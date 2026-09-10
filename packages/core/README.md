@@ -49,7 +49,7 @@ const title = ref('')
 ## Implemented
 
 `WxButton`, `WxInput`, `WxCard`. The full component roadmap lives in
-[the docs](https://webx-ui.github.io/guide/roadmap.html).
+[the docs](https://webx-ui.github.io/webx-ui/guide/roadmap.html).
 
 ## Conventions
 

@@ -1,12 +1,13 @@
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitepress'
 
-// The repo `webx-ui/webx-ui` matches the org name, so Pages serves it from the domain root.
+// GitHub Pages serves this repo from a subpath; the domain root would need a repo named
+// literally `webx-ui.github.io`.
 export default defineConfig({
   title: 'WebX UI',
   description: 'Vue 3 design system for Laravel admin panels',
   lang: 'en-US',
-  base: '/',
+  base: '/webx-ui/',
   cleanUrls: true,
   lastUpdated: true,
   head: [['meta', { name: 'theme-color', content: '#2563eb' }]],

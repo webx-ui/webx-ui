@@ -16,7 +16,7 @@
     "url": "git+https://github.com/webx-ui/webx-ui.git",
     "directory": "packages/schema"
   },
-  "homepage": "https://webx-ui.github.io/guide/roadmap.html",
+  "homepage": "https://webx-ui.github.io/webx-ui/guide/roadmap.html",
   "publishConfig": {
     "access": "public"
   },

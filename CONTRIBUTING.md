@@ -95,7 +95,7 @@ this repo's `release.yml`.
 ## Documentation
 
 The site is VitePress in `apps/docs`, deployed to GitHub Pages by `docs.yml` on every push to
-`main`. Because the repo name matches the org name, it is served from
-https://webx-ui.github.io/ with `base: '/'`.
+`main`. The site is served from a subpath —
+https://webx-ui.github.io/webx-ui/ with `base: '/webx-ui/'`.
 
 A component page documents props, events, slots, accessibility notes, and starts with a live demo.
