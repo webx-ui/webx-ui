@@ -72,7 +72,9 @@ Rate, Timeline, Calendar, Carousel, Mention, Anchor, Splitter, Watermark, Tour, 
 
 ## CMS-specific (not in Element Plus)
 
-MediaLibrary / Gallery, Repeater, RichText (Tiptap), Markdown, LinkPicker, BlockPicker, SortableList
+RichText (Tiptap) ✅ — see [RichText](/components/rich-text).
+
+MediaLibrary / Gallery, Repeater, Markdown, LinkPicker, BlockPicker, SortableList
 (`vue-draggable-plus`), and `SchemaRenderer` in [`@webx-ui/schema`](/guide/#packages).
 
 ## Beyond components

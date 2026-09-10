@@ -55,6 +55,7 @@ export default defineConfig({
             { text: 'Radio', link: '/components/radio' },
             { text: 'Switch', link: '/components/switch' },
             { text: 'DatePicker', link: '/components/date-picker' },
+            { text: 'RichText', link: '/components/rich-text' },
           ],
         },
         {
