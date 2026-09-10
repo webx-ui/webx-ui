@@ -39,8 +39,8 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 
 | Component                                                         | Status |
 | ----------------------------------------------------------------- | ------ |
-| Table (Laravel `Paginated`)                                       | ⬜     |
-| Pagination                                                        | ⬜     |
+| Table (Laravel `Paginated`)                                       | ✅     |
+| Pagination                                                        | ✅     |
 | Dialog (Reka)                                                     | ⬜     |
 | Drawer (Reka)                                                     | ⬜     |
 | Dropdown (Reka)                                                   | ⬜     |
