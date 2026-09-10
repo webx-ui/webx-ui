@@ -23,7 +23,9 @@ export default defineConfig({
       cssFileName: 'style',
     },
     rollupOptions: {
-      external: ['vue'],
+      // The date picker is a runtime dependency, not something to inline: bundling it
+      // would duplicate it for any app that already has it, and its own deps with it.
+      external: ['vue', '@vuepic/vue-datepicker'],
     },
   },
 })

@@ -5,3 +5,6 @@ packages:
 # Dependencies allowed to run install scripts (pnpm blocks the rest by default).
 allowBuilds:
   esbuild: true
+  # vue-demi picks its Vue 2 / Vue 3 entry point in a postinstall; without it the
+  # imports it re-exports resolve to the wrong build.
+  vue-demi: true

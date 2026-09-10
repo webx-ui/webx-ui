@@ -1,0 +1,118 @@
+/*
+ * Theming for @vuepic/vue-datepicker: its own custom properties are mapped onto
+ * WebX tokens, so the picker follows the theme (including dark mode) without the
+ * library's `dark` prop.
+ */
+@import '@vuepic/vue-datepicker/dist/main.css';
+
+.dp__theme_light,
+.dp__theme_dark,
+.wx-datepicker,
+.wx-datepicker__menu {
+  --dp-font-family: var(--wx-font-family-sans);
+  --dp-font-size: var(--wx-font-size-md);
+  --dp-border-radius: var(--wx-radius-control);
+  --dp-cell-border-radius: var(--wx-radius-xs);
+  --dp-common-transition: all var(--wx-duration-fast) var(--wx-easing-standard);
+
+  --dp-background-color: var(--wx-bg-surface);
+  --dp-text-color: var(--wx-text-default);
+  --dp-secondary-color: var(--wx-text-muted);
+  --dp-icon-color: var(--wx-text-muted);
+
+  --dp-hover-color: var(--wx-bg-fill);
+  --dp-hover-text-color: var(--wx-text-default);
+  --dp-hover-icon-color: var(--wx-text-default);
+
+  --dp-primary-color: var(--wx-color-primary);
+  --dp-primary-text-color: var(--wx-color-primary-contrast);
+  --dp-primary-disabled-color: var(--wx-color-primary-disabled);
+  --dp-highlight-color: var(--wx-color-primary-soft);
+
+  --dp-border-color: var(--wx-border-default);
+  --dp-border-color-hover: var(--wx-border-strong);
+  --dp-border-color-focus: var(--wx-border-focus);
+  --dp-menu-border-color: var(--wx-border-default);
+
+  --dp-disabled-color: var(--wx-bg-disabled);
+  --dp-disabled-color-text: var(--wx-text-disabled);
+
+  --dp-success-color: var(--wx-color-success);
+  --dp-success-color-disabled: var(--wx-color-success-disabled);
+  --dp-danger-color: var(--wx-color-danger);
+  --dp-marker-color: var(--wx-color-danger);
+  --dp-tooltip-color: var(--wx-bg-surface);
+
+  --dp-range-between-dates-background-color: var(--wx-color-primary-soft);
+  --dp-range-between-dates-text-color: var(--wx-text-default);
+  --dp-range-between-border-color: var(--wx-color-primary-soft);
+
+  --dp-scroll-bar-background: var(--wx-bg-fill);
+  --dp-scroll-bar-color: var(--wx-border-strong);
+}
+
+.wx-datepicker {
+  display: block;
+  width: 100%;
+}
+
+/* Match the height and typography of every other control. */
+.wx-datepicker__input.dp--input {
+  box-sizing: border-box;
+  height: var(--wx-size-control-md);
+  background: var(--wx-bg-surface);
+  border-color: var(--wx-border-default);
+  border-radius: var(--wx-radius-control);
+  color: var(--wx-text-default);
+  font-family: var(--wx-font-family-sans);
+  font-size: var(--wx-font-size-md);
+}
+
+.wx-datepicker--sm .wx-datepicker__input.dp--input {
+  height: var(--wx-size-control-sm);
+  font-size: var(--wx-font-size-sm);
+}
+
+.wx-datepicker--lg .wx-datepicker__input.dp--input {
+  height: var(--wx-size-control-lg);
+  font-size: var(--wx-font-size-lg);
+}
+
+.wx-datepicker__input.dp--input::placeholder {
+  color: var(--wx-text-placeholder);
+}
+
+.wx-datepicker__input.dp--input:hover:not(:disabled) {
+  border-color: var(--wx-border-strong);
+}
+
+/* Focus is a tinted border here too, matching WxInput rather than the library. */
+.wx-datepicker__input.dp--input-focus {
+  border-color: var(--wx-border-focus);
+  box-shadow: none;
+}
+
+.wx-datepicker--error .wx-datepicker__input.dp--input,
+.wx-datepicker__input.dp--input-invalid {
+  border-color: var(--wx-color-danger);
+}
+
+.wx-datepicker--success .wx-datepicker__input.dp--input {
+  border-color: var(--wx-color-success);
+}
+
+.wx-datepicker--warning .wx-datepicker__input.dp--input {
+  border-color: var(--wx-color-warning);
+}
+
+.wx-datepicker.is-disabled .wx-datepicker__input.dp--input {
+  background: var(--wx-bg-disabled);
+  color: var(--wx-text-disabled);
+  cursor: not-allowed;
+}
+
+.wx-datepicker__menu.dp--menu {
+  border-radius: var(--wx-radius-md);
+  box-shadow: var(--wx-shadow-popover);
+  font-family: var(--wx-font-family-sans);
+}
