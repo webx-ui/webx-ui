@@ -350,6 +350,11 @@ So the component states `display`, `overflow`, `margin`, `border` and the row ba
 rather than inheriting them. Dropping it into an admin that already loads Bootstrap or Tailwind's
 preflight should look the same as it does here.
 
+The same goes for how fast things change. A row's colour reaches the eye by two routes — the row
+paints it behind cells that are transparent, and a pinned cell paints it itself — so both have to
+move at one speed. VitePress fades a `tr` over half a second and leaves cells alone, which had the
+pinned columns snapping to the hover colour while the rest of the row was still on its way there.
+
 It also sets its own `min-width: 0`. A flex or grid item refuses to shrink below its content, and
 the content here is a table that can be twice the width of the page — without it the inner scroller
 never scrolls and the whole document does instead, which is the kind of thing that only shows up

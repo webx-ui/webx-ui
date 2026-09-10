@@ -743,6 +743,31 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   border: 0;
 }
 
+/*
+ * A row's colour reaches the eye by two routes: the row paints it behind cells that are
+ * transparent, and a pinned cell paints it itself. They therefore have to change at the
+ * same speed, and that speed has to be stated — VitePress fades a `tr` over half a
+ * second, which left the pinned columns snapping to the hover colour while the rest of
+ * the row was still on its way there.
+ *
+ * The shadow goes with it: it is the same colour, covering the seam beside the cell.
+ */
+.wx-table__row,
+.wx-table__cell.is-fixed-left,
+.wx-table__cell.is-fixed-right {
+  transition:
+    background-color var(--wx-duration-fast) var(--wx-easing-standard),
+    box-shadow var(--wx-duration-fast) var(--wx-easing-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wx-table__row,
+  .wx-table__cell.is-fixed-left,
+  .wx-table__cell.is-fixed-right {
+    transition: none;
+  }
+}
+
 .wx-table__table th,
 .wx-table__table td {
   display: table-cell;
