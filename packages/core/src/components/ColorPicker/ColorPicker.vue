@@ -15,6 +15,7 @@ import {
   getSliderBackgroundStyle,
   parseColor,
 } from 'reka-ui'
+import type { Color } from 'reka-ui'
 import { useFormField } from '../../composables/useFormField'
 import type { ColorPickerEmits, ColorPickerProps } from './types'
 
@@ -106,11 +107,14 @@ function onBlur() {
 }
 
 /**
- * Both primitives emit `change` as a hex string, while `update:modelValue` may hand
- * back a colour object — so the string event is the one worth listening to.
+ * The two primitives do not agree on which event carries the new colour: the hue
+ * slider reports through `change`, the saturation area through `update:modelValue`.
+ * Both are bound on both, and only string payloads are taken — the slider can also
+ * hand back a colour object. Committing twice is harmless: an unchanged value is
+ * dropped.
  */
-function onPick(value: string) {
-  commit(value.toLowerCase())
+function onPick(value: string | Color) {
+  if (typeof value === 'string') commit(value.toLowerCase())
 }
 
 function clear() {
@@ -171,9 +175,15 @@ function openPicker() {
 
       <popover-portal :disabled="!teleport">
         <popover-content class="wx-color-picker__panel" :side-offset="4" align="start">
+          <!-- Channels are stated: the defaults are RGB, which would move the hue as
+               the pointer travels and disagree with the gradient drawn underneath. -->
           <color-area-root
             class="wx-color-picker__area"
+            color-space="hsb"
+            x-channel="saturation"
+            y-channel="brightness"
             :model-value="workingColor"
+            @update:model-value="onPick"
             @change="onPick"
           >
             <color-area-area class="wx-color-picker__area-surface" :style="areaStyle">
@@ -183,8 +193,10 @@ function openPicker() {
 
           <color-slider-root
             class="wx-color-picker__hue"
+            color-space="hsb"
             channel="hue"
             :model-value="workingColor"
+            @update:model-value="onPick"
             @change="onPick"
           >
             <color-slider-track class="wx-color-picker__hue-track" :style="hueStyle">
