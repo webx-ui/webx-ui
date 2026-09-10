@@ -98,6 +98,33 @@ describe('WxSelect', () => {
     )
   })
 
+  it('leaves the search field empty when multiple, where the tags carry the selection', async () => {
+    const wrapper = mountSelect({ filterable: true, multiple: true, modelValue: ['draft'] })
+    await nextTick()
+
+    // Without control the input falls back to rendering the model: "draft,published".
+    expect((wrapper.get('.wx-select__input').element as HTMLInputElement).value).toBe('')
+
+    await wrapper.setProps({ modelValue: ['draft', 'published'] })
+    await nextTick()
+
+    expect((wrapper.get('.wx-select__input').element as HTMLInputElement).value).toBe('')
+    expect(wrapper.findAll('.wx-select__tag')).toHaveLength(2)
+  })
+
+  it('puts the label back after a search that picked nothing', async () => {
+    const wrapper = mountSelect({ filterable: true, modelValue: 'published' })
+    await nextTick()
+
+    await wrapper.get('.wx-select__toggle').trigger('click')
+    await wrapper.get('.wx-select__input').setValue('zzz')
+    await wrapper.get('.wx-select__input').trigger('keydown', { key: 'Escape' })
+    await nextTick()
+    await nextTick()
+
+    expect((wrapper.get('.wx-select__input').element as HTMLInputElement).value).toBe('Published')
+  })
+
   it('renders a search field only when filterable', () => {
     expect(mountSelect().find('.wx-select__input').exists()).toBe(false)
     expect(mountSelect({ filterable: true }).find('.wx-select__input').exists()).toBe(true)

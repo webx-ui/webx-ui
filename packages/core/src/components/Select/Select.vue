@@ -40,6 +40,13 @@ const model = defineModel<SelectModelValue>({ default: null })
 const field = useFormField(props)
 const open = ref(false)
 
+/**
+ * The text in the search field. Controlled here rather than left to the combobox:
+ * with `multiple` the input has no display value to fall back on and renders the
+ * model itself, so picking two tags leaves "news,releases" sitting in the box.
+ */
+const searchText = ref('')
+
 /** Reka wants an array for multiple and a bare value otherwise. */
 const selection = computed({
   get: () => (props.multiple ? ((model.value as SelectValue[]) ?? []) : (model.value ?? null)),
@@ -82,15 +89,24 @@ const classes = computed(() => [
   },
 ])
 
+/** A pick clears the search in multiple mode and shows the label in single mode. */
+watch(
+  () => model.value,
+  () => {
+    searchText.value = props.multiple ? '' : singleLabel.value
+  },
+  { immediate: true },
+)
+
 watch(open, (value) => {
-  if (value) emit('open')
-  else emit('close')
+  if (value) {
+    emit('open')
+    return
+  }
+  searchText.value = props.multiple ? '' : singleLabel.value
+  emit('close')
 })
 
-/**
- * Reka filters the list itself and keeps no public search term, so the value is read
- * straight off the input — that is what a caller loading options from a backend needs.
- */
 /** Clicking the field is how everyone expects a select to open. */
 function openList() {
   if (!field.disabled.value) open.value = true
@@ -104,6 +120,10 @@ function displayValue(value: unknown): string {
   return value === null || value === undefined ? '' : labelOf(value as SelectValue)
 }
 
+/**
+ * Reka filters the list itself and keeps no public search term, so the value is read
+ * straight off the input — that is what a caller loading options from a backend needs.
+ */
 function onSearch(event: Event) {
   emit('search', (event.target as HTMLInputElement).value)
 }
@@ -159,12 +179,13 @@ function removeTag(value: SelectValue) {
           v-if="filterable"
           :id="field.id.value"
           v-bind="$attrs"
+          v-model="searchText"
           class="wx-select__input"
           :placeholder="placeholder"
           :aria-label="ariaLabel"
           :aria-describedby="field.describedBy.value"
           :aria-invalid="field.status.value === 'error' || undefined"
-          :display-value="displayValue"
+          :display-value="multiple ? undefined : displayValue"
           auto-focus
           @input="onSearch"
         />
