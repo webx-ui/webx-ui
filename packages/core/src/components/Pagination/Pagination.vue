@@ -188,6 +188,7 @@ function setPerPage(event: Event) {
 
 .wx-pagination__total {
   margin: 0;
+  padding: 0;
 }
 
 .wx-pagination__controls {
@@ -220,10 +221,25 @@ function setPerPage(event: Event) {
   box-shadow: var(--wx-ring-focus);
 }
 
+/*
+ * The same explicit resets the table needs. A host stylesheet that puts space between
+ * consecutive list items — VitePress adds 8px, and every CSS framework has a rule of
+ * its own — lands inside the row of buttons and steps them down one by one, because
+ * the margin arrives on all but the first item.
+ */
 .wx-pagination__list {
   display: flex;
   align-items: center;
   gap: var(--wx-space-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  list-style: none;
+}
+
+.wx-pagination__list li {
+  display: flex;
+  align-items: center;
   margin: 0;
   padding: 0;
   list-style: none;
