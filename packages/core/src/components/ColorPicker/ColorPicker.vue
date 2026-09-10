@@ -11,6 +11,7 @@ import {
   PopoverContent,
   PopoverPortal,
   PopoverRoot,
+  colorToHex,
   getAreaBackgroundStyle,
   getSliderBackgroundStyle,
   parseColor,
@@ -51,19 +52,26 @@ watch(model, (value) => {
   text.value = value ?? ''
 })
 
-/** The picker itself always needs a valid colour, even when the field is empty. */
-const workingColor = computed(() =>
-  model.value && HEX.test(model.value) ? model.value : '#427edd',
+/**
+ * The picker works on a colour object, not on the hex string.
+ *
+ * A grey has no hue to speak of, so parsing #919191 back into channels invents one —
+ * and re-deriving it on every pointer move is what made the hue strip jump from blue
+ * to teal to red as the pointer travelled into the desaturated corner. Holding the
+ * object keeps the hue the user chose even where the colour cannot express it.
+ */
+const working = ref<Color>(
+  parseColor(model.value && HEX.test(model.value) ? model.value : '#427edd'),
 )
 
-/**
- * Reka draws neither the saturation square nor the hue strip — it only tracks the
- * value and exposes the gradients, which have to be put on the elements by hand.
- */
-const parsed = computed(() => parseColor(workingColor.value))
+watch(model, (value) => {
+  const hex = value && HEX.test(value) ? value : null
+  if (!hex || hex === colorToHex(working.value).toLowerCase()) return
+  working.value = parseColor(hex)
+})
 
-const areaStyle = computed(() => getAreaBackgroundStyle(parsed.value, 'saturation', 'brightness'))
-const hueStyle = computed(() => getSliderBackgroundStyle(parsed.value, 'hue'))
+const areaStyle = computed(() => getAreaBackgroundStyle(working.value, 'saturation', 'brightness'))
+const hueStyle = computed(() => getSliderBackgroundStyle(working.value, 'hue'))
 
 const swatch = computed(() => (model.value && HEX.test(model.value) ? model.value : null))
 
@@ -113,8 +121,16 @@ function onBlur() {
  * hand back a colour object. Committing twice is harmless: an unchanged value is
  * dropped.
  */
-function onPick(value: string | Color) {
-  if (typeof value === 'string') commit(value.toLowerCase())
+function onColor(color: Color) {
+  working.value = color
+  commit(colorToHex(color).toLowerCase())
+}
+
+/** Presets and typing come in as hex and have to be parsed back into the picker. */
+function onHex(value: string) {
+  const hex = value.toLowerCase()
+  working.value = parseColor(hex)
+  commit(hex)
 }
 
 function clear() {
@@ -182,9 +198,8 @@ function openPicker() {
             color-space="hsb"
             x-channel="saturation"
             y-channel="brightness"
-            :model-value="workingColor"
-            @update:model-value="onPick"
-            @change="onPick"
+            :model-value="working"
+            @update:color="onColor"
           >
             <color-area-area class="wx-color-picker__area-surface" :style="areaStyle">
               <color-area-thumb class="wx-color-picker__thumb" />
@@ -195,9 +210,8 @@ function openPicker() {
             class="wx-color-picker__hue"
             color-space="hsb"
             channel="hue"
-            :model-value="workingColor"
-            @update:model-value="onPick"
-            @change="onPick"
+            :model-value="working"
+            @update:color="onColor"
           >
             <color-slider-track class="wx-color-picker__hue-track" :style="hueStyle">
               <color-slider-thumb class="wx-color-picker__thumb" />
@@ -213,7 +227,7 @@ function openPicker() {
               :style="{ background: preset }"
               :aria-label="preset"
               :aria-pressed="model === preset"
-              @click="onPick(preset)"
+              @click="onHex(preset)"
             />
           </div>
         </popover-content>
