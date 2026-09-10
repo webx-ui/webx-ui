@@ -25,7 +25,6 @@ const emit = defineEmits<PaginationEmits>()
 const page = defineModel<number | undefined>('page', { default: undefined })
 const perPage = defineModel<number | undefined>('perPage', { default: undefined })
 
-const currentPage = computed(() => page.value ?? props.paginator?.current_page ?? 1)
 const currentPerPage = computed(() => perPage.value ?? props.paginator?.per_page ?? 15)
 const total = computed(() => props.total ?? props.paginator?.total ?? 0)
 
@@ -33,6 +32,16 @@ const lastPage = computed(() => {
   if (props.lastPage !== undefined) return Math.max(1, props.lastPage)
   if (props.paginator) return Math.max(1, props.paginator.last_page)
   return Math.max(1, Math.ceil(total.value / currentPerPage.value))
+})
+
+/**
+ * Clamped to what exists. A remembered page can outlive the result it belonged to —
+ * a filter narrows eleven pages down to two — and a pagination with no page marked
+ * current tells the reader they are nowhere.
+ */
+const currentPage = computed(() => {
+  const asked = page.value ?? props.paginator?.current_page ?? 1
+  return Math.min(Math.max(1, asked), lastPage.value)
 })
 
 /** Laravel counts these for us; without it they follow from the page and its size. */

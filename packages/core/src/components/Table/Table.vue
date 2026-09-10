@@ -1,7 +1,8 @@
 <script setup lang="ts" generic="T extends TableRow = TableRow">
-import { computed, onBeforeUnmount, useSlots } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, useSlots, watch } from 'vue'
 import WxCheckbox from '../Checkbox/Checkbox.vue'
 import WxInput from '../Input/Input.vue'
+import WxPagination from '../Pagination/Pagination.vue'
 import type {
   RowKey,
   TableColumn,
@@ -9,6 +10,7 @@ import type {
   TableProps,
   TableRow,
   TableSort,
+  TableState,
   TableSummaryRow,
 } from './types'
 
@@ -35,6 +37,9 @@ const props = withDefaults(defineProps<TableProps<T>>(), {
   expandable: false,
   expandableIf: undefined,
   summary: () => [],
+  pagination: undefined,
+  perPageOptions: () => [],
+  persist: undefined,
   maxHeight: undefined,
   rowClass: undefined,
   layout: 'auto',
@@ -48,6 +53,8 @@ const selected = defineModel<RowKey[]>('selected', { default: () => [] })
 const expanded = defineModel<RowKey[]>('expanded', { default: () => [] })
 const sort = defineModel<TableSort | null>('sort', { default: null })
 const search = defineModel<string>('search', { default: '' })
+const page = defineModel<number>('page', { default: 1 })
+const perPage = defineModel<number>('perPage', { default: 15 })
 
 /** An array or a paginator; the table only ever needs the rows out of it. */
 const rows = computed<T[]>(() => {
@@ -55,6 +62,11 @@ const rows = computed<T[]>(() => {
   if (!value) return []
   return Array.isArray(value) ? value : (value.data ?? [])
 })
+
+/** A paginated response is a promise that there are more pages to reach. */
+const paginator = computed(() => (props.data && !Array.isArray(props.data) ? props.data : null))
+
+const showPagination = computed(() => props.pagination ?? Boolean(paginator.value))
 
 const visibleColumns = computed(() => props.columns.filter((column) => !column.hidden))
 
@@ -265,6 +277,7 @@ function onSort(column: TableColumn<T>) {
   else next = null
 
   sort.value = next
+  page.value = 1
   emit('sort-change', next)
 }
 
@@ -285,21 +298,88 @@ function alignClass(column: TableColumn<T>) {
 let timer: ReturnType<typeof setTimeout> | undefined
 
 /**
- * The field answers at once; the backend hears about it when typing settles. Emitting
- * per keystroke would put a request behind every letter of a search term.
+ * The field answers at once; the backend hears about it when the typing settles. The
+ * settled term is what the state is built from, so a burst of keystrokes is one change
+ * rather than one per letter — and filtering changes what page one is, so the page goes
+ * back to the first.
  */
+const settledSearch = ref(search.value)
+
 function onSearch(value: string | number | undefined) {
-  const term = value === undefined ? '' : String(value)
-  search.value = term
+  search.value = value === undefined ? '' : String(value)
+}
+
+function onSearchChanged(term: string) {
   clearTimeout(timer)
-  if (!props.searchDebounce) {
+  const settle = () => {
+    settledSearch.value = term
+    page.value = 1
     emit('search', term)
-    return
   }
-  timer = setTimeout(() => emit('search', term), props.searchDebounce)
+  if (!props.searchDebounce) settle()
+  else timer = setTimeout(settle, props.searchDebounce)
 }
 
 onBeforeUnmount(() => clearTimeout(timer))
+
+/** Everything the backend needs, in one object, so there is one thing to watch. */
+const state = computed<TableState>(() => ({
+  page: page.value,
+  perPage: perPage.value,
+  sort: sort.value,
+  search: settledSearch.value,
+}))
+
+const STORAGE_PREFIX = 'wx-table:'
+
+/**
+ * Reading happens after mount rather than during setup: this renders on a server too,
+ * and markup built from one machine's localStorage would not match what the browser
+ * then hydrates.
+ */
+function restore() {
+  if (!props.persist) return
+  let saved: Partial<TableState> | null = null
+  try {
+    const raw = window.localStorage.getItem(STORAGE_PREFIX + props.persist)
+    saved = raw ? (JSON.parse(raw) as Partial<TableState>) : null
+  } catch {
+    // Unavailable, full, or holding something we did not write. Defaults will do.
+    return
+  }
+  if (!saved) return
+
+  if (typeof saved.page === 'number' && saved.page > 0) page.value = saved.page
+  if (typeof saved.perPage === 'number' && saved.perPage > 0) perPage.value = saved.perPage
+  if (typeof saved.search === 'string') search.value = saved.search
+  if (saved.sort === null) sort.value = null
+  else if (saved.sort && typeof saved.sort.key === 'string') {
+    sort.value = { key: saved.sort.key, order: saved.sort.order === 'desc' ? 'desc' : 'asc' }
+  }
+}
+
+function save(value: TableState) {
+  if (!props.persist) return
+  try {
+    window.localStorage.setItem(STORAGE_PREFIX + props.persist, JSON.stringify(value))
+  } catch {
+    // A private window or a full quota. Remembering is a convenience, not a feature.
+  }
+}
+
+onMounted(() => {
+  restore()
+  settledSearch.value = search.value
+  emit('state-change', state.value)
+
+  // Both watchers start here, so the restore above counts as the first state rather
+  // than as a change — one fetch on load, not two.
+  watch(search, onSearchChanged)
+  watch(state, (value) => {
+    save(value)
+    emit('state-change', value)
+  })
+})
 
 /** Columns ahead of the first figure belong to the caption. */
 function summaryStart(row: TableSummaryRow): number {
@@ -510,7 +590,7 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
           </tr>
         </tbody>
 
-        <tfoot v-if="summary.length || $slots.footer" class="wx-table__foot">
+        <tfoot v-if="summary.length || $slots.footer || showPagination" class="wx-table__foot">
           <tr
             v-for="(line, lineIndex) in summary"
             :key="lineIndex"
@@ -537,9 +617,18 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
             </td>
           </tr>
 
-          <tr v-if="$slots.footer" class="wx-table__footer-row">
+          <tr v-if="$slots.footer || showPagination" class="wx-table__footer-row">
             <td class="wx-table__cell" :colspan="columnCount">
-              <slot name="footer" />
+              <slot name="footer">
+                <wx-pagination
+                  v-model:page="page"
+                  v-model:per-page="perPage"
+                  :paginator="paginator"
+                  :per-page-options="perPageOptions"
+                  :size="size"
+                  :disabled="loading"
+                />
+              </slot>
             </td>
           </tr>
         </tfoot>
@@ -573,6 +662,8 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 
   --wx-table-padding-y: var(--wx-space-10);
   --wx-table-padding-x: var(--wx-space-16);
+  /* What a pinned cell paints itself with; every row state restates it. */
+  --wx-table-row-bg: var(--wx-bg-surface);
 }
 
 .wx-table--sm {
@@ -710,6 +801,8 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 }
 
 .wx-table__head .wx-table__cell {
+  --wx-table-row-bg: var(--wx-bg-subtle);
+
   background: var(--wx-bg-subtle);
   color: var(--wx-text-muted);
   font-size: var(--wx-font-size-sm);
@@ -731,32 +824,50 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   background: var(--wx-bg-surface);
 }
 
-/* A pinned column paints over the scrolling ones, and the header over both. */
+/* A pinned column paints over the scrolling ones, and the header over both. The colour
+   it paints with is whatever the row it belongs to is wearing. */
 .wx-table__cell.is-fixed-left,
 .wx-table__cell.is-fixed-right {
   position: sticky;
   z-index: 1;
-  background: var(--wx-bg-surface);
+  background: var(--wx-table-row-bg);
 }
 
 .wx-table__head .wx-table__cell.is-fixed-left,
-.wx-table__head .wx-table__cell.is-fixed-right {
-  z-index: 3;
-  background: var(--wx-bg-subtle);
-}
-
+.wx-table__head .wx-table__cell.is-fixed-right,
 .wx-table--sticky .wx-table__foot .wx-table__cell.is-fixed-left,
 .wx-table--sticky .wx-table__foot .wx-table__cell.is-fixed-right {
   z-index: 3;
 }
 
-/* The edge of the frozen block, so it reads as floating over what slides beneath it. */
+/*
+ * Each pinned cell paints one pixel past its own edge, in its own colour. A scrollport
+ * rarely begins on a whole pixel — at any display scale but 100% it begins on a fraction
+ * of one — and the pinned cell is then rasterised half a device pixel short, leaving a
+ * hairline of the scrolling column showing beside it. A sliver of somebody else's text
+ * is the sort of thing you cannot unsee once you have.
+ *
+ * The edge of the frozen block gets its shadow on top of that, so it reads as floating
+ * over what slides beneath.
+ */
+.wx-table__cell.is-fixed-left {
+  box-shadow: -1px 0 0 0 var(--wx-table-row-bg);
+}
+
+.wx-table__cell.is-fixed-right {
+  box-shadow: 1px 0 0 0 var(--wx-table-row-bg);
+}
+
 .wx-table__cell.is-fixed-left.is-fixed-edge {
-  box-shadow: 6px 0 6px -6px rgb(0 0 0 / 0.18);
+  box-shadow:
+    -1px 0 0 0 var(--wx-table-row-bg),
+    6px 0 6px -6px rgb(0 0 0 / 0.18);
 }
 
 .wx-table__cell.is-fixed-right.is-fixed-edge {
-  box-shadow: -6px 0 6px -6px rgb(0 0 0 / 0.18);
+  box-shadow:
+    1px 0 0 0 var(--wx-table-row-bg),
+    -6px 0 6px -6px rgb(0 0 0 / 0.18);
 }
 
 .wx-table__body .wx-table__cell {
@@ -768,25 +879,23 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 }
 
 /* Striped by row index, not by position: an expansion row is a sibling too, and
-   counting it would flip the pattern from wherever a row was opened. */
-.wx-table--stripe .wx-table__row.is-striped,
-.wx-table--stripe .wx-table__row.is-striped .wx-table__cell.is-fixed-left,
-.wx-table--stripe .wx-table__row.is-striped .wx-table__cell.is-fixed-right {
+   counting it would flip the pattern from wherever a row was opened. Each state names
+   its colour once; the pinned cells read it back out of the variable. */
+.wx-table--stripe .wx-table__row.is-striped {
+  --wx-table-row-bg: var(--wx-bg-subtle);
+
   background: var(--wx-bg-subtle);
 }
 
 .wx-table--hover .wx-table__row:hover {
+  --wx-table-row-bg: var(--wx-bg-fill);
+
   background: var(--wx-bg-fill);
 }
 
-.wx-table--hover .wx-table__row:hover .wx-table__cell.is-fixed-left,
-.wx-table--hover .wx-table__row:hover .wx-table__cell.is-fixed-right {
-  background: var(--wx-bg-fill);
-}
+.wx-table__row.is-selected {
+  --wx-table-row-bg: var(--wx-color-primary-soft);
 
-.wx-table__row.is-selected,
-.wx-table__row.is-selected .wx-table__cell.is-fixed-left,
-.wx-table__row.is-selected .wx-table__cell.is-fixed-right {
   background: var(--wx-color-primary-soft);
 }
 

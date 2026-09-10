@@ -15,8 +15,8 @@ arrives, so a controller that already returns `->paginate()` needs no reshaping.
 
 ```vue
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import type { Paginated, RowKey, TableColumn, TableSort } from '@webx-ui/core'
+import { ref } from 'vue'
+import type { Paginated, TableColumn, TableState } from '@webx-ui/core'
 
 interface Order {
   id: number
@@ -25,9 +25,6 @@ interface Order {
 }
 
 const orders = ref<Paginated<Order> | null>(null)
-const page = ref(1)
-const sort = ref<TableSort | null>(null)
-const selected = ref<RowKey[]>([])
 const loading = ref(false)
 
 const columns: TableColumn<Order>[] = [
@@ -36,35 +33,68 @@ const columns: TableColumn<Order>[] = [
   { key: 'total', label: 'Total', align: 'right', formatter: (value) => `€${value}` },
 ]
 
-async function load() {
+async function load(state: TableState) {
   loading.value = true
-  const query = new URLSearchParams({ page: String(page.value) })
-  if (sort.value) query.set('sort', `${sort.value.order === 'desc' ? '-' : ''}${sort.value.key}`)
+  const query = new URLSearchParams({
+    page: String(state.page),
+    per_page: String(state.perPage),
+  })
+  if (state.search) query.set('search', state.search)
+  if (state.sort) query.set('sort', `${state.sort.order === 'desc' ? '-' : ''}${state.sort.key}`)
+
   orders.value = await fetch(`/api/orders?${query}`).then((response) => response.json())
   loading.value = false
 }
-
-watch([page, sort], load, { immediate: true })
 </script>
 
 <template>
   <wx-table
-    v-model:sort="sort"
-    v-model:selected="selected"
+    title="Orders"
+    searchable
+    selectable
+    persist="orders"
     :data="orders"
     :columns="columns"
     :loading="loading"
-    selectable
     row-key="id"
-  >
-    <template #footer>
-      <wx-pagination v-model:page="page" :paginator="orders" />
-    </template>
-  </wx-table>
+    @state-change="load"
+  />
 </template>
 ```
 
 `data` takes either the paginator or a plain array — the table only ever reads rows out of it.
+
+## One event, one fetch
+
+The page, the page size, the sort and the search term are the four things a backend needs, so they
+travel together in `@state-change`:
+
+```ts
+{ page: 1, perPage: 15, sort: { key: 'customer', order: 'asc' }, search: 'ada' }
+```
+
+It fires **once on mount** — carrying whatever `persist` restored — and again whenever any part of
+it changes. That is deliberately your initial load as well: hang the fetch on this event and there
+is no second place where a request can start, and no watcher racing the restored state.
+
+Sorting and searching both send the page back to the first, because the page number of a result set
+that just changed means nothing.
+
+Each part is still a model of its own (`v-model:page`, `v-model:sort`, …) when a query parameter or
+a store needs to own it.
+
+## Pagination is built in
+
+Hand the table a paginator and the pagination appears in the footer by itself — no slot, no second
+component to wire:
+
+```vue
+<wx-table :data="orders" :columns="columns" :per-page-options="[15, 30, 50]" @state-change="load" />
+```
+
+`per-page` starts at 15 and the size control only shows up once `per-page-options` is given. Turn
+the whole thing off with `:pagination="false"`, force it on for a plain array with
+`:pagination="true"`, and replace it entirely with `#footer` — the slot wins.
 
 ## Header and search
 
@@ -79,13 +109,30 @@ field and anything in `#actions` on the right.
 </wx-table>
 ```
 
-The field answers every keystroke; `@search` waits for the typing to settle first — 300 ms by
+The field answers every keystroke; the state waits for the typing to settle first — 300 ms by
 default, `:search-debounce="0"` to report immediately. So `v-model:search` is the text on screen
-and `@search` is the moment to call the backend, which is the difference between one request and
-one request per letter.
+and `@state-change` is the moment to call the backend, which is the difference between one request
+and one request per letter. `@search` fires alongside it if the term alone is what you want.
 
-Searching is filtering, and filtering changes what page one is: reset `page` to 1 in the handler
-before fetching, as the demo above does.
+## Remembering where the user was
+
+`persist` names a key and the table writes the page, the size, the sort and the search term under
+it, restoring them on the next visit:
+
+```vue
+<wx-table persist="orders" :data="orders" :columns="columns" @state-change="load" />
+```
+
+Reading happens after mount rather than during setup, so a page rendered on a server does not
+disagree with what the browser hydrates. The restored state arrives in the first `@state-change`,
+which means the initial fetch is the correct one rather than a default fetch followed by a second.
+
+Nothing is stored unless the key is given, and a storage that is unavailable, full, or holding
+something the table did not write is ignored — remembering is a convenience, not a feature to fail
+over. The selection is deliberately not part of it: keys outlive paging but should not outlive the
+tab.
+
+Use one key per table per application: `orders`, `orders-archive`, not `table`.
 
 ## Sorting is reported, not applied
 
@@ -267,6 +314,9 @@ key of `actions` and fill it from `#cell-actions`.
 | `expandable`        | `boolean`                             | `false`             | Adds the chevron column             |
 | `expandableIf`      | `(row) => boolean`                    | —                   | Rows with nothing to open           |
 | `summary`           | `TableSummaryRow[]`                   | `[]`                | Lines under the table               |
+| `pagination`        | `boolean`                             | paginator           | Pagination in the footer            |
+| `perPageOptions`    | `number[]`                            | `[]`                | Page sizes it offers                |
+| `persist`           | `string`                              | —                   | Storage key for the state           |
 | `maxHeight`         | `string \| number`                    | —                   | Scrolls rows under a stuck header   |
 | `rowClass`          | `(row, index) => string \| undefined` | —                   | Extra class per row                 |
 | `layout`            | `'auto' \| 'fixed'`                   | `'auto'`            | Let the content size columns or not |
@@ -274,10 +324,12 @@ key of `actions` and fill it from `#cell-actions`.
 | `ariaLabel`         | `string`                              | —                   | Names the table for a screen reader |
 
 **Models:** `v-model:sort` (`TableSort | null`), `v-model:selected` (`RowKey[]`),
-`v-model:expanded` (`RowKey[]`), `v-model:search` (`string`).
+`v-model:expanded` (`RowKey[]`), `v-model:search` (`string`), `v-model:page` (`number`),
+`v-model:per-page` (`number`).
 
-**Events:** `row-click` (`row, index, event`), `sort-change` (`TableSort | null`),
-`selection-change` (`keys, rows`), `expand-change` (`keys, rows`), `search` (`term`).
+**Events:** `state-change` (`TableState`), `row-click` (`row, index, event`), `sort-change`
+(`TableSort | null`), `selection-change` (`keys, rows`), `expand-change` (`keys, rows`), `search`
+(`term`).
 
 ## Loading keeps the rows
 

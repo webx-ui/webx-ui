@@ -71,6 +71,14 @@ export interface TableSummaryRow {
   class?: string
 }
 
+/** Everything the table asks the backend for, in one object. */
+export interface TableState {
+  page: number
+  perPage: number
+  sort: TableSort | null
+  search: string
+}
+
 export interface TableProps<T = TableRow> {
   /** Rows, or a whole paginator — the table reads `data` out of it. */
   data?: T[] | Paginated<T> | null
@@ -107,6 +115,18 @@ export interface TableProps<T = TableRow> {
   /** Lines under the table: totals, discounts, whatever the figures are. */
   summary?: TableSummaryRow[]
   /**
+   * Puts the pagination in the footer. On by default as soon as `data` is a paginator,
+   * since a paginated response is a promise that there are more pages to reach.
+   */
+  pagination?: boolean
+  /** Page sizes offered by the built-in pagination. Empty leaves the control out. */
+  perPageOptions?: number[]
+  /**
+   * Remembers the page, the sort, the page size and the search term under this key, so
+   * a reload lands where the user left off. One key per table per application.
+   */
+  persist?: string
+  /**
    * Caps the height and scrolls the rows between a stuck header and a stuck footer.
    * A number is pixels; a string is any CSS length, so `60vh` follows the window.
    */
@@ -124,4 +144,10 @@ export interface TableEmits<T = TableRow> {
   'selection-change': [keys: RowKey[], rows: T[]]
   'expand-change': [keys: RowKey[], rows: T[]]
   search: [term: string]
+  /**
+   * Everything the backend needs, together. Fires once on mount — with whatever
+   * `persist` restored — and again whenever any part of it changes, which makes it the
+   * single place to hang the fetch on.
+   */
+  'state-change': [state: TableState]
 }

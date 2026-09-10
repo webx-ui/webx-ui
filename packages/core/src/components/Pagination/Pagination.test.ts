@@ -80,6 +80,13 @@ describe('WxPagination', () => {
     expect(wrapper.emitted('change')?.at(-1)).toEqual([{ page: 3, perPage: 15 }])
   })
 
+  it('marks the last page when asked for one past the end', () => {
+    // A remembered page outliving its result: a filter narrowed nine pages down to two.
+    const wrapper = mountPagination({ paginator: { ...page, last_page: 2 }, page: 3 })
+
+    expect(wrapper.get('.is-current').text()).toBe('2')
+  })
+
   it('stops at both ends', () => {
     const first = mountPagination({ paginator: { ...page, current_page: 1 } })
     const last = mountPagination({ paginator: { ...page, current_page: 9 } })
