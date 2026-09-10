@@ -36,11 +36,17 @@ const page = ref(1)
 const perPage = ref(5)
 const sort = ref<TableSort | null>({ key: 'created_at', order: 'desc' })
 const selected = ref<RowKey[]>([])
+const search = ref('')
 const loading = ref(false)
 
-/** What a controller does: order, then `->paginate()`. */
+/** What a controller does: filter, order, then `->paginate()`. */
 function query(): Paginated<Order> {
-  const rows = [...table]
+  const term = search.value.trim().toLowerCase()
+  const rows = table.filter(
+    (order) =>
+      !term || order.customer.toLowerCase().includes(term) || String(order.id).includes(term),
+  )
+
   if (sort.value) {
     const { key, order } = sort.value
     rows.sort((a, b) => {
@@ -100,6 +106,12 @@ function reload() {
 watch([page, perPage, sort], reload)
 onBeforeUnmount(() => clearTimeout(timer))
 
+/** The search event has already waited for the typing to settle. */
+function onSearch() {
+  page.value = 1
+  reload()
+}
+
 const STATUS_COLOUR: Record<Order['status'], string> = {
   paid: 'var(--wx-color-success)',
   pending: 'var(--wx-color-warning)',
@@ -112,6 +124,10 @@ const STATUS_COLOUR: Record<Order['status'], string> = {
     <wx-table
       v-model:sort="sort"
       v-model:selected="selected"
+      v-model:search="search"
+      title="Orders"
+      searchable
+      search-placeholder="Customer or number"
       :data="result"
       :columns="columns"
       :loading="loading"
@@ -119,6 +135,7 @@ const STATUS_COLOUR: Record<Order['status'], string> = {
       stripe
       row-key="id"
       aria-label="Orders"
+      @search="onSearch"
     >
       <template #cell-status="{ value }">
         <span class="demo-pill" :style="{ color: STATUS_COLOUR[value as Order['status']] }">
@@ -141,25 +158,6 @@ const STATUS_COLOUR: Record<Order['status'], string> = {
       <code>{{ selected.length }}</code>
       <template v-if="selected.length"> ({{ selected.join(', ') }})</template>
     </p>
-
-    <div>
-      <span class="wx-demo__label">A plain array, a sticky header, no pagination</span>
-      <wx-table
-        :data="table.slice(0, 14)"
-        :columns="columns"
-        :max-height="240"
-        bordered
-        size="sm"
-        row-key="id"
-        aria-label="Recent orders"
-      >
-        <template #cell-status="{ value }">
-          <span class="demo-pill" :style="{ color: STATUS_COLOUR[value as Order['status']] }">
-            {{ value }}
-          </span>
-        </template>
-      </wx-table>
-    </div>
 
     <div>
       <span class="wx-demo__label">Nothing to show</span>

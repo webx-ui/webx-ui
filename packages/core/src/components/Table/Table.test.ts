@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import WxTable from './Table.vue'
 import type { Paginated, TableColumn } from './types'
@@ -221,7 +221,7 @@ describe('WxTable', () => {
   it('does not select the row a checkbox click landed in', async () => {
     const wrapper = mountTable({ selectable: true })
 
-    await wrapper.get('tbody .wx-table__cell--select').trigger('click')
+    await wrapper.get('tbody .wx-table__cell--utility').trigger('click')
 
     expect(wrapper.emitted('row-click')).toBeUndefined()
   })
@@ -238,5 +238,219 @@ describe('WxTable', () => {
     const wrapper = mountTable({ data: [], loading: true })
 
     expect(wrapper.find('.wx-table__empty').exists()).toBe(false)
+  })
+})
+
+describe('WxTable summary', () => {
+  const money: TableColumn<User>[] = [
+    { key: 'name', label: 'Item' },
+    { key: 'balance', label: 'Total', align: 'right' },
+  ]
+
+  it('spans the caption across the columns ahead of the figure', () => {
+    const wrapper = mountTable({
+      columns: money,
+      summary: [{ label: 'Subtotal', cells: { balance: '1540' } }],
+    })
+
+    const cells = wrapper.findAll('tfoot td')
+    expect(cells[0].text()).toBe('Subtotal')
+    expect(cells[0].attributes('colspan')).toBe('1')
+    expect(cells[1].text()).toBe('1540')
+  })
+
+  it('counts the checkbox column into the caption', () => {
+    const wrapper = mountTable({
+      columns: money,
+      selectable: true,
+      summary: [{ label: 'Subtotal', cells: { balance: '1540' } }],
+    })
+
+    expect(wrapper.get('tfoot td').attributes('colspan')).toBe('2')
+  })
+
+  it('keeps each figure under its own column, aligned as that column is', () => {
+    const wrapper = mountTable({
+      columns: money,
+      summary: [{ label: 'Subtotal', cells: { balance: '1540' } }],
+    })
+
+    expect(wrapper.findAll('tfoot td')[1].classes()).toContain('wx-table__cell--right')
+  })
+
+  it('stacks several lines and marks the one that matters', () => {
+    const wrapper = mountTable({
+      columns: money,
+      summary: [
+        { label: 'Sum', cells: { balance: '1540' } },
+        { label: 'Discount', cells: { balance: '-40' } },
+        { label: 'Total', cells: { balance: '1500' }, strong: true },
+      ],
+    })
+
+    const lines = wrapper.findAll('.wx-table__summary')
+    expect(lines).toHaveLength(3)
+    expect(lines[2].classes()).toContain('is-strong')
+    expect(lines[1].text()).toContain('-40')
+  })
+
+  it('lets a slot render the figure', () => {
+    const wrapper = mountTable(
+      { columns: money, summary: [{ label: 'Total', cells: { balance: 1500 } }] },
+      { slots: { 'summary-balance': '<b>{{ params.value }} EUR</b>' } },
+    )
+
+    expect(wrapper.get('tfoot b').text()).toBe('1500 EUR')
+  })
+
+  it('keeps the footer slot alongside the summary', () => {
+    const wrapper = mountTable(
+      { columns: money, summary: [{ label: 'Total', cells: { balance: 1500 } }] },
+      { slots: { footer: '<span class="pager">pages</span>' } },
+    )
+
+    expect(wrapper.findAll('tfoot tr')).toHaveLength(2)
+    expect(wrapper.get('.wx-table__footer-row td').attributes('colspan')).toBe('2')
+  })
+})
+
+describe('WxTable expandable rows', () => {
+  it('opens a row under itself, spanning every column', async () => {
+    const wrapper = mountTable(
+      { expandable: true },
+      { slots: { expanded: '<div class="detail">{{ params.row.name }} detail</div>' } },
+    )
+
+    expect(wrapper.find('.detail').exists()).toBe(false)
+
+    await wrapper.get('.wx-table__expander').trigger('click')
+
+    expect(wrapper.get('.detail').text()).toBe('Ada detail')
+    expect(wrapper.get('.wx-table__expansion').attributes('colspan')).toBe('3')
+  })
+
+  it('reports the open rows by key', async () => {
+    const wrapper = mountTable({ expandable: true })
+
+    await wrapper.findAll('.wx-table__expander')[1].trigger('click')
+
+    expect(wrapper.emitted('update:expanded')?.at(-1)).toEqual([[9]])
+    expect(wrapper.emitted('expand-change')?.at(-1)).toEqual([[9], [users[1]]])
+  })
+
+  it('closes a row that was open', async () => {
+    const wrapper = mountTable({ expandable: true, expanded: [7] })
+
+    await wrapper.get('.wx-table__expander').trigger('click')
+
+    expect(wrapper.emitted('update:expanded')?.at(-1)).toEqual([[]])
+  })
+
+  it('gives a row with nothing to show no control at all', () => {
+    const wrapper = mountTable({ expandable: true, expandableIf: (row: User) => row.id !== 9 })
+
+    expect(wrapper.findAll('.wx-table__expander')).toHaveLength(1)
+  })
+
+  it('does not select the row the chevron sits in', async () => {
+    const wrapper = mountTable({ expandable: true })
+
+    await wrapper.get('.wx-table__expander').trigger('click')
+
+    expect(wrapper.emitted('row-click')).toBeUndefined()
+  })
+})
+
+describe('WxTable fixed columns', () => {
+  const wide: TableColumn<User>[] = [
+    { key: 'name', label: 'Name', width: 160, fixed: 'left' },
+    { key: 'balance', label: 'Balance', width: 300 },
+    { key: 'id', label: '', width: 90, fixed: 'right' },
+  ]
+
+  it('pins a column at the width of everything pinned before it', () => {
+    const wrapper = mountTable({ columns: wide, selectable: true })
+    const headers = wrapper.findAll('thead th')
+
+    // The checkbox column is 44 wide and pinned too, so the name column starts after it.
+    expect(headers[0].attributes('style')).toContain('left: 0px')
+    expect(headers[1].attributes('style')).toContain('left: 44px')
+    expect(headers[3].attributes('style')).toContain('right: 0px')
+  })
+
+  it('stacks two pinned columns on the same edge', () => {
+    const wrapper = mountTable({
+      columns: [
+        { key: 'id', label: '#', width: 60, fixed: 'left' },
+        { key: 'name', label: 'Name', width: 160, fixed: 'left' },
+        { key: 'balance', label: 'Balance', width: 300 },
+      ],
+    })
+    const headers = wrapper.findAll('thead th')
+
+    expect(headers[0].attributes('style')).toContain('left: 0px')
+    expect(headers[1].attributes('style')).toContain('left: 60px')
+    expect(headers[1].classes()).toContain('is-fixed-edge')
+  })
+
+  it('leaves the columns alone when nothing is pinned', () => {
+    const wrapper = mountTable({ selectable: true })
+
+    expect(wrapper.get('thead th').attributes('style')).toBeUndefined()
+    expect(wrapper.get('thead th').classes()).not.toContain('is-fixed-left')
+  })
+})
+
+describe('WxTable header', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('stays out of the way until there is something to put in it', () => {
+    expect(mountTable().find('.wx-table__header').exists()).toBe(false)
+  })
+
+  it('puts the title on the left and the search on the right', () => {
+    const wrapper = mountTable({ title: 'Orders', searchable: true })
+
+    expect(wrapper.get('.wx-table__title').text()).toBe('Orders')
+    expect(wrapper.find('.wx-table__search input').exists()).toBe(true)
+  })
+
+  it('answers in the field at once and tells the backend when typing settles', async () => {
+    vi.useFakeTimers()
+    const wrapper = mountTable({ searchable: true })
+
+    await wrapper.get('.wx-table__search input').setValue('ada')
+
+    expect(wrapper.emitted('update:search')?.at(-1)).toEqual(['ada'])
+    expect(wrapper.emitted('search')).toBeUndefined()
+
+    vi.advanceTimersByTime(300)
+    expect(wrapper.emitted('search')?.at(-1)).toEqual(['ada'])
+  })
+
+  it('reports only the last of a burst of keystrokes', async () => {
+    vi.useFakeTimers()
+    const wrapper = mountTable({ searchable: true })
+    const input = wrapper.get('.wx-table__search input')
+
+    await input.setValue('a')
+    vi.advanceTimersByTime(100)
+    await input.setValue('ad')
+    vi.advanceTimersByTime(100)
+    await input.setValue('ada')
+    vi.advanceTimersByTime(300)
+
+    expect(wrapper.emitted('search')).toHaveLength(1)
+    expect(wrapper.emitted('search')?.at(-1)).toEqual(['ada'])
+  })
+
+  it('reports every keystroke when the wait is turned off', async () => {
+    const wrapper = mountTable({ searchable: true, searchDebounce: 0 })
+
+    await wrapper.get('.wx-table__search input').setValue('ad')
+
+    expect(wrapper.emitted('search')?.at(-1)).toEqual(['ad'])
   })
 })
