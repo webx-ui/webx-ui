@@ -11,5 +11,6 @@ selection. `filterable` adds a search field, and the `search` event carries ever
 lists that live on the server. Selected values render as removable tags in multiple mode, and the
 list is teleported so it escapes a card's `overflow: hidden`.
 
-Clicking the field opens the list — the underlying combobox does not do that by default, which is
-not what anyone expects from a select.
+Clicking anywhere on the field opens the list — the underlying combobox does not do that by
+default, which is not what anyone expects from a select. A filterable field shows the label of the
+selection rather than its raw value.

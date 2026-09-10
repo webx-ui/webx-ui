@@ -91,6 +91,19 @@ watch(open, (value) => {
  * Reka filters the list itself and keeps no public search term, so the value is read
  * straight off the input — that is what a caller loading options from a backend needs.
  */
+/** Clicking the field is how everyone expects a select to open. */
+function openList() {
+  if (!field.disabled.value) open.value = true
+}
+
+/**
+ * What a filterable field shows once a value is picked. Without it the input falls
+ * back to the raw value, so choosing "Maria Kovalenko" leaves "12" in the box.
+ */
+function displayValue(value: unknown): string {
+  return value === null || value === undefined ? '' : labelOf(value as SelectValue)
+}
+
 function onSearch(event: Event) {
   emit('search', (event.target as HTMLInputElement).value)
 }
@@ -120,7 +133,7 @@ function removeTag(value: SelectValue) {
     :class="classes"
     as="div"
   >
-    <combobox-anchor class="wx-select__anchor" as="div">
+    <combobox-anchor class="wx-select__anchor" as="div" @click="openList">
       <div class="wx-select__value">
         <template v-if="multiple">
           <span
@@ -147,10 +160,11 @@ function removeTag(value: SelectValue) {
           :id="field.id.value"
           v-bind="$attrs"
           class="wx-select__input"
-          :placeholder="hasSelection && !multiple ? singleLabel : placeholder"
+          :placeholder="placeholder"
           :aria-label="ariaLabel"
           :aria-describedby="field.describedBy.value"
           :aria-invalid="field.status.value === 'error' || undefined"
+          :display-value="displayValue"
           auto-focus
           @input="onSearch"
         />
