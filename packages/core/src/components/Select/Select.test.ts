@@ -67,6 +67,37 @@ describe('WxSelect', () => {
     expect(wrapper.get('.wx-select').classes()).toContain('is-open')
   })
 
+  it('opens when the field itself is clicked, not only the arrow', async () => {
+    const wrapper = mountSelect({ modelValue: null })
+
+    await wrapper.get('.wx-select__anchor').trigger('click')
+    await nextTick()
+
+    expect(optionTexts()).toHaveLength(3)
+  })
+
+  it('stays shut when a disabled field is clicked', async () => {
+    const wrapper = mountSelect({ modelValue: null, disabled: true })
+
+    await wrapper.get('.wx-select__anchor').trigger('click')
+    await nextTick()
+
+    expect(optionTexts()).toHaveLength(0)
+  })
+
+  it('shows the label of the selection in the search field, not its value', async () => {
+    const wrapper = mountSelect({
+      filterable: true,
+      modelValue: 'published',
+      options: [{ label: 'Maria Kovalenko', value: 'published' }],
+    })
+    await nextTick()
+
+    expect((wrapper.get('.wx-select__input').element as HTMLInputElement).value).toBe(
+      'Maria Kovalenko',
+    )
+  })
+
   it('renders a search field only when filterable', () => {
     expect(mountSelect().find('.wx-select__input').exists()).toBe(false)
     expect(mountSelect({ filterable: true }).find('.wx-select__input').exists()).toBe(true)
