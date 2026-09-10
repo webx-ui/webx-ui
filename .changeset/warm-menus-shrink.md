@@ -2,14 +2,15 @@
 '@webx-ui/core': patch
 ---
 
-Fixes three things in the pickers.
+Fixes four things in the pickers.
 
 The time-only menu was sized for a calendar it never shows, leaving about 150px
 of empty space around the columns; it now passes a smaller `modeHeight`.
 
-The menu now clips its content.  is an opaque square panel inset a
-pixel from the menu edge, so it painted over the rounded corners and each one showed
-a step.
+The menu clips its content, so its rounded corners stay round. `.dp--overlay` is
+an opaque square panel inset a pixel from the menu edge — it has to be opaque,
+since it covers the calendar when the month or year list opens — and it painted
+over each corner.
 
 The library's pointer is dropped. `.dp--arrow-top`, unlike its bottom twin, never
 gets a horizontal position, so it landed on the menu's left corner — invisible at
