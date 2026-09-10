@@ -6,20 +6,24 @@ defineOptions({ name: 'WxCard' })
 
 const props = withDefaults(defineProps<CardProps>(), {
   title: undefined,
-  shadow: 'never',
+  shadow: 'always',
   padding: 'md',
-  borderless: false,
+  bordered: false,
 })
 
 const slots = useSlots()
 
 const hasHeader = computed(() => Boolean(props.title || slots.header || slots.extra))
+const hasSidebar = computed(() => Boolean(slots.sidebar))
 
 const classes = computed(() => [
   'wx-card',
   `wx-card--shadow-${props.shadow}`,
   `wx-card--padding-${props.padding}`,
-  { 'wx-card--borderless': props.borderless },
+  {
+    'wx-card--bordered': props.bordered,
+    'wx-card--with-sidebar': hasSidebar.value,
+  },
 ])
 </script>
 
@@ -35,7 +39,15 @@ const classes = computed(() => [
     </header>
 
     <div class="wx-card__body">
-      <slot />
+      <div v-if="hasSidebar" class="wx-card__layout">
+        <aside class="wx-card__sidebar">
+          <slot name="sidebar" />
+        </aside>
+        <div class="wx-card__content">
+          <slot />
+        </div>
+      </div>
+      <slot v-else />
     </div>
 
     <footer v-if="$slots.footer" class="wx-card__footer">
@@ -50,14 +62,16 @@ const classes = computed(() => [
   flex-direction: column;
   box-sizing: border-box;
   background: var(--wx-bg-surface);
-  border: 1px solid var(--wx-border-default);
-  border-radius: var(--wx-radius-lg);
+  border: 1px solid transparent;
+  border-radius: var(--wx-radius-md);
   color: var(--wx-text-default);
   transition: box-shadow var(--wx-duration-normal) var(--wx-easing-standard);
+  /* The sidebar layout reacts to the card's own width, not the viewport's. */
+  container-type: inline-size;
 }
 
-.wx-card--borderless {
-  border-color: transparent;
+.wx-card--bordered {
+  border-color: var(--wx-border-default);
 }
 
 .wx-card--shadow-always {
@@ -65,13 +79,13 @@ const classes = computed(() => [
 }
 
 .wx-card--shadow-hover:hover {
-  box-shadow: var(--wx-shadow-popover);
+  box-shadow: var(--wx-shadow-card);
 }
 
 .wx-card__header,
 .wx-card__body,
 .wx-card__footer {
-  padding: var(--wx-card-padding, var(--wx-space-5));
+  padding: var(--wx-card-padding, var(--wx-space-16));
 }
 
 .wx-card--padding-none {
@@ -79,23 +93,23 @@ const classes = computed(() => [
 }
 
 .wx-card--padding-sm {
-  --wx-card-padding: var(--wx-space-3);
+  --wx-card-padding: var(--wx-space-12);
 }
 
 .wx-card--padding-md {
-  --wx-card-padding: var(--wx-space-5);
+  --wx-card-padding: var(--wx-space-16);
 }
 
 .wx-card--padding-lg {
-  --wx-card-padding: var(--wx-space-7);
+  --wx-card-padding: var(--wx-space-24);
 }
 
 .wx-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--wx-space-4);
-  border-bottom: 1px solid var(--wx-border-muted);
+  gap: var(--wx-space-16);
+  padding-bottom: 0;
 }
 
 .wx-card__title {
@@ -116,6 +130,33 @@ const classes = computed(() => [
 }
 
 .wx-card__footer {
-  border-top: 1px solid var(--wx-border-muted);
+  padding-top: 0;
+}
+
+/* Sidebar layout: stacked by default, two columns once the card is wide enough. */
+.wx-card__layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-card-padding, var(--wx-space-16));
+}
+
+.wx-card__sidebar,
+.wx-card__content {
+  min-width: 0;
+}
+
+.wx-card__content {
+  flex: 1 1 auto;
+}
+
+@container (min-width: 560px) {
+  .wx-card__layout {
+    flex-direction: row;
+  }
+
+  .wx-card__sidebar {
+    flex: 0 0 auto;
+    width: var(--wx-card-sidebar-width, 240px);
+  }
 }
 </style>

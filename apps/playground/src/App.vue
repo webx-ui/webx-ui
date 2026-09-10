@@ -71,9 +71,9 @@ body {
 .page {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-6);
+  gap: var(--wx-space-18);
   min-height: 100vh;
-  padding: var(--wx-space-8);
+  padding: var(--wx-space-32);
   box-sizing: border-box;
 }
 
@@ -81,7 +81,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--wx-space-5);
+  gap: var(--wx-space-16);
 }
 
 .page__title {
@@ -93,19 +93,19 @@ body {
 .stack {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-4);
+  gap: var(--wx-space-12);
 }
 
 .row {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--wx-space-4);
-  margin-bottom: var(--wx-space-4);
+  gap: var(--wx-space-12);
+  margin-bottom: var(--wx-space-12);
 }
 
 .actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--wx-space-3);
+  gap: var(--wx-space-8);
 }
 </style>
