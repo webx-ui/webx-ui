@@ -94,6 +94,14 @@ This control is the part that is left out unless `per-page-options` is given.
 
 **Slots:** `total`, with `from`, `to` and `total`, for wording the count differently.
 
+## It brings its own list styles
+
+The row of pages is a `<ul>`, and a list is something host stylesheets like to have opinions
+about. This documentation site puts 8px above every list item after the first — which lands
+between the buttons and steps them down the row, one after another. So the component states the
+margins, padding and list style of the row and its items outright, the way
+[Table](/components/table#it-brings-its-own-table-styles) does for cells and rows.
+
 ## What gets folded away
 
 The first and last pages are always reachable, the current page keeps `siblings` neighbours, and
