@@ -57,7 +57,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 | Avatar                                                            | ⬜     |
 | Image                                                             | ⬜     |
 | Upload (Uppy / FilePond)                                          | ⬜     |
-| DatePicker, TimePicker, DateTimePicker (`@vuepic/vue-datepicker`) | ⬜     |
+| DatePicker, TimePicker, DateTimePicker (`@vuepic/vue-datepicker`) | ✅     |
 | Steps                                                             | ⬜     |
 | Collapse                                                          | ⬜     |
 | Segmented                                                         | ⬜     |
