@@ -71,7 +71,9 @@ function toWorking(hex: string): Color {
  * to teal to red as the pointer travelled into the desaturated corner. Holding the
  * object keeps the hue the user chose even where the colour cannot express it.
  */
-const working = ref<Color>(toWorking(model.value && HEX.test(model.value) ? model.value : '#427edd'))
+const working = ref<Color>(
+  toWorking(model.value && HEX.test(model.value) ? model.value : '#427edd'),
+)
 
 watch(model, (value) => {
   const hex = value && HEX.test(value) ? value : null
