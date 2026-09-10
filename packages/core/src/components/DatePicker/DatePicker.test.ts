@@ -102,6 +102,12 @@ describe('WxDatePicker', () => {
     expect(picker(wrapper).props('teleport')).toBe(true)
   })
 
+  it('leaves the overlay height alone for a calendar', () => {
+    const wrapper = mount(WxDatePicker)
+
+    expect(picker(wrapper).props('config')).toBeUndefined()
+  })
+
   it('starts the week on Monday', () => {
     const wrapper = mount(WxDatePicker)
 
@@ -142,5 +148,44 @@ describe('WxTimePicker', () => {
     expect(picker(wrapper).props('timePicker')).toBe(true)
     expect(picker(wrapper).props('modelType')).toBe('HH:mm')
     expect(picker(wrapper).props('formats')).toEqual({ input: 'HH:mm' })
+  })
+
+  it('shrinks the menu, which is otherwise sized for a calendar it does not show', () => {
+    const wrapper = mount(WxTimePicker)
+
+    expect(picker(wrapper).props('config')).toMatchObject({ modeHeight: 125 })
+  })
+})
+
+/**
+ * Vue casts an absent boolean prop to `false`. A preset that forwards its whole
+ * prop object therefore hands the real component an explicit `false` and silently
+ * overrides its defaults — which is how `is24`, `clearable`, `autoApply` and
+ * `teleport` all ended up off.
+ */
+describe.each([
+  ['WxDateTimePicker', WxDateTimePicker],
+  ['WxTimePicker', WxTimePicker],
+])('%s defaults', (_name, Component) => {
+  it('keeps the 24-hour clock', () => {
+    const wrapper = mount(Component)
+
+    expect(picker(wrapper).props('timeConfig')).toMatchObject({ is24: true })
+  })
+
+  it('keeps the menu teleported and clearable, autoApply on', () => {
+    const wrapper = mount(Component)
+    const attrs = picker(wrapper).props('inputAttrs') as Record<string, unknown>
+
+    expect(picker(wrapper).props('teleport')).toBe(true)
+    expect(picker(wrapper).props('autoApply')).toBe(true)
+    expect(attrs.clearable).toBe(true)
+  })
+
+  it('still lets an explicit false through', () => {
+    const wrapper = mount(Component, { props: { is24: false, teleport: false } })
+
+    expect(picker(wrapper).props('timeConfig')).toMatchObject({ is24: false })
+    expect(picker(wrapper).props('teleport')).toBe(false)
   })
 })
