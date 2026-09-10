@@ -92,6 +92,38 @@ describe('WxColorPicker', () => {
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['#21c36d'])
   })
 
+  it('keeps the hue when the colour is dragged into grey and back', async () => {
+    const wrapper = mountPicker({ modelValue: '#427edd' })
+    await wrapper.get('.wx-color-picker__field').trigger('click')
+    await nextTick()
+
+    const area = wrapper.findComponent({ name: 'ColorAreaRoot' })
+
+    // Straight through the desaturated corner, where a hex has no hue to parse back.
+    area.vm.$emit('update:color', { space: 'hsb', h: 219, s: 4, b: 60, alpha: 1 })
+    await nextTick()
+    area.vm.$emit('update:color', { space: 'hsb', h: 219, s: 80, b: 90, alpha: 1 })
+    await nextTick()
+
+    const hue = wrapper.findComponent({ name: 'ColorSliderRoot' }).props('modelValue') as {
+      h: number
+    }
+    expect(hue.h).toBe(219)
+  })
+
+  it('parses a preset back into the picker rather than only the field', async () => {
+    const wrapper = mountPicker({ modelValue: null, presets: ['#21c36d'] })
+    await wrapper.get('.wx-color-picker__field').trigger('click')
+    await nextTick()
+
+    const preset = document.querySelector('.wx-color-picker__preset') as HTMLElement
+    preset.click()
+    await nextTick()
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['#21c36d'])
+    expect(wrapper.findComponent({ name: 'ColorAreaRoot' }).props('modelValue')).not.toBe('#427edd')
+  })
+
   it('does not open while disabled', async () => {
     const wrapper = mountPicker({ modelValue: '#427edd', disabled: true })
 

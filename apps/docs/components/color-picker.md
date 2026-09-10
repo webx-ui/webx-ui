@@ -55,3 +55,8 @@ Reka UI tracks the colour and works out the geometry, but it draws neither the s
 the hue strip — it hands out the gradients and the wrapper paints them. The area is pinned to
 saturation and brightness in HSB; left to its RGB defaults it would drift the hue as the pointer
 moves horizontally, which is not what the gradient underneath promises.
+
+The picker also holds its state as a colour object rather than as the hex string it publishes. A
+grey has no hue to speak of, so parsing  back into channels invents one — and re-deriving
+it on every pointer move sends the hue strip wandering as soon as the colour loses its saturation.
+The hex is the output; the object is the state.
