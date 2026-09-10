@@ -12,6 +12,7 @@ const props = withDefaults(defineProps<InputNumberProps>(), {
   precision: undefined,
   controls: true,
   controlsPosition: 'sides',
+  wheel: false,
   size: undefined,
   status: undefined,
   id: undefined,
@@ -137,6 +138,16 @@ function onBlur(event: FocusEvent) {
   emit('blur', event)
 }
 
+/**
+ * Only ever acts on a focused field, and swallows the scroll while it does — a
+ * hovered field must not steal the page's scrolling.
+ */
+function onWheel(event: WheelEvent) {
+  if (!props.wheel || !focused.value || disabled.value || props.readonly) return
+  event.preventDefault()
+  stepBy(event.deltaY < 0 ? 1 : -1)
+}
+
 function onKeydown(event: KeyboardEvent) {
   if (event.key === 'ArrowUp') {
     event.preventDefault()
@@ -198,6 +209,7 @@ defineExpose({
       @focus="onFocus"
       @blur="onBlur"
       @keydown="onKeydown"
+      @wheel="onWheel"
     />
 
     <button

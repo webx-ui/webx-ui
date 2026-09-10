@@ -40,13 +40,15 @@ function toggleAll(checked: boolean) {
 
     <div>
       <span class="wx-demo__label">Group with a select-all box</span>
-      <wx-checkbox
-        :model-value="allChecked"
-        :indeterminate="someChecked"
-        label="All permissions"
-        @change="toggleAll"
-      />
-      <wx-checkbox-group v-model="permissions" :options="options" style="margin-top: 8px" />
+      <div class="wx-demo__stack">
+        <wx-checkbox
+          :model-value="allChecked"
+          :indeterminate="someChecked"
+          label="All permissions"
+          @change="toggleAll"
+        />
+        <wx-checkbox-group v-model="permissions" :options="options" />
+      </div>
       <p style="margin: 8px 0 0; color: var(--wx-text-muted); font-size: 13px">
         Value: {{ permissions.join(', ') || '—' }}
       </p>
