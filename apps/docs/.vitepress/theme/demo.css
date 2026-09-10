@@ -3,9 +3,9 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--wx-space-4);
+  gap: var(--wx-space-12);
   margin: 16px 0;
-  padding: var(--wx-space-6);
+  padding: var(--wx-space-18);
   background: var(--wx-bg-surface);
   border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-lg);
@@ -23,7 +23,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--wx-space-4);
+  gap: var(--wx-space-12);
 }
 
 .wx-demo__label {
@@ -37,15 +37,15 @@
 .wx-swatches {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: var(--wx-space-4);
+  gap: var(--wx-space-12);
   margin: 16px 0;
 }
 
 .wx-swatch {
   display: flex;
   align-items: center;
-  gap: var(--wx-space-4);
-  padding: var(--wx-space-3);
+  gap: var(--wx-space-12);
+  padding: var(--wx-space-8);
   background: var(--wx-bg-surface);
   border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-md);
@@ -78,14 +78,14 @@
 .wx-scale {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-2);
+  gap: var(--wx-space-4);
   margin: 16px 0;
 }
 
 .wx-scale__row {
   display: flex;
   align-items: center;
-  gap: var(--wx-space-4);
+  gap: var(--wx-space-12);
   font-family: var(--wx-font-family-mono);
   font-size: var(--wx-font-size-xs);
   color: var(--wx-text-muted);

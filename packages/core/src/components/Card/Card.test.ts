@@ -37,13 +37,13 @@ describe('WxCard', () => {
     expect(wrapper.find('.wx-card__header').exists()).toBe(true)
   })
 
-  it('applies shadow, padding and borderless modifiers', () => {
+  it('applies shadow, padding and bordered modifiers', () => {
     const wrapper = mount(WxCard, {
-      props: { shadow: 'hover', padding: 'lg', borderless: true },
+      props: { shadow: 'hover', padding: 'lg', bordered: true },
     })
 
     expect(wrapper.classes()).toContain('wx-card--shadow-hover')
     expect(wrapper.classes()).toContain('wx-card--padding-lg')
-    expect(wrapper.classes()).toContain('wx-card--borderless')
+    expect(wrapper.classes()).toContain('wx-card--bordered')
   })
 })

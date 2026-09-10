@@ -6,9 +6,9 @@ defineOptions({ name: 'WxCard' })
 
 const props = withDefaults(defineProps<CardProps>(), {
   title: undefined,
-  shadow: 'never',
+  shadow: 'always',
   padding: 'md',
-  borderless: false,
+  bordered: false,
 })
 
 const slots = useSlots()
@@ -19,7 +19,7 @@ const classes = computed(() => [
   'wx-card',
   `wx-card--shadow-${props.shadow}`,
   `wx-card--padding-${props.padding}`,
-  { 'wx-card--borderless': props.borderless },
+  { 'wx-card--bordered': props.bordered },
 ])
 </script>
 
@@ -50,14 +50,14 @@ const classes = computed(() => [
   flex-direction: column;
   box-sizing: border-box;
   background: var(--wx-bg-surface);
-  border: 1px solid var(--wx-border-default);
-  border-radius: var(--wx-radius-lg);
+  border: 1px solid transparent;
+  border-radius: var(--wx-radius-md);
   color: var(--wx-text-default);
   transition: box-shadow var(--wx-duration-normal) var(--wx-easing-standard);
 }
 
-.wx-card--borderless {
-  border-color: transparent;
+.wx-card--bordered {
+  border-color: var(--wx-border-default);
 }
 
 .wx-card--shadow-always {
@@ -65,13 +65,13 @@ const classes = computed(() => [
 }
 
 .wx-card--shadow-hover:hover {
-  box-shadow: var(--wx-shadow-popover);
+  box-shadow: var(--wx-shadow-card);
 }
 
 .wx-card__header,
 .wx-card__body,
 .wx-card__footer {
-  padding: var(--wx-card-padding, var(--wx-space-5));
+  padding: var(--wx-card-padding, var(--wx-space-16));
 }
 
 .wx-card--padding-none {
@@ -79,23 +79,23 @@ const classes = computed(() => [
 }
 
 .wx-card--padding-sm {
-  --wx-card-padding: var(--wx-space-3);
+  --wx-card-padding: var(--wx-space-12);
 }
 
 .wx-card--padding-md {
-  --wx-card-padding: var(--wx-space-5);
+  --wx-card-padding: var(--wx-space-16);
 }
 
 .wx-card--padding-lg {
-  --wx-card-padding: var(--wx-space-7);
+  --wx-card-padding: var(--wx-space-24);
 }
 
 .wx-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--wx-space-4);
-  border-bottom: 1px solid var(--wx-border-muted);
+  gap: var(--wx-space-16);
+  padding-bottom: 0;
 }
 
 .wx-card__title {
@@ -116,6 +116,6 @@ const classes = computed(() => [
 }
 
 .wx-card__footer {
-  border-top: 1px solid var(--wx-border-muted);
+  padding-top: 0;
 }
 </style>
