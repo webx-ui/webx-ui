@@ -1,13 +1,29 @@
 <script setup lang="ts" generic="T extends TableRow = TableRow">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, useSlots } from 'vue'
 import WxCheckbox from '../Checkbox/Checkbox.vue'
-import type { RowKey, TableColumn, TableEmits, TableProps, TableRow, TableSort } from './types'
+import WxInput from '../Input/Input.vue'
+import type {
+  RowKey,
+  TableColumn,
+  TableEmits,
+  TableProps,
+  TableRow,
+  TableSort,
+  TableSummaryRow,
+} from './types'
 
 defineOptions({ name: 'WxTable' })
+
+/** The disclosure and checkbox columns are square and never resize. */
+const UTILITY_WIDTH = 44
 
 const props = withDefaults(defineProps<TableProps<T>>(), {
   data: null,
   rowKey: 'id',
+  title: undefined,
+  searchable: false,
+  searchPlaceholder: 'Search',
+  searchDebounce: 300,
   loading: false,
   emptyText: 'Nothing to show',
   stripe: false,
@@ -16,6 +32,9 @@ const props = withDefaults(defineProps<TableProps<T>>(), {
   size: 'md',
   selectable: false,
   selectableIf: undefined,
+  expandable: false,
+  expandableIf: undefined,
+  summary: () => [],
   maxHeight: undefined,
   rowClass: undefined,
   layout: 'auto',
@@ -26,7 +45,9 @@ const emit = defineEmits<TableEmits<T>>()
 
 /** Keys rather than rows: a selection outlives the page it was made on. */
 const selected = defineModel<RowKey[]>('selected', { default: () => [] })
+const expanded = defineModel<RowKey[]>('expanded', { default: () => [] })
 const sort = defineModel<TableSort | null>('sort', { default: null })
+const search = defineModel<string>('search', { default: '' })
 
 /** An array or a paginator; the table only ever needs the rows out of it. */
 const rows = computed<T[]>(() => {
@@ -37,7 +58,16 @@ const rows = computed<T[]>(() => {
 
 const visibleColumns = computed(() => props.columns.filter((column) => !column.hidden))
 
-const columnCount = computed(() => visibleColumns.value.length + (props.selectable ? 1 : 0))
+/** Columns that carry no data of their own: the chevron and the checkbox. */
+const utilityCount = computed(() => (props.expandable ? 1 : 0) + (props.selectable ? 1 : 0))
+
+const columnCount = computed(() => visibleColumns.value.length + utilityCount.value)
+
+const slots = useSlots()
+
+const hasHeader = computed(() =>
+  Boolean(props.title || props.searchable || slots.title || slots.actions),
+)
 
 const classes = computed(() => [
   'wx-table',
@@ -52,19 +82,82 @@ const classes = computed(() => [
 ])
 
 const scrollStyle = computed(() =>
-  props.maxHeight === undefined ? undefined : { maxHeight: size(props.maxHeight) },
+  props.maxHeight === undefined ? undefined : { maxHeight: length(props.maxHeight) },
 )
 
-function size(value: string | number): string {
+function length(value: string | number): string {
   return typeof value === 'number' ? `${value}px` : value
+}
+
+/** Only a declared width can say where the column behind a pinned one begins. */
+function widthOf(column: TableColumn<T>): number {
+  if (typeof column.width === 'number') return column.width
+  if (typeof column.width === 'string') {
+    const parsed = Number.parseFloat(column.width)
+    return Number.isFinite(parsed) ? parsed : 0
+  }
+  return 0
 }
 
 function colStyle(column: TableColumn<T>) {
   return {
-    width: column.width === undefined ? undefined : size(column.width),
-    minWidth: column.minWidth === undefined ? undefined : size(column.minWidth),
+    width: column.width === undefined ? undefined : length(column.width),
+    minWidth: column.minWidth === undefined ? undefined : length(column.minWidth),
   }
 }
+
+/**
+ * Where every pinned column comes to rest, measured from its edge. The utility columns
+ * are pinned too whenever anything else is: a checkbox that slides under a frozen name
+ * column is worse than no freezing at all.
+ */
+const offsets = computed(() => {
+  const map = new Map<string, { side: 'left' | 'right'; offset: number; edge: boolean }>()
+
+  let left = utilityCount.value * UTILITY_WIDTH
+  const lefts = visibleColumns.value.filter((column) => column.fixed === 'left')
+  lefts.forEach((column, index) => {
+    map.set(column.key, { side: 'left', offset: left, edge: index === lefts.length - 1 })
+    left += widthOf(column)
+  })
+
+  let right = 0
+  const rights = visibleColumns.value.filter((column) => column.fixed === 'right')
+  for (let index = rights.length - 1; index >= 0; index--) {
+    const column = rights[index]
+    map.set(column.key, { side: 'right', offset: right, edge: index === 0 })
+    right += widthOf(column)
+  }
+
+  return map
+})
+
+const hasLeftFixed = computed(() => visibleColumns.value.some((column) => column.fixed === 'left'))
+
+const hasFixed = computed(() => offsets.value.size > 0)
+
+function fixedStyle(column: TableColumn<T>) {
+  const pin = offsets.value.get(column.key)
+  if (!pin) return undefined
+  return { [pin.side]: `${pin.offset}px` }
+}
+
+function fixedClass(column: TableColumn<T>) {
+  const pin = offsets.value.get(column.key)
+  if (!pin) return undefined
+  return [`is-fixed-${pin.side}`, { 'is-fixed-edge': pin.edge }]
+}
+
+/** The utility columns ride along at the left edge once anything is pinned. */
+function utilityStyle(slot: 'expand' | 'select') {
+  if (!hasFixed.value) return undefined
+  const before = slot === 'select' && props.expandable ? UTILITY_WIDTH : 0
+  return { left: `${before}px` }
+}
+
+const utilityClass = computed(() =>
+  hasFixed.value ? ['is-fixed-left', { 'is-fixed-edge': !hasLeftFixed.value }] : undefined,
+)
 
 /** A dotted key walks into the row, so an eager-loaded relation reads as `user.name`. */
 function read(row: T, path: string): unknown {
@@ -91,6 +184,10 @@ function canSelect(row: T): boolean {
   return props.selectableIf ? props.selectableIf(row) : true
 }
 
+function canExpand(row: T): boolean {
+  return props.expandableIf ? props.expandableIf(row) : true
+}
+
 const selectableRows = computed(() => rows.value.filter(canSelect))
 
 const selectableKeys = computed(() =>
@@ -107,13 +204,13 @@ const allSelected = computed(
 
 const someSelected = computed(() => selectedCount.value > 0 && !allSelected.value)
 
+function rowsFor(keys: RowKey[]): T[] {
+  return rows.value.filter((row, index) => keys.includes(keyOf(row, index)))
+}
+
 function announce(keys: RowKey[]) {
   selected.value = keys
-  emit(
-    'selection-change',
-    keys,
-    rows.value.filter((row, index) => keys.includes(keyOf(row, index))),
-  )
+  emit('selection-change', keys, rowsFor(keys))
 }
 
 /**
@@ -137,6 +234,21 @@ function toggleRow(row: T, index: number, checked: boolean) {
 
 function isSelected(row: T, index: number): boolean {
   return selected.value.includes(keyOf(row, index))
+}
+
+function isExpanded(row: T, index: number): boolean {
+  return expanded.value.includes(keyOf(row, index))
+}
+
+function toggleExpand(row: T, index: number) {
+  if (!canExpand(row)) return
+  const key = keyOf(row, index)
+  const keys = expanded.value.includes(key)
+    ? expanded.value.filter((item) => item !== key)
+    : [...expanded.value, key]
+
+  expanded.value = keys
+  emit('expand-change', keys, rowsFor(keys))
 }
 
 /**
@@ -169,10 +281,75 @@ function sortState(column: TableColumn<T>) {
 function alignClass(column: TableColumn<T>) {
   return column.align && column.align !== 'left' ? `wx-table__cell--${column.align}` : undefined
 }
+
+let timer: ReturnType<typeof setTimeout> | undefined
+
+/**
+ * The field answers at once; the backend hears about it when typing settles. Emitting
+ * per keystroke would put a request behind every letter of a search term.
+ */
+function onSearch(value: string | number | undefined) {
+  const term = value === undefined ? '' : String(value)
+  search.value = term
+  clearTimeout(timer)
+  if (!props.searchDebounce) {
+    emit('search', term)
+    return
+  }
+  timer = setTimeout(() => emit('search', term), props.searchDebounce)
+}
+
+onBeforeUnmount(() => clearTimeout(timer))
+
+/** Columns ahead of the first figure belong to the caption. */
+function summaryStart(row: TableSummaryRow): number {
+  const cells = row.cells ?? {}
+  const index = visibleColumns.value.findIndex((column) => column.key in cells)
+  return index === -1 ? visibleColumns.value.length : index
+}
+
+function summarySpan(row: TableSummaryRow): number {
+  return utilityCount.value + summaryStart(row)
+}
+
+function summaryColumns(row: TableSummaryRow): TableColumn<T>[] {
+  return visibleColumns.value.slice(summaryStart(row))
+}
+
+function summaryValue(row: TableSummaryRow, column: TableColumn<T>): unknown {
+  return row.cells?.[column.key]
+}
+
+function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
+  const value = summaryValue(row, column)
+  return value === null || value === undefined ? '' : String(value)
+}
 </script>
 
 <template>
   <div :class="classes">
+    <header v-if="hasHeader" class="wx-table__header">
+      <div class="wx-table__title">
+        <slot name="title">{{ title }}</slot>
+      </div>
+
+      <div class="wx-table__tools">
+        <slot name="actions" />
+
+        <div v-if="searchable" class="wx-table__search">
+          <wx-input
+            type="search"
+            :model-value="search"
+            :placeholder="searchPlaceholder"
+            :size="size"
+            clearable
+            :aria-label="searchPlaceholder"
+            @update:model-value="onSearch"
+          />
+        </div>
+      </div>
+    </header>
+
     <div class="wx-table__scroll" :style="scrollStyle">
       <table
         class="wx-table__table"
@@ -181,13 +358,30 @@ function alignClass(column: TableColumn<T>) {
         :aria-busy="loading || undefined"
       >
         <colgroup>
-          <col v-if="selectable" class="wx-table__col--select" />
+          <col v-if="expandable" :style="{ width: `${UTILITY_WIDTH}px` }" />
+          <col v-if="selectable" :style="{ width: `${UTILITY_WIDTH}px` }" />
           <col v-for="column in visibleColumns" :key="column.key" :style="colStyle(column)" />
         </colgroup>
 
         <thead class="wx-table__head">
           <tr>
-            <th v-if="selectable" scope="col" class="wx-table__cell wx-table__cell--select">
+            <th
+              v-if="expandable"
+              scope="col"
+              class="wx-table__cell wx-table__cell--utility"
+              :class="utilityClass"
+              :style="utilityStyle('expand')"
+            >
+              <span class="wx-table__sr-only">Expand</span>
+            </th>
+
+            <th
+              v-if="selectable"
+              scope="col"
+              class="wx-table__cell wx-table__cell--utility"
+              :class="utilityClass"
+              :style="utilityStyle('select')"
+            >
               <wx-checkbox
                 :model-value="allSelected"
                 :indeterminate="someSelected"
@@ -202,7 +396,8 @@ function alignClass(column: TableColumn<T>) {
               :key="column.key"
               scope="col"
               class="wx-table__cell"
-              :class="[alignClass(column), column.headerClass]"
+              :class="[alignClass(column), fixedClass(column), column.headerClass]"
+              :style="fixedStyle(column)"
               :aria-sort="ariaSort(column)"
             >
               <button
@@ -233,42 +428,80 @@ function alignClass(column: TableColumn<T>) {
         </thead>
 
         <tbody class="wx-table__body">
-          <tr
-            v-for="(row, index) in rows"
-            :key="keyOf(row, index)"
-            class="wx-table__row"
-            :class="[
-              rowClass?.(row, index),
-              { 'is-selected': selectable && isSelected(row, index) },
-            ]"
-            @click="emit('row-click', row, index, $event)"
-          >
-            <td v-if="selectable" class="wx-table__cell wx-table__cell--select" @click.stop>
-              <wx-checkbox
-                :model-value="isSelected(row, index)"
-                :disabled="!canSelect(row)"
-                aria-label="Select row"
-                @update:model-value="(checked: boolean) => toggleRow(row, index, checked)"
-              />
-            </td>
-
-            <td
-              v-for="column in visibleColumns"
-              :key="column.key"
-              class="wx-table__cell"
-              :class="[alignClass(column), column.cellClass]"
+          <template v-for="(row, index) in rows" :key="keyOf(row, index)">
+            <tr
+              class="wx-table__row"
+              :class="[
+                rowClass?.(row, index),
+                {
+                  'is-striped': index % 2 === 1,
+                  'is-selected': selectable && isSelected(row, index),
+                  'is-expanded': expandable && isExpanded(row, index),
+                },
+              ]"
+              @click="emit('row-click', row, index, $event)"
             >
-              <slot
-                :name="`cell-${column.key}`"
-                :row="row"
-                :value="read(row, column.key)"
-                :index="index"
-                :column="column"
+              <td
+                v-if="expandable"
+                class="wx-table__cell wx-table__cell--utility"
+                :class="utilityClass"
+                :style="utilityStyle('expand')"
+                @click.stop
               >
-                {{ cellText(column, row, index) }}
-              </slot>
-            </td>
-          </tr>
+                <button
+                  v-if="canExpand(row)"
+                  class="wx-table__expander"
+                  type="button"
+                  :aria-expanded="isExpanded(row, index)"
+                  :aria-label="isExpanded(row, index) ? 'Collapse row' : 'Expand row'"
+                  @click="toggleExpand(row, index)"
+                >
+                  <svg viewBox="0 0 12 12" aria-hidden="true">
+                    <path d="M4.5 2 8.5 6l-4 4" />
+                  </svg>
+                </button>
+              </td>
+
+              <td
+                v-if="selectable"
+                class="wx-table__cell wx-table__cell--utility"
+                :class="utilityClass"
+                :style="utilityStyle('select')"
+                @click.stop
+              >
+                <wx-checkbox
+                  :model-value="isSelected(row, index)"
+                  :disabled="!canSelect(row)"
+                  aria-label="Select row"
+                  @update:model-value="(checked: boolean) => toggleRow(row, index, checked)"
+                />
+              </td>
+
+              <td
+                v-for="column in visibleColumns"
+                :key="column.key"
+                class="wx-table__cell"
+                :class="[alignClass(column), fixedClass(column), column.cellClass]"
+                :style="fixedStyle(column)"
+              >
+                <slot
+                  :name="`cell-${column.key}`"
+                  :row="row"
+                  :value="read(row, column.key)"
+                  :index="index"
+                  :column="column"
+                >
+                  {{ cellText(column, row, index) }}
+                </slot>
+              </td>
+            </tr>
+
+            <tr v-if="expandable && isExpanded(row, index)" class="wx-table__row--expansion">
+              <td class="wx-table__cell wx-table__expansion" :colspan="columnCount">
+                <slot name="expanded" :row="row" :index="index" />
+              </td>
+            </tr>
+          </template>
 
           <tr v-if="!rows.length && !loading" class="wx-table__row wx-table__row--empty">
             <td class="wx-table__cell wx-table__empty" :colspan="columnCount">
@@ -277,8 +510,34 @@ function alignClass(column: TableColumn<T>) {
           </tr>
         </tbody>
 
-        <tfoot v-if="$slots.footer" class="wx-table__foot">
-          <tr>
+        <tfoot v-if="summary.length || $slots.footer" class="wx-table__foot">
+          <tr
+            v-for="(line, lineIndex) in summary"
+            :key="lineIndex"
+            class="wx-table__summary"
+            :class="[line.class, { 'is-strong': line.strong }]"
+          >
+            <td
+              v-if="summarySpan(line) > 0"
+              class="wx-table__cell wx-table__summary-label"
+              :colspan="summarySpan(line)"
+            >
+              {{ line.label }}
+            </td>
+
+            <td
+              v-for="column in summaryColumns(line)"
+              :key="column.key"
+              class="wx-table__cell"
+              :class="alignClass(column)"
+            >
+              <slot :name="`summary-${column.key}`" :row="line" :value="summaryValue(line, column)">
+                {{ summaryText(line, column) }}
+              </slot>
+            </td>
+          </tr>
+
+          <tr v-if="$slots.footer" class="wx-table__footer-row">
             <td class="wx-table__cell" :colspan="columnCount">
               <slot name="footer" />
             </td>
@@ -299,10 +558,57 @@ function alignClass(column: TableColumn<T>) {
 <style scoped>
 .wx-table {
   position: relative;
+  z-index: 0;
   box-sizing: border-box;
+  /*
+   * A flex or grid item will not shrink below its content unless told to, and the
+   * content here is a table that can be twice the width of the page. Without this the
+   * inner scroller never scrolls and the whole document does instead.
+   */
+  min-width: 0;
+  max-width: 100%;
   background: var(--wx-bg-surface);
   border-radius: var(--wx-radius-md);
   color: var(--wx-text-default);
+
+  --wx-table-padding-y: var(--wx-space-10);
+  --wx-table-padding-x: var(--wx-space-16);
+}
+
+.wx-table--sm {
+  --wx-table-padding-y: var(--wx-space-6);
+  --wx-table-padding-x: var(--wx-space-12);
+}
+
+.wx-table--lg {
+  --wx-table-padding-y: var(--wx-space-14);
+}
+
+.wx-table__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-12);
+  padding: var(--wx-space-12) var(--wx-table-padding-x);
+}
+
+.wx-table__title {
+  min-width: 0;
+  color: var(--wx-text-strong);
+  font-size: var(--wx-font-size-lg);
+  font-weight: var(--wx-font-weight-semibold);
+  line-height: var(--wx-font-line-height-tight);
+}
+
+.wx-table__tools {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-8);
+  margin-left: auto;
+}
+
+.wx-table__search {
+  width: var(--wx-table-search-width, 240px);
 }
 
 .wx-table__scroll {
@@ -366,17 +672,9 @@ function alignClass(column: TableColumn<T>) {
 
 .wx-table__cell {
   box-sizing: border-box;
-  padding: var(--wx-table-padding-y, var(--wx-space-12)) var(--wx-space-16);
+  padding: var(--wx-table-padding-y) var(--wx-table-padding-x);
   text-align: left;
   vertical-align: middle;
-}
-
-.wx-table--sm {
-  --wx-table-padding-y: var(--wx-space-8);
-}
-
-.wx-table--lg {
-  --wx-table-padding-y: var(--wx-space-16);
 }
 
 .wx-table__cell--center {
@@ -387,9 +685,28 @@ function alignClass(column: TableColumn<T>) {
   text-align: right;
 }
 
-.wx-table__cell--select {
+/*
+ * The control is the whole content of a utility cell, and an inline-level box would sit
+ * on a text baseline — three pixels above the middle of the row, which is exactly the
+ * kind of misalignment that reads as sloppiness rather than as a bug.
+ */
+.wx-table__cell--utility {
   width: 44px;
   padding-right: 0;
+  line-height: 0;
+}
+
+.wx-table__cell--utility :deep(.wx-checkbox) {
+  display: flex;
+}
+
+.wx-table__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .wx-table__head .wx-table__cell {
@@ -404,7 +721,42 @@ function alignClass(column: TableColumn<T>) {
 .wx-table--sticky .wx-table__head .wx-table__cell {
   position: sticky;
   top: 0;
-  z-index: var(--wx-z-index-sticky);
+  z-index: 2;
+}
+
+.wx-table--sticky .wx-table__foot .wx-table__cell {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: var(--wx-bg-surface);
+}
+
+/* A pinned column paints over the scrolling ones, and the header over both. */
+.wx-table__cell.is-fixed-left,
+.wx-table__cell.is-fixed-right {
+  position: sticky;
+  z-index: 1;
+  background: var(--wx-bg-surface);
+}
+
+.wx-table__head .wx-table__cell.is-fixed-left,
+.wx-table__head .wx-table__cell.is-fixed-right {
+  z-index: 3;
+  background: var(--wx-bg-subtle);
+}
+
+.wx-table--sticky .wx-table__foot .wx-table__cell.is-fixed-left,
+.wx-table--sticky .wx-table__foot .wx-table__cell.is-fixed-right {
+  z-index: 3;
+}
+
+/* The edge of the frozen block, so it reads as floating over what slides beneath it. */
+.wx-table__cell.is-fixed-left.is-fixed-edge {
+  box-shadow: 6px 0 6px -6px rgb(0 0 0 / 0.18);
+}
+
+.wx-table__cell.is-fixed-right.is-fixed-edge {
+  box-shadow: -6px 0 6px -6px rgb(0 0 0 / 0.18);
 }
 
 .wx-table__body .wx-table__cell {
@@ -415,7 +767,11 @@ function alignClass(column: TableColumn<T>) {
   border-left: 1px solid var(--wx-border-muted);
 }
 
-.wx-table--stripe .wx-table__row:nth-child(even) {
+/* Striped by row index, not by position: an expansion row is a sibling too, and
+   counting it would flip the pattern from wherever a row was opened. */
+.wx-table--stripe .wx-table__row.is-striped,
+.wx-table--stripe .wx-table__row.is-striped .wx-table__cell.is-fixed-left,
+.wx-table--stripe .wx-table__row.is-striped .wx-table__cell.is-fixed-right {
   background: var(--wx-bg-subtle);
 }
 
@@ -423,8 +779,58 @@ function alignClass(column: TableColumn<T>) {
   background: var(--wx-bg-fill);
 }
 
-.wx-table__row.is-selected {
+.wx-table--hover .wx-table__row:hover .wx-table__cell.is-fixed-left,
+.wx-table--hover .wx-table__row:hover .wx-table__cell.is-fixed-right {
+  background: var(--wx-bg-fill);
+}
+
+.wx-table__row.is-selected,
+.wx-table__row.is-selected .wx-table__cell.is-fixed-left,
+.wx-table__row.is-selected .wx-table__cell.is-fixed-right {
   background: var(--wx-color-primary-soft);
+}
+
+.wx-table__expander {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: var(--wx-radius-xs);
+  color: var(--wx-text-muted);
+  cursor: pointer;
+}
+
+.wx-table__expander:hover {
+  background: var(--wx-bg-fill);
+  color: var(--wx-text-default);
+}
+
+.wx-table__expander:focus-visible {
+  outline: none;
+  box-shadow: var(--wx-ring-focus);
+}
+
+.wx-table__expander svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform var(--wx-duration-fast) var(--wx-easing-standard);
+}
+
+.wx-table__row.is-expanded .wx-table__expander svg {
+  transform: rotate(90deg);
+}
+
+.wx-table__expansion {
+  background: var(--wx-bg-subtle);
 }
 
 .wx-table__sort {
@@ -465,13 +871,26 @@ function alignClass(column: TableColumn<T>) {
 }
 
 .wx-table__empty {
-  padding: var(--wx-space-32) var(--wx-space-16);
+  padding: var(--wx-space-24) var(--wx-table-padding-x);
   color: var(--wx-text-muted);
   text-align: center;
 }
 
 .wx-table__foot .wx-table__cell {
   border-top: 1px solid var(--wx-border-muted);
+}
+
+.wx-table__summary .wx-table__cell {
+  color: var(--wx-text-muted);
+}
+
+.wx-table__summary-label {
+  text-align: right;
+}
+
+.wx-table__summary.is-strong .wx-table__cell {
+  color: var(--wx-text-strong);
+  font-weight: var(--wx-font-weight-semibold);
 }
 
 /* The rows stay readable underneath: a page that is being refreshed still says what it said. */

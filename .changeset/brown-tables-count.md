@@ -17,6 +17,11 @@ instead of emptying it, and the empty state waits for the load to finish.
 first and last pages reachable, and spells out a gap of a single page rather than hiding it behind
 an ellipsis.
 
-Both state their own `display`, `overflow`, `margin`, `border` and row background rather than
-inheriting them, so a host stylesheet that restyles bare `table` and `tr` elements cannot take the
-layout away from the table or the stickiness away from its header.
+The table also carries a header bar — a title on the left, a debounced search field and `#actions`
+on the right — summary lines under the rows for totals that a caller works out, rows that open to
+show what does not fit in them, and columns pinned to either edge while the rest scrolls sideways.
+`max-height` caps the height and sticks the header and the footer to it.
+
+Both state their own `display`, `overflow`, `margin`, `border`, `min-width` and row background
+rather than inheriting them, so neither a host stylesheet that restyles bare `table`, `tr` and `li`
+elements nor a flex container that will not let its items shrink can take the layout away.
