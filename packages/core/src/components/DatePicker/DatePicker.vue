@@ -61,6 +61,13 @@ const displayFormat = computed(() => {
   return 'dd.MM.yyyy'
 })
 
+/**
+ * The overlay is sized to a calendar (`modeHeight`, 255 by default) so switching
+ * between panes does not resize the menu. A time-only picker has no calendar to
+ * match, and the default leaves ~150px of empty space around the columns.
+ */
+const config = computed(() => (props.type === 'time' ? { modeHeight: 125 } : undefined))
+
 const timeConfig = computed(() => ({
   enableTimePicker: hasTime.value,
   enableSeconds: props.seconds,
@@ -107,6 +114,7 @@ function onCleared() {
       :formats="{ input: displayFormat }"
       :time-picker="type === 'time'"
       :time-config="timeConfig"
+      :config="config"
       :input-attrs="inputAttrs"
       :ui="{ input: 'wx-datepicker__input', menu: 'wx-datepicker__menu' }"
       :placeholder="placeholder"
