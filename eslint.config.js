@@ -29,6 +29,13 @@ export default ts.config(
     },
   },
   {
+    files: ['**/*.test.ts', '**/*.spec.ts'],
+    rules: {
+      // Test files legitimately declare throwaway wrapper components.
+      'vue/one-component-per-file': 'off',
+    },
+  },
+  {
     rules: {
       'vue/multi-word-component-names': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',

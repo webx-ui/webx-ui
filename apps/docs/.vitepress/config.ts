@@ -41,8 +41,19 @@ export default defineConfig({
           text: 'Basic',
           items: [
             { text: 'Button', link: '/components/button' },
-            { text: 'Input', link: '/components/input' },
             { text: 'Card', link: '/components/card' },
+          ],
+        },
+        {
+          text: 'Form',
+          items: [
+            { text: 'Form', link: '/components/form' },
+            { text: 'Input', link: '/components/input' },
+            { text: 'Textarea', link: '/components/textarea' },
+            { text: 'InputNumber', link: '/components/input-number' },
+            { text: 'Checkbox', link: '/components/checkbox' },
+            { text: 'Radio', link: '/components/radio' },
+            { text: 'Switch', link: '/components/switch' },
           ],
         },
         {
