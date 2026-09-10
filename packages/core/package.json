@@ -21,7 +21,7 @@
     "url": "git+https://github.com/webx-ui/webx-ui.git",
     "directory": "packages/core"
   },
-  "homepage": "https://webx-ui.github.io/components/button.html",
+  "homepage": "https://webx-ui.github.io/webx-ui/components/button.html",
   "publishConfig": {
     "access": "public"
   },

@@ -4,7 +4,7 @@
 
 **Vue 3 design system for Laravel-backed admin panels.**
 
-[Documentation](https://webx-ui.github.io/) · [npm](https://www.npmjs.com/org/webx-ui) · [Roadmap](https://webx-ui.github.io/guide/roadmap)
+[Documentation](https://webx-ui.github.io/webx-ui/) · [npm](https://www.npmjs.com/org/webx-ui) · [Roadmap](https://webx-ui.github.io/webx-ui/guide/roadmap)
 
 [![CI](https://github.com/webx-ui/webx-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/webx-ui/webx-ui/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@webx-ui/core.svg)](https://www.npmjs.com/package/@webx-ui/core)
@@ -45,7 +45,7 @@ createApp(App).use(WebxUI).mount('#app')
 </template>
 ```
 
-Full guide: **https://webx-ui.github.io/**
+Full guide: **https://webx-ui.github.io/webx-ui/**
 
 ## Principles
 

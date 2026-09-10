@@ -130,7 +130,7 @@
 
 # \- Changesets: PR «Version packages» создаётся ботом, публикация при мерже.
 
-# \- GitHub Pages: источник GitHub Actions уже включён в настройках репозитория. Workflow `docs.yml` собирает `apps/docs` и деплоит. Репозиторий `webx-ui/webx-ui` совпадает с именем организации, поэтому сайт живёт на `https://webx-ui.github.io/` и в VitePress `base: "/"`.
+# \- GitHub Pages: источник GitHub Actions уже включён в настройках репозитория. Workflow `docs.yml` собирает `apps/docs` и деплоит. Корневой адрес `https://webx-ui.github.io/` требует репозитория, названного буквально `webx-ui.github.io`; у нас репо `webx-ui/webx-ui`, поэтому сайт живёт на `https://webx-ui.github.io/webx-ui/` и в VitePress `base: "/webx-ui/"`.
 
 # \- Организация `webx-ui` на npm уже создана (scope зарезервирован), 2FA включена. Первую публикацию `0.0.1` каждого пакета владелец сделает вручную (`pnpm publish --access public`), после чего на npm настраивается Trusted Publishing (GitHub Actions, workflow `release.yml`) и дальнейшие релизы идут без токенов.
 

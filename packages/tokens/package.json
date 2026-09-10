@@ -17,7 +17,7 @@
     "url": "git+https://github.com/webx-ui/webx-ui.git",
     "directory": "packages/tokens"
   },
-  "homepage": "https://webx-ui.github.io/tokens/",
+  "homepage": "https://webx-ui.github.io/webx-ui/tokens/",
   "publishConfig": {
     "access": "public"
   },
