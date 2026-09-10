@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/schema",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "JSON-driven renderer contracts for WebX UI admin screens (work in progress).",
   "license": "MIT",
   "type": "module",
