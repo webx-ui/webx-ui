@@ -115,4 +115,22 @@
   border-radius: var(--wx-radius-md);
   box-shadow: var(--wx-shadow-popover);
   font-family: var(--wx-font-family-sans);
+  /*
+   * `.dp--overlay` is an opaque square panel inset a pixel or two from the menu
+   * edge — it has to be opaque, since it covers the calendar when the month or
+   * year list opens. Without clipping it paints over the rounded corners and each
+   * one shows a step. Nothing inside the menu is meant to escape it.
+   */
+  overflow: hidden;
+}
+
+/*
+ * The library's pointer is a rotated square, and `.dp--arrow-top` — unlike its
+ * bottom twin — never gets a horizontal position, so it lands on the menu's left
+ * corner. At the library's 4px radius that is invisible; at ours it is a white
+ * shape floating beside the corner. Dropdowns in this kit have no pointers anyway.
+ */
+.wx-datepicker__menu .dp--arrow-top,
+.wx-datepicker__menu .dp--arrow-bottom {
+  display: none;
 }

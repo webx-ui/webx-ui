@@ -4,7 +4,35 @@ import type { DatePickerModelValue, DatePickerProps } from '../DatePicker/types'
 
 defineOptions({ name: 'WxTimePicker' })
 
-defineProps<Omit<DatePickerProps, 'type'>>()
+/**
+ * Every prop defaults to `undefined` on purpose. Vue casts an absent boolean prop
+ * to `false`, and this preset forwards its whole prop object — without these the
+ * preset would hand `WxDatePicker` an explicit `false` for `is24`, `clearable`,
+ * `autoApply` and `teleport`, overriding that component's own defaults. Passing
+ * `undefined` lets each default apply as if the prop had never been written.
+ */
+withDefaults(defineProps<Omit<DatePickerProps, 'type'>>(), {
+  valueFormat: undefined,
+  format: undefined,
+  placeholder: undefined,
+  clearable: undefined,
+  minDate: undefined,
+  maxDate: undefined,
+  seconds: undefined,
+  minutesIncrement: undefined,
+  is24: undefined,
+  weekStart: undefined,
+  autoApply: undefined,
+  textInput: undefined,
+  teleport: undefined,
+  disabled: undefined,
+  readonly: undefined,
+  size: undefined,
+  status: undefined,
+  id: undefined,
+  name: undefined,
+  ariaLabel: undefined,
+})
 
 const model = defineModel<DatePickerModelValue>({ default: null })
 </script>
