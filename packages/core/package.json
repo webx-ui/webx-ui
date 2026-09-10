@@ -49,6 +49,7 @@
     "vue": "^3.5.0"
   },
   "dependencies": {
+    "@vuepic/vue-datepicker": "^14.0.0",
     "@webx-ui/tokens": "workspace:^"
   },
   "devDependencies": {
