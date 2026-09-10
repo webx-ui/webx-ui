@@ -1,0 +1,63 @@
+{
+  "name": "@webx-ui/core",
+  "version": "0.0.1",
+  "description": "Vue 3 UI components for admin panels, styled entirely with WebX UI design tokens.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "keywords": [
+    "webx-ui",
+    "vue",
+    "vue3",
+    "ui",
+    "components",
+    "design-system",
+    "admin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/webx-ui/webx-ui.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://webx-ui.github.io/components/button.html",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css",
+    "./dist/style.css": "./dist/style.css",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "typecheck": "vue-tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "vue": "^3.5.0"
+  },
+  "dependencies": {
+    "@webx-ui/tokens": "workspace:^"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.14",
+    "vite-plugin-dts": "^4.5.4",
+    "vue": "^3.5.24",
+    "vue-tsc": "^3.1.3"
+  }
+}
