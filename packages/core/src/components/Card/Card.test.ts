@@ -46,4 +46,27 @@ describe('WxCard', () => {
     expect(wrapper.classes()).toContain('wx-card--padding-lg')
     expect(wrapper.classes()).toContain('wx-card--bordered')
   })
+  it('renders the body directly when there is no sidebar', () => {
+    const wrapper = mount(WxCard, { slots: { default: 'Body' } })
+
+    expect(wrapper.find('.wx-card__layout').exists()).toBe(false)
+    expect(wrapper.classes()).not.toContain('wx-card--with-sidebar')
+  })
+
+  it('splits the body into sidebar and content when the sidebar slot is used', () => {
+    const wrapper = mount(WxCard, {
+      slots: { sidebar: 'Navigation', default: 'Body' },
+    })
+
+    expect(wrapper.classes()).toContain('wx-card--with-sidebar')
+    expect(wrapper.get('.wx-card__sidebar').text()).toBe('Navigation')
+    expect(wrapper.get('.wx-card__content').text()).toBe('Body')
+    expect(wrapper.get('.wx-card__sidebar').element.tagName).toBe('ASIDE')
+  })
+
+  it('keeps the sidebar layout inside the padded body', () => {
+    const wrapper = mount(WxCard, { slots: { sidebar: 'Nav', default: 'Body' } })
+
+    expect(wrapper.find('.wx-card__body > .wx-card__layout').exists()).toBe(true)
+  })
 })

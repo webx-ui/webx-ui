@@ -16,6 +16,8 @@
 
 .wx-demo--stack {
   flex-direction: column;
+  /* A wrapping column flex container mis-sizes children that establish containment. */
+  flex-wrap: nowrap;
   align-items: stretch;
 }
 
