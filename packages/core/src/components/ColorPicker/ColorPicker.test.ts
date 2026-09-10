@@ -111,6 +111,26 @@ describe('WxColorPicker', () => {
     expect(hue.h).toBe(219)
   })
 
+  it('draws the same square before and after the first drag', async () => {
+    const wrapper = mountPicker({ modelValue: '#427edd' })
+    await wrapper.get('.wx-color-picker__field').trigger('click')
+    await nextTick()
+
+    const surface = () =>
+      document.querySelector('.wx-color-picker__area-surface')?.getAttribute('style') ?? ''
+
+    // Black at the bottom, white at the left: the HSB square, not the RGB one flipped on its head.
+    expect(surface()).toContain('linear-gradient(to top, rgb(0, 0, 0), transparent)')
+
+    wrapper
+      .findComponent({ name: 'ColorAreaRoot' })
+      .vm.$emit('update:color', { space: 'hsb', h: 219, s: 70, b: 87, alpha: 1 })
+    await nextTick()
+
+    // The first drag used to be what fixed the orientation; it now changes nothing.
+    expect(surface()).toContain('linear-gradient(to top, rgb(0, 0, 0), transparent)')
+  })
+
   it('parses a preset back into the picker rather than only the field', async () => {
     const wrapper = mountPicker({ modelValue: null, presets: ['#21c36d'] })
     await wrapper.get('.wx-color-picker__field').trigger('click')
