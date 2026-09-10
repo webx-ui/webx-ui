@@ -57,6 +57,7 @@ export default defineConfig({
             { text: 'Switch', link: '/components/switch' },
             { text: 'DatePicker', link: '/components/date-picker' },
             { text: 'RichText', link: '/components/rich-text' },
+            { text: 'Secondary controls', link: '/components/form-extras' },
           ],
         },
         {
