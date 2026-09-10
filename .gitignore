@@ -141,3 +141,10 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# WebX UI
+apps/docs/.vitepress/cache
+apps/docs/.vitepress/dist
+
+# Local tooling
+.claude/

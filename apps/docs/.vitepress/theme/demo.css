@@ -1,0 +1,98 @@
+/* Frame around live demos in the docs. */
+.wx-demo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-4);
+  margin: 16px 0;
+  padding: var(--wx-space-6);
+  background: var(--wx-bg-surface);
+  border: 1px solid var(--wx-border-default);
+  border-radius: var(--wx-radius-lg);
+  color: var(--wx-text-default);
+  font-family: var(--wx-font-family-sans);
+  font-size: var(--wx-font-size-md);
+}
+
+.wx-demo--stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.wx-demo__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-4);
+}
+
+.wx-demo__label {
+  width: 100%;
+  color: var(--wx-text-muted);
+  font-size: var(--wx-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.wx-swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--wx-space-4);
+  margin: 16px 0;
+}
+
+.wx-swatch {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-4);
+  padding: var(--wx-space-3);
+  background: var(--wx-bg-surface);
+  border: 1px solid var(--wx-border-default);
+  border-radius: var(--wx-radius-md);
+}
+
+.wx-swatch__chip {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 1px solid var(--wx-border-muted);
+  border-radius: var(--wx-radius-sm);
+}
+
+.wx-swatch__meta {
+  min-width: 0;
+  font-family: var(--wx-font-family-mono);
+  font-size: var(--wx-font-size-xs);
+  line-height: 1.4;
+}
+
+.wx-swatch__name {
+  color: var(--wx-text-default);
+  overflow-wrap: anywhere;
+}
+
+.wx-swatch__value {
+  color: var(--wx-text-muted);
+}
+
+.wx-scale {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-2);
+  margin: 16px 0;
+}
+
+.wx-scale__row {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-4);
+  font-family: var(--wx-font-family-mono);
+  font-size: var(--wx-font-size-xs);
+  color: var(--wx-text-muted);
+}
+
+.wx-scale__bar {
+  height: 12px;
+  background: var(--wx-color-primary);
+  border-radius: var(--wx-radius-sm);
+}
