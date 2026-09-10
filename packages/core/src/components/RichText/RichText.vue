@@ -458,21 +458,37 @@ defineExpose({
   line-height: var(--wx-font-line-height-relaxed);
 }
 
+/*
+ * Host applications decorate content tags globally — VitePress, which renders these
+ * docs, gives every h2 a top border and 24px of padding, and turns tables into
+ * `display: block`. The editing surface has to look the same wherever it is
+ * embedded, so anything a host is likely to set is stated here instead of inherited.
+ */
+.wx-rich-text__content :deep(h1),
+.wx-rich-text__content :deep(h2),
+.wx-rich-text__content :deep(h3),
+.wx-rich-text__content :deep(h4),
+.wx-rich-text__content :deep(h5),
+.wx-rich-text__content :deep(h6) {
+  margin: var(--wx-space-18) 0 var(--wx-space-8);
+  padding: 0;
+  border: 0;
+  color: var(--wx-text-strong);
+  font-weight: var(--wx-font-weight-semibold);
+  line-height: var(--wx-font-line-height-tight);
+}
+
 .wx-rich-text__content :deep(p) {
   margin: 0 0 var(--wx-space-12);
 }
 
-.wx-rich-text__content :deep(p:last-child) {
-  margin-bottom: 0;
+/* Nothing pushes the document away from the top or bottom edge of the field. */
+.wx-rich-text__content :deep(.ProseMirror > :first-child) {
+  margin-top: 0;
 }
 
-.wx-rich-text__content :deep(h2),
-.wx-rich-text__content :deep(h3),
-.wx-rich-text__content :deep(h4) {
-  margin: var(--wx-space-18) 0 var(--wx-space-8);
-  color: var(--wx-text-strong);
-  font-weight: var(--wx-font-weight-semibold);
-  line-height: var(--wx-font-line-height-tight);
+.wx-rich-text__content :deep(.ProseMirror > :last-child) {
+  margin-bottom: 0;
 }
 
 .wx-rich-text__content :deep(h2) {
@@ -539,6 +555,8 @@ defineExpose({
 }
 
 .wx-rich-text__content :deep(table) {
+  /* Stated because hosts turn tables into `display: block` for horizontal scrolling. */
+  display: table;
   width: 100%;
   margin: 0 0 var(--wx-space-12);
   border-collapse: collapse;
