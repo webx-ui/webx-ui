@@ -58,7 +58,8 @@
     "@tiptap/starter-kit": "^3.31.3",
     "@tiptap/vue-3": "^3.31.3",
     "@vuepic/vue-datepicker": "^14.0.0",
-    "@webx-ui/tokens": "workspace:^"
+    "@webx-ui/tokens": "workspace:^",
+    "reka-ui": "^2.10.4"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

@@ -16,7 +16,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 | Icon                                                      | ⬜     |
 | Textarea                                                  | ✅     |
 | InputNumber                                               | ✅     |
-| Select (Reka Combobox)                                    | ⬜     |
+| Select (Reka Combobox)                                    | ✅     |
 | Checkbox, CheckboxGroup                                   | ✅     |
 | Radio, RadioGroup                                         | ✅     |
 | Switch                                                    | ✅     |
