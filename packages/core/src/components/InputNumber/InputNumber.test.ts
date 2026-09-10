@@ -110,6 +110,37 @@ describe('WxInputNumber', () => {
     expect(readonly.emitted('update:modelValue')).toBeUndefined()
   })
 
+  it('ignores the wheel unless asked', async () => {
+    const wrapper = mount(WxInputNumber, { props: { modelValue: 5 } })
+    const input = wrapper.get('input')
+
+    await input.trigger('focus')
+    await input.trigger('wheel', { deltaY: -100 })
+
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+  })
+
+  it('steps on the wheel when enabled and focused', async () => {
+    const wrapper = mount(WxInputNumber, { props: { modelValue: 5, wheel: true } })
+    const input = wrapper.get('input')
+
+    await input.trigger('focus')
+    await input.trigger('wheel', { deltaY: -100 })
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([6])
+
+    await wrapper.setProps({ modelValue: 6 })
+    await input.trigger('wheel', { deltaY: 100 })
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([5])
+  })
+
+  it('leaves the wheel alone when the field is not focused', async () => {
+    const wrapper = mount(WxInputNumber, { props: { modelValue: 5, wheel: true } })
+
+    await wrapper.get('input').trigger('wheel', { deltaY: -100 })
+
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+  })
+
   it('exposes the bounds to assistive tech', () => {
     const wrapper = mount(WxInputNumber, { props: { modelValue: 3, min: 1, max: 9 } })
     const input = wrapper.get('input')

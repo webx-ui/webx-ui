@@ -39,6 +39,24 @@ Three details that make the difference between a usable field and an annoying on
 
 `precision` defaults to whatever `step` implies: `step="0.5"` formats to one decimal.
 
+## The mouse wheel
+
+`wheel` is off by default, and that is deliberate. With it on, scrolling a long form past a field
+the user happens to have focused edits that field silently — no click, no keystroke, no sign that
+anything changed. It is the classic way a numeric field loses data, and the reason the same
+behaviour in a native `<input type="number">` is widely switched off.
+
+Turn it on where scrolling is unlikely to overlap editing — a compact toolbar, a short dialog:
+
+```vue
+<template>
+  <wx-input-number v-model="zoom" wheel :min="10" :max="400" :step="10" />
+</template>
+```
+
+Even then it only fires while the field is focused, and it swallows the scroll event so a merely
+hovered field never steals the page scroll.
+
 ## Props
 
 | Prop               | Type                                             | Default     | Description                                     |
