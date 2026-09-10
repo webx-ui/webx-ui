@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useFormField } from '../../composables/useFormField'
 import type { InputEmits, InputModelValue, InputProps } from './types'
 
 defineOptions({ name: 'WxInput', inheritAttrs: false })
 
 const props = withDefaults(defineProps<InputProps>(), {
   type: 'text',
-  size: 'md',
-  status: 'default',
+  size: undefined,
+  status: undefined,
+  id: undefined,
   placeholder: undefined,
-  disabled: false,
+  disabled: undefined,
   readonly: false,
   clearable: false,
   maxlength: undefined,
@@ -22,13 +24,15 @@ const emit = defineEmits<InputEmits>()
 
 const model = defineModel<InputModelValue>({ default: '' })
 
+const field = useFormField(props)
 const inputRef = ref<HTMLInputElement | null>(null)
 const focused = ref(false)
 
 const currentValue = computed(() => (model.value == null ? '' : String(model.value)))
 
 const showClear = computed(
-  () => props.clearable && !props.disabled && !props.readonly && currentValue.value.length > 0,
+  () =>
+    props.clearable && !field.disabled.value && !props.readonly && currentValue.value.length > 0,
 )
 
 const counter = computed(() =>
@@ -37,11 +41,11 @@ const counter = computed(() =>
 
 const classes = computed(() => [
   'wx-input',
-  `wx-input--${props.size}`,
+  `wx-input--${field.size.value}`,
   {
-    [`wx-input--${props.status}`]: props.status !== 'default',
+    [`wx-input--${field.status.value}`]: field.status.value !== 'default',
     'is-focused': focused.value,
-    'is-disabled': props.disabled,
+    'is-disabled': field.disabled.value,
     'is-readonly': props.readonly,
   },
 ])
@@ -89,18 +93,20 @@ defineExpose({
     </span>
 
     <input
+      :id="field.id.value"
       ref="inputRef"
       v-bind="$attrs"
       class="wx-input__inner"
       :type="type"
       :value="currentValue"
       :placeholder="placeholder"
-      :disabled="disabled"
+      :disabled="field.disabled.value"
       :readonly="readonly"
       :maxlength="maxlength"
       :autocomplete="autocomplete"
       :aria-label="ariaLabel"
-      :aria-invalid="status === 'error' || undefined"
+      :aria-describedby="field.describedBy.value"
+      :aria-invalid="field.status.value === 'error' || undefined"
       @input="onInput"
       @change="onChange"
       @focus="onFocus"

@@ -3,6 +3,8 @@ export type InputStatus = 'default' | 'success' | 'warning' | 'error'
 export type InputNativeType = 'text' | 'password' | 'email' | 'number' | 'search' | 'tel' | 'url'
 
 export interface InputProps {
+  /** Overrides the id generated for the control (and used by a WxFormItem label). */
+  id?: string
   /** `type` attribute of the underlying `<input>`. */
   type?: InputNativeType
   size?: InputSize
