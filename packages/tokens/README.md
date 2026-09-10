@@ -21,7 +21,7 @@ import '@webx-ui/tokens/tokens.css'
   color: var(--wx-text-default);
   border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-lg);
-  padding: var(--wx-space-5);
+  padding: var(--wx-space-16);
 }
 ```
 
@@ -33,11 +33,11 @@ import { applyTheme, cssVar, tokens } from '@webx-ui/tokens'
 
 applyTheme('dark')
 cssVar('color-primary') // "var(--wx-color-primary)"
-tokens.primitive.color.blue[600] // "#2563eb"
+tokens.primitive.color.blue.base // "#427edd"
 ```
 
 ## Editing tokens
 
 `src/tokens.json` is the single source of truth. `pnpm --filter @webx-ui/tokens generate` rebuilds
-`dist/tokens.css` and `src/generated/tokens.ts`; values written as `{primitive.color.blue.600}`
-become `var(--wx-color-blue-600)` references.
+`dist/tokens.css` and `src/generated/tokens.ts`; values written as `{primitive.color.blue.base}`
+become `var(--wx-color-blue-base)` references.

@@ -50,6 +50,12 @@ function semanticVars(theme) {
 const light = semanticVars('light')
 const dark = semanticVars('dark')
 
+/** Density overrides are plain var overrides, scoped to a class instead of a theme. */
+const compact = Object.entries(source.density.compact).map(([key, value]) => [
+  varName(key),
+  resolveValue(value, `density.compact.${key}`),
+])
+
 const block = (pairs, indent = '  ') =>
   pairs.map(([name, value]) => `${indent}${name}: ${value};`).join('\n')
 
@@ -77,6 +83,12 @@ ${block(dark)}
 ${block(dark, '    ')}
   }
 }
+
+/* Denser controls for tables, toolbars and dialogs. Scope it to any subtree. */
+.wx-density-compact,
+[data-density='compact'] {
+${block(compact)}
+}
 `
 
 const asRecord = (pairs) =>
@@ -92,6 +104,9 @@ export const lightVars: Record<string, string> = ${asRecord([...primitives, ...l
 
 /** CSS custom properties overridden for the dark theme. */
 export const darkVars: Record<string, string> = ${asRecord(dark)}
+
+/** CSS custom properties applied by the .wx-density-compact class. */
+export const compactVars: Record<string, string> = ${asRecord(compact)}
 `
 
 mkdirSync(resolve(root, 'dist'), { recursive: true })
@@ -100,5 +115,5 @@ writeFileSync(resolve(root, 'dist/tokens.css'), css)
 writeFileSync(resolve(root, 'src/generated/tokens.ts'), ts)
 
 console.log(
-  `tokens: ${primitives.length} primitives, ${light.length} semantic vars -> dist/tokens.css`,
+  `tokens: ${primitives.length} primitives, ${light.length} semantic, ${compact.length} compact -> dist/tokens.css`,
 )

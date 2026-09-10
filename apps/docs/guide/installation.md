@@ -57,7 +57,7 @@ import '@webx-ui/tokens/tokens.css'
   background: var(--wx-bg-surface);
   border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-lg);
-  padding: var(--wx-space-5);
+  padding: var(--wx-space-16);
 }
 ```
 

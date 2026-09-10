@@ -130,58 +130,57 @@ defineExpose({
 .wx-input {
   display: inline-flex;
   align-items: center;
-  gap: var(--wx-space-2);
+  gap: var(--wx-space-8);
   box-sizing: border-box;
   width: 100%;
   background: var(--wx-bg-surface);
   border: 1px solid var(--wx-border-default);
-  border-radius: var(--wx-radius-md);
+  border-radius: var(--wx-radius-control);
   color: var(--wx-text-default);
   transition:
-    border-color var(--wx-duration-fast) var(--wx-easing-standard),
-    box-shadow var(--wx-duration-fast) var(--wx-easing-standard);
+    border-color var(--wx-duration-normal) var(--wx-easing-standard),
+    background-color var(--wx-duration-normal) var(--wx-easing-standard);
 }
 
 .wx-input:hover:not(.is-disabled) {
   border-color: var(--wx-border-strong);
 }
 
+/* The reference marks focus with a tinted border rather than a ring. */
 .wx-input.is-focused {
   border-color: var(--wx-border-focus);
-  box-shadow: var(--wx-ring-focus);
 }
 
 .wx-input--sm {
   height: var(--wx-size-control-sm);
-  padding: 0 var(--wx-space-3);
+  padding: 0 var(--wx-space-10);
   font-size: var(--wx-font-size-sm);
 }
 
 .wx-input--md {
   height: var(--wx-size-control-md);
-  padding: 0 var(--wx-space-4);
+  padding: 0 var(--wx-space-12);
   font-size: var(--wx-font-size-md);
 }
 
 .wx-input--lg {
   height: var(--wx-size-control-lg);
-  padding: 0 var(--wx-space-5);
+  padding: 0 var(--wx-space-16);
   font-size: var(--wx-font-size-lg);
 }
 
-.wx-input--error {
+.wx-input--error,
+.wx-input--error.is-focused {
   border-color: var(--wx-color-danger);
 }
 
-.wx-input--error.is-focused {
-  box-shadow: 0 0 0 3px var(--wx-color-danger-soft);
-}
-
-.wx-input--success {
+.wx-input--success,
+.wx-input--success.is-focused {
   border-color: var(--wx-color-success);
 }
 
-.wx-input--warning {
+.wx-input--warning,
+.wx-input--warning.is-focused {
   border-color: var(--wx-color-warning);
 }
 
@@ -206,7 +205,7 @@ defineExpose({
 }
 
 .wx-input__inner::placeholder {
-  color: var(--wx-text-muted);
+  color: var(--wx-text-placeholder);
 }
 
 .wx-input__inner:disabled {
@@ -231,8 +230,8 @@ defineExpose({
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   padding: 0;
   background: transparent;
   border: none;
@@ -241,10 +240,11 @@ defineExpose({
   font-size: var(--wx-font-size-xs);
   line-height: 1;
   cursor: pointer;
+  transition: background-color var(--wx-duration-fast) var(--wx-easing-standard);
 }
 
 .wx-input__clear:hover {
-  background: var(--wx-bg-muted);
+  background: var(--wx-bg-fill);
   color: var(--wx-text-default);
 }
 </style>

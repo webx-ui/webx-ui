@@ -9,7 +9,7 @@ const props = withDefaults(
     /** For `group="semantic"`: only keys starting with this prefix. */
     prefix?: string
     /** For `group="palette"`: which hue to show. */
-    hue?: 'gray' | 'blue' | 'green' | 'amber' | 'red'
+    hue?: 'gray' | 'blue' | 'green' | 'amber' | 'red' | 'cyan'
   }>(),
   { group: 'semantic', prefix: 'color-', hue: 'blue' },
 )
