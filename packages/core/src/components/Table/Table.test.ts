@@ -521,9 +521,9 @@ describe('WxTable fixed columns', () => {
     const headers = wrapper.findAll('thead th')
 
     // The checkbox column is 44 wide and pinned too, so the name column starts after it.
-    expect(headers[0].attributes('style')).toContain('left: 0px')
-    expect(headers[1].attributes('style')).toContain('left: 44px')
-    expect(headers[3].attributes('style')).toContain('right: 0px')
+    expect(headers[0].attributes('style')).toContain('--wx-pin-left: 0px')
+    expect(headers[1].attributes('style')).toContain('--wx-pin-left: 44px')
+    expect(headers[3].attributes('style')).toContain('--wx-pin-right: 0px')
   })
 
   it('stacks two pinned columns on the same edge', () => {
@@ -536,8 +536,8 @@ describe('WxTable fixed columns', () => {
     })
     const headers = wrapper.findAll('thead th')
 
-    expect(headers[0].attributes('style')).toContain('left: 0px')
-    expect(headers[1].attributes('style')).toContain('left: 60px')
+    expect(headers[0].attributes('style')).toContain('--wx-pin-left: 0px')
+    expect(headers[1].attributes('style')).toContain('--wx-pin-left: 60px')
     expect(headers[1].classes()).toContain('is-fixed-edge')
   })
 

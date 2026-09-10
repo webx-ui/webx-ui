@@ -233,6 +233,15 @@ const columns = [
 **A pinned column needs a `width`.** The resting place of each pinned column is the sum of the
 widths declared before it, and a column of unknown width cannot say where the next one begins.
 
+### Pinning stops when there is no room for it
+
+Below 600px the table gives up freezing and scrolls as a whole. On a phone the frozen columns take
+most of the screen and the columns the reader came for have nowhere to scroll into view — a table
+that cannot show its own contents is worse than one without pinning.
+
+The width in question is the **table's**, not the window's: a table in a narrow panel on a wide
+desktop has the same problem. Nothing to configure and nothing to remember at the call site.
+
 ### Choosing the height
 
 `max-height` is the only knob, and that is the recommendation: a number for pixels, or any CSS
@@ -355,7 +364,11 @@ paints it behind cells that are transparent, and a pinned cell paints it itself 
 move at one speed. VitePress fades a `tr` over half a second and leaves cells alone, which had the
 pinned columns snapping to the hover colour while the rest of the row was still on its way there.
 
-It also sets its own `min-width: 0`. A flex or grid item refuses to shrink below its content, and
+The seam beside a pinned column is covered by a strip of its own rather than by a box shadow, for
+the same reason: Firefox declines to paint a shadow on a cell in a collapsed-border table, so the
+hairline was still there in one browser out of two.
+
+It also sets its own `width: 100%` and `min-width: 0`. A flex or grid item refuses to shrink below its content, and
 the content here is a table that can be twice the width of the page — without it the inner scroller
 never scrolls and the whole document does instead, which is the kind of thing that only shows up
 inside somebody's layout.
