@@ -148,10 +148,15 @@ const hasLeftFixed = computed(() => visibleColumns.value.some((column) => column
 
 const hasFixed = computed(() => offsets.value.size > 0)
 
+/**
+ * The resting place goes out as a custom property rather than as `left` itself. An
+ * inline `left` would outrank every stylesheet rule, and the pinning has to be able to
+ * switch itself off in CSS when the table is too narrow to afford it.
+ */
 function fixedStyle(column: TableColumn<T>) {
   const pin = offsets.value.get(column.key)
   if (!pin) return undefined
-  return { [pin.side]: `${pin.offset}px` }
+  return { [`--wx-pin-${pin.side}`]: `${pin.offset}px` }
 }
 
 function fixedClass(column: TableColumn<T>) {
@@ -164,7 +169,7 @@ function fixedClass(column: TableColumn<T>) {
 function utilityStyle(slot: 'expand' | 'select') {
   if (!hasFixed.value) return undefined
   const before = slot === 'select' && props.expandable ? UTILITY_WIDTH : 0
-  return { left: `${before}px` }
+  return { '--wx-pin-left': `${before}px` }
 }
 
 const utilityClass = computed(() =>
@@ -655,7 +660,14 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
    * inner scroller never scrolls and the whole document does instead.
    */
   min-width: 0;
+  /*
+   * Pinning asks about the table's own width, so the table is the thing being measured.
+   * Containment means the width can no longer come from the contents, so it is stated:
+   * inside a flex row the element would otherwise measure zero.
+   */
+  width: 100%;
   max-width: 100%;
+  container-type: inline-size;
   background: var(--wx-bg-surface);
   border-radius: var(--wx-radius-md);
   color: var(--wx-text-default);
@@ -858,6 +870,14 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   background: var(--wx-table-row-bg);
 }
 
+.wx-table__cell.is-fixed-left {
+  left: var(--wx-pin-left, 0px);
+}
+
+.wx-table__cell.is-fixed-right {
+  right: var(--wx-pin-right, 0px);
+}
+
 .wx-table__head .wx-table__cell.is-fixed-left,
 .wx-table__head .wx-table__cell.is-fixed-right,
 .wx-table--sticky .wx-table__foot .wx-table__cell.is-fixed-left,
@@ -866,33 +886,67 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 }
 
 /*
- * Each pinned cell paints one pixel past its own edge, in its own colour. A scrollport
- * rarely begins on a whole pixel — at any display scale but 100% it begins on a fraction
- * of one — and the pinned cell is then rasterised half a device pixel short, leaving a
- * hairline of the scrolling column showing beside it. A sliver of somebody else's text
- * is the sort of thing you cannot unsee once you have.
+ * A scrollport rarely begins on a whole pixel — at any display scale but 100% it begins
+ * on a fraction of one — so the pinned cell is rasterised with its edge pixel only
+ * partly covered, and a hairline of the scrolling column shows through it.
  *
- * The edge of the frozen block gets its shadow on top of that, so it reads as floating
- * over what slides beneath.
+ * The cover is a strip of its own rather than a box shadow: Firefox declines to paint a
+ * shadow on a cell in a collapsed-border table, which is where the sliver was still
+ * turning up. Two pixels wide and straddling the edge, so whichever pixel the boundary
+ * falls in is covered outright instead of blended.
  */
-.wx-table__cell.is-fixed-left {
-  box-shadow: -1px 0 0 0 var(--wx-table-row-bg);
+.wx-table__cell.is-fixed-left::before,
+.wx-table__cell.is-fixed-right::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--wx-table-row-bg);
+  pointer-events: none;
 }
 
-.wx-table__cell.is-fixed-right {
-  box-shadow: 1px 0 0 0 var(--wx-table-row-bg);
+.wx-table__cell.is-fixed-left::before {
+  left: -1px;
 }
 
+.wx-table__cell.is-fixed-right::before {
+  right: -1px;
+}
+
+/* The edge of the frozen block, so it reads as floating over what slides beneath. */
 .wx-table__cell.is-fixed-left.is-fixed-edge {
-  box-shadow:
-    -1px 0 0 0 var(--wx-table-row-bg),
-    6px 0 6px -6px rgb(0 0 0 / 0.18);
+  box-shadow: 6px 0 6px -6px rgb(0 0 0 / 0.18);
 }
 
 .wx-table__cell.is-fixed-right.is-fixed-edge {
-  box-shadow:
-    1px 0 0 0 var(--wx-table-row-bg),
-    -6px 0 6px -6px rgb(0 0 0 / 0.18);
+  box-shadow: -6px 0 6px -6px rgb(0 0 0 / 0.18);
+}
+
+/*
+ * Pinning is a luxury of width. On a phone the frozen columns take most of the screen
+ * and the ones the reader came for have nowhere to scroll into view, so the table gives
+ * up freezing and simply scrolls as a whole.
+ *
+ * The question is asked of the table rather than of the window: the same thing happens
+ * to a table in a narrow panel on a wide desktop. The offsets are custom properties for
+ * exactly this reason — an inline `left` could not be talked out of it.
+ */
+@container (max-width: 600px) {
+  .wx-table__cell.is-fixed-left,
+  .wx-table__cell.is-fixed-right,
+  .wx-table__cell.is-fixed-left.is-fixed-edge,
+  .wx-table__cell.is-fixed-right.is-fixed-edge {
+    left: auto;
+    right: auto;
+    z-index: auto;
+    box-shadow: none;
+  }
+
+  .wx-table__cell.is-fixed-left::before,
+  .wx-table__cell.is-fixed-right::before {
+    display: none;
+  }
 }
 
 .wx-table__body .wx-table__cell {
