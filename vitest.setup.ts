@@ -21,3 +21,12 @@ if (typeof Element !== 'undefined') {
     Element.prototype.getClientRects = () => emptyRectList
   }
 }
+
+/** Reka's slider measures its track through a ResizeObserver, which jsdom lacks. */
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver
+}

@@ -22,6 +22,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 | Switch                                                    | ✅     |
 | Form, FormItem                                            | ✅     |
 | Tag                                                       | ⬜     |
+| TagsInput                                                 | ✅     |
 | Badge                                                     | ⬜     |
 | Alert                                                     | ⬜     |
 | Divider                                                   | ⬜     |
@@ -58,6 +59,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 | Image                                                             | ⬜     |
 | Upload (Uppy / FilePond)                                          | ⬜     |
 | DatePicker, TimePicker, DateTimePicker (`@vuepic/vue-datepicker`) | ✅     |
+| DateRangePicker                                                   | ✅     |
 | Steps                                                             | ⬜     |
 | Collapse                                                          | ⬜     |
 | Segmented                                                         | ⬜     |
@@ -67,8 +69,10 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 
 ## Wave 3 — as needed
 
-Tree, TreeSelect (`he-tree-vue` / Reka Tree), Cascader, Transfer, Autocomplete, ColorPicker, Slider,
-Rate, Timeline, Calendar, Carousel, Mention, Anchor, Splitter, Watermark, Tour, Marquee.
+ColorPicker ✅, Slider ✅ and Rate ✅ are done.
+
+Still open: Tree, TreeSelect (`he-tree-vue` / Reka Tree), Cascader, Transfer, Autocomplete,
+Timeline, Calendar, Carousel, Mention, Anchor, Splitter, Watermark, Tour, Marquee.
 
 ## CMS-specific (not in Element Plus)
 
