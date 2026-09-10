@@ -14,13 +14,13 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 | Card                                                      | ✅     |
 | ButtonGroup                                               | ⬜     |
 | Icon                                                      | ⬜     |
-| Textarea                                                  | ⬜     |
-| InputNumber                                               | ⬜     |
+| Textarea                                                  | ✅     |
+| InputNumber                                               | ✅     |
 | Select (Reka Combobox)                                    | ⬜     |
-| Checkbox, CheckboxGroup                                   | ⬜     |
-| Radio, RadioGroup                                         | ⬜     |
-| Switch                                                    | ⬜     |
-| Form, FormItem                                            | ⬜     |
+| Checkbox, CheckboxGroup                                   | ✅     |
+| Radio, RadioGroup                                         | ✅     |
+| Switch                                                    | ✅     |
+| Form, FormItem                                            | ✅     |
 | Tag                                                       | ⬜     |
 | Badge                                                     | ⬜     |
 | Alert                                                     | ⬜     |
