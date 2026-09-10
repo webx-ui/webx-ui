@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import WxTable from './Table.vue'
 import type { Paginated, TableColumn } from './types'
 
@@ -238,6 +239,153 @@ describe('WxTable', () => {
     const wrapper = mountTable({ data: [], loading: true })
 
     expect(wrapper.find('.wx-table__empty').exists()).toBe(false)
+  })
+})
+
+describe('WxTable pagination and state', () => {
+  const page: Paginated<User> = {
+    data: users,
+    current_page: 1,
+    last_page: 4,
+    per_page: 2,
+    total: 8,
+    from: 1,
+    to: 2,
+  }
+
+  afterEach(() => {
+    vi.useRealTimers()
+    localStorage.clear()
+  })
+
+  it('paginates itself once the data is a paginator', () => {
+    const wrapper = mountTable({ data: page })
+
+    expect(wrapper.find('.wx-pagination').exists()).toBe(true)
+    expect(wrapper.get('.wx-pagination__total').text()).toContain('of 8')
+  })
+
+  it('leaves a plain array alone', () => {
+    expect(mountTable().find('.wx-pagination').exists()).toBe(false)
+  })
+
+  it('can be told either way', () => {
+    expect(mountTable({ pagination: true }).find('.wx-pagination').exists()).toBe(true)
+    expect(mountTable({ data: page, pagination: false }).find('.wx-pagination').exists()).toBe(
+      false,
+    )
+  })
+
+  it('steps aside for a footer slot', () => {
+    const wrapper = mountTable(
+      { data: page },
+      { slots: { footer: '<span class="mine">mine</span>' } },
+    )
+
+    expect(wrapper.find('.mine').exists()).toBe(true)
+    expect(wrapper.find('.wx-pagination').exists()).toBe(false)
+  })
+
+  it('reports the whole state once on mount', () => {
+    const wrapper = mountTable({ data: page })
+
+    expect(wrapper.emitted('state-change')).toHaveLength(1)
+    expect(wrapper.emitted('state-change')?.[0]).toEqual([
+      { page: 1, perPage: 15, sort: null, search: '' },
+    ])
+  })
+
+  it('reports a sort, and goes back to the first page for it', async () => {
+    const wrapper = mountTable({
+      data: page,
+      page: 3,
+      columns: [{ key: 'name', label: 'Name', sortable: true }],
+    })
+
+    await wrapper.get('.wx-table__sort').trigger('click')
+
+    expect(wrapper.emitted('state-change')?.at(-1)).toEqual([
+      { page: 1, perPage: 15, sort: { key: 'name', order: 'asc' }, search: '' },
+    ])
+  })
+
+  it('reports a burst of typing once, on the first page', async () => {
+    vi.useFakeTimers()
+    const wrapper = mountTable({ data: page, page: 2, searchable: true })
+    const input = wrapper.get('.wx-table__search input')
+
+    await input.setValue('a')
+    await input.setValue('ad')
+    await input.setValue('ada')
+    expect(wrapper.emitted('state-change')).toHaveLength(1)
+
+    vi.advanceTimersByTime(300)
+    await nextTick()
+
+    expect(wrapper.emitted('state-change')).toHaveLength(2)
+    expect(wrapper.emitted('state-change')?.at(-1)).toEqual([
+      { page: 1, perPage: 15, sort: null, search: 'ada' },
+    ])
+  })
+
+  it('writes the state down when asked to remember it', async () => {
+    const wrapper = mountTable({
+      data: page,
+      persist: 'orders',
+      columns: [{ key: 'name', label: 'Name', sortable: true }],
+    })
+
+    await wrapper.get('.wx-table__sort').trigger('click')
+
+    expect(JSON.parse(localStorage.getItem('wx-table:orders') ?? '{}')).toEqual({
+      page: 1,
+      perPage: 15,
+      sort: { key: 'name', order: 'asc' },
+      search: '',
+    })
+  })
+
+  it('opens where it was left', async () => {
+    localStorage.setItem(
+      'wx-table:orders',
+      JSON.stringify({ page: 3, perPage: 25, sort: { key: 'name', order: 'desc' }, search: 'ada' }),
+    )
+
+    const wrapper = mountTable({ data: page, persist: 'orders', searchable: true })
+
+    expect(wrapper.emitted('state-change')?.[0]).toEqual([
+      { page: 3, perPage: 25, sort: { key: 'name', order: 'desc' }, search: 'ada' },
+    ])
+
+    // The restore happens on mount, so the field catches up on the next tick.
+    await nextTick()
+    expect((wrapper.get('.wx-table__search input').element as HTMLInputElement).value).toBe('ada')
+  })
+
+  it('remembers nothing without a key', () => {
+    mountTable({ data: page })
+
+    expect(localStorage.length).toBe(0)
+  })
+
+  it('falls back to the defaults when what was stored makes no sense', () => {
+    localStorage.setItem('wx-table:orders', '{ not json')
+
+    const wrapper = mountTable({ data: page, persist: 'orders' })
+
+    expect(wrapper.emitted('state-change')?.[0]).toEqual([
+      { page: 1, perPage: 15, sort: null, search: '' },
+    ])
+  })
+
+  it('ignores a stored page that could not be one', () => {
+    localStorage.setItem('wx-table:orders', JSON.stringify({ page: -2, perPage: 'lots' }))
+
+    const wrapper = mountTable({ data: page, persist: 'orders' })
+
+    expect(wrapper.emitted('state-change')?.[0]).toEqual([
+      { page: 1, perPage: 15, sort: null, search: '' },
+    ])
   })
 })
 

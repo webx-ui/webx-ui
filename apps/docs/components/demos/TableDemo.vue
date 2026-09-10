@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onBeforeUnmount, ref, watch } from 'vue'
-import { WxPagination, WxTable } from '@webx-ui/core'
-import type { Paginated, RowKey, TableColumn, TableSort } from '@webx-ui/core'
+import { onBeforeUnmount, ref } from 'vue'
+import { WxTable } from '@webx-ui/core'
+import type { Paginated, RowKey, TableColumn, TableState } from '@webx-ui/core'
 
 interface Order extends Record<string, unknown> {
   id: number
@@ -32,23 +32,20 @@ const table: Order[] = Array.from({ length: 47 }, (_, index) => ({
   created_at: new Date(2026, 0, 1 + index * 3).toISOString().slice(0, 10),
 }))
 
-const page = ref(1)
-const perPage = ref(5)
-const sort = ref<TableSort | null>({ key: 'created_at', order: 'desc' })
 const selected = ref<RowKey[]>([])
-const search = ref('')
 const loading = ref(false)
+const lastState = ref<TableState | null>(null)
 
 /** What a controller does: filter, order, then `->paginate()`. */
-function query(): Paginated<Order> {
-  const term = search.value.trim().toLowerCase()
+function query(state: TableState): Paginated<Order> {
+  const term = state.search.trim().toLowerCase()
   const rows = table.filter(
     (order) =>
       !term || order.customer.toLowerCase().includes(term) || String(order.id).includes(term),
   )
 
-  if (sort.value) {
-    const { key, order } = sort.value
+  if (state.sort) {
+    const { key, order } = state.sort
     rows.sort((a, b) => {
       const left = a[key] as string | number
       const right = b[key] as string | number
@@ -58,23 +55,23 @@ function query(): Paginated<Order> {
   }
 
   const total = rows.length
-  const lastPage = Math.max(1, Math.ceil(total / perPage.value))
-  const current = Math.min(page.value, lastPage)
-  const start = (current - 1) * perPage.value
-  const data = rows.slice(start, start + perPage.value)
+  const lastPage = Math.max(1, Math.ceil(total / state.perPage))
+  const current = Math.min(state.page, lastPage)
+  const start = (current - 1) * state.perPage
+  const data = rows.slice(start, start + state.perPage)
 
   return {
     data,
     current_page: current,
     last_page: lastPage,
-    per_page: perPage.value,
+    per_page: state.perPage,
     total,
     from: total === 0 ? null : start + 1,
     to: total === 0 ? null : start + data.length,
   }
 }
 
-const result = ref<Paginated<Order>>(query())
+const result = ref<Paginated<Order> | null>(null)
 
 const columns: TableColumn<Order>[] = [
   { key: 'id', label: '#', width: 80, sortable: true },
@@ -93,24 +90,18 @@ const columns: TableColumn<Order>[] = [
 
 let timer: ReturnType<typeof setTimeout> | undefined
 
-/** The round trip a real admin would make, slowed down enough to see. */
-function reload() {
+/** One entry point: page, size, sort and search all arrive together. */
+function load(state: TableState) {
+  lastState.value = state
   loading.value = true
   clearTimeout(timer)
   timer = setTimeout(() => {
-    result.value = query()
+    result.value = query(state)
     loading.value = false
   }, 450)
 }
 
-watch([page, perPage, sort], reload)
 onBeforeUnmount(() => clearTimeout(timer))
-
-/** The search event has already waited for the typing to settle. */
-function onSearch() {
-  page.value = 1
-  reload()
-}
 
 const STATUS_COLOUR: Record<Order['status'], string> = {
   paid: 'var(--wx-color-success)',
@@ -122,41 +113,34 @@ const STATUS_COLOUR: Record<Order['status'], string> = {
 <template>
   <div class="wx-demo wx-demo--stack">
     <wx-table
-      v-model:sort="sort"
       v-model:selected="selected"
-      v-model:search="search"
       title="Orders"
       searchable
       search-placeholder="Customer or number"
       :data="result"
       :columns="columns"
       :loading="loading"
+      :per-page="5"
+      :per-page-options="[5, 10, 25]"
+      pagination
       selectable
       stripe
       row-key="id"
+      persist="docs-orders"
       aria-label="Orders"
-      @search="onSearch"
+      @state-change="load"
     >
       <template #cell-status="{ value }">
         <span class="demo-pill" :style="{ color: STATUS_COLOUR[value as Order['status']] }">
           {{ value }}
         </span>
       </template>
-
-      <template #footer>
-        <wx-pagination
-          v-model:page="page"
-          v-model:per-page="perPage"
-          :paginator="result"
-          :per-page-options="[5, 10, 25]"
-        />
-      </template>
     </wx-table>
 
     <p class="demo-note">
-      Sort: <code>{{ sort ? `${sort.key} ${sort.order}` : 'none' }}</code> &middot; selected:
-      <code>{{ selected.length }}</code>
-      <template v-if="selected.length"> ({{ selected.join(', ') }})</template>
+      Asked for:
+      <code>{{ lastState ? JSON.stringify(lastState) : '—' }}</code>
+      &middot; selected: <code>{{ selected.length }}</code>
     </p>
 
     <div>
@@ -177,5 +161,6 @@ const STATUS_COLOUR: Record<Order['status'], string> = {
   margin: 0;
   color: var(--wx-text-muted);
   font-size: 13px;
+  overflow-wrap: anywhere;
 }
 </style>

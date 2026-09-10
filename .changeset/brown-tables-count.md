@@ -17,6 +17,12 @@ instead of emptying it, and the empty state waits for the load to finish.
 first and last pages reachable, and spells out a gap of a single page rather than hiding it behind
 an ellipsis.
 
+The table paginates itself as soon as `data` is a paginator, and reports the page, the size, the
+sort and the search term together in one `state-change` event — fired on mount as well, so a single
+handler is the whole wiring. `persist="orders"` remembers that state in local storage and restores
+it on the next visit, which is why the mount event matters: the first fetch is the right one rather
+than a default followed by a correction.
+
 The table also carries a header bar — a title on the left, a debounced search field and `#actions`
 on the right — summary lines under the rows for totals that a caller works out, rows that open to
 show what does not fit in them, and columns pinned to either edge while the rest scrolls sideways.
