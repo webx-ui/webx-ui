@@ -25,7 +25,7 @@ export default defineConfig({
     rollupOptions: {
       // The picker and the editor are runtime dependencies, not something to inline:
       // bundling them would duplicate them for any app that already has them.
-      external: ['vue', '@vuepic/vue-datepicker', /^@tiptap\//],
+      external: ['vue', '@vuepic/vue-datepicker', 'reka-ui', /^@tiptap\//],
     },
   },
 })
