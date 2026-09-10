@@ -11,6 +11,12 @@ export interface InputNumberProps {
   controls?: boolean
   /** `sides` puts them left and right of the field; `right` stacks them at the end. */
   controlsPosition?: 'sides' | 'right'
+  /**
+   * Let the mouse wheel change the value while the field is focused.
+   * Off by default: scrolling a long form past a focused field would otherwise
+   * edit it silently, which is how these fields lose data.
+   */
+  wheel?: boolean
   size?: ControlSize
   status?: ControlStatus
   id?: string
