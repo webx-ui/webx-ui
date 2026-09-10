@@ -60,3 +60,8 @@ The picker also holds its state as a colour object rather than as the hex string
 grey has no hue to speak of, so parsing `#919191` back into channels invents one — and re-deriving
 it on every pointer move sends the hue strip wandering as soon as the colour loses its saturation.
 The hex is the output; the object is the state.
+
+That object is converted to HSB the moment it is parsed, and the space is named again when the
+gradients are asked for. A hex parses into RGB, and both the primitives and the gradient helpers
+read the space off the colour unless told otherwise — an RGB colour draws the brightness gradient
+the other way up, so the square arrives upside down and rights itself on the first drag.

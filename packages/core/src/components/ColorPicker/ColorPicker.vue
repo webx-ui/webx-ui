@@ -12,6 +12,7 @@ import {
   PopoverPortal,
   PopoverRoot,
   colorToHex,
+  convertToHsb,
   getAreaBackgroundStyle,
   getSliderBackgroundStyle,
   parseColor,
@@ -53,6 +54,16 @@ watch(model, (value) => {
 })
 
 /**
+ * A hex parses into an RGB colour, and the picker works in HSB. Both the gradients and
+ * the primitives take the space from the object unless told otherwise, so an unconverted
+ * colour draws an RGB area — where the brightness gradient runs the other way and the
+ * square looks upside down until the first drag replaces the object.
+ */
+function toWorking(hex: string): Color {
+  return convertToHsb(parseColor(hex))
+}
+
+/**
  * The picker works on a colour object, not on the hex string.
  *
  * A grey has no hue to speak of, so parsing #919191 back into channels invents one —
@@ -60,18 +71,20 @@ watch(model, (value) => {
  * to teal to red as the pointer travelled into the desaturated corner. Holding the
  * object keeps the hue the user chose even where the colour cannot express it.
  */
-const working = ref<Color>(
-  parseColor(model.value && HEX.test(model.value) ? model.value : '#427edd'),
-)
+const working = ref<Color>(toWorking(model.value && HEX.test(model.value) ? model.value : '#427edd'))
 
 watch(model, (value) => {
   const hex = value && HEX.test(value) ? value : null
   if (!hex || hex === colorToHex(working.value).toLowerCase()) return
-  working.value = parseColor(hex)
+  working.value = toWorking(hex)
 })
 
-const areaStyle = computed(() => getAreaBackgroundStyle(working.value, 'saturation', 'brightness'))
-const hueStyle = computed(() => getSliderBackgroundStyle(working.value, 'hue'))
+// The space is stated rather than read off the colour, so the gradients cannot drift
+// away from the channels the area and the slider are pinned to.
+const areaStyle = computed(() =>
+  getAreaBackgroundStyle(working.value, 'saturation', 'brightness', 'hsb'),
+)
+const hueStyle = computed(() => getSliderBackgroundStyle(working.value, 'hue', 'hsb'))
 
 const swatch = computed(() => (model.value && HEX.test(model.value) ? model.value : null))
 
@@ -122,14 +135,14 @@ function onBlur() {
  * dropped.
  */
 function onColor(color: Color) {
-  working.value = color
+  working.value = convertToHsb(color)
   commit(colorToHex(color).toLowerCase())
 }
 
 /** Presets and typing come in as hex and have to be parsed back into the picker. */
 function onHex(value: string) {
   const hex = value.toLowerCase()
-  working.value = parseColor(hex)
+  working.value = toWorking(hex)
   commit(hex)
 }
 
