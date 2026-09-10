@@ -6,6 +6,7 @@ import type { Paginated } from '@webx-ui/core'
 const page = ref(1)
 const perPage = ref(15)
 const short = ref(2)
+const small = ref(2)
 
 const paginator = computed<Paginated<unknown>>(() => {
   const total = 128
@@ -28,7 +29,7 @@ const paginator = computed<Paginated<unknown>>(() => {
 <template>
   <div class="wx-demo wx-demo--stack">
     <div>
-      <span class="wx-demo__label">Driven by a paginator</span>
+      <span class="wx-demo__label">Driven by a paginator, with a page-size control</span>
       <wx-pagination
         v-model:page="page"
         v-model:per-page="perPage"
@@ -39,17 +40,22 @@ const paginator = computed<Paginated<unknown>>(() => {
 
     <div>
       <span class="wx-demo__label">Few pages, no ellipsis to hide behind</span>
-      <wx-pagination v-model:page="short" :total="42" :per-page="10" :show-total="false" />
+      <wx-pagination v-model:page="short" :total="42" :per-page="10" />
     </div>
 
     <div>
       <span class="wx-demo__label">Small</span>
-      <wx-pagination :total="60" :per-page="10" :page="2" size="sm" :show-total="false" />
+      <wx-pagination v-model:page="small" :total="60" :per-page="10" size="sm" />
+    </div>
+
+    <div>
+      <span class="wx-demo__label">Without the count</span>
+      <wx-pagination :total="60" :per-page="10" :page="2" :show-total="false" />
     </div>
 
     <div>
       <span class="wx-demo__label">Disabled</span>
-      <wx-pagination :total="60" :per-page="10" :page="2" disabled :show-total="false" />
+      <wx-pagination :total="60" :per-page="10" :page="2" disabled />
     </div>
   </div>
 </template>

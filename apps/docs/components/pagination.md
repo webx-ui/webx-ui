@@ -42,6 +42,21 @@ Without a paginator, `total` and `per-page` are enough:
 <wx-pagination v-model:page="page" :total="42" :per-page="10" />
 ```
 
+## The count
+
+`1–30 of 128` is on by default and has nothing to do with the page-size control — a pagination with
+neither a paginator nor `per-page-options` still shows where the reader is. It comes from `from`,
+`to` and `total`, used as the backend sent them, and reads "Nothing to show" when the result is
+empty.
+
+Turn it off with `:show-total="false"`, or reword it through the slot:
+
+```vue
+<wx-pagination v-model:page="page" :paginator="orders">
+  <template #total="{ from, to, total }"> Заказы {{ from }}–{{ to }} из {{ total }} </template>
+</wx-pagination>
+```
+
 ## Page size
 
 ```vue
@@ -54,9 +69,10 @@ Without a paginator, `total` and `per-page` are enough:
 ```
 
 Changing the size returns to the first page. A larger page can put the current position past the
-end, and asking the backend for a page that is not there is a worse answer than starting over.
+end, and asking the backend for a page that is not there is a worse answer than starting over. The
+count follows the new size, so picking 30 turns `1–15 of 128` into `1–30 of 128`.
 
-The control is left out entirely unless `per-page-options` is given.
+This control is the part that is left out unless `per-page-options` is given.
 
 ## Props
 

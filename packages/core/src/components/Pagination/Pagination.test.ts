@@ -141,6 +141,37 @@ describe('WxPagination', () => {
     expect(mountPagination().find('.wx-pagination__select').exists()).toBe(false)
   })
 
+  it('counts by default, with no page-size control in sight', () => {
+    const wrapper = mountPagination({ paginator: null, total: 60, perPage: 10, page: 2 })
+
+    expect(wrapper.get('.wx-pagination__total').text()).toBe(`11${DASH}20 of 60`)
+    expect(wrapper.find('.wx-pagination__select').exists()).toBe(false)
+  })
+
+  it('recounts when the page size changes', async () => {
+    const wrapper = mountPagination({
+      paginator: null,
+      total: 128,
+      perPage: 15,
+      page: 1,
+      perPageOptions: [15, 30],
+    })
+    expect(wrapper.get('.wx-pagination__total').text()).toBe(`1${DASH}15 of 128`)
+
+    await wrapper.get('.wx-pagination__select').setValue('30')
+
+    expect(wrapper.get('.wx-pagination__total').text()).toBe(`1${DASH}30 of 128`)
+  })
+
+  it('words the count differently through the slot', () => {
+    const wrapper = mount(WxPagination, {
+      props: { paginator: page },
+      slots: { total: '<em>{{ params.from }} to {{ params.to }}</em>' },
+    })
+
+    expect(wrapper.get('.wx-pagination__total em').text()).toBe('31 to 45')
+  })
+
   it('marks the current page for a screen reader', () => {
     const wrapper = mountPagination()
 
