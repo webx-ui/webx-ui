@@ -13,4 +13,5 @@ list is teleported so it escapes a card's `overflow: hidden`.
 
 Clicking anywhere on the field opens the list — the underlying combobox does not do that by
 default, which is not what anyone expects from a select. A filterable field shows the label of the
-selection rather than its raw value.
+selection rather than its raw value, and stays empty in multiple mode where the tags already carry
+the selection.
