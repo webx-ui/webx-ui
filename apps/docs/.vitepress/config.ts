@@ -65,6 +65,13 @@ export default defineConfig({
           ],
         },
         {
+          text: 'Data',
+          items: [
+            { text: 'Table', link: '/components/table' },
+            { text: 'Pagination', link: '/components/pagination' },
+          ],
+        },
+        {
           text: 'Planned',
           items: [{ text: 'Component roadmap', link: '/guide/roadmap' }],
         },
