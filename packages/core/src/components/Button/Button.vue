@@ -83,22 +83,22 @@ function onClick(event: MouseEvent) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--wx-space-2);
+  gap: var(--wx-space-8);
   box-sizing: border-box;
   border: 1px solid transparent;
-  border-radius: var(--wx-radius-md);
+  border-radius: var(--wx-radius-control);
   font-family: inherit;
-  font-weight: var(--wx-font-weight-medium);
+  font-weight: var(--wx-font-weight-semibold);
   line-height: var(--wx-font-line-height-tight);
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
   user-select: none;
   transition:
-    background-color var(--wx-duration-fast) var(--wx-easing-standard),
-    border-color var(--wx-duration-fast) var(--wx-easing-standard),
-    color var(--wx-duration-fast) var(--wx-easing-standard),
-    box-shadow var(--wx-duration-fast) var(--wx-easing-standard);
+    background-color var(--wx-duration-normal) var(--wx-easing-standard),
+    border-color var(--wx-duration-normal) var(--wx-easing-standard),
+    color var(--wx-duration-normal) var(--wx-easing-standard),
+    box-shadow var(--wx-duration-normal) var(--wx-easing-standard);
 }
 
 .wx-button:focus-visible {
@@ -109,19 +109,19 @@ function onClick(event: MouseEvent) {
 /* sizes */
 .wx-button--sm {
   height: var(--wx-size-control-sm);
-  padding: 0 var(--wx-space-3);
+  padding: 0 var(--wx-space-12);
   font-size: var(--wx-font-size-sm);
 }
 
 .wx-button--md {
   height: var(--wx-size-control-md);
-  padding: 0 var(--wx-space-5);
+  padding: 0 var(--wx-space-18);
   font-size: var(--wx-font-size-md);
 }
 
 .wx-button--lg {
   height: var(--wx-size-control-lg);
-  padding: 0 var(--wx-space-7);
+  padding: 0 var(--wx-space-24);
   font-size: var(--wx-font-size-lg);
 }
 
@@ -134,120 +134,133 @@ function onClick(event: MouseEvent) {
   border-radius: var(--wx-radius-full);
 }
 
+/*
+ * Each type exposes its own palette through local variables, so the variant rules
+ * below stay type-agnostic.
+ */
+.wx-button--default {
+  --wx-button-bg: var(--wx-bg-surface);
+  --wx-button-bg-hover: var(--wx-bg-fill);
+  --wx-button-bg-active: var(--wx-bg-fill-hover);
+  --wx-button-bg-disabled: var(--wx-bg-surface);
+  --wx-button-fg: var(--wx-text-default);
+  --wx-button-border: var(--wx-border-default);
+}
+
+.wx-button--primary {
+  --wx-button-bg: var(--wx-color-primary);
+  --wx-button-bg-hover: var(--wx-color-primary-hover);
+  --wx-button-bg-active: var(--wx-color-primary-active);
+  --wx-button-bg-disabled: var(--wx-color-primary-disabled);
+  --wx-button-fg: var(--wx-color-primary-contrast);
+  --wx-button-border: var(--wx-color-primary);
+  --wx-button-accent: var(--wx-color-primary);
+  --wx-button-soft: var(--wx-color-primary-soft);
+}
+
+.wx-button--success {
+  --wx-button-bg: var(--wx-color-success);
+  --wx-button-bg-hover: var(--wx-color-success-hover);
+  --wx-button-bg-active: var(--wx-color-success-active);
+  --wx-button-bg-disabled: var(--wx-color-success-disabled);
+  --wx-button-fg: var(--wx-color-success-contrast);
+  --wx-button-border: var(--wx-color-success);
+  --wx-button-accent: var(--wx-color-success);
+  --wx-button-soft: var(--wx-color-success-soft);
+}
+
+.wx-button--warning {
+  --wx-button-bg: var(--wx-color-warning);
+  --wx-button-bg-hover: var(--wx-color-warning-hover);
+  --wx-button-bg-active: var(--wx-color-warning-active);
+  --wx-button-bg-disabled: var(--wx-color-warning-disabled);
+  --wx-button-fg: var(--wx-color-warning-contrast);
+  --wx-button-border: var(--wx-color-warning);
+  --wx-button-accent: var(--wx-color-warning);
+  --wx-button-soft: var(--wx-color-warning-soft);
+}
+
+.wx-button--danger {
+  --wx-button-bg: var(--wx-color-danger);
+  --wx-button-bg-hover: var(--wx-color-danger-hover);
+  --wx-button-bg-active: var(--wx-color-danger-active);
+  --wx-button-bg-disabled: var(--wx-color-danger-disabled);
+  --wx-button-fg: var(--wx-color-danger-contrast);
+  --wx-button-border: var(--wx-color-danger);
+  --wx-button-accent: var(--wx-color-danger);
+  --wx-button-soft: var(--wx-color-danger-soft);
+}
+
 /* solid */
-.wx-button--solid.wx-button--default {
-  background: var(--wx-bg-surface);
-  border-color: var(--wx-border-strong);
-  color: var(--wx-text-default);
+.wx-button--solid {
+  background: var(--wx-button-bg);
+  border-color: var(--wx-button-border);
+  color: var(--wx-button-fg);
 }
 
-.wx-button--solid.wx-button--default:hover:not(.is-disabled) {
-  background: var(--wx-bg-muted);
+.wx-button--solid:hover:not(.is-disabled) {
+  background: var(--wx-button-bg-hover);
+  border-color: var(--wx-button-bg-hover);
 }
 
-.wx-button--solid.wx-button--primary {
-  background: var(--wx-color-primary);
-  color: var(--wx-color-primary-contrast);
+.wx-button--solid:active:not(.is-disabled) {
+  background: var(--wx-button-bg-active);
+  border-color: var(--wx-button-bg-active);
 }
 
-.wx-button--solid.wx-button--primary:hover:not(.is-disabled) {
-  background: var(--wx-color-primary-hover);
+.wx-button--solid.is-disabled {
+  background: var(--wx-button-bg-disabled);
+  border-color: var(--wx-button-bg-disabled);
 }
 
-.wx-button--solid.wx-button--success {
-  background: var(--wx-color-success);
-  color: var(--wx-color-primary-contrast);
-}
-
-.wx-button--solid.wx-button--warning {
-  background: var(--wx-color-warning);
-  color: var(--wx-color-primary-contrast);
-}
-
-.wx-button--solid.wx-button--danger {
-  background: var(--wx-color-danger);
-  color: var(--wx-color-danger-contrast);
-}
-
-.wx-button--solid.wx-button--danger:hover:not(.is-disabled) {
-  background: var(--wx-color-danger-hover);
-}
-
-.wx-button--solid.wx-button--success:hover:not(.is-disabled),
-.wx-button--solid.wx-button--warning:hover:not(.is-disabled) {
-  filter: brightness(0.94);
+.wx-button--solid.wx-button--default.is-disabled {
+  border-color: var(--wx-border-default);
+  color: var(--wx-text-disabled);
 }
 
 /* outline */
 .wx-button--outline {
   background: transparent;
-  border-color: var(--wx-border-strong);
-  color: var(--wx-text-default);
-}
-
-.wx-button--outline.wx-button--primary {
-  border-color: var(--wx-color-primary);
-  color: var(--wx-color-primary);
-}
-
-.wx-button--outline.wx-button--success {
-  border-color: var(--wx-color-success);
-  color: var(--wx-color-success);
-}
-
-.wx-button--outline.wx-button--warning {
-  border-color: var(--wx-color-warning);
-  color: var(--wx-color-warning);
-}
-
-.wx-button--outline.wx-button--danger {
-  border-color: var(--wx-color-danger);
-  color: var(--wx-color-danger);
+  border-color: var(--wx-button-accent, var(--wx-border-default));
+  color: var(--wx-button-accent, var(--wx-text-default));
 }
 
 .wx-button--outline:hover:not(.is-disabled) {
-  background: var(--wx-bg-muted);
+  background: var(--wx-button-soft, var(--wx-bg-fill));
 }
 
-.wx-button--outline.wx-button--primary:hover:not(.is-disabled) {
-  background: var(--wx-color-primary-soft);
+.wx-button--outline:active:not(.is-disabled) {
+  border-color: var(--wx-button-bg-active);
+  color: var(--wx-button-bg-active);
 }
 
-.wx-button--outline.wx-button--danger:hover:not(.is-disabled) {
-  background: var(--wx-color-danger-soft);
+.wx-button--outline.is-disabled {
+  border-color: var(--wx-button-bg-disabled);
+  color: var(--wx-button-bg-disabled);
 }
 
 /* text */
 .wx-button--text {
   background: transparent;
   border-color: transparent;
-  color: var(--wx-text-default);
-}
-
-.wx-button--text.wx-button--primary {
-  color: var(--wx-color-primary);
-}
-
-.wx-button--text.wx-button--danger {
-  color: var(--wx-color-danger);
-}
-
-.wx-button--text.wx-button--success {
-  color: var(--wx-color-success);
-}
-
-.wx-button--text.wx-button--warning {
-  color: var(--wx-color-warning);
+  color: var(--wx-button-accent, var(--wx-text-default));
 }
 
 .wx-button--text:hover:not(.is-disabled) {
-  background: var(--wx-bg-muted);
+  background: var(--wx-bg-fill);
+}
+
+.wx-button--text:active:not(.is-disabled) {
+  background: var(--wx-bg-fill-hover);
+}
+
+.wx-button--text.is-disabled {
+  color: var(--wx-text-disabled);
 }
 
 /* states */
 .wx-button.is-disabled {
   cursor: not-allowed;
-  opacity: 0.55;
 }
 
 .wx-button--loading {

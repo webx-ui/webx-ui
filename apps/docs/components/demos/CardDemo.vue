@@ -18,6 +18,6 @@ import { WxButton, WxCard, WxInput } from '@webx-ui/core'
 
     <wx-card shadow="hover">Body-only card, shadow on hover.</wx-card>
 
-    <wx-card title="Compact" padding="sm" borderless>Borderless with small padding.</wx-card>
+    <wx-card title="Compact" padding="sm" bordered>Bordered with small padding.</wx-card>
   </div>
 </template>

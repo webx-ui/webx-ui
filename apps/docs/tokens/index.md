@@ -9,11 +9,14 @@ they are `var(--wx-*)` references rather than copied hex codes.
 
 ## Semantic colours
 
-The layer components actually use.
+The layer components actually use. Every accent colour ships the same five roles — base, `-hover`,
+`-active`, `-disabled` and `-soft` — so a component never has to darken or lighten anything itself.
 
 <TokenSwatches group="semantic" prefix="color-" />
 
 ### Backgrounds
+
+`--wx-bg-fill` and `--wx-bg-fill-hover` are the neutral fills used by icon buttons and hovered rows.
 
 <TokenSwatches group="semantic" prefix="bg-" />
 
@@ -49,17 +52,48 @@ Primitives. Components should not use these directly — map them to a semantic 
 
 <TokenSwatches group="palette" hue="red" />
 
+### Cyan
+
+<TokenSwatches group="palette" hue="cyan" />
+
 ## Spacing
+
+The scale is keyed by pixels: `--wx-space-16` is `16px`. No mental arithmetic, no re-basing when a
+value has to change.
 
 <TokenSwatches group="space" />
 
 ## Radii
+
+`--wx-radius-control` is what every control (button, input, select) uses; `--wx-radius-md` is the
+card and dialog radius.
 
 <TokenSwatches group="radius" />
 
 ## Font sizes
 
 <TokenSwatches group="font-size" />
+
+## Density
+
+Controls are comfortable by default: `--wx-size-control-md` is `42px`. Tables, toolbars and dialogs
+often want less. Add `wx-density-compact` (or `data-density="compact"`) to any element and every
+control inside it shrinks:
+
+```html
+<div class="wx-density-compact">
+  <wx-input placeholder="34px tall here" />
+</div>
+```
+
+| Variable               | Default | Compact |
+| ---------------------- | ------- | ------- |
+| `--wx-size-control-sm` | 34px    | 28px    |
+| `--wx-size-control-md` | 42px    | 34px    |
+| `--wx-size-control-lg` | 50px    | 40px    |
+| `--wx-radius-control`  | 10px    | 8px     |
+| `--wx-radius-md`       | 16px    | 12px    |
+| `--wx-font-size-md`    | 16px    | 14px    |
 
 ## Other scales
 

@@ -29,12 +29,12 @@ The header is rendered only when `title`, `#header` or `#extra` is present; the 
 
 ## Props
 
-| Prop         | Type                             | Default   | Description                               |
-| ------------ | -------------------------------- | --------- | ----------------------------------------- |
-| `title`      | `string`                         | —         | Header text; ignored if `#header` is used |
-| `shadow`     | `'never' \| 'hover' \| 'always'` | `'never'` | When the card casts a shadow              |
-| `padding`    | `'none' \| 'sm' \| 'md' \| 'lg'` | `'md'`    | Padding of header, body and footer        |
-| `borderless` | `boolean`                        | `false`   | Drops the border, keeps the surface       |
+| Prop       | Type                             | Default    | Description                               |
+| ---------- | -------------------------------- | ---------- | ----------------------------------------- |
+| `title`    | `string`                         | —          | Header text; ignored if `#header` is used |
+| `shadow`   | `'never' \| 'hover' \| 'always'` | `'always'` | When the card casts a shadow              |
+| `padding`  | `'none' \| 'sm' \| 'md' \| 'lg'` | `'md'`     | Padding of header, body and footer        |
+| `bordered` | `boolean`                        | `false`    | Adds an outline; cards separate by shadow |
 
 ## Slots
 

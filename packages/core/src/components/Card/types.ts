@@ -8,6 +8,6 @@ export interface CardProps {
   shadow?: CardShadow
   /** Inner padding of the body (and of header/footer). */
   padding?: CardPadding
-  /** Removes the outer border, keeping only the surface colour. */
-  borderless?: boolean
+  /** Adds an outline. Cards are borderless by default and separate by shadow alone. */
+  bordered?: boolean
 }
