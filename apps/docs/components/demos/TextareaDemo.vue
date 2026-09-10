@@ -24,14 +24,10 @@ const notes = ref('')
 
     <div>
       <span class="wx-demo__label">States</span>
-      <wx-textarea model-value="Invalid value" status="error" :rows="2" />
-      <wx-textarea
-        model-value="Read-only"
-        readonly
-        :rows="2"
-        resize="none"
-        style="margin-top: 8px"
-      />
+      <div class="wx-demo__stack">
+        <wx-textarea model-value="Invalid value" status="error" :rows="2" />
+        <wx-textarea model-value="Read-only" readonly :rows="2" resize="none" />
+      </div>
     </div>
   </div>
 </template>

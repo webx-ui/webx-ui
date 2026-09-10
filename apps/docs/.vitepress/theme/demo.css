@@ -29,11 +29,21 @@
 }
 
 .wx-demo__label {
+  /* Must be a block: as an inline span, width had no effect outside a flex row. */
+  display: block;
   width: 100%;
+  margin-bottom: var(--wx-space-8);
   color: var(--wx-text-muted);
   font-size: var(--wx-font-size-xs);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+/* Stacks of controls inside one labelled block. */
+.wx-demo__stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-12);
 }
 
 .wx-swatches {

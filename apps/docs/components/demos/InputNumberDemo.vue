@@ -10,10 +10,11 @@ const weight = ref<number | null>(null)
 <template>
   <div class="wx-demo wx-demo--stack">
     <div>
-      <span class="wx-demo__label">Bounded, step 1</span>
-      <wx-input-number v-model="quantity" :min="0" :max="10" />
+      <span class="wx-demo__label">Bounded, step 1 — wheel enabled here</span>
+      <wx-input-number v-model="quantity" wheel :min="0" :max="10" />
       <p style="margin: 8px 0 0; color: var(--wx-text-muted); font-size: 13px">
-        Value: {{ quantity }} — the button disables itself at the bound
+        Value: {{ quantity }} — click the field, then scroll over it. The button disables itself at
+        the bound.
       </p>
     </div>
 
