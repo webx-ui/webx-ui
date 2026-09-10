@@ -56,8 +56,12 @@ export default defineConfig({
             { text: 'Radio', link: '/components/radio' },
             { text: 'Switch', link: '/components/switch' },
             { text: 'DatePicker', link: '/components/date-picker' },
+            { text: 'DateRangePicker', link: '/components/date-range-picker' },
+            { text: 'ColorPicker', link: '/components/color-picker' },
+            { text: 'TagsInput', link: '/components/tags-input' },
+            { text: 'Slider', link: '/components/slider' },
+            { text: 'Rate', link: '/components/rate' },
             { text: 'RichText', link: '/components/rich-text' },
-            { text: 'Secondary controls', link: '/components/form-extras' },
           ],
         },
         {

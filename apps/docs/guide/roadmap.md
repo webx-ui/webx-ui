@@ -69,8 +69,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 
 ## Wave 3 — as needed
 
-ColorPicker ✅, Slider ✅ and Rate ✅ are done — see
-[Secondary controls](/components/form-extras).
+ColorPicker ✅, Slider ✅ and Rate ✅ are done.
 
 Still open: Tree, TreeSelect (`he-tree-vue` / Reka Tree), Cascader, Transfer, Autocomplete,
 Timeline, Calendar, Carousel, Mention, Anchor, Splitter, Watermark, Tour, Marquee.
