@@ -5,6 +5,9 @@ export type KanbanTone = 'default' | 'primary' | 'success' | 'warning' | 'danger
 
 export type KanbanSize = 'sm' | 'md'
 
+/** How something was moved — worth knowing when you animate or undo. */
+export type KanbanVia = 'pointer' | 'keyboard'
+
 /** The least a card has to carry: something to key it by. */
 export interface KanbanCard {
   id: KanbanId
@@ -17,7 +20,7 @@ export interface KanbanColumn<T extends KanbanCard = KanbanCard> {
   /** The cards, in the order they are shown. The board writes moves back into it. */
   items: T[]
   /**
-   * How many cards the column is meant to hold. Over it the count turns red and
+   * How many cards the column is meant to hold. At the limit the count turns red and
    * nothing more can be dropped in — a work-in-progress limit, the point of a board.
    */
   limit?: number
@@ -32,16 +35,21 @@ export interface KanbanMove<T extends KanbanCard = KanbanCard> {
   card: T
   from: { column: KanbanId; index: number }
   to: { column: KanbanId; index: number }
-  /** How the card was moved — worth knowing when you animate or undo. */
-  via: 'pointer' | 'keyboard'
+  via: KanbanVia
+}
+
+/** Where a column came from and where it went. */
+export interface KanbanColumnMove<T extends KanbanCard = KanbanCard> {
+  column: KanbanColumn<T>
+  from: number
+  to: number
+  via: KanbanVia
 }
 
 export interface KanbanProps<T extends KanbanCard = KanbanCard> {
   /** The columns, each carrying its own cards. */
   columns: KanbanColumn<T>[]
-  /**
-   * Boards that share a name exchange cards. Left alone, a board keeps to itself.
-   */
+  /** Boards that share a name exchange cards. Left alone, a board keeps to itself. */
   group?: string
   size?: KanbanSize
   /** Width of a column: a number is pixels, a string is any CSS length. */
@@ -53,6 +61,13 @@ export interface KanbanProps<T extends KanbanCard = KanbanCard> {
   /** Shows an add button under every column, which emits `add`. */
   addable?: boolean
   addLabel?: string
+  /** Lets a column be folded down to a strip. Use `v-model:collapsed` to remember it. */
+  collapsible?: boolean
+  /** Columns can be dragged into another order, by their heading. */
+  reorderColumns?: boolean
+  /** Shows an add button after the last column, which emits `add-column`. */
+  columnAddable?: boolean
+  addColumnLabel?: string
   /** Shown in a column with no cards. */
   emptyText?: string
   /** Accessible name for the board. */
@@ -62,6 +77,10 @@ export interface KanbanProps<T extends KanbanCard = KanbanCard> {
 export interface KanbanEmits<T extends KanbanCard = KanbanCard> {
   /** A card changed position or column. The arrays have already been updated. */
   move: [move: KanbanMove<T>]
+  /** A column changed position. */
+  'column-move': [move: KanbanColumnMove<T>]
   /** The add button under a column was pressed. */
   add: [column: KanbanColumn<T>]
+  /** The add button after the last column was pressed. */
+  'add-column': []
 }
