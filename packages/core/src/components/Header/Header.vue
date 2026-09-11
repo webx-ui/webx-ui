@@ -29,6 +29,14 @@ const classes = computed(() => [
 <template>
   <header :class="classes" :style="height ? { '--wx-header-height': height } : undefined">
     <slot />
+    <!--
+      The far end of the bar, where the user menu and the notifications live. It is a
+      group of its own rather than a `margin-inline-start: auto` every admin panel
+      would otherwise write for itself — and one everybody would spell differently.
+    -->
+    <div v-if="$slots.end" class="wx-header__end">
+      <slot name="end" />
+    </div>
   </header>
 </template>
 
@@ -44,6 +52,15 @@ const classes = computed(() => [
   background: var(--wx-bg-surface);
   color: var(--wx-text-default);
   font-family: var(--wx-font-family-sans);
+}
+
+.wx-header__end {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-8);
+  /* Everything before it keeps its place; this group takes the far end. */
+  margin-inline-start: auto;
+  min-width: 0;
 }
 
 /*

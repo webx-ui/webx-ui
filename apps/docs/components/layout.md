@@ -284,4 +284,43 @@ padding and the background still run the full width of the column:
 | `bordered` | `boolean`                        | `true`  | Rule along the top edge   |
 | `padding`  | `'none' \| 'sm' \| 'md' \| 'lg'` | `'md'`  | Inner padding             |
 
-Every one of them takes a `default` slot and nothing else.
+## Slots
+
+Every part takes a `default` slot, and the two bars take one more: `end` — a group pushed to the
+far side of the bar. That is where the user menu goes, and the notifications beside it:
+
+```vue
+<template>
+  <wx-header>
+    <wx-action icon="sidebar" label="Toggle the sidebar" @click="toggle" />
+    <strong>Admin</strong>
+
+    <template #end>
+      <wx-indicator :value="3">
+        <wx-action icon="bell" title="Notifications" />
+      </wx-indicator>
+
+      <wx-dropdown align="end">
+        <template #trigger>
+          <wx-button variant="text" size="sm">
+            <template #icon><wx-icon name="user" /></template>
+            Alex <wx-icon name="chevron-down" size="0.85em" />
+          </wx-button>
+        </template>
+
+        <wx-dropdown-item icon="user" :as="RouterLink" to="/admin/profile"
+          >Profile</wx-dropdown-item
+        >
+        <wx-dropdown-item icon="settings">Preferences</wx-dropdown-item>
+        <hr />
+        <wx-dropdown-item icon="logout" tone="danger" @click="signOut">Sign out</wx-dropdown-item>
+      </wx-dropdown>
+    </template>
+  </wx-header>
+</template>
+```
+
+Whatever is in the `default` slot keeps its place at the start of the bar; `end` is a flex group of
+its own with its own gap, so the account button and the bell sit together without a wrapper of
+their own. `WxFooter` has the same pair — links on one side, the copyright or a version on the
+other.

@@ -5,6 +5,8 @@ import {
   WxBadge,
   WxContainer,
   WxDrawer,
+  WxDropdown,
+  WxDropdownItem,
   WxFooter,
   WxHeader,
   WxMain,
@@ -59,8 +61,21 @@ function choose(value: string | number) {
               <wx-menu-item value="reports" icon="list" label="Reports" />
             </wx-menu>
 
-            <wx-badge v-if="showBar" size="sm">{{ width }}px</wx-badge>
-            <wx-action v-else icon="menu" label="Menu" title="Menu" @click="toggle()" />
+            <template #end>
+              <wx-badge v-if="showBar" size="sm">{{ width }}px</wx-badge>
+              <wx-action v-else icon="menu" label="Menu" title="Menu" @click="toggle()" />
+
+              <wx-dropdown align="end">
+                <template #trigger>
+                  <wx-action icon="user" title="Account" />
+                </template>
+
+                <wx-dropdown-item icon="user">Profile</wx-dropdown-item>
+                <wx-dropdown-item icon="settings">Preferences</wx-dropdown-item>
+                <hr />
+                <wx-dropdown-item icon="logout" tone="danger">Sign out</wx-dropdown-item>
+              </wx-dropdown>
+            </template>
           </wx-header>
 
           <wx-main>

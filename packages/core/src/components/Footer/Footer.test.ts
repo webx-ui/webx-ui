@@ -11,6 +11,15 @@ describe('WxFooter', () => {
     expect(wrapper.text()).toBe('© 2026')
   })
 
+  it('gives the far end a group of its own', () => {
+    const wrapper = mount(WxFooter, {
+      slots: { default: 'Docs', end: 'v0.6.0' },
+    })
+
+    expect(wrapper.get('.wx-footer__end').text()).toBe('v0.6.0')
+    expect(mount(WxFooter).find('.wx-footer__end').exists()).toBe(false)
+  })
+
   it('takes a height and a padding scale', () => {
     const wrapper = mount(WxFooter, { props: { height: 40, padding: 'lg' } })
 

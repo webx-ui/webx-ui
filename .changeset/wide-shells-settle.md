@@ -22,7 +22,9 @@ to a button "just this once".
 The shell is `WxContainer` with `WxHeader`, `WxAside`, `WxMain` and `WxFooter`, each rendering the
 element it is named after, so a page has real landmarks. The bars are chrome, and padded like it:
 10px, which is the gutter the sidebar's icons stand in, so a toggle in the header sits exactly
-above the icons below it. The sidebar collapses to a rail, the main
+above the icons below it. Both bars also take an `end` slot — a group pushed to the far side, where
+the user menu and the notifications go, instead of the `margin-inline-start: auto` every admin
+panel would otherwise write for itself. The sidebar collapses to a rail, the main
 column takes a reading width, and either can scroll on its own while the chrome stays put. The same
 five parts make the other shape an admin panel takes: a horizontal menu in the header and no
 sidebar at all, with the whole width left to the content.
