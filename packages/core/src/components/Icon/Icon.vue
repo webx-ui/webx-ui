@@ -64,8 +64,12 @@ const classes = computed(() => ['wx-icon', { 'wx-icon--spin': props.spin }])
   overflow: visible;
 }
 
+/*
+ * A turn a second. The duration tokens size transitions, not loops: even the slow one
+ * is 320ms, which spins an icon three times a second and reads as a blur.
+ */
 .wx-icon--spin {
-  animation: wx-icon-spin var(--wx-duration-slow) linear infinite;
+  animation: wx-icon-spin var(--wx-icon-spin-duration, 1s) linear infinite;
 }
 
 @keyframes wx-icon-spin {

@@ -285,7 +285,8 @@ function onClick(event: MouseEvent) {
   border: 2px solid currentcolor;
   border-right-color: transparent;
   border-radius: var(--wx-radius-full);
-  animation: wx-button-spin var(--wx-duration-slow) linear infinite;
+  /* Same pace as a spinning WxIcon — a turn a second, not three. */
+  animation: wx-button-spin var(--wx-button-spin-duration, 1s) linear infinite;
 }
 
 .wx-button__icon {
