@@ -1,5 +1,86 @@
 # @webx-ui/core
 
+## 0.3.0
+
+### Minor Changes
+
+- 2f72134: `WxAction`, `WxActions`, `WxDropdown` and `WxDropdownItem` — the row of icon buttons at the end of a
+  record, and the panel it folds into.
+
+  An action is described by what it does: `type="remove"` is a red trash can called "Delete", and
+  `icon`, `tone` and `label` each override one of those when a screen needs something else. `hidden`
+  draws nothing but keeps the square, so a list where one record may not be deleted still lines up
+  with the rows where it may — the distinction `disabled` cannot make, since a greyed button says
+  "not now" rather than "not for this record".
+
+  `WxActions` lays the row out and, with `collapse`, measures it against its container and folds it
+  into a dropdown as soon as it stops fitting. The row is never unmounted, only taken out of the
+  flow: keeping its natural width is the only way to know when there is room for it again.
+
+  `WxDropdown` is the general case — a `trigger` slot and a content slot, nothing assumed about
+  either. It renders the trigger as the element you pass rather than wrapping it in a button of its
+  own, because the trigger is nearly always a `WxButton` or a `WxAction` and a button inside a button
+  is invalid HTML. A click inside closes the panel by default; a panel of filters turns that off with
+  `:close-on-click="false"` and dismisses itself through the `close` handed to the content slot.
+  `WxDropdownItem` is one row of a menu — icon, label, trailing note, and a `danger` tone for the
+  destructive one at the bottom.
+
+- b4dda58: The small pieces an admin screen is assembled from: icons, badges, typography, and four components
+  that had been standing in as markup.
+
+  `WxIcon` draws one icon from a built-in set of 24×24 stroke drawings that take the colour and the
+  size of the text around them; `registerIcons` adds your own, so a name is all the JSON schema
+  renderer will ever need. `WxBadge` is the label that says what something is, and `WxIndicator` the
+  count or dot pinned to a button, an icon or a link — Element Plus splits the same job between
+  `el-tag` and `el-badge`.
+
+  `WxButtonGroup` joins buttons into one segmented control and hands its look down to them, which is
+  why `WxButton` now resolves `type`, `variant` and `size` from the group when its own are unset — a
+  button that sets one still wins.
+
+  Typography: `WxHeading` separates the level in the outline from the size on screen, `WxText` covers
+  the body, the hints and the truncation, `WxLink` opens an external target safely and renders through
+  `RouterLink` when asked, and `WxProse` gives the editor's HTML the typography of the design system —
+  headings, lists, quotes, code, images, and a pasted table that scrolls inside its own box.
+
+  `WxAutocomplete` suggests without constraining: the model is the text, `search` is debounced and
+  held back by `min-length`, and picking a suggestion does not ask the backend for what it has just
+  been given. `WxCascader` picks out of a tree one column per level, either handed over whole or
+  fetched level by level through `load`, and walks with the arrow keys.
+
+  `WxEntityCard` is one record as a row — picture, name, the fields under it, and an actions slot
+  whose clicks stay out of the row's own. `WxTimeline` and `WxTimelineItem` show what happened and
+  when. `WxStatistic` groups a number through `Intl` rather than a hard-coded separator, and
+  `WxCountdown` counts down to a moment with a format where only the tokens present consume time, so
+  `mm:ss` on two hours prints `120:00` instead of quietly dropping the hours.
+
+### Patch Changes
+
+- 1a76119: `WxRadio` draws its mark as one SVG, so the dot stays in the centre of the ring.
+
+  The dot used to be a CSS box centred inside another CSS box, with the ring drawn as a 1px border
+  between them. At a fractional device pixel ratio — Windows at 125% or 150%, which is most HiDPI
+  screens — that border is 1.25 or 1.5 physical pixels and gets rounded on each side independently.
+  The content box then sits off the centre of the border box, and the dot rides along with it.
+
+  Ring and dot are now two circles sharing one origin in one coordinate system. Nothing is laid out
+  between them, so nothing can round them apart: the renderer resolves both against real geometry and
+  antialiases them. `non-scaling-stroke` keeps the ring one pixel wide at every size, the way the
+  checkbox border is, rather than thinning to 0.8px on `sm` and thickening to 1.2px on `lg`.
+
+- fc7ea62: `WxCountdown` no longer starts its timer during server-side rendering. The interval
+  had nothing to clear it there — `onBeforeUnmount` never runs on the server — so it
+  held the render process open: a static build of a page carrying a countdown finished
+  rendering and then hung. The clock now starts in `onMounted`, the one hook a server
+  render never reaches, while the displayed value is still computed in both places.
+- 571f915: `WxPagination` wraps on a narrow screen instead of running off the edge of it.
+
+  Neither the controls nor the list of page buttons wrapped, and buttons do not shrink, so on a phone
+  the row overflowed its container well before the page count got interesting — taking the last pages
+  with it, and often the next arrow too. Both now wrap and stay aligned to the trailing edge, and the
+  "Per page" label no longer breaks across two lines. Nothing changes on a wide screen, where there
+  is no wrapping to align.
+
 ## 0.2.0
 
 ### Minor Changes
