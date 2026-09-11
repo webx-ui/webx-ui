@@ -75,9 +75,30 @@ const utilityCount = computed(() => (props.expandable ? 1 : 0) + (props.selectab
 
 const columnCount = computed(() => visibleColumns.value.length + utilityCount.value)
 
+/*
+ * The slots are declared rather than inferred. Left to infer, the type is read off a
+ * template that builds slot names out of the column keys, and the circle that makes —
+ * the slots depend on the template, the template on the slots — is answered with
+ * `any`, which takes the table's props down with it.
+ */
+defineSlots<{
+  title?: () => unknown
+  actions?: () => unknown
+  empty?: () => unknown
+  footer?: () => unknown
+  loading?: () => unknown
+  expanded?: (props: { row: T; index: number }) => unknown
+  [key: `header-${string}`]: ((props: { column: TableColumn<T> }) => unknown) | undefined
+  [key: `cell-${string}`]:
+    | ((props: { row: T; value: unknown; index: number; column: TableColumn<T> }) => unknown)
+    | undefined
+  [key: `summary-${string}`]:
+    ((props: { row: TableSummaryRow; value: unknown }) => unknown) | undefined
+}>()
+
 const slots = useSlots()
 
-const hasHeader = computed(() =>
+const hasHeader = computed<boolean>(() =>
   Boolean(props.title || props.searchable || slots.title || slots.actions),
 )
 

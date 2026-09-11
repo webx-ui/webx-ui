@@ -34,6 +34,15 @@ withDefaults(defineProps<Omit<DatePickerProps, 'type'>>(), {
   ariaLabel: undefined,
 })
 
+/*
+ * Every slot is passed straight through to the picker underneath, so this component's
+ * slots are whatever the caller hands it. Saying so explicitly is what keeps the
+ * declaration honest: left to infer, the slot type is read off a template that
+ * enumerates the slots themselves, and TypeScript answers that circle by emitting
+ * `any`.
+ */
+defineSlots<Record<string, (props: Record<string, unknown>) => unknown>>()
+
 const model = defineModel<DatePickerModelValue>({ default: null })
 </script>
 
