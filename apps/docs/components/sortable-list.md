@@ -42,6 +42,67 @@ const products = ref([
 `v-model` is the list itself, in the order it is shown. A move rewrites it before the `move` event
 is raised, so the array is always what the screen says — and saving is `products.map(p => p.id)`.
 
+## A row that is a record
+
+The row above the fold is the one in the demo: `WxEntityCard` in its `plain` variant, which brings
+the thumbnail, the title and the facts under it, and leaves the surface to the list.
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { WxAction, WxActions, WxButton, WxEntityCard, WxSortableList } from '@webx-ui/core'
+
+interface Product {
+  id: number
+  title: string
+  sku: string
+  image?: string
+}
+
+const products = ref<Product[]>([
+  { id: 80633, title: 'Alternator Belt', sku: '7100104' },
+  { id: 80636, title: 'Drive Pump Belt', sku: '6736775' },
+])
+
+function remove(id: number) {
+  products.value = products.value.filter((product) => product.id !== id)
+}
+</script>
+
+<template>
+  <wx-sortable-list v-model="products" title="Pick the products">
+    <template #extra>
+      <wx-button size="sm" variant="outline" @click="browse">Find</wx-button>
+    </template>
+
+    <template #default="{ item }">
+      <wx-entity-card
+        variant="plain"
+        size="sm"
+        :title="`${item.title}, ${item.sku}`"
+        :image="item.image"
+        :meta="[
+          { label: 'SKU', text: item.sku },
+          { label: 'ID', text: String(item.id) },
+        ]"
+      />
+    </template>
+
+    <template #actions="{ item }">
+      <wx-actions size="sm">
+        <wx-action type="remove" @click="remove(item.id)" />
+      </wx-actions>
+    </template>
+
+    <template #empty>Nothing picked yet — press Find.</template>
+  </wx-sortable-list>
+</template>
+```
+
+`plain` is the part worth copying: the card has a surface of its own by default, and two surfaces
+inside one frame is one too many. Without an `image` the card falls back to the first letter of the
+title, so a list of records that have no picture still lines up.
+
 ## The heading belongs to the list
 
 A list that is picked into needs somewhere to say what it is and somewhere to put the button that
@@ -69,6 +130,10 @@ your own — in that case give it `aria-roledescription` and a keydown of its ow
 
 Buttons, links and fields in a row are filtered out of the gesture, so a bin at the end of a row
 stays a bin even when the whole row is the handle.
+
+The text in a row is not selectable, either. Dragging the row itself is the first thing anybody
+tries, and a smear of highlighted text is the wrong answer to it — put anything meant to be copied
+in a field, or outside the list.
 
 ## Between two lists
 

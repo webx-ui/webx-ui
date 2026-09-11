@@ -59,7 +59,7 @@ const handleSelector = computed(() => {
 const classes = computed(() => [
   'wx-sortable-list',
   `wx-sortable-list--${props.size}`,
-  { 'is-plain': props.plain, 'is-disabled': props.disabled },
+  { 'is-plain': props.plain, 'is-disabled': props.disabled, 'is-headed': hasHeader.value },
 ])
 
 function keyOf(item: T, index: number) {
@@ -370,12 +370,31 @@ function onKeydown(event: KeyboardEvent, index: number) {
    */
   margin: 0;
   padding: var(--wx-space-10) var(--wx-space-16);
-  background: var(--wx-bg-surface);
+  /*
+   * A row paints no background of its own. It would be the same colour as the list it sits
+   * in, and a square corner over a rounded one is how the frame loses its corners.
+   */
+  background: none;
+  /*
+   * Dragging is what a pointer is for here, and the first thing anybody tries is the row
+   * itself. Without this that gesture smears a text selection across the list.
+   */
+  user-select: none;
+}
+
+/* The corners the frame is rounded by, so a tinted row does not square them off again. */
+.wx-sortable-list:not(.is-plain) .wx-sortable-list__row:last-child {
+  border-end-start-radius: calc(var(--wx-radius-md) - 1px);
+  border-end-end-radius: calc(var(--wx-radius-md) - 1px);
+}
+
+.wx-sortable-list:not(.is-plain, .is-headed) .wx-sortable-list__row:first-child {
+  border-start-start-radius: calc(var(--wx-radius-md) - 1px);
+  border-start-end-radius: calc(var(--wx-radius-md) - 1px);
 }
 
 .is-plain .wx-sortable-list__row {
   padding-inline: 0;
-  background: none;
 }
 
 .wx-sortable-list--sm .wx-sortable-list__row {
@@ -388,16 +407,25 @@ function onKeydown(event: KeyboardEvent, index: number) {
   border-top: 1px solid var(--wx-border-muted);
 }
 
+/*
+ * The row runs the full width of the frame, so its ring is drawn inside it: a halo around
+ * a row that wide lies over the frame's own border and past its corners.
+ */
 .wx-sortable-list__row:focus-visible,
+.wx-sortable-list__row.is-grabbed {
+  outline: 2px solid var(--wx-border-focus);
+  outline-offset: -2px;
+}
+
+/* Held by the keyboard: the ring, and the tint that says this one is in hand. */
+.wx-sortable-list__row.is-grabbed {
+  background: var(--wx-bg-muted);
+}
+
 .wx-sortable-list__grip:focus-visible {
   outline: none;
   box-shadow: var(--wx-ring-focus);
   border-radius: var(--wx-radius-xs);
-}
-
-/* Held by the keyboard: the same ring, plus the lift a dragged row has. */
-.wx-sortable-list__row.is-grabbed {
-  box-shadow: var(--wx-ring-focus), var(--wx-shadow-md);
 }
 
 .wx-sortable-list__grip {
@@ -437,7 +465,9 @@ function onKeydown(event: KeyboardEvent, index: number) {
   opacity: 0.4;
 }
 
+/* The one under the pointer is opaque, whatever it is passing over. */
 .wx-sortable-list__row--chosen {
+  background: var(--wx-bg-surface);
   cursor: grabbing;
 }
 
