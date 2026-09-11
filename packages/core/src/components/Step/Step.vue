@@ -81,6 +81,13 @@ const classes = computed(() => [
   position: relative;
   display: flex;
   min-width: 0;
+  /*
+   * The step owns its margins, and says so from a scoped rule so that it outweighs a
+   * host stylesheet spacing list items — VitePress puts 8px between every `li + li`,
+   * and a CMS theme will have its own. Left alone, that drops every step but the
+   * first by eight pixels and the rule between them runs downhill.
+   */
+  margin: 0;
 }
 
 .wx-step__head {
@@ -182,7 +189,6 @@ const classes = computed(() => [
  */
 .wx-step:not(:last-child)::after {
   content: '';
-  position: absolute;
   background: var(--wx-border-default);
 }
 
@@ -203,10 +209,18 @@ const classes = computed(() => [
   min-width: 0;
 }
 
+/*
+ * The step is a flex row, so the rule is simply the flex item after the head: it
+ * takes whatever room is left between this step's text and the next step's marker.
+ * Placing it absolutely instead would mean knowing where the text ends, which is
+ * exactly what a pseudo-element cannot be told — and what drew the rule straight
+ * through the titles.
+ */
 .wx-steps--horizontal .wx-step:not(:last-child)::after {
+  flex: 1 1 auto;
   /* Level with the middle of the marker, whatever size the markers are. */
-  top: calc(var(--wx-step-marker, 32px) / 2);
-  inset-inline: calc(var(--wx-step-marker, 32px) + var(--wx-space-16)) var(--wx-space-8);
+  margin-top: calc(var(--wx-step-marker, 32px) / 2);
+  min-width: var(--wx-space-16);
   height: 1px;
 }
 
@@ -225,7 +239,12 @@ const classes = computed(() => [
   padding-bottom: 0;
 }
 
+/*
+ * Down the page the rule runs beside the text rather than after it, so here it is
+ * taken out of the flow and hung from the marker's centre line.
+ */
 .wx-steps--vertical .wx-step:not(:last-child)::after {
+  position: absolute;
   top: calc(var(--wx-step-marker, 32px) + 4px);
   bottom: 4px;
   inset-inline-start: calc(var(--wx-step-marker, 32px) / 2);
