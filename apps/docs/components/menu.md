@@ -66,7 +66,9 @@ route should show where you are without being told. `:auto-expand="false"` turns
 
 `collapsed` hides the labels and leaves an icon rail. Branches there have nowhere to open, so they
 open as flyouts beside the rail instead — the same happens in a horizontal bar, where they drop
-below the trigger:
+below the trigger. Only the first branch becomes a panel: inside one there is room again, and the
+branches below it open inline in the same panel, so a menu three levels deep stays one panel wide
+instead of trailing a chain of them across the screen.
 
 ```vue
 <template>
@@ -78,6 +80,11 @@ below the trigger:
 
 Give every top-level entry an `icon` before collapsing a menu — the icon is all that is left of it.
 The `label` prop doubles as the entry's title on hover, so the rail is not a row of guesses.
+
+A panel closes when an entry in it is chosen, on Escape, and on a click outside it — but not on
+just any click inside itself, since the branches in it are opened by clicking too. Its open state
+is its own and never reaches `v-model:open`: a flyout belongs to the pointer, and collapsing a
+sidebar should not throw open a panel for every branch that happened to be expanded.
 
 ## Horizontal
 

@@ -62,14 +62,21 @@ const style = computed(() => {
   order: var(--wx-col-order, 0);
 }
 
-@media (min-width: 640px) {
+/*
+ * The breakpoints measure the row, not the window: `@container` against the
+ * `wx-row` container `WxRow` establishes. A grid inside a drawer, a card or a main
+ * column that lost half its width to a sidebar then reflows because *it* is narrow,
+ * which is the question a column actually wants answered. The names in the props
+ * keep their usual widths, so `:md="12"` still means "from 768px of room".
+ */
+@container wx-row (min-width: 640px) {
   .wx-col {
     width: calc(var(--wx-col-span-sm, var(--wx-col-span, 24)) / 24 * 100%);
     margin-inline-start: calc(var(--wx-col-offset-sm, var(--wx-col-offset, 0)) / 24 * 100%);
   }
 }
 
-@media (min-width: 768px) {
+@container wx-row (min-width: 768px) {
   .wx-col {
     width: calc(var(--wx-col-span-md, var(--wx-col-span-sm, var(--wx-col-span, 24))) / 24 * 100%);
     margin-inline-start: calc(
@@ -78,7 +85,7 @@ const style = computed(() => {
   }
 }
 
-@media (min-width: 1024px) {
+@container wx-row (min-width: 1024px) {
   .wx-col {
     width: calc(
       var(--wx-col-span-lg, var(--wx-col-span-md, var(--wx-col-span-sm, var(--wx-col-span, 24)))) /
@@ -94,7 +101,7 @@ const style = computed(() => {
   }
 }
 
-@media (min-width: 1280px) {
+@container wx-row (min-width: 1280px) {
   .wx-col {
     width: calc(
       var(

@@ -71,6 +71,12 @@ const separator = computed(() => breadcrumb?.separator.value ?? '/')
   align-items: center;
   gap: var(--wx-space-6);
   min-width: 0;
+  /*
+   * The crumb owns its margins. A host stylesheet that spaces list items — VitePress
+   * puts 8px between every `li + li`, and a CMS theme will have its own — otherwise
+   * walks the trail down the page like a staircase.
+   */
+  margin: 0;
 }
 
 .wx-breadcrumb-item__link {

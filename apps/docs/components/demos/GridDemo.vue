@@ -27,13 +27,28 @@ const spans = [12, 8, 6, 4]
 
     <div>
       <span class="wx-demo__label">
-        Responsive — one column on a phone, two from 768px, four from 1024px
+        Responsive — drag the bottom-right corner and watch the row, not the window
       </span>
-      <wx-row :gutter="12">
-        <wx-col v-for="index in 4" :key="index" :span="24" :md="12" :lg="6">
-          <div class="grid-demo__cell">Card {{ index }}</div>
-        </wx-col>
-      </wx-row>
+      <div class="grid-demo__scroller">
+        <div class="grid-demo__resizable">
+          <wx-row :gutter="12">
+            <wx-col v-for="index in 4" :key="index" :span="24" :sm="12" :lg="6">
+              <div class="grid-demo__cell">Card {{ index }}</div>
+            </wx-col>
+          </wx-row>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <span class="wx-demo__label">The same markup in a 300px column</span>
+      <div class="grid-demo__narrow">
+        <wx-row :gutter="12">
+          <wx-col v-for="index in 4" :key="index" :span="24" :sm="12" :lg="6">
+            <div class="grid-demo__cell">Card {{ index }}</div>
+          </wx-col>
+        </wx-row>
+      </div>
     </div>
   </div>
 </template>
@@ -52,5 +67,35 @@ const spans = [12, 8, 6, 4]
 /* The rows must be able to use the full width of the demo frame. */
 .grid-demo > div {
   width: 100%;
+}
+
+/*
+ * The reader drags the box; the columns answer to its width, not the window's. It is
+ * allowed to grow past the docs column — the scroller takes the overflow, so the
+ * 1024px breakpoint can be reached on a page that is narrower than that.
+ */
+.grid-demo__scroller {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.grid-demo__resizable {
+  width: 100%;
+  min-width: 200px;
+  max-width: none;
+  padding: var(--wx-space-8);
+  border: 1px dashed var(--wx-border-default);
+  border-radius: var(--wx-radius-sm);
+  overflow: hidden;
+  resize: horizontal;
+}
+
+/* A stand-in for a drawer or a narrow panel: same markup, less room. */
+.grid-demo__narrow {
+  width: 300px;
+  max-width: 100%;
+  padding: var(--wx-space-8);
+  border: 1px dashed var(--wx-border-default);
+  border-radius: var(--wx-radius-sm);
 }
 </style>

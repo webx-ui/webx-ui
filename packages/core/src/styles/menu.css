@@ -39,6 +39,16 @@
   box-shadow: var(--wx-ring-focus);
 }
 
+/*
+ * An open branch keeps the hover tint while it is open: the entries below it are
+ * indented, but on a long sidebar the indent alone is easy to lose track of, and the
+ * tint marks where the branch begins. The active entry, further down, still wins.
+ */
+.wx-menu-row.is-open {
+  background: var(--wx-bg-fill);
+  color: var(--wx-text-strong);
+}
+
 .wx-menu-row.is-active {
   background: var(--wx-color-primary-soft);
   color: var(--wx-color-primary);
@@ -116,8 +126,9 @@
 .wx-menu-flyout__list {
   --wx-menu-row-height: 32px;
   --wx-menu-row-padding: var(--wx-space-10);
-  /* Every level of a flyout starts at its own left edge, so nothing is indented. */
-  --wx-menu-indent: 0px;
+  /* The panel is its own surface: what it holds is indented from the panel's edge. */
+  --wx-menu-indent: var(--wx-space-12);
+  --wx-menu-gap: 2px;
 
   display: flex;
   flex-direction: column;

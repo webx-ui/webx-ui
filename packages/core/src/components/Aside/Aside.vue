@@ -59,9 +59,13 @@ const classes = computed(() => [
   transition: flex-basis var(--wx-duration-normal) var(--wx-easing-standard);
 }
 
+/*
+ * The rail is one icon wide plus the air around it — 56px, not the 64 it started
+ * at, which left the icons floating in a column of their own.
+ */
 .wx-aside--collapsed {
-  flex-basis: var(--wx-aside-collapsed-width, 64px);
-  width: var(--wx-aside-collapsed-width, 64px);
+  flex-basis: var(--wx-aside-collapsed-width, 56px);
+  width: var(--wx-aside-collapsed-width, 56px);
 }
 
 .wx-aside--bordered.wx-aside--start {

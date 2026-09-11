@@ -64,4 +64,16 @@ const classes = computed(() => [
 .wx-footer--bordered {
   border-top: 1px solid var(--wx-border-default);
 }
+
+/* The same give as the header, so the two bars stay a pair. */
+@media (max-width: 640px) {
+  .wx-footer--padding-lg,
+  .wx-footer--padding-md {
+    --wx-footer-padding: var(--wx-space-12);
+  }
+
+  .wx-footer--padding-sm {
+    --wx-footer-padding: var(--wx-space-8);
+  }
+}
 </style>

@@ -72,6 +72,10 @@ const classes = computed(() => [
   margin-inline: auto;
 }
 
+/*
+ * Padding is the first thing to give way on a small screen: 24px of margin around a
+ * form is air on a desktop and a third of the line on a phone.
+ */
 @media (max-width: 640px) {
   .wx-main--padding-lg {
     --wx-main-padding: var(--wx-space-16);
@@ -79,6 +83,17 @@ const classes = computed(() => [
 
   .wx-main--padding-md {
     --wx-main-padding: var(--wx-space-16);
+  }
+
+  .wx-main--padding-sm {
+    --wx-main-padding: var(--wx-space-8);
+  }
+}
+
+@media (max-width: 420px) {
+  .wx-main--padding-lg,
+  .wx-main--padding-md {
+    --wx-main-padding: var(--wx-space-12);
   }
 }
 </style>

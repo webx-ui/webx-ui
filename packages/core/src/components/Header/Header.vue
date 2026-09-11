@@ -71,4 +71,16 @@ const classes = computed(() => [
   top: 0;
   z-index: var(--wx-z-index-sticky);
 }
+
+/* On a phone the bar is mostly the title and one button; the padding gives way. */
+@media (max-width: 640px) {
+  .wx-header--padding-lg,
+  .wx-header--padding-md {
+    --wx-header-padding: var(--wx-space-12);
+  }
+
+  .wx-header--padding-sm {
+    --wx-header-padding: var(--wx-space-8);
+  }
+}
 </style>

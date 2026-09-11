@@ -88,6 +88,13 @@ function onClick(event: MouseEvent) {
 
   emit('click', event)
   if (props.value !== undefined) menu?.select(props.value, event)
+
+  /*
+   * Choosing an entry is what a flyout was opened for, so it closes here rather than
+   * on any click inside the panel — the branches in a panel are opened by clicking
+   * too, and a panel that shut on that could never be opened past its first level.
+   */
+  menu?.closeFlyouts()
 }
 </script>
 
@@ -119,7 +126,14 @@ function onClick(event: MouseEvent) {
 </template>
 
 <style scoped>
+/*
+ * The entry owns its margins, and says so from a scoped rule so that it outweighs a
+ * host stylesheet spacing list items — VitePress puts 8px between every `li + li`,
+ * and a CMS theme will have its own. Left alone, that walks a menu bar down the page
+ * like a staircase and pulls a sidebar's rows apart.
+ */
 .wx-menu-item {
   min-width: 0;
+  margin: 0;
 }
 </style>

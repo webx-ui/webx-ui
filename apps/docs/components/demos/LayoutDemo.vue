@@ -60,4 +60,11 @@ const section = ref('pages')
 .layout-demo :deep(.wx-header) {
   justify-content: space-between;
 }
+
+/* What an admin panel does on a phone: the sidebar leaves for a drawer. */
+@media (max-width: 640px) {
+  .layout-demo :deep(.wx-aside) {
+    display: none;
+  }
+}
 </style>

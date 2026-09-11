@@ -63,15 +63,16 @@ const topLevel = ref<MenuValue>('content')
       <span class="wx-demo__label">A bar — submenus open as flyouts</span>
       <div class="menu-demo__bar">
         <wx-menu v-model="topLevel" mode="horizontal" label="Sections">
-          <wx-menu-item value="overview" label="Overview" />
-          <wx-submenu value="content" title="Content">
-            <wx-menu-item value="pages-top" label="Pages" />
-            <wx-menu-item value="media-top" label="Media" />
-            <wx-submenu value="more" title="More">
-              <wx-menu-item value="redirects" label="Redirects" />
+          <wx-menu-item value="overview" icon="grid" label="Overview" />
+          <wx-submenu value="content" icon="file" title="Content">
+            <wx-menu-item value="pages-top" icon="file" label="Pages" />
+            <wx-menu-item value="media-top" icon="image" label="Media" />
+            <wx-submenu value="more" icon="folder" title="More">
+              <wx-menu-item value="redirects" icon="link" label="Redirects" />
+              <wx-menu-item value="imports" icon="upload" label="Imports" />
             </wx-submenu>
           </wx-submenu>
-          <wx-menu-item value="reports" label="Reports" />
+          <wx-menu-item value="reports" icon="list" label="Reports" />
         </wx-menu>
       </div>
     </div>
@@ -95,7 +96,7 @@ const topLevel = ref<MenuValue>('content')
 }
 
 .menu-demo__sidebar.is-collapsed {
-  width: 64px;
+  width: 56px;
 }
 
 .menu-demo__aside {
