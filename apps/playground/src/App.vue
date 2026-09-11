@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { applyTheme, type Theme } from '@webx-ui/tokens'
+import AdminLayout from './AdminLayout.vue'
 import InboxScreen from './inbox/InboxScreen.vue'
 import KitchenSink from './KitchenSink.vue'
 
@@ -16,7 +17,10 @@ function toggleTheme() {
 
 <template>
   <div class="wx-root">
-    <inbox-screen v-if="screen === 'inbox'" />
+    <!-- The shell stays put; the screen inside it is what a router would swap. -->
+    <admin-layout v-if="screen === 'inbox'">
+      <inbox-screen />
+    </admin-layout>
     <kitchen-sink v-else />
 
     <!-- The switcher belongs to the playground, not to either screen. -->
