@@ -1,13 +1,28 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { applyTheme, type Theme } from '@webx-ui/tokens'
-import AdminLayout from './AdminLayout.vue'
+import SidebarLayout from './layouts/SidebarLayout.vue'
+import TopbarLayout from './layouts/TopbarLayout.vue'
+import DashboardScreen from './screens/DashboardScreen.vue'
+import RecordsScreen from './screens/RecordsScreen.vue'
 import InboxScreen from './inbox/InboxScreen.vue'
 import KitchenSink from './KitchenSink.vue'
 
-/** Two things to try out here: the components one by one, and a whole screen. */
-const screen = ref<'inbox' | 'components'>('inbox')
+/**
+ * Three shells and two screens, in the combinations an admin actually ships:
+ * navigation across the top or down the side, and a screen that is either a padded
+ * page or one that lays out its own columns.
+ */
+type Page = 'topbar' | 'sidebar' | 'records' | 'inbox' | 'components'
+
+const page = ref<Page>('topbar')
 const theme = ref<Theme>('light')
+
+const pages: { value: Page; label: string }[] = [
+  { value: 'topbar', label: 'Меню в шапці' },
+  { value: 'sidebar', label: 'Меню збоку' },
+  { value: 'records', label: 'Список + деталі' },
+]
 
 function toggleTheme() {
   theme.value = theme.value === 'light' ? 'dark' : 'light'
@@ -18,30 +33,59 @@ function toggleTheme() {
 <template>
   <div class="wx-root">
     <!-- The shell stays put; the screen inside it is what a router would swap. -->
-    <admin-layout v-if="screen === 'inbox'">
+    <topbar-layout v-if="page === 'topbar'">
+      <dashboard-screen />
+    </topbar-layout>
+
+    <sidebar-layout v-else-if="page === 'sidebar'">
+      <dashboard-screen />
+    </sidebar-layout>
+
+    <!-- A screen that lays out its own columns takes the room unpadded and unscrolled. -->
+    <sidebar-layout v-else-if="page === 'records'" padding="none" :scroll="false">
+      <records-screen />
+    </sidebar-layout>
+
+    <sidebar-layout v-else-if="page === 'inbox'" padding="none" :scroll="false">
       <inbox-screen />
-    </admin-layout>
+    </sidebar-layout>
+
     <kitchen-sink v-else />
 
-    <!-- The switcher belongs to the playground, not to either screen. -->
+    <!-- The switcher belongs to the playground, not to any of the screens. -->
     <div class="switcher">
       <wx-button
+        v-for="item in pages"
+        :key="item.value"
         size="sm"
-        :variant="screen === 'inbox' ? 'solid' : 'text'"
-        :type="screen === 'inbox' ? 'primary' : 'default'"
-        @click="screen = 'inbox'"
+        :variant="page === item.value ? 'solid' : 'text'"
+        :type="page === item.value ? 'primary' : 'default'"
+        @click="page = item.value"
+      >
+        {{ item.label }}
+      </wx-button>
+
+      <wx-divider direction="vertical" spacing="sm" />
+
+      <wx-button
+        size="sm"
+        :variant="page === 'inbox' ? 'solid' : 'text'"
+        :type="page === 'inbox' ? 'primary' : 'default'"
+        @click="page = 'inbox'"
       >
         Вхідні
       </wx-button>
       <wx-button
         size="sm"
-        :variant="screen === 'components' ? 'solid' : 'text'"
-        :type="screen === 'components' ? 'primary' : 'default'"
-        @click="screen = 'components'"
+        :variant="page === 'components' ? 'solid' : 'text'"
+        :type="page === 'components' ? 'primary' : 'default'"
+        @click="page = 'components'"
       >
         Компоненти
       </wx-button>
+
       <wx-divider direction="vertical" spacing="sm" />
+
       <wx-action
         :icon="theme === 'light' ? 'moon' : 'sun'"
         :title="theme === 'light' ? 'Темна тема' : 'Світла тема'"
@@ -67,6 +111,10 @@ body {
   display: flex;
   align-items: center;
   gap: var(--wx-space-4);
+  /* One row that scrolls, rather than three that eat a third of a phone screen. */
+  max-width: calc(100vw - var(--wx-space-32));
+  overflow-x: auto;
+  scrollbar-width: none;
   padding: var(--wx-space-4);
   background: var(--wx-bg-surface);
   border: 1px solid var(--wx-border-default);
