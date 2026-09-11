@@ -43,7 +43,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 | Pagination                                                        | ✅     |
 | Dialog (Reka)                                                     | ⬜     |
 | Drawer (Reka)                                                     | ⬜     |
-| Dropdown (Reka)                                                   | ⬜     |
+| Dropdown (Reka)                                                   | ✅     |
 | Tooltip (Reka)                                                    | ⬜     |
 | Popover (Reka)                                                    | ⬜     |
 | Popconfirm                                                        | ⬜     |
@@ -79,6 +79,7 @@ Anchor, Splitter, Watermark, Tour, Marquee.
 
 RichText (Tiptap) ✅ — see [RichText](/components/rich-text).
 EntityCard ✅ — one record as a row, see [EntityCard](/components/entity-card).
+Actions ✅ — the icon buttons at the end of a row, see [Actions](/components/actions).
 
 MediaLibrary / Gallery, Repeater, Markdown, LinkPicker, BlockPicker, SortableList
 (`vue-draggable-plus`), and `SchemaRenderer` in [`@webx-ui/schema`](/guide/#packages).

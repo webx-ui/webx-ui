@@ -47,6 +47,8 @@ export default defineConfig({
             { text: 'Badge', link: '/components/badge' },
             { text: 'Indicator', link: '/components/indicator' },
             { text: 'Card', link: '/components/card' },
+            { text: 'Actions', link: '/components/actions' },
+            { text: 'Dropdown', link: '/components/dropdown' },
             { text: 'EntityCard', link: '/components/entity-card' },
           ],
         },
