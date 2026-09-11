@@ -26,6 +26,7 @@ export default defineConfig({
             { text: 'Introduction', link: '/guide/' },
             { text: 'Installation', link: '/guide/installation' },
             { text: 'Theming', link: '/guide/theming' },
+            { text: 'Dialogs from code', link: '/guide/modals' },
             { text: 'Roadmap', link: '/guide/roadmap' },
           ],
         },

@@ -1,6 +1,7 @@
 import type { App, Component, Plugin } from 'vue'
 import * as components from './components'
 import { vWxSelect } from './components/SelectionArea'
+import { connectModals } from './composables/useModal'
 
 export interface WebxUiOptions {
   /**
@@ -42,6 +43,12 @@ export const WebxUI: Plugin<[WebxUiOptions?]> = {
      * components do.
      */
     app.directive('wx-select', vWxSelect)
+
+    /*
+     * A component opened from code is mounted outside this app's tree, so it is handed the
+     * app's own context to render in — its plugins, its provides, its global components.
+     */
+    connectModals(app)
   },
 }
 
