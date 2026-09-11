@@ -194,15 +194,15 @@ defineExpose({
 }
 
 .wx-textarea--sm {
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-textarea--md {
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-control-md);
 }
 
 .wx-textarea--lg {
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 .wx-textarea.is-autosize .wx-textarea__inner {

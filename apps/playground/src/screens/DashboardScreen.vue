@@ -47,7 +47,7 @@ const activity = [
       </div>
       <div class="screen__head-actions">
         <wx-action icon="refresh" title="Оновити" />
-        <wx-button type="primary" size="sm">
+        <wx-button type="primary">
           <template #icon><wx-icon name="plus" /></template>
           Створити
         </wx-button>

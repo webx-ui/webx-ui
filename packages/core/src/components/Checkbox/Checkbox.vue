@@ -151,18 +151,18 @@ function onChange(event: Event) {
 
 .wx-checkbox--sm {
   --wx-checkbox-size: 16px;
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-checkbox--md {
   --wx-checkbox-size: 20px;
   /* A tick beside a label is a choice in a list, and reads at the list size. */
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-md);
 }
 
 .wx-checkbox--lg {
   --wx-checkbox-size: 24px;
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 .wx-checkbox:hover:not(.is-disabled) .wx-checkbox__box {

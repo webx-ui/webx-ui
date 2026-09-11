@@ -225,19 +225,19 @@ defineExpose({ focus: () => inputRef.value?.focus() })
   border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-control);
   color: var(--wx-text-default);
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-control-md);
   cursor: text;
   transition: border-color var(--wx-duration-normal) var(--wx-easing-standard);
 }
 
 .wx-tags-input--sm .wx-tags-input__anchor {
   min-height: var(--wx-size-control-sm);
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-tags-input--lg .wx-tags-input__anchor {
   min-height: var(--wx-size-control-lg);
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 .wx-tags-input__anchor:hover {

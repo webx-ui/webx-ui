@@ -112,17 +112,17 @@ function onChange(event: Event) {
 
 .wx-switch--sm {
   --wx-switch-height: 18px;
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-switch--md {
   --wx-switch-height: 22px;
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-control-md);
 }
 
 .wx-switch--lg {
   --wx-switch-height: 26px;
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 .wx-switch__thumb {

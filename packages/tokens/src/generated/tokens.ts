@@ -87,7 +87,10 @@ export const tokens = {
         "lg": "18px",
         "xl": "20px",
         "2xl": "24px",
-        "3xl": "32px"
+        "3xl": "32px",
+        "control-sm": "12px",
+        "control-md": "14px",
+        "control-lg": "16px"
       },
       "weight": {
         "regular": "400",
@@ -334,6 +337,9 @@ export const lightVars: Record<string, string> = {
   '--wx-font-size-xl': "20px",
   '--wx-font-size-2xl': "24px",
   '--wx-font-size-3xl': "32px",
+  '--wx-font-size-control-sm': "12px",
+  '--wx-font-size-control-md': "14px",
+  '--wx-font-size-control-lg': "16px",
   '--wx-font-weight-regular': "400",
   '--wx-font-weight-medium': "500",
   '--wx-font-weight-semibold': "600",

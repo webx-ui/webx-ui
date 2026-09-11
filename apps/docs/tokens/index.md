@@ -74,6 +74,21 @@ card and dialog radius.
 
 <TokenSwatches group="font-size" />
 
+### Controls have their own
+
+A control is not a paragraph. `--wx-font-size-control-sm` (12px), `-md` (14px) and `-lg` (16px)
+are what every input, select, checkbox and button reads at, and they are separate from the body
+scale on purpose: an admin panel is mostly controls, and 16px — a size for reading prose — leaves
+them shouting beside navigation at 14px.
+
+Retune them in one place rather than per component:
+
+```css
+:root {
+  --wx-font-size-control-md: 15px;
+}
+```
+
 ## Density
 
 Controls are comfortable by default: `--wx-size-control-md` is `42px`. Tables, toolbars and dialogs
@@ -94,6 +109,8 @@ control inside it shrinks:
 | `--wx-radius-control`  | 10px    | 8px     |
 | `--wx-radius-md`       | 16px    | 12px    |
 | `--wx-font-size-md`    | 16px    | 14px    |
+
+Compact changes heights, not control text — that is already 14px everywhere.
 
 ## Other scales
 
