@@ -52,6 +52,8 @@ export default defineConfig({
             { text: 'Actions', link: '/components/actions' },
             { text: 'Dropdown', link: '/components/dropdown' },
             { text: 'Popover', link: '/components/popover' },
+            { text: 'Dialog', link: '/components/dialog' },
+            { text: 'Drawer', link: '/components/drawer' },
             { text: 'EntityCard', link: '/components/entity-card' },
           ],
         },
