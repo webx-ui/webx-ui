@@ -112,7 +112,18 @@ of task names, a scale of days, weeks or months, bars with progress, a marker on
 hovering or clicking a bar reported as an event. Dragging the dates and the arrows between
 dependent tasks come after that, once the first pass has been lived with.
 
-MediaLibrary / Gallery, Repeater, Markdown, LinkPicker, BlockPicker, and `SchemaRenderer` in [`@webx-ui/schema`](/guide/#packages).
+MediaLibrary / Gallery, Repeater, Markdown, LinkPicker, BlockPicker, and `SchemaRenderer` in
+[`@webx-ui/schema`](/guide/#packages).
+
+## Not components
+
+Two things here are reached from code rather than from a template, and are easy to miss in a list
+of components:
+
+- [Toast](/components/toast) — `toast.success('Saved')` from anywhere, including an HTTP
+  interceptor or a store, with one `WxToaster` on the page to show them.
+- [Dialogs from code](/guide/modals) — `confirm()`, and `openModal` / `createModal` for
+  mounting any component and awaiting its answer. A picker reached as `await productBrowser()`.
 
 ## Beyond components
 

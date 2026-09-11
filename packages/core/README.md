@@ -46,10 +46,28 @@ const title = ref('')
 `@webx-ui/core/style.css` already includes the token variables, so importing
 `@webx-ui/tokens/tokens.css` separately is optional.
 
-## Implemented
+## What is in it
 
-`WxButton`, `WxInput`, `WxCard`. The full component roadmap lives in
-[the docs](https://webx-ui.github.io/webx-ui/guide/roadmap.html).
+91 components — the form controls, the layout, the overlays, the data ones (`WxTable` takes
+Laravel's `paginate()` payload as it comes), and the ones an admin panel needs that Element Plus
+has no name for: `WxListDetail`, `WxKanban`, `WxEntityCard`, `WxSelectionArea`,
+`WxSortableList`. The [roadmap](https://webx-ui.github.io/webx-ui/guide/roadmap.html) lists every
+one of them and what is still open.
+
+Not everything is a component:
+
+```ts
+import { toast, confirm, openModal, createModal } from '@webx-ui/core'
+
+toast.success('Saved')
+if (await confirm('Delete this product?')) await api.delete(product)
+
+/* Any component, mounted from code and awaited for its answer. */
+const product = await createModal<Product>(ProductBrowser, { resolveOn: 'select' })()
+```
+
+One directive ships with the library, `v-wx-select`, which hands an item to the selection area
+around it. `app.use(WebxUI)` registers it along with the components.
 
 ## Conventions
 
