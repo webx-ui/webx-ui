@@ -40,6 +40,12 @@ show up immediately without rebuilding.
 - Styles are `scoped` and use **only** token variables (`var(--wx-*)`). A literal colour in a
   component is a bug.
 - Components never fetch data. Props in, events out.
+- Layout responds to the **container**, not the window: `container-type: inline-size` and
+  `@container` queries, so a component in a 380px drawer behaves like a narrow one. Where the
+  decision is behaviour rather than layout, measure with `useElementWidth`.
+- jsdom does not lay anything out, so a test cannot catch a visual bug. Anything about size,
+  position, overflow or a shadow is checked in a browser against `pnpm docs:dev` — measured with
+  `getBoundingClientRect` and `getComputedStyle`, not judged by eye.
 - Each component lives in `packages/core/src/components/<Name>/` and ships four files:
 
   ```
@@ -70,7 +76,8 @@ regenerates `dist/tokens.css` and the typed `src/generated/tokens.ts`. Commit th
 ## Pull requests
 
 `main` is protected: changes land through PRs with green CI (lint, format, typecheck, tests, build,
-docs build).
+docs build). No approving review is required, but the branch has to be **up to date with `main`** —
+if it has fallen behind, merge `main` into it and let CI run again.
 
 Add a changeset to any PR that changes a published package:
 
