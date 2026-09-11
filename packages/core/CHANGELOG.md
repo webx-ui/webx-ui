@@ -1,5 +1,111 @@
 # @webx-ui/core
 
+## 0.9.0
+
+### Minor Changes
+
+- 52b655a: Dialogs from code: `openModal`, `createModal`, `useModal` and `confirm`
+
+  Some dialogs do not belong in a template. "Are you sure?" belongs in the middle of the function that
+  deletes something, and a picker belongs wherever a field needs filling — not declared once per
+  screen, wired to a boolean, and answered through an event three components away.
+
+  ```ts
+  if (await confirm('Delete this product?')) await api.delete(product)
+
+  export const productBrowser = createModal<Product, { exclude?: number[] }>(ProductBrowser, {
+    resolveOn: 'select',
+  })
+
+  const product = await productBrowser({ exclude: chosen.value.map((item) => item.id) })
+  ```
+
+  - **The component stays a plain component.** It takes props and emits events; the opener turns one
+    of those events into the answer, so the same file works in a template too. `useModal()` is there
+    for a component that wants to close itself or for a button deep inside one — outside a modal it
+    answers all the same, with calls that do nothing.
+  - **It renders in your app.** A component mounted outside the tree would lose the plugins, the
+    provides, the router, the store and the translations; this one is given the app's own context, so
+    injection works as it would in a template. `app.use(WebxUI)` arranges it; `connectModals(app)` for
+    anyone importing components one at a time.
+  - **Dismissed is not an error.** The promise resolves with `undefined` when the panel is closed
+    without an answer, and rejects only when the component itself throws — a cancel that throws turns
+    every call site into a `try` block and one forgotten `catch` into an unhandled rejection.
+  - **It closes before it goes away.** The promise settles the moment the answer is known and the node
+    is taken 250ms later, so the panel plays its closing animation rather than being cut off mid-fade.
+  - `confirm()` answers `true` or `false`, with a `danger` tone for anything that destroys something.
+
+- c9a5992: SelectionArea: the rubber band over a grid or a list
+
+  Drag across a media library, a card grid or a list of rows and everything the box touches is
+  selected. `WxSelectionArea` draws the box and holds the selection; `v-wx-select="file.id"` hands it
+  an item.
+
+  - A directive rather than a wrapper component, because the thing being selected is already an
+    element — a card, a row, a `<tr>` — and a box of ours around each one would break the grid or the
+    table it sits in. It also keeps the value's type, which a `data-` attribute cannot: the selection
+    comes back as the numbers the API expects. Markup that is not written in Vue can still say
+    `data-wx-selectable="42"` and get the string.
+  - The whole gesture, not just the box: shift or ctrl adds, alt takes away, a click picks one, a
+    ctrl-click toggles it, a shift-click takes the run, a click beside them clears, ctrl+A and escape
+    do all and none. A selection people can only make by dragging is one they cannot make an item at
+    a time.
+  - A drag that begins on a link, a button or a field is left to that control, so the bin on a tile
+    stays a bin.
+  - Dragging past the edge scrolls, faster the further past it you are. The items are measured once,
+    in coordinates that do not move when anything scrolls, so the scrolling costs nothing per frame
+    but the arithmetic.
+  - Off for touch by default: on a phone a drag across a grid means scroll, and taking that away
+    leaves people stranded.
+
+- 5046f23: SortableList: a list whose order is the point
+
+  `WxSortableList` holds a list in the order it is shown, with a heading above it and buttons at the
+  end of every row — a gallery, the blocks on a page, the products picked for a promotion.
+
+  - **The grip is ours.** Every row carries one, and only the grip starts a drag: something has to
+    say the row can be moved, and a keyboard cannot drag anything. It takes focus, and from there
+    space picks the row up, the arrows move it, space drops it and escape puts it back — the same
+    splice the pointer performs, announced in a live region and with the focus following the row.
+    `handle="row"` drags by the whole row instead; `handle=".my-grip"` gives it to a button of yours.
+  - **A heading of its own**, `title` and `extra`, the pair `WxCard` uses — so a list that had been
+    living inside a card keeps the same markup with one less wrapper.
+  - **Buttons in a row are not handles.** Links, fields and the actions are filtered out of the
+    gesture, so a bin at the end of a row stays a bin even when the whole row is draggable.
+  - **Lists that share a `group` pass rows between them**, and an empty one is still somewhere to
+    drop: the empty message is a row of the list rather than a note under it.
+
+- 0ddba11: Wave 2 is complete: seventeen components, and a toast queue
+
+  The ones the playground had been faking by hand:
+
+  - **Avatar** and **AvatarGroup** — a picture where there is one, initials where there is not. The
+    colour comes from the name by default, so the same person is the same colour on every screen, and
+    a list of twenty is scannable without anybody choosing twenty colours. The initials sit under the
+    picture rather than instead of it, so a slow connection shows them and nothing moves when the
+    photograph lands.
+  - **Empty** — what a list says when it has nothing in it, with room to say _which_ kind of empty:
+    nothing yet, or nothing matched.
+  - **Descriptions** and **DescriptionsItem** — a record read rather than edited. A `<dl>` laid out as
+    a grid, because the pairs are a list and not tabular data; each pair is two grid items rather than
+    a box holding two, which is what lets labels in different rows line up. Bordered draws the lattice
+    with the grid's own gaps, exact at any column count and under any span.
+
+  The rest of the wave:
+
+  - **Toast** — `useToast()` and `WxToaster`. The queue is module state on purpose: a toast almost
+    always comes from a place with no view of its own. Message and Notification are one component
+    here; the difference between them is a title and a corner.
+  - **Tooltip**, **Popconfirm**, **Loading**, **Skeleton**, **Progress**, **Result**, **Segmented**,
+    **Steps**, **Image**, **Upload**, **Affix**, **Backtop**.
+
+  Three of those are ours rather than what the checklist suggested, for the same reason each time.
+  `Upload` does not upload: a component that owned the request would own the URL, the headers, the
+  CSRF token and the shape of an error, none of which it can know — so it collects and checks, and
+  the caller sends. `Affix` sticks with `position: sticky` and uses JavaScript only to report it,
+  which avoids both bugs a `fixed` switch inherits. `Segmented` is a radio group rather than a row of
+  buttons, so a screen reader announces "2 of 4" and the arrow keys work.
+
 ## 0.8.0
 
 ### Minor Changes
