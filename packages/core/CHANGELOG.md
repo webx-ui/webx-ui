@@ -1,5 +1,53 @@
 # @webx-ui/core
 
+## 0.4.0
+
+### Minor Changes
+
+- 66818dd: New component: `WxPopover` — a panel hung off a control, for a small form, a confirmation, or an
+  explanation too long for a tooltip.
+
+  It is the counterpart to `WxDropdown` rather than a second copy of it. Both stand on Reka's
+  popover, and the difference is what a click inside means: in a menu the click is the whole
+  interaction, so the panel closes; in a popover it is part of the work being done, so the panel
+  stays until the ×, a footer button, Escape, or a click outside. The panel has a heading, a footer
+  for the buttons and an arrow pointing at its trigger, takes focus when it opens and hands it back
+  when it closes, and is rendered in a portal so it is not clipped by a scrolling strip or a table.
+
+- 66818dd: New components: `WxTabs` / `WxTab` and `WxAccordion` / `WxAccordionItem`.
+
+  A tab and its panel are written in one place — `<wx-tab value="seo" label="SEO">` carries
+  both the button in the strip and the content behind it — and the tabs open the first
+  usable one by themselves, including when the tabs arrive from a request. Three variants:
+  an underlined strip, a segmented control, folder tabs; horizontal or a column beside the
+  panel; hidden panels are dropped from the DOM unless `keep-alive` says otherwise.
+
+  The strip is built for a phone. It scrolls sideways instead of wrapping into a second row
+  that would push the panel down, the open tab is scrolled into view whenever it changes,
+  the end with more behind it fades, arrows show up for a mouse and stay out of the tab
+  order, and a column of tabs lies back down into a strip when the container gets narrow —
+  measured on the tabs themselves, so a narrow drawer on a wide monitor is treated the same
+  as a phone.
+
+  The accordion folds a long page into headed sections: one open at a time or several,
+  headers that are real headings at the level you choose, a chevron on either side, and an
+  `extra` slot for a switch or a menu in the header. The heading holds the button and
+  nothing else — `extra` sits beside it — so skimming a page by its headings reads out the
+  section titles and not the controls next to them, and pressing one of those controls does
+  not open the section under the pointer.
+
+### Patch Changes
+
+- 059272d: Floating panels share one layer, so a list opened inside a panel is not swallowed by it.
+
+  `WxDropdown`, `WxSelect`, `WxAutocomplete`, `WxCascader` and `WxTagsInput` drew their panels on
+  `--wx-z-index-dropdown`, below `--wx-z-index-popover` — so a select inside a popover had its list
+  disappear behind the panel it was opened from. Ranking panels by kind cannot work: what has to be
+  on top is whatever was opened last, whichever kind it happens to be. They all draw on
+  `--wx-z-index-popover` now, and since a panel is added to the document when it opens, the order of
+  opening decides. `--wx-z-index-dialog` and above are unchanged: those are for surfaces that take
+  over the page.
+
 ## 0.3.1
 
 ### Patch Changes
