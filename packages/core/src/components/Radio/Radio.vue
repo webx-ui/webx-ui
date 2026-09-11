@@ -125,7 +125,8 @@ function onChange() {
 
 .wx-radio--md {
   --wx-radio-size: 20px;
-  font-size: var(--wx-font-size-md);
+  /* A tick beside a label is a choice in a list, and reads at the list size. */
+  font-size: var(--wx-font-size-sm);
 }
 
 .wx-radio--lg {

@@ -123,7 +123,7 @@ function revert() {
       <!-- `keep-alive`, so a switch between tabs does not throw away what was typed. -->
       <wx-tabs v-model="tab" variant="line" keep-alive class="settings__tabs">
         <wx-tab value="profile" icon="user" label="Профіль">
-          <wx-form :errors="errors" class="settings__form" @submit.prevent="save">
+          <wx-form :errors="errors" class="settings__pane" @submit.prevent="save">
             <wx-row :gutter="12" wrap>
               <wx-col :span="24" :md="12">
                 <wx-form-item label="Імʼя" name="name" required>
@@ -167,7 +167,7 @@ function revert() {
         </wx-tab>
 
         <wx-tab value="company" icon="users" label="Компанія">
-          <wx-form :errors="errors" class="settings__form" @submit.prevent="save">
+          <wx-form :errors="errors" class="settings__pane" @submit.prevent="save">
             <wx-row :gutter="12" wrap>
               <wx-col :span="24" :md="12">
                 <wx-form-item label="Назва" name="company">
@@ -209,7 +209,7 @@ function revert() {
         </wx-tab>
 
         <wx-tab value="notifications" icon="bell" label="Сповіщення" :badge="3">
-          <div class="settings__form">
+          <div class="settings__pane settings__pane--stack">
             <wx-form-item label="Канали" help="Куди надсилати">
               <wx-checkbox-group v-model="form.channels">
                 <wx-checkbox value="email" label="Пошта" />
@@ -259,7 +259,7 @@ function revert() {
         </wx-tab>
 
         <wx-tab value="security" icon="lock" label="Безпека">
-          <div class="settings__form">
+          <div class="settings__pane settings__pane--stack">
             <wx-alert type="warning" title="Двофакторна автентифікація вимкнена">
               Cum sociis natoque penatibus et magnis dis parturient montes.
               <template #actions>
@@ -320,12 +320,16 @@ function revert() {
   padding: var(--wx-space-8) var(--wx-space-16) var(--wx-space-16);
 }
 
-.settings__form {
+.settings__pane {
+  max-width: 760px;
+  padding-top: var(--wx-space-12);
+}
+
+/* A `WxForm` brings its own row spacing; a tab that is not one needs the column. */
+.settings__pane--stack {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-4);
-  max-width: 760px;
-  padding-top: var(--wx-space-8);
+  gap: var(--wx-space-24);
 }
 
 .settings__toggles {
