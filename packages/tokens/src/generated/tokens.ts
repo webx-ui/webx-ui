@@ -77,7 +77,7 @@ export const tokens = {
     },
     "font": {
       "family": {
-        "sans": "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+        "sans": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
         "mono": "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
       },
       "size": {
@@ -325,7 +325,7 @@ export const lightVars: Record<string, string> = {
   '--wx-space-64': "64px",
   '--wx-space-96': "96px",
   '--wx-space-128': "128px",
-  '--wx-font-family-sans': "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+  '--wx-font-family-sans': "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
   '--wx-font-family-mono': "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
   '--wx-font-size-xs': "12px",
   '--wx-font-size-sm': "14px",
