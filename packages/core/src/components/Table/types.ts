@@ -43,9 +43,10 @@ export interface TableColumn<T = TableRow> {
   /** Adds a sort control to the heading. The table reports, it does not reorder. */
   sortable?: boolean
   /**
-   * Pins the column to an edge while the rest scrolls sideways. A pinned column needs
-   * a `width`: the offsets of the ones behind it are worked out from the declared
-   * widths, and a column of unknown width cannot say where the next one starts.
+   * Pins the column to an edge while the rest scrolls sideways. Give it a `width` as
+   * well: the table measures where each pinned column comes to rest, but the declared
+   * width is what the offsets fall back on before the first measurement — and what
+   * decides how wide the column is in the first place.
    */
   fixed?: 'left' | 'right'
   /** Turns the raw value into the text of the cell. */
