@@ -85,8 +85,20 @@ Complete. Two notes on where this list stopped matching the one it was copied fr
 ColorPicker ✅, Slider ✅, Rate ✅, [Autocomplete](/components/autocomplete) ✅,
 [Cascader](/components/cascader) ✅ and [Timeline](/components/timeline) ✅ are done.
 
-Still open: Tree, TreeSelect (`he-tree-vue` / Reka Tree), Transfer, Calendar, Carousel, Mention,
-Anchor, Splitter, Watermark, Tour, Marquee.
+Still open: Tree, TreeSelect (`he-tree-vue` / Reka Tree), Transfer, Carousel, Anchor, Splitter,
+Watermark, Marquee.
+
+**Some day, maybe** — wanted, but nothing is waiting on them:
+
+- Mention — the `@name` picker inside a text field.
+
+**Dropped**, so that the list stays a list of things somebody is going to write:
+
+- Calendar — a month of boxes to pick a date out of is what [DatePicker](/components/date-picker)
+  already does, and does with a keyboard. What a calendar would add is a month of _events_, which
+  is a scheduler and a different component with a different name.
+- Tour — the step-by-step walk over a screen. An admin panel earns its explanations in the screen
+  itself; when one truly needs a tour, that is a sign to go back to the screen.
 
 ## CMS-specific (not in Element Plus)
 
