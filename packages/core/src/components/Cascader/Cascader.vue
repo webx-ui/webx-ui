@@ -541,7 +541,8 @@ function onPanelKeydown(event: KeyboardEvent) {
 <style>
 /* The panel is teleported, so its styles cannot be scoped to the component. */
 .wx-cascader__panel {
-  z-index: var(--wx-z-index-dropdown);
+  /* One layer for every floating panel, so the one opened last is the one on top. */
+  z-index: var(--wx-z-index-popover);
   box-sizing: border-box;
   background: var(--wx-bg-surface);
   border: 1px solid var(--wx-border-default);

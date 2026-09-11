@@ -74,7 +74,8 @@ function onPanelClick() {
 <style>
 /* The panel is teleported, so its styles cannot be scoped to the component. */
 .wx-dropdown {
-  z-index: var(--wx-z-index-dropdown);
+  /* One layer for every floating panel, so the one opened last is the one on top. */
+  z-index: var(--wx-z-index-popover);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
