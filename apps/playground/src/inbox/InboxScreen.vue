@@ -101,7 +101,7 @@ function chooseView(next: View, closeFilters?: () => void) {
   <wx-list-detail
     v-model:open="open"
     :list-width="380"
-    :filters-width="230"
+    :filters-width="240"
     filters-title="Зрізи"
     detail-label="Звернення"
   >
@@ -115,7 +115,6 @@ function chooseView(next: View, closeFilters?: () => void) {
 
         <wx-menu
           :model-value="view"
-          size="sm"
           label="Зрізи"
           @select="(value: string | number) => chooseView(value as View, close)"
         >
@@ -136,7 +135,7 @@ function chooseView(next: View, closeFilters?: () => void) {
 
         <wx-divider spacing="sm" />
 
-        <wx-menu v-model="source" size="sm" label="Джерела">
+        <wx-menu v-model="source" label="Джерела">
           <wx-menu-group title="Джерела">
             <wx-menu-item value="all" label="Усі форми">
               <template #trailing>{{ items.length }}</template>

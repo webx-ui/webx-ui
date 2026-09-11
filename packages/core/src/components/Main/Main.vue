@@ -36,6 +36,14 @@ const classes = computed(() => [
 
 <style scoped>
 .wx-main {
+  /*
+   * A column rather than a block, so that a screen asked to fill the page — a
+   * `WxListDetail` under a `<router-view />`, say — actually can. As a block, the
+   * inner element was content-tall and a `height: 100%` child measured itself
+   * against that instead of against the column.
+   */
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
   flex: 1 1 auto;
   min-width: 0;
@@ -67,6 +75,9 @@ const classes = computed(() => [
 }
 
 .wx-main__inner {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
   max-width: var(--wx-main-max-width, none);
   /* The cap is centred, but only once there is a cap to centre. */
   margin-inline: auto;

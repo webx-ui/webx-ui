@@ -49,7 +49,7 @@ const section = ref('inbox')
 
       <wx-container direction="horizontal">
         <wx-aside v-if="showAside" :collapsed="collapsed" :width="220" scroll>
-          <wx-menu v-model="section" size="sm" label="Розділи" :collapsed="collapsed">
+          <wx-menu v-model="section" label="Розділи" :collapsed="collapsed">
             <wx-menu-item value="dashboard" icon="home" label="Головна" />
             <wx-menu-item value="inbox" icon="mail" label="Вхідні" />
             <wx-menu-item value="orders" icon="cart" label="Замовлення" />
@@ -67,7 +67,7 @@ const section = ref('inbox')
     </wx-container>
 
     <wx-drawer v-model:open="drawerOpen" title="Меню" side="left" :size="260" closable>
-      <wx-menu v-model="section" size="sm" label="Розділи" @select="close">
+      <wx-menu v-model="section" label="Розділи" @select="close">
         <wx-menu-item value="dashboard" icon="home" label="Головна" />
         <wx-menu-item value="inbox" icon="mail" label="Вхідні" />
         <wx-menu-item value="orders" icon="cart" label="Замовлення" />

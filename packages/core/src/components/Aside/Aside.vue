@@ -79,11 +79,17 @@ const classes = computed(() => [
 /*
  * A sidebar that scrolls on its own sticks to the viewport, so a long menu can be
  * reached while a long page scrolls behind it.
+ *
+ * `max-height` rather than `height`: the column has to answer to both shapes it is
+ * used in. Under a header in a shell that fills the screen it is already the height
+ * of its row, and a hard `100dvh` there is a header taller than the window — the
+ * whole layout then overflows by exactly the header. On a page that scrolls, the row
+ * is as tall as the content, and the cap is what keeps the sticky column in view.
  */
 .wx-aside--scroll {
   position: sticky;
   top: 0;
-  height: 100dvh;
+  max-height: 100dvh;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
