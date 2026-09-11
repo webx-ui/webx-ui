@@ -43,10 +43,9 @@ afterEach(() => vi.unstubAllGlobals())
  * exactly the mismatch that used to leave a gap beside it.
  */
 function layOut(wrapper: ReturnType<typeof mountTable>, widths: number[]) {
-  const cells = wrapper.element.querySelectorAll('thead tr > *')
-  cells.forEach((cell, index) => {
-    ;(cell as HTMLElement).getBoundingClientRect = () =>
-      ({ width: widths[index] ?? 0 }) as unknown as DOMRect
+  const cells = [...wrapper.element.querySelectorAll('thead tr > *')] as HTMLElement[]
+  cells.forEach((cell: HTMLElement, index: number) => {
+    cell.getBoundingClientRect = () => ({ width: widths[index] ?? 0 }) as unknown as DOMRect
   })
 }
 
