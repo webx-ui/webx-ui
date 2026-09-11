@@ -4,10 +4,14 @@ import {
   WxAction,
   WxAside,
   WxBadge,
+  WxButton,
   WxContainer,
   WxDrawer,
+  WxDropdown,
+  WxDropdownItem,
   WxFooter,
   WxHeader,
+  WxIcon,
   WxMain,
   WxMenu,
   WxMenuItem,
@@ -51,16 +55,31 @@ const menuButton = computed(() =>
       <div ref="shellEl" class="layout-demo">
         <wx-container>
           <wx-header>
-            <div class="layout-demo__brand">
-              <wx-action
-                :icon="menuButton.icon"
-                :label="menuButton.title"
-                :title="menuButton.title"
-                @click="toggle()"
-              />
-              <strong>Admin</strong>
-            </div>
-            <wx-badge size="sm">{{ layout }} · {{ width }}px</wx-badge>
+            <wx-action
+              :icon="menuButton.icon"
+              :label="menuButton.title"
+              :title="menuButton.title"
+              @click="toggle()"
+            />
+            <strong>Admin</strong>
+
+            <template #end>
+              <wx-badge size="sm">{{ layout }} · {{ width }}px</wx-badge>
+
+              <wx-dropdown align="end">
+                <template #trigger>
+                  <wx-button variant="text" size="sm">
+                    <template #icon><wx-icon name="user" /></template>
+                    Alex <wx-icon name="chevron-down" size="0.85em" />
+                  </wx-button>
+                </template>
+
+                <wx-dropdown-item icon="user">Profile</wx-dropdown-item>
+                <wx-dropdown-item icon="settings">Preferences</wx-dropdown-item>
+                <hr />
+                <wx-dropdown-item icon="logout" tone="danger">Sign out</wx-dropdown-item>
+              </wx-dropdown>
+            </template>
           </wx-header>
 
           <wx-container direction="horizontal">
@@ -134,13 +153,5 @@ const menuButton = computed(() =>
   resize: horizontal;
 }
 
-.layout-demo :deep(.wx-header) {
-  justify-content: space-between;
-}
-
-.layout-demo__brand {
-  display: flex;
-  align-items: center;
-  gap: var(--wx-space-8);
-}
+/* Nothing here arranges the header any more: the `end` slot takes the far side. */
 </style>

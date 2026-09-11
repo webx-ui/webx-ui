@@ -25,6 +25,10 @@ const classes = computed(() => [
 <template>
   <footer :class="classes" :style="height ? { '--wx-footer-height': height } : undefined">
     <slot />
+    <!-- The far end of the bar: the copyright, a version, a link to the status page. -->
+    <div v-if="$slots.end" class="wx-footer__end">
+      <slot name="end" />
+    </div>
   </footer>
 </template>
 
@@ -43,6 +47,15 @@ const classes = computed(() => [
   color: var(--wx-text-muted);
   font-family: var(--wx-font-family-sans);
   font-size: var(--wx-font-size-sm);
+}
+
+.wx-footer__end {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-8);
+  /* Everything before it keeps its place; this group takes the far end. */
+  margin-inline-start: auto;
+  min-width: 0;
 }
 
 .wx-footer--padding-none {
