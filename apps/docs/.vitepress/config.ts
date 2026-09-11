@@ -63,6 +63,7 @@ export default defineConfig({
           items: [
             { text: 'Layout', link: '/components/layout' },
             { text: 'Grid', link: '/components/grid' },
+            { text: 'ListDetail', link: '/components/list-detail' },
             { text: 'Space', link: '/components/space' },
             { text: 'Divider', link: '/components/divider' },
             { text: 'Scrollbar', link: '/components/scrollbar' },

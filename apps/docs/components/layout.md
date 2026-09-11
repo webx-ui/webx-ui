@@ -20,7 +20,7 @@ A container is either a column or a row, and the shell is the two nested:
 
 ```vue
 <template>
-  <wx-container full-height>
+  <wx-container viewport>
     <wx-header>Admin</wx-header>
 
     <wx-container direction="horizontal">
@@ -28,7 +28,7 @@ A container is either a column or a row, and the shell is the two nested:
         <wx-menu v-model="section">…</wx-menu>
       </wx-aside>
 
-      <wx-main>
+      <wx-main scroll>
         <router-view />
       </wx-main>
     </wx-container>
@@ -38,18 +38,19 @@ A container is either a column or a row, and the shell is the two nested:
 </template>
 ```
 
-`full-height` belongs on the outermost container only: it is `min-height: 100dvh`, the dynamic
-viewport unit, so the shell is not cut off by the browser chrome on a phone.
+`viewport` belongs on the outermost container only. It makes the shell exactly `100dvh` — the
+dynamic viewport unit, so the browser chrome on a phone does not cut it off — and the column
+inside it is what scrolls. See [Scrolling](#scrolling) for the other half of that choice.
 
 ## Scrolling
 
-By default the page scrolls. For the admin shape where the chrome stays put and only the content
-moves, give the main column its own scroll and let the sidebar stick:
+By default the page scrolls. For the admin shape — chrome that stays put, content that moves —
+the outermost container becomes `viewport` and the main column scrolls inside it:
 
 ```vue
 <template>
-  <wx-container full-height>
-    <wx-header sticky>Admin</wx-header>
+  <wx-container viewport>
+    <wx-header>Admin</wx-header>
 
     <wx-container direction="horizontal">
       <wx-aside scroll>…</wx-aside>
@@ -58,6 +59,13 @@ moves, give the main column its own scroll and let the sidebar stick:
   </wx-container>
 </template>
 ```
+
+`viewport` is what makes `scroll` mean anything. It caps the shell at `100dvh` so the column
+inside it overflows and scrolls; with `full-height` — `min-height`, no cap — the container simply
+grows with its content, nothing ever overflows, and a `scroll` column never scrolls.
+
+Pick by what the page is: `viewport` for an application, `full-height` for a document whose page
+scrolls as a whole.
 
 For a scrolling panel inside a screen — a log, a list of comments — use
 [Scrollbar](/components/scrollbar) rather than a container.
@@ -100,7 +108,7 @@ const section = ref('pages')
 
 <template>
   <div ref="shell">
-    <wx-container full-height>
+    <wx-container viewport>
       <wx-header>
         <!-- A burger belongs to the drawer; while the sidebar is on the page it is a toggle. -->
         <wx-action
@@ -116,7 +124,7 @@ const section = ref('pages')
           <wx-menu v-model="section" :collapsed="collapsed">…</wx-menu>
         </wx-aside>
 
-        <wx-main>
+        <wx-main scroll>
           <router-view />
         </wx-main>
       </wx-container>
@@ -202,7 +210,7 @@ horizontal [Menu](/components/menu) in the header and no `WxAside` at all.
 
 ```vue
 <template>
-  <wx-container full-height>
+  <wx-container viewport>
     <wx-header>
       <strong>Admin</strong>
 
@@ -242,11 +250,12 @@ padding and the background still run the full width of the column:
 
 ## Container
 
-| Prop         | Type                         | Default      | Description                      |
-| ------------ | ---------------------------- | ------------ | -------------------------------- |
-| `direction`  | `'vertical' \| 'horizontal'` | `'vertical'` | How the children stack           |
-| `fullHeight` | `boolean`                    | `false`      | At least as tall as the viewport |
-| `as`         | `string \| Component`        | `'div'`      | The element to render            |
+| Prop         | Type                         | Default      | Description                        |
+| ------------ | ---------------------------- | ------------ | ---------------------------------- |
+| `direction`  | `'vertical' \| 'horizontal'` | `'vertical'` | How the children stack             |
+| `fullHeight` | `boolean`                    | `false`      | At least as tall as the viewport   |
+| `viewport`   | `boolean`                    | `false`      | Exactly the viewport; panes scroll |
+| `as`         | `string \| Component`        | `'div'`      | The element to render              |
 
 ## Header
 

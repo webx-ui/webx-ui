@@ -2,8 +2,12 @@
 import { computed, ref } from 'vue'
 import { useFormField } from '../../composables/useFormField'
 import type { InputEmits, InputModelValue, InputProps } from './types'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 
 defineOptions({ name: 'WxInput', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const props = withDefaults(defineProps<InputProps>(), {
   type: 'text',
@@ -87,7 +91,7 @@ defineExpose({
 </script>
 
 <template>
-  <div :class="classes">
+  <div :class="classes" v-bind="rootAttrs">
     <span v-if="$slots.prefix" class="wx-input__affix wx-input__affix--prefix">
       <slot name="prefix" />
     </span>
@@ -95,7 +99,7 @@ defineExpose({
     <input
       :id="field.id.value"
       ref="inputRef"
-      v-bind="$attrs"
+      v-bind="controlAttrs"
       class="wx-input__inner"
       :type="type"
       :value="currentValue"
@@ -160,19 +164,19 @@ defineExpose({
 .wx-input--sm {
   height: var(--wx-size-control-sm);
   padding: 0 var(--wx-space-10);
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-input--md {
   height: var(--wx-size-control-md);
   padding: 0 var(--wx-space-12);
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-control-md);
 }
 
 .wx-input--lg {
   height: var(--wx-size-control-lg);
   padding: 0 var(--wx-space-16);
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 .wx-input--error,

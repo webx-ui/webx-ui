@@ -1,0 +1,20 @@
+/*
+ * Inter, self-hosted — the typeface this design system was drawn in, as an opt-in.
+ *
+ *   import '@webx-ui/tokens/fonts.css'
+ *
+ * Without this file the tokens name the platform's own UI font, which looks right
+ * everywhere and weighs nothing. With it, every admin built on the library reads the
+ * same on Windows, macOS and Linux — which is the point of having one of these.
+ *
+ * The faces come from `@fontsource-variable/inter` (SIL Open Font License): one
+ * variable file per subset, Latin and Cyrillic included, `font-display: swap`. Only
+ * the subsets a page actually needs are downloaded.
+ */
+@import '@fontsource-variable/inter';
+
+:root {
+  --wx-font-family-sans:
+    'Inter Variable', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+}

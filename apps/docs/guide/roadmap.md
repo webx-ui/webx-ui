@@ -84,6 +84,8 @@ RichText (Tiptap) ✅ — see [RichText](/components/rich-text).
 EntityCard ✅ — one record as a row, see [EntityCard](/components/entity-card).
 Actions ✅ — the icon buttons at the end of a row, see [Actions](/components/actions).
 Kanban ✅ — a board of columns cards are dragged between, see [Kanban](/components/kanban).
+ListDetail ✅ — filters, records, the open one, and the rule for when there is room for all three:
+see [ListDetail](/components/list-detail). An inbox and an orders screen are the same furniture.
 
 Gantt ⬜ — the other way to look at the same work: a task per row, a bar across a timeline.
 Decided, not started. It will be ours rather than a wrapper around `frappe-gantt` or

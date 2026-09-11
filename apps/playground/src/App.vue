@@ -1,111 +1,136 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { applyTheme, type Theme } from '@webx-ui/tokens'
+import SidebarLayout from './layouts/SidebarLayout.vue'
+import TopbarLayout from './layouts/TopbarLayout.vue'
+import DashboardScreen from './screens/DashboardScreen.vue'
+import OrdersScreen from './screens/OrdersScreen.vue'
+import RecordsScreen from './screens/RecordsScreen.vue'
+import SettingsScreen from './screens/SettingsScreen.vue'
+import InboxScreen from './inbox/InboxScreen.vue'
+import KitchenSink from './KitchenSink.vue'
 
+/**
+ * Two shells and the screens an admin panel is actually made of: a dashboard, a
+ * table, a form behind tabs, and a three-column pane. Each one is a whole page
+ * rather than a demo box, which is the only way to find out whether the components
+ * hold up next to each other.
+ */
+type Page = 'topbar' | 'sidebar' | 'orders' | 'settings' | 'records' | 'inbox' | 'components'
+
+const page = ref<Page>('topbar')
 const theme = ref<Theme>('light')
-const title = ref('Landing page')
-const saving = ref(false)
+
+const pages: { value: Page; label: string }[] = [
+  { value: 'topbar', label: 'Меню в шапці' },
+  { value: 'sidebar', label: 'Меню збоку' },
+  { value: 'orders', label: 'Таблиця' },
+  { value: 'settings', label: 'Форма і таби' },
+  { value: 'records', label: 'Список + деталі' },
+]
+
+const extras: { value: Page; label: string }[] = [
+  { value: 'inbox', label: 'Вхідні' },
+  { value: 'components', label: 'Компоненти' },
+]
 
 function toggleTheme() {
   theme.value = theme.value === 'light' ? 'dark' : 'light'
   applyTheme(theme.value)
 }
-
-function save() {
-  saving.value = true
-  setTimeout(() => (saving.value = false), 1200)
-}
 </script>
 
 <template>
-  <main class="wx-root page">
-    <header class="page__head">
-      <h1 class="page__title">WebX UI playground</h1>
-      <wx-button variant="outline" size="sm" @click="toggleTheme">
-        {{ theme === 'light' ? 'Dark' : 'Light' }} theme
+  <div class="wx-root">
+    <!-- The shell stays put; the screen inside it is what a router would swap. -->
+    <topbar-layout v-if="page === 'topbar'">
+      <dashboard-screen />
+    </topbar-layout>
+
+    <sidebar-layout v-else-if="page === 'sidebar'">
+      <dashboard-screen />
+    </sidebar-layout>
+
+    <sidebar-layout v-else-if="page === 'orders'">
+      <orders-screen />
+    </sidebar-layout>
+
+    <sidebar-layout v-else-if="page === 'settings'">
+      <settings-screen />
+    </sidebar-layout>
+
+    <!-- A screen that lays out its own columns takes the room unpadded and unscrolled. -->
+    <sidebar-layout v-else-if="page === 'records'" padding="none" :scroll="false">
+      <records-screen />
+    </sidebar-layout>
+
+    <sidebar-layout v-else-if="page === 'inbox'" padding="none" :scroll="false">
+      <inbox-screen />
+    </sidebar-layout>
+
+    <kitchen-sink v-else />
+
+    <!-- The switcher belongs to the playground, not to any of the screens. -->
+    <div class="switcher">
+      <wx-button
+        v-for="item in pages"
+        :key="item.value"
+        size="sm"
+        :variant="page === item.value ? 'solid' : 'text'"
+        :type="page === item.value ? 'primary' : 'default'"
+        @click="page = item.value"
+      >
+        {{ item.label }}
       </wx-button>
-    </header>
 
-    <wx-card title="Page settings" shadow="always">
-      <template #extra>Draft</template>
+      <wx-divider direction="vertical" spacing="sm" />
 
-      <div class="stack">
-        <wx-input v-model="title" placeholder="Title" clearable show-count :maxlength="60" />
-        <wx-input model-value="" placeholder="Slug">
-          <template #prefix>/</template>
-        </wx-input>
-        <wx-input model-value="broken@" status="error" placeholder="Email" />
-      </div>
+      <wx-button
+        v-for="item in extras"
+        :key="item.value"
+        size="sm"
+        :variant="page === item.value ? 'solid' : 'text'"
+        :type="page === item.value ? 'primary' : 'default'"
+        @click="page = item.value"
+      >
+        {{ item.label }}
+      </wx-button>
 
-      <template #footer>
-        <div class="actions">
-          <wx-button variant="text">Cancel</wx-button>
-          <wx-button type="primary" :loading="saving" @click="save">Save</wx-button>
-        </div>
-      </template>
-    </wx-card>
+      <wx-divider direction="vertical" spacing="sm" />
 
-    <wx-card title="Buttons" padding="md">
-      <div class="row">
-        <wx-button>Default</wx-button>
-        <wx-button type="primary">Primary</wx-button>
-        <wx-button type="success">Success</wx-button>
-        <wx-button type="warning">Warning</wx-button>
-        <wx-button type="danger">Danger</wx-button>
-      </div>
-      <div class="row">
-        <wx-button type="primary" variant="outline">Outline</wx-button>
-        <wx-button type="primary" variant="text">Text</wx-button>
-        <wx-button type="primary" round>Round</wx-button>
-        <wx-button type="primary" disabled>Disabled</wx-button>
-      </div>
-    </wx-card>
-  </main>
+      <wx-action
+        :icon="theme === 'light' ? 'moon' : 'sun'"
+        :title="theme === 'light' ? 'Темна тема' : 'Світла тема'"
+        size="sm"
+        @click="toggleTheme"
+      />
+    </div>
+  </div>
 </template>
 
 <style>
 body {
   margin: 0;
 }
+</style>
 
-.page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wx-space-18);
-  min-height: 100vh;
-  padding: var(--wx-space-32);
-  box-sizing: border-box;
-}
-
-.page__head {
+<style scoped>
+.switcher {
+  position: fixed;
+  bottom: var(--wx-space-16);
+  left: var(--wx-space-16);
+  z-index: var(--wx-z-index-sticky);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--wx-space-16);
-}
-
-.page__title {
-  margin: 0;
-  font-size: var(--wx-font-size-2xl);
-  color: var(--wx-text-strong);
-}
-
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wx-space-12);
-}
-
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wx-space-12);
-  margin-bottom: var(--wx-space-12);
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--wx-space-8);
+  gap: var(--wx-space-4);
+  /* One row that scrolls, rather than three that eat a third of a phone screen. */
+  max-width: calc(100vw - var(--wx-space-32));
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: var(--wx-space-4);
+  background: var(--wx-bg-surface);
+  border: 1px solid var(--wx-border-default);
+  border-radius: var(--wx-radius-full);
+  box-shadow: var(--wx-shadow-popover);
 }
 </style>

@@ -2,8 +2,12 @@
 import { computed, ref, watch } from 'vue'
 import { useFormField } from '../../composables/useFormField'
 import type { InputNumberEmits, InputNumberModelValue, InputNumberProps } from './types'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 
 defineOptions({ name: 'WxInputNumber', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const props = withDefaults(defineProps<InputNumberProps>(), {
   min: undefined,
@@ -170,7 +174,7 @@ defineExpose({
 </script>
 
 <template>
-  <div :class="classes">
+  <div :class="classes" v-bind="rootAttrs">
     <button
       v-if="controls"
       class="wx-input-number__button wx-input-number__button--decrease"
@@ -188,7 +192,7 @@ defineExpose({
     <input
       :id="field.id.value"
       ref="inputRef"
-      v-bind="$attrs"
+      v-bind="controlAttrs"
       class="wx-input-number__inner"
       type="text"
       inputmode="decimal"
@@ -252,17 +256,17 @@ defineExpose({
 
 .wx-input-number--sm {
   height: var(--wx-size-control-sm);
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-input-number--md {
   height: var(--wx-size-control-md);
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-control-md);
 }
 
 .wx-input-number--lg {
   height: var(--wx-size-control-lg);
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 .wx-input-number:hover:not(.is-disabled) {

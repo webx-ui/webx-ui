@@ -146,5 +146,9 @@ vite.config.ts.timestamp-*
 apps/docs/.vitepress/cache
 apps/docs/.vitepress/dist
 
+# Design canvases: working files for a published Artifact, and the seeded page itself.
+# They carry mockups for particular sites, which is not what a public library ships.
+/design/
+
 # Local tooling
 .claude/

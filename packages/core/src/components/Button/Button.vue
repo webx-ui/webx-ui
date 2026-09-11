@@ -122,19 +122,19 @@ function onClick(event: MouseEvent) {
 .wx-button--sm {
   height: var(--wx-size-control-sm);
   padding: 0 var(--wx-space-12);
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-button--md {
   height: var(--wx-size-control-md);
   padding: 0 var(--wx-space-18);
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-control-md);
 }
 
 .wx-button--lg {
   height: var(--wx-size-control-lg);
   padding: 0 var(--wx-space-24);
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 .wx-button--block {

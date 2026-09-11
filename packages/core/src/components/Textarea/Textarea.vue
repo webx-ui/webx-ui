@@ -2,8 +2,12 @@
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useFormField } from '../../composables/useFormField'
 import type { TextareaEmits, TextareaModelValue, TextareaProps } from './types'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 
 defineOptions({ name: 'WxTextarea', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const props = withDefaults(defineProps<TextareaProps>(), {
   size: undefined,
@@ -105,11 +109,11 @@ defineExpose({
 </script>
 
 <template>
-  <div :class="classes">
+  <div :class="classes" v-bind="rootAttrs">
     <textarea
       :id="field.id.value"
       ref="textareaRef"
-      v-bind="$attrs"
+      v-bind="controlAttrs"
       class="wx-textarea__inner"
       :value="currentValue"
       :rows="rows"
@@ -190,15 +194,15 @@ defineExpose({
 }
 
 .wx-textarea--sm {
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-textarea--md {
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-control-md);
 }
 
 .wx-textarea--lg {
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 .wx-textarea.is-autosize .wx-textarea__inner {

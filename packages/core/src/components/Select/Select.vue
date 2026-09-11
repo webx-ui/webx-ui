@@ -14,8 +14,12 @@ import {
 } from 'reka-ui'
 import { useFormField } from '../../composables/useFormField'
 import type { SelectEmits, SelectModelValue, SelectProps, SelectValue } from './types'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 
 defineOptions({ name: 'WxSelect', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const props = withDefaults(defineProps<SelectProps>(), {
   options: () => [],
@@ -151,6 +155,7 @@ function removeTag(value: SelectValue) {
     :ignore-filter="!filterable"
     :open-on-click="true"
     :class="classes"
+    v-bind="rootAttrs"
     as="div"
   >
     <combobox-anchor class="wx-select__anchor" as="div" @click="openList">
@@ -178,7 +183,7 @@ function removeTag(value: SelectValue) {
         <combobox-input
           v-if="filterable"
           :id="field.id.value"
-          v-bind="$attrs"
+          v-bind="controlAttrs"
           v-model="searchText"
           class="wx-select__input"
           :placeholder="placeholder"
@@ -275,19 +280,21 @@ function removeTag(value: SelectValue) {
   border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-control);
   color: var(--wx-text-default);
-  font-size: var(--wx-font-size-md);
+  /* A select is a list of choices, and it reads like the one in the sidebar does. */
+  font-size: var(--wx-font-size-control-md);
+  font-weight: var(--wx-font-weight-medium);
   cursor: pointer;
   transition: border-color var(--wx-duration-normal) var(--wx-easing-standard);
 }
 
 .wx-select--sm .wx-select__anchor {
   min-height: var(--wx-size-control-sm);
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-select--lg .wx-select__anchor {
   min-height: var(--wx-size-control-lg);
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 .wx-select__anchor:hover {
@@ -431,7 +438,8 @@ function removeTag(value: SelectValue) {
   box-shadow: var(--wx-shadow-popover);
   color: var(--wx-text-default);
   font-family: var(--wx-font-family-sans);
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-control-md);
+  font-weight: var(--wx-font-weight-medium);
   overflow: hidden;
 }
 

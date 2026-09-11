@@ -77,7 +77,7 @@ export const tokens = {
     },
     "font": {
       "family": {
-        "sans": "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+        "sans": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
         "mono": "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
       },
       "size": {
@@ -87,7 +87,10 @@ export const tokens = {
         "lg": "18px",
         "xl": "20px",
         "2xl": "24px",
-        "3xl": "32px"
+        "3xl": "32px",
+        "control-sm": "12px",
+        "control-md": "14px",
+        "control-lg": "16px"
       },
       "weight": {
         "regular": "400",
@@ -325,7 +328,7 @@ export const lightVars: Record<string, string> = {
   '--wx-space-64': "64px",
   '--wx-space-96': "96px",
   '--wx-space-128': "128px",
-  '--wx-font-family-sans': "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+  '--wx-font-family-sans': "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
   '--wx-font-family-mono': "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
   '--wx-font-size-xs': "12px",
   '--wx-font-size-sm': "14px",
@@ -334,6 +337,9 @@ export const lightVars: Record<string, string> = {
   '--wx-font-size-xl': "20px",
   '--wx-font-size-2xl': "24px",
   '--wx-font-size-3xl': "32px",
+  '--wx-font-size-control-sm': "12px",
+  '--wx-font-size-control-md': "14px",
+  '--wx-font-size-control-lg': "16px",
   '--wx-font-weight-regular': "400",
   '--wx-font-weight-medium': "500",
   '--wx-font-weight-semibold': "600",

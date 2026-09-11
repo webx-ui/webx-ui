@@ -4,8 +4,12 @@ import { VueDatePicker } from '@vuepic/vue-datepicker'
 import { useFormField } from '../../composables/useFormField'
 import '../../styles/datepicker.css'
 import type { DateRangePickerEmits, DateRangePickerModelValue, DateRangePickerProps } from './types'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 
 defineOptions({ name: 'WxDateRangePicker', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const props = withDefaults(defineProps<DateRangePickerProps>(), {
   valueFormat: undefined,
@@ -81,7 +85,7 @@ function onCleared() {
 </script>
 
 <template>
-  <div :class="classes">
+  <div :class="classes" v-bind="rootAttrs">
     <vue-date-picker
       range
       :model-value="model"
@@ -99,7 +103,7 @@ function onCleared() {
       :teleport="teleport"
       :disabled="field.disabled.value"
       :readonly="readonly"
-      v-bind="$attrs"
+      v-bind="controlAttrs"
       @update:model-value="onUpdate"
       @cleared="onCleared"
       @open="emit('open')"

@@ -36,6 +36,14 @@ const classes = computed(() => [
 
 <style scoped>
 .wx-main {
+  /*
+   * A column rather than a block, so that a screen asked to fill the page — a
+   * `WxListDetail` under a `<router-view />`, say — actually can. As a block, the
+   * inner element was content-tall and a `height: 100%` child measured itself
+   * against that instead of against the column.
+   */
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
   flex: 1 1 auto;
   min-width: 0;
@@ -66,10 +74,29 @@ const classes = computed(() => [
   overflow-y: auto;
 }
 
+/*
+ * The inner element fills the column, so a screen that asks for `height: 100%` —
+ * a `WxListDetail` under a `<router-view />` — gets the column's height rather than
+ * its own content's.
+ */
 .wx-main__inner {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
   max-width: var(--wx-main-max-width, none);
   /* The cap is centred, but only once there is a cap to centre. */
   margin-inline: auto;
+}
+
+/*
+ * A scrolling column is the exception: there the inner element has to be as tall as
+ * its content, or the padding at the bottom never makes it into the scrollable area
+ * and the last card ends flush against the edge. Measured: 1288px of content in a
+ * 216px column scrolls 1312px with this rule and 1300px without it.
+ */
+.wx-main--scroll .wx-main__inner {
+  flex: 0 0 auto;
+  min-height: 100%;
 }
 
 /*

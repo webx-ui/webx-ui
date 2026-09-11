@@ -1,6 +1,6 @@
 // Generates dist/tokens.css and src/generated/tokens.ts from src/tokens.json.
 // Run via `pnpm --filter @webx-ui/tokens generate` (also part of `build`).
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, copyFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -112,6 +112,9 @@ export const compactVars: Record<string, string> = ${asRecord(compact)}
 mkdirSync(resolve(root, 'dist'), { recursive: true })
 mkdirSync(resolve(root, 'src/generated'), { recursive: true })
 writeFileSync(resolve(root, 'dist/tokens.css'), css)
+
+/* The opt-in Inter stylesheet ships as it is written — see src/fonts.css. */
+copyFileSync(resolve(root, 'src/fonts.css'), resolve(root, 'dist/fonts.css'))
 writeFileSync(resolve(root, 'src/generated/tokens.ts'), ts)
 
 console.log(

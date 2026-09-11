@@ -60,7 +60,12 @@ const classes = computed(() => [
   gap: var(--wx-space-8);
   /* Everything before it keeps its place; this group takes the far end. */
   margin-inline-start: auto;
-  min-width: 0;
+  /*
+   * And keeps it. Left to shrink like any other flex item, the account menu is the
+   * first thing a wide navigation bar squeezes — it slides under the bar and off the
+   * edge of the header. Whatever is short of room, it is not this.
+   */
+  flex: 0 0 auto;
 }
 
 /*
