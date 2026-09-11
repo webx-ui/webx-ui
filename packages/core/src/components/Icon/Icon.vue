@@ -24,6 +24,14 @@ const keywordSizes: Record<string, string> = {
  */
 const content = computed(() => resolveIcon(props.name))
 
+/*
+ * The rule cannot tell an icon registry from a request body, so it is switched off
+ * for this file rather than left as a warning somebody would eventually "fix" by
+ * deleting the directive. It is switched off here, in the script, because a comment
+ * above the template's root element would make that template a fragment.
+ */
+/* eslint-disable vue/no-v-html */
+
 const boxSize = computed(() => {
   const { size } = props
   if (size === undefined) return '1em'
