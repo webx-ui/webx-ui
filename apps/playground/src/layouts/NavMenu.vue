@@ -21,6 +21,7 @@ const section = defineModel<string>({ default: 'dashboard' })
   <wx-menu
     v-model="section"
     :mode="mode"
+    overflow-title="Ще"
     :collapsed="collapsed"
     :label="label ?? 'Розділи'"
     @select="emit('select')"

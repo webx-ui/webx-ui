@@ -54,7 +54,7 @@ const activity = [
       </div>
     </header>
 
-    <wx-row :gutter="16" wrap>
+    <wx-row :gutter="12" wrap>
       <wx-col v-for="stat in stats" :key="stat.title" :span="24" :sm="12" :lg="6">
         <wx-card padding="md" bordered shadow="never">
           <wx-statistic
@@ -71,7 +71,7 @@ const activity = [
       </wx-col>
     </wx-row>
 
-    <wx-row :gutter="16" wrap>
+    <wx-row :gutter="12" wrap>
       <wx-col :span="24" :lg="16">
         <wx-card title="Lorem ipsum" padding="md" bordered shadow="never">
           <wx-prose>
@@ -104,7 +104,7 @@ const activity = [
       </wx-col>
     </wx-row>
 
-    <wx-row :gutter="16" wrap>
+    <wx-row :gutter="12" wrap>
       <wx-col v-for="card in cards" :key="card.title" :span="24" :sm="12" :lg="8">
         <wx-card padding="md" bordered shadow="hover">
           <template #header>
@@ -129,7 +129,7 @@ const activity = [
 .screen {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
+  gap: var(--wx-space-12);
 }
 
 .screen__head {

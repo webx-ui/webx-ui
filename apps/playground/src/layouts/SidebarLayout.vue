@@ -35,7 +35,7 @@ const section = ref('dashboard')
 
 <template>
   <div ref="shellEl" class="shell">
-    <wx-container full-height>
+    <wx-container viewport>
       <wx-header>
         <wx-action
           :icon="layout === 'drawer' ? 'menu' : 'sidebar'"
@@ -69,8 +69,8 @@ const section = ref('dashboard')
 
 <style scoped>
 .shell {
-  height: 100vh;
-  overflow: hidden;
+  /* The shell is the window; the main column is what scrolls inside it. */
+  height: 100dvh;
 }
 
 .shell__screen {

@@ -103,16 +103,39 @@ sidebar should not throw open a panel for every branch that happened to be expan
 
 `collapsed` is ignored in a bar — there is nothing to collapse.
 
+### What does not fit
+
+A bar gets whatever room the header has left over, and an admin with eight sections will outgrow
+it long before the window becomes a phone. The entries that do not fit **move into a branch at the
+end of the bar**, and come back as it widens:
+
+```vue
+<template>
+  <wx-menu mode="horizontal" overflow-title="More">…</wx-menu>
+</template>
+```
+
+The bar measures itself with a `ResizeObserver` and again once the typeface has loaded, since text
+in the fallback face is a few pixels narrower per label. Entries are _moved_, not duplicated: each
+one is rendered in exactly one of the two places, so it keeps one identity, and the branch shows
+as the trail when the page you are on is inside it.
+
+Set `overflow="scroll"` for the old behaviour — the bar scrolls sideways and nothing moves. In a
+shell where the whole menu should disappear behind a burger instead, hide the bar yourself; see
+[a bar in the header](/components/layout#a-bar-in-the-header).
+
 ## Menu
 
-| Prop         | Type                         | Default      | Description                               |
-| ------------ | ---------------------------- | ------------ | ----------------------------------------- |
-| `mode`       | `'vertical' \| 'horizontal'` | `'vertical'` | A sidebar, or a bar                       |
-| `size`       | `'sm' \| 'md'`               | `'md'`       | Row height and text size                  |
-| `collapsed`  | `boolean`                    | `false`      | Icon rail; vertical menus only            |
-| `accordion`  | `boolean`                    | `false`      | One open branch at a time                 |
-| `autoExpand` | `boolean`                    | `true`       | Opens the branch holding the active entry |
-| `label`      | `string`                     | —            | Accessible name of the menu               |
+| Prop            | Type                         | Default      | Description                                  |
+| --------------- | ---------------------------- | ------------ | -------------------------------------------- |
+| `mode`          | `'vertical' \| 'horizontal'` | `'vertical'` | A sidebar, or a bar                          |
+| `size`          | `'sm' \| 'md'`               | `'md'`       | Row height and text size                     |
+| `overflow`      | `'menu' \| 'scroll'`         | `'menu'`     | What a bar does with entries that do not fit |
+| `overflowTitle` | `string`                     | `'More'`     | Title of the branch they move into           |
+| `collapsed`     | `boolean`                    | `false`      | Icon rail; vertical menus only               |
+| `accordion`     | `boolean`                    | `false`      | One open branch at a time                    |
+| `autoExpand`    | `boolean`                    | `true`       | Opens the branch holding the active entry    |
+| `label`         | `string`                     | —            | Accessible name of the menu                  |
 
 **Models:** `v-model` (`string \| number`) — the selected entry; `v-model:open`
 (`Array<string \| number>`) — the open branches.
