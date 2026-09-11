@@ -305,7 +305,8 @@ function clear() {
 <style>
 /* The list is teleported, so its styles cannot be scoped to the component. */
 .wx-autocomplete__content {
-  z-index: var(--wx-z-index-dropdown);
+  /* One layer for every floating panel, so the one opened last is the one on top. */
+  z-index: var(--wx-z-index-popover);
   box-sizing: border-box;
   width: var(--reka-combobox-trigger-width);
   max-height: 300px;

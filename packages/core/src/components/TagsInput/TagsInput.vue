@@ -317,7 +317,8 @@ defineExpose({ focus: () => inputRef.value?.focus() })
   top: calc(100% + var(--wx-space-4));
   left: 0;
   right: 0;
-  z-index: var(--wx-z-index-dropdown);
+  /* One layer for every floating panel, so the one opened last is the one on top. */
+  z-index: var(--wx-z-index-popover);
   max-height: 220px;
   margin: 0;
   padding: var(--wx-space-4);
