@@ -136,8 +136,27 @@ something that never went away.
 
 The width chooses the shape, it does not hold it: on a tablet the sidebar starts as a rail, and the
 button still expands it in place, because the reader can see what they are expanding. Only the
-phone breakpoint is absolute — a 240px column beside a 375px screen leaves nothing to read, so
-there the menu goes to the drawer and the preference is forgotten until it comes back.
+phone breakpoint is absolute — a 240px column beside a 375px screen leaves nothing to read.
+
+### What is remembered, and what is not
+
+The two answers the button can give are not worth the same:
+
+- **Closed by hand** is a decision. It holds at every width that has room for a sidebar, and with
+  `persist` it holds across reloads too.
+- **Open** only says "not collapsed, here". It is let go the moment the screen changes size class,
+  so the width decides again: a desktop opens the sidebar, a tablet still starts with the rail.
+
+Without that second rule a sidebar opened on a desktop would be sitting there on a tablet, 240px
+wide, over a screen with no room for it. With it, the reader who wants the rail keeps the rail, and
+everybody else gets whatever the screen can take.
+
+```ts
+const shell = useResponsiveShell(el, { persist: 'admin-sidebar' })
+```
+
+`persist` is a key in `localStorage`, and only a closed sidebar is written under it — opening one
+clears the key rather than storing the opposite, since an open sidebar is the default anyway.
 
 | Returns      | Type                                           | Description                                    |
 | ------------ | ---------------------------------------------- | ---------------------------------------------- |
@@ -150,7 +169,8 @@ there the menu goes to the drawer and the preference is forgotten until it comes
 | `close`      | `() => void`                                   | Closes the drawer — call it on `select`        |
 
 Options: `phone` (640) and `tablet` (1024) are the thresholds, `collapsed` starts the sidebar as a
-rail whatever the width. Pass nothing at all to measure the page itself:
+rail whatever the width, and `persist` is the key above. Pass nothing at all to measure the page
+itself:
 
 ```ts
 const shell = useResponsiveShell(undefined, { tablet: 1200 })
@@ -161,9 +181,16 @@ a shell inside a preview, a split screen or the demo box above is narrow whateve
 On a real page the two are the same number. `shellLayoutFor(width, collapsed, options)` is the rule
 on its own, if you would rather drive the state yourself.
 
-The padding of the bars and of the main column needs no help: under 640px the header, the footer
-and `WxMain` drop to 12px on their own — 24px of margin around a form is air on a desktop and a
-third of the line on a phone.
+### The gutter the bars stand in
+
+`WxHeader` and `WxFooter` are chrome rather than content, and their `md` padding is 10px: that puts
+the centre of a 36px control in the header exactly above the centre of the icons in the rail below
+it, which is what makes a sidebar toggle look like it belongs to the sidebar. A header carrying
+nothing but a title can take `padding="lg"`.
+
+The main column keeps the roomier 24px, and gives some of it up on a small screen: under 640px it
+drops to 16px and under 420px to 12px, because 24px of margin around a form is air on a desktop and
+a third of the line on a phone.
 
 ## A bar in the header
 

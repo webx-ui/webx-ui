@@ -1,4 +1,5 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch, type ComputedRef, type Ref } from 'vue'
+import { usePanelMemory } from './useOverlayPanel'
 
 /** What shape the navigation takes at the width it has been given. */
 export type ShellLayout = 'sidebar' | 'rail' | 'drawer'
@@ -10,6 +11,12 @@ export interface ResponsiveShellOptions {
   tablet?: number
   /** Whether it starts as a rail on a screen wide enough for the full sidebar. */
   collapsed?: boolean
+  /**
+   * Remembers a sidebar that was closed by hand, under this key in `localStorage`.
+   * Only the closing is kept: a sidebar left open goes back to following the width,
+   * so a desktop opens it and a tablet still starts with the rail.
+   */
+  persist?: string
 }
 
 export interface ResponsiveShell {
@@ -28,6 +35,11 @@ export interface ResponsiveShell {
    */
   toggle: () => void
   close: () => void
+}
+
+/** What `persist` keeps: a sidebar that was closed by hand, and nothing else. */
+interface ShellMemory {
+  collapsed: boolean
 }
 
 const PHONE = 640
@@ -78,12 +90,16 @@ export function useResponsiveShell(
 
   /*
    * What the reader last asked for, or `null` for "whatever the width suggests".
-   * The width picks the rail on a tablet; it does not hold it there, and the toggle
-   * expands the sidebar in place like it does on any other screen.
+   * The two answers are not equal: closing a sidebar is a decision that holds at
+   * every width and across reloads, while opening one only says "not here, not now"
+   * — it is dropped as soon as the screen changes size class, and the width decides
+   * again. Otherwise a sidebar opened on a desktop would be waiting on a tablet.
    */
-  const collapsedByUser = ref<boolean | null>(options.collapsed ?? null)
+  const preference = ref<boolean | null>(options.collapsed ?? null)
 
-  const layout = computed(() => shellLayoutFor(width.value, collapsedByUser.value, options))
+  const memory = usePanelMemory<ShellMemory>('wx-shell:', () => options.persist)
+
+  const layout = computed(() => shellLayoutFor(width.value, preference.value, options))
   const collapsed = computed(() => layout.value !== 'sidebar')
   const showAside = computed(() => layout.value !== 'drawer')
 
@@ -115,7 +131,11 @@ export function useResponsiveShell(
     observer.observe(el)
   }
 
-  onMounted(observe)
+  onMounted(() => {
+    observe()
+    /* Read after mounting: the server has no storage, and the markup must match. */
+    if (memory.read()?.collapsed) preference.value = true
+  })
 
   if (target) watch(target, observe)
 
@@ -124,15 +144,14 @@ export function useResponsiveShell(
     observer = null
   })
 
-  /*
-   * The menu is back on the page, so the drawer has nothing left to show — and what
-   * the reader last asked of a sidebar they could see does not carry over the gap.
-   */
-  watch(layout, (value) => {
-    /* What the reader asked of a sidebar they could see does not carry over the gap. */
-    if (value === 'drawer') collapsedByUser.value = null
+  /** Which size class the screen is in — what an open sidebar is remembered against. */
+  const sizeClass = computed<ShellLayout>(() => shellLayoutFor(width.value, null, options))
+
+  watch(sizeClass, () => {
+    /* The screen changed class, so "open, here" has been answered and is let go. */
+    if (preference.value === false) preference.value = null
     /* And once the menu is back on the page, the drawer has nothing left to show. */
-    else drawerOpen.value = false
+    if (sizeClass.value !== 'drawer') drawerOpen.value = false
   })
 
   /**
@@ -141,8 +160,17 @@ export function useResponsiveShell(
    * is gone entirely it is the burger that brings the drawer back.
    */
   function toggle() {
-    if (layout.value === 'drawer') drawerOpen.value = !drawerOpen.value
-    else collapsedByUser.value = layout.value !== 'rail'
+    if (layout.value === 'drawer') {
+      drawerOpen.value = !drawerOpen.value
+      return
+    }
+
+    const closing = layout.value !== 'rail'
+    preference.value = closing ? true : false
+
+    /* Only the closing is worth keeping; an open sidebar is the default anyway. */
+    if (closing) memory.write({ collapsed: true })
+    else memory.clear()
   }
 
   function close() {

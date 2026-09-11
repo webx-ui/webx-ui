@@ -50,30 +50,26 @@ const classes = computed(() => [
 }
 
 .wx-footer--padding-sm {
-  --wx-footer-padding: var(--wx-space-12);
+  --wx-footer-padding: var(--wx-space-6);
 }
 
+/* The same gutter as the header, so the two bars stay a pair. */
 .wx-footer--padding-md {
-  --wx-footer-padding: var(--wx-space-16);
+  --wx-footer-padding: var(--wx-space-10);
 }
 
 .wx-footer--padding-lg {
-  --wx-footer-padding: var(--wx-space-24);
+  --wx-footer-padding: var(--wx-space-16);
 }
 
 .wx-footer--bordered {
   border-top: 1px solid var(--wx-border-default);
 }
 
-/* The same give as the header, so the two bars stay a pair. */
+/* The same give as the header on a small screen. */
 @media (max-width: 640px) {
-  .wx-footer--padding-lg,
-  .wx-footer--padding-md {
-    --wx-footer-padding: var(--wx-space-12);
-  }
-
-  .wx-footer--padding-sm {
-    --wx-footer-padding: var(--wx-space-8);
+  .wx-footer--padding-lg {
+    --wx-footer-padding: var(--wx-space-10);
   }
 }
 </style>
