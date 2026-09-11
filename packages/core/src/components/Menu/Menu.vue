@@ -13,7 +13,7 @@ import {
 import WxSubmenu from '../Submenu/Submenu.vue'
 import { menuKey, type MenuValue } from '../../composables/useMenu'
 import { useElementWidth } from '../../composables/useElementWidth'
-import { WxMenuNodes, flattenEntries } from './nodes'
+import { WxNodes, flattenNodes } from '../../internal/nodes'
 import type { MenuEmits, MenuProps } from './types'
 
 defineOptions({ name: 'WxMenu' })
@@ -73,9 +73,7 @@ const overflowing = ref(false)
  * Only the template reads these. Keep it that way: evaluating them is invoking the
  * slot, and that belongs in a render.
  */
-const entries = computed<VNode[]>(() =>
-  splits.value ? flattenEntries(slots.default?.() ?? []) : [],
-)
+const entries = computed<VNode[]>(() => (splits.value ? flattenNodes(slots.default?.() ?? []) : []))
 
 const inBar = computed(() => entries.value.slice(0, fits.value))
 const inBranch = computed(() => entries.value.slice(fits.value))
@@ -258,7 +256,7 @@ const classes = computed(() => [
 <template>
   <ul ref="list" :class="classes" :aria-label="label">
     <template v-if="splits">
-      <wx-menu-nodes :nodes="inBar" />
+      <wx-nodes :nodes="inBar" />
 
       <!--
         Rendered whether or not it is needed, because its own width is part of the
@@ -271,7 +269,7 @@ const classes = computed(() => [
         :title="overflowTitle"
         :hidden="inBranch.length === 0 && !measuring"
       >
-        <wx-menu-nodes :nodes="inBranch" />
+        <wx-nodes :nodes="inBranch" />
       </wx-submenu>
     </template>
 
