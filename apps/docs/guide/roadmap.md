@@ -83,10 +83,11 @@ Complete. Two notes on where this list stopped matching the one it was copied fr
 ## Wave 3 — as needed
 
 ColorPicker ✅, Slider ✅, Rate ✅, [Autocomplete](/components/autocomplete) ✅,
-[Cascader](/components/cascader) ✅ and [Timeline](/components/timeline) ✅ are done.
+[Cascader](/components/cascader) ✅, [Timeline](/components/timeline) ✅ and
+[Transfer](/components/transfer) ✅ are done.
 
-Still open: Tree, TreeSelect (`he-tree-vue` / Reka Tree), Transfer, Carousel, Anchor, Splitter,
-Watermark, Marquee.
+Still open: Tree, TreeSelect (`he-tree-vue` / Reka Tree), Carousel, Anchor, Splitter, Watermark,
+Marquee.
 
 **Some day, maybe** — wanted, but nothing is waiting on them:
 
