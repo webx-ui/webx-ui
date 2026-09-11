@@ -112,6 +112,7 @@ export default defineConfig({
             { text: 'ColorPicker', link: '/components/color-picker' },
             { text: 'TagsInput', link: '/components/tags-input' },
             { text: 'Slider', link: '/components/slider' },
+            { text: 'Transfer', link: '/components/transfer' },
             { text: 'Rate', link: '/components/rate' },
             { text: 'RichText', link: '/components/rich-text' },
             { text: 'Upload', link: '/components/upload' },
