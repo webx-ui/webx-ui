@@ -2,8 +2,12 @@
 import { computed, ref, watch } from 'vue'
 import { useFormField } from '../../composables/useFormField'
 import type { TagsInputEmits, TagsInputProps } from './types'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 
 defineOptions({ name: 'WxTagsInput', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const props = withDefaults(defineProps<TagsInputProps>(), {
   suggestions: () => [],
@@ -138,7 +142,7 @@ defineExpose({ focus: () => inputRef.value?.focus() })
 </script>
 
 <template>
-  <div :class="classes">
+  <div :class="classes" v-bind="rootAttrs">
     <div class="wx-tags-input__anchor" @click="inputRef?.focus()">
       <span
         v-for="(tag, index) in tags"
@@ -162,7 +166,7 @@ defineExpose({ focus: () => inputRef.value?.focus() })
       <input
         :id="field.id.value"
         ref="inputRef"
-        v-bind="$attrs"
+        v-bind="controlAttrs"
         class="wx-tags-input__field"
         type="text"
         role="combobox"

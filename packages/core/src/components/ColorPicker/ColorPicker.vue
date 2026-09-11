@@ -20,8 +20,12 @@ import {
 import type { Color } from 'reka-ui'
 import { useFormField } from '../../composables/useFormField'
 import type { ColorPickerEmits, ColorPickerProps } from './types'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 
 defineOptions({ name: 'WxColorPicker', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const HEX = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i
 
@@ -160,7 +164,7 @@ function openPicker() {
 
 <template>
   <popover-root v-model:open="open">
-    <div :class="classes">
+    <div :class="classes" v-bind="rootAttrs">
       <popover-anchor as-child>
         <div class="wx-color-picker__field" @click="openPicker">
           <button
@@ -174,7 +178,7 @@ function openPicker() {
 
           <input
             :id="field.id.value"
-            v-bind="$attrs"
+            v-bind="controlAttrs"
             class="wx-color-picker__input"
             type="text"
             autocomplete="off"

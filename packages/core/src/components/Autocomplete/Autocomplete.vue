@@ -13,8 +13,12 @@ import {
 import WxIcon from '../Icon/Icon.vue'
 import { useFormField } from '../../composables/useFormField'
 import type { AutocompleteEmits, AutocompleteOption, AutocompleteProps } from './types'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 
 defineOptions({ name: 'WxAutocomplete', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const props = withDefaults(defineProps<AutocompleteProps>(), {
   options: () => [],
@@ -118,6 +122,7 @@ function clear() {
     v-model:open="open"
     as="div"
     :class="classes"
+    v-bind="rootAttrs"
     :disabled="field.disabled.value"
     :name="name"
     :ignore-filter="remote"
@@ -131,7 +136,7 @@ function clear() {
 
       <autocomplete-input
         :id="field.id.value"
-        v-bind="$attrs"
+        v-bind="controlAttrs"
         class="wx-autocomplete__input"
         :placeholder="placeholder"
         :disabled="field.disabled.value"

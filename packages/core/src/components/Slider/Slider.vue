@@ -3,8 +3,12 @@ import { computed } from 'vue'
 import { SliderRange, SliderRoot, SliderThumb, SliderTrack } from 'reka-ui'
 import { useFormField } from '../../composables/useFormField'
 import type { SliderEmits, SliderModelValue, SliderProps } from './types'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 
 defineOptions({ name: 'WxSlider', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const props = withDefaults(defineProps<SliderProps>(), {
   min: 0,
@@ -63,11 +67,11 @@ const classes = computed(() => [
 </script>
 
 <template>
-  <div :class="classes">
+  <div :class="classes" v-bind="rootAttrs">
     <div class="wx-slider__row">
       <slider-root
         :id="field.id.value"
-        v-bind="$attrs"
+        v-bind="controlAttrs"
         class="wx-slider__root"
         :model-value="values"
         :min="min"
