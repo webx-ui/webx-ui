@@ -26,6 +26,7 @@ export default defineConfig({
             { text: 'Introduction', link: '/guide/' },
             { text: 'Installation', link: '/guide/installation' },
             { text: 'Theming', link: '/guide/theming' },
+            { text: 'Dialogs from code', link: '/guide/modals' },
             { text: 'Roadmap', link: '/guide/roadmap' },
           ],
         },
@@ -126,6 +127,8 @@ export default defineConfig({
             { text: 'Timeline', link: '/components/timeline' },
             { text: 'Steps', link: '/components/steps' },
             { text: 'Kanban', link: '/components/kanban' },
+            { text: 'SelectionArea', link: '/components/selection-area' },
+            { text: 'SortableList', link: '/components/sortable-list' },
           ],
         },
         {
