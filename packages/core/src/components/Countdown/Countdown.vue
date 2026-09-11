@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import WxStatistic from '../Statistic/Statistic.vue'
 import { formatCountdown, toTimestamp } from './format'
 import type { CountdownEmits, CountdownProps } from './types'
@@ -44,15 +44,36 @@ function tick() {
 
 function start() {
   stop()
-  remaining.value = Math.max(0, target.value - Date.now())
   if (remaining.value === 0) return
   timer = setInterval(tick, Math.max(16, props.interval))
 }
 
-/* A new target — or a new tick rate — restarts the clock rather than drifting. */
-watch([target, () => props.interval], start, { immediate: true })
+/*
+ * A new target — or a new tick rate — restarts the clock rather than letting it
+ * drift. The value is recomputed either way; the timer only exists once the
+ * component is mounted, which is what keeps it off the server: an interval started
+ * during SSR is never cleared, and it holds the render process open forever.
+ */
+let running = false
 
-onBeforeUnmount(stop)
+watch(
+  [target, () => props.interval],
+  () => {
+    remaining.value = Math.max(0, target.value - Date.now())
+    if (running) start()
+  },
+  { immediate: true },
+)
+
+onMounted(() => {
+  running = true
+  start()
+})
+
+onBeforeUnmount(() => {
+  running = false
+  stop()
+})
 
 const text = computed(() => formatCountdown(remaining.value, props.format))
 
