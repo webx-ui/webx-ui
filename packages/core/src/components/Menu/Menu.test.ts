@@ -173,7 +173,8 @@ describe('WxSubmenu', () => {
   })
 
   it('opens a branch inside a panel inline rather than as a second panel', async () => {
-    const wrapper = await openBar({ open: ['taxonomy'] })
+    // `scroll`, so the only panel in the bar is the one this test is about.
+    const wrapper = await openBar({ open: ['taxonomy'], overflow: 'scroll' })
 
     // One panel for the outer branch; the one nested in it expands in place.
     expect(wrapper.findAllComponents({ name: 'WxDropdown' })).toHaveLength(1)
