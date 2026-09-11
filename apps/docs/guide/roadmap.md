@@ -80,6 +80,7 @@ Anchor, Splitter, Watermark, Tour, Marquee.
 RichText (Tiptap) ✅ — see [RichText](/components/rich-text).
 EntityCard ✅ — one record as a row, see [EntityCard](/components/entity-card).
 Actions ✅ — the icon buttons at the end of a row, see [Actions](/components/actions).
+Kanban ✅ — a board of columns cards are dragged between, see [Kanban](/components/kanban).
 
 MediaLibrary / Gallery, Repeater, Markdown, LinkPicker, BlockPicker, SortableList
 (`vue-draggable-plus`), and `SchemaRenderer` in [`@webx-ui/schema`](/guide/#packages).
