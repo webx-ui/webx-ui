@@ -230,8 +230,14 @@ const columns = [
 ]
 ```
 
-**A pinned column needs a `width`.** The resting place of each pinned column is the sum of the
-widths declared before it, and a column of unknown width cannot say where the next one begins.
+**Give a pinned column a `width` anyway.** The table works out where each one comes to rest by
+measuring the heading row — not by adding up the widths you declared, because a declared width is
+honoured only while there is room. A table that has to scroll squeezes every column proportionally,
+so the numbers stop being true exactly when pinning starts to matter. A `width` is still worth
+giving: it decides how wide the column actually is, and it is what the offsets fall back on for the
+first paint, before anything has been measured.
+
+The measurement is retaken when the table is resized and when its rows or columns change.
 
 ### Pinning stops when there is no room for it
 
@@ -270,7 +276,7 @@ when it sits in a panel whose size you already know.
 | `minWidth`    | `string \| number`              | Lower bound before the table scrolls            |
 | `align`       | `'left' \| 'center' \| 'right'` | Cell alignment                                  |
 | `sortable`    | `boolean`                       | Adds the sort control                           |
-| `fixed`       | `'left' \| 'right'`             | Pins the column; needs a `width`                |
+| `fixed`       | `'left' \| 'right'`             | Pins the column to an edge                      |
 | `formatter`   | `(value, row, index) => string` | Turns the raw value into cell text              |
 | `headerClass` | `string`                        | Class on the `th`                               |
 | `cellClass`   | `string`                        | Class on the `td`                               |
@@ -364,9 +370,13 @@ paints it behind cells that are transparent, and a pinned cell paints it itself 
 move at one speed. VitePress fades a `tr` over half a second and leaves cells alone, which had the
 pinned columns snapping to the hover colour while the rest of the row was still on its way there.
 
-The seam beside a pinned column is covered by a strip of its own rather than by a box shadow, for
-the same reason: Firefox declines to paint a shadow on a cell in a collapsed-border table, so the
-hairline was still there in one browser out of two.
+Two different things are drawn at the edge of a pinned column, and it is worth keeping them
+apart. The **seam** — the hairline of scrolling content that shows through the boundary pixel — is
+covered by a strip of its own rather than by a box shadow, because Firefox declines to paint a
+shadow on a cell in a collapsed-border table and the hairline was still there in one browser out
+of two. The **shadow** that makes the frozen block read as floating is a box shadow, and it
+appears only on the side that still has something scrolled out of view: a table with nothing
+hidden either side draws neither.
 
 It also sets its own `width: 100%` and `min-width: 0`. A flex or grid item refuses to shrink below its content, and
 the content here is a table that can be twice the width of the page — without it the inner scroller

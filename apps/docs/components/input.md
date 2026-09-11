@@ -45,7 +45,9 @@ const title = ref('')
 | `ariaLabel`    | `string`                                                                    | —           | Label when there is no visible `<label>`    |
 
 Unknown attributes (`name`, `id`, `required`, …) fall through to the inner `<input>`, not the
-wrapper.
+wrapper — with two exceptions. `class` and `style` stay on the wrapper, because that is the thing
+the caller can see: `class="w-60"` on a `<wx-input>` is asking for a narrower input, and a class
+that landed on the element inside it could not be reached from a parent's scoped CSS anyway.
 
 ## Events
 
