@@ -81,9 +81,15 @@ const classes = computed(() => [
   font-family: var(--wx-font-family-sans);
 }
 
+/*
+ * The gap between steps is the other half of the one inside them. Each step already
+ * holds its rule off its own text; without this the rule then ran straight into the
+ * next step's marker, and the spacing either side of it did not match.
+ */
 .wx-steps--horizontal {
   flex-direction: row;
   align-items: flex-start;
+  gap: var(--wx-space-8);
 }
 
 .wx-steps--vertical {
