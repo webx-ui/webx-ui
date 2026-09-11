@@ -42,6 +42,14 @@ of the same paragraph.
 
 ## Wave 2 — data and overlays
 
+Complete. Two notes on where this list stopped matching the one it was copied from:
+
+- **Message and Notification are one component.** The difference between them is a title and a
+  corner, so both are [Toast](/components/toast) — one queue, one `WxToaster`, a `placement`.
+- **Upload is ours**, rather than a wrapper around Uppy or FilePond. Those bring their own UI and
+  their own theme, which is the one thing this library does not do; and since a component here
+  never calls an API, there was no request logic to inherit either.
+
 | Component                                                         | Status |
 | ----------------------------------------------------------------- | ------ |
 | Table (Laravel `Paginated`)                                       | ✅     |
@@ -49,28 +57,28 @@ of the same paragraph.
 | Dialog (Reka)                                                     | ✅     |
 | Drawer (Reka)                                                     | ✅     |
 | Dropdown (Reka)                                                   | ✅     |
-| Tooltip (Reka)                                                    | ⬜     |
+| [Tooltip](/components/tooltip)                                    | ✅     |
 | Popover (Reka)                                                    | ✅     |
-| Popconfirm                                                        | ⬜     |
-| Message                                                           | ⬜     |
-| Notification / Toast (Reka)                                       | ⬜     |
-| Loading                                                           | ⬜     |
-| Skeleton                                                          | ⬜     |
-| Empty                                                             | ⬜     |
-| Result                                                            | ⬜     |
-| Progress                                                          | ⬜     |
-| Descriptions                                                      | ⬜     |
-| Avatar                                                            | ⬜     |
-| Image                                                             | ⬜     |
-| Upload (Uppy / FilePond)                                          | ⬜     |
+| [Popconfirm](/components/popconfirm)                              | ✅     |
+| Message (one line, [Toast](/components/toast))                    | ✅     |
+| Notification / [Toast](/components/toast) (Reka)                  | ✅     |
+| [Loading](/components/loading)                                    | ✅     |
+| [Skeleton](/components/skeleton)                                  | ✅     |
+| [Empty](/components/empty)                                        | ✅     |
+| [Result](/components/result)                                      | ✅     |
+| [Progress](/components/progress)                                  | ✅     |
+| [Descriptions](/components/descriptions)                          | ✅     |
+| [Avatar](/components/avatar)                                      | ✅     |
+| [Image](/components/image)                                        | ✅     |
+| [Upload](/components/upload) (ours)                               | ✅     |
 | DatePicker, TimePicker, DateTimePicker (`@vuepic/vue-datepicker`) | ✅     |
 | DateRangePicker                                                   | ✅     |
-| Steps                                                             | ⬜     |
+| [Steps](/components/steps)                                        | ✅     |
 | Collapse (as Accordion)                                           | ✅     |
-| Segmented                                                         | ⬜     |
+| [Segmented](/components/segmented)                                | ✅     |
 | Statistic, Countdown                                              | ✅     |
-| Backtop                                                           | ⬜     |
-| Affix                                                             | ⬜     |
+| [Backtop](/components/affix#backtop)                              | ✅     |
+| [Affix](/components/affix)                                        | ✅     |
 
 ## Wave 3 — as needed
 
