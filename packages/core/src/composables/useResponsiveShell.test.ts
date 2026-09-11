@@ -5,20 +5,28 @@ import { shellLayoutFor, useResponsiveShell, type ResponsiveShell } from './useR
 
 describe('shellLayoutFor', () => {
   it('gives the widest shape until something has been measured', () => {
-    expect(shellLayoutFor(0, false)).toBe('sidebar')
+    expect(shellLayoutFor(0, null)).toBe('sidebar')
     expect(shellLayoutFor(0, true)).toBe('rail')
   })
 
-  it('reads the width before the preference', () => {
-    expect(shellLayoutFor(1440, false)).toBe('sidebar')
+  it('lets the width choose when nothing has been asked for', () => {
+    expect(shellLayoutFor(1440, null)).toBe('sidebar')
+    expect(shellLayoutFor(800, null)).toBe('rail')
+    expect(shellLayoutFor(500, null)).toBe('drawer')
+  })
+
+  it('lets the reader override the rail at any width that has room for one', () => {
     expect(shellLayoutFor(1440, true)).toBe('rail')
-    expect(shellLayoutFor(800, false)).toBe('rail')
+    expect(shellLayoutFor(800, false)).toBe('sidebar')
+  })
+
+  it('keeps the drawer absolute — a phone has nowhere to put a column', () => {
     expect(shellLayoutFor(500, false)).toBe('drawer')
   })
 
   it('takes breakpoints of its own', () => {
-    expect(shellLayoutFor(700, false, { phone: 720 })).toBe('drawer')
-    expect(shellLayoutFor(1100, false, { tablet: 1200 })).toBe('rail')
+    expect(shellLayoutFor(700, null, { phone: 720 })).toBe('drawer')
+    expect(shellLayoutFor(1100, null, { tablet: 1200 })).toBe('rail')
   })
 })
 
@@ -101,37 +109,51 @@ describe('useResponsiveShell', () => {
     expect(shell().layout.value).toBe('sidebar')
   })
 
-  it('opens the drawer where there is not', async () => {
+  it('expands the rail in place on a tablet rather than opening a drawer', async () => {
     const { shell } = mountShell()
 
     emit?.(800)
     await nextTick()
+    expect(shell().layout.value).toBe('rail')
 
-    // On a tablet the button cannot collapse a rail that the width already forced.
+    // The width suggested the rail; the reader is still allowed to disagree with it.
+    shell().toggle()
+    expect(shell().layout.value).toBe('sidebar')
+    expect(shell().drawerOpen.value).toBe(false)
+  })
+
+  it('opens the drawer only where the menu has left the page', async () => {
+    const { shell } = mountShell()
+
+    emit?.(480)
+    await nextTick()
+    expect(shell().layout.value).toBe('drawer')
+
     shell().toggle()
     expect(shell().drawerOpen.value).toBe(true)
-    expect(shell().layout.value).toBe('rail')
 
     shell().close()
     expect(shell().drawerOpen.value).toBe(false)
   })
 
-  it('keeps the drawer open until the menu has a place on the page again', async () => {
+  it('forgets both the drawer and the preference once the menu leaves the page', async () => {
     const { shell } = mountShell()
+
+    emit?.(1440)
+    await nextTick()
+    shell().toggle()
+    expect(shell().layout.value).toBe('rail')
 
     emit?.(480)
     await nextTick()
     shell().toggle()
     expect(shell().drawerOpen.value).toBe(true)
 
-    // Still no room for the menu itself, so the drawer stands.
-    emit?.(800)
-    await nextTick()
-    expect(shell().drawerOpen.value).toBe(true)
-
+    // Back on a wide screen: the drawer is gone and the width decides again.
     emit?.(1440)
     await nextTick()
     expect(shell().drawerOpen.value).toBe(false)
+    expect(shell().layout.value).toBe('sidebar')
   })
 
   it('can start collapsed', async () => {

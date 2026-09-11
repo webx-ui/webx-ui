@@ -102,7 +102,12 @@ const section = ref('pages')
   <div ref="shell">
     <wx-container full-height>
       <wx-header>
-        <wx-action icon="menu" label="Menu" @click="toggle" />
+        <!-- A burger belongs to the drawer; while the sidebar is on the page it is a toggle. -->
+        <wx-action
+          :icon="layout === 'drawer' ? 'menu' : 'sidebar'"
+          :label="layout === 'drawer' ? 'Menu' : 'Toggle the sidebar'"
+          @click="toggle"
+        />
         <strong>Admin</strong>
       </wx-header>
 
@@ -124,9 +129,15 @@ const section = ref('pages')
 </template>
 ```
 
-One button does both jobs: where there is room for a sidebar it collapses and expands it, and where
-there is not it opens the drawer. A drawer opened on a tablet is a temporary look at the full menu
-over the rail, so it stays until the menu has a place on the page again.
+One button does both jobs, and its icon says which: while the sidebar is on the page it collapses
+and expands it, and a burger appears only once the menu has left the page altogether. Anything else
+is a promise the button does not keep — a burger beside a visible menu offers to bring back
+something that never went away.
+
+The width chooses the shape, it does not hold it: on a tablet the sidebar starts as a rail, and the
+button still expands it in place, because the reader can see what they are expanding. Only the
+phone breakpoint is absolute — a 240px column beside a 375px screen leaves nothing to read, so
+there the menu goes to the drawer and the preference is forgotten until it comes back.
 
 | Returns      | Type                                           | Description                                    |
 | ------------ | ---------------------------------------------- | ---------------------------------------------- |
@@ -135,11 +146,11 @@ over the rail, so it stays until the menu has a place on the page again.
 | `collapsed`  | `ComputedRef<boolean>`                         | For `WxAside` and `WxMenu`                     |
 | `showAside`  | `ComputedRef<boolean>`                         | Whether there is room for a column at all      |
 | `drawerOpen` | `Ref<boolean>`                                 | For `v-model:open` on the drawer               |
-| `toggle`     | `() => void`                                   | Collapses the sidebar, or opens the drawer     |
+| `toggle`     | `() => void`                                   | Toggles the sidebar, or opens the drawer       |
 | `close`      | `() => void`                                   | Closes the drawer — call it on `select`        |
 
-Options: `phone` (640) and `tablet` (1024) are the thresholds, `collapsed` says whether a wide
-screen starts with the rail. Pass nothing at all to measure the page itself:
+Options: `phone` (640) and `tablet` (1024) are the thresholds, `collapsed` starts the sidebar as a
+rail whatever the width. Pass nothing at all to measure the page itself:
 
 ```ts
 const shell = useResponsiveShell(undefined, { tablet: 1200 })
