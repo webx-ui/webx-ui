@@ -95,6 +95,9 @@ Kanban ✅ — a board of columns cards are dragged between, see [Kanban](/compo
 ListDetail ✅ — filters, records, the open one, and the rule for when there is room for all three:
 see [ListDetail](/components/list-detail). An inbox and an orders screen are the same furniture.
 
+SelectionArea ✅ — the rubber band over a grid or a list, see
+[SelectionArea](/components/selection-area). A media library is unusable without it.
+
 Gantt ⬜ — the other way to look at the same work: a task per row, a bar across a timeline.
 Decided, not started. It will be ours rather than a wrapper around `frappe-gantt` or
 `vis-timeline`, because a Gantt is a header of dates and bars placed along it — a CSS grid, in

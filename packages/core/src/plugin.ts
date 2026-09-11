@@ -1,5 +1,6 @@
 import type { App, Component, Plugin } from 'vue'
 import * as components from './components'
+import { vWxSelect } from './components/SelectionArea'
 
 export interface WebxUiOptions {
   /**
@@ -34,6 +35,13 @@ export const WebxUI: Plugin<[WebxUiOptions?]> = {
       const registeredName = prefix === 'Wx' ? name : `${prefix}${name.slice(2)}`
       app.component(registeredName, exported as Component)
     }
+
+    /*
+     * The one directive we ship. It belongs to the selection area, and registering it here
+     * means a marked-up grid works the moment the plugin is installed, the way the
+     * components do.
+     */
+    app.directive('wx-select', vWxSelect)
   },
 }
 

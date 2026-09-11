@@ -126,6 +126,7 @@ export default defineConfig({
             { text: 'Timeline', link: '/components/timeline' },
             { text: 'Steps', link: '/components/steps' },
             { text: 'Kanban', link: '/components/kanban' },
+            { text: 'SelectionArea', link: '/components/selection-area' },
           ],
         },
         {
