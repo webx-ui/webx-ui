@@ -203,11 +203,11 @@ function show(order: Order) {
       </div>
 
       <wx-space size="sm">
-        <wx-button variant="outline" size="sm">
+        <wx-button variant="outline">
           <template #icon><wx-icon name="download" /></template>
           Експорт
         </wx-button>
-        <wx-button type="primary" size="sm">
+        <wx-button type="primary">
           <template #icon><wx-icon name="plus" /></template>
           Нове замовлення
         </wx-button>

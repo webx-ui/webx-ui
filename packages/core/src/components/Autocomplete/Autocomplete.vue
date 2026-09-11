@@ -216,18 +216,18 @@ function clear() {
   border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-control);
   color: var(--wx-text-default);
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-control-md);
   transition: border-color var(--wx-duration-normal) var(--wx-easing-standard);
 }
 
 .wx-autocomplete--sm .wx-autocomplete__anchor {
   height: var(--wx-size-control-sm);
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-autocomplete--lg .wx-autocomplete__anchor {
   height: var(--wx-size-control-lg);
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 .wx-autocomplete__anchor:hover {
@@ -322,7 +322,7 @@ function clear() {
   box-shadow: var(--wx-shadow-popover);
   color: var(--wx-text-default);
   font-family: var(--wx-font-family-sans);
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-control-md);
   overflow: hidden;
 }
 

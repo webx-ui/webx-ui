@@ -256,17 +256,17 @@ defineExpose({
 
 .wx-input-number--sm {
   height: var(--wx-size-control-sm);
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-input-number--md {
   height: var(--wx-size-control-md);
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-control-md);
 }
 
 .wx-input-number--lg {
   height: var(--wx-size-control-lg);
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 .wx-input-number:hover:not(.is-disabled) {

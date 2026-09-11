@@ -120,18 +120,18 @@ function onChange() {
 
 .wx-radio--sm {
   --wx-radio-size: 16px;
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-radio--md {
   --wx-radio-size: 20px;
   /* A tick beside a label is a choice in a list, and reads at the list size. */
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-md);
 }
 
 .wx-radio--lg {
   --wx-radio-size: 24px;
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 /* The ring's outer half of stroke sits on the viewport edge, so it must not be clipped. */

@@ -164,19 +164,19 @@ defineExpose({
 .wx-input--sm {
   height: var(--wx-size-control-sm);
   padding: 0 var(--wx-space-10);
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-input--md {
   height: var(--wx-size-control-md);
   padding: 0 var(--wx-space-12);
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-control-md);
 }
 
 .wx-input--lg {
   height: var(--wx-size-control-lg);
   padding: 0 var(--wx-space-16);
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 .wx-input--error,

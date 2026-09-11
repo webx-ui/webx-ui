@@ -292,8 +292,8 @@ function revert() {
     <div v-if="dirty" class="settings__bar">
       <wx-text size="sm" tone="muted">Є незбережені зміни</wx-text>
       <wx-space size="sm">
-        <wx-button variant="text" size="sm" :disabled="saving" @click="revert">Скасувати</wx-button>
-        <wx-button type="primary" size="sm" :loading="saving" @click="save">Зберегти</wx-button>
+        <wx-button variant="text" :disabled="saving" @click="revert">Скасувати</wx-button>
+        <wx-button type="primary" :loading="saving" @click="save">Зберегти</wx-button>
       </wx-space>
     </div>
   </div>
