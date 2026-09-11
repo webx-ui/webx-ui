@@ -1,0 +1,92 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import type { AsideProps } from './types'
+
+defineOptions({ name: 'WxAside' })
+
+const props = withDefaults(defineProps<AsideProps>(), {
+  width: undefined,
+  collapsedWidth: undefined,
+  collapsed: false,
+  side: 'start',
+  bordered: true,
+  scroll: false,
+})
+
+function toLength(value: number | string | undefined) {
+  if (value === undefined) return undefined
+  return typeof value === 'number' ? `${value}px` : value
+}
+
+const style = computed(() => {
+  const vars: Record<string, string> = {}
+  const width = toLength(props.width)
+  const collapsedWidth = toLength(props.collapsedWidth)
+  if (width) vars['--wx-aside-width'] = width
+  if (collapsedWidth) vars['--wx-aside-collapsed-width'] = collapsedWidth
+  return vars
+})
+
+const classes = computed(() => [
+  'wx-aside',
+  `wx-aside--${props.side}`,
+  {
+    'wx-aside--bordered': props.bordered,
+    'wx-aside--collapsed': props.collapsed,
+    'wx-aside--scroll': props.scroll,
+  },
+])
+</script>
+
+<template>
+  <aside :class="classes" :style="style">
+    <slot />
+  </aside>
+</template>
+
+<style scoped>
+.wx-aside {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  /* Fixed width, and it never shrinks when the main column is crowded. */
+  flex: 0 0 var(--wx-aside-width, 240px);
+  width: var(--wx-aside-width, 240px);
+  min-height: 0;
+  background: var(--wx-bg-surface);
+  color: var(--wx-text-default);
+  font-family: var(--wx-font-family-sans);
+  transition: flex-basis var(--wx-duration-normal) var(--wx-easing-standard);
+}
+
+.wx-aside--collapsed {
+  flex-basis: var(--wx-aside-collapsed-width, 64px);
+  width: var(--wx-aside-collapsed-width, 64px);
+}
+
+.wx-aside--bordered.wx-aside--start {
+  border-right: 1px solid var(--wx-border-default);
+}
+
+.wx-aside--bordered.wx-aside--end {
+  border-left: 1px solid var(--wx-border-default);
+}
+
+/*
+ * A sidebar that scrolls on its own sticks to the viewport, so a long menu can be
+ * reached while a long page scrolls behind it.
+ */
+.wx-aside--scroll {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wx-aside {
+    transition: none;
+  }
+}
+</style>

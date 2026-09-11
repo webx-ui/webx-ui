@@ -46,6 +46,7 @@ export default defineConfig({
             { text: 'Typography', link: '/components/typography' },
             { text: 'Badge', link: '/components/badge' },
             { text: 'Indicator', link: '/components/indicator' },
+            { text: 'Alert', link: '/components/alert' },
             { text: 'Card', link: '/components/card' },
             { text: 'Tabs', link: '/components/tabs' },
             { text: 'Accordion', link: '/components/accordion' },
@@ -55,6 +56,23 @@ export default defineConfig({
             { text: 'Dialog', link: '/components/dialog' },
             { text: 'Drawer', link: '/components/drawer' },
             { text: 'EntityCard', link: '/components/entity-card' },
+          ],
+        },
+        {
+          text: 'Layout',
+          items: [
+            { text: 'Layout', link: '/components/layout' },
+            { text: 'Grid', link: '/components/grid' },
+            { text: 'Space', link: '/components/space' },
+            { text: 'Divider', link: '/components/divider' },
+            { text: 'Scrollbar', link: '/components/scrollbar' },
+          ],
+        },
+        {
+          text: 'Navigation',
+          items: [
+            { text: 'Menu', link: '/components/menu' },
+            { text: 'Breadcrumb', link: '/components/breadcrumb' },
           ],
         },
         {

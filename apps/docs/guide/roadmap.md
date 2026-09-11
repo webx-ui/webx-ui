@@ -7,33 +7,36 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 
 ## Wave 1 — basics
 
-| Component                                                 | Status |
-| --------------------------------------------------------- | ------ |
-| Button                                                    | ✅     |
-| Input                                                     | ✅     |
-| Card                                                      | ✅     |
-| ButtonGroup                                               | ✅     |
-| Icon                                                      | ✅     |
-| Textarea                                                  | ✅     |
-| InputNumber                                               | ✅     |
-| Select (Reka Combobox)                                    | ✅     |
-| Checkbox, CheckboxGroup                                   | ✅     |
-| Radio, RadioGroup                                         | ✅     |
-| Switch                                                    | ✅     |
-| Form, FormItem                                            | ✅     |
-| Tag (as Badge)                                            | ✅     |
-| TagsInput                                                 | ✅     |
-| Badge (count: Indicator)                                  | ✅     |
-| Alert                                                     | ⬜     |
-| Divider                                                   | ⬜     |
-| Layout (Container, Header, Aside, Main, Footer, Row, Col) | ⬜     |
-| Space                                                     | ⬜     |
-| Tabs (Reka)                                               | ✅     |
-| Menu / Sidebar                                            | ⬜     |
-| Breadcrumb                                                | ⬜     |
-| Link                                                      | ✅     |
-| Text, Heading, Prose                                      | ✅     |
-| Scrollbar                                                 | ⬜     |
+Complete. Every component below has a page of its own, a demo and tests.
+
+| Component                                                             | Status |
+| --------------------------------------------------------------------- | ------ |
+| [Button](/components/button)                                          | ✅     |
+| [ButtonGroup](/components/button-group)                               | ✅     |
+| [Icon](/components/icon)                                              | ✅     |
+| [Input](/components/input)                                            | ✅     |
+| [Textarea](/components/textarea)                                      | ✅     |
+| [InputNumber](/components/input-number)                               | ✅     |
+| [Select](/components/select) (Reka Combobox)                          | ✅     |
+| [Checkbox, CheckboxGroup](/components/checkbox)                       | ✅     |
+| [Radio, RadioGroup](/components/radio)                                | ✅     |
+| [Switch](/components/switch)                                          | ✅     |
+| [Form, FormItem](/components/form)                                    | ✅     |
+| [Card](/components/card)                                              | ✅     |
+| [Tag (as Badge)](/components/badge)                                   | ✅     |
+| [TagsInput](/components/tags-input)                                   | ✅     |
+| [Badge (count: Indicator)](/components/indicator)                     | ✅     |
+| [Alert](/components/alert)                                            | ✅     |
+| [Divider](/components/divider)                                        | ✅     |
+| [Layout (Container, Header, Aside, Main, Footer)](/components/layout) | ✅     |
+| [Grid (Row, Col)](/components/grid)                                   | ✅     |
+| [Space](/components/space)                                            | ✅     |
+| [Tabs](/components/tabs) (Reka)                                       | ✅     |
+| [Menu / Sidebar](/components/menu)                                    | ✅     |
+| [Breadcrumb](/components/breadcrumb)                                  | ✅     |
+| [Link](/components/typography#link)                                   | ✅     |
+| [Text, Heading, Prose](/components/typography)                        | ✅     |
+| [Scrollbar](/components/scrollbar)                                    | ✅     |
 
 ## Wave 2 — data and overlays
 
