@@ -28,7 +28,10 @@ sidebar at all, with the whole width left to the content.
 `useResponsiveShell` is the rule those shapes follow — the full sidebar, an icon rail under 1024px,
 a drawer behind a burger under 640px — out of one measurement and two thresholds. It returns
 `layout`, `collapsed`, `showAside`, `drawerOpen`, `toggle` and `close`, so one button in the header
-collapses the sidebar where there is room for one and opens the drawer where there is not. Like the
+collapses and expands the sidebar while the sidebar is on the page, and opens the drawer once the
+menu has left it — which is also when a burger is the right icon for it, and not before. The width
+chooses the shape rather than holding it: on a tablet the sidebar starts as a rail and the button
+still expands it in place, since the reader can see what they are expanding. Like the
 grid, it measures an element rather than the viewport, which is what makes a shell inside a preview
 or a split screen behave like the narrow thing it is; `shellLayoutFor` is the same rule as a pure
 function, for a page that would rather drive the state itself.

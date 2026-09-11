@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import {
   WxAction,
   WxAside,
@@ -33,6 +33,13 @@ function choose(value: string | number) {
   section.value = String(value)
   close()
 }
+
+/* A burger belongs to the drawer: while the sidebar is on the page, the button toggles it. */
+const menuButton = computed(() =>
+  layout.value === 'drawer'
+    ? { icon: 'menu', title: 'Menu' }
+    : { icon: 'sidebar', title: layout.value === 'rail' ? 'Expand the sidebar' : 'Collapse it' },
+)
 </script>
 
 <template>
@@ -43,9 +50,9 @@ function choose(value: string | number) {
           <wx-header>
             <div class="layout-demo__brand">
               <wx-action
-                icon="menu"
-                label="Menu"
-                :title="layout === 'sidebar' ? 'Collapse the sidebar' : 'Menu'"
+                :icon="menuButton.icon"
+                :label="menuButton.title"
+                :title="menuButton.title"
                 @click="toggle()"
               />
               <strong>Admin</strong>

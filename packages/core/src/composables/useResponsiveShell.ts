@@ -6,9 +6,9 @@ export type ShellLayout = 'sidebar' | 'rail' | 'drawer'
 export interface ResponsiveShellOptions {
   /** Under this width the menu leaves the page for a drawer behind a burger. */
   phone?: number
-  /** Under this width it is an icon rail. */
+  /** Under this width the sidebar starts as an icon rail. */
   tablet?: number
-  /** Whether the rail starts collapsed on a screen wide enough for the full sidebar. */
+  /** Whether it starts as a rail on a screen wide enough for the full sidebar. */
   collapsed?: boolean
 }
 
@@ -22,8 +22,9 @@ export interface ResponsiveShell {
   showAside: ComputedRef<boolean>
   drawerOpen: Ref<boolean>
   /**
-   * What the one button in the header does: it collapses the sidebar where there is
-   * room for one, and opens the drawer where there is not.
+   * What the one button in the header does: it collapses and expands the sidebar
+   * while the sidebar is on the page, and opens the drawer once the menu is gone.
+   * The icon follows `layout` — a burger belongs to the drawer alone.
    */
   toggle: () => void
   close: () => void
@@ -35,20 +36,25 @@ const TABLET = 1024
 /**
  * The rule on its own, so it can be read — and tested — without a browser.
  *
+ * `collapsed` is the answer to "is the sidebar a rail", and `null` leaves it to the
+ * width: a rail from the tablet breakpoint down. Only the phone breakpoint is
+ * absolute, because a menu that has nowhere to stand has to leave the page.
+ *
  * A width of `0` means nothing has been measured yet: on the server, and on the very
  * first render. The widest shape is the right guess there, since it is the one a
  * desktop gets, and the measurement that follows corrects it before paint.
  */
 export function shellLayoutFor(
   width: number,
-  collapsed: boolean,
+  collapsed: boolean | null,
   options: ResponsiveShellOptions = {},
 ): ShellLayout {
   const { phone = PHONE, tablet = TABLET } = options
 
   if (width > 0 && width < phone) return 'drawer'
-  if (width > 0 && width < tablet) return 'rail'
-  return collapsed ? 'rail' : 'sidebar'
+
+  const rail = collapsed ?? (width > 0 && width < tablet)
+  return rail ? 'rail' : 'sidebar'
 }
 
 /**
@@ -70,15 +76,16 @@ export function useResponsiveShell(
   const width = ref(0)
   const drawerOpen = ref(false)
 
-  /* The user's own preference, which only has a say where the width leaves one. */
-  const collapsedByUser = ref(options.collapsed ?? false)
+  /*
+   * What the reader last asked for, or `null` for "whatever the width suggests".
+   * The width picks the rail on a tablet; it does not hold it there, and the toggle
+   * expands the sidebar in place like it does on any other screen.
+   */
+  const collapsedByUser = ref<boolean | null>(options.collapsed ?? null)
 
   const layout = computed(() => shellLayoutFor(width.value, collapsedByUser.value, options))
   const collapsed = computed(() => layout.value !== 'sidebar')
   const showAside = computed(() => layout.value !== 'drawer')
-
-  /** Whether the width decides the shape, leaving the button nothing to collapse. */
-  const forced = computed(() => width.value > 0 && width.value < (options.tablet ?? TABLET))
 
   let observer: ResizeObserver | null = null
   let observed: HTMLElement | null = null
@@ -118,16 +125,24 @@ export function useResponsiveShell(
   })
 
   /*
-   * A drawer opened on a tablet is a temporary look at the full menu over the rail,
-   * so it survives until there is room for the menu on the page itself.
+   * The menu is back on the page, so the drawer has nothing left to show — and what
+   * the reader last asked of a sidebar they could see does not carry over the gap.
    */
   watch(layout, (value) => {
-    if (value === 'sidebar') drawerOpen.value = false
+    /* What the reader asked of a sidebar they could see does not carry over the gap. */
+    if (value === 'drawer') collapsedByUser.value = null
+    /* And once the menu is back on the page, the drawer has nothing left to show. */
+    else drawerOpen.value = false
   })
 
+  /**
+   * The button does the one thing that is visible from where the reader is standing:
+   * where the sidebar is on the page it collapses and expands it, and where the menu
+   * is gone entirely it is the burger that brings the drawer back.
+   */
   function toggle() {
-    if (forced.value) drawerOpen.value = !drawerOpen.value
-    else collapsedByUser.value = !collapsedByUser.value
+    if (layout.value === 'drawer') drawerOpen.value = !drawerOpen.value
+    else collapsedByUser.value = layout.value !== 'rail'
   }
 
   function close() {
