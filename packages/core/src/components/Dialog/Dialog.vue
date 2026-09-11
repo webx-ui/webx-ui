@@ -28,6 +28,8 @@ const props = withDefaults(defineProps<DialogProps>(), {
   title: undefined,
   width: 520,
   height: undefined,
+  scroll: 'body',
+  stickyFooter: true,
   minWidth: 320,
   minHeight: 200,
   sidebarWidth: 200,
@@ -74,6 +76,16 @@ const hasSidebar = computed(() => Boolean(slots.sidebar))
 
 /* Reka needs a `DialogTitle` to name the panel; without a visible one it is hidden. */
 const accessibleName = computed(() => props.title ?? props.ariaLabel ?? 'Dialog')
+
+/*
+ * A panel taller than the screen is not a panel that can be moved or stretched: the
+ * gesture would fight the scroll it sits in, and there is no free space around it to move
+ * into. Both are ignored rather than refused, so one prop can turn a dialog into the long
+ * kind without having to unpick the rest.
+ */
+const scrollsInPlace = computed(() => props.scroll === 'body')
+const movable = computed(() => props.draggable && scrollsInPlace.value)
+const sizable = computed(() => props.resizable && scrollsInPlace.value)
 
 /** Pixels the panel was last left at. Empty until it is dragged, resized or restored. */
 const layout = ref<DialogLayout>({})
@@ -160,7 +172,7 @@ function begin(kind: 'move' | 'resize', event: PointerEvent) {
 }
 
 function startDrag(event: PointerEvent) {
-  if (!props.draggable) return
+  if (!movable.value) return
   /* The heading holds the × and whatever `extra` put there; those keep their clicks. */
   const target = event.target as HTMLElement | null
   if (target?.closest('button, a, input, select, textarea, [contenteditable]')) return
@@ -168,7 +180,7 @@ function startDrag(event: PointerEvent) {
 }
 
 function startResize(event: PointerEvent) {
-  if (!props.resizable) return
+  if (!sizable.value) return
   begin('resize', event)
 }
 
@@ -301,6 +313,7 @@ defineExpose({ close, reset })
       -->
       <dialog-content
         class="wx-dialog__viewport"
+        :class="{ 'wx-dialog__viewport--scrolls': !scrollsInPlace }"
         :aria-describedby="undefined"
         @escape-key-down="onEscape"
         @interact-outside="onInteractOutside"
@@ -311,10 +324,12 @@ defineExpose({ close, reset })
           v-bind="$attrs"
           class="wx-dialog"
           :class="{
-            'wx-dialog--draggable': draggable,
+            'wx-dialog--draggable': movable,
             'wx-dialog--dragging': dragging,
             'wx-dialog--resizing': resizing,
             'wx-dialog--split': hasSidebar,
+            'wx-dialog--long': !scrollsInPlace,
+            'wx-dialog--sticky-foot': !scrollsInPlace && stickyFooter,
           }"
           :style="panelVars"
         >
@@ -350,7 +365,7 @@ defineExpose({ close, reset })
 
           <!-- Pointer-only, and hidden with it: a corner this size cannot be hit by a finger. -->
           <div
-            v-if="resizable"
+            v-if="sizable"
             class="wx-dialog__grip"
             aria-hidden="true"
             @pointerdown="startResize"
@@ -394,6 +409,10 @@ defineExpose({ close, reset })
 }
 
 .wx-dialog {
+  /* One set of paddings for the three parts, so the small screens can halve them once. */
+  --wx-dialog-pad-x: var(--wx-space-18);
+  --wx-dialog-pad-y: var(--wx-space-14);
+  --wx-dialog-body-pad: var(--wx-space-18);
   position: relative;
   pointer-events: auto;
   box-sizing: border-box;
@@ -417,7 +436,7 @@ defineExpose({ close, reset })
   display: flex;
   align-items: center;
   gap: var(--wx-space-12);
-  padding: var(--wx-space-14) var(--wx-space-18);
+  padding: var(--wx-dialog-pad-y) var(--wx-dialog-pad-x);
   border-bottom: 1px solid var(--wx-border-muted);
 }
 
@@ -497,14 +516,14 @@ defineExpose({ close, reset })
   flex: 1 1 auto;
   min-width: 0;
   overflow: auto;
-  padding: var(--wx-space-18);
+  padding: var(--wx-dialog-body-pad);
 }
 
 .wx-dialog__sidebar {
   flex: 0 0 auto;
   width: var(--wx-dialog-sidebar-width, 200px);
   overflow: auto;
-  padding: var(--wx-space-16);
+  padding: var(--wx-dialog-pad-y) var(--wx-dialog-pad-x);
   background: var(--wx-bg-subtle);
   border-right: 1px solid var(--wx-border-muted);
   border-bottom-left-radius: var(--wx-radius-md);
@@ -516,8 +535,48 @@ defineExpose({ close, reset })
   align-items: center;
   justify-content: flex-end;
   gap: var(--wx-space-8);
-  padding: var(--wx-space-14) var(--wx-space-18);
+  padding: var(--wx-dialog-pad-y) var(--wx-dialog-pad-x);
   border-top: 1px solid var(--wx-border-muted);
+}
+
+/*
+ * The long kind: the panel is as tall as its content and the wrapper around it scrolls.
+ * `margin: auto` rather than `align-items: center` — a centred flex item taller than its
+ * container is clipped at the top and cannot be scrolled back to, while an auto margin
+ * simply gives up when there is no room left to share.
+ */
+.wx-dialog__viewport--scrolls {
+  align-items: flex-start;
+  overflow-y: auto;
+  /* The wrapper is the scroller now, so it has to take its own events. */
+  pointer-events: auto;
+}
+
+.wx-dialog--long {
+  height: auto;
+  max-height: none;
+  margin-block: auto;
+  translate: none;
+}
+
+.wx-dialog--long .wx-dialog__body,
+.wx-dialog--long .wx-dialog__content,
+.wx-dialog--long .wx-dialog__sidebar {
+  overflow: visible;
+}
+
+/*
+ * Stuck to the bottom of the screen while the rest of the panel scrolls past it. The
+ * background is what makes it a bar rather than a transparent strip over the content, and
+ * the rounded corners are the panel's own, borrowed for the moment it rests on them.
+ */
+.wx-dialog--long.wx-dialog--sticky-foot .wx-dialog__foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  background: var(--wx-bg-surface);
+  border-bottom-left-radius: var(--wx-radius-md);
+  border-bottom-right-radius: var(--wx-radius-md);
 }
 
 .wx-dialog__grip {
@@ -603,9 +662,17 @@ defineExpose({ close, reset })
   }
 
   .wx-dialog {
+    /* Tighter than on a desktop: every pixel of padding is a line of content lost. */
+    --wx-dialog-pad-x: var(--wx-space-12);
+    --wx-dialog-pad-y: var(--wx-space-10);
+    --wx-dialog-body-pad: var(--wx-space-12);
     width: 100%;
     height: auto;
     translate: none;
+  }
+
+  .wx-dialog__head {
+    gap: var(--wx-space-8);
   }
 
   .wx-dialog--split .wx-dialog__body {

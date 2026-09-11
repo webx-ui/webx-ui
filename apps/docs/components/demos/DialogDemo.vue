@@ -10,6 +10,7 @@ import {
   WxInput,
   WxTextarea,
 } from '@webx-ui/core'
+import type { DialogScroll } from '@webx-ui/core'
 
 const title = ref('About the company')
 const draft = ref(title.value)
@@ -28,6 +29,34 @@ function save(close: () => void) {
   title.value = draft.value
   close()
 }
+
+/* A list long enough that the panel cannot fit on the screen — the point of `scroll`. */
+const brands = [
+  'Bobcat',
+  'Hyundai',
+  'Shantui',
+  'Cummins',
+  'Perkins',
+  'Kubota',
+  'Yanmar',
+  'Deutz',
+  'Isuzu',
+  'Doosan',
+  'Komatsu',
+  'Caterpillar',
+  'JCB',
+  'Volvo',
+  'Liebherr',
+  'Case',
+]
+
+const brand = ref<string | null>(null)
+const stickyFooter = ref(true)
+
+const scrollModes: { scroll: DialogScroll; label: string }[] = [
+  { scroll: 'body', label: 'The body scrolls' },
+  { scroll: 'panel', label: 'The panel scrolls' },
+]
 </script>
 
 <template>
@@ -113,6 +142,41 @@ function save(close: () => void) {
         </template>
       </wx-dialog>
     </div>
+
+    <div>
+      <span class="wx-demo__label">More than fits on the screen</span>
+      <div class="wx-demo__row">
+        <wx-dialog
+          v-for="mode in scrollModes"
+          :key="mode.scroll"
+          :scroll="mode.scroll"
+          :sticky-footer="stickyFooter"
+          title="Pick a brand"
+          :width="440"
+        >
+          <template #trigger>
+            <wx-button>{{ mode.label }}</wx-button>
+          </template>
+
+          <div class="demo-brands">
+            <label v-for="(item, index) in brands" :key="item" class="demo-brands__row">
+              <input v-model="brand" type="radio" :value="item" />
+              <span class="demo-brands__id">{{ index + 1 }}</span>
+              <span>{{ item }}</span>
+            </label>
+          </div>
+
+          <template #footer="{ close }">
+            <wx-button @click="close">Cancel</wx-button>
+            <wx-button type="primary" @click="close">Choose</wx-button>
+          </template>
+        </wx-dialog>
+
+        <wx-button variant="outline" @click="stickyFooter = !stickyFooter">
+          Footer: {{ stickyFooter ? 'sticky' : 'at the end' }}
+        </wx-button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -144,5 +208,27 @@ function save(close: () => void) {
 .demo-sections__item--active {
   background: var(--wx-color-primary-soft);
   color: var(--wx-color-primary);
+}
+
+.demo-brands {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-8);
+}
+
+.demo-brands__row {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-12);
+  padding: var(--wx-space-12);
+  background: var(--wx-bg-subtle);
+  border: 1px solid var(--wx-border-muted);
+  border-radius: var(--wx-radius-sm);
+  cursor: pointer;
+}
+
+.demo-brands__id {
+  min-width: 16px;
+  color: var(--wx-text-muted);
 }
 </style>
