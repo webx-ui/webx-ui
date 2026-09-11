@@ -1,4 +1,5 @@
-import { computed, onBeforeUnmount, onMounted, ref, watch, type ComputedRef, type Ref } from 'vue'
+import { computed, onMounted, ref, watch, type ComputedRef, type Ref } from 'vue'
+import { useElementWidth } from './useElementWidth'
 import { usePanelMemory } from './useOverlayPanel'
 
 /** What shape the navigation takes at the width it has been given. */
@@ -85,7 +86,7 @@ export function useResponsiveShell(
   target?: Ref<HTMLElement | null | undefined>,
   options: ResponsiveShellOptions = {},
 ): ResponsiveShell {
-  const width = ref(0)
+  const width = useElementWidth(target)
   const drawerOpen = ref(false)
 
   /*
@@ -103,45 +104,9 @@ export function useResponsiveShell(
   const collapsed = computed(() => layout.value !== 'sidebar')
   const showAside = computed(() => layout.value !== 'drawer')
 
-  let observer: ResizeObserver | null = null
-  let observed: HTMLElement | null = null
-
-  function element() {
-    if (target) return target.value ?? null
-    return typeof document === 'undefined' ? null : document.documentElement
-  }
-
-  function observe() {
-    const el = element()
-    /* Mounting and the watch on `target` both land here; the same element is measured once. */
-    if (el === observed) return
-
-    observer?.disconnect()
-    observed = el
-    if (!el || typeof ResizeObserver === 'undefined') return
-
-    /* A first reading, since an observer only reports once something changes. */
-    const measured = Math.round(el.getBoundingClientRect().width)
-    if (measured > 0) width.value = measured
-
-    observer = new ResizeObserver((entries) => {
-      const entry = entries[0]
-      if (entry) width.value = Math.round(entry.contentRect.width)
-    })
-    observer.observe(el)
-  }
-
   onMounted(() => {
-    observe()
     /* Read after mounting: the server has no storage, and the markup must match. */
     if (memory.read()?.collapsed) preference.value = true
-  })
-
-  if (target) watch(target, observe)
-
-  onBeforeUnmount(() => {
-    observer?.disconnect()
-    observer = null
   })
 
   /** Which size class the screen is in — what an open sidebar is remembered against. */
