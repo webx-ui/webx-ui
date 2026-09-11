@@ -41,7 +41,15 @@ export default defineConfig({
           text: 'Basic',
           items: [
             { text: 'Button', link: '/components/button' },
+            { text: 'ButtonGroup', link: '/components/button-group' },
+            { text: 'Icon', link: '/components/icon' },
+            { text: 'Typography', link: '/components/typography' },
+            { text: 'Badge', link: '/components/badge' },
+            { text: 'Indicator', link: '/components/indicator' },
             { text: 'Card', link: '/components/card' },
+            { text: 'Actions', link: '/components/actions' },
+            { text: 'Dropdown', link: '/components/dropdown' },
+            { text: 'EntityCard', link: '/components/entity-card' },
           ],
         },
         {
@@ -52,6 +60,8 @@ export default defineConfig({
             { text: 'Textarea', link: '/components/textarea' },
             { text: 'InputNumber', link: '/components/input-number' },
             { text: 'Select', link: '/components/select' },
+            { text: 'Autocomplete', link: '/components/autocomplete' },
+            { text: 'Cascader', link: '/components/cascader' },
             { text: 'Checkbox', link: '/components/checkbox' },
             { text: 'Radio', link: '/components/radio' },
             { text: 'Switch', link: '/components/switch' },
@@ -69,6 +79,8 @@ export default defineConfig({
           items: [
             { text: 'Table', link: '/components/table' },
             { text: 'Pagination', link: '/components/pagination' },
+            { text: 'Statistic', link: '/components/statistic' },
+            { text: 'Timeline', link: '/components/timeline' },
           ],
         },
         {

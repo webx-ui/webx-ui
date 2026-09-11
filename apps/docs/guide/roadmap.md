@@ -12,8 +12,8 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 | Button                                                    | ✅     |
 | Input                                                     | ✅     |
 | Card                                                      | ✅     |
-| ButtonGroup                                               | ⬜     |
-| Icon                                                      | ⬜     |
+| ButtonGroup                                               | ✅     |
+| Icon                                                      | ✅     |
 | Textarea                                                  | ✅     |
 | InputNumber                                               | ✅     |
 | Select (Reka Combobox)                                    | ✅     |
@@ -21,9 +21,9 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 | Radio, RadioGroup                                         | ✅     |
 | Switch                                                    | ✅     |
 | Form, FormItem                                            | ✅     |
-| Tag                                                       | ⬜     |
+| Tag (as Badge)                                            | ✅     |
 | TagsInput                                                 | ✅     |
-| Badge                                                     | ⬜     |
+| Badge (count: Indicator)                                  | ✅     |
 | Alert                                                     | ⬜     |
 | Divider                                                   | ⬜     |
 | Layout (Container, Header, Aside, Main, Footer, Row, Col) | ⬜     |
@@ -31,8 +31,8 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 | Tabs (Reka)                                               | ⬜     |
 | Menu / Sidebar                                            | ⬜     |
 | Breadcrumb                                                | ⬜     |
-| Link                                                      | ⬜     |
-| Text                                                      | ⬜     |
+| Link                                                      | ✅     |
+| Text, Heading, Prose                                      | ✅     |
 | Scrollbar                                                 | ⬜     |
 
 ## Wave 2 — data and overlays
@@ -43,7 +43,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 | Pagination                                                        | ✅     |
 | Dialog (Reka)                                                     | ⬜     |
 | Drawer (Reka)                                                     | ⬜     |
-| Dropdown (Reka)                                                   | ⬜     |
+| Dropdown (Reka)                                                   | ✅     |
 | Tooltip (Reka)                                                    | ⬜     |
 | Popover (Reka)                                                    | ⬜     |
 | Popconfirm                                                        | ⬜     |
@@ -63,20 +63,23 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 | Steps                                                             | ⬜     |
 | Collapse                                                          | ⬜     |
 | Segmented                                                         | ⬜     |
-| Statistic                                                         | ⬜     |
+| Statistic, Countdown                                              | ✅     |
 | Backtop                                                           | ⬜     |
 | Affix                                                             | ⬜     |
 
 ## Wave 3 — as needed
 
-ColorPicker ✅, Slider ✅ and Rate ✅ are done.
+ColorPicker ✅, Slider ✅, Rate ✅, [Autocomplete](/components/autocomplete) ✅,
+[Cascader](/components/cascader) ✅ and [Timeline](/components/timeline) ✅ are done.
 
-Still open: Tree, TreeSelect (`he-tree-vue` / Reka Tree), Cascader, Transfer, Autocomplete,
-Timeline, Calendar, Carousel, Mention, Anchor, Splitter, Watermark, Tour, Marquee.
+Still open: Tree, TreeSelect (`he-tree-vue` / Reka Tree), Transfer, Calendar, Carousel, Mention,
+Anchor, Splitter, Watermark, Tour, Marquee.
 
 ## CMS-specific (not in Element Plus)
 
 RichText (Tiptap) ✅ — see [RichText](/components/rich-text).
+EntityCard ✅ — one record as a row, see [EntityCard](/components/entity-card).
+Actions ✅ — the icon buttons at the end of a row, see [Actions](/components/actions).
 
 MediaLibrary / Gallery, Repeater, Markdown, LinkPicker, BlockPicker, SortableList
 (`vue-draggable-plus`), and `SchemaRenderer` in [`@webx-ui/schema`](/guide/#packages).
