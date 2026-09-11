@@ -1,5 +1,6 @@
 <script setup>
 import LayoutDemo from '../components/demos/LayoutDemo.vue'
+import LayoutTopbarDemo from '../components/demos/LayoutTopbarDemo.vue'
 </script>
 
 # Layout
@@ -80,29 +81,113 @@ const collapsed = ref(false)
 </template>
 ```
 
-## On a phone
+## A responsive sidebar
 
-Under 640px the bars and the main column give up some of their padding on their own — 24px of
-margin around a form is air on a desktop and a third of the line on a phone. What they will not do
-is decide where the sidebar goes: a 240px column beside a 375px screen leaves nothing to read, so
-below that width most admin panels drop the `WxAside` and put the menu in a
-[Drawer](/components/drawer) behind the header's button.
+A 240px column beside a 375px screen leaves nothing to read, and an admin panel is expected to do
+something about it: the full sidebar on a desktop, an icon rail on a tablet, and a burger on a
+phone. Three shapes with two thresholds — `useResponsiveShell` is that rule, and nothing else.
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useResponsiveShell } from '@webx-ui/core'
+
+const shell = ref<HTMLElement | null>(null)
+const { layout, collapsed, showAside, drawerOpen, toggle, close } = useResponsiveShell(shell)
+
+const section = ref('pages')
+</script>
+
+<template>
+  <div ref="shell">
+    <wx-container full-height>
+      <wx-header>
+        <wx-action icon="menu" label="Menu" @click="toggle" />
+        <strong>Admin</strong>
+      </wx-header>
+
+      <wx-container direction="horizontal">
+        <wx-aside v-if="showAside" :collapsed="collapsed">
+          <wx-menu v-model="section" :collapsed="collapsed">…</wx-menu>
+        </wx-aside>
+
+        <wx-main>
+          <router-view />
+        </wx-main>
+      </wx-container>
+    </wx-container>
+
+    <wx-drawer v-model:open="drawerOpen" title="Menu" side="left" :size="260" closable>
+      <wx-menu v-model="section" @select="close">…</wx-menu>
+    </wx-drawer>
+  </div>
+</template>
+```
+
+One button does both jobs: where there is room for a sidebar it collapses and expands it, and where
+there is not it opens the drawer. A drawer opened on a tablet is a temporary look at the full menu
+over the rail, so it stays until the menu has a place on the page again.
+
+| Returns      | Type                                           | Description                                    |
+| ------------ | ---------------------------------------------- | ---------------------------------------------- |
+| `width`      | `Ref<number>`                                  | Measured width; `0` until it has been measured |
+| `layout`     | `ComputedRef<'sidebar' \| 'rail' \| 'drawer'>` | The shape at that width                        |
+| `collapsed`  | `ComputedRef<boolean>`                         | For `WxAside` and `WxMenu`                     |
+| `showAside`  | `ComputedRef<boolean>`                         | Whether there is room for a column at all      |
+| `drawerOpen` | `Ref<boolean>`                                 | For `v-model:open` on the drawer               |
+| `toggle`     | `() => void`                                   | Collapses the sidebar, or opens the drawer     |
+| `close`      | `() => void`                                   | Closes the drawer — call it on `select`        |
+
+Options: `phone` (640) and `tablet` (1024) are the thresholds, `collapsed` says whether a wide
+screen starts with the rail. Pass nothing at all to measure the page itself:
+
+```ts
+const shell = useResponsiveShell(undefined, { tablet: 1200 })
+```
+
+It measures an **element**, not the viewport, for the same reason the [grid](/components/grid) does:
+a shell inside a preview, a split screen or the demo box above is narrow whatever the window says.
+On a real page the two are the same number. `shellLayoutFor(width, collapsed, options)` is the rule
+on its own, if you would rather drive the state yourself.
+
+The padding of the bars and of the main column needs no help: under 640px the header, the footer
+and `WxMain` drop to 12px on their own — 24px of margin around a form is air on a desktop and a
+third of the line on a phone.
+
+## A bar in the header
+
+Not every admin panel wants a sidebar. A screen that is mostly one wide table reads better with the
+navigation across the top and the whole width left for the content — the same shell with a
+horizontal [Menu](/components/menu) in the header and no `WxAside` at all.
+
+<LayoutTopbarDemo />
 
 ```vue
 <template>
-  <wx-container direction="horizontal">
-    <wx-aside v-if="!isPhone">
-      <wx-menu v-model="section">…</wx-menu>
-    </wx-aside>
+  <wx-container full-height>
+    <wx-header>
+      <strong>Admin</strong>
 
-    <wx-drawer v-model:open="menuOpen" side="left" :size="280">
-      <wx-menu v-model="section" @select="menuOpen = false">…</wx-menu>
-    </wx-drawer>
+      <wx-menu v-if="showBar" v-model="section" mode="horizontal" label="Main navigation">
+        <wx-menu-item value="dashboard" icon="grid" label="Dashboard" />
+        <wx-submenu value="content" icon="file" title="Content">
+          <wx-menu-item value="pages" icon="file" label="Pages" />
+        </wx-submenu>
+      </wx-menu>
 
-    <wx-main>…</wx-main>
+      <wx-action v-else icon="menu" label="Menu" @click="toggle" />
+    </wx-header>
+
+    <wx-main :max-width="1200">
+      <router-view />
+    </wx-main>
   </wx-container>
 </template>
 ```
+
+The same composable drives it — a bar has no rail, so only `showAside` is read from it, under the
+name that fits: there is either room for the bar or there is the burger. Branches in a bar open as
+flyouts, and in the drawer the very same menu opens them inline, because it is vertical there.
 
 ## Reading width
 

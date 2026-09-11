@@ -21,7 +21,17 @@ to a button "just this once".
 
 The shell is `WxContainer` with `WxHeader`, `WxAside`, `WxMain` and `WxFooter`, each rendering the
 element it is named after, so a page has real landmarks. The sidebar collapses to a rail, the main
-column takes a reading width, and either can scroll on its own while the chrome stays put.
+column takes a reading width, and either can scroll on its own while the chrome stays put. The same
+five parts make the other shape an admin panel takes: a horizontal menu in the header and no
+sidebar at all, with the whole width left to the content.
+
+`useResponsiveShell` is the rule those shapes follow — the full sidebar, an icon rail under 1024px,
+a drawer behind a burger under 640px — out of one measurement and two thresholds. It returns
+`layout`, `collapsed`, `showAside`, `drawerOpen`, `toggle` and `close`, so one button in the header
+collapses the sidebar where there is room for one and opens the drawer where there is not. Like the
+grid, it measures an element rather than the viewport, which is what makes a shell inside a preview
+or a split screen behave like the narrow thing it is; `shellLayoutFor` is the same rule as a pure
+function, for a page that would rather drive the state itself.
 
 `WxRow` and `WxCol` are the 24-column grid, and its breakpoints measure the row rather than the
 window: `md` means "from 768px of row", so the same grid stacks inside a 400px drawer and spreads
