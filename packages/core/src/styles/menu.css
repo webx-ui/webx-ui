@@ -1,0 +1,137 @@
+/*
+ * The row shared by a menu entry and a submenu trigger — the two have to be the same
+ * object to the eye, so the rule lives once, outside either component's scoped
+ * styles. It is unscoped for a second reason: a flyout is teleported out of the menu,
+ * and a scoped rule would not reach the panel it lands in.
+ */
+.wx-menu-row {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-10);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--wx-menu-row-height, 36px);
+  /* The indent counts the submenus above the row; a flyout resets it to nothing. */
+  padding-inline: calc(
+      var(--wx-menu-row-padding, 10px) + var(--wx-menu-depth, 0) * var(--wx-menu-indent, 16px)
+    )
+    var(--wx-menu-row-padding, 10px);
+  background: transparent;
+  border: 0;
+  border-radius: var(--wx-radius-sm);
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color var(--wx-duration-fast) var(--wx-easing-standard),
+    color var(--wx-duration-fast) var(--wx-easing-standard);
+}
+
+.wx-menu-row:hover {
+  background: var(--wx-bg-fill);
+  color: var(--wx-text-strong);
+}
+
+.wx-menu-row:focus-visible {
+  outline: none;
+  box-shadow: var(--wx-ring-focus);
+}
+
+.wx-menu-row.is-active {
+  background: var(--wx-color-primary-soft);
+  color: var(--wx-color-primary);
+  font-weight: var(--wx-font-weight-medium);
+}
+
+/* The branch that holds the active entry, so a closed one still says where you are. */
+.wx-menu-row.is-trail {
+  color: var(--wx-text-strong);
+  font-weight: var(--wx-font-weight-medium);
+}
+
+.wx-menu-row.is-disabled,
+.wx-menu-row.is-disabled:hover {
+  background: transparent;
+  color: var(--wx-text-disabled);
+  cursor: not-allowed;
+}
+
+.wx-menu-row__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: var(--wx-font-size-lg);
+}
+
+.wx-menu-row__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wx-menu-row__trailing {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  color: var(--wx-text-muted);
+}
+
+.wx-menu-row__chevron {
+  flex: 0 0 auto;
+  color: var(--wx-text-muted);
+  transition: transform var(--wx-duration-normal) var(--wx-easing-standard);
+}
+
+.wx-menu-row.is-open .wx-menu-row__chevron {
+  transform: rotate(180deg);
+}
+
+/* The icon rail: one square per entry, the label carried by the flyout instead. */
+.wx-menu--collapsed .wx-menu-row {
+  justify-content: center;
+  width: var(--wx-menu-row-height, 36px);
+  padding-inline: 0;
+}
+
+.wx-menu--collapsed .wx-menu-row__label,
+.wx-menu--collapsed .wx-menu-row__trailing,
+.wx-menu--collapsed .wx-menu-row__chevron {
+  display: none;
+}
+
+.wx-menu--horizontal > .wx-menu-item > .wx-menu-row,
+.wx-menu--horizontal > .wx-submenu > .wx-menu-row {
+  width: auto;
+  white-space: nowrap;
+}
+
+/* The flyout panel: a dropdown, holding a menu list of its own. */
+.wx-menu-flyout {
+  padding: var(--wx-space-4);
+}
+
+.wx-menu-flyout__list {
+  --wx-menu-row-height: 32px;
+  --wx-menu-row-padding: var(--wx-space-10);
+  /* Every level of a flyout starts at its own left edge, so nothing is indented. */
+  --wx-menu-indent: 0px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wx-font-size-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wx-menu-row,
+  .wx-menu-row__chevron {
+    transition: none;
+  }
+}
