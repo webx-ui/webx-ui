@@ -104,4 +104,10 @@ control inside it shrinks:
 | z-index  | `--wx-z-index-sticky` … `--wx-z-index-tooltip`                                             |
 | Motion   | `--wx-duration-fast`, `--wx-duration-normal`, `--wx-duration-slow`, `--wx-easing-standard` |
 
+Every floating panel — a dropdown, a select's list, a popover, a colour picker — is drawn on
+`--wx-z-index-popover`, one shared layer. They are added to the document as they open, so the one
+opened last is the one on top, and a select opened inside a popover covers it instead of vanishing
+behind it. Keep your own transient panels on that layer too; `--wx-z-index-dialog` and above are
+for surfaces that take over the page.
+
 See [Theming](/guide/theming) for how to override them.
