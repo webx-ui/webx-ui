@@ -133,6 +133,44 @@ describe('WxDialog', () => {
     expect(panel()?.style.getPropertyValue('--wx-dialog-sidebar-width')).toBe('240px')
   })
 
+  /*
+   * The long kind: too much to fit, so the panel grows past the screen and the wrapper
+   * around it is what scrolls. The footer stays against the bottom unless asked not to.
+   */
+  it('hands the scrolling to the wrapper when the content is long', async () => {
+    const wrapper = factory(
+      { open: true, title: 'Brands', scroll: 'panel' },
+      { footer: '<template #footer>Pick</template>' },
+    )
+    await nextTick()
+
+    const viewport = document.querySelector('.wx-dialog__viewport')
+    expect(viewport?.classList.contains('wx-dialog__viewport--scrolls')).toBe(true)
+    expect(panel()?.classList.contains('wx-dialog--long')).toBe(true)
+    expect(panel()?.classList.contains('wx-dialog--sticky-foot')).toBe(true)
+
+    await wrapper.setProps({ stickyFooter: false })
+    await nextTick()
+
+    expect(panel()?.classList.contains('wx-dialog--sticky-foot')).toBe(false)
+  })
+
+  /* Nothing to drag into and nothing to stretch: the gesture would fight the scroll. */
+  it('ignores dragging and resizing while it is the long kind', async () => {
+    factory({ open: true, title: 'Brands', scroll: 'panel', draggable: true, resizable: true })
+    await nextTick()
+
+    expect(panel()?.querySelector('.wx-dialog__grip')).toBeNull()
+    expect(panel()?.classList.contains('wx-dialog--draggable')).toBe(false)
+
+    const head = panel()?.querySelector('.wx-dialog__head') as HTMLElement
+    press(head, 'pointerdown', 100, 100)
+    press(window, 'pointermove', 150, 130)
+    await nextTick()
+
+    expect(panel()?.style.getPropertyValue('--wx-dialog-x')).toBe('')
+  })
+
   it('is named for screen readers even without a visible heading', async () => {
     factory({ open: true, ariaLabel: 'Edit page', closable: false })
     await nextTick()

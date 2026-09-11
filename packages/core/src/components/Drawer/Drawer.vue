@@ -335,6 +335,10 @@ defineExpose({ close, reset })
 }
 
 .wx-drawer {
+  /* One set of paddings for the three parts, so the small screens can halve them once. */
+  --wx-drawer-pad-x: var(--wx-space-18);
+  --wx-drawer-pad-y: var(--wx-space-14);
+  --wx-drawer-body-pad: var(--wx-space-18);
   position: fixed;
   z-index: var(--wx-z-index-dialog);
   box-sizing: border-box;
@@ -396,7 +400,7 @@ defineExpose({ close, reset })
   display: flex;
   align-items: center;
   gap: var(--wx-space-12);
-  padding: var(--wx-space-14) var(--wx-space-18);
+  padding: var(--wx-drawer-pad-y) var(--wx-drawer-pad-x);
   border-bottom: 1px solid var(--wx-border-muted);
 }
 
@@ -461,14 +465,14 @@ defineExpose({ close, reset })
   flex: 1 1 auto;
   min-width: 0;
   overflow: auto;
-  padding: var(--wx-space-18);
+  padding: var(--wx-drawer-body-pad);
 }
 
 .wx-drawer__sidebar {
   flex: 0 0 auto;
   width: var(--wx-drawer-sidebar-width, 200px);
   overflow: auto;
-  padding: var(--wx-space-16);
+  padding: var(--wx-drawer-pad-y) var(--wx-drawer-pad-x);
   background: var(--wx-bg-subtle);
   border-right: 1px solid var(--wx-border-muted);
 }
@@ -479,7 +483,7 @@ defineExpose({ close, reset })
   align-items: center;
   justify-content: flex-end;
   gap: var(--wx-space-8);
-  padding: var(--wx-space-14) var(--wx-space-18);
+  padding: var(--wx-drawer-pad-y) var(--wx-drawer-pad-x);
   border-top: 1px solid var(--wx-border-muted);
 }
 
@@ -600,10 +604,18 @@ defineExpose({ close, reset })
  */
 @media (max-width: 640px) {
   .wx-drawer {
+    /* Tighter than on a desktop: every pixel of padding is a line of content lost. */
+    --wx-drawer-pad-x: var(--wx-space-12);
+    --wx-drawer-pad-y: var(--wx-space-10);
+    --wx-drawer-body-pad: var(--wx-space-12);
     inset: 0;
     width: 100%;
     height: 100dvh;
     border: none;
+  }
+
+  .wx-drawer__head {
+    gap: var(--wx-space-8);
   }
 
   .wx-drawer--split .wx-drawer__body {

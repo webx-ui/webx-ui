@@ -1,3 +1,9 @@
+/**
+ * What scrolls when the content is longer than the screen: the body inside a panel that
+ * stops at the edge of the screen, or the whole panel inside the screen itself.
+ */
+export type DialogScroll = 'body' | 'panel'
+
 /** Where the panel was left: pixels, and the offset from the middle of the screen. */
 export interface DialogLayout {
   width?: number
@@ -13,6 +19,14 @@ export interface DialogProps {
   width?: number | string
   /** Height of the panel. Without it the panel grows with its content, up to the screen. */
   height?: number | string
+  /**
+   * Where a long panel scrolls. `body` keeps the panel within the screen and scrolls what
+   * is between the heading and the footer. `panel` lets the panel grow past the screen and
+   * scrolls the whole of it — the heading goes with it, and dragging and resizing are off.
+   */
+  scroll?: DialogScroll
+  /** In `scroll="panel"`, keep the footer against the bottom of the screen. */
+  stickyFooter?: boolean
   /** Smallest width a resize may reach, in pixels. */
   minWidth?: number
   /** Smallest height a resize may reach, in pixels. */

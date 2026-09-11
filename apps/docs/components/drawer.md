@@ -74,8 +74,12 @@ component does the same and clears what was stored.
 ## On a phone
 
 Under 640px wide the panel covers the screen whichever edge it came from — a strip of page left
-visible beside it is a panel too narrow to work in — and the resize handle goes away with it. A
-sidebar stacks above the body instead of standing beside it.
+visible beside it is a panel too narrow to work in — and the resize handle goes away with it. The
+paddings of the heading, body and footer tighten so that more of the content fits, and a sidebar
+stacks above the body instead of standing beside it.
+
+Those paddings are custom properties — `--wx-drawer-pad-x`, `--wx-drawer-pad-y` and
+`--wx-drawer-body-pad` — so a panel that wants roomier or tighter chrome can set them itself.
 
 ## Focus and the page behind it
 
