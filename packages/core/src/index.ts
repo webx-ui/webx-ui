@@ -6,6 +6,20 @@ export type { ControlSize, ControlStatus, ValidationErrors } from './composables
 export { useControlAttrs, type ControlAttrs } from './composables/useControlAttrs'
 export { useElementWidth } from './composables/useElementWidth'
 export {
+  useToast,
+  toast,
+  toastQueue,
+  dismissToast,
+  removeToast,
+  clearToasts,
+  type ToastApi,
+  type ToastHandle,
+  type ToastOptions,
+  type ToastRecord,
+  type ToastType,
+  type ToastAction,
+} from './composables/useToast'
+export {
   useResponsiveShell,
   shellLayoutFor,
   type ResponsiveShell,
