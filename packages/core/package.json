@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/core",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Vue 3 UI components for admin panels, styled entirely with WebX UI design tokens.",
   "license": "MIT",
   "type": "module",
