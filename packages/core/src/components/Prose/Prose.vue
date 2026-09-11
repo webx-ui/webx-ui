@@ -19,7 +19,13 @@ const classes = computed(() => ['wx-prose', `wx-prose--${props.size}`])
       The markup goes into a plain element rather than onto the dynamic tag itself:
       `v-html` on `<component :is>` is meaningless when `as` names a component, and
       every rule below matches descendants, so the extra div changes nothing visually.
+
+      The rule is right that this is where an XSS would land, and there is nothing the
+      component can do about it: what counts as allowed markup — an embed, an inline
+      style, a class — is the application's decision, not a design system's. The prop
+      is documented as server-sanitised, and this is the line that trusts it.
     -->
+    <!-- eslint-disable-next-line vue/no-v-html -->
     <div v-if="html !== undefined" class="wx-prose__content" v-html="html"></div>
     <slot v-else />
   </component>
