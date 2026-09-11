@@ -64,6 +64,51 @@ Reordering inside a full column still works — it does not make the column any 
 
 `disabled` on a column freezes it both ways; on the board it freezes everything.
 
+## What a column can do
+
+The `column-actions` slot is the end of a heading: a plus, a menu, a filter — whatever this column
+can be told to do. It sits outside everything the board drags, so pressing a button there never
+starts a move.
+
+```vue
+<template>
+  <wx-kanban :columns="columns" collapsible reorder-columns column-addable @add-column="create">
+    <template #column-actions="{ column }">
+      <wx-action type="add" size="sm" title="Add a task" @click="add(column)" />
+      <wx-dropdown align="end">
+        <template #trigger><wx-action type="more" size="sm" title="Column menu" /></template>
+        <wx-dropdown-item icon="trash" tone="danger" @click="clear(column)"
+          >Empty it</wx-dropdown-item
+        >
+      </wx-dropdown>
+    </template>
+  </wx-kanban>
+</template>
+```
+
+`collapsible` folds a column down to a strip with its name read the long way, which is how a board
+with a dozen statuses stays legible. Bind `v-model:collapsed` — an array of column ids — to
+remember which ones are folded between visits. A folded column holds no cards that can be reached,
+so it takes none: dragging to it is refused and a card moved with the keyboard passes it by.
+
+```vue
+<template>
+  <wx-kanban v-model:collapsed="folded" :columns="columns" collapsible />
+</template>
+```
+
+`column-addable` puts a column-shaped button after the last column and emits `add-column`; the
+`default` slot replaces that button when the application wants its own.
+
+## Reordering the columns
+
+`reorder-columns` lets a column be dragged by its heading — by the heading only, so a card is still
+picked up by the card. The new order is written into the `columns` array you passed and reported as
+`{ column, from, to, via }`.
+
+Keyboard, with a heading focused: <kbd>Space</kbd> picks the column up, <kbd>←</kbd> <kbd>→</kbd>
+move it, <kbd>Space</kbd> drops it, <kbd>Esc</kbd> puts it back.
+
 ## The keyboard
 
 SortableJS is a pointer library and has nothing to say to a keyboard, so the board carries its own.
@@ -101,25 +146,30 @@ The board is as tall as it is given. Put a height on it and each column scrolls 
 
 ## Props
 
-| Prop          | Type               | Default              | Description                            |
-| ------------- | ------------------ | -------------------- | -------------------------------------- |
-| `columns`     | `KanbanColumn[]`   | —                    | Required; each carries its own `items` |
-| `group`       | `string`           | —                    | Boards sharing a name exchange cards   |
-| `size`        | `'sm' \| 'md'`     | `'md'`               | Padding and gaps                       |
-| `columnWidth` | `number \| string` | `288`                | A number means pixels                  |
-| `disabled`    | `boolean`          | `false`              | Nothing moves                          |
-| `handle`      | `string`           | —                    | CSS selector of the part that drags    |
-| `addable`     | `boolean`          | `false`              | Adds a button under each column        |
-| `addLabel`    | `string`           | `'Add a card'`       | Its label                              |
-| `emptyText`   | `string`           | `'Nothing here yet'` | Shown in a column with no cards        |
-| `ariaLabel`   | `string`           | —                    | Accessible name for the board          |
+| Prop             | Type               | Default              | Description                             |
+| ---------------- | ------------------ | -------------------- | --------------------------------------- |
+| `columns`        | `KanbanColumn[]`   | —                    | Required; each carries its own `items`  |
+| `collapsed`      | `KanbanId[]`       | `[]`                 | Folded columns; use `v-model:collapsed` |
+| `group`          | `string`           | —                    | Boards sharing a name exchange cards    |
+| `size`           | `'sm' \| 'md'`     | `'md'`               | Padding and gaps                        |
+| `columnWidth`    | `number \| string` | `288`                | A number means pixels                   |
+| `disabled`       | `boolean`          | `false`              | Nothing moves                           |
+| `handle`         | `string`           | —                    | CSS selector of the part that drags     |
+| `addable`        | `boolean`          | `false`              | Adds a button under each column         |
+| `addLabel`       | `string`           | `'Add a card'`       | Its label                               |
+| `collapsible`    | `boolean`          | `false`              | A column can be folded to a strip       |
+| `reorderColumns` | `boolean`          | `false`              | Columns drag by their heading           |
+| `columnAddable`  | `boolean`          | `false`              | A button after the last column          |
+| `addColumnLabel` | `string`           | `'Add a column'`     | Its label                               |
+| `emptyText`      | `string`           | `'Nothing here yet'` | Shown in a column with no cards         |
+| `ariaLabel`      | `string`           | —                    | Accessible name for the board           |
 
 **Column:** `{ id, title?, items, limit?, tone?, disabled? }`, where `tone` is
 `default | primary | success | warning | danger | info` and colours the rule above the column.
 
-**Events:** `move` — a card changed position or column; `add` — the button under a column was
-pressed.
+**Events:** `move` — a card changed position or column; `column-move` — a column did; `add` — the
+button under a column was pressed; `add-column` — the one after the last column was.
 
 **Slots:** `card` (`{ card, column, index }`); `column-header` (`{ column, count, overLimit }`);
-`column-footer` (`{ column }`); `empty` (`{ column }`); `default` — after the last column, for an
-"add a column" button.
+`column-actions` (`{ column, collapsed }`); `column-footer` (`{ column }`); `empty` (`{ column }`);
+`default` — after the last column, in place of the add-a-column button.

@@ -184,6 +184,90 @@ describe('WxKanban', () => {
     expect(wrapper.emitted('move')).toBeUndefined()
   })
 
+  describe('the column itself', () => {
+    it('carries whatever actions the column is given', () => {
+      const wrapper = board(
+        {},
+        {
+          'column-actions':
+            '<template #column-actions="{ column }"><button :class="column.id">+</button></template>',
+        },
+      )
+
+      const head = wrapper.findAll('.wx-kanban__head')[0]
+      expect(head.get('.wx-kanban__actions .todo').text()).toBe('+')
+    })
+
+    it('folds down to a strip and opens again', async () => {
+      const wrapper = board({ collapsible: true })
+
+      await wrapper.findAll('.wx-kanban__collapse')[0].trigger('click')
+
+      expect(wrapper.emitted('update:collapsed')?.at(-1)).toEqual([['todo']])
+
+      await wrapper.setProps({ collapsed: ['todo'] })
+
+      const column = wrapper.findAll('.wx-kanban__column')[0]
+      expect(column.classes()).toContain('is-collapsed')
+      expect(column.find('.wx-kanban__list').exists()).toBe(false)
+      expect(column.get('.wx-kanban__title--vertical').text()).toBe('To do')
+
+      await column.get('.wx-kanban__expand').trigger('click')
+      expect(wrapper.emitted('update:collapsed')?.at(-1)).toEqual([[]])
+    })
+
+    /* Folded, a column has nowhere to put a card, so the keyboard passes it by. */
+    it('is passed over by a card while it is folded', async () => {
+      const wrapper = board({ collapsible: true, collapsed: ['doing'] })
+
+      await cardAt(wrapper, 'a').trigger('keydown', { key: ' ' })
+      await cardAt(wrapper, 'a').trigger('keydown', { key: 'ArrowRight' })
+
+      expect(cards(wrapper, 'done')).toEqual(['a'])
+    })
+
+    it('offers to add a column after the last one', async () => {
+      const wrapper = board({ columnAddable: true, addColumnLabel: 'Add a status' })
+
+      expect(wrapper.get('.wx-kanban__add-column').text()).toBe('Add a status')
+
+      await wrapper.get('.wx-kanban__add-column').trigger('click')
+      expect(wrapper.emitted('add-column')).toHaveLength(1)
+    })
+
+    it('moves with the keyboard when the columns may be reordered', async () => {
+      const wrapper = board({ reorderColumns: true })
+      const heads = () =>
+        wrapper.findAll('.wx-kanban__head').map((head) => head.get('.wx-kanban__title').text())
+
+      const first = wrapper.findAll('.wx-kanban__head')[0]
+      await first.trigger('keydown', { key: ' ' })
+      expect(first.attributes('aria-pressed')).toBe('true')
+
+      await wrapper.get('[data-column-grip="todo"]').trigger('keydown', { key: 'ArrowRight' })
+
+      expect(heads()).toEqual(['In progress', 'To do', 'Done'])
+      expect(wrapper.emitted('column-move')?.at(-1)?.[0]).toMatchObject({
+        from: 0,
+        to: 1,
+        via: 'keyboard',
+      })
+
+      await wrapper.get('[data-column-grip="todo"]').trigger('keydown', { key: 'Escape' })
+      expect(heads()).toEqual(['To do', 'In progress', 'Done'])
+    })
+
+    it('leaves the columns alone unless it is told they may move', async () => {
+      const wrapper = board()
+
+      const first = wrapper.findAll('.wx-kanban__head')[0]
+      expect(first.attributes('tabindex')).toBe('-1')
+
+      await first.trigger('keydown', { key: ' ' })
+      expect(wrapper.get('.wx-kanban__live').text()).toBe('')
+    })
+  })
+
   it('takes a column width and a size', () => {
     const wrapper = board({ columnWidth: '20rem', size: 'sm' })
 

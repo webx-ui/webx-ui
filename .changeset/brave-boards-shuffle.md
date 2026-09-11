@@ -14,6 +14,14 @@ A column's `limit` is enforced rather than decorated: at the limit the count tur
 column refuses further cards, while reordering inside it still works, since that does not make it
 any fuller.
 
+A column is more than a heading over a list. The `column-actions` slot is the end of that heading —
+a plus, a menu — and sits outside everything that drags, so pressing it never starts a move.
+`collapsible` folds a column down to a strip with its name read the long way, remembered through
+`v-model:collapsed`; folded, it holds nothing reachable, so it takes no cards and a keyboard move
+passes it by. `column-addable` puts a column-shaped button after the last column, and
+`reorder-columns` lets the columns themselves be dragged by their headings — by the heading only,
+so a card is still picked up by the card.
+
 The dragging is SortableJS, through `vue-draggable-plus`, and it has nothing to say to a keyboard —
 so the board carries its own. Space picks a card up, the arrows move it between positions and
 columns (stepping over any column that is full or frozen), space drops it and escape puts it back;
