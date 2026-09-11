@@ -84,6 +84,7 @@ export default defineConfig({
             { text: 'Pagination', link: '/components/pagination' },
             { text: 'Statistic', link: '/components/statistic' },
             { text: 'Timeline', link: '/components/timeline' },
+            { text: 'Kanban', link: '/components/kanban' },
           ],
         },
         {
