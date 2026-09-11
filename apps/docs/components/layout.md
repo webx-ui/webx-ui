@@ -63,7 +63,7 @@ For a scrolling panel inside a screen — a log, a list of comments — use
 
 ## Collapsing the sidebar
 
-`collapsed` narrows the column to `collapsed-width`, 64px by default. Pair it with a collapsed
+`collapsed` narrows the column to `collapsed-width`, 56px by default. Pair it with a collapsed
 [Menu](/components/menu) and the sidebar becomes an icon rail whose submenus open as flyouts:
 
 ```vue
@@ -74,9 +74,33 @@ const collapsed = ref(false)
 </script>
 
 <template>
-  <wx-aside :collapsed="collapsed" :width="240" :collapsed-width="64">
+  <wx-aside :collapsed="collapsed" :width="240" :collapsed-width="56">
     <wx-menu v-model="section" :collapsed="collapsed">…</wx-menu>
   </wx-aside>
+</template>
+```
+
+## On a phone
+
+Under 640px the bars and the main column give up some of their padding on their own — 24px of
+margin around a form is air on a desktop and a third of the line on a phone. What they will not do
+is decide where the sidebar goes: a 240px column beside a 375px screen leaves nothing to read, so
+below that width most admin panels drop the `WxAside` and put the menu in a
+[Drawer](/components/drawer) behind the header's button.
+
+```vue
+<template>
+  <wx-container direction="horizontal">
+    <wx-aside v-if="!isPhone">
+      <wx-menu v-model="section">…</wx-menu>
+    </wx-aside>
+
+    <wx-drawer v-model:open="menuOpen" side="left" :size="280">
+      <wx-menu v-model="section" @select="menuOpen = false">…</wx-menu>
+    </wx-drawer>
+
+    <wx-main>…</wx-main>
+  </wx-container>
 </template>
 ```
 
@@ -115,7 +139,7 @@ padding and the background still run the full width of the column:
 | Prop             | Type               | Default   | Description                              |
 | ---------------- | ------------------ | --------- | ---------------------------------------- |
 | `width`          | `number \| string` | `240px`   | Width of the column                      |
-| `collapsedWidth` | `number \| string` | `64px`    | Width once collapsed                     |
+| `collapsedWidth` | `number \| string` | `56px`    | Width once collapsed                     |
 | `collapsed`      | `boolean`          | `false`   | Narrows the column to the rail           |
 | `side`           | `'start' \| 'end'` | `'start'` | Which edge carries the rule              |
 | `bordered`       | `boolean`          | `true`    | Rule between the column and the page     |

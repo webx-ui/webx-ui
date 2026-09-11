@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, provide, reactive, watch } from 'vue'
+import { computed, provide, reactive, ref, watch } from 'vue'
 import { menuKey, type MenuValue } from '../../composables/useMenu'
 import type { MenuEmits, MenuProps } from './types'
 
@@ -45,6 +45,9 @@ function setOpen(value: MenuValue, open: boolean, ancestors: MenuValue[]) {
     : [...openKeys.value.filter((key) => key !== value), value]
 }
 
+/* Every open flyout listens for this to change; nothing reads the number itself. */
+const closeSignal = ref(0)
+
 provide(menuKey, {
   mode: computed(() => props.mode),
   size: computed(() => props.size),
@@ -57,6 +60,10 @@ provide(menuKey, {
   },
   isOpen: (value) => openKeys.value.includes(value),
   setOpen,
+  closeSignal: computed(() => closeSignal.value),
+  closeFlyouts: () => {
+    closeSignal.value += 1
+  },
   register: (value, ancestors) => positions.set(value, ancestors),
   unregister: (value) => positions.delete(value),
 })
@@ -142,7 +149,12 @@ const classes = computed(() => [
   display: none;
 }
 
+/*
+ * The rail is a column of squares, so the padding around it comes down to the gap
+ * that keeps them off the edge — the width of the sidebar is doing the spacing.
+ */
 .wx-menu--collapsed {
   align-items: center;
+  padding: var(--wx-space-6) var(--wx-space-4);
 }
 </style>

@@ -43,8 +43,8 @@ from the track would leave two halves wider than the line they sit on.
 ## Responsive
 
 `span` is the base and holds at every width. `sm`, `md`, `lg` and `xl` override it from 640, 768,
-1024 and 1280px up — mobile first, so a column that is full width on a phone and a quarter on a
-desktop reads in that order:
+1024 and 1280px up — narrowest first, so a column that takes the whole line when there is little
+room and a quarter of it when there is plenty reads in that order:
 
 ```vue
 <template>
@@ -59,6 +59,20 @@ Each breakpoint also takes an offset of its own:
   <wx-col :span="24" :lg="{ span: 16, offset: 4 }">…</wx-col>
 </template>
 ```
+
+### The breakpoints measure the row, not the window
+
+They are **container queries**: `md` means "from 768px of row", not "from 768px of viewport". The
+same grid therefore stacks inside a 400px drawer and spreads across a wide screen without knowing
+which it is in, and a main column that just lost 240px to a sidebar reflows the moment it narrows
+rather than when the window does. On a page whose content runs the full width the two readings
+agree, which is why the numbers are the familiar ones.
+
+The container is named, so a `WxCol` used outside a `WxRow` does not start answering to the
+nearest card: with no row above it, a column keeps its base `span` at every width.
+
+Support is Chrome 105, Safari 16 and Firefox 110 and up — anything older shows the base `span`,
+which for the usual mobile-first `span="24"` is a stack, not a broken layout.
 
 ## Arranging the row
 
@@ -97,10 +111,10 @@ phone and last on a desktop:
 | -------- | ---------------------------------------------- | ------- | --------------------------------- |
 | `span`   | `number`                                       | `24`    | Columns out of 24, at every width |
 | `offset` | `number`                                       | —       | Empty columns before the cell     |
-| `sm`     | `number \| { span?: number; offset?: number }` | —       | From 640px up                     |
-| `md`     | `number \| { span?: number; offset?: number }` | —       | From 768px up                     |
-| `lg`     | `number \| { span?: number; offset?: number }` | —       | From 1024px up                    |
-| `xl`     | `number \| { span?: number; offset?: number }` | —       | From 1280px up                    |
+| `sm`     | `number \| { span?: number; offset?: number }` | —       | From 640px of row up              |
+| `md`     | `number \| { span?: number; offset?: number }` | —       | From 768px of row up              |
+| `lg`     | `number \| { span?: number; offset?: number }` | —       | From 1024px of row up             |
+| `xl`     | `number \| { span?: number; offset?: number }` | —       | From 1280px of row up             |
 | `order`  | `number`                                       | —       | Visual order within the row       |
 | `as`     | `string \| Component`                          | `'div'` | The element to render             |
 
@@ -109,9 +123,10 @@ Both take a `default` slot and nothing else.
 ## How the breakpoints work
 
 Every width a column is given is written out as a CSS variable — `--wx-col-span`,
-`--wx-col-span-md` and so on — and the stylesheet holds one rule per breakpoint, each falling back
-to the one below it. Nothing is generated per span, so the grid costs four rules rather than the
-several hundred a class-per-span grid ships, and a column can be adjusted from the outside:
+`--wx-col-span-md` and so on — and the stylesheet holds one `@container` rule per breakpoint, each
+falling back to the one below it. Nothing is generated per span, so the grid costs four rules
+rather than the several hundred a class-per-span grid ships, and a column can be adjusted from the
+outside:
 
 ```vue
 <template>

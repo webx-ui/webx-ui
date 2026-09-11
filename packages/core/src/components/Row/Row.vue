@@ -49,6 +49,14 @@ const classes = computed(() => [
   flex-wrap: wrap;
   box-sizing: border-box;
   /*
+   * The row is what its columns measure themselves against: they reflow on the width
+   * of the row, not of the window, so a grid dropped into a drawer or into a main
+   * column squeezed by a sidebar behaves like the narrow thing it is. The container
+   * is named so that a stray column outside a row does not start answering to the
+   * nearest card instead.
+   */
+  container: wx-row / inline-size;
+  /*
    * The gutter is padding on the columns, pulled back by this negative margin, so a
    * column's width stays an honest percentage of the row. A `column-gap` would be
    * subtracted from the track and leave `span="12"` twice over a line too wide.

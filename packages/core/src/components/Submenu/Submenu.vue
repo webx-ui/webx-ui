@@ -23,6 +23,21 @@ const panelId = useId()
 
 const ancestors = computed(() => [...parent.ancestors, props.value])
 
+const collapsed = computed(() => menu?.collapsed.value ?? false)
+const isTrail = computed(() => menu?.trail.value.includes(props.value) ?? false)
+
+/**
+ * Inline the branch drops open under its title; there is no room for that in a bar
+ * or on an icon rail, so those open it as a panel beside the trigger instead.
+ *
+ * Only the first branch does, though. Inside a panel there is room again, and the
+ * branches below open inline in it — a second panel hanging off the first is both
+ * harder to keep under the pointer and harder to place near the edge of a screen.
+ */
+const asFlyout = computed(
+  () => !parent.inFlyout && (collapsed.value || menu?.mode.value === 'horizontal'),
+)
+
 provide(submenuKey, {
   /*
    * A submenu is an ancestor of everything below it, so it puts itself on the list
@@ -31,17 +46,14 @@ provide(submenuKey, {
   get ancestors() {
     return ancestors.value
   },
-  depth: parent.depth + 1,
+  /* A panel is a fresh surface: what it holds is indented from its own edge. */
+  get depth() {
+    return asFlyout.value ? 0 : parent.depth + 1
+  },
+  get inFlyout() {
+    return parent.inFlyout || asFlyout.value
+  },
 })
-
-const collapsed = computed(() => menu?.collapsed.value ?? false)
-const isTrail = computed(() => menu?.trail.value.includes(props.value) ?? false)
-
-/**
- * Inline the branch drops open under its title; there is no room for that in a bar
- * or on an icon rail, so those open it as a panel beside the trigger instead.
- */
-const asFlyout = computed(() => collapsed.value || menu?.mode.value === 'horizontal')
 
 /*
  * A flyout is transient — it belongs to the pointer, not to the menu — so it keeps
@@ -57,6 +69,14 @@ const isOpen = computed(() =>
 watch(asFlyout, () => {
   flyoutOpen.value = false
 })
+
+/* An entry was chosen somewhere in the menu — every panel standing open has served. */
+watch(
+  () => menu?.closeSignal.value,
+  () => {
+    flyoutOpen.value = false
+  },
+)
 
 const flyoutSide = computed(() =>
   menu?.mode.value === 'horizontal' && parent.depth === 0 ? 'bottom' : 'right',
@@ -97,6 +117,7 @@ function onTriggerClick() {
       :side="flyoutSide"
       align="start"
       :disabled="disabled"
+      :close-on-click="false"
       @update:open="setOpen"
     >
       <template #trigger>
@@ -162,6 +183,8 @@ function onTriggerClick() {
 <style scoped>
 .wx-submenu {
   min-width: 0;
+  /* Scoped, so a host stylesheet spacing `li + li` cannot step the branch down. */
+  margin: 0;
 }
 
 .wx-submenu__panel {

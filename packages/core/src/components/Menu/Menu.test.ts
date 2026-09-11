@@ -1,11 +1,15 @@
-import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it } from 'vitest'
+import { enableAutoUnmount, mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import WxMenu from './Menu.vue'
 import WxMenuItem from '../MenuItem/MenuItem.vue'
 import WxMenuGroup from '../MenuGroup/MenuGroup.vue'
 import WxSubmenu from '../Submenu/Submenu.vue'
 
 const components = { WxMenu, WxMenuItem, WxMenuGroup, WxSubmenu }
+
+/* A flyout is teleported to the body; unmounting between tests takes it with it. */
+enableAutoUnmount(afterEach)
 
 const tree = `
   <wx-menu-item value="dashboard" icon="home" label="Dashboard" href="#dashboard" />
@@ -20,6 +24,25 @@ const tree = `
 
 function mountMenu(props: Record<string, unknown> = {}, slot = tree) {
   return mount(WxMenu, { props, slots: { default: slot }, global: { components } })
+}
+
+/** The panel is teleported to the body, so it is read from the document, not the wrapper. */
+function panel() {
+  return document.querySelector('.wx-menu-flyout')
+}
+
+function row(href: string) {
+  return panel()?.querySelector<HTMLElement>(`a[href="${href}"]`)
+}
+
+/** Mounts the bar and opens its one branch, which is what puts a panel on the page. */
+async function openBar(props: Record<string, unknown> = {}) {
+  const wrapper = mountMenu({ mode: 'horizontal', ...props })
+
+  await wrapper.get('button.wx-menu-row').trigger('click')
+  await nextTick()
+
+  return wrapper
 }
 
 describe('WxMenu', () => {
@@ -147,5 +170,44 @@ describe('WxSubmenu', () => {
     const wrapper = mountMenu({ collapsed: true })
 
     expect(wrapper.findComponent({ name: 'WxDropdown' }).props('side')).toBe('right')
+  })
+
+  it('opens a branch inside a panel inline rather than as a second panel', async () => {
+    const wrapper = await openBar({ open: ['taxonomy'] })
+
+    // One panel for the outer branch; the one nested in it expands in place.
+    expect(wrapper.findAllComponents({ name: 'WxDropdown' })).toHaveLength(1)
+    expect(panel()?.querySelector('.wx-submenu__panel')?.className).toContain('is-open')
+  })
+
+  it('restarts the indent inside a panel', async () => {
+    await openBar({ open: ['taxonomy'] })
+
+    // Straight into the panel, so flush with its edge; a level deeper, indented once.
+    expect(row('#posts')?.getAttribute('style')).toContain('--wx-menu-depth: 0')
+    expect(row('#tags')?.getAttribute('style')).toContain('--wx-menu-depth: 1')
+  })
+
+  it('leaves the panel open while a branch in it is worked', async () => {
+    const wrapper = await openBar()
+    const dropdown = wrapper.findComponent({ name: 'WxDropdown' })
+
+    // A panel that closed on any click of its own could never be opened past level two.
+    expect(dropdown.props('closeOnClick')).toBe(false)
+
+    panel()?.querySelector<HTMLElement>('button.wx-menu-row')?.click()
+    await nextTick()
+
+    expect(dropdown.props('open')).toBe(true)
+  })
+
+  it('closes every panel once an entry is chosen', async () => {
+    const wrapper = await openBar()
+
+    row('#posts')?.click()
+    await nextTick()
+
+    expect(wrapper.emitted('select')?.at(-1)?.[0]).toBe('posts')
+    expect(wrapper.findComponent({ name: 'WxDropdown' }).props('open')).toBe(false)
   })
 })

@@ -45,8 +45,11 @@ const hasTitle = computed(() => Boolean(props.title || !collapsed.value))
   flex-direction: column;
   gap: var(--wx-menu-gap, 2px);
   min-width: 0;
-  /* Air above the heading, so a group reads as a break in the list. */
-  margin-top: var(--wx-space-8);
+  /*
+   * Air above the heading, so a group reads as a break in the list — and nothing but
+   * that air: a scoped rule, to outweigh a host stylesheet spacing `li + li`.
+   */
+  margin: var(--wx-space-8) 0 0;
 }
 
 .wx-menu-group:first-child {

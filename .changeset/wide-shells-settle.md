@@ -23,17 +23,21 @@ The shell is `WxContainer` with `WxHeader`, `WxAside`, `WxMain` and `WxFooter`, 
 element it is named after, so a page has real landmarks. The sidebar collapses to a rail, the main
 column takes a reading width, and either can scroll on its own while the chrome stays put.
 
-`WxRow` and `WxCol` are the 24-column grid. Every width a column is given is published as a CSS
-variable and the stylesheet holds one rule per breakpoint, each falling back to the one below it —
-four rules instead of the several hundred a class-per-span grid ships, and a column that can still
-be adjusted from the outside. The gutter is padding on the columns pulled back by a negative margin
-on the row, which is what keeps `span="12"` an honest half.
+`WxRow` and `WxCol` are the 24-column grid, and its breakpoints measure the row rather than the
+window: `md` means "from 768px of row", so the same grid stacks inside a 400px drawer and spreads
+across a wide screen without being told which it is in. Every width a column is given is published
+as a CSS variable and the stylesheet holds one `@container` rule per breakpoint, each falling back
+to the one below it — four rules instead of the several hundred a class-per-span grid ships, and a
+column that can still be adjusted from the outside. The gutter is padding on the columns pulled
+back by a negative margin on the row, which is what keeps `span="12"` an honest half.
 
-`WxMenu` with `WxMenuItem`, `WxSubmenu` and `WxMenuGroup` is the navigation: a sidebar or a bar,
-branches that open inline or as flyouts when there is no room for them, an icon rail, `accordion`,
-and a branch that expands itself around the active entry. It renders a list of links and buttons
-rather than `role="menu"`, whose keyboard model promises a desktop application menu that admin
-navigation is not.
+`WxMenu` with `WxMenuItem`, `WxSubmenu` and `WxMenuGroup` is the navigation: a sidebar or a bar, an
+icon rail, `accordion`, and a branch that expands itself around the active entry. A branch opens
+inline where there is room and as a flyout where there is not — a bar, or a collapsed rail — and
+the branches inside a flyout open inline in the same panel, so three levels deep is still one panel
+rather than a chain of them across the screen. It renders a list of links and buttons rather than
+`role="menu"`, whose keyboard model promises a desktop application menu that admin navigation is
+not.
 
 `WxBreadcrumb` and `WxBreadcrumbItem` are the trail above a title; a crumb that links nowhere is
 recognised as the page you are on and gets `aria-current`.
