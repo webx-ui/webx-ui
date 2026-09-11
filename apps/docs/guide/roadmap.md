@@ -28,7 +28,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 | Divider                                                   | ⬜     |
 | Layout (Container, Header, Aside, Main, Footer, Row, Col) | ⬜     |
 | Space                                                     | ⬜     |
-| Tabs (Reka)                                               | ⬜     |
+| Tabs (Reka)                                               | ✅     |
 | Menu / Sidebar                                            | ⬜     |
 | Breadcrumb                                                | ⬜     |
 | Link                                                      | ✅     |
@@ -45,7 +45,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 | Drawer (Reka)                                                     | ⬜     |
 | Dropdown (Reka)                                                   | ✅     |
 | Tooltip (Reka)                                                    | ⬜     |
-| Popover (Reka)                                                    | ⬜     |
+| Popover (Reka)                                                    | ✅     |
 | Popconfirm                                                        | ⬜     |
 | Message                                                           | ⬜     |
 | Notification / Toast (Reka)                                       | ⬜     |
@@ -61,7 +61,7 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 | DatePicker, TimePicker, DateTimePicker (`@vuepic/vue-datepicker`) | ✅     |
 | DateRangePicker                                                   | ✅     |
 | Steps                                                             | ⬜     |
-| Collapse                                                          | ⬜     |
+| Collapse (as Accordion)                                           | ✅     |
 | Segmented                                                         | ⬜     |
 | Statistic, Countdown                                              | ✅     |
 | Backtop                                                           | ⬜     |
