@@ -52,7 +52,7 @@ Full guide: **https://webx-ui.github.io/webx-ui/**
 - Components read `--wx-*` variables — no hard-coded colours, so a project restyles the system by
   overriding tokens.
 - Components never call an API: data comes in through props, changes leave as events.
-- `WxTable` (planned) consumes Laravel's `->paginate()` payload as-is.
+- `WxTable` consumes Laravel's `->paginate()` payload as-is.
 - Element Plus is a checklist, not a dependency. Headless behaviour leans on
   [Reka UI](https://reka-ui.com/).
 - `vue` stays in `peerDependencies`.
