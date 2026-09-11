@@ -46,20 +46,25 @@ const classes = computed(() => [
   font-family: var(--wx-font-family-sans);
 }
 
+/*
+ * A bar is chrome, not content: it is padded to the gutter the sidebar's icons stand
+ * in — 10px, which puts the centre of a 36px control in the header exactly above the
+ * centre of the rail below it. A header carrying nothing but a title can take `lg`.
+ */
 .wx-header--padding-none {
   --wx-header-padding: 0px;
 }
 
 .wx-header--padding-sm {
-  --wx-header-padding: var(--wx-space-12);
+  --wx-header-padding: var(--wx-space-6);
 }
 
 .wx-header--padding-md {
-  --wx-header-padding: var(--wx-space-16);
+  --wx-header-padding: var(--wx-space-10);
 }
 
 .wx-header--padding-lg {
-  --wx-header-padding: var(--wx-space-24);
+  --wx-header-padding: var(--wx-space-16);
 }
 
 .wx-header--bordered {
@@ -72,15 +77,10 @@ const classes = computed(() => [
   z-index: var(--wx-z-index-sticky);
 }
 
-/* On a phone the bar is mostly the title and one button; the padding gives way. */
+/* On a phone the bar is mostly the title and one button; the roomy option gives way. */
 @media (max-width: 640px) {
-  .wx-header--padding-lg,
-  .wx-header--padding-md {
-    --wx-header-padding: var(--wx-space-12);
-  }
-
-  .wx-header--padding-sm {
-    --wx-header-padding: var(--wx-space-8);
+  .wx-header--padding-lg {
+    --wx-header-padding: var(--wx-space-10);
   }
 }
 </style>

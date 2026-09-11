@@ -17,8 +17,11 @@ import {
 const shellEl = ref<HTMLElement | null>(null)
 
 /* The shell answers to its own width, so the box below can be dragged to see it. */
-const { width, layout, collapsed, showAside, drawerOpen, toggle, close } =
-  useResponsiveShell(shellEl)
+const { width, layout, collapsed, showAside, drawerOpen, toggle, close } = useResponsiveShell(
+  shellEl,
+  /* Closing it by hand is remembered; leaving it open goes back to following the width. */
+  { persist: 'docs-shell' },
+)
 
 const section = ref('pages')
 

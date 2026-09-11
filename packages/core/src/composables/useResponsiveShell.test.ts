@@ -122,6 +122,43 @@ describe('useResponsiveShell', () => {
     expect(shell().drawerOpen.value).toBe(false)
   })
 
+  it('holds a sidebar that was closed by hand at every width', async () => {
+    const { shell } = mountShell()
+
+    emit?.(1440)
+    await nextTick()
+    shell().toggle()
+    expect(shell().layout.value).toBe('rail')
+
+    emit?.(800)
+    await nextTick()
+    expect(shell().layout.value).toBe('rail')
+
+    // Still shut on the way back: closing is a decision, not a reaction to a width.
+    emit?.(1440)
+    await nextTick()
+    expect(shell().layout.value).toBe('rail')
+  })
+
+  it('lets an opened sidebar go back to following the width', async () => {
+    const { shell } = mountShell()
+
+    emit?.(800)
+    await nextTick()
+    shell().toggle()
+    expect(shell().layout.value).toBe('sidebar')
+
+    // "Open, here" was answered; a wider screen opens it anyway.
+    emit?.(1440)
+    await nextTick()
+    expect(shell().layout.value).toBe('sidebar')
+
+    // And a tablet collapses it again rather than holding the reader to that answer.
+    emit?.(800)
+    await nextTick()
+    expect(shell().layout.value).toBe('rail')
+  })
+
   it('opens the drawer only where the menu has left the page', async () => {
     const { shell } = mountShell()
 
@@ -136,22 +173,17 @@ describe('useResponsiveShell', () => {
     expect(shell().drawerOpen.value).toBe(false)
   })
 
-  it('forgets both the drawer and the preference once the menu leaves the page', async () => {
+  it('closes the drawer once the menu is back on the page', async () => {
     const { shell } = mountShell()
-
-    emit?.(1440)
-    await nextTick()
-    shell().toggle()
-    expect(shell().layout.value).toBe('rail')
 
     emit?.(480)
     await nextTick()
     shell().toggle()
     expect(shell().drawerOpen.value).toBe(true)
 
-    // Back on a wide screen: the drawer is gone and the width decides again.
     emit?.(1440)
     await nextTick()
+
     expect(shell().drawerOpen.value).toBe(false)
     expect(shell().layout.value).toBe('sidebar')
   })
@@ -163,5 +195,51 @@ describe('useResponsiveShell', () => {
     await nextTick()
 
     expect(shell().layout.value).toBe('rail')
+  })
+})
+
+describe('useResponsiveShell with persist', () => {
+  beforeEach(() => {
+    window.localStorage.clear()
+  })
+
+  it('remembers a sidebar that was closed by hand', async () => {
+    const first = mountShell({ persist: 'test-shell' })
+
+    emit?.(1440)
+    await nextTick()
+    first.shell().toggle()
+
+    expect(window.localStorage.getItem('wx-shell:test-shell')).toBe('{"collapsed":true}')
+
+    const second = mountShell({ persist: 'test-shell' })
+    emit?.(1440)
+    await nextTick()
+
+    expect(second.shell().layout.value).toBe('rail')
+  })
+
+  it('forgets it as soon as it is opened again', async () => {
+    window.localStorage.setItem('wx-shell:test-shell', '{"collapsed":true}')
+
+    const { shell } = mountShell({ persist: 'test-shell' })
+    emit?.(1440)
+    await nextTick()
+    expect(shell().layout.value).toBe('rail')
+
+    shell().toggle()
+
+    // An open sidebar is the default; only the closing is worth keeping.
+    expect(window.localStorage.getItem('wx-shell:test-shell')).toBeNull()
+  })
+
+  it('keeps nothing without a key', async () => {
+    const { shell } = mountShell()
+
+    emit?.(1440)
+    await nextTick()
+    shell().toggle()
+
+    expect(window.localStorage.length).toBe(0)
   })
 })

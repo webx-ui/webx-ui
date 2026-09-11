@@ -20,7 +20,9 @@ screen reader two contradictory things at once.
 to a button "just this once".
 
 The shell is `WxContainer` with `WxHeader`, `WxAside`, `WxMain` and `WxFooter`, each rendering the
-element it is named after, so a page has real landmarks. The sidebar collapses to a rail, the main
+element it is named after, so a page has real landmarks. The bars are chrome, and padded like it:
+10px, which is the gutter the sidebar's icons stand in, so a toggle in the header sits exactly
+above the icons below it. The sidebar collapses to a rail, the main
 column takes a reading width, and either can scroll on its own while the chrome stays put. The same
 five parts make the other shape an admin panel takes: a horizontal menu in the header and no
 sidebar at all, with the whole width left to the content.
@@ -31,7 +33,13 @@ a drawer behind a burger under 640px — out of one measurement and two threshol
 collapses and expands the sidebar while the sidebar is on the page, and opens the drawer once the
 menu has left it — which is also when a burger is the right icon for it, and not before. The width
 chooses the shape rather than holding it: on a tablet the sidebar starts as a rail and the button
-still expands it in place, since the reader can see what they are expanding. Like the
+still expands it in place, since the reader can see what they are expanding.
+
+The two answers that button can give are not kept the same way. Closing a sidebar is a decision: it
+holds at every width, and with `persist` across reloads, under a key in `localStorage`. Opening one
+only says "not collapsed, here", and is let go as soon as the screen changes size class — otherwise
+a sidebar opened on a desktop would be sitting there on a tablet over a screen with no room for it.
+Like the
 grid, it measures an element rather than the viewport, which is what makes a shell inside a preview
 or a split screen behave like the narrow thing it is; `shellLayoutFor` is the same rule as a pure
 function, for a page that would rather drive the state itself.
