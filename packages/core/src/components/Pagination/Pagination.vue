@@ -200,9 +200,16 @@ function setPerPage(event: Event) {
   padding: 0;
 }
 
+/*
+ * Everything below wraps rather than overflows. On a phone the row of buttons is wider
+ * than the screen well before the page count gets interesting, and a nav that runs off
+ * the edge takes the last pages with it — including, often enough, the next arrow.
+ */
 .wx-pagination__controls {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--wx-space-12);
   margin-left: auto;
 }
@@ -211,6 +218,10 @@ function setPerPage(event: Event) {
   display: flex;
   align-items: center;
   gap: var(--wx-space-6);
+}
+
+.wx-pagination__per-page-label {
+  white-space: nowrap;
 }
 
 .wx-pagination__select {
@@ -238,7 +249,9 @@ function setPerPage(event: Event) {
  */
 .wx-pagination__list {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--wx-space-4);
   margin: 0;
   padding: 0;
