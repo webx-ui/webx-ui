@@ -1,5 +1,177 @@
 # @webx-ui/core
 
+## 0.8.0
+
+### Minor Changes
+
+- 8b15353: A horizontal `WxMenu` folds what it cannot fit into a branch at the end of the bar
+
+  An admin with eight sections outgrows a header long before the window becomes a
+  phone. Until now the bar scrolled sideways, out of sight — and worse, its entries
+  shrank past their own labels and slid over one another, because an entry in a bar
+  was an ordinary flex item that kept `white-space: nowrap`.
+
+  Entries that do not fit now move into a branch at the end of the bar, and come
+  back as it widens. `overflow="scroll"` keeps the old behaviour, and
+  `overflow-title` names the branch.
+
+  They _move_: each entry is rendered in exactly one of the two places, so it keeps
+  one identity and the branch shows as the trail when the page you are on is inside
+  it. The bar measures itself with a `ResizeObserver`, and again once the typeface
+  has loaded — text in the fallback face is a few pixels narrower per label, which
+  is enough to leave one entry in the bar that the real face has no room for.
+
+- 8b15353: `WxContainer` gains `viewport`, the shape an admin shell actually has
+
+  `full-height` is `min-height: 100dvh`: the container may grow past the window, and
+  so nothing inside it ever overflows. That made `scroll` on `WxMain` a no-op — the
+  column grew with its content and the page was simply cut off at the bottom of the
+  shell, with no scrollbar anywhere.
+
+  `viewport` caps the shell at the window instead, so the column inside it overflows
+  and scrolls. `full-height` still means what it said, for a document whose page
+  scrolls as a whole.
+
+- 353feff: `useElementWidth` — the measurement `useResponsiveShell` was built on, now on its own and exported.
+
+  A layout that answers to its own box rather than to the window needs one number: how wide that box
+  is. The shell composable had it inside; a screen with columns of its own needs the same thing for a
+  different element — a reading pane deserves its width measured against what is left after the
+  sidebar, not against the viewport that still counts it.
+
+  ```ts
+  const el = ref<HTMLElement | null>(null)
+  const width = useElementWidth(el)
+  ```
+
+  `0` until it is measured, as in `useResponsiveShell`: treat it as "assume the roomy case", since the
+  real number arrives before paint. Pass nothing to measure the page itself.
+
+- 9005935: Controls read at 14px, and the size is a token now
+
+  Every control — input, textarea, number, select, tags, autocomplete, cascader,
+  colour, the date fields and their calendar, checkbox, radio, switch, rate, button —
+  took its text size straight off the body scale, which put the default at 16px. That
+  is a size for reading paragraphs. An admin panel is a page of controls, and beside
+  navigation at 14px they were reading a size too large.
+
+  The scale drops a notch: `md` from 16px to 14px, `sm` from 14px to 12px, `lg` from
+  18px to 16px. Control heights are unchanged — `data-density="compact"` is still the
+  way to tighten those.
+
+  The size is no longer read off the body scale at all. `@webx-ui/tokens` gains
+  `--wx-font-size-control-sm`, `--wx-font-size-control-md` and
+  `--wx-font-size-control-lg`, and every control points at them, so retuning how
+  controls read is three lines in a stylesheet rather than an override per component.
+
+- f920ade: Controls read at the size the navigation does
+
+  A select is a list of choices, and it now reads like the one in the sidebar:
+  14px, medium — the value in the field and the options in the panel. Checkbox and
+  radio labels come down to the same 14px, since a tick beside a label is a choice in
+  a list too.
+
+  Tabs go the other way. Given a strip wider than 600px they step up to 16px: at that
+  size they are page-level navigation rather than a control, and were reading a size
+  too small for the job. The question is put to the strip, not to the window, so tabs
+  in a narrow panel on a wide desktop keep the compact size.
+
+  `WxForm` gives its rows more room — `md` goes from 16px to 24px and `lg` from 24px
+  to 32px. At 16px a field's hint sat close enough to the next field's label to be
+  read as belonging to it.
+
+- c4a0da2: `WxListDetail` — the screen an admin panel keeps coming back to, as a component: something to narrow
+  the set, the records, and the open one.
+
+  Inbox and messages, orders and an order, tickets, users, invoices — the furniture is identical every
+  time, and so is the part nobody enjoys writing twice: what happens at 900px. It is layout only. Rows,
+  records and filters stay yours, in the `filters`, `list`, `detail` and `empty` slots.
+
+  `v-model:open` is one idea doing two jobs: beside the list it picks the detail over the empty state,
+  and on a screen too narrow for a third column it raises the record as a panel — with `back` handed to
+  the slot, so the column and the screen are written once. Which record is open stays with the caller;
+  the component only knows whether there is one.
+
+  The thresholds are not breakpoints but arithmetic on the widths you gave: the filters column folds
+  away below `filtersWidth + listWidth + detailMin`, the detail below `listWidth + detailMin`. And they
+  are measured against the component's own width, so a sidebar collapsing to a rail hands the screen
+  160px and the filters column comes back by itself, while the same screen in a 700px drawer behaves
+  like the phone it effectively is. Widen the list and both thresholds move with it.
+
+  When the filters column does not fit, that slot moves into a drawer and the `list` slot is handed the
+  button to open it.
+
+### Patch Changes
+
+- 8933ca2: Two fixes the inbox screen turned up, both about height.
+
+  `WxMain` is a flex column now, and its inner element stretches. As a block it was only as tall as
+  its content, so a screen asked to fill the page — a `WxListDetail` under a `<router-view />` —
+  measured its `height: 100%` against that instead of against the column, and stopped halfway down
+  the window. A scrolling column keeps the old arrangement, because there the inner element has to be
+  as tall as its content or the bottom padding never makes it into the scroll — 1288px of content in
+  a 216px column scrolls 1312px, not 1300.
+
+  `WxAside scroll` is capped with `max-height: 100dvh` rather than fixed at `height: 100dvh`. Under a
+  header, in a shell that fills the screen, the column is already the height of its row, and a hard
+  viewport height there is a header taller than the window: the layout overflowed by exactly the
+  header, every time. The cap still does its job on a page that scrolls, which is what the viewport
+  height was there for.
+
+- f920ade: `WxTable`: pinned columns land where they actually are, and the chrome behaves
+
+  Four things a full-page table made visible:
+
+  - **Pinned columns left a gap.** The offsets came from the widths the caller
+    declared, and a declared width is honoured only while there is room: in `auto`
+    layout a table that has to scroll squeezes every column proportionally. The
+    numbers stopped being true exactly when pinning starts to matter, so the frozen
+    block sat a few pixels wide of the column behind it and the scrolling rows showed
+    through the seam. The offsets are now measured off the heading row.
+  - **A table that fitted still had a scrollbar.** The strip that covers the seam
+    beside a right-pinned cell sat a pixel past the table's edge, and that pixel is a
+    pixel of scrollable width. It is now flush.
+  - **Rounded corners under a heading.** With a title or a search field above the
+    rows, the heading strip curved away from two square corners and left a white wedge
+    in each. Those corners are square now.
+  - **Edge shadows with nothing to hide.** The frozen block cast its shadow whether or
+    not anything was underneath it. It now appears only on the side that has more to
+    show, and goes away when the table fits.
+
+- 8b15353: Navigation reads a step heavier, and the account menu stays where it belongs
+
+  Menu labels are `500`, and `600` in a sidebar: a sidebar is the page's own table of
+  contents and is looked at all day, while a bar between a logo and a user menu reads
+  better a step lighter. The gap between an entry's icon and its label comes down
+  from 10px to 8px.
+
+  `WxHeader`'s `end` group no longer shrinks. Left as an ordinary flex item, it was
+  the first thing a wide navigation bar squeezed — the account menu slid under the
+  bar and off the edge of the header.
+
+- dc82be5: `class` and `style` on a form control now land on the control
+
+  Every control sets `inheritAttrs: false` and hands `$attrs` to the element inside
+  it, so that `placeholder`, `autocomplete` and the ARIA attributes reach the real
+  input. Taken literally that sent `class` and `style` there too, and both were then
+  in the wrong place:
+
+  - `class="w-60"` on a `<wx-select>` is asking for a narrower select, and the select
+    is the wrapper, not its input.
+  - A parent's scoped CSS could not reach it. Scoped styles carry an attribute
+    stamped on a child component's root, so a class landing three elements deep
+    matched nothing — silently.
+  - Where `$attrs` went to an element that is only sometimes rendered — the search
+    field of a filterable `WxSelect` — the class disappeared altogether.
+
+  `class` and `style` now go on the root; everything else still goes on the control.
+  The split is exported as `useControlAttrs` for anyone building a control of their
+  own.
+
+- Updated dependencies [acd2c88]
+- Updated dependencies [9005935]
+  - @webx-ui/tokens@0.2.0
+
 ## 0.7.0
 
 ### Minor Changes
