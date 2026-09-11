@@ -246,9 +246,14 @@ function onClick(event: MouseEvent) {
   color: var(--wx-button-bg-active);
 }
 
+/*
+ * Not `--wx-button-bg-disabled`: for the default type that is the surface colour, which painted
+ * a disabled outline button's border and label in the colour of whatever it was sitting on — an
+ * invisible button, in both themes. A disabled control still has to be seen to be disabled.
+ */
 .wx-button--outline.is-disabled {
-  border-color: var(--wx-button-bg-disabled);
-  color: var(--wx-button-bg-disabled);
+  border-color: var(--wx-border-muted);
+  color: var(--wx-text-disabled);
 }
 
 /* text */
