@@ -392,6 +392,18 @@ defineExpose({ measure, revealActive })
     box-shadow var(--wx-duration-fast) var(--wx-easing-standard);
 }
 
+/*
+ * Given room, the tabs are page-level navigation and read as such. The question is
+ * put to the strip rather than to the window: tabs in a narrow panel on a wide
+ * desktop are still tabs in a narrow panel. The compact scale keeps its own size —
+ * the rule below is more specific, so it wins wherever it applies.
+ */
+@container (min-width: 600px) {
+  .wx-tabs__tab {
+    font-size: var(--wx-font-size-md);
+  }
+}
+
 .wx-tabs--sm .wx-tabs__tab {
   padding: var(--wx-space-6) var(--wx-space-10);
   font-size: var(--wx-font-size-xs);

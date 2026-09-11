@@ -59,10 +59,10 @@ function onReset(event: Event) {
 }
 
 .wx-form--gap-md {
-  gap: var(--wx-space-16);
+  gap: var(--wx-space-24);
 }
 
 .wx-form--gap-lg {
-  gap: var(--wx-space-24);
+  gap: var(--wx-space-32);
 }
 </style>

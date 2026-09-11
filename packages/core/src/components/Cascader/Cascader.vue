@@ -3,6 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { PopoverAnchor, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import WxIcon from '../Icon/Icon.vue'
 import { useFormField } from '../../composables/useFormField'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 import type {
   CascaderEmits,
   CascaderModelValue,
@@ -12,6 +13,9 @@ import type {
 } from './types'
 
 defineOptions({ name: 'WxCascader', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const props = withDefaults(defineProps<CascaderProps>(), {
   options: () => [],
@@ -314,11 +318,11 @@ function onPanelKeydown(event: KeyboardEvent) {
 
 <template>
   <popover-root v-model:open="open">
-    <div :class="classes">
+    <div :class="classes" v-bind="rootAttrs">
       <popover-anchor as="div" class="wx-cascader__anchor">
         <popover-trigger
           :id="field.id.value"
-          v-bind="$attrs"
+          v-bind="controlAttrs"
           class="wx-cascader__trigger"
           type="button"
           :disabled="field.disabled.value"
@@ -428,18 +432,18 @@ function onPanelKeydown(event: KeyboardEvent) {
   border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-control);
   color: var(--wx-text-default);
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-control-md);
   transition: border-color var(--wx-duration-normal) var(--wx-easing-standard);
 }
 
 .wx-cascader--sm .wx-cascader__anchor {
   height: var(--wx-size-control-sm);
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-cascader--lg .wx-cascader__anchor {
   height: var(--wx-size-control-lg);
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 .wx-cascader__anchor:hover {
@@ -550,7 +554,7 @@ function onPanelKeydown(event: KeyboardEvent) {
   box-shadow: var(--wx-shadow-popover);
   color: var(--wx-text-default);
   font-family: var(--wx-font-family-sans);
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-control-md);
   overflow: hidden;
 }
 

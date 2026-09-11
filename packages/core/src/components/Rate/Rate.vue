@@ -155,17 +155,17 @@ function onKeydown(event: KeyboardEvent) {
 
 .wx-rate--sm {
   --wx-rate-size: 18px;
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-rate--md {
   --wx-rate-size: 22px;
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-control-md);
 }
 
 .wx-rate--lg {
   --wx-rate-size: 28px;
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 .wx-rate__star {

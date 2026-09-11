@@ -7,7 +7,7 @@
 .wx-menu-row {
   display: flex;
   align-items: center;
-  gap: var(--wx-space-10);
+  gap: var(--wx-space-8);
   box-sizing: border-box;
   width: 100%;
   min-height: var(--wx-menu-row-height, 36px);
@@ -23,6 +23,11 @@
   font: inherit;
   text-align: start;
   text-decoration: none;
+  /*
+   * Navigation is read in glances rather than in sentences: the labels carry a
+   * little more weight than body text, so a section can be found without reading.
+   */
+  font-weight: var(--wx-font-weight-medium);
   cursor: pointer;
   transition:
     background-color var(--wx-duration-fast) var(--wx-easing-standard),
@@ -52,13 +57,22 @@
 .wx-menu-row.is-active {
   background: var(--wx-color-primary-soft);
   color: var(--wx-color-primary);
-  font-weight: var(--wx-font-weight-medium);
+  font-weight: var(--wx-font-weight-semibold);
 }
 
 /* The branch that holds the active entry, so a closed one still says where you are. */
 .wx-menu-row.is-trail {
   color: var(--wx-text-strong);
-  font-weight: var(--wx-font-weight-medium);
+  font-weight: var(--wx-font-weight-semibold);
+}
+
+/*
+ * A sidebar is the page's own table of contents and is looked at all day; a bar
+ * across the top is chrome standing between a logo and a user menu, and reads
+ * better a step lighter. Panels keep the lighter weight with it.
+ */
+.wx-menu--vertical .wx-menu-row {
+  font-weight: var(--wx-font-weight-semibold);
 }
 
 .wx-menu-row.is-disabled,
@@ -112,10 +126,28 @@
   display: none;
 }
 
+/*
+ * An entry in a bar is as wide as its label and no narrower. Left to shrink like any
+ * other flex item it goes on shrinking past its own text, and since the row keeps
+ * `white-space: nowrap` the labels then slide over one another.
+ */
+.wx-menu--horizontal > .wx-menu-item,
+.wx-menu--horizontal > .wx-submenu {
+  flex: 0 0 auto;
+}
+
 .wx-menu--horizontal > .wx-menu-item > .wx-menu-row,
 .wx-menu--horizontal > .wx-submenu > .wx-menu-row {
   width: auto;
   white-space: nowrap;
+}
+
+/*
+ * The branch the entries that did not fit move into. It is measured before it is
+ * needed, so it is taken out of the bar with `hidden` rather than never rendered.
+ */
+.wx-menu__overflow[hidden] {
+  display: none;
 }
 
 /* The flyout panel: a dropdown, holding a menu list of its own. */

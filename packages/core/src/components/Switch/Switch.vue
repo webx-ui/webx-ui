@@ -2,8 +2,12 @@
 import { computed } from 'vue'
 import { useFormField, type ChoiceValue } from '../../composables/useFormField'
 import type { SwitchEmits, SwitchProps } from './types'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 
 defineOptions({ name: 'WxSwitch', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const props = withDefaults(defineProps<SwitchProps>(), {
   activeValue: true,
@@ -39,10 +43,10 @@ function onChange(event: Event) {
 </script>
 
 <template>
-  <label :class="classes">
+  <label :class="classes" v-bind="rootAttrs">
     <input
       :id="field.id.value"
-      v-bind="$attrs"
+      v-bind="controlAttrs"
       class="wx-switch__native"
       type="checkbox"
       role="switch"
@@ -108,17 +112,17 @@ function onChange(event: Event) {
 
 .wx-switch--sm {
   --wx-switch-height: 18px;
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-switch--md {
   --wx-switch-height: 22px;
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-control-md);
 }
 
 .wx-switch--lg {
   --wx-switch-height: 26px;
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 .wx-switch__thumb {

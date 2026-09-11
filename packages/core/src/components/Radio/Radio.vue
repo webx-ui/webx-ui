@@ -2,8 +2,12 @@
 import { computed, inject } from 'vue'
 import { radioGroupKey, useFormField, type ChoiceValue } from '../../composables/useFormField'
 import type { RadioEmits, RadioProps } from './types'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 
 defineOptions({ name: 'WxRadio', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const props = withDefaults(defineProps<RadioProps>(), {
   label: undefined,
@@ -42,10 +46,10 @@ function onChange() {
 </script>
 
 <template>
-  <label :class="classes">
+  <label :class="classes" v-bind="rootAttrs">
     <input
       :id="field.id.value"
-      v-bind="$attrs"
+      v-bind="controlAttrs"
       class="wx-radio__native"
       type="radio"
       :name="name ?? group?.name.value"
@@ -116,17 +120,18 @@ function onChange() {
 
 .wx-radio--sm {
   --wx-radio-size: 16px;
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-control-sm);
 }
 
 .wx-radio--md {
   --wx-radio-size: 20px;
-  font-size: var(--wx-font-size-md);
+  /* A tick beside a label is a choice in a list, and reads at the list size. */
+  font-size: var(--wx-font-size-control-md);
 }
 
 .wx-radio--lg {
   --wx-radio-size: 24px;
-  font-size: var(--wx-font-size-lg);
+  font-size: var(--wx-font-size-control-lg);
 }
 
 /* The ring's outer half of stroke sits on the viewport edge, so it must not be clipped. */

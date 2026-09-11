@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends TableRow = TableRow">
-import { computed, onBeforeUnmount, onMounted, ref, useSlots, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useSlots, watch } from 'vue'
 import WxCheckbox from '../Checkbox/Checkbox.vue'
 import WxInput from '../Input/Input.vue'
 import WxPagination from '../Pagination/Pagination.vue'
@@ -110,6 +110,9 @@ const classes = computed(() => [
     'wx-table--bordered': props.bordered,
     'wx-table--hover': props.hover,
     'wx-table--sticky': props.maxHeight !== undefined,
+    'wx-table--has-header': hasHeader.value,
+    'has-more-left': moreLeft.value,
+    'has-more-right': moreRight.value,
     'is-loading': props.loading,
   },
 ])
@@ -139,6 +142,77 @@ function colStyle(column: TableColumn<T>) {
   }
 }
 
+/* ------------------------------------------------------------- measurement --- */
+
+const scroller = ref<HTMLElement | null>(null)
+const headRow = ref<HTMLElement | null>(null)
+
+/**
+ * The widths the browser actually handed the columns, in the order they sit in — the
+ * utility columns first, then the declared ones.
+ *
+ * A declared width is what the caller *asked* for, and it is honoured only while
+ * there is room. In `auto` layout a table that has to scroll squeezes every column
+ * proportionally, so the declared numbers stop being true exactly when pinning
+ * starts to matter — and a pinned column parked at a declared offset then leaves a
+ * gap for the scrolling ones to show through.
+ */
+const laidOut = ref<number[]>([])
+
+function measureColumns() {
+  const cells = headRow.value?.children
+  if (!cells) return
+
+  const next = [...cells].map((cell) => (cell as HTMLElement).getBoundingClientRect().width)
+  const same =
+    next.length === laidOut.value.length &&
+    next.every((width, index) => Math.abs(width - laidOut.value[index]) < 0.5)
+
+  if (!same) laidOut.value = next
+}
+
+/** How far the columns have slid, which is what the edge shadows are about. */
+const moreLeft = ref(false)
+const moreRight = ref(false)
+
+function readScroll() {
+  const el = scroller.value
+  if (!el) return
+  moreLeft.value = el.scrollLeft > 1
+  moreRight.value = el.scrollLeft + el.clientWidth < el.scrollWidth - 1
+}
+
+function remeasure() {
+  measureColumns()
+  readScroll()
+}
+
+let observer: ResizeObserver | null = null
+
+onMounted(() => {
+  remeasure()
+  if (typeof ResizeObserver === 'undefined' || !scroller.value) return
+  observer = new ResizeObserver(remeasure)
+  observer.observe(scroller.value)
+})
+
+onBeforeUnmount(() => {
+  observer?.disconnect()
+  observer = null
+})
+
+/* Rows and columns both change what the browser gives each column. */
+watch([() => rows.value.length, () => visibleColumns.value.length], async () => {
+  await nextTick()
+  remeasure()
+})
+
+/** What the browser gave the column at this position, or what was asked for. */
+function laidOutWidth(index: number, asked: number) {
+  const measured = laidOut.value[index]
+  return measured === undefined || measured === 0 ? asked : measured
+}
+
 /**
  * Where every pinned column comes to rest, measured from its edge. The utility columns
  * are pinned too whenever anything else is: a checkbox that slides under a frozen name
@@ -146,20 +220,31 @@ function colStyle(column: TableColumn<T>) {
  */
 const offsets = computed(() => {
   const map = new Map<string, { side: 'left' | 'right'; offset: number; edge: boolean }>()
+  const utilities = utilityCount.value
 
-  let left = utilityCount.value * UTILITY_WIDTH
-  const lefts = visibleColumns.value.filter((column) => column.fixed === 'left')
-  lefts.forEach((column, index) => {
-    map.set(column.key, { side: 'left', offset: left, edge: index === lefts.length - 1 })
-    left += widthOf(column)
+  let left = 0
+  for (let index = 0; index < utilities; index += 1) {
+    left += laidOutWidth(index, UTILITY_WIDTH)
+  }
+
+  const lefts = visibleColumns.value
+    .map((column, index) => ({ column, index }))
+    .filter((entry) => entry.column.fixed === 'left')
+
+  lefts.forEach((entry, order) => {
+    map.set(entry.column.key, { side: 'left', offset: left, edge: order === lefts.length - 1 })
+    left += laidOutWidth(utilities + entry.index, widthOf(entry.column))
   })
 
+  const rights = visibleColumns.value
+    .map((column, index) => ({ column, index }))
+    .filter((entry) => entry.column.fixed === 'right')
+
   let right = 0
-  const rights = visibleColumns.value.filter((column) => column.fixed === 'right')
-  for (let index = rights.length - 1; index >= 0; index--) {
-    const column = rights[index]
-    map.set(column.key, { side: 'right', offset: right, edge: index === 0 })
-    right += widthOf(column)
+  for (let order = rights.length - 1; order >= 0; order -= 1) {
+    const entry = rights[order]
+    map.set(entry.column.key, { side: 'right', offset: right, edge: order === 0 })
+    right += laidOutWidth(utilities + entry.index, widthOf(entry.column))
   }
 
   return map
@@ -189,7 +274,7 @@ function fixedClass(column: TableColumn<T>) {
 /** The utility columns ride along at the left edge once anything is pinned. */
 function utilityStyle(slot: 'expand' | 'select') {
   if (!hasFixed.value) return undefined
-  const before = slot === 'select' && props.expandable ? UTILITY_WIDTH : 0
+  const before = slot === 'select' && props.expandable ? laidOutWidth(0, UTILITY_WIDTH) : 0
   return { '--wx-pin-left': `${before}px` }
 }
 
@@ -456,7 +541,7 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
       </div>
     </header>
 
-    <div class="wx-table__scroll" :style="scrollStyle">
+    <div ref="scroller" class="wx-table__scroll" :style="scrollStyle" @scroll="readScroll">
       <table
         class="wx-table__table"
         :class="{ 'wx-table__table--fixed': layout === 'fixed' }"
@@ -470,7 +555,8 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
         </colgroup>
 
         <thead class="wx-table__head">
-          <tr>
+          <!-- The row the pin offsets are measured off: one cell per column, always. -->
+          <tr ref="headRow">
             <th
               v-if="expandable"
               scope="col"
@@ -741,6 +827,17 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 }
 
 /*
+ * A rounded corner belongs to the outside of the card, and once a title or a search
+ * field sits above the rows, the top of the rows is no longer the outside. Left
+ * rounded, the heading strip curves away from two square corners and leaves a white
+ * wedge in each — small on a wide table, and the first thing you see on a narrow one.
+ */
+.wx-table--has-header .wx-table__scroll {
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+}
+
+/*
  * Explicit resets rather than an assumption that nothing else styles a table. VitePress
  * turns every table into a scrolling block; Bootstrap and Tailwind's preflight have
  * opinions of their own. Left alone, a host stylesheet takes the layout away from the
@@ -931,16 +1028,25 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   left: -1px;
 }
 
+/*
+ * Flush with the edge rather than a pixel past it. The rightmost pinned cell ends
+ * where the table does, so a strip hanging over that edge is a pixel of scrollable
+ * width — enough for a horizontal scrollbar to appear under a table that fits.
+ */
 .wx-table__cell.is-fixed-right::before {
-  right: -1px;
+  right: 0;
 }
 
-/* The edge of the frozen block, so it reads as floating over what slides beneath. */
-.wx-table__cell.is-fixed-left.is-fixed-edge {
+/*
+ * The edge of the frozen block, so it reads as floating over what slides beneath —
+ * and only while something is sliding beneath it. A shadow on a table with nothing
+ * hidden either side is a line drawn across the middle of it for no reason.
+ */
+.wx-table.has-more-left .wx-table__cell.is-fixed-left.is-fixed-edge {
   box-shadow: 6px 0 6px -6px rgb(0 0 0 / 0.18);
 }
 
-.wx-table__cell.is-fixed-right.is-fixed-edge {
+.wx-table.has-more-right .wx-table__cell.is-fixed-right.is-fixed-edge {
   box-shadow: -6px 0 6px -6px rgb(0 0 0 / 0.18);
 }
 
