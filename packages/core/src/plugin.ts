@@ -1,4 +1,4 @@
-import type { App, Plugin } from 'vue'
+import type { App, Component, Plugin } from 'vue'
 import * as components from './components'
 
 export interface WebxUiOptions {
@@ -25,10 +25,14 @@ export const WebxUI: Plugin<[WebxUiOptions?]> = {
   install(app: App, options: WebxUiOptions = {}) {
     const { prefix = 'Wx' } = options
 
-    for (const [name, component] of Object.entries(components)) {
+    /*
+     * The barrel also exports helpers — the icon registry, the countdown formatter —
+     * so the `Wx` prefix is what marks a component, and the cast follows that check.
+     */
+    for (const [name, exported] of Object.entries(components)) {
       if (!name.startsWith('Wx')) continue
       const registeredName = prefix === 'Wx' ? name : `${prefix}${name.slice(2)}`
-      app.component(registeredName, component)
+      app.component(registeredName, exported as Component)
     }
   },
 }
