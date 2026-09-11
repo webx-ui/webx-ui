@@ -2,8 +2,12 @@
 import { computed, inject } from 'vue'
 import { radioGroupKey, useFormField, type ChoiceValue } from '../../composables/useFormField'
 import type { RadioEmits, RadioProps } from './types'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 
 defineOptions({ name: 'WxRadio', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const props = withDefaults(defineProps<RadioProps>(), {
   label: undefined,
@@ -42,10 +46,10 @@ function onChange() {
 </script>
 
 <template>
-  <label :class="classes">
+  <label :class="classes" v-bind="rootAttrs">
     <input
       :id="field.id.value"
-      v-bind="$attrs"
+      v-bind="controlAttrs"
       class="wx-radio__native"
       type="radio"
       :name="name ?? group?.name.value"

@@ -3,6 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { PopoverAnchor, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import WxIcon from '../Icon/Icon.vue'
 import { useFormField } from '../../composables/useFormField'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 import type {
   CascaderEmits,
   CascaderModelValue,
@@ -12,6 +13,9 @@ import type {
 } from './types'
 
 defineOptions({ name: 'WxCascader', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const props = withDefaults(defineProps<CascaderProps>(), {
   options: () => [],
@@ -314,11 +318,11 @@ function onPanelKeydown(event: KeyboardEvent) {
 
 <template>
   <popover-root v-model:open="open">
-    <div :class="classes">
+    <div :class="classes" v-bind="rootAttrs">
       <popover-anchor as="div" class="wx-cascader__anchor">
         <popover-trigger
           :id="field.id.value"
-          v-bind="$attrs"
+          v-bind="controlAttrs"
           class="wx-cascader__trigger"
           type="button"
           :disabled="field.disabled.value"

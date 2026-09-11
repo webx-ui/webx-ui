@@ -2,8 +2,12 @@
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { checkboxGroupKey, useFormField } from '../../composables/useFormField'
 import type { CheckboxEmits, CheckboxProps } from './types'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 
 defineOptions({ name: 'WxCheckbox', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const props = withDefaults(defineProps<CheckboxProps>(), {
   value: undefined,
@@ -58,11 +62,11 @@ function onChange(event: Event) {
 </script>
 
 <template>
-  <label :class="classes">
+  <label :class="classes" v-bind="rootAttrs">
     <input
       :id="field.id.value"
       ref="inputRef"
-      v-bind="$attrs"
+      v-bind="controlAttrs"
       class="wx-checkbox__native"
       type="checkbox"
       :name="name ?? group?.name.value"

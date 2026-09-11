@@ -14,8 +14,12 @@ import {
 } from 'reka-ui'
 import { useFormField } from '../../composables/useFormField'
 import type { SelectEmits, SelectModelValue, SelectProps, SelectValue } from './types'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 
 defineOptions({ name: 'WxSelect', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const props = withDefaults(defineProps<SelectProps>(), {
   options: () => [],
@@ -151,6 +155,7 @@ function removeTag(value: SelectValue) {
     :ignore-filter="!filterable"
     :open-on-click="true"
     :class="classes"
+    v-bind="rootAttrs"
     as="div"
   >
     <combobox-anchor class="wx-select__anchor" as="div" @click="openList">
@@ -178,7 +183,7 @@ function removeTag(value: SelectValue) {
         <combobox-input
           v-if="filterable"
           :id="field.id.value"
-          v-bind="$attrs"
+          v-bind="controlAttrs"
           v-model="searchText"
           class="wx-select__input"
           :placeholder="placeholder"

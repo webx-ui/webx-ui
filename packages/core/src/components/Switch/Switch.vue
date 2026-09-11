@@ -2,8 +2,12 @@
 import { computed } from 'vue'
 import { useFormField, type ChoiceValue } from '../../composables/useFormField'
 import type { SwitchEmits, SwitchProps } from './types'
+import { useControlAttrs } from '../../composables/useControlAttrs'
 
 defineOptions({ name: 'WxSwitch', inheritAttrs: false })
+
+/* `class` and `style` belong to the control; the rest belongs to its input. */
+const { rootAttrs, controlAttrs } = useControlAttrs()
 
 const props = withDefaults(defineProps<SwitchProps>(), {
   activeValue: true,
@@ -39,10 +43,10 @@ function onChange(event: Event) {
 </script>
 
 <template>
-  <label :class="classes">
+  <label :class="classes" v-bind="rootAttrs">
     <input
       :id="field.id.value"
-      v-bind="$attrs"
+      v-bind="controlAttrs"
       class="wx-switch__native"
       type="checkbox"
       role="switch"

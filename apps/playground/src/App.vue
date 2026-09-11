@@ -4,16 +4,19 @@ import { applyTheme, type Theme } from '@webx-ui/tokens'
 import SidebarLayout from './layouts/SidebarLayout.vue'
 import TopbarLayout from './layouts/TopbarLayout.vue'
 import DashboardScreen from './screens/DashboardScreen.vue'
+import OrdersScreen from './screens/OrdersScreen.vue'
 import RecordsScreen from './screens/RecordsScreen.vue'
+import SettingsScreen from './screens/SettingsScreen.vue'
 import InboxScreen from './inbox/InboxScreen.vue'
 import KitchenSink from './KitchenSink.vue'
 
 /**
- * Three shells and two screens, in the combinations an admin actually ships:
- * navigation across the top or down the side, and a screen that is either a padded
- * page or one that lays out its own columns.
+ * Two shells and the screens an admin panel is actually made of: a dashboard, a
+ * table, a form behind tabs, and a three-column pane. Each one is a whole page
+ * rather than a demo box, which is the only way to find out whether the components
+ * hold up next to each other.
  */
-type Page = 'topbar' | 'sidebar' | 'records' | 'inbox' | 'components'
+type Page = 'topbar' | 'sidebar' | 'orders' | 'settings' | 'records' | 'inbox' | 'components'
 
 const page = ref<Page>('topbar')
 const theme = ref<Theme>('light')
@@ -21,7 +24,14 @@ const theme = ref<Theme>('light')
 const pages: { value: Page; label: string }[] = [
   { value: 'topbar', label: 'Меню в шапці' },
   { value: 'sidebar', label: 'Меню збоку' },
+  { value: 'orders', label: 'Таблиця' },
+  { value: 'settings', label: 'Форма і таби' },
   { value: 'records', label: 'Список + деталі' },
+]
+
+const extras: { value: Page; label: string }[] = [
+  { value: 'inbox', label: 'Вхідні' },
+  { value: 'components', label: 'Компоненти' },
 ]
 
 function toggleTheme() {
@@ -39,6 +49,14 @@ function toggleTheme() {
 
     <sidebar-layout v-else-if="page === 'sidebar'">
       <dashboard-screen />
+    </sidebar-layout>
+
+    <sidebar-layout v-else-if="page === 'orders'">
+      <orders-screen />
+    </sidebar-layout>
+
+    <sidebar-layout v-else-if="page === 'settings'">
+      <settings-screen />
     </sidebar-layout>
 
     <!-- A screen that lays out its own columns takes the room unpadded and unscrolled. -->
@@ -68,20 +86,14 @@ function toggleTheme() {
       <wx-divider direction="vertical" spacing="sm" />
 
       <wx-button
+        v-for="item in extras"
+        :key="item.value"
         size="sm"
-        :variant="page === 'inbox' ? 'solid' : 'text'"
-        :type="page === 'inbox' ? 'primary' : 'default'"
-        @click="page = 'inbox'"
+        :variant="page === item.value ? 'solid' : 'text'"
+        :type="page === item.value ? 'primary' : 'default'"
+        @click="page = item.value"
       >
-        Вхідні
-      </wx-button>
-      <wx-button
-        size="sm"
-        :variant="page === 'components' ? 'solid' : 'text'"
-        :type="page === 'components' ? 'primary' : 'default'"
-        @click="page = 'components'"
-      >
-        Компоненти
+        {{ item.label }}
       </wx-button>
 
       <wx-divider direction="vertical" spacing="sm" />
