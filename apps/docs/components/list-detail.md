@@ -52,7 +52,7 @@ exactly where a `<router-view />` sits in an admin shell:
 
 ```vue
 <template>
-  <wx-container full-height>
+  <wx-container viewport>
     <wx-header>…</wx-header>
 
     <wx-container direction="horizontal">

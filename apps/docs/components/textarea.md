@@ -57,7 +57,8 @@ While autosizing, manual resizing is switched off — the two fight each other o
 
 **Exposed:** `focus()`, `blur()`, `select()`, and `textarea` — a ref to the native element.
 
-Unknown attributes fall through to the `<textarea>`, not the wrapper.
+Unknown attributes fall through to the `<textarea>`, not the wrapper. `class` and `style` are the
+two that stay on the wrapper — see [Input](/components/input#props) for why.
 
 ## Accessibility
 
