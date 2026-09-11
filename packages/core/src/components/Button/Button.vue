@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useButtonGroup } from '../../composables/useButtonGroup'
 import type { ButtonEmits, ButtonProps } from './types'
 
 defineOptions({ name: 'WxButton', inheritAttrs: false })
 
+/*
+ * The look defaults to `undefined` rather than to its documented value: inside a
+ * `WxButtonGroup` the button has to tell "caller said default" from "caller said
+ * nothing", and a prop default would erase that difference.
+ */
 const props = withDefaults(defineProps<ButtonProps>(), {
-  type: 'default',
-  variant: 'solid',
-  size: 'md',
+  type: undefined,
+  variant: undefined,
+  size: undefined,
   disabled: false,
   loading: false,
   block: false,
@@ -19,14 +25,20 @@ const props = withDefaults(defineProps<ButtonProps>(), {
 
 const emit = defineEmits<ButtonEmits>()
 
-const isDisabled = computed(() => props.disabled || props.loading)
+const group = useButtonGroup()
+
+const type = computed(() => props.type ?? group?.type.value ?? 'default')
+const variant = computed(() => props.variant ?? group?.variant.value ?? 'solid')
+const size = computed(() => props.size ?? group?.size.value ?? 'md')
+
+const isDisabled = computed(() => props.disabled || props.loading || group?.disabled.value || false)
 const tag = computed(() => (props.href ? 'a' : 'button'))
 
 const classes = computed(() => [
   'wx-button',
-  `wx-button--${props.type}`,
-  `wx-button--${props.variant}`,
-  `wx-button--${props.size}`,
+  `wx-button--${type.value}`,
+  `wx-button--${variant.value}`,
+  `wx-button--${size.value}`,
   {
     'wx-button--block': props.block,
     'wx-button--round': props.round,
@@ -273,7 +285,8 @@ function onClick(event: MouseEvent) {
   border: 2px solid currentcolor;
   border-right-color: transparent;
   border-radius: var(--wx-radius-full);
-  animation: wx-button-spin var(--wx-duration-slow) linear infinite;
+  /* Same pace as a spinning WxIcon — a turn a second, not three. */
+  animation: wx-button-spin var(--wx-button-spin-duration, 1s) linear infinite;
 }
 
 .wx-button__icon {

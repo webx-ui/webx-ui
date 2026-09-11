@@ -57,7 +57,10 @@ function onChange() {
     />
 
     <span class="wx-radio__box" aria-hidden="true">
-      <span class="wx-radio__dot" />
+      <svg class="wx-radio__mark" viewBox="0 0 20 20">
+        <circle class="wx-radio__ring" cx="10" cy="10" r="9.5" />
+        <circle class="wx-radio__dot" cx="10" cy="10" r="4" />
+      </svg>
     </span>
 
     <span v-if="label || $slots.default" class="wx-radio__label">
@@ -93,20 +96,22 @@ function onChange() {
   border: 0;
 }
 
+/*
+ * The box only holds the size and the focus ring; the circles are drawn inside it. A CSS
+ * border plus a centred child cannot stay concentric at a fractional device pixel ratio —
+ * Windows at 125% or 150% rounds the 1px border to a whole device pixel on each side
+ * independently, which moves the content box off the centre of the border box and takes
+ * the dot with it. Ring and dot as two circles on one origin cannot drift apart: the
+ * renderer resolves both against real geometry and antialiases, instead of snapping boxes.
+ */
 .wx-radio__box {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   flex: 0 0 auto;
   box-sizing: border-box;
   width: var(--wx-radio-size, 20px);
   height: var(--wx-radio-size, 20px);
-  background: var(--wx-bg-surface);
-  border: 1px solid var(--wx-border-strong);
   border-radius: var(--wx-radius-full);
-  transition:
-    border-color var(--wx-duration-fast) var(--wx-easing-standard),
-    box-shadow var(--wx-duration-fast) var(--wx-easing-standard);
+  transition: box-shadow var(--wx-duration-fast) var(--wx-easing-standard);
 }
 
 .wx-radio--sm {
@@ -124,39 +129,61 @@ function onChange() {
   font-size: var(--wx-font-size-lg);
 }
 
+/* The ring's outer half of stroke sits on the viewport edge, so it must not be clipped. */
+.wx-radio__mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/*
+ * `non-scaling-stroke` keeps the ring one pixel wide at every size, the way the checkbox
+ * border is, instead of thinning to 0.8px on `sm` and thickening to 1.2px on `lg`.
+ */
+.wx-radio__ring {
+  fill: var(--wx-bg-surface);
+  stroke: var(--wx-border-strong);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  transition: stroke var(--wx-duration-fast) var(--wx-easing-standard);
+}
+
 .wx-radio__dot {
-  width: 50%;
-  height: 50%;
-  border-radius: var(--wx-radius-full);
-  background: var(--wx-color-primary);
+  fill: var(--wx-color-primary);
   transform: scale(0);
+  transform-box: fill-box;
+  transform-origin: center;
   transition: transform var(--wx-duration-fast) var(--wx-easing-standard);
 }
 
-.wx-radio:hover:not(.is-disabled) .wx-radio__box {
-  border-color: var(--wx-color-primary);
+.wx-radio:hover:not(.is-disabled) .wx-radio__ring {
+  stroke: var(--wx-color-primary);
 }
 
-.wx-radio.is-checked .wx-radio__box {
-  border-color: var(--wx-color-primary);
+.wx-radio.is-checked .wx-radio__ring {
+  stroke: var(--wx-color-primary);
 }
 
 .wx-radio.is-checked .wx-radio__dot {
   transform: scale(1);
 }
 
-.wx-radio.is-disabled .wx-radio__box {
-  background: var(--wx-bg-disabled);
-  border-color: var(--wx-border-default);
+.wx-radio.is-disabled .wx-radio__ring {
+  fill: var(--wx-bg-disabled);
+  stroke: var(--wx-border-default);
 }
 
 .wx-radio.is-disabled .wx-radio__dot {
-  background: var(--wx-color-primary-disabled);
+  fill: var(--wx-color-primary-disabled);
 }
 
 .wx-radio__native:focus-visible + .wx-radio__box {
-  border-color: var(--wx-color-primary);
   box-shadow: var(--wx-ring-focus);
+}
+
+.wx-radio__native:focus-visible + .wx-radio__box .wx-radio__ring {
+  stroke: var(--wx-color-primary);
 }
 
 .wx-radio__label {
@@ -165,6 +192,7 @@ function onChange() {
 
 @media (prefers-reduced-motion: reduce) {
   .wx-radio__box,
+  .wx-radio__ring,
   .wx-radio__dot {
     transition: none;
   }
