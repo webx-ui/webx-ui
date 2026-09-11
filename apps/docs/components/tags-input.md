@@ -44,18 +44,19 @@ for one more key, so the first press marks the tag and the second removes it.
 
 ## Props
 
-| Prop          | Type                                             | Default     | Description                              |
-| ------------- | ------------------------------------------------ | ----------- | ---------------------------------------- |
-| `modelValue`  | `string[]`                                       | `[]`        | The tags                                 |
-| `suggestions` | `string[]`                                       | `[]`        | Offered while typing                     |
-| `allowCreate` | `boolean`                                        | `true`      | Enter adds a tag that is not in the list |
-| `duplicates`  | `boolean`                                        | `false`     | Allow the same tag twice                 |
-| `max`         | `number`                                         | —           | Largest number of tags                   |
-| `placeholder` | `string`                                         | —           | Placeholder text                         |
-| `disabled`    | `boolean`                                        | `false`     | Disables the field                       |
-| `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`      | Control height                           |
-| `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'` | Validation state                         |
-| `ariaLabel`   | `string`                                         | —           | Label when there is no visible one       |
+| Prop          | Type                                             | Default           | Description                              |
+| ------------- | ------------------------------------------------ | ----------------- | ---------------------------------------- |
+| `modelValue`  | `string[]`                                       | `[]`              | The tags                                 |
+| `suggestions` | `string[]`                                       | `[]`              | Offered while typing                     |
+| `allowCreate` | `boolean`                                        | `true`            | Enter adds a tag that is not in the list |
+| `duplicates`  | `boolean`                                        | `false`           | Allow the same tag twice                 |
+| `max`         | `number`                                         | —                 | Largest number of tags                   |
+| `placeholder` | `string`                                         | —                 | Placeholder text                         |
+| `emptyText`   | `string`                                         | `'Nothing found'` | Shown when the suggestions match nothing |
+| `disabled`    | `boolean`                                        | `false`           | Disables the field                       |
+| `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`            | Control height                           |
+| `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'`       | Validation state                         |
+| `ariaLabel`   | `string`                                         | —                 | Label when there is no visible one       |
 
 **Events:** `update:modelValue` (`string[]`), `change` (`string[]`), `search` (`string`).
 

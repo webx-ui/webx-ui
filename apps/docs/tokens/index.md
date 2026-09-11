@@ -110,7 +110,7 @@ control inside it shrinks:
 | `--wx-radius-md`       | 16px    | 12px    |
 | `--wx-font-size-md`    | 16px    | 14px    |
 
-Compact changes heights, not control text — that is already 14px everywhere.
+Compact changes heights and the body scale; control text is left alone, because it is already on a scale of its own.
 
 ## Other scales
 
