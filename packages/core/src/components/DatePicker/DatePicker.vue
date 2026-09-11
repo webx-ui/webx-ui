@@ -33,6 +33,15 @@ const props = withDefaults(defineProps<DatePickerProps>(), {
 
 const emit = defineEmits<DatePickerEmits>()
 
+/*
+ * Every slot is passed straight through to the underlying picker, so this component's
+ * slots are whatever the caller hands it. Saying so explicitly is what keeps the
+ * declaration honest: left to infer, the slot type is read off a template that
+ * enumerates `$slots`, and TypeScript answers that circle by emitting `any` — which
+ * takes the props of this component down with it.
+ */
+defineSlots<Record<string, (props: Record<string, unknown>) => unknown>>()
+
 const model = defineModel<DatePickerModelValue>({ default: null })
 
 const field = useFormField(props)
