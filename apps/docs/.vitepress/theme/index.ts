@@ -1,6 +1,8 @@
 import type { Theme } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
 import { WebxUI } from '@webx-ui/core'
+/* The demos show the library as it is meant to be served: with its opt-in typeface. */
+import '@webx-ui/tokens/fonts.css'
 import './demo.css'
 
 /**

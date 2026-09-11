@@ -46,6 +46,31 @@ const title = ref('')
 `@webx-ui/core/style.css` bundles the token variables, so a separate
 `import '@webx-ui/tokens/tokens.css'` is only needed when using the tokens without the components.
 
+## The typeface
+
+Out of the box the library asks for the platform's own UI font — Segoe UI on Windows, San Francisco
+on macOS, Roboto on Android. That costs nothing to load and never looks foreign, but it does mean
+your admin panel looks slightly different on every operating system.
+
+One import changes that. It brings **Inter**, self-hosted, and points the type token at it:
+
+```ts
+import '@webx-ui/tokens/fonts.css'
+```
+
+The faces ship inside the package (`@fontsource-variable/inter`, SIL Open Font License) — no
+request to Google, no `<link>` in your Blade layout, nothing to configure at the CDN. They are
+variable and split by alphabet, so a page that shows Cyrillic downloads the Cyrillic file and
+nothing else, and text paints immediately in the fallback while the file arrives.
+
+Prefer your own typeface? Skip the import and set the token:
+
+```css
+:root {
+  --wx-font-family-sans: 'Graphik', -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+```
+
 ## Using tokens alone
 
 ```ts
