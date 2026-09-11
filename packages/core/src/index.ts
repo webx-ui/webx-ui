@@ -20,6 +20,17 @@ export {
   type ToastAction,
 } from './composables/useToast'
 export {
+  openModal,
+  createModal,
+  useModal,
+  connectModals,
+  modalKey,
+  type ModalHandle,
+  type ModalOptions,
+  type ModalPromise,
+} from './composables/useModal'
+export { confirm, type ConfirmOptions } from './composables/confirm'
+export {
   useResponsiveShell,
   shellLayoutFor,
   type ResponsiveShell,

@@ -97,6 +97,12 @@ Kanban ✅ — a board of columns cards are dragged between, see [Kanban](/compo
 ListDetail ✅ — filters, records, the open one, and the rule for when there is room for all three:
 see [ListDetail](/components/list-detail). An inbox and an orders screen are the same furniture.
 
+SelectionArea ✅ — the rubber band over a grid or a list, see
+[SelectionArea](/components/selection-area). A media library is unusable without it.
+
+SortableList ✅ — a list whose order is the point, dragged by a grip or moved with the arrow keys:
+see [SortableList](/components/sortable-list).
+
 Gantt ⬜ — the other way to look at the same work: a task per row, a bar across a timeline.
 Decided, not started. It will be ours rather than a wrapper around `frappe-gantt` or
 `vis-timeline`, because a Gantt is a header of dates and bars placed along it — a CSS grid, in
@@ -106,8 +112,7 @@ of task names, a scale of days, weeks or months, bars with progress, a marker on
 hovering or clicking a bar reported as an event. Dragging the dates and the arrows between
 dependent tasks come after that, once the first pass has been lived with.
 
-MediaLibrary / Gallery, Repeater, Markdown, LinkPicker, BlockPicker, SortableList
-(`vue-draggable-plus`), and `SchemaRenderer` in [`@webx-ui/schema`](/guide/#packages).
+MediaLibrary / Gallery, Repeater, Markdown, LinkPicker, BlockPicker, and `SchemaRenderer` in [`@webx-ui/schema`](/guide/#packages).
 
 ## Beyond components
 
