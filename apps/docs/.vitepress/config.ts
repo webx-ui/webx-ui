@@ -127,6 +127,7 @@ export default defineConfig({
             { text: 'Steps', link: '/components/steps' },
             { text: 'Kanban', link: '/components/kanban' },
             { text: 'SelectionArea', link: '/components/selection-area' },
+            { text: 'SortableList', link: '/components/sortable-list' },
           ],
         },
         {
