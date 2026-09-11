@@ -7,7 +7,9 @@ Legend: ✅ done · 🚧 in progress · ⬜ planned
 
 ## Wave 1 — basics
 
-Complete. Every component below has a page of its own, a demo and tests.
+Complete: every component below has a demo, tests and a page it is documented on — the four
+typographic ones share [Typography](/components/typography), since a page each would be four pages
+of the same paragraph.
 
 | Component                                                             | Status |
 | --------------------------------------------------------------------- | ------ |

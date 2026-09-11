@@ -55,6 +55,8 @@ as [DatePicker](/components/date-picker), so a period goes to a Laravel API with
 | `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'`  | Validation state                                    |
 | `disabled`    | `boolean`                                        | `false`      | Disables the field                                  |
 | `readonly`    | `boolean`                                        | `false`      | Read-only field                                     |
+| `placeholder` | `string`                                         | —            | Placeholder text                                    |
+| `ariaLabel`   | `string`                                         | —            | Label when there is no visible one                  |
 
 **Events:** `update:modelValue`, `change`, `clear`, `open`, `close`.
 
