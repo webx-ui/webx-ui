@@ -280,7 +280,9 @@ function removeTag(value: SelectValue) {
   border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-control);
   color: var(--wx-text-default);
-  font-size: var(--wx-font-size-md);
+  /* A select is a list of choices, and it reads like the one in the sidebar does. */
+  font-size: var(--wx-font-size-sm);
+  font-weight: var(--wx-font-weight-medium);
   cursor: pointer;
   transition: border-color var(--wx-duration-normal) var(--wx-easing-standard);
 }
@@ -436,7 +438,8 @@ function removeTag(value: SelectValue) {
   box-shadow: var(--wx-shadow-popover);
   color: var(--wx-text-default);
   font-family: var(--wx-font-family-sans);
-  font-size: var(--wx-font-size-md);
+  font-size: var(--wx-font-size-sm);
+  font-weight: var(--wx-font-weight-medium);
   overflow: hidden;
 }
 

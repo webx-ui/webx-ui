@@ -377,7 +377,13 @@ function show(order: Order) {
 .orders__record {
   display: flex;
   flex-direction: column;
+  /* A column stretches what is in it; a badge is as wide as its word. */
+  align-items: flex-start;
   gap: var(--wx-space-16);
+}
+
+.orders__record > *:not(.wx-badge) {
+  align-self: stretch;
 }
 
 .orders__facts {
