@@ -39,6 +39,8 @@ export const builtinIcons = {
   'arrow-left': '<path d="M20 12H4m0 0 6-6m-6 6 6 6"/>',
   'arrow-right': '<path d="M4 12h16m0 0-6-6m6 6-6 6"/>',
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  /* The sidebar toggle: a page with a column down its left. */
+  sidebar: '<rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="M9.5 4.5v15"/>',
   'more-horizontal':
     '<circle cx="5.5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
   'more-vertical':
