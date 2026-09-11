@@ -66,6 +66,10 @@ aligned whether or not every record has a cover.
 `variant="plain"` drops both, for a row that already sits inside a [Card](/components/card) or a
 table cell.
 
+A plain row also drops its padding, since the container around it already has some. Add `bordered`
+— or mark it `selected` — and the padding comes back: an outline with nothing inside it would glue
+the thumbnail and the actions to its edge.
+
 ## Props
 
 | Prop        | Type                                | Default     | Description                      |

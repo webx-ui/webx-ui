@@ -145,6 +145,16 @@ const classes = computed(() => [
   border-color: var(--wx-border-default);
 }
 
+/*
+ * A border needs something to enclose: without this a plain card — which drops its
+ * padding so it can sit inside another one — glues the thumbnail and the actions to
+ * the outline.
+ */
+.wx-entity-card--plain.wx-entity-card--bordered,
+.wx-entity-card--plain.is-selected {
+  padding: var(--wx-entity-card-padding, var(--wx-space-12));
+}
+
 .wx-entity-card.is-selected {
   border-color: var(--wx-color-primary);
   background: var(--wx-color-primary-soft);
