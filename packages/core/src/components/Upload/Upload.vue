@@ -319,6 +319,8 @@ const classes = computed(() => [
 
 .wx-upload__file {
   display: flex;
+  /* Scoped, so a host stylesheet spacing `li + li` cannot double the gap. */
+  margin: 0;
   align-items: center;
   gap: var(--wx-space-8);
   padding: var(--wx-space-6) var(--wx-space-8);
