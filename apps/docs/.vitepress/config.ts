@@ -122,6 +122,7 @@ export default defineConfig({
           text: 'Data',
           items: [
             { text: 'Table', link: '/components/table' },
+            { text: 'Tree', link: '/components/tree' },
             { text: 'Pagination', link: '/components/pagination' },
             { text: 'Statistic', link: '/components/statistic' },
             { text: 'Descriptions', link: '/components/descriptions' },
