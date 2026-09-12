@@ -5,8 +5,8 @@ Composer ставит пакет из его собственного репоз
 `github.com/webx-ui/<имя>`, и уже туда приезжает тег, который Packagist показывает как версию.
 
 Публикации как таковой нет. **Версия существует ровно тогда, когда существует тег** в
-репозитории пакета. Секрет для публикации не нужен — нужен только токен на запись в
-split-репозитории.
+репозитории пакета. Секрет для публикации не нужен — нужно только право на запись в
+split-репозитории, и его даёт GitHub App организации.
 
 ## Поток
 
@@ -60,28 +60,32 @@ changesets его версионирует и пишет ему `CHANGELOG.md`.
    Без README и лицензии при создании: всё содержимое привезёт сплит. Пустой репозиторий
    воркфлоу засеет первым коммитом сам — сам экшен сплита этого не умеет и молча пушит пустоту.
 
-2. **Токен на запись в эти репозитории.** Fine-grained PAT,
-   https://github.com/settings/personal-access-tokens/new:
-   - Resource owner — организация `webx-ui`
-   - Repository access — Only select repositories → все split-репозитории
-     (сам `webx-ui/webx-ui` не нужен)
-   - Repository permissions → **Contents: Read and write** (`Metadata: Read-only` GitHub
-     добавит сам, он обязательный; больше ничего не нужно)
-   - срок максимальный, напоминание о продлении в календарь
+2. **GitHub App на запись в зеркала.** Не личный токен: App не протухает, не привязан к одному
+   человеку, и новое зеркало не требует потом никаких действий.
 
-   Если организация требует одобрения fine-grained токенов — одобрить в
-   Settings → Personal access tokens → Pending requests.
+   https://github.com/organizations/webx-ui/settings/apps/new
+   - GitHub App name: `webx-ui-split` (имя глобально уникальное)
+   - Homepage URL: `https://github.com/webx-ui/webx-ui`
+   - Webhook → снять галку **Active**: события нам не нужны
+   - Permissions → Repository permissions → **Contents: Read and write**, больше ничего
+     (`Metadata: Read-only` добавится сам)
+   - Where can this GitHub App be installed → **Only on this account**
+   - Create GitHub App → запомнить **App ID** → Generate a private key, скачается `.pem`
+   - Install App → организация `webx-ui` → **All repositories**
 
-   Доступ выбран точечно, поэтому **у каждого нового зеркала надо дописать доступ в этот же
-   токен** — иначе сплит для него упадёт с 403.
+   «All repositories» тут не расточительность: воркфлоу выпускает токен на каждый job отдельно
+   и сужает его до одного репозитория (`repositories:` + `permission-contents: write`), так что
+   у каждого прогона прав ровно на своё зеркало. Взамен новое зеркало подхватывается само.
 
-3. **Положить токен в секрет репозитория:**
+3. **Положить App ID и ключ в репозиторий:**
 
    ```bash
-   gh secret set PHP_SPLIT_TOKEN --repo webx-ui/webx-ui
+   gh variable set PHP_SPLIT_APP_ID --repo webx-ui/webx-ui --body "<App ID>"
+   gh secret set PHP_SPLIT_APP_PRIVATE_KEY --repo webx-ui/webx-ui < webx-ui-split.private-key.pem
    ```
 
-   Команда спросит значение — токен не надо передавать ни аргументом, ни через файл.
+   App ID не секрет, поэтому он переменная. Скачанный `.pem` после этого удалить — ключ живёт
+   только в секрете, и при утере выпускается новый на странице App.
 
 4. **Добавить чеки в ruleset** `main`. У матричного job'а имя чека своё на каждый вариант:
    `PHP lint, analyse, test (8.3)` и `PHP lint, analyse, test (8.4)` — нужны оба.
@@ -145,7 +149,7 @@ changesets его версионирует и пишет ему `CHANGELOG.md`.
 |                  | npm                      | Packagist                                   |
 | ---------------- | ------------------------ | ------------------------------------------- |
 | что публикуется  | артефакт через OIDC      | ничего: версия = тег в репо пакета          |
-| секреты          | нет (Trusted Publishing) | `PHP_SPLIT_TOKEN` на запись в зеркала       |
+| секреты          | нет (Trusted Publishing) | GitHub App с правом записи в зеркала        |
 | версии           | своя у каждого пакета    | одна на все php-пакеты                      |
 | тег              | `@webx-ui/core@0.14.0`   | `php-v0.1.0` в монорепо, `v0.1.0` в зеркале |
 | задержка реестра | ~5 минут после воркфлоу  | секунды, по вебхуку                         |
