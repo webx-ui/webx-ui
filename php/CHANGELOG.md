@@ -1,5 +1,39 @@
 # @webx-ui/php
 
+## 0.5.0
+
+### Minor Changes
+
+- 78d8ef3: The panel answers in the language of whoever is reading it. `webx-ui/admin` serves the language
+  list and the interface dictionary — both public, because the sign-in screen is drawn before
+  there is a session to ask — and carries `locale`, `locales` and `panelLocales` in the manifest.
+  `webx-ui/module-auth` stores each administrator's choice on the administrator, so it follows
+  them to the next machine and so validation messages arrive in the same language as the labels
+  above them.
+
+  Both packages ship English, Russian and Ukrainian. A site adds a language they never shipped by
+  publishing their `lang` files and translating what is missing; the merge is per line, so an
+  untranslated key falls back on its own rather than taking its screen with it.
+
+- 78d8ef3: `webx-ui/localization` — the languages a site is published in, translated Eloquent attributes,
+  and the dictionary the admin panel is drawn from.
+
+  It keeps two things apart that are easy to run together. Interface phrases are written by
+  whoever wrote the module, change at deploy, and live in the package's `lang` files; content is
+  written by whoever runs the site, changes all day, and lives in the database. One store for
+  each, and neither knows about the other.
+
+  A model names its translatable columns and goes on being a model — the value is a JSON language
+  map, readable by anything that understands `spatie/laravel-translatable`. The panel's own words
+  come from the same `lang` files the server reads, so a module is translated once rather than
+  once per half.
+
+### Patch Changes
+
+- 9c0a762: The panel's sidebar toggle has a translated label: `webx-admin::nav.collapse`, in English,
+  Russian and Ukrainian. Without it that one control fell back to the English the npm package
+  carries, which is a small thing that looks exactly like a broken translation.
+
 ## 0.4.0
 
 ### Minor Changes

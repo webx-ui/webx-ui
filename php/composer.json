@@ -24,11 +24,11 @@
             "options": {
                 "//": "Without this the packages take the version of the git branch, and a constraint between two of them cannot be satisfied locally. scripts/sync-php-version.mjs keeps the map in step with php/package.json.",
                 "versions": {
-                    "webx-ui/admin": "0.4.0",
-                    "webx-ui/localization": "0.4.0",
-                    "webx-ui/mcp": "0.4.0",
-                    "webx-ui/module-auth": "0.4.0",
-                    "webx-ui/nested-set": "0.4.0"
+                    "webx-ui/admin": "0.5.0",
+                    "webx-ui/localization": "0.5.0",
+                    "webx-ui/mcp": "0.5.0",
+                    "webx-ui/module-auth": "0.5.0",
+                    "webx-ui/nested-set": "0.5.0"
                 }
             }
         }
