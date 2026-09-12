@@ -89,6 +89,6 @@ const { layout, collapsed, showAside, drawerOpen, toggle, close } = useResponsiv
   place-items: center;
   min-height: 100dvh;
   padding: var(--wx-space-16);
-  background: var(--wx-color-bg-subtle, var(--wx-color-bg));
+  background: var(--wx-bg-body);
 }
 </style>
