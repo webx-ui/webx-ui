@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
+use WebxUi\Localization\Contracts\HasPanelLocale;
 
 /**
  * Somebody who administers the site — not somebody who uses it.
@@ -21,9 +22,10 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string $password
  * @property bool $is_super
  * @property bool $is_active
+ * @property string|null $locale
  * @property Carbon|null $last_login_at
  */
-class CmsUser extends Model implements AuthenticatableContract
+class CmsUser extends Model implements AuthenticatableContract, HasPanelLocale
 {
     use Authenticatable;
     use HasApiTokens;
@@ -48,6 +50,14 @@ class CmsUser extends Model implements AuthenticatableContract
             'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * The language to draw the panel in for this person, or null to be given the site's.
+     */
+    public function panelLocale(): ?string
+    {
+        return $this->locale;
     }
 
     /**

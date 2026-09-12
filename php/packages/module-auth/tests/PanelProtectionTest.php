@@ -42,7 +42,7 @@ final class PanelProtectionTest extends TestCase
     public function installing_this_package_is_what_closed_the_panel(): void
     {
         $this->assertSame(
-            ['web', 'cms.auth'],
+            ['web', 'cms.auth', 'webx.panel-locale'],
             config('webx-admin.api_middleware'),
         );
     }
@@ -71,6 +71,6 @@ final class PanelProtectionTest extends TestCase
 
         (new AuthServiceProvider($this->app))->register();
 
-        $this->assertSame(['web', 'cms.auth'], config('webx-admin.api_middleware'));
+        $this->assertSame(['web', 'cms.auth', 'webx.panel-locale'], config('webx-admin.api_middleware'));
     }
 }

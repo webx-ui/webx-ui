@@ -27,6 +27,9 @@ final class CmsUserPayload
             'name' => $user->name,
             'email' => $user->email,
             'isSuper' => $user->is_super,
+            // Null until they choose: the panel then follows the browser rather than pinning
+            // somebody to a language they never asked for.
+            'locale' => $user->locale,
             'lastLoginAt' => $user->last_login_at?->toIso8601String(),
             'roles' => $user->roles
                 ->map(static fn (Role $role): array => [
