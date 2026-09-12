@@ -1,0 +1,64 @@
+name: PHP smoke
+
+# Shallow and broad, where php-ci.yml is deep and narrow. The tests run under Testbench, where
+# the providers are wired by hand, the database is sqlite in memory and CSRF is switched off —
+# so nothing there can notice a bad provider declaration, a migration that only works on
+# sqlite, a sign-in that cannot get past CSRF, or a panel that falls open once a deploy runs
+# config:cache.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: php-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Install into a real Laravel app
+    runs-on: ubuntu-latest
+
+    services:
+      mariadb:
+        # The database the sites actually run on, rather than the one the tests are fast on.
+        image: mariadb:11.8
+        env:
+          MARIADB_DATABASE: webx
+          MARIADB_ROOT_PASSWORD: secret
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_mysql
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer/files
+          key: smoke-${{ hashFiles('php/packages/*/composer.json') }}
+          restore-keys: smoke-
+
+      - name: Install the packages into a Laravel application and use it
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: webx
+          DB_USERNAME: root
+          DB_PASSWORD: secret
+          SMOKE_DIR: ${{ runner.temp }}/smoke
+        run: bash scripts/php-smoke.sh
