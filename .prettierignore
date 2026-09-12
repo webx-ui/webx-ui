@@ -4,3 +4,9 @@ pnpm-lock.yaml
 .vitepress/cache
 .vitepress/dist
 packages/tokens/src/generated
+php/vendor
+# Composer writes these back with its own four-space indentation.
+php/composer.json
+php/composer.lock
+php/pint.json
+php/packages/*/composer.json

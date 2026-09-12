@@ -1,0 +1,9 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 6
+    paths:
+        - packages/nested-set/src
+        - packages/nested-set/tests
+    tmpDir: .phpstan.cache
