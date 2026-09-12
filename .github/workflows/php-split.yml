@@ -106,8 +106,7 @@ jobs:
 
           echo "Seeded $REPOSITORY with an initial commit."
 
-      - name: Split without a tag
-        if: inputs.tag == ''
+      - name: Sync the mirror
         uses: danharrin/monorepo-split-github-action@v2.4.5
         env:
           GITHUB_TOKEN: ${{ steps.mirror-token.outputs.token }}
@@ -118,15 +117,29 @@ jobs:
           user_name: webx-ui-bot
           user_email: bot@webx-ui.dev
 
-      - name: Split and tag
+      # The action's own `tag` input pushes from a directory whose remote carries no
+      # credentials as soon as the package itself has not changed — "could not read Password"
+      # — which is exactly the shape of a release that only bumps the shared version. Creating
+      # the ref over the API is both immune to that and easier to read: the tag lands on the
+      # mirror's main, which the step above has just made current.
+      - name: Tag the mirror
         if: inputs.tag != ''
-        uses: danharrin/monorepo-split-github-action@v2.4.5
         env:
-          GITHUB_TOKEN: ${{ steps.mirror-token.outputs.token }}
-        with:
-          tag: ${{ inputs.tag }}
-          package_directory: php/packages/${{ matrix.package.directory }}
-          repository_organization: webx-ui
-          repository_name: ${{ matrix.package.repository }}
-          user_name: webx-ui-bot
-          user_email: bot@webx-ui.dev
+          GH_TOKEN: ${{ steps.mirror-token.outputs.token }}
+          REPOSITORY: webx-ui/${{ matrix.package.repository }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          if gh api "repos/$REPOSITORY/git/ref/tags/$TAG" --silent 2>/dev/null; then
+            echo "$REPOSITORY is already tagged $TAG."
+            exit 0
+          fi
+
+          sha=$(gh api "repos/$REPOSITORY/commits/main" --jq '.sha')
+
+          gh api "repos/$REPOSITORY/git/refs" \
+            --method POST \
+            --field ref="refs/tags/$TAG" \
+            --field sha="$sha" \
+            --silent
+
+          echo "Tagged $REPOSITORY $TAG at $sha."
