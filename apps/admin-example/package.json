@@ -1,0 +1,27 @@
+{
+  "name": "@webx-ui/admin-example",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@webx-ui/admin": "workspace:*",
+    "@webx-ui/core": "workspace:*",
+    "@webx-ui/module-auth": "workspace:*",
+    "@webx-ui/tokens": "workspace:*",
+    "vue": "^3.5.24",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.14",
+    "vue-tsc": "^3.1.3"
+  }
+}
