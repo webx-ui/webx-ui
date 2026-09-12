@@ -64,8 +64,10 @@ project that has none, and CI then fails on `pnpm install --frozen-lockfile`.
      namespace,
    - `php/phpunit.xml.dist` → a `<directory>` in the test suite and in `<source>`,
    - `php/phpstan.neon.dist` → the `src` and `tests` paths.
-3. Create the public repository `webx-ui/<name>` and submit it to Packagist — the split workflow
-   discovers the package from the directory listing, but it cannot create the repository for you.
+3. Create the public repository `webx-ui/<name>`, grant the `PHP_SPLIT_TOKEN` write access to it,
+   and submit it to Packagist. The split workflow discovers the package from the directory
+   listing, but it cannot create the repository — and the token is scoped to named repositories,
+   so a mirror missing from it fails the split with a 403.
 
 Step 3 is the only manual one, and it is described in
 [the release pipeline](../docs/architecture/WEBX_UI_PHP_RELEASE.md).

@@ -64,17 +64,23 @@ changesets его версионирует и пишет ему `CHANGELOG.md`.
    - Resource owner — организация `webx-ui`
    - Repository access — Only select repositories → все split-репозитории
      (сам `webx-ui/webx-ui` не нужен)
-   - Repository permissions → **Contents: Read and write**
+   - Repository permissions → **Contents: Read and write** (`Metadata: Read-only` GitHub
+     добавит сам, он обязательный; больше ничего не нужно)
    - срок максимальный, напоминание о продлении в календарь
 
    Если организация требует одобрения fine-grained токенов — одобрить в
    Settings → Personal access tokens → Pending requests.
+
+   Доступ выбран точечно, поэтому **у каждого нового зеркала надо дописать доступ в этот же
+   токен** — иначе сплит для него упадёт с 403.
 
 3. **Положить токен в секрет репозитория:**
 
    ```bash
    gh secret set PHP_SPLIT_TOKEN --repo webx-ui/webx-ui
    ```
+
+   Команда спросит значение — токен не надо передавать ни аргументом, ни через файл.
 
 4. **Добавить чеки в ruleset** `main`. У матричного job'а имя чека своё на каждый вариант:
    `PHP lint, analyse, test (8.3)` и `PHP lint, analyse, test (8.4)` — нужны оба.
