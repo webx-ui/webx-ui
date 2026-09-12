@@ -106,7 +106,6 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
   const app = createApp(rootComponent(options))
 
   app.use(WebxUI)
-  app.use(router)
   provideAdmin(app, context)
 
   const admin: Admin = {
@@ -114,15 +113,21 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
     router,
     context,
     async mount() {
-      for (const plugin of options.plugins ?? []) {
-        plugin.install(admin)
-      }
-
       app.mount(options.el ?? '#webx-app')
 
       await context.reload()
     },
   }
+
+  // Plugins go on before the router does, because installing the router is what starts the
+  // first navigation. A route added after that is a route the visit already failed to match:
+  // opening /login directly would land on nothing while /cms worked, because / matched and the
+  // redirect to /login happened later, by which time the route existed.
+  for (const plugin of options.plugins ?? []) {
+    plugin.install(admin)
+  }
+
+  app.use(router)
 
   return admin
 }
