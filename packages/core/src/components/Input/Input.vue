@@ -218,6 +218,24 @@ defineExpose({
   color: var(--wx-text-placeholder);
 }
 
+/*
+ * A field the browser filled in is painted by the browser, in a colour that belongs to no
+ * theme — a yellow block in a light panel and an olive one in a dark panel. The background is
+ * set with !important in the user agent stylesheet and cannot be overridden, so it is covered
+ * instead: an inset shadow the size of the field paints over it.
+ *
+ * The absurd transition is the companion trick for Chrome, which repaints its tint on focus.
+ */
+.wx-input__inner:-webkit-autofill,
+.wx-input__inner:-webkit-autofill:hover,
+.wx-input__inner:-webkit-autofill:focus,
+.wx-input__inner:autofill {
+  box-shadow: 0 0 0 100vmax var(--wx-bg-surface) inset;
+  -webkit-text-fill-color: var(--wx-text-default);
+  caret-color: var(--wx-text-default);
+  transition: background-color 100000s ease-in-out 0s;
+}
+
 .wx-input__inner:disabled {
   cursor: not-allowed;
 }
