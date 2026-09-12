@@ -91,12 +91,18 @@ row and a `<mark>` in a label, and neither survives being themed through somebod
 brings the part most trees skip: `Alt` and the arrow keys move a node the same four ways a drag
 does, which is also the only way to rearrange one on a touch screen.
 
-Table in tree mode ⬜ — the same nesting inside `WxTable`: indentation and a disclosure in the
-first column, the rest of the row still columns. Not a second component — `WxTree` keeps its
-machinery in `useTreeNodes` (what is where, what is open, what a filter leaves, what a move does to
-the arrays), and the table is the other thing that runs on it. It is the screen a pages or
-categories module actually wants: the tree and the data in one pane, instead of a sidebar tree
+[Table in tree mode](/components/table#rows-that-nest) ✅ — the same nesting inside `WxTable`:
+indentation and a disclosure in the first column, the rest of the row still columns. Not a second
+component — both run on `useTreeNodes`, so a drop means the same thing in each. It is the screen a
+pages or categories module wants: the tree and the data in one pane, instead of a sidebar tree
 beside a list of the same records.
+
+It is lazy by design — `data` is the roots, `load(row)` is one level — and it gives up the two
+things a table does to a flat list, because both destroy a structure: sorting and pagination.
+Holding a dragged row over a closed branch opens it, fetching it if need be, so a move across the
+tree is one drag. What it does not have is a keyboard equivalent for the drag, the way
+[Tree](/components/tree) does; for that, and for a move across a long distance, a row wants a
+**Move** action and a picker.
 
 [TreeSelect](/components/tree-select) ✅ — the same tree as a form field, single or with
 checkboxes. It is the "parent category" field, so it reads a key and reports a key: `parent_id` is

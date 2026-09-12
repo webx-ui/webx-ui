@@ -1,4 +1,7 @@
 import type { ControlSize } from '../../composables/useFormField'
+import type { TreeDropZone } from '../../composables/useTreeNodes'
+
+export type { TreeDropZone }
 
 /**
  * A page as Laravel's `->paginate()` serialises it. Taken as it arrives, with the
@@ -72,6 +75,59 @@ export interface TableSummaryRow {
   class?: string
 }
 
+/**
+ * Turns the rows into a tree: the first column keeps the disclosure and the
+ * indentation, every other column is still a column.
+ *
+ * A tree is a structure, and the two things a table does to a flat list destroy it —
+ * so in this mode `sortable` columns are drawn without their control and `pagination`
+ * is off. Ordering a tree is what dragging is for, and a page of it would cut branches
+ * in half.
+ */
+export interface TableTreeOptions<T = TableRow> {
+  /** Field holding the children of a row. */
+  childrenKey?: string
+  /**
+   * Field that says a row has children before any have been fetched — Laravel's
+   * `withCount('children')` under its own name, or a boolean of your own. Without it a
+   * lazy table cannot tell a leaf from a branch nobody has opened yet.
+   */
+  hasChildrenKey?: string
+  /** Children arrive when a row is opened. Requires `load`. */
+  lazy?: boolean
+  /** Fetches the children of one row. */
+  load?: (row: T) => T[] | Promise<T[]>
+  /** Open every branch that is already loaded, once, on the first render. */
+  defaultExpandAll?: boolean
+  /** How far one level sits from the next, in pixels. */
+  indent?: number
+  /** Rows can be picked up and dropped before, after or inside another. */
+  draggable?: boolean
+  /** Rows this returns `false` for cannot be picked up. */
+  allowDrag?: (row: T) => boolean
+  /** Vetoes a landing spot before anything moves. */
+  allowDrop?: (drag: T, drop: T, zone: TreeDropZone) => boolean
+  /**
+   * How long a row dragged over a closed branch waits before that branch opens.
+   * Dropping into a branch you cannot see the inside of is a guess; this turns the
+   * guess into a look. Zero switches it off.
+   */
+  springDelay?: number
+}
+
+/** What a finished move says: the row, where it went, and how it got there. */
+export interface TableNodeDropEvent<T = TableRow> {
+  row: T
+  /** The row it was dropped on. */
+  target: T
+  zone: TreeDropZone
+  /** The row it now hangs from — `null` at the top level. */
+  parent: T | null
+  /** Its position among its new siblings. */
+  index: number
+  via: 'pointer' | 'keyboard'
+}
+
 /** Everything the table asks the backend for, in one object. */
 export interface TableState {
   page: number
@@ -134,6 +190,8 @@ export interface TableProps<T = TableRow> {
   maxHeight?: string | number
   /** Extra class per row, for status colouring and the like. */
   rowClass?: (row: T, index: number) => string | undefined
+  /** Draws the rows as a tree. See {@link TableTreeOptions}. */
+  tree?: TableTreeOptions<T>
   /** Fixes the column widths instead of letting the content decide. */
   layout?: 'auto' | 'fixed'
   ariaLabel?: string
@@ -144,6 +202,8 @@ export interface TableEmits<T = TableRow> {
   'sort-change': [sort: TableSort | null]
   'selection-change': [keys: RowKey[], rows: T[]]
   'expand-change': [keys: RowKey[], rows: T[]]
+  /** A row was moved in tree mode. The rows have already been rearranged. */
+  'node-drop': [event: TableNodeDropEvent<T>]
   search: [term: string]
   /**
    * Everything the backend needs, together. Fires once on mount — with whatever

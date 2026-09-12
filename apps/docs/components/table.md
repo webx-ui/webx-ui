@@ -2,6 +2,7 @@
 import TableDemo from '../components/demos/TableDemo.vue'
 import TableSummaryDemo from '../components/demos/TableSummaryDemo.vue'
 import TableFixedDemo from '../components/demos/TableFixedDemo.vue'
+import TableTreeDemo from '../components/demos/TableTreeDemo.vue'
 </script>
 
 # Table
@@ -213,6 +214,74 @@ A row can open to show what does not fit in it, which is how a wide table stays 
 `v-model:expanded` holds keys, like the selection, so several rows can be open at once and the set
 is the caller's to control — open one by default by seeding the array. `expandable-if` decides
 which rows have anything to show; the ones that do not get no chevron rather than an empty panel.
+
+## Rows that nest
+
+`tree` turns the rows into a structure: the first column carries the indentation and the
+disclosure, every other column is still a column. It is the pages screen and the categories screen
+— the tree and the data in one pane, instead of a sidebar tree beside a list of the same records.
+
+<TableTreeDemo />
+
+```vue
+<wx-table
+  v-model:expanded="open"
+  :columns="columns"
+  :data="roots"
+  :tree="{ lazy: true, load, draggable: true }"
+  row-key="id"
+  @node-drop="save"
+/>
+```
+
+`data` is the roots, and `load(row)` fetches one level — a catalogue of five thousand categories is
+not a payload, it is a series of them. A row says whether it is worth a chevron with
+`has_children`, which is `withCount('children')` under a name of your choosing:
+
+```php
+Page::whereNull('parent_id')->withCount('children')->get();
+```
+
+Nothing said about children still gets a chevron: a branch nobody described is worth one request to
+find out. A `false` — or a count of zero — is taken at its word and draws a leaf.
+
+Without `lazy` the table takes the tree it is given, nested under `children`, and opens it locally.
+
+### Moving a row
+
+`draggable` makes every row something to pick up, and which third of a row the pointer is over
+decides where the dragged one lands: the edges put it before or after, the middle puts it inside. A
+row can never land inside its own subtree.
+
+Holding a row over a closed branch opens it — `springDelay`, 600ms by default — and where that
+branch has not been fetched, opening it fetches it. So a move across the tree is one drag rather
+than a drag, a wait, and another drag. Dropping into a branch that has never been opened fetches it
+first as well: the position a row lands at is not something to guess at.
+
+`node-drop` carries everything a backend needs, and the rows on screen are already rearranged:
+
+```ts
+function save(event: TableNodeDropEvent) {
+  return api.patch(`/pages/${event.row.id}/move`, {
+    parent_id: event.parent?.id ?? null,
+    position: event.index,
+  })
+}
+```
+
+Dragging is a pointer gesture, and this table has no keyboard equivalent for it — [Tree](/components/tree)
+does, with `Alt` and the arrow keys. For a move across a long distance, and for the keyboard, give
+the row a **Move** action and open a picker with [`openModal`](/guide/modals).
+
+### What a tree turns off
+
+- **Sorting.** A heading in tree mode is a heading: `sortable` columns are drawn without their
+  control. Ordering rows would either scatter the branches or sort quietly inside each of them, and
+  the order that matters here is the one dragging produces.
+- **Pagination.** A page of a tree cuts branches in half, and the rows are not a page anyway — a
+  lazy tree asks for a level at a time. It stays off even when `data` is a paginator.
+- **Expandable rows.** The chevron belongs to the branch. A row that must show more than fits
+  belongs in a drawer or a detail pane.
 
 ## Fixed columns, sticky header and footer
 
