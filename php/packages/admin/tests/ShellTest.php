@@ -38,4 +38,37 @@ final class ShellTest extends TestCase
     {
         $this->get('/not-the-panel')->assertNotFound();
     }
+
+    #[Test]
+    public function it_loads_the_panel_assets_it_is_given(): void
+    {
+        config()->set('webx-admin.assets', ['/webx/webx.css', '/webx/webx.js']);
+
+        $this->get('/cms')
+            ->assertOk()
+            ->assertSee('<link rel="stylesheet" href="/webx/webx.css">', false)
+            ->assertSee('<script type="module" src="/webx/webx.js" defer></script>', false);
+    }
+
+    #[Test]
+    public function a_query_string_does_not_confuse_a_stylesheet_for_a_script(): void
+    {
+        config()->set('webx-admin.assets', ['/webx/webx.css?v=3']);
+
+        $this->get('/cms')
+            ->assertOk()
+            ->assertSee('<link rel="stylesheet" href="/webx/webx.css?v=3">', false)
+            ->assertDontSee('<script type="module" src="/webx/webx.css', false);
+    }
+
+    #[Test]
+    public function with_no_assets_the_page_is_deliberately_empty(): void
+    {
+        // The frame installed and the panel not is a real state, and it should look like one
+        // rather than like a broken page.
+        $this->get('/cms')
+            ->assertOk()
+            ->assertSee('id="webx-app"', false)
+            ->assertDontSee('<script type="module"', false);
+    }
 }

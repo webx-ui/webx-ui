@@ -45,4 +45,28 @@ return [
 
     'api_middleware' => ['api'],
 
+    /*
+    |---------------------------------------------------------------------------
+    | The panel's own assets
+    |---------------------------------------------------------------------------
+    |
+    | The shell renders an empty page for the front end to fill; these are what
+    | fill it. Stylesheets and scripts are told apart by their extension.
+    |
+    |     'assets' => ['/webx/webx.css', '/webx/webx.js'],
+    |
+    | An application that builds the panel with Laravel's own Vite names its
+    | entry points instead, and gets the dev server and hot reloading with them:
+    |
+    |     'vite' => ['resources/js/admin.ts'],
+    |
+    | With neither, the page is deliberately blank — the frame is installed and
+    | the panel is not.
+    |
+    */
+
+    'assets' => [],
+
+    'vite' => [],
+
 ];
