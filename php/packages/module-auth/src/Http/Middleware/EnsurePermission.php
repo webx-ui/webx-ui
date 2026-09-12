@@ -24,7 +24,7 @@ final class EnsurePermission
         $user = $this->auth->guard((string) config('webx-auth.guard'))->user();
 
         if (! $user instanceof CmsUser) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
+            return response()->json(['message' => __('webx-auth::errors.unauthenticated')], 401);
         }
 
         foreach ($permissions as $permission) {
@@ -34,7 +34,7 @@ final class EnsurePermission
         }
 
         return response()->json([
-            'message' => 'This account may not do that.',
+            'message' => __('webx-auth::errors.forbidden'),
             'required' => array_values($permissions),
         ], 403);
     }

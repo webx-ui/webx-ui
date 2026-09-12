@@ -43,7 +43,7 @@ return [
 
     'middleware' => ['web'],
 
-    'api_middleware' => ['api'],
+    'api_middleware' => ['api', 'webx.panel-locale'],
 
     /*
     |---------------------------------------------------------------------------

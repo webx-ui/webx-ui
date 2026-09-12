@@ -31,7 +31,7 @@ final class AuthModule extends AbstractModule implements ProvidesMcpTools
 
     public function title(): string
     {
-        return 'Administrators';
+        return (string) __('webx-auth::module.title');
     }
 
     public function icon(): string

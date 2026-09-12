@@ -46,7 +46,7 @@ return [
 
     // The session is what authenticates the panel, so its API runs through `web`
     // rather than the stateless `api` group.
-    'panel_api_middleware' => ['web', 'cms.auth'],
+    'panel_api_middleware' => ['web', 'cms.auth', 'webx.panel-locale'],
 
     /*
     |---------------------------------------------------------------------------

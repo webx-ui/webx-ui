@@ -6,6 +6,8 @@ parameters:
     paths:
         - packages/admin/src
         - packages/admin/tests
+        - packages/localization/src
+        - packages/localization/tests
         - packages/mcp/src
         - packages/mcp/tests
         - packages/module-auth/src

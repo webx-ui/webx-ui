@@ -9,6 +9,7 @@ use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Admin\Contracts\Module;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Localization\LocalizationServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -18,7 +19,7 @@ abstract class TestCase extends Orchestra
      */
     protected function getPackageProviders($app): array
     {
-        return [AdminServiceProvider::class];
+        return [LocalizationServiceProvider::class, AdminServiceProvider::class];
     }
 
     /**

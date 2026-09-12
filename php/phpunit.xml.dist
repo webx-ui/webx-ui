@@ -9,6 +9,7 @@
     <testsuites>
         <testsuite name="WebX UI">
             <directory>packages/admin/tests</directory>
+            <directory>packages/localization/tests</directory>
             <directory>packages/mcp/tests</directory>
             <directory>packages/module-auth/tests</directory>
             <directory>packages/nested-set/tests</directory>
@@ -17,6 +18,7 @@
     <source>
         <include>
             <directory>packages/admin/src</directory>
+            <directory>packages/localization/src</directory>
             <directory>packages/mcp/src</directory>
             <directory>packages/module-auth/src</directory>
             <directory>packages/nested-set/src</directory>

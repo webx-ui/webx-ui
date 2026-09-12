@@ -51,7 +51,7 @@ final class SessionController
             // The same answer whether the address exists or not: a different one would turn
             // the login form into a way to enumerate administrators.
             throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
+                'email' => __('webx-auth::card.failed'),
             ]);
         }
 
@@ -70,7 +70,7 @@ final class SessionController
             ));
 
             throw ValidationException::withMessages([
-                'email' => __('auth.failed'),
+                'email' => __('webx-auth::card.failed'),
             ]);
         }
 
