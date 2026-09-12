@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-auth",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Signing in to a WebX UI admin panel: the screen, the session and the router guard. Pairs with webx-ui/module-auth on the server.",
   "license": "MIT",
   "type": "module",
