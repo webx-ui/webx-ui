@@ -1,5 +1,13 @@
 # @webx-ui/core
 
+## 0.14.1
+
+### Patch Changes
+
+- d110a5f: A modal that closes now takes its node away exactly once. An unmount hook that throws came
+  back through the host's `onErrorCaptured`, which unmounted again over a half-gone tree —
+  turning a single error into a stack overflow.
+
 ## 0.14.0
 
 ### Minor Changes

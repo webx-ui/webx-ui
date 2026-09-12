@@ -25,7 +25,7 @@
         "illuminate/console": "^13.0",
         "illuminate/contracts": "^13.0",
         "illuminate/support": "^13.0",
-        "webx-ui/admin": "^0.3.0"
+        "webx-ui/admin": "^0.3.1"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
