@@ -9,7 +9,19 @@
         {{-- The panel reads this before it draws anything. --}}
         <meta name="webx-manifest" content="{{ $manifestUrl }}">
 
-        {{-- The admin application ships its own assets; publish this view to point at them. --}}
+        @foreach ($styles as $stylesheet)
+            <link rel="stylesheet" href="{{ $stylesheet }}">
+        @endforeach
+
+        @foreach ($scripts as $script)
+            <script type="module" src="{{ $script }}" defer></script>
+        @endforeach
+
+        {{-- For an application that builds the panel with Laravel's own Vite. --}}
+        @if ($viteEntrypoints !== [])
+            @vite($viteEntrypoints)
+        @endif
+
         @stack('webx-head')
     </head>
     <body>

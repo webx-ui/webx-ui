@@ -33,6 +33,19 @@ The gate before pushing is all three:
 composer lint && composer analyse && composer test
 ```
 
+## Seeing the panel
+
+`scripts/php-dev-app.sh` provisions a Laravel application next to this checkout with the
+packages linked from it; `scripts/build-panel.sh` builds `apps/admin-example` into its public
+directory. Point `config/webx-admin.php` at the result:
+
+```php
+'assets' => ['/webx/webx.css', '/webx/webx.js'],
+```
+
+After that the panel answers on the real host, over HTTPS, with real cookies — which is the
+only place the session and CSRF behave the way they will in production.
+
 ## The smoke test
 
 Those tests run under Testbench, where the providers are wired by hand, the database is sqlite
