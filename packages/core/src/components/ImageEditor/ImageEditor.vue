@@ -263,6 +263,7 @@ const cropStyle = computed(() => ({
 const handles: CropHandle[] = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
 
 const frame = useTemplateRef<HTMLElement>('frame')
+const cropBox = useTemplateRef<HTMLElement>('cropBox')
 
 interface Gesture {
   handle: CropHandle | 'move'
@@ -299,6 +300,14 @@ function begin(handle: CropHandle | 'move', event: PointerEvent) {
   event.preventDefault()
   gesture.value = { handle, start: { ...crop.value }, from: pointAt(event) }
   ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+
+  /*
+   * By hand, because the `preventDefault` above is what would otherwise have done it —
+   * and a crop the reader has just taken hold of but which never took focus leaves the
+   * arrow keys with whatever was focused before. That is usually the ratio picker, where
+   * an arrow quietly changes the ratio instead of nudging the crop.
+   */
+  cropBox.value?.focus()
 }
 
 /** A drag on the picture itself draws a new crop, rather than doing nothing. */
@@ -579,6 +588,7 @@ defineExpose({
           </div>
 
           <div
+            ref="cropBox"
             class="wx-image-editor__crop"
             :class="{ 'is-dragging': gesture !== null }"
             :style="cropStyle"
