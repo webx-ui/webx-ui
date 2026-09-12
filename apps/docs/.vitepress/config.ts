@@ -104,6 +104,7 @@ export default defineConfig({
             { text: 'Select', link: '/components/select' },
             { text: 'Autocomplete', link: '/components/autocomplete' },
             { text: 'Cascader', link: '/components/cascader' },
+            { text: 'TreeSelect', link: '/components/tree-select' },
             { text: 'Checkbox', link: '/components/checkbox' },
             { text: 'Radio', link: '/components/radio' },
             { text: 'Switch', link: '/components/switch' },
@@ -122,6 +123,7 @@ export default defineConfig({
           text: 'Data',
           items: [
             { text: 'Table', link: '/components/table' },
+            { text: 'Tree', link: '/components/tree' },
             { text: 'Pagination', link: '/components/pagination' },
             { text: 'Statistic', link: '/components/statistic' },
             { text: 'Descriptions', link: '/components/descriptions' },
