@@ -6,6 +6,7 @@ namespace WebxUi\Auth\Tests;
 
 use Illuminate\Support\Facades\Hash;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Auth\Console\CreateAdminCommand;
 use WebxUi\Auth\Models\CmsUser;
 
 final class CreateAdminCommandTest extends TestCase
@@ -63,6 +64,39 @@ final class CreateAdminCommandTest extends TestCase
             ->assertFailed();
 
         $this->assertSame(1, CmsUser::query()->count());
+    }
+
+    #[Test]
+    public function a_provisioning_script_passes_the_password_in_the_environment(): void
+    {
+        // No prompt to answer: this is how a deploy or a container entrypoint creates the first
+        // administrator, and why there is no --password option to put it in the process list.
+        putenv(CreateAdminCommand::PASSWORD_VARIABLE.'=correct-horse-battery');
+
+        try {
+            $this->artisan('webx:admin', ['--name' => 'Ada', '--email' => 'ada@example.test'])
+                ->assertSuccessful();
+        } finally {
+            putenv(CreateAdminCommand::PASSWORD_VARIABLE);
+        }
+
+        $this->assertTrue(
+            Hash::check('correct-horse-battery', CmsUser::query()->firstOrFail()->password),
+        );
+    }
+
+    #[Test]
+    public function with_no_password_and_nobody_to_ask_it_says_what_to_do(): void
+    {
+        $this->artisan('webx:admin', [
+            '--name' => 'Ada',
+            '--email' => 'ada@example.test',
+            '--no-interaction' => true,
+        ])
+            ->expectsOutputToContain(CreateAdminCommand::PASSWORD_VARIABLE)
+            ->assertFailed();
+
+        $this->assertSame(0, CmsUser::query()->count());
     }
 
     #[Test]
