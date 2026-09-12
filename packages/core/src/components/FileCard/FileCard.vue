@@ -7,6 +7,7 @@ import WxDropdownItem from '../DropdownItem/DropdownItem.vue'
 import WxIcon from '../Icon/Icon.vue'
 import WxImage from '../Image/Image.vue'
 import WxInput from '../Input/Input.vue'
+import WxPopconfirm from '../Popconfirm/Popconfirm.vue'
 import WxPopover from '../Popover/Popover.vue'
 import WxTooltip from '../Tooltip/Tooltip.vue'
 import { useElementWidth } from '../../composables/useElementWidth'
@@ -35,12 +36,14 @@ const props = withDefaults(defineProps<FileCardProps>(), {
   renamable: false,
   editable: false,
   removable: false,
+  confirmRemove: true,
   copyable: false,
   renameLabel: 'Rename',
   saveLabel: 'Save',
   cancelLabel: 'Cancel',
   editLabel: 'Edit picture',
   removeLabel: 'Delete',
+  removeConfirmText: undefined,
   copyLabel: 'Copy link',
   copiedLabel: 'Copied',
 })
@@ -130,6 +133,23 @@ function cancelRename() {
   renaming.value = false
 }
 
+/* ------------------------------------------------------------------ deleting --- */
+
+const confirming = ref(false)
+
+/** The question, with the file in it, since a grid of thumbnails looks much alike. */
+const removeQuestion = computed(() => props.removeConfirmText ?? `Delete ${props.name}?`)
+
+function askRemove() {
+  if (props.confirmRemove) confirming.value = true
+  else emit('remove')
+}
+
+function confirmRemoval() {
+  confirming.value = false
+  emit('remove')
+}
+
 /* ----------------------------------------------------------------- clipboard --- */
 
 const copied = ref(false)
@@ -200,13 +220,21 @@ const shows = computed(() => ({
 
 const hasActions = computed(() => Object.values(shows.value).some(Boolean))
 
+/*
+ * The folded-up menu's panel is teleported, so the pointer that opened it is no longer
+ * over the card — and a row that waits for a hover would fade out from under the menu
+ * hanging off it. `WxActions` reports the state for exactly this.
+ */
+const menuOpen = ref(false)
+
 const classes = computed(() => [
   'wx-file-card',
   `wx-file-card--${props.size}`,
   {
     'is-selected': props.selected,
     'is-disabled': props.disabled,
-    'is-renaming': renaming.value,
+    /* Every reason the buttons have to stay put while nothing is hovering them. */
+    'is-busy': renaming.value || confirming.value || menuOpen.value,
   },
 ])
 </script>
@@ -285,7 +313,31 @@ const classes = computed(() => [
           </template>
         </wx-popover>
 
+        <!--
+          The question before a deletion, on an anchor of its own for the same reason the
+          rename panel has one: it is asked from the row and from the folded-up menu, and
+          the menu item is gone by the time the answer is wanted.
+        -->
+        <wx-popconfirm
+          v-if="shows.remove && confirmRemove"
+          v-model:open="confirming"
+          side="bottom"
+          align="end"
+          :title="removeQuestion"
+          :confirm-text="removeLabel"
+          :cancel-text="cancelLabel"
+          confirm-type="danger"
+          :arrow="false"
+          disabled
+          @confirm="confirmRemoval"
+        >
+          <template #trigger>
+            <span class="wx-file-card__anchor" aria-hidden="true" />
+          </template>
+        </wx-popconfirm>
+
         <wx-actions
+          v-model:menu-open="menuOpen"
           class="wx-file-card__actions"
           size="sm"
           align="end"
@@ -308,12 +360,7 @@ const classes = computed(() => [
             :title="copied ? copiedLabel : copyLabel"
             @click="copy"
           />
-          <wx-action
-            v-if="shows.remove"
-            type="remove"
-            :title="removeLabel"
-            @click="emit('remove')"
-          />
+          <wx-action v-if="shows.remove" type="remove" :title="removeLabel" @click="askRemove" />
           <slot name="actions" />
 
           <!--
@@ -331,12 +378,7 @@ const classes = computed(() => [
             <wx-dropdown-item v-if="shows.copy" icon="link" @click="copy">
               {{ copied ? copiedLabel : copyLabel }}
             </wx-dropdown-item>
-            <wx-dropdown-item
-              v-if="shows.remove"
-              icon="trash"
-              tone="danger"
-              @click="emit('remove')"
-            >
+            <wx-dropdown-item v-if="shows.remove" icon="trash" tone="danger" @click="askRemove">
               {{ removeLabel }}
             </wx-dropdown-item>
             <slot name="actions" />
@@ -507,13 +549,14 @@ const classes = computed(() => [
   }
 
   /*
-   * `is-renaming` among them because the panel is teleported: the focus that opened it is
-   * no longer inside the card, so `focus-within` lets go and the buttons would fade out
-   * from under a panel still hanging off them.
+   * `is-busy` among them because every panel the buttons open is teleported: the menu,
+   * the rename field, the question before a deletion. The pointer and the focus are both
+   * outside the card while one of them is up, so neither `:hover` nor `:focus-within`
+   * holds — and the buttons would fade out from under the panel hanging off them.
    */
   .wx-file-card:hover .wx-file-card__tools,
   .wx-file-card:focus-within .wx-file-card__tools,
-  .wx-file-card.is-renaming .wx-file-card__tools {
+  .wx-file-card.is-busy .wx-file-card__tools {
     opacity: 1;
   }
 }

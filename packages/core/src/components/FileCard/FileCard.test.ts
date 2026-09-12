@@ -156,11 +156,50 @@ describe('WxFileCard', () => {
   })
 
   it('reports a deletion rather than doing one', async () => {
-    const wrapper = card({ removable: true })
+    const wrapper = card({ removable: true, confirmRemove: false })
 
     await action(wrapper, 'Delete')!.trigger('click')
 
     expect(wrapper.emitted('remove')).toHaveLength(1)
+  })
+
+  it('asks before deleting, and says nothing until it is answered', async () => {
+    const wrapper = card({ removable: true })
+
+    await action(wrapper, 'Delete')!.trigger('click')
+    await nextTick()
+    await nextTick()
+
+    expect(wrapper.emitted('remove')).toBeUndefined()
+    expect(document.querySelector('.wx-popconfirm')).toBeTruthy()
+    /* The question names the file, since a grid of thumbnails looks much alike. */
+    expect(document.querySelector('.wx-popconfirm')!.textContent).toContain('spare-parts.xlsx')
+  })
+
+  it('deletes once the question is answered', async () => {
+    const wrapper = card({ removable: true })
+
+    await action(wrapper, 'Delete')!.trigger('click')
+    await nextTick()
+    await nextTick()
+
+    const confirm = [...document.querySelectorAll<HTMLButtonElement>('.wx-popconfirm button')].find(
+      (button) => button.textContent?.trim() === 'Delete',
+    )
+    confirm!.click()
+    await nextTick()
+
+    expect(wrapper.emitted('remove')).toHaveLength(1)
+  })
+
+  it('takes the question it is given', async () => {
+    const wrapper = card({ removable: true, removeConfirmText: 'Gone for good?' })
+
+    await action(wrapper, 'Delete')!.trigger('click')
+    await nextTick()
+    await nextTick()
+
+    expect(document.querySelector('.wx-popconfirm')!.textContent).toContain('Gone for good?')
   })
 
   it('asks for an editor rather than being one', async () => {
