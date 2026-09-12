@@ -68,9 +68,17 @@ where the name is not the whole truth.
 
 ## Renaming
 
-`renamable` puts the name into an input in place — from the action, or by double-clicking it.
-Enter commits, Escape puts it back, and moving away commits, because that is what every file
-manager does. The name is selected whole, extension and all: a rename is usually a new name.
+`renamable` opens a small panel beside the name — from the action, or by double-clicking it. Enter
+or **Save** commits; Escape, **Cancel** and a click on the page behind it all leave the name alone.
+The name is selected whole, extension and all: a rename is usually a new name.
+
+The panel is beside the name and not in place of it, which is the whole reason it is a panel.
+Swapping a line of text for an input changes the height of the card, and a card in a grid changes
+the height of its row: renaming one file made the whole library jump.
+
+A plain click on the name is not a rename — it belongs to whatever is choosing the file. That is
+also why the card is dismissed rather than saved when the panel is clicked away from: a panel
+dismissed is a panel dismissed.
 
 Nothing is renamed by the card. `@rename` carries the new name, and the card goes on showing the
 old one until `name` is given the new one.
@@ -115,6 +123,8 @@ touch.
 | `removable`   | `boolean`              | `false`          | Offers deleting                                               |
 | `copyable`    | `boolean`              | `false`          | Offers copying the link                                       |
 | `renameLabel` | `string`               | `'Rename'`       | Tooltip and accessible name                                   |
+| `saveLabel`   | `string`               | `'Save'`         | The two buttons under the rename field                        |
+| `cancelLabel` | `string`               | `'Cancel'`       | —                                                             |
 | `editLabel`   | `string`               | `'Edit picture'` | —                                                             |
 | `removeLabel` | `string`               | `'Delete'`       | —                                                             |
 | `copyLabel`   | `string`               | `'Copy link'`    | —                                                             |
@@ -147,5 +157,6 @@ The buttons on the card are buttons, so a drag that starts on one is the button'
 
 Every action is a real button with an accessible name, whether or not a tooltip is showing. The
 preview is decorative when there is a glyph and carries the file name as its `alt` when there is a
-picture. Renaming is an input with the rename label on it, and the keys are the ones a file manager
-has taught everybody: Enter, Escape, and clicking away.
+picture. Renaming is an input with the rename label on it, inside a panel that takes focus when it
+opens and gives it back when it closes, and the keys are the ones a file manager has taught
+everybody: Enter to save, Escape to leave it alone.

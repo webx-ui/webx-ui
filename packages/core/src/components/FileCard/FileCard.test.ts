@@ -1,9 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount, type VueWrapper } from '@vue/test-utils'
+import { enableAutoUnmount, mount, type VueWrapper } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import WxFileCard from './FileCard.vue'
 import { extensionOf, fileIconName, isPicture } from './files'
 import { registerIcons } from '../Icon/icons'
+
+/* The rename panel is teleported, so it would outlive its card and the test after it. */
+enableAutoUnmount(afterEach)
 
 function card(props: Record<string, unknown> = {}, slots: Record<string, string> = {}) {
   return mount(WxFileCard, {
@@ -19,6 +22,35 @@ const name = (wrapper: VueWrapper) => wrapper.find('.wx-file-card__name')
 /** The action whose tooltip and accessible name is `label`. */
 const action = (wrapper: VueWrapper, label: string) =>
   wrapper.findAll('button').find((button) => button.attributes('title') === label)
+
+/*
+ * The rename panel is a popover, so it is teleported: it is in the document rather than
+ * under the card, and none of it can be found through the wrapper.
+ */
+const field = () => document.querySelector<HTMLInputElement>('.wx-file-card__field input')
+
+const panelButton = (label: string) =>
+  [...document.querySelectorAll<HTMLButtonElement>('.wx-popover__footer button')].find(
+    (button) => button.textContent?.trim() === label,
+  )
+
+async function open(wrapper: VueWrapper) {
+  await action(wrapper, 'Rename')!.trigger('click')
+  await nextTick()
+  await nextTick()
+}
+
+async function type(value: string) {
+  const input = field()!
+  input.value = value
+  input.dispatchEvent(new Event('input', { bubbles: true }))
+  await nextTick()
+}
+
+async function press(key: string) {
+  field()!.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+  await nextTick()
+}
 
 describe('files', () => {
   it('reads an extension off a name, a path or a URL', () => {
@@ -141,59 +173,94 @@ describe('WxFileCard', () => {
 
   /* ------------------------------------------------------------- renaming */
 
-  it('edits the name in place and reports the new one', async () => {
+  it('renames in a panel beside the name, so the card does not change height', async () => {
     const wrapper = card({ renamable: true })
 
-    await action(wrapper, 'Rename')!.trigger('click')
-    await nextTick()
+    await open(wrapper)
 
-    const field = wrapper.get('.wx-file-card__field input')
-    await field.setValue('parts-2026.xlsx')
-    await field.trigger('keydown', { key: 'Enter' })
+    /* The name is still there — the panel is beside it, not in place of it. */
+    expect(name(wrapper).exists()).toBe(true)
+    expect(field()).toBeTruthy()
+    expect(field()!.value).toBe('spare-parts.xlsx')
+  })
+
+  it('reports the new name rather than taking it', async () => {
+    const wrapper = card({ renamable: true })
+
+    await open(wrapper)
+    await type('parts-2026.xlsx')
+    await press('Enter')
 
     expect(wrapper.emitted('rename')?.at(-1)).toEqual(['parts-2026.xlsx'])
     /* It reports, it does not rename: the name is still the one it was given. */
     expect(name(wrapper).text()).toBe('spare-parts.xlsx')
   })
 
+  it('saves from the button as well as the key', async () => {
+    const wrapper = card({ renamable: true })
+
+    await open(wrapper)
+    await type('parts-2026.xlsx')
+    await panelButton('Save')!.click()
+    await nextTick()
+
+    expect(wrapper.emitted('rename')?.at(-1)).toEqual(['parts-2026.xlsx'])
+  })
+
   it('says nothing when the name did not change, or was emptied', async () => {
     const wrapper = card({ renamable: true })
 
-    await action(wrapper, 'Rename')!.trigger('click')
-    await nextTick()
-    await wrapper.get('.wx-file-card__field input').trigger('keydown', { key: 'Enter' })
+    await open(wrapper)
+    await press('Enter')
     expect(wrapper.emitted('rename')).toBeUndefined()
 
-    await action(wrapper, 'Rename')!.trigger('click')
-    await nextTick()
-    await wrapper.get('.wx-file-card__field input').setValue('   ')
-    await wrapper.get('.wx-file-card__field input').trigger('keydown', { key: 'Enter' })
+    await open(wrapper)
+    await type('   ')
+    await press('Enter')
     expect(wrapper.emitted('rename')).toBeUndefined()
   })
 
-  it('puts the name back on escape', async () => {
+  it('keeps the name when the panel is dismissed rather than saved', async () => {
     const wrapper = card({ renamable: true })
 
-    await action(wrapper, 'Rename')!.trigger('click')
+    await open(wrapper)
+    await type('something-else.xlsx')
+    await panelButton('Cancel')!.click()
     await nextTick()
-    const field = wrapper.get('.wx-file-card__field input')
-    await field.setValue('something-else.xlsx')
-    await field.trigger('keydown', { key: 'Escape' })
 
     expect(wrapper.emitted('rename')).toBeUndefined()
     expect(name(wrapper).text()).toBe('spare-parts.xlsx')
+
+    /* And the draft is not still sitting there the next time it opens. */
+    await open(wrapper)
+    expect(field()!.value).toBe('spare-parts.xlsx')
   })
 
   it('starts a rename on a double click, and not when it was not offered', async () => {
     const offered = card({ renamable: true })
     await name(offered).trigger('dblclick')
     await nextTick()
-    expect(offered.find('.wx-file-card__field').exists()).toBe(true)
+    await nextTick()
+    expect(field()).toBeTruthy()
+
+    await panelButton('Cancel')!.click()
+    await nextTick()
 
     const plain = card()
     await name(plain).trigger('dblclick')
     await nextTick()
-    expect(plain.find('.wx-file-card__field').exists()).toBe(false)
+    await nextTick()
+    expect(field()).toBeNull()
+  })
+
+  it('does not open on a plain click, which belongs to whatever chooses the file', async () => {
+    const wrapper = card({ renamable: true })
+
+    await name(wrapper).trigger('click')
+    await nextTick()
+    await nextTick()
+
+    expect(field()).toBeNull()
   })
 
   /* ------------------------------------------------------------ clipboard */

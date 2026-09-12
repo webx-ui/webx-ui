@@ -2,10 +2,12 @@
 import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
 import WxAction from '../Action/Action.vue'
 import WxActions from '../Actions/Actions.vue'
+import WxButton from '../Button/Button.vue'
 import WxDropdownItem from '../DropdownItem/DropdownItem.vue'
 import WxIcon from '../Icon/Icon.vue'
 import WxImage from '../Image/Image.vue'
 import WxInput from '../Input/Input.vue'
+import WxPopover from '../Popover/Popover.vue'
 import WxTooltip from '../Tooltip/Tooltip.vue'
 import { useElementWidth } from '../../composables/useElementWidth'
 import { extensionOf, fileIconName, isPicture } from './files'
@@ -35,6 +37,8 @@ const props = withDefaults(defineProps<FileCardProps>(), {
   removable: false,
   copyable: false,
   renameLabel: 'Rename',
+  saveLabel: 'Save',
+  cancelLabel: 'Cancel',
   editLabel: 'Edit picture',
   removeLabel: 'Delete',
   copyLabel: 'Copy link',
@@ -63,15 +67,22 @@ const renaming = ref(false)
 const draft = ref('')
 const field = useTemplateRef<{ select: () => void }>('field')
 
-async function startRename() {
+function startRename() {
   if (props.disabled || !props.renamable) return
   draft.value = props.name
   renaming.value = true
-  /*
-   * Selected rather than merely focused, and the extension is part of the selection:
-   * a rename is usually a new name, and the reader who only wanted to fix a typo has
-   * lost nothing by having to press End first.
-   */
+}
+
+/**
+ * The panel focuses its first field itself; this is about the selection. Selected whole,
+ * extension and all: a rename is usually a new name, and the reader who only wanted to
+ * fix a typo has lost nothing by pressing End first.
+ *
+ * Two ticks, because the first is the panel deciding to exist and the second is the
+ * field arriving in it.
+ */
+async function selectDraft() {
+  await nextTick()
   await nextTick()
   field.value?.select()
 }
@@ -83,8 +94,12 @@ function commitRename() {
   if (next && next !== props.name) emit('rename', next)
 }
 
+/*
+ * Every way out of the panel that is not Save: Escape, a click on the page behind it,
+ * Cancel. A panel dismissed is a panel dismissed — it does not quietly save on the way
+ * out, the way an input in place had to.
+ */
 function cancelRename() {
-  /* Put the name back before closing: whatever commits next has nothing to report. */
   draft.value = props.name
   renaming.value = false
 }
@@ -252,23 +267,48 @@ const classes = computed(() => [
     </div>
 
     <div class="wx-file-card__body">
-      <wx-input
-        v-if="renaming"
-        ref="field"
-        v-model="draft"
-        class="wx-file-card__field"
-        size="sm"
-        :aria-label="renameLabel"
-        @keydown.enter.prevent="commitRename"
-        @keydown.esc.prevent="cancelRename"
-        @blur="commitRename"
-      />
+      <!--
+        The field is in a panel beside the name rather than in place of it. Swapping a
+        line of text for an input changes the height of the card, and a card in a grid
+        changes the height of its row: renaming one file made the whole library jump.
 
-      <wx-tooltip v-else :content="name" :disabled="!truncated">
-        <span ref="label" class="wx-file-card__name" :title="undefined" @dblclick="startRename">{{
-          name
-        }}</span>
-      </wx-tooltip>
+        `disabled` is on the popover because the trigger is only there to be pointed at.
+        A name that opened a rename when it was clicked would be a name that could not be
+        clicked to choose the file it belongs to.
+      -->
+      <wx-popover
+        v-model:open="renaming"
+        side="bottom"
+        align="center"
+        :width="240"
+        :arrow="false"
+        disabled
+        :aria-label="renameLabel"
+        @open="selectDraft"
+        @close="cancelRename"
+      >
+        <template #trigger>
+          <wx-tooltip :content="name" :disabled="!truncated || renaming">
+            <span ref="label" class="wx-file-card__name" @dblclick="startRename">{{ name }}</span>
+          </wx-tooltip>
+        </template>
+
+        <wx-input
+          ref="field"
+          v-model="draft"
+          class="wx-file-card__field"
+          size="sm"
+          :aria-label="renameLabel"
+          @keydown.enter.prevent="commitRename"
+        />
+
+        <template #footer>
+          <wx-button size="sm" variant="text" @click="renaming = false">{{
+            cancelLabel
+          }}</wx-button>
+          <wx-button size="sm" type="primary" @click="commitRename">{{ saveLabel }}</wx-button>
+        </template>
+      </wx-popover>
 
       <span v-if="$slots.meta" class="wx-file-card__meta"><slot name="meta" /></span>
     </div>

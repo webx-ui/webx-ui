@@ -74,7 +74,8 @@ function remove(item: Item) {
       </wx-selection-area>
 
       <span class="wx-demo__note">
-        {{ log }} — double-click a name to rename it, too. Selected: {{ picked.length }}.
+        {{ log }} — double-click a name to rename it, too; the field opens beside it rather than in
+        place of it, so nothing in the grid moves. Selected: {{ picked.length }}.
       </span>
     </div>
 

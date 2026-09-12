@@ -6,7 +6,11 @@
 
 A preview where there is a picture to show and a glyph where there is not, the name on one line
 with the full one in a tooltip when it does not fit, and the few things that can be done to the
-file: rename it in place, open a picture in an editor, copy its link, delete it.
+file: rename it, open a picture in an editor, copy its link, delete it.
+
+Renaming opens a small panel beside the name rather than replacing it with a field: swapping a line
+of text for an input changes the height of the card, and a card in a grid changes the height of its
+row, so renaming one file made the whole library jump.
 
 It does none of them. Renaming reports a name, deleting reports a wish, the edit action reports
 that somebody wants an editor — nothing happens to the file until the screen holding the cards says
