@@ -7,6 +7,7 @@
         "php": "^8.3",
         "webx-ui/admin": "*",
         "webx-ui/mcp": "*",
+        "webx-ui/module-auth": "*",
         "webx-ui/nested-set": "*"
     },
     "require-dev": {
@@ -24,6 +25,7 @@
                 "versions": {
                     "webx-ui/admin": "0.2.0",
                     "webx-ui/mcp": "0.2.0",
+                    "webx-ui/module-auth": "0.2.0",
                     "webx-ui/nested-set": "0.2.0"
                 }
             }
@@ -32,6 +34,7 @@
     "autoload-dev": {
         "psr-4": {
             "WebxUi\\Admin\\Tests\\": "packages/admin/tests/",
+            "WebxUi\\Auth\\Tests\\": "packages/module-auth/tests/",
             "WebxUi\\Mcp\\Tests\\": "packages/mcp/tests/",
             "WebxUi\\NestedSet\\Tests\\": "packages/nested-set/tests/"
         }

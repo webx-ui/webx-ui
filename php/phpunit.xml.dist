@@ -10,6 +10,7 @@
         <testsuite name="WebX UI">
             <directory>packages/admin/tests</directory>
             <directory>packages/mcp/tests</directory>
+            <directory>packages/module-auth/tests</directory>
             <directory>packages/nested-set/tests</directory>
         </testsuite>
     </testsuites>
@@ -17,6 +18,7 @@
         <include>
             <directory>packages/admin/src</directory>
             <directory>packages/mcp/src</directory>
+            <directory>packages/module-auth/src</directory>
             <directory>packages/nested-set/src</directory>
         </include>
     </source>
