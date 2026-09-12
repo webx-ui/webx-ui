@@ -58,3 +58,37 @@ if (rewritten.length === 0) {
 } else {
   console.log(`Rewrote internal constraints to ${constraint} in: ${rewritten.join(', ')}`)
 }
+
+// The development root installs the packages from a path repository, where they would
+// otherwise take the version of the current git branch — and a constraint like ^0.2.0 between
+// two of them could then never be satisfied locally. Pinning them here keeps `composer install`
+// in php/ resolving the same way Composer will once the packages are on Packagist.
+const rootPath = join(phpRoot, 'composer.json')
+const root = JSON.parse(readFileSync(rootPath, 'utf8'))
+const pathRepository = (root.repositories ?? []).find((repository) => repository.type === 'path')
+
+if (!pathRepository) {
+  console.error('php/composer.json has no path repository to pin versions in.')
+  process.exit(1)
+}
+
+const names = readdirSync(packagesRoot, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => {
+    try {
+      return JSON.parse(readFileSync(join(packagesRoot, entry.name, 'composer.json'), 'utf8')).name
+    } catch {
+      return null
+    }
+  })
+  .filter((name) => typeof name === 'string')
+  .sort()
+
+pathRepository.options = {
+  ...pathRepository.options,
+  versions: Object.fromEntries(names.map((name) => [name, version])),
+}
+
+writeFileSync(rootPath, `${JSON.stringify(root, null, 4)}\n`)
+
+console.log(`Pinned ${names.length} path packages to ${version} in php/composer.json.`)
