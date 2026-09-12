@@ -1,5 +1,12 @@
 import { createAdmin } from '@webx-ui/admin'
 
+// The components carry no styles of their own: each package ships one stylesheet, and the
+// design tokens travel inside the core one.
+import '@webx-ui/core/style.css'
+import '@webx-ui/admin/style.css'
+// Optional — without it the panel renders in the platform's own UI font.
+import '@webx-ui/tokens/fonts.css'
+
 /**
  * The panel.
  *
