@@ -95,21 +95,30 @@ anything at all.
 
 ## A finger is not a mouse
 
-Off by default. On a touch screen a drag across a grid means scroll, and taking that away leaves
-people stranded. `touch` turns it on where the gesture is worth more than the scrolling — a canvas,
-a seat picker — and those interfaces usually want a long press first, which this does not do.
+A tap picks the item under it, always — that half needs nothing turned on. It is the box that is
+off by default: on a touch screen a drag across a grid means scroll, and taking that away leaves
+people stranded. A finger that travels is left to the browser, and the selection it started on is
+kept, not replaced.
+
+`touch` turns the box on where the gesture is worth more than the scrolling — a canvas, a seat
+picker. The area then sets `touch-action: none`, which is the real price: it stops scrolling with a
+finger at all. Those interfaces usually want a long press first, which this does not do.
+
+Test that on a device rather than in a desktop browser's device mode. The emulator sends the
+gesture as a pointer and nothing takes it away; a phone hands it to the scroller, which is the
+whole difference.
 
 ## Props
 
-| Prop          | Type                       | Default       | Description                                        |
-| ------------- | -------------------------- | ------------- | -------------------------------------------------- |
-| `modelValue`  | `(string \| number)[]`     | `[]`          | The selection                                      |
-| `match`       | `'intersect' \| 'contain'` | `'intersect'` | Whether the box has to cover an item or touch it   |
-| `threshold`   | `number`                   | `5`           | Pixels before a press becomes a drag               |
-| `clickSelect` | `boolean`                  | `true`        | Clicks pick items; a click beside them clears      |
-| `touch`       | `boolean`                  | `false`       | Drag with a finger too                             |
-| `edgeScroll`  | `number`                   | `48`          | How near the edge the drag scrolls; `0` never does |
-| `disabled`    | `boolean`                  | `false`       | Leaves every pointer alone                         |
+| Prop          | Type                       | Default       | Description                                            |
+| ------------- | -------------------------- | ------------- | ------------------------------------------------------ |
+| `modelValue`  | `(string \| number)[]`     | `[]`          | The selection                                          |
+| `match`       | `'intersect' \| 'contain'` | `'intersect'` | Whether the box has to cover an item or touch it       |
+| `threshold`   | `number`                   | `5`           | Pixels before a press becomes a drag                   |
+| `clickSelect` | `boolean`                  | `true`        | Clicks pick items; a click beside them clears          |
+| `touch`       | `boolean`                  | `false`       | The box can be drawn with a finger; a tap always picks |
+| `edgeScroll`  | `number`                   | `48`          | How near the edge the drag scrolls; `0` never does     |
+| `disabled`    | `boolean`                  | `false`       | Leaves every pointer alone                             |
 
 **Events:** `update:modelValue`; `start`; `end` (`SelectionValue[]`).
 

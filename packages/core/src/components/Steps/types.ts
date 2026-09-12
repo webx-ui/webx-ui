@@ -18,6 +18,11 @@ export interface StepsProps {
    * offered: the steps ahead are the ones that have not been filled in.
    */
   clickable?: boolean
+  /**
+   * How narrow a step may get before a horizontal sequence turns down the page, in
+   * pixels. `0` never folds, and a sequence that is already vertical ignores it.
+   */
+  minStepWidth?: number
   /** Accessible name of the sequence. */
   ariaLabel?: string
 }

@@ -5,5 +5,10 @@ export const descriptionsKey: InjectionKey<DescriptionsContext> = Symbol('wx-des
 
 /** A pair on its own, outside any list, still has to render something sensible. */
 export function useDescriptions(): DescriptionsContext {
-  return inject(descriptionsKey, { bordered: false, layout: 'horizontal', labelWidth: undefined })
+  return inject(descriptionsKey, {
+    bordered: false,
+    layout: 'horizontal',
+    labelWidth: undefined,
+    columns: 1,
+  })
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends TreeNode">
-import { computed, nextTick, ref, useTemplateRef } from 'vue'
+import { computed, nextTick, onBeforeUnmount, ref, useTemplateRef } from 'vue'
 import WxCheckbox from '../Checkbox/Checkbox.vue'
 import WxIcon from '../Icon/Icon.vue'
 import {
@@ -27,6 +27,7 @@ const props = withDefaults(defineProps<TreeProps<T>>(), {
   draggable: false,
   allowDrag: undefined,
   allowDrop: undefined,
+  springDelay: 600,
   lazy: false,
   load: undefined,
   filter: undefined,
@@ -215,6 +216,38 @@ const dragKey = ref<TreeKey | null>(null)
 const dropKey = ref<TreeKey | null>(null)
 const dropZone = ref<TreeDropZone | null>(null)
 
+/** The branch a node is hovering over, and the timer that will open it. */
+let springKey: TreeKey | null = null
+let springTimer: ReturnType<typeof setTimeout> | undefined
+
+function cancelSpring() {
+  if (springTimer) clearTimeout(springTimer)
+  springTimer = undefined
+  springKey = null
+}
+
+/**
+ * Dropping into a branch nobody can see the inside of is a guess. Holding a node over a
+ * closed one opens it — and fetches it, where the children are not in yet — so the guess
+ * becomes a look, and a move across the tree is one drag rather than three.
+ */
+function spring(row: TreeRow<T>, zone: TreeDropZone) {
+  if (!props.springDelay || zone !== 'inside' || !row.expandable || row.expanded) {
+    cancelSpring()
+    return
+  }
+  /* Already counting down on this branch: restarting the clock would never finish. */
+  if (springKey === row.key) return
+
+  cancelSpring()
+  springKey = row.key
+  springTimer = setTimeout(() => {
+    void tree.expand(row.key)
+    emit('expand', row.node)
+    cancelSpring()
+  }, props.springDelay)
+}
+
 function onDragStart(row: TreeRow<T>, event: DragEvent) {
   if (!canDrag(row)) {
     event.preventDefault()
@@ -245,6 +278,7 @@ function onDragOver(row: TreeRow<T>, event: DragEvent) {
   if (!tree.canDrop(dragKey.value, row.key, zone)) {
     dropKey.value = null
     dropZone.value = null
+    cancelSpring()
     return
   }
 
@@ -253,6 +287,7 @@ function onDragOver(row: TreeRow<T>, event: DragEvent) {
   if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
   dropKey.value = row.key
   dropZone.value = zone
+  spring(row, zone)
 }
 
 function onDrop(row: TreeRow<T>) {
@@ -261,7 +296,10 @@ function onDrop(row: TreeRow<T>) {
   onDragEnd()
 }
 
+onBeforeUnmount(cancelSpring)
+
 function onDragEnd() {
+  cancelSpring()
   dragKey.value = null
   dropKey.value = null
   dropZone.value = null
