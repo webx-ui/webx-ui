@@ -59,21 +59,24 @@ hovered field never steals the page scroll.
 
 ## Props
 
-| Prop               | Type                                             | Default     | Description                                     |
-| ------------------ | ------------------------------------------------ | ----------- | ----------------------------------------------- |
-| `modelValue`       | `number \| null`                                 | `null`      | Current value                                   |
-| `min`              | `number`                                         | —           | Lower bound                                     |
-| `max`              | `number`                                         | —           | Upper bound                                     |
-| `step`             | `number`                                         | `1`         | Amount added by buttons and arrow keys          |
-| `precision`        | `number`                                         | from `step` | Decimal places kept                             |
-| `controls`         | `boolean`                                        | `true`      | Show the buttons                                |
-| `controlsPosition` | `'sides' \| 'right'`                             | `'sides'`   | Buttons around the field, or stacked at the end |
-| `size`             | `'sm' \| 'md' \| 'lg'`                           | `'md'`      | Control height                                  |
-| `status`           | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'` | Validation state                                |
-| `placeholder`      | `string`                                         | —           | Placeholder text                                |
-| `disabled`         | `boolean`                                        | `false`     | Disables the field                              |
-| `readonly`         | `boolean`                                        | `false`     | Read-only field                                 |
-| `ariaLabel`        | `string`                                         | —           | Label when there is no visible one              |
+| Prop               | Type                                             | Default     | Description                                                       |
+| ------------------ | ------------------------------------------------ | ----------- | ----------------------------------------------------------------- |
+| `modelValue`       | `number \| null`                                 | `null`      | Current value                                                     |
+| `min`              | `number`                                         | —           | Lower bound                                                       |
+| `max`              | `number`                                         | —           | Upper bound                                                       |
+| `step`             | `number`                                         | `1`         | Amount added by buttons and arrow keys                            |
+| `precision`        | `number`                                         | from `step` | Decimal places kept                                               |
+| `controls`         | `boolean`                                        | `true`      | Show the buttons                                                  |
+| `controlsPosition` | `'sides' \| 'right'`                             | `'sides'`   | Buttons around the field, or stacked at the end                   |
+| `size`             | `'sm' \| 'md' \| 'lg'`                           | `'md'`      | Control height                                                    |
+| `status`           | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'` | Validation state                                                  |
+| `placeholder`      | `string`                                         | —           | Placeholder text                                                  |
+| `disabled`         | `boolean`                                        | `false`     | Disables the field                                                |
+| `readonly`         | `boolean`                                        | `false`     | Read-only field                                                   |
+| `id`               | `string`                                         | generated   | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `name`             | `string`                                         | —           | `name` of the underlying input                                    |
+| `wheel`            | `boolean`                                        | `false`     | The mouse wheel changes the value while focused                   |
+| `ariaLabel`        | `string`                                         | —           | Label when there is no visible one                                |
 
 **Events:** `update:modelValue` (`number | null`), `change` (`number | null`), `focus`, `blur`.
 
