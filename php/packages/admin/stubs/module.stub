@@ -1,0 +1,39 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use WebxUi\Admin\AbstractModule;
+
+class {{ class }} extends AbstractModule
+{
+    public function id(): string
+    {
+        return '{{ id }}';
+    }
+
+    public function title(): string
+    {
+        return '{{ title }}';
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function permissions(): array
+    {
+        return [
+            '{{ id }}.view',
+            '{{ id }}.manage',
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function manifest(): array
+    {
+        return [];
+    }
+}

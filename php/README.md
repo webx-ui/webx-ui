@@ -35,9 +35,11 @@ composer lint && composer analyse && composer test
 
 ## Packages
 
-| Package              | Purpose                                        |
-| -------------------- | ---------------------------------------------- |
-| `webx-ui/nested-set` | Nested set trees for Eloquent (`HasNestedSet`) |
+| Package              | Purpose                                                   |
+| -------------------- | --------------------------------------------------------- |
+| `webx-ui/admin`      | The frame: module contract, manifest, panel routes        |
+| `webx-ui/mcp`        | What a module offers an AI agent, and the registry for it |
+| `webx-ui/nested-set` | Nested set trees for Eloquent (`HasNestedSet`)            |
 
 The roadmap for the rest lives in
 [`docs/architecture/WEBX_UI_COMPOSER_PACKAGES.md`](../docs/architecture/WEBX_UI_COMPOSER_PACKAGES.md).
@@ -63,7 +65,8 @@ project that has none, and CI then fails on `pnpm install --frozen-lockfile`.
    - `php/composer.json` → `require` (`"webx-ui/<name>": "*"`) and `autoload-dev` for the test
      namespace,
    - `php/phpunit.xml.dist` → a `<directory>` in the test suite and in `<source>`,
-   - `php/phpstan.neon.dist` → the `src` and `tests` paths.
+   - `php/phpstan.neon.dist` → the `src` and `tests` paths, and `viewDirectories` if the
+     package ships Blade views.
 3. Create the public repository `webx-ui/<name>` and submit it to Packagist. The split
    workflow discovers the package from the directory listing and mints its own write token, so
    the repository is the only thing it cannot do for itself.

@@ -4,6 +4,12 @@ includes:
 parameters:
     level: 6
     paths:
+        - packages/admin/src
+        - packages/admin/tests
+        - packages/mcp/src
+        - packages/mcp/tests
         - packages/nested-set/src
         - packages/nested-set/tests
+    viewDirectories:
+        - packages/admin/resources/views
     tmpDir: .phpstan.cache

@@ -1,0 +1,51 @@
+{
+    "name": "webx-ui/mcp",
+    "description": "The contract by which a WebX UI admin module offers its tools, resources and prompts to an AI agent, and the registry that collects them.",
+    "keywords": ["laravel", "mcp", "ai", "agents", "webx-ui"],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/mcp"
+    },
+    "require": {
+        "php": "^8.3",
+        "illuminate/console": "^13.0",
+        "illuminate/contracts": "^13.0",
+        "illuminate/support": "^13.0",
+        "webx-ui/admin": "^0.1.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0"
+    },
+    "suggest": {
+        "laravel/mcp": "Serves the collected tools over Streamable HTTP once its API settles at 1.0."
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Mcp\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Mcp\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": ["WebxUi\\Mcp\\McpServiceProvider"]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

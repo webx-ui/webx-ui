@@ -5,6 +5,8 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "webx-ui/admin": "*",
+        "webx-ui/mcp": "*",
         "webx-ui/nested-set": "*"
     },
     "require-dev": {
@@ -16,15 +18,25 @@
     "repositories": [
         {
             "type": "path",
-            "url": "packages/*"
+            "url": "packages/*",
+            "options": {
+                "//": "Without this the packages take the version of the git branch, and a constraint between two of them cannot be satisfied locally. scripts/sync-php-version.mjs keeps the map in step with php/package.json.",
+                "versions": {
+                    "webx-ui/admin": "0.1.0",
+                    "webx-ui/mcp": "0.1.0",
+                    "webx-ui/nested-set": "0.1.0"
+                }
+            }
         }
     ],
     "autoload-dev": {
         "psr-4": {
+            "WebxUi\\Admin\\Tests\\": "packages/admin/tests/",
+            "WebxUi\\Mcp\\Tests\\": "packages/mcp/tests/",
             "WebxUi\\NestedSet\\Tests\\": "packages/nested-set/tests/"
         }
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true,
     "config": {
         "sort-packages": true,
