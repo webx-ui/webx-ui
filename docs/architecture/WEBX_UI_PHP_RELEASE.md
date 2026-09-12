@@ -70,22 +70,25 @@ changesets его версионирует и пишет ему `CHANGELOG.md`.
    - Permissions → Repository permissions → **Contents: Read and write**, больше ничего
      (`Metadata: Read-only` добавится сам)
    - Where can this GitHub App be installed → **Only on this account**
-   - Create GitHub App → запомнить **App ID** → Generate a private key, скачается `.pem`
+   - Create GitHub App → запомнить **Client ID** (вида `Iv23li…`, он публичный) →
+     Generate a private key, скачается `.pem`
    - Install App → организация `webx-ui` → **All repositories**
 
    «All repositories» тут не расточительность: воркфлоу выпускает токен на каждый job отдельно
    и сужает его до одного репозитория (`repositories:` + `permission-contents: write`), так что
    у каждого прогона прав ровно на своё зеркало. Взамен новое зеркало подхватывается само.
 
-3. **Положить App ID и ключ в репозиторий:**
+3. **Положить Client ID и ключ в репозиторий:**
 
    ```bash
-   gh variable set PHP_SPLIT_APP_ID --repo webx-ui/webx-ui --body "<App ID>"
+   gh variable set PHP_SPLIT_APP_CLIENT_ID --repo webx-ui/webx-ui --body "<Client ID>"
    gh secret set PHP_SPLIT_APP_PRIVATE_KEY --repo webx-ui/webx-ui < webx-ui-split.private-key.pem
    ```
 
-   App ID не секрет, поэтому он переменная. Скачанный `.pem` после этого удалить — ключ живёт
-   только в секрете, и при утере выпускается новый на странице App.
+   Client ID не секрет, поэтому он переменная. Из PowerShell редирект `<` не работает —
+   `cmd /c "gh secret set … < ключ.pem"`, так байты ключа доедут без перекодировки.
+   Скачанный `.pem` после этого удалить: ключ живёт только в секрете, а при утере на странице
+   App выпускается новый.
 
 4. **Добавить чеки в ruleset** `main`. У матричного job'а имя чека своё на каждый вариант:
    `PHP lint, analyse, test (8.3)` и `PHP lint, analyse, test (8.4)` — нужны оба.
