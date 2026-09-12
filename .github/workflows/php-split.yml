@@ -69,12 +69,25 @@ jobs:
         with:
           fetch-depth: 0
 
+      # A GitHub App rather than a personal token: it never expires, it does not hang off one
+      # person's account, and a new mirror needs nothing here — the App is installed org-wide and
+      # this token is narrowed, per job, to the single repository that job pushes to.
+      - name: Mint a token for the mirror
+        id: mirror-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.PHP_SPLIT_APP_ID }}
+          private-key: ${{ secrets.PHP_SPLIT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ matrix.package.repository }}
+          permission-contents: write
+
       # The split action cannot make the first commit in a mirror: it clones the empty
       # repository, fails to check out the branch, creates it locally and then pushes nothing
       # ("src refspec main does not match any"). Give it a branch to land on.
       - name: Seed an empty mirror
         env:
-          GH_TOKEN: ${{ secrets.PHP_SPLIT_TOKEN }}
+          GH_TOKEN: ${{ steps.mirror-token.outputs.token }}
           REPOSITORY: webx-ui/${{ matrix.package.repository }}
         run: |
           if gh api "repos/$REPOSITORY/branches/main" --silent 2>/dev/null; then
@@ -97,7 +110,7 @@ jobs:
         if: inputs.tag == ''
         uses: danharrin/monorepo-split-github-action@v2.4.5
         env:
-          GITHUB_TOKEN: ${{ secrets.PHP_SPLIT_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.mirror-token.outputs.token }}
         with:
           package_directory: php/packages/${{ matrix.package.directory }}
           repository_organization: webx-ui
@@ -109,7 +122,7 @@ jobs:
         if: inputs.tag != ''
         uses: danharrin/monorepo-split-github-action@v2.4.5
         env:
-          GITHUB_TOKEN: ${{ secrets.PHP_SPLIT_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.mirror-token.outputs.token }}
         with:
           tag: ${{ inputs.tag }}
           package_directory: php/packages/${{ matrix.package.directory }}
