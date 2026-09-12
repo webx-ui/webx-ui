@@ -63,14 +63,21 @@ export const builtinIcons = {
   search: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
   filter: '<path d="M4 5.5h16l-6.2 7.2v5.1l-3.6 2v-7.1z"/>',
   crop: '<path d="M6.5 2.5v13a2 2 0 0 0 2 2h13"/><path d="M2.5 6.5h13a2 2 0 0 1 2 2v13"/>',
-  /* A quarter turn each way: a ring open at the top, the head where the turn ends. */
-  'rotate-left': '<path d="M19.4 13.8A7.5 7.5 0 1 0 12 5"/><path d="M14.3 2.9 12 5l2.3 2.1"/>',
-  'rotate-right': '<path d="M4.6 13.8A7.5 7.5 0 1 1 12 5"/><path d="M9.7 2.9 12 5l-2.3 2.1"/>',
-  /* The mirror line, and the same shape on both sides of it. */
+  /*
+   * A quarter turn each way: a ring open at its upper corner, with the corner mark for a
+   * head. The arc is a single sweep between two points a chord apart — endpoints closer
+   * to the diameter come out as two crescents instead of a ring.
+   */
+  'rotate-left': '<path d="M4.5 9.5A8 8 0 1 1 4 13.5"/><path d="M9.5 9.5h-5v-5"/>',
+  'rotate-right': '<path d="M19.5 9.5A8 8 0 1 0 20 13.5"/><path d="M14.5 9.5h5v-5"/>',
+  /*
+   * The mirror line, a shape, and its reflection — filled on one side and drawn on the
+   * other, since two identical shapes read as a pair rather than as a mirroring.
+   */
   'flip-horizontal':
-    '<path d="M12 3v18" stroke-dasharray="3 3"/><path d="M9.2 7.2v9.6L3.6 12z"/><path d="M14.8 7.2v9.6L20.4 12z"/>',
+    '<path d="M12 3.5v17" stroke-dasharray="2.5 2.5"/><path d="M9.5 7.5v9L4 14.5v-5z" fill="currentColor" stroke="none"/><path d="M14.5 7.5v9l5.5-2v-5z"/>',
   'flip-vertical':
-    '<path d="M3 12h18" stroke-dasharray="3 3"/><path d="M7.2 9.2h9.6L12 3.6z"/><path d="M7.2 14.8h9.6L12 20.4z"/>',
+    '<path d="M3.5 12h17" stroke-dasharray="2.5 2.5"/><path d="M7.5 9.5h9L14.5 4h-5z" fill="currentColor" stroke="none"/><path d="M7.5 14.5h9L14.5 20h-5z"/>',
   refresh:
     '<path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5"/><path d="M20 4.5v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.5"/><path d="M4 19.5v-4h4"/>',
   upload:

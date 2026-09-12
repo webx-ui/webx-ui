@@ -3,7 +3,7 @@ import { onBeforeUnmount, ref } from 'vue'
 import { WxButton, WxImageEditor, openImageEditor, type ImageEditorResult } from '@webx-ui/core'
 
 const photo = 'https://picsum.photos/seed/wx-editor/900/600'
-const named = { src: photo, fileName: 'workspace.jpg' }
+const named = { src: photo, fileName: 'workspace.jpg', filters: true }
 
 const preview = ref('')
 const note = ref('Nothing yet')
@@ -50,7 +50,9 @@ async function avatar() {
 <template>
   <div class="wx-demo wx-demo--stack">
     <div>
-      <span class="wx-demo__label">On the page — drag a box, take the corners, turn it</span>
+      <span class="wx-demo__label"
+        >On the page — drag a box, take the corners, turn it, adjust it</span
+      >
 
       <wx-image-editor v-bind="named" @save="show($event, 'On the page')" />
     </div>

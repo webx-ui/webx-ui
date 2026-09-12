@@ -56,7 +56,7 @@ function remove(item: Item) {
 const drafts: string[] = []
 
 async function edit(item: Item) {
-  const result = await openImageEditor({ src: item.url, title: `Edit ${item.name}` })
+  const result = await openImageEditor({ src: item.url, title: `Edit ${item.name}`, filters: true })
   if (!result) {
     log.value = `Left ${item.name} alone`
     return

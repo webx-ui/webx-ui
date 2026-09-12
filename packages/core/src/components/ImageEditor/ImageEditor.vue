@@ -4,7 +4,11 @@ import WxAction from '../Action/Action.vue'
 import WxButton from '../Button/Button.vue'
 import WxIcon from '../Icon/Icon.vue'
 import WxInputNumber from '../InputNumber/InputNumber.vue'
+import WxPopover from '../Popover/Popover.vue'
 import WxSegmented from '../Segmented/Segmented.vue'
+import WxSlider from '../Slider/Slider.vue'
+import WxSwitch from '../Switch/Switch.vue'
+import WxTooltip from '../Tooltip/Tooltip.vue'
 import {
   clamp,
   fitInside,
@@ -17,7 +21,9 @@ import {
   turnCrop,
   type CropHandle,
 } from './crop'
+import { NEUTRAL, applyAdjustments, filterString, isNeutral } from './filters'
 import type {
+  ImageEditorAdjustments,
   ImageEditorCrop,
   ImageEditorEmits,
   ImageEditorProps,
@@ -47,6 +53,7 @@ const props = withDefaults(defineProps<ImageEditorProps>(), {
   rotatable: true,
   flippable: true,
   resizable: true,
+  filters: false,
   maxWidth: undefined,
   maxHeight: undefined,
   minSize: 16,
@@ -65,7 +72,15 @@ const props = withDefaults(defineProps<ImageEditorProps>(), {
   flipVerticalLabel: 'Mirror down',
   ratioLabel: 'Ratio',
   cropLabel: 'Crop',
+  outputLabel: 'Output',
+  outputHint: 'The size of the picture you will get',
   widthLabel: 'Width',
+  heightLabel: 'Height',
+  adjustLabel: 'Adjust',
+  brightnessLabel: 'Brightness',
+  contrastLabel: 'Contrast',
+  saturationLabel: 'Saturation',
+  monoLabel: 'Black and white',
   freeLabel: 'Free',
   originalLabel: 'Original',
   errorText: 'This picture could not be loaded',
@@ -106,6 +121,37 @@ const crop = ref<ImageEditorCrop>({ x: 0, y: 0, width: 0, height: 0 })
 
 /** Set by hand in the width field; until then the output is the crop's own size. */
 const widthOverride = ref<number | null>(null)
+
+/*
+ * Brightness, contrast, saturation and black-and-white — the four a photograph for a
+ * website actually wants. They are shown as a CSS `filter` on the `<img>` and written as
+ * the same string onto the canvas, so what is looked at and what comes out are the one
+ * calculation rather than two that have to be kept in step.
+ */
+const adjust = ref<ImageEditorAdjustments>({ ...NEUTRAL })
+
+const filter = computed(() => filterString(adjust.value))
+
+/** Whether the button should show that there is something behind it. */
+const touchedFilters = computed(() => !isNeutral(adjust.value))
+
+type SliderKey = 'brightness' | 'contrast' | 'saturation'
+
+const sliders = computed(() => [
+  { key: 'brightness' as SliderKey, label: props.brightnessLabel },
+  { key: 'contrast' as SliderKey, label: props.contrastLabel },
+  { key: 'saturation' as SliderKey, label: props.saturationLabel },
+])
+
+function setAdjustment(key: SliderKey, value: number | number[] | null) {
+  if (typeof value !== 'number') return
+  adjust.value = { ...adjust.value, [key]: value }
+  touched.value = true
+}
+
+function adjusted() {
+  touched.value = true
+}
 
 /** The picture as it is being looked at: sides swapped by an odd number of turns. */
 const work = computed(() =>
@@ -162,6 +208,7 @@ function reset({ loaded = true } = {}) {
   flipX.value = false
   flipY.value = false
   widthOverride.value = null
+  adjust.value = { ...NEUTRAL }
   chosen.value = props.ratio ?? options.value[0]?.value ?? 'free'
   failed.value = false
   touched.value = false
@@ -249,6 +296,8 @@ const imageStyle = computed(() => ({
   width: `${natural.value.width * scale.value}px`,
   height: `${natural.value.height * scale.value}px`,
   transform: `translate(-50%, -50%) scale(${flipX.value ? -1 : 1}, ${flipY.value ? -1 : 1}) rotate(${rotation.value}deg)`,
+  /* On the picture and nowhere else: the crop, the grips and the shade are its siblings. */
+  filter: filter.value || undefined,
 }))
 
 const cropStyle = computed(() => ({
@@ -400,11 +449,36 @@ const fullSize = computed(() =>
   fitInside(crop.value.width, crop.value.height, props.maxWidth, props.maxHeight),
 )
 
+/**
+ * The size the result will actually be written at: the crop's own pixels, unless the
+ * reader has asked for fewer.
+ *
+ * The width is kept as a fraction rather than a whole number of pixels so that a height
+ * typed into the other field comes back as exactly that height — rounded first, it would
+ * read back a pixel out and look as though the field had refused what was typed.
+ */
 const output = computed(() => {
-  const width = clamp(widthOverride.value ?? fullSize.value.width, 1, fullSize.value.width)
-  const height = Math.max(1, Math.round((width * crop.value.height) / (crop.value.width || 1)))
-  return { width, height }
+  const full = fullSize.value
+  const width = clamp(widthOverride.value ?? full.width, 1, full.width)
+  return {
+    width: Math.max(1, Math.round(width)),
+    height: Math.max(1, Math.round((width * full.height) / (full.width || 1))),
+  }
 })
+
+function setOutputWidth(value: number | null | undefined) {
+  widthOverride.value = value == null ? null : clamp(value, 1, fullSize.value.width)
+}
+
+/** The same size, asked for from the other side. */
+function setOutputHeight(value: number | null | undefined) {
+  if (value == null) {
+    widthOverride.value = null
+    return
+  }
+  const full = fullSize.value
+  widthOverride.value = clamp((value * full.width) / (full.height || 1), 1, full.width)
+}
 
 /**
  * The last part of the URL, which is where a name and an extension would be — taken
@@ -449,6 +523,15 @@ function rounded(value: ImageEditorCrop): ImageEditorCrop {
   }
 }
 
+/*
+ * Asked of the object rather than with `in` on the typed one: TypeScript knows every
+ * context has a `filter` and narrows the negative branch away to `never`, which is true
+ * of the type and not of Safari before 16.4.
+ */
+function supportsFilter(context: CanvasRenderingContext2D) {
+  return 'filter' in (context as unknown as Record<string, unknown>)
+}
+
 function encode(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
     if (typeof canvas.toBlob !== 'function') {
@@ -483,6 +566,16 @@ async function apply(): Promise<ImageEditorResult | undefined> {
 
     context.imageSmoothingQuality = 'high'
 
+    /*
+     * The adjustments ride along with the drawing, so the picture is still sampled once.
+     * Where the canvas has never heard of `filter` — Safari before 16.4 — it is not an
+     * error and not a refusal: the same arithmetic is done over the pixels afterwards,
+     * which is slower and gives the same answer. Silently writing an unadjusted file is
+     * the one outcome worth any amount of code to avoid.
+     */
+    const byHand = Boolean(filter.value) && !supportsFilter(context)
+    if (filter.value && !byHand) context.filter = filter.value
+
     /* Transparency turns black in a format that has none, which reads as a bug. */
     if (type.value === 'image/jpeg') {
       context.fillStyle = props.background
@@ -506,6 +599,14 @@ async function apply(): Promise<ImageEditorResult | undefined> {
       natural.value.height,
     )
 
+    if (byHand) {
+      /* Reading the pixels back needs the same untainted canvas that writing one does. */
+      context.setTransform(1, 0, 0, 1, 0, 0)
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height)
+      applyAdjustments(pixels.data, adjust.value)
+      context.putImageData(pixels, 0, 0)
+    }
+
     const blob = await encode(canvas)
     const result: ImageEditorResult = {
       blob,
@@ -517,6 +618,8 @@ async function apply(): Promise<ImageEditorResult | undefined> {
       rotation: rotation.value,
       flipX: flipX.value,
       flipY: flipY.value,
+      adjustments: { ...adjust.value },
+      filter: filter.value,
     }
 
     emit('save', result)
@@ -670,22 +773,86 @@ defineExpose({
         />
       </span>
 
+      <!--
+        The adjustments live behind one button rather than in the toolbar: three sliders
+        and a switch are wider than everything else put together, and they are reached on
+        purpose — nobody arrives at a cropper meaning to change the contrast.
+      -->
+      <wx-popover v-if="filters" side="bottom" align="start" :width="260" :title="adjustLabel">
+        <template #trigger>
+          <wx-action
+            class="wx-image-editor__adjust"
+            icon="sliders"
+            size="sm"
+            :title="adjustLabel"
+            :tone="touchedFilters ? 'primary' : undefined"
+            :disabled="disabled || !ready"
+          />
+        </template>
+
+        <div class="wx-image-editor__sliders">
+          <label v-for="slider in sliders" :key="slider.key" class="wx-image-editor__slider">
+            <span class="wx-image-editor__slider-name">
+              {{ slider.label }}
+              <span class="wx-image-editor__slider-value">{{ adjust[slider.key] }}%</span>
+            </span>
+            <wx-slider
+              :model-value="adjust[slider.key]"
+              :min="0"
+              :max="200"
+              :step="1"
+              size="sm"
+              :disabled="slider.key === 'saturation' && adjust.mono"
+              :aria-label="slider.label"
+              @update:model-value="setAdjustment(slider.key, $event)"
+            />
+          </label>
+
+          <wx-switch v-model="adjust.mono" :label="monoLabel" size="sm" @change="adjusted" />
+        </div>
+      </wx-popover>
+
+      <!--
+        Named, and both sides of it: two numbers with nothing to say what they measure
+        read as the crop, the picture or the panel with equal ease, and a lone width
+        leaves the reader to work out what happened to the height.
+      -->
       <span class="wx-image-editor__size">
+        <wx-tooltip :content="outputHint">
+          <span class="wx-image-editor__caption">{{ outputLabel }}</span>
+        </wx-tooltip>
+
         <wx-input-number
           v-if="resizable"
           :model-value="output.width"
-          class="wx-image-editor__width"
+          class="wx-image-editor__field"
           size="sm"
           :min="1"
           :max="fullSize.width"
           :controls="false"
           :aria-label="widthLabel"
           :disabled="disabled || !ready"
-          @update:model-value="widthOverride = $event ?? null"
+          @update:model-value="setOutputWidth"
         />
         <span v-else class="wx-image-editor__number">{{ output.width }}</span>
+
         <span class="wx-image-editor__times" aria-hidden="true">×</span>
-        <span class="wx-image-editor__number">{{ output.height }}</span>
+
+        <wx-input-number
+          v-if="resizable"
+          :model-value="output.height"
+          class="wx-image-editor__field"
+          size="sm"
+          :min="1"
+          :max="fullSize.height"
+          :controls="false"
+          :aria-label="heightLabel"
+          :disabled="disabled || !ready"
+          @update:model-value="setOutputHeight"
+        />
+        <span v-else class="wx-image-editor__number">{{ output.height }}</span>
+
+        <span class="wx-image-editor__unit">px</span>
       </span>
 
       <wx-button
@@ -955,6 +1122,30 @@ defineExpose({
   align-items: center;
 }
 
+.wx-image-editor__sliders {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-12);
+}
+
+.wx-image-editor__slider {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-4);
+}
+
+.wx-image-editor__slider-name {
+  display: flex;
+  justify-content: space-between;
+  color: var(--wx-text-muted);
+  font-size: var(--wx-font-size-xs);
+}
+
+.wx-image-editor__slider-value {
+  color: var(--wx-text-default);
+  font-variant-numeric: tabular-nums;
+}
+
 /* Pushed to the end, with the reset after it — the two things that are not the picture. */
 .wx-image-editor__size {
   display: flex;
@@ -965,12 +1156,24 @@ defineExpose({
   font-variant-numeric: tabular-nums;
 }
 
-.wx-image-editor__width {
-  width: 84px;
+/* Wide enough for five digits — a camera's four, and a scan's five. */
+.wx-image-editor__field {
+  width: 74px;
+}
+
+.wx-image-editor__caption {
+  /* Dotted, the way a word with something behind it is written everywhere else. */
+  border-bottom: 1px dotted var(--wx-border-default);
+  cursor: help;
 }
 
 .wx-image-editor__number {
   color: var(--wx-text-default);
+}
+
+.wx-image-editor__times,
+.wx-image-editor__unit {
+  color: var(--wx-text-placeholder);
 }
 
 .wx-image-editor__footer {
