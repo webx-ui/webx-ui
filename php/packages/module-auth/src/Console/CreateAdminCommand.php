@@ -17,14 +17,27 @@ final class CreateAdminCommand extends Command
 
     protected $description = 'Create an administrator for the panel';
 
+    /**
+     * Read by the command when there is nobody to ask. Named here rather than passed as an
+     * option on purpose — see below.
+     */
+    public const PASSWORD_VARIABLE = 'WEBX_ADMIN_PASSWORD';
+
     public function handle(): int
     {
         $name = (string) ($this->option('name') ?? $this->ask('Name'));
         $email = (string) ($this->option('email') ?? $this->ask('Email'));
 
-        // Never as an option: a password on the command line lands in the shell history and in
-        // the process list.
-        $password = (string) $this->secret('Password');
+        $password = $this->password();
+
+        if ($password === null) {
+            $this->components->error(
+                'No password and nobody to ask for one. Run this interactively, or set '
+                .self::PASSWORD_VARIABLE.' — provisioning scripts and containers need a way in too.'
+            );
+
+            return self::FAILURE;
+        }
 
         $validator = Validator::make(
             ['name' => $name, 'email' => $email, 'password' => $password],
@@ -61,5 +74,33 @@ final class CreateAdminCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * There is deliberately no `--password` option. An argument lands in the shell history and
+     * is visible in the process list for as long as the command runs; an environment variable
+     * does neither, and is how a provisioning script or a container entrypoint would pass one.
+     */
+    private function password(): ?string
+    {
+        // Not env(): that goes through the configuration repository, which a cached config
+        // leaves empty. A provisioning script exports a real variable, and .env puts one in
+        // $_SERVER while the config is not cached — both are read here, neither by way of the
+        // cache.
+        $fromEnvironment = $_SERVER[self::PASSWORD_VARIABLE]
+            ?? $_ENV[self::PASSWORD_VARIABLE]
+            ?? getenv(self::PASSWORD_VARIABLE);
+
+        if (is_string($fromEnvironment) && $fromEnvironment !== '') {
+            return $fromEnvironment;
+        }
+
+        if (! $this->input->isInteractive()) {
+            return null;
+        }
+
+        $asked = $this->secret('Password');
+
+        return is_string($asked) && $asked !== '' ? $asked : null;
     }
 }

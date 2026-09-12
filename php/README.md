@@ -33,6 +33,25 @@ The gate before pushing is all three:
 composer lint && composer analyse && composer test
 ```
 
+## The smoke test
+
+Those tests run under Testbench, where the providers are wired by hand, the database is sqlite
+in memory and CSRF is switched off. A whole class of breakage lives outside that: a bad
+`extra.laravel.providers`, a migration that only works on sqlite, a sign-in that cannot get
+past CSRF, a panel that falls open once a deploy runs `config:cache`.
+
+`scripts/php-smoke.sh` installs the packages into a **real Laravel application**, migrates,
+creates an administrator, signs in over HTTP with a real CSRF token, and repeats the checks
+with the config and route caches on. CI runs it against MariaDB on every pull request; locally
+it defaults to sqlite:
+
+```bash
+scripts/php-smoke.sh
+```
+
+It is shallow on purpose — it proves the thing installs and the panel is shut to strangers,
+not that the logic is right.
+
 ## Packages
 
 | Package               | Purpose                                                    |
