@@ -1,5 +1,6 @@
 import { computed, inject, reactive, type App, type ComputedRef, type InjectionKey } from 'vue'
 import type { Http } from './http'
+import type { I18n } from './i18n'
 import type { AdminModule, AdminStatus, AdminUser, Manifest, NavEntry } from './types'
 
 export interface AdminContext {
@@ -10,12 +11,20 @@ export interface AdminContext {
   /** Where its JSON lives, so a module does not have to be told twice. */
   readonly apiPath: string
   readonly state: AdminState
+  /** The interface's own words, and the languages it can be shown in. */
+  readonly i18n: I18n
   /** Modules registered on the front end, whether or not the server reports them. */
   readonly modules: readonly AdminModule[]
   /** Navigation, in the order the server gave, for the modules that exist on both sides. */
   readonly nav: ComputedRef<NavEntry[]>
   /** Ask the server what the panel is and who is signed in again. */
   reload(): Promise<void>
+  /**
+   * Draw the panel in another language: fetches that dictionary and remembers the choice for
+   * the next visit. Storing it against the administrator is an auth module's business — this
+   * only changes what is on screen.
+   */
+  setLocale(code: string): Promise<void>
   /** Filled in by an auth module; `null` means nobody is signed in. */
   setUser(user: AdminUser | null): void
   /**
@@ -55,7 +64,9 @@ export function createAdminContext(options: {
   basePath: string
   apiPath: string
   modules: AdminModule[]
+  i18n: I18n
   loadManifest: () => Promise<Manifest>
+  loadDictionary?: (locale: string) => Promise<void>
 }): AdminContext {
   const state = reactive<AdminState>({
     status: 'loading',
@@ -120,7 +131,18 @@ export function createAdminContext(options: {
         }
       }
 
-      state.manifest = await options.loadManifest()
+      const manifest = await options.loadManifest()
+
+      state.manifest = manifest
+      options.i18n.state.contentLocales = manifest.locales ?? []
+      options.i18n.state.panelLocales = manifest.panelLocales ?? options.i18n.state.panelLocales
+
+      // The administrator's own choice, which the sign-in screen had no way of knowing: it
+      // drew itself in whatever the browser asked for.
+      if (manifest.locale !== undefined && manifest.locale !== options.i18n.state.locale) {
+        await setLocale(manifest.locale)
+      }
+
       state.status = 'ready'
     } catch (error) {
       // 401 is not a failure: it is the panel finding out nobody is signed in, which is the
@@ -138,14 +160,26 @@ export function createAdminContext(options: {
     }
   }
 
+  async function setLocale(code: string): Promise<void> {
+    if (options.loadDictionary === undefined) {
+      options.i18n.state.locale = code
+
+      return
+    }
+
+    await options.loadDictionary(code)
+  }
+
   return {
     http: options.http,
     basePath: options.basePath,
     apiPath: options.apiPath,
     state,
+    i18n: options.i18n,
     modules: options.modules,
     nav,
     reload,
+    setLocale,
     setUser(user) {
       state.user = user
     },

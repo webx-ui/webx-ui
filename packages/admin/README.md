@@ -54,6 +54,28 @@ export const pages: AdminModule = {
 A module the server reports with no front end installed has nowhere to send anybody, so it
 stays out of the menu; one installed but not reported is not there at all.
 
+## Language
+
+The panel draws itself in the language of whoever is reading it — their choice, stored against
+them on the server, not a setting of the site. A site published only in Ukrainian can still be
+maintained by somebody who wants English menus.
+
+```ts
+import { useI18n, useTranslate } from '@webx-ui/admin'
+
+const t = useTranslate('webx-admin') // t('shell.retry')
+const i18n = useI18n() // i18n.state.locale, i18n.state.panelLocales
+```
+
+The words come from the Composer package's `lang` files, fetched as one dictionary at boot and
+merged over the English this package ships in its own code. So a module is translated **once**,
+in the half that also writes the server's validation messages, and a panel with no server
+behind it still has labels.
+
+`i18n.state.contentLocales` is the other list: the languages the site publishes content in.
+That is what an editing screen builds its tabs from, and it has nothing to do with the language
+of the interface around them.
+
 ## Talking to the backend
 
 ```ts

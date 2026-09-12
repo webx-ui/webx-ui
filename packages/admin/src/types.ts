@@ -1,4 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router'
+import type { LocaleDescriptor } from './i18n'
 
 /**
  * What `GET /api/cms/manifest` answers with — the panel's own description of itself, and the
@@ -10,6 +11,12 @@ export interface Manifest {
   path: string
   /** Where its JSON lives, e.g. `/api/cms`. */
   apiPath: string
+  /** The language this administrator reads the panel in — their choice, not the site's. */
+  locale: string
+  /** The languages the site publishes content in. Editing screens are built around this. */
+  locales: LocaleDescriptor[]
+  /** The languages the interface itself can be switched to. */
+  panelLocales: LocaleDescriptor[]
   modules: ManifestModule[]
 }
 
@@ -33,6 +40,8 @@ export interface AdminUser {
   email: string
   isSuper: boolean
   permissions: string[]
+  /** The panel language they chose, or null if they never have. */
+  locale?: string | null
   [key: string]: unknown
 }
 

@@ -4,18 +4,48 @@ import { createAdmin } from './createAdmin'
 import type { Http } from './http'
 import type { Manifest } from './types'
 
+const english = {
+  code: 'en',
+  name: 'English',
+  nativeName: 'English',
+  direction: 'ltr',
+  default: true,
+} as const
+
 const manifest: Manifest = {
   title: 'WebX UI',
   path: '/cms',
   apiPath: '/api/cms',
+  locale: 'en',
+  locales: [english],
+  panelLocales: [english],
   modules: [{ id: 'pages', title: 'Pages', icon: null, order: 0, permissions: [], meta: {} }],
+}
+
+const dictionary = {
+  locale: 'en',
+  fallback: 'en',
+  namespaces: { 'webx-admin': { shell: { loading: 'Loading the panel…' } } },
+}
+
+/** The panel asks for three things at boot; answering all of them keeps the stub honest. */
+function answer(url: string): unknown {
+  if (url.includes('/translations/')) {
+    return { data: dictionary }
+  }
+
+  if (url.endsWith('/locales')) {
+    return { data: { panel: [english], content: [english] } }
+  }
+
+  return { data: manifest }
 }
 
 function stubHttp(overrides: Partial<Http> = {}): Http {
   const reject = () => Promise.reject(new Error('not stubbed'))
 
   return {
-    get: () => Promise.resolve({ data: manifest }) as never,
+    get: ((url: string) => Promise.resolve(answer(url))) as never,
     post: reject as never,
     put: reject as never,
     patch: reject as never,
@@ -84,9 +114,11 @@ describe('createAdmin', () => {
       routes: [rootRoute],
       http: stubHttp({
         get: ((url: string) => {
-          asked = url
+          if (url.includes('/manifest')) {
+            asked = url
+          }
 
-          return Promise.resolve({ data: manifest })
+          return Promise.resolve(answer(url))
         }) as never,
       }),
     })
@@ -146,6 +178,49 @@ describe('createAdmin', () => {
 
     expect(admin.context.state.status).toBe('error')
     expect(admin.context.state.error).toBe('Server error')
+  })
+
+  it('has its words before it paints, and adopts the administrator’s language after', async () => {
+    // Two separate moments. The sign-in screen is drawn in whatever the browser asked for,
+    // because there is nobody to ask yet; the manifest is the first time the panel learns
+    // which language this particular administrator reads it in.
+    const asked: string[] = []
+
+    const admin = createAdmin({
+      el: mountPoint(),
+      basePath: '/cms',
+      routes: [rootRoute],
+      http: stubHttp({
+        get: ((url: string) => {
+          asked.push(url)
+
+          if (url.includes('/translations/')) {
+            return Promise.resolve({
+              data: { ...dictionary, locale: url.endsWith('/uk') ? 'uk' : 'en' },
+            })
+          }
+
+          if (url.includes('/manifest')) {
+            return Promise.resolve({ data: { ...manifest, locale: 'uk' } })
+          }
+
+          return Promise.resolve(answer(url))
+        }) as never,
+      }),
+    })
+
+    await admin.mount()
+
+    expect(asked.filter((url) => url.includes('/translations/'))).toEqual([
+      '/api/cms/translations/en',
+      '/api/cms/translations/uk',
+    ])
+    expect(admin.i18n.state.locale).toBe('uk')
+    // The dictionary was asked for before the manifest: the first paint is not in English
+    // and then something else a moment later.
+    expect(asked.indexOf('/api/cms/translations/en')).toBeLessThan(
+      asked.findIndex((url) => url.includes('/manifest')),
+    )
   })
 
   it('shows only the modules both halves have', async () => {
