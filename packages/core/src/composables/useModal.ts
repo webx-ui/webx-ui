@@ -208,8 +208,11 @@ export function openModal<T = unknown>(
  *
  * const product = await productBrowser({ multiple: false })
  * ```
+ *
+ * `P` is any object — an `interface` of props included, which a `Record<string, unknown>`
+ * would have turned away for want of an index signature.
  */
-export function createModal<T = unknown, P extends Record<string, unknown> = Record<string, never>>(
+export function createModal<T = unknown, P extends object = Record<string, never>>(
   component: Component,
   defaults: ModalOptions = {},
 ) {
@@ -217,7 +220,7 @@ export function createModal<T = unknown, P extends Record<string, unknown> = Rec
     openModal<T>(component, {
       ...defaults,
       ...options,
-      props: { ...defaults.props, ...props, ...options.props },
+      props: { ...defaults.props, ...props, ...options.props } as Record<string, unknown>,
     })
 }
 

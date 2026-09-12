@@ -33,7 +33,14 @@ import { WxFileCard } from '@webx-ui/core'
 ## It does none of it
 
 Renaming reports a name, deleting reports a wish, the edit action reports that somebody wants an
-editor. Nothing happens to the file until the screen holding the cards says so — the card has no
+editor — which is one line to answer:
+
+```ts
+const edited = await openImageEditor({ src: file.url })
+```
+
+[ImageEditor](/components/image-editor) is the component behind it, and the demo above is wired to
+it. Nothing else happens to the file until the screen holding the cards says so — the card has no
 idea there is a server, which is what lets the same card sit in a library, in a picker, and in a
 form field.
 
