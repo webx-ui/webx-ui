@@ -37,10 +37,12 @@ function rect(el: Element, [left, top, right, bottom]: [number, number, number, 
  * told what pointer it came from. Test Utils cannot do this one: it assigns `clientX` to
  * an event that has only a getter for it.
  */
-function fire(el: Element, type: string, init: MouseEventInit & { pointerId?: number } = {}) {
+type PointerInit = MouseEventInit & { pointerId?: number; pointerType?: string }
+
+function fire(el: Element, type: string, init: PointerInit = {}) {
   const event = new MouseEvent(type, { bubbles: true, cancelable: true, ...init })
   Object.defineProperty(event, 'pointerId', { get: () => init.pointerId ?? 1 })
-  Object.defineProperty(event, 'pointerType', { get: () => 'mouse' })
+  Object.defineProperty(event, 'pointerType', { get: () => init.pointerType ?? 'mouse' })
   el.dispatchEvent(event)
   return nextTick()
 }
@@ -80,22 +82,24 @@ function item(wrapper: VueWrapper, index: number) {
   return wrapper.findAll('.item')[index].element
 }
 
-function down(el: Element, x: number, y: number, keys: MouseEventInit = {}) {
+function down(el: Element, x: number, y: number, keys: PointerInit = {}) {
   return fire(el, 'pointerdown', { clientX: x, clientY: y, button: 0, ...keys })
 }
 
-function move(el: Element, x: number, y: number) {
-  return fire(el, 'pointermove', { clientX: x, clientY: y })
+function move(el: Element, x: number, y: number, keys: PointerInit = {}) {
+  return fire(el, 'pointermove', { clientX: x, clientY: y, ...keys })
 }
 
-function up(el: Element, x: number, y: number, keys: MouseEventInit = {}) {
+function up(el: Element, x: number, y: number, keys: PointerInit = {}) {
   return fire(el, 'pointerup', { clientX: x, clientY: y, ...keys })
 }
 
-async function click(el: Element, x: number, y: number, keys: MouseEventInit = {}) {
+async function click(el: Element, x: number, y: number, keys: PointerInit = {}) {
   await down(el, x, y, keys)
   await up(el, x, y, keys)
 }
+
+const finger = { pointerType: 'touch' } as const
 
 function chosen(wrapper: VueWrapper) {
   return wrapper.emitted('update:modelValue')?.at(-1)?.[0]
@@ -224,6 +228,50 @@ describe('WxSelectionArea', () => {
     await move(el, 90, 40)
 
     expect(chosen(wrapper)).toEqual(['b', 'c'])
+  })
+
+  /* ----------------------------------------------------------------- touch */
+
+  it('picks the item a finger taps, with no box turned on', async () => {
+    const wrapper = area()
+
+    await click(item(wrapper, 1), 120, 20, finger)
+
+    expect(chosen(wrapper)).toEqual(['b'])
+    expect(wrapper.find('.wx-selection-area__box').exists()).toBe(false)
+  })
+
+  it('leaves the selection alone when a finger travels — that gesture is a scroll', async () => {
+    const wrapper = area()
+
+    await click(item(wrapper, 1), 120, 20, finger)
+
+    await down(item(wrapper, 0), 10, 10, finger)
+    await move(wrapper.element, 150, 90, finger)
+    await up(wrapper.element, 150, 90, finger)
+
+    expect(chosen(wrapper)).toEqual(['b'])
+    expect(wrapper.emitted('start')).toBeUndefined()
+  })
+
+  it('draws the box with a finger once touch is asked for', async () => {
+    const wrapper = area({ touch: true })
+
+    await down(wrapper.element, 10, 10, finger)
+    await move(wrapper.element, 150, 90, finger)
+
+    expect(chosen(wrapper)).toEqual(['a', 'b', 'c', 'd'])
+    expect(wrapper.find('.wx-selection-area__box').exists()).toBe(true)
+    expect(wrapper.classes()).toContain('is-touch')
+  })
+
+  it('chooses nothing when the browser takes the gesture back', async () => {
+    const wrapper = area()
+
+    await down(item(wrapper, 1), 120, 20, finger)
+    await fire(wrapper.element, 'pointercancel', { clientX: 120, clientY: 20, ...finger })
+
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
   })
 
   it('leaves a drag that begins on a control alone', async () => {

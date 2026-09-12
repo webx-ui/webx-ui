@@ -40,9 +40,18 @@ describe('WxDescriptions', () => {
     const wrapper = mountList()
     const values = wrapper.findAll('.wx-descriptions__value')
 
-    // Beside its label, a pair is two tracks: spanning two columns is three more.
-    expect(values[0].attributes('style')).toContain('span 1')
-    expect(values[2].attributes('style')).toContain('span 3')
+    // Beside its label, a pair is two tracks: spanning two columns is three of them.
+    expect(values[0].attributes('style')).toContain('--wx-descriptions-span: 1')
+    expect(values[2].attributes('style')).toContain('--wx-descriptions-span: 3')
+  })
+
+  it('never spans a pair past the columns the list has', () => {
+    const wrapper = mountList({ columns: 1 })
+    const values = wrapper.findAll('.wx-descriptions__value')
+
+    // `:span="2"` in a one-column list is one column, or the grid it asks for does
+    // not exist and every pair after it is placed off the end of the one that does.
+    expect(values[2].attributes('style')).toContain('--wx-descriptions-span: 1')
   })
 
   it('stacks the label over the value when asked, as one grid item', () => {
@@ -51,7 +60,9 @@ describe('WxDescriptions', () => {
 
     expect(list.element.children).toHaveLength(3)
     expect(wrapper.findAll('.wx-descriptions__pair')).toHaveLength(3)
-    expect(wrapper.findAll('.wx-descriptions__pair')[2].attributes('style')).toContain('span 2')
+    expect(wrapper.findAll('.wx-descriptions__pair')[2].attributes('style')).toContain(
+      '--wx-descriptions-span: 2',
+    )
   })
 
   it('carries the column count as a custom property', () => {

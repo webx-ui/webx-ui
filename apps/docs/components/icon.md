@@ -69,6 +69,56 @@ arrived from a user or an API.
 `iconNames()` lists everything currently registered, built-in first — that is what the gallery
 above is built from.
 
+## Icons from another set
+
+A set like [Bootstrap Icons](https://icons.getbootstrap.com/) is around two thousand drawings, and
+the ones an admin panel actually shows are a dozen. The library does not ship them: bundling all of
+them to use twelve is 1.4 MB nobody reads, and an icon that lives in your app is one you can add
+today instead of after a release of `@webx-ui/core`.
+
+The two sets do not agree on a grid — Bootstrap's are 16×16 and filled, the built-ins 24×24 and
+stroked — and reconciling them is one line of SVG. Nest the whole thing, `viewBox` and all: an
+inner `<svg>` with no width or height fills its parent, and scales its own art to do it.
+
+```ts
+import { registerIcons } from '@webx-ui/core'
+
+registerIcons({
+  // Straight out of bootstrap-icons/icons/gear-fill.svg, with its own viewBox kept.
+  'bi-gear':
+    '<svg viewBox="0 0 16 16" fill="currentColor" stroke="none"><path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0…" /></svg>',
+})
+```
+
+`<wx-icon name="bi-gear" />` from then on, in the colour and the size of whatever it sits in. For a
+whole folder of them at once, let the bundler read the files:
+
+```ts
+/* Vite. Every name comes out as `bi-<file>`: `bi-gear-fill`, `bi-trash`, … */
+const files = import.meta.glob('/node_modules/bootstrap-icons/icons/*.svg', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>
+
+registerIcons(
+  Object.fromEntries(
+    Object.entries(files).map(([path, svg]) => [
+      `bi-${path.split('/').pop()!.replace('.svg', '')}`,
+      /*
+       * The file's own `width="16" height="16"` is what has to go: left on, the nested
+       * drawing keeps sixteen of the outer twenty-four units and sits in the corner.
+       */
+      svg.replace(/\s(?:width|height)="[^"]*"/g, '').replace('<svg', '<svg stroke="none"'),
+    ]),
+  ),
+)
+```
+
+Both forms end up as a nested `<svg>`, which is the whole trick: an inner `<svg>` with no width or
+height fills its parent and scales its own `viewBox` to do it. The same works for any set that
+draws on a grid of its own.
+
 ## Props
 
 | Prop          | Type                                       | Default | Description                                    |

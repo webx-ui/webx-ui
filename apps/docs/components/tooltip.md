@@ -39,7 +39,7 @@ browser's own styling, and never at all on a touch screen.
 
 ## Delays, and the group
 
-The first tip in a group waits 400 ms before appearing; the ones after it come at once. By the time
+The first tip in a group waits 150 ms before appearing; the ones after it come at once. By the time
 a reader has hovered one icon and moved to the next, they have said what they are doing, and making
 them wait again for each one is how a toolbar comes to feel slow.
 
@@ -54,7 +54,7 @@ tips are not.
 | `side`     | `'top' \| 'right' \| 'bottom' \| 'left'` | `'top'`    | Preferred side; it flips when there is no room |
 | `align`    | `'start' \| 'center' \| 'end'`           | `'center'` | How it lines up along that side                |
 | `offset`   | `number`                                 | `6`        | Distance from the trigger                      |
-| `delay`    | `number`                                 | `400`      | How long the pointer rests before it opens     |
+| `delay`    | `number`                                 | `150`      | How long the pointer rests before it opens     |
 | `arrow`    | `boolean`                                | `true`     | The little pointer                             |
 | `maxWidth` | `number \| string`                       | `260`      | Before it wraps                                |
 | `disabled` | `boolean`                                | `false`    | Nothing opens                                  |

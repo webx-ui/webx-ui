@@ -27,7 +27,7 @@ const props = withDefaults(defineProps<TooltipProps>(), {
   side: 'top',
   align: 'center',
   offset: 6,
-  delay: 400,
+  delay: 150,
   arrow: true,
   maxWidth: 260,
   disabled: false,
