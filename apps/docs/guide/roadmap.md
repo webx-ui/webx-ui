@@ -86,8 +86,23 @@ ColorPicker ✅, Slider ✅, Rate ✅, [Autocomplete](/components/autocomplete) 
 [Cascader](/components/cascader) ✅, [Timeline](/components/timeline) ✅ and
 [Transfer](/components/transfer) ✅ are done.
 
-Still open: Tree, TreeSelect (`he-tree-vue` / Reka Tree), Carousel, Anchor, Splitter, Watermark,
-Marquee.
+[Tree](/components/tree) ✅ — ours rather than `he-tree-vue`, because a drop is three zones on a
+row and a `<mark>` in a label, and neither survives being themed through somebody else's CSS. It
+brings the part most trees skip: `Alt` and the arrow keys move a node the same four ways a drag
+does, which is also the only way to rearrange one on a touch screen.
+
+Table in tree mode ⬜ — the same nesting inside `WxTable`: indentation and a disclosure in the
+first column, the rest of the row still columns. Not a second component — `WxTree` keeps its
+machinery in `useTreeNodes` (what is where, what is open, what a filter leaves, what a move does to
+the arrays), and the table is the other thing that runs on it. It is the screen a pages or
+categories module actually wants: the tree and the data in one pane, instead of a sidebar tree
+beside a list of the same records.
+
+[TreeSelect](/components/tree-select) ✅ — the same tree as a form field, single or with
+checkboxes. It is the "parent category" field, so it reads a key and reports a key: `parent_id` is
+what the form sends, and the node comes along with the event for whatever the screen needs to show.
+
+Still open: Carousel, Anchor, Splitter, Watermark, Marquee.
 
 **Some day, maybe** — wanted, but nothing is waiting on them:
 
