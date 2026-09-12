@@ -66,6 +66,23 @@ export interface UseTreeNodesOptions<T> {
   allowDrop?: (drag: T, drop: T, zone: TreeDropZone) => boolean
 }
 
+/*
+ * Bumped whenever a fetched branch is written into its node, and shared by every index
+ * in the application rather than kept per instance.
+ *
+ * Two reasons it cannot be private. A tree handed over as a plain array — which is what
+ * a tree arriving through a prop usually is — holds no proxies, so writing children into
+ * one of its nodes changes nothing an index is watching. And the same nodes are commonly
+ * read by more than one index: `WxTreeSelect` keeps one to name the value in its field
+ * while the tree inside its panel keeps another, and it is the second that does the
+ * fetching. A counter the fetcher alone could see would leave the field showing an id.
+ *
+ * The cost is that an unrelated tree rebuilds its index when this one fetches. That is a
+ * walk over an array that is already in memory, against a fetch that a person had to
+ * click for.
+ */
+const fetched = ref(0)
+
 /**
  * The parts of a tree that have nothing to do with how it looks: what is where, what is
  * open, what a filter leaves standing, and what a move does to the arrays underneath.
@@ -77,16 +94,8 @@ export function useTreeNodes<T>(options: UseTreeNodesOptions<T>) {
   /** Branches `load` has already answered for — an empty answer still counts. */
   const loaded = ref(new Set<TreeKey>())
 
-  /*
-   * Bumped when a fetched branch is written into its node. A tree handed over as a
-   * plain array — which is what a tree arriving through a prop usually is — holds no
-   * proxies, so writing children into one of its nodes changes nothing the index is
-   * watching. This is what it watches instead.
-   */
-  const fetchedAt = ref(0)
-
   const entries = computed(() => {
-    void fetchedAt.value
+    void fetched.value
 
     const map = new Map<TreeKey, TreeEntry<T>>()
 
@@ -224,7 +233,7 @@ export function useTreeNodes<T>(options: UseTreeNodesOptions<T>) {
         const children = await options.load(item.node)
         accessors.setChildren(item.node, children)
         loaded.value = new Set(loaded.value).add(key)
-        fetchedAt.value += 1
+        fetched.value += 1
       } finally {
         const next = new Set(loading.value)
         next.delete(key)
