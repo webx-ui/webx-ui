@@ -1,5 +1,107 @@
 # @webx-ui/core
 
+## 0.10.0
+
+### Minor Changes
+
+- f9b18b4: Table: rows that nest
+
+  `tree` turns `WxTable` into the screen a pages or categories module wants — the tree and the data
+  in one pane, instead of a sidebar tree beside a list of the same records. The first column carries
+  the indentation and the disclosure; every other column is still a column.
+
+  - **Lazy by design.** `data` is the roots and `load(row)` fetches one level, because a catalogue of
+    five thousand categories is not a payload. A row says whether it is worth a chevron with
+    `has_children` — `withCount('children')` under a name of your choosing. Nothing said about
+    children still gets one: a branch nobody described is worth a request to find out.
+  - **Dragging is the ordering.** Which third of a row the pointer is over decides the landing, and a
+    row can never enter its own subtree. `node-drop` carries `parent` and `index`, which is a
+    `PATCH` and nothing else.
+  - **Holding a row over a closed branch opens it**, fetching it where the children are not in yet,
+    so a move across the tree is one drag rather than a drag, a wait and another drag. Dropping into
+    a branch that was never opened fetches it first: the position a row lands at is not a guess.
+  - **Sorting and pagination are off in this mode**, and say so by not being drawn. Ordering rows
+    would scatter the branches, and a page of a tree cuts them in half.
+
+  It runs on `useTreeNodes`, the same machinery behind [`WxTree`](/components/tree), so a drop means
+  the same thing in both. What it does not have is the keyboard equivalent of a drag that the tree
+  has; a long move wants a **Move** action and a picker.
+
+- 66b71f5: Transfer: two lists and a pair of arrows
+
+  `WxTransfer` is the shape for choosing out of a set you also need to see — permissions, roles, the
+  columns of a report. `items` is everything, `v-model` is the right-hand panel, and the left is
+  simply what is left.
+
+  - **The right panel is in the model's order**, not the catalogue's. The model is an array and that
+    order is what will be saved; a panel that showed some other order would be quietly lying about
+    what is about to be sent.
+  - **The heading's checkbox ticks what the search left showing**, and nothing behind it. A
+    select-all that quietly took forty hidden rows with it is a trap, not a convenience.
+  - Tick and press an arrow, or double-click a row to move that one. `disabled` on an item pins it to
+    the side it is on, from either direction. Every move is announced in a live region.
+  - Side by side is the point of it, so when there is no room the panels stack and the arrows turn to
+    point up and down — decided by the panel's width, not the window's.
+
+  Also fixes a **disabled outline button that could not be seen**: `.wx-button--outline.is-disabled`
+  took its border and its label from `--wx-button-bg-disabled`, which for the default type is the
+  surface colour — so the button was painted in the colour of whatever it was sitting on, in both
+  themes. It now uses the muted border and the disabled text colour. A disabled control still has to
+  be seen to be disabled.
+
+- 0fdbc7c: TreeSelect: the tree as a form field
+
+  `WxTreeSelect` is a trigger that reads like every other control and a panel holding
+  [`WxTree`](/components/tree). It is the "parent category" field, and with `multiple` the set of
+  sections a record belongs to.
+
+  - **The model is a key, not a node** — `parent_id` is what a form sends. The node comes with the
+    `change` event, since an id alone is rarely what the screen needs to show.
+  - **`multiple` puts a checkbox on every node** and leaves the panel open, because a set is rarely
+    finished after one tick. `check-strictly` keeps a tick where it was made, for "exactly these
+    three" rather than "everything under Brakes".
+  - **Opening the panel reveals what is already chosen**: the branches leading to it open, so a tree
+    of five hundred nodes does not open on its first page with the answer somewhere below.
+  - **`show-path` spells out which node it is** — two categories called "Seals" under two different
+    parents are otherwise one field showing "Seals" twice.
+  - `filterable`, `lazy` with `load`, `clearable`, sizes, statuses, and the hidden input a plain
+    `<form>` post needs.
+
+  `useTreeNodes` now takes the tree as a getter as well as a `ref`: the field reads a prop it never
+  rearranges, and reuses the same index the tree keeps for finding a node by key and the path to it.
+
+- ef27c02: Tree: a structure you can see and rearrange
+
+  `WxTree` draws a tree of records the way the backend already sends them — `node-key`, `label-key`
+  and `children-key` name the fields, so a Laravel resource goes in without a `map` over it first.
+
+  - **A drop is three zones on a row**: the edges put the node before or after, the middle puts it
+    inside — on a leaf too, which is how a leaf becomes a branch. A node can never land inside its
+    own subtree; that check belongs to the tree, not to the caller.
+  - **`Alt` and the arrow keys move a node the same four ways a drag does**, and say so in a live
+    region. It is the half most trees skip, and it is also the only way to rearrange one on a touch
+    screen, where HTML drag and drop does not exist.
+  - **`filter` is a string, not a callback.** Matches stay, so do the branches leading to them, and
+    those branches open for as long as the term stands — a match hidden behind a closed parent is the
+    one thing a search must never do.
+  - **Checkboxes cascade both ways** unless `check-strictly` says otherwise, and a disabled node
+    stays out of the cascade.
+  - **`lazy` fetches a branch the first time it opens**, and opens it once the children are in, so a
+    spinner is never followed by an empty box that then fills.
+
+  The machinery — what is where, what is open, what a filter leaves standing, what a move does to the
+  arrays — lives in `useTreeNodes`, which is what a tree-shaped `WxTable` will run on rather than a
+  second implementation of the same thing.
+
+### Patch Changes
+
+- 3fdce1c: TreeSelect: the field names a node the panel has just fetched
+
+  The field keeps one index to name its value and the tree inside its panel keeps another, and it is
+  the tree that does the fetching. The signal that said "a branch arrived, rebuild" was private to
+  each index, so picking a city out of a branch that had just loaded left the field showing
+  `ua-odesa`. Every index now shares it.
+
 ## 0.9.0
 
 ### Minor Changes
