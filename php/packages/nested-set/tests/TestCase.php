@@ -8,6 +8,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Schema;
 use Orchestra\Testbench\TestCase as Orchestra;
+use WebxUi\NestedSet\NestedSet;
 use WebxUi\NestedSet\NestedSetServiceProvider;
 
 abstract class TestCase extends Orchestra
@@ -26,7 +27,7 @@ abstract class TestCase extends Orchestra
         Schema::create('categories', function (Blueprint $table): void {
             $table->id();
             $table->string('name');
-            $table->nestedSet();
+            NestedSet::columns($table);
             $table->timestamps();
         });
 
@@ -34,7 +35,7 @@ abstract class TestCase extends Orchestra
             $table->id();
             $table->unsignedBigInteger('site_id');
             $table->string('name');
-            $table->nestedSet();
+            NestedSet::columns($table);
             $table->timestamps();
         });
     }
