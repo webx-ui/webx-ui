@@ -2,7 +2,15 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useSlots, watch } from 'vue'
 import WxCheckbox from '../Checkbox/Checkbox.vue'
 import WxInput from '../Input/Input.vue'
+import WxIcon from '../Icon/Icon.vue'
 import WxPagination from '../Pagination/Pagination.vue'
+import {
+  useTreeNodes,
+  type TreeAccessors,
+  type TreeDropZone,
+  type TreeKey,
+  type TreeRow,
+} from '../../composables/useTreeNodes'
 import type {
   RowKey,
   TableColumn,
@@ -57,16 +65,215 @@ const page = defineModel<number>('page', { default: 1 })
 const perPage = defineModel<number>('perPage', { default: 15 })
 
 /** An array or a paginator; the table only ever needs the rows out of it. */
-const rows = computed<T[]>(() => {
+const source = computed<T[]>(() => {
   const value = props.data
   if (!value) return []
   return Array.isArray(value) ? value : (value.data ?? [])
 })
 
+/* ---------------------------------------------------------------------------
+ * Tree mode
+ *
+ * The rows nest: the first column carries the indentation and the disclosure, every
+ * other column is still a column. What is where, what is open and what a move does to
+ * the arrays is `useTreeNodes` — the same machinery `WxTree` runs on, so the two cannot
+ * drift apart in what a drop means or when a lazy branch arrives.
+ * ------------------------------------------------------------------------- */
+
+const isTree = computed(() => Boolean(props.tree))
+
+const treeOptions = computed(() => ({
+  childrenKey: 'children',
+  hasChildrenKey: 'has_children',
+  indent: 20,
+  springDelay: 600,
+  ...props.tree,
+}))
+
+/** The tree needs a key from the row alone; the table's own falls back to a position. */
+function treeKeyOf(row: T, path: number[]): TreeKey {
+  const index = path.at(-1) ?? 0
+  if (typeof props.rowKey === 'function') return props.rowKey(row, index)
+  if (props.rowKey) {
+    const value = read(row, props.rowKey)
+    if (typeof value === 'string' || typeof value === 'number') return value
+  }
+  return path.join('.')
+}
+
+const treeAccessors: TreeAccessors<T> = {
+  key: treeKeyOf,
+  children: (row) => row[treeOptions.value.childrenKey] as T[] | undefined,
+  setChildren: (row, children) => {
+    ;(row as Record<string, unknown>)[treeOptions.value.childrenKey] = children
+  },
+  /*
+   * Absent is not the same as false: a backend that never said anything about children
+   * gets a chevron, and finding nothing behind it costs one request. Saying `false` —
+   * `withCount` returning zero — is taken at its word.
+   */
+  leaf: (row) => {
+    const flag = row[treeOptions.value.hasChildrenKey]
+    return flag === undefined ? false : !flag
+  },
+}
+
+const tree = useTreeNodes<T>({
+  nodes: () => source.value,
+  accessors: treeAccessors,
+  expanded,
+  lazy: () => Boolean(treeOptions.value.lazy),
+  load: (row) => treeOptions.value.load?.(row) ?? [],
+  allowDrop: (drag, drop, zone) => treeOptions.value.allowDrop?.(drag, drop, zone) ?? true,
+})
+
+const treeRows = computed(() => (isTree.value ? tree.rows.value : []))
+
+/** The rows on screen: the branch as it is opened, or the page as it arrived. */
+const rows = computed<T[]>(() =>
+  isTree.value ? treeRows.value.map((item) => item.node) : source.value,
+)
+
+/** The two arrays run in step, so a row's place in the tree is its index. */
+const treeAt = (index: number) => (isTree.value ? treeRows.value[index] : undefined)
+
+if (props.tree?.defaultExpandAll) tree.expandAll()
+
+async function toggleBranch(item: TreeRow<T>) {
+  await tree.toggle(item.key)
+  emit('expand-change', [...expanded.value], rowsFor(expanded.value))
+}
+
+/* ------------------------------------------------------------- moving rows */
+
+const dragKey = ref<TreeKey | null>(null)
+const dropKey = ref<TreeKey | null>(null)
+const dropZone = ref<TreeDropZone | null>(null)
+
+/** The branch a row is hovering over, and the timer that will open it. */
+let springKey: TreeKey | null = null
+let springTimer: ReturnType<typeof setTimeout> | undefined
+
+const canDragRow = (item: TreeRow<T>) =>
+  Boolean(treeOptions.value.draggable) && (treeOptions.value.allowDrag?.(item.node) ?? true)
+
+function onRowDragStart(item: TreeRow<T>, event: DragEvent) {
+  if (!canDragRow(item)) {
+    event.preventDefault()
+    return
+  }
+  dragKey.value = item.key
+  event.dataTransfer?.setData('text/plain', String(item.key))
+  if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move'
+}
+
+/**
+ * Which third of the row the pointer is over decides the landing: the edges put the row
+ * beside the one under the pointer, the middle puts it inside.
+ */
+function zoneAt(event: DragEvent, element: HTMLElement): TreeDropZone {
+  const box = element.getBoundingClientRect()
+  const y = (event.clientY - box.top) / box.height
+  if (y <= 0.3) return 'before'
+  if (y >= 0.7) return 'after'
+  return 'inside'
+}
+
+function cancelSpring() {
+  if (springTimer) clearTimeout(springTimer)
+  springTimer = undefined
+  springKey = null
+}
+
+/**
+ * Dropping into a branch nobody can see the inside of is a guess. Holding a row over a
+ * closed one opens it — and fetches it, where the children are not in yet — so the
+ * guess becomes a look, and a move across the tree is one drag rather than three.
+ */
+function spring(item: TreeRow<T>, zone: TreeDropZone) {
+  const delay = treeOptions.value.springDelay ?? 0
+  if (!delay || zone !== 'inside' || !item.expandable || item.expanded) {
+    cancelSpring()
+    return
+  }
+  if (springKey === item.key) return
+
+  cancelSpring()
+  springKey = item.key
+  springTimer = setTimeout(() => {
+    void tree.expand(item.key)
+    cancelSpring()
+  }, delay)
+}
+
+function onRowDragOver(item: TreeRow<T>, event: DragEvent) {
+  if (dragKey.value === null) return
+
+  const zone = zoneAt(event, event.currentTarget as HTMLElement)
+  if (!tree.canDrop(dragKey.value, item.key, zone)) {
+    dropKey.value = null
+    dropZone.value = null
+    cancelSpring()
+    return
+  }
+
+  // Taking the event is what tells the browser this is a valid drop target.
+  event.preventDefault()
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
+  dropKey.value = item.key
+  dropZone.value = zone
+  spring(item, zone)
+}
+
+async function onRowDrop(item: TreeRow<T>) {
+  const key = dragKey.value
+  const zone = dropZone.value
+  if (key === null || zone === null || dropKey.value !== item.key) return
+
+  cancelSpring()
+  dragKey.value = null
+  dropKey.value = null
+  dropZone.value = null
+
+  /*
+   * Into a branch whose children have not arrived, the position is not ours to guess:
+   * fetch first, then append to what is really there.
+   */
+  if (zone === 'inside' && treeOptions.value.lazy && !item.expanded) await tree.expand(item.key)
+
+  const target = tree.entry(item.key)
+  const landed = tree.move(key, item.key, zone)
+  if (!landed || !target) return
+
+  emit('node-drop', {
+    row: landed.node,
+    target: target.node,
+    zone,
+    parent: landed.parent,
+    index: landed.index,
+    via: 'pointer',
+  })
+}
+
+function onRowDragEnd() {
+  cancelSpring()
+  dragKey.value = null
+  dropKey.value = null
+  dropZone.value = null
+}
+
+onBeforeUnmount(cancelSpring)
+
 /** A paginated response is a promise that there are more pages to reach. */
 const paginator = computed(() => (props.data && !Array.isArray(props.data) ? props.data : null))
 
-const showPagination = computed(() => props.pagination ?? Boolean(paginator.value))
+/*
+ * A page of a tree would cut branches in half, and the rows here are not a page anyway:
+ * a lazy tree asks for a level at a time.
+ */
+const showPagination = computed(() =>
+  isTree.value ? false : (props.pagination ?? Boolean(paginator.value)),
+)
 
 const visibleColumns = computed(() => props.columns.filter((column) => !column.hidden))
 
@@ -379,8 +586,16 @@ function toggleExpand(row: T, index: number) {
  * and reordering them here would only shuffle the page. Three states, because a column
  * has to be able to give the ordering back.
  */
+/*
+ * A tree has an order of its own, and it is the one on screen. Sorting the rows would
+ * either scatter the branches or quietly sort inside each of them — the first is wrong
+ * and the second is a control that does almost nothing. So in tree mode the heading is
+ * a heading.
+ */
+const sortableIn = (column: TableColumn<T>) => Boolean(column.sortable) && !isTree.value
+
 function onSort(column: TableColumn<T>) {
-  if (!column.sortable) return
+  if (!sortableIn(column)) return
   const current = sort.value
   let next: TableSort | null
   if (current?.key !== column.key) next = { key: column.key, order: 'asc' }
@@ -393,7 +608,7 @@ function onSort(column: TableColumn<T>) {
 }
 
 function ariaSort(column: TableColumn<T>) {
-  if (!column.sortable) return undefined
+  if (!sortableIn(column)) return undefined
   if (sort.value?.key !== column.key) return 'none'
   return sort.value.order === 'asc' ? 'ascending' : 'descending'
 }
@@ -593,7 +808,7 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
               :aria-sort="ariaSort(column)"
             >
               <button
-                v-if="column.sortable"
+                v-if="sortableIn(column)"
                 class="wx-table__sort"
                 type="button"
                 @click="onSort(column)"
@@ -629,9 +844,16 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
                   'is-striped': index % 2 === 1,
                   'is-selected': selectable && isSelected(row, index),
                   'is-expanded': expandable && isExpanded(row, index),
+                  'is-dragging': dragKey !== null && dragKey === treeAt(index)?.key,
+                  [`is-drop-${dropZone}`]: dropZone && dropKey === treeAt(index)?.key,
                 },
               ]"
+              :draggable="treeAt(index) ? canDragRow(treeAt(index)!) : undefined"
               @click="emit('row-click', row, index, $event)"
+              @dragstart="treeAt(index) && onRowDragStart(treeAt(index)!, $event)"
+              @dragover="treeAt(index) && onRowDragOver(treeAt(index)!, $event)"
+              @drop.prevent="treeAt(index) && onRowDrop(treeAt(index)!)"
+              @dragend="onRowDragEnd"
             >
               <td
                 v-if="expandable"
@@ -676,6 +898,33 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
                 :class="[alignClass(column), fixedClass(column), column.cellClass]"
                 :style="fixedStyle(column)"
               >
+                <!--
+                  The tree lives in the first column, ahead of whatever that column
+                  draws: indentation for the level, and a disclosure for a branch.
+                -->
+                <span
+                  v-if="treeAt(index) && column.key === visibleColumns[0]?.key"
+                  class="wx-table__tree"
+                  :style="{
+                    paddingInlineStart: `${treeAt(index)!.depth * (treeOptions.indent ?? 20)}px`,
+                  }"
+                >
+                  <button
+                    v-if="treeAt(index)!.expandable"
+                    class="wx-table__tree-toggle"
+                    type="button"
+                    :aria-expanded="treeAt(index)!.expanded"
+                    :aria-label="treeAt(index)!.expanded ? 'Collapse branch' : 'Expand branch'"
+                    @click.stop="toggleBranch(treeAt(index)!)"
+                  >
+                    <wx-icon
+                      :name="treeAt(index)!.loading ? 'loader' : 'chevron-right'"
+                      :spin="treeAt(index)!.loading"
+                    />
+                  </button>
+                  <span v-else class="wx-table__tree-toggle is-leaf" />
+                </span>
+
                 <slot
                   :name="`cell-${column.key}`"
                   :row="row"
@@ -1127,6 +1376,84 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 .wx-table__expander:focus-visible {
   outline: none;
   box-shadow: var(--wx-ring-focus);
+}
+
+/* ---------------------------------------------------------------- tree mode */
+
+/*
+ * Inline rather than a flex row: a cell in a table is laid out by the table, and a
+ * `display: flex` on it would take the column out of the very grid the pinned columns
+ * are measured against.
+ */
+.wx-table__tree {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.wx-table__tree-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-inline-end: var(--wx-space-4);
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: var(--wx-radius-xs);
+  color: var(--wx-text-muted);
+  cursor: pointer;
+}
+
+.wx-table__tree-toggle:hover {
+  background: var(--wx-bg-fill);
+  color: var(--wx-text-default);
+}
+
+.wx-table__tree-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--wx-ring-focus);
+}
+
+.wx-table__tree-toggle.is-leaf {
+  cursor: default;
+  visibility: hidden;
+}
+
+.wx-table__tree-toggle :deep(svg) {
+  transition: transform 0.15s ease;
+}
+
+.wx-table__tree-toggle[aria-expanded='true'] :deep(svg) {
+  transform: rotate(90deg);
+}
+
+.wx-table__row.is-dragging {
+  opacity: 0.4;
+}
+
+/*
+ * The landing is drawn on the cells rather than on the row: a `<tr>` cannot be given a
+ * border that survives a sticky column, and an absolutely positioned line would need a
+ * positioned row, which is the corner table layout is least sure about.
+ */
+.wx-table__row.is-drop-before > .wx-table__cell {
+  box-shadow: inset 0 2px 0 0 var(--wx-color-primary);
+}
+
+.wx-table__row.is-drop-after > .wx-table__cell {
+  box-shadow: inset 0 -2px 0 0 var(--wx-color-primary);
+}
+
+.wx-table__row.is-drop-inside > .wx-table__cell {
+  background: var(--wx-color-primary-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wx-table__tree-toggle :deep(svg) {
+    transition: none;
+  }
 }
 
 .wx-table__expander svg {
