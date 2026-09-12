@@ -105,6 +105,12 @@ apps/
   отвечает 404 — смотреть `gh api repos/webx-ui/webx-ui/rules/branches/main`). Апрув не нужен, но
   нужен зелёный чек `Lint, typecheck, test, build` **и** ветка должна быть свежей относительно
   `main`. Отстала — влить `main` в ветку, дождаться CI заново, потом мержить.
+- **После `gh pr merge` локальный `main` остаётся старым.** `gh` синхронизирует его через
+  remote по умолчанию, то есть `origin`, куда доступа нет: в конце вывода будет
+  «Could not read from remote repository» и «not possible to fast-forward», хотя PR на GitHub
+  уже смержен. Выглядит страшно — рабочие файлы будто откатились. Лечится
+  `git fetch claude && git merge --ff-only claude/main`; проверить, что мерж прошёл, можно через
+  `gh pr view <N> --json state`.
 - **Changeset** на каждый PR, который меняет публикуемый пакет; docs-only — без него.
 - **Релиз:** мерж PR с changeset'ами → бот открывает «chore: version packages» → мерж этого PR
   публикует пакеты. На npm версия появляется минут через пять после того, как воркфлоу отчитался.
