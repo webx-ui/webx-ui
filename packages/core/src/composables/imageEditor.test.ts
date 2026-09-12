@@ -27,9 +27,25 @@ beforeEach(() => {
   }
 })
 
-afterEach(() => {
+function hosts() {
+  return document.querySelectorAll('.wx-modal-host').length
+}
+
+/**
+ * The panel takes its own node away on a timer once it has closed. Pulling the node out
+ * of the page here would leave that timer running past the end of the file, to unmount a
+ * tree into an environment vitest has already torn down. So wait for the panel to go of
+ * its own accord — and only then put the canvas back, since it is on the way out that the
+ * editor last reaches for one.
+ */
+afterEach(async () => {
+  const deadline = Date.now() + 2000
+  while (hosts() > 0 && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 10))
+  }
+  expect(hosts()).toBe(0)
+
   HTMLCanvasElement.prototype.getContext = originalGetContext
-  for (const host of document.querySelectorAll('.wx-modal-host')) host.remove()
 })
 
 /** The picture arriving in the panel that was just opened. */
