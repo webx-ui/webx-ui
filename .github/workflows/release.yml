@@ -58,7 +58,11 @@ jobs:
       - name: Tag the PHP packages
         id: php_tag
         run: |
-          version=$(node -p "require('./php/package.json').version")
+          # Read the committed version, not the working tree: when changesets only opens the
+          # "version packages" PR it leaves the bump behind in the checkout, and tagging that
+          # would announce a release that has not landed on main.
+          git show HEAD:php/package.json > "$RUNNER_TEMP/php-package.json"
+          version=$(node -p "require('$RUNNER_TEMP/php-package.json').version")
 
           if [ "$version" = "0.0.0" ]; then
             echo "No PHP release has been cut yet — skipping."
