@@ -12,6 +12,8 @@ export default ts.config(
       '**/.vitepress/cache/**',
       '**/.vitepress/dist/**',
       'packages/tokens/src/generated/**',
+      // Composer dependencies ship their own bundled JavaScript.
+      'php/vendor/**',
     ],
   },
   js.configs.recommended,

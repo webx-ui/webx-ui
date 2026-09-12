@@ -18,6 +18,8 @@ jobs:
   release:
     name: Version or publish
     runs-on: ubuntu-latest
+    outputs:
+      php_version: ${{ steps.php_tag.outputs.version }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -49,3 +51,39 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
+
+      # Composer has no registry to publish to: a version exists once the tag exists. The npm
+      # packages get their tags from changesets, the PHP ones share a single version carried by
+      # the private php/package.json, so the tag for them is cut here.
+      - name: Tag the PHP packages
+        id: php_tag
+        run: |
+          version=$(node -p "require('./php/package.json').version")
+
+          if [ "$version" = "0.0.0" ]; then
+            echo "No PHP release has been cut yet — skipping."
+            exit 0
+          fi
+
+          if git rev-parse -q --verify "refs/tags/php-v$version" >/dev/null; then
+            echo "php-v$version already exists — nothing to do."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "php-v$version" -m "php-v$version"
+          git push origin "php-v$version"
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  # Mirrors every PHP package into its own repository and tags it there as v<version>, which
+  # is the form Composer and Packagist understand.
+  php-split:
+    name: Publish PHP packages
+    needs: release
+    if: needs.release.outputs.php_version != ''
+    uses: ./.github/workflows/php-split.yml
+    with:
+      tag: v${{ needs.release.outputs.php_version }}
+    secrets: inherit
