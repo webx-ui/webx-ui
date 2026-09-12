@@ -74,6 +74,24 @@ so the area handles the rest of it as well:
 Set `:click-select="false"` to keep the drag and leave clicking to the items themselves — a grid
 whose tiles open something when clicked wants that.
 
+## One at a time
+
+`:multiple="false"` and the model never holds more than one value. There is no box, no run and no
+toggle — every one of them is a way of ending up holding a second thing — so a click or a tap picks
+the item under it and the background clears. A gallery wants several; a file picker wants one.
+
+```vue
+<template>
+  <wx-selection-area v-slot="{ isSelected }" v-model="picked" :multiple="false">
+    <figure v-for="file in files" :key="file.id" v-wx-select="file.id">…</figure>
+  </wx-selection-area>
+</template>
+```
+
+The model stays an array — of nought or one — so nothing else about the component changes with the
+flag. `picked[0]` is the file, and a `v-model` handed several values is left as it was found: the
+limit is on what the gestures produce, not on what the caller may say.
+
 ## The selection is the model
 
 `v-model` is an array of values, in the order they were taken. The area never keeps a second copy
@@ -118,6 +136,7 @@ whole difference.
 | Prop          | Type                       | Default       | Description                                            |
 | ------------- | -------------------------- | ------------- | ------------------------------------------------------ |
 | `modelValue`  | `(string \| number)[]`     | `[]`          | The selection                                          |
+| `multiple`    | `boolean`                  | `true`        | Off, the model never holds more than one value         |
 | `match`       | `'intersect' \| 'contain'` | `'intersect'` | Whether the box has to cover an item or touch it       |
 | `threshold`   | `number`                   | `5`           | Pixels before a press becomes a drag                   |
 | `clickSelect` | `boolean`                  | `true`        | Clicks pick items; a click beside them clears          |

@@ -3,6 +3,12 @@ export type SelectionValue = string | number
 export type SelectionMatch = 'intersect' | 'contain'
 
 export interface SelectionAreaProps {
+  /**
+   * Whether more than one item may be held at once. Off, the model never holds more than
+   * a single value: there is no box, no run and no toggle, and a click or a tap picks the
+   * item under it. A gallery wants several; a file picker wants one.
+   */
+  multiple?: boolean
   /** Whether the box has to cover an item or merely touch it. */
   match?: SelectionMatch
   /** How far the pointer travels before it is a drag rather than a click, in pixels. */

@@ -11,6 +11,7 @@ import type {
 defineOptions({ name: 'WxSelectionArea' })
 
 const props = withDefaults(defineProps<SelectionAreaProps>(), {
+  multiple: true,
   match: 'intersect',
   threshold: 5,
   clickSelect: true,
@@ -61,8 +62,16 @@ function isSelected(value: SelectionValue) {
 /* The drag is plain variables rather than refs: none of it is rendered except the box. */
 let pointer = -1
 let started = false
-/** Whether this gesture is allowed to become a box, or is only ever a tap. */
+/** Whether this gesture is allowed to become a box, or is only ever a click. */
 let boxDrag = true
+/**
+ * What the gesture began on. Read here rather than off the event that ends it: once the
+ * pointer is captured every event is retargeted to the area, so the release reports the
+ * area itself — which read as a click on the background, and cleared the selection every
+ * time a card was clicked. It is also the right question to ask: a click is a press and a
+ * release on the same thing.
+ */
+let downTarget: HTMLElement | null = null
 let downX = 0
 let downY = 0
 let originX = 0
@@ -235,13 +244,14 @@ function stop() {
   if (el && pointer !== -1 && el.hasPointerCapture?.(pointer)) el.releasePointerCapture(pointer)
   pointer = -1
   started = false
+  downTarget = null
   scroller = null
   selecting.value = false
   box.value = null
 }
 
-function pick(event: PointerEvent) {
-  const el = (event.target as HTMLElement).closest(`[${SELECTABLE}]`)
+function pick(event: PointerEvent, from: HTMLElement | null) {
+  const el = from?.closest(`[${SELECTABLE}]`)
   if (!el) {
     /* The background is what clears a selection — the one gesture every file list shares. */
     if (mode === 'replace') apply([])
@@ -250,6 +260,17 @@ function pick(event: PointerEvent) {
   const value = valueOf(el)
   if (value === undefined) return
   const index = candidates.findIndex((item) => item.value === value)
+
+  /*
+   * One at a time. The run and the toggle are both ways of ending up holding more than
+   * one, so neither is offered: picking is picking, and the background is how you end up
+   * holding none.
+   */
+  if (!props.multiple) {
+    anchor = index
+    apply([value])
+    return
+  }
 
   if (event.shiftKey && anchor >= 0 && index >= 0) {
     const [from, to] = anchor < index ? [anchor, index] : [index, anchor]
@@ -279,15 +300,19 @@ function onPointerDown(event: PointerEvent) {
   if (props.disabled || !el || event.button !== 0) return
   if ((event.target as HTMLElement).closest(INTERACTIVE)) return
 
+  const isTouch = event.pointerType === 'touch'
+
   /*
-   * A finger dragged across a list means scroll, so without `touch` the gesture is
-   * followed but never becomes a box. It is still followed: a tap has to pick the item
-   * under it, and bailing out here is how a touch screen came to select nothing at all.
+   * A rubber band is a gesture for taking several things, so there is none where only one
+   * may be held. And a finger dragged across a list means scroll: without `touch` that
+   * gesture is followed but never becomes a box. It is still followed — a tap has to pick
+   * the item under it, and bailing out here is how a touch screen came to select nothing.
    */
-  boxDrag = event.pointerType !== 'touch' || props.touch
+  boxDrag = props.multiple && (!isTouch || props.touch)
 
   pointer = event.pointerId
   started = false
+  downTarget = event.target as HTMLElement
   downX = event.clientX
   downY = event.clientY
   atX = event.clientX
@@ -307,7 +332,12 @@ function onPointerDown(event: PointerEvent) {
   /* Puts the shortcuts within reach. */
   el.focus({ preventScroll: true })
 
-  if (!boxDrag) return
+  /*
+   * A finger's gesture belongs to the page unless the box is about to take it. A mouse
+   * has nothing to lose either way, so it is captured whether or not a box follows —
+   * that is what keeps a press and its release one gesture.
+   */
+  if (isTouch && !boxDrag) return
 
   /*
    * Takes the caret out of any text the box crosses — and, on a finger, the scroll out
@@ -351,9 +381,11 @@ function onPointerMove(event: PointerEvent) {
 function onPointerUp(event: PointerEvent) {
   if (event.pointerId !== pointer) return
   const dragged = started
+  /* `stop` forgets where the gesture began, and the click still has to be told. */
+  const from = downTarget
   stop()
   if (dragged) emit('end', [...model.value])
-  else if (props.clickSelect) pick(event)
+  else if (props.clickSelect) pick(event, from)
 }
 
 /*
@@ -382,13 +414,16 @@ function onKeydown(event: KeyboardEvent) {
   }
 
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+    if (!props.multiple) return
     if ((event.target as HTMLElement).closest(INTERACTIVE)) return
     event.preventDefault()
     selectAll()
   }
 }
 
+/** Everything there is. Nothing at all where only one may be held. */
 function selectAll() {
+  if (!props.multiple) return
   apply(items().map((item) => item.value))
 }
 
