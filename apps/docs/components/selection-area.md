@@ -67,6 +67,7 @@ so the area handles the rest of it as well:
 | Click an item        | Picks that one                                  |
 | Ctrl-click an item   | Adds or removes that one                        |
 | Shift-click an item  | Takes the run from the last one clicked         |
+| Tap an item          | Adds or removes that one                        |
 | Click the background | Clears                                          |
 | Ctrl+A / Escape      | Everything / nothing                            |
 
@@ -99,6 +100,10 @@ A tap picks the item under it, always — that half needs nothing turned on. It 
 off by default: on a touch screen a drag across a grid means scroll, and taking that away leaves
 people stranded. A finger that travels is left to the browser, and the selection it started on is
 kept, not replaced.
+
+A tap **adds and removes** rather than replacing, the way ctrl-click does. There is no modifier on
+a phone and no box either, so a tap that replaced the selection would be a selection that can never
+hold more than one thing. A tap on the background still clears, which is the way back to none.
 
 `touch` turns the box on where the gesture is worth more than the scrolling — a canvas, a seat
 picker. The area then sets `touch-action: none`, which is the real price: it stops scrolling with a
