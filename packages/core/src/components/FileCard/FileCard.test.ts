@@ -34,8 +34,12 @@ const panelButton = (label: string) =>
     (button) => button.textContent?.trim() === label,
   )
 
+/** A panel opens on the next turn of the loop, so the tests have to wait one out. */
+const flush = () => new Promise((resolve) => setTimeout(resolve))
+
 async function open(wrapper: VueWrapper) {
   await action(wrapper, 'Rename')!.trigger('click')
+  await flush()
   await nextTick()
   await nextTick()
 }
@@ -167,7 +171,7 @@ describe('WxFileCard', () => {
     const wrapper = card({ removable: true })
 
     await action(wrapper, 'Delete')!.trigger('click')
-    await nextTick()
+    await flush()
     await nextTick()
 
     expect(wrapper.emitted('remove')).toBeUndefined()
@@ -180,7 +184,7 @@ describe('WxFileCard', () => {
     const wrapper = card({ removable: true })
 
     await action(wrapper, 'Delete')!.trigger('click')
-    await nextTick()
+    await flush()
     await nextTick()
 
     const confirm = [...document.querySelectorAll<HTMLButtonElement>('.wx-popconfirm button')].find(
@@ -196,7 +200,7 @@ describe('WxFileCard', () => {
     const wrapper = card({ removable: true, removeConfirmText: 'Gone for good?' })
 
     await action(wrapper, 'Delete')!.trigger('click')
-    await nextTick()
+    await flush()
     await nextTick()
 
     expect(document.querySelector('.wx-popconfirm')!.textContent).toContain('Gone for good?')
@@ -278,7 +282,7 @@ describe('WxFileCard', () => {
   it('starts a rename on a double click, and not when it was not offered', async () => {
     const offered = card({ renamable: true })
     await name(offered).trigger('dblclick')
-    await nextTick()
+    await flush()
     await nextTick()
     expect(field()).toBeTruthy()
 
@@ -287,7 +291,7 @@ describe('WxFileCard', () => {
 
     const plain = card()
     await name(plain).trigger('dblclick')
-    await nextTick()
+    await flush()
     await nextTick()
     expect(field()).toBeNull()
   })
@@ -296,7 +300,7 @@ describe('WxFileCard', () => {
     const wrapper = card({ renamable: true })
 
     await name(wrapper).trigger('click')
-    await nextTick()
+    await flush()
     await nextTick()
 
     expect(field()).toBeNull()

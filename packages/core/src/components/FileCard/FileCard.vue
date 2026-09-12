@@ -70,10 +70,28 @@ const renaming = ref(false)
 const draft = ref('')
 const field = useTemplateRef<{ select: () => void; input: HTMLInputElement | null }>('field')
 
+/**
+ * A panel is opened on the next turn of the loop rather than inside the handler that
+ * asked for it.
+ *
+ * The item that asks is often inside another panel — the folded-up menu — and the layer
+ * the new panel puts up is created part-way through that very click. It then sees the
+ * rest of the same click finish somewhere that is not inside it, reads that as a click
+ * on the page behind, and dismisses itself before anyone has seen it. Opening after the
+ * click is over is what separates the two.
+ */
+function openLater(open: () => void) {
+  openTimers.push(setTimeout(open))
+}
+
+const openTimers: ReturnType<typeof setTimeout>[] = []
+
 function startRename() {
   if (props.disabled || !props.renamable) return
   draft.value = props.name
-  renaming.value = true
+  openLater(() => {
+    renaming.value = true
+  })
 }
 
 /* Cleared on the way out, so a card unmounted mid-rename leaves nothing running. */
@@ -141,8 +159,13 @@ const confirming = ref(false)
 const removeQuestion = computed(() => props.removeConfirmText ?? `Delete ${props.name}?`)
 
 function askRemove() {
-  if (props.confirmRemove) confirming.value = true
-  else emit('remove')
+  if (!props.confirmRemove) {
+    emit('remove')
+    return
+  }
+  openLater(() => {
+    confirming.value = true
+  })
 }
 
 function confirmRemoval() {
@@ -184,6 +207,7 @@ async function copy() {
 onBeforeUnmount(() => {
   clearTimeout(copiedTimer)
   stopSelecting()
+  for (const timer of openTimers.splice(0)) clearTimeout(timer)
 })
 
 /* ---------------------------------------------------------------------- name --- */
