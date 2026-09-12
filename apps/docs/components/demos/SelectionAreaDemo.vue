@@ -165,12 +165,20 @@ const orders = [
   font-size: 24px;
 }
 
+/*
+ * `place-items` rather than a bare `display: block`: a button around a 14px icon
+ * inherits the page's 24px line height, which made it ten pixels taller than it was
+ * wide — a squashed pill rather than a square.
+ */
 .drop {
   position: absolute;
   top: 4px;
   right: 4px;
   display: none;
-  padding: 2px;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
   background: var(--wx-bg-surface);
   border: 1px solid var(--wx-border-muted);
   border-radius: var(--wx-radius-xs);
@@ -180,7 +188,7 @@ const orders = [
 }
 
 .tile:hover .drop {
-  display: block;
+  display: grid;
 }
 
 .name {
