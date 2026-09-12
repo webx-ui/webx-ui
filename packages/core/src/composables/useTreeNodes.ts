@@ -77,7 +77,17 @@ export function useTreeNodes<T>(options: UseTreeNodesOptions<T>) {
   /** Branches `load` has already answered for — an empty answer still counts. */
   const loaded = ref(new Set<TreeKey>())
 
+  /*
+   * Bumped when a fetched branch is written into its node. A tree handed over as a
+   * plain array — which is what a tree arriving through a prop usually is — holds no
+   * proxies, so writing children into one of its nodes changes nothing the index is
+   * watching. This is what it watches instead.
+   */
+  const fetchedAt = ref(0)
+
   const entries = computed(() => {
+    void fetchedAt.value
+
     const map = new Map<TreeKey, TreeEntry<T>>()
 
     const walk = (
@@ -214,6 +224,7 @@ export function useTreeNodes<T>(options: UseTreeNodesOptions<T>) {
         const children = await options.load(item.node)
         accessors.setChildren(item.node, children)
         loaded.value = new Set(loaded.value).add(key)
+        fetchedAt.value += 1
       } finally {
         const next = new Set(loading.value)
         next.delete(key)

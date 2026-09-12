@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
+import { markRaw } from 'vue'
 import WxTree from './Tree.vue'
 import type { TreeNode } from './types'
 
@@ -191,6 +192,27 @@ describe('WxTree', () => {
     await row(wrapper, 'Pages').get('.wx-tree__toggle').trigger('click')
     await row(wrapper, 'Pages').get('.wx-tree__toggle').trigger('click')
     expect(load).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows a fetched branch even when the tree it was handed is not reactive', async () => {
+    const load = vi.fn().mockResolvedValue([{ id: 21, label: 'Contacts' }])
+    /*
+     * `markRaw` is what a plain array amounts to once it arrives through a prop:
+     * nothing in it is a proxy, so writing the children into a node notifies nobody.
+     * The browser showed this as a branch that opened empty and filled on the second
+     * try; jsdom had hidden it, because the test harness makes its props reactive.
+     */
+    const wrapper = tree({
+      lazy: true,
+      load,
+      modelValue: [markRaw({ id: 2, label: 'Pages' })],
+      expanded: [],
+    })
+
+    await row(wrapper, 'Pages').get('.wx-tree__toggle').trigger('click')
+    await new Promise((resolve) => setTimeout(resolve))
+
+    expect(labels(wrapper)).toContain('Contacts')
   })
 
   it('has nothing to open on a node marked as a leaf', () => {
