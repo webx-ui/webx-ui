@@ -527,8 +527,15 @@ defineExpose({
   align-items: center;
   gap: var(--wx-space-4);
   min-height: 32px;
-  /* Inside the row rather than around the tree, so the highlight still runs edge to
-     edge while the grip and the buttons keep their distance from it. */
+  /*
+   * Inside the row rather than around the tree, so the highlight still runs edge to
+   * edge while what sits in the row keeps its distance from it. The block half is what
+   * a row full of buttons needs: the caller's actions are taller than the text, and
+   * without it they end up a pixel from the edge of the highlight. A row of plain
+   * labels is shorter than `min-height` either way, so nothing is spent where there
+   * is nothing to clear.
+   */
+  padding-block: var(--wx-space-4);
   padding-inline: var(--wx-space-8);
   border-radius: var(--wx-radius-control);
   cursor: pointer;
@@ -622,8 +629,12 @@ defineExpose({
   opacity: 1;
 }
 
+/* Flex, not block: an inline-flex checkbox in a block sits in a line box, and the
+   leading around it makes the wrapper taller than the control it holds. */
 .wx-tree__check {
   flex: none;
+  display: flex;
+  align-items: center;
   margin-inline-end: var(--wx-space-2);
 }
 
@@ -633,7 +644,6 @@ defineExpose({
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding-block: var(--wx-space-4);
 }
 
 .wx-tree__hit {
