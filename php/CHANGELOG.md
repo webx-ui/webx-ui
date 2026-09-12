@@ -1,5 +1,24 @@
 # @webx-ui/php
 
+## 0.4.0
+
+### Minor Changes
+
+- fd98bdd: `webx:panel` wires the panel's front end into the application that hosts it: it writes the
+  entry file, adds it to the Vite inputs, points `webx-admin.vite` at it, and names the npm
+  packages to install. Where it cannot recognise a Vite configuration it says which line to add
+  rather than rewriting a build it does not understand.
+- 7fa1539: `webx-ui/admin` can load the panel's own assets. `webx-admin.assets` names the built files, or
+  `webx-admin.vite` names entry points for an application that builds the panel with Laravel's
+  own Vite. With neither, the shell stays deliberately blank — the frame installed and the panel
+  not is a real state, and it should look like one.
+
+### Patch Changes
+
+- 48c6e34: The entry `webx:panel` writes now imports the stylesheets. The packages ship compiled CSS that
+  nothing imports on its own, so the panel built from the previous stub ran perfectly and looked
+  like an unstyled form.
+
 ## 0.3.1
 
 ### Patch Changes
