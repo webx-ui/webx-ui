@@ -542,9 +542,15 @@ defineExpose({
   user-select: none;
 }
 
+/*
+ * The small size is density, not small print: a node's label is the content, and
+ * shrinking the text of a list of names buys a couple of pixels at the cost of the
+ * thing being read. What gives is the room around it.
+ */
 .wx-tree--sm .wx-tree__row {
-  min-height: 28px;
-  font-size: var(--wx-font-size-xs);
+  min-height: 26px;
+  padding-block: var(--wx-space-2);
+  line-height: var(--wx-font-line-height-tight);
 }
 
 .wx-tree__row:hover {
