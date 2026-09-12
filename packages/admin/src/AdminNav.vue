@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdmin } from './admin'
+import { useTranslate } from './i18n'
 
 /**
  * The menu, built from the manifest rather than written out. What the panel offers is what the
@@ -13,6 +14,7 @@ defineProps<{ collapsed?: boolean }>()
 const emit = defineEmits<{ select: [] }>()
 
 const admin = useAdmin()
+const t = useTranslate('webx-admin')
 const router = useRouter()
 const route = useRoute()
 
@@ -33,7 +35,12 @@ const current = computed<string>({
 </script>
 
 <template>
-  <wx-menu v-model="current" :collapsed="collapsed" label="Sections" @select="emit('select')">
+  <wx-menu
+    v-model="current"
+    :collapsed="collapsed"
+    :label="t('nav.sections')"
+    @select="emit('select')"
+  >
     <wx-menu-item
       v-for="entry in admin.nav.value"
       :key="entry.id"

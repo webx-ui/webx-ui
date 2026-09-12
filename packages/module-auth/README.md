@@ -49,18 +49,20 @@ What it does carry: a password reveal, a Caps Lock warning, `autocomplete="usern
 `current-password` so password managers work, validation errors landing on the right field, and
 a countdown when the server throttles.
 
-Every string is a prop. The library speaks English; the panels built with it do not have to.
+Every string is a prop, and a prop given wins. What happens when one is not given is that the
+label comes from the panel's dictionary — assembled by the server from the same `lang` files it
+writes its own messages from, so the card and the 422 under its fields speak one language
+without anybody listing labels twice.
 
 ```ts
-auth({
-  card: {
-    emailLabel: 'Електронна пошта',
-    passwordLabel: 'Пароль',
-    submitLabel: 'Увійти',
-    rememberLabel: 'Запам’ятати мене',
-  },
-})
+// Nothing to pass: a panel in Ukrainian draws a Ukrainian card.
+auth()
+
+// Unless this particular panel wants its own words.
+auth({ card: { submitLabel: 'Увійти' } })
 ```
+
+Placed outside a panel, with no server to ask, the card falls back to the English it ships.
 
 `WxLoginCard` is exported for a panel that wants to place it itself.
 
@@ -74,6 +76,7 @@ const auth = useAuth()
 await auth.login({ email, password, remember: true })
 await auth.logout()
 const user = await auth.me() // null when nobody is
+await auth.setLocale('uk') // the language this administrator reads the panel in
 ```
 
 There is nothing kept here: the session lives in a cookie, the server is the source of truth,

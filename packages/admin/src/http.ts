@@ -13,6 +13,11 @@ export interface HttpOptions {
   csrfUrl?: string
   /** Called whenever the server answers 401, however deep in the app the call was. */
   onUnauthenticated?: () => void
+  /**
+   * Headers added to every request, read at the time of the request rather than fixed when
+   * the client is made — the panel's language changes while it runs.
+   */
+  headers?: () => Record<string, string>
   /** Swappable for tests. */
   fetch?: typeof globalThis.fetch
 }
@@ -69,6 +74,7 @@ export function createHttp(options: HttpOptions = {}): Http {
   const csrfUrl = options.csrfUrl ?? '/sanctum/csrf-cookie'
   const doFetch = options.fetch ?? globalThis.fetch.bind(globalThis)
   const onUnauthenticated = options.onUnauthenticated
+  const standingHeaders = options.headers
 
   let csrfFetched = false
 
@@ -97,6 +103,8 @@ export function createHttp(options: HttpOptions = {}): Http {
     const headers: Record<string, string> = {
       Accept: 'application/json',
       'X-Requested-With': 'XMLHttpRequest',
+      // Standing headers first, so a caller can still override one for a single request.
+      ...standingHeaders?.(),
       ...options.headers,
     }
 

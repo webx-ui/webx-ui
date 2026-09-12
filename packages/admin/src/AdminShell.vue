@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useResponsiveShell } from '@webx-ui/core'
 import { useAdmin } from './admin'
+import { useTranslate } from './i18n'
 
 /**
  * The panel around the screen: navigation built from the manifest, a header, and the hole the
@@ -15,6 +16,7 @@ import { useAdmin } from './admin'
  * wrapped in a menu of sections the visitor cannot reach.
  */
 const admin = useAdmin()
+const t = useTranslate('webx-admin')
 const shellEl = ref<HTMLElement | null>(null)
 
 const { layout, collapsed, showAside, drawerOpen, toggle, close } = useResponsiveShell(shellEl, {
@@ -28,12 +30,12 @@ const { layout, collapsed, showAside, drawerOpen, toggle, close } = useResponsiv
   </div>
 
   <div v-else-if="admin.state.status === 'loading'" class="wx-root wx-admin-plain">
-    <wx-loading label="Loading the panel…" />
+    <wx-loading :label="t('shell.loading')" />
   </div>
 
   <div v-else-if="admin.state.status === 'error'" class="wx-root wx-admin-plain">
-    <wx-result status="error" title="The panel could not start" :description="admin.state.error">
-      <wx-button type="primary" @click="admin.reload()">Try again</wx-button>
+    <wx-result status="error" :title="t('shell.error-title')" :description="admin.state.error">
+      <wx-button type="primary" @click="admin.reload()">{{ t('shell.retry') }}</wx-button>
     </wx-result>
   </div>
 
@@ -42,7 +44,7 @@ const { layout, collapsed, showAside, drawerOpen, toggle, close } = useResponsiv
       <wx-header>
         <wx-action
           :icon="layout === 'drawer' ? 'menu' : 'sidebar'"
-          :title="layout === 'drawer' ? 'Menu' : 'Collapse the menu'"
+          :title="layout === 'drawer' ? t('nav.menu') : t('nav.collapse')"
           @click="toggle"
         />
 
@@ -66,7 +68,7 @@ const { layout, collapsed, showAside, drawerOpen, toggle, close } = useResponsiv
       </wx-container>
     </wx-container>
 
-    <wx-drawer v-model:open="drawerOpen" title="Menu" side="left" :size="260" closable>
+    <wx-drawer v-model:open="drawerOpen" :title="t('nav.menu')" side="left" :size="260" closable>
       <slot name="nav" :collapsed="false" @select="close" />
     </wx-drawer>
   </div>

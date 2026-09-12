@@ -13,6 +13,14 @@ export interface AuthSession {
   /** Signs in and tells the panel to load itself. Throws `HttpError` on a refusal. */
   login(credentials: Credentials): Promise<AdminUser>
   logout(): Promise<void>
+  /**
+   * Change the language this administrator reads the panel in.
+   *
+   * Stored on the person rather than in this browser, so it follows them to the next machine
+   * and so the server writes its own messages — a 422 under a field — in the same language as
+   * the label above it.
+   */
+  setLocale(code: string): Promise<void>
 }
 
 export const authKey: InjectionKey<AuthSession> = Symbol('webx-auth')
@@ -65,6 +73,16 @@ export function createAuthSession(admin: AdminContext): AuthSession {
       await admin.reload()
 
       return body.data
+    },
+
+    async setLocale(code) {
+      // The panel redraws only after the server has accepted the choice: a language that
+      // half took — menus switched, error messages not — is worse than one that did not.
+      const body = await admin.http.put<{ data: AdminUser }>(`${base}/locale`, { locale: code })
+
+      admin.setUser(body.data)
+
+      await admin.setLocale(code)
     },
 
     async logout() {

@@ -1,6 +1,7 @@
 import { h, watch } from 'vue'
 import type { Admin, AdminPlugin } from '@webx-ui/admin'
 import LoginCard from './LoginCard.vue'
+import { authMessages } from './messages'
 import { createAuthSession, provideAuth } from './session'
 
 export interface AuthOptions {
@@ -23,6 +24,10 @@ export function auth(options: AuthOptions = {}): AdminPlugin {
   return {
     install(admin: Admin) {
       const session = createAuthSession(admin.context)
+
+      // The floor under this module's labels: what the server has not translated, and what
+      // a panel assembled without a server has to fall back on.
+      admin.i18n.defaults('webx-auth', authMessages)
 
       provideAuth(admin.app, session)
       admin.context.useSessionLoader(() => session.me())
@@ -79,3 +84,4 @@ export { createAuthSession, provideAuth, useAuth, authKey } from './session'
 export type { AuthSession, Credentials } from './session'
 export { default as WxLoginCard } from './LoginCard.vue'
 export { default as WxUserMenu } from './UserMenu.vue'
+export { authMessages } from './messages'

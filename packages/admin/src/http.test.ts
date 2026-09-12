@@ -29,6 +29,27 @@ describe('createHttp', () => {
     ])
   })
 
+  it('sends the standing headers as they are at the time of the request', async () => {
+    // Read each time rather than captured once: the panel's language changes while it runs,
+    // and the server decides which language to write a 422 in from this.
+    const fetch = vi.fn().mockImplementation(() => respond({ data: [] }))
+    let locale = 'en'
+    const http = createHttp({ fetch, headers: () => ({ 'X-Webx-Locale': locale }) })
+
+    await http.get('/pages')
+    locale = 'uk'
+    await http.get('/pages')
+    // A caller who names a header for one request still wins.
+    await http.get('/pages', { headers: { 'X-Webx-Locale': 'ru' } })
+
+    const sent = fetch.mock.calls.map(
+      (call) =>
+        (call[1] as RequestInit & { headers: Record<string, string> }).headers['X-Webx-Locale'],
+    )
+
+    expect(sent).toEqual(['en', 'uk', 'ru'])
+  })
+
   it('leaves out query parameters that have no value', async () => {
     const fetch = vi.fn().mockImplementation(() => respond({ data: [] }))
     const http = createHttp({ baseUrl: '/api', fetch })

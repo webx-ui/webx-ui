@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, useTemplateRef } from 'vue'
-import { HttpError } from '@webx-ui/admin'
+import { HttpError, useTranslate } from '@webx-ui/admin'
 import { useAuth } from './session'
 
 /**
@@ -10,7 +10,10 @@ import { useAuth } from './session'
  * little as possible to somebody who has no business behind it, and the people who do have
  * business behind it already know where they are.
  *
- * Every string is a prop. The library speaks English; the panels built with it do not have to.
+ * Every string is still a prop and a prop given still wins. What changed is what happens when
+ * one is not: the label comes from the panel's dictionary, which the server assembles from the
+ * same `lang` files it answers its own messages from. A panel gets its language without being
+ * told every label twice, and a card placed outside a panel still speaks English.
  */
 const props = withDefaults(
   defineProps<{
@@ -19,20 +22,26 @@ const props = withDefaults(
     rememberLabel?: string
     submitLabel?: string
     capsLockWarning?: string
+    /** `:seconds` is replaced with however long the server said to wait. */
     throttleMessage?: string
+    revealLabel?: string
+    hideLabel?: string
     /** Offer to stay signed in. The server honours it with a long-lived cookie. */
     remember?: boolean
     /** Put the cursor in the email field. Off for a card that is not the only thing on screen. */
     autofocus?: boolean
   }>(),
   {
-    emailLabel: 'Email',
-    passwordLabel: 'Password',
-    rememberLabel: 'Stay signed in',
-    submitLabel: 'Sign in',
-    capsLockWarning: 'Caps Lock is on.',
-    // `{seconds}` is replaced with however long the server said to wait.
-    throttleMessage: 'Too many attempts. Try again in {seconds} s.',
+    // Undefined rather than a string, so "not given" is tellable from "given as English" and
+    // the dictionary gets its turn.
+    emailLabel: undefined,
+    passwordLabel: undefined,
+    rememberLabel: undefined,
+    submitLabel: undefined,
+    capsLockWarning: undefined,
+    throttleMessage: undefined,
+    revealLabel: undefined,
+    hideLabel: undefined,
     remember: true,
     autofocus: true,
   },
@@ -41,6 +50,17 @@ const props = withDefaults(
 const emit = defineEmits<{ success: [] }>()
 
 const auth = useAuth()
+const t = useTranslate('webx-auth')
+
+const labels = computed(() => ({
+  email: props.emailLabel ?? t('card.email'),
+  password: props.passwordLabel ?? t('card.password'),
+  remember: props.rememberLabel ?? t('card.remember'),
+  submit: props.submitLabel ?? t('card.submit'),
+  capsLock: props.capsLockWarning ?? t('card.caps-lock'),
+  reveal: props.revealLabel ?? t('card.reveal'),
+  hide: props.hideLabel ?? t('card.hide'),
+}))
 
 const email = ref('')
 const password = ref('')
@@ -62,7 +82,9 @@ onBeforeUnmount(stopCountdown)
 const throttled = computed(() => secondsLeft.value > 0)
 
 const throttleNotice = computed(() =>
-  props.throttleMessage.replace('{seconds}', String(secondsLeft.value)),
+  props.throttleMessage === undefined
+    ? t('card.throttled', { seconds: secondsLeft.value })
+    : props.throttleMessage.replace(':seconds', String(secondsLeft.value)),
 )
 
 async function submit(): Promise<void> {
@@ -173,8 +195,8 @@ defineExpose({ focus: () => emailField.value?.focus() })
           ref="emailField"
           v-model="email"
           type="email"
-          :placeholder="emailLabel"
-          :aria-label="emailLabel"
+          :placeholder="labels.email"
+          :aria-label="labels.email"
           autocomplete="username"
           :autofocus="autofocus"
           inputmode="email"
@@ -184,12 +206,12 @@ defineExpose({ focus: () => emailField.value?.focus() })
         </wx-input>
       </wx-form-item>
 
-      <wx-form-item name="password" :help="capsLock ? capsLockWarning : undefined">
+      <wx-form-item name="password" :help="capsLock ? labels.capsLock : undefined">
         <wx-input
           v-model="password"
           :type="revealed ? 'text' : 'password'"
-          :placeholder="passwordLabel"
-          :aria-label="passwordLabel"
+          :placeholder="labels.password"
+          :aria-label="labels.password"
           autocomplete="current-password"
           size="lg"
           @keydown="trackCapsLock"
@@ -203,8 +225,8 @@ defineExpose({ focus: () => emailField.value?.focus() })
             <button
               type="button"
               class="wx-login__reveal"
-              :title="revealed ? 'Hide the password' : 'Show the password'"
-              :aria-label="revealed ? 'Hide the password' : 'Show the password'"
+              :title="revealed ? labels.hide : labels.reveal"
+              :aria-label="revealed ? labels.hide : labels.reveal"
               :aria-pressed="revealed"
               tabindex="-1"
               @click="revealed = !revealed"
@@ -215,7 +237,7 @@ defineExpose({ focus: () => emailField.value?.focus() })
         </wx-input>
       </wx-form-item>
 
-      <wx-checkbox v-if="remember" v-model="rememberMe" :label="rememberLabel" />
+      <wx-checkbox v-if="remember" v-model="rememberMe" :label="labels.remember" />
 
       <wx-button
         type="primary"
@@ -225,7 +247,7 @@ defineExpose({ focus: () => emailField.value?.focus() })
         :loading="busy"
         :disabled="throttled"
       >
-        {{ submitLabel }}
+        {{ labels.submit }}
       </wx-button>
     </wx-form>
   </wx-card>
