@@ -1,7 +1,14 @@
 {
     "name": "webx-ui/module-auth",
     "description": "Administrators, roles and sign-in for a WebX UI admin panel — kept separate from the site's own users.",
-    "keywords": ["laravel", "admin", "cms", "authentication", "permissions", "webx-ui"],
+    "keywords": [
+        "laravel",
+        "admin",
+        "cms",
+        "authentication",
+        "permissions",
+        "webx-ui"
+    ],
     "homepage": "https://github.com/webx-ui/webx-ui",
     "license": "MIT",
     "authors": [
@@ -25,8 +32,8 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "laravel/sanctum": "^4.3",
-        "webx-ui/admin": "^0.2.0",
-        "webx-ui/mcp": "^0.2.0"
+        "webx-ui/admin": "^0.3.0",
+        "webx-ui/mcp": "^0.3.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
@@ -44,7 +51,9 @@
     },
     "extra": {
         "laravel": {
-            "providers": ["WebxUi\\Auth\\AuthServiceProvider"]
+            "providers": [
+                "WebxUi\\Auth\\AuthServiceProvider"
+            ]
         }
     },
     "config": {
