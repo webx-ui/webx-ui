@@ -62,6 +62,11 @@ if (product) chosen.value.push(product)
 `createModal` is the shape worth reaching for: one file names the component, its answer's type and
 the event that carries it, and every call site is a single `await`.
 
+[`openImageEditor`](/components/image-editor#from-code) is that file, shipped: `WxImageEditor` in a
+dialog, resolving on its `save`. It is worth reading before writing one of your own — including the
+half that is not the opener, which is a component that works both ways, with `:footer="false"` and
+an exposed `apply()` for the panel to drive.
+
 ## Dismissed is not an error
 
 The promise resolves with `undefined` when the panel is closed without an answer — by the ✕, by

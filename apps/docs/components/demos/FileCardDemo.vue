@@ -1,6 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { WxFileCard, WxSelectionArea, vWxSelect, type SelectionValue } from '@webx-ui/core'
+import { onBeforeUnmount, ref } from 'vue'
+import {
+  WxFileCard,
+  WxSelectionArea,
+  openImageEditor,
+  vWxSelect,
+  type SelectionValue,
+} from '@webx-ui/core'
 
 interface Item {
   id: number
@@ -45,6 +51,27 @@ function remove(item: Item) {
   files.value = files.value.filter((file) => file.id !== item.id)
   log.value = `Deleted ${item.name}`
 }
+
+/* Nothing is uploaded here, so the edited picture is kept as a URL for the blob itself. */
+const drafts: string[] = []
+
+async function edit(item: Item) {
+  const result = await openImageEditor({ src: item.url, title: `Edit ${item.name}` })
+  if (!result) {
+    log.value = `Left ${item.name} alone`
+    return
+  }
+
+  const url = URL.createObjectURL(result.blob)
+  drafts.push(url)
+  item.url = url
+  item.thumbnail = url
+  log.value = `${item.name} is now ${result.width}×${result.height}`
+}
+
+onBeforeUnmount(() => {
+  for (const url of drafts) URL.revokeObjectURL(url)
+})
 </script>
 
 <template>
@@ -67,7 +94,7 @@ function remove(item: Item) {
           copyable
           @rename="rename(file, $event)"
           @remove="remove(file)"
-          @edit="log = `An editor would open for ${file.name}`"
+          @edit="edit(file)"
           @copy="log = `Copied the link to ${file.name}`"
           @copy-error="log = 'The clipboard refused'"
         />

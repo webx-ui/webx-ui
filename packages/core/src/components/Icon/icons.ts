@@ -63,6 +63,14 @@ export const builtinIcons = {
   search: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
   filter: '<path d="M4 5.5h16l-6.2 7.2v5.1l-3.6 2v-7.1z"/>',
   crop: '<path d="M6.5 2.5v13a2 2 0 0 0 2 2h13"/><path d="M2.5 6.5h13a2 2 0 0 1 2 2v13"/>',
+  /* A quarter turn each way: a ring open at the top, the head where the turn ends. */
+  'rotate-left': '<path d="M19.4 13.8A7.5 7.5 0 1 0 12 5"/><path d="M14.3 2.9 12 5l2.3 2.1"/>',
+  'rotate-right': '<path d="M4.6 13.8A7.5 7.5 0 1 1 12 5"/><path d="M9.7 2.9 12 5l-2.3 2.1"/>',
+  /* The mirror line, and the same shape on both sides of it. */
+  'flip-horizontal':
+    '<path d="M12 3v18" stroke-dasharray="3 3"/><path d="M9.2 7.2v9.6L3.6 12z"/><path d="M14.8 7.2v9.6L20.4 12z"/>',
+  'flip-vertical':
+    '<path d="M3 12h18" stroke-dasharray="3 3"/><path d="M7.2 9.2h9.6L12 3.6z"/><path d="M7.2 14.8h9.6L12 20.4z"/>',
   refresh:
     '<path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5"/><path d="M20 4.5v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.5"/><path d="M4 19.5v-4h4"/>',
   upload:

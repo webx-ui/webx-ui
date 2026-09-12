@@ -30,6 +30,7 @@ export {
   type ModalPromise,
 } from './composables/useModal'
 export { confirm, type ConfirmOptions } from './composables/confirm'
+export { openImageEditor } from './composables/imageEditor'
 export {
   useResponsiveShell,
   shellLayoutFor,
