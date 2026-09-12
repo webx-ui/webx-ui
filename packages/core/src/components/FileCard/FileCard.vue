@@ -65,7 +65,7 @@ const glyph = computed(() => props.icon ?? fileIconName(props.name))
 
 const renaming = ref(false)
 const draft = ref('')
-const field = useTemplateRef<{ select: () => void }>('field')
+const field = useTemplateRef<{ select: () => void; input: HTMLInputElement | null }>('field')
 
 function startRename() {
   if (props.disabled || !props.renamable) return
@@ -73,19 +73,44 @@ function startRename() {
   renaming.value = true
 }
 
-/**
- * The panel focuses its first field itself; this is about the selection. Selected whole,
- * extension and all: a rename is usually a new name, and the reader who only wanted to
- * fix a typo has lost nothing by pressing End first.
- *
- * Two ticks, because the first is the panel deciding to exist and the second is the
- * field arriving in it.
- */
-async function selectDraft() {
-  await nextTick()
-  await nextTick()
-  field.value?.select()
+/* Cleared on the way out, so a card unmounted mid-rename leaves nothing running. */
+const selectTimers: ReturnType<typeof setTimeout>[] = []
+
+function stopSelecting() {
+  for (const timer of selectTimers.splice(0)) clearTimeout(timer)
 }
+
+/**
+ * The name, focused and selected whole — extension and all, because a rename is usually a
+ * new name, and the reader who only wanted to fix a typo has lost nothing by pressing End
+ * first.
+ *
+ * Hung off the field appearing rather than off the panel opening, because the two are not
+ * the same moment: opened from the folded-up menu, the panel waits for that menu to
+ * finish closing and the field arrives several ticks after the open.
+ */
+watch(
+  () => field.value?.input,
+  (el) => {
+    if (!el || !renaming.value) return
+
+    const take = () => {
+      if (!renaming.value || !el.isConnected) return
+      if (document.activeElement !== el) el.focus()
+      el.select()
+    }
+
+    take()
+
+    /*
+     * And again twice. That same menu hands focus back to its own trigger on the way out,
+     * which takes it straight out of the field the panel has just put it in. Opened from
+     * the row or from a double click there is nothing to fight, and the first call is the
+     * only one that does anything.
+     */
+    selectTimers.push(setTimeout(take, 0), setTimeout(take, 120))
+  },
+)
 
 function commitRename() {
   if (!renaming.value) return
@@ -100,6 +125,7 @@ function commitRename() {
  * out, the way an input in place had to.
  */
 function cancelRename() {
+  stopSelecting()
   draft.value = props.name
   renaming.value = false
 }
@@ -135,7 +161,10 @@ async function copy() {
   }
 }
 
-onBeforeUnmount(() => clearTimeout(copiedTimer))
+onBeforeUnmount(() => {
+  clearTimeout(copiedTimer)
+  stopSelecting()
+})
 
 /* ---------------------------------------------------------------------- name --- */
 
@@ -216,99 +245,110 @@ const classes = computed(() => [
         Over the preview, and on a pointer that can hover they stay out of the way until
         it does. There is no hovering on a touch screen, so there they simply stand.
       -->
-      <wx-actions
-        v-if="hasActions || $slots.actions"
-        class="wx-file-card__actions"
-        size="sm"
-        align="end"
-        collapse
-        :aria-label="`Actions for ${name}`"
-      >
-        <wx-action
-          v-if="shows.edit"
-          type="edit"
-          icon="crop"
-          :title="editLabel"
-          @click="emit('edit')"
-        />
-        <wx-action v-if="shows.rename" type="edit" :title="renameLabel" @click="startRename" />
-        <wx-action
-          v-if="shows.copy"
-          type="link"
-          :icon="copied ? 'check' : 'link'"
-          :tone="copied ? 'success' : undefined"
-          :title="copied ? copiedLabel : copyLabel"
-          @click="copy"
-        />
-        <wx-action v-if="shows.remove" type="remove" :title="removeLabel" @click="emit('remove')" />
-        <slot name="actions" />
-
+      <span v-if="hasActions || $slots.actions" class="wx-file-card__tools">
         <!--
+          What the rename panel hangs from: an empty box over the buttons, rather than
+          the rename button itself, because that button is not always there — folded up,
+          the row is a single "more" and the panel still has to drop from what was
+          pressed. It is empty and not a wrapper because a trigger that contained the
+          buttons opened the panel whenever one of them was clicked, `disabled` or not:
+          the click reaches the trigger on its way up.
+        -->
+        <wx-popover
+          v-model:open="renaming"
+          side="bottom"
+          align="end"
+          :width="240"
+          :arrow="false"
+          disabled
+          :aria-label="renameLabel"
+          @close="cancelRename"
+        >
+          <template #trigger>
+            <span class="wx-file-card__anchor" aria-hidden="true" />
+          </template>
+
+          <wx-input
+            ref="field"
+            v-model="draft"
+            class="wx-file-card__field"
+            size="sm"
+            :aria-label="renameLabel"
+            @keydown.enter.prevent="commitRename"
+          />
+
+          <template #footer>
+            <wx-button size="sm" variant="text" @click="renaming = false">{{
+              cancelLabel
+            }}</wx-button>
+            <wx-button size="sm" type="primary" @click="commitRename">{{ saveLabel }}</wx-button>
+          </template>
+        </wx-popover>
+
+        <wx-actions
+          class="wx-file-card__actions"
+          size="sm"
+          align="end"
+          collapse
+          :aria-label="`Actions for ${name}`"
+        >
+          <wx-action
+            v-if="shows.edit"
+            type="edit"
+            icon="crop"
+            :title="editLabel"
+            @click="emit('edit')"
+          />
+          <wx-action v-if="shows.rename" type="edit" :title="renameLabel" @click="startRename" />
+          <wx-action
+            v-if="shows.copy"
+            type="link"
+            :icon="copied ? 'check' : 'link'"
+            :tone="copied ? 'success' : undefined"
+            :title="copied ? copiedLabel : copyLabel"
+            @click="copy"
+          />
+          <wx-action
+            v-if="shows.remove"
+            type="remove"
+            :title="removeLabel"
+            @click="emit('remove')"
+          />
+          <slot name="actions" />
+
+          <!--
           Folded up, the same actions need their names: a menu of four unlabelled icons
           is worse than the row it replaced. Left alone, `WxActions` puts the row itself
           in the panel, which is exactly those four icons.
         -->
-        <template #collapsed>
-          <wx-dropdown-item v-if="shows.edit" icon="crop" @click="emit('edit')">
-            {{ editLabel }}
-          </wx-dropdown-item>
-          <wx-dropdown-item v-if="shows.rename" icon="edit" @click="startRename">
-            {{ renameLabel }}
-          </wx-dropdown-item>
-          <wx-dropdown-item v-if="shows.copy" icon="link" @click="copy">
-            {{ copied ? copiedLabel : copyLabel }}
-          </wx-dropdown-item>
-          <wx-dropdown-item v-if="shows.remove" icon="trash" tone="danger" @click="emit('remove')">
-            {{ removeLabel }}
-          </wx-dropdown-item>
-          <slot name="actions" />
-        </template>
-      </wx-actions>
+          <template #collapsed>
+            <wx-dropdown-item v-if="shows.edit" icon="crop" @click="emit('edit')">
+              {{ editLabel }}
+            </wx-dropdown-item>
+            <wx-dropdown-item v-if="shows.rename" icon="edit" @click="startRename">
+              {{ renameLabel }}
+            </wx-dropdown-item>
+            <wx-dropdown-item v-if="shows.copy" icon="link" @click="copy">
+              {{ copied ? copiedLabel : copyLabel }}
+            </wx-dropdown-item>
+            <wx-dropdown-item
+              v-if="shows.remove"
+              icon="trash"
+              tone="danger"
+              @click="emit('remove')"
+            >
+              {{ removeLabel }}
+            </wx-dropdown-item>
+            <slot name="actions" />
+          </template>
+        </wx-actions>
+      </span>
     </div>
 
     <div class="wx-file-card__body">
-      <!--
-        The field is in a panel beside the name rather than in place of it. Swapping a
-        line of text for an input changes the height of the card, and a card in a grid
-        changes the height of its row: renaming one file made the whole library jump.
-
-        `disabled` is on the popover because the trigger is only there to be pointed at.
-        A name that opened a rename when it was clicked would be a name that could not be
-        clicked to choose the file it belongs to.
-      -->
-      <wx-popover
-        v-model:open="renaming"
-        side="bottom"
-        align="center"
-        :width="240"
-        :arrow="false"
-        disabled
-        :aria-label="renameLabel"
-        @open="selectDraft"
-        @close="cancelRename"
-      >
-        <template #trigger>
-          <wx-tooltip :content="name" :disabled="!truncated || renaming">
-            <span ref="label" class="wx-file-card__name" @dblclick="startRename">{{ name }}</span>
-          </wx-tooltip>
-        </template>
-
-        <wx-input
-          ref="field"
-          v-model="draft"
-          class="wx-file-card__field"
-          size="sm"
-          :aria-label="renameLabel"
-          @keydown.enter.prevent="commitRename"
-        />
-
-        <template #footer>
-          <wx-button size="sm" variant="text" @click="renaming = false">{{
-            cancelLabel
-          }}</wx-button>
-          <wx-button size="sm" type="primary" @click="commitRename">{{ saveLabel }}</wx-button>
-        </template>
-      </wx-popover>
+      <wx-tooltip :content="name" :disabled="!truncated || renaming">
+        <span ref="label" class="wx-file-card__name" @dblclick="startRename">{{ name }}</span>
+      </wx-tooltip>
 
       <span v-if="$slots.meta" class="wx-file-card__meta"><slot name="meta" /></span>
     </div>
@@ -404,16 +444,50 @@ const classes = computed(() => [
 }
 
 /*
- * `collapse` on the row above folds four buttons into one menu as soon as they stop
- * fitting the preview, which on a card a hundred pixels wide is at once. The cap is
- * there for the frame before the first measurement, so the row is never seen hanging
- * out of the card it belongs to.
+ * The wrapper carries the place and the width; the row inside carries the look. They are
+ * two elements because `WxActions` measures itself against its parent, so the parent has
+ * to be the thing with a width — and because the rename panel hangs from the wrapper,
+ * which stays put whether the row is four buttons or the one it folds into.
+ *
+ * `collapse` folds those four as soon as they stop fitting, which on a card a hundred
+ * pixels wide is at once. The cap is for the frame before the first measurement, so the
+ * row is never seen hanging out of the card it belongs to.
  */
-.wx-file-card__actions {
+/*
+ * Both edges, so the width is the preview's and not the row's. Left to shrink around its
+ * contents it would be the width of whatever it currently holds — and once the row had
+ * folded into a single button, that is the width the row would be measured against next
+ * time, so it could never come back out.
+ */
+.wx-file-card__tools {
   position: absolute;
   top: var(--wx-space-4);
   right: var(--wx-space-4);
-  max-width: calc(100% - var(--wx-space-8));
+  left: var(--wx-space-4);
+  display: block;
+  /* The row inside sits at the end of it; the span itself is only a measuring stick. */
+  pointer-events: none;
+}
+
+.wx-file-card__tools > * {
+  pointer-events: auto;
+}
+
+/* The box the panel is placed against: exactly the buttons, and nothing to click. */
+.wx-file-card__anchor {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+
+/*
+ * Shrunk to its buttons and pushed to the end of the measuring stick above, so the
+ * background is a pill around them rather than a bar across the picture.
+ */
+.wx-file-card__actions {
+  width: fit-content;
+  margin-inline-start: auto;
   padding: 2px;
   background: color-mix(in srgb, var(--wx-bg-surface) 88%, transparent);
   border: 1px solid var(--wx-border-muted);
@@ -427,13 +501,19 @@ const classes = computed(() => [
  * happen are actions nobody can reach.
  */
 @media (hover: hover) {
-  .wx-file-card__actions {
+  .wx-file-card__tools {
     opacity: 0;
     transition: opacity var(--wx-duration-fast) var(--wx-easing-standard);
   }
 
-  .wx-file-card:hover .wx-file-card__actions,
-  .wx-file-card:focus-within .wx-file-card__actions {
+  /*
+   * `is-renaming` among them because the panel is teleported: the focus that opened it is
+   * no longer inside the card, so `focus-within` lets go and the buttons would fade out
+   * from under a panel still hanging off them.
+   */
+  .wx-file-card:hover .wx-file-card__tools,
+  .wx-file-card:focus-within .wx-file-card__tools,
+  .wx-file-card.is-renaming .wx-file-card__tools {
     opacity: 1;
   }
 }
@@ -464,7 +544,7 @@ const classes = computed(() => [
 
 @media (prefers-reduced-motion: reduce) {
   .wx-file-card,
-  .wx-file-card__actions {
+  .wx-file-card__tools {
     transition: none;
   }
 }

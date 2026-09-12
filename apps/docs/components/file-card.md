@@ -68,13 +68,14 @@ where the name is not the whole truth.
 
 ## Renaming
 
-`renamable` opens a small panel beside the name — from the action, or by double-clicking it. Enter
-or **Save** commits; Escape, **Cancel** and a click on the page behind it all leave the name alone.
-The name is selected whole, extension and all: a rename is usually a new name.
+`renamable` opens a small panel under the actions — from the rename action, or by double-clicking
+the name. Enter or **Save** commits; Escape, **Cancel** and a click on the page behind it all leave
+the name alone. The name is selected whole, extension and all: a rename is usually a new name.
 
-The panel is beside the name and not in place of it, which is the whole reason it is a panel.
-Swapping a line of text for an input changes the height of the card, and a card in a grid changes
-the height of its row: renaming one file made the whole library jump.
+It is a panel and not a field in place of the name for two reasons. Swapping a line of text for an
+input changes the height of the card, and a card in a grid changes the height of its row, so
+renaming one file made the whole library jump. And it drops from the button that was pressed, which
+is where the reader is already looking — not at the other end of the card.
 
 A plain click on the name is not a rename — it belongs to whatever is choosing the file. That is
 also why the card is dismissed rather than saved when the panel is clicked away from: a panel
