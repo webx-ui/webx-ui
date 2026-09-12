@@ -109,7 +109,11 @@ jobs:
       - name: Sync the mirror
         uses: danharrin/monorepo-split-github-action@v2.4.5
         env:
-          GITHUB_TOKEN: ${{ steps.mirror-token.outputs.token }}
+          # The action builds `https://<token>@github.com/...`, which puts the token in the
+          # username. A personal token works that way; a GitHub App installation token has to
+          # be the password, so git otherwise stops and asks for one — and the only sign of it
+          # is "could not read Password" at the push. Naming the username makes both work.
+          GITHUB_TOKEN: x-access-token:${{ steps.mirror-token.outputs.token }}
         with:
           package_directory: php/packages/${{ matrix.package.directory }}
           repository_organization: webx-ui
