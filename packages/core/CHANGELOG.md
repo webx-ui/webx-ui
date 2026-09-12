@@ -1,5 +1,57 @@
 # @webx-ui/core
 
+## 0.11.0
+
+### Minor Changes
+
+- 6d876dc: A round of fixes from reading the docs on a phone.
+
+  - `WxSelectionArea` now picks the item a finger taps. It used to ignore touch entirely unless
+    `touch` was on, so a phone selected nothing at all; a finger that travels is still left to the
+    scroller, and a cancelled gesture no longer picks whatever it started on. With `touch` on, the
+    area sets `touch-action: none` — without it the browser took the drag away on a real device,
+    which is why it worked in a desktop emulator and nowhere else.
+  - `WxSteps` turns down the page on its own once a step would be narrower than `minStepWidth`
+    (132px; `0` never folds). Across a phone the titles used to wrap to a letter a line.
+  - `WxDescriptions` clamps a pair's `span` to the columns the list has, and folds every span to one
+    when the list folds to one column. A `:span="2"` pair used to ask for more tracks than the grid
+    had and threw the placement of every pair after it.
+  - `WxMenu` shuts an open overflow flyout before re-splitting the bar, instead of leaving it
+    standing with an empty list.
+  - `WxSubmenu` sets the first child of an open branch off its own title, rather than leaving the
+    same two pixels there as between siblings.
+  - `WxTree` gains `springDelay` (600ms): holding a node over a closed branch opens it, as
+    `WxTable`'s tree already did.
+  - `WxDateRangePicker` no longer offers a clock under the calendar — the date-only format threw
+    away whatever was set on it.
+  - `WxTooltip`'s default `delay` is 150ms rather than 400ms.
+
+- 828cd57: `WxSelectionArea`: a click picks a card again, and it can be told to hold only one.
+
+  - A plain mouse click cleared the selection instead of picking the card under it. The area captures
+    the pointer, and every event after that is retargeted to the element holding the capture — so the
+    release reported the area itself, which read as a click on the background. The gesture is now
+    read off where it began, which is also what a click is: a press and a release on the same thing.
+  - New `multiple` prop, `true` by default. Off, the model never holds more than one value: there is
+    no box, no run and no toggle, and a click or a tap picks the item under it. A gallery wants
+    several; a file picker wants one.
+
+### Patch Changes
+
+- e8c2bd5: Three fixes from the same round, read on a phone again.
+
+  - The overflow branch of a horizontal `WxMenu` rendered an empty list in a production build. Vnodes
+    handed along as a prop skip the cloning Vue does for a slot rendered in a template, so an entry
+    moving from the bar to the branch was being asked to mount twice — and in production a static
+    entry is cached and handed back as the very same object. `WxNodes` now clones what it renders,
+    which covers every split slot at once. It never showed in a development build.
+  - The splitting bar is `overflow-x: clip` rather than `hidden`. A box with `hidden` is still a
+    scroll container, and the browser scrolls one to reveal a focused button inside it — which, in
+    the frame where everything is back in the bar to be measured, left the bar pushed sideways.
+  - A tap in `WxSelectionArea` adds and removes rather than replacing, the way ctrl-click does. With
+    no modifier and no box, a tap that replaced the selection meant a touch screen could never hold
+    more than one item in it.
+
 ## 0.10.0
 
 ### Minor Changes
