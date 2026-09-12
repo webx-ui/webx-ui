@@ -140,9 +140,16 @@ name, deleting reports a wish — so the same card sits in a library, in a picke
 field. The icon set gained a `file-<extension>` family to go with it, and an extension nobody has
 drawn gets the plain page with its own name written underneath.
 
-ImageEditor ⬜ — what the card's edit action asks for and nothing yet answers: a canvas, crop
-handles, aspect ratios, a rotation, and a blob at the end of it. Wanted for the media library;
-deliberately not folded into the card, which is a tile and should stay one.
+ImageEditor ✅ — what the card's edit action asks for: a crop with the eight grips everybody knows,
+aspect ratios, quarter turns, mirrorings, an output size, and a blob at the end of it. See
+[ImageEditor](/components/image-editor). It is deliberately not folded into the card, which is a
+tile and should stay one — the card asks, `openImageEditor()` answers.
+
+It uploads nothing, the way nothing here does: the answer is a blob, its measurements and the crop
+it was cut from, so the same editor crops an avatar before a form is submitted and re-cuts a file
+that is already in a library. Everything on screen is geometry, and the picture is drawn exactly
+once — at the end, under one transform — because a chain of canvases softens a photograph at every
+link.
 
 SortableList ✅ — a list whose order is the point, dragged by a grip or moved with the arrow keys:
 see [SortableList](/components/sortable-list).

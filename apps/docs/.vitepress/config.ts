@@ -61,6 +61,7 @@ export default defineConfig({
             { text: 'FileCard', link: '/components/file-card' },
             { text: 'Avatar', link: '/components/avatar' },
             { text: 'Image', link: '/components/image' },
+            { text: 'ImageEditor', link: '/components/image-editor' },
             { text: 'Segmented', link: '/components/segmented' },
           ],
         },
