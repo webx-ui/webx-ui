@@ -177,7 +177,8 @@ php/
   composer-пакетов.
 - **У php-пакетов нет публикации, есть тег.** `release.yml` после changesets вешает `php-v<версия>`
   и вызывает `php-split.yml`, тот зеркалит каждый пакет в `webx-ui/<имя>` и ставит там `v<версия>`
-  — Packagist подхватывает вебхуком. Нужен секрет `PHP_SPLIT_TOKEN` и заранее созданный
+  — Packagist подхватывает вебхуком. Право на запись даёт GitHub App организации
+  (`PHP_SPLIT_APP_ID` + `PHP_SPLIT_APP_PRIVATE_KEY`); руками нужен только сам
   репозиторий-зеркало. Подробности и что делать на packagist.org —
   `docs/architecture/WEBX_UI_PHP_RELEASE.md`.
 - **Релиз:** мерж PR с changeset'ами → бот открывает «chore: version packages» → мерж этого PR
