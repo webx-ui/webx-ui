@@ -7,6 +7,7 @@ namespace WebxUi\Admin;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Console\InstallCommand;
 use WebxUi\Admin\Console\MakeModuleCommand;
+use WebxUi\Admin\Console\PanelCommand;
 use WebxUi\Admin\Manifest\ManifestBuilder;
 
 class AdminServiceProvider extends ServiceProvider
@@ -48,6 +49,7 @@ class AdminServiceProvider extends ServiceProvider
         $this->commands([
             InstallCommand::class,
             MakeModuleCommand::class,
+            PanelCommand::class,
         ]);
     }
 }

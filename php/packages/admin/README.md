@@ -126,6 +126,35 @@ return ApiResponse::message('Published.');
 return ApiResponse::noContent();
 ```
 
+## The panel's front end
+
+The panel is built by the site rather than shipped prebuilt: which modules it contains is a
+decision only the site can make, so there is no one bundle to ship.
+
+```bash
+php artisan webx:panel
+```
+
+writes `resources/js/admin.ts`, adds it to the `laravel()` plugin's inputs, and points
+`webx-admin.vite` at it. Then install the front-end packages it names and build:
+
+```bash
+npm install @webx-ui/admin @webx-ui/module-auth
+npm run build      # or npm run dev while working — @vite serves from the dev server
+```
+
+If your Vite configuration is shaped in a way the command does not recognise, it says which
+line to add rather than rewriting a build it does not understand.
+
+Building the panel outside Laravel's Vite — in CI, say, or alongside a front end that has its
+own toolchain — is the other supported route: name the files instead.
+
+```php
+'assets' => ['/webx/webx.css', '/webx/webx.js'],
+```
+
+Give those files hashed names. With stable ones a browser keeps the panel it saw yesterday.
+
 ## The shell
 
 Every address below the panel prefix serves the same page: routing inside the admin belongs to
