@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import WxSteps from './Steps.vue'
 import WxStep from '../Step/Step.vue'
 
@@ -14,6 +15,32 @@ const three = `
 function mountSteps(props: Record<string, unknown> = {}) {
   return mount(WxSteps, { props, slots: { default: three }, global })
 }
+
+const originalObserver = globalThis.ResizeObserver
+
+/**
+ * jsdom lays nothing out and has no `ResizeObserver`, so the width the sequence folds
+ * on is handed over: a stub observer that never fires, and a box of the given width for
+ * the first reading `useElementWidth` takes on mount.
+ */
+function widthIs(width: number) {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as unknown as typeof ResizeObserver
+
+  Object.defineProperty(HTMLElement.prototype, 'getBoundingClientRect', {
+    configurable: true,
+    value: () => ({ width, height: 0, top: 0, left: 0, right: width, bottom: 0 }),
+  })
+}
+
+afterEach(() => {
+  globalThis.ResizeObserver = originalObserver
+  // @ts-expect-error — putting jsdom's own (useless, but real) one back
+  delete HTMLElement.prototype.getBoundingClientRect
+})
 
 function states(wrapper: ReturnType<typeof mountSteps>) {
   return wrapper.findAll('.wx-step').map((step) => {
@@ -75,5 +102,42 @@ describe('WxSteps', () => {
     const wrapper = mountSteps({ current: 2 })
 
     expect(wrapper.findAll('.wx-step__head')[0].element.tagName).toBe('DIV')
+  })
+
+  /* ----------------------------------------------------------------- fold */
+
+  it('turns down the page where a step would be too narrow to read', async () => {
+    widthIs(300)
+
+    const wrapper = mountSteps()
+    await nextTick()
+
+    // Three steps in 300px is a hundred each, and a step is 132 at its narrowest.
+    expect(wrapper.classes()).toContain('wx-steps--vertical')
+    expect(wrapper.classes()).toContain('is-folded')
+  })
+
+  it('stays across the page while the steps have room', async () => {
+    widthIs(600)
+
+    const wrapper = mountSteps()
+    await nextTick()
+
+    expect(wrapper.classes()).toContain('wx-steps--horizontal')
+    expect(wrapper.classes()).not.toContain('is-folded')
+  })
+
+  it('never folds when min-step-width is off', async () => {
+    widthIs(120)
+
+    const wrapper = mountSteps({ minStepWidth: 0 })
+    await nextTick()
+
+    expect(wrapper.classes()).toContain('wx-steps--horizontal')
+  })
+
+  it('assumes the roomy case until something has been measured', () => {
+    // No `widthIs`: nothing is laid out, which is the server and the first frame.
+    expect(mountSteps().classes()).toContain('wx-steps--horizontal')
   })
 })

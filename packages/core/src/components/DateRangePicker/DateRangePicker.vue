@@ -52,6 +52,14 @@ const modelType = computed(() =>
 )
 const displayFormat = computed(() => props.format ?? 'dd.MM.yyyy')
 
+/*
+ * A range of days, not of moments. The picker offers a clock underneath by default, and
+ * the time picked there is thrown away by the date-only format the moment it is applied —
+ * so the control is only there to be misread. Pair two `WxDateTimePicker`s where the ends
+ * really are moments.
+ */
+const timeConfig = { enableTimePicker: false }
+
 const inputAttrs = computed(() => ({
   id: field.id.value,
   name: props.name,
@@ -91,6 +99,7 @@ function onCleared() {
       :model-value="model"
       :model-type="modelType"
       :formats="{ input: displayFormat }"
+      :time-config="timeConfig"
       :multi-calendars="months"
       :input-attrs="inputAttrs"
       :ui="{ input: 'wx-datepicker__input', menu: 'wx-datepicker__menu' }"

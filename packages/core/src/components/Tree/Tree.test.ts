@@ -265,6 +265,49 @@ describe('WxTree', () => {
     expect(row(wrapper, 'Pages').attributes('draggable')).toBe('true')
   })
 
+  /* --------------------------------------------------------------- spring */
+
+  it('opens a closed branch a node is held over', async () => {
+    vi.useFakeTimers()
+    const wrapper = tree({ draggable: true, springDelay: 400 })
+
+    await row(wrapper, 'Pages').trigger('dragstart', { dataTransfer: dataTransfer() })
+    await row(wrapper, 'Engine').trigger('dragover', { dataTransfer: dataTransfer() })
+
+    expect(labels(wrapper)).not.toContain('Pistons')
+
+    await vi.advanceTimersByTimeAsync(400)
+
+    expect(labels(wrapper)).toContain('Pistons')
+    expect(wrapper.emitted('expand')).toHaveLength(1)
+    vi.useRealTimers()
+  })
+
+  it('holds the branch closed when the spring is switched off', async () => {
+    vi.useFakeTimers()
+    const wrapper = tree({ draggable: true, springDelay: 0 })
+
+    await row(wrapper, 'Pages').trigger('dragstart', { dataTransfer: dataTransfer() })
+    await row(wrapper, 'Engine').trigger('dragover', { dataTransfer: dataTransfer() })
+    await vi.advanceTimersByTimeAsync(2000)
+
+    expect(labels(wrapper)).not.toContain('Pistons')
+    vi.useRealTimers()
+  })
+
+  it('leaves the branch closed when the drag ends before the spring fires', async () => {
+    vi.useFakeTimers()
+    const wrapper = tree({ draggable: true, springDelay: 400 })
+
+    await row(wrapper, 'Pages').trigger('dragstart', { dataTransfer: dataTransfer() })
+    await row(wrapper, 'Engine').trigger('dragover', { dataTransfer: dataTransfer() })
+    await row(wrapper, 'Engine').trigger('dragend')
+    await vi.advanceTimersByTimeAsync(2000)
+
+    expect(labels(wrapper)).not.toContain('Pistons')
+    vi.useRealTimers()
+  })
+
   /* ------------------------------------------------------------- keyboard */
 
   it('walks the rows with the arrow keys', async () => {

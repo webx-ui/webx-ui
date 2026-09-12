@@ -9,7 +9,10 @@ export interface SelectionAreaProps {
   threshold?: number
   /** A click picks one item; a click on the background clears the selection. */
   clickSelect?: boolean
-  /** Drag with a finger too. Off, because on a touch screen a drag scrolls. */
+  /**
+   * Draw the box with a finger too, at the cost of the area scrolling with one. Off,
+   * because on a touch screen a drag means scroll — a tap still picks either way.
+   */
   touch?: boolean
   /** How near the scroller's edge the pointer scrolls it, in pixels. `0` never does. */
   edgeScroll?: number

@@ -31,6 +31,9 @@ provide(descriptionsKey, {
   get labelWidth() {
     return props.labelWidth
   },
+  get columns() {
+    return Math.max(1, props.columns)
+  },
 })
 
 const classes = computed(() => [

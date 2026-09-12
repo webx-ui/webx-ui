@@ -23,11 +23,23 @@ const stacked = computed(() => list.layout === 'vertical')
  * Beside its value, a pair is two grid cells, so spanning two columns means spanning
  * four tracks — and the label keeps the one track it started with. Above its value,
  * the pair is a single cell and spans plainly.
+ *
+ * Clamped to the columns the list actually has: a pair asking for more tracks than
+ * there are does not widen the grid, it spills out of it and takes the placement of
+ * every pair after it with it.
  */
 const span = computed(() => {
-  const columns = Math.max(1, props.span)
+  const columns = Math.min(Math.max(1, props.span), list.columns)
   return stacked.value ? columns : columns * 2 - 1
 })
+
+/*
+ * Handed to CSS rather than set as `grid-column` here, because the number is only right
+ * while the list has all its columns. Folded to one — which is a container query, and so
+ * is not knowable from script — every pair spans a single track, and an inline style is
+ * exactly what a stylesheet cannot take back.
+ */
+const style = computed(() => ({ '--wx-descriptions-span': String(span.value) }))
 </script>
 
 <template>
@@ -37,7 +49,7 @@ const span = computed(() => {
     labels of different pairs share a column and line up. A wrapper here would end
     that, which is why there is not one.
   -->
-  <div v-if="stacked" class="wx-descriptions__pair" :style="{ gridColumn: `span ${span}` }">
+  <div v-if="stacked" class="wx-descriptions__pair" :style="style">
     <dt class="wx-descriptions__label">
       <slot name="label">{{ label }}</slot>
     </dt>
@@ -48,7 +60,7 @@ const span = computed(() => {
     <dt class="wx-descriptions__label">
       <slot name="label">{{ label }}</slot>
     </dt>
-    <dd class="wx-descriptions__value" :style="{ gridColumn: `span ${span}` }"><slot /></dd>
+    <dd class="wx-descriptions__value" :style="style"><slot /></dd>
   </template>
 </template>
 
@@ -68,6 +80,7 @@ const span = computed(() => {
 .wx-descriptions__value {
   min-width: 0;
   margin: 0;
+  grid-column: span var(--wx-descriptions-span, 1);
   color: var(--wx-text-default);
   line-height: var(--wx-font-line-height-normal);
 }
@@ -77,6 +90,20 @@ const span = computed(() => {
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  grid-column: span var(--wx-descriptions-span, 1);
+}
+
+/*
+ * Folded to one column there is one track for a value and one for a pair, so every span
+ * is one whatever it was asked for. Left alone, a pair spanning two columns still asked
+ * for three tracks out of two and was placed on a row of its own past the edge of the
+ * grid — which is what threw the labels and the values of every pair after it apart.
+ */
+@container (max-width: 420px) {
+  .wx-descriptions__value,
+  .wx-descriptions__pair {
+    grid-column: span 1;
+  }
 }
 
 /*

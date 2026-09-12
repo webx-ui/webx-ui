@@ -73,6 +73,11 @@ const topLevel = ref<MenuValue>('content')
             </wx-submenu>
           </wx-submenu>
           <wx-menu-item value="reports" icon="list" label="Reports" />
+          <wx-menu-item value="orders" icon="cart" label="Orders" />
+          <wx-menu-item value="customers" icon="users" label="Customers" />
+          <wx-menu-item value="invoices" icon="file" label="Invoices" />
+          <wx-menu-item value="shipping" icon="tag" label="Shipping" />
+          <wx-menu-item value="settings-top" icon="settings" label="Settings" />
         </wx-menu>
       </div>
     </div>

@@ -61,6 +61,9 @@ const fits = ref(Number.POSITIVE_INFINITY)
 /* While this is on everything is in the bar, and the branch is there to be measured. */
 const measuring = ref(false)
 
+/* Every open flyout listens for this to change; nothing reads the number itself. */
+const closeSignal = ref(0)
+
 /**
  * Whether anything is in the branch. It is read off the last measurement rather than
  * off the entries, because everything that asks the slot for its entries has to do
@@ -89,6 +92,14 @@ async function measure() {
     overflowing.value = false
     return
   }
+
+  /*
+   * A panel hanging off the branch is stale the moment the bar is re-split, and it is
+   * emptied by the measurement itself: everything goes back into the bar to be measured,
+   * so a flyout left standing shows an empty list — which is what the open, empty "More"
+   * was. It is shut before the bar is touched rather than after, so it never shows one.
+   */
+  closeSignal.value += 1
 
   /* Everything back in the bar, at its natural width, before anything is read. */
   measuring.value = true
@@ -202,9 +213,6 @@ function setOpen(value: MenuValue, open: boolean, ancestors: MenuValue[]) {
     ? [...ancestors, value]
     : [...openKeys.value.filter((key) => key !== value), value]
 }
-
-/* Every open flyout listens for this to change; nothing reads the number itself. */
-const closeSignal = ref(0)
 
 provide(menuKey, {
   mode: computed(() => props.mode),
