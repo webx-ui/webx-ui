@@ -118,6 +118,7 @@ export function openModal<T = unknown>(
 
   let done = false
   let timer: ReturnType<typeof setTimeout> | undefined
+  let gone = false
 
   /*
    * The plain timer functions rather than `window`'s. The panel is taken away a moment
@@ -126,6 +127,14 @@ export function openModal<T = unknown>(
    * error rather than a cleanup.
    */
   function unmount() {
+    /*
+     * An unmount hook that throws comes back here through `onErrorCaptured`, and a second
+     * `render(null)` over a half-unmounted tree throws again — one error becomes a stack
+     * overflow. Once is enough.
+     */
+    if (gone) return
+    gone = true
+
     clearTimeout(timer)
     render(null, container)
     container.remove()
