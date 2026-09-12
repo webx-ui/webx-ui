@@ -5,6 +5,7 @@ import WxButton from '../Button/Button.vue'
 import WxIcon from '../Icon/Icon.vue'
 import WxInputNumber from '../InputNumber/InputNumber.vue'
 import WxSegmented from '../Segmented/Segmented.vue'
+import WxTooltip from '../Tooltip/Tooltip.vue'
 import {
   clamp,
   fitInside,
@@ -65,7 +66,10 @@ const props = withDefaults(defineProps<ImageEditorProps>(), {
   flipVerticalLabel: 'Mirror down',
   ratioLabel: 'Ratio',
   cropLabel: 'Crop',
+  outputLabel: 'Output',
+  outputHint: 'The size of the picture you will get',
   widthLabel: 'Width',
+  heightLabel: 'Height',
   freeLabel: 'Free',
   originalLabel: 'Original',
   errorText: 'This picture could not be loaded',
@@ -400,11 +404,36 @@ const fullSize = computed(() =>
   fitInside(crop.value.width, crop.value.height, props.maxWidth, props.maxHeight),
 )
 
+/**
+ * The size the result will actually be written at: the crop's own pixels, unless the
+ * reader has asked for fewer.
+ *
+ * The width is kept as a fraction rather than a whole number of pixels so that a height
+ * typed into the other field comes back as exactly that height — rounded first, it would
+ * read back a pixel out and look as though the field had refused what was typed.
+ */
 const output = computed(() => {
-  const width = clamp(widthOverride.value ?? fullSize.value.width, 1, fullSize.value.width)
-  const height = Math.max(1, Math.round((width * crop.value.height) / (crop.value.width || 1)))
-  return { width, height }
+  const full = fullSize.value
+  const width = clamp(widthOverride.value ?? full.width, 1, full.width)
+  return {
+    width: Math.max(1, Math.round(width)),
+    height: Math.max(1, Math.round((width * full.height) / (full.width || 1))),
+  }
 })
+
+function setOutputWidth(value: number | null | undefined) {
+  widthOverride.value = value == null ? null : clamp(value, 1, fullSize.value.width)
+}
+
+/** The same size, asked for from the other side. */
+function setOutputHeight(value: number | null | undefined) {
+  if (value == null) {
+    widthOverride.value = null
+    return
+  }
+  const full = fullSize.value
+  widthOverride.value = clamp((value * full.width) / (full.height || 1), 1, full.width)
+}
 
 /**
  * The last part of the URL, which is where a name and an extension would be — taken
@@ -670,22 +699,47 @@ defineExpose({
         />
       </span>
 
+      <!--
+        Named, and both sides of it: two numbers with nothing to say what they measure
+        read as the crop, the picture or the panel with equal ease, and a lone width
+        leaves the reader to work out what happened to the height.
+      -->
       <span class="wx-image-editor__size">
+        <wx-tooltip :content="outputHint">
+          <span class="wx-image-editor__caption">{{ outputLabel }}</span>
+        </wx-tooltip>
+
         <wx-input-number
           v-if="resizable"
           :model-value="output.width"
-          class="wx-image-editor__width"
+          class="wx-image-editor__field"
           size="sm"
           :min="1"
           :max="fullSize.width"
           :controls="false"
           :aria-label="widthLabel"
           :disabled="disabled || !ready"
-          @update:model-value="widthOverride = $event ?? null"
+          @update:model-value="setOutputWidth"
         />
         <span v-else class="wx-image-editor__number">{{ output.width }}</span>
+
         <span class="wx-image-editor__times" aria-hidden="true">×</span>
-        <span class="wx-image-editor__number">{{ output.height }}</span>
+
+        <wx-input-number
+          v-if="resizable"
+          :model-value="output.height"
+          class="wx-image-editor__field"
+          size="sm"
+          :min="1"
+          :max="fullSize.height"
+          :controls="false"
+          :aria-label="heightLabel"
+          :disabled="disabled || !ready"
+          @update:model-value="setOutputHeight"
+        />
+        <span v-else class="wx-image-editor__number">{{ output.height }}</span>
+
+        <span class="wx-image-editor__unit">px</span>
       </span>
 
       <wx-button
@@ -965,12 +1019,24 @@ defineExpose({
   font-variant-numeric: tabular-nums;
 }
 
-.wx-image-editor__width {
-  width: 84px;
+/* Wide enough for five digits — a camera's four, and a scan's five. */
+.wx-image-editor__field {
+  width: 74px;
+}
+
+.wx-image-editor__caption {
+  /* Dotted, the way a word with something behind it is written everywhere else. */
+  border-bottom: 1px dotted var(--wx-border-default);
+  cursor: help;
 }
 
 .wx-image-editor__number {
   color: var(--wx-text-default);
+}
+
+.wx-image-editor__times,
+.wx-image-editor__unit {
+  color: var(--wx-text-placeholder);
 }
 
 .wx-image-editor__footer {

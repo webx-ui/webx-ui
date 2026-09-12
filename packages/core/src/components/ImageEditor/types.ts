@@ -98,8 +98,11 @@ export interface ImageEditorProps {
   /** Accessible name of the ratio picker, and of the crop box itself. */
   ratioLabel?: string
   cropLabel?: string
-  /** The output-size field. */
+  /** The output-size row: its caption, the tip on that caption, and the two fields. */
+  outputLabel?: string
+  outputHint?: string
   widthLabel?: string
+  heightLabel?: string
   freeLabel?: string
   originalLabel?: string
   /** Shown in place of the picture when it will not load. */

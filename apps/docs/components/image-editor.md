@@ -109,13 +109,17 @@ laid out afresh in the picture's new orientation rather than coming out sideways
 
 ## The size it is written at
 
-`maxWidth` and `maxHeight` cap the result, and a bigger crop is scaled down to fit inside them —
-the line to write on a media library, where what arrives from a phone is four thousand pixels wide
-and what the site needs is twelve hundred.
+**Output** is the size of the file you will get — not the crop on screen and not the picture
+behind it, which is why it is named rather than left as two numbers to be guessed at. It starts as
+the crop's own pixels and follows the crop as it is dragged; type into either field and the other
+follows, since the shape is the crop's to decide.
 
-Under the toolbar the reader gets the same control for one picture: the width of the result, with
-the height following it. It never scales up — a crop cannot be asked for more pixels than it has.
-`:resizable="false"` takes the field away and leaves the reading.
+It never scales up: a crop cannot be asked for more pixels than it has. `:resizable="false"` takes
+the fields away and leaves the reading.
+
+`maxWidth` and `maxHeight` cap it from the other side, and a bigger crop is scaled down to fit
+inside them — the line to write on a media library, where what arrives from a phone is four
+thousand pixels wide and what the site needs is twelve hundred.
 
 ## The format
 
@@ -151,7 +155,7 @@ the ratio.
 | `ratio`       | `ImageEditorRatio`                                      | the first     | Which one it opens on                                      |
 | `rotatable`   | `boolean`                                               | `true`        | Quarter turns, left and right                              |
 | `flippable`   | `boolean`                                               | `true`        | Mirroring, across and down                                 |
-| `resizable`   | `boolean`                                               | `true`        | The output-width field                                     |
+| `resizable`   | `boolean`                                               | `true`        | The output-size fields                                     |
 | `maxWidth`    | `number`                                                | —             | Largest output; a bigger crop is scaled down               |
 | `maxHeight`   | `number`                                                | —             | The same, for the height                                   |
 | `minSize`     | `number`                                                | `16`          | Smallest crop, in the picture's own pixels                 |
@@ -163,8 +167,9 @@ the ratio.
 | `disabled`    | `boolean`                                               | `false`       | Everything is shown and nothing can be done                |
 
 The labels — `saveLabel`, `cancelLabel`, `resetLabel`, `rotateLeftLabel`, `rotateRightLabel`,
-`flipHorizontalLabel`, `flipVerticalLabel`, `ratioLabel`, `cropLabel`, `widthLabel`, `freeLabel`,
-`originalLabel`, `errorText` — are all English by default and all replaceable.
+`flipHorizontalLabel`, `flipVerticalLabel`, `ratioLabel`, `cropLabel`, `outputLabel`, `outputHint`,
+`widthLabel`, `heightLabel`, `freeLabel`, `originalLabel`, `errorText` — are all English by default
+and all replaceable.
 
 **Events:** `save` (`ImageEditorResult`); `cancel`; `load` (`{ width, height }`); `error`
 (`unknown`); `crop` (the rectangle, as it is dragged).

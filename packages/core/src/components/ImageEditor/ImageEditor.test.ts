@@ -217,4 +217,35 @@ describe('WxImageEditor', () => {
 
     expect(cropOf(wrapper)).toEqual({ x: 0, y: 0, width: 800, height: 600 })
   })
+  it('sizes the result from either side, and says what the size is of', async () => {
+    const wrapper = await loaded(editor())
+
+    expect(wrapper.get('.wx-image-editor__caption').text()).toBe('Output')
+
+    /* A height typed in comes back as exactly that height, not a pixel either side. */
+    await wrapper.get('[aria-label="Height"]').setValue('410')
+    expect((wrapper.get('[aria-label="Width"]').element as HTMLInputElement).value).toBe('547')
+
+    await (wrapper.vm as unknown as { apply: () => Promise<unknown> }).apply()
+
+    expect(saved(wrapper)!.width).toBe(547)
+    expect(saved(wrapper)!.height).toBe(410)
+  })
+
+  it('will not be asked for more pixels than the crop has', async () => {
+    const wrapper = await loaded(editor())
+
+    await wrapper.get('[aria-label="Width"]').setValue('4000')
+    await (wrapper.vm as unknown as { apply: () => Promise<unknown> }).apply()
+
+    expect(saved(wrapper)!.width).toBe(800)
+  })
+
+  it('reads the size out when it may not be changed', async () => {
+    const wrapper = await loaded(editor({ resizable: false }))
+
+    expect(wrapper.findAll('.wx-image-editor__field')).toHaveLength(0)
+    expect(wrapper.get('.wx-image-editor__size').text()).toContain('800')
+    expect(wrapper.get('.wx-image-editor__size').text()).toContain('600')
+  })
 })
