@@ -58,6 +58,7 @@ export default defineConfig({
             { text: 'Dialog', link: '/components/dialog' },
             { text: 'Drawer', link: '/components/drawer' },
             { text: 'EntityCard', link: '/components/entity-card' },
+            { text: 'FileCard', link: '/components/file-card' },
             { text: 'Avatar', link: '/components/avatar' },
             { text: 'Image', link: '/components/image' },
             { text: 'Segmented', link: '/components/segmented' },

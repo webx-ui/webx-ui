@@ -1,3 +1,45 @@
+/*
+ * The file family is a page with a mark on it. The page is drawn once here and the marks
+ * sit in the room it leaves: roughly x 8.5–15.5, y 12–18, the lower half under the folded
+ * corner. They are declared before the set below because that is where they are used.
+ */
+const PAGE = '<path d="M13.5 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9zm0 0V9H19"/>'
+
+/** Lines of prose. */
+const TEXT = PAGE + '<path d="M8.5 12.8h7M8.5 15.4h7M8.5 18h4"/>'
+/** A little grid. */
+const SHEET = PAGE + '<path d="M8.5 12.6h7v5.4h-7z"/><path d="M8.5 15.3h7M12 12.6V18"/>'
+/** Bars, which is what a deck is full of. */
+const SLIDES = PAGE + '<path d="M9.3 18v-2.6M12 18v-5.2M14.7 18v-3.6"/>'
+/*
+ * A P, because a red page with three letters on it is not available here. One letter and
+ * not two: a P beside a bare stroke for the D read as "PI".
+ */
+const PDF = PAGE + '<path d="M10.2 18v-5.4h2.1a1.7 1.7 0 0 1 0 3.4h-2.1"/>'
+/** The slider of a zip. */
+const ARCHIVE =
+  PAGE + '<rect x="10.4" y="12.4" width="3.2" height="5.6" rx="1.4"/><path d="M12 14.4v1.6"/>'
+/** A note with its stem. */
+const AUDIO =
+  PAGE +
+  '<path d="M10.4 17.3v-4.4l4.6-1v4.4"/><circle cx="9.3" cy="17.4" r="1.15"/><circle cx="13.9" cy="16.4" r="1.15"/>'
+/** A play triangle. */
+const VIDEO = PAGE + '<path d="M10.4 12.9v4.8l4.4-2.4z"/>'
+/** Hills and a sun — the same picture the `image` icon draws, at a sixth of the room. */
+const PICTURE =
+  PAGE + '<path d="M8.6 17.8 11 14.9l1.7 1.9 1.3-1.5 2.1 2.5"/><circle cx="10" cy="13.4" r="1.05"/>'
+/** A curve between two nodes. */
+const VECTOR =
+  PAGE +
+  '<path d="M9.4 17.4c0-3.2 5.2-3.2 5.2 0"/><circle cx="9.4" cy="17.7" r="1"/><circle cx="14.6" cy="17.7" r="1"/>'
+/** Sheets stacked on sheets. */
+const LAYERED =
+  PAGE + '<path d="m12 12.4-3.5 1.8 3.5 1.8 3.5-1.8z"/><path d="m8.5 16.6 3.5 1.8 3.5-1.8"/>'
+/** Angle brackets. */
+const CODE = PAGE + '<path d="m10.5 13.3-2 2 2 2M13.5 13.3l2 2-2 2"/>'
+/** A serif A, as close as a stroke gets to a specimen. */
+const FONT = PAGE + '<path d="M9.6 18l2.4-5.4 2.4 5.4M10.5 16.2h3"/>'
+
 /**
  * The built-in icon set.
  *
@@ -20,6 +62,7 @@ export const builtinIcons = {
   copy: '<rect x="8.5" y="8.5" width="11" height="11" rx="2.2"/><path d="M15.5 8.5v-2a2 2 0 0 0-2-2h-7a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
   filter: '<path d="M4 5.5h16l-6.2 7.2v5.1l-3.6 2v-7.1z"/>',
+  crop: '<path d="M6.5 2.5v13a2 2 0 0 0 2 2h13"/><path d="M2.5 6.5h13a2 2 0 0 1 2 2v13"/>',
   refresh:
     '<path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5"/><path d="M20 4.5v4h-4"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.5"/><path d="M4 19.5v-4h4"/>',
   upload:
@@ -95,6 +138,106 @@ export const builtinIcons = {
     '<circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.4a2.5 2.5 0 0 1 4.9.6c0 1.7-2.5 2-2.5 3.5"/><circle cx="12" cy="16.6" r="1.05" fill="currentColor" stroke="none"/>',
   loader:
     '<path d="M12 3.5v4M12 16.5v4M3.5 12h4M16.5 12h4M6 6l2.8 2.8M15.2 15.2 18 18M18 6l-2.8 2.8M8.8 15.2 6 18"/>',
+
+  /*
+   * --- files ---------------------------------------------------------------
+   *
+   * A name per extension, so `file-docx` is a name whether or not it draws
+   * something of its own, and a screen never has to map an extension to a family
+   * before it can ask for an icon. Extensions that are the same kind of file share
+   * a drawing: a `.docx` and an `.odt` are both a page of prose, and pretending
+   * otherwise would mean twelve marks nobody can tell apart.
+   *
+   * `file-generic` is what an unknown extension gets. `WxFileCard` writes the
+   * extension under it, which is the part that tells a `.sketch` from a `.dwg`.
+   */
+  'file-generic': PAGE,
+
+  'file-txt': TEXT,
+  'file-md': TEXT,
+  'file-rtf': TEXT,
+  'file-doc': TEXT,
+  'file-docx': TEXT,
+  'file-odt': TEXT,
+  'file-pages': TEXT,
+
+  'file-csv': SHEET,
+  'file-xls': SHEET,
+  'file-xlsx': SHEET,
+  'file-ods': SHEET,
+  'file-numbers': SHEET,
+
+  'file-ppt': SLIDES,
+  'file-pptx': SLIDES,
+  'file-odp': SLIDES,
+  'file-key': SLIDES,
+
+  'file-pdf': PDF,
+
+  'file-zip': ARCHIVE,
+  'file-rar': ARCHIVE,
+  'file-7z': ARCHIVE,
+  'file-tar': ARCHIVE,
+  'file-gz': ARCHIVE,
+  'file-bz2': ARCHIVE,
+
+  'file-mp3': AUDIO,
+  'file-wav': AUDIO,
+  'file-ogg': AUDIO,
+  'file-flac': AUDIO,
+  'file-aac': AUDIO,
+  'file-m4a': AUDIO,
+
+  'file-mp4': VIDEO,
+  'file-mov': VIDEO,
+  'file-avi': VIDEO,
+  'file-webm': VIDEO,
+  'file-mkv': VIDEO,
+  'file-m4v': VIDEO,
+
+  'file-jpg': PICTURE,
+  'file-jpeg': PICTURE,
+  'file-png': PICTURE,
+  'file-gif': PICTURE,
+  'file-webp': PICTURE,
+  'file-avif': PICTURE,
+  'file-bmp': PICTURE,
+  'file-tiff': PICTURE,
+  'file-ico': PICTURE,
+
+  'file-svg': VECTOR,
+  'file-ai': VECTOR,
+  'file-eps': VECTOR,
+
+  'file-psd': LAYERED,
+  'file-xcf': LAYERED,
+  'file-fig': LAYERED,
+  'file-sketch': LAYERED,
+
+  'file-js': CODE,
+  'file-ts': CODE,
+  'file-jsx': CODE,
+  'file-tsx': CODE,
+  'file-vue': CODE,
+  'file-json': CODE,
+  'file-xml': CODE,
+  'file-yml': CODE,
+  'file-yaml': CODE,
+  'file-html': CODE,
+  'file-css': CODE,
+  'file-scss': CODE,
+  'file-php': CODE,
+  'file-py': CODE,
+  'file-rb': CODE,
+  'file-go': CODE,
+  'file-java': CODE,
+  'file-sh': CODE,
+  'file-sql': CODE,
+
+  'file-ttf': FONT,
+  'file-otf': FONT,
+  'file-woff': FONT,
+  'file-woff2': FONT,
 } as const satisfies Record<string, string>
 
 /** Every name the library ships with. */

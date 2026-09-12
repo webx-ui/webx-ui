@@ -38,8 +38,9 @@ Laravel. Библиотека публикуется в npm, админки — 
 `npm view @webx-ui/core version`.
 
 - **91 компонент.** Волны 1 и 2 закрыты полностью, волна 3 — частично.
-- Сверх списка Element Plus: `WxListDetail`, `WxKanban`, `WxEntityCard`, `WxActions`/`WxAction`,
-  `WxSelectionArea` (+ директива `v-wx-select`), `WxSortableList`, `WxRichText`.
+- Сверх списка Element Plus: `WxListDetail`, `WxKanban`, `WxEntityCard`, `WxFileCard`,
+  `WxActions`/`WxAction`, `WxSelectionArea` (+ директива `v-wx-select`), `WxSortableList`,
+  `WxRichText`.
 - **Не компоненты:** `useToast`/`toast` — очередь уведомлений, вызываемая откуда угодно;
   `openModal` / `createModal` / `useModal` / `confirm` — «диалоги из кода»: любой компонент
   монтируется вне дерева приложения и возвращает промис с ответом (`apps/docs/guide/modals.md`).
