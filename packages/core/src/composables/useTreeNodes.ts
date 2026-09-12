@@ -46,7 +46,12 @@ export interface TreeRow<T> extends TreeEntry<T> {
 }
 
 export interface UseTreeNodesOptions<T> {
-  nodes: Ref<T[]>
+  /**
+   * The tree. A getter or a plain array is enough for a tree that is only read; a
+   * `ref` is what a tree that can be rearranged wants, since a move splices the array
+   * the caller is holding.
+   */
+  nodes: MaybeRefOrGetter<T[]>
   accessors: TreeAccessors<T>
   /** Keys of the open branches. Owned by the caller, so `v-model:expanded` works. */
   expanded: Ref<TreeKey[]>
@@ -91,7 +96,7 @@ export function useTreeNodes<T>(options: UseTreeNodesOptions<T>) {
       })
     }
 
-    walk(nodes.value, null, null, 0, [])
+    walk(toValue(nodes), null, null, 0, [])
     return map
   })
 
@@ -171,7 +176,7 @@ export function useTreeNodes<T>(options: UseTreeNodesOptions<T>) {
       })
     }
 
-    walk(nodes.value, [])
+    walk(toValue(nodes), [])
     return out
   })
 

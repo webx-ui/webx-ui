@@ -98,7 +98,11 @@ the arrays), and the table is the other thing that runs on it. It is the screen 
 categories module actually wants: the tree and the data in one pane, instead of a sidebar tree
 beside a list of the same records.
 
-Still open: TreeSelect, Carousel, Anchor, Splitter, Watermark, Marquee.
+[TreeSelect](/components/tree-select) ✅ — the same tree as a form field, single or with
+checkboxes. It is the "parent category" field, so it reads a key and reports a key: `parent_id` is
+what the form sends, and the node comes along with the event for whatever the screen needs to show.
+
+Still open: Carousel, Anchor, Splitter, Watermark, Marquee.
 
 **Some day, maybe** — wanted, but nothing is waiting on them:
 
