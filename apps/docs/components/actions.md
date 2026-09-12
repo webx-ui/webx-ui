@@ -136,10 +136,20 @@ column); a container that shrinks to fit its content has nothing to measure agai
 | `collapse`  | `boolean`                      | `false`   | Fold into a dropdown when it does not fit |
 | `ariaLabel` | `string`                       | —         | Accessible name of the group              |
 
+**Models:** `v-model:menuOpen` — whether the folded-up menu is showing.
+
 **Events:** `collapse` (`boolean`) — the row folded, or came back out.
 
 **Slots:** `default` — the actions; `collapsed` — what the menu shows; `trigger` — the button that
 opens it.
+
+`menuOpen` is there because the menu's panel is teleported. A row that hides itself until the
+pointer is over it — the buttons on a card, say — loses that pointer the moment the menu opens, and
+would fade out from under the panel hanging off it. Reading the model is how it knows to stay:
+
+```vue
+<wx-actions v-model:menu-open="menuOpen" collapse :class="{ 'is-busy': menuOpen }">…</wx-actions>
+```
 
 The gap between actions is a variable:
 

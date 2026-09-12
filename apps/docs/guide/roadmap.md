@@ -134,6 +134,16 @@ see [ListDetail](/components/list-detail). An inbox and an orders screen are the
 SelectionArea ✅ — the rubber band over a grid or a list, see
 [SelectionArea](/components/selection-area). A media library is unusable without it.
 
+FileCard ✅ — one file in that library: a preview or a glyph, the name, and the few things that can
+be done to it, see [FileCard](/components/file-card). It does none of them — renaming reports a
+name, deleting reports a wish — so the same card sits in a library, in a picker and in a form
+field. The icon set gained a `file-<extension>` family to go with it, and an extension nobody has
+drawn gets the plain page with its own name written underneath.
+
+ImageEditor ⬜ — what the card's edit action asks for and nothing yet answers: a canvas, crop
+handles, aspect ratios, a rotation, and a blob at the end of it. Wanted for the media library;
+deliberately not folded into the card, which is a tile and should stay one.
+
 SortableList ✅ — a list whose order is the point, dragged by a grip or moved with the arrow keys:
 see [SortableList](/components/sortable-list).
 

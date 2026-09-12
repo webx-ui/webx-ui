@@ -16,6 +16,13 @@ const props = withDefaults(defineProps<ActionsProps>(), {
 
 const emit = defineEmits<ActionsEmits>()
 
+/*
+ * Whether the folded-up menu is showing. It is a model rather than a secret because the
+ * panel is teleported: a row that hides itself until the pointer is over it loses that
+ * pointer the moment the menu opens, and has no other way of knowing to stay.
+ */
+const menuOpen = defineModel<boolean>('menuOpen', { default: false })
+
 provide(actionsKey, { size: computed(() => props.size) })
 
 const root = ref<HTMLElement | null>(null)
@@ -77,7 +84,7 @@ defineExpose({ collapsed, measure })
 
     <!-- The dropdown teleports its panel, so the class that hides it lives on a wrapper. -->
     <span v-if="collapse" class="wx-actions__menu">
-      <wx-dropdown align="end">
+      <wx-dropdown v-model:open="menuOpen" align="end">
         <template #trigger>
           <slot name="trigger">
             <wx-action type="more" :size="size" />
