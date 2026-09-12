@@ -46,6 +46,19 @@ directory. Point `config/webx-admin.php` at the result:
 After that the panel answers on the real host, over HTTPS, with real cookies — which is the
 only place the session and CSRF behave the way they will in production.
 
+### Working on the packages against it
+
+`scripts/link-panel.sh` points the application's panel packages at this checkout instead of the
+registry, leaving everything else about the build alone — the application keeps using its own
+Vite, its own entry and hashed filenames, the way a real site does.
+
+```bash
+scripts/link-panel.sh              # from this checkout
+scripts/link-panel.sh --registry   # back to the published packages
+```
+
+After changing a package: `pnpm build` here, `npm run build` there.
+
 ## The smoke test
 
 Those tests run under Testbench, where the providers are wired by hand, the database is sqlite
