@@ -197,12 +197,20 @@ defineExpose({ focus: () => emailField.value?.focus() })
         >
           <template #prefix><wx-icon name="lock" /></template>
           <template #suffix>
-            <wx-action
-              :icon="revealed ? 'eye-off' : 'eye'"
+            <!-- A bare icon rather than a button with a surface: it sits inside the field, and
+                 a second box in there reads as a second control. Out of the tab order because
+                 it is a convenience, not a step. -->
+            <button
+              type="button"
+              class="wx-login__reveal"
               :title="revealed ? 'Hide the password' : 'Show the password'"
+              :aria-label="revealed ? 'Hide the password' : 'Show the password'"
+              :aria-pressed="revealed"
               tabindex="-1"
               @click="revealed = !revealed"
-            />
+            >
+              <wx-icon :name="revealed ? 'eye-off' : 'eye'" />
+            </button>
           </template>
         </wx-input>
       </wx-form-item>
@@ -232,5 +240,20 @@ defineExpose({ focus: () => emailField.value?.focus() })
 
 .wx-login__message {
   margin-block-end: var(--wx-space-4);
+}
+
+.wx-login__reveal {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  color: var(--wx-text-muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.wx-login__reveal:hover,
+.wx-login__reveal[aria-pressed='true'] {
+  color: var(--wx-text-default);
 }
 </style>
