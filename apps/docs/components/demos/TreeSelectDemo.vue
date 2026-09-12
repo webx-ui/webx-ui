@@ -60,6 +60,18 @@ const cities: Record<string, string[]> = {
 
 const region = ref<TreeKey | null>(null)
 
+/*
+ * The value a form arrives with. The tree has not fetched Ukraine's cities yet, so the
+ * field is told the path to the record it holds — which is what the backend used to
+ * find it in the first place.
+ */
+const city = ref<TreeKey | null>('ua-Kyiv')
+
+const cityPath: TreeNode[] = [
+  { id: 'ua', label: 'Ukraine' },
+  { id: 'ua-Kyiv', label: 'Kyiv', leaf: true },
+]
+
 function load(node: TreeNode) {
   return new Promise<TreeNode[]>((resolve) => {
     setTimeout(() => {
@@ -113,14 +125,25 @@ function load(node: TreeNode) {
 
       <div>
         <span class="wx-demo__label">Branches fetched when they open</span>
+        <wx-tree-select v-model="region" :nodes="regions" lazy :load="load" placeholder="Region" />
+        <span class="wx-demo__note">Model: {{ region ?? 'null' }}</span>
+      </div>
+
+      <div>
+        <span class="wx-demo__label">Fetched, and holding a value from the start</span>
         <wx-tree-select
-          v-model="region"
+          v-model="city"
           :nodes="regions"
+          :selected-path="cityPath"
           lazy
           :load="load"
-          placeholder="Region"
-          size="sm"
+          show-path
+          clearable
+          placeholder="City"
         />
+        <span class="wx-demo__note">
+          Open it: the branch the value sits in is fetched and opened.
+        </span>
       </div>
     </div>
   </div>

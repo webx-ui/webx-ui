@@ -33,6 +33,16 @@ export interface TreeSelectProps<T = TreeNode> {
   lazy?: boolean
   /** Fetches the children of one node. */
   load?: (node: T) => T[] | Promise<T[]>
+  /**
+   * The path to what is chosen — the ancestors and the node itself — for a tree that
+   * has not fetched it yet. A lazy field has no other way to name the value it holds,
+   * or to know which branches to open in order to show it. One path, or an array of
+   * them with `multiple`.
+   *
+   * A backend that knows the record knows its ancestors, so this is the same query the
+   * form already makes.
+   */
+  selectedPath?: T[] | T[][]
   /** Adds the search field above the tree. */
   filterable?: boolean
   filterPlaceholder?: string
