@@ -1,0 +1,15 @@
+import { createAdmin } from '@webx-ui/admin'
+import { auth, WxUserMenu } from '@webx-ui/module-auth'
+
+/**
+ * The panel.
+ *
+ * Add a module's front end to `modules` as you install it. A section appears when both halves
+ * are there — the server reports the module in its manifest, and its front end is listed here.
+ */
+createAdmin({
+  basePath: '{{ path }}',
+  modules: [],
+  plugins: [auth()],
+  userMenu: WxUserMenu,
+}).mount()
