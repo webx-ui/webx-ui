@@ -42,8 +42,20 @@ function hosts() {
   return document.querySelectorAll('.wx-modal-host').length
 }
 
-afterEach(() => {
-  document.querySelectorAll('.wx-modal-host').forEach((host) => host.remove())
+/**
+ * A modal takes its own node away on a timer once it has closed — a quarter of a second
+ * by default, which is what `confirm` gets, since it names no duration. Pulling the node
+ * out of the page here would leave that timer running past the end of the file, to
+ * unmount a tree into an environment vitest has already torn down; the error that comes
+ * out of that belongs to no test, and fails the run. So wait for the modal to go of its
+ * own accord, and let a test that leaves one behind say so.
+ */
+afterEach(async () => {
+  const deadline = Date.now() + 2000
+  while (hosts() > 0 && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 10))
+  }
+  expect(hosts()).toBe(0)
 })
 
 describe('openModal', () => {
