@@ -31,4 +31,6 @@ export interface DescriptionsContext {
   bordered: boolean
   layout: DescriptionsLayout
   labelWidth: string | undefined
+  /** How many columns the list has — a pair may not span more than there are. */
+  columns: number
 }

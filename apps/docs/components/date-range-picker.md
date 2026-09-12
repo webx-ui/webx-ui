@@ -26,6 +26,10 @@ const period = ref<string[] | null>(null)
 The model is `[start, end]` in `yyyy-MM-dd`, or `null` while nothing is picked — the same convention
 as [DatePicker](/components/date-picker), so a period goes to a Laravel API without conversion.
 
+A range of days, not of moments: there is no clock under the calendar, because the date-only format
+would throw away whatever was set on it. Where the ends really are moments, use two
+[`WxDateTimePicker`s](/components/date-picker).
+
 ```vue
 <template>
   <!-- three months, bounded to one year -->

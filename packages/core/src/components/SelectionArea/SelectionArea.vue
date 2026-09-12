@@ -61,6 +61,8 @@ function isSelected(value: SelectionValue) {
 /* The drag is plain variables rather than refs: none of it is rendered except the box. */
 let pointer = -1
 let started = false
+/** Whether this gesture is allowed to become a box, or is only ever a tap. */
+let boxDrag = true
 let downX = 0
 let downY = 0
 let originX = 0
@@ -268,8 +270,14 @@ function pick(event: PointerEvent) {
 function onPointerDown(event: PointerEvent) {
   const el = root.value
   if (props.disabled || !el || event.button !== 0) return
-  if (event.pointerType === 'touch' && !props.touch) return
   if ((event.target as HTMLElement).closest(INTERACTIVE)) return
+
+  /*
+   * A finger dragged across a list means scroll, so without `touch` the gesture is
+   * followed but never becomes a box. It is still followed: a tap has to pick the item
+   * under it, and bailing out here is how a touch screen came to select nothing at all.
+   */
+  boxDrag = event.pointerType !== 'touch' || props.touch
 
   pointer = event.pointerId
   started = false
@@ -289,8 +297,15 @@ function onPointerDown(event: PointerEvent) {
   originX = at.x
   originY = at.y
 
-  /* Puts the shortcuts within reach, and takes the caret out of any text the box crosses. */
+  /* Puts the shortcuts within reach. */
   el.focus({ preventScroll: true })
+
+  if (!boxDrag) return
+
+  /*
+   * Takes the caret out of any text the box crosses — and, on a finger, the scroll out
+   * of the page, which is why a tap-only gesture is left alone.
+   */
   event.preventDefault()
   /*
    * Capture is what keeps the moves coming once the pointer leaves the area, and it is
@@ -311,6 +326,11 @@ function onPointerMove(event: PointerEvent) {
 
   if (!started) {
     if (Math.hypot(event.clientX - downX, event.clientY - downY) < props.threshold) return
+    /* Travelled too far to be a tap, and there is no box to turn into: it was a scroll. */
+    if (!boxDrag) {
+      stop()
+      return
+    }
     started = true
     selecting.value = true
     emit('start')
@@ -327,6 +347,18 @@ function onPointerUp(event: PointerEvent) {
   stop()
   if (dragged) emit('end', [...model.value])
   else if (props.clickSelect) pick(event)
+}
+
+/*
+ * The browser taking the gesture over — a finger that turned into a scroll, a palm on the
+ * screen. Whatever was drawn is over, but nothing was chosen: a cancelled gesture that
+ * picked the item it happened to start on is how a scroll comes to change the selection.
+ */
+function onPointerCancel(event: PointerEvent) {
+  if (event.pointerId !== pointer) return
+  const dragged = started
+  stop()
+  if (dragged) emit('end', [...model.value])
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -366,12 +398,12 @@ defineExpose({ selectAll, clear })
   <div
     ref="root"
     class="wx-selection-area"
-    :class="{ 'is-selecting': selecting, 'is-disabled': disabled }"
+    :class="{ 'is-selecting': selecting, 'is-disabled': disabled, 'is-touch': touch }"
     tabindex="-1"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
     @pointerup="onPointerUp"
-    @pointercancel="onPointerUp"
+    @pointercancel="onPointerCancel"
     @keydown="onKeydown"
   >
     <slot :selected="selected" :is-selected="isSelected" :selecting="selecting" />
@@ -399,6 +431,16 @@ defineExpose({ selectAll, clear })
 /* The area is focusable so the shortcuts have somewhere to land, not as a stop on the way. */
 .wx-selection-area:focus {
   outline: none;
+}
+
+/*
+ * A finger drag is the browser's before it is ours: left alone it becomes a scroll and the
+ * pointer events stop arriving, which is why box selection worked in a desktop browser's
+ * device emulator and did nothing at all on a phone. Claiming the gesture is the price of
+ * `touch`, and it is why `touch` is off by default.
+ */
+.wx-selection-area.is-touch {
+  touch-action: none;
 }
 
 .wx-selection-area.is-selecting {

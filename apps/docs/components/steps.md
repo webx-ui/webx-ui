@@ -42,6 +42,17 @@ would do nothing.
 `error` marks the current step as failed without moving off it — a payment refused, a validation
 the server rejected. The step keeps its place; only its colour and its glyph change.
 
+## Too narrow to be a row
+
+Across the page a step is a marker, a title and a line of explanation side by side; on a phone
+there is room for about one of those. Rather than wrap every title to a letter a line, a horizontal
+sequence turns down the page on its own once a step would be narrower than `minStepWidth` — 132
+pixels by default. `:min-step-width="0"` keeps it across the page whatever the room.
+
+How many steps there are is half the question, so this is a measurement of the sequence's own box
+rather than a media query: four steps need twice the room two do, and it is the panel a wizard sits
+in that decides, not the window.
+
 ## Numbering
 
 The steps report themselves in the order they are written, while the component sets up rather than
@@ -53,14 +64,15 @@ that had to be told how many siblings it has cannot know on its first render.
 
 ## Steps
 
-| Prop        | Type                         | Default        | Description                       |
-| ----------- | ---------------------------- | -------------- | --------------------------------- |
-| `current`   | `number`                     | `0`            | Which step, counting from zero    |
-| `direction` | `'horizontal' \| 'vertical'` | `'horizontal'` | Across, or down the page          |
-| `size`      | `'sm' \| 'md'`               | `'md'`         | Marker and title size             |
-| `error`     | `boolean`                    | `false`        | The current step went wrong       |
-| `clickable` | `boolean`                    | `false`        | Finished steps can be returned to |
-| `ariaLabel` | `string`                     | —              | Accessible name of the sequence   |
+| Prop           | Type                         | Default        | Description                                              |
+| -------------- | ---------------------------- | -------------- | -------------------------------------------------------- |
+| `current`      | `number`                     | `0`            | Which step, counting from zero                           |
+| `direction`    | `'horizontal' \| 'vertical'` | `'horizontal'` | Across, or down the page                                 |
+| `size`         | `'sm' \| 'md'`               | `'md'`         | Marker and title size                                    |
+| `error`        | `boolean`                    | `false`        | The current step went wrong                              |
+| `clickable`    | `boolean`                    | `false`        | Finished steps can be returned to                        |
+| `minStepWidth` | `number`                     | `132`          | Narrower than this and it folds down the page; `0` never |
+| `ariaLabel`    | `string`                     | —              | Accessible name of the sequence                          |
 
 **Events:** `change` (`index`) — a finished step was chosen.
 

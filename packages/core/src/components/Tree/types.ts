@@ -66,6 +66,12 @@ export interface TreeProps<T = TreeNode> {
   allowDrag?: (node: T) => boolean
   /** Vetoes a landing spot — say, to keep a page out of the root. */
   allowDrop?: (drag: T, drop: T, zone: TreeDropZone) => boolean
+  /**
+   * How long a node dragged over a closed branch waits before that branch opens.
+   * Dropping into a branch you cannot see the inside of is a guess; this turns the
+   * guess into a look. Zero switches it off.
+   */
+  springDelay?: number
   /** Children are fetched when a branch first opens. Requires `load`. */
   lazy?: boolean
   /** Fetches the children of one node. */

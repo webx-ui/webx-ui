@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, provide, ref } from 'vue'
+import { useElementWidth } from '../../composables/useElementWidth'
 import { stepsKey } from './context'
 import type { StepsEmits, StepsProps, StepState } from './types'
 
@@ -11,6 +12,7 @@ const props = withDefaults(defineProps<StepsProps>(), {
   size: 'md',
   error: false,
   clickable: false,
+  minStepWidth: 132,
   ariaLabel: undefined,
 })
 
@@ -24,6 +26,26 @@ defineSlots<{ default?: () => unknown }>()
  * shape that holds markup is a slot, so the numbering has to come from the DOM.
  */
 const ids = ref<symbol[]>([])
+
+const list = ref<HTMLElement | null>(null)
+const width = useElementWidth(list)
+
+/*
+ * Across the page a step is a marker, a title and a line of explanation side by side, and
+ * on a phone there is room for about one of those. Rather than let the titles wrap to a
+ * letter a line, the sequence turns down the page — which is the same sequence, read the
+ * way a narrow screen reads everything else.
+ *
+ * How many steps there are is part of the question, so this is a measurement rather than a
+ * media or container query: four steps need four times the room two do. A width of `0` is
+ * "not measured yet" — on the server and before the first frame — and the roomy answer is
+ * the safe one there.
+ */
+const direction = computed(() => {
+  if (props.direction === 'vertical' || props.minStepWidth <= 0) return props.direction
+  if (width.value === 0 || ids.value.length === 0) return props.direction
+  return width.value < ids.value.length * props.minStepWidth ? 'vertical' : 'horizontal'
+})
 
 provide(stepsKey, {
   register: (id) => {
@@ -44,7 +66,7 @@ provide(stepsKey, {
     emit('change', index)
   },
   get direction() {
-    return props.direction
+    return direction.value
   },
   get size() {
     return props.size
@@ -59,13 +81,14 @@ provide(stepsKey, {
 
 const classes = computed(() => [
   'wx-steps',
-  `wx-steps--${props.direction}`,
+  `wx-steps--${direction.value}`,
   `wx-steps--${props.size}`,
+  { 'is-folded': direction.value !== props.direction },
 ])
 </script>
 
 <template>
-  <ol :class="classes" :aria-label="ariaLabel">
+  <ol ref="list" :class="classes" :aria-label="ariaLabel">
     <slot />
   </ol>
 </template>

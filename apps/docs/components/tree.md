@@ -89,6 +89,11 @@ A node can never land inside its own subtree; that check is the tree's, not your
 `allowDrop` are for the rules above it — a locked branch, a depth limit, a page that has to stay at
 the top level.
 
+Holding a node over a closed branch opens it — `springDelay`, 600 ms by default — and where the
+children are not in yet, fetches them. Dropping into a branch you cannot see the inside of is a
+guess; this turns the guess into a look, and a move across the tree into one drag rather than
+three. `:spring-delay="0"` switches it off.
+
 `drop` carries where the node ended up, which is all a backend needs:
 
 ```ts
@@ -162,6 +167,7 @@ cannot tell "not loaded yet" from "nothing there".
 | `draggable`        | `boolean`                       | `false`              | Rows can be picked up                          |
 | `allowDrag`        | `(node) => boolean`             | —                    | Which nodes can be picked up                   |
 | `allowDrop`        | `(drag, drop, zone) => boolean` | —                    | Which landings are allowed                     |
+| `springDelay`      | `number`                        | `600`                | Hovering a closed branch opens it; `0` never   |
 | `lazy`             | `boolean`                       | `false`              | Children arrive when a branch opens            |
 | `load`             | `(node) => T[] \| Promise<T[]>` | —                    | Fetches one branch                             |
 | `filter`           | `string`                        | —                    | Shows matches and the branches leading to them |

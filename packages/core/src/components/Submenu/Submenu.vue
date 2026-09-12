@@ -205,7 +205,12 @@ function onTriggerClick() {
   min-height: 0;
   overflow: hidden;
   margin: 0;
-  padding: 0;
+  /*
+   * Wider than the gap between siblings, because that gap is what a branch has to be
+   * read against: with the same two pixels above it, the first child sat against its
+   * own title and the pair looked like one row that had grown a second line.
+   */
+  padding: var(--wx-space-4) 0 0;
   list-style: none;
 }
 
