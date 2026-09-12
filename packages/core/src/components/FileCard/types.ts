@@ -42,6 +42,9 @@ export interface FileCardProps {
    * both the tooltip and the accessible name.
    */
   renameLabel?: string
+  /** The two buttons under the field renaming opens. */
+  saveLabel?: string
+  cancelLabel?: string
   editLabel?: string
   removeLabel?: string
   copyLabel?: string
