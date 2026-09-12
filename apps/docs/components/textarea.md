@@ -38,20 +38,21 @@ While autosizing, manual resizing is switched off — the two fight each other o
 
 ## Props
 
-| Prop          | Type                                                | Default      | Description                                 |
-| ------------- | --------------------------------------------------- | ------------ | ------------------------------------------- |
-| `modelValue`  | `string`                                            | `''`         | `v-model` value                             |
-| `rows`        | `number`                                            | `3`          | Visible rows when autosize is off           |
-| `autosize`    | `boolean \| { minRows?: number; maxRows?: number }` | `false`      | Grows with the content                      |
-| `maxlength`   | `number`                                            | —            | Native `maxlength`                          |
-| `showCount`   | `boolean`                                           | `false`      | Renders `current / max` (needs `maxlength`) |
-| `resize`      | `'none' \| 'vertical' \| 'both'`                    | `'vertical'` | Manual resize handle                        |
-| `size`        | `'sm' \| 'md' \| 'lg'`                              | `'md'`       | Font size                                   |
-| `status`      | `'default' \| 'success' \| 'warning' \| 'error'`    | `'default'`  | Validation state                            |
-| `placeholder` | `string`                                            | —            | Placeholder text                            |
-| `disabled`    | `boolean`                                           | `false`      | Disables the field                          |
-| `readonly`    | `boolean`                                           | `false`      | Read-only field                             |
-| `ariaLabel`   | `string`                                            | —            | Label when there is no visible one          |
+| Prop          | Type                                                | Default      | Description                                                       |
+| ------------- | --------------------------------------------------- | ------------ | ----------------------------------------------------------------- |
+| `modelValue`  | `string`                                            | `''`         | `v-model` value                                                   |
+| `rows`        | `number`                                            | `3`          | Visible rows when autosize is off                                 |
+| `autosize`    | `boolean \| { minRows?: number; maxRows?: number }` | `false`      | Grows with the content                                            |
+| `maxlength`   | `number`                                            | —            | Native `maxlength`                                                |
+| `showCount`   | `boolean`                                           | `false`      | Renders `current / max` (needs `maxlength`)                       |
+| `resize`      | `'none' \| 'vertical' \| 'both'`                    | `'vertical'` | Manual resize handle                                              |
+| `size`        | `'sm' \| 'md' \| 'lg'`                              | `'md'`       | Font size                                                         |
+| `status`      | `'default' \| 'success' \| 'warning' \| 'error'`    | `'default'`  | Validation state                                                  |
+| `placeholder` | `string`                                            | —            | Placeholder text                                                  |
+| `disabled`    | `boolean`                                           | `false`      | Disables the field                                                |
+| `readonly`    | `boolean`                                           | `false`      | Read-only field                                                   |
+| `id`          | `string`                                            | generated    | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `ariaLabel`   | `string`                                            | —            | Label when there is no visible one                                |
 
 **Events:** `update:modelValue` (`string`), `input` (`string`), `change` (`string`), `focus`, `blur`.
 

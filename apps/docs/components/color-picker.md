@@ -34,18 +34,20 @@ to the last one, and a missing `#` is added — pasting `21c36d` works.
 
 ## Props
 
-| Prop          | Type                                             | Default     | Description                        |
-| ------------- | ------------------------------------------------ | ----------- | ---------------------------------- |
-| `modelValue`  | `string \| null`                                 | `null`      | Hex colour, lower case             |
-| `presets`     | `string[]`                                       | `[]`        | Swatches under the picker          |
-| `clearable`   | `boolean`                                        | `false`     | Show a button that empties it      |
-| `placeholder` | `string`                                         | `'#000000'` | Placeholder text                   |
-| `teleport`    | `boolean`                                        | `true`      | Render the panel in a portal       |
-| `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`      | Control height                     |
-| `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'` | Validation state                   |
-| `disabled`    | `boolean`                                        | `false`     | Disables the field and the panel   |
-| `readonly`    | `boolean`                                        | `false`     | Text stays, panel does not open    |
-| `ariaLabel`   | `string`                                         | —           | Label when there is no visible one |
+| Prop          | Type                                             | Default     | Description                                                       |
+| ------------- | ------------------------------------------------ | ----------- | ----------------------------------------------------------------- |
+| `modelValue`  | `string \| null`                                 | `null`      | Hex colour, lower case                                            |
+| `presets`     | `string[]`                                       | `[]`        | Swatches under the picker                                         |
+| `clearable`   | `boolean`                                        | `false`     | Show a button that empties it                                     |
+| `placeholder` | `string`                                         | `'#000000'` | Placeholder text                                                  |
+| `teleport`    | `boolean`                                        | `true`      | Render the panel in a portal                                      |
+| `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`      | Control height                                                    |
+| `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'` | Validation state                                                  |
+| `disabled`    | `boolean`                                        | `false`     | Disables the field and the panel                                  |
+| `readonly`    | `boolean`                                        | `false`     | Text stays, panel does not open                                   |
+| `id`          | `string`                                         | generated   | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `name`        | `string`                                         | —           | `name` of the underlying input                                    |
+| `ariaLabel`   | `string`                                         | —           | Label when there is no visible one                                |
 
 **Events:** `update:modelValue` (`string | null`), `change` (`string | null`).
 

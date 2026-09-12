@@ -42,25 +42,27 @@ would throw away whatever was set on it. Where the ends really are moments, use 
 
 ## Props
 
-| Prop          | Type                                             | Default      | Description                                         |
-| ------------- | ------------------------------------------------ | ------------ | --------------------------------------------------- |
-| `modelValue`  | `string[] \| Date[] \| null`                     | `null`       | `[start, end]`                                      |
-| `months`      | `number`                                         | `2`          | Months shown side by side                           |
-| `valueFormat` | `string`                                         | `yyyy-MM-dd` | Format each end is stored in; `'date'` keeps `Date` |
-| `format`      | `string`                                         | `dd.MM.yyyy` | Format the field shows                              |
-| `minDate`     | `string \| Date`                                 | —            | Earliest selectable date                            |
-| `maxDate`     | `string \| Date`                                 | —            | Latest selectable date                              |
-| `weekStart`   | `number`                                         | `1`          | 0 is Sunday, 1 is Monday                            |
-| `clearable`   | `boolean`                                        | `true`       | Show the clear button                               |
-| `autoApply`   | `boolean`                                        | `true`       | Apply on the second pick                            |
-| `textInput`   | `boolean`                                        | `false`      | Allow typing the range                              |
-| `teleport`    | `boolean`                                        | `true`       | Render the calendar in a portal                     |
-| `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`       | Control height                                      |
-| `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'`  | Validation state                                    |
-| `disabled`    | `boolean`                                        | `false`      | Disables the field                                  |
-| `readonly`    | `boolean`                                        | `false`      | Read-only field                                     |
-| `placeholder` | `string`                                         | —            | Placeholder text                                    |
-| `ariaLabel`   | `string`                                         | —            | Label when there is no visible one                  |
+| Prop          | Type                                             | Default      | Description                                                       |
+| ------------- | ------------------------------------------------ | ------------ | ----------------------------------------------------------------- |
+| `modelValue`  | `string[] \| Date[] \| null`                     | `null`       | `[start, end]`                                                    |
+| `months`      | `number`                                         | `2`          | Months shown side by side                                         |
+| `valueFormat` | `string`                                         | `yyyy-MM-dd` | Format each end is stored in; `'date'` keeps `Date`               |
+| `format`      | `string`                                         | `dd.MM.yyyy` | Format the field shows                                            |
+| `minDate`     | `string \| Date`                                 | —            | Earliest selectable date                                          |
+| `maxDate`     | `string \| Date`                                 | —            | Latest selectable date                                            |
+| `weekStart`   | `number`                                         | `1`          | 0 is Sunday, 1 is Monday                                          |
+| `clearable`   | `boolean`                                        | `true`       | Show the clear button                                             |
+| `autoApply`   | `boolean`                                        | `true`       | Apply on the second pick                                          |
+| `textInput`   | `boolean`                                        | `false`      | Allow typing the range                                            |
+| `teleport`    | `boolean`                                        | `true`       | Render the calendar in a portal                                   |
+| `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`       | Control height                                                    |
+| `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'`  | Validation state                                                  |
+| `disabled`    | `boolean`                                        | `false`      | Disables the field                                                |
+| `readonly`    | `boolean`                                        | `false`      | Read-only field                                                   |
+| `placeholder` | `string`                                         | —            | Placeholder text                                                  |
+| `id`          | `string`                                         | generated    | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `name`        | `string`                                         | —            | `name` of the underlying input                                    |
+| `ariaLabel`   | `string`                                         | —            | Label when there is no visible one                                |
 
 **Events:** `update:modelValue`, `change`, `clear`, `open`, `close`.
 

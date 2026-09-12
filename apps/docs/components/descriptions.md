@@ -42,6 +42,11 @@ rows share a column and line up. Wrapping a pair would end it.
 <wx-descriptions-item label="Note" :span="2">…</wx-descriptions-item>
 ```
 
+A span never asks for more columns than the list has, and folds to one along with the list: a pair
+that spans two is a pair like any other once the panel is down to a single column. Neither is a
+setting — a span wider than the grid is not a wider grid, it is a pair placed off the end of the
+one there is, taking the placement of everything after it along.
+
 ## Bordered
 
 `bordered` draws the lattice. It is the grid's own gaps opened to a pixel over a background in the

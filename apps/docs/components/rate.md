@@ -26,17 +26,19 @@ const rating = ref(0)
 
 ## Props
 
-| Prop         | Type                   | Default | Description                            |
-| ------------ | ---------------------- | ------- | -------------------------------------- |
-| `modelValue` | `number`               | `0`     | Current rating                         |
-| `max`        | `number`               | `5`     | How many stars to draw                 |
-| `allowHalf`  | `boolean`              | `false` | Halves, set from the left of a star    |
-| `clearable`  | `boolean`              | `true`  | Clicking the current value resets to 0 |
-| `showValue`  | `boolean`              | `false` | Print the number beside the stars      |
-| `readonly`   | `boolean`              | `false` | Display only                           |
-| `disabled`   | `boolean`              | `false` | Display only, and dimmed               |
-| `size`       | `'sm' \| 'md' \| 'lg'` | `'md'`  | Star size                              |
-| `ariaLabel`  | `string`               | —       | Label when there is no visible one     |
+| Prop         | Type                   | Default   | Description                                                       |
+| ------------ | ---------------------- | --------- | ----------------------------------------------------------------- |
+| `modelValue` | `number`               | `0`       | Current rating                                                    |
+| `max`        | `number`               | `5`       | How many stars to draw                                            |
+| `allowHalf`  | `boolean`              | `false`   | Halves, set from the left of a star                               |
+| `clearable`  | `boolean`              | `true`    | Clicking the current value resets to 0                            |
+| `showValue`  | `boolean`              | `false`   | Print the number beside the stars                                 |
+| `readonly`   | `boolean`              | `false`   | Display only                                                      |
+| `disabled`   | `boolean`              | `false`   | Display only, and dimmed                                          |
+| `size`       | `'sm' \| 'md' \| 'lg'` | `'md'`    | Star size                                                         |
+| `id`         | `string`               | generated | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `name`       | `string`               | —         | `name` of the underlying input                                    |
+| `ariaLabel`  | `string`               | —         | Label when there is no visible one                                |
 
 **Events:** `update:modelValue` (`number`), `change` (`number`).
 

@@ -71,6 +71,9 @@ so the area handles the rest of it as well:
 | Click the background | Clears                                          |
 | Ctrl+A / Escape      | Everything / nothing                            |
 
+That is the table for a selection that may hold several. Where only one may be held, every row of
+it that adds a second thing is gone — see below.
+
 Set `:click-select="false"` to keep the drag and leave clicking to the items themselves — a grid
 whose tiles open something when clicked wants that.
 
