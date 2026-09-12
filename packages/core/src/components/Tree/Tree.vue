@@ -527,7 +527,9 @@ defineExpose({
   align-items: center;
   gap: var(--wx-space-4);
   min-height: 32px;
-  padding-inline-end: var(--wx-space-8);
+  /* Inside the row rather than around the tree, so the highlight still runs edge to
+     edge while the grip and the buttons keep their distance from it. */
+  padding-inline: var(--wx-space-8);
   border-radius: var(--wx-radius-control);
   cursor: pointer;
   user-select: none;
@@ -645,6 +647,7 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: var(--wx-space-2);
+  margin-inline-start: var(--wx-space-8);
   opacity: 0;
 }
 
@@ -661,7 +664,8 @@ defineExpose({
 .wx-tree__row.is-drop-after::after {
   content: '';
   position: absolute;
-  inset-inline: calc(var(--wx-tree-depth, 0) * var(--wx-tree-indent, 20px)) 0;
+  inset-inline: calc(var(--wx-space-8) + var(--wx-tree-depth, 0) * var(--wx-tree-indent, 20px))
+    var(--wx-space-8);
   height: 2px;
   border-radius: var(--wx-radius-full);
   background: var(--wx-color-primary);
