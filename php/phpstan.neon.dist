@@ -10,6 +10,18 @@ parameters:
         - packages/mcp/tests
         - packages/nested-set/src
         - packages/nested-set/tests
-    viewDirectories:
-        - packages/admin/resources/views
     tmpDir: .phpstan.cache
+
+    # Larastan checks a view name against the views it can find, and it cannot find the
+    # namespaced ones a package ships: there is no application to have registered `webx-admin::`
+    # with (larastan/larastan#2213). `viewDirectories` looks like the fix and is not — it only
+    # works once something has already analysed the tree, and CI analyses exactly once.
+    #
+    # The name is checked for real instead: ShellTest renders the view over HTTP, which is what
+    # this rule would have been protecting.
+    reportUnmatchedIgnoredErrors: false
+    ignoreErrors:
+        -
+            identifier: argument.type
+            message: '#expects view-string, string given#'
+            path: packages/admin/src/Http/Controllers/ShellController.php
