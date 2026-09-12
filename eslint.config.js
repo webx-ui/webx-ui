@@ -14,6 +14,8 @@ export default ts.config(
       'packages/tokens/src/generated/**',
       // Composer dependencies ship their own bundled JavaScript.
       'php/vendor/**',
+      // Scratch copies of the repository another session is working in.
+      '.claude/**',
     ],
   },
   js.configs.recommended,
