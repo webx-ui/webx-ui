@@ -23,21 +23,21 @@ const { layout, collapsed, showAside, drawerOpen, toggle, close } = useResponsiv
 </script>
 
 <template>
-  <div v-if="admin.state.status === 'unauthenticated'" class="wx-admin-plain">
+  <div v-if="admin.state.status === 'unauthenticated'" class="wx-root wx-admin-plain">
     <router-view />
   </div>
 
-  <div v-else-if="admin.state.status === 'loading'" class="wx-admin-plain">
+  <div v-else-if="admin.state.status === 'loading'" class="wx-root wx-admin-plain">
     <wx-loading label="Loading the panel…" />
   </div>
 
-  <div v-else-if="admin.state.status === 'error'" class="wx-admin-plain">
+  <div v-else-if="admin.state.status === 'error'" class="wx-root wx-admin-plain">
     <wx-result status="error" title="The panel could not start" :description="admin.state.error">
       <wx-button type="primary" @click="admin.reload()">Try again</wx-button>
     </wx-result>
   </div>
 
-  <div v-else ref="shellEl" class="wx-admin">
+  <div v-else ref="shellEl" class="wx-root wx-admin">
     <wx-container viewport>
       <wx-header>
         <wx-action
@@ -87,8 +87,21 @@ const { layout, collapsed, showAside, drawerOpen, toggle, close } = useResponsiv
 .wx-admin-plain {
   display: grid;
   place-items: center;
+  /* Without this the padding is added to the viewport height and the page scrolls by exactly
+     the padding. */
+  box-sizing: border-box;
   min-height: 100dvh;
   padding: var(--wx-space-16);
   background: var(--wx-bg-body);
+}
+</style>
+
+<style>
+/* Not scoped, and global on purpose: the panel is the whole page, so the browser default
+   margin on <body> shows up as a gap around the shell and puts a scrollbar under a column
+   that is exactly one viewport tall. */
+html:has(> body > #webx-app),
+body:has(> #webx-app) {
+  margin: 0;
 }
 </style>
