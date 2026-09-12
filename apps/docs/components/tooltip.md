@@ -37,6 +37,21 @@ Icon-only buttons, mainly. A row of glyphs at the end of a table row is unreadab
 and a `title` attribute is not a substitute: it appears after a second of stillness, in the
 browser's own styling, and never at all on a touch screen.
 
+## On a touch screen it never opens
+
+That is deliberate, not a gap. A tooltip answers hovering, and a finger does not hover: the only
+gesture it has is the tap, which already belongs to the control the tip is attached to. Opening one
+on tap would mean every icon button did nothing the first time it was pressed.
+
+So a phone gets no tips at all, which is why nothing may live only in one. What replaces it depends
+on what the tip was doing:
+
+| The tip said                   | On a phone                                                     |
+| ------------------------------ | -------------------------------------------------------------- |
+| What an icon-only button is    | Show the label. There is room in a sheet or a menu row         |
+| Something worth reading        | A [Popover](/components/popover), which a tap opens and closes |
+| Something the control must say | `aria-label`, which is what a screen reader was reading anyway |
+
 ## Delays, and the group
 
 The first tip in a group waits 150 ms before appearing; the ones after it come at once. By the time

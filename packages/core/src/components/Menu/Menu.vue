@@ -78,6 +78,7 @@ const overflowing = ref(false)
  */
 const entries = computed<VNode[]>(() => (splits.value ? flattenNodes(slots.default?.() ?? []) : []))
 
+/* Which half an entry is in changes; `WxNodes` is what makes moving between them safe. */
 const inBar = computed(() => entries.value.slice(0, fits.value))
 const inBranch = computed(() => entries.value.slice(fits.value))
 
@@ -339,9 +340,14 @@ const classes = computed(() => [
 /*
  * A bar that folds its overflow away never scrolls: what does not fit has somewhere
  * to be. It is still clipped, for the frame in which everything is measured.
+ *
+ * `clip` rather than `hidden`, which only hides the scrollbar: a box with `hidden` is
+ * still a scroll container, and the browser scrolls one to reveal a focused button
+ * inside it. During the frame in which everything is back in the bar to be measured,
+ * that leaves the bar pushed sideways, showing the middle of the row and no start to it.
  */
 .wx-menu--overflow {
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /*
