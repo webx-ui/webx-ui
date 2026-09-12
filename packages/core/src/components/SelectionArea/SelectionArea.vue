@@ -259,7 +259,14 @@ function pick(event: PointerEvent) {
 
   anchor = index
 
-  if (event.ctrlKey || event.metaKey) {
+  /*
+   * A finger has no ctrl key and no box to draw, so on a touch screen the tap is the only
+   * gesture there is — and a tap that replaces the selection can never build one. It adds
+   * and removes instead; the background still clears, which is the way back out.
+   */
+  const toggles = event.ctrlKey || event.metaKey || event.pointerType === 'touch'
+
+  if (toggles) {
     apply(selected.value.has(value) ? base.filter((held) => held !== value) : [...base, value])
     return
   }

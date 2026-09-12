@@ -241,6 +241,22 @@ describe('WxSelectionArea', () => {
     expect(wrapper.find('.wx-selection-area__box').exists()).toBe(false)
   })
 
+  it('builds a selection one tap at a time, and takes one back out', async () => {
+    const wrapper = area()
+
+    await click(item(wrapper, 1), 120, 20, finger)
+    await click(item(wrapper, 2), 10, 60, finger)
+    expect(chosen(wrapper)).toEqual(['b', 'c'])
+
+    /* Again on the same one takes it back out — there is no modifier to do it with. */
+    await click(item(wrapper, 2), 10, 60, finger)
+    expect(chosen(wrapper)).toEqual(['b'])
+
+    /* And the background is still the way back to none. */
+    await click(wrapper.element, 250, 150, finger)
+    expect(chosen(wrapper)).toEqual([])
+  })
+
   it('leaves the selection alone when a finger travels — that gesture is a scroll', async () => {
     const wrapper = area()
 
