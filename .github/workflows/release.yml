@@ -39,30 +39,18 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      # Opens (or updates) the "Version packages" PR when changesets are pending;
-      # publishes to npm when that PR is merged.
-      - name: Create release PR or publish
-        uses: changesets/action@v1
-        with:
-          version: pnpm version-packages
-          publish: pnpm release
-          commit: 'chore: version packages'
-          title: 'chore: version packages'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_CONFIG_PROVENANCE: true
-
       # Composer has no registry to publish to: a version exists once the tag exists. The npm
       # packages get their tags from changesets, the PHP ones share a single version carried by
       # the private php/package.json, so the tag for them is cut here.
+      #
+      # Before changesets/action on purpose. When changesets has work to do it bumps the version
+      # and commits it, so afterwards neither the working tree nor HEAD is what was pushed to
+      # main any more — and tagging that announces a release nobody has merged, on a commit that
+      # may never land.
       - name: Tag the PHP packages
         id: php_tag
         run: |
-          # Read the committed version, not the working tree: when changesets only opens the
-          # "version packages" PR it leaves the bump behind in the checkout, and tagging that
-          # would announce a release that has not landed on main.
-          git show HEAD:php/package.json > "$RUNNER_TEMP/php-package.json"
-          version=$(node -p "require('$RUNNER_TEMP/php-package.json').version")
+          version=$(node -p "require('./php/package.json').version")
 
           if [ "$version" = "0.0.0" ]; then
             echo "No PHP release has been cut yet — skipping."
@@ -80,6 +68,19 @@ jobs:
           git push origin "php-v$version"
 
           echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # Opens (or updates) the "Version packages" PR when changesets are pending;
+      # publishes to npm when that PR is merged.
+      - name: Create release PR or publish
+        uses: changesets/action@v1
+        with:
+          version: pnpm version-packages
+          publish: pnpm release
+          commit: 'chore: version packages'
+          title: 'chore: version packages'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: true
 
   # Mirrors every PHP package into its own repository and tags it there as v<version>, which
   # is the form Composer and Packagist understand.
