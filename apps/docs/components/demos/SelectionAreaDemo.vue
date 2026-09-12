@@ -19,6 +19,9 @@ const files = [
 
 const picked = ref<number[]>([2, 3])
 
+/* One at a time: the model is still an array, and never holds more than one value. */
+const one = ref<number[]>([])
+
 const rows = ref<string[]>([])
 
 const orders = [
@@ -66,6 +69,28 @@ const orders = [
       <span class="wx-demo__note">
         Shift or ctrl to add to the selection, alt to take away. Click a tile to pick it on its own,
         the background to clear. The bin is a button, so a drag that starts on it is the button's.
+      </span>
+    </div>
+
+    <div>
+      <span class="wx-demo__label">One at a time — a file picker rather than a gallery</span>
+
+      <wx-selection-area v-slot="{ isSelected }" v-model="one" :multiple="false" class="grid">
+        <figure
+          v-for="file in files.slice(0, 4)"
+          :key="file.id"
+          v-wx-select="file.id"
+          class="tile"
+          :class="{ 'is-selected': isSelected(file.id) }"
+        >
+          <span class="thumb"><wx-icon name="image" /></span>
+          <figcaption class="name">{{ file.name }}</figcaption>
+        </figure>
+      </wx-selection-area>
+
+      <span class="wx-demo__note">
+        No box, no run, no toggle: a click or a tap picks the one under it, the background clears.
+        Chosen: {{ files.find((file) => file.id === one[0])?.name ?? 'nothing' }}
       </span>
     </div>
 

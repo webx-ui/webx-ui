@@ -99,6 +99,17 @@ async function click(el: Element, x: number, y: number, keys: PointerInit = {}) 
   await up(el, x, y, keys)
 }
 
+/**
+ * A click the way a browser really delivers one. The area captures the pointer, and every
+ * event after that is retargeted to the element holding the capture — so the release
+ * arrives on the area, not on the item the press landed on. jsdom captures nothing, so
+ * the retargeting is done here instead.
+ */
+async function clickCaptured(wrapper: VueWrapper, el: Element, x: number, y: number) {
+  await down(el, x, y)
+  await up(wrapper.element, x, y)
+}
+
 const finger = { pointerType: 'touch' } as const
 
 function chosen(wrapper: VueWrapper) {
@@ -193,6 +204,15 @@ describe('WxSelectionArea', () => {
     expect(chosen(wrapper)).toEqual([])
   })
 
+  it('picks the item the press landed on, not the one the capture retargets to', async () => {
+    const wrapper = area()
+
+    await clickCaptured(wrapper, item(wrapper, 1), 120, 20)
+
+    /* Read off the release, this was a click on the background — and cleared instead. */
+    expect(chosen(wrapper)).toEqual(['b'])
+  })
+
   it('adds one at a time with ctrl, and a run of them with shift', async () => {
     const wrapper = area()
 
@@ -228,6 +248,63 @@ describe('WxSelectionArea', () => {
     await move(el, 90, 40)
 
     expect(chosen(wrapper)).toEqual(['b', 'c'])
+  })
+
+  /* ---------------------------------------------------------------- single */
+
+  it('holds one item at a time, replacing rather than adding', async () => {
+    const wrapper = area({ multiple: false })
+
+    await click(item(wrapper, 1), 120, 20)
+    expect(chosen(wrapper)).toEqual(['b'])
+
+    await click(item(wrapper, 2), 10, 60)
+    expect(chosen(wrapper)).toEqual(['c'])
+
+    /* The background is still how you end up holding none. */
+    await click(wrapper.element, 250, 150)
+    expect(chosen(wrapper)).toEqual([])
+  })
+
+  it('ignores the modifiers that would hold a second item', async () => {
+    const wrapper = area({ multiple: false })
+
+    await click(item(wrapper, 0), 10, 10)
+    await click(item(wrapper, 2), 10, 60, { ctrlKey: true })
+    expect(chosen(wrapper)).toEqual(['c'])
+
+    await click(item(wrapper, 3), 110, 60, { shiftKey: true })
+    expect(chosen(wrapper)).toEqual(['d'])
+  })
+
+  it('draws no box where only one may be held', async () => {
+    const wrapper = area({ multiple: false })
+    const el = wrapper.element
+
+    await down(el, 10, 10)
+    await move(el, 150, 90)
+
+    expect(wrapper.find('.wx-selection-area__box').exists()).toBe(false)
+    expect(wrapper.emitted('start')).toBeUndefined()
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+  })
+
+  it('takes a tap as a pick rather than a toggle when only one may be held', async () => {
+    const wrapper = area({ multiple: false })
+
+    await click(item(wrapper, 1), 120, 20, finger)
+    await click(item(wrapper, 1), 120, 20, finger)
+
+    expect(chosen(wrapper)).toEqual(['b'])
+  })
+
+  it('has nothing to select all of', async () => {
+    const wrapper = area({ multiple: false })
+
+    await click(item(wrapper, 0), 10, 10)
+    await wrapper.trigger('keydown', { key: 'a', ctrlKey: true })
+
+    expect(chosen(wrapper)).toEqual(['a'])
   })
 
   /* ----------------------------------------------------------------- touch */
