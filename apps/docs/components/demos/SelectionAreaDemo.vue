@@ -1,21 +1,29 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { WxButton, WxIcon, WxSelectionArea, vWxSelect } from '@webx-ui/core'
+import { WxButton, WxFileCard, WxSelectionArea, vWxSelect } from '@webx-ui/core'
 
-const files = [
-  { id: 1, name: 'engine.png' },
-  { id: 2, name: 'hydraulics.png' },
-  { id: 3, name: 'transmission.png' },
-  { id: 4, name: 'undercarriage.png' },
-  { id: 5, name: 'electrical.png' },
-  { id: 6, name: 'cabin.png' },
-  { id: 7, name: 'filters.png' },
-  { id: 8, name: 'fasteners.png' },
-  { id: 9, name: 'attachments.png' },
-  { id: 10, name: 'tyres.png' },
-  { id: 11, name: 'accessories.png' },
-  { id: 12, name: 'bucket.png' },
+const names = [
+  'engine.png',
+  'hydraulics.png',
+  'transmission.png',
+  'undercarriage.png',
+  'electrical.png',
+  'cabin.png',
+  'filters.pdf',
+  'fasteners.xlsx',
+  'attachments.zip',
+  'tyres.png',
+  'accessories.docx',
+  'bucket.png',
 ]
+
+const files = names.map((name, index) => ({
+  id: index + 1,
+  name,
+  thumbnail: name.endsWith('.png')
+    ? `https://picsum.photos/seed/wx-sel-${index}/220/165`
+    : undefined,
+}))
 
 const picked = ref<number[]>([2, 3])
 
@@ -49,26 +57,24 @@ const orders = [
       </div>
 
       <wx-selection-area v-slot="{ isSelected }" v-model="picked" class="grid">
-        <figure
+        <wx-file-card
           v-for="file in files"
           :key="file.id"
           v-wx-select="file.id"
-          class="tile"
-          :class="{ 'is-selected': isSelected(file.id) }"
-        >
-          <span class="thumb">
-            <wx-icon name="image" />
-            <button class="drop" type="button" aria-label="Delete">
-              <wx-icon name="trash" />
-            </button>
-          </span>
-          <figcaption class="name">{{ file.name }}</figcaption>
-        </figure>
+          :name="file.name"
+          :thumbnail="file.thumbnail"
+          :selected="isSelected(file.id)"
+          removable
+          copyable
+          url="https://files.example/x"
+        />
       </wx-selection-area>
 
       <span class="wx-demo__note">
-        Shift or ctrl to add to the selection, alt to take away. Click a tile to pick it on its own,
-        the background to clear. The bin is a button, so a drag that starts on it is the button's.
+        Shift or ctrl to add to the selection, alt to take away. Click a card to pick it on its own,
+        the background to clear. The tiles are
+        <a href="/components/file-card">FileCards</a>, and their buttons are buttons — so a drag
+        that starts on one is the button's, not the box's.
       </span>
     </div>
 
@@ -76,16 +82,14 @@ const orders = [
       <span class="wx-demo__label">One at a time — a file picker rather than a gallery</span>
 
       <wx-selection-area v-slot="{ isSelected }" v-model="one" :multiple="false" class="grid">
-        <figure
+        <wx-file-card
           v-for="file in files.slice(0, 4)"
           :key="file.id"
           v-wx-select="file.id"
-          class="tile"
-          :class="{ 'is-selected': isSelected(file.id) }"
-        >
-          <span class="thumb"><wx-icon name="image" /></span>
-          <figcaption class="name">{{ file.name }}</figcaption>
-        </figure>
+          :name="file.name"
+          :thumbnail="file.thumbnail"
+          :selected="isSelected(file.id)"
+        />
       </wx-selection-area>
 
       <span class="wx-demo__note">
@@ -138,67 +142,6 @@ const orders = [
   background: var(--wx-bg-body);
   border: 1px solid var(--wx-border-muted);
   border-radius: var(--wx-radius-md);
-}
-
-.tile {
-  margin: 0;
-  padding: var(--wx-space-8);
-  border: 1px solid transparent;
-  border-radius: var(--wx-radius-md);
-}
-
-.tile.is-selected {
-  background: var(--wx-color-primary-soft);
-  border-color: color-mix(in srgb, var(--wx-color-primary) 40%, transparent);
-}
-
-.thumb {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  aspect-ratio: 4 / 3;
-  background: var(--wx-bg-surface);
-  border: 1px solid var(--wx-border-muted);
-  border-radius: var(--wx-radius-sm);
-  color: var(--wx-text-placeholder);
-  font-size: 24px;
-}
-
-/*
- * `place-items` rather than a bare `display: block`: a button around a 14px icon
- * inherits the page's 24px line height, which made it ten pixels taller than it was
- * wide — a squashed pill rather than a square.
- */
-.drop {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  display: none;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  background: var(--wx-bg-surface);
-  border: 1px solid var(--wx-border-muted);
-  border-radius: var(--wx-radius-xs);
-  color: var(--wx-color-danger);
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.tile:hover .drop {
-  display: grid;
-}
-
-.name {
-  margin-top: var(--wx-space-6);
-  overflow: hidden;
-  color: var(--wx-text-default);
-  font-size: var(--wx-font-size-sm);
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .rows {
