@@ -32,8 +32,10 @@ Laravel. Библиотека публикуется в npm, админки — 
 
 ## 2. Состояние
 
-Актуально на 11.09.2026: `@webx-ui/core@0.9.0`, `@webx-ui/tokens@0.2.0`, `@webx-ui/schema@0.0.2`
-опубликованы в npm, сайт документации живёт на https://webx-ui.github.io/webx-ui/.
+Актуально на 12.09.2026: `@webx-ui/core@0.11.0`, `@webx-ui/tokens@0.2.0`, `@webx-ui/schema@0.0.2`
+опубликованы в npm, сайт документации живёт на https://webx-ui.github.io/webx-ui/. Версии тут
+устаревают первыми — считать их подсказкой, а не фактом: точный ответ даёт
+`npm view @webx-ui/core version`.
 
 - **91 компонент.** Волны 1 и 2 закрыты полностью, волна 3 — частично.
 - Сверх списка Element Plus: `WxListDetail`, `WxKanban`, `WxEntityCard`, `WxActions`/`WxAction`,
@@ -128,6 +130,12 @@ apps/
 - **Changeset** на каждый PR, который меняет публикуемый пакет; docs-only — без него.
 - **Релиз:** мерж PR с changeset'ами → бот открывает «chore: version packages» → мерж этого PR
   публикует пакеты. На npm версия появляется минут через пять после того, как воркфлоу отчитался.
+  Проверять `npm view @webx-ui/core version`, а не веру: тег в git ставится сразу, регистр отстаёт.
+- **CI на релизном PR ждёт ручного подтверждения.** Прогон на ветке `changeset-release/main`
+  встаёт в `action_required`, `gh pr checks` при этом отвечает «no checks reported», а сам PR —
+  `BLOCKED`. Выглядит как сломанный бот. Лечится
+  `gh api -X POST repos/webx-ui/webx-ui/actions/runs/<id>/approve`; id брать из
+  `gh run list --branch changeset-release/main`.
 - **Начинать с `gh pr list`:** работа могла остаться в открытом PR, а не в `main`. Ветка с
   незакрытым PR — это незаконченный разговор, а не мусор.
 - Детали для людей — в `CONTRIBUTING.md`.
@@ -136,7 +144,8 @@ apps/
 
 Порядок не догма, но примерно такой:
 
-1. Остаток волны 3: Tree / TreeSelect, Carousel, Anchor, Splitter, Watermark, Marquee.
+1. Остаток волны 3: Carousel, Anchor, Splitter, Watermark, Marquee. Tree, TreeSelect и дерево
+   внутри таблицы закрыты.
 2. **Gantt** — решено делать своим, не начинали (обоснование в roadmap).
 3. CMS-блоки: MediaLibrary / Gallery, Repeater, Markdown, LinkPicker, BlockPicker.
 4. `@webx-ui/schema` — рендерер поверх уже зафиксированных контрактов, затем

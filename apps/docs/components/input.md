@@ -29,20 +29,21 @@ const title = ref('')
 
 ## Props
 
-| Prop           | Type                                                                        | Default     | Description                                 |
-| -------------- | --------------------------------------------------------------------------- | ----------- | ------------------------------------------- |
-| `modelValue`   | `string \| number \| undefined`                                             | `''`        | `v-model` value                             |
-| `type`         | `'text' \| 'password' \| 'email' \| 'number' \| 'search' \| 'tel' \| 'url'` | `'text'`    | Native input type                           |
-| `size`         | `'sm' \| 'md' \| 'lg'`                                                      | `'md'`      | Control height and font size                |
-| `status`       | `'default' \| 'success' \| 'warning' \| 'error'`                            | `'default'` | Validation state                            |
-| `placeholder`  | `string`                                                                    | —           | Placeholder text                            |
-| `disabled`     | `boolean`                                                                   | `false`     | Disables the field                          |
-| `readonly`     | `boolean`                                                                   | `false`     | Read-only field                             |
-| `clearable`    | `boolean`                                                                   | `false`     | Shows a clear button when filled            |
-| `maxlength`    | `number`                                                                    | —           | Native `maxlength`                          |
-| `showCount`    | `boolean`                                                                   | `false`     | Renders `current / max` (needs `maxlength`) |
-| `autocomplete` | `string`                                                                    | —           | Native `autocomplete`                       |
-| `ariaLabel`    | `string`                                                                    | —           | Label when there is no visible `<label>`    |
+| Prop           | Type                                                                        | Default     | Description                                                       |
+| -------------- | --------------------------------------------------------------------------- | ----------- | ----------------------------------------------------------------- |
+| `modelValue`   | `string \| number \| undefined`                                             | `''`        | `v-model` value                                                   |
+| `type`         | `'text' \| 'password' \| 'email' \| 'number' \| 'search' \| 'tel' \| 'url'` | `'text'`    | Native input type                                                 |
+| `size`         | `'sm' \| 'md' \| 'lg'`                                                      | `'md'`      | Control height and font size                                      |
+| `status`       | `'default' \| 'success' \| 'warning' \| 'error'`                            | `'default'` | Validation state                                                  |
+| `placeholder`  | `string`                                                                    | —           | Placeholder text                                                  |
+| `disabled`     | `boolean`                                                                   | `false`     | Disables the field                                                |
+| `readonly`     | `boolean`                                                                   | `false`     | Read-only field                                                   |
+| `clearable`    | `boolean`                                                                   | `false`     | Shows a clear button when filled                                  |
+| `maxlength`    | `number`                                                                    | —           | Native `maxlength`                                                |
+| `showCount`    | `boolean`                                                                   | `false`     | Renders `current / max` (needs `maxlength`)                       |
+| `autocomplete` | `string`                                                                    | —           | Native `autocomplete`                                             |
+| `id`           | `string`                                                                    | generated   | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `ariaLabel`    | `string`                                                                    | —           | Label when there is no visible `<label>`                          |
 
 Unknown attributes (`name`, `id`, `required`, …) fall through to the inner `<input>`, not the
 wrapper — with two exceptions. `class` and `style` stay on the wrapper, because that is the thing

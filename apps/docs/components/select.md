@@ -58,20 +58,22 @@ the `search` event fires on every keystroke:
 
 ## Props
 
-| Prop          | Type                                             | Default           | Description                               |
-| ------------- | ------------------------------------------------ | ----------------- | ----------------------------------------- |
-| `modelValue`  | `string \| number \| array \| null`              | `null`            | Selected value, or values with `multiple` |
-| `options`     | `SelectOption[]`                                 | `[]`              | `{ label, value, disabled? }`             |
-| `multiple`    | `boolean`                                        | `false`           | Pick several; the model becomes an array  |
-| `filterable`  | `boolean`                                        | `false`           | Show a search field                       |
-| `clearable`   | `boolean`                                        | `false`           | Show a button that empties the selection  |
-| `placeholder` | `string`                                         | —                 | Shown while nothing is selected           |
-| `emptyText`   | `string`                                         | `'Nothing found'` | Shown when filtering matches nothing      |
-| `teleport`    | `boolean`                                        | `true`            | Render the list in a portal               |
-| `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`            | Control height                            |
-| `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'`       | Validation state                          |
-| `disabled`    | `boolean`                                        | `false`           | Disables the control                      |
-| `ariaLabel`   | `string`                                         | —                 | Label when there is no visible one        |
+| Prop          | Type                                             | Default           | Description                                                       |
+| ------------- | ------------------------------------------------ | ----------------- | ----------------------------------------------------------------- |
+| `modelValue`  | `string \| number \| array \| null`              | `null`            | Selected value, or values with `multiple`                         |
+| `options`     | `SelectOption[]`                                 | `[]`              | `{ label, value, disabled? }`                                     |
+| `multiple`    | `boolean`                                        | `false`           | Pick several; the model becomes an array                          |
+| `filterable`  | `boolean`                                        | `false`           | Show a search field                                               |
+| `clearable`   | `boolean`                                        | `false`           | Show a button that empties the selection                          |
+| `placeholder` | `string`                                         | —                 | Shown while nothing is selected                                   |
+| `emptyText`   | `string`                                         | `'Nothing found'` | Shown when filtering matches nothing                              |
+| `teleport`    | `boolean`                                        | `true`            | Render the list in a portal                                       |
+| `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`            | Control height                                                    |
+| `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'`       | Validation state                                                  |
+| `disabled`    | `boolean`                                        | `false`           | Disables the control                                              |
+| `id`          | `string`                                         | generated         | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `name`        | `string`                                         | —                 | `name` of the underlying input                                    |
+| `ariaLabel`   | `string`                                         | —                 | Label when there is no visible one                                |
 
 **Events:** `update:modelValue`, `change`, `clear`, `open`, `close`, `search` (`string`).
 

@@ -77,20 +77,21 @@ The YouTube button asks for a URL and embeds it through `youtube-nocookie.com`.
 
 ## Props
 
-| Prop          | Type                                             | Default     | Description                                |
-| ------------- | ------------------------------------------------ | ----------- | ------------------------------------------ |
-| `modelValue`  | `string`                                         | `''`        | HTML content                               |
-| `placeholder` | `string`                                         | —           | Shown while the document is empty          |
-| `tools`       | `RichTextTool[]`                                 | all         | Which buttons appear, in order             |
-| `upload`      | `(file: File) => Promise<{ url, alt? }>`         | —           | Handles pasted, dropped and picked files   |
-| `pickImage`   | `() => Promise<string \| null>`                  | —           | Opens a media library; `null` cancels      |
-| `accept`      | `string[]`                                       | image types | MIME types accepted for upload             |
-| `minHeight`   | `string`                                         | `'220px'`   | Height before the editor starts growing    |
-| `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`      | Control size                               |
-| `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'` | Validation state                           |
-| `disabled`    | `boolean`                                        | `false`     | Disables the editor and its toolbar        |
-| `readonly`    | `boolean`                                        | `false`     | Content stays visible but cannot be edited |
-| `ariaLabel`   | `string`                                         | —           | Label when there is no visible one         |
+| Prop          | Type                                             | Default     | Description                                                       |
+| ------------- | ------------------------------------------------ | ----------- | ----------------------------------------------------------------- |
+| `modelValue`  | `string`                                         | `''`        | HTML content                                                      |
+| `placeholder` | `string`                                         | —           | Shown while the document is empty                                 |
+| `tools`       | `RichTextTool[]`                                 | all         | Which buttons appear, in order                                    |
+| `upload`      | `(file: File) => Promise<{ url, alt? }>`         | —           | Handles pasted, dropped and picked files                          |
+| `pickImage`   | `() => Promise<string \| null>`                  | —           | Opens a media library; `null` cancels                             |
+| `accept`      | `string[]`                                       | image types | MIME types accepted for upload                                    |
+| `minHeight`   | `string`                                         | `'220px'`   | Height before the editor starts growing                           |
+| `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`      | Control size                                                      |
+| `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'` | Validation state                                                  |
+| `disabled`    | `boolean`                                        | `false`     | Disables the editor and its toolbar                               |
+| `readonly`    | `boolean`                                        | `false`     | Content stays visible but cannot be edited                        |
+| `id`          | `string`                                         | generated   | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `ariaLabel`   | `string`                                         | —           | Label when there is no visible one                                |
 
 **Events:** `update:modelValue` (`string`), `change` (`string`), `focus`, `blur`,
 `upload-error` (`error`, `file`).

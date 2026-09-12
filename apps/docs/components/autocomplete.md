@@ -88,25 +88,26 @@ included:
 
 ## Props
 
-| Prop          | Type                                             | Default           | Description                                  |
-| ------------- | ------------------------------------------------ | ----------------- | -------------------------------------------- |
-| `modelValue`  | `string`                                         | `''`              | The text in the field                        |
-| `options`     | `AutocompleteOption[]`                           | `[]`              | `{ value, label?, description?, disabled? }` |
-| `remote`      | `boolean`                                        | `false`           | Do not filter locally                        |
-| `debounce`    | `number`                                         | `300`             | Quiet time before `search` fires             |
-| `loading`     | `boolean`                                        | `false`           | Shows a spinner                              |
-| `loadingText` | `string`                                         | `'Searching…'`    | Shown while the first response is awaited    |
-| `emptyText`   | `string`                                         | `'Nothing found'` | Shown when nothing matches                   |
-| `minLength`   | `number`                                         | `0`               | Characters needed before searching           |
-| `clearable`   | `boolean`                                        | `false`           | Button that empties the field                |
-| `openOnFocus` | `boolean`                                        | `true`            | Open the list on focus                       |
-| `teleport`    | `boolean`                                        | `true`            | Render the list in a portal                  |
-| `placeholder` | `string`                                         | —                 | Placeholder                                  |
-| `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`            | Control height                               |
-| `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'`       | Validation state                             |
-| `disabled`    | `boolean`                                        | `false`           | Disables the control                         |
-| `name`        | `string`                                         | —                 | Field name for a plain form post             |
-| `ariaLabel`   | `string`                                         | —                 | Label when there is no visible one           |
+| Prop          | Type                                             | Default           | Description                                                       |
+| ------------- | ------------------------------------------------ | ----------------- | ----------------------------------------------------------------- |
+| `modelValue`  | `string`                                         | `''`              | The text in the field                                             |
+| `options`     | `AutocompleteOption[]`                           | `[]`              | `{ value, label?, description?, disabled? }`                      |
+| `remote`      | `boolean`                                        | `false`           | Do not filter locally                                             |
+| `debounce`    | `number`                                         | `300`             | Quiet time before `search` fires                                  |
+| `loading`     | `boolean`                                        | `false`           | Shows a spinner                                                   |
+| `loadingText` | `string`                                         | `'Searching…'`    | Shown while the first response is awaited                         |
+| `emptyText`   | `string`                                         | `'Nothing found'` | Shown when nothing matches                                        |
+| `minLength`   | `number`                                         | `0`               | Characters needed before searching                                |
+| `clearable`   | `boolean`                                        | `false`           | Button that empties the field                                     |
+| `openOnFocus` | `boolean`                                        | `true`            | Open the list on focus                                            |
+| `teleport`    | `boolean`                                        | `true`            | Render the list in a portal                                       |
+| `placeholder` | `string`                                         | —                 | Placeholder                                                       |
+| `size`        | `'sm' \| 'md' \| 'lg'`                           | `'md'`            | Control height                                                    |
+| `status`      | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'`       | Validation state                                                  |
+| `disabled`    | `boolean`                                        | `false`           | Disables the control                                              |
+| `name`        | `string`                                         | —                 | Field name for a plain form post                                  |
+| `id`          | `string`                                         | generated         | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `ariaLabel`   | `string`                                         | —                 | Label when there is no visible one                                |
 
 **Events:** `update:modelValue`, `change` (`string`), `search` (`string`, debounced),
 `select` (`AutocompleteOption`), `clear`, `open`, `close`.
