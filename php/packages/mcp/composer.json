@@ -1,7 +1,13 @@
 {
     "name": "webx-ui/mcp",
     "description": "The contract by which a WebX UI admin module offers its tools, resources and prompts to an AI agent, and the registry that collects them.",
-    "keywords": ["laravel", "mcp", "ai", "agents", "webx-ui"],
+    "keywords": [
+        "laravel",
+        "mcp",
+        "ai",
+        "agents",
+        "webx-ui"
+    ],
     "homepage": "https://github.com/webx-ui/webx-ui",
     "license": "MIT",
     "authors": [
@@ -19,7 +25,7 @@
         "illuminate/console": "^13.0",
         "illuminate/contracts": "^13.0",
         "illuminate/support": "^13.0",
-        "webx-ui/admin": "^0.1.0"
+        "webx-ui/admin": "^0.2.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
@@ -40,7 +46,9 @@
     },
     "extra": {
         "laravel": {
-            "providers": ["WebxUi\\Mcp\\McpServiceProvider"]
+            "providers": [
+                "WebxUi\\Mcp\\McpServiceProvider"
+            ]
         }
     },
     "config": {
