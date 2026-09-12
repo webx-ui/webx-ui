@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
+import { markRaw, nextTick } from 'vue'
 import WxTreeSelect from './TreeSelect.vue'
 import type { TreeNode } from '../Tree/types'
 
@@ -231,6 +231,40 @@ describe('WxTreeSelect', () => {
     expect(load).toHaveBeenCalledTimes(1)
     expect(rowFor('Kyiv')).toBeTruthy()
     expect(rowFor('Kyiv').classList.contains('is-selected')).toBe(true)
+  })
+
+  it('names a node picked out of a branch it has just fetched', async () => {
+    const load = vi.fn().mockResolvedValue([
+      { id: 'ua-kyiv', label: 'Kyiv', leaf: true },
+      { id: 'ua-odesa', label: 'Odesa', leaf: true },
+    ])
+    /*
+     * The field keeps one index to name its value and the tree in the panel keeps
+     * another, and it is the tree that fetches. This covers the chain that finds the
+     * label — and not the reason it once broke: in a browser the field's index stayed
+     * stale, and here it does not, whatever `markRaw` is asked to withhold. jsdom
+     * refreshes too much to be able to fail at it, so that half is a browser's to check.
+     */
+    const wrapper = factory({
+      nodes: [markRaw({ id: 'ua', label: 'Ukraine' })],
+      lazy: true,
+      load,
+    })
+
+    await openPanel(wrapper)
+    await click(rowFor('Ukraine').querySelector('.wx-tree__toggle')!)
+    await flushPromises()
+    await click(rowFor('Odesa'))
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['ua-odesa'])
+
+    /*
+     * No `setProps` here on purpose: handing the props object back rebuilds every index
+     * over it, and that is exactly the help the field does not get in an application.
+     */
+    await nextTick()
+    expect(wrapper.get('.wx-tree-select__single').text()).toBe('Odesa')
+    expect((wrapper.emitted('change')?.at(-1)?.[1] as TreeNode[])[0]?.label).toBe('Odesa')
   })
 
   it('takes a path per value when several are chosen', () => {
