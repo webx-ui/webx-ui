@@ -68,6 +68,21 @@ final class PanelCommandTest extends TestCase
     }
 
     #[Test]
+    public function the_entry_brings_the_stylesheets_with_it(): void
+    {
+        // The packages ship compiled CSS that nothing imports on its own. An entry without
+        // these lines builds, runs, and renders a panel with no styling at all.
+        $entry = $this->at('resources/js/admin.ts');
+
+        $this->artisan('webx:panel')->assertSuccessful();
+
+        $contents = (string) $this->files->get($entry);
+
+        $this->assertStringContainsString("import '@webx-ui/core/style.css'", $contents);
+        $this->assertStringContainsString("import '@webx-ui/admin/style.css'", $contents);
+    }
+
+    #[Test]
     public function the_entry_follows_the_panel_path(): void
     {
         config()->set('webx-admin.path', 'panel');
