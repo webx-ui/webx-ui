@@ -18,6 +18,19 @@ export interface ImageEditorRatioOption {
   label?: string
 }
 
+/**
+ * The adjustments, as percentages of what the picture already is: 100 leaves it alone.
+ * They are the four a photograph for a website actually wants, and no more — a preset is
+ * a name for a set of these numbers, and can be built on top without the editor knowing.
+ */
+export interface ImageEditorAdjustments {
+  brightness: number
+  contrast: number
+  saturation: number
+  /** Black and white, which overrules whatever the saturation is set to. */
+  mono: boolean
+}
+
 /** What the editor hands over. Nothing is uploaded; this is a blob and its measurements. */
 export interface ImageEditorResult {
   blob: Blob
@@ -36,6 +49,10 @@ export interface ImageEditorResult {
   rotation: number
   flipX: boolean
   flipY: boolean
+  /** The adjustments as they stood, and the CSS `filter` that says the same thing. */
+  adjustments: ImageEditorAdjustments
+  /** Empty when the picture was left alone. A server can apply the same numbers. */
+  filter: string
 }
 
 export interface ImageEditorProps {
@@ -59,8 +76,13 @@ export interface ImageEditorProps {
   rotatable?: boolean
   /** Mirroring, across and down. */
   flippable?: boolean
-  /** Offers the output size — the field that scales the cut-out down before it is written. */
+  /** Offers the output size — the fields that scale the cut-out down before it is written. */
   resizable?: boolean
+  /**
+   * Offers the adjustments: brightness, contrast, saturation and black-and-white, behind
+   * one button. Off by default, so an editor asked for as a cropper stays one.
+   */
+  filters?: boolean
   /** Largest output, in pixels. A bigger crop is scaled down to fit inside it. */
   maxWidth?: number
   maxHeight?: number
@@ -103,6 +125,12 @@ export interface ImageEditorProps {
   outputHint?: string
   widthLabel?: string
   heightLabel?: string
+  /** The adjustments: the button, and the four things inside its panel. */
+  adjustLabel?: string
+  brightnessLabel?: string
+  contrastLabel?: string
+  saturationLabel?: string
+  monoLabel?: string
   freeLabel?: string
   originalLabel?: string
   /** Shown in place of the picture when it will not load. */

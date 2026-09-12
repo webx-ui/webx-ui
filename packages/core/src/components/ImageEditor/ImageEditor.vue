@@ -4,7 +4,10 @@ import WxAction from '../Action/Action.vue'
 import WxButton from '../Button/Button.vue'
 import WxIcon from '../Icon/Icon.vue'
 import WxInputNumber from '../InputNumber/InputNumber.vue'
+import WxPopover from '../Popover/Popover.vue'
 import WxSegmented from '../Segmented/Segmented.vue'
+import WxSlider from '../Slider/Slider.vue'
+import WxSwitch from '../Switch/Switch.vue'
 import WxTooltip from '../Tooltip/Tooltip.vue'
 import {
   clamp,
@@ -18,7 +21,9 @@ import {
   turnCrop,
   type CropHandle,
 } from './crop'
+import { NEUTRAL, applyAdjustments, filterString, isNeutral } from './filters'
 import type {
+  ImageEditorAdjustments,
   ImageEditorCrop,
   ImageEditorEmits,
   ImageEditorProps,
@@ -48,6 +53,7 @@ const props = withDefaults(defineProps<ImageEditorProps>(), {
   rotatable: true,
   flippable: true,
   resizable: true,
+  filters: false,
   maxWidth: undefined,
   maxHeight: undefined,
   minSize: 16,
@@ -70,6 +76,11 @@ const props = withDefaults(defineProps<ImageEditorProps>(), {
   outputHint: 'The size of the picture you will get',
   widthLabel: 'Width',
   heightLabel: 'Height',
+  adjustLabel: 'Adjust',
+  brightnessLabel: 'Brightness',
+  contrastLabel: 'Contrast',
+  saturationLabel: 'Saturation',
+  monoLabel: 'Black and white',
   freeLabel: 'Free',
   originalLabel: 'Original',
   errorText: 'This picture could not be loaded',
@@ -110,6 +121,37 @@ const crop = ref<ImageEditorCrop>({ x: 0, y: 0, width: 0, height: 0 })
 
 /** Set by hand in the width field; until then the output is the crop's own size. */
 const widthOverride = ref<number | null>(null)
+
+/*
+ * Brightness, contrast, saturation and black-and-white — the four a photograph for a
+ * website actually wants. They are shown as a CSS `filter` on the `<img>` and written as
+ * the same string onto the canvas, so what is looked at and what comes out are the one
+ * calculation rather than two that have to be kept in step.
+ */
+const adjust = ref<ImageEditorAdjustments>({ ...NEUTRAL })
+
+const filter = computed(() => filterString(adjust.value))
+
+/** Whether the button should show that there is something behind it. */
+const touchedFilters = computed(() => !isNeutral(adjust.value))
+
+type SliderKey = 'brightness' | 'contrast' | 'saturation'
+
+const sliders = computed(() => [
+  { key: 'brightness' as SliderKey, label: props.brightnessLabel },
+  { key: 'contrast' as SliderKey, label: props.contrastLabel },
+  { key: 'saturation' as SliderKey, label: props.saturationLabel },
+])
+
+function setAdjustment(key: SliderKey, value: number | number[] | null) {
+  if (typeof value !== 'number') return
+  adjust.value = { ...adjust.value, [key]: value }
+  touched.value = true
+}
+
+function adjusted() {
+  touched.value = true
+}
 
 /** The picture as it is being looked at: sides swapped by an odd number of turns. */
 const work = computed(() =>
@@ -166,6 +208,7 @@ function reset({ loaded = true } = {}) {
   flipX.value = false
   flipY.value = false
   widthOverride.value = null
+  adjust.value = { ...NEUTRAL }
   chosen.value = props.ratio ?? options.value[0]?.value ?? 'free'
   failed.value = false
   touched.value = false
@@ -253,6 +296,8 @@ const imageStyle = computed(() => ({
   width: `${natural.value.width * scale.value}px`,
   height: `${natural.value.height * scale.value}px`,
   transform: `translate(-50%, -50%) scale(${flipX.value ? -1 : 1}, ${flipY.value ? -1 : 1}) rotate(${rotation.value}deg)`,
+  /* On the picture and nowhere else: the crop, the grips and the shade are its siblings. */
+  filter: filter.value || undefined,
 }))
 
 const cropStyle = computed(() => ({
@@ -478,6 +523,15 @@ function rounded(value: ImageEditorCrop): ImageEditorCrop {
   }
 }
 
+/*
+ * Asked of the object rather than with `in` on the typed one: TypeScript knows every
+ * context has a `filter` and narrows the negative branch away to `never`, which is true
+ * of the type and not of Safari before 16.4.
+ */
+function supportsFilter(context: CanvasRenderingContext2D) {
+  return 'filter' in (context as unknown as Record<string, unknown>)
+}
+
 function encode(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
     if (typeof canvas.toBlob !== 'function') {
@@ -512,6 +566,16 @@ async function apply(): Promise<ImageEditorResult | undefined> {
 
     context.imageSmoothingQuality = 'high'
 
+    /*
+     * The adjustments ride along with the drawing, so the picture is still sampled once.
+     * Where the canvas has never heard of `filter` — Safari before 16.4 — it is not an
+     * error and not a refusal: the same arithmetic is done over the pixels afterwards,
+     * which is slower and gives the same answer. Silently writing an unadjusted file is
+     * the one outcome worth any amount of code to avoid.
+     */
+    const byHand = Boolean(filter.value) && !supportsFilter(context)
+    if (filter.value && !byHand) context.filter = filter.value
+
     /* Transparency turns black in a format that has none, which reads as a bug. */
     if (type.value === 'image/jpeg') {
       context.fillStyle = props.background
@@ -535,6 +599,14 @@ async function apply(): Promise<ImageEditorResult | undefined> {
       natural.value.height,
     )
 
+    if (byHand) {
+      /* Reading the pixels back needs the same untainted canvas that writing one does. */
+      context.setTransform(1, 0, 0, 1, 0, 0)
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height)
+      applyAdjustments(pixels.data, adjust.value)
+      context.putImageData(pixels, 0, 0)
+    }
+
     const blob = await encode(canvas)
     const result: ImageEditorResult = {
       blob,
@@ -546,6 +618,8 @@ async function apply(): Promise<ImageEditorResult | undefined> {
       rotation: rotation.value,
       flipX: flipX.value,
       flipY: flipY.value,
+      adjustments: { ...adjust.value },
+      filter: filter.value,
     }
 
     emit('save', result)
@@ -698,6 +772,45 @@ defineExpose({
           @click="mirror('y')"
         />
       </span>
+
+      <!--
+        The adjustments live behind one button rather than in the toolbar: three sliders
+        and a switch are wider than everything else put together, and they are reached on
+        purpose — nobody arrives at a cropper meaning to change the contrast.
+      -->
+      <wx-popover v-if="filters" side="bottom" align="start" :width="260" :title="adjustLabel">
+        <template #trigger>
+          <wx-action
+            class="wx-image-editor__adjust"
+            icon="sliders"
+            size="sm"
+            :title="adjustLabel"
+            :tone="touchedFilters ? 'primary' : undefined"
+            :disabled="disabled || !ready"
+          />
+        </template>
+
+        <div class="wx-image-editor__sliders">
+          <label v-for="slider in sliders" :key="slider.key" class="wx-image-editor__slider">
+            <span class="wx-image-editor__slider-name">
+              {{ slider.label }}
+              <span class="wx-image-editor__slider-value">{{ adjust[slider.key] }}%</span>
+            </span>
+            <wx-slider
+              :model-value="adjust[slider.key]"
+              :min="0"
+              :max="200"
+              :step="1"
+              size="sm"
+              :disabled="slider.key === 'saturation' && adjust.mono"
+              :aria-label="slider.label"
+              @update:model-value="setAdjustment(slider.key, $event)"
+            />
+          </label>
+
+          <wx-switch v-model="adjust.mono" :label="monoLabel" size="sm" @change="adjusted" />
+        </div>
+      </wx-popover>
 
       <!--
         Named, and both sides of it: two numbers with nothing to say what they measure
@@ -1007,6 +1120,30 @@ defineExpose({
   display: flex;
   gap: 2px;
   align-items: center;
+}
+
+.wx-image-editor__sliders {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-12);
+}
+
+.wx-image-editor__slider {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-4);
+}
+
+.wx-image-editor__slider-name {
+  display: flex;
+  justify-content: space-between;
+  color: var(--wx-text-muted);
+  font-size: var(--wx-font-size-xs);
+}
+
+.wx-image-editor__slider-value {
+  color: var(--wx-text-default);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Pushed to the end, with the reset after it — the two things that are not the picture. */

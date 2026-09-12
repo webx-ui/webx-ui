@@ -5,7 +5,8 @@ import ImageEditorDemo from '../components/demos/ImageEditorDemo.vue'
 # ImageEditor
 
 `WxImageEditor` is a picture, a rectangle over it, and a blob at the end: a crop with the eight
-grips everybody knows, quarter turns, mirrorings, and an output size.
+grips everybody knows, quarter turns, mirrorings, an output size, and the four adjustments a
+photograph for a website actually wants.
 
 <ImageEditorDemo />
 
@@ -70,11 +71,14 @@ interface ImageEditorResult {
   rotation: number
   flipX: boolean
   flipY: boolean
+  adjustments: { brightness: number; contrast: number; saturation: number; mono: boolean }
+  filter: string // the same, as a CSS filter
 }
 ```
 
-The last four are there so a server can arrive at the same picture from the original: turn by
-`rotation`, mirror where the flips say so, then cut `crop` out of what you have. That is also why
+Everything under `height` is there so a server can arrive at the same picture from the original:
+turn by `rotation`, mirror where the flips say so, cut `crop` out of what you have, and apply the
+adjustments. That is also why
 `crop` is in the pixels of the turned picture rather than the original's — it is the second step,
 not the first.
 
@@ -121,6 +125,43 @@ the fields away and leaves the reading.
 inside them — the line to write on a media library, where what arrives from a phone is four
 thousand pixels wide and what the site needs is twelve hundred.
 
+## Adjustments
+
+`filters` offers the four a photograph for a website actually wants — brightness, contrast,
+saturation and black-and-white — behind one button, because three sliders and a switch are wider
+than the rest of the toolbar put together and nobody arrives at a cropper meaning to change the
+contrast. It is off by default: an editor asked for as a cropper stays one.
+
+```vue
+<wx-image-editor :src="src" filters />
+```
+
+What you see is what is written. The picture on screen is shown through a CSS `filter` and the
+canvas is drawn under the same string, so the preview and the file are one calculation rather than
+two that have to be kept in step — and since the filter rides along with the drawing, the picture
+is still sampled exactly once.
+
+The result carries both the numbers and the string:
+
+```ts
+{
+  adjustments: { brightness: 112, contrast: 100, saturation: 80, mono: false },
+  filter: 'brightness(112%) saturate(80%)',
+}
+```
+
+That is there so a server can arrive at the same picture from the original — the numbers are
+percentages, and `brightness`, `contrast` and `saturation`/`modulate` mean the same thing in
+ImageMagick as they do here.
+
+Safari learned `ctx.filter` in 16.4, and where it is missing it is missing **silently**: the
+picture on screen is adjusted and the file that comes out is not. Rather than let that happen the
+editor does the same arithmetic over the pixels itself — slower, same answer. Nothing to turn on.
+
+What is deliberately not here: sharpening, which wants a convolution rather than a filter and is
+its own piece of work; and presets, which are a name for a set of these four numbers and can be
+built on top without the editor knowing.
+
 ## The format
 
 `auto` keeps a PNG a PNG and a WebP a WebP, and writes everything else as a JPEG. It matters
@@ -156,6 +197,7 @@ the ratio.
 | `rotatable`   | `boolean`                                               | `true`        | Quarter turns, left and right                              |
 | `flippable`   | `boolean`                                               | `true`        | Mirroring, across and down                                 |
 | `resizable`   | `boolean`                                               | `true`        | The output-size fields                                     |
+| `filters`     | `boolean`                                               | `false`       | Brightness, contrast, saturation and black-and-white       |
 | `maxWidth`    | `number`                                                | —             | Largest output; a bigger crop is scaled down               |
 | `maxHeight`   | `number`                                                | —             | The same, for the height                                   |
 | `minSize`     | `number`                                                | `16`          | Smallest crop, in the picture's own pixels                 |
@@ -168,8 +210,9 @@ the ratio.
 
 The labels — `saveLabel`, `cancelLabel`, `resetLabel`, `rotateLeftLabel`, `rotateRightLabel`,
 `flipHorizontalLabel`, `flipVerticalLabel`, `ratioLabel`, `cropLabel`, `outputLabel`, `outputHint`,
-`widthLabel`, `heightLabel`, `freeLabel`, `originalLabel`, `errorText` — are all English by default
-and all replaceable.
+`widthLabel`, `heightLabel`, `adjustLabel`, `brightnessLabel`, `contrastLabel`, `saturationLabel`,
+`monoLabel`, `freeLabel`, `originalLabel`, `errorText` — are all English by default and all
+replaceable.
 
 **Events:** `save` (`ImageEditorResult`); `cancel`; `load` (`{ width, height }`); `error`
 (`unknown`); `crop` (the rectangle, as it is dragged).

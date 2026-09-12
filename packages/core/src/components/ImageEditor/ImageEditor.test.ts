@@ -14,6 +14,8 @@ import type { ImageEditorProps, ImageEditorResult } from './types'
 const context = {
   imageSmoothingQuality: '',
   fillStyle: '',
+  /* Present, the way it is on every browser since Safari 16.4. */
+  filter: '',
   fillRect: vi.fn(),
   setTransform: vi.fn(),
   translate: vi.fn(),
@@ -25,6 +27,7 @@ const context = {
 const originalGetContext = HTMLCanvasElement.prototype.getContext
 
 beforeEach(() => {
+  context.filter = ''
   for (const call of Object.values(context)) {
     if (typeof call === 'function') call.mockClear()
   }
@@ -247,5 +250,54 @@ describe('WxImageEditor', () => {
     expect(wrapper.findAll('.wx-image-editor__field')).toHaveLength(0)
     expect(wrapper.get('.wx-image-editor__size').text()).toContain('800')
     expect(wrapper.get('.wx-image-editor__size').text()).toContain('600')
+  })
+  it('has no adjustments unless they are asked for', async () => {
+    expect((await loaded(editor())).find('.wx-image-editor__adjust').exists()).toBe(false)
+    expect(
+      (await loaded(editor({ filters: true }))).find('.wx-image-editor__adjust').exists(),
+    ).toBe(true)
+  })
+
+  it('draws under the adjustments, and says what they were', async () => {
+    const wrapper = await loaded(editor({ filters: true }))
+    const vm = wrapper.vm as unknown as { adjust: { brightness: number; mono: boolean } }
+
+    vm.adjust.brightness = 120
+    vm.adjust.mono = true
+    await (wrapper.vm as unknown as { apply: () => Promise<unknown> }).apply()
+
+    expect(context.filter).toBe('brightness(120%) grayscale(1)')
+    expect(saved(wrapper)!.filter).toBe('brightness(120%) grayscale(1)')
+    expect(saved(wrapper)!.adjustments.brightness).toBe(120)
+  })
+
+  it('leaves the canvas alone when nothing was adjusted', async () => {
+    const wrapper = await loaded(editor({ filters: true }))
+
+    await (wrapper.vm as unknown as { apply: () => Promise<unknown> }).apply()
+
+    expect(saved(wrapper)!.filter).toBe('')
+  })
+
+  it('does the arithmetic itself where the canvas cannot', async () => {
+    /* Safari before 16.4: the property is simply not there. */
+    const without = {
+      ...context,
+      getImageData: vi.fn(() => ({ data: new Uint8ClampedArray([10, 20, 30, 255]) })),
+      putImageData: vi.fn(),
+    }
+    delete (without as { filter?: unknown }).filter
+    HTMLCanvasElement.prototype.getContext = vi.fn(
+      () => without,
+    ) as unknown as typeof HTMLCanvasElement.prototype.getContext
+
+    const wrapper = await loaded(editor({ filters: true }))
+    ;(wrapper.vm as unknown as { adjust: { brightness: number } }).adjust.brightness = 200
+    await (wrapper.vm as unknown as { apply: () => Promise<unknown> }).apply()
+
+    /* Not silently unadjusted: the pixels were read, changed and put back. */
+    expect(without.getImageData).toHaveBeenCalled()
+    expect(without.putImageData).toHaveBeenCalled()
+    expect(saved(wrapper)!.filter).toBe('brightness(200%)')
   })
 })
