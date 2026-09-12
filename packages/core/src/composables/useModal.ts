@@ -117,10 +117,16 @@ export function openModal<T = unknown>(
   const open = ref(true)
 
   let done = false
-  let timer = 0
+  let timer: ReturnType<typeof setTimeout> | undefined
 
+  /*
+   * The plain timer functions rather than `window`'s. The panel is taken away a moment
+   * after it closes, and that moment can land after whatever set it up has gone — the end
+   * of a test, a page being torn down — where reaching through `window` is a reference
+   * error rather than a cleanup.
+   */
   function unmount() {
-    window.clearTimeout(timer)
+    clearTimeout(timer)
     render(null, container)
     container.remove()
   }
@@ -130,7 +136,7 @@ export function openModal<T = unknown>(
     done = true
     open.value = false
     settle(value)
-    timer = window.setTimeout(unmount, options.duration ?? 250)
+    timer = setTimeout(unmount, options.duration ?? 250)
   }
 
   const handle: ModalHandle<T> = {
