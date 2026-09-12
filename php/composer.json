@@ -1,0 +1,41 @@
+{
+    "name": "webx-ui/monorepo",
+    "description": "Development root for the WebX UI PHP packages. Never published: every package ships from its own split repository.",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "webx-ui/nested-set": "*"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.12",
+        "laravel/pint": "^1.32",
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^13.0"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "packages/*"
+        }
+    ],
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\NestedSet\\Tests\\": "packages/nested-set/tests/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "lint": "pint --test",
+        "lint:fix": "pint",
+        "analyse": "phpstan analyse"
+    }
+}

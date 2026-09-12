@@ -1,6 +1,9 @@
 packages:
   - 'packages/*'
   - 'apps/*'
+  # Not an npm package: it carries the shared version of the Composer packages
+  # so changesets can bump them alongside the JavaScript ones.
+  - 'php'
 
 # Dependencies allowed to run install scripts (pnpm blocks the rest by default).
 allowBuilds:

@@ -73,6 +73,24 @@ pnpm --filter @webx-ui/tokens generate
 regenerates `dist/tokens.css` and the typed `src/generated/tokens.ts`. Commit the generated TS file
 — CI fails if it is stale.
 
+## PHP packages
+
+The Laravel side lives in `php/packages/*` and is published to Packagist as `webx-ui/*`. It has
+its own toolchain and its own CI job:
+
+```bash
+cd php
+composer install
+composer lint && composer analyse && composer test
+```
+
+All PHP packages share one version, carried by the private `@webx-ui/php` package in
+`php/package.json` — so a change under `php/packages/` takes a changeset on **`@webx-ui/php`**.
+There is nothing to publish: the release workflow tags the monorepo, mirrors every package into
+its own repository, and Packagist picks the tag up. See
+[`php/README.md`](php/README.md) and
+[`docs/architecture/WEBX_UI_PHP_RELEASE.md`](docs/architecture/WEBX_UI_PHP_RELEASE.md).
+
 ## Pull requests
 
 `main` is protected: changes land through PRs with green CI (lint, format, typecheck, tests, build,

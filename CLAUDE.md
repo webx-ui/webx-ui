@@ -22,6 +22,11 @@ Laravel. Библиотека публикуется в npm, админки — 
 4. **`@webx-ui/adapter-laravel`** — адаптер под Laravel (`LengthAwarePaginator`, ошибки 422,
    query-параметры сортировки и фильтров). Не начинался.
 
+Вторая половина системы — **composer-пакеты** в `php/packages/*` (вендор `webx-ui/*`, namespace
+`WebxUi`), они же ядро админки на Laravel. Реестр и планы — в
+`docs/architecture/WEBX_UI_COMPOSER_PACKAGES.md`, конвейер публикации на Packagist — в
+`docs/architecture/WEBX_UI_PHP_RELEASE.md`.
+
 Ключевые принципы:
 
 - Компоненты знают только CSS-переменные, никаких хардкод-цветов.
@@ -64,6 +69,10 @@ packages/
 apps/
 ├── docs/                         # VitePress: components/*.md + components/demos/*.vue + guide/*
 └── playground/                   # Vite-песочница: реальные экраны админки
+php/
+├── composer.json                 # dev-корень: тулинг + path-репозитории пакетов
+├── package.json                  # приватный @webx-ui/php: общая версия composer-пакетов
+└── packages/<name>/              # composer.json + src + tests + README + LICENSE
 ```
 
 ## 4. Правила, которые уже стоили времени
@@ -130,6 +139,17 @@ apps/
   `components/index.ts` (плагин сам подхватывает всё, что называется `Wx*`).
 - Большие `.vue` писать инструментом Write, а не heredoc'ом в bash — на обратных кавычках и `$`
   ломается.
+- **Bash-инструмент здесь съедает обратные слэши, даже в закавыченном heredoc'е.** Двойной слэш
+  приезжает одинарным, `\N` — просто буквой; так ломаются psr-4 в `composer.json` и любые
+  perl/sed-выражения с экранированием. Composer на это отвечает «unescaped backslash». Файлы со
+  слэшами писать инструментом Write, точечные правки — скриптом на php/node, который держит
+  шаблон в файле, а не в командной строке.
+- **`/tmp` у bash и у php — разные каталоги.** Bash подставляет реальный путь только в аргументах
+  запуска, а строка `/tmp/x.php` внутри php-кода на Windows никуда не ведёт. Временное — в
+  скретчпад сессии по абсолютному пути.
+- **PHP-часть проверяется настоящим PHP.** Локально есть `C:\Work\OSPanel\modules\PHP-8.4\php.exe`;
+  composer в PATH нет, phar кладётся в скретчпад. Гейт php-половины —
+  `composer lint && composer analyse && composer test` из `php/`.
 
 ## 5. Процесс
 
@@ -145,7 +165,14 @@ apps/
   уже смержен. Выглядит страшно — рабочие файлы будто откатились. Лечится
   `git fetch claude && git merge --ff-only claude/main`; проверить, что мерж прошёл, можно через
   `gh pr view <N> --json state`.
-- **Changeset** на каждый PR, который меняет публикуемый пакет; docs-only — без него.
+- **Changeset** на каждый PR, который меняет публикуемый пакет; docs-only — без него. Правка в
+  `php/packages/*` — это changeset на приватный `@webx-ui/php`: он носит общую версию всех
+  composer-пакетов.
+- **У php-пакетов нет публикации, есть тег.** `release.yml` после changesets вешает `php-v<версия>`
+  и вызывает `php-split.yml`, тот зеркалит каждый пакет в `webx-ui/<имя>` и ставит там `v<версия>`
+  — Packagist подхватывает вебхуком. Нужен секрет `PHP_SPLIT_TOKEN` и заранее созданный
+  репозиторий-зеркало. Подробности и что делать на packagist.org —
+  `docs/architecture/WEBX_UI_PHP_RELEASE.md`.
 - **Релиз:** мерж PR с changeset'ами → бот открывает «chore: version packages» → мерж этого PR
   публикует пакеты. На npm версия появляется минут через пять после того, как воркфлоу отчитался.
   Проверять `npm view @webx-ui/core version`, а не веру: тег в git ставится сразу, регистр отстаёт.
