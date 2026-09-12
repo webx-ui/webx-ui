@@ -28,6 +28,7 @@ class AuthServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-auth');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         /** @var Router $router */
@@ -49,6 +50,10 @@ class AuthServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../config/webx-auth.php' => config_path('webx-auth.php'),
         ], 'webx-auth-config');
+
+        $this->publishes([
+            __DIR__.'/../lang' => lang_path('vendor/webx-auth'),
+        ], 'webx-auth-lang');
 
         $this->commands([CreateAdminCommand::class]);
     }

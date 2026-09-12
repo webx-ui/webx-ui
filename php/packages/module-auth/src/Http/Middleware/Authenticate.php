@@ -24,12 +24,12 @@ final class Authenticate
         $user = $guard->user();
 
         if (! $user instanceof CmsUser) {
-            return response()->json(['message' => 'Unauthenticated.'], 401);
+            return response()->json(['message' => __('webx-auth::errors.unauthenticated')], 401);
         }
 
         // An account switched off mid-session stops working now, not at its next sign-in.
         if (! $user->is_active) {
-            return response()->json(['message' => 'This account is no longer active.'], 403);
+            return response()->json(['message' => __('webx-auth::errors.inactive')], 403);
         }
 
         return $next($request);

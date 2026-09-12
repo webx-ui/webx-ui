@@ -91,7 +91,7 @@ REPOSITORY="$(
 )
 
 step "The packages came from the checkout, not from Packagist"
-for package in admin mcp module-auth; do
+for package in admin localization mcp module-auth; do
     [ -L "$APP/vendor/webx-ui/$package" ] || [ -f "$APP/vendor/webx-ui/$package/.git" ] \
         || fail "vendor/webx-ui/$package is a copy, so a released version was installed instead of this checkout"
     note "webx-ui/$package is linked to the checkout"
@@ -105,6 +105,7 @@ step "Providers are found by discovery, not by hand"
     $manifest = require $argv[1];
     $expected = [
         "webx-ui/admin" => "WebxUi\\Admin\\AdminServiceProvider",
+        "webx-ui/localization" => "WebxUi\\Localization\\LocalizationServiceProvider",
         "webx-ui/mcp" => "WebxUi\\Mcp\\McpServiceProvider",
         "webx-ui/module-auth" => "WebxUi\\Auth\\AuthServiceProvider",
     ];
@@ -157,6 +158,11 @@ note "$(grep -E '^DB_CONNECTION=|^DB_DATABASE=' "$APP/.env" | tr '\n' ' ')"
 "$PHP_BIN" "$APP/artisan" migrate --force --no-interaction
 note 'migrations ran'
 
+step "Seed the languages"
+"$PHP_BIN" "$APP/artisan" webx:locales:seed --no-interaction | grep -qi 'english' \
+    || fail 'webx:locales:seed did not create the configured languages'
+note 'the locales table has the configured languages'
+
 step "Create an administrator"
 WEBX_ADMIN_PASSWORD="$ADMIN_PASSWORD" "$PHP_BIN" "$APP/artisan" webx:admin \
     --name=Smoke --email="$ADMIN_EMAIL" --no-interaction
@@ -204,6 +210,11 @@ run_http_checks() {
 
     expect 200 "$(status "$BASE/cms")" "[$phase] the shell is public"
     expect 401 "$(status "$BASE/api/cms/manifest")" "[$phase] the manifest is closed to a stranger"
+
+    # Installing module-auth replaces the panel's API middleware wholesale, and these two have
+    # to survive it: the sign-in screen is drawn before there is anybody to authenticate.
+    expect 200 "$(status "$BASE/api/cms/locales")" "[$phase] the languages are readable by a stranger"
+    expect 200 "$(status "$BASE/api/cms/translations/ru")" "[$phase] so is the dictionary"
 
     # The real sign-in dance: the panel's API runs through the `web` group, so a POST needs a
     # CSRF token. Tests never see this — Laravel switches the check off while running them.

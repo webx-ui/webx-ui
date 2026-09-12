@@ -10,6 +10,7 @@ use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
+use WebxUi\Localization\LocalizationServiceProvider;
 use WebxUi\Mcp\McpServiceProvider;
 
 abstract class TestCase extends Orchestra
@@ -20,7 +21,12 @@ abstract class TestCase extends Orchestra
      */
     protected function getPackageProviders($app): array
     {
-        return [AdminServiceProvider::class, McpServiceProvider::class, AuthServiceProvider::class];
+        return [
+            LocalizationServiceProvider::class,
+            AdminServiceProvider::class,
+            McpServiceProvider::class,
+            AuthServiceProvider::class,
+        ];
     }
 
     /**

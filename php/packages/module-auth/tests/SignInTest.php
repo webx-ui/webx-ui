@@ -76,7 +76,7 @@ final class SignInTest extends TestCase
             'password' => 'correct-horse-battery',
         ])
             ->assertStatus(422)
-            ->assertJsonPath('errors.email.0', __('auth.failed'));
+            ->assertJsonPath('errors.email.0', __('webx-auth::card.failed'));
 
         $this->assertGuest('cms');
     }
