@@ -398,6 +398,11 @@ async function onKeydown(row: TreeRow<T>, event: KeyboardEvent) {
 defineExpose({
   /** Opens every branch on the way to a node. */
   reveal: (key: TreeKey) => tree.reveal(key),
+  /**
+   * Opens a named path one level at a time, waiting for each lazy level before asking
+   * for the next — the way to reach a node the tree has not fetched yet.
+   */
+  openPath: (keys: TreeKey[]) => tree.openPath(keys),
   expandAll: () => tree.expandAll(),
   collapseAll: () => tree.collapseAll(),
   /** The node itself and everything above it — a breadcrumb of the tree. */

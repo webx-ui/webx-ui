@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends TreeNode">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import { PopoverAnchor, PopoverContent, PopoverPortal, PopoverRoot, PopoverTrigger } from 'reka-ui'
 import WxIcon from '../Icon/Icon.vue'
 import WxTree from '../Tree/Tree.vue'
@@ -26,6 +26,7 @@ const props = withDefaults(defineProps<TreeSelectProps<T>>(), {
   defaultExpandAll: false,
   lazy: false,
   load: undefined,
+  selectedPath: undefined,
   filterable: false,
   filterPlaceholder: 'Search',
   showPath: false,
@@ -95,15 +96,45 @@ const keys = computed<TreeKey[]>(() => {
   return Array.isArray(model.value) ? model.value : [model.value]
 })
 
+/** `selectedPath` as the array of paths it always is inside. */
+const paths = computed<T[][]>(() => {
+  const given = props.selectedPath
+  if (!given?.length) return []
+  return (Array.isArray(given[0]) ? given : [given]) as T[][]
+})
+
+/** The path the caller handed over for a key, when the tree has none of its own. */
+function givenPath(key: TreeKey): T[] {
+  return (
+    (paths.value.find((path) => {
+      const last = path.at(-1)
+      return last !== undefined && accessors.key(last, []) === key
+    }) as T[] | undefined) ?? []
+  )
+}
+
+/** The nodes behind the keys, from the tree where it knows them and from the path where it does not. */
 const selectedNodes = computed<T[]>(() =>
-  keys.value.map((key) => lookup.entry(key)?.node).filter((node): node is T => node !== undefined),
+  keys.value
+    .map((key) => lookup.entry(key)?.node ?? givenPath(key).at(-1))
+    .filter((node): node is T => node !== undefined),
 )
 
-const hasValue = computed(() => selectedNodes.value.length > 0)
+/*
+ * A key with no node behind it is still a value. Saying so with the placeholder — the
+ * way a field with nothing in it looks — would be the field lying about the model,
+ * which is why a lazy tree wants `selected-path`: it is the only thing that can put a
+ * name where the key would otherwise show through.
+ */
+const hasValue = computed(() => keys.value.length > 0)
 
 function labelOf(key: TreeKey) {
-  const steps = props.showPath ? lookup.path(key) : lookup.path(key).slice(-1)
-  return steps.map((step) => accessors.label?.(step.node) ?? '').join(props.separator)
+  const known = lookup.path(key).map((step) => step.node)
+  const steps = known.length ? known : givenPath(key)
+  if (!steps.length) return String(key)
+
+  const shown = props.showPath ? steps : steps.slice(-1)
+  return shown.map((node) => accessors.label?.(node) ?? '').join(props.separator)
 }
 
 /** A `<form>` posts strings: one key, or several separated by commas. */
@@ -161,6 +192,11 @@ function clear() {
  * ------------------------------------------------------------------------- */
 
 const panel = ref<HTMLElement | null>(null)
+/*
+ * Typed by the one thing the field asks of it. `InstanceType` cannot be taken of a
+ * generic component, and the whole instance is more than is wanted here anyway.
+ */
+const tree = useTemplateRef<{ openPath: (keys: TreeKey[]) => Promise<boolean> }>('tree')
 
 /*
  * The panel itself takes focus when it opens, which leaves the arrow keys with nothing
@@ -180,23 +216,41 @@ function onPanelKeydown(event: KeyboardEvent) {
  * help when something is already chosen: the branches leading to it are opened, so the
  * answer to "where is this" is on screen before the first scroll.
  */
-watch(open, (isOpen) => {
-  if (isOpen) {
-    for (const key of keys.value) lookup.reveal(key)
-    emit('open')
-    /* A field with a search field is a field somebody opened in order to type. */
-    if (props.filterable) {
-      void nextTick(() => {
-        panel.value
-          ?.closest('.wx-tree-select__panel')
-          ?.querySelector<HTMLElement>('.wx-tree-select__search-input')
-          ?.focus()
-      })
-    }
-  } else {
+watch(open, async (isOpen) => {
+  if (!isOpen) {
     term.value = ''
     emit('close')
+    return
   }
+
+  for (const key of keys.value) lookup.reveal(key)
+  emit('open')
+
+  await nextTick()
+
+  /* A field with a search field is a field somebody opened in order to type. */
+  if (props.filterable) {
+    panel.value
+      ?.closest('.wx-tree-select__panel')
+      ?.querySelector<HTMLElement>('.wx-tree-select__search-input')
+      ?.focus()
+  }
+
+  /*
+   * Where the tree is fetched a branch at a time it does not hold the chosen node yet,
+   * so `reveal` above had nothing to open. The path the caller gave is walked instead,
+   * a level at a time, which is a fetch per level — and then the node is in the tree,
+   * open and scrolled to.
+   */
+  for (const path of paths.value) {
+    const ancestors = path.slice(0, -1).map((node) => accessors.key(node, []))
+    if (ancestors.length) await tree.value?.openPath(ancestors)
+  }
+
+  await nextTick()
+  panel.value
+    ?.querySelector<HTMLElement>('.wx-tree__row.is-selected, .wx-tree__row[aria-checked="true"]')
+    ?.scrollIntoView({ block: 'nearest' })
 })
 </script>
 
@@ -281,6 +335,7 @@ watch(open, (isOpen) => {
 
         <div ref="panel" class="wx-tree-select__body" :style="panelStyle">
           <wx-tree
+            ref="tree"
             :model-value="nodes"
             v-model:expanded="expanded"
             :selected="multiple ? null : (keys[0] ?? null)"

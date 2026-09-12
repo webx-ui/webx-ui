@@ -251,6 +251,21 @@ export function useTreeNodes<T>(options: UseTreeNodesOptions<T>) {
     expanded.value = []
   }
 
+  /**
+   * Opens a named path, one level at a time, waiting for each level before asking for
+   * the next. It is what `reveal` cannot do on a lazy tree: there the ancestors are not
+   * in the tree yet, so the way to them has to be walked rather than looked up. Stops
+   * at the first key the level above did not contain — a path into a branch somebody
+   * has since moved or deleted opens as far as it still goes.
+   */
+  async function openPath(keys: TreeKey[]) {
+    for (const key of keys) {
+      if (!entry(key)) return false
+      await expand(key)
+    }
+    return true
+  }
+
   /** Opens every branch on the way to a node, so it can be scrolled to. */
   function reveal(key: TreeKey) {
     const path = ancestors(key).map((item) => item.key)
@@ -365,6 +380,7 @@ export function useTreeNodes<T>(options: UseTreeNodesOptions<T>) {
     expandAll,
     collapseAll,
     reveal,
+    openPath,
     ancestors,
     path,
     descendants,

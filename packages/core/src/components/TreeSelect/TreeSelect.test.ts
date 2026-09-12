@@ -189,6 +189,75 @@ describe('WxTreeSelect', () => {
     expect(wrapper.get('.wx-tree-select__trigger').attributes('disabled')).toBeDefined()
   })
 
+  it('names a value the tree has not fetched, from the path it was given', () => {
+    const wrapper = factory({
+      nodes: [{ id: 'ua', label: 'Ukraine' }],
+      modelValue: 'ua-kyiv',
+      selectedPath: [
+        { id: 'ua', label: 'Ukraine' },
+        { id: 'ua-kyiv', label: 'Kyiv' },
+      ],
+      showPath: true,
+      lazy: true,
+      load: vi.fn(),
+    })
+
+    expect(wrapper.get('.wx-tree-select__single').text()).toBe('Ukraine / Kyiv')
+  })
+
+  it('shows the key itself rather than pretending a value is not there', () => {
+    const wrapper = factory({ nodes: [], modelValue: 42, placeholder: 'Pick' })
+
+    expect(wrapper.find('.wx-tree-select__placeholder').exists()).toBe(false)
+    expect(wrapper.get('.wx-tree-select__single').text()).toBe('42')
+  })
+
+  it('fetches and opens the branch its value sits in', async () => {
+    const load = vi.fn().mockResolvedValue([{ id: 'ua-kyiv', label: 'Kyiv', leaf: true }])
+    const wrapper = factory({
+      nodes: [{ id: 'ua', label: 'Ukraine' }],
+      modelValue: 'ua-kyiv',
+      selectedPath: [
+        { id: 'ua', label: 'Ukraine' },
+        { id: 'ua-kyiv', label: 'Kyiv' },
+      ],
+      lazy: true,
+      load,
+    })
+
+    await openPanel(wrapper)
+    await flushPromises()
+
+    expect(load).toHaveBeenCalledTimes(1)
+    expect(rowFor('Kyiv')).toBeTruthy()
+    expect(rowFor('Kyiv').classList.contains('is-selected')).toBe(true)
+  })
+
+  it('takes a path per value when several are chosen', () => {
+    const wrapper = factory({
+      nodes: [],
+      multiple: true,
+      modelValue: ['ua-kyiv', 'pl-warsaw'],
+      selectedPath: [
+        [
+          { id: 'ua', label: 'Ukraine' },
+          { id: 'ua-kyiv', label: 'Kyiv' },
+        ],
+        [
+          { id: 'pl', label: 'Poland' },
+          { id: 'pl-warsaw', label: 'Warsaw' },
+        ],
+      ],
+      lazy: true,
+      load: vi.fn(),
+    })
+
+    expect(wrapper.findAll('.wx-tree-select__tag').map((tag) => tag.text())).toEqual([
+      'Kyiv',
+      'Warsaw',
+    ])
+  })
+
   it('fetches a branch through the tree it holds', async () => {
     const load = vi.fn().mockResolvedValue([{ id: 31, label: 'Rotors' }])
     const wrapper = factory({ nodes: [{ id: 3, label: 'Discs' }], lazy: true, load })
