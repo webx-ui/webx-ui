@@ -8,11 +8,15 @@
          cacheDirectory=".phpunit.cache">
     <testsuites>
         <testsuite name="WebX UI">
+            <directory>packages/admin/tests</directory>
+            <directory>packages/mcp/tests</directory>
             <directory>packages/nested-set/tests</directory>
         </testsuite>
     </testsuites>
     <source>
         <include>
+            <directory>packages/admin/src</directory>
+            <directory>packages/mcp/src</directory>
             <directory>packages/nested-set/src</directory>
         </include>
     </source>
