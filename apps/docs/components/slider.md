@@ -30,19 +30,21 @@ stores. With `range` the model is a pair.
 
 ## Props
 
-| Prop                    | Type                     | Default | Description                        |
-| ----------------------- | ------------------------ | ------- | ---------------------------------- |
-| `modelValue`            | `number \| number[]`     | `null`  | Value, or a pair when `range`      |
-| `range`                 | `boolean`                | `false` | Two thumbs                         |
-| `min`                   | `number`                 | `0`     | Lower bound                        |
-| `max`                   | `number`                 | `100`   | Upper bound                        |
-| `step`                  | `number`                 | `1`     | Stepping interval                  |
-| `minStepsBetweenThumbs` | `number`                 | `0`     | Smallest gap between the thumbs    |
-| `marks`                 | `Record<number, string>` | —       | Ticks under the track              |
-| `showValue`             | `boolean`                | `false` | Print the value beside the track   |
-| `disabled`              | `boolean`                | `false` | Disables dragging                  |
-| `size`                  | `'sm' \| 'md' \| 'lg'`   | `'md'`  | Row height                         |
-| `ariaLabel`             | `string`                 | —       | Label when there is no visible one |
+| Prop                    | Type                     | Default   | Description                                                       |
+| ----------------------- | ------------------------ | --------- | ----------------------------------------------------------------- |
+| `modelValue`            | `number \| number[]`     | `null`    | Value, or a pair when `range`                                     |
+| `range`                 | `boolean`                | `false`   | Two thumbs                                                        |
+| `min`                   | `number`                 | `0`       | Lower bound                                                       |
+| `max`                   | `number`                 | `100`     | Upper bound                                                       |
+| `step`                  | `number`                 | `1`       | Stepping interval                                                 |
+| `minStepsBetweenThumbs` | `number`                 | `0`       | Smallest gap between the thumbs                                   |
+| `marks`                 | `Record<number, string>` | —         | Ticks under the track                                             |
+| `showValue`             | `boolean`                | `false`   | Print the value beside the track                                  |
+| `disabled`              | `boolean`                | `false`   | Disables dragging                                                 |
+| `size`                  | `'sm' \| 'md' \| 'lg'`   | `'md'`    | Row height                                                        |
+| `id`                    | `string`                 | generated | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `name`                  | `string`                 | —         | `name` of the underlying input                                    |
+| `ariaLabel`             | `string`                 | —         | Label when there is no visible one                                |
 
 **Events:** `update:modelValue`, `change`.
 

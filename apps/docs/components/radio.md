@@ -45,14 +45,15 @@ A standalone `WxRadio` also works — it writes its own `value` into the model w
 
 ## WxRadio props
 
-| Prop        | Type                                  | Default | Description                        |
-| ----------- | ------------------------------------- | ------- | ---------------------------------- |
-| `value`     | `string \| number \| boolean \| null` | —       | Value this radio stands for        |
-| `label`     | `string`                              | —       | Label text; the default slot wins  |
-| `disabled`  | `boolean`                             | `false` | Disables the radio                 |
-| `size`      | `'sm' \| 'md' \| 'lg'`                | `'md'`  | Dot and label size                 |
-| `name`      | `string`                              | —       | `name` of the underlying input     |
-| `ariaLabel` | `string`                              | —       | Label when there is no visible one |
+| Prop        | Type                                  | Default   | Description                                                       |
+| ----------- | ------------------------------------- | --------- | ----------------------------------------------------------------- |
+| `value`     | `string \| number \| boolean \| null` | —         | Value this radio stands for                                       |
+| `label`     | `string`                              | —         | Label text; the default slot wins                                 |
+| `disabled`  | `boolean`                             | `false`   | Disables the radio                                                |
+| `size`      | `'sm' \| 'md' \| 'lg'`                | `'md'`    | Dot and label size                                                |
+| `name`      | `string`                              | —         | `name` of the underlying input                                    |
+| `id`        | `string`                              | generated | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `ariaLabel` | `string`                              | —         | Label when there is no visible one                                |
 
 **Events:** `update:modelValue` (`ChoiceValue`), `change` (`ChoiceValue`).
 

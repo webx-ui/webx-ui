@@ -90,26 +90,27 @@ The trigger opens on <kbd>Enter</kbd> or <kbd>Space</kbd>. Inside the panel <kbd
 
 ## Props
 
-| Prop            | Type                                               | Default          | Description                                     |
-| --------------- | -------------------------------------------------- | ---------------- | ----------------------------------------------- |
-| `modelValue`    | `(string \| number)[] \| string \| number \| null` | `null`           | The path, or the last value                     |
-| `options`       | `CascaderOption[]`                                 | `[]`             | `{ label, value, children?, disabled?, leaf? }` |
-| `expandTrigger` | `'click' \| 'hover'`                               | `'click'`        | How the next column opens                       |
-| `checkStrictly` | `boolean`                                          | `false`          | Any level may be picked                         |
-| `emitPath`      | `boolean`                                          | `true`           | Model holds the whole path                      |
-| `showAllLevels` | `boolean`                                          | `true`           | Field shows the whole path                      |
-| `separator`     | `string`                                           | `' / '`          | Between the levels in the field                 |
-| `lazy`          | `boolean`                                          | `false`          | Fetch levels as they open                       |
-| `load`          | `(option, path) => CascaderOption[] \| Promise`    | —                | Fetches one level; required with `lazy`         |
-| `clearable`     | `boolean`                                          | `false`          | Button that empties the field                   |
-| `emptyText`     | `string`                                           | `'Nothing here'` | Shown for an empty level                        |
-| `teleport`      | `boolean`                                          | `true`           | Render the panel in a portal                    |
-| `placeholder`   | `string`                                           | —                | Shown while nothing is picked                   |
-| `size`          | `'sm' \| 'md' \| 'lg'`                             | `'md'`           | Control height                                  |
-| `status`        | `'default' \| 'success' \| 'warning' \| 'error'`   | `'default'`      | Validation state                                |
-| `disabled`      | `boolean`                                          | `false`          | Disables the control                            |
-| `name`          | `string`                                           | —                | Posts the value through a hidden input          |
-| `ariaLabel`     | `string`                                           | —                | Label when there is no visible one              |
+| Prop            | Type                                               | Default          | Description                                                       |
+| --------------- | -------------------------------------------------- | ---------------- | ----------------------------------------------------------------- |
+| `modelValue`    | `(string \| number)[] \| string \| number \| null` | `null`           | The path, or the last value                                       |
+| `options`       | `CascaderOption[]`                                 | `[]`             | `{ label, value, children?, disabled?, leaf? }`                   |
+| `expandTrigger` | `'click' \| 'hover'`                               | `'click'`        | How the next column opens                                         |
+| `checkStrictly` | `boolean`                                          | `false`          | Any level may be picked                                           |
+| `emitPath`      | `boolean`                                          | `true`           | Model holds the whole path                                        |
+| `showAllLevels` | `boolean`                                          | `true`           | Field shows the whole path                                        |
+| `separator`     | `string`                                           | `' / '`          | Between the levels in the field                                   |
+| `lazy`          | `boolean`                                          | `false`          | Fetch levels as they open                                         |
+| `load`          | `(option, path) => CascaderOption[] \| Promise`    | —                | Fetches one level; required with `lazy`                           |
+| `clearable`     | `boolean`                                          | `false`          | Button that empties the field                                     |
+| `emptyText`     | `string`                                           | `'Nothing here'` | Shown for an empty level                                          |
+| `teleport`      | `boolean`                                          | `true`           | Render the panel in a portal                                      |
+| `placeholder`   | `string`                                           | —                | Shown while nothing is picked                                     |
+| `size`          | `'sm' \| 'md' \| 'lg'`                             | `'md'`           | Control height                                                    |
+| `status`        | `'default' \| 'success' \| 'warning' \| 'error'`   | `'default'`      | Validation state                                                  |
+| `disabled`      | `boolean`                                          | `false`          | Disables the control                                              |
+| `name`          | `string`                                           | —                | Posts the value through a hidden input                            |
+| `id`            | `string`                                           | generated        | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `ariaLabel`     | `string`                                           | —                | Label when there is no visible one                                |
 
 **Events:** `update:modelValue`, `change`, `expand` (`CascaderOption[]`), `clear`, `open`, `close`.
 

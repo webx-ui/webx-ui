@@ -53,28 +53,30 @@ Override either side when the backend disagrees, or opt out of strings entirely:
 
 All three take the same props; `WxDateTimePicker` and `WxTimePicker` simply fix `type`.
 
-| Prop               | Type                                             | Default     | Description                                            |
-| ------------------ | ------------------------------------------------ | ----------- | ------------------------------------------------------ |
-| `modelValue`       | `string \| Date \| null`                         | `null`      | Current value                                          |
-| `type`             | `'date' \| 'datetime' \| 'time'`                 | `'date'`    | What is being picked                                   |
-| `valueFormat`      | `string`                                         | per type    | Format the value is stored in; `'date'` keeps a `Date` |
-| `format`           | `string`                                         | per type    | Format the field shows                                 |
-| `placeholder`      | `string`                                         | —           | Placeholder text                                       |
-| `clearable`        | `boolean`                                        | `true`      | Show the clear button                                  |
-| `minDate`          | `string \| Date`                                 | —           | Earliest selectable date                               |
-| `maxDate`          | `string \| Date`                                 | —           | Latest selectable date                                 |
-| `seconds`          | `boolean`                                        | `false`     | Include seconds                                        |
-| `minutesIncrement` | `number`                                         | `1`         | Step of the minutes column                             |
-| `is24`             | `boolean`                                        | `true`      | 24-hour clock                                          |
-| `weekStart`        | `number`                                         | `1`         | 0 is Sunday, 1 is Monday                               |
-| `autoApply`        | `boolean`                                        | `true`      | Apply on pick, with no confirm button                  |
-| `textInput`        | `boolean`                                        | `false`     | Allow typing as well as picking                        |
-| `teleport`         | `boolean \| string`                              | `true`      | Render the menu in a portal                            |
-| `size`             | `'sm' \| 'md' \| 'lg'`                           | `'md'`      | Control height                                         |
-| `status`           | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'` | Validation state                                       |
-| `disabled`         | `boolean`                                        | `false`     | Disables the field                                     |
-| `readonly`         | `boolean`                                        | `false`     | Read-only field                                        |
-| `ariaLabel`        | `string`                                         | —           | Label when there is no visible one                     |
+| Prop               | Type                                             | Default     | Description                                                       |
+| ------------------ | ------------------------------------------------ | ----------- | ----------------------------------------------------------------- |
+| `modelValue`       | `string \| Date \| null`                         | `null`      | Current value                                                     |
+| `type`             | `'date' \| 'datetime' \| 'time'`                 | `'date'`    | What is being picked                                              |
+| `valueFormat`      | `string`                                         | per type    | Format the value is stored in; `'date'` keeps a `Date`            |
+| `format`           | `string`                                         | per type    | Format the field shows                                            |
+| `placeholder`      | `string`                                         | —           | Placeholder text                                                  |
+| `clearable`        | `boolean`                                        | `true`      | Show the clear button                                             |
+| `minDate`          | `string \| Date`                                 | —           | Earliest selectable date                                          |
+| `maxDate`          | `string \| Date`                                 | —           | Latest selectable date                                            |
+| `seconds`          | `boolean`                                        | `false`     | Include seconds                                                   |
+| `minutesIncrement` | `number`                                         | `1`         | Step of the minutes column                                        |
+| `is24`             | `boolean`                                        | `true`      | 24-hour clock                                                     |
+| `weekStart`        | `number`                                         | `1`         | 0 is Sunday, 1 is Monday                                          |
+| `autoApply`        | `boolean`                                        | `true`      | Apply on pick, with no confirm button                             |
+| `textInput`        | `boolean`                                        | `false`     | Allow typing as well as picking                                   |
+| `teleport`         | `boolean \| string`                              | `true`      | Render the menu in a portal                                       |
+| `size`             | `'sm' \| 'md' \| 'lg'`                           | `'md'`      | Control height                                                    |
+| `status`           | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'` | Validation state                                                  |
+| `disabled`         | `boolean`                                        | `false`     | Disables the field                                                |
+| `readonly`         | `boolean`                                        | `false`     | Read-only field                                                   |
+| `id`               | `string`                                         | generated   | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `name`             | `string`                                         | —           | `name` of the underlying input                                    |
+| `ariaLabel`        | `string`                                         | —           | Label when there is no visible one                                |
 
 **Events:** `update:modelValue`, `change`, `clear`, `open`, `close`.
 

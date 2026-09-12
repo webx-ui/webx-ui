@@ -33,16 +33,17 @@ The model does not have to be boolean. A backend that stores `"yes"` / `"no"` ne
 
 ## Props
 
-| Prop            | Type                                  | Default | Description                        |
-| --------------- | ------------------------------------- | ------- | ---------------------------------- |
-| `modelValue`    | `ChoiceValue`                         | `false` | Current value                      |
-| `activeValue`   | `string \| number \| boolean \| null` | `true`  | Written when switched on           |
-| `inactiveValue` | `string \| number \| boolean \| null` | `false` | Written when switched off          |
-| `label`         | `string`                              | —       | Label text; the default slot wins  |
-| `disabled`      | `boolean`                             | `false` | Disables the switch                |
-| `size`          | `'sm' \| 'md' \| 'lg'`                | `'md'`  | Track size                         |
-| `name`          | `string`                              | —       | `name` of the underlying input     |
-| `ariaLabel`     | `string`                              | —       | Label when there is no visible one |
+| Prop            | Type                                  | Default   | Description                                                       |
+| --------------- | ------------------------------------- | --------- | ----------------------------------------------------------------- |
+| `modelValue`    | `ChoiceValue`                         | `false`   | Current value                                                     |
+| `activeValue`   | `string \| number \| boolean \| null` | `true`    | Written when switched on                                          |
+| `inactiveValue` | `string \| number \| boolean \| null` | `false`   | Written when switched off                                         |
+| `label`         | `string`                              | —         | Label text; the default slot wins                                 |
+| `disabled`      | `boolean`                             | `false`   | Disables the switch                                               |
+| `size`          | `'sm' \| 'md' \| 'lg'`                | `'md'`    | Track size                                                        |
+| `name`          | `string`                              | —         | `name` of the underlying input                                    |
+| `id`            | `string`                              | generated | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `ariaLabel`     | `string`                              | —         | Label when there is no visible one                                |
 
 **Events:** `update:modelValue` (`ChoiceValue`), `change` (`ChoiceValue`).
 

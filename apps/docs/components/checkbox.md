@@ -63,16 +63,17 @@ attribute, and it is dropped automatically once the box becomes checked.
 
 ## WxCheckbox props
 
-| Prop            | Type                                  | Default | Description                        |
-| --------------- | ------------------------------------- | ------- | ---------------------------------- |
-| `modelValue`    | `boolean`                             | `false` | Checked state when used standalone |
-| `value`         | `string \| number \| boolean \| null` | —       | Value contributed to a group       |
-| `label`         | `string`                              | —       | Label text; the default slot wins  |
-| `indeterminate` | `boolean`                             | `false` | Third visual state                 |
-| `disabled`      | `boolean`                             | `false` | Disables the box                   |
-| `size`          | `'sm' \| 'md' \| 'lg'`                | `'md'`  | Box and label size                 |
-| `name`          | `string`                              | —       | `name` of the underlying input     |
-| `ariaLabel`     | `string`                              | —       | Label when there is no visible one |
+| Prop            | Type                                  | Default   | Description                                                       |
+| --------------- | ------------------------------------- | --------- | ----------------------------------------------------------------- |
+| `modelValue`    | `boolean`                             | `false`   | Checked state when used standalone                                |
+| `value`         | `string \| number \| boolean \| null` | —         | Value contributed to a group                                      |
+| `label`         | `string`                              | —         | Label text; the default slot wins                                 |
+| `indeterminate` | `boolean`                             | `false`   | Third visual state                                                |
+| `disabled`      | `boolean`                             | `false`   | Disables the box                                                  |
+| `size`          | `'sm' \| 'md' \| 'lg'`                | `'md'`    | Box and label size                                                |
+| `name`          | `string`                              | —         | `name` of the underlying input                                    |
+| `id`            | `string`                              | generated | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `ariaLabel`     | `string`                              | —         | Label when there is no visible one                                |
 
 **Events:** `update:modelValue` (`boolean`), `change` (`boolean`).
 

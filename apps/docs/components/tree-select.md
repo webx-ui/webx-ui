@@ -127,35 +127,36 @@ control:
 
 ## Props
 
-| Prop                | Type                                             | Default          | Description                                           |
-| ------------------- | ------------------------------------------------ | ---------------- | ----------------------------------------------------- |
-| `modelValue`        | `TreeKey \| TreeKey[] \| null`                   | `null`           | The chosen key, or keys with `multiple`               |
-| `nodes`             | `T[]`                                            | `[]`             | The tree to choose from                               |
-| `multiple`          | `boolean`                                        | `false`          | Checkboxes, and an array for a model                  |
-| `checkStrictly`     | `boolean`                                        | `false`          | A tick stays where it was made                        |
-| `nodeKey`           | `string`                                         | `'id'`           | Field holding the identity                            |
-| `labelKey`          | `string`                                         | `'label'`        | Field holding the text                                |
-| `childrenKey`       | `string`                                         | `'children'`     | Field holding the children                            |
-| `disabledKey`       | `string`                                         | `'disabled'`     | Field that makes a node unchoosable                   |
-| `leafKey`           | `string`                                         | `'leaf'`         | Field saying there is nothing to fetch                |
-| `defaultExpandAll`  | `boolean`                                        | `false`          | Open every branch in the panel                        |
-| `lazy`              | `boolean`                                        | `false`          | Children arrive when a branch opens                   |
-| `selectedPath`      | `T[] \| T[][]`                                   | —                | Path to the value, for a tree that has not fetched it |
-| `load`              | `(node) => T[] \| Promise<T[]>`                  | —                | Fetches one branch                                    |
-| `filterable`        | `boolean`                                        | `false`          | Search field above the tree                           |
-| `filterPlaceholder` | `string`                                         | `'Search'`       | Placeholder for it                                    |
-| `showPath`          | `boolean`                                        | `false`          | Show the whole path in the field                      |
-| `separator`         | `string`                                         | `' / '`          | What goes between the steps of a path                 |
-| `panelHeight`       | `number \| string`                               | `280`            | How tall the tree may get before it scrolls           |
-| `clearable`         | `boolean`                                        | `false`          | A button that empties the selection                   |
-| `placeholder`       | `string`                                         | `'Select'`       | Shown with nothing chosen                             |
-| `emptyText`         | `string`                                         | `'Nothing here'` | Shown with nothing to choose from                     |
-| `teleport`          | `boolean`                                        | `true`           | Render the panel in a portal                          |
-| `disabled`          | `boolean`                                        | —                | Inherited from the form when not set                  |
-| `size`              | `'sm' \| 'md' \| 'lg'`                           | `'md'`           | Size of the field                                     |
-| `status`            | `'default' \| 'error' \| 'success' \| 'warning'` | `'default'`      | Border state                                          |
-| `name`              | `string`                                         | —                | Adds the hidden input for a form post                 |
-| `ariaLabel`         | `string`                                         | —                | Accessible name when there is no `<label>`            |
+| Prop                | Type                                             | Default          | Description                                                       |
+| ------------------- | ------------------------------------------------ | ---------------- | ----------------------------------------------------------------- |
+| `modelValue`        | `TreeKey \| TreeKey[] \| null`                   | `null`           | The chosen key, or keys with `multiple`                           |
+| `nodes`             | `T[]`                                            | `[]`             | The tree to choose from                                           |
+| `multiple`          | `boolean`                                        | `false`          | Checkboxes, and an array for a model                              |
+| `checkStrictly`     | `boolean`                                        | `false`          | A tick stays where it was made                                    |
+| `nodeKey`           | `string`                                         | `'id'`           | Field holding the identity                                        |
+| `labelKey`          | `string`                                         | `'label'`        | Field holding the text                                            |
+| `childrenKey`       | `string`                                         | `'children'`     | Field holding the children                                        |
+| `disabledKey`       | `string`                                         | `'disabled'`     | Field that makes a node unchoosable                               |
+| `leafKey`           | `string`                                         | `'leaf'`         | Field saying there is nothing to fetch                            |
+| `defaultExpandAll`  | `boolean`                                        | `false`          | Open every branch in the panel                                    |
+| `lazy`              | `boolean`                                        | `false`          | Children arrive when a branch opens                               |
+| `selectedPath`      | `T[] \| T[][]`                                   | —                | Path to the value, for a tree that has not fetched it             |
+| `load`              | `(node) => T[] \| Promise<T[]>`                  | —                | Fetches one branch                                                |
+| `filterable`        | `boolean`                                        | `false`          | Search field above the tree                                       |
+| `filterPlaceholder` | `string`                                         | `'Search'`       | Placeholder for it                                                |
+| `showPath`          | `boolean`                                        | `false`          | Show the whole path in the field                                  |
+| `separator`         | `string`                                         | `' / '`          | What goes between the steps of a path                             |
+| `panelHeight`       | `number \| string`                               | `280`            | How tall the tree may get before it scrolls                       |
+| `clearable`         | `boolean`                                        | `false`          | A button that empties the selection                               |
+| `placeholder`       | `string`                                         | `'Select'`       | Shown with nothing chosen                                         |
+| `emptyText`         | `string`                                         | `'Nothing here'` | Shown with nothing to choose from                                 |
+| `teleport`          | `boolean`                                        | `true`           | Render the panel in a portal                                      |
+| `disabled`          | `boolean`                                        | —                | Inherited from the form when not set                              |
+| `size`              | `'sm' \| 'md' \| 'lg'`                           | `'md'`           | Size of the field                                                 |
+| `status`            | `'default' \| 'error' \| 'success' \| 'warning'` | `'default'`      | Border state                                                      |
+| `name`              | `string`                                         | —                | Adds the hidden input for a form post                             |
+| `id`                | `string`                                         | generated        | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `ariaLabel`         | `string`                                         | —                | Accessible name when there is no `<label>`                        |
 
 **Events:** `update:modelValue`; `change` (`value, nodes`); `clear`; `open`; `close`.
 
