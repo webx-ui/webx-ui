@@ -152,4 +152,18 @@ describe('WxActions', () => {
 
     expect(wrapper.classes()).not.toContain('is-collapsed')
   })
+
+  it('reports whether the menu is showing, since its panel is somewhere else', async () => {
+    setWidths({ row: 900, available: 50 })
+    const wrapper = actions({ collapse: true })
+
+    TestResizeObserver.fire()
+    await nextTick()
+
+    expect(wrapper.props('menuOpen')).toBe(false)
+
+    await wrapper.get('.wx-actions__menu button').trigger('click')
+
+    expect(wrapper.emitted('update:menuOpen')?.at(-1)).toEqual([true])
+  })
 })

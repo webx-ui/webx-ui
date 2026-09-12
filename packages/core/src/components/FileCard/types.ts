@@ -34,6 +34,12 @@ export interface FileCardProps {
    */
   editable?: boolean
   removable?: boolean
+  /**
+   * Asks before deleting. On, because a file deleted from a grid of thumbnails is a file
+   * deleted by a misplaced click. Off where the screen asks its own question, or where
+   * the deletion is undoable.
+   */
+  confirmRemove?: boolean
   /** Offers copying `url` to the clipboard. */
   copyable?: boolean
 
@@ -47,6 +53,8 @@ export interface FileCardProps {
   cancelLabel?: string
   editLabel?: string
   removeLabel?: string
+  /** The question `confirmRemove` asks. The file name is worth putting in it. */
+  removeConfirmText?: string
   copyLabel?: string
   /** Shown on the copy action for a moment after it worked. */
   copiedLabel?: string

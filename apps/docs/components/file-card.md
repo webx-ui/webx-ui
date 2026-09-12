@@ -95,41 +95,55 @@ the name is.
 
 | Prop        | What it offers                                                                                  |
 | ----------- | ----------------------------------------------------------------------------------------------- |
-| `renamable` | The name, edited in place                                                                       |
+| `renamable` | The name, in a panel under the button                                                           |
 | `editable`  | `@edit` — "open this picture in an editor". Pictures only; there is nothing to crop in a `.zip` |
 | `copyable`  | `url` to the clipboard, with a tick for a moment afterwards                                     |
-| `removable` | `@remove`                                                                                       |
+| `removable` | `@remove`, after a question unless `:confirm-remove="false"`                                    |
 
 They sit over the preview, and where the pointer can hover they wait until it does. A touch screen
 never hovers, so there they simply stand — actions that wait for a hover that cannot happen are
 actions nobody can reach.
 
+They also stay while any of their panels is up. The menu, the rename field and the question before
+a deletion are all teleported, so neither the pointer nor the focus is on the card while one of
+them is open, and the buttons would otherwise fade out from under it.
+
 `disabled` takes all four away and stops the name being edited: a file a reader may look at and not
 touch.
 
+## Before deleting
+
+`confirmRemove` is on: the delete action asks first, in a panel under the button, and `@remove`
+comes only when the question is answered. A file deleted from a grid of thumbnails is a file
+deleted by a misplaced click, and the thumbnails all look much alike — which is why the question
+names the file. `removeConfirmText` replaces it; `:confirm-remove="false"` skips it, for a screen
+that asks its own question or where the deletion can be undone.
+
 ## Props
 
-| Prop          | Type                   | Default          | Description                                                   |
-| ------------- | ---------------------- | ---------------- | ------------------------------------------------------------- |
-| `name`        | `string`               | —                | The file name, extension and all                              |
-| `url`         | `string`               | —                | Where the file is; what the copy action copies                |
-| `thumbnail`   | `string`               | —                | A smaller picture to draw instead of `url`                    |
-| `type`        | `string`               | —                | MIME type; decides picture or glyph before the extension does |
-| `icon`        | `IconName`             | by extension     | Glyph to draw instead                                         |
-| `selected`    | `boolean`              | `false`          | Draws the card as chosen                                      |
-| `size`        | `'sm' \| 'md' \| 'lg'` | `'md'`           | Glyph and text size                                           |
-| `disabled`    | `boolean`              | `false`          | No actions, no renaming                                       |
-| `renamable`   | `boolean`              | `false`          | Offers renaming                                               |
-| `editable`    | `boolean`              | `false`          | Offers the edit action, for pictures                          |
-| `removable`   | `boolean`              | `false`          | Offers deleting                                               |
-| `copyable`    | `boolean`              | `false`          | Offers copying the link                                       |
-| `renameLabel` | `string`               | `'Rename'`       | Tooltip and accessible name                                   |
-| `saveLabel`   | `string`               | `'Save'`         | The two buttons under the rename field                        |
-| `cancelLabel` | `string`               | `'Cancel'`       | —                                                             |
-| `editLabel`   | `string`               | `'Edit picture'` | —                                                             |
-| `removeLabel` | `string`               | `'Delete'`       | —                                                             |
-| `copyLabel`   | `string`               | `'Copy link'`    | —                                                             |
-| `copiedLabel` | `string`               | `'Copied'`       | Shown for a moment after a copy worked                        |
+| Prop                | Type                   | Default          | Description                                                   |
+| ------------------- | ---------------------- | ---------------- | ------------------------------------------------------------- |
+| `name`              | `string`               | —                | The file name, extension and all                              |
+| `url`               | `string`               | —                | Where the file is; what the copy action copies                |
+| `thumbnail`         | `string`               | —                | A smaller picture to draw instead of `url`                    |
+| `type`              | `string`               | —                | MIME type; decides picture or glyph before the extension does |
+| `icon`              | `IconName`             | by extension     | Glyph to draw instead                                         |
+| `selected`          | `boolean`              | `false`          | Draws the card as chosen                                      |
+| `size`              | `'sm' \| 'md' \| 'lg'` | `'md'`           | Glyph and text size                                           |
+| `disabled`          | `boolean`              | `false`          | No actions, no renaming                                       |
+| `renamable`         | `boolean`              | `false`          | Offers renaming                                               |
+| `editable`          | `boolean`              | `false`          | Offers the edit action, for pictures                          |
+| `removable`         | `boolean`              | `false`          | Offers deleting                                               |
+| `confirmRemove`     | `boolean`              | `true`           | Asks before deleting                                          |
+| `removeConfirmText` | `string`               | `Delete <name>?` | The question it asks                                          |
+| `copyable`          | `boolean`              | `false`          | Offers copying the link                                       |
+| `renameLabel`       | `string`               | `'Rename'`       | Tooltip and accessible name                                   |
+| `saveLabel`         | `string`               | `'Save'`         | The two buttons under the rename field                        |
+| `cancelLabel`       | `string`               | `'Cancel'`       | —                                                             |
+| `editLabel`         | `string`               | `'Edit picture'` | —                                                             |
+| `removeLabel`       | `string`               | `'Delete'`       | —                                                             |
+| `copyLabel`         | `string`               | `'Copy link'`    | —                                                             |
+| `copiedLabel`       | `string`               | `'Copied'`       | Shown for a moment after a copy worked                        |
 
 **Events:** `rename` (`string`); `edit`; `remove`; `copy` (`string`); `copy-error` (`unknown`).
 
