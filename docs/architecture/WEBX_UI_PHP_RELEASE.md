@@ -147,6 +147,10 @@ changesets его версионирует и пишет ему `CHANGELOG.md`.
    composer show webx-ui/nested-set --all
    ```
 
+   Смотреть надо именно так или на `https://repo.packagist.org/p2/webx-ui/<имя>.json` — это то,
+   что читает Composer, и там версия появляется сразу. А `packagist.org/packages/<имя>.json`
+   кешируется и отстаёт на десятки минут: выглядит как «релиз не доехал», хотя он уже доехал.
+
 ## Чем это отличается от npm
 
 |                  | npm                      | Packagist                                   |
@@ -180,3 +184,5 @@ changesets его версионирует и пишет ему `CHANGELOG.md`.
 - **`export-ignore` в `.gitattributes` пакета** убирает `tests/` из zip-архива, который Composer
   скачивает с GitHub. В самом зеркале тесты остаются — это нормально.
 - **Вендор на Packagist закрепляется за первым отправителем.**
+- **`packagist.org/packages/<имя>.json` отстаёт от реальности.** Проверять публикацию по
+  `repo.packagist.org/p2/<имя>.json` или `composer show`.
