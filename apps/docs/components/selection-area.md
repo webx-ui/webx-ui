@@ -48,10 +48,29 @@ what the model holds and what the API expects back.
 For markup that is not written in Vue, `data-wx-selectable="42"` does the same thing and yields
 the string `'42'` — all an attribute can carry.
 
+The grid above is [FileCard](/components/file-card), which is what a media library is made of. It
+is an element like any other, so the directive goes on it and nothing else changes:
+
+```vue
+<wx-selection-area v-slot="{ isSelected }" v-model="picked" class="grid">
+  <wx-file-card
+    v-for="file in files"
+    :key="file.id"
+    v-wx-select="file.id"
+    :name="file.name"
+    :thumbnail="file.thumbnail"
+    :selected="isSelected(file.id)"
+    removable
+    copyable
+  />
+</wx-selection-area>
+```
+
 ## What the area does not touch
 
 A drag that begins on a link, a button, a field or anything else a pointer already means
-something to is left to that control. The bin on a tile stays a bin. Mark anything else with
+something to is left to that control. The buttons on a [FileCard](/components/file-card) stay its
+buttons. Mark anything else with
 `data-wx-no-select` — a description a reader is meant to be able to copy, say.
 
 ## The whole gesture, not just the box
