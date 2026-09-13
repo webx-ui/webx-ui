@@ -25,17 +25,6 @@ const languages = computed(() =>
   i18n.state.panelLocales.length > 1 ? i18n.state.panelLocales : [],
 )
 
-const initials = computed(() => {
-  const name = user.value?.name ?? ''
-
-  return name
-    .split(/\s+/)
-    .filter((part) => part !== '')
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('')
-})
-
 async function choose(code: string): Promise<void> {
   if (code === i18n.state.locale) {
     return
@@ -47,10 +36,15 @@ async function choose(code: string): Promise<void> {
 
 <template>
   <wx-dropdown v-if="user !== null">
+    <!--
+      The avatar is the button. Wrapped in an action it was a small picture inside a box the
+      same size as every icon beside it, which reads as one more tool rather than as who is
+      signed in.
+    -->
     <template #trigger>
-      <wx-action :title="user.name">
-        <wx-avatar :label="initials" size="sm" />
-      </wx-action>
+      <button type="button" class="wx-user-menu__trigger" :title="user.name">
+        <wx-avatar :name="user.name" size="md" />
+      </button>
     </template>
 
     <wx-dropdown-item disabled>
@@ -81,3 +75,29 @@ async function choose(code: string): Promise<void> {
     </wx-dropdown-item>
   </wx-dropdown>
 </template>
+
+<style scoped>
+/*
+ * The avatar is the whole button: no border, no background, nothing of the browser's own —
+ * a bordered box around a round picture reads as one more tool in the row of icons, which is
+ * what wrapping it in an action looked like in the first place.
+ */
+.wx-user-menu__trigger {
+  display: inline-flex;
+  padding: 0;
+  border: none;
+  border-radius: var(--wx-radius-full);
+  background: transparent;
+  cursor: pointer;
+  transition: opacity var(--wx-duration-fast) var(--wx-easing-standard);
+}
+
+.wx-user-menu__trigger:hover {
+  opacity: 0.85;
+}
+
+.wx-user-menu__trigger:focus-visible {
+  outline: 2px solid var(--wx-border-focus);
+  outline-offset: 2px;
+}
+</style>

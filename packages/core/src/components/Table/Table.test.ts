@@ -565,6 +565,11 @@ describe('WxTable header', () => {
     expect(wrapper.find('.wx-table__search input').exists()).toBe(true)
   })
 
+  it('keeps no margins of its own when told the card already keeps them', () => {
+    expect(mountTable({ searchable: true }).classes()).not.toContain('wx-table--flush')
+    expect(mountTable({ searchable: true, flush: true }).classes()).toContain('wx-table--flush')
+  })
+
   it('answers in the field at once and tells the backend when typing settles', async () => {
     vi.useFakeTimers()
     const wrapper = mountTable({ searchable: true })
