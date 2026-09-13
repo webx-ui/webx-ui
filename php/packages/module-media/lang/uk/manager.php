@@ -37,4 +37,5 @@ return [
     'status-files' => 'Файлів: :count',
     'status-selected' => 'обрано: :count',
     'status-size' => 'розмір: :size',
+    'save' => 'Зберегти',
 ];

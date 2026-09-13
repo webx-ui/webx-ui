@@ -43,11 +43,18 @@ function submit(): void {
 <template>
   <wx-dialog v-model:open="open" :title="title" :width="420">
     <div ref="input">
-      <wx-input v-model="name" :label="label ?? t('manager.folder-name')" @keyup.enter="submit" />
+      <!-- The dialog's title says what is being named, so the field carries the same words as a
+           placeholder and as its accessible name rather than repeating them above itself. -->
+      <wx-input
+        v-model="name"
+        :placeholder="label ?? t('manager.folder-name')"
+        :aria-label="label ?? t('manager.folder-name')"
+        @keyup.enter="submit"
+      />
     </div>
 
     <template #footer>
-      <wx-space size="6">
+      <wx-space size="sm">
         <wx-button variant="outline" @click="dismiss()">{{ t('manager.cancel') }}</wx-button>
         <wx-button type="primary" :disabled="name.trim() === ''" @click="submit">
           {{ confirmText ?? t('manager.save') }}

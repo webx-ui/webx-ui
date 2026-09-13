@@ -44,7 +44,7 @@ function flatten(directories: MediaDirectory[]): { value: number; label: string 
     <wx-select v-model="target" :options="options" />
 
     <template #footer>
-      <wx-space size="6">
+      <wx-space size="sm">
         <wx-button variant="outline" @click="dismiss()">{{ t('manager.cancel') }}</wx-button>
         <wx-button type="primary" :disabled="target === null" @click="resolve(target!)">
           {{ t('manager.move') }}

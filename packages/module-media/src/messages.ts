@@ -39,6 +39,7 @@ export const mediaMessages: Record<string, Messages> = {
     'duplicate-added': 'That file was already in this folder',
     uploaded: ':count file(s) added',
     cancel: 'Cancel',
+    save: 'Save',
     folders: 'Folders',
     edit: 'Edit',
     'copy-link': 'Copy the link',

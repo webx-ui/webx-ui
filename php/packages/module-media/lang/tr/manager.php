@@ -37,4 +37,5 @@ return [
     'status-files' => 'Dosyalar: :count',
     'status-selected' => 'seçili: :count',
     'status-size' => 'boyut: :size',
+    'save' => 'Kaydet',
 ];

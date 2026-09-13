@@ -37,4 +37,5 @@ return [
     'status-files' => 'Ficheiros: :count',
     'status-selected' => 'selecionados: :count',
     'status-size' => 'tamanho: :size',
+    'save' => 'Guardar',
 ];

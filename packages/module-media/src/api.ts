@@ -83,6 +83,9 @@ export function createMediaApi(admin: AdminContext): MediaApi {
         request.withCredentials = true
         request.setRequestHeader('Accept', 'application/json')
         request.setRequestHeader('X-Requested-With', 'XMLHttpRequest')
+        // Without this the refusal comes back in English while the panel is in Russian: the
+        // panel's own client sends it on every request, and this one is not that client.
+        request.setRequestHeader('X-Webx-Locale', admin.i18n.state.locale)
 
         const token = csrfToken()
         if (token) {

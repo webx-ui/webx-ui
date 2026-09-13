@@ -37,4 +37,5 @@ return [
     'status-files' => 'Files: :count',
     'status-selected' => 'selected: :count',
     'status-size' => 'size: :size',
+    'save' => 'Save',
 ];

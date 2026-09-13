@@ -52,8 +52,8 @@ function clear(): void {
     <div class="wx-media-field__body">
       <wx-image v-if="preview" class="wx-media-field__preview" :src="preview" fit="cover" />
 
-      <wx-space direction="vertical" size="6" class="wx-media-field__controls">
-        <wx-space size="4">
+      <wx-space direction="vertical" size="sm" class="wx-media-field__controls">
+        <wx-space size="xs">
           <wx-button size="sm" icon="image" @click="choose">{{ t('manager.select') }}</wx-button>
           <wx-button v-if="value" size="sm" variant="text" type="danger" @click="clear">
             {{ t('manager.delete') }}

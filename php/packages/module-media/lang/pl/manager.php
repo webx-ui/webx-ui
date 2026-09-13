@@ -37,4 +37,5 @@ return [
     'status-files' => 'Pliki: :count',
     'status-selected' => 'zaznaczono: :count',
     'status-size' => 'rozmiar: :size',
+    'save' => 'Zapisz',
 ];
