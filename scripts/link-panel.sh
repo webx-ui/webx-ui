@@ -9,6 +9,11 @@
 #   scripts/link-panel.sh
 #   scripts/link-panel.sh --registry
 #   APP_PATH=/somewhere scripts/link-panel.sh
+#
+# The application at ../webx-cms.local is a deployed site now, and its Composer half has to move
+# with the npm one: a manifest naming this checkout cannot be built anywhere else, and its deploy
+# rejects one that reaches its repository. That application owns the switch — this script hands
+# over to it when it is there, and does the npm half alone when it is not.
 
 set -euo pipefail
 
@@ -25,27 +30,37 @@ fi
 
 step() { printf '\n\033[1m== %s\033[0m\n' "$1"; }
 
-if [ "$MODE" = "--registry" ]; then
-    step 'Back to the published packages'
-    ( cd "$APP" && npm install "${PACKAGES[@]/#/@webx-ui/}" --save )
-else
+if [ "$MODE" != "--registry" ]; then
     step 'Build the packages in this checkout'
     ( cd "$MONOREPO" && pnpm build )
+fi
 
-    step "Link them into $APP"
-    # A relative specifier: npm symlinks a `file:` directory, so rebuilding a package here is
-    # enough — the application only has to build itself again.
-    RELATIVE="$(node -e "
-        const { relative, sep } = require('node:path')
-        process.stdout.write(relative(process.argv[1], process.argv[2]).split(sep).join('/'))
-    " "$APP" "$MONOREPO")"
+if [ -f "$APP/scripts/packages.mjs" ]; then
+    step "Point $APP at $([ "$MODE" = "--registry" ] && echo 'the registry' || echo 'this checkout')"
+    ( cd "$APP" && node scripts/packages.mjs "$([ "$MODE" = "--registry" ] && echo registry || echo local)" )
+else
+    # A freshly provisioned application has no switch of its own yet: npm only, and say so.
+    if [ "$MODE" = "--registry" ]; then
+        step 'Back to the published packages'
+        ( cd "$APP" && npm install "${PACKAGES[@]/#/@webx-ui/}" --save )
+    else
+        step "Link them into $APP"
+        # A relative specifier: npm symlinks a `file:` directory, so rebuilding a package here is
+        # enough — the application only has to build itself again.
+        RELATIVE="$(node -e "
+            const { relative, sep } = require('node:path')
+            process.stdout.write(relative(process.argv[1], process.argv[2]).split(sep).join('/'))
+        " "$APP" "$MONOREPO")"
 
-    specifiers=()
-    for package in "${PACKAGES[@]}"; do
-        specifiers+=("@webx-ui/${package}@file:${RELATIVE}/packages/${package}")
-    done
+        specifiers=()
+        for package in "${PACKAGES[@]}"; do
+            specifiers+=("@webx-ui/${package}@file:${RELATIVE}/packages/${package}")
+        done
 
-    ( cd "$APP" && npm install "${specifiers[@]}" --save )
+        ( cd "$APP" && npm install "${specifiers[@]}" --save )
+    fi
+
+    printf '   Composer side untouched: this application has no scripts/packages.mjs.\n'
 fi
 
 step 'Build the panel'
