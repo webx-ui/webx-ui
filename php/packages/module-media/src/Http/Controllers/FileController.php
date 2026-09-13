@@ -95,6 +95,13 @@ final class FileController
         return ApiResponse::data(['moved' => $moved]);
     }
 
+    public function destroyOne(MediaFile $file): JsonResponse
+    {
+        $this->files->deleteAll([$file]);
+
+        return ApiResponse::noContent();
+    }
+
     public function destroy(FileDeleteRequest $request): JsonResponse
     {
         /** @var list<int> $ids */

@@ -165,7 +165,7 @@ final class FileEndpointsTest extends TestCase
         $first = $this->upload($this->root(), 'One.jpg');
         $second = $this->upload($this->root(), 'Two.jpg');
 
-        $this->deleteJson('/api/cms/media/files', ['ids' => [$first->id, $second->id]])
+        $this->postJson('/api/cms/media/files/delete', ['ids' => [$first->id, $second->id]])
             ->assertOk()
             ->assertJsonPath('data.deleted', 2);
 
@@ -220,7 +220,7 @@ final class FileEndpointsTest extends TestCase
 
         $file = MediaFile::query()->firstOrFail();
 
-        $this->deleteJson('/api/cms/media/files', ['ids' => [$file->id]])->assertForbidden();
+        $this->postJson('/api/cms/media/files/delete', ['ids' => [$file->id]])->assertForbidden();
     }
 
     private function root(): MediaDirectory
