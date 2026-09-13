@@ -3,9 +3,9 @@ import type { Messages } from '@webx-ui/admin'
 /**
  * What this package says, in English.
  *
- * The same keys `webx-ui/module-media` ships as `lang/en/*.php`. Kept here so a manager placed
- * by hand, with no WebX UI server behind it, still has words — and so a key never reaches the
- * screen when a translation is missing.
+ * The same keys `webx-ui/module-media` ships as `lang/en/*.php`, and the same ones every other
+ * language there has. Kept here so a manager placed by hand, with no WebX UI server behind it,
+ * still has words — and so a key never reaches the screen when a translation is missing.
  */
 export const mediaMessages: Record<string, Messages> = {
   module: {
@@ -22,13 +22,8 @@ export const mediaMessages: Record<string, Messages> = {
     delete: 'Delete',
     upload: 'Upload',
     'upload-hint': 'Drop files here or choose them',
-    edit: 'Edit',
-    copy: 'Save as a copy',
-    'restore-original': 'Restore the original',
-    'copy-link': 'Copy the link',
     select: 'Select',
     selected: ':count selected',
-    'clear-selection': 'Clear',
     empty: 'This folder is empty',
     'empty-search': 'Nothing matches :query',
     'all-types': 'All types',
@@ -44,19 +39,15 @@ export const mediaMessages: Record<string, Messages> = {
     'duplicate-added': 'That file was already in this folder',
     uploaded: ':count file(s) added',
     cancel: 'Cancel',
-    save: 'Save',
   },
   dialogs: {
     'delete-files-title': 'Delete :count file(s)?',
     'delete-files-text': 'Anywhere they are already used, they will stop opening.',
     'delete-folder-title': 'Delete the folder :title?',
-    'delete-folder-empty': 'The folder is empty.',
     'delete-folder-contents': 'It holds :files file(s) and :directories folder(s).',
     'delete-folder-warning':
       'Everything inside goes too, and pictures already placed in content will stop opening.',
     confirm: 'Delete',
-    'restore-title': 'Restore the original?',
-    'restore-text': 'The picture goes back to the way it was uploaded. Later edits are lost.',
   },
   errors: {
     'directory-not-empty': 'This folder is not empty.',
@@ -65,5 +56,14 @@ export const mediaMessages: Record<string, Messages> = {
     'not-an-image': 'This file is not an image.',
     'image-too-large': 'This image is larger than :megapixels megapixels.',
     upload: 'That file was not accepted.',
+  },
+  files: {
+    copy: ':name (copy)',
+  },
+  validation: {
+    title: 'name',
+    parent_id: 'parent folder',
+    directory_id: 'folder',
+    files: 'files',
   },
 }

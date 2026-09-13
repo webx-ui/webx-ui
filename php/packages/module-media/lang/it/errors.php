@@ -8,4 +8,5 @@ return [
     'directory-into-itself' => 'Una cartella non può essere spostata dentro sé stessa.',
     'not-an-image' => 'Questo file non è un’immagine.',
     'image-too-large' => 'Questa immagine supera i :megapixels megapixel.',
+    'upload' => 'Questo file non è stato accettato.',
 ];

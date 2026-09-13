@@ -14,6 +14,4 @@ export interface MediaPickerOptions {
  * A form does not need to own a dialog for this — `const file = await openMediaPicker()` is the
  * whole integration, and `undefined` means the person closed it.
  */
-export const openMediaPicker = createModal<MediaFile, MediaPickerOptions>(MediaPicker, {
-  resolveOn: 'pick',
-})
+export const openMediaPicker = createModal<MediaFile, MediaPickerOptions>(MediaPicker)

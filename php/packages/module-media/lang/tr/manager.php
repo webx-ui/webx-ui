@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'root' => 'Kitaplık',
+    'search' => 'Dosya ara',
+    'new-folder' => 'Yeni klasör',
+    'folder-name' => 'Klasör adı',
+    'rename' => 'Yeniden adlandır',
+    'move' => 'Taşı',
+    'move-to' => 'Şuraya taşı…',
+    'delete' => 'Sil',
+    'upload' => 'Yükle',
+    'upload-hint' => 'Dosyaları buraya bırakın veya seçin',
+    'select' => 'Seç',
+    'selected' => ':count seçildi',
+    'empty' => 'Bu klasör boş',
+    'empty-search' => ':query ile eşleşen bir şey yok',
+    'all-types' => 'Tüm türler',
+    'image' => 'Görseller',
+    'video' => 'Video',
+    'audio' => 'Ses',
+    'document' => 'Belgeler',
+    'other' => 'Diğer',
+    'sort-newest' => 'Önce en yeniler',
+    'sort-oldest' => 'Önce en eskiler',
+    'sort-name' => 'Ada göre',
+    'sort-size' => 'Önce en büyükler',
+    'duplicate-added' => 'Bu dosya zaten bu klasördeydi',
+    'uploaded' => ':count dosya eklendi',
+    'cancel' => 'İptal',
+];

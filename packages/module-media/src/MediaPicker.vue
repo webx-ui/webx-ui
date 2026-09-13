@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTranslate } from '@webx-ui/admin'
-import { WxDialog } from '@webx-ui/core'
+import { useModal, WxDialog } from '@webx-ui/core'
 import MediaManager from './MediaManager.vue'
 import type { MediaFile, MediaKind } from './types'
 
@@ -18,17 +18,15 @@ withDefaults(
   { accept: 'image', title: undefined },
 )
 
-const emit = defineEmits<{ pick: [file: MediaFile]; cancel: [] }>()
-
-const open = defineModel<boolean>({ default: true })
+const { open, resolve } = useModal<MediaFile>()
 
 const t = useTranslate('webx-media')
 </script>
 
 <template>
-  <wx-dialog v-model="open" size="lg" :title="title ?? t('module.title')" @close="emit('cancel')">
+  <wx-dialog v-model:open="open" :title="title ?? t('module.title')" :width="960">
     <div class="wx-media-picker">
-      <media-manager picking :accept="accept" @pick="(file) => emit('pick', file)" />
+      <media-manager picking :accept="accept" @pick="(file) => resolve(file)" />
     </div>
   </wx-dialog>
 </template>

@@ -8,4 +8,5 @@ return [
     'directory-into-itself' => 'Ein Ordner kann nicht in sich selbst verschoben werden.',
     'not-an-image' => 'Diese Datei ist kein Bild.',
     'image-too-large' => 'Dieses Bild ist größer als :megapixels Megapixel.',
+    'upload' => 'Diese Datei wurde nicht angenommen.',
 ];

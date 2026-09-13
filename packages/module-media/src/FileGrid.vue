@@ -70,6 +70,8 @@ const empty = computed(() =>
 
 <style>
 .wx-media-grid {
+  /* A rubber band over names would otherwise select the names. */
+  user-select: none;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: var(--wx-space-12);

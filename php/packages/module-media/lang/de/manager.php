@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'root' => 'Bibliothek',
+    'search' => 'Dateien suchen',
+    'new-folder' => 'Neuer Ordner',
+    'folder-name' => 'Ordnername',
+    'rename' => 'Umbenennen',
+    'move' => 'Verschieben',
+    'move-to' => 'Verschieben nach…',
+    'delete' => 'Löschen',
+    'upload' => 'Hochladen',
+    'upload-hint' => 'Dateien hierher ziehen oder auswählen',
+    'select' => 'Auswählen',
+    'selected' => ':count ausgewählt',
+    'empty' => 'Dieser Ordner ist leer',
+    'empty-search' => 'Nichts passt zu :query',
+    'all-types' => 'Alle Typen',
+    'image' => 'Bilder',
+    'video' => 'Video',
+    'audio' => 'Audio',
+    'document' => 'Dokumente',
+    'other' => 'Sonstiges',
+    'sort-newest' => 'Neueste zuerst',
+    'sort-oldest' => 'Älteste zuerst',
+    'sort-name' => 'Nach Name',
+    'sort-size' => 'Größte zuerst',
+    'duplicate-added' => 'Diese Datei war bereits in diesem Ordner',
+    'uploaded' => ':count Datei(en) hinzugefügt',
+    'cancel' => 'Abbrechen',
+];

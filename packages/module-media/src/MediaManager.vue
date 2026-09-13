@@ -13,7 +13,9 @@ import {
   WxUpload,
   type UploadFile,
 } from '@webx-ui/core'
+import { createModal } from '@webx-ui/core'
 import DirectoryTree from './DirectoryTree.vue'
+import MoveDialog from './MoveDialog.vue'
 import FileGrid from './FileGrid.vue'
 import { createMediaApi } from './api'
 import { useMediaMessages } from './i18n'
@@ -49,7 +51,7 @@ const current = ref<number | null>(null)
 const page = ref<MediaPage | null>(null)
 const selected = ref<number[]>([])
 const search = ref('')
-const type = ref<MediaKind | null>(props.accept)
+const type = ref<MediaKind | 'all'>(props.accept ?? 'all')
 const sort = ref('-created_at')
 const busy = ref(false)
 
@@ -58,7 +60,7 @@ const canManage = computed(() => admin.can('media.manage'))
 const canUpload = computed(() => admin.can('media.upload') || canManage.value)
 
 const types = computed(() => [
-  { value: '', label: t('manager.all-types') },
+  { value: 'all', label: t('manager.all-types') },
   ...(['image', 'video', 'audio', 'document', 'other'] as MediaKind[]).map((kind) => ({
     value: kind,
     label: t(`manager.${kind}`),
@@ -93,7 +95,7 @@ async function loadFiles(to = page.value?.meta.current_page ?? 1): Promise<void>
     page.value = await api.files({
       directory_id: search.value ? null : current.value,
       q: search.value,
-      type: type.value,
+      type: type.value === 'all' ? null : type.value,
       sort: sort.value,
       page: to,
     })
@@ -216,15 +218,23 @@ async function removeSelected(): Promise<void> {
   }
 }
 
-async function moveSelected(): Promise<void> {
-  const target = window.prompt(t('manager.move-to'))
-  const id = Number(target)
+const askWhereTo = createModal<
+  number,
+  { directories: MediaDirectory[]; from: number | null; count: number }
+>(MoveDialog)
 
-  if (!Number.isFinite(id) || id <= 0) {
+async function moveSelected(): Promise<void> {
+  const to = await askWhereTo({
+    directories: directories.value,
+    from: current.value,
+    count: selected.value.length,
+  })
+
+  if (to === undefined) {
     return
   }
 
-  await api.move([...selected.value], id)
+  await api.move([...selected.value], to)
   await Promise.all([load(), loadFiles()])
 }
 
@@ -324,9 +334,15 @@ function debounce(run: () => void, wait: number): () => void {
 
     <section class="wx-media__files">
       <header class="wx-media__bar">
-        <wx-input v-model="search" :placeholder="t('manager.search')" clearable size="sm" />
-        <wx-select v-model="type" :options="types" size="sm" />
-        <wx-select v-model="sort" :options="sorts" size="sm" />
+        <wx-input
+          v-model="search"
+          class="wx-media__search"
+          :placeholder="t('manager.search')"
+          clearable
+          size="sm"
+        />
+        <wx-select v-model="type" :options="types" size="sm" class="wx-media__filter" />
+        <wx-select v-model="sort" :options="sorts" size="sm" class="wx-media__filter" />
 
         <wx-space v-if="selected.length > 0" size="4">
           <span class="wx-media__count">{{
@@ -413,6 +429,15 @@ function debounce(run: () => void, wait: number): () => void {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wx-space-8);
+}
+
+.wx-media__filter {
+  min-width: 160px;
+}
+
+.wx-media__search {
+  flex: 1 1 220px;
+  min-width: 160px;
 }
 
 .wx-media__count {
