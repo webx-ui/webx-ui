@@ -30,7 +30,9 @@ Laravel. Библиотека публикуется в npm, админки — 
 администраторы — `admins`, а `users` оставлено пользователям сайта, которые станут отдельным
 разделом. Реестр и планы — в
 `docs/architecture/WEBX_UI_COMPOSER_PACKAGES.md`, конвейер публикации на Packagist — в
-`docs/architecture/WEBX_UI_PHP_RELEASE.md`.
+`docs/architecture/WEBX_UI_PHP_RELEASE.md`. **Экраны как описание** — дерево узлов в JSON,
+патчи от проекта, реестр типов на обеих половинах — согласованная спецификация в
+`docs/architecture/WEBX_UI_SCREENS.md`; читать до того, как трогать любой экран панели.
 
 Ключевые принципы:
 
