@@ -122,6 +122,16 @@ Both role tools honour `dry_run`, so an agent can be asked what it would change 
 Password reset, two-factor, and invitations. Sanctum is a dependency and the model carries
 `HasApiTokens`, so scoped tokens for MCP have somewhere to go when that arrives.
 
+## Languages
+
+Ten shipped: en, ru, uk, de, pl, fr, es, it, pt, tr. English is the fallback, and it is laid
+_under_ the chosen language line by line, so a half-translated group shows what it has and
+English for the rest.
+
+Only English, Russian and Ukrainian have been read by a speaker; the other seven are machine
+translations. A correction from someone who speaks the language is welcome — they are plain PHP
+arrays in `lang/`.
+
 ## Licence
 
 MIT.
