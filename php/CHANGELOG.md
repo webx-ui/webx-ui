@@ -1,5 +1,16 @@
 # @webx-ui/php
 
+## 0.6.0
+
+### Minor Changes
+
+- a9240d6: Seven more languages in the panel: German, Polish, French, Spanish, Italian, Portuguese and
+  Turkish, alongside the English, Russian and Ukrainian that were already there. A site still
+  decides which of them to offer in `config('webx-localization.panel')`.
+
+  A test in each package holds the ten key sets together — a missing line falls back to English
+  rather than to a key, which is right and also the reason a gap can sit unnoticed.
+
 ## 0.5.0
 
 ### Minor Changes
