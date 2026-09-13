@@ -59,6 +59,14 @@ export interface TableColumn<T = TableRow> {
   /** Leaves the column out without changing the array. */
   hidden?: boolean
   /**
+   * Drops the column while the table is narrower than this.
+   *
+   * The alternative is a horizontal scrollbar, and a column somebody has to drag sideways to
+   * read is a column they will not read. Say it about the ones that can go — a date, a count —
+   * and the ones that identify the row stay whatever the width.
+   */
+  hideBelow?: number
+  /**
    * Leaves the column out of a card, where space is the scarce thing.
    *
    * A date somebody scans down a column is worth a line of its own on a wide screen and is the

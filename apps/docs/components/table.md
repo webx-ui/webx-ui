@@ -348,6 +348,8 @@ Two things are worth saying explicitly:
 
 - A column with `hideOnCards` is left out. A date somebody scans down a column is worth a line on
   a wide screen and is the first thing to go on a narrow one.
+- `hideBelow` does **not** apply: it is about columns that will not fit beside each other, and a
+  card stacks them.
 - Row actions have no column to live in, so they go along the top of the card through the
   `card-actions` slot.
 
@@ -383,6 +385,8 @@ and asks to be read, and on a phone that line is most of what is left.
 | `headerClass` | `string`                        | Class on the `th`                               |
 | `cellClass`   | `string`                        | Class on the `td`                               |
 | `hidden`      | `boolean`                       | Leaves the column out                           |
+| `hideBelow`   | `number`                        | Drops it while the table is narrower than this  |
+| `hideOnCards` | `boolean`                       | Leaves it out of a card                         |
 
 A dotted `key` reads through an eager-loaded relation, so `user.name` lands in its own column
 without a formatter. A path that goes nowhere renders as empty rather than as `undefined`.

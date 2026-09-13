@@ -1,5 +1,14 @@
 <script setup lang="ts" generic="T extends TableRow = TableRow">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, useSlots, watch } from 'vue'
+import {
+  computed,
+  getCurrentInstance,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  useSlots,
+  watch,
+} from 'vue'
 import WxCheckbox from '../Checkbox/Checkbox.vue'
 import WxInput from '../Input/Input.vue'
 import type { InputModelValue } from '../Input/types'
@@ -289,7 +298,22 @@ const showPagination = computed(() => {
   return props.pagination ?? false
 })
 
-const visibleColumns = computed(() => props.columns.filter((column) => !column.hidden))
+/*
+ * The table's own width decides this, not the window's: the same table is a page, half of a
+ * dialog and a phone, and only one of those is the window.
+ */
+const root = ref<HTMLElement | null>(null)
+const width = useElementWidth(root)
+
+const visibleColumns = computed(() =>
+  props.columns.filter(
+    (column) =>
+      !column.hidden &&
+      // Measured before the first layout, `width` is 0 and nothing is dropped — which is the
+      // right way round: a column that flashes in is better than one that flashes out.
+      !(column.hideBelow && width.value > 0 && width.value < column.hideBelow),
+  ),
+)
 
 /** Columns that carry no data of their own: the chevron and the checkbox. */
 const utilityCount = computed(() => (props.expandable ? 1 : 0) + (props.selectable ? 1 : 0))
@@ -326,24 +350,34 @@ const hasHeader = computed<boolean>(() =>
 )
 
 /*
- * The table's own width decides this, not the window's: the same table is a page, half of a
- * dialog and a phone, and only one of those is the window.
+ * Whether a row does anything when it is clicked, so the pointer can say so.
+ *
+ * Read off the vnode rather than taken as a prop: the caller already says it by listening, and
+ * a second way to say the same thing is a second thing to get wrong.
  */
-const root = ref<HTMLElement | null>(null)
-const width = useElementWidth(root)
+const instance = getCurrentInstance()
+const clickable = computed(() => Boolean(instance?.vnode.props?.onRowClick))
 
 const asCards = computed(
   () => props.cardsBelow > 0 && width.value > 0 && width.value < props.cardsBelow,
 )
 
-/** What a card shows: the columns worth the room, without the ones that carry no data. */
-const cardColumns = computed(() => visibleColumns.value.filter((column) => !column.hideOnCards))
+/**
+ * What a card shows.
+ *
+ * Not `visibleColumns`: `hideBelow` is about columns that will not fit beside each other, and a
+ * card stacks them — there is room. Only `hideOnCards` applies here.
+ */
+const cardColumns = computed(() =>
+  props.columns.filter((column) => !column.hidden && !column.hideOnCards),
+)
 
 const classes = computed(() => [
   'wx-table',
   `wx-table--${props.size}`,
   {
     'wx-table--cards': asCards.value,
+    'wx-table--clickable': clickable.value,
     'wx-table--stripe': props.stripe,
     'wx-table--bordered': props.bordered,
     'wx-table--hover': props.hover,
@@ -801,6 +835,7 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
         :class="[rowClass?.(row, index), { 'is-selected': selectable && isSelected(row, index) }]"
         @click="emit('row-click', row, index, $event)"
       >
+        <!-- The checkbox where a list puts one, the actions where a thumb reaches them. -->
         <div v-if="selectable || $slots['card-actions']" class="wx-table__card-top" @click.stop>
           <wx-checkbox
             v-if="selectable"
@@ -809,7 +844,9 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
             aria-label="Select row"
             @update:model-value="(checked: boolean) => toggleRow(row, index, checked)"
           />
-          <slot name="card-actions" :row="row" :index="index" />
+          <div class="wx-table__card-tools">
+            <slot name="card-actions" :row="row" :index="index" />
+          </div>
         </div>
 
         <div v-for="column in cardColumns" :key="column.key" class="wx-table__field">
@@ -1664,15 +1701,15 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 .wx-table__cards {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-12);
-  padding: var(--wx-space-12);
+  gap: var(--wx-space-8);
+  padding: var(--wx-space-8);
 }
 
 .wx-table__card {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-8);
-  padding: var(--wx-space-12);
+  gap: var(--wx-space-6);
+  padding: var(--wx-space-10) var(--wx-space-12);
   border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-md);
   background: var(--wx-bg-surface);
@@ -1689,14 +1726,18 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 .wx-table__card-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--wx-space-8);
+}
+
+/* Pushed to the end, so the checkbox keeps the left and the buttons keep the right. */
+.wx-table__card-tools {
+  margin-left: auto;
 }
 
 .wx-table__field {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-2);
+  gap: 1px;
   min-width: 0;
 }
 
@@ -1719,5 +1760,10 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 .wx-table__cards-footer {
   display: flex;
   justify-content: center;
+}
+/* A row that opens something says so before it is clicked. */
+.wx-table--clickable .wx-table__row,
+.wx-table--clickable .wx-table__card {
+  cursor: pointer;
 }
 </style>

@@ -88,16 +88,23 @@ const stateOptions = computed(() => [
   { value: 'no', label: t('admins.only-inactive') },
 ])
 
+/*
+ * No widths but the one the buttons need.
+ *
+ * A declared width is a promise the table has to keep, and five of them add up to more than the
+ * screen — so it scrolls sideways while half the row is whitespace. Left alone, the columns take
+ * what their contents need. What does not fit is dropped instead, in the order it can be spared.
+ */
 const columns = computed<TableColumn<Admin>[]>(() => [
-  { key: 'name', label: t('admins.name'), sortable: true, minWidth: 220 },
-  { key: 'email', label: t('admins.email'), sortable: true, minWidth: 200 },
-  { key: 'roles', label: t('admins.roles'), minWidth: 180 },
-  { key: 'is_active', label: t('admins.active'), width: 120, align: 'center' },
+  { key: 'name', label: t('admins.name'), sortable: true },
+  { key: 'email', label: t('admins.email'), sortable: true, hideBelow: 560 },
+  { key: 'roles', label: t('admins.roles'), hideBelow: 760 },
+  { key: 'is_active', label: t('admins.active'), align: 'center', hideBelow: 660 },
   {
     key: 'last_login_at',
     label: t('admins.last-login'),
     sortable: true,
-    width: 170,
+    hideBelow: 900,
     // The first thing to go when a row becomes a card: it is a date somebody scans down a
     // column, and a card has no column to scan.
     hideOnCards: true,
@@ -105,8 +112,8 @@ const columns = computed<TableColumn<Admin>[]>(() => [
   {
     key: 'actions',
     label: '',
-    width: 64,
-    align: 'center',
+    width: 56,
+    align: 'right',
     hidden: !props.removable,
     // A card puts them along its top instead, through the `card-actions` slot.
     hideOnCards: true,

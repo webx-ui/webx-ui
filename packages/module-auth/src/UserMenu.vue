@@ -75,3 +75,29 @@ async function choose(code: string): Promise<void> {
     </wx-dropdown-item>
   </wx-dropdown>
 </template>
+
+<style scoped>
+/*
+ * The avatar is the whole button: no border, no background, nothing of the browser's own —
+ * a bordered box around a round picture reads as one more tool in the row of icons, which is
+ * what wrapping it in an action looked like in the first place.
+ */
+.wx-user-menu__trigger {
+  display: inline-flex;
+  padding: 0;
+  border: none;
+  border-radius: var(--wx-radius-full);
+  background: transparent;
+  cursor: pointer;
+  transition: opacity var(--wx-duration-fast) var(--wx-easing-standard);
+}
+
+.wx-user-menu__trigger:hover {
+  opacity: 0.85;
+}
+
+.wx-user-menu__trigger:focus-visible {
+  outline: 2px solid var(--wx-border-focus);
+  outline-offset: 2px;
+}
+</style>
