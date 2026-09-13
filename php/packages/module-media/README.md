@@ -84,6 +84,18 @@ WEBX_MEDIA_PREFIX=media
 Everything goes through Laravel's filesystem, so a remote disk behaves like a local one. A disk
 with a configured `url` serves files directly; a private bucket gets temporary signed addresses.
 
+An S3 disk needs its adapter, which Laravel does not ship and this module deliberately does not
+require — most installations never point at a bucket, and nobody should carry the AWS SDK to
+store files in `public`:
+
+```
+composer require league/flysystem-aws-s3-v3
+```
+
+Without it the disk resolves and then fails on first use with
+`Class "League\Flysystem\AwsS3V3\PortableVisibilityConverter" not found`, which names Flysystem
+rather than the missing package.
+
 Uploads are limited by size and by a white list of types, and images are refused above
 `image.max_pixels` before they are decoded — a small file can still be a very large picture.
 
