@@ -26,7 +26,7 @@ final class AuthModule extends AbstractModule implements ProvidesMcpTools
 
     public function id(): string
     {
-        return 'users';
+        return 'admins';
     }
 
     public function title(): string
@@ -49,7 +49,7 @@ final class AuthModule extends AbstractModule implements ProvidesMcpTools
      */
     public function permissions(): array
     {
-        return ['users.view', 'users.manage', 'users.audit'];
+        return ['admins.view', 'admins.manage', 'admins.audit'];
     }
 
     /**
@@ -67,7 +67,7 @@ final class AuthModule extends AbstractModule implements ProvidesMcpTools
     {
         return [
             Tool::read(
-                'list_users',
+                'list_admins',
                 'List the administrators of this panel with their roles and whether they are active.',
                 static fn (): array => CmsUser::query()
                     ->with('roles')
@@ -83,7 +83,7 @@ final class AuthModule extends AbstractModule implements ProvidesMcpTools
                         'last_login_at' => $user->last_login_at?->toIso8601String(),
                     ])
                     ->all(),
-                scope: 'users:read',
+                scope: 'admins:read',
             ),
 
             Tool::read(
@@ -98,7 +98,7 @@ final class AuthModule extends AbstractModule implements ProvidesMcpTools
                         'permissions' => $role->permissions ?? [],
                     ])
                     ->all(),
-                scope: 'users:read',
+                scope: 'admins:read',
             ),
 
             Tool::mutating(
@@ -112,7 +112,7 @@ final class AuthModule extends AbstractModule implements ProvidesMcpTools
                     ],
                     'required' => ['email', 'role'],
                 ],
-                scope: 'users:write',
+                scope: 'admins:write',
             ),
 
             Tool::mutating(
@@ -126,7 +126,7 @@ final class AuthModule extends AbstractModule implements ProvidesMcpTools
                     ],
                     'required' => ['email', 'role'],
                 ],
-                scope: 'users:write',
+                scope: 'admins:write',
             ),
 
             Tool::read(
@@ -149,7 +149,7 @@ final class AuthModule extends AbstractModule implements ProvidesMcpTools
                         'limit' => ['type' => 'integer', 'default' => 50, 'maximum' => 200],
                     ],
                 ],
-                scope: 'users:audit',
+                scope: 'admins:audit',
             ),
 
             Tool::read(
@@ -162,7 +162,7 @@ final class AuthModule extends AbstractModule implements ProvidesMcpTools
                         'threshold' => ['type' => 'integer', 'default' => 5],
                     ],
                 ],
-                scope: 'users:audit',
+                scope: 'admins:audit',
             ),
         ];
     }

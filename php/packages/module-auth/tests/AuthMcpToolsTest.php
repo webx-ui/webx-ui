@@ -23,17 +23,17 @@ final class AuthMcpToolsTest extends TestCase
 
         $this->assertSame(
             [
-                'users_list_users',
-                'users_list_roles',
-                'users_grant_role',
-                'users_revoke_role',
-                'users_recent_sign_ins',
-                'users_failed_sign_in_bursts',
+                'admins_list_admins',
+                'admins_list_roles',
+                'admins_grant_role',
+                'admins_revoke_role',
+                'admins_recent_sign_ins',
+                'admins_failed_sign_in_bursts',
             ],
             array_map(fn ($tool) => $tool->fullName(), $registry->tools()),
         );
 
-        $this->assertSame(['users:audit', 'users:read', 'users:write'], $registry->scopes());
+        $this->assertSame(['admins:audit', 'admins:read', 'admins:write'], $registry->scopes());
     }
 
     #[Test]
@@ -58,7 +58,7 @@ final class AuthMcpToolsTest extends TestCase
         $admin = $this->admin();
         $admin->roles()->attach($this->role('editor', ['pages.view']));
 
-        $rows = ($this->tool('users_list_users'))([]);
+        $rows = ($this->tool('admins_list_admins'))([]);
 
         $this->assertCount(1, $rows);
         $this->assertSame('admin@example.test', $rows[0]['email']);
@@ -71,7 +71,7 @@ final class AuthMcpToolsTest extends TestCase
         $admin = $this->admin();
         $this->role('editor', ['pages.view']);
 
-        $preview = ($this->tool('users_grant_role'))([
+        $preview = ($this->tool('admins_grant_role'))([
             'email' => 'admin@example.test',
             'role' => 'editor',
             'dry_run' => true,
@@ -81,7 +81,7 @@ final class AuthMcpToolsTest extends TestCase
         $this->assertFalse($preview['applied']);
         $this->assertSame(0, $admin->roles()->count());
 
-        $applied = ($this->tool('users_grant_role'))([
+        $applied = ($this->tool('admins_grant_role'))([
             'email' => 'admin@example.test',
             'role' => 'editor',
         ]);
@@ -96,7 +96,7 @@ final class AuthMcpToolsTest extends TestCase
         $admin = $this->admin();
         $admin->roles()->attach($this->role('editor', ['pages.view']));
 
-        ($this->tool('users_revoke_role'))(['email' => 'admin@example.test', 'role' => 'editor']);
+        ($this->tool('admins_revoke_role'))(['email' => 'admin@example.test', 'role' => 'editor']);
 
         $this->assertSame(0, $admin->roles()->count());
     }
@@ -107,7 +107,7 @@ final class AuthMcpToolsTest extends TestCase
         $this->admin();
         $this->role('editor', ['pages.view']);
 
-        $result = ($this->tool('users_revoke_role'))([
+        $result = ($this->tool('admins_revoke_role'))([
             'email' => 'admin@example.test',
             'role' => 'editor',
         ]);
@@ -121,14 +121,14 @@ final class AuthMcpToolsTest extends TestCase
     {
         $this->role('editor', ['pages.view']);
 
-        $this->assertFalse(($this->tool('users_grant_role'))([
+        $this->assertFalse(($this->tool('admins_grant_role'))([
             'email' => 'ghost@example.test',
             'role' => 'editor',
         ])['ok']);
 
         $this->admin();
 
-        $this->assertFalse(($this->tool('users_grant_role'))([
+        $this->assertFalse(($this->tool('admins_grant_role'))([
             'email' => 'admin@example.test',
             'role' => 'nope',
         ])['ok']);
@@ -159,7 +159,7 @@ final class AuthMcpToolsTest extends TestCase
             'created_at' => Carbon::now()->subDays(30),
         ]);
 
-        $bursts = ($this->tool('users_failed_sign_in_bursts'))([]);
+        $bursts = ($this->tool('admins_failed_sign_in_bursts'))([]);
 
         $this->assertCount(1, $bursts);
         $this->assertSame('target@example.test', $bursts[0]['email']);
@@ -177,7 +177,7 @@ final class AuthMcpToolsTest extends TestCase
             ]);
         }
 
-        $this->assertCount(2, ($this->tool('users_recent_sign_ins'))(['limit' => 2]));
-        $this->assertCount(5, ($this->tool('users_recent_sign_ins'))([]));
+        $this->assertCount(2, ($this->tool('admins_recent_sign_ins'))(['limit' => 2]));
+        $this->assertCount(5, ($this->tool('admins_recent_sign_ins'))([]));
     }
 }

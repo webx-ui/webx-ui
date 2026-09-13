@@ -34,7 +34,7 @@ const editing = ref<Admin | null>(null)
 
 const edit = createModal<Admin, { admin: Admin | null; avatarField?: Component }>(AdminDialog)
 
-const canManage = context.can('users.manage')
+const canManage = context.can('admins.manage')
 
 async function open(admin: Admin | null): Promise<void> {
   editing.value = admin

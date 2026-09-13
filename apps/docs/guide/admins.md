@@ -65,7 +65,7 @@ One of the [dialogs from code](/guide/modals): the same list, in a dialog, resol
 was chosen and with `undefined` when it was closed. One is chosen by clicking the row; several
 are ticked and confirmed.
 
-Both need `users.view`, which is deliberately separate from `users.manage`: assigning work to
+Both need `admins.view`, which is deliberately separate from `admins.manage`: assigning work to
 somebody is not the same as being allowed to edit their account.
 
 ## Talking to it directly

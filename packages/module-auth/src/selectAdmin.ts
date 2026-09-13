@@ -19,7 +19,7 @@ const pick = createModal<Admin[], AdminPickerOptions & { multiple?: boolean }>(A
  * if (owner) task.assignedTo = owner.id
  * ```
  *
- * Resolves with `undefined` when the dialog was closed without choosing. Needs `users.view`,
+ * Resolves with `undefined` when the dialog was closed without choosing. Needs `admins.view`,
  * which is deliberately separate from managing them: assigning work to somebody is not the
  * same as being allowed to edit their account.
  */

@@ -169,7 +169,7 @@ WEBX_ADMIN_PASSWORD="$ADMIN_PASSWORD" "$PHP_BIN" "$APP/artisan" webx:admin \
 note "$ADMIN_EMAIL created"
 
 step "The modules answer to artisan"
-"$PHP_BIN" "$APP/artisan" webx:mcp-tools | grep -q 'users_grant_role' \
+"$PHP_BIN" "$APP/artisan" webx:mcp-tools | grep -q 'admins_grant_role' \
     || fail 'the auth module offers no MCP tools'
 note 'webx:mcp-tools lists the auth tools'
 

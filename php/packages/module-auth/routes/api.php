@@ -28,13 +28,13 @@ Route::prefix((string) config('webx-admin.api_path').'/auth')
             // Reading the list is not managing it: a module that wants to show who wrote
             // something, or offer a picker of people to assign work to, needs the first and
             // has no business with the second.
-            Route::middleware('cms.can:users.view,users.manage')->group(function (): void {
+            Route::middleware('cms.can:admins.view,admins.manage')->group(function (): void {
                 Route::get('roles', RoleController::class)->name('roles');
                 Route::get('admins', [AdminController::class, 'index'])->name('admins.index');
                 Route::get('admins/{admin}', [AdminController::class, 'show'])->name('admins.show');
             });
 
-            Route::middleware('cms.can:users.manage')->group(function (): void {
+            Route::middleware('cms.can:admins.manage')->group(function (): void {
                 Route::post('admins', [AdminController::class, 'store'])->name('admins.store');
                 Route::patch('admins/{admin}', [AdminController::class, 'update'])->name('admins.update');
                 Route::delete('admins/{admin}', [AdminController::class, 'destroy'])->name('admins.destroy');

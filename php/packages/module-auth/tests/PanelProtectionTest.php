@@ -27,7 +27,7 @@ final class PanelProtectionTest extends TestCase
         $this->actingAs($this->admin(), 'cms')
             ->getJson('/api/cms/manifest')
             ->assertOk()
-            ->assertJsonPath('data.modules.0.id', 'users');
+            ->assertJsonPath('data.modules.0.id', 'admins');
     }
 
     #[Test]
