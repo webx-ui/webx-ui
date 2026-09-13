@@ -28,7 +28,7 @@
         "illuminate/http": "^13.0",
         "illuminate/routing": "^13.0",
         "illuminate/support": "^13.0",
-        "webx-ui/localization": "^0.10.0"
+        "webx-ui/localization": "^0.11.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
