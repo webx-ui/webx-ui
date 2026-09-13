@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace WebxUi\Media\Tests;
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 
 final class ModuleTest extends TestCase
 {
+    use RefreshDatabase;
+
     #[Test]
     public function the_panel_is_told_about_the_module(): void
     {
+        $this->actingAsAdmin();
+
         $this->getJson('/api/cms/manifest')
             ->assertOk()
             ->assertJsonPath('data.modules.0.id', 'media')
@@ -25,6 +30,8 @@ final class ModuleTest extends TestCase
     #[Test]
     public function the_section_is_named_in_the_language_being_asked_for(): void
     {
+        $this->actingAsAdmin();
+
         // The header rather than `setLocale`: the panel's own middleware decides the language of
         // every answer, and it would overwrite anything set beforehand.
         $this->withHeader('X-Webx-Locale', 'ru')

@@ -1,0 +1,9 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'directory-not-empty' => 'Dieser Ordner ist nicht leer.',
+    'root-immutable' => 'Der Wurzelordner kann nicht verschoben oder gelöscht werden.',
+    'directory-into-itself' => 'Ein Ordner kann nicht in sich selbst verschoben werden.',
+];
