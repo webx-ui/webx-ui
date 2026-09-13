@@ -1,5 +1,5 @@
 import { h, watch } from 'vue'
-import type { Admin, AdminPlugin } from '@webx-ui/admin'
+import type { Admin, AdminPlugin } from '@webx-ui/module-admin'
 import LoginCard from './LoginCard.vue'
 import { authMessages } from './messages'
 import { createAuthSession, provideAuth } from './session'

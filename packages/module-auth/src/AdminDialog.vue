@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, type Component } from 'vue'
-import { useAdmin, useI18n, useTranslate } from '@webx-ui/admin'
+import { useAdmin, useI18n, useTranslate } from '@webx-ui/module-admin'
 import {
   toast,
   useModal,

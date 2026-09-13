@@ -1,4 +1,4 @@
-import type { AdminContext } from '@webx-ui/admin'
+import type { AdminContext } from '@webx-ui/module-admin'
 import type { Admin, AdminInput, AdminPage, AdminQuery, Role } from './types'
 
 export interface AdminsApi {

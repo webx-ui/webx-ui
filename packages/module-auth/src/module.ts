@@ -1,5 +1,5 @@
 import { h, type Component } from 'vue'
-import type { AdminModule } from '@webx-ui/admin'
+import type { AdminModule } from '@webx-ui/module-admin'
 import AdminsPage from './AdminsPage.vue'
 
 export interface AdminsOptions {

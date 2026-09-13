@@ -1,5 +1,5 @@
 {
-    "name": "webx-ui/admin",
+    "name": "webx-ui/module-admin",
     "description": "The frame a WebX UI admin panel is built on: a module contract, the manifest the front end reads, and the routes that serve it.",
     "keywords": [
         "laravel",
@@ -10,6 +10,9 @@
     ],
     "homepage": "https://github.com/webx-ui/webx-ui",
     "license": "MIT",
+    "replace": {
+        "webx-ui/admin": "self.version"
+    },
     "authors": [
         {
             "name": "WebX UI",
@@ -18,7 +21,7 @@
     ],
     "support": {
         "issues": "https://github.com/webx-ui/webx-ui/issues",
-        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/admin"
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-admin"
     },
     "require": {
         "php": "^8.3",

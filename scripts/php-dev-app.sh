@@ -63,7 +63,7 @@ REPOSITORY="$(
         '{"type":"composer","url":"https://repo.packagist.org","exclude":["webx-ui/*"]}'
     $COMPOSER_BIN require webx-ui/module-auth:'*' --no-interaction --no-progress --quiet
 )
-note 'webx-ui/admin, webx-ui/mcp and webx-ui/module-auth linked to the checkout'
+note 'webx-ui/module-admin, webx-ui/mcp and webx-ui/module-auth linked to the checkout'
 
 step "Configure it"
 set_env() {

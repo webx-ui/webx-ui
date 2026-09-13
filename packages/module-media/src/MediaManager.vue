@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
-import { useAdmin, useTranslate } from '@webx-ui/admin'
+import { useAdmin, useTranslate } from '@webx-ui/module-admin'
 import {
   confirm,
   createModal,

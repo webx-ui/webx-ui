@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useTranslate } from '@webx-ui/admin'
+import { useAdmin, useTranslate } from '@webx-ui/module-admin'
 import {
   WxAction,
   WxActions,

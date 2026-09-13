@@ -1,9 +1,9 @@
-# @webx-ui/admin
+# @webx-ui/module-admin
 
 The frame a WebX UI admin panel runs in: the bootstrap, the shell, the HTTP client and the
 module registry.
 
-It is the front-end half of the Composer package [`webx-ui/admin`](https://packagist.org/packages/webx-ui/admin),
+It is the front-end half of the Composer package [`webx-ui/module-admin`](https://packagist.org/packages/webx-ui/module-admin),
 and the two are paired by the manifest the server publishes — so a section appears in the panel
 when both halves have it, and the menu is what the installation actually has rather than a list
 written twice.
@@ -11,7 +11,7 @@ written twice.
 ## Install
 
 ```bash
-pnpm add @webx-ui/admin @webx-ui/core @webx-ui/tokens vue vue-router
+pnpm add @webx-ui/module-admin @webx-ui/core @webx-ui/tokens vue vue-router
 ```
 
 On the Laravel side, `php artisan webx:panel` writes the entry file below and wires it into
@@ -20,7 +20,7 @@ Vite for you.
 ## The panel
 
 ```ts
-import { createAdmin } from '@webx-ui/admin'
+import { createAdmin } from '@webx-ui/module-admin'
 import { auth, WxUserMenu } from '@webx-ui/module-auth'
 import { pages } from '@webx-ui/module-pages'
 
@@ -42,7 +42,7 @@ bound to lose.
 ## A module
 
 ```ts
-import type { AdminModule } from '@webx-ui/admin'
+import type { AdminModule } from '@webx-ui/module-admin'
 
 export const pages: AdminModule = {
   id: 'pages', // the same id the server-side module answers to
@@ -61,7 +61,7 @@ them on the server, not a setting of the site. A site published only in Ukrainia
 maintained by somebody who wants English menus.
 
 ```ts
-import { useI18n, useTranslate } from '@webx-ui/admin'
+import { useI18n, useTranslate } from '@webx-ui/module-admin'
 
 const t = useTranslate('webx-admin') // t('shell.retry')
 const i18n = useI18n() // i18n.state.locale, i18n.state.panelLocales
@@ -79,7 +79,7 @@ of the interface around them.
 ## Talking to the backend
 
 ```ts
-import { useAdmin, HttpError } from '@webx-ui/admin'
+import { useAdmin, HttpError } from '@webx-ui/module-admin'
 
 const { http, can, state } = useAdmin()
 
@@ -115,7 +115,7 @@ everything, the same rule the server applies.
 Styles come with `@webx-ui/core`; this package adds a little of its own:
 
 ```ts
-import '@webx-ui/admin/style.css'
+import '@webx-ui/module-admin/style.css'
 ```
 
 ## Licence

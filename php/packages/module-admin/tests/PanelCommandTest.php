@@ -63,7 +63,7 @@ final class PanelCommandTest extends TestCase
 
         $contents = (string) $this->files->get($entry);
 
-        $this->assertStringContainsString("from '@webx-ui/admin'", $contents);
+        $this->assertStringContainsString("from '@webx-ui/module-admin'", $contents);
         $this->assertStringContainsString("basePath: '/cms'", $contents);
     }
 
@@ -79,7 +79,7 @@ final class PanelCommandTest extends TestCase
         $contents = (string) $this->files->get($entry);
 
         $this->assertStringContainsString("import '@webx-ui/core/style.css'", $contents);
-        $this->assertStringContainsString("import '@webx-ui/admin/style.css'", $contents);
+        $this->assertStringContainsString("import '@webx-ui/module-admin/style.css'", $contents);
     }
 
     #[Test]
@@ -196,7 +196,7 @@ final class PanelCommandTest extends TestCase
         $this->at('resources/js/admin.ts');
 
         $this->artisan('webx:panel')
-            ->expectsOutputToContain('@webx-ui/admin')
+            ->expectsOutputToContain('@webx-ui/module-admin')
             ->assertSuccessful();
     }
 

@@ -1,4 +1,4 @@
-import type { AdminContext } from '@webx-ui/admin'
+import type { AdminContext } from '@webx-ui/module-admin'
 import type { EditOperations, FileQuery, MediaDirectory, MediaFile, MediaPage } from './types'
 
 export interface MediaApi {

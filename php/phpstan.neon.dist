@@ -4,8 +4,8 @@ includes:
 parameters:
     level: 6
     paths:
-        - packages/admin/src
-        - packages/admin/tests
+        - packages/module-admin/src
+        - packages/module-admin/tests
         - packages/localization/src
         - packages/localization/tests
         - packages/mcp/src
@@ -29,4 +29,4 @@ parameters:
         -
             identifier: argument.type
             message: '#expects view-string, string given#'
-            path: packages/admin/src/Http/Controllers/ShellController.php
+            path: packages/module-admin/src/Http/Controllers/ShellController.php

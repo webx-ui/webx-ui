@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useTranslate } from '@webx-ui/admin'
+import { useTranslate } from '@webx-ui/module-admin'
 import { useModal, WxDialog } from '@webx-ui/core'
 import MediaManager from './MediaManager.vue'
 import type { MediaFile, MediaKind } from './types'
