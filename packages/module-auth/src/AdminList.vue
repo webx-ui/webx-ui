@@ -192,6 +192,7 @@ defineExpose({ reload: () => load(last), chosen: () => selected.value })
       row-key="id"
       searchable
       hover
+      flush
       :loading="loading"
       :search-placeholder="t('admins.search')"
       :empty-text="t('admins.empty')"

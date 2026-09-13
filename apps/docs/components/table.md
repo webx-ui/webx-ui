@@ -416,34 +416,35 @@ key of `actions` and fill it from `#cell-actions`.
 
 ## Props
 
-| Prop                | Type                                  | Default             | Description                         |
-| ------------------- | ------------------------------------- | ------------------- | ----------------------------------- |
-| `data`              | `T[] \| Paginated<T> \| null`         | `null`              | Rows, or a whole paginator          |
-| `columns`           | `TableColumn<T>[]`                    | —                   | Required                            |
-| `rowKey`            | `string \| (row, index) => RowKey`    | `'id'`              | Where a stable id comes from        |
-| `title`             | `string`                              | —                   | Heading in the header bar           |
-| `searchable`        | `boolean`                             | `false`             | Adds the search field               |
-| `searchPlaceholder` | `string`                              | `'Search'`          | Placeholder for it                  |
-| `searchDebounce`    | `number`                              | `300`               | Wait before `search` fires, in ms   |
-| `loading`           | `boolean`                             | `false`             | Dims the table and marks it busy    |
-| `emptyText`         | `string`                              | `'Nothing to show'` | Shown when there are no rows        |
-| `stripe`            | `boolean`                             | `false`             | Alternating row background          |
-| `bordered`          | `boolean`                             | `false`             | Vertical rules between columns      |
-| `hover`             | `boolean`                             | `true`              | Highlight the row under the pointer |
-| `selectable`        | `boolean`                             | `false`             | Adds the checkbox column            |
-| `selectableIf`      | `(row) => boolean`                    | —                   | Rows that cannot be picked          |
-| `expandable`        | `boolean`                             | `false`             | Adds the chevron column             |
-| `expandableIf`      | `(row) => boolean`                    | —                   | Rows with nothing to open           |
-| `summary`           | `TableSummaryRow[]`                   | `[]`                | Lines under the table               |
-| `cardsBelow`        | `number`                              | `480`               | Width under which rows become cards |
-| `pagination`        | `boolean`                             | paginator           | Pagination in the footer            |
-| `perPageOptions`    | `number[]`                            | `[]`                | Page sizes it offers                |
-| `persist`           | `string`                              | —                   | Storage key for the state           |
-| `maxHeight`         | `string \| number`                    | —                   | Scrolls rows under a stuck header   |
-| `rowClass`          | `(row, index) => string \| undefined` | —                   | Extra class per row                 |
-| `layout`            | `'auto' \| 'fixed'`                   | `'auto'`            | Let the content size columns or not |
-| `size`              | `'sm' \| 'md' \| 'lg'`                | `'md'`              | Row height                          |
-| `ariaLabel`         | `string`                              | —                   | Names the table for a screen reader |
+| Prop                | Type                                  | Default             | Description                                      |
+| ------------------- | ------------------------------------- | ------------------- | ------------------------------------------------ |
+| `data`              | `T[] \| Paginated<T> \| null`         | `null`              | Rows, or a whole paginator                       |
+| `columns`           | `TableColumn<T>[]`                    | —                   | Required                                         |
+| `rowKey`            | `string \| (row, index) => RowKey`    | `'id'`              | Where a stable id comes from                     |
+| `title`             | `string`                              | —                   | Heading in the header bar                        |
+| `searchable`        | `boolean`                             | `false`             | Adds the search field                            |
+| `searchPlaceholder` | `string`                              | `'Search'`          | Placeholder for it                               |
+| `searchDebounce`    | `number`                              | `300`               | Wait before `search` fires, in ms                |
+| `loading`           | `boolean`                             | `false`             | Dims the table and marks it busy                 |
+| `emptyText`         | `string`                              | `'Nothing to show'` | Shown when there are no rows                     |
+| `stripe`            | `boolean`                             | `false`             | Alternating row background                       |
+| `bordered`          | `boolean`                             | `false`             | Vertical rules between columns                   |
+| `hover`             | `boolean`                             | `true`              | Highlight the row under the pointer              |
+| `selectable`        | `boolean`                             | `false`             | Adds the checkbox column                         |
+| `selectableIf`      | `(row) => boolean`                    | —                   | Rows that cannot be picked                       |
+| `expandable`        | `boolean`                             | `false`             | Adds the chevron column                          |
+| `expandableIf`      | `(row) => boolean`                    | —                   | Rows with nothing to open                        |
+| `summary`           | `TableSummaryRow[]`                   | `[]`                | Lines under the table                            |
+| `cardsBelow`        | `number`                              | `480`               | Width under which rows become cards              |
+| `flush`             | `boolean`                             | `false`             | No margins of its own, for a table inside a card |
+| `pagination`        | `boolean`                             | paginator           | Pagination in the footer                         |
+| `perPageOptions`    | `number[]`                            | `[]`                | Page sizes it offers                             |
+| `persist`           | `string`                              | —                   | Storage key for the state                        |
+| `maxHeight`         | `string \| number`                    | —                   | Scrolls rows under a stuck header                |
+| `rowClass`          | `(row, index) => string \| undefined` | —                   | Extra class per row                              |
+| `layout`            | `'auto' \| 'fixed'`                   | `'auto'`            | Let the content size columns or not              |
+| `size`              | `'sm' \| 'md' \| 'lg'`                | `'md'`              | Row height                                       |
+| `ariaLabel`         | `string`                              | —                   | Names the table for a screen reader              |
 
 **Models:** `v-model:sort` (`TableSort | null`), `v-model:selected` (`RowKey[]`),
 `v-model:expanded` (`RowKey[]`), `v-model:search` (`string`), `v-model:page` (`number`),

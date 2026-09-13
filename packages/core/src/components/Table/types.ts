@@ -194,6 +194,14 @@ export interface TableProps<T = TableRow> {
    */
   cardsBelow?: number
   /**
+   * Drops the table's own margins around the header and the cards.
+   *
+   * On its own the table is a surface, and its search field and cards keep clear of its rounded
+   * edge. Inside a card the card keeps the margins already, and a second set puts the search
+   * field a step in from whatever the card has above it.
+   */
+  flush?: boolean
+  /**
    * Puts the pagination in the footer. On by default as soon as `data` is a paginator,
    * since a paginated response is a promise that there are more pages to reach.
    */

@@ -58,6 +58,7 @@ const props = withDefaults(defineProps<TableProps<T>>(), {
   summary: () => [],
   /* A phone is 360–430 CSS pixels wide, and a table has to be wider than its widest row. */
   cardsBelow: 480,
+  flush: false,
   pagination: undefined,
   perPageOptions: () => [],
   persist: undefined,
@@ -377,6 +378,7 @@ const classes = computed(() => [
   `wx-table--${props.size}`,
   {
     'wx-table--cards': asCards.value,
+    'wx-table--flush': props.flush,
     'wx-table--clickable': clickable.value,
     'wx-table--stripe': props.stripe,
     'wx-table--bordered': props.bordered,
@@ -1197,6 +1199,11 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   width: var(--wx-table-search-width, 240px);
 }
 
+/* Inside a card the margins are the card's; the search field lines up with what the card has above it. */
+.wx-table--flush .wx-table__header {
+  padding-inline: 0;
+}
+
 .wx-table__scroll {
   overflow: auto;
   border-radius: inherit;
@@ -1703,6 +1710,10 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   flex-direction: column;
   gap: var(--wx-space-8);
   padding: var(--wx-space-8);
+}
+
+.wx-table--flush .wx-table__cards {
+  padding: 0;
 }
 
 .wx-table__card {
