@@ -30,4 +30,8 @@ return [
     'duplicate-added' => 'Questo file era già in questa cartella',
     'uploaded' => 'File aggiunti: :count',
     'cancel' => 'Annulla',
+    'folders' => 'Cartelle',
+    'edit' => 'Modifica',
+    'copy-link' => 'Copia il link',
+    'link-copied' => 'Link copiato',
 ];

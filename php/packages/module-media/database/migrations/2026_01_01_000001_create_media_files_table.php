@@ -22,6 +22,9 @@ return new class extends Migration
 
             $table->char('hash', 32);
             $table->string('name');
+            // Searching is done against this one. SQL's own LOWER() is ASCII-only on sqlite, so a
+            // search for "диван" would never find "Диван" — PHP lowers it once, on the way in.
+            $table->string('name_lower');
             $table->string('file_name');
             $table->string('extension', 16);
             $table->string('mime', 127);
@@ -35,6 +38,7 @@ return new class extends Migration
             $table->index(['directory_id', 'hash']);
             // The listing, which is by folder and sorted by name or by date.
             $table->index(['directory_id', 'name']);
+            $table->index('name_lower');
             $table->index('mime');
             // Duplicates across the library — nothing reads it yet, and backfilling an index
             // over a table of tens of thousands of rows later is the expensive way to get it.

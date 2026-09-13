@@ -1,32 +1,34 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useAdmin, useTranslate } from '@webx-ui/admin'
 import {
   confirm,
+  createModal,
   openImageEditor,
   toast,
-  WxButton,
-  WxInput,
+  useElementWidth,
+  WxAction,
+  WxActions,
+  WxDrawer,
   WxPagination,
-  WxSelect,
-  WxSpace,
-  WxUpload,
-  type UploadFile,
 } from '@webx-ui/core'
-import { createModal } from '@webx-ui/core'
 import DirectoryTree from './DirectoryTree.vue'
-import MoveDialog from './MoveDialog.vue'
 import FileGrid from './FileGrid.vue'
+import MediaToolbar from './MediaToolbar.vue'
+import MoveDialog from './MoveDialog.vue'
 import { createMediaApi } from './api'
 import { useMediaMessages } from './i18n'
 import type { MediaDirectory, MediaFile, MediaKind, MediaPage } from './types'
 
 /**
- * The library: folders on the left, files on the right, and a toolbar over both.
+ * The library: folders on the left, files on the right, a row of icons over both.
  *
  * Everything the screen does is one request and a reload of the part that changed — there is no
  * cache here on purpose. A library is edited by several people, and a panel that believes its
  * own copy shows a folder that was emptied an hour ago.
+ *
+ * The width that decides the layout is this component's own, not the window's: the same manager
+ * is a page, half of a picker dialog, and a phone.
  */
 const props = withDefaults(
   defineProps<{
@@ -46,6 +48,10 @@ useMediaMessages()
 
 const t = useTranslate('webx-media')
 
+const root = useTemplateRef<HTMLElement>('root')
+const width = useElementWidth(root)
+const compact = computed(() => width.value > 0 && width.value < 640)
+
 const directories = ref<MediaDirectory[]>([])
 const current = ref<number | null>(null)
 const page = ref<MediaPage | null>(null)
@@ -54,25 +60,13 @@ const search = ref('')
 const type = ref<MediaKind | 'all'>(props.accept ?? 'all')
 const sort = ref('-created_at')
 const busy = ref(false)
+const foldersOpen = ref(false)
+const picker = useTemplateRef<HTMLInputElement>('picker')
 
-const files = computed(() => page.value?.data ?? [])
+const rows = computed(() => page.value?.data ?? [])
 const canManage = computed(() => admin.can('media.manage'))
 const canUpload = computed(() => admin.can('media.upload') || canManage.value)
-
-const types = computed(() => [
-  { value: 'all', label: t('manager.all-types') },
-  ...(['image', 'video', 'audio', 'document', 'other'] as MediaKind[]).map((kind) => ({
-    value: kind,
-    label: t(`manager.${kind}`),
-  })),
-])
-
-const sorts = computed(() => [
-  { value: '-created_at', label: t('manager.sort-newest') },
-  { value: 'created_at', label: t('manager.sort-oldest') },
-  { value: 'name', label: t('manager.sort-name') },
-  { value: '-size', label: t('manager.sort-size') },
-])
+const folder = computed(() => find(current.value))
 
 onMounted(load)
 
@@ -81,6 +75,11 @@ watch(
   search,
   debounce(() => loadFiles(1), 300),
 )
+watch(compact, (narrow) => {
+  if (!narrow) {
+    foldersOpen.value = false
+  }
+})
 
 async function load(): Promise<void> {
   directories.value = await api.directories()
@@ -105,18 +104,34 @@ async function loadFiles(to = page.value?.meta.current_page ?? 1): Promise<void>
   }
 }
 
-async function upload(added: UploadFile[]): Promise<void> {
-  const raw = added.map((file) => file.raw).filter((file): file is File => Boolean(file))
+function choose(): void {
+  picker.value?.click()
+}
 
-  if (raw.length === 0 || current.value === null) {
+/**
+ * Uploading says what happened in a toast and nowhere else.
+ *
+ * A list of what was just added under the toolbar is a second place to look and a thing to
+ * dismiss; the files themselves appear in the grid a moment later, which is the answer.
+ */
+async function upload(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  const chosen = Array.from(input.files ?? [])
+
+  // Cleared straight away, so choosing the same file twice in a row still counts as a change.
+  input.value = ''
+
+  if (chosen.length === 0 || current.value === null) {
     return
   }
 
   try {
-    const stored = await api.upload(current.value, raw)
+    const stored = await api.upload(current.value, chosen)
     const duplicates = stored.filter((file) => file.duplicate).length
 
-    toast.success(t('manager.uploaded', { count: stored.length - duplicates }))
+    if (stored.length > duplicates) {
+      toast.success(t('manager.uploaded', { count: stored.length - duplicates }))
+    }
 
     if (duplicates > 0) {
       toast.info(t('manager.duplicate-added'))
@@ -140,31 +155,31 @@ async function createFolder(): Promise<void> {
 }
 
 async function renameFolder(): Promise<void> {
-  const folder = find(current.value)
+  const target = folder.value
 
-  if (!folder || folder.is_root) {
+  if (!target || target.is_root) {
     return
   }
 
-  const title = window.prompt(t('manager.rename'), folder.title)
+  const title = window.prompt(t('manager.rename'), target.title)
 
   if (title) {
-    await api.renameDirectory(folder.id, title)
+    await api.renameDirectory(target.id, title)
     await load()
   }
 }
 
 async function deleteFolder(): Promise<void> {
-  const folder = find(current.value)
+  const target = folder.value
 
-  if (!folder || folder.is_root) {
+  if (!target || target.is_root) {
     return
   }
 
   // Asked twice on purpose, and the second question carries the counts the server sent back:
   // what goes with the folder is somebody's article illustrations.
   try {
-    await api.deleteDirectory(folder.id)
+    await api.deleteDirectory(target.id)
   } catch (error) {
     const counts = countsOf(error)
 
@@ -173,7 +188,7 @@ async function deleteFolder(): Promise<void> {
     }
 
     const agreed = await confirm({
-      title: t('dialogs.delete-folder-title', { title: folder.title }),
+      title: t('dialogs.delete-folder-title', { title: target.title }),
       message: `${t('dialogs.delete-folder-contents', counts)} ${t('dialogs.delete-folder-warning')}`,
       confirmText: t('dialogs.confirm'),
       cancelText: t('manager.cancel'),
@@ -184,7 +199,7 @@ async function deleteFolder(): Promise<void> {
       return
     }
 
-    await api.deleteDirectory(folder.id, true)
+    await api.deleteDirectory(target.id, true)
   }
 
   current.value = null
@@ -199,23 +214,6 @@ async function moveFolder(id: number, parentId: number): Promise<void> {
   }
 
   await load()
-}
-
-async function removeSelected(): Promise<void> {
-  const ids = [...selected.value]
-
-  const agreed = await confirm({
-    title: t('dialogs.delete-files-title', { count: ids.length }),
-    message: t('dialogs.delete-files-text'),
-    confirmText: t('dialogs.confirm'),
-    cancelText: t('manager.cancel'),
-    tone: 'danger',
-  })
-
-  if (agreed) {
-    await api.remove(ids)
-    await Promise.all([load(), loadFiles()])
-  }
 }
 
 const askWhereTo = createModal<
@@ -236,6 +234,23 @@ async function moveSelected(): Promise<void> {
 
   await api.move([...selected.value], to)
   await Promise.all([load(), loadFiles()])
+}
+
+async function removeSelected(): Promise<void> {
+  const ids = [...selected.value]
+
+  const agreed = await confirm({
+    title: t('dialogs.delete-files-title', { count: ids.length }),
+    message: t('dialogs.delete-files-text'),
+    confirmText: t('dialogs.confirm'),
+    cancelText: t('manager.cancel'),
+    tone: 'danger',
+  })
+
+  if (agreed) {
+    await api.remove(ids)
+    await Promise.all([load(), loadFiles()])
+  }
 }
 
 async function rename(file: MediaFile, name: string): Promise<void> {
@@ -269,6 +284,8 @@ async function edit(file: MediaFile): Promise<void> {
     flip: result.flipX ? 'horizontal' : result.flipY ? 'vertical' : undefined,
   })
 
+  // Both addresses — the picture and its preview — carry the new version, so what is on screen
+  // a moment later is what was just saved rather than what the browser kept.
   await loadFiles()
 }
 
@@ -315,67 +332,47 @@ function debounce(run: () => void, wait: number): () => void {
 </script>
 
 <template>
-  <div class="wx-media">
-    <aside class="wx-media__folders">
+  <div ref="root" class="wx-media" :class="{ 'wx-media--compact': compact }">
+    <aside v-if="!compact" class="wx-media__folders">
       <directory-tree v-model:selected="current" :directories="directories" @move="moveFolder" />
 
-      <wx-space v-if="canManage" size="4" wrap>
-        <wx-button size="sm" variant="text" icon="folder-plus" @click="createFolder">
-          {{ t('manager.new-folder') }}
-        </wx-button>
-        <wx-button size="sm" variant="text" icon="pencil" @click="renameFolder">
-          {{ t('manager.rename') }}
-        </wx-button>
-        <wx-button size="sm" variant="text" type="danger" icon="trash" @click="deleteFolder">
-          {{ t('manager.delete') }}
-        </wx-button>
-      </wx-space>
+      <wx-actions v-if="canManage" size="sm" align="start">
+        <wx-action type="add" :title="t('manager.new-folder')" @click="createFolder" />
+        <wx-action
+          type="edit"
+          :title="t('manager.rename')"
+          :disabled="!folder || folder.is_root"
+          @click="renameFolder"
+        />
+        <wx-action
+          type="remove"
+          :title="t('manager.delete')"
+          :disabled="!folder || folder.is_root"
+          @click="deleteFolder"
+        />
+      </wx-actions>
     </aside>
 
     <section class="wx-media__files">
-      <header class="wx-media__bar">
-        <wx-input
-          v-model="search"
-          class="wx-media__search"
-          :placeholder="t('manager.search')"
-          clearable
-          size="sm"
-        />
-        <wx-select v-model="type" :options="types" size="sm" class="wx-media__filter" />
-        <wx-select v-model="sort" :options="sorts" size="sm" class="wx-media__filter" />
-
-        <wx-space v-if="selected.length > 0" size="4">
-          <span class="wx-media__count">{{
-            t('manager.selected', { count: selected.length })
-          }}</span>
-          <wx-button v-if="canManage" size="sm" variant="text" @click="moveSelected">
-            {{ t('manager.move') }}
-          </wx-button>
-          <wx-button
-            v-if="canManage"
-            size="sm"
-            variant="text"
-            type="danger"
-            @click="removeSelected"
-          >
-            {{ t('manager.delete') }}
-          </wx-button>
-        </wx-space>
-      </header>
-
-      <wx-upload
-        v-if="canUpload && !picking"
-        class="wx-media__upload"
-        multiple
-        button-only
-        :button-text="t('manager.upload')"
-        :hint="t('manager.upload-hint')"
-        @add="upload"
+      <media-toolbar
+        v-model:search="search"
+        v-model:type="type"
+        v-model:sort="sort"
+        :can-upload="canUpload && !picking"
+        :can-manage="canManage"
+        :selected="selected.length"
+        :compact="compact"
+        @upload="choose"
+        @move="moveSelected"
+        @remove="removeSelected"
+        @folders="foldersOpen = true"
       />
+
+      <input ref="picker" type="file" multiple hidden @change="upload" />
 
       <file-grid
         v-model:selected="selected"
-        :files="files"
+        :files="rows"
         :api="api"
         :query="search"
         :single="picking"
@@ -392,9 +389,37 @@ function debounce(run: () => void, wait: number): () => void {
         :total="page.meta.total"
         :last-page="page.meta.last_page"
         :disabled="busy"
+        size="sm"
         @change="({ page: to }) => loadFiles(to)"
       />
     </section>
+
+    <!-- On a narrow screen the folders are a drawer: a tree beside a grid leaves room for
+         neither, and an editor on a phone is looking for one thing at a time. -->
+    <wx-drawer v-model:open="foldersOpen" side="left" :title="t('manager.folders')" :size="280">
+      <directory-tree
+        v-model:selected="current"
+        :directories="directories"
+        @move="moveFolder"
+        @update:selected="foldersOpen = false"
+      />
+
+      <wx-actions v-if="canManage" size="sm" align="start">
+        <wx-action type="add" :title="t('manager.new-folder')" @click="createFolder" />
+        <wx-action
+          type="edit"
+          :title="t('manager.rename')"
+          :disabled="!folder || folder.is_root"
+          @click="renameFolder"
+        />
+        <wx-action
+          type="remove"
+          :title="t('manager.delete')"
+          :disabled="!folder || folder.is_root"
+          @click="deleteFolder"
+        />
+      </wx-actions>
+    </wx-drawer>
   </div>
 </template>
 
@@ -403,9 +428,13 @@ function debounce(run: () => void, wait: number): () => void {
   display: grid;
   grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
   gap: var(--wx-space-16);
-  container-type: inline-size;
   min-height: 0;
   height: 100%;
+}
+
+.wx-media--compact {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wx-space-8);
 }
 
 .wx-media__folders {
@@ -420,43 +449,7 @@ function debounce(run: () => void, wait: number): () => void {
 .wx-media__files {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-12);
+  gap: var(--wx-space-10);
   min-height: 0;
-}
-
-.wx-media__bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wx-space-8);
-}
-
-.wx-media__filter {
-  min-width: 160px;
-}
-
-.wx-media__search {
-  flex: 1 1 220px;
-  min-width: 160px;
-}
-
-.wx-media__count {
-  font-size: var(--wx-font-size-sm);
-  color: var(--wx-color-text-muted);
-}
-
-/* The panel decides, not the window: this screen is also a dialog half the width of one. */
-@container (max-width: 640px) {
-  .wx-media {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .wx-media__folders {
-    border-right: none;
-    border-bottom: 1px solid var(--wx-color-border);
-    padding-right: 0;
-    padding-bottom: var(--wx-space-8);
-    max-height: 30cqh;
-  }
 }
 </style>

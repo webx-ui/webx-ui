@@ -14,8 +14,10 @@ withDefaults(
   defineProps<{
     accept?: MediaKind | null
     title?: string
+    /** Opened to manage the library rather than to choose from it. */
+    manage?: boolean
   }>(),
-  { accept: 'image', title: undefined },
+  { accept: 'image', title: undefined, manage: false },
 )
 
 const { open, resolve } = useModal<MediaFile>()
@@ -26,7 +28,11 @@ const t = useTranslate('webx-media')
 <template>
   <wx-dialog v-model:open="open" :title="title ?? t('module.title')" :width="960">
     <div class="wx-media-picker">
-      <media-manager picking :accept="accept" @pick="(file) => resolve(file)" />
+      <media-manager
+        :picking="!manage"
+        :accept="manage ? null : accept"
+        @pick="(file) => resolve(file)"
+      />
     </div>
   </wx-dialog>
 </template>

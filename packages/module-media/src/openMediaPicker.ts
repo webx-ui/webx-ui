@@ -15,3 +15,15 @@ export interface MediaPickerOptions {
  * whole integration, and `undefined` means the person closed it.
  */
 export const openMediaPicker = createModal<MediaFile, MediaPickerOptions>(MediaPicker)
+
+/**
+ * The whole library as a dialog, from anywhere.
+ *
+ * The same manager, the same folders, the same uploads — for a screen that needs to put files in
+ * order without navigating away from what it was doing. It resolves when a file is opened, and
+ * with `undefined` when the dialog is simply closed.
+ */
+export const openMediaLibrary = createModal<MediaFile, Omit<MediaPickerOptions, 'accept'>>(
+  MediaPicker,
+  { props: { manage: true } },
+)

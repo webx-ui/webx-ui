@@ -9,4 +9,5 @@ return [
     'not-an-image' => 'Ce fichier n’est pas une image.',
     'image-too-large' => 'Cette image dépasse :megapixels mégapixels.',
     'upload' => 'Ce fichier n’a pas été accepté.',
+    'copy' => 'Le presse-papiers n’est pas disponible ici. L’adresse :',
 ];

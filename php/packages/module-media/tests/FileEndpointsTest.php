@@ -123,6 +123,9 @@ final class FileEndpointsTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.name', 'Chair Bergen');
+
+        // Case, and a language whose case sqlite's own LIKE does not know about.
+        $this->getJson('/api/cms/media/files?q=BERGEN')->assertOk()->assertJsonCount(1, 'data');
     }
 
     #[Test]
@@ -221,6 +224,18 @@ final class FileEndpointsTest extends TestCase
         $file = MediaFile::query()->firstOrFail();
 
         $this->postJson('/api/cms/media/files/delete', ['ids' => [$file->id]])->assertForbidden();
+    }
+
+    #[Test]
+    public function searching_does_not_care_about_case_in_any_alphabet(): void
+    {
+        $this->upload($this->root(), 'Диван Осло.jpg');
+
+        foreach (['диван', 'ДИВАН', 'Осло', 'осло'] as $query) {
+            $this->getJson('/api/cms/media/files?q='.urlencode($query))
+                ->assertOk()
+                ->assertJsonCount(1, 'data');
+        }
     }
 
     private function root(): MediaDirectory

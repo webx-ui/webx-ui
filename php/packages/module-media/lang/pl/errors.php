@@ -9,4 +9,5 @@ return [
     'not-an-image' => 'Ten plik nie jest obrazem.',
     'image-too-large' => 'Ten obraz ma więcej niż :megapixels megapikseli.',
     'upload' => 'Ten plik nie został przyjęty.',
+    'copy' => 'Schowek jest tu niedostępny. Adres:',
 ];

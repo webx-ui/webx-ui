@@ -9,4 +9,5 @@ return [
     'not-an-image' => 'Este archivo no es una imagen.',
     'image-too-large' => 'Esta imagen supera los :megapixels megapíxeles.',
     'upload' => 'Ese archivo no fue aceptado.',
+    'copy' => 'El portapapeles no está disponible aquí. La dirección:',
 ];

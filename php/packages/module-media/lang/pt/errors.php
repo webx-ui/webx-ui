@@ -9,4 +9,5 @@ return [
     'not-an-image' => 'Este ficheiro não é uma imagem.',
     'image-too-large' => 'Esta imagem tem mais de :megapixels megapíxeis.',
     'upload' => 'Esse ficheiro não foi aceite.',
+    'copy' => 'A área de transferência não está disponível aqui. O endereço:',
 ];

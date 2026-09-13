@@ -9,4 +9,5 @@ return [
     'not-an-image' => 'Questo file non è un’immagine.',
     'image-too-large' => 'Questa immagine supera i :megapixels megapixel.',
     'upload' => 'Questo file non è stato accettato.',
+    'copy' => 'Gli appunti non sono disponibili qui. L’indirizzo:',
 ];

@@ -39,6 +39,10 @@ export const mediaMessages: Record<string, Messages> = {
     'duplicate-added': 'That file was already in this folder',
     uploaded: ':count file(s) added',
     cancel: 'Cancel',
+    folders: 'Folders',
+    edit: 'Edit',
+    'copy-link': 'Copy the link',
+    'link-copied': 'Link copied',
   },
   dialogs: {
     'delete-files-title': 'Delete :count file(s)?',
@@ -56,6 +60,7 @@ export const mediaMessages: Record<string, Messages> = {
     'not-an-image': 'This file is not an image.',
     'image-too-large': 'This image is larger than :megapixels megapixels.',
     upload: 'That file was not accepted.',
+    copy: 'The clipboard is not available here. The address:',
   },
   files: {
     copy: ':name (copy)',

@@ -9,4 +9,5 @@ return [
     'not-an-image' => 'Diese Datei ist kein Bild.',
     'image-too-large' => 'Dieses Bild ist größer als :megapixels Megapixel.',
     'upload' => 'Diese Datei wurde nicht angenommen.',
+    'copy' => 'Die Zwischenablage ist hier nicht verfügbar. Die Adresse:',
 ];

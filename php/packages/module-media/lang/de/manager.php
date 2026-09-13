@@ -30,4 +30,8 @@ return [
     'duplicate-added' => 'Diese Datei war bereits in diesem Ordner',
     'uploaded' => ':count Datei(en) hinzugefügt',
     'cancel' => 'Abbrechen',
+    'folders' => 'Ordner',
+    'edit' => 'Bearbeiten',
+    'copy-link' => 'Link kopieren',
+    'link-copied' => 'Link kopiert',
 ];

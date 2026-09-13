@@ -30,4 +30,8 @@ return [
     'duplicate-added' => 'Esse ficheiro já estava nesta pasta',
     'uploaded' => 'Ficheiros adicionados: :count',
     'cancel' => 'Cancelar',
+    'folders' => 'Pastas',
+    'edit' => 'Editar',
+    'copy-link' => 'Copiar a ligação',
+    'link-copied' => 'Ligação copiada',
 ];

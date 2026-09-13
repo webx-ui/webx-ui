@@ -32,7 +32,7 @@ export function media(options: MediaOptions = {}): AdminModule {
 
 export { mediaMessages }
 export { createMediaApi, type MediaApi } from './api'
-export { openMediaPicker, type MediaPickerOptions } from './openMediaPicker'
+export { openMediaLibrary, openMediaPicker, type MediaPickerOptions } from './openMediaPicker'
 export { default as WxMediaManager } from './MediaManager.vue'
 export { default as WxMediaPicker } from './MediaPicker.vue'
 export { default as WxMediaField } from './MediaField.vue'

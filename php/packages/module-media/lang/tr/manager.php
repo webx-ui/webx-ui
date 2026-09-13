@@ -30,4 +30,8 @@ return [
     'duplicate-added' => 'Bu dosya zaten bu klasördeydi',
     'uploaded' => ':count dosya eklendi',
     'cancel' => 'İptal',
+    'folders' => 'Klasörler',
+    'edit' => 'Düzenle',
+    'copy-link' => 'Bağlantıyı kopyala',
+    'link-copied' => 'Bağlantı kopyalandı',
 ];

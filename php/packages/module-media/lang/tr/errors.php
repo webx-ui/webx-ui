@@ -9,4 +9,5 @@ return [
     'not-an-image' => 'Bu dosya bir görsel değil.',
     'image-too-large' => 'Bu görsel :megapixels megapikselden büyük.',
     'upload' => 'Bu dosya kabul edilmedi.',
+    'copy' => 'Pano burada kullanılamıyor. Adres:',
 ];

@@ -30,4 +30,8 @@ return [
     'duplicate-added' => 'Ten plik już był w tym folderze',
     'uploaded' => 'Dodano plików: :count',
     'cancel' => 'Anuluj',
+    'folders' => 'Foldery',
+    'edit' => 'Edytuj',
+    'copy-link' => 'Kopiuj link',
+    'link-copied' => 'Link skopiowany',
 ];
