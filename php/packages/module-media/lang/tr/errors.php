@@ -13,4 +13,5 @@ return [
     'unsupported-type' => 'Yalnızca şunlar yüklenebilir: :types.',
     'file-too-large' => 'Dosya :size MB’tan büyük.',
     'too-many-files' => 'Bir seferde en fazla :count dosya.',
+    'file-not-found' => 'Kitaplıkta böyle bir dosya yok.',
 ];

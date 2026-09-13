@@ -2,7 +2,9 @@ export type InputSize = 'sm' | 'md' | 'lg'
 export type InputStatus = 'default' | 'success' | 'warning' | 'error'
 export type InputNativeType = 'text' | 'password' | 'email' | 'number' | 'search' | 'tel' | 'url'
 
-export interface InputProps {
+import type { LocalizedFieldProps, LocalizedValue } from '../../composables/useLocalized'
+
+export interface InputProps extends LocalizedFieldProps {
   /** Overrides the id generated for the control (and used by a WxFormItem label). */
   id?: string
   /** `type` attribute of the underlying `<input>`. */
@@ -23,7 +25,8 @@ export interface InputProps {
   ariaLabel?: string
 }
 
-export type InputModelValue = string | number | undefined
+/** A record once `localized` is on — the same field, in every language the site publishes in. */
+export type InputModelValue = string | number | LocalizedValue | undefined
 
 export interface InputEmits {
   input: [value: string]

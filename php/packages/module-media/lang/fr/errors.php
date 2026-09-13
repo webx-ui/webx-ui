@@ -13,4 +13,5 @@ return [
     'unsupported-type' => 'Seuls ces fichiers peuvent être téléversés : :types.',
     'file-too-large' => 'Le fichier dépasse :size Mo.',
     'too-many-files' => 'Pas plus de :count fichiers à la fois.',
+    'file-not-found' => 'Ce fichier n’est pas dans la bibliothèque.',
 ];

@@ -48,6 +48,19 @@ export const mediaMessages: Record<string, Messages> = {
     'status-selected': 'selected: :count',
     'status-size': 'size: :size',
   },
+  // The picture field on a form, which is the module used from outside its own section.
+  field: {
+    select: 'Choose a picture',
+    edit: 'Captions',
+    replace: 'Replace',
+    captions: 'Captions',
+    'alt-hint': 'What is on the picture, for a reader who cannot see it',
+    'title-hint': 'A caption shown on hover',
+    'no-preview': 'No preview',
+    'clear-title': 'Clear the field?',
+    'clear-text': 'The file stays in the library — only this record stops using it.',
+    'clear-confirm': 'Clear',
+  },
   // The image editor is a component of the design system, so its words are props rather than
   // lines in the dictionary — the manager hands it these when it opens it.
   editor: {

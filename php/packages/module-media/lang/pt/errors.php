@@ -13,4 +13,5 @@ return [
     'unsupported-type' => 'Só podem ser carregados: :types.',
     'file-too-large' => 'O ficheiro é maior do que :size MB.',
     'too-many-files' => 'No máximo :count ficheiros de cada vez.',
+    'file-not-found' => 'Esse ficheiro não está na biblioteca.',
 ];

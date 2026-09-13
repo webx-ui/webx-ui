@@ -103,6 +103,7 @@ export default defineConfig({
             { text: 'Form', link: '/components/form' },
             { text: 'Input', link: '/components/input' },
             { text: 'Textarea', link: '/components/textarea' },
+            { text: 'Locales', link: '/components/locales' },
             { text: 'InputNumber', link: '/components/input-number' },
             { text: 'Select', link: '/components/select' },
             { text: 'Autocomplete', link: '/components/autocomplete' },

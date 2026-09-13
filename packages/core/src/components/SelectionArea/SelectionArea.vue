@@ -340,17 +340,32 @@ function onPointerDown(event: PointerEvent) {
   if (isTouch && !boxDrag) return
 
   /*
-   * Takes the caret out of any text the box crosses — and, on a finger, the scroll out
-   * of the page, which is why a tap-only gesture is left alone.
+   * A finger has the scroll taken out of the page here, which is why a tap-only gesture is
+   * left alone above.
+   *
+   * A mouse must not: preventing the default on `pointerdown` also suppresses the
+   * compatibility mouse events the browser builds a double click out of, and `dblclick` then
+   * never fires inside the area. A grid where double click opens an item silently stops
+   * opening anything — and a synthetic `dblclick` in a test still works, so nothing catches
+   * it. The caret is taken out of the text when a box actually starts instead.
    */
-  event.preventDefault()
-  /*
-   * Capture is what keeps the moves coming once the pointer leaves the area, and it is
-   * best effort: a pointer the browser is not tracking — a synthetic event, a test harness —
-   * cannot be captured, and the drag is no worse for it while the pointer stays inside.
-   */
+  if (isTouch) event.preventDefault()
+}
+
+/**
+ * Capture is what keeps the moves coming once the pointer leaves the area — so it is taken
+ * when a box actually starts, not when the pointer goes down.
+ *
+ * Capturing on press retargets everything that follows to the area, and the compatibility
+ * mouse events go with it: an item below never sees `mouseup`, `click` or `dblclick`. That is
+ * invisible in a test, where a synthetic `dblclick` is dispatched straight at the item.
+ *
+ * Best effort: a pointer the browser is not tracking cannot be captured, and the drag is no
+ * worse for it while the pointer stays inside.
+ */
+function capture(pointerId: number): void {
   try {
-    el.setPointerCapture?.(event.pointerId)
+    root.value?.setPointerCapture?.(pointerId)
   } catch {
     /* No live pointer by that id. */
   }
@@ -370,6 +385,13 @@ function onPointerMove(event: PointerEvent) {
     }
     started = true
     selecting.value = true
+    capture(event.pointerId)
+    /*
+     * The press was allowed to place a caret so that a double click still reaches the items;
+     * now that a box is being drawn, the text it started in goes.
+     */
+    event.preventDefault()
+    window.getSelection?.()?.removeAllRanges()
     emit('start')
     if (props.edgeScroll > 0 && root.value) scroller = scrollerOf(root.value)
     if (scroller) frame = requestAnimationFrame(tick)
