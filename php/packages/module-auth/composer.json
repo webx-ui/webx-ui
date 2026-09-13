@@ -32,9 +32,9 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "laravel/sanctum": "^4.3",
-        "webx-ui/admin": "^0.8.0",
-        "webx-ui/localization": "^0.8.0",
-        "webx-ui/mcp": "^0.8.0"
+        "webx-ui/admin": "^0.9.0",
+        "webx-ui/localization": "^0.9.0",
+        "webx-ui/mcp": "^0.9.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
