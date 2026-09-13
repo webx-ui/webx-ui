@@ -16,6 +16,7 @@ import DirectoryTree from './DirectoryTree.vue'
 import FileGrid from './FileGrid.vue'
 import MediaToolbar from './MediaToolbar.vue'
 import MoveDialog from './MoveDialog.vue'
+import NameDialog from './NameDialog.vue'
 import { createMediaApi } from './api'
 import { useMediaMessages } from './i18n'
 import type { MediaDirectory, MediaFile, MediaKind, MediaPage } from './types'
@@ -143,10 +144,18 @@ async function upload(event: Event): Promise<void> {
   }
 }
 
-async function createFolder(): Promise<void> {
-  const title = window.prompt(t('manager.folder-name'))
+const askName = createModal<
+  string,
+  { title: string; label?: string; value?: string; confirmText?: string }
+>(NameDialog)
 
-  if (!title || current.value === null) {
+async function createFolder(): Promise<void> {
+  const title = await askName({
+    title: t('manager.new-folder'),
+    confirmText: t('manager.new-folder'),
+  })
+
+  if (title === undefined || current.value === null) {
     return
   }
 
@@ -161,9 +170,13 @@ async function renameFolder(): Promise<void> {
     return
   }
 
-  const title = window.prompt(t('manager.rename'), target.title)
+  const title = await askName({
+    title: t('manager.rename'),
+    value: target.title,
+    confirmText: t('manager.save'),
+  })
 
-  if (title) {
+  if (title !== undefined) {
     await api.renameDirectory(target.id, title)
     await load()
   }
@@ -279,9 +292,12 @@ async function edit(file: MediaFile): Promise<void> {
   }
 
   await api.edit(file.id, {
+    // The editor's frame is read against the picture as it is on screen — already turned — and
+    // the server applies the operations in that order for the same reason.
     crop: result.crop,
     rotate: (((result.rotation % 360) + 360) % 360) as 0 | 90 | 180 | 270,
     flip: result.flipX ? 'horizontal' : result.flipY ? 'vertical' : undefined,
+    resize: { width: result.width, height: result.height },
   })
 
   // Both addresses — the picture and its preview — carry the new version, so what is on screen
@@ -319,6 +335,20 @@ function countsOf(error: unknown): { files: number; directories: number } | null
 
 function messageOf(error: unknown): string | null {
   return (error as { message?: string })?.message ?? null
+}
+
+/** Bytes as somebody would say them: 32 MB, not 33 554 432. */
+function readable(bytes: number): string {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let size = bytes
+  let unit = 0
+
+  while (size >= 1024 && unit < units.length - 1) {
+    size /= 1024
+    unit++
+  }
+
+  return `${size >= 10 || unit === 0 ? Math.round(size) : size.toFixed(1)} ${units[unit]}`
 }
 
 function debounce(run: () => void, wait: number): () => void {
@@ -382,6 +412,14 @@ function debounce(run: () => void, wait: number): () => void {
         @open="(file) => emit('pick', file)"
       />
 
+      <footer class="wx-media__status">
+        <span>{{ t('manager.status-files', { count: page?.stats.files ?? 0 }) }}</span>
+        <span v-if="selected.length > 0">
+          {{ t('manager.status-selected', { count: selected.length }) }}
+        </span>
+        <span>{{ t('manager.status-size', { size: readable(page?.stats.size ?? 0) }) }}</span>
+      </footer>
+
       <wx-pagination
         v-if="page && page.meta.last_page > 1"
         :page="page.meta.current_page"
@@ -397,28 +435,30 @@ function debounce(run: () => void, wait: number): () => void {
     <!-- On a narrow screen the folders are a drawer: a tree beside a grid leaves room for
          neither, and an editor on a phone is looking for one thing at a time. -->
     <wx-drawer v-model:open="foldersOpen" side="left" :title="t('manager.folders')" :size="280">
-      <directory-tree
-        v-model:selected="current"
-        :directories="directories"
-        @move="moveFolder"
-        @update:selected="foldersOpen = false"
-      />
+      <div class="wx-media__drawer">
+        <directory-tree
+          v-model:selected="current"
+          :directories="directories"
+          @move="moveFolder"
+          @update:selected="foldersOpen = false"
+        />
 
-      <wx-actions v-if="canManage" size="sm" align="start">
-        <wx-action type="add" :title="t('manager.new-folder')" @click="createFolder" />
-        <wx-action
-          type="edit"
-          :title="t('manager.rename')"
-          :disabled="!folder || folder.is_root"
-          @click="renameFolder"
-        />
-        <wx-action
-          type="remove"
-          :title="t('manager.delete')"
-          :disabled="!folder || folder.is_root"
-          @click="deleteFolder"
-        />
-      </wx-actions>
+        <wx-actions v-if="canManage" size="sm" align="start">
+          <wx-action type="add" :title="t('manager.new-folder')" @click="createFolder" />
+          <wx-action
+            type="edit"
+            :title="t('manager.rename')"
+            :disabled="!folder || folder.is_root"
+            @click="renameFolder"
+          />
+          <wx-action
+            type="remove"
+            :title="t('manager.delete')"
+            :disabled="!folder || folder.is_root"
+            @click="deleteFolder"
+          />
+        </wx-actions>
+      </div>
     </wx-drawer>
   </div>
 </template>
@@ -444,6 +484,24 @@ function debounce(run: () => void, wait: number): () => void {
   min-height: 0;
   border-right: 1px solid var(--wx-color-border);
   padding-right: var(--wx-space-12);
+}
+
+/* The drawer hands its content the edge of the screen; the tree and its actions want air. */
+.wx-media__drawer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-10);
+  padding-block: var(--wx-space-4);
+}
+
+.wx-media__status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wx-space-8);
+  font-size: var(--wx-font-size-sm);
+  color: var(--wx-color-text-muted);
+  border-top: 1px solid var(--wx-color-border);
+  padding-top: var(--wx-space-6);
 }
 
 .wx-media__files {

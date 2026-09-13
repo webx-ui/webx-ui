@@ -10,4 +10,7 @@ return [
     'image-too-large' => 'Зображення більше за :megapixels мегапікселів.',
     'upload' => 'Файл не прийнято.',
     'copy' => 'Буфер обміну недоступний. Адреса:',
+    'unsupported-type' => 'Завантажити можна лише: :types.',
+    'file-too-large' => 'Файл більший за :size МБ.',
+    'too-many-files' => 'Не більше :count файлів за раз.',
 ];

@@ -43,6 +43,9 @@ export const mediaMessages: Record<string, Messages> = {
     edit: 'Edit',
     'copy-link': 'Copy the link',
     'link-copied': 'Link copied',
+    'status-files': 'Files: :count',
+    'status-selected': 'selected: :count',
+    'status-size': 'size: :size',
   },
   dialogs: {
     'delete-files-title': 'Delete :count file(s)?',
@@ -61,6 +64,9 @@ export const mediaMessages: Record<string, Messages> = {
     'image-too-large': 'This image is larger than :megapixels megapixels.',
     upload: 'That file was not accepted.',
     copy: 'The clipboard is not available here. The address:',
+    'unsupported-type': 'Only these can be uploaded: :types.',
+    'file-too-large': 'The file is larger than :size MB.',
+    'too-many-files': 'No more than :count files at a time.',
   },
   files: {
     copy: ':name (copy)',

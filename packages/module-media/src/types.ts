@@ -36,6 +36,8 @@ export interface MediaFile {
 export interface MediaPage {
   data: MediaFile[]
   meta: { current_page: number; last_page: number; per_page: number; total: number }
+  /** Everything the current filters match, not just this page. */
+  stats: { files: number; size: number }
 }
 
 export interface FileQuery {

@@ -34,4 +34,7 @@ return [
     'edit' => 'Düzenle',
     'copy-link' => 'Bağlantıyı kopyala',
     'link-copied' => 'Bağlantı kopyalandı',
+    'status-files' => 'Dosyalar: :count',
+    'status-selected' => 'seçili: :count',
+    'status-size' => 'boyut: :size',
 ];

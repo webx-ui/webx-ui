@@ -185,23 +185,61 @@ async function copy() {
   /*
    * Asked for rather than assumed. The clipboard is missing outside a secure context,
    * and `await undefined` would have the card report a copy that never happened.
+   *
+   * When it is there and still refuses — an iframe that was not granted it, a browser that
+   * wants a gesture it did not see — the old way is tried before giving up. The card is what
+   * tells the person it worked, so the fallback has to live here rather than in whatever
+   * placed the card: a green tick that only appears for half the browsers is worse than none.
    */
-  if (!navigator.clipboard?.writeText) {
-    emit('copy-error', new Error('The clipboard is not available here'))
-    return
-  }
-
   try {
-    await navigator.clipboard.writeText(url)
-    copied.value = true
-    clearTimeout(copiedTimer)
-    copiedTimer = setTimeout(() => {
-      copied.value = false
-    }, 1600)
-    emit('copy', url)
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url)
+    } else if (!copyByHand(url)) {
+      throw new Error('The clipboard is not available here')
+    }
+
+    confirmCopied(url)
   } catch (error) {
+    if (copyByHand(url)) {
+      confirmCopied(url)
+
+      return
+    }
+
     emit('copy-error', error)
   }
+}
+
+function confirmCopied(url: string) {
+  copied.value = true
+  clearTimeout(copiedTimer)
+  copiedTimer = setTimeout(() => {
+    copied.value = false
+  }, 1600)
+  emit('copy', url)
+}
+
+/** `document.execCommand`, which is deprecated everywhere and still works everywhere. */
+function copyByHand(url: string): boolean {
+  const area = document.createElement('textarea')
+  area.value = url
+  area.setAttribute('readonly', '')
+  area.style.position = 'fixed'
+  area.style.opacity = '0'
+  document.body.appendChild(area)
+  area.select()
+
+  let done = false
+
+  try {
+    done = document.execCommand('copy')
+  } catch {
+    done = false
+  }
+
+  area.remove()
+
+  return done
 }
 
 onBeforeUnmount(() => {

@@ -10,4 +10,7 @@ return [
     'image-too-large' => 'Questa immagine supera i :megapixels megapixel.',
     'upload' => 'Questo file non è stato accettato.',
     'copy' => 'Gli appunti non sono disponibili qui. L’indirizzo:',
+    'unsupported-type' => 'Si possono caricare solo: :types.',
+    'file-too-large' => 'Il file supera :size MB.',
+    'too-many-files' => 'Non più di :count file per volta.',
 ];

@@ -67,10 +67,24 @@ final class FileEndpointsTest extends TestCase
     #[Test]
     public function a_type_nobody_asked_for_is_refused(): void
     {
-        $this->post('/api/cms/media/files', [
+        $response = $this->post('/api/cms/media/files', [
             'directory_id' => $this->root()->getKey(),
             'files' => [UploadedFile::fake()->create('payload.php', 4, 'application/x-php')],
-        ], ['Accept' => 'application/json'])->assertStatus(422);
+        ], ['Accept' => 'application/json']);
+
+        $response->assertStatus(422);
+
+        /** @var array<string, list<string>> $errors */
+        $errors = $response->json('errors');
+        $message = implode(' ', array_merge(...array_values($errors)));
+
+        // In extensions, and only those. Laravel's own message lists every mime type it was
+        // given, which arrives as a paragraph of
+        // application/vnd.openxmlformats-officedocument… — true, and useless to whoever is
+        // holding the file.
+        $this->assertStringContainsString('jpg', $message);
+        $this->assertStringContainsString('xlsx', $message);
+        $this->assertStringNotContainsString('application/', $message);
 
         $this->assertSame(0, MediaFile::query()->count());
     }

@@ -10,4 +10,7 @@ return [
     'image-too-large' => 'Cette image dépasse :megapixels mégapixels.',
     'upload' => 'Ce fichier n’a pas été accepté.',
     'copy' => 'Le presse-papiers n’est pas disponible ici. L’adresse :',
+    'unsupported-type' => 'Seuls ces fichiers peuvent être téléversés : :types.',
+    'file-too-large' => 'Le fichier dépasse :size Mo.',
+    'too-many-files' => 'Pas plus de :count fichiers à la fois.',
 ];

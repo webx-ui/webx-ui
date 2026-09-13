@@ -10,4 +10,7 @@ return [
     'image-too-large' => 'Esta imagem tem mais de :megapixels megapíxeis.',
     'upload' => 'Esse ficheiro não foi aceite.',
     'copy' => 'A área de transferência não está disponível aqui. O endereço:',
+    'unsupported-type' => 'Só podem ser carregados: :types.',
+    'file-too-large' => 'O ficheiro é maior do que :size MB.',
+    'too-many-files' => 'No máximo :count ficheiros de cada vez.',
 ];

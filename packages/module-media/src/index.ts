@@ -1,5 +1,5 @@
 import type { AdminModule } from '@webx-ui/admin'
-import MediaManager from './MediaManager.vue'
+import MediaPage from './MediaPage.vue'
 import { mediaMessages } from './messages'
 
 export interface MediaOptions {
@@ -24,7 +24,7 @@ export function media(options: MediaOptions = {}): AdminModule {
       {
         path,
         name: 'webx.media',
-        component: MediaManager,
+        component: MediaPage,
       },
     ],
   }
@@ -34,6 +34,7 @@ export { mediaMessages }
 export { createMediaApi, type MediaApi } from './api'
 export { openMediaLibrary, openMediaPicker, type MediaPickerOptions } from './openMediaPicker'
 export { default as WxMediaManager } from './MediaManager.vue'
+export { default as WxMediaPage } from './MediaPage.vue'
 export { default as WxMediaPicker } from './MediaPicker.vue'
 export { default as WxMediaField } from './MediaField.vue'
 export type {

@@ -34,4 +34,7 @@ return [
     'edit' => 'Редагувати',
     'copy-link' => 'Скопіювати посилання',
     'link-copied' => 'Посилання скопійовано',
+    'status-files' => 'Файлів: :count',
+    'status-selected' => 'обрано: :count',
+    'status-size' => 'розмір: :size',
 ];

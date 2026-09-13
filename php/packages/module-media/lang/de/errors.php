@@ -10,4 +10,7 @@ return [
     'image-too-large' => 'Dieses Bild ist größer als :megapixels Megapixel.',
     'upload' => 'Diese Datei wurde nicht angenommen.',
     'copy' => 'Die Zwischenablage ist hier nicht verfügbar. Die Adresse:',
+    'unsupported-type' => 'Hochgeladen werden können nur: :types.',
+    'file-too-large' => 'Die Datei ist größer als :size MB.',
+    'too-many-files' => 'Höchstens :count Dateien auf einmal.',
 ];

@@ -44,36 +44,26 @@ return [
     |
     | `max_size` is in kilobytes, the unit Laravel's own validation speaks.
     |
-    | The list of types is a white list on purpose: a black list of what must
-    | not be uploaded is always missing something, and the something is usually
-    | executable.
+    | The types are a white list of extensions on purpose. A list of what must not be
+    | uploaded is always missing one, and the one it misses is usually executable; and a
+    | list of extensions is what the person who has to edit it reads, where a list of
+    | forty mime types is not. Laravel checks the file's real type against the extension,
+    | so a .jpg full of PHP is refused all the same.
     |
     */
 
     'upload' => [
         'max_size' => (int) env('WEBX_MEDIA_MAX_SIZE', 51200),
         'max_files' => 20,
-        'mimes' => [
-            'image/jpeg',
-            'image/png',
-            'image/gif',
-            'image/webp',
-            'image/avif',
-            'image/svg+xml',
-            'application/pdf',
-            'text/plain',
-            'text/csv',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'application/vnd.ms-powerpoint',
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            'application/zip',
-            'audio/mpeg',
-            'audio/ogg',
-            'video/mp4',
-            'video/webm',
+        'extensions' => [
+            'jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg',
+            'pdf', 'txt', 'csv', 'rtf',
+            'doc', 'docx', 'odt',
+            'xls', 'xlsx', 'ods',
+            'ppt', 'pptx',
+            'zip',
+            'mp3', 'ogg', 'wav',
+            'mp4', 'webm',
         ],
     ],
 

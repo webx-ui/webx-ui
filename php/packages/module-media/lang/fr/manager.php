@@ -34,4 +34,7 @@ return [
     'edit' => 'Modifier',
     'copy-link' => 'Copier le lien',
     'link-copied' => 'Lien copié',
+    'status-files' => 'Fichiers : :count',
+    'status-selected' => 'sélectionnés : :count',
+    'status-size' => 'taille : :size',
 ];

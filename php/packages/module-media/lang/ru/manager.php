@@ -34,4 +34,7 @@ return [
     'edit' => 'Редактировать',
     'copy-link' => 'Скопировать ссылку',
     'link-copied' => 'Ссылка скопирована',
+    'status-files' => 'Файлов: :count',
+    'status-selected' => 'выделено: :count',
+    'status-size' => 'размер: :size',
 ];

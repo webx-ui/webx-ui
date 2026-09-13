@@ -14,8 +14,6 @@ final class FileUploadRequest extends FormRequest
      */
     public function rules(): array
     {
-        /** @var list<string> $mimes */
-        $mimes = (array) config('webx-media.upload.mimes', []);
         $maxSize = (int) config('webx-media.upload.max_size', 51200);
         $maxFiles = (int) config('webx-media.upload.max_files', 20);
 
@@ -26,11 +24,36 @@ final class FileUploadRequest extends FormRequest
                 'required',
                 'file',
                 'max:'.$maxSize,
-                // A white list: a list of what must not be uploaded is always missing one, and
-                // the one it misses is usually executable.
-                'mimetypes:'.implode(',', $mimes),
+                // `mimes` rather than `mimetypes`: it is written in extensions, which is what
+                // the configuration and the refusal both say, and it still checks the file's
+                // real type rather than trusting its name.
+                'mimes:'.implode(',', $this->extensions()),
                 new WithinPixelBudget,
             ],
+        ];
+    }
+
+    /**
+     * The server's own words for a refusal.
+     *
+     * Laravel's default lists every mime type it was given, which arrives as a paragraph of
+     * `application/vnd.openxmlformats-officedocument…` — true, and useless to the person
+     * holding the file.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'files.*.mimes' => (string) __('webx-media::errors.unsupported-type', [
+                'types' => implode(', ', $this->extensions()),
+            ]),
+            'files.*.max' => (string) __('webx-media::errors.file-too-large', [
+                'size' => round(((int) config('webx-media.upload.max_size', 51200)) / 1024),
+            ]),
+            'files.max' => (string) __('webx-media::errors.too-many-files', [
+                'count' => (int) config('webx-media.upload.max_files', 20),
+            ]),
         ];
     }
 
@@ -43,5 +66,16 @@ final class FileUploadRequest extends FormRequest
             'directory_id' => (string) __('webx-media::validation.directory_id'),
             'files' => (string) __('webx-media::validation.files'),
         ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function extensions(): array
+    {
+        /** @var list<string> $extensions */
+        $extensions = (array) config('webx-media.upload.extensions', []);
+
+        return $extensions;
     }
 }

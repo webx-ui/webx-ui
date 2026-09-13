@@ -108,17 +108,22 @@ const sortLabel = computed(() => sorts.value.find((one) => one.value === sort.va
       @click="emit('upload')"
     />
 
-    <!-- Only once something is selected: an empty row of disabled icons says nothing useful. -->
-    <template v-if="props.selected > 0">
-      <span class="wx-media-toolbar__count">{{
-        t('manager.selected', { count: props.selected })
-      }}</span>
-
-      <wx-actions v-if="canManage" size="sm">
-        <wx-action icon="folder" :title="t('manager.move')" @click="emit('move')" />
-        <wx-action type="remove" :title="t('manager.delete')" @click="emit('remove')" />
-      </wx-actions>
-    </template>
+    <!-- Kept in the row rather than added to it: the icons are always here and simply cannot
+         be used while nothing is selected, so the grid never moves down a line. -->
+    <wx-actions v-if="canManage" size="sm">
+      <wx-action
+        icon="folder"
+        :title="t('manager.move')"
+        :disabled="props.selected === 0"
+        @click="emit('move')"
+      />
+      <wx-action
+        type="remove"
+        :title="t('manager.delete')"
+        :disabled="props.selected === 0"
+        @click="emit('remove')"
+      />
+    </wx-actions>
   </header>
 </template>
 

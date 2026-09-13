@@ -75,6 +75,26 @@ final class ImageEditingTest extends TestCase
     }
 
     #[Test]
+    public function what_the_row_says_is_what_the_bytes_are(): void
+    {
+        $file = $this->picture();
+
+        // Turn and crop in one request, which is what the editor sends: its frame is dragged
+        // over the picture as it is on screen, so the crop is read against the turned one.
+        $this->postJson("/api/cms/media/files/{$file->id}/edit", [
+            'rotate' => 90,
+            'crop' => ['x' => 0, 'y' => 0, 'width' => 120, 'height' => 200],
+        ])->assertOk();
+
+        $file->refresh();
+
+        $bytes = getimagesizefromstring((string) Storage::disk('public')->get($file->path));
+
+        $this->assertSame([120, 200], [$bytes[0], $bytes[1]]);
+        $this->assertSame([120, 200], [$file->width, $file->height]);
+    }
+
+    #[Test]
     public function rotating_turns_the_picture_a_quarter_and_swaps_its_sides(): void
     {
         $file = $this->picture();
