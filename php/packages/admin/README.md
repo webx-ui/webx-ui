@@ -174,6 +174,16 @@ php artisan vendor:publish --tag=webx-admin-views
 `config/webx-admin.php` covers the title, the two paths and the middleware groups. Moving the
 panel means clearing the route cache afterwards.
 
+## Languages
+
+Ten shipped: en, ru, uk, de, pl, fr, es, it, pt, tr. English is the fallback, and it is laid
+_under_ the chosen language line by line, so a half-translated group shows what it has and
+English for the rest.
+
+Only English, Russian and Ukrainian have been read by a speaker; the other seven are machine
+translations. A correction from someone who speaks the language is welcome — they are plain PHP
+arrays in `lang/`.
+
 ## Licence
 
 MIT.
