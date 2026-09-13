@@ -1,5 +1,55 @@
 # @webx-ui/php
 
+## 0.7.0
+
+### Minor Changes
+
+- 760d372: `webx-ui/module-media` gains its folder endpoints: the tree in one answer, create, rename, move,
+  and a delete that refuses a folder with anything in it until it is asked again with `force`. The
+  refusal carries the counts, because the panel has a real question to put to the person: pictures
+  already placed in articles will stop opening.
+- a7fd824: `webx-ui/module-media` gains image editing and its MCP tools. An edit is written over the same
+  key, so every address already in an article keeps working, and the picture as it arrived is kept
+  once so any edit can be undone. The tools cover the library the way an agent would use it —
+  except deleting a folder, which is deliberately absent.
+- de2b3a4: `webx-ui/module-media` gains its file endpoints and its previews: a paginated, searchable,
+  filterable listing, multi-file upload, rename, batch move, batch delete, and a thumbnail
+  endpoint that cuts a variant once and then redirects to it so the disk — or the CDN in front of
+  it — serves the grid instead of PHP.
+- 47cc998: The file manager after an hour with it: icon actions instead of labelled buttons, filters behind
+  popovers, folders in a drawer on a phone, case-insensitive search in any alphabet, previews that
+  change when a picture is edited, and a copy-the-link that says whether it worked.
+
+  `@webx-ui/admin` gains the toaster the panel never had — until now every `toast()` from every
+  module reported into silence.
+
+- 5ccdccc: New package `webx-ui/module-media`: the panel's file manager. This is its first step — the
+  section registers itself, carries its configuration and its ten languages, and declares the
+  permissions the rest of the module will be built against. Folders, files and the endpoints
+  around them follow.
+- 377e894: `webx-ui/module-media` gains its schema and its storage: folders as a nested set, files that
+  belong to one, and the service that puts bytes on a disk and takes them off it. Keys are built
+  from a uuid and say nothing about the folder, so the same picture in two folders is two keys and
+  moving a file between folders never touches the bytes.
+- 47cc998: A second pass over the file manager, from using it: upload refusals written in extensions rather
+  than a paragraph of mime types, a status bar under the grid instead of a toolbar that grows a
+  line, folders created through a dialog rather than a `prompt` the browser may refuse, the page in
+  a card, and the image editor cropping what the person actually framed.
+
+  `@webx-ui/core`: `WxFileCard` falls back to the old clipboard when the modern one refuses, so the
+  green tick appears wherever the copy actually worked.
+
+### Patch Changes
+
+- 47cc998: New package `@webx-ui/module-media`: the file manager as a section of the panel, a picker that
+  opens from code, and a form field that keeps `{ path, alt, title }` on the entity rather than on
+  the file. Batch deletion moved to `POST files/delete` on the server, because the panel's own HTTP
+  client sends no body on `DELETE`.
+- 47cc998: Three things the file manager got wrong in Russian: the dialogs' buttons stood shoulder to
+  shoulder, the confirm button read `manager.save` because nobody had shipped the key, and an
+  upload refusal came back in English — the uploader is a bare `XMLHttpRequest` and was the one
+  request in the panel that never said which language it was drawn in.
+
 ## 0.6.0
 
 ### Minor Changes
