@@ -6,4 +6,6 @@ return [
     'directory-not-empty' => 'Ten folder nie jest pusty.',
     'root-immutable' => 'Folderu głównego nie można przenieść ani usunąć.',
     'directory-into-itself' => 'Nie można przenieść folderu do niego samego.',
+    'not-an-image' => 'Ten plik nie jest obrazem.',
+    'image-too-large' => 'Ten obraz ma więcej niż :megapixels megapikseli.',
 ];

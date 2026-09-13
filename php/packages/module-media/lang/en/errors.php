@@ -6,4 +6,6 @@ return [
     'directory-not-empty' => 'This folder is not empty.',
     'root-immutable' => 'The library root cannot be moved or deleted.',
     'directory-into-itself' => 'A folder cannot be moved into itself.',
+    'not-an-image' => 'This file is not an image.',
+    'image-too-large' => 'This image is larger than :megapixels megapixels.',
 ];
