@@ -23,12 +23,10 @@ export interface AdminsOptions {
  * navigation: a section shows up when both halves are installed.
  */
 export function admins(options: AdminsOptions = {}): AdminModule {
-  // The section is the administrators, and the address says so. The id stays 'users': it is
-  // what the server reports, and the permissions and MCP tools carry it in their names.
   const path = options.path ?? '/admins'
 
   return {
-    id: 'users',
+    id: 'admins',
     path,
     routes: [
       {
