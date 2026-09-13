@@ -25,17 +25,6 @@ const languages = computed(() =>
   i18n.state.panelLocales.length > 1 ? i18n.state.panelLocales : [],
 )
 
-const initials = computed(() => {
-  const name = user.value?.name ?? ''
-
-  return name
-    .split(/\s+/)
-    .filter((part) => part !== '')
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('')
-})
-
 async function choose(code: string): Promise<void> {
   if (code === i18n.state.locale) {
     return
@@ -47,10 +36,15 @@ async function choose(code: string): Promise<void> {
 
 <template>
   <wx-dropdown v-if="user !== null">
+    <!--
+      The avatar is the button. Wrapped in an action it was a small picture inside a box the
+      same size as every icon beside it, which reads as one more tool rather than as who is
+      signed in.
+    -->
     <template #trigger>
-      <wx-action :title="user.name">
-        <wx-avatar :label="initials" size="sm" />
-      </wx-action>
+      <button type="button" class="wx-user-menu__trigger" :title="user.name">
+        <wx-avatar :name="user.name" size="md" />
+      </button>
     </template>
 
     <wx-dropdown-item disabled>
