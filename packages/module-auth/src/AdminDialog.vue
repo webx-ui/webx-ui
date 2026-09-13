@@ -13,6 +13,7 @@ import {
   WxSpace,
   WxText,
 } from '@webx-ui/core'
+
 import { createAdminsApi } from './admins'
 import { useAuthMessages } from './i18n'
 import type { Admin, AdminInput, Role } from './types'
@@ -145,46 +146,68 @@ async function save(): Promise<void> {
 </script>
 
 <template>
-  <wx-dialog v-model:open="open" :title="editing ? t('admins.edit') : t('admins.new')" :width="520">
-    <wx-space direction="vertical" size="md" style="width: 100%">
-      <component :is="avatarField" v-if="avatarField" v-model="photo" :label="t('admins.avatar')" />
+  <wx-dialog
+    v-model:open="open"
+    :title="editing ? t('admins.edit-short') : t('admins.new-short')"
+    :width="720"
+  >
+    <!--
+      The photograph beside the fields rather than above them: it is square, the fields are a
+      column, and stacking the two makes somebody scroll past a picture to reach a name. Under
+      `--wx-admin-form-wrap` the sidebar goes back on top, which is the only shape that fits a
+      phone.
+    -->
+    <div class="wx-admin-form">
+      <div class="wx-admin-form__grid">
+        <div v-if="avatarField" class="wx-admin-form__aside">
+          <component
+            :is="avatarField"
+            v-model="photo"
+            :label="t('admins.avatar')"
+            aspect="1/1"
+            :captions="false"
+          />
+        </div>
 
-      <wx-form-item :label="t('admins.name')" :error="errorOf('name')">
-        <wx-input v-model="form.name" name="name" />
-      </wx-form-item>
+        <div class="wx-admin-form__fields">
+          <wx-form-item :label="t('admins.name')" :error="errorOf('name')">
+            <wx-input v-model="form.name" name="name" />
+          </wx-form-item>
 
-      <wx-form-item :label="t('admins.email')" :error="errorOf('email')">
-        <wx-input v-model="form.email" type="email" name="email" autocomplete="off" />
-      </wx-form-item>
+          <wx-form-item :label="t('admins.email')" :error="errorOf('email')">
+            <wx-input v-model="form.email" type="email" name="email" autocomplete="off" />
+          </wx-form-item>
 
-      <wx-form-item
-        :label="t('admins.password')"
-        :error="errorOf('password')"
-        :help="editing ? t('admins.password-keep') : t('admins.password-hint')"
-      >
-        <wx-input
-          v-model="form.password"
-          type="password"
-          name="password"
-          autocomplete="new-password"
-        />
-      </wx-form-item>
+          <wx-form-item
+            :label="t('admins.password')"
+            :error="errorOf('password')"
+            :help="editing ? t('admins.password-keep') : t('admins.password-hint')"
+          >
+            <wx-input
+              v-model="form.password"
+              type="password"
+              name="password"
+              autocomplete="new-password"
+            />
+          </wx-form-item>
 
-      <wx-form-item :label="t('admins.roles')" :error="errorOf('roles')">
-        <wx-select v-model="form.roles" :options="roleOptions" multiple />
-      </wx-form-item>
+          <wx-form-item :label="t('admins.roles')" :error="errorOf('roles')">
+            <wx-select v-model="form.roles" :options="roleOptions" multiple />
+          </wx-form-item>
 
-      <wx-form-item :label="t('admins.locale')">
-        <wx-select v-model="form.locale" :options="localeOptions" />
-      </wx-form-item>
+          <wx-form-item :label="t('admins.locale')">
+            <wx-select v-model="form.locale" :options="localeOptions" />
+          </wx-form-item>
 
-      <wx-space size="md">
-        <wx-checkbox v-model="form.is_active" :label="t('admins.active')" />
-        <wx-checkbox v-model="form.is_super" :label="t('admins.super')" />
-      </wx-space>
+          <wx-space size="md">
+            <wx-checkbox v-model="form.is_active" :label="t('admins.active')" />
+            <wx-checkbox v-model="form.is_super" :label="t('admins.super')" />
+          </wx-space>
 
-      <wx-text size="sm" tone="muted">{{ t('admins.super-hint') }}</wx-text>
-    </wx-space>
+          <wx-text size="sm" tone="muted">{{ t('admins.super-hint') }}</wx-text>
+        </div>
+      </div>
+    </div>
 
     <template #footer>
       <wx-space size="sm">
@@ -196,3 +219,34 @@ async function save(): Promise<void> {
     </template>
   </wx-dialog>
 </template>
+
+<style>
+/* The container is the wrapper, not the grid: an element cannot query its own width. */
+.wx-admin-form {
+  container-type: inline-size;
+}
+
+.wx-admin-form__grid {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: var(--wx-space-24);
+}
+
+.wx-admin-form__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-12);
+  min-width: 0;
+}
+
+/* The dialog's own width decides this, not the window's. */
+@container (max-width: 520px) {
+  .wx-admin-form__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wx-admin-form__aside {
+    max-width: 200px;
+  }
+}
+</style>

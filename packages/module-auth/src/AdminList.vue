@@ -32,10 +32,23 @@ const props = withDefaults(
     multiple?: boolean
     /** Adds the column that removes somebody. */
     removable?: boolean
+    /**
+     * Offers the role and state filters.
+     *
+     * Off by default: a panel has half a dozen administrators, and a filter over six rows is a
+     * control to read and decide about where a glance would have done.
+     */
+    filters?: boolean
     /** Turns an avatar key into an address. The panel wires this; this package cannot. */
     resolveAvatar?: (key: string) => Promise<string | null>
   }>(),
-  { picking: false, multiple: false, removable: false, resolveAvatar: undefined },
+  {
+    picking: false,
+    multiple: false,
+    removable: false,
+    filters: false,
+    resolveAvatar: undefined,
+  },
 )
 
 const emit = defineEmits<{
@@ -80,13 +93,23 @@ const columns = computed<TableColumn<Admin>[]>(() => [
   { key: 'email', label: t('admins.email'), sortable: true, minWidth: 200 },
   { key: 'roles', label: t('admins.roles'), minWidth: 180 },
   { key: 'is_active', label: t('admins.active'), width: 120, align: 'center' },
-  { key: 'last_login_at', label: t('admins.last-login'), sortable: true, width: 170 },
+  {
+    key: 'last_login_at',
+    label: t('admins.last-login'),
+    sortable: true,
+    width: 170,
+    // The first thing to go when a row becomes a card: it is a date somebody scans down a
+    // column, and a card has no column to scan.
+    hideOnCards: true,
+  },
   {
     key: 'actions',
     label: '',
     width: 64,
     align: 'center',
     hidden: !props.removable,
+    // A card puts them along its top instead, through the `card-actions` slot.
+    hideOnCards: true,
   },
 ])
 
@@ -170,7 +193,7 @@ defineExpose({ reload: () => load(last), chosen: () => selected.value })
       @row-click="onRow"
       @selection-change="onSelection"
     >
-      <template #actions>
+      <template v-if="filters" #actions>
         <wx-space size="sm">
           <wx-select v-model="role" :options="roleOptions" size="sm" style="width: 180px" />
           <wx-select v-model="active" :options="stateOptions" size="sm" style="width: 180px" />
@@ -200,6 +223,12 @@ defineExpose({ reload: () => load(last), chosen: () => selected.value })
         <wx-badge :type="row.is_active ? 'success' : 'default'" dot>
           {{ row.is_active ? t('admins.active') : t('admins.only-inactive') }}
         </wx-badge>
+      </template>
+
+      <template #card-actions="{ row }">
+        <wx-actions v-if="removable" size="sm" @click.stop>
+          <wx-action type="remove" :title="t('admins.delete')" @click="emit('remove', row)" />
+        </wx-actions>
       </template>
 
       <template #cell-actions="{ row }">

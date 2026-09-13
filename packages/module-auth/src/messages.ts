@@ -24,6 +24,9 @@ export const authMessages: Record<string, Messages> = {
     search: 'Search administrators',
     new: 'New administrator',
     edit: 'Edit administrator',
+    // The same two, short enough for a button on a phone and for a dialog's heading.
+    'new-short': 'Add',
+    'edit-short': 'Edit',
     name: 'Name',
     email: 'Email',
     password: 'Password',

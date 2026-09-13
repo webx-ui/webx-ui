@@ -5,6 +5,7 @@ import WxInput from '../Input/Input.vue'
 import type { InputModelValue } from '../Input/types'
 import WxIcon from '../Icon/Icon.vue'
 import WxPagination from '../Pagination/Pagination.vue'
+import { useElementWidth } from '../../composables/useElementWidth'
 import {
   useTreeNodes,
   type TreeAccessors,
@@ -46,6 +47,8 @@ const props = withDefaults(defineProps<TableProps<T>>(), {
   expandable: false,
   expandableIf: undefined,
   summary: () => [],
+  /* A phone is 360–430 CSS pixels wide, and a table has to be wider than its widest row. */
+  cardsBelow: 480,
   pagination: undefined,
   perPageOptions: () => [],
   persist: undefined,
@@ -272,9 +275,19 @@ const paginator = computed(() => (props.data && !Array.isArray(props.data) ? pro
  * A page of a tree would cut branches in half, and the rows here are not a page anyway:
  * a lazy tree asks for a level at a time.
  */
-const showPagination = computed(() =>
-  isTree.value ? false : (props.pagination ?? Boolean(paginator.value)),
-)
+/*
+ * One page is not a thing to page through. The control still costs a line of the screen and
+ * asks to be read, and on a phone that line is most of what is left.
+ */
+const showPagination = computed(() => {
+  if (isTree.value) return false
+
+  if (paginator.value) {
+    return (props.pagination ?? true) && paginator.value.last_page > 1
+  }
+
+  return props.pagination ?? false
+})
 
 const visibleColumns = computed(() => props.columns.filter((column) => !column.hidden))
 
@@ -296,6 +309,8 @@ defineSlots<{
   footer?: () => unknown
   loading?: () => unknown
   expanded?: (props: { row: T; index: number }) => unknown
+  /** Buttons along the top of a card, where a row has no room for a column of them. */
+  'card-actions'?: (props: { row: T; index: number }) => unknown
   [key: `header-${string}`]: ((props: { column: TableColumn<T> }) => unknown) | undefined
   [key: `cell-${string}`]:
     | ((props: { row: T; value: unknown; index: number; column: TableColumn<T> }) => unknown)
@@ -310,10 +325,25 @@ const hasHeader = computed<boolean>(() =>
   Boolean(props.title || props.searchable || slots.title || slots.actions),
 )
 
+/*
+ * The table's own width decides this, not the window's: the same table is a page, half of a
+ * dialog and a phone, and only one of those is the window.
+ */
+const root = ref<HTMLElement | null>(null)
+const width = useElementWidth(root)
+
+const asCards = computed(
+  () => props.cardsBelow > 0 && width.value > 0 && width.value < props.cardsBelow,
+)
+
+/** What a card shows: the columns worth the room, without the ones that carry no data. */
+const cardColumns = computed(() => visibleColumns.value.filter((column) => !column.hideOnCards))
+
 const classes = computed(() => [
   'wx-table',
   `wx-table--${props.size}`,
   {
+    'wx-table--cards': asCards.value,
     'wx-table--stripe': props.stripe,
     'wx-table--bordered': props.bordered,
     'wx-table--hover': props.hover,
@@ -735,7 +765,7 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 </script>
 
 <template>
-  <div :class="classes">
+  <div ref="root" :class="classes">
     <header v-if="hasHeader" class="wx-table__header">
       <div class="wx-table__title">
         <slot name="title">{{ title }}</slot>
@@ -758,7 +788,65 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
       </div>
     </header>
 
-    <div ref="scroller" class="wx-table__scroll" :style="scrollStyle" @scroll="readScroll">
+    <!--
+      Below `cardsBelow` the columns become a card each. The cells are the same cells — the
+      same `cell-<key>` slots, the same formatters — so a screen written for the table needs
+      nothing added to survive a phone.
+    -->
+    <div v-if="asCards" class="wx-table__cards">
+      <div
+        v-for="(row, index) in rows"
+        :key="keyOf(row, index)"
+        class="wx-table__card"
+        :class="[rowClass?.(row, index), { 'is-selected': selectable && isSelected(row, index) }]"
+        @click="emit('row-click', row, index, $event)"
+      >
+        <div v-if="selectable || $slots['card-actions']" class="wx-table__card-top" @click.stop>
+          <wx-checkbox
+            v-if="selectable"
+            :model-value="isSelected(row, index)"
+            :disabled="!canSelect(row)"
+            aria-label="Select row"
+            @update:model-value="(checked: boolean) => toggleRow(row, index, checked)"
+          />
+          <slot name="card-actions" :row="row" :index="index" />
+        </div>
+
+        <div v-for="column in cardColumns" :key="column.key" class="wx-table__field">
+          <span v-if="column.label" class="wx-table__field-label">{{ column.label }}</span>
+          <div class="wx-table__field-value" :class="column.cellClass">
+            <slot
+              :name="`cell-${column.key}`"
+              :row="row"
+              :value="read(row, column.key)"
+              :index="index"
+              :column="column"
+            >
+              {{ cellText(column, row, index) }}
+            </slot>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="rows.length === 0" class="wx-table__cards-empty">
+        <slot name="empty">{{ emptyText }}</slot>
+      </div>
+
+      <div v-if="showPagination" class="wx-table__cards-footer">
+        <slot name="footer">
+          <wx-pagination
+            v-model:page="page"
+            v-model:per-page="perPage"
+            :paginator="paginator"
+            :per-page-options="perPageOptions"
+            :size="size"
+            :disabled="loading"
+          />
+        </slot>
+      </div>
+    </div>
+
+    <div v-else ref="scroller" class="wx-table__scroll" :style="scrollStyle" @scroll="readScroll">
       <table
         class="wx-table__table"
         :class="{ 'wx-table__table--fixed': layout === 'fixed' }"
@@ -1570,5 +1658,66 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   .wx-table__spinner {
     animation-duration: 3s;
   }
+}
+/* --- cards --------------------------------------------------------------- */
+
+.wx-table__cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-12);
+  padding: var(--wx-space-12);
+}
+
+.wx-table__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-8);
+  padding: var(--wx-space-12);
+  border: 1px solid var(--wx-border-default);
+  border-radius: var(--wx-radius-md);
+  background: var(--wx-bg-surface);
+}
+
+.wx-table--hover .wx-table__card:hover {
+  border-color: var(--wx-border-strong);
+}
+
+.wx-table__card.is-selected {
+  border-color: var(--wx-color-primary);
+}
+
+.wx-table__card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wx-space-8);
+}
+
+.wx-table__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-2);
+  min-width: 0;
+}
+
+.wx-table__field-label {
+  color: var(--wx-text-muted);
+  font-size: var(--wx-font-size-xs);
+}
+
+.wx-table__field-value {
+  min-width: 0;
+  word-break: break-word;
+}
+
+.wx-table__cards-empty {
+  padding: var(--wx-space-24) var(--wx-space-12);
+  color: var(--wx-text-muted);
+  text-align: center;
+}
+
+.wx-table__cards-footer {
+  display: flex;
+  justify-content: center;
 }
 </style>

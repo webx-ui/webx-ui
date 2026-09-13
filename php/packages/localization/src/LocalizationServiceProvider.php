@@ -7,6 +7,7 @@ namespace WebxUi\Localization;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Translation\FileLoader;
 use WebxUi\Localization\Console\ClearLocalesCommand;
 use WebxUi\Localization\Console\SeedLocalesCommand;
 use WebxUi\Localization\Http\Middleware\SetLocale;
@@ -41,6 +42,7 @@ class LocalizationServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
+        $this->addValidationLines();
         $this->registerBlueprintMacro();
 
         /** @var Router $router */
@@ -60,6 +62,29 @@ class LocalizationServiceProvider extends ServiceProvider
             ClearLocalesCommand::class,
             SeedLocalesCommand::class,
         ]);
+    }
+
+    /**
+     * Put this package's validation lines behind the application's own.
+     *
+     * Laravel ships them in English and nowhere else, so a panel translated into ten languages
+     * answers a bad form in English. `addPath` appends rather than replaces — the application's
+     * `lang/` is still read first, so publishing your own line still wins.
+     *
+     * The loader is bound under a string rather than under its interface, which is why this
+     * asks for it by name.
+     */
+    private function addValidationLines(): void
+    {
+        if (! $this->app->bound('translation.loader')) {
+            return;
+        }
+
+        $loader = $this->app->make('translation.loader');
+
+        if ($loader instanceof FileLoader) {
+            $loader->addPath(__DIR__.'/../lang');
+        }
     }
 
     /**

@@ -14,7 +14,7 @@ import {
 import { createMediaApi } from './api'
 import { openMediaPicker } from './openMediaPicker'
 import { useMediaMessages } from './i18n'
-import type { MediaKind, MediaValue } from './types'
+import type { MediaAspect, MediaKind, MediaValue } from './types'
 
 /**
  * A picture on a form, with the words this entity uses for it.
@@ -33,7 +33,15 @@ const props = withDefaults(
     accept?: MediaKind | null
     /** Off for a decorative picture, where a caption is noise. */
     captions?: boolean
-    /** Height of the frame — a number in pixels, or any CSS length. */
+    /**
+     * Shape of the frame: one of the presets, any `width / height`, or `null` for a fixed
+     * height instead.
+     *
+     * A field that holds a cover and a field that holds an avatar are not the same shape, and
+     * the frame should say which before anything is in it.
+     */
+    aspect?: MediaAspect | null
+    /** Height of the frame when there is no aspect — a number in pixels, or any CSS length. */
     height?: number | string
     disabled?: boolean
   }>(),
@@ -41,6 +49,7 @@ const props = withDefaults(
     label: undefined,
     accept: 'image',
     captions: true,
+    aspect: '16/9',
     height: 220,
     disabled: false,
   },
@@ -53,6 +62,13 @@ useMediaMessages()
 const t = useTranslate('webx-media')
 
 const api = createMediaApi(useAdmin())
+
+/** The presets, spelled the way CSS wants them. Anything else is passed through as given. */
+const RATIOS: Record<string, string> = {
+  '16/9': '16 / 9',
+  '4/3': '4 / 3',
+  '1/1': '1 / 1',
+}
 
 const editing = ref(false)
 
@@ -83,9 +99,11 @@ const preview = computed(() => {
   return current.url ?? resolved.value[current.path] ?? null
 })
 
-const frameStyle = computed(() => ({
-  height: typeof props.height === 'number' ? `${props.height}px` : props.height,
-}))
+const frameStyle = computed(() =>
+  props.aspect
+    ? { aspectRatio: RATIOS[props.aspect] ?? props.aspect }
+    : { height: typeof props.height === 'number' ? `${props.height}px` : props.height },
+)
 
 /**
  * `alt` and `title` are edited through the field, so they have to be readable as a record even

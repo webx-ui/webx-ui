@@ -38,4 +38,6 @@ return [
     'created' => 'Yönetici oluşturuldu',
     'updated' => 'Yönetici kaydedildi',
     'deleted' => 'Yönetici silindi',
+    'new-short' => 'Ekle',
+    'edit-short' => 'Düzenle',
 ];

@@ -43,6 +43,7 @@ export type {
   FileQuery,
   MediaDirectory,
   MediaFile,
+  MediaAspect,
   MediaKind,
   MediaPage,
   MediaValue,

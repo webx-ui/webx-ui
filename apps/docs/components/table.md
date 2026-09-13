@@ -335,6 +335,39 @@ the user the table failed to load; a maximum leaves three rows looking like thre
 takes over when there are forty. Use `60vh` when the table should follow the window, and pixels
 when it sits in a panel whose size you already know.
 
+## On a phone
+
+A table narrower than its widest row is a set of columns nobody can read, and on a phone that is
+every table. Below `cardsBelow` — the width of the **table**, not the window — each row is drawn
+as a card of label/value pairs instead:
+
+The cells are the same cells: the same `cell-<key>` slots, the same formatters. A screen written
+for the table needs nothing added to survive a phone.
+
+Two things are worth saying explicitly:
+
+- A column with `hideOnCards` is left out. A date somebody scans down a column is worth a line on
+  a wide screen and is the first thing to go on a narrow one.
+- Row actions have no column to live in, so they go along the top of the card through the
+  `card-actions` slot.
+
+```vue
+<wx-table :data="page" :columns="columns">
+  <template #card-actions="{ row }">
+    <wx-actions size="sm" @click.stop>
+      <wx-action type="remove" @click="remove(row)" />
+    </wx-actions>
+  </template>
+</wx-table>
+```
+
+`cardsBelow="0"` keeps the columns at any width.
+
+## One page is not pagination
+
+The footer appears only when there is more than one page. The control costs a line of the screen
+and asks to be read, and on a phone that line is most of what is left.
+
 ## Columns
 
 | Field         | Type                            | Description                                     |
@@ -398,6 +431,7 @@ key of `actions` and fill it from `#cell-actions`.
 | `expandable`        | `boolean`                             | `false`             | Adds the chevron column             |
 | `expandableIf`      | `(row) => boolean`                    | —                   | Rows with nothing to open           |
 | `summary`           | `TableSummaryRow[]`                   | `[]`                | Lines under the table               |
+| `cardsBelow`        | `number`                              | `480`               | Width under which rows become cards |
 | `pagination`        | `boolean`                             | paginator           | Pagination in the footer            |
 | `perPageOptions`    | `number[]`                            | `[]`                | Page sizes it offers                |
 | `persist`           | `string`                              | —                   | Storage key for the state           |

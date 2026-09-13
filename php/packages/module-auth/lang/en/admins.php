@@ -38,4 +38,6 @@ return [
     'created' => 'Administrator created',
     'updated' => 'Administrator saved',
     'deleted' => 'Administrator deleted',
+    'new-short' => 'Add',
+    'edit-short' => 'Edit',
 ];
