@@ -80,6 +80,12 @@ export function auth(options: AuthOptions = {}): AdminPlugin {
   }
 }
 
+export { admins, type AdminsOptions } from './module'
+export { createAdminsApi, type AdminsApi } from './admins'
+export { selectAdmin, selectAdmins, type AdminPickerOptions } from './selectAdmin'
+export { default as WxAdminsPage } from './AdminsPage.vue'
+export { default as WxAdminList } from './AdminList.vue'
+export type { Admin, AdminInput, AdminPage, AdminQuery, AdminRole, Role } from './types'
 export { createAuthSession, provideAuth, useAuth, authKey } from './session'
 export type { AuthSession, Credentials } from './session'
 export { default as WxLoginCard } from './LoginCard.vue'

@@ -4,6 +4,9 @@ import type { LocalizedValue } from '@webx-ui/core'
 
 export type MediaKind = 'image' | 'video' | 'audio' | 'document' | 'other'
 
+/** The shapes a picture field offers, plus anything CSS understands as a ratio. */
+export type MediaAspect = '16/9' | '4/3' | '1/1' | (string & {})
+
 export interface MediaDirectory {
   id: number
   parent_id: number | null

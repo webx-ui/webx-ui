@@ -19,11 +19,13 @@ use WebxUi\Localization\Contracts\HasPanelLocale;
  * @property int $id
  * @property string $name
  * @property string $email
+ * @property string|null $avatar
  * @property string $password
  * @property bool $is_super
  * @property bool $is_active
  * @property string|null $locale
  * @property Carbon|null $last_login_at
+ * @property Carbon|null $created_at
  */
 class CmsUser extends Model implements AuthenticatableContract, HasPanelLocale
 {

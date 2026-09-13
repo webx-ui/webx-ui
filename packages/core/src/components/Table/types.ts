@@ -58,6 +58,21 @@ export interface TableColumn<T = TableRow> {
   cellClass?: string
   /** Leaves the column out without changing the array. */
   hidden?: boolean
+  /**
+   * Drops the column while the table is narrower than this.
+   *
+   * The alternative is a horizontal scrollbar, and a column somebody has to drag sideways to
+   * read is a column they will not read. Say it about the ones that can go — a date, a count —
+   * and the ones that identify the row stay whatever the width.
+   */
+  hideBelow?: number
+  /**
+   * Leaves the column out of a card, where space is the scarce thing.
+   *
+   * A date somebody scans down a column is worth a line of its own on a wide screen and is the
+   * first thing to go on a narrow one.
+   */
+  hideOnCards?: boolean
 }
 
 /**
@@ -171,6 +186,21 @@ export interface TableProps<T = TableRow> {
   expandableIf?: (row: T) => boolean
   /** Lines under the table: totals, discounts, whatever the figures are. */
   summary?: TableSummaryRow[]
+  /**
+   * Below this width — of the table, not the window — each row is drawn as a card instead.
+   *
+   * A table narrower than about forty characters is a row of columns nobody can read, and on a
+   * phone that is every table. `0` turns it off and keeps the columns at any width.
+   */
+  cardsBelow?: number
+  /**
+   * Drops the table's own margins around the header and the cards.
+   *
+   * On its own the table is a surface, and its search field and cards keep clear of its rounded
+   * edge. Inside a card the card keeps the margins already, and a second set puts the search
+   * field a step in from whatever the card has above it.
+   */
+  flush?: boolean
   /**
    * Puts the pagination in the footer. On by default as soon as `data` is a paginator,
    * since a paginated response is a promise that there are more pages to reach.
