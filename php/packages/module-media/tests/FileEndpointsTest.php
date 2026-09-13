@@ -252,6 +252,35 @@ final class FileEndpointsTest extends TestCase
         }
     }
 
+    #[Test]
+    public function the_editor_reads_the_picture_from_the_panel_itself(): void
+    {
+        $file = $this->upload($this->root(), 'Sofa Oslo.jpg');
+
+        // A CDN in front of the library is another origin, and a canvas drawn from another
+        // origin cannot be written out — so the address the editor uses is the panel's own.
+        $source = (string) $this->getJson("/api/cms/media/files/{$file->id}")->json('data.source');
+
+        $this->assertStringContainsString("/media/files/{$file->id}/source", $source);
+
+        $response = $this->get($source);
+
+        $response->assertOk();
+        $this->assertSame($file->mime, $response->headers->get('Content-Type'));
+        // The bytes at this key change when the picture is edited and the address carries no
+        // version of its own, so it must not be kept.
+        $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+    }
+
+    #[Test]
+    public function what_is_not_a_picture_has_nothing_to_edit_from(): void
+    {
+        $file = $this->upload($this->root(), 'Notes.txt');
+
+        $this->getJson("/api/cms/media/files/{$file->id}")->assertOk()->assertJsonPath('data.source', null);
+        $this->getJson("/api/cms/media/files/{$file->id}/source")->assertNotFound();
+    }
+
     private function root(): MediaDirectory
     {
         return MediaDirectory::query()->whereNull('parent_id')->firstOrFail();

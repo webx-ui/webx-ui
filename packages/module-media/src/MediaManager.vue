@@ -49,6 +49,34 @@ useMediaMessages()
 
 const t = useTranslate('webx-media')
 
+/**
+ * The image editor's words, in the language the panel is being read in.
+ *
+ * Read when the editor is opened rather than kept in a computed: the dialog is mounted outside
+ * the app, so it is handed plain strings once and nothing re-renders it afterwards.
+ */
+function editorLabels(): Record<string, string> {
+  return {
+    title: t('editor.title'),
+    saveLabel: t('editor.save'),
+    cancelLabel: t('editor.cancel'),
+    resetLabel: t('editor.reset'),
+    rotateLeftLabel: t('editor.rotate-left'),
+    rotateRightLabel: t('editor.rotate-right'),
+    flipHorizontalLabel: t('editor.flip-horizontal'),
+    flipVerticalLabel: t('editor.flip-vertical'),
+    ratioLabel: t('editor.ratio'),
+    cropLabel: t('editor.crop'),
+    outputLabel: t('editor.output'),
+    outputHint: t('editor.output-hint'),
+    widthLabel: t('editor.width'),
+    heightLabel: t('editor.height'),
+    freeLabel: t('editor.free'),
+    originalLabel: t('editor.original'),
+    errorText: t('editor.error'),
+  }
+}
+
 const root = useTemplateRef<HTMLElement>('root')
 const width = useElementWidth(root)
 const compact = computed(() => width.value > 0 && width.value < 640)
@@ -285,7 +313,19 @@ async function remove(file: MediaFile): Promise<void> {
  * not there.
  */
 async function edit(file: MediaFile): Promise<void> {
-  const result = await openImageEditor({ src: file.url, fileName: file.file_name, filters: false })
+  // `source`, not `url`: the editor draws the picture onto a canvas and writes that canvas out,
+  // and a browser refuses to do that for bytes from another origin without CORS headers — which
+  // is exactly what a CDN in front of the library is. `url` stays what everything that only
+  // looks at the picture uses.
+  const result = await openImageEditor({
+    src: file.source ?? file.url,
+    fileName: file.file_name,
+    filters: false,
+    // The editor is a component of the design system: its words are props with English
+    // defaults, not lines in the panel's dictionary. Whoever opens it is the one who knows
+    // what language the panel is being read in.
+    ...editorLabels(),
+  })
 
   if (!result) {
     return

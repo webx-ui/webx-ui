@@ -168,6 +168,21 @@ export function createAdminContext(options: {
     }
 
     await options.loadDictionary(code)
+
+    // The dictionary is not the whole of the interface. Section titles are translated on the
+    // server and travel inside the manifest, which was fetched in the previous language — so
+    // without this the panel switches everything except its own navigation, and the sidebar
+    // goes on naming the section in the language nobody is reading any more until the page is
+    // reloaded. Only worth doing once there is a manifest to replace: during the first load
+    // the caller is `reload()` itself, which is about to fetch one.
+    if (state.manifest !== null) {
+      try {
+        state.manifest = await options.loadManifest()
+      } catch {
+        // A manifest that will not come back is `reload()`'s problem to report. The language
+        // did change, and a stale section title is not worth throwing away a working panel.
+      }
+    }
   }
 
   return {

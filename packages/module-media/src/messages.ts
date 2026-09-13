@@ -48,6 +48,27 @@ export const mediaMessages: Record<string, Messages> = {
     'status-selected': 'selected: :count',
     'status-size': 'size: :size',
   },
+  // The image editor is a component of the design system, so its words are props rather than
+  // lines in the dictionary — the manager hands it these when it opens it.
+  editor: {
+    title: 'Edit picture',
+    save: 'Save',
+    cancel: 'Cancel',
+    reset: 'Reset',
+    'rotate-left': 'Turn left',
+    'rotate-right': 'Turn right',
+    'flip-horizontal': 'Mirror across',
+    'flip-vertical': 'Mirror down',
+    ratio: 'Ratio',
+    crop: 'Crop',
+    output: 'Output',
+    'output-hint': 'The size of the picture you will get',
+    width: 'Width',
+    height: 'Height',
+    free: 'Free',
+    original: 'Original',
+    error: 'This picture could not be loaded',
+  },
   dialogs: {
     'delete-files-title': 'Delete :count file(s)?',
     'delete-files-text': 'Anywhere they are already used, they will stop opening.',
@@ -56,6 +77,7 @@ export const mediaMessages: Record<string, Messages> = {
     'delete-folder-warning':
       'Everything inside goes too, and pictures already placed in content will stop opening.',
     confirm: 'Delete',
+    'delete-file': 'Delete :name?',
   },
   errors: {
     'directory-not-empty': 'This folder is not empty.',

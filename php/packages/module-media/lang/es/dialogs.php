@@ -9,4 +9,5 @@ return [
     'delete-folder-contents' => 'Contiene :files archivo(s) y :directories carpeta(s).',
     'delete-folder-warning' => 'Todo lo que hay dentro se va con ella, y las imágenes ya colocadas en el contenido dejarán de abrirse.',
     'confirm' => 'Eliminar',
+    'delete-file' => '¿Eliminar :name?',
 ];

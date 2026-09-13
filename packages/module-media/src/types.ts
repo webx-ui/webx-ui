@@ -27,6 +27,13 @@ export interface MediaFile {
   path: string
   url: string
   thumb: string | null
+  /**
+   * The picture served by the panel itself, for the one thing that needs the pixels back.
+   *
+   * `url` is the address to show a file at, and on a CDN it is another origin — which a canvas
+   * may not be written out from. The editor reads from here instead.
+   */
+  source: string | null
   editable: boolean
   has_original: boolean
   duplicate: boolean

@@ -14,7 +14,7 @@ import type { MediaKind, MediaValue } from './types'
  * address is worked out when the page is drawn, so moving the library to another disk changes
  * nothing here.
  */
-withDefaults(
+const props = withDefaults(
   defineProps<{
     label?: string
     accept?: MediaKind | null
@@ -33,7 +33,7 @@ const t = useTranslate('webx-media')
 const preview = computed(() => value.value?.url ?? null)
 
 async function choose(): Promise<void> {
-  const file = await openMediaPicker({ accept: 'image' })
+  const file = await openMediaPicker({ accept: props.accept })
 
   if (file) {
     value.value = { ...value.value, path: file.path, url: file.url }

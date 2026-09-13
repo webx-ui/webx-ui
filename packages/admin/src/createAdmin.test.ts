@@ -240,4 +240,52 @@ describe('createAdmin', () => {
 
     expect(admin.context.nav.value.map((entry) => entry.id)).toEqual(['pages'])
   })
+  it('renames the sections when the language changes, without a reload', async () => {
+    // The dictionary is not the whole interface: section titles are translated on the server
+    // and arrive inside the manifest. Without refetching it the panel switched everything
+    // except its own navigation, which went on naming the section in the language nobody was
+    // reading any more.
+    const titles: Record<string, string> = { en: 'Files', de: 'Dateien' }
+    let locale = 'en'
+
+    const admin = createAdmin({
+      el: mountPoint(),
+      basePath: '/cms',
+      routes: [rootRoute],
+      modules: [
+        { id: 'pages', routes: [{ path: '/pages', component: { render: () => h('div') } }] },
+      ],
+      http: stubHttp({
+        get: ((url: string) => {
+          const asked = /\/translations\/(\w+)/.exec(url)
+
+          if (asked !== null) {
+            locale = asked[1] as string
+
+            return Promise.resolve({ data: { ...dictionary, locale } })
+          }
+
+          if (url.includes('/manifest')) {
+            return Promise.resolve({
+              data: {
+                ...manifest,
+                modules: [{ ...manifest.modules[0], title: titles[locale] as string }],
+              },
+            })
+          }
+
+          return Promise.resolve(answer(url))
+        }) as never,
+      }),
+    })
+
+    await admin.mount()
+
+    expect(admin.context.nav.value[0]?.title).toBe('Files')
+
+    await admin.context.setLocale('de')
+
+    expect(admin.i18n.state.locale).toBe('de')
+    expect(admin.context.nav.value[0]?.title).toBe('Dateien')
+  })
 })
