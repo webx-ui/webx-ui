@@ -60,10 +60,12 @@ Namespace: `webx-ui/*`, размещение: `php/packages/*` в монореп
 
 ## Правило: имя пакета
 
-Раздел панели — пакет с префиксом `module-` (`webx-ui/module-auth`, `webx-ui/module-media`), и
-его npm-пара называется так же (`@webx-ui/module-auth`). Всё, что разделом не является, — без
-префикса: `admin` — каркас, в который модули втыкаются, `nested-set`, `localization`, `mcp` —
-библиотеки. Это и есть разделение: по имени видно, появится ли пакет в навигации.
+Всё, из чего состоит панель, — пакет с префиксом `module-`: каркас `webx-ui/module-admin` и
+разделы `webx-ui/module-auth`, `webx-ui/module-media`; npm-пара называется так же
+(`@webx-ui/module-admin`, `@webx-ui/module-auth`). Библиотека, которая живёт и без панели, — без
+префикса: `nested-set`, `localization`, `mcp`. Это и есть разделение: по имени видно, панель это
+или библиотека. До 0.12.0 каркас назывался `webx-ui/admin` (`@webx-ui/admin`); старые имена
+помечены как замещённые новым и больше не публикуются.
 
 Идентификатор модуля (`Module::id()`, он же префикс прав `<id>.<action>`, областей MCP
 `<id>:<scope>` и имён инструментов `<id>_<tool>`) называет то, что модуль показывает, а не
@@ -72,7 +74,7 @@ Namespace: `webx-ui/*`, размещение: `php/packages/*` в монореп
 
 ## Ядро
 
-### `webx-ui/admin` — каркас
+### `webx-ui/module-admin` — каркас
 
 Статус: в работе — контракты и точки входа готовы
 
@@ -84,7 +86,7 @@ Namespace: `webx-ui/*`, размещение: `php/packages/*` в монореп
 
 Сделано: `Contracts\Module` + `AbstractModule`, `ModuleRegistry` (дубли id запрещены), `GET /api/cms/manifest`, catch-all `/cms/{any}` на Blade-заглушку, `ApiResponse` для простых полезных нагрузок, обе artisan-команды. Не сделано: `cms.auth` и политики — это `module-auth`; пока панель открыта, и `webx:install` об этом предупреждает.
 
-npm-пара: `@webx-ui/admin`
+npm-пара: `@webx-ui/module-admin`
 
 ### `webx-ui/mcp` — MCP-сервер
 
@@ -110,7 +112,7 @@ npm-пара: `@webx-ui/admin`
 
 Не сделано намеренно: транспорт. `laravel/mcp` на 0.9.5 (есть `v1.0.0-beta.1`), и завязываться на его API до 1.0 рано — контракты модулей от этого не зависят и менять их не придётся. Туда же авторизация по областям, журнал вызовов и очередь подтверждений.
 
-npm-пара: раздел в `@webx-ui/admin`: токены и области, журнал вызовов, очередь подтверждений.
+npm-пара: раздел в `@webx-ui/module-admin`: токены и области, журнал вызовов, очередь подтверждений.
 
 ---
 
@@ -198,12 +200,12 @@ MCP: не свои инструменты, а хелперы для модуле
   должны считать одинаково. Кандидат — явные ключи `one/few/many/other` и таблица правил на
   локаль вместо пайпов Laravel.
 
-API панели (в `webx-ui/admin`, потому что API панели — его зона): `GET {api}/locales` и
+API панели (в `webx-ui/module-admin`, потому что API панели — его зона): `GET {api}/locales` и
 `GET {api}/translations/{code}` — публичные, экран входа рисуется до сессии;
 `PUT {api}/auth/locale` — выбор администратора (в `module-auth`). Манифест несёт `locale`,
 `locales` и `panelLocales`.
 
-npm-пара: отдельного пакета нет — i18n живёт в `@webx-ui/admin` (`createAdmin({ locale })`,
+npm-пара: отдельного пакета нет — i18n живёт в `@webx-ui/module-admin` (`createAdmin({ locale })`,
 `useI18n()`, скоупнутый `t()`), словарь тянется с сервера.
 
 MCP: пока нет. Кандидаты на потом — `list_locales`, `find_missing_translations`,

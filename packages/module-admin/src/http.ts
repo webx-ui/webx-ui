@@ -2,7 +2,7 @@
  * The panel's way of talking to its own backend.
  *
  * Small on purpose — it is not a general HTTP library, it is the handful of conventions
- * `webx-ui/admin` and `webx-ui/module-auth` answer with: a session cookie rather than a token,
+ * `webx-ui/module-admin` and `webx-ui/module-auth` answer with: a session cookie rather than a token,
  * 422 for a bad form, 401 for a stranger, 429 with `Retry-After` when somebody is guessing.
  */
 

@@ -10,7 +10,7 @@
     "typecheck": "vue-tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@webx-ui/admin": "workspace:*",
+    "@webx-ui/module-admin": "workspace:*",
     "@webx-ui/core": "workspace:*",
     "@webx-ui/module-auth": "workspace:*",
     "@webx-ui/tokens": "workspace:*",

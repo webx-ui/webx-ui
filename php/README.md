@@ -80,12 +80,12 @@ not that the logic is right.
 
 ## Packages
 
-| Package               | Purpose                                                    |
-| --------------------- | ---------------------------------------------------------- |
-| `webx-ui/admin`       | The frame: module contract, manifest, panel routes         |
-| `webx-ui/mcp`         | What a module offers an AI agent, and the registry for it  |
-| `webx-ui/module-auth` | Administrators, roles, sign-in — and what closes the panel |
-| `webx-ui/nested-set`  | Nested set trees for Eloquent (`HasNestedSet`)             |
+| Package                | Purpose                                                    |
+| ---------------------- | ---------------------------------------------------------- |
+| `webx-ui/module-admin` | The frame: module contract, manifest, panel routes         |
+| `webx-ui/mcp`          | What a module offers an AI agent, and the registry for it  |
+| `webx-ui/module-auth`  | Administrators, roles, sign-in — and what closes the panel |
+| `webx-ui/nested-set`   | Nested set trees for Eloquent (`HasNestedSet`)             |
 
 The roadmap for the rest lives in
 [`docs/architecture/WEBX_UI_COMPOSER_PACKAGES.md`](../docs/architecture/WEBX_UI_COMPOSER_PACKAGES.md).

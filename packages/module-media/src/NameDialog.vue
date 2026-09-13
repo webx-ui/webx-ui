@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, useTemplateRef } from 'vue'
-import { useTranslate } from '@webx-ui/admin'
+import { useTranslate } from '@webx-ui/module-admin'
 import { useModal, WxButton, WxDialog, WxInput, WxSpace } from '@webx-ui/core'
 
 /**

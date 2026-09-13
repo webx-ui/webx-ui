@@ -9,11 +9,11 @@ closes the panel on the server. This is what lets somebody back in.
 ## Install
 
 ```bash
-pnpm add @webx-ui/module-auth @webx-ui/admin @webx-ui/core vue vue-router
+pnpm add @webx-ui/module-auth @webx-ui/module-admin @webx-ui/core vue vue-router
 ```
 
 ```ts
-import { createAdmin } from '@webx-ui/admin'
+import { createAdmin } from '@webx-ui/module-admin'
 import { auth, WxUserMenu } from '@webx-ui/module-auth'
 
 createAdmin({
@@ -23,7 +23,7 @@ createAdmin({
 ```
 
 That is the whole integration. Installing it also tells the panel how to find out who is signed
-in, which is why `@webx-ui/admin` knows nothing about authentication — it holds the answer, not
+in, which is why `@webx-ui/module-admin` knows nothing about authentication — it holds the answer, not
 the question.
 
 ## A plugin, not a section
