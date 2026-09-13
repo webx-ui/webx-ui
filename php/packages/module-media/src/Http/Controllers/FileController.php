@@ -46,10 +46,20 @@ final class FileController
             MediaType::filter($query, (string) $request->string('type'));
         }
 
+        // Counted before the page is cut, and over the same filters: the status bar under the
+        // grid answers "how much is in here", which a page of twenty-four cannot.
+        $stats = (clone $query)->toBase()->selectRaw('COUNT(*) as files, COALESCE(SUM(size), 0) as size')->first();
+
         $sort = (string) ($request->string('sort')->value() ?: '-created_at');
         $query->orderBy(ltrim($sort, '-'), str_starts_with($sort, '-') ? 'desc' : 'asc');
 
-        return FileResource::collection($query->paginate($request->integer('per_page') ?: 24));
+        return FileResource::collection($query->paginate($request->integer('per_page') ?: 24))
+            ->additional([
+                'stats' => [
+                    'files' => (int) ($stats->files ?? 0),
+                    'size' => (int) ($stats->size ?? 0),
+                ],
+            ]);
     }
 
     public function show(MediaFile $file): JsonResponse
@@ -93,6 +103,13 @@ final class FileController
             ->update(['directory_id' => $request->integer('directory_id')]);
 
         return ApiResponse::data(['moved' => $moved]);
+    }
+
+    public function destroyOne(MediaFile $file): JsonResponse
+    {
+        $this->files->deleteAll([$file]);
+
+        return ApiResponse::noContent();
     }
 
     public function destroy(FileDeleteRequest $request): JsonResponse

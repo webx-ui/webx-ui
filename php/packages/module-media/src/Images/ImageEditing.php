@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Media\Images;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Database\ConnectionResolverInterface;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
 use Intervention\Image\ImageManager;
@@ -24,6 +25,7 @@ final class ImageEditing
         private readonly FileStore $files,
         private readonly Thumbnails $thumbnails,
         private readonly Config $config,
+        private readonly ConnectionResolverInterface $connection,
     ) {}
 
     /**
@@ -53,14 +55,21 @@ final class ImageEditing
             quality: (int) $this->config->get('webx-media.image.quality', 85),
         );
 
-        $disk->put($file->path, $encoded);
+        // The row first, the bytes second, both inside one transaction.
+        //
+        // The other way round is how a picture and its record stop agreeing: the file is
+        // written, the update then fails for a reason that has nothing to do with images, and
+        // what is on the disk is a crop the panel goes on describing at its old size.
+        $this->connection->connection()->transaction(function () use ($disk, $encoded, $file, $image): void {
+            $file->fill([
+                'hash' => md5($encoded),
+                'size' => strlen($encoded),
+                'width' => $image->width(),
+                'height' => $image->height(),
+            ])->save();
 
-        $file->fill([
-            'hash' => md5($encoded),
-            'size' => strlen($encoded),
-            'width' => $image->width(),
-            'height' => $image->height(),
-        ])->save();
+            $disk->put($file->path, $encoded);
+        });
 
         // Cut from what has just changed, so they have to go; the address of the picture itself
         // carries a new version for the same reason.
@@ -83,15 +92,18 @@ final class ImageEditing
             throw new MissingSource((string) $file->original_path);
         }
 
-        $disk->put($file->path, $contents);
         $size = $this->manager()->read($contents);
 
-        $file->fill([
-            'hash' => md5($contents),
-            'size' => strlen($contents),
-            'width' => $size->width(),
-            'height' => $size->height(),
-        ])->save();
+        $this->connection->connection()->transaction(function () use ($contents, $disk, $file, $size): void {
+            $file->fill([
+                'hash' => md5($contents),
+                'size' => strlen($contents),
+                'width' => $size->width(),
+                'height' => $size->height(),
+            ])->save();
+
+            $disk->put($file->path, $contents);
+        });
 
         $this->thumbnails->forget($file);
 
@@ -103,13 +115,12 @@ final class ImageEditing
      */
     private function edit(ImageInterface $image, array $operations): ImageInterface
     {
-        // A fixed order, so the same request always means the same picture: a crop described
-        // against the original cannot be applied after a rotation and mean anything.
-        if (isset($operations['crop'])) {
-            $crop = $operations['crop'];
-            $image->crop($crop['width'], $crop['height'], $crop['x'], $crop['y']);
-        }
-
+        // Turning comes first, and the crop is read against the turned picture.
+        //
+        // That is the order the editor works in: its frame is dragged over what is on screen,
+        // which is already rotated and flipped. Cropping the original first and turning the
+        // result afterwards would take a different rectangle for every angle but zero — the
+        // crop would silently land somewhere else the moment somebody pressed rotate.
         if (! empty($operations['rotate'])) {
             // Counter-clockwise in Intervention, clockwise for anyone pressing the button.
             $image->rotate(-(float) $operations['rotate']);
@@ -117,6 +128,11 @@ final class ImageEditing
 
         if (isset($operations['flip'])) {
             $operations['flip'] === 'vertical' ? $image->flip() : $image->flop();
+        }
+
+        if (isset($operations['crop'])) {
+            $crop = $operations['crop'];
+            $image->crop($crop['width'], $crop['height'], $crop['x'], $crop['y']);
         }
 
         if (isset($operations['resize'])) {

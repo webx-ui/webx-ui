@@ -28,7 +28,11 @@ Route::prefix((string) config('webx-admin.api_path').'/media')
         Route::middleware('cms.can:media.manage')->group(function (): void {
             Route::patch('files/{file}', [FileController::class, 'update'])->name('files.update');
             Route::post('files/move', [FileController::class, 'move'])->name('files.move');
-            Route::delete('files', [FileController::class, 'destroy'])->name('files.destroy');
+            // A POST for the batch: a DELETE carrying a list of ids in its body is legal HTTP
+            // that browsers, clients and proxies treat inconsistently — including the panel's
+            // own client, which sends no body on DELETE at all.
+            Route::post('files/delete', [FileController::class, 'destroy'])->name('files.destroy');
+            Route::delete('files/{file}', [FileController::class, 'destroyOne'])->name('files.destroy-one');
             Route::post('files/{file}/edit', [ImageController::class, 'edit'])->name('files.edit');
             Route::post('files/{file}/copy', [ImageController::class, 'copy'])->name('files.copy');
             Route::post('files/{file}/restore-original', [ImageController::class, 'restore'])->name('files.restore');

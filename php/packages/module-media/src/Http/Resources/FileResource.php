@@ -50,7 +50,15 @@ final class FileResource extends JsonResource
             'path' => $file->path,
             'url' => $urls->url($file),
             'thumb' => $file->isImage()
-                ? route('webx.media.files.thumb', ['file' => $file->id, 'w' => 320, 'h' => 320, 'fit' => 'cover'])
+                ? route('webx.media.files.thumb', [
+                    'file' => $file->id,
+                    'w' => 320,
+                    'h' => 320,
+                    'fit' => 'cover',
+                    // Editing writes over the same key, so the address of the preview has to
+                    // move with the bytes — otherwise a crop shows the picture from before it.
+                    'v' => substr($file->hash, 0, 8),
+                ])
                 : null,
             'editable' => $file->isImage(),
             'has_original' => $file->hasOriginal(),

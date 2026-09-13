@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Storage;
  * @property string|null $original_path
  * @property string $hash
  * @property string $name
+ * @property string $name_lower
  * @property string $file_name
  * @property string $extension
  * @property string $mime
@@ -67,6 +68,10 @@ class MediaFile extends Model
         // The bytes go with the row. Deleting a folder goes through the service that collects
         // its files and deletes them one by one for exactly this reason: the database's own
         // cascade raises no events, and the files would stay on the disk forever.
+        static::saving(static function (self $file): void {
+            $file->name_lower = mb_strtolower((string) $file->name);
+        });
+
         static::deleted(static function (self $file): void {
             $file->eraseFiles();
         });
@@ -96,7 +101,10 @@ class MediaFile extends Model
      */
     public function scopeSearch(Builder $query, string $term): Builder
     {
-        return $query->where('name', 'like', '%'.addcslashes($term, '%_\\').'%');
+        // Against the lowered copy, with the term lowered by PHP. Neither `like` nor SQL's
+        // LOWER() knows about Cyrillic on sqlite, and a search for "диван" that misses "Диван"
+        // is a search nobody trusts a second time.
+        return $query->where('name_lower', 'like', '%'.addcslashes(mb_strtolower($term), '%_\\').'%');
     }
 
     /** Remove what this row owns on the disk: the file itself and the copy kept before editing. */

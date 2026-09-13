@@ -168,7 +168,8 @@ path-style, публичное чтение через `https://cdn.alexx.group/
 | `POST`   | `files`                         | `media.upload` | multipart `directory_id`, `files[]` → `201`, список `FileResource`   |
 | `PATCH`  | `files/{file}`                  | `media.manage` | `{ name }` → `FileResource`                                          |
 | `POST`   | `files/move`                    | `media.manage` | `{ ids: [], directory_id }` → `data: { moved: 12 }`                  |
-| `DELETE` | `files`                         | `media.manage` | `{ ids: [] }` → `data: { deleted: 12 }`                              |
+| `POST`   | `files/delete`                  | `media.manage` | `{ ids: [] }` → `data: { deleted: 12 }`                              |
+| `DELETE` | `files/{file}`                  | `media.manage` | → `204`                                                              |
 | `GET`    | `files/{file}/thumb`            | `media.view`   | `?w=&h=&fit=cover\|contain` → `302` на вариант                       |
 | `POST`   | `files/{file}/edit`             | `media.manage` | операции (см. §7) → `FileResource`                                   |
 | `POST`   | `files/{file}/copy`             | `media.manage` | → `201`, `FileResource`                                              |
@@ -181,6 +182,10 @@ path-style, публичное чтение через `https://cdn.alexx.group/
 - `type` — `image` / `video` / `audio` / `document` / `other`, раскрывается в набор mime.
 - `sort` — `name`, `-name`, `created_at`, `-created_at`, `size`, `-size`; по умолчанию `-created_at`.
 - `per_page` — 24 по умолчанию, максимум 96.
+
+Пакетное удаление — POST, а не DELETE с телом: тело у DELETE — легальный HTTP, который клиенты,
+прокси и браузеры трактуют по-разному, и собственный клиент панели его не отправляет вовсе.
+Один файл при этом удаляется честным DELETE.
 
 Листинг **всегда** пагинирован, поиск тоже. Это единственная защита от папки на десять тысяч
 файлов, и её отсутствие — вторая исправленная ошибка старой реализации.
