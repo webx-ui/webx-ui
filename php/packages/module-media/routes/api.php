@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use WebxUi\Media\Http\Controllers\DirectoryController;
 use WebxUi\Media\Http\Controllers\FileController;
+use WebxUi\Media\Http\Controllers\ImageController;
 use WebxUi\Media\Http\Controllers\ThumbController;
 
 Route::prefix((string) config('webx-admin.api_path').'/media')
@@ -28,6 +29,9 @@ Route::prefix((string) config('webx-admin.api_path').'/media')
             Route::patch('files/{file}', [FileController::class, 'update'])->name('files.update');
             Route::post('files/move', [FileController::class, 'move'])->name('files.move');
             Route::delete('files', [FileController::class, 'destroy'])->name('files.destroy');
+            Route::post('files/{file}/edit', [ImageController::class, 'edit'])->name('files.edit');
+            Route::post('files/{file}/copy', [ImageController::class, 'copy'])->name('files.copy');
+            Route::post('files/{file}/restore-original', [ImageController::class, 'restore'])->name('files.restore');
 
             Route::post('directories', [DirectoryController::class, 'store'])->name('directories.store');
             Route::patch('directories/{directory}', [DirectoryController::class, 'update'])->name('directories.update');

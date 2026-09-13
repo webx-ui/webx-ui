@@ -6,10 +6,8 @@ address.
 
 Its front end is [`@webx-ui/module-media`](https://www.npmjs.com/package/@webx-ui/module-media).
 
-**Status: being built.** The section registers itself with the panel and carries its
-configuration; folders, files and the endpoints around them are landing step by step, in the
-order the [specification](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_MEDIA.md)
-sets out.
+**Status: the server half is complete.** Folders, files, uploads, previews and image editing
+answer; the panel's front end is [`@webx-ui/module-media`](https://www.npmjs.com/package/@webx-ui/module-media).
 
 ## Requirements
 
@@ -42,6 +40,35 @@ bytes and no "where used", and it is paid knowingly.
 
 `alt` and `title` are not stored here either: one image used by two articles needs two captions,
 so they belong to the entity that uses it, beside the reference.
+
+## API
+
+Everything lives under the panel's API path, behind the panel session and a permission.
+
+|                                              |                                                                                 |
+| -------------------------------------------- | ------------------------------------------------------------------------------- |
+| `GET directories`                            | the whole tree with file counts                                                 |
+| `POST/PATCH directories`, `PATCH …/move`     | create, rename, move                                                            |
+| `DELETE directories/{id}`                    | refuses a folder that holds anything (409 with counts) until `?force=1`         |
+| `GET files`                                  | paginated, `q`, `type`, `sort`, `per_page`                                      |
+| `POST files`                                 | multi-file upload; the same bytes in the same folder answer `duplicate`         |
+| `PATCH files/{id}`                           | rename — the key on the disk never changes                                      |
+| `POST files/move`, `DELETE files`            | in batches                                                                      |
+| `GET files/{id}/thumb?w=&h=&fit=`            | cuts the variant once, then redirects to it                                     |
+| `POST files/{id}/edit`                       | crop, rotate, flip, resize — applied to the original, written over the same key |
+| `POST files/{id}/copy`, `…/restore-original` | a second file; the picture as it arrived                                        |
+
+The editor takes **operations rather than a finished picture**: the canvas in the browser works
+on a preview, and what it could send back is smaller than the original.
+
+## MCP
+
+`list_directories`, `list_files`, `search_files`, `get_file`, `create_directory`,
+`rename_file`, `move_files`, `upload_from_url`, `delete_files`. Every mutating tool takes
+`dry_run`.
+
+Deleting a folder is deliberately not among them: recursive deletion is the one operation here
+that a mistaken call cannot take back, and an agent cannot ask the question the panel asks first.
 
 ## Configuration
 
