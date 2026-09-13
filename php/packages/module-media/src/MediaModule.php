@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace WebxUi\Media;
 
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Mcp\Contracts\ProvidesMcpTools;
+use WebxUi\Mcp\ProvidesMcpDefaults;
+use WebxUi\Mcp\Tool;
+use WebxUi\Media\Mcp\MediaTools;
 
 /**
  * The panel section for the file library.
@@ -14,8 +18,10 @@ use WebxUi\Admin\AbstractModule;
  * own media when they are attached, so a product's ten thousand photographs never land in a
  * tree an editor has to browse.
  */
-final class MediaModule extends AbstractModule
+final class MediaModule extends AbstractModule implements ProvidesMcpTools
 {
+    use ProvidesMcpDefaults;
+
     public function id(): string
     {
         return 'media';
@@ -45,5 +51,13 @@ final class MediaModule extends AbstractModule
     public function permissions(): array
     {
         return ['media.view', 'media.upload', 'media.manage'];
+    }
+
+    /**
+     * @return list<Tool>
+     */
+    public function mcpTools(): array
+    {
+        return MediaTools::all();
     }
 }
