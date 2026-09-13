@@ -5,7 +5,9 @@ export interface AutosizeOptions {
   maxRows?: number
 }
 
-export interface TextareaProps {
+import type { LocalizedFieldProps, LocalizedValue } from '../../composables/useLocalized'
+
+export interface TextareaProps extends LocalizedFieldProps {
   size?: ControlSize
   status?: ControlStatus
   id?: string
@@ -25,7 +27,8 @@ export interface TextareaProps {
   ariaLabel?: string
 }
 
-export type TextareaModelValue = string | undefined
+/** A record once `localized` is on — the same field, in every language the site publishes in. */
+export type TextareaModelValue = string | LocalizedValue | undefined
 
 export interface TextareaEmits {
   input: [value: string]

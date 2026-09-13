@@ -281,6 +281,21 @@ final class FileEndpointsTest extends TestCase
         $this->getJson("/api/cms/media/files/{$file->id}/source")->assertNotFound();
     }
 
+    #[Test]
+    public function a_key_is_enough_to_find_the_file_again(): void
+    {
+        $file = $this->upload($this->root(), 'Sofa Oslo.jpg');
+
+        // A form stores the key and nothing else. Opened again, it has to draw the picture —
+        // and only the library knows where that key currently lives.
+        $this->getJson('/api/cms/media/files/by-path?path='.urlencode($file->path))
+            ->assertOk()
+            ->assertJsonPath('data.id', $file->id)
+            ->assertJsonPath('data.path', $file->path);
+
+        $this->getJson('/api/cms/media/files/by-path?path=media/gone.jpg')->assertNotFound();
+    }
+
     private function root(): MediaDirectory
     {
         return MediaDirectory::query()->whereNull('parent_id')->firstOrFail();

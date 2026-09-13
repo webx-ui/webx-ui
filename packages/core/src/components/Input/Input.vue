@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useFormField } from '../../composables/useFormField'
+import { useLocalized } from '../../composables/useLocalized'
+import LocalePicker from '../Locales/LocalePicker.vue'
 import type { InputEmits, InputModelValue, InputProps } from './types'
 import { useControlAttrs } from '../../composables/useControlAttrs'
 
@@ -22,6 +24,7 @@ const props = withDefaults(defineProps<InputProps>(), {
   showCount: false,
   autocomplete: undefined,
   ariaLabel: undefined,
+  localized: false,
 })
 
 const emit = defineEmits<InputEmits>()
@@ -32,7 +35,28 @@ const field = useFormField(props)
 const inputRef = ref<HTMLInputElement | null>(null)
 const focused = ref(false)
 
-const currentValue = computed(() => (model.value == null ? '' : String(model.value)))
+const locales = useLocalized(props, model)
+
+/** The language on screen, or nothing at all when the field is plain. */
+const editing = computed(() => (locales.on.value ? locales.active.value : undefined))
+
+const currentValue = computed(() => locales.read(editing.value))
+
+/**
+ * The languages not on screen, carried along as hidden inputs.
+ *
+ * One visible control and the rest hidden, rather than one styled box per language: the box is
+ * this component's root, and a component's root is what a parent's scoped CSS is stamped on and
+ * what `class` lands on. They are here at all because a control that is not in the DOM is one a
+ * classic form post leaves out, and saving would wipe every language nobody was looking at.
+ */
+const carried = computed(() =>
+  locales.on.value
+    ? locales.list.value
+        .filter((locale) => locale.code !== locales.active.value)
+        .map((locale) => ({ code: locale.code, value: locales.read(locale.code) }))
+    : [],
+)
 
 const showClear = computed(
   () =>
@@ -51,12 +75,13 @@ const classes = computed(() => [
     'is-focused': focused.value,
     'is-disabled': field.disabled.value,
     'is-readonly': props.readonly,
+    'is-localized': locales.on.value,
   },
 ])
 
 function onInput(event: Event) {
   const value = (event.target as HTMLInputElement).value
-  model.value = value
+  locales.write(editing.value, value)
   emit('input', value)
 }
 
@@ -75,7 +100,7 @@ function onBlur(event: FocusEvent) {
 }
 
 function clear() {
-  model.value = ''
+  locales.write(editing.value, '')
   emit('input', '')
   emit('change', '')
   emit('clear')
@@ -102,6 +127,7 @@ defineExpose({
       v-bind="controlAttrs"
       class="wx-input__inner"
       :type="type"
+      :name="locales.nameFor(controlAttrs.name, editing)"
       :value="currentValue"
       :placeholder="placeholder"
       :disabled="field.disabled.value"
@@ -115,6 +141,14 @@ defineExpose({
       @change="onChange"
       @focus="onFocus"
       @blur="onBlur"
+    />
+
+    <input
+      v-for="other in carried"
+      :key="other.code"
+      type="hidden"
+      :name="locales.nameFor(controlAttrs.name, other.code)"
+      :value="other.value"
     />
 
     <button
@@ -133,11 +167,19 @@ defineExpose({
     <span v-if="$slots.suffix" class="wx-input__affix wx-input__affix--suffix">
       <slot name="suffix" />
     </span>
+
+    <locale-picker
+      v-if="locales.on.value"
+      :locales="locales.list.value"
+      :active="locales.active.value"
+      @choose="(code) => (locales.active.value = code)"
+    />
   </div>
 </template>
 
 <style scoped>
 .wx-input {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--wx-space-8);
@@ -177,6 +219,11 @@ defineExpose({
   height: var(--wx-size-control-lg);
   padding: 0 var(--wx-space-16);
   font-size: var(--wx-font-size-control-lg);
+}
+
+/* Room for the language chip in the corner, so a long title does not run under it. */
+.wx-input.is-localized {
+  padding-right: var(--wx-space-40);
 }
 
 .wx-input--error,

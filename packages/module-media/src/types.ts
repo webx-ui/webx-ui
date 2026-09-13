@@ -1,5 +1,7 @@
 /** The shapes `webx-ui/module-media` answers with. */
 
+import type { LocalizedValue } from '@webx-ui/core'
+
 export type MediaKind = 'image' | 'video' | 'audio' | 'document' | 'other'
 
 export interface MediaDirectory {
@@ -66,8 +68,15 @@ export interface EditOperations {
 /** What a form keeps about a picture it uses: the file, and this entity's words for it. */
 export interface MediaValue {
   path: string
-  alt?: string
-  title?: string
+  /**
+   * The words this entity uses for the picture, in every language the site publishes in.
+   *
+   * They live here rather than on the file because one picture used by two articles needs two
+   * captions. A plain string is accepted — that is what a column held before the site had a
+   * second language — and the first edit turns it into a record.
+   */
+  alt?: LocalizedValue | string
+  title?: LocalizedValue | string
   /** Filled in when the value was picked in this session, so a field can draw a preview. */
   url?: string
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Media\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\UploadedFile;
 use WebxUi\Admin\Http\ApiResponse;
@@ -64,6 +65,26 @@ final class FileController
 
     public function show(MediaFile $file): JsonResponse
     {
+        return ApiResponse::data(new FileResource($file));
+    }
+
+    /**
+     * The file behind a key.
+     *
+     * What an entity stores is the key and nothing else — that is what lets the library move to
+     * another disk without rewriting a single record. A form editing that entity still has to
+     * draw the picture, and it has only the key, so this is how it gets the rest.
+     */
+    public function byPath(Request $request): JsonResponse
+    {
+        $path = (string) $request->query('path');
+
+        $file = MediaFile::query()->where('path', $path)->first();
+
+        if ($file === null) {
+            return ApiResponse::message(__('webx-media::errors.file-not-found'), 404);
+        }
+
         return ApiResponse::data(new FileResource($file));
     }
 

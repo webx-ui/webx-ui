@@ -50,15 +50,24 @@ const cover = ref<MediaValue | null>(null)
 </template>
 ```
 
+Two states and nothing in between. Empty, the frame opens the library. Filled, it shows the
+picture with two things you can do to it:
+
+- **Captions** — a popover with `alt` and `title`, and a button to swap the picture. Both fields
+  are [localized](/components/locales), because the site is.
+- **Clear** — asks first, and then empties the field. It does **not** delete the file: the same
+  picture is very likely used by another record, and this is the one place somebody would expect
+  otherwise.
+
 `MediaValue` is `{ path, url?, alt?, title? }`, and **`path` is the only part worth storing**.
 
 The captions belong to the entity, not to the file: one picture used by two articles needs two
 `alt`s, so the library does not carry them. The address is worked out from `path` when the page is
 drawn, which is why moving the library to another disk — or putting a CDN in front of it — changes
-nothing that was written before.
+nothing that was written before. A field given nothing but a key looks the file up to draw it.
 
-Pass `:captions="false"` for a decorative picture, and `accept` to pick something other than an
-image.
+Pass `:captions="false"` for a decorative picture, `height` to size the frame, and `accept` to
+pick something other than an image.
 
 ## Talking to it directly
 

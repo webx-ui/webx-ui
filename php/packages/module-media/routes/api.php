@@ -18,6 +18,8 @@ Route::prefix((string) config('webx-admin.api_path').'/media')
         Route::middleware('cms.can:media.view,media.manage')->group(function (): void {
             Route::get('directories', [DirectoryController::class, 'index'])->name('directories.index');
             Route::get('files', [FileController::class, 'index'])->name('files.index');
+            // Before `files/{file}`, or the word would be read as an id.
+            Route::get('files/by-path', [FileController::class, 'byPath'])->name('files.by-path');
             Route::get('files/{file}', [FileController::class, 'show'])->name('files.show');
             Route::get('files/{file}/thumb', ThumbController::class)->name('files.thumb');
             Route::get('files/{file}/source', SourceController::class)->name('files.source');

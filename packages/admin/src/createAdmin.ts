@@ -1,6 +1,6 @@
-import { createApp, h, type App, type Component } from 'vue'
+import { computed, createApp, h, ref, type App, type Component } from 'vue'
 import { createRouter, createWebHistory, type Router, type RouteRecordRaw } from 'vue-router'
-import { WebxUI } from '@webx-ui/core'
+import { localesKey, WebxUI, type LocaleOption } from '@webx-ui/core'
 import AdminNav from './AdminNav.vue'
 import AdminShell from './AdminShell.vue'
 import { createAdminContext, provideAdmin, type AdminContext } from './admin'
@@ -140,6 +140,30 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
   app.use(WebxUI)
   provideAdmin(app, context)
   provideI18n(app, i18n)
+
+  /*
+   * The languages a localized field offers are the site's *content* languages, not the ones the
+   * panel can be drawn in: a panel in English routinely edits a site published in Ukrainian and
+   * Russian. They arrive with the manifest, so this is a computed over what is already there
+   * rather than a second request — and a form written before they arrive simply has nothing to
+   * switch between yet.
+   */
+  const editing = ref('')
+
+  app.provide(localesKey, {
+    list: computed<LocaleOption[]>(() =>
+      i18n.state.contentLocales.map((locale) => ({
+        code: locale.code,
+        label: locale.code.toUpperCase(),
+      })),
+    ),
+    active: computed({
+      get: () => editing.value || (i18n.state.contentLocales[0]?.code ?? ''),
+      set: (code: string) => {
+        editing.value = code
+      },
+    }),
+  })
 
   const admin: Admin = {
     app,

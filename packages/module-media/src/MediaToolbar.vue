@@ -15,6 +15,8 @@ const props = defineProps<{
   canUpload: boolean
   canManage: boolean
   selected: number
+  /** The caller asked for one kind of file, so there is nothing to filter by. */
+  fixedType?: boolean
   /** Narrow screens get the folders behind a button instead of beside the files. */
   compact: boolean
 }>()
@@ -69,7 +71,7 @@ const sortLabel = computed(() => sorts.value.find((one) => one.value === sort.va
       size="sm"
     />
 
-    <wx-dropdown>
+    <wx-dropdown v-if="!fixedType">
       <template #trigger>
         <wx-action icon="filter" :title="`${t('manager.all-types')}: ${typeLabel}`" size="sm" />
       </template>

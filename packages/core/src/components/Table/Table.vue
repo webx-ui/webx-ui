@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useSlots, watch } from 'vue'
 import WxCheckbox from '../Checkbox/Checkbox.vue'
 import WxInput from '../Input/Input.vue'
+import type { InputModelValue } from '../Input/types'
 import WxIcon from '../Icon/Icon.vue'
 import WxPagination from '../Pagination/Pagination.vue'
 import {
@@ -631,8 +632,9 @@ let timer: ReturnType<typeof setTimeout> | undefined
  */
 const settledSearch = ref(search.value)
 
-function onSearch(value: string | number | undefined) {
-  search.value = value === undefined ? '' : String(value)
+/* `WxInput`'s model widened when it learned about languages; this field is never localized. */
+function onSearch(value: InputModelValue) {
+  search.value = typeof value === 'object' || value === undefined ? '' : String(value)
 }
 
 function onSearchChanged(term: string) {

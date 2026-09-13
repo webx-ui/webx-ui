@@ -13,4 +13,5 @@ return [
     'unsupported-type' => 'Przesłać można tylko: :types.',
     'file-too-large' => 'Plik jest większy niż :size MB.',
     'too-many-files' => 'Nie więcej niż :count plików naraz.',
+    'file-not-found' => 'Nie ma takiego pliku w bibliotece.',
 ];
