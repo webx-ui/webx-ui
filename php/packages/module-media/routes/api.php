@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use WebxUi\Media\Http\Controllers\DirectoryController;
+use WebxUi\Media\Http\Controllers\FileController;
+use WebxUi\Media\Http\Controllers\ThumbController;
 
 Route::prefix((string) config('webx-admin.api_path').'/media')
     // `web` for the session the panel signs in with, the locale middleware so an error is worded
@@ -13,9 +15,20 @@ Route::prefix((string) config('webx-admin.api_path').'/media')
     ->group(function (): void {
         Route::middleware('cms.can:media.view,media.manage')->group(function (): void {
             Route::get('directories', [DirectoryController::class, 'index'])->name('directories.index');
+            Route::get('files', [FileController::class, 'index'])->name('files.index');
+            Route::get('files/{file}', [FileController::class, 'show'])->name('files.show');
+            Route::get('files/{file}/thumb', ThumbController::class)->name('files.thumb');
+        });
+
+        Route::middleware('cms.can:media.upload,media.manage')->group(function (): void {
+            Route::post('files', [FileController::class, 'store'])->name('files.store');
         });
 
         Route::middleware('cms.can:media.manage')->group(function (): void {
+            Route::patch('files/{file}', [FileController::class, 'update'])->name('files.update');
+            Route::post('files/move', [FileController::class, 'move'])->name('files.move');
+            Route::delete('files', [FileController::class, 'destroy'])->name('files.destroy');
+
             Route::post('directories', [DirectoryController::class, 'store'])->name('directories.store');
             Route::patch('directories/{directory}', [DirectoryController::class, 'update'])->name('directories.update');
             Route::patch('directories/{directory}/move', [DirectoryController::class, 'move'])->name('directories.move');
