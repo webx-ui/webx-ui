@@ -60,6 +60,16 @@ final class FileResource extends JsonResource
                     'v' => substr($file->hash, 0, 8),
                 ])
                 : null,
+            // Where the editor reads the picture from. Same origin as the panel on purpose:
+            // it draws onto a canvas and writes that canvas out, which a browser refuses for
+            // bytes fetched from a CDN that sends no CORS headers — and a private bucket
+            // cannot be given any.
+            'source' => $file->isImage()
+                ? route('webx.media.files.source', [
+                    'file' => $file->id,
+                    'v' => substr($file->hash, 0, 8),
+                ])
+                : null,
             'editable' => $file->isImage(),
             'has_original' => $file->hasOriginal(),
             'duplicate' => $this->duplicate,

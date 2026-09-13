@@ -9,4 +9,5 @@ return [
     'delete-folder-contents' => 'Zawiera :files plik(ów) i :directories folder(ów).',
     'delete-folder-warning' => 'Wszystko w środku też zniknie, a obrazy wstawione do treści przestaną się otwierać.',
     'confirm' => 'Usuń',
+    'delete-file' => 'Usunąć :name?',
 ];
