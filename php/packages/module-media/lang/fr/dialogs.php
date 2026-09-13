@@ -9,4 +9,5 @@ return [
     'delete-folder-contents' => 'Il contient :files fichier(s) et :directories dossier(s).',
     'delete-folder-warning' => 'Tout ce qu’il contient part aussi, et les images déjà placées dans le contenu cesseront de s’ouvrir.',
     'confirm' => 'Supprimer',
+    'delete-file' => 'Supprimer :name ?',
 ];

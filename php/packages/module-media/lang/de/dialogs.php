@@ -9,4 +9,5 @@ return [
     'delete-folder-contents' => 'Er enthält :files Datei(en) und :directories Ordner.',
     'delete-folder-warning' => 'Alles darin geht mit, und bereits eingefügte Bilder lassen sich nicht mehr öffnen.',
     'confirm' => 'Löschen',
+    'delete-file' => ':name löschen?',
 ];

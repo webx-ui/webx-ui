@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use WebxUi\Media\Http\Controllers\DirectoryController;
 use WebxUi\Media\Http\Controllers\FileController;
 use WebxUi\Media\Http\Controllers\ImageController;
+use WebxUi\Media\Http\Controllers\SourceController;
 use WebxUi\Media\Http\Controllers\ThumbController;
 
 Route::prefix((string) config('webx-admin.api_path').'/media')
@@ -19,6 +20,7 @@ Route::prefix((string) config('webx-admin.api_path').'/media')
             Route::get('files', [FileController::class, 'index'])->name('files.index');
             Route::get('files/{file}', [FileController::class, 'show'])->name('files.show');
             Route::get('files/{file}/thumb', ThumbController::class)->name('files.thumb');
+            Route::get('files/{file}/source', SourceController::class)->name('files.source');
         });
 
         Route::middleware('cms.can:media.upload,media.manage')->group(function (): void {

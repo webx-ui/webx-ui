@@ -9,4 +9,5 @@ return [
     'delete-folder-contents' => 'У ній :files файл(ів) і :directories тек(и).',
     'delete-folder-warning' => 'Усе вкладене видалиться теж, а вставлені в контент зображення перестануть відкриватися.',
     'confirm' => 'Видалити',
+    'delete-file' => 'Видалити :name?',
 ];

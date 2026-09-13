@@ -9,4 +9,5 @@ return [
     'delete-folder-contents' => 'It holds :files file(s) and :directories folder(s).',
     'delete-folder-warning' => 'Everything inside goes too, and pictures already placed in content will stop opening.',
     'confirm' => 'Delete',
+    'delete-file' => 'Delete :name?',
 ];
