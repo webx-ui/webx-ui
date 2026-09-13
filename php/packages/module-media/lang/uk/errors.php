@@ -13,4 +13,5 @@ return [
     'unsupported-type' => 'Завантажити можна лише: :types.',
     'file-too-large' => 'Файл більший за :size МБ.',
     'too-many-files' => 'Не більше :count файлів за раз.',
+    'file-not-found' => 'Такого файла в бібліотеці немає.',
 ];

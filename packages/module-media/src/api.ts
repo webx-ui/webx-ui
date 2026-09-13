@@ -11,6 +11,13 @@ export interface MediaApi {
 
   files(query?: FileQuery): Promise<MediaPage>
   file(id: number): Promise<MediaFile>
+  /**
+   * The file behind a key.
+   *
+   * An entity stores the key and nothing else, so this is how a form draws the picture it
+   * saved last time. `null` when the file is gone from the library.
+   */
+  fileByPath(path: string): Promise<MediaFile | null>
   upload(
     directoryId: number,
     files: File[],
@@ -67,6 +74,12 @@ export function createMediaApi(admin: AdminContext): MediaApi {
       }),
 
     file: (id) => admin.http.get<{ data: MediaFile }>(`${base}/files/${id}`).then(data),
+
+    fileByPath: (path) =>
+      admin.http
+        .get<{ data: MediaFile }>(`${base}/files/by-path?path=${encodeURIComponent(path)}`)
+        .then(data)
+        .catch(() => null),
 
     async upload(directoryId, files, onProgress) {
       const body = new FormData()

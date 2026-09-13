@@ -13,4 +13,5 @@ return [
     'unsupported-type' => 'Only these can be uploaded: :types.',
     'file-too-large' => 'The file is larger than :size MB.',
     'too-many-files' => 'No more than :count files at a time.',
+    'file-not-found' => 'There is no such file in the library.',
 ];

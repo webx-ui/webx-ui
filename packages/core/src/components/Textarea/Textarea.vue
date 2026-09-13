@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useFormField } from '../../composables/useFormField'
+import { useLocalized } from '../../composables/useLocalized'
+import LocalePicker from '../Locales/LocalePicker.vue'
 import type { TextareaEmits, TextareaModelValue, TextareaProps } from './types'
 import { useControlAttrs } from '../../composables/useControlAttrs'
 
@@ -22,6 +24,7 @@ const props = withDefaults(defineProps<TextareaProps>(), {
   showCount: false,
   resize: 'vertical',
   ariaLabel: undefined,
+  localized: false,
 })
 
 const emit = defineEmits<TextareaEmits>()
@@ -32,7 +35,21 @@ const field = useFormField(props)
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const focused = ref(false)
 
-const currentValue = computed(() => model.value ?? '')
+const locales = useLocalized(props, model)
+
+/** The language on screen, or nothing at all when the field is plain. */
+const editing = computed(() => (locales.on.value ? locales.active.value : undefined))
+
+const currentValue = computed(() => locales.read(editing.value))
+
+/* The languages not on screen, carried along — see the same note in `WxInput`. */
+const carried = computed(() =>
+  locales.on.value
+    ? locales.list.value
+        .filter((locale) => locale.code !== locales.active.value)
+        .map((locale) => ({ code: locale.code, value: locales.read(locale.code) }))
+    : [],
+)
 
 const counter = computed(() =>
   props.showCount && props.maxlength ? `${currentValue.value.length}/${props.maxlength}` : null,
@@ -51,6 +68,7 @@ const classes = computed(() => [
     'is-disabled': field.disabled.value,
     'is-readonly': props.readonly,
     'is-autosize': Boolean(autosizeOptions.value),
+    'is-localized': locales.on.value,
   },
 ])
 
@@ -82,7 +100,7 @@ watch([currentValue, autosizeOptions], () => nextTick(syncHeight))
 
 function onInput(event: Event) {
   const value = (event.target as HTMLTextAreaElement).value
-  model.value = value
+  locales.write(editing.value, value)
   emit('input', value)
 }
 
@@ -115,6 +133,7 @@ defineExpose({
       ref="textareaRef"
       v-bind="controlAttrs"
       class="wx-textarea__inner"
+      :name="locales.nameFor(controlAttrs.name, editing)"
       :value="currentValue"
       :rows="rows"
       :placeholder="placeholder"
@@ -131,7 +150,22 @@ defineExpose({
       @blur="onBlur"
     />
 
+    <input
+      v-for="other in carried"
+      :key="other.code"
+      type="hidden"
+      :name="locales.nameFor(controlAttrs.name, other.code)"
+      :value="other.value"
+    />
+
     <span v-if="counter" class="wx-textarea__count">{{ counter }}</span>
+
+    <locale-picker
+      v-if="locales.on.value"
+      :locales="locales.list.value"
+      :active="locales.active.value"
+      @choose="(code) => (locales.active.value = code)"
+    />
   </div>
 </template>
 
@@ -216,6 +250,11 @@ defineExpose({
 
 .wx-textarea__inner:disabled {
   cursor: not-allowed;
+}
+
+/* Room for the language chip in the corner, so the first line does not run under it. */
+.wx-textarea.is-localized .wx-textarea__inner {
+  padding-right: var(--wx-space-40);
 }
 
 .wx-textarea__count {
