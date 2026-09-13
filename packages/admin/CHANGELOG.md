@@ -1,5 +1,19 @@
 # @webx-ui/admin
 
+## 0.2.1
+
+### Patch Changes
+
+- 47cc998: The file manager after an hour with it: icon actions instead of labelled buttons, filters behind
+  popovers, folders in a drawer on a phone, case-insensitive search in any alphabet, previews that
+  change when a picture is edited, and a copy-the-link that says whether it worked.
+
+  `@webx-ui/admin` gains the toaster the panel never had — until now every `toast()` from every
+  module reported into silence.
+
+- Updated dependencies [47cc998]
+  - @webx-ui/core@0.14.3
+
 ## 0.2.0
 
 ### Minor Changes
