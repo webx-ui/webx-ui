@@ -7,6 +7,7 @@ namespace WebxUi\Media\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -29,6 +30,8 @@ use Illuminate\Support\Facades\Storage;
  * @property int $size
  * @property int|null $width
  * @property int|null $height
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class MediaFile extends Model
 {
