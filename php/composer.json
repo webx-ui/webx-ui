@@ -9,6 +9,7 @@
         "webx-ui/localization": "*",
         "webx-ui/mcp": "*",
         "webx-ui/module-auth": "*",
+        "webx-ui/module-media": "*",
         "webx-ui/nested-set": "*"
     },
     "require-dev": {
@@ -28,6 +29,7 @@
                     "webx-ui/localization": "0.6.0",
                     "webx-ui/mcp": "0.6.0",
                     "webx-ui/module-auth": "0.6.0",
+                    "webx-ui/module-media": "0.6.0",
                     "webx-ui/nested-set": "0.6.0"
                 }
             }
@@ -39,6 +41,7 @@
             "WebxUi\\Auth\\Tests\\": "packages/module-auth/tests/",
             "WebxUi\\Localization\\Tests\\": "packages/localization/tests/",
             "WebxUi\\Mcp\\Tests\\": "packages/mcp/tests/",
+            "WebxUi\\Media\\Tests\\": "packages/module-media/tests/",
             "WebxUi\\NestedSet\\Tests\\": "packages/nested-set/tests/"
         }
     },
