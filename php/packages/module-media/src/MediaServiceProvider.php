@@ -18,6 +18,7 @@ class MediaServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-media');
+        $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->app->make(ModuleRegistry::class)->register(new MediaModule);
 

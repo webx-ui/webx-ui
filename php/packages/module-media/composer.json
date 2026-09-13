@@ -1,7 +1,14 @@
 {
     "name": "webx-ui/module-media",
     "description": "File manager for a WebX UI admin panel: folders, files, uploads and image editing on any Laravel disk.",
-    "keywords": ["laravel", "admin", "cms", "media", "file-manager", "webx-ui"],
+    "keywords": [
+        "laravel",
+        "admin",
+        "cms",
+        "media",
+        "file-manager",
+        "webx-ui"
+    ],
     "homepage": "https://github.com/webx-ui/webx-ui",
     "license": "MIT",
     "authors": [
@@ -27,6 +34,7 @@
         "webx-ui/admin": "^0.6.0",
         "webx-ui/localization": "^0.6.0",
         "webx-ui/mcp": "^0.6.0",
+        "webx-ui/module-auth": "^0.6.0",
         "webx-ui/nested-set": "^0.6.0"
     },
     "require-dev": {
@@ -45,7 +53,9 @@
     },
     "extra": {
         "laravel": {
-            "providers": ["WebxUi\\Media\\MediaServiceProvider"]
+            "providers": [
+                "WebxUi\\Media\\MediaServiceProvider"
+            ]
         }
     },
     "config": {
