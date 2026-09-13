@@ -86,7 +86,18 @@ const current = ref<number | null>(null)
 const page = ref<MediaPage | null>(null)
 const selected = ref<number[]>([])
 const search = ref('')
+/*
+ * What the caller asked for is not a default the person can put back: a field that wants a
+ * picture would otherwise be handed a PDF, and find out when the page renders.
+ */
 const type = ref<MediaKind | 'all'>(props.accept ?? 'all')
+
+watch(
+  () => props.accept,
+  (kind) => {
+    type.value = kind ?? 'all'
+  },
+)
 const sort = ref('-created_at')
 const busy = ref(false)
 const foldersOpen = ref(false)
@@ -424,11 +435,18 @@ function debounce(run: () => void, wait: number): () => void {
     </aside>
 
     <section class="wx-media__files">
+      <!--
+        Uploading is offered while picking too. Most of the time the picture somebody is looking
+        for is the one on their desk, and a picker that can only choose from what is already
+        there sends them off to the library, to the upload, and back to a form they then have to
+        find again.
+      -->
       <media-toolbar
         v-model:search="search"
         v-model:type="type"
         v-model:sort="sort"
-        :can-upload="canUpload && !picking"
+        :can-upload="canUpload"
+        :fixed-type="accept !== null"
         :can-manage="canManage"
         :selected="selected.length"
         :compact="compact"
@@ -438,7 +456,18 @@ function debounce(run: () => void, wait: number): () => void {
         @folders="foldersOpen = true"
       />
 
-      <input ref="picker" type="file" multiple hidden @change="upload" />
+      <!--
+        `accept` here is a hint to the file dialog, not a rule: what may be uploaded at all is
+        the server's list of extensions, and it says so in a language the person reads.
+      -->
+      <input
+        ref="picker"
+        type="file"
+        multiple
+        hidden
+        :accept="accept === null ? undefined : `${accept}/*`"
+        @change="upload"
+      />
 
       <file-grid
         v-model:selected="selected"

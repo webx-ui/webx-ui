@@ -47,9 +47,22 @@ const ordered = computed<LocaleOption[]>(() => [
  * around it, and unrolls over whatever is below rather than pushing it down.
  */
 .wx-locale-picker {
+  /*
+   * The host may set these; the defaults live in the `var()` fallbacks rather than as
+   * declarations here, because a property declared on this element would override the one
+   * inherited from the host and the host could never say anything.
+   *
+   * A single-line field centres the chip on its middle line; a textarea is tall, so it pins the
+   * chip near the top and makes it a size smaller.
+   */
   position: absolute;
-  top: var(--wx-space-4);
+  top: var(--wx-locale-picker-top, 50%);
   right: var(--wx-space-4);
+  /*
+   * Unrolled it hangs over whatever is below — including the next field's own chip, which sits
+   * at this same corner one control down. Two pickers at the same depth overlap into an
+   * unreadable stack, so the one being pointed at leaves the others well beneath it.
+   */
   z-index: 2;
   display: flex;
   flex-direction: column;
@@ -58,6 +71,8 @@ const ordered = computed<LocaleOption[]>(() => [
   border: 1px solid transparent;
   border-radius: var(--wx-radius-sm);
   background: transparent;
+  /* Folded up it is one chip, and one chip belongs on the middle line of the control. */
+  transform: translateY(var(--wx-locale-picker-shift, -50%));
   transition:
     background-color var(--wx-duration-fast) var(--wx-easing-standard),
     border-color var(--wx-duration-fast) var(--wx-easing-standard),
@@ -66,6 +81,7 @@ const ordered = computed<LocaleOption[]>(() => [
 
 .wx-locale-picker:hover,
 .wx-locale-picker:focus-within {
+  z-index: 40;
   border-color: var(--wx-border-default);
   background: var(--wx-bg-surface);
   box-shadow: var(--wx-shadow-sm);
@@ -75,15 +91,15 @@ const ordered = computed<LocaleOption[]>(() => [
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 30px;
-  height: 22px;
+  min-width: 32px;
+  height: var(--wx-locale-picker-height, 24px);
   padding: 0 var(--wx-space-6);
   border: none;
   border-radius: var(--wx-radius-xs);
   background: transparent;
   color: var(--wx-text-muted);
   font-family: inherit;
-  font-size: var(--wx-font-size-xs);
+  font-size: var(--wx-font-size-sm);
   font-weight: 600;
   line-height: 1;
   text-transform: uppercase;

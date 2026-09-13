@@ -9,7 +9,6 @@ import {
   WxInput,
   WxPopconfirm,
   WxPopover,
-  WxSpace,
   type LocalizedValue,
 } from '@webx-ui/core'
 import { createMediaApi } from './api'
@@ -133,15 +132,24 @@ function clear(): void {
 
     <div v-else class="wx-media-field__frame" :style="frameStyle">
       <!--
-        Both of these are wrapped in elements of our own rather than styled through their class.
-        A component of the design system carries scoped rules, and a scoped rule is a class plus
-        an attribute — so a single class from outside loses to it, silently and only in a
-        browser: the picture came out its natural size and the buttons landed beside the frame.
+        The picture and the buttons are wrapped in elements of our own rather than styled
+        through their class: a component of the design system carries scoped rules, and a scoped
+        rule is a class plus an attribute, so a single class from outside loses to it — silently,
+        and only in a browser.
+
+        The picture is also the way to swap it. A button labelled "replace" inside the captions
+        popover is a second place to look for something the picture itself already offers.
       -->
-      <div class="wx-media-field__picture">
+      <button
+        type="button"
+        class="wx-media-field__picture"
+        :disabled="disabled"
+        :title="t('field.replace')"
+        @click="choose"
+      >
         <wx-image v-if="preview" :src="preview" fit="contain" width="100%" height="100%" />
         <span v-else class="wx-media-field__missing">{{ t('field.no-preview') }}</span>
-      </div>
+      </button>
 
       <div v-if="!disabled" class="wx-media-field__bar">
         <wx-actions size="sm">
@@ -161,32 +169,35 @@ function clear(): void {
               <wx-action type="edit" :title="t('field.edit')" />
             </template>
 
-            <wx-space direction="vertical" size="sm" class="wx-media-field__captions">
-              <label class="wx-media-field__caption-label" for="wx-media-alt">alt</label>
-              <wx-input
-                id="wx-media-alt"
-                localized
-                :model-value="words('alt')"
-                :placeholder="t('field.alt-hint')"
-                @update:model-value="(next) => setWords('alt', next)"
-              />
+            <div class="wx-media-field__captions">
+              <div class="wx-media-field__caption">
+                <label class="wx-media-field__caption-label" for="wx-media-alt">alt</label>
+                <wx-input
+                  id="wx-media-alt"
+                  localized
+                  :model-value="words('alt')"
+                  :placeholder="t('field.alt-hint')"
+                  @update:model-value="(next) => setWords('alt', next)"
+                />
+              </div>
 
-              <label class="wx-media-field__caption-label" for="wx-media-title">title</label>
-              <wx-input
-                id="wx-media-title"
-                localized
-                :model-value="words('title')"
-                :placeholder="t('field.title-hint')"
-                @update:model-value="(next) => setWords('title', next)"
-              />
+              <div class="wx-media-field__caption">
+                <label class="wx-media-field__caption-label" for="wx-media-title">title</label>
+                <wx-input
+                  id="wx-media-title"
+                  localized
+                  :model-value="words('title')"
+                  :placeholder="t('field.title-hint')"
+                  @update:model-value="(next) => setWords('title', next)"
+                />
+              </div>
 
               <div class="wx-media-field__captions-footer">
-                <wx-button size="sm" @click="choose">{{ t('field.replace') }}</wx-button>
                 <wx-button size="sm" type="primary" @click="editing = false">
                   {{ t('manager.save') }}
                 </wx-button>
               </div>
-            </wx-space>
+            </div>
           </wx-popover>
 
           <!--
@@ -270,6 +281,17 @@ function clear(): void {
   width: 100%;
   height: 100%;
   min-width: 0;
+  padding: 0;
+  border: none;
+  /* Inscribed in the frame, so rounded a step less than it — concentric, not parallel. */
+  border-radius: var(--wx-radius-xs);
+  overflow: hidden;
+  background: transparent;
+  cursor: pointer;
+}
+
+.wx-media-field__picture:disabled {
+  cursor: not-allowed;
 }
 
 .wx-media-field__missing {
@@ -280,7 +302,8 @@ function clear(): void {
 /* On the picture, out of the way of it: the frame is the preview, not a toolbar. */
 .wx-media-field__bar {
   position: absolute;
-  bottom: var(--wx-space-8);
+  /* Clear of the frame's inner edge rather than sitting on it. */
+  bottom: var(--wx-space-16);
   left: 50%;
   transform: translateX(-50%);
   padding: var(--wx-space-4);
@@ -289,8 +312,18 @@ function clear(): void {
   box-shadow: var(--wx-shadow-sm);
 }
 
+/* A label belongs to the field under it, so it sits closer to that than to the next one. */
 .wx-media-field__captions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-12);
   width: 100%;
+}
+
+.wx-media-field__caption {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-2);
 }
 
 .wx-media-field__caption-label {
@@ -302,6 +335,5 @@ function clear(): void {
   display: flex;
   justify-content: flex-end;
   gap: var(--wx-space-8);
-  margin-top: var(--wx-space-4);
 }
 </style>

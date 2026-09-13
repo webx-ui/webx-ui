@@ -171,6 +171,11 @@ defineExpose({
 
 <style scoped>
 .wx-textarea {
+  /* Tall, so the chip is pinned near the top rather than centred, and a size smaller. */
+  --wx-locale-picker-height: 20px;
+  --wx-locale-picker-top: var(--wx-space-6);
+  --wx-locale-picker-shift: 0;
+
   position: relative;
   display: block;
   box-sizing: border-box;
