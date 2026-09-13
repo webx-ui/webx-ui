@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useResponsiveShell } from '@webx-ui/core'
+import { useResponsiveShell, WxToaster } from '@webx-ui/core'
 import { useAdmin } from './admin'
 import { useTranslate } from './i18n'
 
@@ -25,6 +25,8 @@ const { layout, collapsed, showAside, drawerOpen, toggle, close } = useResponsiv
 </script>
 
 <template>
+  <wx-toaster />
+
   <div v-if="admin.state.status === 'unauthenticated'" class="wx-root wx-admin-plain">
     <router-view />
   </div>

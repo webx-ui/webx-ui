@@ -67,10 +67,24 @@ final class FileEndpointsTest extends TestCase
     #[Test]
     public function a_type_nobody_asked_for_is_refused(): void
     {
-        $this->post('/api/cms/media/files', [
+        $response = $this->post('/api/cms/media/files', [
             'directory_id' => $this->root()->getKey(),
             'files' => [UploadedFile::fake()->create('payload.php', 4, 'application/x-php')],
-        ], ['Accept' => 'application/json'])->assertStatus(422);
+        ], ['Accept' => 'application/json']);
+
+        $response->assertStatus(422);
+
+        /** @var array<string, list<string>> $errors */
+        $errors = $response->json('errors');
+        $message = implode(' ', array_merge(...array_values($errors)));
+
+        // In extensions, and only those. Laravel's own message lists every mime type it was
+        // given, which arrives as a paragraph of
+        // application/vnd.openxmlformats-officedocument… — true, and useless to whoever is
+        // holding the file.
+        $this->assertStringContainsString('jpg', $message);
+        $this->assertStringContainsString('xlsx', $message);
+        $this->assertStringNotContainsString('application/', $message);
 
         $this->assertSame(0, MediaFile::query()->count());
     }
@@ -123,6 +137,9 @@ final class FileEndpointsTest extends TestCase
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.name', 'Chair Bergen');
+
+        // Case, and a language whose case sqlite's own LIKE does not know about.
+        $this->getJson('/api/cms/media/files?q=BERGEN')->assertOk()->assertJsonCount(1, 'data');
     }
 
     #[Test]
@@ -165,7 +182,7 @@ final class FileEndpointsTest extends TestCase
         $first = $this->upload($this->root(), 'One.jpg');
         $second = $this->upload($this->root(), 'Two.jpg');
 
-        $this->deleteJson('/api/cms/media/files', ['ids' => [$first->id, $second->id]])
+        $this->postJson('/api/cms/media/files/delete', ['ids' => [$first->id, $second->id]])
             ->assertOk()
             ->assertJsonPath('data.deleted', 2);
 
@@ -220,7 +237,19 @@ final class FileEndpointsTest extends TestCase
 
         $file = MediaFile::query()->firstOrFail();
 
-        $this->deleteJson('/api/cms/media/files', ['ids' => [$file->id]])->assertForbidden();
+        $this->postJson('/api/cms/media/files/delete', ['ids' => [$file->id]])->assertForbidden();
+    }
+
+    #[Test]
+    public function searching_does_not_care_about_case_in_any_alphabet(): void
+    {
+        $this->upload($this->root(), 'Диван Осло.jpg');
+
+        foreach (['диван', 'ДИВАН', 'Осло', 'осло'] as $query) {
+            $this->getJson('/api/cms/media/files?q='.urlencode($query))
+                ->assertOk()
+                ->assertJsonCount(1, 'data');
+        }
     }
 
     private function root(): MediaDirectory
