@@ -3,7 +3,7 @@
 Administrators, roles and sign-in for a [WebX UI](https://github.com/webx-ui/webx-ui) admin
 panel.
 
-Installing it is what closes the panel. Before it, `webx-ui/admin` serves its API to anyone who
+Installing it is what closes the panel. Before it, `webx-ui/module-admin` serves its API to anyone who
 asks — and says so during `webx:install`, because that is the kind of thing that is easy to
 leave for later.
 
@@ -11,7 +11,7 @@ leave for later.
 
 - PHP 8.3+
 - Laravel 13
-- `webx-ui/admin`, `webx-ui/mcp`
+- `webx-ui/module-admin`, `webx-ui/mcp`
 
 ## Install
 

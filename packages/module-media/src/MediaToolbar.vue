@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useTranslate } from '@webx-ui/admin'
+import { useTranslate } from '@webx-ui/module-admin'
 import { WxAction, WxActions, WxDropdown, WxDropdownItem, WxInput } from '@webx-ui/core'
 import type { MediaKind } from './types'
 

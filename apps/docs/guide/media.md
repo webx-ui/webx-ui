@@ -73,7 +73,7 @@ pick something other than an image.
 
 ```ts
 import { createMediaApi } from '@webx-ui/module-media'
-import { useAdmin } from '@webx-ui/admin'
+import { useAdmin } from '@webx-ui/module-admin'
 
 const api = createMediaApi(useAdmin())
 

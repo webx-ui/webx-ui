@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, useTemplateRef } from 'vue'
-import { HttpError, useTranslate } from '@webx-ui/admin'
+import { HttpError, useTranslate } from '@webx-ui/module-admin'
 import { useAuth } from './session'
 
 /**

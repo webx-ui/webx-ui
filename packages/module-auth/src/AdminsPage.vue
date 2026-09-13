@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, useTemplateRef, type Component } from 'vue'
-import { useAdmin, useTranslate } from '@webx-ui/admin'
+import { useAdmin, useTranslate } from '@webx-ui/module-admin'
 import { confirm, createModal, toast, WxButton, WxCard } from '@webx-ui/core'
 import AdminDialog from './AdminDialog.vue'
 import AdminList from './AdminList.vue'

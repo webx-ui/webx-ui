@@ -9,12 +9,12 @@ pnpm add @webx-ui/module-media
 ```
 
 ```ts
-import { createAdmin } from '@webx-ui/admin'
+import { createAdmin } from '@webx-ui/module-admin'
 import { auth } from '@webx-ui/module-auth'
 import { media } from '@webx-ui/module-media'
 
 import '@webx-ui/core/style.css'
-import '@webx-ui/admin/style.css'
+import '@webx-ui/module-admin/style.css'
 import '@webx-ui/module-media/style.css'
 
 createAdmin({
@@ -75,7 +75,7 @@ adjustments are switched off until the server can be told about them.
 
 ```ts
 import { createMediaApi } from '@webx-ui/module-media'
-import { useAdmin } from '@webx-ui/admin'
+import { useAdmin } from '@webx-ui/module-admin'
 
 const api = createMediaApi(useAdmin())
 const page = await api.files({ q: 'sofa', type: 'image' })

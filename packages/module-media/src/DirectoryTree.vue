@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { useTranslate } from '@webx-ui/admin'
+import { useTranslate } from '@webx-ui/module-admin'
 import { WxTree, type TreeDropEvent } from '@webx-ui/core'
 import type { MediaDirectory } from './types'
 

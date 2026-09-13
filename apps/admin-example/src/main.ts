@@ -1,5 +1,5 @@
 import { h } from 'vue'
-import { createAdmin, useAdmin, type AdminModule } from '@webx-ui/admin'
+import { createAdmin, useAdmin, type AdminModule } from '@webx-ui/module-admin'
 import { auth, WxUserMenu } from '@webx-ui/module-auth'
 /* The opt-in typeface; the tokens themselves come in with the core stylesheet. */
 import '@webx-ui/tokens/fonts.css'

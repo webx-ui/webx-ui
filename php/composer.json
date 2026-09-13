@@ -5,7 +5,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
-        "webx-ui/admin": "*",
+        "webx-ui/module-admin": "*",
         "webx-ui/localization": "*",
         "webx-ui/mcp": "*",
         "webx-ui/module-auth": "*",
@@ -25,7 +25,7 @@
             "options": {
                 "//": "Without this the packages take the version of the git branch, and a constraint between two of them cannot be satisfied locally. scripts/sync-php-version.mjs keeps the map in step with php/package.json.",
                 "versions": {
-                    "webx-ui/admin": "0.11.0",
+                    "webx-ui/module-admin": "0.11.0",
                     "webx-ui/localization": "0.11.0",
                     "webx-ui/mcp": "0.11.0",
                     "webx-ui/module-auth": "0.11.0",
@@ -37,7 +37,7 @@
     ],
     "autoload-dev": {
         "psr-4": {
-            "WebxUi\\Admin\\Tests\\": "packages/admin/tests/",
+            "WebxUi\\Admin\\Tests\\": "packages/module-admin/tests/",
             "WebxUi\\Auth\\Tests\\": "packages/module-auth/tests/",
             "WebxUi\\Localization\\Tests\\": "packages/localization/tests/",
             "WebxUi\\Mcp\\Tests\\": "packages/mcp/tests/",

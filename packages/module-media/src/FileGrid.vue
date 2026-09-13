@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useTranslate } from '@webx-ui/admin'
+import { useTranslate } from '@webx-ui/module-admin'
 import { toast, WxEmpty, WxFileCard, WxSelectionArea } from '@webx-ui/core'
 import type { MediaApi } from './api'
 import type { MediaFile } from './types'

@@ -72,7 +72,7 @@ somebody is not the same as being allowed to edit their account.
 
 ```ts
 import { createAdminsApi } from '@webx-ui/module-auth'
-import { useAdmin } from '@webx-ui/admin'
+import { useAdmin } from '@webx-ui/module-admin'
 
 const api = createAdminsApi(useAdmin())
 

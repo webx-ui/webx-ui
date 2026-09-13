@@ -1,5 +1,5 @@
 import { inject, type App, type InjectionKey } from 'vue'
-import type { AdminContext, AdminUser } from '@webx-ui/admin'
+import type { AdminContext, AdminUser } from '@webx-ui/module-admin'
 
 export interface Credentials {
   email: string

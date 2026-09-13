@@ -155,7 +155,7 @@ final class PanelCommand extends Command
 
     private function reportPackages(): void
     {
-        $packages = ['@webx-ui/admin'];
+        $packages = ['@webx-ui/module-admin'];
 
         if (class_exists(AuthServiceProvider::class)) {
             $packages[] = '@webx-ui/module-auth';

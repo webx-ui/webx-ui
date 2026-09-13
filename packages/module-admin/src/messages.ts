@@ -3,7 +3,7 @@ import type { Messages } from './i18n'
 /**
  * The panel's own words, in English.
  *
- * The same keys `webx-ui/admin` ships as `lang/en/*.php`, kept here so the package works with
+ * The same keys `webx-ui/module-admin` ships as `lang/en/*.php`, kept here so the package works with
  * no server behind it. Anything the server sends wins; this is the floor, not the source of
  * truth. Translations belong in the Composer package, where one file serves both halves.
  */

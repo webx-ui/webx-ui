@@ -1,7 +1,7 @@
 {
-  "name": "@webx-ui/admin",
+  "name": "@webx-ui/module-admin",
   "version": "0.2.4",
-  "description": "The frame a WebX UI admin panel runs in: bootstrap, the shell, the HTTP client and the module registry that pairs with webx-ui/admin on the server.",
+  "description": "The frame a WebX UI admin panel runs in: bootstrap, the shell, the HTTP client and the module registry that pairs with webx-ui/module-admin on the server.",
   "license": "MIT",
   "type": "module",
   "sideEffects": [
@@ -18,7 +18,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/webx-ui/webx-ui.git",
-    "directory": "packages/admin"
+    "directory": "packages/module-admin"
   },
   "homepage": "https://webx-ui.github.io/webx-ui/guide/roadmap.html",
   "publishConfig": {

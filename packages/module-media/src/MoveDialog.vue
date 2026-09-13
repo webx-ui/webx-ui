@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useTranslate } from '@webx-ui/admin'
+import { useTranslate } from '@webx-ui/module-admin'
 import { useModal, WxButton, WxDialog, WxSelect, WxSpace } from '@webx-ui/core'
 import type { MediaDirectory } from './types'
 

@@ -21,7 +21,7 @@ MONOREPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP="${APP_PATH:-$(cd "$MONOREPO/.." && pwd)/webx-cms.local}"
 MODE="${1:-local}"
 
-PACKAGES=(core tokens admin module-auth)
+PACKAGES=(core tokens module-admin module-auth)
 
 if [ ! -f "$APP/package.json" ]; then
     printf 'No application at %s — run scripts/php-dev-app.sh first.\n' "$APP" >&2

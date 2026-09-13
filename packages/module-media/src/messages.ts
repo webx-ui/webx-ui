@@ -1,4 +1,4 @@
-import type { Messages } from '@webx-ui/admin'
+import type { Messages } from '@webx-ui/module-admin'
 
 /**
  * What this package says, in English.

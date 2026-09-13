@@ -88,7 +88,7 @@ class AuthServiceProvider extends ServiceProvider
      * Installing this package is what closes the panel, rather than remembering to.
      *
      * It runs in register() on purpose: every provider is registered before any is booted, so
-     * this lands before webx-ui/admin reads the value while declaring its routes.
+     * this lands before webx-ui/module-admin reads the value while declaring its routes.
      */
     private function protectPanel(): void
     {

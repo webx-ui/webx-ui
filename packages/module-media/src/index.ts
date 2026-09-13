@@ -1,4 +1,4 @@
-import type { AdminModule } from '@webx-ui/admin'
+import type { AdminModule } from '@webx-ui/module-admin'
 import MediaPage from './MediaPage.vue'
 import { mediaMessages } from './messages'
 

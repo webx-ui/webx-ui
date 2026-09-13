@@ -10,7 +10,7 @@ the modules it actually has.
 
 - PHP 8.3+
 - Laravel 13
-- `webx-ui/admin`
+- `webx-ui/module-admin`
 
 ## Install
 

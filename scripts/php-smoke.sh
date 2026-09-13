@@ -91,7 +91,7 @@ REPOSITORY="$(
 )
 
 step "The packages came from the checkout, not from Packagist"
-for package in admin localization mcp module-auth; do
+for package in module-admin localization mcp module-auth; do
     [ -L "$APP/vendor/webx-ui/$package" ] || [ -f "$APP/vendor/webx-ui/$package/.git" ] \
         || fail "vendor/webx-ui/$package is a copy, so a released version was installed instead of this checkout"
     note "webx-ui/$package is linked to the checkout"
@@ -104,7 +104,7 @@ step "Providers are found by discovery, not by hand"
 "$PHP_BIN" -r '
     $manifest = require $argv[1];
     $expected = [
-        "webx-ui/admin" => "WebxUi\\Admin\\AdminServiceProvider",
+        "webx-ui/module-admin" => "WebxUi\\Admin\\AdminServiceProvider",
         "webx-ui/localization" => "WebxUi\\Localization\\LocalizationServiceProvider",
         "webx-ui/mcp" => "WebxUi\\Mcp\\McpServiceProvider",
         "webx-ui/module-auth" => "WebxUi\\Auth\\AuthServiceProvider",

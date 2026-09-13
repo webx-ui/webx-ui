@@ -1,4 +1,4 @@
-# webx-ui/admin
+# webx-ui/module-admin
 
 The frame a [WebX UI](https://github.com/webx-ui/webx-ui) admin panel is built on.
 
@@ -14,7 +14,7 @@ permissions belong to the modules.
 ## Install
 
 ```bash
-composer require webx-ui/admin
+composer require webx-ui/module-admin
 php artisan webx:install
 ```
 
@@ -139,7 +139,7 @@ writes `resources/js/admin.ts`, adds it to the `laravel()` plugin's inputs, and 
 `webx-admin.vite` at it. Then install the front-end packages it names and build:
 
 ```bash
-npm install @webx-ui/admin @webx-ui/module-auth
+npm install @webx-ui/module-admin @webx-ui/module-auth
 npm run build      # or npm run dev while working — @vite serves from the dev server
 ```
 

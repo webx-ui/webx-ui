@@ -1,4 +1,4 @@
-import { useAdmin } from '@webx-ui/admin'
+import { useAdmin } from '@webx-ui/module-admin'
 import { authMessages } from './messages'
 
 const seeded = new WeakSet<object>()
