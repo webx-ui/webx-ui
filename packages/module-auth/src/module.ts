@@ -23,10 +23,10 @@ export interface AdminsOptions {
  * navigation: a section shows up when both halves are installed.
  */
 export function admins(options: AdminsOptions = {}): AdminModule {
-  const path = options.path ?? '/users'
+  const path = options.path ?? '/admins'
 
   return {
-    id: 'users',
+    id: 'admins',
     path,
     routes: [
       {

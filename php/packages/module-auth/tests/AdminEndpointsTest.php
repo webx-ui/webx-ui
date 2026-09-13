@@ -160,7 +160,7 @@ final class AdminEndpointsTest extends TestCase
     public function reading_the_list_is_not_managing_it(): void
     {
         $reader = $this->admin('reader@example.test');
-        $reader->roles()->attach($this->role('readers', ['users.view'])->getKey());
+        $reader->roles()->attach($this->role('readers', ['admins.view'])->getKey());
         $this->actingAs($reader, 'cms');
 
         // A picker of people to assign work to needs the list and nothing else.

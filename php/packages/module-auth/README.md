@@ -98,12 +98,12 @@ The module offers MCP tools for reading who has what, moving people between role
 at the sign-in trail:
 
 ```
-users_list_users              users:read
-users_list_roles              users:read
-users_grant_role              users:write
-users_revoke_role             users:write
-users_recent_sign_ins         users:audit
-users_failed_sign_in_bursts   users:audit
+admins_list_admins              admins:read
+admins_list_roles              admins:read
+admins_grant_role              admins:write
+admins_revoke_role             admins:write
+admins_recent_sign_ins         admins:audit
+admins_failed_sign_in_bursts   admins:audit
 ```
 
 There is deliberately **no tool that sets a password, mints a token, creates an account or
