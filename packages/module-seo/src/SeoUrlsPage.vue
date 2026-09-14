@@ -148,7 +148,7 @@ async function remove(rule: SeoUrlRule): Promise<void> {
         @row-click="canManage ? open($event) : undefined"
       >
         <template #actions>
-          <wx-select v-model="kind" :options="kindOptions" size="sm" style="width: 200px" />
+          <wx-select v-model="kind" :options="kindOptions" class="wx-seo-urls__kind" />
         </template>
 
         <template #cell-pattern="{ row }">
@@ -186,3 +186,14 @@ async function remove(rule: SeoUrlRule): Promise<void> {
     </wx-card>
   </seo-layout>
 </template>
+
+<style scoped>
+.wx-seo-urls__kind {
+  width: 200px;
+}
+
+/* Once the rows are cards the filters are a column, and a fixed width leaves this one short. */
+.wx-table--cards .wx-seo-urls__kind {
+  width: 100%;
+}
+</style>

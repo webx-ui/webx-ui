@@ -1188,15 +1188,31 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   line-height: var(--wx-font-line-height-tight);
 }
 
+/* Wraps: a filter and a search field are each wider than a phone can spare, and an input
+   will not shrink below its own intrinsic width — it overflows sideways instead. */
 .wx-table__tools {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--wx-space-8);
   margin-left: auto;
 }
 
 .wx-table__search {
   width: var(--wx-table-search-width, 240px);
+  max-width: 100%;
+}
+
+/* Once the rows are cards there is no width to share: the filters become a column of their own. */
+.wx-table--cards .wx-table__tools {
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+}
+
+.wx-table--cards .wx-table__search {
+  width: 100%;
 }
 
 /* Inside a card the margins are the card's; the search field lines up with what the card has above it. */
