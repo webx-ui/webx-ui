@@ -36,7 +36,7 @@ final class SettingsModule extends AbstractModule implements ProvidesMcpTools
 
     public function icon(): string
     {
-        return 'settings';
+        return 'gear';
     }
 
     public function order(): int

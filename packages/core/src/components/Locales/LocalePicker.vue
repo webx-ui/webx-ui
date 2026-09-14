@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { localeLabel, type LocaleOption } from '../../composables/useLocalized'
 
 /**
  * The chip in the corner of a localized field.
  *
- * Folded up it shows the language being edited; pointed at, the rest unroll beneath it. Not
- * exported: a field gets this by asking for `localized`, and a section gets it through
- * `WxLocales`.
+ * Folded up it shows the language being edited; pointed at, every language unrolls beneath it
+ * in the site's own order — the current one included and marked, so the list never reshuffles
+ * under the pointer. Not exported: a field gets this by asking for `localized`, and a section
+ * gets it through `WxLocales`.
  */
 defineOptions({ name: 'WxLocalePicker' })
 
@@ -18,22 +18,27 @@ const props = defineProps<{
 
 const emit = defineEmits<{ choose: [code: string] }>()
 
-/** The current one first, so the folded-up picker shows it and the rest unroll beneath. */
-const ordered = computed<LocaleOption[]>(() => [
-  ...props.locales.filter((locale) => locale.code === props.active),
-  ...props.locales.filter((locale) => locale.code !== props.active),
-])
+const current = () => props.locales.find((locale) => locale.code === props.active)
 </script>
 
 <template>
   <div class="wx-locale-picker">
     <button
-      v-for="locale in ordered"
+      type="button"
+      class="wx-locale-picker__current"
+      :aria-label="active"
+      @click="emit('choose', active)"
+    >
+      {{ current() ? localeLabel(current() as LocaleOption) : active }}
+    </button>
+
+    <button
+      v-for="locale in locales"
       :key="locale.code"
       type="button"
       :class="['wx-locale-picker__code', { 'is-active': locale.code === active }]"
       :aria-label="locale.code"
-      :tabindex="locale.code === active ? 0 : -1"
+      tabindex="-1"
       @click="emit('choose', locale.code)"
     >
       {{ localeLabel(locale) }}
@@ -87,6 +92,7 @@ const ordered = computed<LocaleOption[]>(() => [
   box-shadow: var(--wx-shadow-sm);
 }
 
+.wx-locale-picker__current,
 .wx-locale-picker__code {
   display: flex;
   align-items: center;
@@ -106,18 +112,29 @@ const ordered = computed<LocaleOption[]>(() => [
   cursor: pointer;
 }
 
+/* The chip: always there, and the one thing a keyboard reaches. */
+.wx-locale-picker__current,
 .wx-locale-picker__code.is-active {
   background: var(--wx-bg-fill);
   color: var(--wx-text-default);
 }
 
-.wx-locale-picker__code:not(.is-active) {
+/* The list unrolls under the chip, separated by a hairline so the two do not read as one. */
+.wx-locale-picker__code {
   display: none;
 }
 
-.wx-locale-picker:hover .wx-locale-picker__code:not(.is-active),
-.wx-locale-picker:focus-within .wx-locale-picker__code:not(.is-active) {
+.wx-locale-picker:hover .wx-locale-picker__code,
+.wx-locale-picker:focus-within .wx-locale-picker__code {
   display: flex;
+}
+
+.wx-locale-picker:hover .wx-locale-picker__code:first-of-type,
+.wx-locale-picker:focus-within .wx-locale-picker__code:first-of-type {
+  margin-top: 2px;
+  border-top: 1px solid var(--wx-border-muted);
+  border-radius: 0 0 var(--wx-radius-xs) var(--wx-radius-xs);
+  padding-top: 2px;
 }
 
 .wx-locale-picker__code:not(.is-active):hover {

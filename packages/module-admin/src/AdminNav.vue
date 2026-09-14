@@ -57,7 +57,7 @@ const current = computed<string>({
       :key="group.id"
       :value="`group:${group.id}`"
       :title="group.title"
-      icon="settings"
+      icon="gear"
     >
       <wx-menu-item
         v-for="entry in group.entries"

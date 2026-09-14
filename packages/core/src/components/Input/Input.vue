@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useFormField } from '../../composables/useFormField'
 import { useLocalized } from '../../composables/useLocalized'
 import LocalePicker from '../Locales/LocalePicker.vue'
@@ -107,6 +107,15 @@ function clear() {
   inputRef.value?.focus()
 }
 
+/**
+ * Switching the language is done to type in it, so the caret goes straight into the field
+ * that was switched — this one, not every localized field on the screen.
+ */
+function choose(code: string): void {
+  locales.active.value = code
+  void nextTick(() => inputRef.value?.focus())
+}
+
 defineExpose({
   focus: () => inputRef.value?.focus(),
   blur: () => inputRef.value?.blur(),
@@ -172,7 +181,7 @@ defineExpose({
       v-if="locales.on.value"
       :locales="locales.list.value"
       :active="locales.active.value"
-      @choose="(code) => (locales.active.value = code)"
+      @choose="choose"
     />
   </div>
 </template>

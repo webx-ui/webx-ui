@@ -1,4 +1,5 @@
 ---
+'@webx-ui/core': minor
 '@webx-ui/module-admin': minor
 '@webx-ui/module-media': minor
 '@webx-ui/module-auth': patch
@@ -12,4 +13,5 @@ Screens in the panel, both halves, and the first section built on them.
 - `@webx-ui/module-admin`: `createAdmin({ screens, types })`, `WxScreen`, `admin.loadScreen()` cached per language, `admin.types`, navigation groups drawn as branches — "System" holds settings and administrators.
 - `module-media`, both halves: registers `wx-media` (the field on the client, the stored key with the resolved address on the server).
 - `module-settings`, both halves, new: the `settings.index` screen with one "General" tab, `cms_settings`, `GET`/`PUT /api/cms/settings`, `settings()` on the site, cache and `SettingsSaved`, MCP `settings_list` / `settings_get` / `settings_set`. The SEO tab is a project patch, not part of the module.
+- `core`: a `gear` icon; the language chip on a localized field unrolls every language in the site order — the current one included and marked — instead of reshuffling, and switching puts the caret into the field that was switched.
 - `module-auth`: the administrator implements `HasPermissions`, `cms.auth` makes the guard the request's default, and the section sits in the "System" group.
