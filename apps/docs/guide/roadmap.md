@@ -125,6 +125,9 @@ Still open: Carousel, Anchor, Splitter, Watermark, Marquee.
 ## CMS-specific (not in Element Plus)
 
 RichText (Tiptap) ✅ — see [RichText](/components/rich-text).
+CodeEditor (CodeMirror 6) ✅ — the same field for code: JSON with a linter, HTML, CSS, PHP, YAML
+and the rest, see [CodeEditor](/components/code-editor). The screens mechanism needs its patches
+written somewhere better than a textarea.
 EntityCard ✅ — one record as a row, see [EntityCard](/components/entity-card).
 Actions ✅ — the icon buttons at the end of a row, see [Actions](/components/actions).
 Kanban ✅ — a board of columns cards are dragged between, see [Kanban](/components/kanban).
