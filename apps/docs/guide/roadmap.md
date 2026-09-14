@@ -157,6 +157,13 @@ link.
 SortableList ✅ — a list whose order is the point, dragged by a grip or moved with the arrow keys:
 see [SortableList](/components/sortable-list).
 
+Repeater ✅ — the same list once every row is a form: a set of fields, repeated, in an order that
+is part of the answer. See [Repeater](/components/repeater). It is `SortableList` underneath, with
+the two things a form needs on top — rows that fold to a name taken from their own fields, and a
+key of its own per row, so writing a field, removing the row above or dragging one elsewhere never
+rebuilds the form under the caret. In a [described screen](/guide/screens) it is `wx-repeater`, the
+one type whose model is nested.
+
 Gantt ⬜ — the other way to look at the same work: a task per row, a bar across a timeline.
 Decided, not started. It will be ours rather than a wrapper around `frappe-gantt` or
 `vis-timeline`, because a Gantt is a header of dates and bars placed along it — a CSS grid, in
@@ -166,8 +173,7 @@ of task names, a scale of days, weeks or months, bars with progress, a marker on
 hovering or clicking a bar reported as an event. Dragging the dates and the arrows between
 dependent tasks come after that, once the first pass has been lived with.
 
-MediaLibrary / Gallery, Repeater, Markdown, LinkPicker, BlockPicker, and `SchemaRenderer` in
-[`@webx-ui/schema`](/guide/#packages).
+MediaLibrary / Gallery, Markdown, LinkPicker and BlockPicker are still open.
 
 ## Not components
 

@@ -49,7 +49,7 @@ final class MediaFieldType implements FieldType
     /**
      * @param  array<string, mixed>  $node
      */
-    public function resolve(mixed $stored, array $node): mixed
+    public function resolve(mixed $stored, array $node, ?string $locale = null): mixed
     {
         if (! is_array($stored) || ! is_string($stored['path'] ?? null)) {
             return null;

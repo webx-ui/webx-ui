@@ -165,4 +165,13 @@ describe('WxSortableList', () => {
     const byFunction = list({ itemKey: (item: Product) => `p-${item.id}` })
     expect(byFunction.findAll('.wx-sortable-list__row')).toHaveLength(3)
   })
+
+  it('names a row the way it is told to, and by its title otherwise', () => {
+    expect(grip(list({ itemLabel: 'id' }), 0)?.attributes('aria-label')).toBe('Reorder: 1')
+
+    const named = list({ itemLabel: (item: Product) => `#${item.id}` })
+    expect(grip(named, 0)?.attributes('aria-label')).toBe('Reorder: #1')
+
+    expect(grip(list(), 0)?.attributes('aria-label')).toBe('Reorder: Alternator Belt')
+  })
 })

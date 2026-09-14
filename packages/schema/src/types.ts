@@ -100,6 +100,12 @@ export interface TypeEntry {
   labelProp?: string
   /** Props derived from the node itself, beyond `props` — a tab's `value`, say. */
   bind?: (node: ScreenNode) => Record<string, unknown>
+  /**
+   * A `field` that draws its own children: it is handed `node` and `context` on top of
+   * the model binding, and decides what its children are bound to. `wx-repeater` is the
+   * one type that needs this — only it knows what one item of its list is.
+   */
+  nested?: boolean
 }
 
 export type TypeRegistry = Record<string, TypeEntry>

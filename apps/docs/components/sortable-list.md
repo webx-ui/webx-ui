@@ -159,19 +159,20 @@ only while nothing is inserted in the middle.
 
 ## Props
 
-| Prop         | Type                                          | Default              | Description                                    |
-| ------------ | --------------------------------------------- | -------------------- | ---------------------------------------------- |
-| `modelValue` | `T[]`                                         | `[]`                 | The list, in the order it is shown             |
-| `title`      | `string`                                      | —                    | Heading above the list                         |
-| `handle`     | `'grip' \| 'row' \| string`                   | `'grip'`             | What a drag starts from                        |
-| `itemKey`    | `string \| ((item, index) => string\|number)` | `'id'`               | What identifies a row                          |
-| `group`      | `string`                                      | —                    | Lists sharing a name exchange rows             |
-| `disabled`   | `boolean`                                     | `false`              | Nothing can be moved                           |
-| `size`       | `'sm' \| 'md'`                                | `'md'`               | Row height and type size                       |
-| `plain`      | `boolean`                                     | `false`              | Drops the frame, for use inside a card         |
-| `emptyText`  | `string`                                      | `'Nothing here yet'` | Shown in place of an empty list                |
-| `dragLabel`  | `string`                                      | `'Reorder'`          | What the grip is called, before the row's name |
-| `ariaLabel`  | `string`                                      | —                    | Accessible name for the list                   |
+| Prop         | Type                                          | Default                | Description                                    |
+| ------------ | --------------------------------------------- | ---------------------- | ---------------------------------------------- |
+| `modelValue` | `T[]`                                         | `[]`                   | The list, in the order it is shown             |
+| `title`      | `string`                                      | —                      | Heading above the list                         |
+| `handle`     | `'grip' \| 'row' \| string`                   | `'grip'`               | What a drag starts from                        |
+| `itemKey`    | `string \| ((item, index) => string\|number)` | `'id'`                 | What identifies a row                          |
+| `itemLabel`  | `string \| ((item, index) => string)`         | `title`/`name`/`label` | What a row is called out loud                  |
+| `group`      | `string`                                      | —                      | Lists sharing a name exchange rows             |
+| `disabled`   | `boolean`                                     | `false`                | Nothing can be moved                           |
+| `size`       | `'sm' \| 'md'`                                | `'md'`                 | Row height and type size                       |
+| `plain`      | `boolean`                                     | `false`                | Drops the frame, for use inside a card         |
+| `emptyText`  | `string`                                      | `'Nothing here yet'`   | Shown in place of an empty list                |
+| `dragLabel`  | `string`                                      | `'Reorder'`            | What the grip is called, before the row's name |
+| `ariaLabel`  | `string`                                      | —                      | Accessible name for the list                   |
 
 **Events:** `update:modelValue`; `move` (`{ item, from, to, via }`, where `via` is `'pointer'` or
 `'keyboard'`).

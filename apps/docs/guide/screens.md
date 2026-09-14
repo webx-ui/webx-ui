@@ -155,32 +155,56 @@ The core types, generated from the registry (a test fails when this table is sta
 
 <!-- types:start -->
 
-| Type              | Kind    | Component       | `label` goes to |
-| ----------------- | ------- | --------------- | --------------- |
-| `wx-tabs`         | layout  | `WxTabs`        | —               |
-| `wx-tab`          | layout  | `WxTab`         | prop `label`    |
-| `wx-card`         | layout  | `WxCard`        | prop `title`    |
-| `wx-row`          | layout  | `WxRow`         | —               |
-| `wx-col`          | layout  | `WxCol`         | —               |
-| `wx-divider`      | layout  | `WxDivider`     | prop `label`    |
-| `wx-input`        | field   | `WxInput`       | form item       |
-| `wx-textarea`     | field   | `WxTextarea`    | form item       |
-| `wx-input-number` | field   | `WxInputNumber` | form item       |
-| `wx-select`       | field   | `WxSelect`      | form item       |
-| `wx-switch`       | field   | `WxSwitch`      | form item       |
-| `wx-checkbox`     | field   | `WxCheckbox`    | form item       |
-| `wx-radio-group`  | field   | `WxRadioGroup`  | form item       |
-| `wx-date-picker`  | field   | `WxDatePicker`  | form item       |
-| `wx-color-picker` | field   | `WxColorPicker` | form item       |
-| `wx-text`         | display | `WxText`        | default slot    |
-| `wx-alert`        | display | `WxAlert`       | prop `title`    |
+| Type              | Kind    | Component          | `label` goes to |
+| ----------------- | ------- | ------------------ | --------------- |
+| `wx-tabs`         | layout  | `WxTabs`           | —               |
+| `wx-tab`          | layout  | `WxTab`            | prop `label`    |
+| `wx-card`         | layout  | `WxCard`           | prop `title`    |
+| `wx-row`          | layout  | `WxRow`            | —               |
+| `wx-col`          | layout  | `WxCol`            | —               |
+| `wx-divider`      | layout  | `WxDivider`        | prop `label`    |
+| `wx-input`        | field   | `WxInput`          | form item       |
+| `wx-textarea`     | field   | `WxTextarea`       | form item       |
+| `wx-input-number` | field   | `WxInputNumber`    | form item       |
+| `wx-select`       | field   | `WxSelect`         | form item       |
+| `wx-switch`       | field   | `WxSwitch`         | form item       |
+| `wx-checkbox`     | field   | `WxCheckbox`       | form item       |
+| `wx-radio-group`  | field   | `WxRadioGroup`     | form item       |
+| `wx-date-picker`  | field   | `WxDatePicker`     | form item       |
+| `wx-color-picker` | field   | `WxColorPicker`    | form item       |
+| `wx-repeater`     | field   | `WxScreenRepeater` | form item       |
+| `wx-text`         | display | `WxText`           | default slot    |
+| `wx-alert`        | display | `WxAlert`          | prop `title`    |
 
 <!-- types:end -->
 
 `wx-media` is `WxMediaField` from `module-media`, which registers it when installed (a module's
-`types` are merged into every panel screen, and so are `createAdmin({ types })`); `wx-repeater`
-— a list of items each edited with the same nested fields — is the one type with a nested model
-and is not written yet.
+`types` are merged into every panel screen, and so are `createAdmin({ types })`).
+
+`wx-repeater` is the one type with a nested model: its value is a list of records, and its
+children are the fields of one of them, so a `name` inside it is a key of the item rather than a
+key of the screen. `WxScreenRepeater` is a thin wrapper — [`WxRepeater`](/components/repeater)
+draws the rows, and everything the node puts in `props` (`title`, `itemLabel`, `min`, `max`,
+`collapsible`, …) reaches it untouched:
+
+```json
+{
+  "id": "offices",
+  "type": "wx-repeater",
+  "name": "contacts.offices",
+  "label": "Offices",
+  "props": { "itemLabel": "city", "addLabel": "Add an office" },
+  "children": [
+    { "id": "office-city", "type": "wx-input", "name": "city", "label": "City" },
+    { "id": "office-address", "type": "wx-textarea", "name": "address", "label": "Address" }
+  ]
+}
+```
+
+A condition inside a row is read against that row: `{ "when": "hq", "is": true }` on a child asks
+about the item being edited, not about the screen. A type of your own can draw its children the
+same way — `nested: true` on the entry, and the component is handed `node` and `context` on top of
+the model binding, with `WxScreenNodes` to render them.
 
 A project registers its own types the same way, under any name:
 
