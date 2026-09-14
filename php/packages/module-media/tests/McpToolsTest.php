@@ -133,8 +133,15 @@ final class McpToolsTest extends TestCase
 
     private function file(string $name): MediaFile
     {
+        // A fake image is a blank canvas of the size asked for and nothing else — the name is
+        // never drawn into it — so two of them with the same dimensions are the same bytes, and
+        // the store deduplicates by content inside a directory. A random width made that a one
+        // in eight hundred failure rather than none; a width of its own makes it none.
+        static $nth = 0;
+        $nth++;
+
         return $this->app->make(FileStore::class)->store(
-            UploadedFile::fake()->image($name, random_int(100, 900), 400),
+            UploadedFile::fake()->image($name, 100 + $nth, 400),
             $this->root(),
         );
     }
