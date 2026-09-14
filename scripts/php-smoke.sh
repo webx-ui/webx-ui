@@ -87,11 +87,11 @@ REPOSITORY="$(
     # this checkout, and the whole run would prove nothing about the change under test.
     $COMPOSER_BIN config repositories.packagist.org \
         '{"type":"composer","url":"https://repo.packagist.org","exclude":["webx-ui/*"]}'
-    $COMPOSER_BIN require webx-ui/module-auth:'*' --no-interaction --no-progress --quiet
+    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' --no-interaction --no-progress --quiet
 )
 
 step "The packages came from the checkout, not from Packagist"
-for package in module-admin localization mcp module-auth; do
+for package in module-admin localization mcp module-auth module-settings; do
     [ -L "$APP/vendor/webx-ui/$package" ] || [ -f "$APP/vendor/webx-ui/$package/.git" ] \
         || fail "vendor/webx-ui/$package is a copy, so a released version was installed instead of this checkout"
     note "webx-ui/$package is linked to the checkout"
@@ -108,6 +108,7 @@ step "Providers are found by discovery, not by hand"
         "webx-ui/localization" => "WebxUi\\Localization\\LocalizationServiceProvider",
         "webx-ui/mcp" => "WebxUi\\Mcp\\McpServiceProvider",
         "webx-ui/module-auth" => "WebxUi\\Auth\\AuthServiceProvider",
+        "webx-ui/module-settings" => "WebxUi\\Settings\\SettingsServiceProvider",
     ];
     foreach ($expected as $package => $provider) {
         if (! in_array($provider, $manifest[$package]["providers"] ?? [], true)) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use WebxUi\Admin\Http\Controllers\LocaleController;
 use WebxUi\Admin\Http\Controllers\ManifestController;
+use WebxUi\Admin\Http\Controllers\ScreenController;
 use WebxUi\Admin\Http\Controllers\ShellController;
 use WebxUi\Admin\Http\Controllers\TranslationController;
 
@@ -13,6 +14,9 @@ Route::prefix((string) config('webx-admin.api_path'))
     ->name('webx.api.')
     ->group(function (): void {
         Route::get('manifest', ManifestController::class)->name('manifest');
+        Route::get('screens/{name}', ScreenController::class)
+            ->where('name', '[a-z0-9-]+\.[a-z0-9-]+')
+            ->name('screens');
     });
 
 // The two things the panel needs before it can draw the sign-in screen, and therefore before

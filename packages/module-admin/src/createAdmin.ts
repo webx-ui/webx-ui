@@ -7,6 +7,7 @@ import { createAdminContext, provideAdmin, type AdminContext } from './admin'
 import { createHttp, type Http } from './http'
 import { createI18n, provideI18n, type Dictionary, type I18n, type LocaleDescriptor } from './i18n'
 import { adminMessages } from './messages'
+import type { Patch, TypeRegistry } from '@webx-ui/schema'
 import type { AdminModule, Manifest } from './types'
 
 const STORED_LOCALE = 'webx.locale'
@@ -46,6 +47,17 @@ export interface CreateAdminOptions {
    * narrows it to a language the panel actually has.
    */
   locale?: string
+  /**
+   * Screen node types the project adds — `{ map: { component: WxMapField, kind: 'field' } }` —
+   * over the core's and the modules'.
+   */
+  types?: TypeRegistry
+  /**
+   * The project's patches over the screens modules ship, by screen name, applied on the
+   * client on top of what the server hands out. What a patch cannot do from here is open a
+   * key for writing: the server decides what is saved.
+   */
+  screens?: Record<string, Patch>
   /** Swappable for tests. */
   http?: Http
 }
@@ -128,6 +140,8 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
     modules,
     i18n,
     loadDictionary,
+    types: options.types,
+    screens: options.screens,
     loadManifest: async () => {
       const body = await http.get<{ data: Manifest }>(manifestUrl)
 

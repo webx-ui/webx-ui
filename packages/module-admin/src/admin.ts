@@ -1,7 +1,8 @@
 import { computed, inject, reactive, type App, type ComputedRef, type InjectionKey } from 'vue'
+import type { Patch, ScreenNode, TypeRegistry } from '@webx-ui/schema'
 import type { Http } from './http'
 import type { I18n } from './i18n'
-import type { AdminModule, AdminStatus, AdminUser, Manifest, NavEntry } from './types'
+import type { AdminModule, AdminStatus, AdminUser, Manifest, NavEntry, NavGroup } from './types'
 
 export interface AdminContext {
   /** The panel's own backend. */
@@ -17,6 +18,10 @@ export interface AdminContext {
   readonly modules: readonly AdminModule[]
   /** Navigation, in the order the server gave, for the modules that exist on both sides. */
   readonly nav: ComputedRef<NavEntry[]>
+  /** The same navigation, with the top-level entries first and then each group's. */
+  readonly groups: ComputedRef<{ top: NavEntry[]; groups: NavGroup[] }>
+  /** Node types every screen is drawn with: the modules' and the project's, over the core. */
+  readonly types: TypeRegistry
   /** Ask the server what the panel is and who is signed in again. */
   reload(): Promise<void>
   /**
@@ -33,6 +38,13 @@ export interface AdminContext {
    */
   useSessionLoader(loader: () => Promise<AdminUser | null>): void
   can(permission: string): boolean
+  /**
+   * A screen by name, as the server hands it out — patched, cut to this administrator's
+   * permissions, translated. Fetched once per name and language for the session.
+   */
+  loadScreen(name: string): Promise<ScreenNode[]>
+  /** The project's own operations over a screen, from `createAdmin({ screens })`. */
+  screenPatch(name: string): Patch
 }
 
 export interface AdminState {
@@ -67,6 +79,8 @@ export function createAdminContext(options: {
   i18n: I18n
   loadManifest: () => Promise<Manifest>
   loadDictionary?: (locale: string) => Promise<void>
+  types?: TypeRegistry
+  screens?: Record<string, Patch>
 }): AdminContext {
   const state = reactive<AdminState>({
     status: 'loading',
@@ -105,11 +119,73 @@ export function createAdminContext(options: {
         title: module.title,
         icon: module.icon,
         path,
+        group: module.group ?? null,
       })
     }
 
     return entries
   })
+
+  const groups = computed(() => {
+    const declared = state.manifest?.groups ?? []
+    const top: NavEntry[] = []
+    const byGroup = new Map<string, NavEntry[]>()
+
+    for (const entry of nav.value) {
+      // A group the server never declared is not a group: the entry stays at the top rather
+      // than vanishing under a heading nobody can name.
+      if (entry.group !== null && declared.some((group) => group.id === entry.group)) {
+        const list = byGroup.get(entry.group) ?? []
+        list.push(entry)
+        byGroup.set(entry.group, list)
+      } else {
+        top.push(entry)
+      }
+    }
+
+    return {
+      top,
+      groups: declared
+        .filter((group) => byGroup.has(group.id))
+        .map((group) => ({
+          id: group.id,
+          title: group.title,
+          entries: byGroup.get(group.id) ?? [],
+        })),
+    }
+  })
+
+  // The core types are the renderer's own default; what is merged here is only what the panel
+  // adds — a module's, then the project's, which therefore wins.
+  const types: TypeRegistry = {}
+
+  for (const module of options.modules) {
+    Object.assign(types, module.types)
+  }
+
+  Object.assign(types, options.types)
+
+  const screens = new Map<string, Promise<ScreenNode[]>>()
+
+  async function loadScreen(name: string): Promise<ScreenNode[]> {
+    // The tree is translated on the server, so a screen is one thing per language.
+    const key = `${options.i18n.state.locale}:${name}`
+    let pending = screens.get(key)
+
+    if (pending === undefined) {
+      pending = options.http
+        .get<{ data: { screen: string; root: ScreenNode[] } }>(`${options.apiPath}/screens/${name}`)
+        .then((body) => body.data.root)
+        .catch((error: unknown) => {
+          // A failed request is not worth remembering: the next page open asks again.
+          screens.delete(key)
+          throw error
+        })
+      screens.set(key, pending)
+    }
+
+    return pending
+  }
 
   let loadSession: (() => Promise<AdminUser | null>) | null = null
 
@@ -193,6 +269,8 @@ export function createAdminContext(options: {
     i18n: options.i18n,
     modules: options.modules,
     nav,
+    groups,
+    types,
     reload,
     setLocale,
     setUser(user) {
@@ -209,6 +287,10 @@ export function createAdminContext(options: {
       }
 
       return user.isSuper || user.permissions.includes(permission)
+    },
+    loadScreen,
+    screenPatch(name) {
+      return options.screens?.[name] ?? []
     },
   }
 }

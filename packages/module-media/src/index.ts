@@ -1,4 +1,5 @@
 import type { AdminModule } from '@webx-ui/module-admin'
+import MediaField from './MediaField.vue'
 import MediaPage from './MediaPage.vue'
 import { mediaMessages } from './messages'
 
@@ -27,6 +28,11 @@ export function media(options: MediaOptions = {}): AdminModule {
         component: MediaPage,
       },
     ],
+    // What a screen means by `wx-media`: the field over the library. The server registers
+    // the same name for the value it stores.
+    types: {
+      'wx-media': { component: MediaField, kind: 'field' },
+    },
   }
 }
 

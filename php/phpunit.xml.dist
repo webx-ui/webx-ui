@@ -13,6 +13,7 @@
             <directory>packages/mcp/tests</directory>
             <directory>packages/module-auth/tests</directory>
             <directory>packages/module-media/tests</directory>
+            <directory>packages/module-settings/tests</directory>
             <directory>packages/nested-set/tests</directory>
         </testsuite>
     </testsuites>
@@ -23,6 +24,7 @@
             <directory>packages/mcp/src</directory>
             <directory>packages/module-auth/src</directory>
             <directory>packages/module-media/src</directory>
+            <directory>packages/module-settings/src</directory>
             <directory>packages/nested-set/src</directory>
         </include>
     </source>

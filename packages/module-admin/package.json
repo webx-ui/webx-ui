@@ -50,6 +50,7 @@
   },
   "dependencies": {
     "@webx-ui/core": "workspace:^",
+    "@webx-ui/schema": "workspace:^",
     "@webx-ui/tokens": "workspace:^"
   },
   "devDependencies": {
