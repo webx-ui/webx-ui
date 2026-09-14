@@ -76,8 +76,14 @@ const current = () => props.locales.find((locale) => locale.code === props.activ
   border: 1px solid transparent;
   border-radius: var(--wx-radius-sm);
   background: transparent;
-  /* Folded up it is one chip, and one chip belongs on the middle line of the control. */
-  transform: translateY(var(--wx-locale-picker-shift, -50%));
+  /*
+   * The chip belongs on the middle line of the control, so the box is lifted by half the chip
+   * — not by half of itself: unrolled, the box is four chips tall, and lifting by half of that
+   * would drag the chip up as the list appears. The 3px is the border and the padding above it.
+   */
+  transform: translateY(
+    var(--wx-locale-picker-shift, calc(-1 * (var(--wx-locale-picker-height, 24px) / 2 + 3px)))
+  );
   transition:
     background-color var(--wx-duration-fast) var(--wx-easing-standard),
     border-color var(--wx-duration-fast) var(--wx-easing-standard),
