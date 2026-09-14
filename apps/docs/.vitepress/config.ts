@@ -29,6 +29,7 @@ export default defineConfig({
             { text: 'Dialogs from code', link: '/guide/modals' },
             { text: 'The file manager', link: '/guide/media' },
             { text: 'Administrators', link: '/guide/admins' },
+            { text: 'Screens', link: '/guide/screens' },
             { text: 'Roadmap', link: '/guide/roadmap' },
           ],
         },
