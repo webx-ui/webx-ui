@@ -99,8 +99,23 @@ export function createAuthSession(admin: AdminContext): AuthSession {
   }
 }
 
-export function provideAuth(app: App, session: AuthSession): void {
+/** Turns the key an avatar is stored under into an address the browser can load. */
+export type AvatarResolver = (key: string) => Promise<string | null>
+
+/**
+ * The resolver the panel handed to `auth()`, for whatever draws the signed-in person — the
+ * menu in the corner, first of all. Null in a panel that has no library to resolve against,
+ * which is what initials are for.
+ */
+export const avatarResolverKey: InjectionKey<AvatarResolver | null> = Symbol('webx-auth-avatar')
+
+export function provideAuth(
+  app: App,
+  session: AuthSession,
+  resolveAvatar: AvatarResolver | null = null,
+): void {
   app.provide(authKey, session)
+  app.provide(avatarResolverKey, resolveAvatar)
 }
 
 function isUnauthenticated(error: unknown): boolean {

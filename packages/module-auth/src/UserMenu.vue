@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, inject, ref, watch } from 'vue'
 import { useAdmin, useI18n, useTranslate } from '@webx-ui/module-admin'
-import { useAuth } from './session'
+import { avatarResolverKey, useAuth, type AvatarResolver } from './session'
 
 /**
  * The corner of the header: who this is, which language they read the panel in, and the way
@@ -11,7 +11,14 @@ import { useAuth } from './session'
  * the person, not of the site — and because somebody who has landed in a language they cannot
  * read needs it within reach, not three clicks into a section they cannot navigate.
  */
-withDefaults(defineProps<{ signOutLabel?: string }>(), { signOutLabel: undefined })
+const props = withDefaults(
+  defineProps<{
+    signOutLabel?: string
+    /** Overrides the resolver `auth()` was given. Without either, initials. */
+    resolveAvatar?: AvatarResolver
+  }>(),
+  { signOutLabel: undefined, resolveAvatar: undefined },
+)
 
 const admin = useAdmin()
 const auth = useAuth()
@@ -23,6 +30,36 @@ const user = computed(() => admin.state.user)
 // One language is not a choice, and a menu that offers it is noise.
 const languages = computed(() =>
   i18n.state.panelLocales.length > 1 ? i18n.state.panelLocales : [],
+)
+
+const provided = inject(avatarResolverKey, null)
+const avatarUrl = ref<string | undefined>(undefined)
+
+/*
+ * The server sends the key the photograph is stored under, not a picture: turning one into
+ * the other is the library's job, and the panel says which library. Resolved again whenever
+ * the key changes — somebody editing their own photograph is told about it by the row, and
+ * the corner should agree with the row.
+ */
+watch(
+  () => (typeof user.value?.avatar === 'string' ? user.value.avatar : null),
+  async (key) => {
+    const resolve = props.resolveAvatar ?? provided
+
+    if (key === null || key === '' || resolve === null) {
+      avatarUrl.value = undefined
+
+      return
+    }
+
+    const url = await resolve(key)
+
+    // Only the answer to the key still on screen: a slow answer to a previous one is stale.
+    if (user.value?.avatar === key) {
+      avatarUrl.value = url ?? undefined
+    }
+  },
+  { immediate: true },
 )
 
 async function choose(code: string): Promise<void> {
@@ -43,7 +80,7 @@ async function choose(code: string): Promise<void> {
     -->
     <template #trigger>
       <button type="button" class="wx-user-menu__trigger" :title="user.name">
-        <wx-avatar :name="user.name" size="md" />
+        <wx-avatar :name="user.name" :src="avatarUrl" size="lg" />
       </button>
     </template>
 
@@ -52,7 +89,7 @@ async function choose(code: string): Promise<void> {
     </wx-dropdown-item>
 
     <template v-if="languages.length > 0">
-      <wx-divider :spacing="4" />
+      <wx-divider spacing="sm" />
 
       <wx-dropdown-item disabled>
         <wx-text size="sm" tone="muted">{{ t('menu.language') }}</wx-text>
@@ -67,7 +104,7 @@ async function choose(code: string): Promise<void> {
         {{ language.nativeName }}
       </wx-dropdown-item>
 
-      <wx-divider :spacing="4" />
+      <wx-divider spacing="sm" />
     </template>
 
     <wx-dropdown-item icon="logout" @click="auth.logout()">

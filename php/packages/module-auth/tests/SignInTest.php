@@ -147,12 +147,15 @@ final class SignInTest extends TestCase
     public function me_describes_whoever_is_signed_in(): void
     {
         $admin = $this->admin(super: true);
+        $admin->forceFill(['avatar' => 'people/admin.jpg'])->save();
 
         $this->actingAs($admin, 'cms')
             ->getJson('/api/cms/auth/me')
             ->assertOk()
             ->assertJsonPath('data.email', 'admin@example.test')
-            ->assertJsonPath('data.isSuper', true);
+            ->assertJsonPath('data.isSuper', true)
+            // The key, not an address: the panel asks its library for the picture.
+            ->assertJsonPath('data.avatar', 'people/admin.jpg');
     }
 
     #[Test]

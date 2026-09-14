@@ -42,6 +42,8 @@ export interface AdminUser {
   permissions: string[]
   /** The panel language they chose, or null if they never have. */
   locale?: string | null
+  /** The key their photograph is stored under — not an address; the panel resolves it. */
+  avatar?: string | null
   [key: string]: unknown
 }
 

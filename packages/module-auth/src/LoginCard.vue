@@ -237,7 +237,12 @@ defineExpose({ focus: () => emailField.value?.focus() })
         </wx-input>
       </wx-form-item>
 
-      <wx-checkbox v-if="remember" v-model="rememberMe" :label="labels.remember" />
+      <wx-checkbox
+        v-if="remember"
+        v-model="rememberMe"
+        :label="labels.remember"
+        class="wx-login__remember"
+      />
 
       <wx-button
         type="primary"
@@ -264,10 +269,20 @@ defineExpose({ focus: () => emailField.value?.focus() })
   margin-block-end: var(--wx-space-4);
 }
 
+/* The checkbox belongs to the password above it, not to the form's row of fields: pulled up
+   out of the form's gap so it reads as an option under the field rather than as a field of its
+   own. */
+.wx-login__remember {
+  margin-block-start: calc(-1 * var(--wx-space-12));
+}
+
 .wx-login__reveal {
   display: inline-flex;
   align-items: center;
   padding: 0;
+  /* A button has a font size of its own — 13.3px in every browser — and the icon inside is
+     sized in em, so without this it came out smaller than the lock at the other end. */
+  font: inherit;
   color: var(--wx-text-muted);
   background: none;
   border: 0;
