@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "title": "WebX UI screen",
+  "description": "A panel screen described as a tree of nodes. Every node has a stable id — the address patches use — and a type the registry resolves to a component.",
+  "type": "object",
+  "required": ["screen", "root"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "screen": {
+      "type": "string",
+      "description": "<module>.<screen>, e.g. settings.index",
+      "pattern": "^[a-z0-9-]+\\.[a-z0-9-]+$"
+    },
+    "model": { "type": "string", "description": "What the values belong to." },
+    "root": { "type": "array", "items": { "$ref": "#/definitions/node" } }
+  },
+  "definitions": {
+    "node": {
+      "type": "object",
+      "required": ["id", "type"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique within the screen. Renaming one is a breaking change for every patch."
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Registry key: the full component name (wx-input) or a project's own type."
+        },
+        "name": {
+          "type": "string",
+          "description": "For fields: the key in the model. A literal string — dots are part of the key."
+        },
+        "label": { "type": "string" },
+        "help": { "type": "string", "description": "Hint under a field." },
+        "localized": {
+          "type": "boolean",
+          "description": "The value is a record keyed by content language."
+        },
+        "props": {
+          "type": "object",
+          "description": "Passed to the component untouched.",
+          "additionalProperties": true
+        },
+        "children": { "type": "array", "items": { "$ref": "#/definitions/node" } },
+        "slot": {
+          "type": ["string", "null"],
+          "description": "Named slot of the parent to land in."
+        },
+        "visible": {
+          "oneOf": [{ "type": "boolean" }, { "$ref": "#/definitions/condition" }]
+        },
+        "can": {
+          "type": ["string", "null"],
+          "description": "Permission required to render the node, e.g. settings.manage."
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "oneOf": [
+        { "required": ["when", "is"] },
+        { "required": ["when", "in"] },
+        { "required": ["when", "not"] },
+        { "required": ["all"] },
+        { "required": ["any"] }
+      ],
+      "properties": {
+        "when": { "type": "string", "description": "Name of the field the condition reads." },
+        "is": {},
+        "in": { "type": "array" },
+        "not": {},
+        "all": { "type": "array", "items": { "$ref": "#/definitions/condition" } },
+        "any": { "type": "array", "items": { "$ref": "#/definitions/condition" } }
+      }
+    }
+  }
+}

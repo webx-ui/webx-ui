@@ -1,6 +1,6 @@
 # WebX UI — экраны как описание: спецификация
 
-Статус: **третья редакция, согласована**, код не начат. Первый потребитель —
+Статус: **третья редакция, согласована**, код идёт (§13). Первый потребитель —
 `module-settings`, второй — форма администратора в `module-auth`. Механизм общий и живёт в
 каркасе (`module-admin` + `@webx-ui/schema`), модули только описывают свои экраны.
 
@@ -132,7 +132,7 @@ Screens::register('settings.index', __DIR__.'/../resources/screens/index.json');
               "children": [
                 {
                   "id": "seo-grid",
-                  "type": "wx-grid",
+                  "type": "wx-row",
                   "children": [
                     {
                       "id": "og-col",
@@ -357,7 +357,7 @@ interface TypeEntry {
 
 | kind    | типы                                                                                                                                                                    |
 | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| layout  | `wx-tabs`, `wx-tab`, `wx-card`, `wx-grid`, `wx-col`, `wx-divider`                                                                                                       |
+| layout  | `wx-tabs`, `wx-tab`, `wx-card`, `wx-row`, `wx-col`, `wx-divider`                                                                                                        |
 | field   | `wx-input`, `wx-textarea`, `wx-input-number`, `wx-select`, `wx-switch`, `wx-checkbox`, `wx-radio-group`, `wx-date-picker`, `wx-color-picker`, `wx-media`, `wx-repeater` |
 | display | `wx-text`, `wx-alert`                                                                                                                                                   |
 
@@ -524,7 +524,8 @@ FieldTypes::register('map', new MapFieldType());
 1. `WxCodeEditor` в ядре — патчи на странице документации пишутся в нём, а не в textarea
    (сделано: [CodeEditor](https://webx-ui.github.io/webx-ui/components/code-editor.html)).
 2. Рендерер в `@webx-ui/schema` и страница документации с двумя редакторами — эталонное дерево и
-   патч — и живым превью. Это площадка, на которой механизм проверяется до всякого PHP.
+   патч — и живым превью. Это площадка, на которой механизм проверяется до всякого PHP
+   (сделано: [Screens](https://webx-ui.github.io/webx-ui/guide/screens.html); `wx-repeater` — отдельно).
 3. Общий слой в `module-admin`: эндпоинт экранов, реестр патчей.
 4. `module-settings`, затем `admins.form` и обе проверки на демо (§9.2).
 

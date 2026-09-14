@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://webx-ui.github.io/webx-ui/schema/patch.json",
+  "title": "WebX UI screen patch",
+  "description": "An ordered list of operations over a screen tree. Targets are node ids.",
+  "type": "array",
+  "items": { "$ref": "#/definitions/operation" },
+  "definitions": {
+    "position": {
+      "type": "string",
+      "description": "first, last (default), before:<id> or after:<id>",
+      "pattern": "^(first|last|before:.+|after:.+)$"
+    },
+    "operation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["op", "target", "node"],
+          "additionalProperties": false,
+          "properties": {
+            "op": { "const": "add" },
+            "target": { "type": "string", "description": "Parent to insert into." },
+            "node": {
+              "$ref": "https://webx-ui.github.io/webx-ui/schema/screen.json#/definitions/node"
+            },
+            "position": { "$ref": "#/definitions/position" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["op", "target"],
+          "additionalProperties": false,
+          "properties": {
+            "op": { "const": "remove" },
+            "target": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["op", "target", "node"],
+          "additionalProperties": false,
+          "properties": {
+            "op": { "const": "replace" },
+            "target": { "type": "string" },
+            "node": {
+              "$ref": "https://webx-ui.github.io/webx-ui/schema/screen.json#/definitions/node"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["op", "target"],
+          "additionalProperties": false,
+          "properties": {
+            "op": { "const": "move" },
+            "target": { "type": "string" },
+            "position": { "$ref": "#/definitions/position" },
+            "to": { "type": "string", "description": "Id of the new parent." }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["op", "target"],
+          "additionalProperties": false,
+          "properties": {
+            "op": { "const": "set" },
+            "target": { "type": "string" },
+            "type": { "type": "string", "minLength": 1 },
+            "name": { "type": "string" },
+            "label": { "type": "string" },
+            "help": { "type": "string" },
+            "localized": { "type": "boolean" },
+            "props": {
+              "type": "object",
+              "description": "Merged key by key into the node's props."
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "https://webx-ui.github.io/webx-ui/schema/screen.json#/definitions/node"
+              }
+            },
+            "slot": { "type": ["string", "null"] },
+            "visible": {
+              "oneOf": [
+                { "type": "boolean" },
+                {
+                  "$ref": "https://webx-ui.github.io/webx-ui/schema/screen.json#/definitions/condition"
+                }
+              ]
+            },
+            "can": { "type": ["string", "null"] }
+          }
+        }
+      ]
+    }
+  }
+}
