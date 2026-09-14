@@ -118,6 +118,12 @@ function onBlur(event: FocusEvent) {
   emit('blur', event)
 }
 
+/** Same as the input: the caret follows the language into this field. */
+function choose(code: string): void {
+  locales.active.value = code
+  void nextTick(() => textareaRef.value?.focus())
+}
+
 defineExpose({
   focus: () => textareaRef.value?.focus(),
   blur: () => textareaRef.value?.blur(),
@@ -164,7 +170,7 @@ defineExpose({
       v-if="locales.on.value"
       :locales="locales.list.value"
       :active="locales.active.value"
-      @choose="(code) => (locales.active.value = code)"
+      @choose="choose"
     />
   </div>
 </template>

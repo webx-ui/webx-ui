@@ -9,6 +9,14 @@ use WebxUi\Admin\Console\InstallCommand;
 use WebxUi\Admin\Console\MakeModuleCommand;
 use WebxUi\Admin\Console\PanelCommand;
 use WebxUi\Admin\Manifest\ManifestBuilder;
+use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Screens\Types\BooleanType;
+use WebxUi\Admin\Screens\Types\ColorType;
+use WebxUi\Admin\Screens\Types\DateType;
+use WebxUi\Admin\Screens\Types\NumberType;
+use WebxUi\Admin\Screens\Types\OptionType;
+use WebxUi\Admin\Screens\Types\StringType;
 use WebxUi\Localization\Locales;
 
 class AdminServiceProvider extends ServiceProvider
@@ -21,12 +29,32 @@ class AdminServiceProvider extends ServiceProvider
         // and the manifest reads whatever is there by the time a request arrives.
         $this->app->singleton(ModuleRegistry::class);
 
+        // Same for screens and the field types they are written in: modules and the project
+        // add theirs from `boot()`, and the endpoints read the sum.
+        $this->app->singleton(ScreenRegistry::class);
+        $this->app->singleton(FieldTypes::class, static function (): FieldTypes {
+            $types = new FieldTypes;
+
+            $types->register('wx-input', new StringType(2000));
+            $types->register('wx-textarea', new StringType);
+            $types->register('wx-input-number', new NumberType);
+            $types->register('wx-switch', new BooleanType);
+            $types->register('wx-checkbox', new BooleanType);
+            $types->register('wx-select', new OptionType);
+            $types->register('wx-radio-group', new OptionType);
+            $types->register('wx-date-picker', new DateType);
+            $types->register('wx-color-picker', new ColorType);
+
+            return $types;
+        });
+
         $this->app->bind(
             ManifestBuilder::class,
             static fn ($app): ManifestBuilder => new ManifestBuilder(
                 $app->make(ModuleRegistry::class),
                 $app->make('config'),
                 $app->make(Locales::class),
+                $app->make(ScreenRegistry::class),
             ),
         );
     }

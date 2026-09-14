@@ -1,0 +1,33 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "settings.index",
+  "model": "settings",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "general",
+          "type": "wx-tab",
+          "label": "trans::webx-settings::screen.general",
+          "children": [
+            {
+              "id": "general-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "project-name",
+                  "type": "wx-input",
+                  "name": "general.project-name",
+                  "label": "trans::webx-settings::screen.project-name",
+                  "localized": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

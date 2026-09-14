@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { defineComponent, h, ref } from 'vue'
+import { defineComponent, h, nextTick, ref } from 'vue'
 import WxInput from '../Input/Input.vue'
 import WxLocales from './Locales.vue'
 import { localesKey, localizedValue, type LocalesContext } from '../../composables/useLocalized'
@@ -156,5 +156,42 @@ describe('localizedValue', () => {
     expect(localizedValue('Двигуни', 'ru')).toBe('Двигуни')
     expect(localizedValue(null, 'ru', '—')).toBe('—')
     expect(localizedValue({}, 'ru', '—')).toBe('—')
+  })
+})
+
+describe('the language chip', () => {
+  it('lists every language in the site order beneath the current one, without reshuffling', async () => {
+    const wrapper = mount(WxInput, {
+      props: { modelValue: { uk: 'a', ru: 'b', en: 'c' }, localized: true },
+      global: panel(['uk', 'ru', 'en']),
+    })
+
+    const codes = () => wrapper.findAll('.wx-locale-picker__code').map((button) => button.text())
+
+    expect(wrapper.get('.wx-locale-picker__current').text()).toBe('UK')
+    expect(codes()).toEqual(['UK', 'RU', 'EN'])
+
+    await wrapper.findAll('.wx-locale-picker__code')[2]?.trigger('click')
+
+    // The chip follows; the list stays where it was, with the new language marked.
+    expect(wrapper.get('.wx-locale-picker__current').text()).toBe('EN')
+    expect(codes()).toEqual(['UK', 'RU', 'EN'])
+    expect(wrapper.findAll('.wx-locale-picker__code')[2]?.classes()).toContain('is-active')
+  })
+
+  it('puts the caret into the field whose language was switched', async () => {
+    const wrapper = mount(WxInput, {
+      props: { modelValue: { uk: 'a', ru: 'b' }, localized: true },
+      global: panel(['uk', 'ru']),
+      attachTo: document.body,
+    })
+
+    await wrapper.findAll('.wx-locale-picker__code')[1]?.trigger('click')
+    await nextTick()
+
+    expect(document.activeElement).toBe(wrapper.get('input:not([type="hidden"])').element)
+    expect((document.activeElement as HTMLInputElement).value).toBe('b')
+
+    wrapper.unmount()
   })
 })

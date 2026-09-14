@@ -44,6 +44,11 @@ final class AuthModule extends AbstractModule implements ProvidesMcpTools
         return 900;
     }
 
+    public function group(): string
+    {
+        return 'system';
+    }
+
     /**
      * @return list<string>
      */
