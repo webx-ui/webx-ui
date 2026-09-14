@@ -1,5 +1,69 @@
 # @webx-ui/php
 
+## 0.14.0
+
+### Minor Changes
+
+- c92f42a: SEO: rules for addresses, redirects, and the `<head>` a page prints
+
+  `webx-ui/module-seo` is the panel section for SEO that belongs to no entity, and the renderer that
+  turns it into markup. Sources are asked in order and merged **field by field** — a rule that fills
+  in nothing but a title keeps the description and the picture that came from below it — so the
+  entity source that arrives with the first content module is an addition, not a change.
+
+  One matcher serves rules and redirects alike: exact, then mask (`*` inside a segment, `**` across
+  them), then a regular expression, by priority inside each group, against the path with its query
+  string. A pattern that will not compile is refused when it is saved and never matches if it got in
+  anyway. The active ones are one compiled list in the cache, dropped whenever any of them changes.
+
+  Redirects run as global middleware rather than in the `web` group, because the addresses worth
+  redirecting are the ones the site has no route for and those never reach a group at all — with the
+  panel's own paths stepped over, so a mask cannot lock an editor out of the screen they wrote it on.
+  `/robots.txt` answers from a setting; the SEO tab of the settings screen now comes from the module
+  instead of from each project's own patch. `POST /seo/test-url` says what an address ends up saying
+  and where every part of it came from.
+
+- c92f42a: SEO in the panel: rules for addresses, redirects, and `wx-seo`
+
+  `@webx-ui/module-seo` is the front half of the section, and the card that edits what a page says
+  about itself. Two screens rather than two tabs — rules and redirects each have their own paging
+  and their own search, and a tab that resets both on the way back is worse than a second address.
+  Rules are listed in the order the site tries them, so reading the table top to bottom is reading
+  what will happen.
+
+  `WxSeo` is registered as the `wx-seo` field type on both halves: its value is everything a page
+  says about itself as one object, so an entity's form gets the whole card from a patch the day it
+  has somewhere to keep it. The text fields are language maps and grow the same chip every localized
+  field in the panel does; the picture is not one, deliberately. The length counters are soft —
+  search engines shorten what they shorten, and nothing here refuses a longer line.
+
+  The share image comes in as `seo({ mediaField: WxMediaField })` rather than as an import, so the
+  package does not depend on the library being installed.
+
+  **Check an address** answers the question this section gets asked most — which redirect catches
+  it, which rule matched, what each source contributed, what the page ends up with — in one call.
+
+  The settings tab has moved out of every project's own patch and into the module, which makes it
+  the first screen patch laid by a module rather than by a project. The guide is
+  `apps/docs/guide/seo.md`.
+
+- 0304791: Repeater: a field whose value is a list of records
+
+  `WxRepeater` is `WxSortableList` once every row is a form — a set of fields, repeated, in an order
+  that is part of the answer. Rows fold to a name taken from their own fields, and each keeps a key
+  of its own, so writing a field, removing the row above or dragging one elsewhere never rebuilds the
+  form under the caret. `WxSortableList` gained `itemLabel` for the same reason: a row has to be
+  called something out loud.
+
+  In a described screen it is `wx-repeater`, the one type whose model is nested: the node's children
+  are the fields of one item, and a `name` inside it is a key of that item. A type of its own can do
+  the same with `nested: true`, which hands the component the node and the render context.
+
+  On the server `RepeaterType` checks, stores and resolves items with the types their children
+  declare — per language where a child is localized — and a failed row says which row it was.
+  `FieldType::resolve` now takes the requested locale as a third argument, and `Tree::fields` stops
+  at a named node: a repeater's children belong to its value, not to the screen.
+
 ## 0.13.0
 
 ### Minor Changes
