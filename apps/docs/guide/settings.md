@@ -57,28 +57,29 @@ public function boot(): void
     "op": "add",
     "target": "tabs",
     "node": {
-      "id": "seo",
+      "id": "contacts",
       "type": "wx-tab",
-      "label": "SEO",
+      "label": "Contacts",
       "children": [
         {
-          "id": "seo-card",
+          "id": "contacts-card",
           "type": "wx-card",
           "children": [
             {
-              "id": "default-og",
+              "id": "office-photo",
               "type": "wx-media",
-              "name": "seo.default-og",
-              "label": "Default share image",
+              "name": "contacts.photo",
+              "label": "Photograph of the office",
               "slot": "sidebar",
               "props": { "aspect": "16/9", "accept": "image" }
             },
             {
-              "id": "robots",
+              "id": "address",
               "type": "wx-textarea",
-              "name": "seo.robots-txt",
-              "label": "robots.txt",
-              "props": { "rows": 10 }
+              "name": "contacts.address",
+              "label": "Postal address",
+              "localized": true,
+              "props": { "rows": 4 }
             }
           ]
         }
@@ -93,9 +94,13 @@ The picture sits in the card's `sidebar` slot — `slot` names any named slot th
 A server-side patch does two things at once: it draws the fields, and it opens their keys for
 writing. Saving goes by the same tree — a key the tree does not name is dropped, and every value
 is checked with the rules its type declares, per language when the field is `localized`. That
-is why the SEO tab is a patch and not part of the module: a project that has no share previews
-does not get a field for them, and a project that has a map gets a `map` field the module has
+is why the tab above is a patch and not part of the module: a project that has no office does not
+get a field for its photograph, and a project that has a map gets a `map` field the module has
 never heard of.
+
+A module may patch this screen too, and one does: installing
+[`@webx-ui/module-seo`](/guide/seo) adds the SEO tab, with the same mechanism and the same
+rules. Whoever boots last has the last word, and the application always boots last.
 
 A client-side patch — `createAdmin({ screens: { 'settings.index': [...] } })` — changes only what
 is drawn: a placeholder, a row count, a project component under a type the server stores as it
@@ -104,9 +109,9 @@ is. It cannot open a key for writing. What is saved is the server's decision.
 ## Reading a value on the site
 
 ```php
-settings('general.project-name');          // the current language, with the site's fallbacks
-settings('seo.robots-txt', 'User-agent: *');
-settings('seo.default-og')['url'] ?? null;  // a media field resolves to its address
+settings('general.project-name');            // the current language, with the site's fallbacks
+settings('contacts.address', 'Nowhere');
+settings('contacts.photo')['url'] ?? null;   // a media field resolves to its address
 settings()->all();
 ```
 
