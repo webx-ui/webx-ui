@@ -125,6 +125,19 @@ const classes = computed(() => [
   color: var(--wx-text-muted);
 }
 
+/*
+ * A card is a column of things, and they need the same air between them as around them.
+ * The form's own gap reaches only its direct children, so two fields dropped into a card
+ * stack flush and the hint under one reads as the label of the next.
+ */
+.wx-card__body,
+.wx-card__sidebar,
+.wx-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-card-padding, var(--wx-space-16));
+}
+
 .wx-card__body {
   flex: 1 1 auto;
 }

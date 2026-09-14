@@ -30,6 +30,7 @@ export default defineConfig({
             { text: 'The file manager', link: '/guide/media' },
             { text: 'Administrators', link: '/guide/admins' },
             { text: 'Settings', link: '/guide/settings' },
+            { text: 'SEO', link: '/guide/seo' },
             { text: 'Screens', link: '/guide/screens' },
             { text: 'Roadmap', link: '/guide/roadmap' },
           ],
