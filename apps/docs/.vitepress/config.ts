@@ -121,6 +121,7 @@ export default defineConfig({
             { text: 'Transfer', link: '/components/transfer' },
             { text: 'Rate', link: '/components/rate' },
             { text: 'RichText', link: '/components/rich-text' },
+            { text: 'CodeEditor', link: '/components/code-editor' },
             { text: 'Upload', link: '/components/upload' },
           ],
         },
