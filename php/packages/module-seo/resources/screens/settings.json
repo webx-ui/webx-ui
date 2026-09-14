@@ -1,0 +1,75 @@
+[
+  {
+    "op": "add",
+    "target": "tabs",
+    "node": {
+      "id": "seo",
+      "type": "wx-tab",
+      "label": "trans::webx-seo::screen.tab",
+      "children": [
+        {
+          "id": "seo-card",
+          "type": "wx-card",
+          "children": [
+            {
+              "id": "default-og",
+              "type": "wx-media",
+              "name": "seo.default-og",
+              "label": "trans::webx-seo::screen.default-og",
+              "help": "trans::webx-seo::screen.default-og-help",
+              "slot": "sidebar",
+              "props": { "aspect": "16/9", "accept": "image" }
+            },
+            {
+              "id": "title-template",
+              "type": "wx-input",
+              "name": "seo.title-template",
+              "label": "trans::webx-seo::screen.title-template",
+              "help": "trans::webx-seo::screen.title-template-help",
+              "props": { "placeholder": "{title} — {site}" }
+            },
+            {
+              "id": "robots-txt",
+              "type": "wx-textarea",
+              "name": "seo.robots-txt",
+              "label": "trans::webx-seo::screen.robots-txt",
+              "help": "trans::webx-seo::screen.robots-txt-help",
+              "props": { "rows": 10 }
+            },
+            {
+              "id": "org-name",
+              "type": "wx-input",
+              "name": "seo.org-name",
+              "label": "trans::webx-seo::screen.org-name",
+              "help": "trans::webx-seo::screen.org-name-help",
+              "localized": true
+            },
+            {
+              "id": "org-logo",
+              "type": "wx-media",
+              "name": "seo.org-logo",
+              "label": "trans::webx-seo::screen.org-logo",
+              "slot": "sidebar",
+              "props": { "accept": "image" }
+            },
+            {
+              "id": "org-socials",
+              "type": "wx-repeater",
+              "name": "seo.org-socials",
+              "label": "trans::webx-seo::screen.org-socials",
+              "help": "trans::webx-seo::screen.org-socials-help",
+              "children": [
+                {
+                  "id": "org-social-url",
+                  "type": "wx-input",
+                  "name": "url",
+                  "label": "trans::webx-seo::screen.org-social-url"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]
