@@ -14,6 +14,8 @@ parameters:
         - packages/module-auth/tests
         - packages/module-media/src
         - packages/module-media/tests
+        - packages/module-seo/src
+        - packages/module-seo/tests
         - packages/module-settings/src
         - packages/module-settings/tests
         - packages/nested-set/src
@@ -28,7 +30,12 @@ parameters:
 
     reportUnmatchedIgnoredErrors: false
     ignoreErrors:
+        # A view a package registers under its own namespace at runtime is a view Larastan
+        # cannot find on disk, so the name never becomes a view-string no matter how literal it
+        # is written. Both of these are `<package>::<view>` names of views that exist.
         -
             identifier: argument.type
             message: '#expects view-string, string given#'
-            path: packages/module-admin/src/Http/Controllers/ShellController.php
+            paths:
+                - packages/module-admin/src/Http/Controllers/ShellController.php
+                - packages/module-seo/src/Rendering/Seo.php

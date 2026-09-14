@@ -1,0 +1,244 @@
+# SEO
+
+`@webx-ui/module-seo` is the section where a site says what its pages are called, where its old
+addresses went, and what it says about itself. Its other half, `webx-ui/module-seo` on the server,
+is what actually prints that into a `<head>` — this page is both, because neither is useful alone.
+
+What the module owns is SEO with no entity behind it: rules written for addresses, redirects, and
+the site-wide defaults. SEO that belongs to an entity — a page, an article, a product — arrives
+with the first content module as one more source; nothing here changes when it does.
+
+## The section
+
+```ts
+import { createAdmin } from '@webx-ui/module-admin'
+import { media, WxMediaField } from '@webx-ui/module-media'
+import { seo } from '@webx-ui/module-seo'
+import '@webx-ui/module-seo/style.css'
+
+createAdmin({
+  modules: [media(), seo({ mediaField: WxMediaField }), settings()],
+})
+```
+
+It appears under **System** in the navigation, above the settings, once `webx-ui/module-seo` is
+installed and migrated on the server. Permissions: `seo.view` to look, `seo.manage` to change.
+
+`mediaField` is how the share image gets picked. It is handed in rather than imported, so this
+package does not depend on the library being installed — without it every other SEO field still
+works and only the picture is missing.
+
+## Where a value comes from
+
+Sources are asked highest first and merged **field by field**. A rule that fills in nothing but a
+title keeps the description and the picture that came from below it — merging whole objects
+instead is how one rule wipes out half a page's markup and the engine looks broken.
+
+| Priority | Source           | Reads                                        |
+| -------- | ---------------- | -------------------------------------------- |
+| 100      | `UrlRuleSource`  | `seo_urls` — the rules written for addresses |
+| 50       | _entity_         | reserved for `HasSeo`                        |
+| 10       | `DefaultsSource` | `settings('seo.*')`                          |
+
+A project adds its own from a provider:
+
+```php
+use WebxUi\Seo\Rendering\{SeoData, SeoSource, SeoSources};
+
+final class CampaignSource implements SeoSource
+{
+    public function priority(): int { return 70; }
+
+    public function forUrl(string $url, ?object $subject = null, ?string $locale = null): ?SeoData
+    {
+        return str_starts_with($url, '/promo/')
+            ? SeoData::make(['robots' => 'noindex'])
+            : null;
+    }
+}
+
+app(SeoSources::class)->register(new CampaignSource);
+```
+
+Answer with the fields you know and leave the rest null. Whatever stands below fills those in.
+
+## Printing the head
+
+```blade
+<head>
+    @webxSeo
+</head>
+```
+
+With an entity to name — once there is a source that answers about one:
+
+```blade
+@webxSeo($page)
+{{-- or, when a tag reads better --}}
+<x-webx-seo :for="$page" />
+```
+
+Both print `<title>`, the description, keywords and robots meta tags, the canonical link, the
+Open Graph properties and every JSON-LD block. Which of those are printed at all is
+`config/webx-seo.php`, so a site that writes its own canonical links turns that one off rather
+than working around it.
+
+Everything goes through Blade's escaping, and JSON-LD through `json_encode` with `JSON_HEX_TAG`:
+a title with a quote in it cannot end an attribute, and a `</script>` inside a string cannot close
+the block.
+
+## Writing a rule
+
+A rule covers one address or a shape of them. What is compared is the path **with its query
+string**, as it arrived — `/catalog/shoes?page=2` — with a trailing slash removed from everything
+but the root. The query is part of it because pages of filters and pagination are half of what
+rules get written for.
+
+| Kind    | Pattern        | Matches                                                  |
+| ------- | -------------- | -------------------------------------------------------- |
+| `exact` | `/about`       | that address and no other                                |
+| `mask`  | `/catalog/*`   | one segment: `/catalog/shoes`, not `/catalog/shoes/red`  |
+| `mask`  | `/catalog/**`  | any number of them                                       |
+| `regex` | `#^/p/(\d+)$#` | whatever it says — stored as written, delimiters and all |
+
+Rules are tried exact first, then mask, then regex; inside a group by `priority` descending, and
+by age when two are equal. The first match wins, and the table lists them in that same order —
+reading it top to bottom is reading what will happen.
+
+A regular expression is checked when it is saved, so a typo is a message under the field rather
+than a 500 on every page of the public side. One that got in anyway — written straight into the
+database — never matches instead of throwing.
+
+The active rules are kept as one compiled list in the cache and thrown away whenever any of them
+is saved or deleted, so switching a rule off stops it on the next request.
+
+## Redirects
+
+The same matcher, and the same three kinds. A mask or a regular expression may put back what it
+caught: `/catalog/*` → `/shop/$1`.
+
+Redirects are **global middleware**, not a member of the `web` group, and that is not an
+implementation detail: the addresses worth redirecting are the ones the site no longer has a route
+for, and a request for one of those never reaches a middleware group at all — the router throws
+first. The panel's own addresses are stepped over, so a mask an editor writes cannot lock them out
+of the screen they wrote it on.
+
+A redirect that would send an address back to itself is skipped rather than refused when it is
+saved: a mask is a loop only for some of the addresses it covers, and the rest are still worth
+serving. The row says so in the table. Chains are not collapsed — `A → B → C` costs the browser
+two requests, which is cheaper than walking a graph an editor can make circular from two screens.
+
+## `robots` and `robots.txt` are different things
+
+- `robots` on a rule is that page's own meta directives — `noindex, nofollow` — printed into
+  `<meta name="robots">`. The card offers the five that get used as checkboxes; anything else
+  already stored is kept as written and shown under them.
+- `seo.robots-txt` is one setting for the whole site, served at `/robots.txt`.
+
+If a real `public/robots.txt` exists, the web server hands it over before Laravel is asked and the
+setting never gets a say. That is the server doing its job, not a bug in the module. With the
+setting empty the route answers 404 for the same reason.
+
+## The settings tab
+
+The module lays a patch over `settings.index`. These ids are a contract — a project writes its own
+patch against them:
+
+| id               | type          | name                 | what it is                      |
+| ---------------- | ------------- | -------------------- | ------------------------------- |
+| `seo`            | `wx-tab`      |                      | the tab                         |
+| `seo-card`       | `wx-card`     |                      |                                 |
+| `default-og`     | `wx-media`    | `seo.default-og`     | the fallback share image        |
+| `title-template` | `wx-input`    | `seo.title-template` | `{title} — {site}`              |
+| `robots-txt`     | `wx-textarea` | `seo.robots-txt`     | what `/robots.txt` answers      |
+| `org-name`       | `wx-input`    | `seo.org-name`       | Organization, per language      |
+| `org-logo`       | `wx-media`    | `seo.org-logo`       | Organization                    |
+| `org-socials`    | `wx-repeater` | `seo.org-socials`    | profiles elsewhere, as `sameAs` |
+
+The dot in `seo.default-og` is part of the name, not a path. A key with a dot in it is one key,
+and both the server's validator and its tests have to be told so.
+
+The title template is applied to whatever title the sources agreed on. A placeholder with nothing
+behind it takes its separator with it, so a site with no name does not publish "Contacts —".
+
+## `wx-seo`, the card
+
+The module registers `wx-seo` as a field type, on both halves. Its value is everything a page says
+about itself, as one object:
+
+```json
+{
+  "title": { "en": "Shoes", "uk": "Взуття" },
+  "h1": {},
+  "description": { "en": "Everything we sell" },
+  "keywords": {},
+  "og_title": {},
+  "og_description": {},
+  "og_image": { "path": "catalog/cover.jpg" },
+  "canonical": null,
+  "robots": "noindex, nofollow",
+  "json_ld": null
+}
+```
+
+The text fields are language maps and grow the same chip every localized field in the panel does.
+`og_image` is not one: there are no per-language pictures anywhere in the panel yet, and a column
+that already holds an object would read `path` as a language code the day one was added.
+
+So an entity's form gets the whole card from a patch, once the entity has somewhere to keep it:
+
+```json
+{
+  "op": "add",
+  "target": "sidebar",
+  "node": { "id": "seo", "type": "wx-seo", "name": "seo", "label": "SEO" }
+}
+```
+
+The counters beside the title and the description are **soft**. Long is not wrong — search engines
+shorten what they shorten — so nothing refuses a longer line; `webx-seo.trim` makes the server cut
+to them, and it is off by default because cutting an editor's title behind their back reads as a
+bug.
+
+## Structured data
+
+Three levels, on purpose:
+
+- **About the site** — `Organization`, `WebSite` — comes from the settings fields above, and the
+  JSON-LD is assembled from them.
+- **About an entity** — `Article`, `Product`, `BreadcrumbList` — is generated from the entity by
+  whoever owns it. Typed in by hand it drifts away from the page within a month and starts lying
+  to search engines.
+- **One-off exceptions** — the JSON-LD field on a rule or on the card.
+
+There is no schema.org builder in the panel and there will not be one: the vocabulary has hundreds
+of types and filling them in by hand is how markup starts lying.
+
+## Why is this page saying that?
+
+The most common question the section gets, and it takes one call to answer. **Check an address**,
+at the top of the section, reports the redirect that catches it, the rule that matched, what each
+source contributed and what the page ends up with.
+
+```ts
+import { createSeoApi } from '@webx-ui/module-seo'
+
+const api = createSeoApi(useAdmin())
+const answer = await api.test('/catalog/shoes?page=2')
+```
+
+Or, from an agent: `seo_test_url`, beside `seo_urls_list`, `seo_urls_get`, `seo_urls_set`,
+`seo_redirects_list`, `seo_redirects_set` and `seo_import_redirects` — which turns the list of old
+and new addresses that comes out of every site migration into rows in one call.
+
+## Talking to it directly
+
+| Method and address                    | What it does                                                |
+| ------------------------------------- | ----------------------------------------------------------- |
+| `GET /api/cms/seo/urls`               | the rules, in the order the site tries them                 |
+| `POST /api/cms/seo/urls`              | add one                                                     |
+| `GET`, `PUT`, `DELETE` on `urls/{id}` | one rule; `PUT` replaces the whole of it                    |
+| `GET /api/cms/seo/redirects` …        | the same for redirects                                      |
+| `POST /api/cms/seo/test-url`          | what an address ends up saying, and where each part is from |
+
+Lists arrive as Laravel's own paginator, which the table in the core reads as it comes.

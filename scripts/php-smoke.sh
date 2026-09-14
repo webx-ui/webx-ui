@@ -87,11 +87,11 @@ REPOSITORY="$(
     # this checkout, and the whole run would prove nothing about the change under test.
     $COMPOSER_BIN config repositories.packagist.org \
         '{"type":"composer","url":"https://repo.packagist.org","exclude":["webx-ui/*"]}'
-    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' --no-interaction --no-progress --quiet
+    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' --no-interaction --no-progress --quiet
 )
 
 step "The packages came from the checkout, not from Packagist"
-for package in module-admin localization mcp module-auth module-settings; do
+for package in module-admin localization mcp module-auth module-settings module-seo; do
     [ -L "$APP/vendor/webx-ui/$package" ] || [ -f "$APP/vendor/webx-ui/$package/.git" ] \
         || fail "vendor/webx-ui/$package is a copy, so a released version was installed instead of this checkout"
     note "webx-ui/$package is linked to the checkout"
@@ -109,6 +109,7 @@ step "Providers are found by discovery, not by hand"
         "webx-ui/mcp" => "WebxUi\\Mcp\\McpServiceProvider",
         "webx-ui/module-auth" => "WebxUi\\Auth\\AuthServiceProvider",
         "webx-ui/module-settings" => "WebxUi\\Settings\\SettingsServiceProvider",
+        "webx-ui/module-seo" => "WebxUi\\Seo\\SeoServiceProvider",
     ];
     foreach ($expected as $package => $provider) {
         if (! in_array($provider, $manifest[$package]["providers"] ?? [], true)) {
@@ -204,6 +205,15 @@ sign_in_attempt() {
         "$BASE/api/cms/auth/login"
 }
 
+send_json() {
+    local method="$1" url="$2" body="$3"
+
+    curl -s -o /dev/null -w '%{http_code}' -c "$COOKIES" -b "$COOKIES" \
+        -H 'Accept: application/json' -H 'Content-Type: application/json' \
+        -H "X-XSRF-TOKEN: $(xsrf_token)" \
+        -X "$method" -d "$body" "$url"
+}
+
 run_http_checks() {
     local phase="$1"
 
@@ -225,6 +235,19 @@ run_http_checks() {
     expect 200 "$(sign_in_attempt "$ADMIN_PASSWORD")" "[$phase] sign in"
     expect 200 "$(status "$BASE/api/cms/manifest")" "[$phase] the manifest opens for an administrator"
     expect 200 "$(status "$BASE/api/cms/auth/me")" "[$phase] me answers"
+
+    # module-seo. Both of these are invisible to the tests: a redirect only fires because the
+    # middleware reached the real `web` group, and `/robots.txt` only answers because a route
+    # registered by a package survived `route:cache`.
+    expect 201 "$(send_json POST "$BASE/api/cms/seo/redirects" \
+        '{"match_type":"exact","pattern":"/moved-'"$phase"'","target":"/cms"}')" \
+        "[$phase] a redirect is written through the panel"
+    expect 301 "$(status "$BASE/moved-$phase")" "[$phase] and the public side follows it"
+
+    expect 200 "$(send_json PUT "$BASE/api/cms/settings" \
+        '{"values":{"seo.robots-txt":"User-agent: *"}}')" \
+        "[$phase] the SEO tab of the settings takes a value"
+    expect 200 "$(status "$BASE/robots.txt")" "[$phase] and /robots.txt serves it"
 
     expect 204 "$(
         curl -s -o /dev/null -w '%{http_code}' -c "$COOKIES" -b "$COOKIES" \
