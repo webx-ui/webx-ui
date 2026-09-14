@@ -17,8 +17,9 @@ Laravel. Библиотека публикуется в npm, админки — 
    реализуем сами. Сложная логика без стиля (Dialog, Dropdown, Popover, Tooltip, Combobox, Tabs) —
    из **Reka UI**; drag-and-drop — `vue-draggable-plus`, датапикер — `@vuepic/vue-datepicker`,
    rich-text — Tiptap.
-3. **`@webx-ui/schema`** — рендерер интерфейса из JSON: узел `{ type, props, children, on, visible }`,
-   реестр компонентов, реестр действий, интерфейс адаптера данных. Пока только контракты.
+3. **`@webx-ui/schema`** — экраны как JSON: узел `{ id, type, name, label, props, children, visible, can }`,
+   патчи (add/remove/replace/move/set), реестр типов на компонентах ядра, `WxScreenRenderer`,
+   JSON-схемы. Гайд — `apps/docs/guide/screens.md`, спецификация — §1 ниже.
 4. **`@webx-ui/adapter-laravel`** — адаптер под Laravel (`LengthAwarePaginator`, ошибки 422,
    query-параметры сортировки и фильтров). Не начинался.
 
@@ -286,8 +287,9 @@ php/
    внутри таблицы закрыты.
 2. **Gantt** — решено делать своим, не начинали (обоснование в roadmap).
 3. CMS-блоки: MediaLibrary / Gallery, Repeater, Markdown, LinkPicker, BlockPicker.
-4. `@webx-ui/schema` — рендерер поверх уже зафиксированных контрактов, затем
-   `@webx-ui/adapter-laravel`.
+4. Экраны как описание (`docs/architecture/WEBX_UI_SCREENS.md`): рендерер и гайд готовы, дальше
+   общий слой в `module-admin` (эндпоинт экранов, реестр патчей), `module-settings`, `admins.form`,
+   `wx-repeater`; `@webx-ui/adapter-laravel` — после.
 5. Позже: редактор компонентов внутри админки (поля как JSON + Blade-шаблон + CSS, генерация
    файлов Laravel'ом).
 

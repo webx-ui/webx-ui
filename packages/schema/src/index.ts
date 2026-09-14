@@ -1,20 +1,26 @@
 export type {
-  ActionContext,
-  ActionDescriptor,
-  ActionHandler,
-  ActionRegistry,
-  ComponentRegistry,
   DataAdapter,
   ListQuery,
+  NodeKind,
   Paginated,
-  SchemaNode,
+  Patch,
+  PatchError,
+  PatchOperation,
+  PatchPosition,
+  Screen,
+  ScreenError,
+  ScreenModel,
+  ScreenNode,
+  Translate,
+  TypeEntry,
+  TypeRegistry,
   ValidationErrors,
+  VisibilityCondition,
 } from './types'
 
-/**
- * Placeholder registry helper. The renderer itself lands in a later milestone —
- * for now the package only fixes the contracts so adapters can be written against them.
- */
-export function createComponentRegistry<T extends Record<string, unknown>>(components: T): T {
-  return { ...components }
-}
+export { applyPatch, collectIds, findNode } from './patch'
+export { evaluateCondition, isVisible } from './visible'
+export { validatePatch, validateScreen } from './validate'
+export { coreTypes, defineTypes, describeTypes, typesTable, type TypeDescription } from './registry'
+export { translateDeep, words, TRANS_MARKER, type RenderContext } from './render'
+export { default as WxScreenRenderer } from './ScreenRenderer.vue'
