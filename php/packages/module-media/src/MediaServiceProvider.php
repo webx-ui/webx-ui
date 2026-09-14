@@ -6,6 +6,8 @@ namespace WebxUi\Media;
 
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Media\Screens\MediaFieldType;
 
 class MediaServiceProvider extends ServiceProvider
 {
@@ -21,6 +23,10 @@ class MediaServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->app->make(ModuleRegistry::class)->register(new MediaModule);
+
+        // What a screen means by `wx-media`, on the server: the key the field stores and the
+        // address the site reads. The front end registers the component under the same name.
+        $this->app->make(FieldTypes::class)->register('wx-media', $this->app->make(MediaFieldType::class));
 
         if (! $this->app->runningInConsole()) {
             return;

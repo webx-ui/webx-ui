@@ -26,7 +26,7 @@ Laravel. Библиотека публикуется в npm, админки — 
 Вторая половина системы — **composer-пакеты** в `php/packages/*` (вендор `webx-ui/*`, namespace
 `WebxUi`), они же ядро админки на Laravel. **Имена пакетов на обеих половинах:** всё, из чего
 состоит панель, — с префиксом `module-`: каркас `module-admin` и разделы `module-auth`,
-`module-media`; библиотеки, которые живут и без панели, — без него: `nested-set`, `localization`,
+`module-media`, `module-settings`; библиотеки, которые живут и без панели, — без него: `nested-set`, `localization`,
 `mcp`. Идентификатор модуля — то, чем он называется в панели, а не то, что он хранит:
 администраторы — `admins`, а `users` оставлено пользователям сайта, которые станут отдельным
 разделом. Реестр и планы — в
@@ -123,6 +123,11 @@ php/
   как пустой диапазон, и линтер рисует его точкой в пиксель, а не волной — линт «работает», а
   подчёркивания нет. `WxCodeEditor` растягивает такие диапазоны до конца строки; свой линтер в
   `extensions` должен делать то же сам.
+- **Ключ с точкой — это один ключ, а не путь, и Laravel с этим не согласен.** Имена полей
+  экранов (`general.project-name`) буквальны, а `Validator` с правилом `values.general.project-name`
+  и `assertJsonPath('data.values.general.project-name')` разбирают точку как вложенность.
+  Поэтому `ScreenValues` проверяет каждое значение отдельным валидатором под именем `value`,
+  а тесты читают `->json('data.values')` и берут ключ из массива.
 - **Картинку для canvas нельзя брать с CDN.** `WxImageEditor` рисует изображение на canvas и
   вызывает `toBlob`, поэтому у него `crossorigin="anonymous"` — и без `Access-Control-Allow-Origin`
   браузер не грузит картинку вообще. Выглядит как «редактор сломался»: интерфейс есть, а внутри
@@ -287,9 +292,10 @@ php/
    внутри таблицы закрыты.
 2. **Gantt** — решено делать своим, не начинали (обоснование в roadmap).
 3. CMS-блоки: MediaLibrary / Gallery, Repeater, Markdown, LinkPicker, BlockPicker.
-4. Экраны как описание (`docs/architecture/WEBX_UI_SCREENS.md`): рендерер и гайд готовы, дальше
-   общий слой в `module-admin` (эндпоинт экранов, реестр патчей), `module-settings`, `admins.form`,
-   `wx-repeater`; `@webx-ui/adapter-laravel` — после.
+4. Экраны как описание (`docs/architecture/WEBX_UI_SCREENS.md`): рендерер, общий слой в
+   `module-admin` и `module-settings` готовы. Дальше `wx-repeater` и `module-seo` (вкладка SEO
+   переедет туда из патча сайта); `admins.form` на экраны пока не переводим (решение 14.09.2026);
+   `@webx-ui/adapter-laravel` — после.
 5. Позже: редактор компонентов внутри админки (поля как JSON + Blade-шаблон + CSS, генерация
    файлов Laravel'ом).
 

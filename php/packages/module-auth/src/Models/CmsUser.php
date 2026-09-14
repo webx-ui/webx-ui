@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
+use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Localization\Contracts\HasPanelLocale;
 
 /**
@@ -27,7 +28,7 @@ use WebxUi\Localization\Contracts\HasPanelLocale;
  * @property Carbon|null $last_login_at
  * @property Carbon|null $created_at
  */
-class CmsUser extends Model implements AuthenticatableContract, HasPanelLocale
+class CmsUser extends Model implements AuthenticatableContract, HasPanelLocale, HasPermissions
 {
     use Authenticatable;
     use HasApiTokens;

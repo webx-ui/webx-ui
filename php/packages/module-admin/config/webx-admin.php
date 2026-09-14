@@ -47,6 +47,22 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Navigation groups
+    |---------------------------------------------------------------------------
+    |
+    | A module may name a group it belongs under; this is where the groups are
+    | described. The title is a translation key. `system` holds what keeps the
+    | panel running — settings, administrators — apart from what the site is
+    | about.
+    |
+    */
+
+    'groups' => [
+        'system' => ['title' => 'webx-admin::nav.system', 'order' => 900],
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
     | The panel's own assets
     |---------------------------------------------------------------------------
     |

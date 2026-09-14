@@ -1,0 +1,46 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "settings.index",
+  "model": "settings",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "general",
+          "type": "wx-tab",
+          "label": "trans::webx-admin::nav.system",
+          "children": [
+            {
+              "id": "main",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "project-name",
+                  "type": "wx-input",
+                  "name": "general.project-name",
+                  "label": "trans::webx-admin::nav.sections",
+                  "localized": true
+                },
+                {
+                  "id": "secret",
+                  "type": "wx-input",
+                  "name": "general.secret",
+                  "label": "Secret",
+                  "can": "settings.manage"
+                },
+                {
+                  "id": "map",
+                  "type": "map",
+                  "name": "contacts.map",
+                  "label": "Map"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

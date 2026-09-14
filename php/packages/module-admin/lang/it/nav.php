@@ -7,4 +7,5 @@ return [
     'menu' => 'Menu',
     'collapse' => 'Comprimi il menu',
     'language' => 'Lingua',
+    'system' => 'Sistema',
 ];

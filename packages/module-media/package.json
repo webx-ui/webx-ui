@@ -51,7 +51,8 @@
   },
   "dependencies": {
     "@webx-ui/module-admin": "workspace:^",
-    "@webx-ui/core": "workspace:^"
+    "@webx-ui/core": "workspace:^",
+    "@webx-ui/schema": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

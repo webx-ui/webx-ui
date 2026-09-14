@@ -30,6 +30,11 @@ abstract class AbstractModule implements Module
         return 0;
     }
 
+    public function group(): ?string
+    {
+        return null;
+    }
+
     /**
      * @return list<string>
      */

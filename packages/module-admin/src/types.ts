@@ -1,4 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router'
+import type { TypeRegistry } from '@webx-ui/schema'
 import type { LocaleDescriptor } from './i18n'
 
 /**
@@ -17,7 +18,17 @@ export interface Manifest {
   locales: LocaleDescriptor[]
   /** The languages the interface itself can be switched to. */
   panelLocales: LocaleDescriptor[]
+  /** Navigation groups, translated and in order; a module names one by id. */
+  groups?: ManifestGroup[]
   modules: ManifestModule[]
+  /** Names of the screens the server can hand out — the trees themselves travel on request. */
+  screens?: string[]
+}
+
+export interface ManifestGroup {
+  id: string
+  title: string
+  order: number
 }
 
 export interface ManifestModule {
@@ -25,6 +36,8 @@ export interface ManifestModule {
   title: string
   icon: string | null
   order: number
+  /** The group the section sits under, or null for the top level. */
+  group?: string | null
   permissions: string[]
   /** Whatever the server-side module wanted to say, in its own room. */
   meta: Record<string, unknown>
@@ -66,6 +79,11 @@ export interface AdminModule {
    * the reason this exists.
    */
   public?: boolean
+  /**
+   * Screen node types this module brings — `wx-media` from the media module. Merged into the
+   * registry every screen in the panel is drawn with.
+   */
+  types?: TypeRegistry
 }
 
 export type AdminStatus = 'loading' | 'ready' | 'unauthenticated' | 'error'
@@ -75,4 +93,13 @@ export interface NavEntry {
   title: string
   icon: string | null
   path: string
+  /** Group id, or null at the top level. */
+  group: string | null
+}
+
+/** A group with the entries that sit under it, in navigation order. */
+export interface NavGroup {
+  id: string
+  title: string
+  entries: NavEntry[]
 }

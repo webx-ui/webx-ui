@@ -26,6 +26,13 @@ interface Module
     public function order(): int;
 
     /**
+     * The navigation group the section sits under — `system` for what keeps the panel
+     * running rather than what the site is about — or null for the top level. Groups are
+     * declared in `webx-admin.groups`.
+     */
+    public function group(): ?string;
+
+    /**
      * Permissions the module defines, as `<id>.<action>`.
      *
      * @return list<string>

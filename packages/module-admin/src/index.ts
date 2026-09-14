@@ -40,3 +40,4 @@ export type {
 
 export { default as AdminShell } from './AdminShell.vue'
 export { default as AdminNav } from './AdminNav.vue'
+export { default as WxScreen } from './Screen.vue'

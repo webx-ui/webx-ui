@@ -32,6 +32,10 @@ final class Authenticate
             return response()->json(['message' => __('webx-auth::errors.inactive')], 403);
         }
 
+        // From here on `$request->user()` is this administrator, for code that does not know
+        // the guard's name — the screens endpoint in module-admin, most of all.
+        $this->auth->shouldUse((string) config('webx-auth.guard'));
+
         return $next($request);
     }
 }

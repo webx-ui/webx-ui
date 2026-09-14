@@ -1,0 +1,5 @@
+export { settings, type SettingsOptions } from './module'
+export { createSettingsApi, type SettingsApi } from './api'
+export { settingsMessages } from './messages'
+export { default as WxSettingsPage } from './SettingsPage.vue'
+export type { SettingsValues } from './types'

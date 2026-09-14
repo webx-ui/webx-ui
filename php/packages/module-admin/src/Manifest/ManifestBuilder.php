@@ -7,6 +7,7 @@ namespace WebxUi\Admin\Manifest;
 use Illuminate\Contracts\Config\Repository;
 use WebxUi\Admin\Contracts\Module;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Localization\Locales;
 
 /**
@@ -19,6 +20,7 @@ final class ManifestBuilder
         private readonly ModuleRegistry $registry,
         private readonly Repository $config,
         private readonly Locales $locales,
+        private readonly ScreenRegistry $screens,
     ) {}
 
     /**
@@ -29,7 +31,9 @@ final class ManifestBuilder
      *     locale: string,
      *     locales: list<array{code: string, name: string, nativeName: string, direction: string, default: bool}>,
      *     panelLocales: list<array{code: string, name: string, nativeName: string, direction: string, default: bool}>,
+     *     groups: list<array{id: string, title: string, order: int}>,
      *     modules: list<array<string, mixed>>,
+     *     screens: list<string>,
      * }
      */
     public function build(): array
@@ -46,7 +50,10 @@ final class ManifestBuilder
             'locales' => $this->locales->toPayload(),
             // What the interface itself can be switched to.
             'panelLocales' => $this->locales->panel(),
+            'groups' => $this->groups(),
             'modules' => array_map($this->describe(...), $this->registry->all()),
+            // Only the names: a screen travels on its own, when the page that needs it opens.
+            'screens' => $this->screens->names(),
         ];
     }
 
@@ -60,10 +67,37 @@ final class ManifestBuilder
             'title' => $module->title(),
             'icon' => $module->icon(),
             'order' => $module->order(),
+            'group' => $module->group(),
             'permissions' => $module->permissions(),
             // Whatever the module itself wants to say, kept in its own room so it can never
             // shadow the fields above.
             'meta' => $module->manifest(),
         ];
+    }
+
+    /**
+     * The navigation groups, translated: `webx-admin.groups` maps an id to a title key and an
+     * order, and a module names the id.
+     *
+     * @return list<array{id: string, title: string, order: int}>
+     */
+    private function groups(): array
+    {
+        $configured = $this->config->get('webx-admin.groups', []);
+        $groups = [];
+
+        foreach (is_array($configured) ? $configured : [] as $id => $group) {
+            $title = is_array($group) ? (string) ($group['title'] ?? $id) : (string) $group;
+
+            $groups[] = [
+                'id' => (string) $id,
+                'title' => (string) __($title),
+                'order' => is_array($group) ? (int) ($group['order'] ?? 0) : 0,
+            ];
+        }
+
+        usort($groups, static fn (array $a, array $b): int => [$a['order'], $a['id']] <=> [$b['order'], $b['id']]);
+
+        return $groups;
     }
 }

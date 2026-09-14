@@ -136,9 +136,10 @@ do in a `WxForm`. The buttons are the page's, not the screen's: there is no `act
 **Events:** `update:modelValue`, `patch-error` (`PatchError[]`). **Exposed:** `tree` — the tree
 after the patch, what is actually on screen.
 
-Inside a panel you will not use the renderer directly: `WxScreen` in `module-admin` fetches the
-screen by name, applies the patches from `createAdmin({ screens })` and passes the panel's
-dictionary and permissions. That layer is next; this page is the renderer on its own.
+Inside a panel you will not use the renderer directly: `WxScreen` from `@webx-ui/module-admin`
+fetches the screen by name, lays the project's patch from `createAdmin({ screens })` over it,
+and passes the panel's dictionary, registry and permissions — `<wx-screen name="settings.index"
+v-model="values" :errors="errors" />`. [Settings](/guide/settings) is the first page built on it.
 
 ## The registry
 
@@ -176,7 +177,8 @@ The core types, generated from the registry (a test fails when this table is sta
 
 <!-- types:end -->
 
-`wx-media` is `WxMediaField` from `module-media`, which registers it when installed; `wx-repeater`
+`wx-media` is `WxMediaField` from `module-media`, which registers it when installed (a module's
+`types` are merged into every panel screen, and so are `createAdmin({ types })`); `wx-repeater`
 — a list of items each edited with the same nested fields — is the one type with a nested model
 and is not written yet.
 
@@ -246,5 +248,6 @@ rules for writing it and the permissions — the server needs it no less than th
 The front end fetches a screen with `GET /api/cms/screens/<name>` when its page opens: the tree,
 server patches applied in order (other packages first, the project last), nodes without
 permission already cut out, `trans::` strings already translated. Client patches from `admin.ts`
-go on top. That endpoint is the next step; the design in full is
+go on top. That endpoint is `GET /api/cms/screens/<name>` in `module-admin`, with
+`Screens::register` and `Screens::extend` behind it; the design in full is
 [`docs/architecture/WEBX_UI_SCREENS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_SCREENS.md).
