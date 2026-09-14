@@ -117,8 +117,9 @@ final class FileStoreTest extends TestCase
 
     private function picture(): UploadedFile
     {
-        // The same bytes every time: UploadedFile::fake()->image() draws a different picture on
-        // each call, and this test is about two uploads of one file.
+        // The same bytes every time, said out loud: this test is about two uploads of one file.
+        // `image()` would do as well — it draws a blank canvas and nothing else, so one size is
+        // one picture — but that is a fact about Laravel's fake, not something to lean on here.
         return UploadedFile::fake()->createWithContent('picture.jpg', 'the same bytes');
     }
 

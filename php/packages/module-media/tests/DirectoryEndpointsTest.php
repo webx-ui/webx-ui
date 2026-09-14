@@ -187,8 +187,14 @@ final class DirectoryEndpointsTest extends TestCase
 
     private function upload(MediaDirectory $directory): MediaFile
     {
+        // A unique name buys nothing: a fake image is a blank canvas of the size asked for, and
+        // the store deduplicates by content inside a directory. The size is what makes it its own
+        // file — today no test puts two of these in one folder, and this is why none has to know.
+        static $nth = 0;
+        $nth++;
+
         return $this->app->make(FileStore::class)->store(
-            UploadedFile::fake()->image(uniqid().'.jpg'),
+            UploadedFile::fake()->image(uniqid().'.jpg', 100 + $nth, 400),
             $directory,
         );
     }
