@@ -30,6 +30,9 @@ final class CmsUserPayload
             // Null until they choose: the panel then follows the browser rather than pinning
             // somebody to a language they never asked for.
             'locale' => $user->locale,
+            // The key the photograph is stored under, as the admin resource sends it: which
+            // library turns it into an address is the panel's business, not this package's.
+            'avatar' => $user->avatar,
             'lastLoginAt' => $user->last_login_at?->toIso8601String(),
             'roles' => $user->roles
                 ->map(static fn (Role $role): array => [
