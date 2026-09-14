@@ -10,6 +10,7 @@ const props = withDefaults(defineProps<SortableListProps<T>>(), {
   title: undefined,
   handle: 'grip',
   itemKey: 'id',
+  itemLabel: undefined,
   group: undefined,
   disabled: false,
   size: 'md',
@@ -76,7 +77,15 @@ function keyOf(item: T, index: number) {
  * an accessible name, and so does everything a keyboard move says out loud.
  */
 function labelOf(item: T, index: number) {
+  if (typeof props.itemLabel === 'function') return props.itemLabel(item, index)
+
   if (item && typeof item === 'object') {
+    if (props.itemLabel) {
+      const named = (item as Record<string, unknown>)[props.itemLabel]
+      if (typeof named === 'string' && named.trim()) return named
+      if (typeof named === 'number') return String(named)
+    }
+
     const record = item as Record<string, unknown>
     for (const field of ['title', 'name', 'label']) {
       const value = record[field]

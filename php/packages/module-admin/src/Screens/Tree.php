@@ -59,6 +59,10 @@ final class Tree
     /**
      * The nodes that carry a value: everything with a `name`, in document order.
      *
+     * A named node owns what is under it and the walk stops there. That is what makes
+     * `wx-repeater` work: its children are the fields of one of its items — `city`, not
+     * `contacts.offices.city` — and they belong to the repeater's value, not to the screen's.
+     *
      * @param  list<Node>  $nodes
      * @return list<Node>
      */
@@ -69,6 +73,8 @@ final class Tree
         foreach ($nodes as $node) {
             if (isset($node['name']) && is_string($node['name']) && $node['name'] !== '') {
                 $fields[] = $node;
+
+                continue;
             }
 
             foreach (self::fields(self::children($node)) as $field) {

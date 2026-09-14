@@ -29,7 +29,11 @@ interface FieldType
     /**
      * What the site reads: `settings('seo.default-og')` answers with this.
      *
+     * `$locale` is the language that was asked for, already used to pick a localized value
+     * apart. A type only needs it when it holds values of its own that are localized —
+     * `wx-repeater` does, since every one of its items may carry translated fields.
+     *
      * @param  array<string, mixed>  $node
      */
-    public function resolve(mixed $stored, array $node): mixed;
+    public function resolve(mixed $stored, array $node, ?string $locale = null): mixed;
 }

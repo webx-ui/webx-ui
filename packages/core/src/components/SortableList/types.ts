@@ -21,6 +21,12 @@ export interface SortableListProps<T = unknown> {
   handle?: 'grip' | 'row' | string
   /** Field to key a row by, or a function. Falls back to the position. */
   itemKey?: string | ((item: T, index: number) => string | number)
+  /**
+   * What a row is called out loud — in the grip's name and in every move a keyboard
+   * announces: a field of the item, or a function. Falls back to its `title`, `name` or
+   * `label`, and to the position when it has none of those.
+   */
+  itemLabel?: string | ((item: T, index: number) => string)
   /** Lists that share a name pass rows between them. */
   group?: string
   /** Nothing can be moved. */
