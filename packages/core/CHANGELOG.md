@@ -1,5 +1,11 @@
 # @webx-ui/core
 
+## 0.17.0
+
+### Minor Changes
+
+- 1d691b8: `WxCodeEditor` — a code field on CodeMirror 6: JSON (with a linter and `format()`), JavaScript, TypeScript, HTML, CSS, Markdown, YAML, PHP and plain text, styled entirely with the design tokens. The counterpart of `WxRichText` for code.
+
 ## 0.16.0
 
 ### Minor Changes
