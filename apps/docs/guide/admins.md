@@ -32,23 +32,24 @@ An administrator's photo is a picture like any other, so it lives in the media l
 both are installed, hands the pieces in:
 
 ```ts
-import { admins } from '@webx-ui/module-auth'
+import { admins, auth } from '@webx-ui/module-auth'
 import { createMediaApi, WxMediaField } from '@webx-ui/module-media'
 
+const resolveAvatar = async (key: string) =>
+  (await createMediaApi(panel.context).fileByPath(key))?.url ?? null
+
 const panel = createAdmin({
-  modules: [
-    media(),
-    admins({
-      avatarField: WxMediaField,
-      resolveAvatar: async (key) =>
-        (await createMediaApi(panel.context).fileByPath(key))?.url ?? null,
-    }),
-  ],
+  modules: [media(), admins({ avatarField: WxMediaField, resolveAvatar })],
+  plugins: [auth({ resolveAvatar })],
 })
 ```
 
 Without them the form simply has no photo field and rows show initials — which is what they
 showed anyway for everybody who never uploaded one. What is stored is the library's key.
+
+The same function goes to `auth()`, which is how the menu in the corner of the header shows
+the signed-in person's own photograph: the session carries the key, and the plugin hands the
+resolver to `WxUserMenu`.
 
 ## Choosing somebody, from code
 

@@ -2,13 +2,20 @@ import { h, watch } from 'vue'
 import type { Admin, AdminPlugin } from '@webx-ui/module-admin'
 import LoginCard from './LoginCard.vue'
 import { authMessages } from './messages'
-import { createAuthSession, provideAuth } from './session'
+import { createAuthSession, provideAuth, type AvatarResolver } from './session'
 
 export interface AuthOptions {
   /** Where the sign-in screen lives, inside the panel. */
   path?: string
   /** Props handed to the card — the labels, mostly. */
   card?: Record<string, unknown>
+  /**
+   * Turns the key the signed-in person's photograph is stored under into an address, so the
+   * menu in the corner shows the picture rather than initials. The same function `admins()`
+   * takes: this package does not depend on the media one, and the panel is the only place
+   * that knows both are installed.
+   */
+  resolveAvatar?: AvatarResolver
 }
 
 /**
@@ -29,7 +36,7 @@ export function auth(options: AuthOptions = {}): AdminPlugin {
       // a panel assembled without a server has to fall back on.
       admin.i18n.defaults('webx-auth', authMessages)
 
-      provideAuth(admin.app, session)
+      provideAuth(admin.app, session, options.resolveAvatar ?? null)
       admin.context.useSessionLoader(() => session.me())
 
       admin.router.addRoute({
@@ -86,8 +93,8 @@ export { selectAdmin, selectAdmins, type AdminPickerOptions } from './selectAdmi
 export { default as WxAdminsPage } from './AdminsPage.vue'
 export { default as WxAdminList } from './AdminList.vue'
 export type { Admin, AdminInput, AdminPage, AdminQuery, AdminRole, Role } from './types'
-export { createAuthSession, provideAuth, useAuth, authKey } from './session'
-export type { AuthSession, Credentials } from './session'
+export { createAuthSession, provideAuth, useAuth, authKey, avatarResolverKey } from './session'
+export type { AuthSession, AvatarResolver, Credentials } from './session'
 export { default as WxLoginCard } from './LoginCard.vue'
 export { default as WxUserMenu } from './UserMenu.vue'
 export { authMessages } from './messages'
