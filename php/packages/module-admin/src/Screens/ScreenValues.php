@@ -107,7 +107,7 @@ final class ScreenValues
             $stored = $this->pick($stored, $locale);
         }
 
-        return $type?->resolve($stored, $node) ?? $stored;
+        return $type?->resolve($stored, $node, $locale) ?? $stored;
     }
 
     /**

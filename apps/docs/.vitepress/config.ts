@@ -125,6 +125,7 @@ export default defineConfig({
             { text: 'RichText', link: '/components/rich-text' },
             { text: 'CodeEditor', link: '/components/code-editor' },
             { text: 'Upload', link: '/components/upload' },
+            { text: 'Repeater', link: '/components/repeater' },
           ],
         },
         {

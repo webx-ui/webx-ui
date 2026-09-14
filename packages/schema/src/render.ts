@@ -84,6 +84,8 @@ export function renderNode(node: ScreenNode, context: RenderContext): VNode | nu
     const name = node.name
     const control = h(entry.component, {
       ...props,
+      /* A nested field draws the children itself, so it needs the node and the way down. */
+      ...(entry.nested ? { node, context } : {}),
       name,
       localized: node.localized || undefined,
       modelValue: name === undefined ? undefined : context.model[name],

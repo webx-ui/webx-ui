@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin;
 
+use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Console\InstallCommand;
 use WebxUi\Admin\Console\MakeModuleCommand;
@@ -16,6 +17,7 @@ use WebxUi\Admin\Screens\Types\ColorType;
 use WebxUi\Admin\Screens\Types\DateType;
 use WebxUi\Admin\Screens\Types\NumberType;
 use WebxUi\Admin\Screens\Types\OptionType;
+use WebxUi\Admin\Screens\Types\RepeaterType;
 use WebxUi\Admin\Screens\Types\StringType;
 use WebxUi\Localization\Locales;
 
@@ -32,7 +34,7 @@ class AdminServiceProvider extends ServiceProvider
         // Same for screens and the field types they are written in: modules and the project
         // add theirs from `boot()`, and the endpoints read the sum.
         $this->app->singleton(ScreenRegistry::class);
-        $this->app->singleton(FieldTypes::class, static function (): FieldTypes {
+        $this->app->singleton(FieldTypes::class, static function ($app): FieldTypes {
             $types = new FieldTypes;
 
             $types->register('wx-input', new StringType(2000));
@@ -44,6 +46,14 @@ class AdminServiceProvider extends ServiceProvider
             $types->register('wx-radio-group', new OptionType);
             $types->register('wx-date-picker', new DateType);
             $types->register('wx-color-picker', new ColorType);
+
+            // The repeater checks and casts its items with the other types, so it is handed
+            // the registry it is being put into.
+            $types->register('wx-repeater', new RepeaterType(
+                $types,
+                $app->make(Locales::class),
+                $app->make(ValidationFactory::class),
+            ));
 
             return $types;
         });
