@@ -9,10 +9,19 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Orchestra\Testbench\TestCase as Orchestra;
+use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Blocks\BlocksServiceProvider;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\Rendering\TemplateCompiler;
+use WebxUi\Blocks\Tests\Fixtures\Page;
+use WebxUi\Blocks\Tests\Fixtures\PageHandler;
+use WebxUi\Blocks\Tests\Fixtures\RoutedPage;
+use WebxUi\Localization\LocalizationServiceProvider;
+use WebxUi\Routing\Formatters\Slug;
+use WebxUi\Routing\RouteType;
+use WebxUi\Routing\RouteTypes;
+use WebxUi\Routing\RoutingServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -22,7 +31,12 @@ abstract class TestCase extends Orchestra
      */
     protected function getPackageProviders($app): array
     {
-        return [BlocksServiceProvider::class];
+        return [
+            LocalizationServiceProvider::class,
+            RoutingServiceProvider::class,
+            AdminServiceProvider::class,
+            BlocksServiceProvider::class,
+        ];
     }
 
     /**
@@ -32,6 +46,8 @@ abstract class TestCase extends Orchestra
     {
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
         $app['config']->set('app.url', 'https://example.test');
+        $app['config']->set('webx-localization.locales', [['code' => 'en', 'default' => true]]);
+        $app['config']->set('webx-localization.cache.enabled', false);
     }
 
     protected function defineDatabaseMigrations(): void
@@ -40,10 +56,36 @@ abstract class TestCase extends Orchestra
 
         Schema::create('pages', function (Blueprint $table): void {
             $table->id();
-            $table->string('title');
+            $table->string('title')->nullable();
+            $table->string('slug')->nullable();
             $table->blocks();
+            $table->draft();
             $table->timestamps();
         });
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // What a content module registers in its own provider: the type the preview route and
+        // the resolver both hand a page to. `note` is the same without an address, for the
+        // preview of a record the registry knows nothing about.
+        $types = $this->app->make(RouteTypes::class);
+
+        $types->register(new RouteType(
+            type: 'page',
+            model: RoutedPage::class,
+            formatter: Slug::class,
+            handler: PageHandler::class,
+        ));
+
+        $types->register(new RouteType(
+            type: 'note',
+            model: Page::class,
+            formatter: Slug::class,
+            handler: PageHandler::class,
+        ));
     }
 
     protected function tearDown(): void

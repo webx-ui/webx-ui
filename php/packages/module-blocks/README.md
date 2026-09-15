@@ -10,8 +10,8 @@ type is made entirely in the panel — its fields, its Blade template, its style
 and stored in the database; an entity's content is a tree of such blocks, and this package prints
 it. Pages, articles and products add one trait and know nothing else about blocks.
 
-Status: the rendering half and the bundles of styles and scripts (this README). The preview,
-the panel section and the MCP tools follow; the plan is
+Status: the rendering half, the bundles of styles and scripts and the preview (this README).
+The panel section and the MCP tools follow; the plan is
 [`docs/architecture/WEBX_UI_MODULE_BLOCKS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_BLOCKS.md).
 
 ## Requirements
@@ -33,12 +33,13 @@ Three tables: `blocks` (the type), `block_versions` (one immutable snapshot per 
 
 ```php
 Schema::table('pages', function (Blueprint $table) {
-    $table->blocks();   // `blocks` json — the tree the site prints — and `draft` json
+    $table->blocks();   // `blocks` json — the tree the site prints
+    $table->draft();    // `draft` json and `published_at`, from webx-ui/module-admin
 });
 
 class Page extends Model
 {
-    use HasBlocks;
+    use HasBlocks, HasDraft, HasVersions;
 }
 
 $page->blocks;          // [{ key, type, values }, …]
@@ -152,10 +153,29 @@ BlockTypes::draft('hero');  // the draft, or the published one when there is non
 Cached (`webx-blocks.cache`) and forgotten whenever a block or a version is saved, published or
 deleted.
 
+## Preview
+
+```php
+Preview::url($page, adminId: 7);   // https://example.test/_preview/page/12?token=…
+```
+
+A signed link, good for an hour (`webx-blocks.preview.ttl`), that shows the draft of an entity
+as the page it will be. The route does what the address registry would do for the real address
+— find the type, load the entity, hand both to the type's handler with a `Resolution` — and the
+handler answers with the same view it answers the site with. What differs: the entity carries
+its draft over its columns (`withDraft()`), the block types render at their drafts, every block
+is wrapped in the marker comments the panel finds it by, and the response is `no-store` and
+`noindex`. The token opens one entity and nothing else; a bad or expired one is a 403.
+
+A handler tells a preview from a visit with `PreviewGrant::of($request)`, and that is where an
+unpublished entity is a 404 to everybody else. The prefix is closed to the registry, so no page
+can take the address.
+
 ## Config
 
 `php artisan vendor:publish --tag=webx-blocks-config` — groups, editing, nesting depth, where the
-compiled templates go, cache, the bundles' path prefix and inline threshold, the entities to warm.
+compiled templates go, cache, the bundles' path prefix and inline threshold, the entities to warm,
+the preview's path, lifetime and middleware.
 
 ## License
 

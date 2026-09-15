@@ -138,10 +138,11 @@ final class Renderer
         return $this->used;
     }
 
-    /** Between two responses of one process. */
+    /** Between two responses of one process: the next one is not a preview until it says so. */
     public function flush(): void
     {
         $this->used = [];
+        $this->preview = false;
     }
 
     /**

@@ -28,4 +28,21 @@ block's script is an initialiser per instance behind a small runtime (`webx.bloc
 `webx.provide`, `webx.use`) that also ships on its own at `/blocks/runtime.js`. Commands:
 `webx:blocks:bundles --prune|--warm` and `webx:blocks:clear`.
 
-The preview route, the panel section and the MCP tools follow.
+The preview: `/_preview/{type}/{id}?token=…` shows the draft of an entity as the page it will
+be, through the same handler and view that answer the real address, with a `Resolution` of the
+entity's own, the drafts of the block types, the marker comments, and `no-store` plus `noindex`
+on the response. The token is one signed parameter that opens one entity for an hour;
+`Preview::url($entity)` makes it, `PreviewGrant::of($request)` is how a handler tells a preview
+from a visit. The preview prefix is closed to the address registry.
+
+What the preview stands on, in `webx-ui/module-admin`: drafts and versions for any entity.
+`HasDraft` keeps what is being prepared in a `draft` column next to what the site shows, with
+`saveDraft()`, `withDraft()`, `publish()`, `unpublish()` and `isPublished()` by `published_at`;
+`HasVersions` writes a numbered snapshot into `entity_versions` on every publication, keeps a
+ring of autosaves beside the history, trims to `webx-admin.versions.limit` with pinned versions
+excepted, and restores an old version into the draft. `$table->draft()` adds the columns,
+`webx:versions:prune` applies a lowered limit. And in `webx-ui/nested-set`: a detached node —
+`saveDetached()` saves a row with no place in the tree, for a "new page" that exists before
+anybody has decided where it goes; it joins the tree with the first placement.
+
+The panel section and the MCP tools follow.

@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Blocks\Console\BundlesCommand;
 use WebxUi\Blocks\Console\ClearCommand;
+use WebxUi\Blocks\Preview\Preview;
+use WebxUi\Blocks\Preview\PreviewToken;
 use WebxUi\Blocks\Rendering\Bundles;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\Rendering\TemplateCompiler;
@@ -30,6 +32,17 @@ class BlocksServiceProvider extends ServiceProvider
         $this->app->singleton(BlockTypes::class);
         $this->app->singleton(Renderer::class);
         $this->app->singleton(Bundles::class);
+        $this->app->singleton(Preview::class);
+
+        $this->app->singleton(PreviewToken::class, static function (Application $app): PreviewToken {
+            $key = (string) $app->make('config')->get('app.key', '');
+
+            if (str_starts_with($key, 'base64:')) {
+                $key = (string) base64_decode(substr($key, 7), true);
+            }
+
+            return new PreviewToken($key);
+        });
 
         $this->app->singleton(TemplateCompiler::class, static function (Application $app): TemplateCompiler {
             $config = $app->make('config');
@@ -71,23 +84,23 @@ class BlocksServiceProvider extends ServiceProvider
     }
 
     /**
-     * `$table->blocks()` — the tree the site prints and the draft the preview reads — so a
-     * migration says what it adds rather than how.
+     * `$table->blocks()` — the tree the site prints — so a migration says what it adds rather
+     * than how. The draft the preview reads is `$table->draft()` of `module-admin`: drafts are
+     * the frame's mechanism, and an entity without blocks needs them just the same.
      */
     private function registerMacro(): void
     {
         if (! Blueprint::hasMacro('blocks')) {
-            Blueprint::macro('blocks', function (string $column = 'blocks', string $draft = 'draft'): void {
+            Blueprint::macro('blocks', function (string $column = 'blocks'): void {
                 /** @var Blueprint $this */
                 $this->json($column)->nullable();
-                $this->json($draft)->nullable();
             });
         }
 
         if (! Blueprint::hasMacro('dropBlocks')) {
-            Blueprint::macro('dropBlocks', function (string $column = 'blocks', string $draft = 'draft'): void {
+            Blueprint::macro('dropBlocks', function (string $column = 'blocks'): void {
                 /** @var Blueprint $this */
-                $this->dropColumn([$column, $draft]);
+                $this->dropColumn($column);
             });
         }
     }

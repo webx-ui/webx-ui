@@ -106,4 +106,25 @@ return [
 
     'entities' => [],
 
+    /*
+    |---------------------------------------------------------------------------
+    | Preview
+    |---------------------------------------------------------------------------
+    |
+    | `/{path}/{type}/{id}?token=…` shows the draft of an entity as the page it
+    | will be: the same handler, the same view, with the draft laid over the
+    | columns and the drafts of the block types in place of the published ones.
+    | The token is signed with the application key and lives `ttl` minutes;
+    | the panel asks for a fresh one when it opens the preview. The route runs
+    | through `middleware`, so that the site's own locale and session handling
+    | apply to the preview exactly as they do to the page.
+    |
+    */
+
+    'preview' => [
+        'path' => '_preview',
+        'ttl' => 60,
+        'middleware' => ['web'],
+    ],
+
 ];
