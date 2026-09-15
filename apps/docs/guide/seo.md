@@ -128,6 +128,24 @@ saved: a mask is a loop only for some of the addresses it covers, and the rest a
 serving. The row says so in the table. Chains are not collapsed — `A → B → C` costs the browser
 two requests, which is cheaper than walking a graph an editor can make circular from two screens.
 
+## The redirects nobody wrote
+
+The third tab, **Automatic**, is the other half of the same story and belongs to
+[`webx-ui/routing`](./routing): renaming a page or moving a branch leaves the old address behind as
+an alias that answers 301, which is what keeps a bookmark, an inbound link and a search result
+alive through an edit in the panel. A reader who lands on a dead address does not care which half
+of the system answered, so an editor chasing one should not have to either.
+
+Read only, and not for want of a form. An alias belongs to the entity that moved: the entity makes
+it, a second rename repoints it, and deleting the entity takes it away. A panel that could edit one
+would be a panel that can make the registry disagree with the site. To give an old address a
+different answer, write a rule on the **Redirects** tab — rules are tried before routing, so yours
+wins and the alias underneath stops mattering.
+
+That is also why the form warns when the address it is about to take over is a live page. It
+warns and saves anyway: shadowing a page is a legitimate thing to want, and refusing it here would
+make the common case — an address that should now go somewhere else — impossible to express.
+
 ## `robots` and `robots.txt` are different things
 
 - `robots` on a rule is that page's own meta directives — `noindex, nofollow` — printed into
@@ -239,6 +257,7 @@ and new addresses that comes out of every site migration into rows in one call.
 | `POST /api/cms/seo/urls`              | add one                                                     |
 | `GET`, `PUT`, `DELETE` on `urls/{id}` | one rule; `PUT` replaces the whole of it                    |
 | `GET /api/cms/seo/redirects` …        | the same for redirects                                      |
+| `GET /api/cms/seo/aliases`            | the addresses renames left behind; read only                |
 | `POST /api/cms/seo/test-url`          | what an address ends up saying, and where each part is from |
 
 Lists arrive as Laravel's own paginator, which the table in the core reads as it comes.

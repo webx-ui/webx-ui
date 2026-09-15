@@ -9,6 +9,8 @@ use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use WebxUi\Routing\Resolution;
+use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Settings\Settings;
 
 /**
@@ -87,12 +89,31 @@ final class Seo
     /** The `<head>` block, ready to print. */
     public function head(?object $subject = null, ?string $url = null, ?string $locale = null): HtmlString
     {
-        $data = $this->for($url ?? $this->currentUrl(), $subject, $locale);
+        $data = $this->for($url ?? $this->currentUrl(), $subject ?? $this->resolved(), $locale);
 
         return new HtmlString((string) $this->views->make('webx-seo::head', [
             'seo' => $data,
             'print' => (array) $this->config->get('webx-seo.print', []),
         ])->render());
+    }
+
+    /**
+     * The entity the address registry found for this request, when the template named none.
+     *
+     * `<x-webx-seo :for="$page" />` is still the explicit way to say it, and a template that
+     * renders something other than what the address belongs to has to. But a page reached
+     * through `webx-ui/routing` was already looked up once, and making the template repeat the
+     * lookup is how the two end up disagreeing about what the page is.
+     *
+     * Only here, never in `for()`: that one is given an address to answer about — `/test-url`
+     * asks it about somebody else's page — and the entity of the request being served would be
+     * the wrong subject for every one of those.
+     */
+    private function resolved(): ?object
+    {
+        $request = app()->bound('request') ? app('request') : null;
+
+        return $request instanceof Request ? Resolution::of($request)?->entity : null;
     }
 
     /**

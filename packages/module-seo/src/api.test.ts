@@ -48,6 +48,20 @@ describe('createSeoApi', () => {
     expect(put).toHaveBeenCalledWith('/api/cms/seo/urls/7', input)
   })
 
+  it('reads the aliases from the registry beside the redirects', async () => {
+    const get = vi.fn().mockResolvedValue({
+      data: [{ id: 3, pattern: '/about', target: '/about-us' }],
+      meta: { current_page: 1, last_page: 1, per_page: 25, total: 1, from: 1, to: 1 },
+    })
+
+    const page = await createSeoApi(context({ get })).aliases({ q: 'about' })
+
+    expect(page.data[0]?.target).toBe('/about-us')
+    expect(get).toHaveBeenCalledWith('/api/cms/seo/aliases', {
+      query: { q: 'about', locale: undefined, page: undefined, per_page: undefined },
+    })
+  })
+
   it('asks about an address in the body, not in the query string', async () => {
     const post = vi.fn().mockResolvedValue({ data: { url: '/catalog?page=2' } })
 

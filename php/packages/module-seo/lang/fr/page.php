@@ -49,4 +49,14 @@ return [
     'test-redirected' => 'Cette adresse est redirigée vers :target avec un :status.',
     'test-result' => 'Ce que la page dira',
     'test-chain' => 'D’où vient chaque élément',
+
+    'automatic' => 'Automatiques',
+    'search-aliases' => 'Rechercher par adresse ou destination',
+    'aliases-empty' => 'Rien n’a encore déménagé.',
+    'aliases-help' => 'Le site les écrit lui-même : renommer ou déplacer une page laisse son ancienne adresse en place, qui répond 301 — les liens qui y menaient ne meurent pas. On ne les modifie pas ici ; une redirection à vous passe avant et l’emporte.',
+    'language' => 'Langue',
+    'moved-at' => 'Déménagée',
+    'gone' => 'Ne mène nulle part',
+    'occupied' => 'Une page du site répond à :path. Une redirection passe avant elle : la page ne sera plus accessible à cette adresse.',
+    'occupied-alias' => 'Cette adresse mène déjà à :target — la trace d’un déménagement. Une redirection écrite ici passe avant.',
 ];

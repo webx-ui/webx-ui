@@ -20,6 +20,8 @@ parameters:
         - packages/module-settings/tests
         - packages/nested-set/src
         - packages/nested-set/tests
+        - packages/routing/src
+        - packages/routing/tests
     tmpDir: .phpstan.cache
 
     # Without an application to read config/auth.php from, Larastan assumes the framework's own

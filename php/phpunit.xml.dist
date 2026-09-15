@@ -16,6 +16,7 @@
             <directory>packages/module-seo/tests</directory>
             <directory>packages/module-settings/tests</directory>
             <directory>packages/nested-set/tests</directory>
+            <directory>packages/routing/tests</directory>
         </testsuite>
     </testsuites>
     <source>
@@ -28,6 +29,7 @@
             <directory>packages/module-seo/src</directory>
             <directory>packages/module-settings/src</directory>
             <directory>packages/nested-set/src</directory>
+            <directory>packages/routing/src</directory>
         </include>
     </source>
 </phpunit>

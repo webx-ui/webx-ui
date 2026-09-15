@@ -49,4 +49,14 @@ return [
     'test-redirected' => 'Questo indirizzo viene reindirizzato a :target con un :status.',
     'test-result' => 'Cosa dirà la pagina',
     'test-chain' => 'Da dove viene ogni parte',
+
+    'automatic' => 'Automatici',
+    'search-aliases' => 'Cerca per indirizzo o destinazione',
+    'aliases-empty' => 'Non si è ancora spostato nulla.',
+    'aliases-help' => 'Li scrive il sito stesso: rinominando o spostando una pagina il vecchio indirizzo resta e risponde 301, così i link che ci portavano non muoiono. Qui non si modificano; un tuo redirect viene provato prima e vince.',
+    'language' => 'Lingua',
+    'moved-at' => 'Spostato',
+    'gone' => 'Non porta da nessuna parte',
+    'occupied' => 'A :path risponde una pagina del sito. Il redirect viene provato prima: a quell’indirizzo la pagina non sarà più raggiungibile.',
+    'occupied-alias' => 'Questo indirizzo porta già a :target — la traccia di uno spostamento. Un redirect scritto qui viene provato prima.',
 ];

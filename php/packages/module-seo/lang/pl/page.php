@@ -49,4 +49,14 @@ return [
     'test-redirected' => 'Ten adres jest przekierowany na :target z kodem :status.',
     'test-result' => 'Co powie strona',
     'test-chain' => 'Skąd wzięła się każda część',
+
+    'automatic' => 'Automatyczne',
+    'search-aliases' => 'Szukaj po adresie lub celu',
+    'aliases-empty' => 'Nic jeszcze się nie przeniosło.',
+    'aliases-help' => 'Pisze je sama witryna: po zmianie nazwy lub przeniesieniu strony stary adres zostaje i odpowiada kodem 301 — linki do niego nie giną. Nie da się ich tu edytować; własne przekierowanie zadziała wcześniej i wygra.',
+    'language' => 'Język',
+    'moved-at' => 'Przeniesiono',
+    'gone' => 'Prowadzi donikąd',
+    'occupied' => 'Pod adresem :path odpowiada strona witryny. Przekierowanie działa wcześniej — strona przestanie być dostępna pod tym adresem.',
+    'occupied-alias' => 'Ten adres prowadzi już do :target — ślad po przeniesieniu. Przekierowanie napisane tutaj zadziała wcześniej.',
 ];

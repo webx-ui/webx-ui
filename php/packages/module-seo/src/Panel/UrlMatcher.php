@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Panel;
 
 use Throwable;
-use WebxUi\Seo\Rendering\UrlNormaliser;
+use WebxUi\Routing\UrlNormaliser;
 
 /**
  * Which rule an address belongs to.

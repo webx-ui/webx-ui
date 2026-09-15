@@ -80,6 +80,54 @@ export interface SeoRedirect {
   [key: string]: unknown
 }
 
+/**
+ * An address a rename left behind, from `webx-ui/routing`.
+ *
+ * The same words a manual redirect uses where the two overlap, so one screen can show both
+ * without learning two vocabularies. What it has instead of the rest is an entity: these are
+ * written by whatever moved, always exact, always 301, and never edited here.
+ */
+export interface SeoAlias {
+  id: number
+  locale: string
+  /** The old address. */
+  pattern: string
+  /** The address it leads to now; null when the row it pointed at is gone. */
+  target: string | null
+  url: string
+  target_url: string | null
+  /** `page`, `article`, `product` — what the content module called itself. */
+  entity_type: string
+  entity_id: number
+  created_at: string | null
+  [key: string]: unknown
+}
+
+export interface SeoAliasQuery {
+  q?: string
+  locale?: string | null
+  page?: number
+  per_page?: number
+}
+
+/**
+ * What the address registry holds at an address, when something does.
+ *
+ * A rule written by hand is tried before any of it — that is deliberate — so this is a warning
+ * and never a refusal: the page at this address is about to stop being reachable.
+ */
+export interface SeoRoute {
+  path: string
+  url: string
+  kind: 'canonical' | 'alias'
+  /** Where an old address leads now; null on a live page, which has nowhere to lead. */
+  target: string | null
+  entity_type: string
+  entity_id: number
+  /** False when a shorter address matched: the page at `/parts` answering for `/parts/bobcat`. */
+  exact: boolean
+}
+
 export interface SeoRedirectInput {
   match_type: MatchType
   pattern: string
@@ -138,6 +186,8 @@ export interface SeoTestResult {
   url: string
   /** Said first because it happens first: a redirected address never reaches the rules. */
   redirect: SeoRedirect | null
+  /** What the address registry has here — a live page, or the trail of one that moved. */
+  route: SeoRoute | null
   matched: SeoUrlRule | null
   chain: SeoChainStep[]
   seo: SeoResolved

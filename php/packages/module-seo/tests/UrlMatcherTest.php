@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Panel\UrlMatcher;
-use WebxUi\Seo\Rendering\UrlNormaliser;
 
 final class UrlMatcherTest extends TestCase
 {

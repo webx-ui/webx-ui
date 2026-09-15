@@ -7,9 +7,9 @@ namespace WebxUi\Seo\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Panel\SeoRules;
 use WebxUi\Seo\Panel\UrlMatcher;
-use WebxUi\Seo\Rendering\UrlNormaliser;
 
 /**
  * An address that has moved.

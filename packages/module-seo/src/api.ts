@@ -1,5 +1,7 @@
 import type { AdminContext } from '@webx-ui/module-admin'
 import type {
+  SeoAlias,
+  SeoAliasQuery,
   SeoPage,
   SeoRedirect,
   SeoRedirectInput,
@@ -22,6 +24,9 @@ export interface SeoApi {
   createRedirect(input: SeoRedirectInput): Promise<SeoRedirect>
   updateRedirect(id: number, input: SeoRedirectInput): Promise<SeoRedirect>
   removeRedirect(id: number): Promise<void>
+
+  /** The redirects nobody wrote: what the address registry kept after a rename. Read only. */
+  aliases(query?: SeoAliasQuery): Promise<SeoPage<SeoAlias>>
 
   /** What an address ends up saying, and where every part of it came from. */
   test(url: string, locale?: string | null): Promise<SeoTestResult>
@@ -85,6 +90,18 @@ export function createSeoApi(admin: AdminContext): SeoApi {
       admin.http.put<{ data: SeoRedirect }>(`${base}/redirects/${id}`, input).then(data),
 
     removeRedirect: (id) => admin.http.delete<void>(`${base}/redirects/${id}`),
+
+    aliases: (query = {}) =>
+      admin.http
+        .get<{ data: SeoAlias[]; meta: Omit<SeoPage<SeoAlias>, 'data'> }>(`${base}/aliases`, {
+          query: {
+            q: query.q || undefined,
+            locale: query.locale ?? undefined,
+            page: query.page,
+            per_page: query.per_page,
+          },
+        })
+        .then(page),
 
     // A POST because it carries an address in its body, and an address in a query string is an
     // address somebody has to escape twice.

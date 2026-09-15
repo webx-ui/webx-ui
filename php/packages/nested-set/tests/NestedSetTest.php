@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\NestedSet\Tests;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\NestedSet\Exceptions\NestedSetException;
 use WebxUi\NestedSet\Tests\Fixtures\Category;
@@ -248,6 +249,27 @@ final class NestedSetTest extends TestCase
         $this->expectException(NestedSetException::class);
 
         $two->appendTo($one);
+    }
+
+    #[Test]
+    public function a_move_fires_an_event_of_its_own(): void
+    {
+        $root = Category::create(['name' => 'root']);
+        $other = Category::create(['name' => 'other']);
+        $child = $this->node('child');
+        $child->appendTo($root);
+
+        $moved = [];
+
+        Event::listen('eloquent.moved: '.Category::class, static function (Category $node) use (&$moved): void {
+            $moved[] = $node->name;
+        });
+
+        $child->appendTo($other);
+
+        // A move rewrites bounds with bulk updates, so `updated` never fires — anything that
+        // mirrors the tree elsewhere has only this event to hear it on.
+        $this->assertSame(['child'], $moved);
     }
 
     /**

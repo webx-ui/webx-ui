@@ -9,11 +9,11 @@ import { useSeoMessages } from './i18n'
  * The head of the section: its name, the switch between what it holds, and the one tool that
  * belongs to the whole of it.
  *
- * Rules and redirects are two screens rather than two tabs of one, because they are two tables
- * with their own paging and their own search — and a tab that quietly resets both when you come
- * back to it is worse than a second address.
+ * Rules, redirects and the trail of renames are three screens rather than three tabs of one,
+ * because they are three tables with their own paging and their own search — and a tab that
+ * quietly resets both when you come back to it is worse than a second address.
  */
-const props = defineProps<{ base: string; current: 'rules' | 'redirects' }>()
+const props = defineProps<{ base: string; current: 'rules' | 'redirects' | 'aliases' }>()
 
 const emit = defineEmits<{ test: [] }>()
 
@@ -35,12 +35,13 @@ const title = computed(
 const options = computed(() => [
   { value: 'rules', label: t('page.rules') },
   { value: 'redirects', label: t('page.redirects') },
+  { value: 'aliases', label: t('page.automatic') },
 ])
 
 const where = computed({
   get: () => props.current,
   set: (next: string | number) => {
-    const path = next === 'redirects' ? `${props.base}/redirects` : props.base
+    const path = next === 'rules' ? props.base : `${props.base}/${String(next)}`
 
     if (path !== route.path) void router.push(path)
   },

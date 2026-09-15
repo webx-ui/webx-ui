@@ -1,5 +1,6 @@
 import { markRaw, type Component } from 'vue'
 import type { AdminModule } from '@webx-ui/module-admin'
+import SeoAliasesPage from './SeoAliasesPage.vue'
 import SeoCard from './SeoCard.vue'
 import SeoRedirectsPage from './SeoRedirectsPage.vue'
 import SeoUrlsPage from './SeoUrlsPage.vue'
@@ -45,6 +46,15 @@ export function seo(options: SeoOptions = {}): AdminModule {
         path: `${path}/redirects`,
         name: 'webx.seo.redirects',
         component: SeoRedirectsPage,
+        props: { base: path },
+      },
+      // The trail of renames, from `webx-ui/routing`. The screen is here whether or not any
+      // content module has registered a type yet: without one the table is simply empty, and an
+      // empty table is a better answer than a tab that appears one day without explanation.
+      {
+        path: `${path}/aliases`,
+        name: 'webx.seo.aliases',
+        component: SeoAliasesPage,
         props: { base: path },
       },
     ],

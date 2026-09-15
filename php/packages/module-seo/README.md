@@ -12,7 +12,7 @@ the resolver is built so that adding it is one more source rather than a change 
 
 - PHP 8.3+, Laravel 13
 - `webx-ui/module-admin`, `webx-ui/module-auth`, `webx-ui/module-settings`, `webx-ui/localization`,
-  `webx-ui/mcp`
+  `webx-ui/mcp`, `webx-ui/routing`
 
 ## Install
 
@@ -114,10 +114,16 @@ Under `config('webx-admin.api_path').'/seo'`:
 | `POST /urls`                           | add one                                                     |
 | `GET`, `PUT`, `DELETE` on `/urls/{id}` | one rule                                                    |
 | `GET /redirects` …                     | the same for redirects                                      |
+| `GET /aliases`                         | the addresses renames left behind; read only                |
 | `POST /test-url`                       | what an address ends up saying, and where each part is from |
 
 `test-url` is the one worth remembering: it answers "why does this page have the wrong title" in
-one call.
+one call — and says what `webx-ui/routing` holds at the address, which is how the panel warns that
+a redirect is about to shadow a live page.
+
+`/aliases` is the other half of the redirects: the trail a rename leaves in the address registry,
+read through its `RouteAliases` contract. Nothing writes there — those rows belong to the entity
+that moved.
 
 ## Structured data
 
