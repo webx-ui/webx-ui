@@ -27,6 +27,15 @@ class PathRejected extends ValidationException
         return self::make($attribute, $path, sprintf('The address "/%s" is already taken.', $path));
     }
 
+    /**
+     * The address belongs to the application itself — a route of the project, the panel, or a
+     * directory the web server answers from. Losing that race quietly is worse than this (§10).
+     */
+    public static function reserved(string $path, string $attribute = 'slug'): self
+    {
+        return self::make($attribute, $path, sprintf('The address "/%s" is reserved by the application.', $path));
+    }
+
     public static function tooLong(string $path, int $limit, string $attribute = 'slug'): self
     {
         return self::make($attribute, $path, sprintf('The address is %d characters long; the limit is %d.', mb_strlen($path), $limit));

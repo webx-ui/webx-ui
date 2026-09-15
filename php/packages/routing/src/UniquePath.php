@@ -33,6 +33,8 @@ class UniquePath
      */
     private const ATTEMPTS = 50;
 
+    public function __construct(private readonly Reserved $reserved) {}
+
     public function for(Model $entity, string $locale, PathFormatter $formatter, OnConflict $policy): string
     {
         $path = $formatter->format($entity, $locale);
@@ -40,14 +42,16 @@ class UniquePath
 
         $this->assertFits($path, $attribute);
 
-        if (! $this->taken($path, $locale, $entity)) {
+        $rejection = $this->rejection($path, $locale, $entity, $attribute);
+
+        if ($rejection === null) {
             return $path;
         }
 
         // The root cannot be suffixed: `''` has no slug to add `-2` to, and a second home page
         // is a mistake worth refusing rather than moving to `-2`.
         if ($policy === OnConflict::Fail || $path === '') {
-            throw PathRejected::taken($path, $attribute);
+            throw $rejection;
         }
 
         $slug = EntitySlug::read($entity, $locale);
@@ -59,14 +63,30 @@ class UniquePath
             $candidate = $formatter->format($entity, $locale);
             $this->assertFits($candidate, $attribute);
 
-            if (! $this->taken($candidate, $locale, $entity)) {
+            if ($this->rejection($candidate, $locale, $entity, $attribute) === null) {
                 return $candidate;
             }
         }
 
         EntitySlug::write($entity, $locale, $slug);
 
-        throw PathRejected::taken($path, $attribute);
+        throw $rejection;
+    }
+
+    /**
+     * Why this address cannot be used, or null if it can.
+     *
+     * Two reasons that behave the same way and read differently: another entity is already
+     * there, or the application itself is (§10). A type with the `suffix` policy walks past
+     * both — a reserved name is as good as taken for an import that must not stop.
+     */
+    private function rejection(string $path, string $locale, Model $entity, string $attribute): ?PathRejected
+    {
+        if ($this->reserved->taken($path)) {
+            return PathRejected::reserved($path, $attribute);
+        }
+
+        return $this->taken($path, $locale, $entity) ? PathRejected::taken($path, $attribute) : null;
     }
 
     /**

@@ -44,6 +44,23 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | What the fallback route runs through
+    |---------------------------------------------------------------------------
+    |
+    | A route registered outside a group has no middleware at all, and a page of
+    | a site needs two things that live in one: a session, and the decision about
+    | which language this request is in. `webx.locale` reads the same first
+    | segment the resolver strips, so the two can never disagree.
+    |
+    | A site that serves its public pages some other way — no session, its own
+    | language middleware — replaces the list here.
+    |
+    */
+
+    'middleware' => ['web', 'webx.locale'],
+
+    /*
+    |---------------------------------------------------------------------------
     | Reserved addresses
     |---------------------------------------------------------------------------
     |
@@ -54,6 +71,10 @@ return [
     | true without editing it — and these are the addresses no route describes:
     | directories served by the web server, and names kept for later. The panel's
     | own prefix is added at runtime from `module-admin`.
+    |
+    | One consequence worth knowing before it surprises somebody: a fresh Laravel
+    | skeleton answers `/` with its welcome route, so no page can take the site
+    | root until that route is deleted. That is the rule working, not failing.
     |
     */
 

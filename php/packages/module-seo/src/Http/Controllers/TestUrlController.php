@@ -7,6 +7,7 @@ namespace WebxUi\Seo\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Http\Resources\SeoRedirectResource;
 use WebxUi\Seo\Http\Resources\SeoUrlResource;
 use WebxUi\Seo\Models\SeoRedirect;
@@ -14,7 +15,6 @@ use WebxUi\Seo\Panel\SeoRules;
 use WebxUi\Seo\Panel\UrlMatcher;
 use WebxUi\Seo\Panel\UrlRuleSource;
 use WebxUi\Seo\Rendering\Seo;
-use WebxUi\Seo\Rendering\UrlNormaliser;
 
 /**
  * "Why does this page have the wrong title?"

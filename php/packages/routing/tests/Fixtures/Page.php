@@ -22,7 +22,7 @@ class Page extends Model
 
     protected $table = 'pages';
 
-    protected $fillable = ['title', 'slug'];
+    protected $fillable = ['title', 'slug', 'published'];
 
     /**
      * @return list<string>

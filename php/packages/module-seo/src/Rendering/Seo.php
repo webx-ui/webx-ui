@@ -9,6 +9,7 @@ use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Settings\Settings;
 
 /**

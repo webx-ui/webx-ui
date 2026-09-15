@@ -110,6 +110,67 @@ A flat namespace means `Str::slug()` of a name is not unique, so each type says 
 `PathRejected` is a `ValidationException`, so a form request can let it through untouched. Its
 message is English, like every default a library ships: whoever opens the form translates it.
 
+## Answering a request
+
+The registry hangs off `Route::fallback()`, so it is asked only when nothing else matched: a
+project's own `/search` wins with no ordering to arrange and nothing of its own shadowed. A handler
+gets the entity already loaded and whatever was left of the path:
+
+```php
+class ProductPage implements RouteHandler
+{
+    public function handle(Request $request, object $entity, string $tail): Response
+    {
+        // $tail is '' for an exact hit, 'brands-bobcat/stock-in-stock' behind acceptsTail: true.
+    }
+}
+```
+
+What the resolver decides, in order: one spelling per address (a trailing slash, a capital letter
+or a doubled slash is a 301 to the canonical one, query kept); exact match beats prefix match, so
+`/about/mission` is its own page rather than a tail handed to `/about`; an alias answers 301 and
+takes the tail with it, so a renamed category keeps its pages of filters.
+
+What it does not decide is **publication**: the entity already carries that state, and a second
+copy of it in `routes` would be a copy that drifts. A draft answers 404 from the handler, and a
+preview answers 200 from the same place.
+
+Whatever runs afterwards can read what was found without asking again:
+
+```php
+Resolution::of($request)?->entity;
+```
+
+`webx-routing.middleware` is what the fallback route runs through — `['web', 'webx.locale']`, since
+a public page needs a session and a language. `webx-routing.fallback => false` switches the route
+off for a site that would rather call `Resolver::resolve()` from a route of its own.
+
+## Reserved addresses
+
+An address the application answers itself is refused when the entity is saved, not when the request
+arrives: losing silently to a live route leaves an editor with a page that exists everywhere except
+on the site. The router is asked first, so a project that adds a screen keeps this true without
+editing anything; `webx-routing.reserved` covers what no route describes, and the panel's prefix
+comes from `module-admin` at runtime.
+
+One consequence worth knowing: a fresh Laravel skeleton answers `/` with its welcome route, so no
+page can take the site root until that route is gone.
+
+## Commands
+
+```bash
+php artisan webx:routes:rebuild [--type=page] [--dry-run]
+php artisan webx:routes:check
+```
+
+`rebuild` recomputes every address with the formatters as they are configured now and leaves an
+alias behind for each one that moves — the supported way to change the address scheme of a type,
+and the repair tool when rows were written around the observer.
+
+`check` reports what no constraint can: rows whose entity is gone, entities with no address,
+aliases that lead nowhere, and addresses the project has since claimed with a route of its own. It
+exits 1 when it finds anything, so a deploy can run it and stop.
+
 ## Bulk writes
 
 ```php

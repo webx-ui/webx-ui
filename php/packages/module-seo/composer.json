@@ -34,7 +34,8 @@
         "webx-ui/mcp": "^0.14.1",
         "webx-ui/module-admin": "^0.14.1",
         "webx-ui/module-auth": "^0.14.1",
-        "webx-ui/module-settings": "^0.14.1"
+        "webx-ui/module-settings": "^0.14.1",
+        "webx-ui/routing": "^0.14.1"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",

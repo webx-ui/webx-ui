@@ -7,8 +7,8 @@ namespace WebxUi\Seo\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use WebxUi\Localization\Locales;
+use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Panel\UrlMatcher;
-use WebxUi\Seo\Rendering\UrlNormaliser;
 use WebxUi\Seo\Rules\ValidJsonLd;
 use WebxUi\Seo\Rules\ValidRegex;
 

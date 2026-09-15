@@ -21,6 +21,7 @@ use WebxUi\Routing\RoutingServiceProvider;
 use WebxUi\Routing\Tests\Fixtures\Article;
 use WebxUi\Routing\Tests\Fixtures\Category;
 use WebxUi\Routing\Tests\Fixtures\Page;
+use WebxUi\Routing\Tests\Fixtures\PageHandler;
 use WebxUi\Routing\Tests\Fixtures\Product;
 
 abstract class TestCase extends Orchestra
@@ -59,6 +60,9 @@ abstract class TestCase extends Orchestra
             $table->id();
             $table->json('title')->nullable();
             $table->json('slug')->nullable();
+            // Publication is the entity's business, never the registry's (§2, decision 9); the
+            // handler is what reads this, and the resolution tests are what prove it.
+            $table->boolean('published')->default(true);
             $table->nestedSet();
             $table->timestamps();
         });
@@ -103,12 +107,14 @@ abstract class TestCase extends Orchestra
             type: 'page',
             model: Page::class,
             formatter: TreePath::class,
+            handler: PageHandler::class,
         ));
 
         $types->register(new RouteType(
             type: 'category',
             model: Category::class,
             formatter: Slug::class,
+            handler: PageHandler::class,
             acceptsTail: true,
             onConflict: OnConflict::Suffix,
         ));

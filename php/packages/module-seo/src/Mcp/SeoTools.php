@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Mcp;
 
 use WebxUi\Mcp\Tool;
+use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Models\SeoRedirect;
 use WebxUi\Seo\Models\SeoUrl;
 use WebxUi\Seo\Panel\UrlMatcher;
 use WebxUi\Seo\Panel\UrlRuleSource;
 use WebxUi\Seo\Rendering\Seo;
-use WebxUi\Seo\Rendering\UrlNormaliser;
 
 /**
  * What an agent can do with SEO.
