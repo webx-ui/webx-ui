@@ -91,7 +91,7 @@ REPOSITORY="$(
 )
 
 step "The packages came from the checkout, not from Packagist"
-for package in module-admin localization mcp module-auth module-settings module-seo; do
+for package in module-admin localization mcp module-auth module-settings module-seo routing; do
     [ -L "$APP/vendor/webx-ui/$package" ] || [ -f "$APP/vendor/webx-ui/$package/.git" ] \
         || fail "vendor/webx-ui/$package is a copy, so a released version was installed instead of this checkout"
     note "webx-ui/$package is linked to the checkout"
@@ -110,6 +110,7 @@ step "Providers are found by discovery, not by hand"
         "webx-ui/module-auth" => "WebxUi\\Auth\\AuthServiceProvider",
         "webx-ui/module-settings" => "WebxUi\\Settings\\SettingsServiceProvider",
         "webx-ui/module-seo" => "WebxUi\\Seo\\SeoServiceProvider",
+        "webx-ui/routing" => "WebxUi\\Routing\\RoutingServiceProvider",
     ];
     foreach ($expected as $package => $provider) {
         if (! in_array($provider, $manifest[$package]["providers"] ?? [], true)) {
@@ -169,6 +170,147 @@ step "Create an administrator"
 WEBX_ADMIN_PASSWORD="$ADMIN_PASSWORD" "$PHP_BIN" "$APP/artisan" webx:admin \
     --name=Smoke --email="$ADMIN_EMAIL" --no-interaction
 note "$ADMIN_EMAIL created"
+
+step "Give the site something with a public address"
+# webx-ui/routing has no module of its own and no consumer yet, so the only way to exercise it
+# in a real application is to be that consumer: a model with the trait, a type registered from a
+# provider, a handler. Everything below then goes through the fallback route, which is the part
+# Testbench cannot show — a fallback only means anything next to the project's own routes, and a
+# route registered by a package only survives `route:cache` if it carries no closure.
+mkdir -p "$APP/app/Http" "$APP/app/Console/Commands"
+
+cat > "$APP/app/Models/SmokePage.php" <<'PHP'
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use WebxUi\Routing\HasUrl;
+
+class SmokePage extends Model
+{
+    use HasUrl;
+
+    protected $table = 'smoke_pages';
+
+    protected $fillable = ['title', 'slug'];
+}
+PHP
+
+cat > "$APP/app/Http/SmokePageHandler.php" <<'PHP'
+<?php
+
+namespace App\Http;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\Response as BaseResponse;
+use WebxUi\Routing\RouteHandler;
+
+class SmokePageHandler implements RouteHandler
+{
+    public function handle(Request $request, object $entity, string $tail): BaseResponse
+    {
+        return new Response('smoke page: '.$entity->slug, 200);
+    }
+}
+PHP
+
+cat > "$APP/app/Providers/SmokeRoutingServiceProvider.php" <<'PHP'
+<?php
+
+namespace App\Providers;
+
+use App\Http\SmokePageHandler;
+use App\Models\SmokePage;
+use Illuminate\Support\ServiceProvider;
+use WebxUi\Routing\Formatters\Slug;
+use WebxUi\Routing\RouteType;
+use WebxUi\Routing\RouteTypes;
+
+class SmokeRoutingServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        $this->app->make(RouteTypes::class)->register(new RouteType(
+            type: 'smoke-page',
+            model: SmokePage::class,
+            formatter: Slug::class,
+            handler: SmokePageHandler::class,
+        ));
+    }
+}
+PHP
+
+cat > "$APP/app/Console/Commands/SmokePageCommand.php" <<'PHP'
+<?php
+
+namespace App\Console\Commands;
+
+use App\Models\SmokePage;
+use Illuminate\Console\Command;
+
+class SmokePageCommand extends Command
+{
+    protected $signature = 'smoke:page {slug} {--rename=}';
+
+    protected $description = 'Create or rename a page so that the address registry has to follow';
+
+    public function handle(): int
+    {
+        $page = SmokePage::query()->firstOrCreate(
+            ['slug' => $this->argument('slug')],
+            ['title' => 'Smoke'],
+        );
+
+        $rename = $this->option('rename');
+
+        if (is_string($rename) && $rename !== '') {
+            $page->update(['slug' => $rename]);
+        }
+
+        $this->line((string) $page->refresh()->slug);
+
+        return self::SUCCESS;
+    }
+}
+PHP
+
+cat > "$APP/database/migrations/2026_01_01_000100_create_smoke_pages_table.php" <<'PHP'
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('smoke_pages', function (Blueprint $table): void {
+            $table->id();
+            $table->string('title');
+            $table->string('slug');
+            $table->timestamps();
+        });
+    }
+};
+PHP
+
+"$PHP_BIN" -r '
+    [, $file] = $argv;
+    $source = file_get_contents($file);
+    if (! str_contains($source, "SmokeRoutingServiceProvider")) {
+        $source = preg_replace("/\n\];/", "\n    App\\\\Providers\\\\SmokeRoutingServiceProvider::class,\n];", $source, 1);
+        file_put_contents($file, $source);
+    }
+' "$APP/bootstrap/providers.php"
+
+grep -q 'SmokeRoutingServiceProvider' "$APP/bootstrap/providers.php" \
+    || fail 'the smoke provider was not registered'
+
+"$PHP_BIN" "$APP/artisan" migrate --force --no-interaction --quiet
+note 'a model with HasUrl, a type, a handler and a table for them'
 
 step "The modules answer to artisan"
 "$PHP_BIN" "$APP/artisan" webx:mcp-tools | grep -q 'admins_grant_role' \
@@ -248,6 +390,24 @@ run_http_checks() {
         '{"values":{"seo.robots-txt":"User-agent: *"}}')" \
         "[$phase] the SEO tab of the settings takes a value"
     expect 200 "$(status "$BASE/robots.txt")" "[$phase] and /robots.txt serves it"
+
+    # webx-ui/routing. None of this is visible to the tests: the address answers only because a
+    # fallback route registered by a package reached the real router, survived `route:cache`
+    # without a closure in it, and lost to nothing else on the way.
+    "$PHP_BIN" "$APP/artisan" smoke:page "about-$phase" --no-interaction > /dev/null
+
+    expect 200 "$(status "$BASE/about-$phase")" "[$phase] a page in the registry answers"
+    expect 301 "$(status "$BASE/About-$phase")" "[$phase] another spelling of it is a 301"
+    expect 404 "$(status "$BASE/about-$phase/nothing")" "[$phase] a type that takes no tail is a 404"
+
+    "$PHP_BIN" "$APP/artisan" smoke:page "about-$phase" --rename="moved-page-$phase" --no-interaction > /dev/null
+
+    expect 301 "$(status "$BASE/about-$phase")" "[$phase] a rename leaves the old address behind"
+    expect 200 "$(status "$BASE/moved-page-$phase")" "[$phase] and the new one answers"
+
+    "$PHP_BIN" "$APP/artisan" webx:routes:check --no-interaction > /dev/null \
+        || fail "[$phase] webx:routes:check found problems in the registry"
+    note "[$phase] webx:routes:check is quiet"
 
     expect 204 "$(
         curl -s -o /dev/null -w '%{http_code}' -c "$COOKIES" -b "$COOKIES" \

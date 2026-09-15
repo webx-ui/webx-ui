@@ -10,10 +10,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Symfony\Component\HttpFoundation\Response;
+use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Models\SeoRedirect;
 use WebxUi\Seo\Panel\SeoRules;
 use WebxUi\Seo\Panel\UrlMatcher;
-use WebxUi\Seo\Rendering\UrlNormaliser;
 
 /**
  * An address that has moved answers before the router is asked.

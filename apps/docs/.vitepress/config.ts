@@ -31,6 +31,7 @@ export default defineConfig({
             { text: 'Administrators', link: '/guide/admins' },
             { text: 'Settings', link: '/guide/settings' },
             { text: 'SEO', link: '/guide/seo' },
+            { text: 'Addresses', link: '/guide/routing' },
             { text: 'Screens', link: '/guide/screens' },
             { text: 'Roadmap', link: '/guide/roadmap' },
           ],

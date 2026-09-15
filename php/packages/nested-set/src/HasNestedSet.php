@@ -26,6 +26,17 @@ trait HasNestedSet
 {
     private const PLACE_ROOT = 'root';
 
+    /**
+     * A move rewrites bounds with one update per pass rather than by saving models — that is
+     * what keeps a thousand-node branch cheap — so nothing that listens for `updated` ever
+     * hears about it. Anything that mirrors the tree elsewhere (an address registry, a cached
+     * breadcrumb) needs to, hence a `moved` event of our own.
+     */
+    public function initializeHasNestedSet(): void
+    {
+        $this->addObservableEvents('moved');
+    }
+
     private const PLACE_APPEND = 'append';
 
     private const PLACE_PREPEND = 'prepend';
@@ -566,6 +577,8 @@ trait HasNestedSet
 
         $this->refresh();
         $this->syncTarget($target);
+
+        $this->fireModelEvent('moved', false);
 
         return true;
     }

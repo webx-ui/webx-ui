@@ -12,7 +12,8 @@
         "webx-ui/module-media": "*",
         "webx-ui/module-seo": "*",
         "webx-ui/module-settings": "*",
-        "webx-ui/nested-set": "*"
+        "webx-ui/nested-set": "*",
+        "webx-ui/routing": "*"
     },
     "require-dev": {
         "larastan/larastan": "^3.12",
@@ -34,7 +35,8 @@
                     "webx-ui/module-media": "0.14.1",
                     "webx-ui/module-seo": "0.14.1",
                     "webx-ui/module-settings": "0.14.1",
-                    "webx-ui/nested-set": "0.14.1"
+                    "webx-ui/nested-set": "0.14.1",
+                    "webx-ui/routing": "0.14.1"
                 }
             }
         }
@@ -47,6 +49,7 @@
             "WebxUi\\Mcp\\Tests\\": "packages/mcp/tests/",
             "WebxUi\\Media\\Tests\\": "packages/module-media/tests/",
             "WebxUi\\NestedSet\\Tests\\": "packages/nested-set/tests/",
+            "WebxUi\\Routing\\Tests\\": "packages/routing/tests/",
             "WebxUi\\Seo\\Tests\\": "packages/module-seo/tests/",
             "WebxUi\\Settings\\Tests\\": "packages/module-settings/tests/"
         }
