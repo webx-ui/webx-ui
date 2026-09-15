@@ -282,6 +282,12 @@ php/
 - **`Illuminate\Contracts\Translation\Loader` в контейнере не связан** — загрузчик лежит под
   строкой `translation.loader`. Инъекция по интерфейсу падает с «Target … is not instantiable»
   только в рантайме, тесты на конструкторе этого не видят.
+- **Larastan не увидел Blueprint-макрос нового пакета на свежем vendor.** `$table->blocks()` из
+  `module-blocks` шёл как «undefined method», хотя провайдер зарегистрирован и соседний
+  `nestedSet()` находился. Помогло удалить
+  `vendor/orchestra/testbench-core/laravel/bootstrap/cache/{packages,services}.php` и прогнать
+  заново: Larastan поднимает Testbench-приложение и берёт манифест пакетов оттуда, если он уже
+  лежит. После добавления пакета — сначала снести этот кеш, потом верить phpstan.
 - **PHPStan кеширует результат.** После правки `phpstan.neon.dist` (особенно `paths`) старый
   прогон может остаться зелёным: настоящий ответ даёт холодный кеш или чистый клон. Так же
   проверяется и `composer install` — CI чекаутит detached HEAD, path-репозитории резолвятся
