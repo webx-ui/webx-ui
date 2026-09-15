@@ -107,8 +107,10 @@ final class Bundles
                 $css .= sprintf("/* %s v%d */\n%s\n", $type->slug, $type->version, trim($type->styles));
             }
 
-            if ($type->script !== null && trim($type->script) !== '') {
-                $scripts .= sprintf("webx.block(%s, async (el, values) => {\n%s\n});\n", json_encode($type->slug, JSON_THROW_ON_ERROR), trim($type->script));
+            $wrapped = self::wrapScript($type);
+
+            if ($wrapped !== null) {
+                $scripts .= $wrapped;
             }
         }
 
@@ -194,6 +196,20 @@ final class Bundles
         $pairs = array_map(static fn (BlockType $type): array => [$type->slug, $type->version], $ordered);
 
         return substr(hash('sha256', json_encode($pairs, JSON_THROW_ON_ERROR)), 0, 16);
+    }
+
+    /**
+     * A block's script as it rides in a bundle: the body wrapped into the initialiser the
+     * runtime calls per instance. Null when there is nothing to wrap. Public so the editor's
+     * stage runs the same code the site will.
+     */
+    public static function wrapScript(BlockType $type): ?string
+    {
+        if ($type->script === null || trim($type->script) === '') {
+            return null;
+        }
+
+        return sprintf("webx.block(%s, async (el, values) => {\n%s\n});\n", json_encode($type->slug, JSON_THROW_ON_ERROR), trim($type->script));
     }
 
     /** The runtime, as shipped with the package. */

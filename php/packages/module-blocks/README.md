@@ -10,8 +10,8 @@ type is made entirely in the panel — its fields, its Blade template, its style
 and stored in the database; an entity's content is a tree of such blocks, and this package prints
 it. Pages, articles and products add one trait and know nothing else about blocks.
 
-Status: the rendering half, the bundles of styles and scripts and the preview (this README).
-The panel section and the MCP tools follow; the plan is
+Status: the rendering half, the bundles of styles and scripts, the preview and the panel's API
+(this README). The MCP tools follow; the plan is
 [`docs/architecture/WEBX_UI_MODULE_BLOCKS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_BLOCKS.md).
 
 ## Requirements
@@ -170,6 +170,15 @@ is wrapped in the marker comments the panel finds it by, and the response is `no
 A handler tells a preview from a visit with `PreviewGrant::of($request)`, and that is where an
 unpublished entity is a 404 to everybody else. The prefix is closed to the registry, so no page
 can take the address.
+
+## The panel
+
+The section lives in `@webx-ui/module-blocks` on the front end; this package answers it under
+`{api_path}/blocks` — the types, the catalogue the constructor reads, a version per save, publish
+with the check on the sample and on every page the block stands on, render on sent values, usage,
+history and restore. Permissions `blocks.view` and `blocks.manage`; `webx-blocks.editing` off makes
+every write a 403 whatever the permission says. `webx-blocks.provides` lists what the site's bundle
+hands to blocks through `webx.provide()`, for the editor and for an agent.
 
 ## Config
 

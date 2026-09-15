@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
+use WebxUi\Auth\AuthServiceProvider;
+use WebxUi\Auth\Models\CmsUser;
+use WebxUi\Auth\Models\Role;
 use WebxUi\Blocks\BlocksServiceProvider;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Rendering\Renderer;
@@ -35,6 +38,7 @@ abstract class TestCase extends Orchestra
             LocalizationServiceProvider::class,
             RoutingServiceProvider::class,
             AdminServiceProvider::class,
+            AuthServiceProvider::class,
             BlocksServiceProvider::class,
         ];
     }
@@ -48,6 +52,28 @@ abstract class TestCase extends Orchestra
         $app['config']->set('app.url', 'https://example.test');
         $app['config']->set('webx-localization.locales', [['code' => 'en', 'default' => true]]);
         $app['config']->set('webx-localization.cache.enabled', false);
+    }
+
+    /**
+     * @param  list<string>  $permissions
+     */
+    protected function editor(array $permissions = ['blocks.view', 'blocks.manage']): CmsUser
+    {
+        static $count = 0;
+        $count++;
+
+        $user = CmsUser::query()->create([
+            'name' => 'Editor',
+            'email' => "editor-{$count}@example.test",
+            'password' => 'correct-horse-battery',
+            'is_super' => false,
+            'is_active' => true,
+        ]);
+
+        $role = Role::query()->create(['slug' => "editor-{$count}", 'name' => 'Editor', 'permissions' => $permissions]);
+        $user->roles()->attach($role->getKey());
+
+        return $user;
     }
 
     protected function defineDatabaseMigrations(): void

@@ -8,10 +8,16 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Blocks\Console\BundlesCommand;
 use WebxUi\Blocks\Console\ClearCommand;
+use WebxUi\Blocks\Http\Middleware\EnsureEditing;
+use WebxUi\Blocks\Panel\BlocksModule;
+use WebxUi\Blocks\Panel\Publisher;
+use WebxUi\Blocks\Panel\Usage;
 use WebxUi\Blocks\Preview\Preview;
 use WebxUi\Blocks\Preview\PreviewToken;
 use WebxUi\Blocks\Rendering\Bundles;
@@ -20,8 +26,9 @@ use WebxUi\Blocks\Rendering\TemplateCompiler;
 
 /**
  * Two halves of one package. `Rendering\` is what a public page uses: the registry of types,
- * the compiler and the renderer behind `Blocks::render()` and `@blocks`. The panel half — the
- * section where a type is made — arrives next to it; the seam between them is the tables.
+ * the compiler and the renderer behind `Blocks::render()` and `@blocks`. `Panel\` is the
+ * section where a type is made — the module, the controllers behind `/blocks`, what knows
+ * where a type stands and what gates its publication. The seam between them is the tables.
  */
 class BlocksServiceProvider extends ServiceProvider
 {
@@ -33,6 +40,8 @@ class BlocksServiceProvider extends ServiceProvider
         $this->app->singleton(Renderer::class);
         $this->app->singleton(Bundles::class);
         $this->app->singleton(Preview::class);
+        $this->app->singleton(Usage::class);
+        $this->app->singleton(Publisher::class);
 
         $this->app->singleton(PreviewToken::class, static function (Application $app): PreviewToken {
             $key = (string) $app->make('config')->get('app.key', '');
@@ -61,10 +70,18 @@ class BlocksServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-blocks');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->registerMacro();
         $this->registerDirectives();
+
+        /** @var Router $router */
+        $router = $this->app->make('router');
+        $router->aliasMiddleware('webx.blocks-editing', EnsureEditing::class);
+
+        $this->app->make(ModuleRegistry::class)->register($this->app->make(BlocksModule::class));
 
         // What a response printed is what its bundle is glued from, and no more than that: in a
         // process that serves many requests the list would otherwise grow across them.
@@ -81,6 +98,10 @@ class BlocksServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../config/webx-blocks.php' => config_path('webx-blocks.php'),
         ], 'webx-blocks-config');
+
+        $this->publishes([
+            __DIR__.'/../lang' => lang_path('vendor/webx-blocks'),
+        ], 'webx-blocks-lang');
     }
 
     /**

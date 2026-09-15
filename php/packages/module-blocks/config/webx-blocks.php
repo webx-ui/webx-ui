@@ -34,6 +34,20 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | What the site provides
+    |---------------------------------------------------------------------------
+    |
+    | The names the site's own bundle hands to blocks through `webx.provide()`
+    | — `swiper`, `gsap`, whatever it has built. Data, not code: the editor
+    | shows the list beside the script field, and MCP hands it to an agent, so
+    | that a block asks for what this site actually has.
+    |
+    */
+
+    'provides' => [],
+
+    /*
+    |---------------------------------------------------------------------------
     | Nesting
     |---------------------------------------------------------------------------
     |

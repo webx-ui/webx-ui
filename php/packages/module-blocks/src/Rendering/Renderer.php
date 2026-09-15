@@ -74,20 +74,23 @@ final class Renderer
     }
 
     /**
-     * Render the type on its sample values, and say why when it cannot be.
+     * Render the type on its sample values — or on the values handed in — and say why when it
+     * cannot be.
      *
      * This is the gate before publishing: a template that does not compile or throws on its
-     * own sample stays a draft.
+     * own sample stays a draft, and the panel runs it on every page's values as well.
+     *
+     * @param  array<string, mixed>|null  $values  The sample when null.
      *
      * @throws BlockNotPublishable
      */
-    public function check(BlockType $type): void
+    public function check(BlockType $type, ?array $values = null): void
     {
         $context = new BlockContext(
             key: 'sample',
             type: $type->slug,
             version: $type->version,
-            values: $type->sample,
+            values: $values ?? $type->sample,
             entity: null,
             depth: 0,
         );
@@ -99,6 +102,42 @@ final class Renderer
         } catch (Throwable $failure) {
             throw BlockNotPublishable::because($type, $failure, $this->line($failure, $path, $type));
         }
+    }
+
+    /**
+     * One block for the panel: the type at the version given, on the values given, as the
+     * preview would draw it — a notice with the line in place of a failure, the marker pair
+     * around it, drafts for whatever it nests. `$unsaved` compiles the template in the type
+     * as it is rather than the stored version, for the editor rendering what is being typed.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    public function draw(BlockType $type, array $values, string $key = 'sample', bool $unsaved = false): string
+    {
+        $context = new BlockContext(
+            key: $key,
+            type: $type->slug,
+            version: $type->version,
+            values: $values,
+            entity: null,
+            depth: 0,
+        );
+
+        $path = $unsaved ? $this->compiler->adHoc($type->slug, $type->template) : $this->compiler->path($type);
+        $was = $this->preview;
+        $this->preview = true;
+
+        try {
+            $html = $this->evaluate($path, $type, $context);
+        } catch (Throwable $failure) {
+            $html = $this->failed($context, $failure, $this->line($failure, $path, $type));
+        } finally {
+            $this->preview = $was;
+        }
+
+        $this->used[$type->slug] = $type;
+
+        return $this->markers($key, $html);
     }
 
     /**
@@ -285,6 +324,11 @@ final class Renderer
             return $html;
         }
 
+        return $this->markers($key, $html);
+    }
+
+    private function markers(string $key, string $html): string
+    {
         $key = (string) preg_replace('/[^A-Za-z0-9_.:-]/', '', $key);
 
         return "<!--wx:{$key}-->{$html}<!--/wx:{$key}-->";
