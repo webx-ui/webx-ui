@@ -10,8 +10,8 @@ type is made entirely in the panel — its fields, its Blade template, its style
 and stored in the database; an entity's content is a tree of such blocks, and this package prints
 it. Pages, articles and products add one trait and know nothing else about blocks.
 
-Status: the rendering half (this README). The bundles of styles and scripts, the preview, the
-panel section and the MCP tools follow; the plan is
+Status: the rendering half and the bundles of styles and scripts (this README). The preview,
+the panel section and the MCP tools follow; the plan is
 [`docs/architecture/WEBX_UI_MODULE_BLOCKS.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_BLOCKS.md).
 
 ## Requirements
@@ -99,6 +99,48 @@ handler and the block is left out, the rest of the page intact. In the preview i
 the block's place with the message and the template's line. A block whose type is no longer
 published is left out and noted in the log.
 
+## Styles and scripts
+
+```blade
+<head>
+    @webxBlocks            {{-- the stylesheet and the script of every block the page rendered --}}
+</head>
+```
+
+The types on a page and their versions, in `sort` then `slug` order, make a hash; the hash names
+a row of `block_bundles` with the glued CSS and JS, written the first time that set is seen and
+served by `/blocks/{hash}.css` and `/blocks/{hash}.js` with a year-long immutable cache. A page
+pulls only what stands on it, pages with the same set share the file, and publishing a version
+changes the hash only where the block stands. A page without blocks prints nothing.
+
+The directive is evaluated where it stands — with `@extends` and with components the content
+renders before the layout, so the head knows what is below it. `@webxBlocks('styles')` and
+`@webxBlocks('scripts')` split the two tags between the head and the end of the body; a set that
+weighs no more than `webx-blocks.bundles.inline_below` bytes is printed inline instead.
+
+A block's `script` is the body of an initialiser, run once per instance:
+
+```js
+// the script field of the block "hero"
+const Swiper = await webx.use('swiper') // whatever the site's own bundle provided
+new Swiper(el, values.options)
+```
+
+The runtime rides in the bundle. It finds every `[data-wx-block="hero"]` and calls the function
+with the element and the values it carries in `data-wx-values` (JSON, `{}` when absent —
+`data-wx-values="{{ json_encode($block->values) }}"` in the template); `webx.mount(root)` picks up
+what is new inside a subtree, which is what the panel calls after replacing a block. The bridge
+to the site's build is `webx.provide('swiper', Swiper)` on the site's side and `await
+webx.use('swiper')` in the block: `use` waits, so the order the two files load in does not
+matter — but `webx` has to exist when the site calls `provide`. A site that needs it before its
+own entry prints `@webxBlocks('runtime')` in the head first; the copy inside the bundle then
+steps aside.
+
+Housekeeping: `webx:blocks:bundles --prune` drops the bundles glued from versions no longer
+published, `--warm` writes the bundle of every entity of the models listed in
+`webx-blocks.entities` ahead of the first visitor, and `webx:blocks:clear` forgets the cached
+types and the compiled templates.
+
 ## The registry
 
 ```php
@@ -113,7 +155,7 @@ deleted.
 ## Config
 
 `php artisan vendor:publish --tag=webx-blocks-config` — groups, editing, nesting depth, where the
-compiled templates go, cache.
+compiled templates go, cache, the bundles' path prefix and inline threshold, the entities to warm.
 
 ## License
 

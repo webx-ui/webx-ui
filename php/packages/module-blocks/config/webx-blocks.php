@@ -76,4 +76,34 @@ return [
         'key' => 'webx.blocks.types',
     ],
 
+    /*
+    |---------------------------------------------------------------------------
+    | Bundles
+    |---------------------------------------------------------------------------
+    |
+    | The styles and scripts of a page are served as one file each, named by
+    | the hash of the types and versions on it, under this path prefix. A set
+    | whose CSS and JS together weigh no more than `inline_below` bytes is
+    | printed inline instead; 0 never inlines.
+    |
+    */
+
+    'bundles' => [
+        'path' => 'blocks',
+        'inline_below' => 0,
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Entities
+    |---------------------------------------------------------------------------
+    |
+    | The models that use `HasBlocks`, for `webx:blocks:bundles --warm`: the
+    | bundle of every row of every model listed here is written ahead of the
+    | first visitor. The package does not know your entities; name them.
+    |
+    */
+
+    'entities' => [],
+
 ];

@@ -19,4 +19,13 @@ it on its sample values first and refuses, with the line, when that throws. The 
 the template's variables — a field added after the content was written is `null` on the old pages,
 not an error.
 
-The bundles of styles and scripts, the preview route, the panel section and the MCP tools follow.
+The second half of the same package, the styles and scripts: the set of types a page rendered, at
+their versions, makes a hash that names a row of `block_bundles` with the glued CSS and JS, served
+by `/blocks/{hash}.css` and `.js` with a year-long immutable cache. `@webxBlocks` in the layout
+prints the tags — evaluated where it stands, after the content under `@extends` and components —
+with `('styles')`, `('scripts')` and `('runtime')` variants and an inline mode for small sets. A
+block's script is an initialiser per instance behind a small runtime (`webx.block`, `webx.mount`,
+`webx.provide`, `webx.use`) that also ships on its own at `/blocks/runtime.js`. Commands:
+`webx:blocks:bundles --prune|--warm` and `webx:blocks:clear`.
+
+The preview route, the panel section and the MCP tools follow.

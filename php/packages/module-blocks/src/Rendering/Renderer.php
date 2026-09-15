@@ -30,7 +30,7 @@ final class Renderer
 {
     private bool $preview = false;
 
-    /** @var array<string, int> slug → version number of every type this response has printed */
+    /** @var array<string, BlockType> slug → the type, at the version, this response has printed */
     private array $used = [];
 
     public function __construct(
@@ -125,6 +125,16 @@ final class Renderer
      */
     public function used(): array
     {
+        return array_map(static fn (BlockType $type): int => $type->version, $this->used);
+    }
+
+    /**
+     * The same, as the types themselves — what the bundle is glued from.
+     *
+     * @return array<string, BlockType>
+     */
+    public function usedTypes(): array
+    {
         return $this->used;
     }
 
@@ -172,7 +182,7 @@ final class Renderer
             return $this->wrap($key, $this->problem($key, $slug, "There is no published block type \"{$slug}\"; the block is left out."));
         }
 
-        $this->used[$type->slug] = $type->version;
+        $this->used[$type->slug] = $type;
 
         $context = new BlockContext(
             key: $key,
