@@ -28,7 +28,10 @@ return new class extends Migration
             // one address would otherwise be two rows in the map and one row in the database.
             $table->string('path', 255);
 
-            $table->string('kind', 8)->default('canonical');
+            // 16, because the default has to fit in it: `canonical` is nine characters, and
+            // MySQL refuses a default longer than its column at CREATE time — sqlite takes it
+            // without a word, so only a real database says so.
+            $table->string('kind', 16)->default('canonical');
 
             // An alias points at the row, not at its text: after a second rename it still leads
             // to wherever the canonical row is now, with no chain of 301s to walk.

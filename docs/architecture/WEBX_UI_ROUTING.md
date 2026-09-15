@@ -82,7 +82,7 @@
 id            bigint
 locale        string(12)         -- код BCP-47, как в `locales`
 path          string(255)        -- '' для главной, без ведущего слэша, нижний регистр
-kind          string(8)          -- canonical | alias
+kind          string(16)         -- canonical | alias (16, а не 8: дефолт 'canonical' длиннее)
 target_id     bigint nullable    -- у алиаса: строка-канон, FK на routes.id, on delete cascade
 entity_type   string(32)         -- алиас morph map: page | rubric | article | category | product
 entity_id     bigint
