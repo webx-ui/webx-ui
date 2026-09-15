@@ -76,7 +76,7 @@ final class BlockController
 
         $content = $request->content();
 
-        if ($content !== null && $this->differs($block, $content)) {
+        if ($content !== null && $block->contentDiffers($content)) {
             $block->saveVersion($content, BlockVersion::SOURCE_PANEL, $this->author($request), $request->comment());
         }
 
@@ -129,29 +129,6 @@ final class BlockController
             ->map(static fn (Block $block): BlockResource => new BlockResource($block, $usage, $authors, $withContent))
             ->values()
             ->all();
-    }
-
-    /**
-     * Whether what was sent differs from the version being edited. Field by field, on what
-     * was sent: a request that carries only the template compares only the template.
-     *
-     * @param  array<string, mixed>  $content
-     */
-    private function differs(Block $block, array $content): bool
-    {
-        $current = $block->currentVersion()?->content();
-
-        if ($current === null) {
-            return true;
-        }
-
-        foreach ($content as $field => $value) {
-            if (($current[$field] ?? null) != $value) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private function author(Request $request): ?int

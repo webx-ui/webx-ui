@@ -180,6 +180,32 @@ history and restore. Permissions `blocks.view` and `blocks.manage`; `webx-blocks
 every write a 403 whatever the permission says. `webx-blocks.provides` lists what the site's bundle
 hands to blocks through `webx.provide()`, for the editor and for an agent.
 
+## Export and import
+
+```bash
+php artisan webx:blocks:export             # resources/blocks/{slug}.json, one per published type
+php artisan webx:blocks:export hero --draft
+php artisan webx:blocks:import             # back in, as drafts; a version only where content differs
+php artisan webx:blocks:import --publish   # …and publish what passes the checks
+php artisan webx:blocks:import --dry-run
+```
+
+A block does not travel through git on its own; the files do. Each is the row's settings and one
+version's content, flat and pretty-printed for a diff. Import checks a file by the rules the panel
+checks a save with, writes a version only when the content differs from the one being edited, and
+with `--publish` runs the publish checks — a type that fails stays a draft and the exit code says so.
+
+## MCP
+
+With [`webx-ui/mcp`](../mcp) — it comes with this package — the section is also a set of tools
+for an agent: `blocks_list`, `blocks_get`, `blocks_create`, `blocks_update`, `blocks_publish`,
+`blocks_render`, `blocks_get_content`, `blocks_set_content`, `blocks_preview_url`. The same doors
+the panel uses, with `mcp` as the source in the history; every tool that changes something takes
+`dry_run: true`. Scopes `blocks:read` and `blocks:write` are the abilities of the token
+`php artisan webx:mcp:token` issues. Before writing, an agent reads `blocks://guidelines`,
+`blocks://catalog`, `blocks://fields` and `blocks://site`; the prompt `design_block` packages the
+loop of create, render, fix, report.
+
 ## Config
 
 `php artisan vendor:publish --tag=webx-blocks-config` — groups, editing, nesting depth, where the

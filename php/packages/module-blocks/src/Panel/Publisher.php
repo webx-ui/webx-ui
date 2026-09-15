@@ -30,21 +30,49 @@ final class Publisher
      */
     public function publish(Block $block): BlockVersion
     {
-        $draft = $block->draftVersion ?? throw new BlocksException("Block '{$block->slug}' has no draft to publish.");
-        $type = BlockType::fromModels($block, $draft);
+        $draft = $this->draftOf($block);
 
-        foreach ($this->usage->values($block->slug) as $instance) {
-            try {
-                $this->renderer->check($type, $instance['values']);
-            } catch (BlockNotPublishable $failure) {
-                throw PublishFailed::onEntity($failure, $instance['model'], $instance['id'], $instance['title']);
-            }
-        }
+        $this->check($block);
 
         try {
             return $block->publish($draft);
         } catch (BlockNotPublishable $failure) {
             throw PublishFailed::onSample($failure);
         }
+    }
+
+    /**
+     * The checks alone, without moving the pointer — what a dry run of publishing is. Returns
+     * how many instances on pages were rendered, so the caller can say what was checked.
+     *
+     * @throws BlocksException when there is no draft
+     * @throws PublishFailed
+     */
+    public function check(Block $block): int
+    {
+        $type = BlockType::fromModels($block, $this->draftOf($block));
+        $checked = 0;
+
+        foreach ($this->usage->values($block->slug) as $instance) {
+            try {
+                $this->renderer->check($type, $instance['values']);
+                $checked++;
+            } catch (BlockNotPublishable $failure) {
+                throw PublishFailed::onEntity($failure, $instance['model'], $instance['id'], $instance['title']);
+            }
+        }
+
+        try {
+            $this->renderer->check($type);
+        } catch (BlockNotPublishable $failure) {
+            throw PublishFailed::onSample($failure);
+        }
+
+        return $checked;
+    }
+
+    private function draftOf(Block $block): BlockVersion
+    {
+        return $block->draftVersion ?? throw new BlocksException("Block '{$block->slug}' has no draft to publish.");
     }
 }

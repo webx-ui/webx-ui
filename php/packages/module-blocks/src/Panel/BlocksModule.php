@@ -6,6 +6,13 @@ namespace WebxUi\Blocks\Panel;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Blocks\Mcp\BlockPrompts;
+use WebxUi\Blocks\Mcp\BlockResources;
+use WebxUi\Blocks\Mcp\BlockTools;
+use WebxUi\Mcp\Contracts\ProvidesMcpTools;
+use WebxUi\Mcp\McpResource;
+use WebxUi\Mcp\Prompt;
+use WebxUi\Mcp\Tool;
 
 /**
  * The section where a block type is made.
@@ -14,10 +21,18 @@ use WebxUi\Admin\AbstractModule;
  * system setting — and the ones who use it are the ones who build the pages. Two permissions,
  * the panel's usual pair: `view` opens the section and the picker, `manage` writes. Saving a
  * block is running Blade, so `manage` is given the way a shell is given (§16).
+ *
+ * To an agent the module is the same section by other doors (§18): the tools, the resources
+ * it should read first, and one prompt. The scopes are `blocks:read` and `blocks:write`.
  */
-final class BlocksModule extends AbstractModule
+final class BlocksModule extends AbstractModule implements ProvidesMcpTools
 {
-    public function __construct(private readonly Config $config) {}
+    public function __construct(
+        private readonly Config $config,
+        private readonly BlockTools $tools,
+        private readonly BlockResources $resources,
+        private readonly BlockPrompts $prompts,
+    ) {}
 
     public function id(): string
     {
@@ -64,5 +79,29 @@ final class BlocksModule extends AbstractModule
             'editing' => (bool) $this->config->get('webx-blocks.editing', true),
             'provides' => is_array($provides) ? array_values(array_map('strval', $provides)) : [],
         ];
+    }
+
+    /**
+     * @return list<Tool>
+     */
+    public function mcpTools(): array
+    {
+        return $this->tools->all();
+    }
+
+    /**
+     * @return list<McpResource>
+     */
+    public function mcpResources(): array
+    {
+        return $this->resources->all();
+    }
+
+    /**
+     * @return list<Prompt>
+     */
+    public function mcpPrompts(): array
+    {
+        return $this->prompts->all();
     }
 }

@@ -8,7 +8,10 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
+use Laravel\Sanctum\Sanctum;
+use Laravel\Sanctum\SanctumServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
+use ReflectionClass;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
@@ -21,6 +24,7 @@ use WebxUi\Blocks\Tests\Fixtures\Page;
 use WebxUi\Blocks\Tests\Fixtures\PageHandler;
 use WebxUi\Blocks\Tests\Fixtures\RoutedPage;
 use WebxUi\Localization\LocalizationServiceProvider;
+use WebxUi\Mcp\McpServiceProvider;
 use WebxUi\Routing\Formatters\Slug;
 use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
@@ -39,6 +43,9 @@ abstract class TestCase extends Orchestra
             RoutingServiceProvider::class,
             AdminServiceProvider::class,
             AuthServiceProvider::class,
+            // Sanctum is what an agent's token is; the mcp package is the door it comes through.
+            SanctumServiceProvider::class,
+            McpServiceProvider::class,
             BlocksServiceProvider::class,
         ];
     }
@@ -78,6 +85,10 @@ abstract class TestCase extends Orchestra
 
     protected function defineDatabaseMigrations(): void
     {
+        // Sanctum only publishes its migration; an application runs it once. The tests are the
+        // application here, and an agent's token needs the table.
+        $this->loadMigrationsFrom(dirname((string) (new ReflectionClass(Sanctum::class))->getFileName(), 2).'/database/migrations');
+
         $this->artisan('migrate')->run();
 
         Schema::create('pages', function (Blueprint $table): void {

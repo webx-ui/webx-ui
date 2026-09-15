@@ -208,4 +208,28 @@ class Block extends Model
 
         return $version;
     }
+
+    /**
+     * Whether content sent differs from the version being edited — field by field, on what
+     * was sent: a request that carries only the template compares only the template. What
+     * decides whether a save writes a version, from the panel, an agent or an import alike.
+     *
+     * @param  array<string, mixed>  $content
+     */
+    public function contentDiffers(array $content): bool
+    {
+        $current = $this->currentVersion()?->content();
+
+        if ($current === null) {
+            return true;
+        }
+
+        foreach ($content as $field => $value) {
+            if (($current[$field] ?? null) != $value) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

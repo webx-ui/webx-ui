@@ -159,6 +159,9 @@ note "$(grep -E '^DB_CONNECTION=|^DB_DATABASE=' "$APP/.env" | tr '\n' ' ')"
 
 [ "$DB_CONNECTION" = "sqlite" ] && : > "$APP/database/database.sqlite"
 
+# Sanctum only publishes its migration; an agent's MCP token lives in that table.
+"$PHP_BIN" "$APP/artisan" vendor:publish --tag=sanctum-migrations --no-interaction --quiet
+
 "$PHP_BIN" "$APP/artisan" migrate --force --no-interaction
 note 'migrations ran'
 
@@ -171,6 +174,13 @@ step "Create an administrator"
 WEBX_ADMIN_PASSWORD="$ADMIN_PASSWORD" "$PHP_BIN" "$APP/artisan" webx:admin \
     --name=Smoke --email="$ADMIN_EMAIL" --no-interaction
 note "$ADMIN_EMAIL created"
+
+step "Issue an MCP token"
+# The token is the one bare `id|secret` line of the output.
+MCP_TOKEN="$("$PHP_BIN" "$APP/artisan" webx:mcp:token "$ADMIN_EMAIL" --scopes=blocks:read --no-ansi \
+    | grep -E '^[0-9]+\|[A-Za-z0-9]+$' | head -1)"
+[ -n "$MCP_TOKEN" ] || fail 'webx:mcp:token did not print a token'
+note 'a token with blocks:read issued'
 
 step "Give the site something with a public address"
 # webx-ui/routing has no module of its own and no consumer yet, so the only way to exercise it
@@ -463,6 +473,21 @@ run_http_checks() {
     )" "[$phase] sign out"
 
     expect 401 "$(status "$BASE/api/cms/manifest")" "[$phase] and the panel is closed again"
+
+    # The MCP server: outside the `web` group, so no session and no CSRF — a bearer token or
+    # nothing. Its routes are registered by a provider, which is exactly what the route cache
+    # phase has to prove still works.
+    local rpc='{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+
+    expect 401 "$(status -X POST -H 'Content-Type: application/json' -d "$rpc" "$BASE/api/cms/mcp")" \
+        "[$phase] the MCP server is closed to strangers"
+
+    local tools
+    tools="$(curl -s -H 'Accept: application/json' -H 'Content-Type: application/json' \
+        -H "Authorization: Bearer $MCP_TOKEN" -X POST -d "$rpc" "$BASE/api/cms/mcp")"
+    printf '%s' "$tools" | grep -q '"blocks_list"' \
+        || fail "[$phase] the MCP server did not list the blocks tools to a token: $tools"
+    note "[$phase] and lists the blocks tools to a token"
 }
 
 serve() {
