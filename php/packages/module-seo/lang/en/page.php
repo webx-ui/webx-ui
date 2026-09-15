@@ -55,4 +55,14 @@ return [
     'test-redirected' => 'This address is redirected to :target with a :status.',
     'test-result' => 'What the page will say',
     'test-chain' => 'Where each part came from',
+
+    'automatic' => 'Automatic',
+    'search-aliases' => 'Search by address or destination',
+    'aliases-empty' => 'Nothing has moved yet.',
+    'aliases-help' => 'The site writes these itself: renaming or moving a page leaves its old address behind answering 301, so nothing that linked to it dies. They cannot be edited here — a redirect of your own is tried first and wins.',
+    'language' => 'Language',
+    'moved-at' => 'Moved',
+    'gone' => 'Leads nowhere',
+    'occupied' => 'A page of the site answers at :path. A redirect is tried before it, so the page stops being reachable there.',
+    'occupied-alias' => 'This address already leads to :target — what a move left behind. A redirect written here is tried first.',
 ];

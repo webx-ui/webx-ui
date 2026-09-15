@@ -77,6 +77,26 @@ class Resolver
     }
 
     /**
+     * What the registry holds for an address, without answering it.
+     *
+     * The question the panel asks before it writes a redirect rule by hand (§12.3): a rule is
+     * allowed to shadow a live page — it is tried before routing and that is deliberate — but an
+     * editor who is about to make a page unreachable should be told so while they can still
+     * change their mind. Takes an address as a person writes it, prefix and slashes and all.
+     *
+     * The language is the site's own rather than the current request's, because the asking is
+     * done from the panel: an administrator working in English is not asking about the English
+     * half of the site, they are asking about an address. A prefix in the address itself wins,
+     * and `$locale` is for a screen that lets somebody name the language outright.
+     */
+    public function lookup(string $url, ?string $locale = null): ?Resolution
+    {
+        [$found, $prefix, $path] = $this->split(UrlNormaliser::key($url));
+
+        return $this->match($prefix === '' ? ($locale ?? $this->locales->defaultCode()) : $found, $path);
+    }
+
+    /**
      * The row that owns this path, and what was left over.
      *
      * Exact beats prefix (§2, decision 7), which is why the rows are tried longest first: a page

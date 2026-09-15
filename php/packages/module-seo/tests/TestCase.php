@@ -12,6 +12,7 @@ use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\Role;
 use WebxUi\Localization\LocalizationServiceProvider;
 use WebxUi\Mcp\McpServiceProvider;
+use WebxUi\Routing\RoutingServiceProvider;
 use WebxUi\Seo\SeoServiceProvider;
 use WebxUi\Settings\SettingsServiceProvider;
 
@@ -29,6 +30,9 @@ abstract class TestCase extends Orchestra
             McpServiceProvider::class,
             AuthServiceProvider::class,
             SettingsServiceProvider::class,
+            // A dependency since the address registry arrived: the aliases screen reads through
+            // its contract, and one spelling of an address now lives on its side of the seam.
+            RoutingServiceProvider::class,
             SeoServiceProvider::class,
         ];
     }

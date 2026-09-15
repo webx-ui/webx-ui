@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use WebxUi\Seo\Http\Controllers\RouteAliasController;
 use WebxUi\Seo\Http\Controllers\SeoRedirectController;
 use WebxUi\Seo\Http\Controllers\SeoUrlController;
 use WebxUi\Seo\Http\Controllers\TestUrlController;
@@ -17,6 +18,10 @@ Route::prefix((string) config('webx-admin.api_path').'/seo')
 
             Route::get('redirects', [SeoRedirectController::class, 'index'])->name('redirects.index');
             Route::get('redirects/{redirect}', [SeoRedirectController::class, 'show'])->name('redirects.show');
+
+            // Beside them because an editor chasing a dead address does not care which half of
+            // the system made it. Read only: these are written by whatever moved.
+            Route::get('aliases', [RouteAliasController::class, 'index'])->name('aliases.index');
 
             // A POST because it carries an address in its body, and an address in a query
             // string is an address somebody has to escape twice.

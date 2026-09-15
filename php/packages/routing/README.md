@@ -171,6 +171,21 @@ and the repair tool when rows were written around the observer.
 aliases that lead nowhere, and addresses the project has since claimed with a route of its own. It
 exits 1 when it finds anything, so a deploy can run it and stop.
 
+## Showing the aliases to somebody
+
+```php
+use WebxUi\Routing\Aliases\RouteAliases;
+
+app(RouteAliases::class)->search(term: 'about', perPage: 25);
+```
+
+A page of flat values — the old address, where it leads now, the entity it belongs to — and that is
+deliberately all a panel gets. `webx-ui/module-seo` puts them on an **Automatic** tab beside the
+redirect rules an editor wrote by hand, read only: an alias is made, repointed and removed by the
+entity that moved, and a screen that could edit one would be a screen that can make the registry
+disagree with the site. To give an old address a different answer, write a rule — rules are tried
+before routing.
+
 ## Bulk writes
 
 ```php

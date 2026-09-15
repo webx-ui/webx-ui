@@ -93,6 +93,18 @@ async function run(): Promise<void> {
           "
         />
 
+        <!-- Who answers at this address at all. A rule of the site's own comes before any of
+             this, so an address can be redirected away from a page that still exists. -->
+        <wx-alert
+          v-if="result.route"
+          type="info"
+          :description="
+            result.route.kind === 'alias'
+              ? t('page.occupied-alias', { target: result.route.target ?? result.route.path })
+              : t('page.occupied', { path: result.route.path })
+          "
+        />
+
         <wx-alert v-if="!result.matched" type="info" :description="t('page.test-none')" />
         <div v-else class="wx-seo-test__matched">
           <wx-text size="sm" tone="muted">{{ t('page.test-matched') }}</wx-text>

@@ -49,4 +49,14 @@ return [
     'test-redirected' => 'Diese Adresse wird mit :status auf :target weitergeleitet.',
     'test-result' => 'Was die Seite sagen wird',
     'test-chain' => 'Woher jeder Teil kommt',
+
+    'automatic' => 'Automatisch',
+    'search-aliases' => 'Nach Adresse oder Ziel suchen',
+    'aliases-empty' => 'Noch ist nichts umgezogen.',
+    'aliases-help' => 'Die Website schreibt sie selbst: Wird eine Seite umbenannt oder verschoben, bleibt ihre alte Adresse bestehen und antwortet mit 301 — Links darauf sterben nicht. Hier lassen sie sich nicht bearbeiten; eine eigene Weiterleitung greift vorher und gewinnt.',
+    'language' => 'Sprache',
+    'moved-at' => 'Umgezogen',
+    'gone' => 'Führt ins Leere',
+    'occupied' => 'Unter :path antwortet eine Seite der Website. Eine Weiterleitung greift vorher — unter dieser Adresse ist die Seite dann nicht mehr erreichbar.',
+    'occupied-alias' => 'Diese Adresse führt bereits auf :target — die Spur eines Umzugs. Eine hier geschriebene Weiterleitung greift vorher.',
 ];

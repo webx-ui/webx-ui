@@ -6,6 +6,8 @@ namespace WebxUi\Routing;
 
 use Illuminate\Support\Facades\Route as Router;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Routing\Aliases\DatabaseAliases;
+use WebxUi\Routing\Aliases\RouteAliases;
 use WebxUi\Routing\Console\CheckRoutesCommand;
 use WebxUi\Routing\Console\RebuildRoutesCommand;
 use WebxUi\Routing\Http\Controllers\ResolveController;
@@ -26,6 +28,11 @@ class RoutingServiceProvider extends ServiceProvider
         $this->app->singleton(UniquePath::class);
         $this->app->singleton(RouteSync::class);
         $this->app->singleton(Resolver::class);
+
+        // The one thing the registry offers a panel to read. Bound to an interface rather than
+        // exposed as a class, because the screen that shows it lives in another package and a
+        // table is not a contract.
+        $this->app->singleton(RouteAliases::class, DatabaseAliases::class);
     }
 
     public function boot(): void
