@@ -43,7 +43,9 @@ class Reserved
 
         $prefixes = array_map(UrlNormaliser::key(...), $configured);
 
-        foreach (['webx-admin.path', 'webx-admin.api_path'] as $key) {
+        // The panel's two prefixes and the preview's: routes with parameters, which the router
+        // cannot be asked about one address at a time, so their prefixes are closed here.
+        foreach (['webx-admin.path', 'webx-admin.api_path', 'webx-blocks.preview.path'] as $key) {
             $panel = UrlNormaliser::key((string) $this->config->get($key, ''));
 
             if ($panel !== '') {

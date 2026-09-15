@@ -23,6 +23,16 @@ class NestedSetException extends RuntimeException
         return new self('The target node has to be saved before another node can be placed relative to it.');
     }
 
+    public static function targetDetached(): self
+    {
+        return new self('The target node is detached: place it in the tree before placing other nodes relative to it.');
+    }
+
+    public static function alreadyPlaced(): self
+    {
+        return new self('The node already has a place in the tree; a placed node cannot be detached.');
+    }
+
     public static function differentScope(string $attribute): self
     {
         return new self("Nodes belong to different trees: the scope attribute [{$attribute}] does not match.");

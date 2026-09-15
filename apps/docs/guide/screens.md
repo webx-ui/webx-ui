@@ -179,7 +179,10 @@ The core types, generated from the registry (a test fails when this table is sta
 <!-- types:end -->
 
 `wx-media` is `WxMediaField` from `module-media`, which registers it when installed (a module's
-`types` are merged into every panel screen, and so are `createAdmin({ types })`).
+`types` are merged into every panel screen, and so are `createAdmin({ types })`). `wx-blocks` is
+the constructor from `module-blocks`, the same way: on an entity's screen it is the tab that builds
+the content out of blocks, and inside a block's own schema it makes the type a container — see
+[Blocks](/guide/blocks).
 
 `wx-repeater` is the one type with a nested model: its value is a list of records, and its
 children are the fields of one of them, so a `name` inside it is a key of the item rather than a

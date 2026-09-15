@@ -169,10 +169,45 @@ php artisan vendor:publish --tag=webx-admin-views
 
 — or push onto the `webx-head` and `webx-body` stacks from a view composer.
 
+## Drafts and versions
+
+Three places, and one rule that keeps them apart: an entity's columns are what is on the site
+now, its `draft` column is what is being prepared, and `entity_versions` is the site's past.
+
+```php
+Schema::table('pages', fn (Blueprint $table) => $table->draft());   // `draft` json, `published_at`
+
+class Page extends Model
+{
+    use HasDraft, HasVersions;
+}
+
+$page->saveDraft(['title' => 'New', 'blocks' => [...]]);   // on every save in the panel
+$page->withDraft()->title;                                  // 'New' — a copy, for the preview
+$page->title;                                               // still what the site shows
+$page->isPublished();                                       // false until the first publish
+
+$page->publish(authorId: 7, comment: 'First cut');          // columns ← draft, version 1 written
+$page->publishedVersions();                                 // the history, newest first
+$page->restoreVersion(1);                                   // into the draft; publish to roll back
+$page->publishedVersions()->first()->pin();                 // kept whatever the limit says
+```
+
+The history is made of publications only: every save writes an autosave into a ring of the
+last five instead, insurance rather than history, and publishing drops them. A version holds
+every attribute except the key, the timestamps, the draft and what describes the entity's place
+rather than its content — `slug`, `parent_id`, the tree bounds; override
+`unversionedAttributes()` to change the list. Structure is applied at once, never at
+publication. An entity keeps thirty publications (`webx-admin.versions.limit`), pinned ones
+excepted; `webx:versions:prune` trims everything to a limit lowered after the fact.
+
+A handler answering a public address reads `isPublished()`; the preview that shows a draft
+lives in `webx-ui/module-blocks`.
+
 ## Configuration
 
-`config/webx-admin.php` covers the title, the two paths and the middleware groups. Moving the
-panel means clearing the route cache afterwards.
+`config/webx-admin.php` covers the title, the two paths, the middleware groups and the version
+limits. Moving the panel means clearing the route cache afterwards.
 
 ## Languages
 
