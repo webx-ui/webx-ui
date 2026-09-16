@@ -29,7 +29,7 @@ createAdmin({
 })
 ```
 
-The section appears at the top level once both halves are there. Permissions: `blocks.view` opens
+The section appears in the System group, above SEO, once both halves are there. Permissions: `blocks.view` opens
 the section and the picker, `blocks.manage` writes. `php artisan vendor:publish
 --tag=webx-blocks-config` publishes `config/webx-blocks.php`; the keys are listed at the end.
 
