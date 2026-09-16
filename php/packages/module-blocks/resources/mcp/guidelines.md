@@ -45,6 +45,12 @@ no facades that reach for the database, no `@php` that does work a controller sh
   block is printed: `<img src="{{ $image['url'] }}" alt="{{ $image['alt'] }}">`. Take `alt`
   from the value rather than inventing one, and do not build an address from `path` yourself —
   a library that moves to another disk changes `url` and nothing else.
+- Several pictures are a `wx-gallery` field, not a `wx-repeater` holding a `wx-media` — the
+  editor picks them all in one trip and drags them into order. `wx-files` is the same for
+  documents. Each item carries the keys `wx-media` does, plus `thumb`, `name`, `extension`,
+  `mime`, `size`, `width` and `height`: print `width` and `height` on an `<img>` so the page
+  does not jump, and label a download with `name` and `size`. An item whose file has been
+  deleted has `url` of `null`, so guard it rather than assuming it is there.
 - Links go through the site's addresses, not hard-coded paths.
 
 ## Styles

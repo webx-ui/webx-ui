@@ -38,4 +38,6 @@ return [
     'status-selected' => 'обрано: :count',
     'status-size' => 'розмір: :size',
     'save' => 'Зберегти',
+    'pick' => 'Вибрати (:count)',
+    'chosen' => 'Вибрано :count з :max',
 ];

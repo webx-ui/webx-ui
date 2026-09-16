@@ -144,7 +144,7 @@ const sortLabel = computed(() => sorts.value.find((one) => one.value === sort.va
 
 .wx-media-toolbar__count {
   font-size: var(--wx-font-size-sm);
-  color: var(--wx-color-text-muted);
+  color: var(--wx-text-muted);
   margin-inline-start: auto;
 }
 </style>

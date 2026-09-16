@@ -38,4 +38,6 @@ return [
     'status-selected' => 'seçili: :count',
     'status-size' => 'boyut: :size',
     'save' => 'Kaydet',
+    'pick' => 'Seç (:count)',
+    'chosen' => ':max dosyadan :count seçildi',
 ];

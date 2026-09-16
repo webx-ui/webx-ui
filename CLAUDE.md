@@ -170,6 +170,17 @@ php/
   Поэтому манифест, в котором прописан этот чекаут, нельзя собрать нигде больше: сайт
   `webx-cms.local` переключается между монорепой и реестром скриптом (`scripts/packages.mjs` у
   него, `scripts/link-panel.sh` здесь), а не живёт в одном состоянии. У npm то же самое с `file:`.
+- **В worktree `node_modules` — симлинк на основной чекаут, и `pnpm` это не переживает.** Любой
+  `pnpm <скрипт>` оттуда либо отказывается («Refusing to use task run state directory … because
+  it is a symbolic link»), либо — если решит, что сменился пакетный менеджер, — идёт по симлинку
+  и **сносит содержимое `node_modules` основного чекаута**: пропадают `.pnpm` и `.bin`, и
+  ломается всё сразу, включая соседнюю сессию. Так же ведёт себя `preview_start` по имени из
+  `.claude/launch.json`: он запускает pnpm. Из worktree запускать бинарники напрямую
+  (`npx vite build`, `npx vue-tsc -p tsconfig.json --noEmit` в каждом пакете вместо рекурсивного
+  `pnpm typecheck`, `node <основной чекаут>/apps/docs/node_modules/vitepress/bin/vitepress.js dev
+--port 5177`), а dev-сервер поднимать фоновой командой и открывать `preview_start` с `url`.
+  Лечится снос одним `pnpm install --frozen-lockfile` в основном чекауте — проверить, что
+  `node_modules/.pnpm` на месте.
 - **Гейт локально упирается в память, а не в ошибки.** `pnpm build` и `pnpm test` идут
   параллельно по числу ядер, dts-шаг `@webx-ui/core` и любой тест, который монтирует
   `WxCodeEditor` (CodeMirror), тяжёлые — и с седьмым пакетом в монорепе это стало срываться в

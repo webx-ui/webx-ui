@@ -5,15 +5,16 @@ declare(strict_types=1);
 namespace WebxUi\Media\Screens;
 
 use WebxUi\Admin\Screens\FieldType;
+use WebxUi\Media\Support\MediaType;
 
 /**
- * `wx-media` on the server: one picture, in a frame.
+ * `wx-gallery`: a list of pictures, in an order somebody dragged them into.
  *
- * The field stores what `WxMediaField` edits — the library key and the captions — and the site
- * reads it back with everything known about the file filled in. The address is never stored: a
- * library that moves from a public directory to S3 does not have to rewrite a single article.
+ * Pictures and nothing else, whatever `props` says: a gallery that quietly holds a PDF is a
+ * template printing an `<img>` at a document. A list of files that takes anything is `wx-files`,
+ * and it is a separate type because that is a different thing to choose from a menu.
  */
-final class MediaFieldType implements FieldType
+final class GalleryFieldType implements FieldType
 {
     public function __construct(private readonly MediaValues $values) {}
 
@@ -23,7 +24,7 @@ final class MediaFieldType implements FieldType
      */
     public function rules(array $node): array
     {
-        return $this->values->rules($node, $this->values->accept($node));
+        return $this->values->listRules($node, MediaType::IMAGE);
     }
 
     /**
@@ -31,7 +32,7 @@ final class MediaFieldType implements FieldType
      */
     public function store(mixed $value, array $node): mixed
     {
-        return $this->values->store($value);
+        return $this->values->storeList($value);
     }
 
     /**
@@ -39,6 +40,6 @@ final class MediaFieldType implements FieldType
      */
     public function resolve(mixed $stored, array $node, ?string $locale = null): mixed
     {
-        return $this->values->resolve($stored);
+        return $this->values->resolveList($stored);
     }
 }

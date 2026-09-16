@@ -34,6 +34,28 @@ final class FileUrls
         return $this->address($file->disk, $path, substr($file->hash, 0, 8));
     }
 
+    /**
+     * The address of the preview shown instead of the picture itself.
+     *
+     * `null` for anything that is not an image: there is nothing to cut. The version travels
+     * with it for the same reason it travels with the picture — editing writes over the same
+     * key, and a preview without it is the picture from before the crop.
+     */
+    public function thumbUrl(MediaFile $file, int $width = 320, int $height = 320, string $fit = 'cover'): ?string
+    {
+        if (! $file->isImage()) {
+            return null;
+        }
+
+        return route('webx.media.files.thumb', [
+            'file' => $file->id,
+            'w' => $width,
+            'h' => $height,
+            'fit' => $fit,
+            'v' => substr($file->hash, 0, 8),
+        ]);
+    }
+
     private function address(string $disk, string $path, string $version): string
     {
         $url = $this->temporary($disk)

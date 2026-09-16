@@ -7,13 +7,14 @@ namespace WebxUi\Media\Screens;
 use WebxUi\Admin\Screens\FieldType;
 
 /**
- * `wx-media` on the server: one picture, in a frame.
+ * `wx-file`: one file, shown as a card rather than as a picture.
  *
- * The field stores what `WxMediaField` edits — the library key and the captions — and the site
- * reads it back with everything known about the file filled in. The address is never stored: a
- * library that moves from a public directory to S3 does not have to rewrite a single article.
+ * The same value as `wx-media`, kept and read the same way — what differs is that a document has
+ * no `alt` worth asking for and no preview worth framing, so the field draws a glyph, a name and
+ * a size instead. That is a decision about the field, which is why the server has nothing of its
+ * own to say here.
  */
-final class MediaFieldType implements FieldType
+final class FileFieldType implements FieldType
 {
     public function __construct(private readonly MediaValues $values) {}
 

@@ -181,6 +181,29 @@ a library that moves to another disk rewrites no page. A value whose type nobody
 server — `wx-blocks`, a field of the project's own — arrives as it is stored. `$block->values`
 holds the same map, which is what a template hands its script in `data-wx-values`.
 
+**A gallery is `wx-gallery`, not a repeater of pictures.** `wx-gallery` and `wx-files` hold a list
+of those same values, in an order somebody dragged them into, and the editor picks ten of them in
+one trip to the library rather than ten times over. `wx-repeater` is still the answer for a list
+whose items have fields of their own beside the picture.
+
+```json
+{ "id": "shots", "type": "wx-gallery", "label": "Photographs", "props": { "max": 12 } }
+```
+
+```blade
+@foreach ($shots as $shot)
+  <img src="{{ $shot['url'] }}" alt="{{ $shot['alt'] }}"
+       width="{{ $shot['width'] }}" height="{{ $shot['height'] }}">
+@endforeach
+```
+
+Each item arrives resolved with everything the library knows: `url` and `thumb`, `name`,
+`extension` and `mime`, `size`, and `width` and `height` for a picture. The whole set rather than
+the address alone, because a template has nothing to ask the library with — `width` and `height`
+are what keep the page from jumping, and `size` with `extension` are what a link to a document is
+labelled with. A file that has since been deleted comes back with `url: null` instead of breaking
+the page.
+
 **The styles start with `.b-{slug}`**, in BEM: `.b-hero__title`, `.b-hero--wide`. Width decisions
 are container queries, because the block does not know whether it is the page or a third of it.
 Saving reports what leaks — a selector outside the prefix, a bare element selector, `@media`, a

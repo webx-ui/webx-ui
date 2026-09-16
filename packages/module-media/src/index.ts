@@ -1,4 +1,7 @@
 import type { AdminModule } from '@webx-ui/module-admin'
+import FileField from './FileField.vue'
+import FilesField from './FilesField.vue'
+import GalleryField from './GalleryField.vue'
 import MediaField from './MediaField.vue'
 import MediaPage from './MediaPage.vue'
 import { mediaMessages } from './messages'
@@ -28,21 +31,35 @@ export function media(options: MediaOptions = {}): AdminModule {
         component: MediaPage,
       },
     ],
-    // What a screen means by `wx-media`: the field over the library. The server registers
-    // the same name for the value it stores.
+    // What a screen means by these four: the fields over the library. The server registers the
+    // same names for the values it stores. Three of them are one component with a layout and a
+    // limit — the names are what an author picks from a list, and nobody picks "media with
+    // `multiple: true` and `accept: document`".
     types: {
       'wx-media': { component: MediaField, kind: 'field' },
+      'wx-gallery': { component: GalleryField, kind: 'field' },
+      'wx-file': { component: FileField, kind: 'field' },
+      'wx-files': { component: FilesField, kind: 'field' },
     },
   }
 }
 
 export { mediaMessages }
 export { createMediaApi, type MediaApi } from './api'
-export { openMediaLibrary, openMediaPicker, type MediaPickerOptions } from './openMediaPicker'
+export {
+  openMediaFiles,
+  openMediaLibrary,
+  openMediaPicker,
+  type MediaFilesOptions,
+  type MediaPickerOptions,
+} from './openMediaPicker'
 export { default as WxMediaManager } from './MediaManager.vue'
 export { default as WxMediaPage } from './MediaPage.vue'
 export { default as WxMediaPicker } from './MediaPicker.vue'
 export { default as WxMediaField } from './MediaField.vue'
+export { default as WxGalleryField } from './GalleryField.vue'
+export { default as WxFileField } from './FileField.vue'
+export { default as WxFilesField } from './FilesField.vue'
 export type {
   DirectoryNotEmpty,
   EditOperations,
