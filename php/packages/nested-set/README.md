@@ -163,8 +163,23 @@ Deleting a node deletes its subtree and closes the gap it leaves. The descendant
 with one query, so their model events do **not** fire — delete them one by one first if you rely
 on those.
 
-Soft deletes are not supported: a soft-deleted node would stay in the tree while its bounds were
-reclaimed. A model using `SoftDeletes` throws unless the delete is a `forceDelete()`.
+Soft deletes are refused by default: a node that vanishes from every query while its bounds are
+reclaimed leaves its children outside their parent, and `restore()` puts back a row that no
+longer fits anywhere. A model using `SoftDeletes` throws unless the delete is a `forceDelete()`.
+
+A model that wants them says so, and takes on the other half:
+
+```php
+public function softDeletesInTree(): bool
+{
+    return true;
+}
+```
+
+Then a soft delete leaves the bounds alone — the trashed node still occupies its place, its
+descendants still stand inside it, and nothing happens to them unless the model makes it happen.
+`webx-ui/module-pages` is what that looks like: deleting a page trashes its branch node by node,
+so that every address in it is released, and restoring one brings back exactly what went with it.
 
 ## Licence
 

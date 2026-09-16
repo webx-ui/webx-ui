@@ -16,6 +16,8 @@ parameters:
         - packages/module-blocks/tests
         - packages/module-media/src
         - packages/module-media/tests
+        - packages/module-pages/src
+        - packages/module-pages/tests
         - packages/module-seo/src
         - packages/module-seo/tests
         - packages/module-settings/src

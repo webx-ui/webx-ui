@@ -46,15 +46,14 @@ class RouteSync
         $type = $this->types->forEntity($entity);
         $moved = false;
 
-        // The slugs as they stand before anything is resolved. A retry starts from them rather
-        // than from the suffix the losing attempt picked, or a lost race would turn `belt-2`
-        // into `belt-2-2` instead of `belt-3`.
-        $original = $this->slugs($entity, $this->localeCodes());
+        // The slug column as it stands before anything is resolved. A retry starts from it
+        // rather than from the suffix the losing attempt picked, or a lost race would turn
+        // `belt-2` into `belt-2-2` instead of `belt-3`.
+        $attribute = EntitySlug::attribute($entity);
+        $original = $entity->getAttributes()[$attribute] ?? null;
 
-        $this->retrying(function () use ($entity, $type, $original, &$moved): void {
-            foreach ($original as $locale => $slug) {
-                EntitySlug::write($entity, $locale, $slug);
-            }
+        $this->retrying(function () use ($entity, $type, $attribute, $original, &$moved): void {
+            $this->restoreSlug($entity, $attribute, $original);
 
             $paths = $this->paths($entity, $type);
 
@@ -67,6 +66,8 @@ class RouteSync
                 foreach ($paths as $locale => $path) {
                     $moved = $this->syncOne($entity, $locale, $path, $rows->where('locale', $locale)) || $moved;
                 }
+
+                $moved = $this->forgetLocales($entity, array_keys($paths)) || $moved;
             });
         });
 
@@ -77,6 +78,32 @@ class RouteSync
     public function forget(Model $entity): void
     {
         Route::query()->forEntity($entity)->delete();
+    }
+
+    /**
+     * Whether the entity has an address in this language at all.
+     *
+     * Through a method the model may not have, so that a model with no opinion — most of them —
+     * needs to know nothing about this. {@see HasUrl::hasUrlIn()} is the default, and says yes.
+     */
+    private function addressed(Model $entity, string $locale): bool
+    {
+        return ! method_exists($entity, 'hasUrlIn') || $entity->hasUrlIn($locale);
+    }
+
+    /**
+     * Drop the rows of the languages this entity no longer has an address in — the aliases with
+     * them, since an alias to nothing is a redirect into a 404.
+     *
+     * @param  list<string>  $kept
+     * @return bool Whether anything went, which makes this a move as far as a subtree is concerned.
+     */
+    private function forgetLocales(Model $entity, array $kept): bool
+    {
+        return Route::query()
+            ->forEntity($entity)
+            ->when($kept !== [], fn ($query) => $query->whereNotIn('locale', $kept))
+            ->delete() > 0;
     }
 
     /**
@@ -131,6 +158,10 @@ class RouteSync
             $paths = [];
 
             foreach ($locales as $locale) {
+                if (! $this->addressed($entity, $locale)) {
+                    continue;
+                }
+
                 $paths[$locale] = $this->unique->for($entity, $locale, $formatter, $type->onConflict);
             }
 
@@ -286,6 +317,25 @@ class RouteSync
         }
 
         return $found;
+    }
+
+    /**
+     * Put the slug column back exactly as it was — the raw value, not the languages read out
+     * of it.
+     *
+     * Reading a translatable slug falls back to another language when one is empty, so writing
+     * what was read back into the entity would quietly fill that language in. The difference
+     * matters: an empty language means the entity has no address there, and a filled one means
+     * it has the English address (§8).
+     */
+    private function restoreSlug(Model $entity, string $attribute, mixed $original): void
+    {
+        $attributes = $entity->getAttributes();
+        $attributes[$attribute] = $original;
+
+        // `false`, so that the originals are left alone and `persistSlug()` below can still
+        // tell whether resolving a collision changed anything.
+        $entity->setRawAttributes($attributes, false);
     }
 
     /**
