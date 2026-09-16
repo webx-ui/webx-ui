@@ -64,6 +64,13 @@ final class McpToolsTest extends TestCase
         $this->assertSame(1, $answer['pages']);
         $this->assertArrayHasKey('url', $answer['files'][0]);
         $this->assertSame('image', $answer['files'][0]['type']);
+
+        // The key as well as the address: a media field stores `path`, so an agent that only
+        // saw the url would have nothing to write into a block.
+        $file = $this->file('Three.jpg');
+        $found = $this->invoke('search_files', ['query' => 'three']);
+
+        $this->assertSame($file->path, $found['files'][0]['path']);
     }
 
     #[Test]

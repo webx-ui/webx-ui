@@ -8,6 +8,7 @@ use Illuminate\Testing\Fluent\AssertableJson;
 use Laravel\Mcp\Server\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Auth\Models\CmsUser;
+use WebxUi\Blocks\Content;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Tests\Fixtures\Page;
 use WebxUi\Mcp\Registry\ToolRegistry;
@@ -33,7 +34,7 @@ final class McpTest extends TestCase
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['blocks_list', 'blocks_get', 'blocks_create', 'blocks_update', 'blocks_publish', 'blocks_render', 'blocks_get_content', 'blocks_set_content', 'blocks_preview_url'],
+            ['blocks_list', 'blocks_get', 'blocks_create', 'blocks_update', 'blocks_publish', 'blocks_render', 'blocks_get_content', 'blocks_set_content', 'blocks_edit_content', 'blocks_preview_url'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('blocks')),
         );
 
@@ -278,6 +279,86 @@ final class McpTest extends TestCase
                 self::assertTrue(str_contains((string) $content['url'], '/_preview/note/'.$page->id.'?token=')
                 && $content['expires_in_minutes'] === 5, (string) json_encode($content));
             });
+    }
+
+    #[Test]
+    public function an_agent_changes_one_block_without_sending_the_page(): void
+    {
+        $this->publish('text', '<p data-wx-block="text">{{ $body }}</p>', [], [
+            'schema' => [['id' => 'body', 'type' => 'wx-input', 'localized' => true]],
+        ]);
+        $this->publish('quote', '<blockquote data-wx-block="quote">{{ $words }}</blockquote>');
+
+        $page = Page::query()->create([
+            'title' => 'About',
+            'slug' => 'about',
+            'blocks' => [
+                $this->node('text', ['body' => ['en' => 'Live words']], 'k-one'),
+                $this->node('quote', ['words' => 'Said once'], 'k-two'),
+            ],
+        ]);
+
+        // The map first: keys, types and a line each — the cheap read an edit starts from.
+        $revision = Content::revision($page->refresh()->blocks);
+
+        $this->agent('get_content', ['entity' => 'note', 'id' => $page->id, 'outline' => true])
+            ->assertOk()
+            ->assertStructuredContent(static function (AssertableJson $json) use ($revision): void {
+                $content = $json->etc()->toArray();
+                self::assertTrue($content['outline'] === [
+                    ['key' => 'k-one', 'type' => 'text', 'depth' => 0, 'label' => 'Live words'],
+                    ['key' => 'k-two', 'type' => 'quote', 'depth' => 0, 'label' => 'Said once'],
+                ]
+                && $content['revision'] === $revision
+                && ! isset($content['live']), (string) json_encode($content));
+            });
+
+        $this->agent('get_content', ['entity' => 'note', 'id' => $page->id, 'key' => 'k-two'])
+            ->assertOk()
+            ->assertStructuredContent(static function (AssertableJson $json): void {
+                $content = $json->etc()->toArray();
+                self::assertTrue($content['node']['values']['words'] === 'Said once', (string) json_encode($content));
+            });
+
+        $this->agent('edit_content', [
+            'entity' => 'note',
+            'id' => $page->id,
+            'revision' => $revision,
+            'ops' => [
+                ['op' => 'set', 'key' => 'k-one', 'values' => ['body' => 'Живые слова'], 'locale' => 'ru'],
+                ['op' => 'add', 'type' => 'quote', 'values' => ['words' => 'Added'], 'after' => 'k-one'],
+                ['op' => 'remove', 'key' => 'k-two'],
+            ],
+        ], $this->editor())->assertOk();
+
+        $page->refresh();
+        $draft = $page->draft['blocks'];
+
+        $this->assertSame(['en' => 'Live words', 'ru' => 'Живые слова'], $draft[0]['values']['body'], 'the other language survives');
+        $this->assertSame('Added', $draft[1]['values']['words']);
+        $this->assertCount(2, $draft, 'the removed block is gone and nothing else moved');
+        $this->assertSame('Said once', $page->blocks[1]['values']['words'], 'the site still shows what it showed');
+
+        // The revision the agent held is the one before its own edit, so the second attempt is
+        // exactly the case this guards: writing over something that has changed since.
+        $this->agent('edit_content', [
+            'entity' => 'note',
+            'id' => $page->id,
+            'revision' => $revision,
+            'ops' => [['op' => 'set', 'key' => 'k-one', 'values' => ['body' => 'Again'], 'locale' => 'ru']],
+        ], $this->editor())->assertHasErrors(['changed since you read it']);
+
+        $this->agent('edit_content', [
+            'entity' => 'note',
+            'id' => $page->id,
+            'ops' => [['op' => 'set', 'key' => 'ghost', 'values' => []]],
+        ], $this->editor())->assertHasErrors(['Operation 1 (set)', 'key [ghost]']);
+
+        $this->agent('edit_content', [
+            'entity' => 'note',
+            'id' => $page->id,
+            'ops' => [['op' => 'set', 'key' => 'k-one', 'values' => ['body' => 'One language only']]],
+        ], $this->editor())->assertHasErrors(['is localized']);
     }
 
     #[Test]
