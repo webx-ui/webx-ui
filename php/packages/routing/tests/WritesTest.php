@@ -6,12 +6,17 @@ namespace WebxUi\Routing\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Routing\Exceptions\PathRejected;
+use WebxUi\Routing\Formatters\TreePath;
 use WebxUi\Routing\Models\Route;
 use WebxUi\Routing\RouteSync;
+use WebxUi\Routing\RouteType;
+use WebxUi\Routing\RouteTypes;
 use WebxUi\Routing\Tests\Fixtures\Article;
 use WebxUi\Routing\Tests\Fixtures\Category;
 use WebxUi\Routing\Tests\Fixtures\Page;
+use WebxUi\Routing\Tests\Fixtures\PageHandler;
 use WebxUi\Routing\Tests\Fixtures\Product;
+use WebxUi\Routing\Tests\Fixtures\TranslatedPage;
 
 class WritesTest extends TestCase
 {
@@ -219,5 +224,55 @@ class WritesTest extends TestCase
 
         $this->assertSame('https://example.test/about', $page->url('en'));
         $this->assertSame('https://example.test/uk/pro-nas', $page->url('uk'));
+    }
+
+    #[Test]
+    public function a_language_the_entity_has_no_address_in_gets_no_row(): void
+    {
+        $this->useLocales(['en', 'uk']);
+        $this->registerTranslatedPages();
+
+        $page = new TranslatedPage(['title' => 'About', 'slug' => ['en' => 'about']]);
+        $page->saveAsRoot();
+
+        // The Ukrainian slug was never written, so there is no Ukrainian address — rather than
+        // one made of the English slug standing in front of untranslated content.
+        $this->assertSame(['en'], Route::query()->forEntity($page)->pluck('locale')->all());
+
+        // And nothing was filled in behind the editor: reading a slug falls back to another
+        // language, and syncing used to write what it read straight back.
+        $this->assertArrayNotHasKey('uk', $page->refresh()->getTranslations('slug'));
+    }
+
+    #[Test]
+    public function clearing_a_slug_takes_that_language_off_the_site(): void
+    {
+        $this->useLocales(['en', 'uk']);
+        $this->registerTranslatedPages();
+
+        $page = new TranslatedPage(['title' => 'About', 'slug' => ['en' => 'about', 'uk' => 'pro-nas']]);
+        $page->saveAsRoot();
+
+        $this->assertSame(2, Route::query()->forEntity($page)->count());
+
+        $page->setTranslation('slug', 'uk', null);
+        $page->save();
+
+        $this->assertSame(['en'], Route::query()->forEntity($page)->pluck('locale')->all());
+    }
+
+    /**
+     * Registered here rather than with the other types, because the fixture shares the `pages`
+     * table with {@see Page} — two registered types over one table would have every row of it
+     * expected under both.
+     */
+    private function registerTranslatedPages(): void
+    {
+        $this->app->make(RouteTypes::class)->register(new RouteType(
+            type: 'translated-page',
+            model: TranslatedPage::class,
+            formatter: TreePath::class,
+            handler: PageHandler::class,
+        ));
     }
 }

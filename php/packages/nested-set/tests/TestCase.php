@@ -31,6 +31,14 @@ abstract class TestCase extends Orchestra
             $table->timestamps();
         });
 
+        Schema::create('notes', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            NestedSet::columns($table);
+            $table->softDeletes();
+            $table->timestamps();
+        });
+
         Schema::create('pages', function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('site_id');
