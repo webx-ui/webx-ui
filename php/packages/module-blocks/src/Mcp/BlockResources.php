@@ -31,7 +31,7 @@ final class BlockResources
         'wx-date-picker' => ['kind' => 'field', 'note' => 'A date, stored as YYYY-MM-DD.'],
         'wx-color-picker' => ['kind' => 'field', 'note' => 'A colour, stored as a CSS colour string.'],
         'wx-repeater' => ['kind' => 'field', 'note' => 'A list of records; children are the fields of one record. props: itemLabel, min, max.'],
-        'wx-media' => ['kind' => 'field', 'note' => 'A file from the media library; the value is { path, alt, title } as stored — the template gets the path, not an address. props: accept.'],
+        'wx-media' => ['kind' => 'field', 'note' => 'A file from the media library; the value is { path, alt, title }, and the template also gets url, worked out when the block is printed. props: accept.'],
         'wx-blocks' => ['kind' => 'field', 'note' => 'Nested blocks — makes the type a container. props: allow (type slugs), max. Print with @blocks(\'id\').'],
         'wx-card' => ['kind' => 'layout', 'note' => 'Groups children under props.title.'],
         'wx-tabs' => ['kind' => 'layout', 'note' => 'Holds wx-tab children.'],
