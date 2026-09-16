@@ -87,11 +87,11 @@ REPOSITORY="$(
     # this checkout, and the whole run would prove nothing about the change under test.
     $COMPOSER_BIN config repositories.packagist.org \
         '{"type":"composer","url":"https://repo.packagist.org","exclude":["webx-ui/*"]}'
-    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' --no-interaction --no-progress --quiet
+    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' webx-ui/module-pages:'*' --no-interaction --no-progress --quiet
 )
 
 step "The packages came from the checkout, not from Packagist"
-for package in module-admin localization mcp module-auth module-settings module-seo module-blocks routing; do
+for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages nested-set routing; do
     [ -L "$APP/vendor/webx-ui/$package" ] || [ -f "$APP/vendor/webx-ui/$package/.git" ] \
         || fail "vendor/webx-ui/$package is a copy, so a released version was installed instead of this checkout"
     note "webx-ui/$package is linked to the checkout"
@@ -112,6 +112,7 @@ step "Providers are found by discovery, not by hand"
         "webx-ui/module-seo" => "WebxUi\\Seo\\SeoServiceProvider",
         "webx-ui/routing" => "WebxUi\\Routing\\RoutingServiceProvider",
         "webx-ui/module-blocks" => "WebxUi\\Blocks\\BlocksServiceProvider",
+        "webx-ui/module-pages" => "WebxUi\\Pages\\PagesServiceProvider",
     ];
     foreach ($expected as $package => $provider) {
         if (! in_array($provider, $manifest[$package]["providers"] ?? [], true)) {
@@ -141,6 +142,18 @@ set_env() {
         file_put_contents($file, implode("\n", $lines)."\n");
     ' "$APP/.env" "$1" "$2"
 }
+
+step "Hand / to the pages module"
+# A site that installs webx-ui/module-pages gives up its own front page: the home page is the
+# root of the page tree, and a route here would win over the registry's fallback for good. The
+# order matters — the migration that creates the home page asks the registry for `''`, and the
+# registry refuses an address the application already answers.
+cat > "$APP/routes/web.php" <<'PHP'
+<?php
+
+// Nothing: every public address of this site comes from the registry.
+PHP
+note 'the skeleton welcome route is gone'
 
 step "Migrate on $DB_CONNECTION"
 set_env DB_CONNECTION "$DB_CONNECTION"
@@ -351,6 +364,67 @@ grep -q 'SmokeRoutingServiceProvider' "$APP/bootstrap/providers.php" \
 "$PHP_BIN" "$APP/artisan" migrate --force --no-interaction --quiet
 note 'a model with HasUrl, a type, a handler and a table for them'
 
+step "Publish the home page the pages module created"
+# The migration leaves the root unpublished, because a fresh site has nothing to show there.
+# Publishing it here is what puts the fallback, the `''` address and the page handler on the
+# one route the tests can never reach: Testbench has no `/` of its own to compete with.
+cat > "$APP/app/Console/Commands/SmokeHomeCommand.php" <<'PHP'
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use WebxUi\Pages\Models\Page;
+
+class SmokeHomeCommand extends Command
+{
+    protected $signature = 'smoke:home';
+
+    protected $description = 'Put the home page of webx-ui/module-pages on the site';
+
+    public function handle(): int
+    {
+        $home = Page::home();
+
+        if ($home === null) {
+            $this->error('The migration did not create a home page.');
+
+            return self::FAILURE;
+        }
+
+        $home->saveDraft(['title' => ['en' => 'The front page']]);
+        $home->publish(authorId: 1);
+
+        // A child of the root, to see a tree address built on a real application: `about` and
+        // not `home/about`, because the root's slug is empty and drops out of the path.
+        $about = Page::query()->firstWhere('parent_id', $home->getKey());
+
+        if ($about === null) {
+            $about = new Page(['title' => ['en' => 'About'], 'slug' => ['en' => 'about-pages']]);
+            $about->appendTo($home);
+            $about->publish(authorId: 1);
+        }
+
+        $route = $home->routeCanonical();
+
+        $this->line($route === null ? 'home address: none' : "home address: [{$route->path}]");
+        $this->line('child address: ['.($about->routeCanonical()?->path ?? 'none').']');
+
+        return self::SUCCESS;
+    }
+}
+PHP
+
+SMOKE_HOME="$("$PHP_BIN" "$APP/artisan" smoke:home --no-interaction)"
+
+echo "$SMOKE_HOME" | grep -q 'home address: \[\]' \
+    || fail "the home page did not take the empty address in the registry: $SMOKE_HOME"
+note 'the home page is published on the empty address'
+
+echo "$SMOKE_HOME" | grep -q 'child address: \[about-pages\]' \
+    || fail "a child of the home page is not addressed from the root: $SMOKE_HOME"
+note 'its child is /about-pages, not /home/about-pages'
+
 step "The modules answer to artisan"
 "$PHP_BIN" "$APP/artisan" webx:mcp-tools | grep -q 'admins_grant_role' \
     || fail 'the auth module offers no MCP tools'
@@ -461,6 +535,15 @@ run_http_checks() {
     curl -s -D - -o /dev/null -c "$COOKIES" -b "$COOKIES" "$PREVIEW_URL" | grep -qi '^X-Robots-Tag: noindex' \
         || fail "[$phase] the preview is not marked noindex"
     note "[$phase] the preview is noindex and no-store"
+
+    # The front page through the fallback: the one address no test can exercise, because only a
+    # real application has a `/` of its own to have given up.
+    expect 200 "$(status "$BASE/")" "[$phase] the home page of the tree answers /"
+    expect 200 "$(status "$BASE/about-pages")" "[$phase] and its child answers from the root"
+
+    curl -s -c "$COOKIES" -b "$COOKIES" "$BASE/about-pages" | grep -q '<html lang=' \
+        || fail "[$phase] the page view of module-pages did not print the document"
+    note "[$phase] the page view printed the document"
 
     "$PHP_BIN" "$APP/artisan" webx:routes:check --no-interaction > /dev/null \
         || fail "[$phase] webx:routes:check found problems in the registry"

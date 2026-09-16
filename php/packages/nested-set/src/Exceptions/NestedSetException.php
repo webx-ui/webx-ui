@@ -42,7 +42,8 @@ class NestedSetException extends RuntimeException
     {
         return new self(
             'Soft deleting a nested set node would leave a hole in the tree. '
-            .'Use forceDelete(), or drop SoftDeletes from the model.'
+            .'Use forceDelete(), drop SoftDeletes from the model, or say softDeletesInTree() '
+            .'on it and take charge of what happens to the descendants.'
         );
     }
 }

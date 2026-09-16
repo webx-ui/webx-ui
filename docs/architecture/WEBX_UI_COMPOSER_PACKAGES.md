@@ -275,10 +275,11 @@ MCP: пока нет. Кандидаты на потом — `list_locales`, `fi
 MCP: `seo_urls_list`, `seo_urls_get`, `seo_urls_set`, `seo_test_url`, `seo_redirects_list`,
 `seo_redirects_set`, `seo_import_redirects`. Скоупы `seo:read` / `seo:write`.
 
-Отложено (§16 спецификации): трейт `HasSeo` и `seo_meta` — вместе с `module-pages`, тогда же
-`EntitySource`; лог 404 и `find_404s`; аудит (сущности без SEO, дубли title, длинные
-description); `sitemap.xml`; плагины `SeoExtension` (breadcrumbs, schema.org для сущностей,
-hreflang, twitter-cards); схлопывание цепочек редиректов.
+Сделано 16.09.2026 (сессия D `module-pages`): трейт `HasSeo`, `seo_meta`, `EntitySource` и тип
+поля `wx-seo` на сервере. Осталось отложенным (§16 спецификации): лог 404 и `find_404s`;
+аудит (сущности без SEO, дубли title, длинные description); `sitemap.xml`; плагины
+`SeoExtension` (breadcrumbs, schema.org для сущностей, hreflang, twitter-cards); схлопывание
+цепочек редиректов.
 
 ### `webx-ui/module-media` — файловый менеджер
 
@@ -353,7 +354,7 @@ MCP: `blocks_list`, `blocks_get`, `blocks_create`, `blocks_update`, `blocks_publ
 - Удаление мягкое, ветка гаснет целиком (`trashed_with`), адреса освобождаются событиями.
 - Экран списка — табличное дерево с ленивыми детьми, поиск отменяет дерево; редактор — вкладками
   Контент · Настройки · SEO · История.
-- Здесь же открывается отложенное в `module-seo`: `HasSeo`, `seo_meta`, `EntitySource`.
+- Здесь же открыто отложенное в `module-seo`: `HasSeo`, `seo_meta`, `EntitySource` (сессия D).
 
 npm-пара: `@webx-ui/module-pages` — раздел «Страницы» и редактор.
 

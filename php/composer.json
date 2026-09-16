@@ -11,6 +11,7 @@
         "webx-ui/module-auth": "*",
         "webx-ui/module-blocks": "*",
         "webx-ui/module-media": "*",
+        "webx-ui/module-pages": "*",
         "webx-ui/module-seo": "*",
         "webx-ui/module-settings": "*",
         "webx-ui/nested-set": "*",
@@ -35,6 +36,7 @@
                     "webx-ui/module-auth": "0.17.0",
                     "webx-ui/module-blocks": "0.17.0",
                     "webx-ui/module-media": "0.17.0",
+                    "webx-ui/module-pages": "0.17.0",
                     "webx-ui/module-seo": "0.17.0",
                     "webx-ui/module-settings": "0.17.0",
                     "webx-ui/nested-set": "0.17.0",
@@ -52,6 +54,7 @@
             "WebxUi\\Mcp\\Tests\\": "packages/mcp/tests/",
             "WebxUi\\Media\\Tests\\": "packages/module-media/tests/",
             "WebxUi\\NestedSet\\Tests\\": "packages/nested-set/tests/",
+            "WebxUi\\Pages\\Tests\\": "packages/module-pages/tests/",
             "WebxUi\\Routing\\Tests\\": "packages/routing/tests/",
             "WebxUi\\Seo\\Tests\\": "packages/module-seo/tests/",
             "WebxUi\\Settings\\Tests\\": "packages/module-settings/tests/"

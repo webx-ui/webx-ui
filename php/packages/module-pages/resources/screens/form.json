@@ -1,0 +1,88 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "pages.form",
+  "model": "page",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "content",
+          "type": "wx-tab",
+          "label": "trans::webx-pages::screen.content",
+          "children": [
+            {
+              "id": "blocks",
+              "type": "wx-blocks",
+              "name": "blocks",
+              "props": { "fill": true }
+            }
+          ]
+        },
+        {
+          "id": "settings",
+          "type": "wx-tab",
+          "label": "trans::webx-pages::screen.settings",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "label": "trans::webx-pages::screen.naming",
+              "children": [
+                {
+                  "id": "title",
+                  "type": "wx-input",
+                  "name": "title",
+                  "label": "trans::webx-pages::screen.title",
+                  "localized": true
+                },
+                {
+                  "id": "slug",
+                  "type": "wx-input",
+                  "name": "slug",
+                  "label": "trans::webx-pages::screen.slug",
+                  "help": "trans::webx-pages::screen.slug-help",
+                  "localized": true,
+                  "visible": { "when": "is_home", "is": false }
+                },
+                {
+                  "id": "place",
+                  "type": "wx-page-place"
+                }
+              ]
+            },
+            {
+              "id": "danger",
+              "type": "wx-page-danger"
+            }
+          ]
+        },
+        {
+          "id": "seo",
+          "type": "wx-tab",
+          "label": "trans::webx-pages::screen.seo",
+          "children": [
+            {
+              "id": "seo-placeholder",
+              "type": "wx-alert",
+              "label": "trans::webx-pages::screen.seo-empty",
+              "props": { "type": "info", "variant": "soft" }
+            }
+          ]
+        },
+        {
+          "id": "history",
+          "type": "wx-tab",
+          "label": "trans::webx-pages::screen.history",
+          "children": [
+            {
+              "id": "versions",
+              "type": "wx-page-history"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

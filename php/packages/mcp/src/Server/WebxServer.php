@@ -25,6 +25,19 @@ final class WebxServer extends Server
 {
     protected string $name = 'WebX UI';
 
+    /**
+     * Everything a panel offers in one page of `tools/list`.
+     *
+     * The default is fifteen, and a panel with six modules has three times that — so a client
+     * that does not follow the cursor sees a third of the tools and concludes the rest do not
+     * exist. Nothing here is expensive to list, and a hundred is well past the number of tools
+     * a panel will ever have. The ceiling goes up with it — the page size is `min` of the two,
+     * so raising one alone changes nothing.
+     */
+    public int $defaultPaginationLength = 100;
+
+    public int $maxPaginationLength = 200;
+
     protected string $instructions = <<<'MARKDOWN'
         This is the admin panel of a site built on WebX UI. Every tool belongs to a module of
         the panel and is named `<module>_<tool>`.

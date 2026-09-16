@@ -8,9 +8,11 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\UrlNormaliser;
+use WebxUi\Seo\Fields;
 use WebxUi\Seo\Panel\UrlMatcher;
 use WebxUi\Seo\Rules\ValidJsonLd;
 use WebxUi\Seo\Rules\ValidRegex;
+use WebxUi\Seo\Screens\SeoFieldType;
 
 /**
  * One rule for one address, or for a shape of them.
@@ -20,8 +22,8 @@ use WebxUi\Seo\Rules\ValidRegex;
  */
 final class SeoUrlRequest extends FormRequest
 {
-    /** Fields kept as a language map. */
-    public const TRANSLATED = ['title', 'h1', 'description', 'keywords', 'og_title', 'og_description'];
+    /** Fields kept as a language map — the same set the card and the tables hold. */
+    public const TRANSLATED = Fields::TRANSLATED;
 
     /**
      * @return array<string, mixed>
@@ -146,12 +148,9 @@ final class SeoUrlRequest extends FormRequest
         return $text === '' ? null : $text;
     }
 
+    /** The width of the column behind the field, spelled once, by the type that owns the card. */
     private static function length(string $field): int
     {
-        return match ($field) {
-            'description', 'og_description' => 1000,
-            'keywords' => 500,
-            default => 255,
-        };
+        return SeoFieldType::LIMITS[$field];
     }
 }

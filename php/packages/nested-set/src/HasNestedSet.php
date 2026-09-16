@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use WebxUi\NestedSet\Exceptions\NestedSetException;
 
@@ -84,7 +85,14 @@ trait HasNestedSet
         });
 
         static::deleting(static function (self $node): void {
-            $node->guardAgainstSoftDelete();
+            if ($node->isSoftDeleting()) {
+                $node->guardAgainstSoftDelete();
+
+                // A trashed node keeps its bounds and its subtree keeps standing on them: the
+                // tree is intact, the node is simply filtered out of every read. What becomes
+                // of the descendants is the model's business — see {@see softDeletesInTree()}.
+                return;
+            }
 
             if (! $node->isDetached()) {
                 $node->deleteDescendants();
@@ -94,10 +102,34 @@ trait HasNestedSet
         static::deleted(static function (self $node): void {
             // A detached node occupies no bounds, so there is no gap to close — and closing one
             // at position 0 would slide the whole tree down by one.
-            if (! $node->isDetached()) {
+            if (! $node->isDetached() && ! $node->isSoftDeleting()) {
                 $node->closeGap($node->getLft(), $node->getNodeWidth());
             }
         });
+    }
+
+    /**
+     * Whether a soft delete leaves the node standing in the tree rather than being refused.
+     *
+     * Off by default, because the obvious reading of `SoftDeletes` on a tree is the wrong one:
+     * a node that vanishes from every query while its bounds are reclaimed leaves its children
+     * outside their parent, and `restore()` puts back a row that no longer fits anywhere.
+     *
+     * A model that says yes takes on the other half — bounds are left alone on a delete, so the
+     * trashed node still occupies its place and its descendants are still inside it, and
+     * nothing happens to them unless the model makes it happen. `webx-ui/module-pages` is what
+     * that looks like: deleting a page trashes its branch node by node, and restoring one
+     * brings back exactly what went with it.
+     */
+    public function softDeletesInTree(): bool
+    {
+        return false;
+    }
+
+    /** A delete that only writes `deleted_at`: the model soft deletes and is not forcing. */
+    public function isSoftDeleting(): bool
+    {
+        return method_exists($this, 'isForceDeleting') && ! $this->isForceDeleting();
     }
 
     /**
@@ -386,7 +418,7 @@ trait HasNestedSet
     public static function fixTree(array $scope = []): int
     {
         $prototype = static::query()->getModel();
-        $query = $prototype->newQuery();
+        $query = self::wholeTreeQuery($prototype);
 
         foreach ($scope as $column => $value) {
             $query->where($column, $value);
@@ -462,7 +494,7 @@ trait HasNestedSet
     public static function checkTreeIntegrity(array $scope = []): array
     {
         $prototype = static::query()->getModel();
-        $query = $prototype->newQuery();
+        $query = self::wholeTreeQuery($prototype);
 
         foreach ($scope as $column => $value) {
             $query->where($column, $value);
@@ -530,6 +562,23 @@ trait HasNestedSet
         }
 
         return $problems;
+    }
+
+    /**
+     * Every row that has a place in the tree, trashed ones included.
+     *
+     * A trashed node still occupies its bounds ({@see softDeletesInTree()}), so a repair or an
+     * integrity check that could not see it would count the bounds wrong and rebuild the tree
+     * on top of the branch somebody is about to restore.
+     *
+     * @param  static  $prototype
+     * @return Builder<static>
+     */
+    private static function wholeTreeQuery(self $prototype): Builder
+    {
+        $query = $prototype->newQuery();
+
+        return $prototype->softDeletesInTree() ? $query->withoutGlobalScope(SoftDeletingScope::class) : $query;
     }
 
     private function place(?self $target, string $mode): bool
@@ -752,7 +801,7 @@ trait HasNestedSet
 
     private function guardAgainstSoftDelete(): void
     {
-        if (method_exists($this, 'isForceDeleting') && ! $this->isForceDeleting()) {
+        if (! $this->softDeletesInTree()) {
             throw NestedSetException::softDeleteUnsupported();
         }
     }

@@ -53,6 +53,23 @@ trait HasUrl
         return 'slug';
     }
 
+    /**
+     * Does this entity have an address in this language at all?
+     *
+     * True for everything unless a model says otherwise, because the usual answer is yes: one
+     * slug, translated or not, gives an address in every language the site publishes.
+     *
+     * The case for saying no is a translatable slug nobody has filled in. An address is part of
+     * the content, so a page that has no slug in Ukrainian has no Ukrainian address — rather
+     * than one built out of the English slug, which would put another language's address in
+     * front of content that is not there. A model that says no for a language gets no row in
+     * the registry for it, and loses the one it had when the slug is cleared.
+     */
+    public function hasUrlIn(string $locale): bool
+    {
+        return true;
+    }
+
     /** @return MorphMany<Route, $this> */
     public function routes(): MorphMany
     {
