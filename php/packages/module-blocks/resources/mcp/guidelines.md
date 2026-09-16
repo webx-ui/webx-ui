@@ -41,9 +41,10 @@ no facades that reach for the database, no `@php` that does work a controller sh
   time; render it on empty values before you are done.
 - A `wx-media` field (when the media module is installed) holds the file the editor picked as
   `{ path, alt, title }` — the path on the media disk and this block's own words for the
-  picture. The template gets that map as stored; print the picture through whatever the site
-  uses to turn a media path into an address (`blocks://site` says nothing about it yet — ask),
-  and take `alt` from the value rather than inventing one.
+  picture. The template gets `url` alongside them, worked out by the media module when the
+  block is printed: `<img src="{{ $image['url'] }}" alt="{{ $image['alt'] }}">`. Take `alt`
+  from the value rather than inventing one, and do not build an address from `path` yourself —
+  a library that moves to another disk changes `url` and nothing else.
 - Links go through the site's addresses, not hard-coded paths.
 
 ## Styles
