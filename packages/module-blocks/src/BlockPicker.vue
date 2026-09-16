@@ -120,8 +120,10 @@ const emptyText = computed(() => {
 <template>
   <wx-dialog v-model:open="open" :title="t('field.pick')" :width="860">
     <div class="wx-block-picker">
+      <!-- Always there, four types or forty: a person who came to type a name should not
+           first have to notice that the field is missing. -->
       <wx-input
-        v-if="options.length > 5"
+        v-if="options.length > 0"
         v-model="search"
         :placeholder="t('field.search')"
         clearable

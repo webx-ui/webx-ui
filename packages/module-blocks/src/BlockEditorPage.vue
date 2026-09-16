@@ -414,7 +414,14 @@ watch(id, () => void load())
 
 <template>
   <div class="wx-block-editor">
-    <wx-skeleton v-if="loading || !block" :rows="6" />
+    <!-- Shaped like the page it stands in for: the head on the ground, the rest on cards. -->
+    <template v-if="loading || !block">
+      <wx-skeleton class="wx-block-editor__ghost-head" title :rows="1" />
+      <div class="wx-block-editor__columns">
+        <wx-card><wx-skeleton :rows="8" /></wx-card>
+        <wx-card><wx-skeleton :rows="4" /></wx-card>
+      </div>
+    </template>
 
     <template v-else>
       <div class="wx-block-editor__head">
@@ -561,112 +568,116 @@ watch(id, () => void load())
             </wx-tab>
 
             <wx-tab value="settings" :label="t('page.tab-settings')">
-              <div class="wx-block-editor__settings">
-                <wx-form-item
-                  :label="t('page.identifier')"
-                  :help="t('page.identifier-help')"
-                  :error="errorOf('slug')"
-                  :disabled="!canManage"
-                >
-                  <wx-input v-model="settings.slug" />
-                </wx-form-item>
-                <wx-form-item
-                  :label="t('page.group')"
-                  :help="t('page.group-help')"
-                  :error="errorOf('group')"
-                  :disabled="!canManage"
-                >
-                  <wx-select v-model="settings.group" :options="groupOptions" />
-                </wx-form-item>
-                <wx-form-item
-                  class="is-wide"
-                  :label="t('page.description')"
-                  :help="t('page.description-help')"
-                  :error="errorOf('description')"
-                  :disabled="!canManage"
-                >
-                  <wx-textarea
-                    :model-value="settings.description ?? ''"
-                    :rows="2"
-                    @update:model-value="settings.description = String($event ?? '')"
-                  />
-                </wx-form-item>
-                <wx-form-item
-                  :label="t('page.icon')"
-                  :error="errorOf('icon')"
-                  :disabled="!canManage"
-                >
-                  <wx-input
-                    :model-value="settings.icon ?? ''"
-                    placeholder="grid"
-                    @update:model-value="settings.icon = String($event ?? '')"
-                  />
-                </wx-form-item>
-                <wx-form-item
-                  :label="t('page.sort')"
-                  :help="t('page.sort-help')"
-                  :error="errorOf('sort')"
-                  :disabled="!canManage"
-                >
-                  <wx-input-number v-model="settings.sort" />
-                </wx-form-item>
-                <wx-form-item
-                  :label="t('page.allow')"
-                  :help="t('page.allow-help')"
-                  :error="errorOf('allow')"
-                  :disabled="!canManage"
-                >
-                  <wx-tags-input v-model="settings.allow" allow-create />
-                </wx-form-item>
-                <wx-form-item
-                  :label="t('page.allowed-in')"
-                  :help="t('page.allowed-in-help')"
-                  :error="errorOf('allowed_in')"
-                  :disabled="!canManage"
-                >
-                  <wx-tags-input
-                    v-model="settings.allowed_in"
-                    allow-create
-                    :suggestions="['root']"
-                  />
-                </wx-form-item>
-                <wx-form-item
-                  :label="t('page.max-per-entity')"
-                  :help="t('page.max-per-entity-help')"
-                  :error="errorOf('max_per_entity')"
-                  :disabled="!canManage"
-                >
-                  <wx-input-number
-                    :model-value="settings.max_per_entity ?? undefined"
-                    :min="1"
-                    @update:model-value="settings.max_per_entity = $event ?? null"
-                  />
-                </wx-form-item>
-                <wx-form-item
-                  :label="t('page.enabled')"
-                  :help="t('page.enabled-help')"
-                  :disabled="!canManage"
-                >
-                  <wx-switch v-model="settings.is_enabled" />
-                </wx-form-item>
-                <div v-if="canManage" class="is-wide wx-block-editor__danger">
-                  <wx-button
-                    type="danger"
-                    variant="outline"
-                    :disabled="block.usage_count > 0"
-                    @click="remove"
+              <wx-card class="wx-block-editor__sheet">
+                <div class="wx-block-editor__settings">
+                  <wx-form-item
+                    :label="t('page.identifier')"
+                    :help="t('page.identifier-help')"
+                    :error="errorOf('slug')"
+                    :disabled="!canManage"
                   >
-                    {{ t('page.delete') }}
-                  </wx-button>
-                  <wx-text v-if="block.usage_count > 0" size="sm" tone="muted">
-                    {{ t('page.delete-used', { count: block.usage_count }) }}
-                  </wx-text>
+                    <wx-input v-model="settings.slug" />
+                  </wx-form-item>
+                  <wx-form-item
+                    :label="t('page.group')"
+                    :help="t('page.group-help')"
+                    :error="errorOf('group')"
+                    :disabled="!canManage"
+                  >
+                    <wx-select v-model="settings.group" :options="groupOptions" />
+                  </wx-form-item>
+                  <wx-form-item
+                    class="is-wide"
+                    :label="t('page.description')"
+                    :help="t('page.description-help')"
+                    :error="errorOf('description')"
+                    :disabled="!canManage"
+                  >
+                    <wx-textarea
+                      :model-value="settings.description ?? ''"
+                      :rows="2"
+                      @update:model-value="settings.description = String($event ?? '')"
+                    />
+                  </wx-form-item>
+                  <wx-form-item
+                    :label="t('page.icon')"
+                    :error="errorOf('icon')"
+                    :disabled="!canManage"
+                  >
+                    <wx-input
+                      :model-value="settings.icon ?? ''"
+                      placeholder="grid"
+                      @update:model-value="settings.icon = String($event ?? '')"
+                    />
+                  </wx-form-item>
+                  <wx-form-item
+                    :label="t('page.sort')"
+                    :help="t('page.sort-help')"
+                    :error="errorOf('sort')"
+                    :disabled="!canManage"
+                  >
+                    <wx-input-number v-model="settings.sort" />
+                  </wx-form-item>
+                  <wx-form-item
+                    :label="t('page.allow')"
+                    :help="t('page.allow-help')"
+                    :error="errorOf('allow')"
+                    :disabled="!canManage"
+                  >
+                    <wx-tags-input v-model="settings.allow" allow-create />
+                  </wx-form-item>
+                  <wx-form-item
+                    :label="t('page.allowed-in')"
+                    :help="t('page.allowed-in-help')"
+                    :error="errorOf('allowed_in')"
+                    :disabled="!canManage"
+                  >
+                    <wx-tags-input
+                      v-model="settings.allowed_in"
+                      allow-create
+                      :suggestions="['root']"
+                    />
+                  </wx-form-item>
+                  <wx-form-item
+                    :label="t('page.max-per-entity')"
+                    :help="t('page.max-per-entity-help')"
+                    :error="errorOf('max_per_entity')"
+                    :disabled="!canManage"
+                  >
+                    <wx-input-number
+                      :model-value="settings.max_per_entity ?? undefined"
+                      :min="1"
+                      @update:model-value="settings.max_per_entity = $event ?? null"
+                    />
+                  </wx-form-item>
+                  <wx-form-item
+                    :label="t('page.enabled')"
+                    :help="t('page.enabled-help')"
+                    :disabled="!canManage"
+                  >
+                    <wx-switch v-model="settings.is_enabled" />
+                  </wx-form-item>
+                  <div v-if="canManage" class="is-wide wx-block-editor__danger">
+                    <wx-button
+                      type="danger"
+                      variant="outline"
+                      :disabled="block.usage_count > 0"
+                      @click="remove"
+                    >
+                      {{ t('page.delete') }}
+                    </wx-button>
+                    <wx-text v-if="block.usage_count > 0" size="sm" tone="muted">
+                      {{ t('page.delete-used', { count: block.usage_count }) }}
+                    </wx-text>
+                  </div>
                 </div>
-              </div>
+              </wx-card>
             </wx-tab>
 
             <wx-tab value="history" :label="t('page.tab-history')">
-              <block-history :block="block" :can-manage="canManage" @restored="take" />
+              <wx-card class="wx-block-editor__sheet" padding="none">
+                <block-history :block="block" :can-manage="canManage" @restored="take" />
+              </wx-card>
             </wx-tab>
           </wx-tabs>
         </div>
@@ -734,6 +745,10 @@ watch(id, () => void load())
   justify-content: space-between;
   gap: var(--wx-space-16);
   flex-wrap: wrap;
+}
+
+.wx-block-editor__ghost-head {
+  max-width: 420px;
 }
 
 .wx-block-editor__id {
@@ -836,11 +851,16 @@ watch(id, () => void load())
   border-block-start: 1px solid var(--wx-color-border-muted, var(--wx-border-default));
 }
 
+/* The settings and the history sit on a card, the way the side column does: the code tabs
+   bring their own white with the editor, these two would otherwise stand on the grey. */
+.wx-block-editor__sheet {
+  min-width: 0;
+}
+
 .wx-block-editor__settings {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: var(--wx-space-12) var(--wx-space-16);
-  padding-block-start: var(--wx-space-12);
 }
 
 .wx-block-editor__settings .is-wide {
