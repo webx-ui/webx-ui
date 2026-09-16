@@ -173,7 +173,10 @@ of task names, a scale of days, weeks or months, bars with progress, a marker on
 hovering or clicking a bar reported as an event. Dragging the dates and the arrows between
 dependent tasks come after that, once the first pass has been lived with.
 
-MediaLibrary / Gallery, Markdown, LinkPicker and BlockPicker are still open.
+MediaLibrary / Gallery ✅ — the library itself, and the fields that reach into it:
+`wx-media` for one picture, `wx-gallery` for a grid of them in an order somebody dragged them
+into, `wx-file` and `wx-files` for documents. See [Media fields](/guide/media). Markdown,
+LinkPicker and BlockPicker are still open.
 
 ## Not components
 
