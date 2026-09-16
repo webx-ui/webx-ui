@@ -13,7 +13,9 @@ use Illuminate\Validation\ValidationException;
 use Throwable;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\BlockType;
+use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Content;
+use WebxUi\Blocks\ContentEdit;
 use WebxUi\Blocks\Exceptions\BlockNotPublishable;
 use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Models\Block;
@@ -53,6 +55,10 @@ final class BlockTools
             'description' => 'Which kind of entity: '.$this->entityNames().'.',
         ];
         $id = ['type' => ['integer', 'string'], 'description' => 'The entity\'s id.'];
+        $revision = [
+            'type' => 'string',
+            'description' => 'The revision blocks_get_content returned. Left out, the write goes in whatever happened since.',
+        ];
 
         return [
             Tool::read(
@@ -115,21 +121,54 @@ final class BlockTools
             Tool::read(
                 'get_content',
                 'The blocks of an entity: the tree the site shows and the draft being prepared, each a list of '
-                .'{ key, type, values } nodes where a value may itself be such a list.',
+                .'{ key, type, values } nodes where a value may itself be such a list. With outline it answers with '
+                .'the map alone — key, type, nesting and a line of text each — and with key, one node in full. '
+                .'Read the map first: the values of twenty blocks are not what you need to edit one.',
                 fn (array $arguments): array => $this->getContent($arguments),
-                ['properties' => ['entity' => $entity, 'id' => $id], 'required' => ['entity', 'id']],
+                ['properties' => [
+                    'entity' => $entity,
+                    'id' => $id,
+                    'outline' => ['type' => 'boolean', 'description' => 'The map of the page instead of the trees.'],
+                    'key' => ['type' => 'string', 'description' => 'One node, with whatever is nested inside it.'],
+                ], 'required' => ['entity', 'id']],
             ),
 
             Tool::mutating(
                 'set_content',
                 'Replace the blocks of an entity\'s draft with a tree of { type, values } nodes; keys are kept when '
-                .'sent and made when not. The site keeps showing what it showed until a person publishes the entity.',
+                .'sent and made when not. To change part of a page use blocks_edit_content instead — this one writes '
+                .'the whole tree, so anything left out is gone. The site keeps showing what it showed until a person '
+                .'publishes the entity.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->setContent($arguments, $user),
                 ['properties' => [
                     'entity' => $entity,
                     'id' => $id,
                     'blocks' => ['type' => 'array', 'items' => ['type' => 'object'], 'description' => 'The whole tree, top to bottom.'],
+                    'revision' => $revision,
                 ], 'required' => ['entity', 'id', 'blocks']],
+            ),
+
+            Tool::mutating(
+                'edit_content',
+                'Change the blocks of an entity a node at a time, by key: set merges values into one block, add puts '
+                .'a new one where you say, move and remove rearrange. Everything not named stays exactly as it is. '
+                .'Send the revision blocks_get_content gave you and the edit is refused if the entity changed in '
+                .'between, instead of quietly overwriting somebody.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->editContent($arguments, $user),
+                ['properties' => [
+                    'entity' => $entity,
+                    'id' => $id,
+                    'revision' => $revision,
+                    'ops' => [
+                        'type' => 'array',
+                        'items' => ['type' => 'object'],
+                        'description' => 'In order: { op: "set", key, values, locale? } · '
+                            .'{ op: "add", type, values?, parent?, field?, before?, after? } · '
+                            .'{ op: "move", key, parent?, field?, before?, after? } · { op: "remove", key }. '
+                            .'locale writes one language of a localized field; parent omitted means the top level; '
+                            .'field names the wx-blocks field when the parent has more than one.',
+                    ],
+                ], 'required' => ['entity', 'id', 'ops']],
             ),
 
             Tool::read(
@@ -353,16 +392,238 @@ final class BlockTools
         $live = $entity->getAttribute($column);
         $draft = method_exists($entity, 'draftValues') ? $entity->draftValues() : [];
         $draftTree = is_array($draft[$column] ?? null) ? $draft[$column] : null;
+        $editing = $this->editing($entity);
 
-        return [
+        $head = [
             'entity' => $this->entities()->nameOf($entity),
             'id' => $entity->getKey(),
             'title' => $this->title($entity),
             'published' => method_exists($entity, 'isPublished') ? (bool) $entity->isPublished() : true,
+            // What an edit would change, and the revision of exactly that — the draft when there
+            // is one, otherwise what the site shows.
+            'editing' => $draftTree === null ? $column : 'draft',
+            'revision' => Content::revision($editing),
+        ];
+
+        $key = $arguments['key'] ?? null;
+
+        if (is_string($key) && $key !== '') {
+            $node = ContentEdit::find($editing, $key);
+
+            if ($node === null) {
+                throw new ToolFailure("No block on this entity has the key [{$key}]. Ask with outline to see the keys.");
+            }
+
+            return $head + ['node' => $node];
+        }
+
+        if (($arguments['outline'] ?? false) === true) {
+            return $head + ['outline' => ContentEdit::outline($editing)];
+        }
+
+        return $head + [
             'live' => is_array($live) ? array_values($live) : [],
             'draft' => $draftTree === null ? null : array_values($draftTree),
             'types' => Content::types(array_merge(is_array($live) ? $live : [], $draftTree ?? [])),
         ];
+    }
+
+    /**
+     * The tree an edit works on: the draft being prepared, or what the site shows when there is
+     * no draft yet. Writing goes the same way round — `saveDraft` starts the draft from it.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function editing(Model $entity): array
+    {
+        $column = $this->column($entity);
+        $draft = method_exists($entity, 'draftValues') ? $entity->draftValues() : [];
+
+        if (is_array($draft[$column] ?? null)) {
+            return array_values($draft[$column]);
+        }
+
+        $live = $entity->getAttribute($column);
+
+        return is_array($live) ? array_values($live) : [];
+    }
+
+    /**
+     * Apply the operations to the tree and keep the result.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function editContent(array $arguments, ?Authenticatable $user): array
+    {
+        $entity = $this->entity($arguments);
+        $ops = $arguments['ops'] ?? null;
+
+        if (! is_array($ops) || ! array_is_list($ops) || $ops === []) {
+            throw new ToolFailure('`ops` must be a non-empty list of operations.');
+        }
+
+        $tree = $this->editing($entity);
+        $this->sameRevision($arguments, $tree);
+
+        $localized = $this->localized(...);
+        $applied = [];
+
+        foreach ($ops as $index => $op) {
+            if (! is_array($op)) {
+                throw new ToolFailure('Operation '.($index + 1).' is not an object.');
+            }
+
+            try {
+                $tree = $this->applyOp($tree, $op, $localized);
+            } catch (BlocksException $failed) {
+                throw new ToolFailure('Operation '.($index + 1).' ('.(string) ($op['op'] ?? '?').'): '.$failed->getMessage());
+            }
+
+            $applied[] = (string) ($op['op'] ?? '?');
+        }
+
+        return $this->writeContent($entity, $tree, $user, $this->dryRun($arguments), ['ops' => $applied]);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $tree
+     * @param  array<string, mixed>  $op
+     * @param  callable(string, string): ?bool  $localized
+     * @return list<array<string, mixed>>
+     */
+    private function applyOp(array $tree, array $op, callable $localized): array
+    {
+        $name = $op['op'] ?? null;
+        $key = is_string($op['key'] ?? null) ? $op['key'] : '';
+        $parent = is_string($op['parent'] ?? null) && $op['parent'] !== '' ? $op['parent'] : null;
+        $field = is_string($op['field'] ?? null) && $op['field'] !== '' ? $op['field'] : null;
+        $before = is_string($op['before'] ?? null) && $op['before'] !== '' ? $op['before'] : null;
+        $after = is_string($op['after'] ?? null) && $op['after'] !== '' ? $op['after'] : null;
+
+        return match ($name) {
+            'set' => ContentEdit::set(
+                $tree,
+                $this->opKey($key),
+                is_array($op['values'] ?? null) ? $op['values'] : throw new ToolFailure('`values` is required by set.'),
+                is_string($op['locale'] ?? null) && $op['locale'] !== '' ? $op['locale'] : null,
+                $localized,
+            ),
+            'add' => ContentEdit::insert(
+                $tree,
+                [
+                    'type' => is_string($op['type'] ?? null) && $op['type'] !== ''
+                        ? $op['type']
+                        : throw new ToolFailure('`type` is required by add: the slug of a block type.'),
+                    'values' => is_array($op['values'] ?? null) ? $op['values'] : [],
+                ],
+                $parent,
+                $field,
+                $before,
+                $after,
+            ),
+            'move' => ContentEdit::move($tree, $this->opKey($key), $parent, $field, $before, $after),
+            'remove' => ContentEdit::remove($tree, $this->opKey($key)),
+            default => throw new ToolFailure('Unknown operation ['.(is_string($name) ? $name : '?').']: set, add, move or remove.'),
+        };
+    }
+
+    private function opKey(string $key): string
+    {
+        return $key !== '' ? $key : throw new ToolFailure('`key` is required: the key of the block to change.');
+    }
+
+    /**
+     * Whether a field of a block type holds a language map; null when nobody can say — the type
+     * was removed, or the field is not in its schema any more.
+     */
+    private function localized(string $type, string $field): ?bool
+    {
+        $types = $this->container->make(BlockTypes::class);
+        $block = $types->draft($type) ?? $types->find($type);
+
+        if ($block === null || ! in_array($field, $block->fields(), true)) {
+            return null;
+        }
+
+        return in_array($field, $block->localizedFields(), true);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @param  list<array<string, mixed>>  $tree
+     */
+    private function sameRevision(array $arguments, array $tree): void
+    {
+        $sent = $arguments['revision'] ?? null;
+
+        if (! is_string($sent) || $sent === '') {
+            return;
+        }
+
+        $current = Content::revision($tree);
+
+        if ($sent !== $current) {
+            throw new ToolFailure(
+                "The entity changed since you read it: revision is [{$current}], you sent [{$sent}]. "
+                .'Read it again with blocks_get_content and redo the edit on what is there now.'
+            );
+        }
+    }
+
+    /**
+     * Normalise a tree, then keep it as the draft — the one way content is written here.
+     *
+     * @param  list<array<string, mixed>>  $tree
+     * @param  array<string, mixed>  $extra
+     * @return array<string, mixed>
+     */
+    private function writeContent(Model $entity, array $tree, ?Authenticatable $user, bool $dryRun, array $extra = []): array
+    {
+        $known = Block::query()->pluck('slug')->all();
+        $unknown = [];
+        $added = 0;
+        $tree = $this->normalise($tree, $known, $unknown, $added, 0);
+
+        if ($unknown !== []) {
+            throw new ToolFailure('Unknown block type(s): '.implode(', ', array_unique($unknown)).'. blocks_list says which exist.');
+        }
+
+        $column = $this->column($entity);
+        $asDraft = method_exists($entity, 'saveDraft');
+        $count = 0;
+        Content::walk($tree, static function () use (&$count): void {
+            $count++;
+        });
+
+        $report = $extra + [
+            'nodes' => $count,
+            'keys_made' => $added,
+            'types' => Content::types($tree),
+            'revision' => Content::revision($tree),
+        ];
+
+        if ($dryRun) {
+            return ['dry_run' => true, 'would_write' => $asDraft ? 'draft' : $column] + $report;
+        }
+
+        if ($asDraft) {
+            $draft = method_exists($entity, 'draftValues') ? $entity->draftValues() : [];
+            $entity->saveDraft(array_merge($draft, [$column => $tree]), $this->authorId($user), EntityVersion::SOURCE_MCP);
+        } else {
+            $entity->setAttribute($column, $tree);
+            $entity->save();
+        }
+
+        $result = ['written' => $asDraft ? 'draft' : $column] + $report;
+
+        try {
+            $result['preview_url'] = $this->container->make(Preview::class)->url($entity, $this->authorId($user));
+        } catch (Throwable) {
+            // An entity outside the address registry has no preview; the content is written all the same.
+        }
+
+        return $result;
     }
 
     /**
@@ -378,54 +639,9 @@ final class BlockTools
             throw new ToolFailure('`blocks` must be a list of { type, values } nodes.');
         }
 
-        $known = Block::query()->pluck('slug')->all();
-        $unknown = [];
-        $added = 0;
-        $tree = $this->normalise($blocks, $known, $unknown, $added, 0);
+        $this->sameRevision($arguments, $this->editing($entity));
 
-        if ($unknown !== []) {
-            throw new ToolFailure('Unknown block type(s): '.implode(', ', array_unique($unknown)).'. blocks_list says which exist.');
-        }
-
-        $column = $this->column($entity);
-        $asDraft = method_exists($entity, 'saveDraft');
-        $count = 0;
-        Content::walk($tree, static function () use (&$count): void {
-            $count++;
-        });
-
-        if ($this->dryRun($arguments)) {
-            return [
-                'dry_run' => true,
-                'would_write' => $asDraft ? 'draft' : $column,
-                'nodes' => $count,
-                'keys_made' => $added,
-                'types' => Content::types($tree),
-            ];
-        }
-
-        if ($asDraft) {
-            $draft = method_exists($entity, 'draftValues') ? $entity->draftValues() : [];
-            $entity->saveDraft(array_merge($draft, [$column => $tree]), $this->authorId($user), EntityVersion::SOURCE_MCP);
-        } else {
-            $entity->setAttribute($column, $tree);
-            $entity->save();
-        }
-
-        $result = [
-            'written' => $asDraft ? 'draft' : $column,
-            'nodes' => $count,
-            'keys_made' => $added,
-            'types' => Content::types($tree),
-        ];
-
-        try {
-            $result['preview_url'] = $this->container->make(Preview::class)->url($entity, $this->authorId($user));
-        } catch (Throwable) {
-            // An entity outside the address registry has no preview; the content is written all the same.
-        }
-
-        return $result;
+        return $this->writeContent($entity, $blocks, $user, $this->dryRun($arguments));
     }
 
     /**

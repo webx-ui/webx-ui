@@ -317,6 +317,10 @@ final class MediaTools
         return [
             'id' => $file->id,
             'directory_id' => $file->directory_id,
+            // The key, not only the address: a media field of a block or a screen stores
+            // `{ path, alt, title }`, so without this an agent can see a file and still have
+            // nothing to write into the field it belongs in.
+            'path' => $file->path,
             'name' => $file->name,
             'type' => MediaType::of($file->mime),
             'mime' => $file->mime,
