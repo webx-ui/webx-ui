@@ -1,5 +1,16 @@
 # @webx-ui/module-blocks
 
+## 0.1.1
+
+### Patch Changes
+
+- f7bdc63: The section's settings and history stand on a card, the search stands over the grid it narrows
+  and the new-block button beside the heading, and both pages load into placeholders shaped like
+  what is coming — cards on the list, the head and two cards in the editor — rather than into
+  lines on the grey. The picker's search is there for four types as well as for forty.
+- Updated dependencies [f7bdc63]
+  - @webx-ui/core@0.19.1
+
 ## 0.1.0
 
 ### Minor Changes
