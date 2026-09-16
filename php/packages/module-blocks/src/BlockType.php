@@ -149,6 +149,19 @@ final readonly class BlockType
     }
 
     /**
+     * The fields that hold a language map rather than one value.
+     *
+     * Whoever writes a value has to know: a localized field keeps `{ en: …, ru: … }`, and
+     * putting a string there is not an edit but a loss of every other language.
+     *
+     * @return list<string>
+     */
+    public function localizedFields(): array
+    {
+        return self::collect($this->schema, static fn (array $node): bool => ($node['localized'] ?? false) === true);
+    }
+
+    /**
      * Through `children` too: a screen puts fields inside cards and tabs, and a schema may.
      *
      * @param  list<array<string, mixed>>  $nodes

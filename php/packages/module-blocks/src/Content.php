@@ -51,11 +51,31 @@ final class Content
             $visit($node, $depth);
 
             foreach (is_array($node['values'] ?? null) ? $node['values'] : [] as $value) {
-                if (self::isList($value)) {
+                if (self::isNodeList($value)) {
                     self::walk($value, $visit, $depth + 1);
                 }
             }
         }
+    }
+
+    /**
+     * What the tree is, as a short string: the same content gives the same revision.
+     *
+     * An entity's draft has no number of its own — autosaves are a ring and lose theirs — so
+     * "the page as I read it" is the content itself. Two writers agreeing on the content is not
+     * a conflict, and this says so; anything else is.
+     *
+     * @param  iterable<array-key, mixed>|null  $blocks
+     */
+    public static function revision(?iterable $blocks): string
+    {
+        $tree = [];
+
+        foreach ($blocks ?? [] as $node) {
+            $tree[] = $node;
+        }
+
+        return substr(sha1(json_encode($tree, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)), 0, 12);
     }
 
     /**
@@ -67,7 +87,7 @@ final class Content
     }
 
     /** A list of nodes — a nested constructor's value — as opposed to a list of strings or a map. */
-    private static function isList(mixed $value): bool
+    public static function isNodeList(mixed $value): bool
     {
         if (! is_array($value) || $value === [] || ! array_is_list($value)) {
             return false;

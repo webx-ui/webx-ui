@@ -313,22 +313,55 @@ agent then acts as that administrator, within the token's scopes: `blocks:read` 
 that look, `blocks:write` for the ones that change. On the machine the site runs on,
 `php artisan mcp:start webx` is the same server over stdio, trusted the way tinker is.
 
-| Tool                 | What it does                                                                             |
-| -------------------- | ---------------------------------------------------------------------------------------- |
-| `blocks_list`        | The types: names, fields, where each may go, published or not, on how many pages         |
-| `blocks_get`         | One type in full, at the current or a given version, with the warnings on it             |
-| `blocks_create`      | A new type as a draft                                                                    |
-| `blocks_update`      | Any settings and any of the five content fields; a version only when content differs     |
-| `blocks_publish`     | Publish the draft — the same checks as the panel; `dry_run` runs them and moves nothing  |
-| `blocks_render`      | Draw a type on values (the sample by default): HTML, styles, script, or the failing line |
-| `blocks_get_content` | An entity's blocks: what the site shows and the draft                                    |
-| `blocks_set_content` | Replace the entity's draft with a tree of nodes; keys are kept or made                   |
-| `blocks_preview_url` | A signed link to the entity's draft as the page it will be                               |
+| Tool                  | What it does                                                                             |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| `blocks_list`         | The types: names, fields, where each may go, published or not, on how many pages         |
+| `blocks_get`          | One type in full, at the current or a given version, with the warnings on it             |
+| `blocks_create`       | A new type as a draft                                                                    |
+| `blocks_update`       | Any settings and any of the five content fields; a version only when content differs     |
+| `blocks_publish`      | Publish the draft — the same checks as the panel; `dry_run` runs them and moves nothing  |
+| `blocks_render`       | Draw a type on values (the sample by default): HTML, styles, script, or the failing line |
+| `blocks_get_content`  | An entity's blocks: the map with `outline`, one node with `key`, both trees by default   |
+| `blocks_set_content`  | Replace the entity's draft with a tree of nodes; keys are kept or made                   |
+| `blocks_edit_content` | Change one block at a time: `set`, `add`, `move`, `remove`, by key                       |
+| `blocks_preview_url`  | A signed link to the entity's draft as the page it will be                               |
 
 `render` and `preview_url` are what close the loop: without them an agent writes a template it
 never sees, and the site gets the markup it imagined. Every tool that changes something accepts
 `dry_run: true` and then reports what it would do. Publishing an entity is not offered: the agent
 writes the draft, a person looks at the preview and publishes.
+
+### Changing part of a page
+
+Reading a page and writing it back is the expensive way to change one heading: the whole tree
+goes both ways, and anything an editor did in between is quietly lost. `blocks_edit_content`
+names the node instead, and everything else stays the object it already was:
+
+```json
+{
+  "entity": "page",
+  "id": 12,
+  "revision": "8a41c0d2f7b3",
+  "ops": [
+    { "op": "set", "key": "b7f3", "values": { "title": "A new heading" }, "locale": "en" },
+    { "op": "add", "type": "text", "parent": "b1a0", "after": "b7f3", "values": {} },
+    { "op": "move", "key": "b9de", "before": "b7f3" },
+    { "op": "remove", "key": "b2c1" }
+  ]
+}
+```
+
+- `set` merges field by field: a field nobody mentions keeps its value, and `locale` writes one
+  language of a localized field rather than replacing the map with a string.
+- `parent` omitted means the top level; `field` names the `wx-blocks` field when the parent block
+  has more than one. `before` and `after` place the node among its siblings.
+- `revision` is the one `blocks_get_content` returned. Send it and the edit is refused when the
+  entity changed in between, instead of overwriting whoever changed it. `blocks_set_content` takes
+  it too.
+
+Start from the map rather than the page: `blocks_get_content` with `outline: true` answers with
+the keys, types, nesting and a line of text each, and with `key` it answers with that one node in
+full. The values of twenty blocks are not what you need to edit one.
 
 Before writing, an agent reads the module's resources: `blocks://guidelines` (the house rules
 above, as a page for a model), `blocks://catalog` (every type with its fields and sample, to reuse
