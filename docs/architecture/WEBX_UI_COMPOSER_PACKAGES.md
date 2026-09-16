@@ -329,15 +329,44 @@ MCP: поиск файлов по имени/типу/размеру/дате, `
 npm-пара: `@webx-ui/module-blocks` — узел `wx-blocks` для описанных экранов, конструктор на экране
 сущности и раздел «Блоки».
 
-MCP: `list_blocks`, `get_block`, `create_block`, `update_block`, `publish_block`, `render_block`,
-`get_entity_blocks`, `set_entity_blocks`, `preview_url` — и ресурсы с домашними правилами вёрстки,
-каталогом блоков и списком того, что сайт отдаёт через `webx.provide()`.
+MCP: `blocks_list`, `blocks_get`, `blocks_create`, `blocks_update`, `blocks_publish`,
+`blocks_render`, `blocks_get_content`, `blocks_set_content`, `blocks_edit_content`,
+`blocks_preview_url` — и ресурсы с домашними правилами вёрстки, каталогом блоков и списком того,
+что сайт отдаёт через `webx.provide()`. Точечная правка содержимого (операции по ключам,
+`revision` против затирания) — §18.1 спецификации.
+
+### `webx-ui/module-pages` — страницы
+
+Статус: спроектирован 16.09.2026, кода нет — [спецификация](WEBX_UI_MODULE_PAGES.md).
+
+Первый модуль, который собирает соседей на живой сущности: дерево (`nested-set`), адрес из реестра
+(`routing`, тип `page`, форматтер `TreePath`, политика `Fail`), содержимое блоками
+(`module-blocks`), черновик и версии (`module-admin`), SEO (`module-seo`). Своего кода мало, и
+это правда: он же — первая настоящая проверка всех четырёх.
+
+- **Главная — корневой узел** с пустым слагом: `UrlNormaliser::join` выбрасывает пустые сегменты,
+  поэтому её путь `''`, а у ребёнка `about`, а не `home/about`. Правок в `routing` не требует.
+- У главной правится содержимое, но не структура; отдаётся возможностями узла (`can.address`,
+  `can.move`, `can.delete`), а не признаком «корень».
+- `title` и `slug` переводимые, адрес свой на каждый язык. Уникальности слага в таблице нет — она
+  в реестре, по `(locale, path)`.
+- Удаление мягкое, ветка гаснет целиком (`trashed_with`), адреса освобождаются событиями.
+- Экран списка — табличное дерево с ленивыми детьми, поиск отменяет дерево; редактор — вкладками
+  Контент · Настройки · SEO · История.
+- Здесь же открывается отложенное в `module-seo`: `HasSeo`, `seo_meta`, `EntitySource`.
+
+npm-пара: `@webx-ui/module-pages` — раздел «Страницы» и редактор.
+
+MCP: `pages_tree`, `pages_get`, `pages_create`, `pages_update`, `pages_move`, `pages_publish`,
+`pages_unpublish`, `pages_delete`, `pages_restore`. Содержимое блоками агент правит
+`blocks_edit_content` — второго способа делать то же самое не заводим.
+
+Права — отдельной задачей: пока `pages.view` и `pages.manage`.
 
 ---
 
 ## Упомянуты ранее, детализировать позже
 
-- `webx-ui/module-pages` — страницы: адрес через `webx-ui/routing` (тип `page`, форматтер `TreePath`, политика `fail`), SEO (через `webx-ui/module-seo`), статус, контент как массив блоков конструктора (`webx-ui/module-blocks`), дерево страниц (nested-set)
 - `webx-ui/module-news` — новости/статьи: категории, теги, дата публикации
 - `webx-ui/module-inbox` — обращения с форм обратной связи: формы, отправки, статусы, уведомления
 - `webx-ui/module-products` — товары: цены, склад, категории, бренды, характеристики
