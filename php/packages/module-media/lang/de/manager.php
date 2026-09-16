@@ -38,4 +38,6 @@ return [
     'status-selected' => 'ausgewählt: :count',
     'status-size' => 'Größe: :size',
     'save' => 'Speichern',
+    'pick' => 'Auswählen (:count)',
+    'chosen' => ':count von :max ausgewählt',
 ];
