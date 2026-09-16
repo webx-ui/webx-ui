@@ -81,7 +81,7 @@ const chosen = ref<MediaFile[]>([])
 
 .wx-media-picker__count {
   font-size: var(--wx-font-size-sm);
-  color: var(--wx-color-text-muted);
+  color: var(--wx-text-muted);
   align-self: center;
 }
 </style>

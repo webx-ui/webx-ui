@@ -18,6 +18,7 @@ import MediaToolbar from './MediaToolbar.vue'
 import MoveDialog from './MoveDialog.vue'
 import NameDialog from './NameDialog.vue'
 import { createMediaApi } from './api'
+import { readable } from './format'
 import { useMediaMessages } from './i18n'
 import type { MediaDirectory, MediaFile, MediaKind, MediaPage } from './types'
 
@@ -434,20 +435,6 @@ function messageOf(error: unknown): string | null {
   return (error as { message?: string })?.message ?? null
 }
 
-/** Bytes as somebody would say them: 32 MB, not 33 554 432. */
-function readable(bytes: number): string {
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  let size = bytes
-  let unit = 0
-
-  while (size >= 1024 && unit < units.length - 1) {
-    size /= 1024
-    unit++
-  }
-
-  return `${size >= 10 || unit === 0 ? Math.round(size) : size.toFixed(1)} ${units[unit]}`
-}
-
 function debounce(run: () => void, wait: number): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined
 
@@ -597,7 +584,7 @@ function debounce(run: () => void, wait: number): () => void {
   flex-direction: column;
   gap: var(--wx-space-8);
   min-height: 0;
-  border-right: 1px solid var(--wx-color-border);
+  border-right: 1px solid var(--wx-border-muted);
   padding-right: var(--wx-space-12);
 }
 
@@ -614,8 +601,8 @@ function debounce(run: () => void, wait: number): () => void {
   flex-wrap: wrap;
   gap: var(--wx-space-8);
   font-size: var(--wx-font-size-sm);
-  color: var(--wx-color-text-muted);
-  border-top: 1px solid var(--wx-color-border);
+  color: var(--wx-text-muted);
+  border-top: 1px solid var(--wx-border-muted);
   padding-top: var(--wx-space-6);
 }
 

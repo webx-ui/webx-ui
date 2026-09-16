@@ -62,6 +62,16 @@ export const mediaMessages: Record<string, Messages> = {
     'clear-title': 'Clear the field?',
     'clear-text': 'The file stays in the library — only this record stops using it.',
     'clear-confirm': 'Clear',
+    add: 'Add',
+    empty: 'Nothing chosen yet',
+    reorder: 'Reorder',
+    open: 'Open in the library',
+    missing: 'No longer in the library',
+    'remove-title': 'Take it out of the list?',
+    'remove-text': 'The file stays in the library — only this record stops using it.',
+    'remove-confirm': 'Remove',
+    count: ':count of :max',
+    'at-least': 'At least :count',
   },
   // The image editor is a component of the design system, so its words are props rather than
   // lines in the dictionary — the manager hands it these when it opens it.
