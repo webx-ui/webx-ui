@@ -1,8 +1,8 @@
 # `webx-ui/module-pages` — спецификация и план реализации
 
-Статус: спроектирован 16.09.2026; сессии A и B сделаны — есть composer-пакет
-`webx-ui/module-pages` и npm-пакет `@webx-ui/module-pages` с разделом «Страницы». Дальше C —
-редактор страницы.
+Статус: выпущен 16.09.2026, все шесть сессий закрыты. `webx-ui/module-pages` на Packagist,
+`@webx-ui/module-pages` в npm, раздел стоит на обоих демо — `webx-cms.local` и
+`https://webx-cms.alexx.group`. Гайд — `apps/docs/guide/pages.md`.
 
 Страницы сайта: дерево, адреса из реестра `webx-ui/routing`, содержимое — блоки конструктора
 `webx-ui/module-blocks`, SEO — `webx-ui/module-seo`, черновик и история — `webx-ui/module-admin`.
