@@ -100,6 +100,22 @@ const classes = computed(() => [
 }
 
 /*
+ * A screen that scrolls its own panes — an editor with a tree beside a preview — says so
+ * with `data-wx-fill`, and the column stops growing with it.
+ *
+ * It has to be said from the inside, and it has to be said to the column: `height: 100%`
+ * on the screen resolves against nothing while the inner element is as tall as its own
+ * content, and the screen cannot reach its own ancestors any other way. With the inner
+ * element stretched instead, its height is the column's, the screen's `height: 100%`
+ * finally means something, and whatever the screen holds scrolls where it belongs rather
+ * than taking the page with it.
+ */
+.wx-main--scroll:has(> .wx-main__inner > [data-wx-fill]) > .wx-main__inner {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/*
  * Padding is the first thing to give way on a small screen: 24px of margin around a
  * form is air on a desktop and a third of the line on a phone.
  */

@@ -7,7 +7,9 @@ namespace WebxUi\Pages;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Pages\Models\Page;
+use WebxUi\Pages\Panel\PageForm;
 use WebxUi\Pages\Panel\PagesModule;
 use WebxUi\Routing\Formatters\TreePath;
 use WebxUi\Routing\OnConflict;
@@ -35,6 +37,7 @@ class PagesServiceProvider extends ServiceProvider
 
         $this->registerRouteType();
         $this->registerBlockEntity();
+        $this->registerScreens();
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(PagesModule::class));
 
@@ -74,6 +77,18 @@ class PagesServiceProvider extends ServiceProvider
             acceptsTail: false,
             onConflict: OnConflict::Fail,
         ));
+    }
+
+    /**
+     * The editor is a described screen, so a project — or the SEO module (§12) — can add a tab
+     * to it with a patch instead of a fork.
+     */
+    private function registerScreens(): void
+    {
+        $this->app->make(ScreenRegistry::class)->register(
+            PageForm::SCREEN,
+            __DIR__.'/../resources/screens/form.json',
+        );
     }
 
     /**

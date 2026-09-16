@@ -12,4 +12,8 @@ return [
     'move-into-self' => 'Eine Seite kann nicht in sich selbst oder in ihre eigenen Seiten verschoben werden.',
     'parent-trashed' => 'Diese Seite liegt im Papierkorb. Stellen Sie sie wieder her, bevor Sie etwas hineinlegen.',
     'slug-shape' => 'Eine Adresse darf Buchstaben, Ziffern, Bindestriche und Unterstriche enthalten.',
+
+    // The editor.
+    'conflict' => ':name hat diese Seite geändert, während Sie sie bearbeitet haben.',
+    'conflict-anonymous' => 'Diese Seite hat sich geändert, während Sie sie bearbeitet haben.',
 ];

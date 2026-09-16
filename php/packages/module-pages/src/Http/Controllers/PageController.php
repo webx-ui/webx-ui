@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Localization\Locales;
 use WebxUi\Pages\Exceptions\PagesException;
@@ -15,6 +16,7 @@ use WebxUi\Pages\Http\Requests\PageRequest;
 use WebxUi\Pages\Http\Resources\PageResource;
 use WebxUi\Pages\Models\Page;
 use WebxUi\Pages\Panel\Editors;
+use WebxUi\Pages\Panel\PageForm;
 
 /**
  * The section's list and the page as a record.
@@ -64,26 +66,14 @@ final class PageController
     }
 
     /**
-     * One page, with the trail above it: the editor's breadcrumbs, and the only way the panel
-     * can name where a page sits without walking the tree itself.
-     *
-     * The values of the form are not here yet — they arrive with the described screen, and so
-     * does the preview link (§11).
+     * One page as its editor needs it: the row, the trail above it for the breadcrumbs, the
+     * values of the described screen, and a link to the draft.
      */
-    public function show(Page $page): JsonResponse
+    public function show(Request $request, Page $page, PageForm $form): JsonResponse
     {
         $page->loadMissing('routes')->loadCount('children');
 
-        $ancestors = $page->pathFromRoot()->filter(static fn (Page $node): bool => ! $node->is($page));
-        $editors = Editors::of([$page, ...$ancestors]);
-
-        return ApiResponse::data([
-            'page' => new PageResource($page, $editors),
-            'ancestors' => $ancestors
-                ->map(static fn (Page $node): PageResource => new PageResource($node, $editors))
-                ->values()
-                ->all(),
-        ]);
+        return ApiResponse::data($form->describe($page, $this->author($request)));
     }
 
     public function store(PageRequest $request): JsonResponse
@@ -99,26 +89,34 @@ final class PageController
     /**
      * Save the draft.
      *
-     * Thin on purpose: the form is a described screen, and what a page's values are is decided
-     * there (§9, decision 9). Until it exists this accepts the three the section itself can
-     * write, and the editor's own form replaces the input with `ScreenValues` and the revision
-     * check of §6.
+     * Thin on purpose: the form is a described screen, so what a page's values are is decided
+     * by the description and checked by `ScreenValues` (§11). What is left here is the one
+     * thing the screen cannot answer — whether this editor is writing over somebody else.
      */
-    public function update(PageRequest $request, Page $page): JsonResponse
+    public function update(Request $request, Page $page, PageForm $form): JsonResponse
     {
-        $locale = app(Locales::class)->current();
+        $sent = $request->input('revision');
 
-        // Whole maps rather than the one language: the draft is laid over the columns as it
-        // is, and a bare string would arrive as "the current language" of whatever language the
-        // publishing request happens to be in.
-        $page->saveDraft([
-            'title' => [...$page->getTranslations('title'), $locale => $request->title()],
-            'slug' => $page->isRoot()
-                ? $page->getTranslations('slug')
-                : [...$page->getTranslations('slug'), $locale => $request->slug()],
-        ], $this->author($request));
+        // A request that names no revision is one that did not read the page first — an import,
+        // a script — and is let through: the check protects an editor from a surprise, and
+        // there is no editor to surprise.
+        if (is_string($sent) && $sent !== $form->revision($page)) {
+            return $this->conflict($page, $request, $form);
+        }
 
-        return ApiResponse::data(new PageResource($page->refresh()->loadMissing('routes')));
+        $user = $request->user();
+        $input = $request->input('values');
+
+        $form->save(
+            $page,
+            is_array($input) ? $input : [],
+            static fn (string $permission): bool => $user instanceof HasPermissions && $user->hasPermission($permission),
+            $this->author($request),
+        );
+
+        $page->refresh()->loadMissing('routes')->loadCount('children');
+
+        return ApiResponse::data($form->describe($page, $this->author($request)));
     }
 
     /**
@@ -135,6 +133,27 @@ final class PageController
         $page->delete();
 
         return ApiResponse::data(['trashed' => $count]);
+    }
+
+    /**
+     * Somebody wrote to this page between the editor reading it and saving it (§6).
+     *
+     * 409 with the page as it now is, so the panel can say who changed it and offer to re-read
+     * rather than quietly keeping one of the two edits. The same answer covers two editors and
+     * an agent: what is stale is the request, not whoever made it.
+     */
+    private function conflict(Page $page, Request $request, PageForm $form): JsonResponse
+    {
+        $page->loadMissing('routes')->loadCount('children');
+        $editor = Editors::of([$page])[(int) $page->getKey()] ?? null;
+
+        return new JsonResponse([
+            'message' => (string) __(
+                $editor === null ? 'webx-pages::errors.conflict-anonymous' : 'webx-pages::errors.conflict',
+                ['name' => $editor ?? ''],
+            ),
+            'data' => $form->describe($page, $this->author($request)),
+        ], 409);
     }
 
     /**

@@ -12,4 +12,8 @@ return [
     'move-into-self' => 'Bir sayfa kendi içine ya da kendi sayfalarının içine taşınamaz.',
     'parent-trashed' => 'O sayfa çöp kutusunda. İçine bir şey koymadan önce geri getirin.',
     'slug-shape' => 'Bir adres harf, rakam, tire ve alt çizgi içerebilir.',
+
+    // The editor.
+    'conflict' => 'Siz düzenlerken bu sayfayı :name değiştirdi.',
+    'conflict-anonymous' => 'Siz düzenlerken bu sayfa değişti.',
 ];

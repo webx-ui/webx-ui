@@ -12,4 +12,8 @@ return [
     'move-into-self' => 'Una pagina non può essere spostata dentro sé stessa né dentro le proprie pagine.',
     'parent-trashed' => 'Quella pagina è nel cestino. Ripristinala prima di metterci qualcosa dentro.',
     'slug-shape' => 'Un indirizzo accetta lettere, cifre, trattini e trattini bassi.',
+
+    // The editor.
+    'conflict' => ':name ha modificato questa pagina mentre la modificavi.',
+    'conflict-anonymous' => 'Questa pagina è cambiata mentre la modificavi.',
 ];

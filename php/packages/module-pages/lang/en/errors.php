@@ -12,4 +12,8 @@ return [
     'move-into-self' => 'A page cannot be moved inside itself or inside one of its own pages.',
     'parent-trashed' => 'That page is in the bin. Restore it before putting anything inside it.',
     'slug-shape' => 'An address may hold letters, digits, hyphens and underscores.',
+
+    // The editor.
+    'conflict' => ':name changed this page while you were editing it.',
+    'conflict-anonymous' => 'This page changed while you were editing it.',
 ];
