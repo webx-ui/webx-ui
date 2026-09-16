@@ -7,11 +7,10 @@ namespace WebxUi\Seo\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
-use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Seo\Fields;
 use WebxUi\Seo\Panel\SeoRules;
 use WebxUi\Seo\Panel\UrlMatcher;
-use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * What the site should say about one address, or about every address of one shape.
@@ -41,6 +40,7 @@ use WebxUi\Seo\Rendering\SeoData;
 class SeoUrl extends Model
 {
     use HasTranslations;
+    use SeoFields;
 
     protected $table = 'seo_urls';
 
@@ -66,7 +66,7 @@ class SeoUrl extends Model
      */
     public function translatable(): array
     {
-        return ['title', 'h1', 'description', 'keywords', 'og_title', 'og_description'];
+        return Fields::TRANSLATED;
     }
 
     /**
@@ -74,10 +74,8 @@ class SeoUrl extends Model
      */
     protected function casts(): array
     {
-        return [
+        return $this->seoCasts() + [
             'priority' => 'integer',
-            'og_image' => 'array',
-            'json_ld' => 'array',
             'is_active' => 'boolean',
         ];
     }
@@ -107,49 +105,5 @@ class SeoUrl extends Model
     public function covers(string $url): bool
     {
         return UrlMatcher::covers($this->match_type, $this->pattern, $url);
-    }
-
-    /** What the rule contributes to the page, in one language. */
-    public function toSeoData(?string $locale = null): SeoData
-    {
-        $rule = $locale === null ? $this : $this->forLocale($locale);
-
-        $og = [
-            'title' => $rule->og_title,
-            'description' => $rule->og_description,
-            'image' => $this->imageUrl($locale),
-        ];
-
-        return SeoData::make([
-            'title' => $rule->title,
-            'h1' => $rule->h1,
-            'description' => $rule->description,
-            'keywords' => $rule->keywords,
-            'canonical' => $rule->canonical,
-            'robots' => $rule->robots,
-            'og' => $og,
-            'jsonLd' => $rule->json_ld,
-        ]);
-    }
-
-    /**
-     * The address of the picture, worked out by whoever owns `wx-media`.
-     *
-     * Asked through the field-type registry rather than through the media module directly:
-     * SEO does not depend on a library being installed, and a site that stores its pictures
-     * somewhere else registers its own type under the same name.
-     */
-    public function imageUrl(?string $locale = null): ?string
-    {
-        $stored = $this->og_image;
-
-        if (! is_array($stored) || $stored === []) {
-            return null;
-        }
-
-        $resolved = app(FieldTypes::class)->get('wx-media')?->resolve($stored, ['type' => 'wx-media'], $locale);
-        $url = is_array($resolved) ? ($resolved['url'] ?? null) : null;
-
-        return is_string($url) && $url !== '' ? $url : null;
     }
 }

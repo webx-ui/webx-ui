@@ -170,7 +170,7 @@ interface SeoSource
 - `UrlRuleSource` — приоритет `100`, читает `seo_urls`.
 - `DefaultsSource` — приоритет `10`, читает `settings('seo.*')`: OG по умолчанию, шаблон title,
   Organization/WebSite в JSON-LD.
-- `EntitySource` — приоритет `50`, появится вместе с `HasSeo`.
+- `EntitySource` — приоритет `50`, читает `seo_meta` через `HasSeo` у переданного subject.
 
 `SeoData` — value-object: `title`, `h1`, `description`, `keywords`, `canonical`, `robots`,
 `og` (массив), `jsonLd` (список блоков). Ключевой метод — `mergeOver(SeoData $lower): SeoData`:
@@ -394,9 +394,9 @@ packages/module-seo/src/
 
 ## 16. Отложено
 
-- `HasSeo` и `seo_meta` — вместе с `module-pages`; тогда же `EntitySource` (приоритет 50) и
-  карточка `wx-seo` в форме сущности патчем. **Тогда же и пункт 9 из §14** — проверка на
-  настоящем телефоне: раньше на нём нечего смотреть, кроме заглушек.
+- ~~`HasSeo` и `seo_meta`, `EntitySource`, карточка патчем~~ — сделано 16.09.2026 вместе с
+  сессией D `module-pages`. Пункт 9 из §14 (настоящий телефон) остаётся за сессией F того
+  модуля: смотреть надо на демо, а не в тестах.
 - Лог 404 и `find_404s`.
 - Аудит: сущности без SEO, дубли title, слишком длинные description.
 - `sitemap.xml` — нужны сущности.

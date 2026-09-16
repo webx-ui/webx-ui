@@ -11,6 +11,7 @@ use WebxUi\Blocks\Facades\Preview;
 use WebxUi\Pages\Http\Resources\PageResource;
 use WebxUi\Pages\Models\Page;
 use WebxUi\Routing\Models\Route;
+use WebxUi\Seo\Fields;
 
 /**
  * The editor's screen on the server side: what its fields hold, what a save writes, and what
@@ -112,6 +113,9 @@ final class PageForm
             'slug' => $shown->getTranslations('slug'),
             'blocks' => $shown->blocksTree(),
             'is_home' => $page->isRoot(),
+            // Never from the draft. What a page says about itself is saved when it is saved
+            // (`HasSeo`), so the card shows what is on the site rather than what is waiting.
+            Fields::SCREEN => $page->seoValue(),
         ];
     }
 
@@ -161,6 +165,15 @@ final class PageForm
         $draft = [...$this->draftable($this->values($page)), ...$this->draftable($stored)];
 
         $page->saveDraft($draft, $authorId, $source);
+
+        // The one field on this screen that is not the page: it belongs to `module-seo`, which
+        // put it here, and it goes to its own table rather than into the draft. Only when it
+        // travelled — a save of the content tab alone must not empty a card nobody opened.
+        if (array_key_exists(Fields::SCREEN, $stored)) {
+            $value = $stored[Fields::SCREEN];
+
+            $page->saveSeo(is_array($value) ? $value : null);
+        }
     }
 
     /**

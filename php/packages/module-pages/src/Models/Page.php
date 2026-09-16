@@ -16,17 +16,18 @@ use WebxUi\Localization\HasTranslations;
 use WebxUi\NestedSet\HasNestedSet;
 use WebxUi\Pages\Exceptions\PagesException;
 use WebxUi\Routing\HasUrl;
+use WebxUi\Seo\HasSeo;
 
 /**
  * A page of the site.
  *
- * Six traits and barely any code of its own, which is the point: the tree is
+ * Seven traits and barely any code of its own, which is the point: the tree is
  * `webx-ui/nested-set`, the address is `webx-ui/routing`, the content is `webx-ui/module-blocks`,
- * the draft and the history are `webx-ui/module-admin`, the languages are
- * `webx-ui/localization`. What this class adds is the three rules that are about pages rather
- * than about any of those: the home page is the root and cannot be moved, deleted or given an
- * address; there is only ever one of it; and deleting a page puts its whole branch in the bin
- * together (§7).
+ * the draft and the history are `webx-ui/module-admin`, what the page says about itself is
+ * `webx-ui/module-seo`, the languages are `webx-ui/localization`. What this class adds is the
+ * three rules that are about pages rather than about any of those: the home page is the root and
+ * cannot be moved, deleted or given an address; there is only ever one of it; and deleting a page
+ * puts its whole branch in the bin together (§7).
  *
  * @property int $id
  * @property array<string, string>|string|null $title
@@ -61,6 +62,7 @@ class Page extends Model
         saveAsRoot as private placeAsRoot;
     }
 
+    use HasSeo;
     use HasTranslations;
     use HasUrl;
     use HasVersions {
