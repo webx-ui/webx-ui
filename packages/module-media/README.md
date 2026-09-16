@@ -56,6 +56,23 @@ file** — one picture used by two articles needs two captions. The address is w
 `path` when the page is drawn, so the library can move to another disk without touching a single
 article.
 
+Four fields in all, which are also the four types a [described screen](https://webx-ui.github.io/webx-ui/guide/screens)
+may use — the server half registers the same names for storing them:
+
+| Export           | Screen type  | Value                | What it draws                    |
+| ---------------- | ------------ | -------------------- | -------------------------------- |
+| `WxMediaField`   | `wx-media`   | `MediaValue \| null` | one picture in a frame           |
+| `WxGalleryField` | `wx-gallery` | `MediaValue[]`       | a grid of thumbnails, in order   |
+| `WxFileField`    | `wx-file`    | `MediaValue \| null` | one file card: glyph, name, size |
+| `WxFilesField`   | `wx-files`   | `MediaValue[]`       | those cards a line each          |
+
+Three names rather than `wx-media` with `multiple`, because the type is what an author picks from
+a list: nobody picks "media with `multiple: true` and `accept: document`", they pick "Files".
+Underneath there is one component and one set of rules.
+
+`openMediaFiles({ accept: 'image', max: 10 })` is the dialog those lists open — the same library
+with multiple selection on, resolving with `MediaFile[]`.
+
 ## What it draws
 
 `WxMediaManager` is the section itself: a folder tree, a grid of cards with rubber-band
