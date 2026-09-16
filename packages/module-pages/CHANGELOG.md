@@ -1,6 +1,6 @@
-# @webx-ui/module-blocks
+# @webx-ui/module-pages
 
-## 0.2.0
+## 0.1.0
 
 ### Minor Changes
 
@@ -35,44 +35,32 @@
   growing with it. A percentage height inside a scrolling column resolves against nothing while the
   column is as tall as its own content, and a screen cannot reach its own ancestors any other way.
 
+- 2c2c2ba: The pages section: the tree of a site's pages, and the panel API behind it.
+
+  `@webx-ui/module-pages` is a new npm package — the front end of the section. The list is a table
+  tree read a level at a time: the home page is pinned at the top and its children are the top
+  level, because everything on the site is inside it and a branch drawn for that would give every
+  row a step of indentation that says nothing. Children arrive when a branch is opened, searching
+  puts the tree away and answers with a flat list of matches and their addresses, and the bin is a
+  filter rather than a section of its own. A page is moved by dragging it or through “Move…” and a
+  tree of pages — the one that works on a touch screen and in a catalogue where the page and its
+  new parent are four screens apart — and either way the section says out loud how many addresses
+  the move rewrote, because an editor should not hear about a thousand redirects from a search
+  engine. Row actions: open, add a page inside, duplicate, move, copy the address, open on the
+  site, delete; in the bin, restore.
+
+  `webx-ui/module-pages` gains the section and the endpoints under `/api/cms/pages`: the level of
+  the tree with `can` and `children_count` on every row, create, save the draft, move, duplicate,
+  publish, unpublish, delete into the bin with the branch, and restore. A page's title comes from
+  its draft and its address from the registry, so a page renamed and not yet published shows its
+  new name beside the address the site is still serving. Its refusals — the home page cannot be
+  moved or deleted, a page cannot be dropped into its own branch, nothing stands beside the home
+  page — answer as a 422 under the field they are about, the same way a taken address does.
+
 ### Patch Changes
 
 - Updated dependencies [2c2c2ba]
+  - @webx-ui/module-blocks@0.2.0
   - @webx-ui/core@0.20.0
   - @webx-ui/module-admin@0.4.2
   - @webx-ui/schema@0.2.1
-
-## 0.1.1
-
-### Patch Changes
-
-- f7bdc63: The section's settings and history stand on a card, the search stands over the grid it narrows
-  and the new-block button beside the heading, and both pages load into placeholders shaped like
-  what is coming — cards on the list, the head and two cards in the editor — rather than into
-  lines on the grey. The picker's search is there for four types as well as for forty.
-- Updated dependencies [f7bdc63]
-  - @webx-ui/core@0.19.1
-
-## 0.1.0
-
-### Minor Changes
-
-- 7cecf88: The block constructor: the panel
-
-  `@webx-ui/module-blocks` is new: the section where a block type is made — a list of cards with
-  live thumbnails, and an editor with the template, styles, script, fields and settings on one side
-  and the block drawn on its sample, the sample's form built from the schema being edited and where
-  the type stands on the other. Checks run live under the editor; publishing is a separate step,
-  refused with the line when the template fails on the sample or on a page. `wx-blocks` is the field
-  that builds an entity out of blocks: a tree with drag to reorder, a picker of types with pictures
-  that offers only what may go here, the selected block's fields as a form, and the entity's own
-  preview beside them — the whole page while looking at it, a phone at one to one while editing a
-  block, swapped in place after a field changes. `provideBlocksPreview()` is how the hosting screen
-  hands the preview address in.
-
-  In `webx-ui/module-blocks`, the panel half: the module (`blocks.view`, `blocks.manage`, the groups
-  and `webx.provide()` names in the manifest), the API under `/blocks` — types, catalogue, save
-  (a version per save, none for an unchanged one), publish with the check on every page's values,
-  render on sent values or on an unsaved template, usage, history and restore — the lints the
-  server sends back with a saved version, `webx-blocks.editing` as a read-only switch, and the
-  dictionary in ten languages.
