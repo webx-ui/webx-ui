@@ -118,9 +118,18 @@ final class CheckRoutesCommand extends Command
 
             foreach ($entities as $entity) {
                 foreach ($codes as $code) {
-                    if (! isset($found[$entity->getKey()][$code])) {
-                        $this->problems[] = ['no address', sprintf('%s#%s in %s', $type->type, (string) $entity->getKey(), $code)];
+                    if (isset($found[$entity->getKey()][$code])) {
+                        continue;
                     }
+
+                    // A language the entity says it has no address in is not a problem: an
+                    // untranslated page is meant to be missing from the registry there (§8),
+                    // and reporting it would drown the real findings.
+                    if (method_exists($entity, 'hasUrlIn') && ! $entity->hasUrlIn($code)) {
+                        continue;
+                    }
+
+                    $this->problems[] = ['no address', sprintf('%s#%s in %s', $type->type, (string) $entity->getKey(), $code)];
                 }
             }
         });

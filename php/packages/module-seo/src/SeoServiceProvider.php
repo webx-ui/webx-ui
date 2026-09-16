@@ -10,6 +10,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Seo\Http\Middleware\RedirectRequests;
 use WebxUi\Seo\Panel\DefaultsSource;
@@ -17,9 +18,11 @@ use WebxUi\Seo\Panel\SeoModule;
 use WebxUi\Seo\Panel\SeoRules;
 use WebxUi\Seo\Panel\UrlMatcher;
 use WebxUi\Seo\Panel\UrlRuleSource;
+use WebxUi\Seo\Rendering\EntitySource;
 use WebxUi\Seo\Rendering\Seo;
 use WebxUi\Seo\Rendering\SeoHead;
 use WebxUi\Seo\Rendering\SeoSources;
+use WebxUi\Seo\Screens\SeoFieldType;
 use WebxUi\Settings\Settings;
 
 /**
@@ -53,13 +56,23 @@ class SeoServiceProvider extends ServiceProvider
         $this->registerSources();
         $this->registerRendering();
         $this->registerRedirects();
+        $this->registerFieldType();
 
         $this->app->make(ModuleRegistry::class)->register(new SeoModule);
 
         // The SEO tab on the settings screen. A patch may name a screen nobody has registered
         // yet — the registry applies it when the tree is first built — so the order in which
         // this provider and the settings one boot does not matter.
-        $this->app->make(ScreenRegistry::class)->extend(Settings::SCREEN, __DIR__.'/../resources/screens/settings.json');
+        $screens = $this->app->make(ScreenRegistry::class);
+
+        $screens->extend(Settings::SCREEN, __DIR__.'/../resources/screens/settings.json');
+
+        // The card on the page editor, for the same reason and by the same mechanism: a
+        // content module describes its screen, and whoever has something to add to it adds it
+        // from their own provider rather than being named in somebody else's description. A
+        // patch on a screen that is not registered — a panel without `module-pages` — is
+        // simply never applied.
+        $screens->extend('pages.form', __DIR__.'/../resources/screens/pages.form.json');
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -78,13 +91,30 @@ class SeoServiceProvider extends ServiceProvider
         ], 'webx-seo-views');
     }
 
-    /** The sources that ship with the module. An entity source joins them at priority 50. */
+    /**
+     * The sources that ship with the module, in the order they will be asked: the rules an
+     * editor wrote for an address, then what the entity on the page says about itself, then
+     * what the site says when nobody said anything.
+     */
     private function registerSources(): void
     {
         $sources = $this->app->make(SeoSources::class);
 
         $sources->register($this->app->make(UrlRuleSource::class));
+        $sources->register($this->app->make(EntitySource::class));
         $sources->register($this->app->make(DefaultsSource::class));
+    }
+
+    /**
+     * `wx-seo` as a field any screen can carry.
+     *
+     * Registered here rather than by whoever uses it, so that a content module gets the card by
+     * patching one node into its screen and putting `HasSeo` on its model — and gets the same
+     * card, checked the same way, as every other one.
+     */
+    private function registerFieldType(): void
+    {
+        $this->app->make(FieldTypes::class)->register('wx-seo', $this->app->make(SeoFieldType::class));
     }
 
     /**

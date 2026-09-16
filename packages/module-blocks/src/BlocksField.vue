@@ -68,6 +68,16 @@ const props = withDefaults(
     disabled?: boolean
     /** Where the section lives, for the picker's "make one" link. */
     blocksPath?: string
+    /**
+     * Be as tall as what the field is drawn in, and let each of the three panels scroll inside
+     * itself.
+     *
+     * Off by default, because the ordinary case is a field on a form that scrolls: there the
+     * constructor is as tall as it needs to be and the preview sticks. A screen that has given
+     * the constructor the whole area below its head says so — otherwise the field grows, the
+     * page scrolls, and the tree, the form and the preview all leave the screen together.
+     */
+    fill?: boolean
   }>(),
   {
     node: undefined,
@@ -79,6 +89,7 @@ const props = withDefaults(
     catalog: null,
     disabled: false,
     blocksPath: '/blocks',
+    fill: false,
   },
 )
 
@@ -298,7 +309,7 @@ const formRoot = computed(() =>
 
   <!-- The host is the container the queries below measure: a query on an element's own
        class resolves against its nearest ancestor container, never against itself. -->
-  <div v-else class="wx-blocks-host">
+  <div v-else class="wx-blocks-host" :class="{ 'is-fill': fill }">
     <div
       class="wx-blocks"
       :class="{
@@ -380,6 +391,7 @@ const formRoot = computed(() =>
           :selected="selectedKey"
           :mode="selected ? 'phone' : 'wide'"
           :reload="preview.reload?.value ?? 0"
+          :fill="fill"
         />
       </div>
     </div>
@@ -389,6 +401,31 @@ const formRoot = computed(() =>
 <style scoped>
 .wx-blocks-host {
   container-type: inline-size;
+}
+
+/*
+ * Filling the area it was given: the grid stretches to it, and each panel scrolls in itself.
+ * The preview stops sticking — there is nothing to stick to when the page does not move — and
+ * it is the panels that scroll instead.
+ */
+.wx-blocks-host.is-fill,
+.wx-blocks-host.is-fill .wx-blocks {
+  height: 100%;
+  min-height: 0;
+}
+
+.wx-blocks-host.is-fill .wx-blocks {
+  align-items: stretch;
+}
+
+.wx-blocks-host.is-fill .wx-blocks__tree,
+.wx-blocks-host.is-fill .wx-blocks__fields {
+  overflow: auto;
+}
+
+.wx-blocks-host.is-fill .wx-blocks__preview {
+  position: static;
+  min-height: 0;
 }
 
 .wx-blocks {

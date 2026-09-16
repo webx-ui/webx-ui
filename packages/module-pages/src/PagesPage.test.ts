@@ -1,0 +1,132 @@
+import { flushPromises, mount } from '@vue/test-utils'
+import { describe, expect, it, vi } from 'vitest'
+import { createRouter, createWebHistory } from 'vue-router'
+import { adminKey, createI18n, i18nKey, type AdminContext } from '@webx-ui/module-admin'
+import PagesPage from './PagesPage.vue'
+import type { PageLevel, PageRow } from './types'
+
+function page(row: Partial<PageRow> & { id: number }): PageRow {
+  return {
+    parent_id: 1,
+    depth: 1,
+    is_home: false,
+    title: 'About',
+    slug: 'about',
+    path: 'about',
+    url: 'https://example.test/about',
+    status: 'published',
+    published_at: '2026-09-01T00:00:00+00:00',
+    updated_at: '2026-09-02T00:00:00+00:00',
+    edited_by: 'Editor',
+    children_count: 0,
+    descendants_count: 0,
+    deleted_at: null,
+    trashed_with: null,
+    can: { move: true, delete: true, address: true },
+    ...row,
+  }
+}
+
+const home = page({
+  id: 1,
+  parent_id: null,
+  depth: 0,
+  is_home: true,
+  title: 'Home',
+  slug: '',
+  path: '',
+  url: 'https://example.test',
+  children_count: 2,
+  can: { move: false, delete: false, address: false },
+})
+
+function panel(level: PageLevel) {
+  const get = vi.fn().mockResolvedValue({ data: level })
+
+  // The real dictionary, because the package's own English is what a panel sees before the
+  // server's translations arrive — and a screen that shows keys until then is the bug.
+  const i18n = createI18n()
+
+  const admin = {
+    apiPath: '/api/cms',
+    basePath: '/cms',
+    http: { get },
+    i18n,
+    state: { manifest: null, user: null, status: 'ready', error: null },
+    can: () => true,
+  } as unknown as AdminContext
+
+  const router = createRouter({
+    history: createWebHistory(),
+    routes: [{ path: '/:all(.*)', component: { template: '<div />' } }],
+  })
+
+  return {
+    get,
+    wrapper: mount(PagesPage, {
+      global: {
+        plugins: [router],
+        provide: { [adminKey as symbol]: admin, [i18nKey as symbol]: i18n },
+      },
+    }),
+  }
+}
+
+/**
+ * What the section asks for and what it draws. Nothing about how it looks — jsdom computes no
+ * layout, so the tree, the cards and the 375px width are checked in a browser (§9).
+ */
+describe('WxPagesPage', () => {
+  it('pins the home page above the level of its children', async () => {
+    const { wrapper, get } = panel({ home, items: [page({ id: 2 })] })
+
+    await flushPromises()
+
+    expect(get).toHaveBeenCalledWith('/api/cms/pages')
+
+    const rows = wrapper.findAll('tbody tr')
+    expect(rows[0]?.text()).toContain('Home')
+    expect(rows[1]?.text()).toContain('About')
+
+    // A live page's address is a link to it; the home page's own is the site's front page.
+    const addresses = wrapper.findAll('.wx-pages__address')
+    expect(addresses.map((link) => link.attributes('href'))).toEqual([
+      'https://example.test',
+      'https://example.test/about',
+    ])
+  })
+
+  it('says when a page has no address in the language the panel is open in', async () => {
+    const { wrapper } = panel({ home, items: [page({ id: 3, path: null, url: null })] })
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('No address in this language')
+  })
+
+  it('draws a draft address as text rather than a link nobody can follow', async () => {
+    const { wrapper } = panel({
+      home,
+      items: [page({ id: 4, status: 'draft', url: 'https://example.test/soon', path: 'soon' })],
+    })
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('/soon')
+
+    // The home page above it is live and keeps its link; the draft has none.
+    expect(wrapper.findAll('.wx-pages__address')).toHaveLength(1)
+  })
+
+  it('asks for the bin, flat, when the bin is chosen', async () => {
+    const { wrapper, get } = panel({ home, items: [] })
+
+    await flushPromises()
+    get.mockClear()
+
+    await wrapper.findAll('.wx-segmented button').at(-1)?.trigger('click')
+    await flushPromises()
+
+    expect(get).toHaveBeenCalledWith('/api/cms/pages?trashed=1')
+  })
+})

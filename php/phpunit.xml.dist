@@ -14,6 +14,7 @@
             <directory>packages/module-auth/tests</directory>
             <directory>packages/module-blocks/tests</directory>
             <directory>packages/module-media/tests</directory>
+            <directory>packages/module-pages/tests</directory>
             <directory>packages/module-seo/tests</directory>
             <directory>packages/module-settings/tests</directory>
             <directory>packages/nested-set/tests</directory>
@@ -28,6 +29,7 @@
             <directory>packages/module-auth/src</directory>
             <directory>packages/module-blocks/src</directory>
             <directory>packages/module-media/src</directory>
+            <directory>packages/module-pages/src</directory>
             <directory>packages/module-seo/src</directory>
             <directory>packages/module-settings/src</directory>
             <directory>packages/nested-set/src</directory>
