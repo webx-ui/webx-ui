@@ -1,5 +1,13 @@
 # @webx-ui/php
 
+## 0.16.1
+
+### Patch Changes
+
+- f7bdc63: `module-blocks`: the section moves into the System group of the navigation, first in it, above
+  SEO — a block type is made once and then lives on the pages, so the section is opened the way
+  the settings are.
+
 ## 0.16.0
 
 ### Minor Changes
