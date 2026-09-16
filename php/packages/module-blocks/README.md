@@ -83,6 +83,9 @@ Inside the template:
 - the schema's fields are variables — `$title` — filled from the values and `null` where the
   content has nothing, so a field added later does not break the pages written before it. A
   variable the schema does not declare is what the publish check refuses;
+- a value is what the field type makes of it, not the raw row: `wx-media` stores
+  `{ path, alt, title }` and the template reads `$image['url']` as well, worked out when the
+  block is printed. A type nobody registered — `wx-blocks` above all — arrives as it is;
 - `$block` — `key`, `type`, `version`, and `value('project-name')` for a field whose id is not a
   variable name;
 - `$entity` — the model being rendered, or `null` when there is none (the sample check, a
