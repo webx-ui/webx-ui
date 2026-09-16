@@ -22,8 +22,10 @@ const props = withDefaults(
     mode?: 'wide' | 'phone'
     /** Bumped by the host to reload the page. */
     reload?: number
+    /** Be as tall as what it is drawn in, and scroll the page inside rather than beside. */
+    fill?: boolean
   }>(),
-  { selected: null, mode: 'wide', reload: 0 },
+  { selected: null, mode: 'wide', reload: 0, fill: false },
 )
 
 const t = useTranslate('webx-blocks')
@@ -129,7 +131,7 @@ defineExpose({ replace, refresh, open: () => (fullscreen.value = true) })
 <template>
   <div
     class="wx-blocks-preview"
-    :class="{ 'is-fullscreen': fullscreen, 'is-phone': mode === 'phone' }"
+    :class="{ 'is-fullscreen': fullscreen, 'is-phone': mode === 'phone', 'is-fill': fill }"
   >
     <div class="wx-blocks-preview__bar">
       <wx-text size="xs" tone="muted" class="wx-blocks-preview__label" truncate>{{
@@ -218,6 +220,20 @@ defineExpose({ replace, refresh, open: () => (fullscreen.value = true) })
 
 .is-fullscreen .wx-blocks-preview__ground {
   max-height: none;
+}
+
+/*
+ * Told how tall to be rather than working it out from the window: the two viewport-sized caps
+ * below are for a preview standing on a page that scrolls, and inside a panel that already has
+ * a height they are a second, smaller box that fights the first.
+ */
+.wx-blocks-preview.is-fill {
+  height: 100%;
+}
+
+.is-fill .wx-blocks-preview__ground {
+  max-height: none;
+  min-height: 0;
 }
 
 .wx-blocks-preview__clip {

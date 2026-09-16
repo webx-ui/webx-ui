@@ -1,4 +1,5 @@
 import type { TreeDropZone } from '@webx-ui/core'
+import type { ScreenModel } from '@webx-ui/schema'
 
 /** Never published · on the site · on the site with edits waiting. */
 export type PageStatus = 'draft' | 'published' | 'modified'
@@ -72,6 +73,45 @@ export interface PageInput {
 export interface PageDetail {
   page: PageRow
   ancestors: PageRow[]
+  /** The values of `pages.form`, keyed by field name. */
+  values: ScreenModel
+  /**
+   * The page as the editor read it, as a short string. It travels back with every save, and a
+   * save whose revision is not the current one is refused with a 409 rather than written over
+   * whoever saved in between.
+   */
+  revision: string
+  /**
+   * The address of the page above, by content language — what the whole address of this page
+   * is made of, less its own last segment. A language that is not in here is one the page above
+   * has no address in, and so neither has this one (§8).
+   */
+  address_prefix: Record<string, string>
+  /** A signed, short-lived link to the draft as a page of the site. */
+  preview_url: string
+}
+
+/** What a `PUT` carries: the values of the screen, and the page they were read from. */
+export interface PageSave {
+  values: ScreenModel
+  revision?: string
+}
+
+/** A 409: somebody wrote while this editor was typing. The page comes back as it now is. */
+export interface PageConflict {
+  message: string
+  data: PageDetail
+}
+
+/** One publication in the history. */
+export interface PageVersion {
+  number: number
+  created_at: string | null
+  /** Who published it; `null` for an agent or an import with nobody behind it. */
+  author: string | null
+  source: 'panel' | 'mcp' | 'import'
+  comment: string | null
+  is_pinned: boolean
 }
 
 export interface PageMoveResult {

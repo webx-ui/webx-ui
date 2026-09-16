@@ -93,6 +93,32 @@ something that was deleted earlier and separately. Addresses come back with the 
 was taken while the page was in the bin, the restore is refused rather than the page being quietly
 moved somewhere else.
 
+## The editor
+
+The form is a described screen, `pages.form`, registered by this package: four tabs — the content
+as a `wx-blocks` field, the settings, SEO, the history. A module or a project adds to it with a
+patch rather than a fork:
+
+```php
+app(ScreenRegistry::class)->extend('pages.form', [
+    ['op' => 'add', 'target' => 'seo', 'node' => [...]],
+]);
+```
+
+What a save carries is decided by that tree and checked by `ScreenValues`, so a key the screen does
+not name is dropped and a refused value lands under the field it belongs to. The panel sends back
+the `revision` it read the page at — a short hash of the content — and a save whose revision is no
+longer the current one is answered with a `409` carrying the page as it now is, rather than written
+over whoever saved in between. Two writers who saved the same thing are not a conflict, and the
+same check covers an agent.
+
+```
+GET    /api/cms/pages/{id}                       values, the trail, a preview link, the revision
+PUT    /api/cms/pages/{id}                       the draft: { values, revision }
+GET    /api/cms/pages/{id}/versions              the publications, newest first
+POST   /api/cms/pages/{id}/versions/{n}/restore  an old one becomes the draft
+```
+
 ## The view
 
 The handler hands the page to `webx-pages.view`, which defaults to `pages.show`, as `$page`:

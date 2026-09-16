@@ -12,4 +12,8 @@ return [
     'move-into-self' => 'Una página no se puede mover dentro de sí misma ni dentro de sus propias páginas.',
     'parent-trashed' => 'Esa página está en la papelera. Restáurala antes de poner algo dentro.',
     'slug-shape' => 'Una dirección admite letras, dígitos, guiones y guiones bajos.',
+
+    // The editor.
+    'conflict' => ':name cambió esta página mientras la editabas.',
+    'conflict-anonymous' => 'Esta página cambió mientras la editabas.',
 ];

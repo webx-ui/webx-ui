@@ -12,4 +12,8 @@ return [
     'move-into-self' => 'Strony nie można przenieść do samej siebie ani do własnych stron.',
     'parent-trashed' => 'Ta strona jest w koszu. Przywróć ją, zanim coś w niej umieścisz.',
     'slug-shape' => 'Adres może zawierać litery, cyfry, myślniki i podkreślenia.',
+
+    // The editor.
+    'conflict' => ':name zmienił(a) tę stronę, gdy ją edytowałeś.',
+    'conflict-anonymous' => 'Ta strona zmieniła się, gdy ją edytowałeś.',
 ];

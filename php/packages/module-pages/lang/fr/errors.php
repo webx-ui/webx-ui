@@ -12,4 +12,8 @@ return [
     'move-into-self' => 'Une page ne peut pas être déplacée dans elle-même ni dans ses propres pages.',
     'parent-trashed' => 'Cette page est à la corbeille. Restaurez-la avant d’y placer quoi que ce soit.',
     'slug-shape' => 'Une adresse accepte lettres, chiffres, tirets et tirets bas.',
+
+    // The editor.
+    'conflict' => ':name a modifié cette page pendant que vous la modifiiez.',
+    'conflict-anonymous' => 'Cette page a changé pendant que vous la modifiiez.',
 ];

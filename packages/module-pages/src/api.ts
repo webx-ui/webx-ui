@@ -6,6 +6,8 @@ import type {
   PageLevel,
   PageMoveResult,
   PageRow,
+  PageSave,
+  PageVersion,
 } from './types'
 
 export interface PagesApi {
@@ -20,7 +22,11 @@ export interface PagesApi {
   }): Promise<PageLevel>
   get(id: number): Promise<PageDetail>
   create(input: PageInput): Promise<PageRow>
-  update(id: number, input: PageInput): Promise<PageRow>
+  /**
+   * Save the draft. Refused with a 409 when the revision is not the current one — the error's
+   * body is a {@link PageConflict}, and the page it carries is the page as it now is.
+   */
+  save(id: number, input: PageSave): Promise<PageDetail>
   move(id: number, target: number, zone: PageDropZone): Promise<PageMoveResult>
   duplicate(id: number): Promise<PageRow>
   publish(id: number): Promise<PageRow>
@@ -29,6 +35,10 @@ export interface PagesApi {
   remove(id: number): Promise<number>
   /** Out of the bin, with whatever went in with it. Answers how many came back. */
   restore(id: number): Promise<number>
+  /** The publications, newest first. */
+  versions(id: number): Promise<PageVersion[]>
+  /** An old publication becomes the draft; putting it on the site is a separate step. */
+  restoreVersion(id: number, number: number): Promise<PageDetail>
 }
 
 /** Everything under `/pages`, below the panel's API path. */
@@ -54,7 +64,7 @@ export function createPagesApi(admin: AdminContext): PagesApi {
     },
     get: (id) => admin.http.get<{ data: PageDetail }>(`${base}/${id}`).then(data),
     create: (input) => admin.http.post<{ data: PageRow }>(base, input).then(data),
-    update: (id, input) => admin.http.put<{ data: PageRow }>(`${base}/${id}`, input).then(data),
+    save: (id, input) => admin.http.put<{ data: PageDetail }>(`${base}/${id}`, input).then(data),
     move: (id, target, zone) =>
       admin.http.post<{ data: PageMoveResult }>(`${base}/${id}/move`, { target, zone }).then(data),
     duplicate: (id) => admin.http.post<{ data: PageRow }>(`${base}/${id}/duplicate`, {}).then(data),
@@ -68,5 +78,10 @@ export function createPagesApi(admin: AdminContext): PagesApi {
       admin.http
         .post<{ data: { restored: number } }>(`${base}/${id}/restore`, {})
         .then((body) => body.data.restored),
+    versions: (id) => admin.http.get<{ data: PageVersion[] }>(`${base}/${id}/versions`).then(data),
+    restoreVersion: (id, number) =>
+      admin.http
+        .post<{ data: PageDetail }>(`${base}/${id}/versions/${number}/restore`, {})
+        .then(data),
   }
 }
