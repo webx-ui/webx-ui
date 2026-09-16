@@ -35,6 +35,8 @@ use WebxUi\Routing\HasUrl;
  * @property array<string, mixed>|null $draft
  * @property Carbon|null $published_at
  * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property int|null $trashed_with
  * @property int $lft
  * @property int $rgt

@@ -6,15 +6,18 @@ namespace WebxUi\Pages;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Pages\Models\Page;
+use WebxUi\Pages\Panel\PagesModule;
 use WebxUi\Routing\Formatters\TreePath;
 use WebxUi\Routing\OnConflict;
 use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
 
 /**
- * Almost everything a page does belongs to another package, so this provider is mostly one
- * registration: the kind of entity that has addresses.
+ * Almost everything a page does belongs to another package, so this provider is mostly
+ * registrations: the kind of entity that has addresses, the kind that is made of blocks, and
+ * the section of the panel that edits them.
  */
 class PagesServiceProvider extends ServiceProvider
 {
@@ -28,9 +31,12 @@ class PagesServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-pages');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-pages');
+        $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->registerRouteType();
         $this->registerBlockEntity();
+
+        $this->app->make(ModuleRegistry::class)->register($this->app->make(PagesModule::class));
 
         if (! $this->app->runningInConsole()) {
             return;
