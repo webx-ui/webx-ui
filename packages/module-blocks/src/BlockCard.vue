@@ -52,8 +52,8 @@ const t = useTranslate('webx-blocks')
   text-align: start;
   font: inherit;
   color: inherit;
-  background: var(--wx-color-surface);
-  border: 1px solid var(--wx-color-border);
+  background: var(--wx-bg-surface);
+  border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-md);
   cursor: pointer;
 }

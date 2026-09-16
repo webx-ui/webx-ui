@@ -61,7 +61,7 @@ const frameStyle = computed(() => ({
 .wx-block-thumb {
   position: relative;
   overflow: hidden;
-  background: var(--wx-color-surface-sunken);
+  background: var(--wx-bg-subtle);
 }
 
 .wx-block-thumb__frame {
@@ -78,6 +78,6 @@ const frameStyle = computed(() => ({
   display: grid;
   place-items: center;
   height: 100%;
-  color: var(--wx-color-text-muted);
+  color: var(--wx-text-muted);
 }
 </style>

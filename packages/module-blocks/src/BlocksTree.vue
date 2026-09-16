@@ -176,7 +176,7 @@ function iconOf(node: BlockNode): string {
 }
 
 .wx-blocks-tree__row:hover {
-  background: var(--wx-color-surface-sunken);
+  background: var(--wx-bg-subtle);
 }
 
 .wx-blocks-tree__row.is-selected {
@@ -191,12 +191,12 @@ function iconOf(node: BlockNode): string {
   width: 24px;
   height: 24px;
   border-radius: var(--wx-radius-sm);
-  background: var(--wx-color-surface-sunken);
-  color: var(--wx-color-text-muted);
+  background: var(--wx-bg-subtle);
+  color: var(--wx-text-muted);
 }
 
 .is-selected .wx-blocks-tree__icon {
-  background: var(--wx-color-surface);
+  background: var(--wx-bg-surface);
   color: var(--wx-color-primary);
 }
 
@@ -212,7 +212,7 @@ function iconOf(node: BlockNode): string {
 
 .wx-blocks-tree__flag {
   display: flex;
-  color: var(--wx-color-text-muted);
+  color: var(--wx-text-muted);
 }
 
 .wx-blocks-tree__flag.is-warning {
@@ -241,16 +241,16 @@ function iconOf(node: BlockNode): string {
   gap: var(--wx-space-2);
   margin-inline-start: var(--wx-space-14);
   padding-inline-start: var(--wx-space-8);
-  border-inline-start: 1px dashed var(--wx-color-border);
+  border-inline-start: 1px dashed var(--wx-border-default);
 }
 
 .wx-blocks-tree__add {
   width: 100%;
   padding: var(--wx-space-6);
-  border: 1px dashed var(--wx-color-border-strong, var(--wx-color-border));
+  border: 1px dashed var(--wx-color-border-strong, var(--wx-border-default));
   border-radius: var(--wx-radius-control);
   background: transparent;
-  color: var(--wx-color-text-muted);
+  color: var(--wx-text-muted);
   font: inherit;
   font-size: var(--wx-font-size-xs);
   cursor: pointer;

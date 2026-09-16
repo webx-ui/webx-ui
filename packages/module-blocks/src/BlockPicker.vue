@@ -184,7 +184,7 @@ const emptyText = computed(() => {
   font-weight: var(--wx-font-weight-semibold);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--wx-color-text-muted);
+  color: var(--wx-text-muted);
 }
 
 .wx-block-picker__cards {
@@ -201,8 +201,8 @@ const emptyText = computed(() => {
   text-align: start;
   font: inherit;
   color: inherit;
-  background: var(--wx-color-surface);
-  border: 1px solid var(--wx-color-border);
+  background: var(--wx-bg-surface);
+  border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-md);
   cursor: pointer;
 }

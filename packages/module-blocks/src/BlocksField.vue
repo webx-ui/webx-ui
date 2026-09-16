@@ -296,98 +296,106 @@ const formRoot = computed(() =>
     <wx-text size="sm" tone="muted">{{ t('field.nested-note') }}</wx-text>
   </div>
 
-  <div
-    v-else
-    class="wx-blocks"
-    :class="{
-      'is-editing': selected !== null,
-      'has-preview': preview !== null && preview.url.value !== null,
-    }"
-  >
-    <div class="wx-blocks__tree">
-      <div class="wx-blocks__panel-head">
-        <span class="wx-blocks__panel-title">{{ t('field.blocks') }}</span>
-        <wx-text size="sm" tone="muted">{{ tree.length }}</wx-text>
-      </div>
-      <blocks-tree
-        :nodes="tree"
-        :catalog="catalog"
-        :selected="selectedKey"
-        :disabled="disabled"
-        @select="select"
-        @add="add"
-        @remove="remove"
-        @duplicate="duplicate"
-        @reorder="reorder"
-      />
-      <wx-button
-        v-if="!disabled && (max === null || tree.length < max)"
-        variant="outline"
-        block
-        icon="plus"
-        class="wx-blocks__add"
-        @click="add(null, null, null)"
-      >
-        {{ t('field.add') }}
-      </wx-button>
-      <wx-button
-        v-if="preview && preview.url.value"
-        variant="text"
-        block
-        class="wx-blocks__preview-button"
-        @click="previewEl?.open()"
-      >
-        {{ t('field.preview') }}
-      </wx-button>
-    </div>
-
-    <div v-if="selected" class="wx-blocks__fields">
-      <div class="wx-blocks__panel-head">
-        <span class="wx-blocks__panel-title">{{ selectedType?.title ?? selected.node.type }}</span>
-        <span class="wx-blocks__panel-extra">
-          <code>{{ selected.node.type }}</code>
-          <wx-button size="sm" variant="outline" @click="done"
-            >{{ t('field.done') }} · Esc</wx-button
-          >
-        </span>
-      </div>
-      <div class="wx-blocks__form">
-        <wx-screen-renderer
-          v-if="selectedType?.content"
-          :key="selected.node.key"
-          :model-value="selected.node.values"
-          :root="formRoot"
-          :types="types"
-          :translate="translate"
-          :can="can"
+  <!-- The host is the container the queries below measure: a query on an element's own
+       class resolves against its nearest ancestor container, never against itself. -->
+  <div v-else class="wx-blocks-host">
+    <div
+      class="wx-blocks"
+      :class="{
+        'is-editing': selected !== null,
+        'has-preview': preview !== null && preview.url.value !== null,
+      }"
+    >
+      <div class="wx-blocks__tree">
+        <div class="wx-blocks__panel-head">
+          <span class="wx-blocks__panel-title">{{ t('field.blocks') }}</span>
+          <wx-text size="sm" tone="muted">{{ tree.length }}</wx-text>
+        </div>
+        <blocks-tree
+          :nodes="tree"
+          :catalog="catalog"
+          :selected="selectedKey"
           :disabled="disabled"
-          @update:model-value="onValues"
+          @select="select"
+          @add="add"
+          @remove="remove"
+          @duplicate="duplicate"
+          @reorder="reorder"
         />
-        <wx-text v-else size="sm" tone="danger">{{
-          t('field.unknown-type', { type: selected.node.type })
-        }}</wx-text>
+        <wx-button
+          v-if="!disabled && (max === null || tree.length < max)"
+          variant="outline"
+          block
+          icon="plus"
+          class="wx-blocks__add"
+          @click="add(null, null, null)"
+        >
+          {{ t('field.add') }}
+        </wx-button>
+        <wx-button
+          v-if="preview && preview.url.value"
+          variant="text"
+          block
+          class="wx-blocks__preview-button"
+          @click="previewEl?.open()"
+        >
+          {{ t('field.preview') }}
+        </wx-button>
       </div>
-    </div>
 
-    <div v-if="preview && preview.url.value" class="wx-blocks__preview">
-      <blocks-preview
-        ref="previewEl"
-        :url="preview.url.value"
-        :selected="selectedKey"
-        :mode="selected ? 'phone' : 'wide'"
-        :reload="preview.reload?.value ?? 0"
-      />
+      <div v-if="selected" class="wx-blocks__fields">
+        <div class="wx-blocks__panel-head">
+          <span class="wx-blocks__panel-title">{{
+            selectedType?.title ?? selected.node.type
+          }}</span>
+          <span class="wx-blocks__panel-extra">
+            <code>{{ selected.node.type }}</code>
+            <wx-button size="sm" variant="outline" @click="done"
+              >{{ t('field.done') }} · Esc</wx-button
+            >
+          </span>
+        </div>
+        <div class="wx-blocks__form">
+          <wx-screen-renderer
+            v-if="selectedType?.content"
+            :key="selected.node.key"
+            :model-value="selected.node.values"
+            :root="formRoot"
+            :types="types"
+            :translate="translate"
+            :can="can"
+            :disabled="disabled"
+            @update:model-value="onValues"
+          />
+          <wx-text v-else size="sm" tone="danger">{{
+            t('field.unknown-type', { type: selected.node.type })
+          }}</wx-text>
+        </div>
+      </div>
+
+      <div v-if="preview && preview.url.value" class="wx-blocks__preview">
+        <blocks-preview
+          ref="previewEl"
+          :url="preview.url.value"
+          :selected="selectedKey"
+          :mode="selected ? 'phone' : 'wide'"
+          :reload="preview.reload?.value ?? 0"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.wx-blocks-host {
+  container-type: inline-size;
+}
+
 .wx-blocks {
   display: grid;
   grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
   gap: var(--wx-space-16);
   align-items: start;
-  container-type: inline-size;
 }
 
 .wx-blocks.is-editing {
@@ -404,9 +412,9 @@ const formRoot = computed(() =>
   flex-direction: column;
   gap: var(--wx-space-8);
   padding: var(--wx-space-8);
-  border: 1px solid var(--wx-color-border);
+  border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-md);
-  background: var(--wx-color-surface);
+  background: var(--wx-bg-surface);
   min-width: 0;
 }
 
@@ -442,12 +450,37 @@ const formRoot = computed(() =>
   display: none;
 }
 
-/* Below the width where three columns fit, the preview folds into a button that opens it
-   full screen. */
-@container (max-width: 1320px) {
-  .wx-blocks.has-preview,
+/* Below the width where three columns fit, the phone beside the form folds into a button
+   that opens it full screen. The two-column state — the tree and the whole page — keeps its
+   preview: a laptop's panel is narrower than three columns and wide enough for two. The
+   threshold is the three columns at their minimum — 260 + 360 + 420 and the two gaps. */
+@container (max-width: 1080px) {
   .wx-blocks.is-editing.has-preview {
     grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  }
+
+  .wx-blocks.is-editing .wx-blocks__preview {
+    display: none;
+  }
+
+  .wx-blocks.is-editing.has-preview .wx-blocks__preview-button {
+    display: inline-flex;
+  }
+
+  /* Full screen still needs the node in the tree: it is drawn there, only unstuck. */
+  .wx-blocks.is-editing .wx-blocks__preview:has(.is-fullscreen) {
+    display: block;
+    position: static;
+  }
+}
+
+/* One column: the preview is a button in either state. */
+@container (max-width: 720px) {
+  .wx-blocks,
+  .wx-blocks.is-editing,
+  .wx-blocks.has-preview,
+  .wx-blocks.is-editing.has-preview {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .wx-blocks__preview {
@@ -458,24 +491,15 @@ const formRoot = computed(() =>
     display: inline-flex;
   }
 
-  /* Full screen still needs the node in the tree: it is drawn there, only unstuck. */
   .wx-blocks__preview:has(.is-fullscreen) {
     display: block;
     position: static;
   }
 }
 
-@container (max-width: 720px) {
-  .wx-blocks,
-  .wx-blocks.is-editing,
-  .wx-blocks.is-editing.has-preview {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 code {
   font-family: var(--wx-font-family-mono);
   font-size: var(--wx-font-size-xs);
-  color: var(--wx-color-text-muted);
+  color: var(--wx-text-muted);
 }
 </style>

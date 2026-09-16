@@ -107,7 +107,7 @@ watch(
   align-items: center;
   gap: var(--wx-space-12);
   padding: var(--wx-space-10) var(--wx-space-12);
-  border-block-end: 1px solid var(--wx-color-border-muted, var(--wx-color-border));
+  border-block-end: 1px solid var(--wx-color-border-muted, var(--wx-border-default));
   flex-wrap: wrap;
 }
 
@@ -119,7 +119,7 @@ watch(
   width: 40px;
   font-family: var(--wx-font-family-mono);
   font-size: var(--wx-font-size-sm);
-  color: var(--wx-color-text-muted);
+  color: var(--wx-text-muted);
 }
 
 .wx-block-history__who {

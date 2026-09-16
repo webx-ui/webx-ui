@@ -746,7 +746,7 @@ watch(id, () => void load())
 
 .wx-block-editor__back {
   font-size: var(--wx-font-size-sm);
-  color: var(--wx-color-text-muted);
+  color: var(--wx-text-muted);
   text-decoration: none;
 }
 
@@ -794,7 +794,7 @@ watch(id, () => void load())
 .wx-block-editor__pane {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--wx-color-border);
+  border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-md);
   overflow: hidden;
 }
@@ -810,14 +810,14 @@ watch(id, () => void load())
   align-items: center;
   gap: var(--wx-space-6);
   padding: var(--wx-space-8) var(--wx-space-12);
-  border-block-start: 1px solid var(--wx-color-border-muted, var(--wx-color-border));
+  border-block-start: 1px solid var(--wx-color-border-muted, var(--wx-border-default));
 }
 
 .wx-block-editor__pill {
   padding: 2px var(--wx-space-8);
-  border: 1px solid var(--wx-color-border);
+  border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-full);
-  background: var(--wx-color-surface);
+  background: var(--wx-bg-surface);
   color: var(--wx-color-primary);
   font-family: var(--wx-font-family-mono);
   font-size: var(--wx-font-size-xs);
@@ -833,7 +833,7 @@ watch(id, () => void load())
   flex-direction: column;
   gap: var(--wx-space-4);
   padding: var(--wx-space-8) var(--wx-space-12);
-  border-block-start: 1px solid var(--wx-color-border-muted, var(--wx-color-border));
+  border-block-start: 1px solid var(--wx-color-border-muted, var(--wx-border-default));
 }
 
 .wx-block-editor__settings {

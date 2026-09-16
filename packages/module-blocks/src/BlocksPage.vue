@@ -190,7 +190,7 @@ onMounted(load)
   font-weight: var(--wx-font-weight-semibold);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--wx-color-text-muted);
+  color: var(--wx-text-muted);
 }
 
 .wx-blocks-page__cards {

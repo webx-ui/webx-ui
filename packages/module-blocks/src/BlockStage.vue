@@ -105,9 +105,9 @@ const clipStyle = computed(() => ({
 .wx-block-stage {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--wx-color-border);
+  border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-md);
-  background: var(--wx-color-surface);
+  background: var(--wx-bg-surface);
   overflow: hidden;
 }
 
@@ -116,12 +116,12 @@ const clipStyle = computed(() => ({
   justify-content: space-between;
   gap: var(--wx-space-8);
   padding: var(--wx-space-8) var(--wx-space-12);
-  border-block-end: 1px solid var(--wx-color-border-muted, var(--wx-color-border));
+  border-block-end: 1px solid var(--wx-color-border-muted, var(--wx-border-default));
 }
 
 .wx-block-stage__ground {
   padding: var(--wx-space-12);
-  background: var(--wx-color-surface-sunken);
+  background: var(--wx-bg-subtle);
   overflow: auto;
   max-height: 62vh;
 }

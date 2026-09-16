@@ -172,9 +172,9 @@ defineExpose({ replace, refresh, open: () => (fullscreen.value = true) })
 .wx-blocks-preview {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--wx-color-border);
+  border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-md);
-  background: var(--wx-color-surface);
+  background: var(--wx-bg-surface);
   overflow: hidden;
   min-width: 0;
 }
@@ -193,7 +193,7 @@ defineExpose({ replace, refresh, open: () => (fullscreen.value = true) })
   justify-content: space-between;
   gap: var(--wx-space-8);
   padding: var(--wx-space-8) var(--wx-space-12);
-  border-block-end: 1px solid var(--wx-color-border-muted, var(--wx-color-border));
+  border-block-end: 1px solid var(--wx-color-border-muted, var(--wx-border-default));
 }
 
 .wx-blocks-preview__label {
@@ -211,7 +211,7 @@ defineExpose({ replace, refresh, open: () => (fullscreen.value = true) })
 .wx-blocks-preview__ground {
   flex: 1;
   padding: var(--wx-space-12);
-  background: var(--wx-color-surface-sunken);
+  background: var(--wx-bg-subtle);
   overflow: auto;
   max-height: calc(100vh - 200px);
 }
