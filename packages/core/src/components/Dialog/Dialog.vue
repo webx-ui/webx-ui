@@ -281,6 +281,20 @@ function onInteractOutside(event: Event) {
 }
 
 /*
+ * Reka hands focus to the first tabbable thing in the panel when it opens, and that is
+ * the × in the heading — after the native `autofocus` has already fired, so a field marked
+ * for it loses. A field marked `autofocus` is what the person came to type into.
+ */
+function onOpenAutoFocus(event: Event) {
+  const target = panel.value?.querySelector<HTMLElement>('[autofocus]')
+
+  if (!target) return
+
+  event.preventDefault()
+  target.focus()
+}
+
+/*
  * The wrapper covers the screen, so a click beside the panel is a click inside the
  * dialog as far as Reka is concerned — and in modal mode it gives the wrapper its own
  * `pointer-events: auto`, which the overlay underneath can then never be handed. The
@@ -317,6 +331,7 @@ defineExpose({ close, reset })
         :aria-describedby="undefined"
         @escape-key-down="onEscape"
         @interact-outside="onInteractOutside"
+        @open-auto-focus="onOpenAutoFocus"
         @mousedown.self="onViewportPointerDown"
       >
         <div
