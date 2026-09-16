@@ -87,11 +87,11 @@ REPOSITORY="$(
     # this checkout, and the whole run would prove nothing about the change under test.
     $COMPOSER_BIN config repositories.packagist.org \
         '{"type":"composer","url":"https://repo.packagist.org","exclude":["webx-ui/*"]}'
-    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' --no-interaction --no-progress --quiet
+    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' --no-interaction --no-progress --quiet
 )
 
 step "The packages came from the checkout, not from Packagist"
-for package in module-admin localization mcp module-auth module-settings module-seo routing; do
+for package in module-admin localization mcp module-auth module-settings module-seo module-blocks routing; do
     [ -L "$APP/vendor/webx-ui/$package" ] || [ -f "$APP/vendor/webx-ui/$package/.git" ] \
         || fail "vendor/webx-ui/$package is a copy, so a released version was installed instead of this checkout"
     note "webx-ui/$package is linked to the checkout"
@@ -111,6 +111,7 @@ step "Providers are found by discovery, not by hand"
         "webx-ui/module-settings" => "WebxUi\\Settings\\SettingsServiceProvider",
         "webx-ui/module-seo" => "WebxUi\\Seo\\SeoServiceProvider",
         "webx-ui/routing" => "WebxUi\\Routing\\RoutingServiceProvider",
+        "webx-ui/module-blocks" => "WebxUi\\Blocks\\BlocksServiceProvider",
     ];
     foreach ($expected as $package => $provider) {
         if (! in_array($provider, $manifest[$package]["providers"] ?? [], true)) {
@@ -158,6 +159,9 @@ note "$(grep -E '^DB_CONNECTION=|^DB_DATABASE=' "$APP/.env" | tr '\n' ' ')"
 
 [ "$DB_CONNECTION" = "sqlite" ] && : > "$APP/database/database.sqlite"
 
+# Sanctum only publishes its migration; an agent's MCP token lives in that table.
+"$PHP_BIN" "$APP/artisan" vendor:publish --tag=sanctum-migrations --no-interaction --quiet
+
 "$PHP_BIN" "$APP/artisan" migrate --force --no-interaction
 note 'migrations ran'
 
@@ -170,6 +174,13 @@ step "Create an administrator"
 WEBX_ADMIN_PASSWORD="$ADMIN_PASSWORD" "$PHP_BIN" "$APP/artisan" webx:admin \
     --name=Smoke --email="$ADMIN_EMAIL" --no-interaction
 note "$ADMIN_EMAIL created"
+
+step "Issue an MCP token"
+# The token is the one bare `id|secret` line of the output.
+MCP_TOKEN="$("$PHP_BIN" "$APP/artisan" webx:mcp:token "$ADMIN_EMAIL" --scopes=blocks:read --no-ansi \
+    | grep -E '^[0-9]+\|[A-Za-z0-9]+$' | head -1)"
+[ -n "$MCP_TOKEN" ] || fail 'webx:mcp:token did not print a token'
+note 'a token with blocks:read issued'
 
 step "Give the site something with a public address"
 # webx-ui/routing has no module of its own and no consumer yet, so the only way to exercise it
@@ -185,11 +196,15 @@ cat > "$APP/app/Models/SmokePage.php" <<'PHP'
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use WebxUi\Admin\Versions\HasDraft;
+use WebxUi\Admin\Versions\HasVersions;
 use WebxUi\Routing\HasUrl;
 
 class SmokePage extends Model
 {
+    use HasDraft;
     use HasUrl;
+    use HasVersions;
 
     protected $table = 'smoke_pages';
 
@@ -205,13 +220,20 @@ namespace App\Http;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Symfony\Component\HttpFoundation\Response as BaseResponse;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use WebxUi\Blocks\Preview\PreviewGrant;
 use WebxUi\Routing\RouteHandler;
 
 class SmokePageHandler implements RouteHandler
 {
     public function handle(Request $request, object $entity, string $tail): BaseResponse
     {
-        return new Response('smoke page: '.$entity->slug, 200);
+        // Publication is the handler's business: a draft is a 404 to everybody but a preview.
+        if (! $entity->isPublished() && PreviewGrant::of($request) === null) {
+            throw new NotFoundHttpException;
+        }
+
+        return new Response('smoke page: '.$entity->slug.' / '.$entity->title, 200);
     }
 }
 PHP
@@ -249,12 +271,13 @@ namespace App\Console\Commands;
 
 use App\Models\SmokePage;
 use Illuminate\Console\Command;
+use WebxUi\Blocks\Facades\Preview;
 
 class SmokePageCommand extends Command
 {
-    protected $signature = 'smoke:page {slug} {--rename=}';
+    protected $signature = 'smoke:page {slug} {--rename=} {--draft} {--preview}';
 
-    protected $description = 'Create or rename a page so that the address registry has to follow';
+    protected $description = 'Create, publish or rename a page so that the registry, the draft and the preview have to follow';
 
     public function handle(): int
     {
@@ -262,6 +285,21 @@ class SmokePageCommand extends Command
             ['slug' => $this->argument('slug')],
             ['title' => 'Smoke'],
         );
+
+        if ($this->option('preview')) {
+            $this->line(Preview::url($page, adminId: 1));
+
+            return self::SUCCESS;
+        }
+
+        if (! $page->isPublished()) {
+            // The draft is what the preview shows and what publishing copies into the columns.
+            $page->saveDraft(['title' => $this->option('draft') ? 'Draft only' : 'Published']);
+
+            if (! $this->option('draft')) {
+                $page->publish(authorId: 1);
+            }
+        }
 
         $rename = $this->option('rename');
 
@@ -291,6 +329,7 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->string('slug');
+            $table->draft();
             $table->timestamps();
         });
     }
@@ -405,6 +444,24 @@ run_http_checks() {
     expect 301 "$(status "$BASE/about-$phase")" "[$phase] a rename leaves the old address behind"
     expect 200 "$(status "$BASE/moved-page-$phase")" "[$phase] and the new one answers"
 
+    # module-blocks, the preview. The route is registered by a package and carries a signed
+    # token, so this is the check that it survives `route:cache` and that the key `config:cache`
+    # hands the signer is the one the link was made with.
+    "$PHP_BIN" "$APP/artisan" smoke:page "draft-$phase" --draft --no-interaction > /dev/null
+    PREVIEW_URL="$("$PHP_BIN" "$APP/artisan" smoke:page "draft-$phase" --preview --no-interaction | tail -n 1)"
+
+    expect 404 "$(status "$BASE/draft-$phase")" "[$phase] an unpublished page is a 404 to a visitor"
+    expect 403 "$(status "${PREVIEW_URL%%\?*}")" "[$phase] the preview without a token is a 403"
+    expect 200 "$(status "$PREVIEW_URL")" "[$phase] and with the token it answers"
+
+    curl -s -c "$COOKIES" -b "$COOKIES" "$PREVIEW_URL" | grep -q 'Draft only' \
+        || fail "[$phase] the preview did not render the draft"
+    note "[$phase] the preview shows the draft"
+
+    curl -s -D - -o /dev/null -c "$COOKIES" -b "$COOKIES" "$PREVIEW_URL" | grep -qi '^X-Robots-Tag: noindex' \
+        || fail "[$phase] the preview is not marked noindex"
+    note "[$phase] the preview is noindex and no-store"
+
     "$PHP_BIN" "$APP/artisan" webx:routes:check --no-interaction > /dev/null \
         || fail "[$phase] webx:routes:check found problems in the registry"
     note "[$phase] webx:routes:check is quiet"
@@ -416,6 +473,21 @@ run_http_checks() {
     )" "[$phase] sign out"
 
     expect 401 "$(status "$BASE/api/cms/manifest")" "[$phase] and the panel is closed again"
+
+    # The MCP server: outside the `web` group, so no session and no CSRF — a bearer token or
+    # nothing. Its routes are registered by a provider, which is exactly what the route cache
+    # phase has to prove still works.
+    local rpc='{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+
+    expect 401 "$(status -X POST -H 'Content-Type: application/json' -d "$rpc" "$BASE/api/cms/mcp")" \
+        "[$phase] the MCP server is closed to strangers"
+
+    local tools
+    tools="$(curl -s -H 'Accept: application/json' -H 'Content-Type: application/json' \
+        -H "Authorization: Bearer $MCP_TOKEN" -X POST -d "$rpc" "$BASE/api/cms/mcp")"
+    printf '%s' "$tools" | grep -q '"blocks_list"' \
+        || fail "[$phase] the MCP server did not list the blocks tools to a token: $tools"
+    note "[$phase] and lists the blocks tools to a token"
 }
 
 serve() {

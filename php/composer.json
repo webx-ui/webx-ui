@@ -9,6 +9,7 @@
         "webx-ui/mcp": "*",
         "webx-ui/module-admin": "*",
         "webx-ui/module-auth": "*",
+        "webx-ui/module-blocks": "*",
         "webx-ui/module-media": "*",
         "webx-ui/module-seo": "*",
         "webx-ui/module-settings": "*",
@@ -32,6 +33,7 @@
                     "webx-ui/mcp": "0.15.0",
                     "webx-ui/module-admin": "0.15.0",
                     "webx-ui/module-auth": "0.15.0",
+                    "webx-ui/module-blocks": "0.15.0",
                     "webx-ui/module-media": "0.15.0",
                     "webx-ui/module-seo": "0.15.0",
                     "webx-ui/module-settings": "0.15.0",
@@ -45,6 +47,7 @@
         "psr-4": {
             "WebxUi\\Admin\\Tests\\": "packages/module-admin/tests/",
             "WebxUi\\Auth\\Tests\\": "packages/module-auth/tests/",
+            "WebxUi\\Blocks\\Tests\\": "packages/module-blocks/tests/",
             "WebxUi\\Localization\\Tests\\": "packages/localization/tests/",
             "WebxUi\\Mcp\\Tests\\": "packages/mcp/tests/",
             "WebxUi\\Media\\Tests\\": "packages/module-media/tests/",

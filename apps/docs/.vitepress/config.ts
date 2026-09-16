@@ -32,6 +32,7 @@ export default defineConfig({
             { text: 'Settings', link: '/guide/settings' },
             { text: 'SEO', link: '/guide/seo' },
             { text: 'Addresses', link: '/guide/routing' },
+            { text: 'Blocks', link: '/guide/blocks' },
             { text: 'Screens', link: '/guide/screens' },
             { text: 'Roadmap', link: '/guide/roadmap' },
           ],
