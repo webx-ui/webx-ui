@@ -174,6 +174,13 @@ carries `data-wx-block="{slug}"`: the runtime finds the block by it and the pane
 it. Every block renders in its own `try`/`catch` — on the site a failure goes to the log and leaves
 a gap; in the preview it is a notice with the line.
 
+A variable holds what the field type makes of the stored value, the same way
+[a screen's values](/guide/screens) are read for the site: `wx-media` stores
+`{ path, alt, title }` and the template also gets `url`, worked out when the block is printed, so
+a library that moves to another disk rewrites no page. A value whose type nobody registered on the
+server — `wx-blocks`, a field of the project's own — arrives as it is stored. `$block->values`
+holds the same map, which is what a template hands its script in `data-wx-values`.
+
 **The styles start with `.b-{slug}`**, in BEM: `.b-hero__title`, `.b-hero--wide`. Width decisions
 are container queries, because the block does not know whether it is the page or a third of it.
 Saving reports what leaks — a selector outside the prefix, a bare element selector, `@media`, a
@@ -328,9 +335,6 @@ report — and do not publish unless asked.
 
 ## What is deferred
 
-- A block's template gets a field's value as stored. A `wx-media` value is `{ path, alt, title }`,
-  not an address — printing the picture goes through whatever the site uses for a media path
-  until the renderer resolves field types the way settings do.
 - Dragging a block between two containers is "duplicate" plus "remove", not a drag.
 - The line above the tree for what the view prints from the record's own fields, and the
   panel's menu folding to icons while the constructor is open, arrive with the first content

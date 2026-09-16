@@ -38,6 +38,7 @@ final class Renderer
         private readonly TemplateCompiler $compiler,
         private readonly ViewFactory $views,
         private readonly Config $config,
+        private readonly Values $values,
     ) {}
 
     /**
@@ -90,7 +91,7 @@ final class Renderer
             key: 'sample',
             type: $type->slug,
             version: $type->version,
-            values: $values ?? $type->sample,
+            values: $this->values->resolve($type, $values ?? $type->sample),
             entity: null,
             depth: 0,
         );
@@ -118,7 +119,7 @@ final class Renderer
             key: $key,
             type: $type->slug,
             version: $type->version,
-            values: $values,
+            values: $this->values->resolve($type, $values),
             entity: null,
             depth: 0,
         );
@@ -228,7 +229,7 @@ final class Renderer
             key: $key,
             type: $type->slug,
             version: $type->version,
-            values: $values,
+            values: $this->values->resolve($type, $values),
             entity: $entity,
             depth: $depth,
         );
@@ -249,6 +250,10 @@ final class Renderer
      * the values have nothing — so a field added to a block after the content was written is
      * null on the old pages, not an error that blanks them. A variable the schema does not
      * declare stays undefined, which is what refuses a template at publishing time.
+     *
+     * The values are the resolved ones ({@see Values}): the block that holds a picture is
+     * holding its address by now, and `$block->values` — what a template hands its script —
+     * says the same thing the variables do.
      *
      * `$block` and `$entity` come next, and the view factory's shared data — `$__env` above
      * all — last, so a field called `app` cannot take the application's place. A value whose

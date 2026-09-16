@@ -15,6 +15,18 @@ use WebxUi\Media\Storage\FileUrls;
  */
 final class MediaFieldType implements FieldType
 {
+    /**
+     * Files already looked up in this request, by key — including the ones that were not found.
+     *
+     * A page of blocks asks for the same picture as often as it prints it, and a gallery asks
+     * for a dozen in a row; one query each is a dozen queries for one screenful. What is kept
+     * is the row, never the address: a private bucket's address is signed and expires, so it
+     * has to be worked out again every time it is asked for.
+     *
+     * @var array<string, MediaFile|null>
+     */
+    private array $found = [];
+
     public function __construct(private readonly FileUrls $urls) {}
 
     /**
@@ -55,8 +67,23 @@ final class MediaFieldType implements FieldType
             return null;
         }
 
-        $file = MediaFile::query()->where('path', $stored['path'])->first();
+        $file = $this->file($stored['path']);
 
         return $stored + ['url' => $file instanceof MediaFile ? $this->urls->url($file) : null];
+    }
+
+    /** Between two responses of one process the library may well have changed. */
+    public function flush(): void
+    {
+        $this->found = [];
+    }
+
+    private function file(string $path): ?MediaFile
+    {
+        if (! array_key_exists($path, $this->found)) {
+            $this->found[$path] = MediaFile::query()->where('path', $path)->first();
+        }
+
+        return $this->found[$path];
     }
 }

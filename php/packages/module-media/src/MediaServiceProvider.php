@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Media;
 
+use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
@@ -26,7 +28,14 @@ class MediaServiceProvider extends ServiceProvider
 
         // What a screen means by `wx-media`, on the server: the key the field stores and the
         // address the site reads. The front end registers the component under the same name.
-        $this->app->make(FieldTypes::class)->register('wx-media', $this->app->make(MediaFieldType::class));
+        $field = $this->app->make(MediaFieldType::class);
+        $this->app->make(FieldTypes::class)->register('wx-media', $field);
+
+        // The field remembers the files one response asked about; in a process that serves many
+        // responses that memory would outlive the library it describes.
+        $this->app->make(Dispatcher::class)->listen(RequestHandled::class, static function () use ($field): void {
+            $field->flush();
+        });
 
         if (! $this->app->runningInConsole()) {
             return;
