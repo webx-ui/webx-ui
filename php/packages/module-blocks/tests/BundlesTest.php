@@ -254,7 +254,7 @@ final class BundlesTest extends TestCase
         $this->publish('hero', '<h1>one</h1>');
         $this->render([$this->node('hero')]);
 
-        $this->assertFileExists($compiler->directory().'/hero-1.php');
+        $this->assertNotEmpty(glob($compiler->directory().'/hero-1-*.php'));
 
         $this->artisan('webx:blocks:clear')->expectsOutputToContain('Block types forgotten.')->assertSuccessful();
 
