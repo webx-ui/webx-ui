@@ -119,6 +119,22 @@ GET    /api/cms/pages/{id}/versions              the publications, newest first
 POST   /api/cms/pages/{id}/versions/{n}/restore  an old one becomes the draft
 ```
 
+## MCP
+
+With [`webx-ui/mcp`](../mcp) — it comes with this package — the section is also a set of tools for
+an agent: `pages_tree`, `pages_get`, `pages_create`, `pages_update`, `pages_move`, `pages_publish`,
+`pages_unpublish`, `pages_delete`, `pages_restore`. The same doors the panel uses — `PageForm`
+checks the values against the described screen, `Placement` decides where a page may go, the
+`revision` refuses a stale write — with `mcp` as the source in the history; every tool that changes
+something takes `dry_run: true`. A page is named by its id or by its address, `"/"` being the home
+page, and text fields answer with every language at once.
+
+Content is not written here. Blocks go through `blocks_edit_content`, which names the node it
+changes and leaves the rest of the page alone; a `blocks` key sent to `pages_update` is refused
+with that sentence rather than dropped. Scopes `pages:read` and `pages:write` are abilities of the
+token `php artisan webx:mcp:token` issues. The resource `pages://sitemap` is the map to read first,
+and the prompt `build_page` packages the loop of create, fill, preview, report.
+
 ## The view
 
 The handler hands the page to `webx-pages.view`, which defaults to `pages.show`, as `$page`:

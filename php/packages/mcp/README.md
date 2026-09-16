@@ -129,6 +129,10 @@ it starts it reads the registry and wraps every tool, resource and prompt in the
 transport expects. The module's JSON Schema goes out as written; a read tool is announced with
 `readOnlyHint`, so a client may skip its confirmation for it.
 
+`tools/list` answers with a hundred at a time rather than the default fifteen. A panel with six
+modules offers more than forty tools, and a client that does not follow the cursor would see a
+third of them and conclude the rest do not exist.
+
 `config/webx-mcp.php`:
 
 | Key          | Default             | What it is                                                       |
