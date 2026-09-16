@@ -17,10 +17,11 @@ use WebxUi\Mcp\Tool;
 /**
  * The section where a block type is made.
  *
- * At the top level next to the media library, because it is content tooling rather than a
- * system setting — and the ones who use it are the ones who build the pages. Two permissions,
- * the panel's usual pair: `view` opens the section and the picker, `manage` writes. Saving a
- * block is running Blade, so `manage` is given the way a shell is given (§16).
+ * In the system group, first in it: a block type is made once and then lives on the pages,
+ * so the section is opened the way the settings are — to set the site up, not to edit it
+ * daily. Two permissions, the panel's usual pair: `view` opens the section and the picker,
+ * `manage` writes. Saving a block is running Blade, so `manage` is given the way a shell is
+ * given (§16).
  *
  * To an agent the module is the same section by other doors (§18): the tools, the resources
  * it should read first, and one prompt. The scopes are `blocks:read` and `blocks:write`.
@@ -51,7 +52,12 @@ final class BlocksModule extends AbstractModule implements ProvidesMcpTools
 
     public function order(): int
     {
-        return 250;
+        return 600;
+    }
+
+    public function group(): string
+    {
+        return 'system';
     }
 
     /**

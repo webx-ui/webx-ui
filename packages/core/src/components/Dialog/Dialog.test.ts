@@ -336,4 +336,23 @@ describe('WxDialog', () => {
 
     expect(wrapper.emitted('update:open')?.at(-1)).toEqual([false])
   })
+
+  it('opens with the caret in the field marked autofocus, not on the ×', async () => {
+    factory(
+      { open: true, title: 'Add' },
+      { default: '<input class="first" /><input class="wanted" autofocus />' },
+    )
+    await nextTick()
+    await nextTick()
+
+    expect(document.activeElement).toBe(panel()?.querySelector('.wanted'))
+  })
+
+  it('leaves the focus to Reka when nothing asks for it', async () => {
+    factory({ open: true, title: 'Add' })
+    await nextTick()
+    await nextTick()
+
+    expect(document.activeElement).toBe(panel()?.querySelector('.wx-dialog__close'))
+  })
 })

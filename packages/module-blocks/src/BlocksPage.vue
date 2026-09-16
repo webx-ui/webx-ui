@@ -11,6 +11,7 @@ import {
   WxHeading,
   WxInput,
   WxSkeleton,
+  WxSkeletonItem,
 } from '@webx-ui/core'
 import { createBlocksApi } from './api'
 import BlockCard from './BlockCard.vue'
@@ -121,12 +122,9 @@ onMounted(load)
   <div class="wx-blocks-page">
     <div class="wx-blocks-page__head">
       <wx-heading :level="2">{{ title }}</wx-heading>
-      <div class="wx-blocks-page__tools">
-        <wx-input v-model="search" :placeholder="t('page.search')" clearable />
-        <wx-button v-if="canManage" type="primary" icon="plus" @click="add">
-          {{ t('page.new') }}
-        </wx-button>
-      </div>
+      <wx-button v-if="canManage" type="primary" icon="plus" @click="add">
+        {{ t('page.new') }}
+      </wx-button>
     </div>
 
     <wx-alert
@@ -136,7 +134,30 @@ onMounted(load)
       :description="t('page.editing-off')"
     />
 
-    <wx-skeleton v-if="loading" :rows="4" />
+    <!-- The search stands over the grid it narrows, not in the corner beside the button. -->
+    <wx-input
+      v-if="loading || blocks.length > 0"
+      v-model="search"
+      class="wx-blocks-page__search"
+      :placeholder="t('page.search')"
+      clearable
+    />
+
+    <!-- The placeholder is shaped like what is coming: a row of cards, not a paragraph. -->
+    <wx-skeleton v-if="loading">
+      <template #template>
+        <div class="wx-blocks-page__cards">
+          <div v-for="n in 4" :key="n" class="wx-blocks-page__ghost">
+            <wx-skeleton-item variant="image" :height="120" class="wx-blocks-page__ghost-thumb" />
+            <div class="wx-blocks-page__ghost-body">
+              <wx-skeleton-item variant="title" width="45%" />
+              <wx-skeleton-item variant="text" width="70%" />
+              <wx-skeleton-item variant="button" width="64px" height="22px" />
+            </div>
+          </div>
+        </div>
+      </template>
+    </wx-skeleton>
 
     <wx-empty
       v-else-if="blocks.length === 0"
@@ -172,11 +193,28 @@ onMounted(load)
   flex-wrap: wrap;
 }
 
-.wx-blocks-page__tools {
+.wx-blocks-page__search {
+  max-width: 360px;
+}
+
+.wx-blocks-page__ghost {
   display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--wx-bg-surface);
+  border: 1px solid var(--wx-border-default);
+  border-radius: var(--wx-radius-md);
+}
+
+.wx-blocks-page__ghost-thumb {
+  border-radius: 0;
+}
+
+.wx-blocks-page__ghost-body {
+  display: flex;
+  flex-direction: column;
   gap: var(--wx-space-8);
-  align-items: center;
-  flex-wrap: wrap;
+  padding: var(--wx-space-12) var(--wx-space-14);
 }
 
 .wx-blocks-page__group {
