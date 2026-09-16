@@ -47,6 +47,8 @@ export const mediaMessages: Record<string, Messages> = {
     'status-files': 'Files: :count',
     'status-selected': 'selected: :count',
     'status-size': 'size: :size',
+    pick: 'Choose (:count)',
+    chosen: 'Chosen :count of :max',
   },
   // The picture field on a form, which is the module used from outside its own section.
   field: {
@@ -60,6 +62,16 @@ export const mediaMessages: Record<string, Messages> = {
     'clear-title': 'Clear the field?',
     'clear-text': 'The file stays in the library — only this record stops using it.',
     'clear-confirm': 'Clear',
+    add: 'Add',
+    empty: 'Nothing chosen yet',
+    reorder: 'Reorder',
+    open: 'Open in the library',
+    missing: 'No longer in the library',
+    'remove-title': 'Take it out of the list?',
+    'remove-text': 'The file stays in the library — only this record stops using it.',
+    'remove-confirm': 'Remove',
+    count: ':count of :max',
+    'at-least': 'At least :count',
   },
   // The image editor is a component of the design system, so its words are props rather than
   // lines in the dictionary — the manager hands it these when it opens it.
@@ -103,6 +115,7 @@ export const mediaMessages: Record<string, Messages> = {
     'unsupported-type': 'Only these can be uploaded: :types.',
     'file-too-large': 'The file is larger than :size MB.',
     'too-many-files': 'No more than :count files at a time.',
+    'file-not-found': 'There is no such file in the library.',
   },
   files: {
     copy: ':name (copy)',
@@ -112,5 +125,16 @@ export const mediaMessages: Record<string, Messages> = {
     parent_id: 'parent folder',
     directory_id: 'folder',
     files: 'files',
+    item: 'File :number: :message',
+    shape: 'This is not a file from the library.',
+    accept: 'This field takes :kind only.',
+    localized: 'A field of files cannot be translated — the captions inside it are.',
+    kind: {
+      image: 'images',
+      video: 'video',
+      audio: 'audio',
+      document: 'documents',
+      other: 'other files',
+    },
   },
 }

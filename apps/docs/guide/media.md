@@ -24,6 +24,22 @@ the promise answers with the chosen `MediaFile`, or with `undefined` when the pe
 `accept` narrows what can be picked — `'image'`, `'video'`, `'audio'`, `'document'`, or `null`
 for everything.
 
+For more than one:
+
+```ts
+import { openMediaFiles } from '@webx-ui/module-media'
+
+const files = await openMediaFiles({ accept: 'image', max: 10 })
+```
+
+The dialog turns on the same rubber-band selection the manager already uses for its batch
+operations, and the button at the bottom counts what is chosen. A second function rather than a
+flag on the first one, because the answer is a different shape — `MediaFile[]` against
+`MediaFile` — and a signature says that more plainly than a conditional type does.
+
+`max` is kept by the dialog, which says how many are left, and again by the server: the limit
+belongs to the field's schema, and a request that never opened a dialog has to meet it too.
+
 ## The whole library, without leaving the screen
 
 ```ts
@@ -68,6 +84,68 @@ nothing that was written before. A field given nothing but a key looks the file 
 
 Pass `:captions="false"` for a decorative picture, `height` to size the frame, and `accept` to
 pick something other than an image.
+
+## Several of them
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue'
+import { WxGalleryField, type MediaValue } from '@webx-ui/module-media'
+
+const shots = ref<MediaValue[]>([])
+</script>
+
+<template>
+  <wx-gallery-field v-model="shots" label="Photographs" :max="12" />
+</template>
+```
+
+A grid of thumbnails in the order somebody dragged them into, each with the captions popover the
+single field has. **Add** opens the library with multiple selection on, so twelve pictures are one
+trip rather than twelve.
+
+`WxFilesField` is the same list laid out as rows of file cards — the glyph of the extension, the
+name, the size — for the downloads hanging off a page. `WxFileField` is one of those cards on its
+own: the same `MediaValue | null` as `WxMediaField`, for a document that has no `alt` worth asking
+for and no preview worth framing.
+
+| Export           | Screen type  | Value                | What it draws                    |
+| ---------------- | ------------ | -------------------- | -------------------------------- |
+| `WxMediaField`   | `wx-media`   | `MediaValue \| null` | one picture in a frame           |
+| `WxGalleryField` | `wx-gallery` | `MediaValue[]`       | a grid of thumbnails             |
+| `WxFileField`    | `wx-file`    | `MediaValue \| null` | one file card: glyph, name, size |
+| `WxFilesField`   | `wx-files`   | `MediaValue[]`       | those cards a line each          |
+
+The type names are what `media()` registers on [a described screen](/guide/screens), and what the
+server half registers for storing the values — so a screen that writes `"type": "wx-gallery"` gets
+this field and these rules without anyone wiring the two together.
+
+**Three names rather than `wx-media` with `multiple`.** The type is what an author picks from a
+list and what an agent reads in `blocks://nodes`. Nobody picks "media with `multiple: true` and
+`accept: document`"; they pick "Files". Underneath there is one component and one set of rules —
+the names exist for the person, not for the code.
+
+Props: `max`, `min`, `captions`, `columns` and `aspect` for the grid, `accept` for the two file
+types. The gallery's `accept` is fixed at `image`, because a gallery holding a `.zip` is a
+template printing an `<img>` at a document.
+
+Some things these deliberately do not do:
+
+- **The thumbnails come from `thumb`**, not from `url`. A gallery of forty photographs drawn from
+  the originals is forty originals over the wire; the manager's own grid has asked for previews
+  for the same reason since it was written.
+- **Editing a picture is not offered here.** The file is shared, and cropping it from one page's
+  form crops it everywhere it stands. The card offers "open in the library", where the
+  consequences are visible.
+- **Uploading goes through the picker.** A drop zone on the field would first have to settle
+  which folder the dropped file lands in, and that is a separate decision; in the picker the
+  folder was chosen by eye.
+- **A file deleted from the library does not invalidate the value.** `url` comes back `null`, the
+  card draws as broken, and whoever is editing removes it. The alternative — a 422 under the
+  field — means one missing picture out of twenty stops the page being saved at all.
+- **`localized` is not supported** on these types, and says so rather than half working. The
+  captions inside a value translate, as they do for `wx-media`; a translatable list would mean a
+  different set of pictures per language, which is a decision about the entity, not the field.
 
 ## Talking to it directly
 

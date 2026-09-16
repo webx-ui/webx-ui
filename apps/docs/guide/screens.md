@@ -178,11 +178,22 @@ The core types, generated from the registry (a test fails when this table is sta
 
 <!-- types:end -->
 
-`wx-media` is `WxMediaField` from `module-media`, which registers it when installed (a module's
-`types` are merged into every panel screen, and so are `createAdmin({ types })`). `wx-blocks` is
-the constructor from `module-blocks`, the same way: on an entity's screen it is the tab that builds
-the content out of blocks, and inside a block's own schema it makes the type a container — see
-[Blocks](/guide/blocks).
+A module registers its own the same way — its `types` are merged into every panel screen, as are
+`createAdmin({ types })` — so these are here whenever the module is installed on both halves:
+
+| Type         | From            | Value                | The field                         |
+| ------------ | --------------- | -------------------- | --------------------------------- |
+| `wx-media`   | `module-media`  | `MediaValue \| null` | one picture in a frame            |
+| `wx-gallery` | `module-media`  | `MediaValue[]`       | a grid of thumbnails, in order    |
+| `wx-file`    | `module-media`  | `MediaValue \| null` | one file card: glyph, name, size  |
+| `wx-files`   | `module-media`  | `MediaValue[]`       | those cards a line each, in order |
+| `wx-blocks`  | `module-blocks` | a list of blocks     | the constructor                   |
+
+`MediaValue` is `{ path, alt?, title? }` — the key on the media disk and this entity's own words
+for it. The address is worked out on read rather than stored, and the same holds for a list; see
+[the file manager](/guide/media). `wx-blocks` is the constructor from `module-blocks`: on an
+entity's screen it is the tab that builds the content out of blocks, and inside a block's own
+schema it makes the type a container — see [Blocks](/guide/blocks).
 
 `wx-repeater` is the one type with a nested model: its value is a list of records, and its
 children are the fields of one of them, so a `name` inside it is a key of the item rather than a

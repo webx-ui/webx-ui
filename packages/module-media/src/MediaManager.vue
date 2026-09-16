@@ -18,6 +18,7 @@ import MediaToolbar from './MediaToolbar.vue'
 import MoveDialog from './MoveDialog.vue'
 import NameDialog from './NameDialog.vue'
 import { createMediaApi } from './api'
+import { readable } from './format'
 import { useMediaMessages } from './i18n'
 import type { MediaDirectory, MediaFile, MediaKind, MediaPage } from './types'
 
@@ -37,11 +38,21 @@ const props = withDefaults(
     picking?: boolean
     /** Only these kinds can be chosen, when picking. */
     accept?: MediaKind | null
+    /**
+     * A picker that takes several files at once.
+     *
+     * What this switches on is the selection the manager already has for its batch operations:
+     * the rubber band, the tap that toggles, the run held with shift. A picker with a way of
+     * marking files of its own would be a second thing to learn for the very same job.
+     */
+    multiple?: boolean
+    /** The most that may be held at once, when picking several. */
+    max?: number | null
   }>(),
-  { picking: false, accept: null },
+  { picking: false, accept: null, multiple: false, max: null },
 )
 
-const emit = defineEmits<{ pick: [file: MediaFile] }>()
+const emit = defineEmits<{ pick: [file: MediaFile]; selection: [files: MediaFile[]] }>()
 
 const admin = useAdmin()
 const api = createMediaApi(admin)
@@ -107,6 +118,30 @@ const rows = computed(() => page.value?.data ?? [])
 const canManage = computed(() => admin.can('media.manage'))
 const canUpload = computed(() => admin.can('media.upload') || canManage.value)
 const folder = computed(() => find(current.value))
+/** Picking one file is the one case the band is off for; the manager itself always has it. */
+const picksOne = computed(() => props.picking && !props.multiple)
+
+/**
+ * The limit belongs to the field, so the dialog keeps to it.
+ *
+ * Trimmed rather than refused: what the person sees is that the grid stops taking more, and the
+ * count under it says how far they have got. Finding out on save that a field takes ten is not
+ * a limit, it is a rejected form.
+ */
+watch(selected, (ids) => {
+  if (props.max !== null && props.max > 0 && ids.length > props.max) {
+    selected.value = ids.slice(0, props.max)
+
+    return
+  }
+
+  // In the order they are on screen, not the order they were clicked in: what comes back is a
+  // gallery, and its order is the one the person was looking at.
+  emit(
+    'selection',
+    rows.value.filter((file) => ids.includes(file.id)),
+  )
+})
 
 onMounted(load)
 
@@ -356,6 +391,18 @@ async function edit(file: MediaFile): Promise<void> {
   await loadFiles()
 }
 
+/**
+ * A double-click means "this one, now".
+ *
+ * While several are being picked it means nothing extra: the first click of it has already put
+ * the file in the selection, and the dialog ends on its own button instead.
+ */
+function open(file: MediaFile): void {
+  if (!props.multiple) {
+    emit('pick', file)
+  }
+}
+
 function find(id: number | null): MediaDirectory | null {
   const walk = (nodes: MediaDirectory[]): MediaDirectory | null => {
     for (const node of nodes) {
@@ -386,20 +433,6 @@ function countsOf(error: unknown): { files: number; directories: number } | null
 
 function messageOf(error: unknown): string | null {
   return (error as { message?: string })?.message ?? null
-}
-
-/** Bytes as somebody would say them: 32 MB, not 33 554 432. */
-function readable(bytes: number): string {
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  let size = bytes
-  let unit = 0
-
-  while (size >= 1024 && unit < units.length - 1) {
-    size /= 1024
-    unit++
-  }
-
-  return `${size >= 10 || unit === 0 ? Math.round(size) : size.toFixed(1)} ${units[unit]}`
 }
 
 function debounce(run: () => void, wait: number): () => void {
@@ -474,11 +507,11 @@ function debounce(run: () => void, wait: number): () => void {
         :files="rows"
         :api="api"
         :query="search"
-        :single="picking"
+        :single="picksOne"
         @rename="rename"
         @edit="edit"
         @remove="remove"
-        @open="(file) => emit('pick', file)"
+        @open="open"
       />
 
       <footer class="wx-media__status">
@@ -551,7 +584,7 @@ function debounce(run: () => void, wait: number): () => void {
   flex-direction: column;
   gap: var(--wx-space-8);
   min-height: 0;
-  border-right: 1px solid var(--wx-color-border);
+  border-right: 1px solid var(--wx-border-muted);
   padding-right: var(--wx-space-12);
 }
 
@@ -568,8 +601,8 @@ function debounce(run: () => void, wait: number): () => void {
   flex-wrap: wrap;
   gap: var(--wx-space-8);
   font-size: var(--wx-font-size-sm);
-  color: var(--wx-color-text-muted);
-  border-top: 1px solid var(--wx-color-border);
+  color: var(--wx-text-muted);
+  border-top: 1px solid var(--wx-border-muted);
   padding-top: var(--wx-space-6);
 }
 

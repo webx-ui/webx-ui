@@ -41,6 +41,29 @@ bytes and no "where used", and it is paid knowingly.
 `alt` and `title` are not stored here either: one image used by two articles needs two captions,
 so they belong to the entity that uses it, beside the reference.
 
+## Fields on a screen
+
+Four field types are registered for [described screens](https://webx-ui.github.io/webx-ui/guide/screens),
+matching the four the front end draws:
+
+| Type         | Stored                    | Read back as                   |
+| ------------ | ------------------------- | ------------------------------ |
+| `wx-media`   | `{ path, alt, title }`    | the same, plus the file's keys |
+| `wx-gallery` | a list of those, in order | a list, each resolved          |
+| `wx-file`    | `{ path, alt, title }`    | the same, plus the file's keys |
+| `wx-files`   | a list of those, in order | a list, each resolved          |
+
+**Only the key and the captions are stored.** The address never is — a library that moves to
+another disk would otherwise mean rewriting everything already saved. On read each value is
+resolved with `url` and `thumb`, `name`, `extension`, `mime`, `size`, and `width` and `height` for
+a picture: the whole set, because a Blade template has nothing to ask the library with, and
+`width` and `height` are what keep a page from jumping. Whole lists are looked up in one query.
+
+`props.accept` is checked against the row that is fetched for the resolve anyway, so a `.zip`
+cannot be posted into a gallery by hand. A key whose file has since been deleted is **kept**: it
+resolves to `url: null` and the field draws a broken card, because one missing picture out of
+twenty must not be the reason a page cannot be saved.
+
 ## API
 
 Everything lives under the panel's API path, behind the panel session and a permission.
