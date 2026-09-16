@@ -16,6 +16,7 @@ use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Rendering\TemplateCompiler;
 use WebxUi\Localization\Locales;
 use WebxUi\Localization\LocalizationServiceProvider;
+use WebxUi\Mcp\McpServiceProvider;
 use WebxUi\NestedSet\NestedSetServiceProvider;
 use WebxUi\Pages\Models\Page;
 use WebxUi\Pages\PagesServiceProvider;
@@ -37,6 +38,8 @@ abstract class TestCase extends Orchestra
             RoutingServiceProvider::class,
             AdminServiceProvider::class,
             AuthServiceProvider::class,
+            // The door an agent comes through; the section offers its tools to it (§13).
+            McpServiceProvider::class,
             BlocksServiceProvider::class,
             // A hard dependency since the SEO card arrived on the editor (§12): the tab is a
             // patch from that package, and `@webxSeo` in the page view is its directive.
