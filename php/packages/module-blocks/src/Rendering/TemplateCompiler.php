@@ -11,8 +11,12 @@ use WebxUi\Blocks\BlockType;
 /**
  * Blade from the database to PHP on disk.
  *
- * One file per version, named by slug and number, so nothing is ever invalidated: a new
- * version is a new file, and the old one keeps serving whatever still points at it.
+ * One file per version, named by slug, number and a hash of the template, so nothing is ever
+ * invalidated: a new version is a new file, and the old one keeps serving whatever still
+ * points at it. The hash is there because the number alone is not unique across databases:
+ * a test suite on an in-memory database and the developer's own site share one compiled
+ * directory, and each has a `hero` at version 1 with a different template — without the
+ * hash whichever compiled first served both, and the page printed the other site's block.
  * `view:cache` does not know these files, so the first request after a deploy compiles again —
  * and that is all it costs.
  */
@@ -27,7 +31,7 @@ final class TemplateCompiler
     /** The compiled file of a version, written on the first ask. */
     public function path(BlockType $type): string
     {
-        $path = $this->directory.'/'.$type->slug.'-'.$type->version.'.php';
+        $path = $this->directory.'/'.$type->slug.'-'.$type->version.'-'.substr(sha1($type->template), 0, 12).'.php';
 
         if (! $this->files->exists($path)) {
             $this->write($path, $type->template);

@@ -8,7 +8,10 @@ use Illuminate\Support\Facades\Exceptions;
 use Illuminate\Support\Facades\Log;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
+use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Facades\Blocks;
+use WebxUi\Blocks\Models\Block;
+use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\Rendering\TemplateCompiler;
 use WebxUi\Blocks\Tests\Fixtures\Page;
@@ -257,16 +260,34 @@ final class RenderingTest extends TestCase
         $block = $this->publish('hero', '<h1>one</h1>');
 
         $this->render([$this->node('hero')]);
-        $this->assertFileExists($compiler->directory().'/hero-1.php');
+        $one = $compiler->directory().'/hero-1-'.substr(sha1('<h1>one</h1>'), 0, 12).'.php';
+        $this->assertFileExists($one);
 
         $block->saveVersion(['template' => '<h1>two</h1>']);
         $block->publish();
         $this->assertSame('<h1>two</h1>', $this->render([$this->node('hero')]));
-        $this->assertFileExists($compiler->directory().'/hero-2.php');
+        $two = $compiler->directory().'/hero-2-'.substr(sha1('<h1>two</h1>'), 0, 12).'.php';
+        $this->assertFileExists($two);
 
         // The file is the cache: gone, it is written again from the template in the database.
-        unlink($compiler->directory().'/hero-2.php');
+        unlink($two);
         $this->assertSame('<h1>two</h1>', $this->render([$this->node('hero')]));
+    }
+
+    #[Test]
+    public function two_databases_sharing_the_directory_do_not_serve_each_other_s_templates(): void
+    {
+        // A test suite on an in-memory database and the developer's site compile into the same
+        // directory, and each has its own `hero` at version 1.
+        $this->publish('hero', '<h1>one</h1>');
+        $this->assertSame('<h1>one</h1>', $this->render([$this->node('hero')]));
+
+        Block::query()->delete();
+        BlockVersion::query()->delete();
+        $this->app->make(BlockTypes::class)->forget();
+
+        $this->publish('hero', '<h1>other</h1>');
+        $this->assertSame('<h1>other</h1>', $this->render([$this->node('hero')]));
     }
 
     #[Test]
