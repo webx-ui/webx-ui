@@ -85,12 +85,54 @@ trait HasNestedSet
 
         static::deleting(static function (self $node): void {
             $node->guardAgainstSoftDelete();
-            $node->deleteDescendants();
+
+            if (! $node->isDetached()) {
+                $node->deleteDescendants();
+            }
         });
 
         static::deleted(static function (self $node): void {
-            $node->closeGap($node->getLft(), $node->getNodeWidth());
+            // A detached node occupies no bounds, so there is no gap to close — and closing one
+            // at position 0 would slide the whole tree down by one.
+            if (! $node->isDetached()) {
+                $node->closeGap($node->getLft(), $node->getNodeWidth());
+            }
         });
+    }
+
+    /**
+     * Save the node without a place in the tree.
+     *
+     * A detached node has the bounds 0/0 — a position no placed node can have, since bounds
+     * start at 1 — so the columns stay what they are and no table needs altering. It is what
+     * "new page" creates: a draft that exists, has an id and can be previewed, but has not yet
+     * moved half the table's bounds to make room for itself. It joins the tree once, with
+     * `appendTo()`, `saveAsRoot()` or any other placement, when somebody decides where it goes.
+     *
+     * Detached nodes have no parent, no ancestors, no siblings and no descendants; `ordered()`
+     * and `roots()` leave them out, `fixTree()` and `checkTreeIntegrity()` skip them.
+     */
+    public function saveDetached(): bool
+    {
+        if ($this->exists && ! $this->isDetached()) {
+            throw NestedSetException::alreadyPlaced();
+        }
+
+        $this->setAttribute($this->getLftName(), 0);
+        $this->setAttribute($this->getRgtName(), 0);
+        $this->setAttribute($this->getDepthName(), 0);
+        $this->setAttribute($this->getParentIdName(), null);
+
+        return (bool) $this->save();
+    }
+
+    /**
+     * No bounds and no parent. A row with a parent and the bounds 0/0 is not detached but
+     * broken — an import that wrote `parent_id` and nothing else — and `fixTree()` repairs it.
+     */
+    public function isDetached(): bool
+    {
+        return $this->getRgt() === 0 && $this->getAttribute($this->getParentIdName()) === null;
     }
 
     public function getLft(): int
@@ -116,7 +158,7 @@ trait HasNestedSet
 
     public function isRoot(): bool
     {
-        return $this->getAttribute($this->getParentIdName()) === null;
+        return $this->getAttribute($this->getParentIdName()) === null && ! $this->isDetached();
     }
 
     public function isLeaf(): bool
@@ -169,8 +211,11 @@ trait HasNestedSet
     /** @return Builder<static> */
     public function siblings(): Builder
     {
+        // A detached node shares `parent_id = null` with the roots without being one of them:
+        // it has no siblings, and the roots are not made its siblings by the query below.
         return $this->newNestedSetQuery()
             ->where($this->getParentIdName(), $this->getAttribute($this->getParentIdName()))
+            ->where($this->getRgtName(), '>', $this->isDetached() ? PHP_INT_MAX : 0)
             ->whereKeyNot($this->getKey())
             ->orderBy($this->getLftName());
     }
@@ -189,12 +234,14 @@ trait HasNestedSet
     }
 
     /**
+     * The tree in preorder, detached nodes left out: they have no order to be in.
+     *
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
     public function scopeOrdered(Builder $query): Builder
     {
-        return $query->orderBy($this->getLftName());
+        return $query->where($this->getRgtName(), '>', 0)->orderBy($this->getLftName());
     }
 
     /**
@@ -203,7 +250,29 @@ trait HasNestedSet
      */
     public function scopeRoots(Builder $query): Builder
     {
-        return $query->whereNull($this->getParentIdName());
+        return $query->whereNull($this->getParentIdName())->where($this->getRgtName(), '>', 0);
+    }
+
+    /**
+     * The nodes that have a place in the tree.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopePlaced(Builder $query): Builder
+    {
+        return $query->where($this->getRgtName(), '>', 0);
+    }
+
+    /**
+     * The nodes saved with {@see saveDetached()} and not placed since.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeDetached(Builder $query): Builder
+    {
+        return $query->where($this->getRgtName(), 0);
     }
 
     /**
@@ -324,6 +393,9 @@ trait HasNestedSet
         }
 
         $nodes = $query
+            ->where(static fn (Builder $placed) => $placed
+                ->where($prototype->getRgtName(), '>', 0)
+                ->orWhereNotNull($prototype->getParentIdName()))
             ->orderBy($prototype->getLftName())
             ->orderBy($prototype->getKeyName())
             ->get();
@@ -396,7 +468,12 @@ trait HasNestedSet
             $query->where($column, $value);
         }
 
-        $nodes = $query->orderBy($prototype->getLftName())->get();
+        $nodes = $query
+            ->where(static fn (Builder $placed) => $placed
+                ->where($prototype->getRgtName(), '>', 0)
+                ->orWhereNotNull($prototype->getParentIdName()))
+            ->orderBy($prototype->getLftName())
+            ->get();
         $problems = [];
         $boundOwner = [];
         $byKey = [];
@@ -461,10 +538,16 @@ trait HasNestedSet
             throw NestedSetException::targetNotSaved();
         }
 
+        if ($target !== null && $target->isDetached()) {
+            throw NestedSetException::targetDetached();
+        }
+
         return (bool) $this->getConnection()->transaction(function () use ($target, $mode): bool {
             $target = $this->syncTarget($target);
 
-            return $this->exists
+            // A detached node that exists is still placed for the first time: there is no
+            // subtree to lift and no gap to close, only a row to give bounds to.
+            return $this->exists && ! $this->isDetached()
                 ? $this->moveNode($target, $mode)
                 : $this->insertNode($target, $mode);
         });

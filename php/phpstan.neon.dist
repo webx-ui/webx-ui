@@ -12,6 +12,8 @@ parameters:
         - packages/mcp/tests
         - packages/module-auth/src
         - packages/module-auth/tests
+        - packages/module-blocks/src
+        - packages/module-blocks/tests
         - packages/module-media/src
         - packages/module-media/tests
         - packages/module-seo/src

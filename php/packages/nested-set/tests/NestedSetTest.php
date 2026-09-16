@@ -216,7 +216,8 @@ final class NestedSetTest extends TestCase
     {
         $this->sampleTree();
 
-        DB::table('categories')->update(['lft' => 0, 'rgt' => 0, 'depth' => 0]);
+        // Scrambled rather than zeroed: a root with the bounds 0/0 is a detached node, not damage.
+        DB::table('categories')->update(['lft' => 9, 'rgt' => 9, 'depth' => 0]);
 
         $this->assertNotSame([], Category::checkTreeIntegrity());
         $this->assertSame(4, Category::fixTree());

@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace WebxUi\Admin;
 
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Console\InstallCommand;
 use WebxUi\Admin\Console\MakeModuleCommand;
 use WebxUi\Admin\Console\PanelCommand;
+use WebxUi\Admin\Console\PruneVersionsCommand;
 use WebxUi\Admin\Manifest\ManifestBuilder;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -74,6 +76,9 @@ class AdminServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-admin');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-admin');
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+
+        $this->registerDraftMacro();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -97,6 +102,29 @@ class AdminServiceProvider extends ServiceProvider
             InstallCommand::class,
             MakeModuleCommand::class,
             PanelCommand::class,
+            PruneVersionsCommand::class,
         ]);
+    }
+
+    /**
+     * `$table->draft()` — the two columns `HasDraft` reads: the draft itself and when the
+     * entity was last published — so a migration says what it adds rather than how.
+     */
+    private function registerDraftMacro(): void
+    {
+        if (! Blueprint::hasMacro('draft')) {
+            Blueprint::macro('draft', function (string $column = 'draft', string $publishedAt = 'published_at'): void {
+                /** @var Blueprint $this */
+                $this->json($column)->nullable();
+                $this->timestamp($publishedAt)->nullable();
+            });
+        }
+
+        if (! Blueprint::hasMacro('dropDraft')) {
+            Blueprint::macro('dropDraft', function (string $column = 'draft', string $publishedAt = 'published_at'): void {
+                /** @var Blueprint $this */
+                $this->dropColumn([$column, $publishedAt]);
+            });
+        }
     }
 }

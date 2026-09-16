@@ -85,4 +85,21 @@ return [
 
     'vite' => [],
 
+    /*
+    |---------------------------------------------------------------------------
+    | Versions
+    |---------------------------------------------------------------------------
+    |
+    | An entity with `HasVersions` keeps this many publications; the oldest go
+    | as new ones are written, pinned ones excepted. `autosaves` is the ring of
+    | draft copies kept beside the history as insurance, not as part of it.
+    | Lowering a limit after the fact is what `webx:versions:prune` is for.
+    |
+    */
+
+    'versions' => [
+        'limit' => 30,
+        'autosaves' => 5,
+    ],
+
 ];

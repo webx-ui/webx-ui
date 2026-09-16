@@ -12,6 +12,7 @@
             <directory>packages/localization/tests</directory>
             <directory>packages/mcp/tests</directory>
             <directory>packages/module-auth/tests</directory>
+            <directory>packages/module-blocks/tests</directory>
             <directory>packages/module-media/tests</directory>
             <directory>packages/module-seo/tests</directory>
             <directory>packages/module-settings/tests</directory>
@@ -25,6 +26,7 @@
             <directory>packages/localization/src</directory>
             <directory>packages/mcp/src</directory>
             <directory>packages/module-auth/src</directory>
+            <directory>packages/module-blocks/src</directory>
             <directory>packages/module-media/src</directory>
             <directory>packages/module-seo/src</directory>
             <directory>packages/module-settings/src</directory>

@@ -14,6 +14,11 @@ use WebxUi\Mcp\Exceptions\McpException;
  * because the difference between the two is the whole safety story: a mutating tool is given
  * a `dry_run` argument whether its author remembered one or not, and carries a scope that a
  * token has to hold.
+ *
+ * The handler is `fn (array $arguments, ?Authenticatable $user = null)`: the arguments as the
+ * agent sent them, and the administrator the call acts as — null on the local stdio server,
+ * where there is no request. A handler that declares one parameter is fine; a refusal the
+ * agent should read is a thrown {@see Exceptions\ToolFailure}.
  */
 final class Tool
 {

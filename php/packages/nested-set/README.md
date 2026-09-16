@@ -83,6 +83,26 @@ $phones->saveAsRoot();      // lift a whole branch out to the top level
 The same calls move a node that already exists, subtree and all. Each one runs in a transaction;
 moving a node into its own subtree throws `NestedSetException`.
 
+## Detached nodes
+
+A node can exist before anybody has decided where it goes:
+
+```php
+$draft = new Page(['name' => 'Untitled']);
+$draft->saveDetached();     // saved, has an id, is in no tree
+
+$draft->isDetached();       // true
+$draft->appendTo($parent);  // joins the tree now, as an insert
+```
+
+This is what "new page" creates — a draft that can be previewed and autosaved without moving
+half the table's bounds to make room for a record that may be thrown away. A detached node has
+the bounds 0/0, which no placed node can have, so the columns stay what they are. It has no
+parent, ancestors, siblings or descendants; `ordered()`, `roots()`, `fixTree()` and
+`checkTreeIntegrity()` leave it alone; `Page::query()->detached()` lists them and `placed()`
+the rest. Nothing can be placed relative to a detached node, and a placed node cannot be
+detached again.
+
 ## Reading
 
 ```php

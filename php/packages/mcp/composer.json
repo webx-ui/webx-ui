@@ -25,14 +25,12 @@
         "illuminate/console": "^13.0",
         "illuminate/contracts": "^13.0",
         "illuminate/support": "^13.0",
+        "laravel/mcp": "^1.0",
         "webx-ui/module-admin": "^0.15.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0"
-    },
-    "suggest": {
-        "laravel/mcp": "Serves the collected tools over Streamable HTTP once its API settles at 1.0."
     },
     "autoload": {
         "psr-4": {
