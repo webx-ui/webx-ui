@@ -1,5 +1,130 @@
 # @webx-ui/php
 
+## 0.18.0
+
+### Minor Changes
+
+- 22130c0: An agent changes part of a page without sending the page. `blocks_edit_content` takes operations
+  by key — `set`, `add`, `move`, `remove`, the same vocabulary screen patches use — so changing one
+  heading no longer means reading the whole tree and writing it back, which cost the page twice and
+  quietly dropped whatever an editor had done in between. `set` merges field by field, and `locale`
+  writes one language of a localized field rather than replacing the map with a string; a localized
+  field refuses a bare value, and a plain field refuses a `locale`. Reading is cheaper too:
+  `blocks_get_content` answers with the map of the page under `outline`, with one node under `key`,
+  and always with a `revision` — a short hash of the content, which both writing tools accept and
+  refuse to write over when the entity has changed since. The tree is edited by `ContentEdit`, pure
+  functions the panel can use as well. `media_*` now report a file's `path` beside its `url`: a media
+  field stores the key, so an agent that could only see the address had nothing to write into the
+  field it belongs in.
+- 2c2c2ba: The page editor: `pages.form` as a described screen, and the screen that saves it.
+
+  `webx-ui/module-pages` registers `pages.form` — four tabs, Content · Settings · SEO · History —
+  so the SEO card can arrive as a patch rather than as a fork of the editor. `GET /api/cms/pages/{id}`
+  now answers with the values of that screen, the trail above the page, a signed preview link and a
+  `revision`; `PUT` takes the values back through `ScreenValues`, so what the tree does not name is
+  dropped and a 422 lands under the field it is about. The `revision` is a short hash of the
+  content, the way `module-blocks` computes one: a save that names a revision that is no longer the
+  current one is refused with a 409 carrying the page as it now is and who wrote it, and two people
+  who saved the same thing are not a conflict. `GET .../versions` lists the publications with their
+  author and source, and `POST .../versions/{n}/restore` makes an old one the draft — publishing it
+  stays the separate step it always was.
+
+  `@webx-ui/module-pages` draws it. The head stays put: the trail through the tree, the page's state,
+  the preview link and the two buttons, folded into a menu on a narrow panel. Saving is by autosave —
+  a pause after the last keystroke and the moment a field is left — with an explicit button beside a
+  chip that says saved · saving · not saved yet, and a guard that flushes the pause on the way out
+  and only asks when the save did not go through. The parts of the screen that are not fields are
+  node types of their own: `wx-page-place` prints the whole address the page answers at and moves it
+  in the tree, `wx-page-danger` takes it off the site or into the bin, `wx-page-history` is the
+  history.
+
+  `@webx-ui/module-blocks`: `wx-blocks` takes a `fill` prop — be as tall as what it is drawn in and
+  let the tree, the form and the preview scroll each in itself. Without it the constructor sizes
+  itself to its content, and a page made of twenty blocks scrolls the editor's head off the top of
+  the screen along with it.
+
+  `@webx-ui/core`: a screen that fills its column says so with `data-wx-fill`, and `WxMain` stops
+  growing with it. A percentage height inside a scrolling column resolves against nothing while the
+  column is as tall as its own content, and a screen cannot reach its own ancestors any other way.
+
+- 2c2c2ba: A page says something about itself. `webx-ui/module-seo` grows the half it had deliberately left
+  out: `seo_meta`, one translated row per entity; the `HasSeo` trait, which is the whole of what a
+  content module has to write (`$page->seoValue()`, `$page->saveSeo()`, `$page->seoData($locale)`);
+  and `EntitySource` at priority 50, between the rules an editor wrote for an address and the
+  defaults the site falls back on — a rule was written because a page was wrong, so it wins; the
+  defaults are what is said when nothing was said, so they lose. `wx-seo` is now a field type on the
+  server as well, so the card can be dropped onto any entity's screen by a patch, and
+  `webx-ui/module-pages` gets it that way: the SEO tab of the page editor is filled in by the SEO
+  module rather than described by the pages one. What the card holds is saved the moment it is
+  saved, on a published page and on an unpublished one alike — it never goes into the draft, because
+  a description that only reaches search engines at the next publication is the kind of thing an
+  editor finds out about from a search engine. An emptied card deletes its row instead of keeping
+  one full of blanks, which is what lets the site's defaults back through.
+- 2c2c2ba: Agents get the pages of a site. `webx-ui/module-pages` offers nine tools — `pages_tree`,
+  `pages_get`, `pages_create`, `pages_update`, `pages_move`, `pages_publish`, `pages_unpublish`,
+  `pages_delete`, `pages_restore` — through the same doors the panel uses: `PageForm` decides what
+  a page's values are and checks them against the described screen, so a field another module put
+  on `pages.form` is writable here by having done nothing, and the `revision` that answers a
+  panel's 409 refuses an agent's stale write with the same sentence. Where a page may go is now
+  `Placement`, one class the move endpoint and the move tool both ask, rather than two copies of
+  the three rules that keep the home page where it is.
+
+  A page is named by its id or by its address — `"/catalog/shoes"`, and `"/"` for the home page —
+  because that is what a site is talked about in; text fields answer with every language at once,
+  since an agent that got one title has no way of knowing whether the others exist. Content does
+  not travel through any of this: a `blocks` key sent to `pages_update` is refused with the name of
+  the tool that does it (`blocks_edit_content`, §13.1), rather than accepted and dropped. The new
+  resource `pages://sitemap` is the map to read first — the tree nested the way it is nested, each
+  page with its address per language and its status — and the prompt `build_page` puts the loop in
+  front of an agent that was asked for a page: read the map and the block catalogue, create, fill
+  with blocks, look at the preview, write the SEO card, and leave it a draft for a person.
+
+  `webx-ui/mcp` raises the page size of `tools/list` from fifteen to a hundred. Six modules now
+  offer more than forty tools between them, and a client that does not follow the cursor was seeing
+  a third of them and concluding the rest did not exist.
+
+- 2c2c2ba: `webx-ui/module-pages`: the tree of pages, the home page as its root, and the addresses.
+
+  A new Composer package. Pages are a nested set with translatable `title` and `slug`, content
+  made of blocks, a draft and a history — almost all of it from packages that already existed.
+  What the package adds is the rules that are about pages: the home page is the root, is always
+  there, and cannot be moved, deleted or given an address of its own; there is only ever one of
+  it; and deleting a page trashes its whole branch, one node at a time, so that every address in
+  it is released and a restore brings back exactly what went down together.
+
+  `webx-ui/nested-set` learns soft deletes, by opt-in: a model that says `softDeletesInTree()`
+  keeps its trashed nodes standing in the tree instead of being refused the delete, and takes
+  charge of what happens to their descendants. Without it, the delete is still refused — a node
+  that vanishes while its bounds are reclaimed leaves its children outside their parent.
+
+  `webx-ui/routing` learns that an entity may have no address in a language at all:
+  `HasUrl::hasUrlIn()` answers yes for everything unless a model says otherwise, and a language it
+  says no to gets no row in the registry and loses the one it had. Syncing also stopped writing
+  the slug it read back into the entity, which quietly filled in languages the editor had left
+  empty; `webx:routes:check` no longer reports those languages as missing addresses.
+
+- 2c2c2ba: The pages section: the tree of a site's pages, and the panel API behind it.
+
+  `@webx-ui/module-pages` is a new npm package — the front end of the section. The list is a table
+  tree read a level at a time: the home page is pinned at the top and its children are the top
+  level, because everything on the site is inside it and a branch drawn for that would give every
+  row a step of indentation that says nothing. Children arrive when a branch is opened, searching
+  puts the tree away and answers with a flat list of matches and their addresses, and the bin is a
+  filter rather than a section of its own. A page is moved by dragging it or through “Move…” and a
+  tree of pages — the one that works on a touch screen and in a catalogue where the page and its
+  new parent are four screens apart — and either way the section says out loud how many addresses
+  the move rewrote, because an editor should not hear about a thousand redirects from a search
+  engine. Row actions: open, add a page inside, duplicate, move, copy the address, open on the
+  site, delete; in the bin, restore.
+
+  `webx-ui/module-pages` gains the section and the endpoints under `/api/cms/pages`: the level of
+  the tree with `can` and `children_count` on every row, create, save the draft, move, duplicate,
+  publish, unpublish, delete into the bin with the branch, and restore. A page's title comes from
+  its draft and its address from the registry, so a page renamed and not yet published shows its
+  new name beside the address the site is still serving. Its refusals — the home page cannot be
+  moved or deleted, a page cannot be dropped into its own branch, nothing stands beside the home
+  page — answer as a 422 under the field they are about, the same way a taken address does.
+
 ## 0.17.0
 
 ### Minor Changes
