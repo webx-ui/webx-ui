@@ -4,9 +4,9 @@
 addresses went, and what it says about itself. Its other half, `webx-ui/module-seo` on the server,
 is what actually prints that into a `<head>` — this page is both, because neither is useful alone.
 
-What the module owns is SEO with no entity behind it: rules written for addresses, redirects, and
-the site-wide defaults. SEO that belongs to an entity — a page, an article, a product — arrives
-with the first content module as one more source; nothing here changes when it does.
+What the module owns is everything a page can say about itself: rules written for addresses, the
+fields of an entity that carries `HasSeo`, the site-wide defaults, and the redirects. Each of
+those is a source, asked in order and merged field by field.
 
 ## The section
 
@@ -37,7 +37,7 @@ instead is how one rule wipes out half a page's markup and the engine looks brok
 | Priority | Source           | Reads                                        |
 | -------- | ---------------- | -------------------------------------------- |
 | 100      | `UrlRuleSource`  | `seo_urls` — the rules written for addresses |
-| 50       | _entity_         | reserved for `HasSeo`                        |
+| 50       | `EntitySource`   | `seo_meta` — what the page's entity says     |
 | 10       | `DefaultsSource` | `settings('seo.*')`                          |
 
 A project adds its own from a provider:
@@ -70,7 +70,7 @@ Answer with the fields you know and leave the rest null. Whatever stands below f
 </head>
 ```
 
-With an entity to name — once there is a source that answers about one:
+With an entity to name:
 
 ```blade
 @webxSeo($page)
@@ -203,13 +203,14 @@ The text fields are language maps and grow the same chip every localized field i
 `og_image` is not one: there are no per-language pictures anywhere in the panel yet, and a column
 that already holds an object would read `path` as a language code the day one was added.
 
-So an entity's form gets the whole card from a patch, once the entity has somewhere to keep it:
+An entity's form gets the whole card from a patch, laid over the screen the content module
+described:
 
 ```json
 {
-  "op": "add",
-  "target": "sidebar",
-  "node": { "id": "seo", "type": "wx-seo", "name": "seo", "label": "SEO" }
+  "op": "replace",
+  "target": "seo-placeholder",
+  "node": { "id": "seo-fields", "type": "wx-seo", "name": "seo" }
 }
 ```
 
@@ -217,6 +218,37 @@ The counters beside the title and the description are **soft**. Long is not wron
 shorten what they shorten — so nothing refuses a longer line; `webx-seo.trim` makes the server cut
 to them, and it is off by default because cutting an editor's title behind their back reads as a
 bug.
+
+## An entity that speaks for itself
+
+A content module gives its model one trait and it has somewhere to keep that value:
+
+```php
+use WebxUi\Seo\HasSeo;
+
+class Page extends Model
+{
+    use HasSeo;
+}
+```
+
+The fields live in `seo_meta`, one row per entity, translated the way everything else in the
+panel is. The trait reads and writes them:
+
+```php
+$page->seoValue();       // the card's value: every language of every field
+$page->saveSeo($value);  // write it back — an empty value removes the row
+$page->seoData('en');    // what the page contributes to its own <head>, or null
+```
+
+An entity nobody has written anything for has **no row**, and `EntitySource` then contributes
+nothing, which is what lets the site's defaults through. That is the whole reason an emptied card
+deletes the row instead of keeping one full of blanks: "nothing written here" and "everything
+written here is blank" look the same to an editor and mean opposite things to the merge.
+
+Where the value goes once the form has checked it is the host screen's business. The page editor
+keeps it out of the draft on purpose — a description that only reaches search engines at the next
+publication is the kind of thing an editor finds out about from a search engine.
 
 ## Structured data
 

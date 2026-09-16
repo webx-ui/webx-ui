@@ -3,10 +3,10 @@
 SEO as a section of the [WebX UI](https://github.com/webx-ui/webx-ui) admin panel, and the
 `<head>` the public side prints from it.
 
-What it owns is SEO with no entity behind it: rules written for addresses, addresses that have
-moved, and what the site says about itself when nothing more specific does. SEO that belongs to
-an entity — the `HasSeo` trait and the `seo_meta` table — arrives with the first content module;
-the resolver is built so that adding it is one more source rather than a change here.
+What it owns is everything a page can say about itself: the rules written for addresses, the
+fields of one entity (`HasSeo` and `seo_meta`), what the site says when nothing more specific
+does, and the addresses that have moved. Each of those is a source, asked in order and merged
+field by field, so a project adds one of its own without touching the resolver.
 
 ## Requirements
 
@@ -52,7 +52,7 @@ but a title keeps the description and the picture that came from below it.
 | Priority | Source           | Reads                                        |
 | -------- | ---------------- | -------------------------------------------- |
 | 100      | `UrlRuleSource`  | `seo_urls` — the rules written for addresses |
-| 50       | _entity_         | reserved for `HasSeo`                        |
+| 50       | `EntitySource`   | `seo_meta` — what the page's entity says     |
 | 10       | `DefaultsSource` | `settings('seo.*')`                          |
 
 A project adds its own by implementing `SeoSource` and registering it:
@@ -60,6 +60,22 @@ A project adds its own by implementing `SeoSource` and registering it:
 ```php
 app(SeoSources::class)->register(new MySource);
 ```
+
+## An entity that speaks for itself
+
+```php
+use WebxUi\Seo\HasSeo;
+
+class Page extends Model
+{
+    use HasSeo;
+}
+```
+
+One row of `seo_meta` per entity, translated. `$page->seoValue()` and `$page->saveSeo()` read
+and write it, `$page->seoData($locale)` is what it contributes to the `<head>`. An entity with
+no row contributes nothing, which is what lets the site's defaults through. The card itself is
+one node of type `wx-seo`, put on the entity's screen by a patch.
 
 ## Matching an address
 

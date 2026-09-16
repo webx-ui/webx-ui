@@ -80,13 +80,15 @@ return [
     | the rest alone: a rule that fills in only a title does not wipe out the
     | description that came from the defaults below it.
     |
-    | An entity source sits at 50 — the number is kept free on purpose, and
-    | `HasSeo` will register there when the first content module arrives.
+    | The entity sits between the two: a rule was written because a page was
+    | wrong, so it wins; the defaults are what is said when nothing was said,
+    | so they lose.
     |
     */
 
     'sources' => [
         'urls' => 100,
+        'entities' => 50,
         'defaults' => 10,
     ],
 

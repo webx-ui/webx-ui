@@ -20,6 +20,8 @@ use WebxUi\NestedSet\NestedSetServiceProvider;
 use WebxUi\Pages\Models\Page;
 use WebxUi\Pages\PagesServiceProvider;
 use WebxUi\Routing\RoutingServiceProvider;
+use WebxUi\Seo\SeoServiceProvider;
+use WebxUi\Settings\SettingsServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -36,6 +38,10 @@ abstract class TestCase extends Orchestra
             AdminServiceProvider::class,
             AuthServiceProvider::class,
             BlocksServiceProvider::class,
+            // A hard dependency since the SEO card arrived on the editor (§12): the tab is a
+            // patch from that package, and `@webxSeo` in the page view is its directive.
+            SettingsServiceProvider::class,
+            SeoServiceProvider::class,
             PagesServiceProvider::class,
         ];
     }
@@ -49,6 +55,9 @@ abstract class TestCase extends Orchestra
         $app['config']->set('app.url', 'https://example.test');
         $app['config']->set('webx-localization.locales', [['code' => 'en', 'default' => true]]);
         $app['config']->set('webx-localization.cache.enabled', false);
+        // The compiled rule list would otherwise outlive a test that writes a rule and then
+        // asks for the page it is about.
+        $app['config']->set('webx-seo.cache.enabled', false);
     }
 
     protected function defineDatabaseMigrations(): void
