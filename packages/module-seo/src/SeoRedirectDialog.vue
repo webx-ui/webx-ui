@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import {
   toast,
   useModal,
@@ -27,6 +27,8 @@ const api = createSeoApi(context)
 useSeoMessages()
 
 const t = useTranslate('webx-seo')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 const saving = ref(false)
 const errors = ref<Record<string, string[]>>({})
@@ -123,7 +125,7 @@ async function save(): Promise<void> {
       errors.value = body.errors
       toast.danger(t('page.failed'))
     } else {
-      toast.danger(body?.message ?? t('page.failed'))
+      toast.danger(message(error, t('page.failed')))
     }
   } finally {
     saving.value = false

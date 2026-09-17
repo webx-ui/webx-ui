@@ -9,7 +9,7 @@ return [
     'done' => 'Gotowe',
     'remove' => 'Usuń',
     'remove-title' => 'Usunąć „:title”?',
-    'remove-text' => 'Bloki w środku odchodzą razem z nim.',
+    'remove-text' => 'Razem z nim odejdzie :count bloków w środku.',
     'duplicate' => 'Duplikuj',
     'empty' => 'Nie ma jeszcze bloków. Dodaj pierwszy.',
     'nested-note' => 'Zagnieżdżone bloki edytuje się w drzewie po lewej.',

@@ -47,6 +47,7 @@ return [
     'move-title' => 'Move “:title”',
     'move-help' => 'Pick the page it goes inside. Everything under it moves too, and their addresses change with it.',
     'move-confirm' => 'Move',
+    'move-branch' => ':count addresses change — the page and everything inside it. The old ones will redirect to the new ones.',
     'moved' => 'Moved. :count addresses changed; the old ones now redirect to the new ones.',
     'moved-one' => 'Moved. The address changed; the old one now redirects to it.',
 
@@ -55,6 +56,10 @@ return [
     'delete-branch' => 'The :count pages inside it go with it.',
     'deleted' => 'The page is in the bin.',
     'restored' => 'The page is back.',
+    'restore-page-title' => 'Bring “:title” back?',
+    'restore-page-text' => 'The page leaves the bin and takes its address back. One that was on the site answers again.',
+    'restore-branch' => 'The :count pages that went in with it come back too.',
+    'restored-branch' => ':count pages are back.',
 
     'copy-of' => ':title (copy)',
     'duplicated' => 'The copy is ready, and it is not on the site.',
@@ -69,6 +74,9 @@ return [
     'save' => 'Save',
     'save-failed' => 'The page was not saved.',
     'publish' => 'Publish',
+    'publish-title' => 'Put “:title” on the site?',
+    'publish-text' => 'It answers at :address from the moment you do, for everyone.',
+    'publish-text-nowhere' => 'It starts answering on the site from the moment you do, for everyone.',
     'published' => 'The page is on the site.',
     'preview' => 'Preview',
     'more' => 'More',

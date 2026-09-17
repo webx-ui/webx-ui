@@ -50,6 +50,7 @@ const props = withDefaults(defineProps<TableProps<T>>(), {
   stripe: false,
   bordered: false,
   hover: true,
+  clickable: undefined,
   size: 'md',
   selectable: false,
   selectableIf: undefined,
@@ -355,9 +356,28 @@ const hasHeader = computed<boolean>(() =>
  *
  * Read off the vnode rather than taken as a prop: the caller already says it by listening, and
  * a second way to say the same thing is a second thing to get wrong.
+ *
+ * Except when the answer changes while the table is on screen. `instance.vnode` is not
+ * reactive, so the inference runs once, at the first render, and a list that swaps its rows for
+ * ones that lead nowhere — a bin, an archive — would keep the pointer and the highlight it no
+ * longer earns. Such a list says so with the prop instead.
  */
 const instance = getCurrentInstance()
-const clickable = computed(() => Boolean(instance?.vnode.props?.onRowClick))
+const clickable = computed(() => props.clickable ?? Boolean(instance?.vnode.props?.onRowClick))
+
+/**
+ * A row leads somewhere, or it does not lead anywhere at all.
+ *
+ * Only an explicit `false` stops it, and then it stops everything: a row that looked inert and
+ * still opened something would be the same lie as one that looked clickable and did nothing
+ * (§13). The inference above is about how a row looks — a table nobody happens to be listening
+ * to has withdrawn no promise, and its click is emitted into the air as it always was.
+ */
+function onRowClick(row: T, index: number, event: MouseEvent): void {
+  if (props.clickable === false) return
+
+  emit('row-click', row, index, event)
+}
 
 const asCards = computed(
   () => props.cardsBelow > 0 && width.value > 0 && width.value < props.cardsBelow,
@@ -835,7 +855,7 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
         :key="keyOf(row, index)"
         class="wx-table__card"
         :class="[rowClass?.(row, index), { 'is-selected': selectable && isSelected(row, index) }]"
-        @click="emit('row-click', row, index, $event)"
+        @click="onRowClick(row, index, $event)"
       >
         <!-- The checkbox where a list puts one, the actions where a thumb reaches them. -->
         <div v-if="selectable || $slots['card-actions']" class="wx-table__card-top" @click.stop>
@@ -978,7 +998,7 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
                 },
               ]"
               :draggable="treeAt(index) ? canDragRow(treeAt(index)!) : undefined"
-              @click="emit('row-click', row, index, $event)"
+              @click="onRowClick(row, index, $event)"
               @dragstart="treeAt(index) && onRowDragStart(treeAt(index)!, $event)"
               @dragover="treeAt(index) && onRowDragOver(treeAt(index)!, $event)"
               @drop.prevent="treeAt(index) && onRowDrop(treeAt(index)!)"

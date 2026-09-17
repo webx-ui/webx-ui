@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useAdmin, useTranslate, WxRowMenu, type RowAction } from '@webx-ui/module-admin'
+import {
+  useAdmin,
+  useErrorText,
+  useTranslate,
+  WxRowMenu,
+  type RowAction,
+} from '@webx-ui/module-admin'
 import {
   confirm,
   createModal,
@@ -32,6 +38,8 @@ const api = createSeoApi(context)
 useSeoMessages()
 
 const t = useTranslate('webx-seo')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 const page = ref<SeoPage<SeoRedirect> | null>(null)
 const loading = ref(false)
@@ -88,6 +96,11 @@ async function load(state: TableState): Promise<void> {
   }
 }
 
+/**
+ * Opening a redirect is editing it, so a reader who may not manage these has nowhere to go: the
+ * table is told so (`:clickable="canManage"`) and withholds the pointer, the highlight and the
+ * click together, rather than promising a dialog that would not open (§13).
+ */
 async function open(redirect: SeoRedirect | null): Promise<void> {
   const saved = await edit({ redirect })
 
@@ -110,7 +123,7 @@ async function remove(redirect: SeoRedirect): Promise<void> {
     toast.success(t('page.deleted'))
     void load(last)
   } catch (error) {
-    toast.danger((error as { body?: { message?: string } }).body?.message ?? String(error))
+    toast.danger(message(error))
   }
 }
 </script>
@@ -128,13 +141,14 @@ async function remove(redirect: SeoRedirect): Promise<void> {
       :columns="columns"
       row-key="id"
       searchable
-      hover
+      :clickable="canManage"
+      :hover="canManage"
       flush
       :loading="loading"
       :search-placeholder="t('page.search-redirects')"
       :empty-text="t('page.empty')"
+      @row-click="open"
       @state-change="load"
-      @row-click="canManage ? open($event) : undefined"
     >
       <template #cell-pattern="{ row }">
         <wx-text mono size="sm">{{ row.pattern }}</wx-text>

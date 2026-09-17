@@ -9,8 +9,8 @@ import {
   ref,
   watch,
 } from 'vue'
-import { adminKey, useTranslate, type AdminContext } from '@webx-ui/module-admin'
-import { createModal, toast, WxButton, WxText } from '@webx-ui/core'
+import { adminKey, useErrorText, useTranslate, type AdminContext } from '@webx-ui/module-admin'
+import { confirm, createModal, toast, WxButton, WxText } from '@webx-ui/core'
 import {
   coreTypes,
   WxScreenRenderer,
@@ -24,6 +24,7 @@ import BlocksPreview from './BlocksPreview.vue'
 import BlocksTree from './BlocksTree.vue'
 import {
   cloneNode,
+  countInside,
   insertNode,
   locate,
   makeNode,
@@ -100,6 +101,8 @@ provide(blocksRootKey, true)
 
 useBlocksMessages()
 const t = useTranslate('webx-blocks')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 /* The panel, when there is one. A demo page has none, and gets by on the catalog prop —
    which is why this is `inject` and not `useAdmin()`: that throws outside a panel, and a
@@ -212,7 +215,33 @@ function structuredSample(type: BlockType): Record<string, unknown> {
   return values
 }
 
-function remove(key: string): void {
+/**
+ * A block on its own goes without a question — it is one row in a tree that is right there, and
+ * the draft keeps a version of what it was. A container is asked about, because what leaves
+ * with it is not on screen: collapse a section and its twelve blocks are one row (§14.2).
+ */
+async function remove(key: string): Promise<void> {
+  const found = locate(tree.value, key)
+
+  if (!found) return
+
+  const inside = countInside(found.node)
+
+  if (inside > 0) {
+    const agreed = await confirm({
+      title: t('field.remove-title', {
+        title:
+          catalog.value.find((type) => type.slug === found.node.type)?.title ?? found.node.type,
+      }),
+      message: t('field.remove-text', { count: inside }),
+      confirmText: t('field.remove'),
+      cancelText: t('page.cancel'),
+      tone: 'danger',
+    })
+
+    if (!agreed) return
+  }
+
   if (selectedKey.value === key) selectedKey.value = null
   set(removeNode(tree.value, key))
 }
@@ -285,7 +314,7 @@ onMounted(async () => {
     try {
       loaded.value = await api.catalog()
     } catch (error) {
-      toast.danger((error as { body?: { message?: string } }).body?.message ?? String(error))
+      toast.danger(message(error))
     }
   } else if (admin) {
     api = createBlocksApi(admin)
