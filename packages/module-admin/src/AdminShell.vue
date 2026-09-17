@@ -35,6 +35,14 @@ const { width, layout, collapsed, showAside, drawerOpen, toggle, close } = useRe
 const title = computed(() => admin.state.manifest?.title ?? '')
 
 /*
+ * The client's logo, when the settings hold one. The name never leaves: it is the alt of the
+ * picture, what stands in the corner until the picture arrives, and what stands there for good
+ * if the file behind it is gone.
+ */
+const logo = computed(() => admin.state.manifest?.branding?.logo ?? null)
+const mark = computed(() => admin.state.manifest?.branding?.mark ?? null)
+
+/*
  * The step the frame is spaced by — 8 on a phone, 12 on a tablet, 16 on a desktop — follows the
  * size of the screen and not the shape the menu is in. A sidebar somebody collapsed by hand on a
  * 1440px desktop is still a desktop, and air measured off the menu would shrink with it.
@@ -81,7 +89,15 @@ const size = computed(() => shellLayoutFor(width.value, null))
         <wx-action icon="menu" :title="t('nav.menu')" @click="toggle" />
 
         <slot name="brand">
-          <wx-text weight="semibold" truncate>{{ title }}</wx-text>
+          <img
+            v-if="logo"
+            class="wx-admin__logo"
+            :src="logo.url"
+            :alt="title"
+            :width="logo.width ?? undefined"
+            :height="logo.height ?? undefined"
+          />
+          <wx-text v-else weight="semibold" truncate>{{ title }}</wx-text>
         </slot>
 
         <template #end>
@@ -101,14 +117,28 @@ const size = computed(() => shellLayoutFor(width.value, null))
         :collapsed-width="56"
       >
         <template #top>
-          <div class="wx-admin__brand">
+          <div class="wx-admin__brand" :class="{ 'wx-admin__brand--stacked': collapsed && mark }">
             <!--
               The rail has no room for a name, and the button is the one thing on it that
-              has to stay: without it there is no way back to the full sidebar.
+              has to stay: without it there is no way back to the full sidebar. A mark fits
+              there, but not beside the button — 56px holds one of them at a time, so the two
+              stand one above the other.
             -->
             <slot v-if="!collapsed" name="brand">
-              <wx-text weight="semibold" truncate class="wx-admin__title">{{ title }}</wx-text>
+              <img
+                v-if="logo"
+                class="wx-admin__logo"
+                :src="logo.url"
+                :alt="title"
+                :width="logo.width ?? undefined"
+                :height="logo.height ?? undefined"
+              />
+              <wx-text v-else weight="semibold" truncate class="wx-admin__title">
+                {{ title }}
+              </wx-text>
             </slot>
+
+            <img v-else-if="mark" class="wx-admin__mark" :src="mark.url" :alt="title" />
 
             <wx-action
               icon="sidebar"
@@ -222,9 +252,40 @@ const size = computed(() => shellLayoutFor(width.value, null))
   padding-inline: var(--wx-space-4);
 }
 
+.wx-admin__brand--stacked {
+  flex-direction: column;
+  gap: var(--wx-space-4);
+}
+
 .wx-admin__title {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/*
+ * The logo is given a height and takes whatever width that leaves it: a client's file can be
+ * any shape, and the one measurement the corner can promise is how tall a brand is allowed to
+ * be.
+ *
+ * `min-width: 0` is what actually holds a wide one in. A picture in a flex row refuses to go
+ * below its natural width, and `max-width: 100%` is measured before the button beside it is
+ * placed — so a 1600px wordmark took the whole sidebar and pushed the button for collapsing
+ * it 15px outside the panel. Measured, not guessed.
+ */
+.wx-admin__logo {
+  flex: 0 1 auto;
+  min-width: 0;
+  height: 28px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.wx-admin__mark {
+  height: 24px;
+  width: 24px;
+  object-fit: contain;
 }
 
 .wx-admin__user {
