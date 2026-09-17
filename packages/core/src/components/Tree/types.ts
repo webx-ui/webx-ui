@@ -83,7 +83,7 @@ export interface TreeProps<T = TreeNode> {
   filter?: string
   /** Draws the guide lines that connect a child to its parent. */
   showLines?: boolean
-  /** How far one level sits from the next, in pixels. */
+  /** How far one level sits from the next, in pixels — the guide line included. */
   indent?: number
   size?: TreeSize
   /** Shown when there is nothing to draw. */

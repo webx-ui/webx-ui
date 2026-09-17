@@ -40,6 +40,10 @@ const CODE = PAGE + '<path d="m10.5 13.3-2 2 2 2M13.5 13.3l2 2-2 2"/>'
 /** A serif A, as close as a stroke gets to a specimen. */
 const FONT = PAGE + '<path d="M9.6 18l2.4-5.4 2.4 5.4M10.5 16.2h3"/>'
 
+/** The folder, drawn once: `folder-move` is this shape with an arrow going into it. */
+const FOLDER =
+  '<path d="M3.5 7a2 2 0 0 1 2-2h3.2a2 2 0 0 1 1.5.7l1.3 1.5h7a2 2 0 0 1 2 2v8.3a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>'
+
 /**
  * The built-in icon set.
  *
@@ -116,8 +120,13 @@ export const builtinIcons = {
     '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
   home: '<path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15V14H9v6.5H5.5A1.5 1.5 0 0 1 4 19Z"/>',
   file: '<path d="M13.5 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9zm0 0V9H19"/>',
-  folder:
-    '<path d="M3.5 7a2 2 0 0 1 2-2h3.2a2 2 0 0 1 1.5.7l1.3 1.5h7a2 2 0 0 1 2 2v8.3a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>',
+  folder: FOLDER,
+  /*
+   * Moving something into a folder. The arrow points down into the folder rather than
+   * sideways at it: a folder small enough to leave room beside it for an arrow is a folder
+   * nobody recognises at 16 px, which is the only size this is ever drawn at.
+   */
+  'folder-move': FOLDER + '<path d="M12 9.2v6.4m0 0-2.6-2.6M12 15.6l2.6-2.6"/>',
   image:
     '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="8.75" cy="9.75" r="1.75"/><path d="m4 17 4.5-4.2a2 2 0 0 1 2.7 0l3 2.8 1.6-1.5a2 2 0 0 1 2.7 0L20 16"/>',
   calendar:
