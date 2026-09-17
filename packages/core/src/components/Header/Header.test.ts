@@ -40,4 +40,11 @@ describe('WxHeader', () => {
     // The group comes last, so what was in the header keeps its place.
     expect(wrapper.element.lastElementChild?.className).toContain('wx-header__end')
   })
+
+  it('draws itself as a card when asked', () => {
+    const wrapper = mount(WxHeader, { props: { floating: true, bordered: false } })
+
+    expect(wrapper.classes()).toContain('wx-header--floating')
+    expect(wrapper.classes()).not.toContain('wx-header--bordered')
+  })
 })

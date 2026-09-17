@@ -89,6 +89,69 @@ const collapsed = ref(false)
 </template>
 ```
 
+## A sidebar with zones
+
+A sidebar can be the whole of the chrome: the brand at the top, the menu in the middle, the
+account at the bottom, and no bar across the page at all. The `top` and `bottom` slots are those
+two ends; they stay where they are put, and the middle is what grows.
+
+```vue
+<template>
+  <wx-aside sticky floating :bordered="false" scroll :collapsed="collapsed">
+    <template #top>
+      <div class="brand">
+        <strong v-if="!collapsed">Admin</strong>
+        <wx-action icon="sidebar" title="Toggle the sidebar" @click="toggle" />
+      </div>
+    </template>
+
+    <wx-menu v-model="section" :collapsed="collapsed">…</wx-menu>
+
+    <template #bottom>
+      <wx-dropdown>…</wx-dropdown>
+    </template>
+  </wx-aside>
+</template>
+```
+
+With either zone filled, `scroll` moves to the middle: the menu carries the scrollbar and the two
+ends never leave the column. Without them it means what it always did — the whole column scrolls.
+
+`sticky` is the other half of the same shape. It keeps the column in place while the **page**
+scrolls past it, at a height of its own rather than the row's: `--wx-aside-top` is how far from
+the top it stops and `--wx-aside-height` is how tall it is, so a shell that insets the column can
+say so.
+
+```css
+.shell__aside {
+  --wx-aside-top: 16px;
+  --wx-aside-height: calc(100dvh - 32px);
+}
+```
+
+`floating` draws the column as a card — border, radius and shadow — instead of as a wall, so the
+page's own colour runs all the way round it. Pair it with `bordered` off: the rule on one side is
+what the card replaces. `WxHeader` takes the same prop, for the bar a phone puts back.
+
+A shell built this way scrolls natively, which is the other choice from the one at the top of this
+page: the outer container is `full-height` rather than `viewport`, and `WxMain` is left without
+`scroll`.
+
+```vue
+<template>
+  <wx-container direction="horizontal" full-height class="shell">
+    <wx-aside sticky floating scroll :bordered="false" class="shell__aside">…</wx-aside>
+    <wx-main padding="none">
+      <router-view />
+    </wx-main>
+  </wx-container>
+</template>
+```
+
+A screen that has to be exactly as tall as the window still marks itself `data-wx-fill`, and in a
+column that does not scroll the height it gets is `--wx-fill-height` — the window, less whatever
+the shell keeps around the column — rather than the column's own.
+
 ## A responsive sidebar
 
 A 240px column beside a 375px screen leaves nothing to read, and an admin panel is expected to do
@@ -264,18 +327,21 @@ padding and the background still run the full width of the column:
 | `height`   | `number \| string`               | `56px`  | Height of the bar                |
 | `bordered` | `boolean`                        | `true`  | Rule along the bottom edge       |
 | `sticky`   | `boolean`                        | `false` | Stays put while the page scrolls |
+| `floating` | `boolean`                        | `false` | Draws the bar as a card          |
 | `padding`  | `'none' \| 'sm' \| 'md' \| 'lg'` | `'md'`  | Inner padding                    |
 
 ## Aside
 
-| Prop             | Type               | Default   | Description                              |
-| ---------------- | ------------------ | --------- | ---------------------------------------- |
-| `width`          | `number \| string` | `240px`   | Width of the column                      |
-| `collapsedWidth` | `number \| string` | `56px`    | Width once collapsed                     |
-| `collapsed`      | `boolean`          | `false`   | Narrows the column to the rail           |
-| `side`           | `'start' \| 'end'` | `'start'` | Which edge carries the rule              |
-| `bordered`       | `boolean`          | `true`    | Rule between the column and the page     |
-| `scroll`         | `boolean`          | `false`   | Sticks to the viewport and scrolls alone |
+| Prop             | Type               | Default   | Description                             |
+| ---------------- | ------------------ | --------- | --------------------------------------- |
+| `width`          | `number \| string` | `240px`   | Width of the column                     |
+| `collapsedWidth` | `number \| string` | `56px`    | Width once collapsed                    |
+| `collapsed`      | `boolean`          | `false`   | Narrows the column to the rail          |
+| `side`           | `'start' \| 'end'` | `'start'` | Which edge carries the rule             |
+| `bordered`       | `boolean`          | `true`    | Rule between the column and the page    |
+| `scroll`         | `boolean`          | `false`   | Scrolls alone — the middle zone, if any |
+| `sticky`         | `boolean`          | `false`   | Stands still while the page scrolls     |
+| `floating`       | `boolean`          | `false`   | Draws the column as a card              |
 
 ## Main
 
@@ -295,8 +361,11 @@ padding and the background still run the full width of the column:
 
 ## Slots
 
-Every part takes a `default` slot, and the two bars take one more: `end` — a group pushed to the
-far side of the bar. That is where the user menu goes, and the notifications beside it:
+Every part takes a `default` slot. The two bars take one more — `end`, a group pushed to the far
+side of the bar — and `WxAside` takes two, `top` and `bottom`, which are the zones above and below
+its menu (see [A sidebar with zones](#a-sidebar-with-zones)).
+
+That far side is where the user menu goes, and the notifications beside it:
 
 ```vue
 <template>

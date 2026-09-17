@@ -222,10 +222,19 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
   return admin
 }
 
+/** What the shell tells the navigation slot about where it is drawing it. */
+interface NavSlotProps {
+  collapsed?: boolean
+  select?: () => void
+}
+
 function rootComponent(options: CreateAdminOptions): Component {
-  const slots: Record<string, (props: { collapsed?: boolean }) => unknown> = {
+  const slots: Record<string, (props: NavSlotProps) => unknown> = {
     // The menu is the panel's own: it is the manifest, drawn.
-    nav: (props) => h(AdminNav, { collapsed: props.collapsed === true }),
+    // The shell hands in what a choice means where it drew the menu — in the drawer it is what
+    // closes it, and a drawer that stays open over the section it just opened is a drawer the
+    // reader has to dismiss by hand.
+    nav: (props) => h(AdminNav, { collapsed: props.collapsed === true, onSelect: props.select }),
   }
 
   if (options.brand !== undefined) {

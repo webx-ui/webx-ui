@@ -6,6 +6,7 @@ return [
     'sections' => 'Sections',
     'menu' => 'Menu',
     'collapse' => 'Réduire le menu',
+    'expand' => 'Déplier le menu',
     'language' => 'Langue',
     'system' => 'Système',
 ];

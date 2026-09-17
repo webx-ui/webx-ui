@@ -8,6 +8,7 @@ const props = withDefaults(defineProps<HeaderProps>(), {
   height: undefined,
   bordered: true,
   sticky: false,
+  floating: false,
   padding: 'md',
 })
 
@@ -22,6 +23,7 @@ const classes = computed(() => [
   {
     'wx-header--bordered': props.bordered,
     'wx-header--sticky': props.sticky,
+    'wx-header--floating': props.floating,
   },
 ])
 </script>
@@ -95,8 +97,15 @@ const classes = computed(() => [
 
 .wx-header--sticky {
   position: sticky;
-  top: 0;
+  top: var(--wx-header-top, 0px);
   z-index: var(--wx-z-index-sticky);
+}
+
+/* A card rather than a bar: the body colour runs all the way round it. */
+.wx-header--floating {
+  border: 1px solid var(--wx-border-default);
+  border-radius: var(--wx-radius-md);
+  box-shadow: var(--wx-shadow-card);
 }
 
 /* On a phone the bar is mostly the title and one button; the roomy option gives way. */
