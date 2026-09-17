@@ -39,7 +39,17 @@ final class MediaModule extends AbstractModule implements ProvidesMcpTools
 
     public function order(): int
     {
-        return 300;
+        return 500;
+    }
+
+    /**
+     * The library sits in `System` rather than at the top level: the menu's first level is for
+     * what a site is made of, and a file store is a tool the sections share. It leads the group
+     * because it is the one an editor opens while writing, not while configuring.
+     */
+    public function group(): string
+    {
+        return 'system';
     }
 
     /**
