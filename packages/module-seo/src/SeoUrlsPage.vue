@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, type Component } from 'vue'
-import { useAdmin, useTranslate, WxRowMenu, type RowAction } from '@webx-ui/module-admin'
+import {
+  useAdmin,
+  useErrorText,
+  useTranslate,
+  WxRowMenu,
+  type RowAction,
+} from '@webx-ui/module-admin'
 import {
   confirm,
   createModal,
@@ -38,6 +44,8 @@ const api = createSeoApi(context)
 useSeoMessages()
 
 const t = useTranslate('webx-seo')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 const page = ref<SeoPage<SeoUrlRule> | null>(null)
 const loading = ref(false)
@@ -104,6 +112,11 @@ async function load(state: TableState): Promise<void> {
   }
 }
 
+/**
+ * Opening a rule is editing it, so a reader who may not manage these has nowhere to go: the
+ * table is told so (`:clickable="canManage"`) and withholds the pointer, the highlight and the
+ * click together, rather than promising a dialog that would not open (§13).
+ */
 async function open(rule: SeoUrlRule | null): Promise<void> {
   const saved = await edit({ rule, mediaField: props.mediaField })
 
@@ -126,7 +139,7 @@ async function remove(rule: SeoUrlRule): Promise<void> {
     toast.success(t('page.deleted'))
     void load(last)
   } catch (error) {
-    toast.danger((error as { body?: { message?: string } }).body?.message ?? String(error))
+    toast.danger(message(error))
   }
 }
 </script>
@@ -144,13 +157,14 @@ async function remove(rule: SeoUrlRule): Promise<void> {
       :columns="columns"
       row-key="id"
       searchable
-      hover
+      :clickable="canManage"
+      :hover="canManage"
       flush
       :loading="loading"
       :search-placeholder="t('page.search-rules')"
       :empty-text="t('page.empty')"
+      @row-click="open"
       @state-change="load"
-      @row-click="canManage ? open($event) : undefined"
     >
       <template #actions>
         <wx-select v-model="kind" :options="kindOptions" class="wx-seo-urls__kind" />

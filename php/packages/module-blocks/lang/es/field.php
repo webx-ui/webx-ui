@@ -9,7 +9,7 @@ return [
     'done' => 'Listo',
     'remove' => 'Quitar',
     'remove-title' => '¿Quitar «:title»?',
-    'remove-text' => 'Los bloques que contiene se van con él.',
+    'remove-text' => 'Los :count bloques que contiene se van con él.',
     'duplicate' => 'Duplicar',
     'empty' => 'Todavía no hay bloques. Añada el primero.',
     'nested-note' => 'Los bloques anidados se editan en el árbol de la izquierda.',

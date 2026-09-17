@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import {
   confirm,
   toast,
@@ -49,6 +49,8 @@ const router = useRouter()
 useBlocksMessages()
 
 const t = useTranslate('webx-blocks')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 const id = computed(() => Number(route.params.id))
 
@@ -177,7 +179,7 @@ async function load(): Promise<void> {
     take(await api.get(id.value))
     usage.value = await api.usage(id.value)
   } catch (error) {
-    toast.danger((error as { body?: { message?: string } }).body?.message ?? String(error))
+    toast.danger(message(error))
   } finally {
     loading.value = false
   }
@@ -235,7 +237,7 @@ async function render(): Promise<void> {
     stage.runtime = drawn.runtime
   } catch (error) {
     if (ticket === pending) {
-      toast.danger((error as { body?: { message?: string } }).body?.message ?? String(error))
+      toast.danger(message(error))
     }
   } finally {
     if (ticket === pending) stage.loading = false
@@ -311,7 +313,7 @@ async function save(): Promise<void> {
       errors.value = body.errors
       toast.danger(t('page.failed'))
     } else {
-      toast.danger(body?.message ?? t('page.failed'))
+      toast.danger(message(error, t('page.failed')))
     }
   } finally {
     saving.value = false
@@ -347,7 +349,7 @@ async function publish(): Promise<void> {
       tab.value = 'template'
       toast.danger(t('page.publish-failed'))
     } else {
-      toast.danger((body as { message?: string } | undefined)?.message ?? t('page.publish-failed'))
+      toast.danger(message(error, t('page.publish-failed')))
     }
   } finally {
     publishing.value = false
@@ -372,7 +374,7 @@ async function remove(): Promise<void> {
     toast.success(t('page.deleted'))
     void router.push(props.base)
   } catch (error) {
-    toast.danger((error as { body?: { message?: string } }).body?.message ?? String(error))
+    toast.danger(message(error))
   }
 }
 

@@ -219,6 +219,19 @@ describe('WxTable', () => {
     expect(event?.[1]).toBe(1)
   })
 
+  it('withdraws the whole promise where a row leads nowhere', async () => {
+    const leads = mountTable({ onRowClick: () => {} })
+    expect(leads.get('.wx-table').classes()).toContain('wx-table--clickable')
+
+    // A list whose rows stop leading anywhere while it is on screen — a bin, an archive — says
+    // so, because the listener it was rendered with cannot be read again (§13).
+    const nowhere = mountTable({ onRowClick: () => {}, clickable: false })
+    expect(nowhere.get('.wx-table').classes()).not.toContain('wx-table--clickable')
+
+    await nowhere.findAll('tbody tr')[1].trigger('click')
+    expect(nowhere.emitted('row-click')).toBeUndefined()
+  })
+
   it('does not select the row a checkbox click landed in', async () => {
     const wrapper = mountTable({ selectable: true })
 

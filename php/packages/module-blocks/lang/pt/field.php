@@ -9,7 +9,7 @@ return [
     'done' => 'Concluído',
     'remove' => 'Remover',
     'remove-title' => 'Remover «:title»?',
-    'remove-text' => 'Os blocos dentro dele vão com ele.',
+    'remove-text' => 'Os :count blocos dentro dele vão com ele.',
     'duplicate' => 'Duplicar',
     'empty' => 'Ainda não há blocos. Adicione o primeiro.',
     'nested-note' => 'Os blocos aninhados editam-se na árvore à esquerda.',

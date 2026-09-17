@@ -9,7 +9,7 @@ return [
     'done' => 'Bitti',
     'remove' => 'Kaldır',
     'remove-title' => '":title" kaldırılsın mı?',
-    'remove-text' => 'İçindeki bloklar da gider.',
+    'remove-text' => 'İçindeki :count blok da onunla birlikte gider.',
     'duplicate' => 'Çoğalt',
     'empty' => 'Henüz blok yok. İlkini ekleyin.',
     'nested-note' => 'İç içe bloklar soldaki ağaçta düzenlenir.',

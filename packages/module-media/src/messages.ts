@@ -98,6 +98,7 @@ export const mediaMessages: Record<string, Messages> = {
     'delete-files-title': 'Delete :count file(s)?',
     'delete-files-text': 'Anywhere they are already used, they will stop opening.',
     'delete-folder-title': 'Delete the folder :title?',
+    'delete-folder-text': 'It goes for good, and so does whatever is inside it.',
     'delete-folder-contents': 'It holds :files file(s) and :directories folder(s).',
     'delete-folder-warning':
       'Everything inside goes too, and pictures already placed in content will stop opening.',

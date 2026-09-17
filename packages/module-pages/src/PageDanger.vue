@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import { confirm, toast, WxButton, WxCard, WxText } from '@webx-ui/core'
 import { createPagesApi } from './api'
 import { usePageEditor } from './editor'
@@ -23,6 +23,8 @@ const editor = usePageEditor()
 usePagesMessages()
 
 const t = useTranslate('webx-pages')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 const working = ref(false)
 
@@ -88,10 +90,6 @@ async function remove(): Promise<void> {
   } finally {
     working.value = false
   }
-}
-
-function message(error: unknown): string {
-  return (error as { body?: { message?: string } }).body?.message ?? String(error)
 }
 </script>
 

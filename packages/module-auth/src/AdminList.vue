@@ -178,16 +178,24 @@ function actionsFor(row: Admin): RowAction[] {
 }
 
 function onRow(row: Admin): void {
-  if (!props.picking) {
-    emit('open', row)
+  if (props.picking) {
+    emit('chosen', [row])
 
     return
   }
 
-  if (!props.multiple) {
-    emit('chosen', [row])
-  }
+  emit('open', row)
 }
+
+/**
+ * The listeners the table gets, rather than a handler that decides to do nothing (§13).
+ *
+ * Picking several is the one case where a row leads nowhere: the tick box is what chooses, and
+ * a click on the row itself would have to either choose one and drop the rest or do nothing at
+ * all. So it does nothing and says so — no cursor, no highlight, which is what `WxTable` reads
+ * out of the missing listener. `v-bind`, not `v-on`: only that reaches it (CLAUDE.md §4).
+ */
+const clickable = computed(() => !(props.picking && props.multiple))
 
 function onSelection(_keys: unknown, rows: Admin[]): void {
   selected.value = rows
@@ -205,14 +213,15 @@ defineExpose({ reload: () => load(last), chosen: () => selected.value })
       :columns="columns"
       row-key="id"
       searchable
-      hover
+      :clickable="clickable"
+      :hover="clickable"
       flush
       :loading="loading"
       :search-placeholder="t('admins.search')"
       :empty-text="t('admins.empty')"
       :selectable="picking && multiple"
-      @state-change="load"
       @row-click="onRow"
+      @state-change="load"
       @selection-change="onSelection"
     >
       <template v-if="filters" #actions>

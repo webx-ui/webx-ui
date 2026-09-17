@@ -9,7 +9,7 @@ return [
     'done' => 'Done',
     'remove' => 'Remove',
     'remove-title' => 'Remove ":title"?',
-    'remove-text' => 'The blocks inside it go with it.',
+    'remove-text' => 'The :count blocks inside it go with it.',
     'duplicate' => 'Duplicate',
     'empty' => 'No blocks yet. Add the first one.',
     'nested-note' => 'Nested blocks are edited in the tree on the left.',

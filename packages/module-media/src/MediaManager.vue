@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import {
   confirm,
   createModal,
@@ -67,6 +67,8 @@ const api = createMediaApi(admin)
 useMediaMessages()
 
 const t = useTranslate('webx-media')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 /**
  * The image editor's words, in the language the panel is being read in.
@@ -224,7 +226,7 @@ async function upload(event: Event): Promise<void> {
 
     await Promise.all([load(), loadFiles(1)])
   } catch (error) {
-    toast.danger(messageOf(error) ?? t('errors.upload'))
+    toast.danger(message(error, t('errors.upload')))
   }
 }
 
@@ -273,15 +275,30 @@ async function deleteFolder(): Promise<void> {
     return
   }
 
-  // Asked twice on purpose, and the second question carries the counts the server sent back:
-  // what goes with the folder is somebody's article illustrations.
+  // Asked before anything is tried, because a folder is a folder whether or not it holds
+  // anything (§14.2) — and asked a second time, with the counts the server sent back, when it
+  // turns out that what goes with it is somebody's article illustrations.
+  const first = await confirm({
+    title: t('dialogs.delete-folder-title', { title: target.title }),
+    message: t('dialogs.delete-folder-text'),
+    confirmText: t('dialogs.confirm'),
+    cancelText: t('manager.cancel'),
+    tone: 'danger',
+  })
+
+  if (!first) {
+    return
+  }
+
   try {
     await api.deleteDirectory(target.id)
   } catch (error) {
     const counts = countsOf(error)
 
     if (!counts) {
-      throw error
+      toast.danger(message(error))
+
+      return
     }
 
     const agreed = await confirm({
@@ -307,7 +324,7 @@ async function moveFolder(id: number, parentId: number): Promise<void> {
   try {
     await api.moveDirectory(id, parentId)
   } catch (error) {
-    toast.danger(messageOf(error) ?? t('errors.directory-into-itself'))
+    toast.danger(message(error, t('errors.directory-into-itself')))
   }
 
   await load()
@@ -439,10 +456,6 @@ function countsOf(error: unknown): { files: number; directories: number } | null
   )?.body
 
   return body?.code === 'directory_not_empty' ? (body.counts ?? null) : null
-}
-
-function messageOf(error: unknown): string | null {
-  return (error as { message?: string })?.message ?? null
 }
 
 /* The page's own upload button opens the same file dialog the toolbar's icon does. */

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAdmin, useTranslate, WxListScreen } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxListScreen } from '@webx-ui/module-admin'
 import {
   createModal,
   toast,
@@ -34,6 +34,8 @@ const router = useRouter()
 useBlocksMessages()
 
 const t = useTranslate('webx-blocks')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 const blocks = ref<BlockType[]>([])
 const loading = ref(true)
@@ -128,7 +130,7 @@ async function load(): Promise<void> {
   try {
     blocks.value = await api.list()
   } catch (error) {
-    toast.danger((error as { body?: { message?: string } }).body?.message ?? String(error))
+    toast.danger(message(error))
   } finally {
     loading.value = false
   }
