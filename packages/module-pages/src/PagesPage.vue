@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAdmin, useErrorText, useTranslate, WxListScreen } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxDate, WxListScreen } from '@webx-ui/module-admin'
 import {
   confirm,
   createModal,
@@ -347,12 +347,6 @@ function badge(status: PageStatus): 'default' | 'success' | 'warning' {
   return status === 'modified' ? 'warning' : 'default'
 }
 
-function when(page: PageRow): string {
-  const at = inBin.value ? page.deleted_at : page.updated_at
-
-  return at ? new Date(at).toLocaleDateString() : ''
-}
-
 watch(filter, () => void load())
 
 onMounted(load)
@@ -417,7 +411,7 @@ onMounted(load)
         </template>
 
         <template #cell-status="{ row }">
-          <wx-text v-if="inBin" size="sm" tone="muted">{{ when(row) }}</wx-text>
+          <wx-date v-if="inBin" :value="row.deleted_at" />
           <wx-badge v-else :type="badge(row.status)" dot>
             {{ t(`page.status-${row.status}`) }}
           </wx-badge>
@@ -425,7 +419,9 @@ onMounted(load)
 
         <template #cell-updated_at="{ row }">
           <wx-text size="sm" tone="muted">
-            {{ when(row) }}<template v-if="row.edited_by && !inBin">, {{ row.edited_by }}</template>
+            <wx-date :value="row.updated_at" /><template v-if="row.edited_by && !inBin"
+              >, {{ row.edited_by }}</template
+            >
           </wx-text>
         </template>
 

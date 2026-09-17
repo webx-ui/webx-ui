@@ -24,6 +24,15 @@ export const adminMessages: Record<string, Messages> = {
     // The one menu group the panel names itself; a module's own group is named by the module.
     system: 'System',
   },
+  // When something happened, said the way a person would. The month names and the order of
+  // the parts come from `Intl` — only the words that no formatter knows are here.
+  dates: {
+    today: 'today at :time',
+    yesterday: 'yesterday at :time',
+    // Not an empty cell and not a dash: a column that says nothing leaves a reader wondering
+    // whether the panel failed to load it.
+    never: 'never',
+  },
   // How a request fails, in the panel's words rather than the server's (§13.3). `errors.ts`
   // decides which of these a status gets.
   errors: {

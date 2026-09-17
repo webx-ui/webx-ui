@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxDate } from '@webx-ui/module-admin'
 import { confirm, toast, WxBadge, WxButton, WxSkeleton, WxText } from '@webx-ui/core'
 import { createBlocksApi } from './api'
 import type { BlockType, BlockVersionMeta } from './types'
@@ -30,12 +30,6 @@ function state(version: BlockVersionMeta): 'draft' | 'live' | 'replaced' {
   if (props.block.published?.number === version.number) return 'live'
 
   return 'replaced'
-}
-
-function when(version: BlockVersionMeta): string {
-  if (!version.created_at) return ''
-
-  return new Date(version.created_at).toLocaleString(context.i18n.state.locale)
 }
 
 async function restore(version: BlockVersionMeta): Promise<void> {
@@ -75,7 +69,7 @@ watch(
       <div class="wx-block-history__who">
         <wx-text>{{ t(`page.version-${state(version)}`) }}</wx-text>
         <wx-text size="sm" tone="muted">
-          {{ when(version) }}
+          <wx-date v-if="version.created_at" :value="version.created_at" />
           · {{ version.author ?? t(`page.source-${version.source}`) }}
           <template v-if="version.comment"> · {{ version.comment }}</template>
         </wx-text>

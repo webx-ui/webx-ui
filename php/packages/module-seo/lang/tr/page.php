@@ -22,7 +22,6 @@ return [
     'status' => 'Kod',
     'hits' => 'Kullanım',
     'last-hit' => 'Son kullanım',
-    'never' => 'hiç',
     'loop' => 'Kendini gösteriyor',
     'any-kind' => 'Her tür',
     'exact' => 'Tam',
