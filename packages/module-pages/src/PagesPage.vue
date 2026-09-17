@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useTranslate, WxListScreen } from '@webx-ui/module-admin'
 import {
   confirm,
   createModal,
@@ -9,15 +9,14 @@ import {
   useElementWidth,
   WxBadge,
   WxButton,
-  WxCard,
-  WxHeading,
-  WxSegmented,
   WxTable,
   WxText,
+  type TabItem,
   type TableColumn,
   type TableNodeDropEvent,
   type TableState,
   type TableTreeOptions,
+  type TabValue,
   type TreeDropZone,
 } from '@webx-ui/core'
 import PageActions from './PageActions.vue'
@@ -51,7 +50,8 @@ const home = ref<PageRow | null>(null)
 const items = ref<PageRow[]>([])
 const loading = ref(true)
 const search = ref('')
-const filter = ref<PageStatus | '' | 'trashed'>('')
+/* A tab's value is a string; what the server is asked for is read back out of it. */
+const filter = ref<TabValue>('')
 
 /*
  * Below the width where the table becomes cards, the tree becomes a flat list.
@@ -81,12 +81,17 @@ const title = computed(
     t('module.title'),
 )
 
-const filters = computed(() => [
+/*
+ * The views of the same list, as tabs over the card (§10). The bin rides in the same row with
+ * an icon rather than standing apart: it is still this list, and a reader who wants what they
+ * deleted looks for it beside what they did not.
+ */
+const views = computed<TabItem[]>(() => [
   { value: '', label: t('page.filter-all') },
   { value: 'draft', label: t('page.filter-draft') },
   { value: 'published', label: t('page.filter-published') },
   { value: 'modified', label: t('page.filter-modified') },
-  { value: 'trashed', label: t('page.bin'), icon: 'trash' as const },
+  { value: 'trashed', label: t('page.bin'), icon: 'trash' },
 ])
 
 /**
@@ -99,10 +104,9 @@ const rows = computed<PageRow[]>(() =>
 )
 
 /**
- * Every column but the title is given a width, and the table is laid out `fixed`: the row of
- * actions is seven icons wide and only folds into a menu when its cell refuses to grow for it.
- * Left to size itself, the cell takes the width of all seven, and the table scrolls sideways
- * instead — which on a phone is the whole table.
+ * Every column but the title is given a width, and the table is laid out `fixed`, so the
+ * widths that are hidden below a breakpoint give what they had to the title rather than to
+ * whichever column happened to hold the longest string.
  */
 const columns = computed<TableColumn<PageRow>[]>(() => [
   { key: 'title', label: t('page.column-title'), minWidth: 200 },
@@ -124,7 +128,7 @@ const columns = computed<TableColumn<PageRow>[]>(() => [
     hideOnCards: true,
     hidden: inBin.value,
   },
-  { key: 'actions', label: '', width: 48, align: 'right', hideOnCards: true },
+  { key: 'actions', label: '', width: 56, align: 'right', hideOnCards: true },
 ])
 
 const tree = computed<TableTreeOptions<PageRow> | undefined>(() =>
@@ -157,7 +161,7 @@ async function load(): Promise<void> {
   try {
     const level = await api.list({
       search: search.value.trim(),
-      status: inBin.value ? '' : filter.value,
+      status: inBin.value ? '' : (filter.value as PageStatus | ''),
       trashed: inBin.value,
       flat: narrow.value,
     })
@@ -301,9 +305,7 @@ function message(error: unknown): string {
   return (error as { body?: { message?: string } }).body?.message ?? String(error)
 }
 
-function changeFilter(): void {
-  void load()
-}
+watch(filter, () => void load())
 
 // The answer for a phone is a different answer, not a different stylesheet: crossing the width
 // re-asks the server for a flat list or for a level of the tree.
@@ -314,22 +316,11 @@ onMounted(load)
 
 <template>
   <div ref="root" class="wx-pages">
-    <div class="wx-pages__head">
-      <wx-heading :level="2">{{ title }}</wx-heading>
-      <wx-button v-if="canManage" type="primary" icon="plus" @click="add(null)">
-        {{ t('page.new') }}
-      </wx-button>
-    </div>
-
-    <wx-card>
-      <template #header>
-        <wx-segmented
-          v-model="filter"
-          :options="filters"
-          size="sm"
-          :aria-label="t('page.column-status')"
-          @change="changeFilter"
-        />
+    <wx-list-screen v-model:view="filter" :title="title" :views="views">
+      <template v-if="canManage" #actions>
+        <wx-button type="primary" icon="plus" @click="add(null)">
+          {{ t('page.new') }}
+        </wx-button>
       </template>
 
       <wx-table
@@ -408,12 +399,10 @@ onMounted(load)
           />
         </template>
 
-        <!-- A card has the same actions, and the same reason to fold them into a menu: at that
-             width the card itself is the whole screen. -->
+        <!-- The same menu on a card: one place to look, whatever width the list is read at. -->
         <template #card-actions="{ row }">
           <page-actions
             v-if="canManage"
-            menu-only
             :page="row"
             :in-bin="inBin"
             @open="open"
@@ -426,24 +415,14 @@ onMounted(load)
           />
         </template>
       </wx-table>
-    </wx-card>
+    </wx-list-screen>
   </div>
 </template>
 
 <style scoped>
+/* Only here to be measured: the list screen inside it is what lays the screen out. */
 .wx-pages {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wx-gap, var(--wx-space-16));
-  container-type: inline-size;
-}
-
-.wx-pages__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wx-space-12);
-  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .wx-pages__title {
@@ -451,7 +430,7 @@ onMounted(load)
 }
 
 .wx-pages__address {
-  font-family: var(--wx-font-mono);
+  font-family: var(--wx-font-family-mono);
   font-size: var(--wx-font-size-sm);
   color: var(--wx-color-primary);
   text-decoration: none;

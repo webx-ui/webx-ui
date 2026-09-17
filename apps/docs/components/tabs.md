@@ -156,19 +156,38 @@ to the first and last. By default the panel follows the focus. `activation-mode=
 the focus only, and <kbd>Enter</kbd> or <kbd>Space</kbd> opens the tab — the right choice when
 opening a panel is expensive.
 
+## A strip over one panel
+
+Given `items`, the strip is built from a list and the default slot is the one panel under it —
+the tab says which view is open, and what is inside the panel answers for it. Nothing is
+unmounted on a switch, so a table under it keeps its search, its page and its scroll. This is how
+a list screen offers "All / Drafts / Published" without the strip becoming navigation.
+
+```vue
+<wx-tabs v-model="view" :items="views" :collapse-below="560">
+  <wx-table :data="rows" searchable />
+</wx-tabs>
+```
+
+`collapseBelow` is a width of the strip's own container. Under it the tabs fold into one switch
+labelled with the view that is open — five views do not fit across a phone, and a strip somebody
+has to scroll to find out what it holds is worse than a control that says.
+
 ## Tabs props
 
-| Prop             | Type                                        | Default        | Description                                      |
-| ---------------- | ------------------------------------------- | -------------- | ------------------------------------------------ |
-| `modelValue`     | `string \| number`                          | first tab      | The open tab; use with `v-model`                 |
-| `variant`        | `'line' \| 'pill' \| 'card'`                | `'line'`       | Underlined strip, segmented control, folder tabs |
-| `size`           | `'sm' \| 'md'`                              | `'md'`         | Height and text size of the strip                |
-| `orientation`    | `'horizontal' \| 'vertical'`                | `'horizontal'` | A strip above the panel, or a column beside it   |
-| `align`          | `'start' \| 'center' \| 'end' \| 'stretch'` | `'start'`      | Where the tabs sit while they fit                |
-| `activationMode` | `'automatic' \| 'manual'`                   | `'automatic'`  | Whether arrow keys open a panel as they move     |
-| `keepAlive`      | `boolean`                                   | `false`        | Keep hidden panels in the DOM                    |
-| `loop`           | `boolean`                                   | `true`         | Arrow keys wrap around at the ends               |
-| `ariaLabel`      | `string`                                    | —              | Accessible name for the strip                    |
+| Prop             | Type                                        | Default        | Description                                                 |
+| ---------------- | ------------------------------------------- | -------------- | ----------------------------------------------------------- |
+| `modelValue`     | `string \| number`                          | first tab      | The open tab; use with `v-model`                            |
+| `items`          | `TabItem[]`                                 | —              | Builds the strip from a list; the slot is one panel         |
+| `collapseBelow`  | `number`                                    | `0`            | Container width under which the strip folds into one switch |
+| `variant`        | `'line' \| 'pill' \| 'card'`                | `'line'`       | Underlined strip, segmented control, folder tabs            |
+| `size`           | `'sm' \| 'md'`                              | `'md'`         | Height and text size of the strip                           |
+| `orientation`    | `'horizontal' \| 'vertical'`                | `'horizontal'` | A strip above the panel, or a column beside it              |
+| `align`          | `'start' \| 'center' \| 'end' \| 'stretch'` | `'start'`      | Where the tabs sit while they fit                           |
+| `activationMode` | `'automatic' \| 'manual'`                   | `'automatic'`  | Whether arrow keys open a panel as they move                |
+| `keepAlive`      | `boolean`                                   | `false`        | Keep hidden panels in the DOM                               |
+| `loop`           | `boolean`                                   | `true`         | Arrow keys wrap around at the ends                          |
+| `ariaLabel`      | `string`                                    | —              | Accessible name for the strip                               |
 
 **Events:** `change` — the value of the tab that was opened.
 **Slots:** `default` — the `WxTab`s; `extra` — content at the end of the strip.

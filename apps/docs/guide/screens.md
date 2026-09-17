@@ -178,6 +178,37 @@ The core types, generated from the registry (a test fails when this table is sta
 
 <!-- types:end -->
 
+The panel's own frame comes with `module-admin` and is in every screen it draws:
+
+| Type      | From           | Kind     | What it is                             |
+| --------- | -------------- | -------- | -------------------------------------- |
+| `wx-list` | `module-admin` | `layout` | the frame a section's list is drawn in |
+
+`wx-list` is one shape for every list in the panel: the section's name on its own line, the one
+action the section exists for beside it, the views of the list as tabs under that, and a card
+holding nothing but the rows. The search stays inside the table — it narrows the rows, not the
+screen. `label` becomes its title; `props` take `views` (`{ value, label, icon? }[]`), `card`,
+`padding`, `fill` and `collapseBelow`, and children go inside the card:
+
+```json
+{
+  "id": "list",
+  "type": "wx-list",
+  "label": "trans::webx-pages::module.title",
+  "props": {
+    "views": [
+      { "value": "", "label": "All" },
+      { "value": "draft", "label": "Drafts" }
+    ]
+  },
+  "children": [{ "id": "rows", "type": "wx-pages-table" }]
+}
+```
+
+The card has no heading of its own: the tab says which view it is and the line above says which
+section, so a second one would be the same words twice. A heading inside a card is for a group of
+fields on a form, where there are two or more of them on a screen.
+
 A module registers its own the same way — its `types` are merged into every panel screen, as are
 `createAdmin({ types })` — so these are here whenever the module is installed on both halves:
 

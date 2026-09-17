@@ -38,6 +38,7 @@ const props = withDefaults(defineProps<FileCardProps>(), {
   removable: false,
   confirmRemove: true,
   copyable: false,
+  actionsMenu: false,
   renameLabel: 'Rename',
   saveLabel: 'Save',
   cancelLabel: 'Cancel',
@@ -403,7 +404,7 @@ const classes = computed(() => [
           class="wx-file-card__actions"
           size="sm"
           align="end"
-          collapse
+          :collapse="actionsMenu ? 'always' : true"
           :aria-label="`Actions for ${name}`"
         >
           <wx-action

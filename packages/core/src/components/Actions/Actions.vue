@@ -27,7 +27,10 @@ provide(actionsKey, { size: computed(() => props.size) })
 
 const root = ref<HTMLElement | null>(null)
 const row = ref<HTMLElement | null>(null)
-const collapsed = ref(false)
+const tooWide = ref(false)
+
+/** Asked for outright, or arrived at by measuring. */
+const collapsed = computed(() => props.collapse === 'always' || tooWide.value)
 
 /**
  * The row is measured against the space its container gives it. When it collapses
@@ -37,7 +40,7 @@ const collapsed = ref(false)
 function measure() {
   const rowEl = row.value
   const parent = root.value?.parentElement
-  if (!props.collapse || !rowEl || !parent) return
+  if (props.collapse !== true || !rowEl || !parent) return
 
   /* `|| 0`: a padding that was never set reads as an empty string, not as `0px`. */
   const style = getComputedStyle(parent)
@@ -47,14 +50,14 @@ function measure() {
   /* jsdom and a container that has not been laid out yet both report zero. */
   if (available <= 0) return
 
-  collapsed.value = rowEl.scrollWidth > available
+  tooWide.value = rowEl.scrollWidth > available
 }
 
 let observer: ResizeObserver | undefined
 
 function observe() {
   observer?.disconnect()
-  if (!props.collapse) return
+  if (props.collapse !== true) return
 
   observer = new ResizeObserver(() => measure())
   if (root.value?.parentElement) observer.observe(root.value.parentElement)
@@ -78,7 +81,11 @@ defineExpose({ collapsed, measure })
 
 <template>
   <div ref="root" :class="classes" role="group" :aria-label="ariaLabel">
-    <div ref="row" class="wx-actions__row">
+    <!--
+      Told to be a menu, the row is never drawn. Kept around it would be a second copy of
+      every action — hidden, but still in the document — for a measurement nobody asked for.
+    -->
+    <div v-if="collapse !== 'always'" ref="row" class="wx-actions__row">
       <slot />
     </div>
 
@@ -138,5 +145,20 @@ defineExpose({ collapsed, measure })
 
 .wx-actions:not(.is-collapsed) .wx-actions__menu {
   display: none;
+}
+
+/*
+ * Folded up, the menu is the only way into what the row offers, so it has to be a target a
+ * finger can hit.
+ *
+ * The property is set on the action itself, not on the wrapper for it to inherit: `WxAction`
+ * declares its own `--wx-action-size` per size class, and a value declared on an element beats
+ * one it would have inherited, whatever the specificity of the rule that set it upstream.
+ * Measured on a phone: inherited it stayed 30 px and read as working.
+ */
+@media (pointer: coarse) {
+  .wx-actions__menu :deep(.wx-action) {
+    --wx-action-size: 44px;
+  }
 }
 </style>

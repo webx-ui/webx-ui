@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, type Component } from 'vue'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useTranslate, WxRowMenu, type RowAction } from '@webx-ui/module-admin'
 import {
   confirm,
   createModal,
   toast,
-  WxAction,
-  WxActions,
   WxBadge,
   WxButton,
-  WxCard,
   WxSelect,
   WxTable,
   WxText,
@@ -70,15 +67,26 @@ const columns = computed<TableColumn<SeoUrlRule>[]>(() => [
   { key: 'title', label: t('page.title'), hideBelow: 900 },
   { key: 'priority', label: t('page.priority'), align: 'center', hideBelow: 760 },
   { key: 'is_active', label: t('page.state'), align: 'center', hideBelow: 660 },
-  {
-    key: 'actions',
-    label: '',
-    width: 56,
-    align: 'right',
-    hidden: !canManage,
-    hideOnCards: true,
-  },
+  { key: 'actions', label: '', width: 56, align: 'right', hidden: !canManage, hideOnCards: true },
 ])
+
+/**
+ * What a rule offers: one line, and it is the destructive one — everything else about a rule is
+ * done by opening it. Still a menu, because a red bin standing in every row shouts louder than
+ * deleting a rule deserves, and because a reader should find a record's actions in the same
+ * place in every list of the panel (§20).
+ */
+function actionsFor(rule: SeoUrlRule): RowAction[] {
+  return [
+    {
+      key: 'delete',
+      icon: 'trash',
+      label: t('page.delete'),
+      danger: true,
+      run: () => remove(rule),
+    },
+  ]
+}
 
 async function load(state: TableState): Promise<void> {
   last = state
@@ -125,65 +133,56 @@ async function remove(rule: SeoUrlRule): Promise<void> {
 
 <template>
   <seo-layout :base="props.base" current="rules" @test="test({})">
-    <wx-card>
-      <template #header>{{ t('page.rules') }}</template>
+    <template v-if="canManage" #actions>
+      <wx-button type="primary" icon="add" @click="open(null)">
+        {{ t('page.new-rule') }}
+      </wx-button>
+    </template>
 
-      <template v-if="canManage" #extra>
-        <wx-button type="primary" icon="add" @click="open(null)">
-          {{ t('page.new-rule') }}
-        </wx-button>
+    <wx-table
+      :data="page"
+      :columns="columns"
+      row-key="id"
+      searchable
+      hover
+      flush
+      :loading="loading"
+      :search-placeholder="t('page.search-rules')"
+      :empty-text="t('page.empty')"
+      @state-change="load"
+      @row-click="canManage ? open($event) : undefined"
+    >
+      <template #actions>
+        <wx-select v-model="kind" :options="kindOptions" class="wx-seo-urls__kind" />
       </template>
 
-      <wx-table
-        :data="page"
-        :columns="columns"
-        row-key="id"
-        searchable
-        hover
-        flush
-        :loading="loading"
-        :search-placeholder="t('page.search-rules')"
-        :empty-text="t('page.empty')"
-        @state-change="load"
-        @row-click="canManage ? open($event) : undefined"
-      >
-        <template #actions>
-          <wx-select v-model="kind" :options="kindOptions" class="wx-seo-urls__kind" />
-        </template>
+      <template #cell-pattern="{ row }">
+        <wx-text mono size="sm">{{ row.pattern }}</wx-text>
+      </template>
 
-        <template #cell-pattern="{ row }">
-          <wx-text mono size="sm">{{ row.pattern }}</wx-text>
-        </template>
+      <template #cell-match_type="{ row }">
+        <wx-badge>{{ t(`page.${row.match_type}`) }}</wx-badge>
+      </template>
 
-        <template #cell-match_type="{ row }">
-          <wx-badge>{{ t(`page.${row.match_type}`) }}</wx-badge>
-        </template>
+      <template #cell-title="{ row }">
+        <wx-text v-if="ruleTitle(row)" size="sm">{{ ruleTitle(row) }}</wx-text>
+        <wx-text v-else size="sm" tone="muted">—</wx-text>
+      </template>
 
-        <template #cell-title="{ row }">
-          <wx-text v-if="ruleTitle(row)" size="sm">{{ ruleTitle(row) }}</wx-text>
-          <wx-text v-else size="sm" tone="muted">—</wx-text>
-        </template>
+      <template #cell-is_active="{ row }">
+        <wx-badge :type="row.is_active ? 'success' : 'default'" dot>
+          {{ row.is_active ? t('page.active') : t('page.inactive') }}
+        </wx-badge>
+      </template>
 
-        <template #cell-is_active="{ row }">
-          <wx-badge :type="row.is_active ? 'success' : 'default'" dot>
-            {{ row.is_active ? t('page.active') : t('page.inactive') }}
-          </wx-badge>
-        </template>
+      <template #card-actions="{ row }">
+        <wx-row-menu v-if="canManage" :actions="actionsFor(row)" :label="row.pattern" />
+      </template>
 
-        <template #card-actions="{ row }">
-          <wx-actions v-if="canManage" size="sm" @click.stop>
-            <wx-action type="remove" :title="t('page.delete')" @click="remove(row)" />
-          </wx-actions>
-        </template>
-
-        <template #cell-actions="{ row }">
-          <!-- `.stop`: the row opens the rule, and deleting one is not opening it. -->
-          <wx-actions size="sm" @click.stop>
-            <wx-action type="remove" :title="t('page.delete')" @click="remove(row)" />
-          </wx-actions>
-        </template>
-      </wx-table>
-    </wx-card>
+      <template #cell-actions="{ row }">
+        <wx-row-menu :actions="actionsFor(row)" :label="row.pattern" />
+      </template>
+    </wx-table>
   </seo-layout>
 </template>
 
