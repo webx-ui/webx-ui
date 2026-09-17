@@ -1,5 +1,5 @@
-import { mount } from '@vue/test-utils'
-import { describe, expect, it } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it } from 'vitest'
 import BlocksField from './BlocksField.vue'
 import type { BlockNode, BlockType } from './types'
 
@@ -83,6 +83,27 @@ function field(value: BlockNode[] = tree()) {
   })
 }
 
+/**
+ * Press the confirming button of the dialog `confirm()` mounted.
+ *
+ * It lives outside the wrapper — that is the whole point of a dialog from code — so it is
+ * found in the document and pressed for real rather than through the test utilities.
+ */
+function confirmIt(): void {
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>('.wx-dialog__foot button')]
+
+  buttons[buttons.length - 1]!.click()
+}
+
+/* A dialog takes its own node away on a timer; one left behind is found by the next test. */
+afterEach(async () => {
+  const deadline = Date.now() + 2000
+
+  while (document.querySelectorAll('.wx-modal-host').length > 0 && Date.now() < deadline) {
+    await new Promise((settle) => setTimeout(settle, 10))
+  }
+})
+
 function emitted(wrapper: ReturnType<typeof field>): BlockNode[] | null {
   const updates = wrapper.emitted('update:modelValue') as [BlockNode[]][] | undefined
 
@@ -123,7 +144,7 @@ describe('WxBlocks', () => {
     expect(wrapper.findAll('.wx-blocks').length).toBe(1)
   })
 
-  it('removes a block with everything inside it', async () => {
+  it('asks before removing a block that holds others', async () => {
     const wrapper = field()
 
     // Outside a panel the words are keys, so the buttons are found by place, not by name.
@@ -132,8 +153,31 @@ describe('WxBlocks', () => {
       .findAll('.wx-blocks-tree__actions button')[1]!
       .trigger('click')
 
-    const next = emitted(wrapper)!
-    expect(next.map((node) => node.key)).toEqual(['a'])
+    await flushPromises()
+
+    // Nothing has gone yet: what leaves with a container is not on screen, so it is asked
+    // about. The count in the question is a translated line, so it reads as a key here.
+    expect(emitted(wrapper)).toBeNull()
+    expect(document.querySelector('.wx-confirm__message')).not.toBeNull()
+
+    confirmIt()
+    await flushPromises()
+
+    expect(emitted(wrapper)!.map((node) => node.key)).toEqual(['a'])
+  })
+
+  it('removes a block that holds nothing without asking', async () => {
+    const wrapper = field()
+
+    await wrapper
+      .findAll('.wx-blocks-tree__row')[0]!
+      .findAll('.wx-blocks-tree__actions button')[1]!
+      .trigger('click')
+
+    await flushPromises()
+
+    expect(document.querySelector('.wx-confirm__message')).toBeNull()
+    expect(emitted(wrapper)!.map((node) => node.key)).toEqual(['b'])
   })
 
   it('duplicates a block with fresh keys, right after the original', async () => {

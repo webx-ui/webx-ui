@@ -430,6 +430,7 @@ key of `actions` and fill it from `#cell-actions`.
 | `stripe`            | `boolean`                             | `false`             | Alternating row background                       |
 | `bordered`          | `boolean`                             | `false`             | Vertical rules between columns                   |
 | `hover`             | `boolean`                             | `true`              | Highlight the row under the pointer              |
+| `clickable`         | `boolean`                             | inferred            | Whether a row leads anywhere                     |
 | `selectable`        | `boolean`                             | `false`             | Adds the checkbox column                         |
 | `selectableIf`      | `(row) => boolean`                    | —                   | Rows that cannot be picked                       |
 | `expandable`        | `boolean`                             | `false`             | Adds the chevron column                          |
@@ -453,6 +454,20 @@ key of `actions` and fill it from `#cell-actions`.
 **Events:** `state-change` (`TableState`), `row-click` (`row, index, event`), `sort-change`
 (`TableSort | null`), `selection-change` (`keys, rows`), `expand-change` (`keys, rows`), `search`
 (`term`).
+
+## A row that leads nowhere says so
+
+The pointer and the highlight on a row are a promise that clicking it opens something. Listening
+for `row-click` is how the table learns there is one, so an ordinary list needs nothing else.
+
+`clickable` is for a list where the answer changes while it is on screen — a bin, an archive, a
+picker that takes several rows at once. The listener a component was rendered with cannot be read
+again, so a table left to infer would keep the cursor it no longer earns. `:clickable="false"`
+withdraws the whole promise: no pointer, no highlight, and no `row-click` either.
+
+```vue
+<wx-table :data="rows" :columns="columns" :clickable="!inBin" @row-click="open" />
+```
 
 ## Loading keeps the rows
 

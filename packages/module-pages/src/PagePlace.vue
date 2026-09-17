@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
-import { toast, useLocales, WxAlert, WxFormItem, WxText } from '@webx-ui/core'
+import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { confirm, toast, useLocales, WxAlert, WxFormItem, WxText } from '@webx-ui/core'
 import PagePicker from './PagePicker.vue'
 import { createPagesApi } from './api'
 import { usePageEditor } from './editor'
@@ -28,6 +28,8 @@ const locales = useLocales()
 usePagesMessages()
 
 const t = useTranslate('webx-pages')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 const moving = ref(false)
 const parent = ref<number | null>(null)
@@ -72,10 +74,33 @@ watch(
   { immediate: true },
 )
 
+/**
+ * The same question a drop in the list asks, and for the same reason (§14.3): a move rewrites
+ * the address of the page and of everything under it, and leaves a redirect on each of the old
+ * ones. Picking a parent from a list is deliberate enough that one page moving alone goes
+ * through without a dialog; a branch does not.
+ */
 async function move(target: number | null): Promise<void> {
   const current = page.value
 
   if (!current || target === null || target === current.parent_id || moving.value) return
+
+  const moves = current.descendants_count + 1
+
+  if (moves > 1) {
+    const agreed = await confirm({
+      title: t('page.move-title', { title: current.title }),
+      message: t('page.move-branch', { count: moves }),
+      confirmText: t('page.move-confirm'),
+      cancelText: t('page.cancel'),
+    })
+
+    if (!agreed) {
+      parent.value = current.parent_id
+
+      return
+    }
+  }
 
   moving.value = true
 
@@ -89,7 +114,7 @@ async function move(target: number | null): Promise<void> {
     )
     await editor?.reload()
   } catch (error) {
-    toast.danger((error as { body?: { message?: string } }).body?.message ?? String(error))
+    toast.danger(message(error))
     parent.value = current.parent_id
   } finally {
     moving.value = false

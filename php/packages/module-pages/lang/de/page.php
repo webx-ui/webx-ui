@@ -47,6 +47,7 @@ return [
     'move-title' => '„:title“ verschieben',
     'move-help' => 'Wählen Sie die Seite, in die sie kommt. Alles darunter zieht mit, und die Adressen ändern sich.',
     'move-confirm' => 'Verschieben',
+    'move-branch' => ':count Adressen ändern sich — die Seite und alles darin. Die alten leiten künftig auf die neuen weiter.',
     'moved' => 'Verschoben. :count Adressen haben sich geändert; die alten leiten auf die neuen weiter.',
     'moved-one' => 'Verschoben. Die Adresse hat sich geändert; die alte leitet darauf weiter.',
 
@@ -55,6 +56,10 @@ return [
     'delete-branch' => 'Die :count Seiten darin gehen mit.',
     'deleted' => 'Die Seite liegt im Papierkorb.',
     'restored' => 'Die Seite ist zurück.',
+    'restore-page-title' => '„:title“ zurückholen?',
+    'restore-page-text' => 'Die Seite verlässt den Papierkorb und bekommt ihre Adresse zurück. Was auf der Website war, antwortet wieder.',
+    'restore-branch' => 'Die :count Seiten, die mit ihr hineingingen, kommen mit zurück.',
+    'restored-branch' => ':count Seiten sind zurück.',
 
     'copy-of' => ':title (Kopie)',
     'duplicated' => 'Die Kopie ist fertig und steht nicht auf der Website.',
@@ -69,6 +74,9 @@ return [
     'save' => 'Speichern',
     'save-failed' => 'Die Seite wurde nicht gespeichert.',
     'publish' => 'Veröffentlichen',
+    'publish-title' => '„:title“ veröffentlichen?',
+    'publish-text' => 'Von da an antwortet die Seite unter :address — für alle.',
+    'publish-text-nowhere' => 'Von da an antwortet die Seite auf der Website — für alle.',
     'published' => 'Die Seite ist auf der Website.',
     'preview' => 'Vorschau',
     'more' => 'Mehr',

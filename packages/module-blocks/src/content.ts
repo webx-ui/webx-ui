@@ -102,6 +102,17 @@ export function countType(tree: BlockNode[], slug: string): number {
   return count
 }
 
+/** How many blocks sit inside a node, at any depth — what removing it takes with it. */
+export function countInside(node: BlockNode): number {
+  let count = 0
+
+  for (const value of Object.values(node.values ?? {})) {
+    if (isNodeList(value)) walk(value, () => count++)
+  }
+
+  return count
+}
+
 /** The distinct types a tree uses, in first-seen order. */
 export function typesIn(tree: BlockNode[]): string[] {
   const seen: string[] = []

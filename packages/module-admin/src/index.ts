@@ -21,6 +21,7 @@ export {
   type Translate,
 } from './i18n'
 export { adminMessages } from './messages'
+export { errorText, useErrorText } from './errors'
 export {
   createHttp,
   readCookie,

@@ -118,7 +118,7 @@ describe('WxPagesPage', () => {
     expect(wrapper.findAll('.wx-pages__address')).toHaveLength(1)
   })
 
-  it('asks for the bin, flat, when the bin is chosen', async () => {
+  it('asks for the bin when the bin is chosen', async () => {
     const { wrapper, get } = panel({ home, items: [] })
 
     await flushPromises()
@@ -129,5 +129,43 @@ describe('WxPagesPage', () => {
     await flushPromises()
 
     expect(get).toHaveBeenCalledWith('/api/cms/pages?trashed=1')
+  })
+
+  it('stops promising a click once the rows are the bin', async () => {
+    const { wrapper } = panel({ home, items: [page({ id: 2 })] })
+
+    await flushPromises()
+    expect(wrapper.get('.wx-table').classes()).toContain('wx-table--clickable')
+
+    await wrapper.findAll('.wx-tabs__tab').at(-1)?.trigger('mousedown')
+    await flushPromises()
+
+    // A deleted page has no editor to open, so the row leads nowhere and says so (§13).
+    expect(wrapper.get('.wx-table').classes()).not.toContain('wx-table--clickable')
+    expect(wrapper.get('.wx-table').classes()).not.toContain('wx-table--hover')
+  })
+
+  it('asks before a drop that rewrites more than one address, and not before one that does not', async () => {
+    const leaf = page({ id: 2, parent_id: 1, descendants_count: 0 })
+    const branch = page({ id: 3, parent_id: 1, title: 'Catalogue', descendants_count: 41 })
+
+    const { wrapper } = panel({ home, items: [leaf, branch] })
+    await flushPromises()
+
+    const table = wrapper.findComponent({ name: 'WxTable' })
+
+    // One page landing somewhere else changes one address: a gesture, not a decision (§14.3).
+    table.vm.$emit('node-drop', { row: leaf, target: branch, zone: 'inside' })
+    await flushPromises()
+    expect(document.querySelector('.wx-confirm__message')).toBeNull()
+
+    // A branch takes its forty-one pages with it, and every one of them changes address.
+    table.vm.$emit('node-drop', { row: branch, target: leaf, zone: 'inside' })
+    await flushPromises()
+    expect(document.querySelector('.wx-confirm__message')?.textContent).toContain('42')
+
+    // Left open, the dialog outlives the test and is found by the next one.
+    document.querySelector<HTMLButtonElement>('.wx-dialog__foot button')?.click()
+    await flushPromises()
   })
 })

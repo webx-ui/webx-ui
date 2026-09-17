@@ -175,6 +175,19 @@ export interface TableProps<T = TableRow> {
   bordered?: boolean
   /** Highlight the row under the pointer. */
   hover?: boolean
+  /**
+   * Whether a click on a row leads anywhere.
+   *
+   * Left alone it is inferred from whether anybody is listening for `row-click` — the caller has
+   * already said it by listening, and a second way to say the same thing is a second thing to
+   * get wrong. Said out loud when the answer changes while the table is on screen: the vnode a
+   * component was rendered with is not reactive, so the inference runs once and never again, and
+   * a list that puts its destination away — a bin, an archive, a picker that takes several at a
+   * time — would keep the cursor and the highlight it no longer earns.
+   *
+   * `false` is the whole promise withdrawn: no pointer, no highlight, and no `row-click` either.
+   */
+  clickable?: boolean
   size?: ControlSize
   /** Adds the checkbox column. */
   selectable?: boolean

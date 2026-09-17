@@ -47,6 +47,7 @@ return [
     'move-title' => 'Mover «:title»',
     'move-help' => 'Elige la página que la acoge. Todo lo que hay dentro se mueve con ella, y las direcciones cambian.',
     'move-confirm' => 'Mover',
+    'move-branch' => 'Cambian :count direcciones: la de la página y las de todo lo que contiene. Las antiguas redirigirán a las nuevas.',
     'moved' => 'Movida. Han cambiado :count direcciones; las antiguas redirigen a las nuevas.',
     'moved-one' => 'Movida. La dirección ha cambiado; la antigua redirige a ella.',
 
@@ -55,6 +56,10 @@ return [
     'delete-branch' => 'Las :count páginas que contiene van con ella.',
     'deleted' => 'La página está en la papelera.',
     'restored' => 'La página ha vuelto.',
+    'restore-page-title' => '¿Recuperar «:title»?',
+    'restore-page-text' => 'La página sale de la papelera y recupera su dirección. La que estaba en el sitio vuelve a responder.',
+    'restore-branch' => 'Las :count páginas que entraron con ella también vuelven.',
+    'restored-branch' => 'Han vuelto :count páginas.',
 
     'copy-of' => ':title (copia)',
     'duplicated' => 'La copia está lista y no está en el sitio.',
@@ -69,6 +74,9 @@ return [
     'save' => 'Guardar',
     'save-failed' => 'La página no se guardó.',
     'publish' => 'Publicar',
+    'publish-title' => '¿Publicar «:title»?',
+    'publish-text' => 'Desde ese momento responde en :address, para todo el mundo.',
+    'publish-text-nowhere' => 'Desde ese momento empieza a responder en el sitio, para todo el mundo.',
     'published' => 'La página está en el sitio.',
     'preview' => 'Vista previa',
     'more' => 'Más',

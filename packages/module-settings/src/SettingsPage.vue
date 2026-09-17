@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useAdmin, useTranslate, WxScreen } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxScreen } from '@webx-ui/module-admin'
 import { toast, WxActionBar, WxButton, WxHeading, WxSkeleton } from '@webx-ui/core'
 import type { ScreenModel } from '@webx-ui/schema'
 import { createSettingsApi } from './api'
@@ -16,6 +16,8 @@ const api = createSettingsApi(context)
 useSettingsMessages()
 
 const t = useTranslate('webx-settings')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 const values = ref<ScreenModel>({})
 const errors = ref<Record<string, string[]>>({})
@@ -35,8 +37,7 @@ onMounted(async () => {
   try {
     values.value = await api.load()
   } catch (error) {
-    const body = (error as { body?: { message?: string } }).body
-    toast.danger(body?.message ?? String(error))
+    toast.danger(message(error))
   } finally {
     loading.value = false
   }
@@ -56,7 +57,7 @@ async function save(): Promise<void> {
       errors.value = body.errors
       toast.danger(t('page.failed'))
     } else {
-      toast.danger(body?.message ?? t('page.failed'))
+      toast.danger(message(error, t('page.failed')))
     }
   } finally {
     saving.value = false

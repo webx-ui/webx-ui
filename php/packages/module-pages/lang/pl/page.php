@@ -47,6 +47,7 @@ return [
     'move-title' => 'Przenieś „:title”',
     'move-help' => 'Wybierz stronę, do której trafi. Wszystko, co w niej jest, przenosi się razem z nią, a adresy się zmieniają.',
     'move-confirm' => 'Przenieś',
+    'move-branch' => 'Zmieni się :count adresów — strony i wszystkiego, co jest w środku. Stare będą prowadzić do nowych.',
     'moved' => 'Przeniesiono. Zmieniło się :count adresów; stare przekierowują na nowe.',
     'moved-one' => 'Przeniesiono. Adres się zmienił; stary przekierowuje na nowy.',
 
@@ -55,6 +56,10 @@ return [
     'delete-branch' => ':count stron wewnątrz trafi tam razem z nią.',
     'deleted' => 'Strona jest w koszu.',
     'restored' => 'Strona wróciła.',
+    'restore-page-title' => 'Przywrócić „:title”?',
+    'restore-page-text' => 'Strona wyjdzie z kosza i odzyska swój adres. Ta, która była w serwisie, znów zacznie odpowiadać.',
+    'restore-branch' => 'Wrócą też :count stron, które trafiły tam razem z nią.',
+    'restored-branch' => 'Wróciło stron: :count.',
 
     'copy-of' => ':title (kopia)',
     'duplicated' => 'Kopia jest gotowa i nie ma jej w witrynie.',
@@ -69,6 +74,9 @@ return [
     'save' => 'Zapisz',
     'save-failed' => 'Strona nie została zapisana.',
     'publish' => 'Opublikuj',
+    'publish-title' => 'Opublikować „:title”?',
+    'publish-text' => 'Od tej chwili strona odpowiada pod adresem :address — dla wszystkich.',
+    'publish-text-nowhere' => 'Od tej chwili strona zacznie odpowiadać w serwisie — dla wszystkich.',
     'published' => 'Strona jest na witrynie.',
     'preview' => 'Podgląd',
     'more' => 'Więcej',

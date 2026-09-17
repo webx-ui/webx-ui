@@ -9,7 +9,7 @@ return [
     'done' => 'Fertig',
     'remove' => 'Entfernen',
     'remove-title' => '„:title“ entfernen?',
-    'remove-text' => 'Die Blöcke darin gehen mit.',
+    'remove-text' => 'Die :count Blöcke darin gehen mit.',
     'duplicate' => 'Duplizieren',
     'empty' => 'Noch keine Blöcke. Fügen Sie den ersten hinzu.',
     'nested-note' => 'Verschachtelte Blöcke werden im Baum links bearbeitet.',

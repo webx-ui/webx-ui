@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, type Component } from 'vue'
-import { useAdmin, useI18n, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useI18n, useTranslate } from '@webx-ui/module-admin'
 import {
   toast,
   useModal,
@@ -47,6 +47,8 @@ const i18n = useI18n()
 useAuthMessages()
 
 const t = useTranslate('webx-auth')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 const roles = ref<Role[]>([])
 const saving = ref(false)
@@ -135,9 +137,11 @@ async function save(): Promise<void> {
 
     if (body?.errors) {
       errors.value = body.errors
-    } else if (body?.message) {
-      // The two refusals that keep a panel reachable arrive as a message, not as a field.
-      toast.danger(body.message)
+    } else {
+      // The two refusals that keep a panel reachable — the last super administrator, and doing
+      // it to yourself — arrive as a 422 with a message and no field, which is the one shape
+      // the panel repeats back word for word.
+      toast.danger(message(error))
     }
   } finally {
     saving.value = false

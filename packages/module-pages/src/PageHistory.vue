@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import { confirm, toast, WxBadge, WxButton, WxEmpty, WxSkeleton, WxText } from '@webx-ui/core'
 import { createPagesApi } from './api'
 import { usePageEditor } from './editor'
@@ -25,6 +25,8 @@ const editor = usePageEditor()
 usePagesMessages()
 
 const t = useTranslate('webx-pages')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 const versions = ref<PageVersion[] | null>(null)
 const working = ref(false)
@@ -86,10 +88,6 @@ function when(version: PageVersion): string {
   if (!version.created_at) return ''
 
   return new Date(version.created_at).toLocaleString(context.i18n.state.locale)
-}
-
-function message(error: unknown): string {
-  return (error as { body?: { message?: string } }).body?.message ?? String(error)
 }
 
 // The page is reloaded after every publication and every restore, so its stamp is the signal

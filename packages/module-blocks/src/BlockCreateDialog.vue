@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import {
   toast,
   useModal,
@@ -27,6 +27,8 @@ const api = createBlocksApi(context)
 useBlocksMessages()
 
 const t = useTranslate('webx-blocks')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 const groups = computed<string[]>(() => {
   const meta = context.state.manifest?.modules.find((module) => module.id === 'blocks')?.meta
@@ -76,7 +78,7 @@ async function save(): Promise<void> {
     if (body?.errors) {
       errors.value = body.errors
     } else {
-      toast.danger(body?.message ?? t('page.failed'))
+      toast.danger(message(error, t('page.failed')))
     }
   } finally {
     saving.value = false
