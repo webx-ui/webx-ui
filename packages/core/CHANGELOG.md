@@ -1,5 +1,189 @@
 # @webx-ui/core
 
+## 0.21.0
+
+### Minor Changes
+
+- 2e27380: Lists that mean what they show: a tree stays a tree, a row promises only what it does, and
+  anything that cannot be undone asks first.
+
+  **The page tree is a table at every width.** Below 640px it used to become cards, and a card has
+  no indentation to read and no chevron to open — so the section quietly asked the server for a flat
+  list instead, and a phone had no tree at all. The cards were the mistake, not the tree. The table
+  now drops columns as the width goes: when it was last touched, then what state it is in, then
+  where it lives, until a row is its title and its `···`. Measured at 375px: 65px a row against
+  250px a card, ten pages on screen instead of three and a half, with the chevron still opening
+  branches.
+
+  **`WxTable` takes a `clickable` prop.** It still infers the answer from whether anybody listens
+  for `row-click`, which is right for an ordinary list and needs nothing said. It is not right for a
+  list whose rows stop leading anywhere while it is on screen — the bin of `Pages`, an archive, a
+  picker taking several rows at once — because the listener a component was rendered with cannot be
+  read again. `:clickable="false"` withdraws the whole promise: no pointer, no highlight, and no
+  `row-click` either. The bin, the two SEO lists for a reader who may not edit them, and the
+  administrator picker in multiple mode all say so now.
+
+  **One place decides what a failed request says.** `useErrorText()` turns an error into a sentence
+  in the panel's language. A 422 is repeated word for word — every refusal that reaches one is
+  written by a module to be read — and every other status gets the panel's own words, so clicking a
+  page somebody else deleted says "It is not there any more" rather than
+  `No query results for model [WebxUi\Pages\Models\Page] 8`. Twenty-odd places that printed the
+  server's `message` now go through it, and `webx-admin::errors` ships the lines in ten languages.
+
+  **Confirmations, in numbers.** Restoring from the bin, publishing a page, moving a branch by drag
+  or by the "Inside" picker, deleting a block that holds others and deleting an empty media folder
+  all ask now, and the question carries the consequence as a figure: how many pages come back, which
+  address the page starts answering at, how many addresses a move rewrites, how many blocks go with
+  the one being removed. A move of a single page stays a gesture and asks nothing, because a redirect
+  is left on every address a move vacates — there is no undo to offer, only a second move.
+
+- 738a7e9: One shape for every list in the panel
+
+  Five sections each answered "where does the heading go" on their own, and there were five
+  answers: a heading inside the card on `Administrators`, two headings on `SEO`, a search outside
+  the card on `Blocks`, no heading at all on `Files`, a bare red bin in every row here and a menu
+  there. They are one shape now — the section's name on its own line, the one action it exists
+  for beside it, the views of the list as tabs under that, and a card holding nothing but the
+  rows. The search stays inside the table: it narrows the rows, not the screen.
+
+  `WxListScreen` in `module-admin` is that frame, and it is a screen node type — `wx-list` — so
+  the next section describes its list rather than writing a sixth copy of the same markup.
+
+  `WxTabs` grew an `items` mode for it: the strip is built from a list and the default slot is the
+  **one** panel under it. A view is a different question to the server, not a different panel, so
+  nothing is unmounted on a switch and the table keeps its search, its page and its scroll.
+  `collapseBelow` folds the strip into a single switch labelled with the open view when its own
+  container gets narrow — not into three dots, which in this panel mean actions.
+
+  `WxRowMenu` is the other half: a `···` at the end of every row in every list, even for a single
+  action. It orders the destructive one last, behind a rule, in red, and what somebody has no
+  right to is left out rather than greyed. Underneath it is `WxActions` with the new
+  `collapse="always"`, which never builds the row of icons at all — so the width of a table cell
+  stops deciding whether a row has a menu. `WxFileCard` takes the same choice as `actionsMenu`,
+  which is how a single file in the library gets one.
+
+  Uploading is the media library's main action now: a filled blue button with a word on it in the
+  line of the heading, rather than the third grey icon in a row of six. Blue, because green in
+  this system means "it worked". Inside the picker dialog the toolbar keeps its upload icon —
+  there is no screen around it there.
+
+- 738a7e9: One step for the whole panel: cards, grids and forms read `--wx-gap`
+
+  The panel's spacing step — 8 on a phone, 12 on a tablet, 16 on a desktop — used to space the
+  frame alone. It now spaces everything: the air inside a card and between the things in it, the
+  gap between the fields of a form, the gutter of a grid, the space between the strip of tabs and
+  what it switches. Where there is no panel around them, the components fall back to 16, which is
+  what they had.
+
+  Two things change on their own account. A form's `gap="md"` is 16 rather than 24, so a form laid
+  out by a card and a form laid out by itself finally agree. And a tab is now a column that spaces
+  what it holds — two cards in a tab used to stand flush and read as one.
+
+- 738a7e9: The screen's own bar along the bottom, and a preview that fills the height it was given.
+
+  A screen's buttons live in its head, and since the page started scrolling natively the head goes
+  with it — so a form long enough to need saving is a form whose save button is off the top of the
+  window by the time it is needed. `WxActionBar` is that button brought back: the state of the work
+  on the left, what can be done about it on the right.
+
+  It is part of the screen rather than of the shell — a list has none, a form has one — and it is
+  the last row of the screen rather than a layer over it. That is why it never covers anything: at
+  the end of a page it is the last thing on it, and above that it sticks to the bottom of the window
+  without taking the room it would need to be there. `--wx-action-bar-bottom` is how far off the
+  edge it stops, and the strip below it is painted over, or the page scrolling past would show
+  through the gap.
+
+  `WxMain` gives a screen that holds one a floor of `--wx-fill-height`, so a form of one field still
+  has its bar along the bottom of the window rather than halfway up the page.
+
+  In the panel: the settings screen and the block type editor duplicate the buttons from their
+  heads, and the page editor — which is exactly as tall as the window, so nothing ever scrolls away
+  — moves `Save` and `Publish` into the bar instead of repeating them, leaving the head the links
+  out to the site.
+
+  The page preview inside the block constructor now fills the card it stands in. A scaled iframe
+  keeps its layout height, so a page 1280px wide drawn in a 420px column used to paint a third of
+  the card and leave the rest empty for the card to scroll; the frame is now divided by its own
+  scale, and what scrolls inside it is the site. On a form that scrolls, the tree and the field
+  panel are sticky with their own scrollbars, the way the preview beside them already was.
+
+- e93ae5b: The panel's frame: the bar goes into the sidebar, and the page scrolls itself.
+
+  On a desktop and a tablet there is no bar across the top of the panel any more. The sidebar is
+  the whole of the chrome and has three zones — the brand and the collapse button, the menu with its
+  own scrollbar, the account at the bottom with its menu opening upwards — and the 56px the bar took
+  out of the window's height go to the screen. A phone has no such column, so there the bar comes
+  back with the burger, the brand and the account, and the menu is a drawer; choosing a section
+  there now closes the drawer, which it did not before.
+
+  The frame floats: the sidebar and the phone's bar are cards inset from the edges of the window,
+  with the body colour running all the way round them. The inset is the panel's spacing step —
+  8 on a phone, 12 on a tablet, 16 on a desktop — and the column is 220px wide, 56px as a rail,
+  which leaves a screen exactly the width it had under the old frame at 1280 and at 1440.
+
+  What scrolls is the page, natively: the shell no longer caps itself at one viewport, and the
+  sidebar stands still beside a document that moves. A screen that has to be exactly as tall as the
+  window still says `data-wx-fill`, but the height it gets is now measured from the window rather
+  than from a scrolling column.
+
+  `WxAside` grew the `top` and `bottom` slots — with either of them filled, `scroll` moves to the
+  middle zone — plus `sticky`, for a column that stands beside a scrolling page, and `floating`, for
+  one drawn as a card. `WxHeader` takes `floating` too. Both are additions: every existing shape
+  behaves exactly as it did, and `viewport` shells are untouched.
+
+  `webx-ui/module-admin` adds `nav.expand` in all ten languages, for the button on the rail.
+
+- a16ff45: Icon buttons say what they are, and the tree gives its width back
+
+  `WxAction` draws its own tooltip. `title` is now what the tip says rather than what the browser
+  draws: one shape across a panel, a delay of our own, and a side that can be turned away from the
+  edge of a dialog with the new `tooltipSide`. The accessible name is unchanged — `aria-label`
+  carries `label`, then `title`, then the English name of the type — but the `title` attribute is
+  gone from the markup, so an action is found by its name and no longer by `[title=…]`.
+
+  A greyed action keeps its tip, which is when an icon needs one most. That needed the other half
+  of the change: `disabled` puts `aria-disabled` and `tabindex="-1"` on the control instead of the
+  attribute, because a disabled button receives no pointer events at all and nothing would ever
+  open. Clicks and keys are turned away as before, and the control stays out of the tab order.
+
+  The tooltip brings a portal beside the control, so an action is no longer a single root node.
+  Templates do not notice; a test does — reach for the `button` inside the wrapper rather than for
+  the wrapper itself.
+
+  `WxTree` gives back the width it was spending on nothing. Two pixels between branches, so a list
+  of names stops reading as one block. The level step is 16 rather than 21, and `indent` now
+  counts the guide line inside itself, so a lined tree and a plain one indent by the same amount.
+  The drag handle leaves the flow: it sits in the row's left margin and appears on hover, instead
+  of holding 20 px of every row at every level. From the edge to the text: 77 px to 60 at the
+  first level, 127 to 100 at the fourth. A leaf keeps the room where a chevron would be, so the
+  names of leaves and branches still line up.
+
+  New icon: `folder-move`, a folder with an arrow going down into it.
+
+  The media library uses both. The button that shows the folder tree on a narrow screen is now
+  `sidebar` — the same icon the shell shows and hides its own column with — and the one that moves
+  files into a folder is `folder-move`. They were both drawn as `folder`, in the same row.
+
+### Patch Changes
+
+- 738a7e9: A note under a field is smaller than its label, and a group of fields has a card
+
+  `WxFormItem` sets the help text and the error to `--wx-font-size-xs` — 12 against the label's 14.
+  They used to share a size and differ only in weight and colour, so a two-line note read as a
+  paragraph of its own and the eye lost the seam between one field and the next. The error moves
+  with the help text rather than staying at 14: it takes the help text's place, and a line that
+  jumps a size on the first failed save is worse than either size.
+
+  The SEO tab of a page gets the card it never had. It arrives as a patch from `module-seo`, so
+  the fix is in the patched node: the `wx-seo` field now travels inside a `wx-card`, and the tab
+  stops being the one place in the panel where fields lie straight on the page background. The
+  card holds SEO's own three sub-tabs — one card, tabs inside it, nothing nested.
+
+  The snippet preview inside that card also gets its frame back. It asked for
+  `--wx-color-border`, `--wx-color-surface-sunken`, `--wx-color-text-muted` and `--wx-color-text`,
+  none of which are tokens; a name that does not exist resolves to nothing without complaint, so
+  the box had no border, no background and no colour of its own.
+
 ## 0.20.0
 
 ### Minor Changes
