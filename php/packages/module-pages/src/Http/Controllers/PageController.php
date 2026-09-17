@@ -45,7 +45,7 @@ final class PageController
         $flat = $request->boolean('flat');
 
         $items = match (true) {
-            $trashed => $this->bin(),
+            $trashed => $this->bin($search, $locales->current()),
             $search !== '' => $this->matches($search, $locales->current(), $request),
             $flat => $this->everything($request),
             default => $this->level($request),
@@ -185,22 +185,41 @@ final class PageController
      */
     private function matches(string $term, string $locale, Request $request): Collection
     {
-        $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $term).'%';
-
         /** @var Collection<int, Page> $found */
-        $found = $this->listing($request)
-            ->where(static function (Builder $query) use ($like, $locale): void {
-                // Each half through the package's own scope rather than a hand-written
-                // `title->en`: how a translation is stored is `webx-ui/localization`'s to know,
-                // and a second spelling of it here is one that drifts.
-                $query->where(static fn (Builder $nested): Builder => $nested->whereTranslationLike('title', $like, $locale))
-                    ->orWhere(static fn (Builder $nested): Builder => $nested->whereTranslationLike('slug', $like, $locale));
-            })
+        $found = $this->searching($this->listing($request), $term, $locale)
             ->orderBy('lft')
             ->limit(self::SEARCH_LIMIT)
             ->get();
 
         return $found;
+    }
+
+    /**
+     * Narrow a query to pages whose name or address contains the term, in the language the panel
+     * is open in. An empty term narrows nothing.
+     *
+     * Lives apart from `matches()` because the bin is a search too: an editor who types in the
+     * box expects the list under it to answer, and which list that is — the tree or the bin — is
+     * not something the box knows about.
+     *
+     * @param  Builder<Page>  $query
+     * @return Builder<Page>
+     */
+    private function searching(Builder $query, string $term, string $locale): Builder
+    {
+        if ($term === '') {
+            return $query;
+        }
+
+        $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $term).'%';
+
+        return $query->where(static function (Builder $nested) use ($like, $locale): void {
+            // Each half through the package's own scope rather than a hand-written `title->en`:
+            // how a translation is stored is `webx-ui/localization`'s to know, and a second
+            // spelling of it here is one that drifts.
+            $nested->where(static fn (Builder $half): Builder => $half->whereTranslationLike('title', $like, $locale))
+                ->orWhere(static fn (Builder $half): Builder => $half->whereTranslationLike('slug', $like, $locale));
+        });
     }
 
     /**
@@ -222,7 +241,7 @@ final class PageController
     }
 
     /**
-     * The bin: what was deleted, newest first.
+     * The bin: what was deleted, newest first, narrowed by the term in the search box.
      *
      * Only the pages somebody actually deleted. The branch that went down with one of them is
      * restored with it and has no life of its own in here — listing it would offer an editor a
@@ -230,12 +249,12 @@ final class PageController
      *
      * @return Collection<int, Page>
      */
-    private function bin(): Collection
+    private function bin(string $term, string $locale): Collection
     {
+        $query = Page::onlyTrashed()->whereNull('trashed_with')->with('routes');
+
         /** @var Collection<int, Page> $trashed */
-        $trashed = Page::onlyTrashed()
-            ->whereNull('trashed_with')
-            ->with('routes')
+        $trashed = $this->searching($query, $term, $locale)
             ->orderByDesc('deleted_at')
             ->get();
 
