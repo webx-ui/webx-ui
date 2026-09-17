@@ -128,7 +128,13 @@ final class SettingsEndpointsTest extends TestCase
             ->assertOk();
 
         $this->assertSame('Глобекс', settings('general.project-name'));
-        $this->assertSame(['general.project-name' => 'Глобекс'], settings()->all());
+        // Every key the screen declares, whether or not it holds anything: the branding
+        // pictures nobody has chosen are part of the answer as nulls.
+        $this->assertSame([
+            'general.project-name' => 'Глобекс',
+            'branding.logo' => null,
+            'branding.mark' => null,
+        ], settings()->all());
     }
 
     #[Test]

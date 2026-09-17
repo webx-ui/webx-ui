@@ -28,15 +28,42 @@ button of its own: Save. A 422 from the server lands under the field it names.
 
 ## The screen, and what to patch
 
-Out of the box the screen is one tab with one field. That is deliberate: the rest of a site's
-settings are the site's own, and a module cannot guess them.
+Out of the box the screen is two tabs — what the panel is called and what it wears. That is
+deliberately little: the rest of a site's settings are the site's own, and a module cannot
+guess them.
 
-| id             | type       | name                   | what it is                       |
-| -------------- | ---------- | ---------------------- | -------------------------------- |
-| `tabs`         | `wx-tabs`  |                        | The tab strip                    |
-| `general`      | `wx-tab`   |                        | "General"                        |
-| `general-card` | `wx-card`  |                        | The card inside it               |
-| `project-name` | `wx-input` | `general.project-name` | The project's name, per language |
+| id              | type       | name                   | what it is                       |
+| --------------- | ---------- | ---------------------- | -------------------------------- |
+| `tabs`          | `wx-tabs`  |                        | The tab strip                    |
+| `general`       | `wx-tab`   |                        | "General"                        |
+| `general-card`  | `wx-card`  |                        | The card inside it               |
+| `project-name`  | `wx-input` | `general.project-name` | The project's name, per language |
+| `branding`      | `wx-tab`   |                        | "Branding"                       |
+| `branding-card` | `wx-card`  |                        | The card inside it               |
+| `logo`          | `wx-media` | `branding.logo`        | The logo for the open sidebar    |
+| `mark`          | `wx-media` | `branding.mark`        | The square mark for the rail     |
+
+## Whose panel this is
+
+The three branding values are the only settings the panel reads about itself. They travel in
+the manifest, so the frame wears them from the first paint:
+
+- `general.project-name` becomes `manifest.title` — the text in the corner when there is no
+  logo, and the logo's `alt` when there is. Left empty it falls back to `WEBX_ADMIN_TITLE`.
+- `branding.logo` is shown in the corner of the open sidebar, at 28 px tall and whatever width
+  that leaves it.
+- `branding.mark` is shown on the 56 px rail, above the button that opens the sidebar again.
+  Left empty, the rail looks the way it always has: two pictures rather than one and a
+  cropping rule, because a wordmark cut to a square is its first two letters.
+
+On the server this is one binding, `WebxUi\Admin\Contracts\BrandingSource`, which
+`module-settings` answers. The frame asks whoever is bound to it and wears its configured
+title when nobody is — `module-admin` neither knows nor requires the section that holds a
+logo. A project that keeps its brand somewhere else binds its own implementation.
+
+The two picture fields are `wx-media`, which means `webx-ui/module-media` resolves them into
+addresses. Without that package installed the values stay library paths the panel cannot read,
+and the corner keeps its name — the same tolerance `module-seo` has for its `og:image`.
 
 Those ids are the public contract. A project addresses them from a patch — registered on the
 server, in a provider that boots after the module's, which the application's own does:
