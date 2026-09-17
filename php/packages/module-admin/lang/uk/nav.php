@@ -6,6 +6,7 @@ return [
     'sections' => 'Розділи',
     'menu' => 'Меню',
     'collapse' => 'Згорнути меню',
+    'expand' => 'Розгорнути меню',
     'language' => 'Мова',
     'system' => 'Система',
 ];
