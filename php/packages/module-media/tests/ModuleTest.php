@@ -20,6 +20,7 @@ final class ModuleTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.modules.0.id', 'media')
             ->assertJsonPath('data.modules.0.icon', 'folder')
+            ->assertJsonPath('data.modules.0.group', 'system')
             ->assertJsonPath('data.modules.0.permissions', [
                 'media.view',
                 'media.upload',
