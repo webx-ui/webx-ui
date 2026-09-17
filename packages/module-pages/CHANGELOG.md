@@ -1,5 +1,146 @@
 # @webx-ui/module-pages
 
+## 0.2.0
+
+### Minor Changes
+
+- 738a7e9: The screen's own bar along the bottom, and a preview that fills the height it was given.
+
+  A screen's buttons live in its head, and since the page started scrolling natively the head goes
+  with it — so a form long enough to need saving is a form whose save button is off the top of the
+  window by the time it is needed. `WxActionBar` is that button brought back: the state of the work
+  on the left, what can be done about it on the right.
+
+  It is part of the screen rather than of the shell — a list has none, a form has one — and it is
+  the last row of the screen rather than a layer over it. That is why it never covers anything: at
+  the end of a page it is the last thing on it, and above that it sticks to the bottom of the window
+  without taking the room it would need to be there. `--wx-action-bar-bottom` is how far off the
+  edge it stops, and the strip below it is painted over, or the page scrolling past would show
+  through the gap.
+
+  `WxMain` gives a screen that holds one a floor of `--wx-fill-height`, so a form of one field still
+  has its bar along the bottom of the window rather than halfway up the page.
+
+  In the panel: the settings screen and the block type editor duplicate the buttons from their
+  heads, and the page editor — which is exactly as tall as the window, so nothing ever scrolls away
+  — moves `Save` and `Publish` into the bar instead of repeating them, leaving the head the links
+  out to the site.
+
+  The page preview inside the block constructor now fills the card it stands in. A scaled iframe
+  keeps its layout height, so a page 1280px wide drawn in a 420px column used to paint a third of
+  the card and leave the rest empty for the card to scroll; the frame is now divided by its own
+  scale, and what scrolls inside it is the site. On a form that scrolls, the tree and the field
+  panel are sticky with their own scrollbars, the way the preview beside them already was.
+
+### Patch Changes
+
+- 2e27380: Lists that mean what they show: a tree stays a tree, a row promises only what it does, and
+  anything that cannot be undone asks first.
+
+  **The page tree is a table at every width.** Below 640px it used to become cards, and a card has
+  no indentation to read and no chevron to open — so the section quietly asked the server for a flat
+  list instead, and a phone had no tree at all. The cards were the mistake, not the tree. The table
+  now drops columns as the width goes: when it was last touched, then what state it is in, then
+  where it lives, until a row is its title and its `···`. Measured at 375px: 65px a row against
+  250px a card, ten pages on screen instead of three and a half, with the chevron still opening
+  branches.
+
+  **`WxTable` takes a `clickable` prop.** It still infers the answer from whether anybody listens
+  for `row-click`, which is right for an ordinary list and needs nothing said. It is not right for a
+  list whose rows stop leading anywhere while it is on screen — the bin of `Pages`, an archive, a
+  picker taking several rows at once — because the listener a component was rendered with cannot be
+  read again. `:clickable="false"` withdraws the whole promise: no pointer, no highlight, and no
+  `row-click` either. The bin, the two SEO lists for a reader who may not edit them, and the
+  administrator picker in multiple mode all say so now.
+
+  **One place decides what a failed request says.** `useErrorText()` turns an error into a sentence
+  in the panel's language. A 422 is repeated word for word — every refusal that reaches one is
+  written by a module to be read — and every other status gets the panel's own words, so clicking a
+  page somebody else deleted says "It is not there any more" rather than
+  `No query results for model [WebxUi\Pages\Models\Page] 8`. Twenty-odd places that printed the
+  server's `message` now go through it, and `webx-admin::errors` ships the lines in ten languages.
+
+  **Confirmations, in numbers.** Restoring from the bin, publishing a page, moving a branch by drag
+  or by the "Inside" picker, deleting a block that holds others and deleting an empty media folder
+  all ask now, and the question carries the consequence as a figure: how many pages come back, which
+  address the page starts answering at, how many addresses a move rewrites, how many blocks go with
+  the one being removed. A move of a single page stays a gesture and asks nothing, because a redirect
+  is left on every address a move vacates — there is no undo to offer, only a second move.
+
+- 738a7e9: One shape for every list in the panel
+
+  Five sections each answered "where does the heading go" on their own, and there were five
+  answers: a heading inside the card on `Administrators`, two headings on `SEO`, a search outside
+  the card on `Blocks`, no heading at all on `Files`, a bare red bin in every row here and a menu
+  there. They are one shape now — the section's name on its own line, the one action it exists
+  for beside it, the views of the list as tabs under that, and a card holding nothing but the
+  rows. The search stays inside the table: it narrows the rows, not the screen.
+
+  `WxListScreen` in `module-admin` is that frame, and it is a screen node type — `wx-list` — so
+  the next section describes its list rather than writing a sixth copy of the same markup.
+
+  `WxTabs` grew an `items` mode for it: the strip is built from a list and the default slot is the
+  **one** panel under it. A view is a different question to the server, not a different panel, so
+  nothing is unmounted on a switch and the table keeps its search, its page and its scroll.
+  `collapseBelow` folds the strip into a single switch labelled with the open view when its own
+  container gets narrow — not into three dots, which in this panel mean actions.
+
+  `WxRowMenu` is the other half: a `···` at the end of every row in every list, even for a single
+  action. It orders the destructive one last, behind a rule, in red, and what somebody has no
+  right to is left out rather than greyed. Underneath it is `WxActions` with the new
+  `collapse="always"`, which never builds the row of icons at all — so the width of a table cell
+  stops deciding whether a row has a menu. `WxFileCard` takes the same choice as `actionsMenu`,
+  which is how a single file in the library gets one.
+
+  Uploading is the media library's main action now: a filled blue button with a word on it in the
+  line of the heading, rather than the third grey icon in a row of six. Blue, because green in
+  this system means "it worked". Inside the picker dialog the toolbar keeps its upload icon —
+  there is no screen around it there.
+
+- 738a7e9: One step for the whole panel: cards, grids and forms read `--wx-gap`
+
+  The panel's spacing step — 8 on a phone, 12 on a tablet, 16 on a desktop — used to space the
+  frame alone. It now spaces everything: the air inside a card and between the things in it, the
+  gap between the fields of a form, the gutter of a grid, the space between the strip of tabs and
+  what it switches. Where there is no panel around them, the components fall back to 16, which is
+  what they had.
+
+  Two things change on their own account. A form's `gap="md"` is 16 rather than 24, so a form laid
+  out by a card and a form laid out by itself finally agree. And a tab is now a column that spaces
+  what it holds — two cards in a tab used to stand flush and read as one.
+
+- 30a3d30: One way for the panel to say when something happened
+
+  `module-admin` gains `useDates()` and `WxDate`, and every section that showed a date now calls
+  them: "today at 08:10", "yesterday at 14:03", "16 September at 14:03", "16 September 2025",
+  "never". Twenty-four hours and no seconds in the column; the exact moment stays in a tip and in
+  `<time datetime>`.
+
+  There were three formats on three screens before this, all of them `toLocaleString()` with no
+  locale — so a panel drawn in Russian dated its rows in American order, with `AM/PM` and seconds
+  nobody wanted. The month names and the order of the parts now come from `Intl` in the panel's
+  own language; only `today`, `yesterday` and `never` are translated by hand, and the word for
+  "never" moved out of the two modules that each had their own copy.
+
+  "Today" is counted in the reader's calendar day rather than in UTC, which is what the server
+  sends: the small hours of a morning are today to the person reading them. Sorting is untouched —
+  a column still sorts on the value the server sent, never on the words.
+
+- Updated dependencies [14d79c1]
+- Updated dependencies [738a7e9]
+- Updated dependencies [2e27380]
+- Updated dependencies [738a7e9]
+- Updated dependencies [738a7e9]
+- Updated dependencies [30a3d30]
+- Updated dependencies [738a7e9]
+- Updated dependencies [e93ae5b]
+- Updated dependencies [a16ff45]
+- Updated dependencies [046c6ba]
+  - @webx-ui/module-blocks@0.3.0
+  - @webx-ui/core@0.21.0
+  - @webx-ui/module-admin@0.5.0
+  - @webx-ui/schema@0.2.2
+
 ## 0.1.0
 
 ### Minor Changes
