@@ -75,11 +75,25 @@ up with the rows where it may — which is the whole point of a column of action
 `disabled` is the other half of that choice: the action is visible, greyed and inert, which says
 "not now" rather than "not for this record".
 
+## The tooltip
+
+`title` is drawn by `WxTooltip`, not by the browser: one shape across a panel, a delay of its own
+and a side that can be turned away from the edge of a dialog with `tooltipSide`. The attribute is
+gone from the markup, so an action is found by its name rather than by `[title=…]`.
+
+A greyed action keeps its tooltip, which is when an icon needs it most. That is why `disabled`
+puts `aria-disabled` on the control instead of the attribute: a disabled button receives no
+pointer events at all, so nothing would ever open. Clicks and keys are turned away all the same,
+and the control stays out of the tab order.
+
 ## Accessibility
 
 Every action has an accessible name — `label` if given, otherwise `title`, otherwise the English
 name of the type. In a localised admin panel, pass `title`: it is both the tooltip and the name a
 screen reader reads.
+
+The tooltip comes with a portal beside the control, so an action is not a single root node: in a
+test, reach for the `button` inside the wrapper rather than for the wrapper itself.
 
 ## Collapsing
 
@@ -126,19 +140,20 @@ stops mattering.
 
 ## WxAction props
 
-| Prop       | Type                                                           | Default  | Description                                |
-| ---------- | -------------------------------------------------------------- | -------- | ------------------------------------------ |
-| `type`     | `ActionType`                                                   | `'edit'` | What the action does — see the table above |
-| `icon`     | `string`                                                       | by type  | Icon to draw instead                       |
-| `tone`     | `'primary' \| 'danger' \| 'success' \| 'warning' \| 'neutral'` | by type  | Colour to use instead                      |
-| `title`    | `string`                                                       | —        | Tooltip, and the accessible name           |
-| `label`    | `string`                                                       | by type  | Accessible name on its own                 |
-| `href`     | `string`                                                       | —        | Renders an `<a>`                           |
-| `target`   | `string`                                                       | —        | Target of that link                        |
-| `as`       | `string \| Component`                                          | —        | Render through another component           |
-| `disabled` | `boolean`                                                      | `false`  | Visible, greyed and inert                  |
-| `hidden`   | `boolean`                                                      | `false`  | Draws nothing, keeps the square            |
-| `size`     | `'sm' \| 'md' \| 'lg'`                                         | group's  | 30, 36 or 42 pixels                        |
+| Prop          | Type                                                           | Default  | Description                                |
+| ------------- | -------------------------------------------------------------- | -------- | ------------------------------------------ |
+| `type`        | `ActionType`                                                   | `'edit'` | What the action does — see the table above |
+| `icon`        | `string`                                                       | by type  | Icon to draw instead                       |
+| `tone`        | `'primary' \| 'danger' \| 'success' \| 'warning' \| 'neutral'` | by type  | Colour to use instead                      |
+| `title`       | `string`                                                       | —        | Tooltip, and the accessible name           |
+| `label`       | `string`                                                       | by type  | Accessible name on its own                 |
+| `href`        | `string`                                                       | —        | Renders an `<a>`                           |
+| `target`      | `string`                                                       | —        | Target of that link                        |
+| `as`          | `string \| Component`                                          | —        | Render through another component           |
+| `disabled`    | `boolean`                                                      | `false`  | Visible, greyed and inert                  |
+| `hidden`      | `boolean`                                                      | `false`  | Draws nothing, keeps the square            |
+| `size`        | `'sm' \| 'md' \| 'lg'`                                         | group's  | 30, 36 or 42 pixels                        |
+| `tooltipSide` | `'top'                                                         | 'right'  | 'bottom'                                   | 'left'` | `'top'` | Where the tooltip prefers to sit |
 
 **Events:** `click` (`MouseEvent`). **Slot:** `default` — replaces the icon.
 
