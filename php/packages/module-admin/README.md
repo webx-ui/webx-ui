@@ -89,6 +89,10 @@ GET /api/cms/manifest
 {
   "data": {
     "title": "WebX UI",
+    "branding": {
+      "logo": { "url": "/storage/media/logo.svg", "width": 240, "height": 48 },
+      "mark": null
+    },
     "path": "/cms",
     "apiPath": "/api/cms",
     "modules": [
@@ -107,6 +111,11 @@ GET /api/cms/manifest
 
 Whatever a module returns from `manifest()` lands under `meta`, in its own room, so it can never
 shadow the fields around it.
+
+`title` and `branding` are whose panel this is. They come from whoever is bound to
+`WebxUi\Admin\Contracts\BrandingSource` — `module-settings` binds itself to it, and a site
+without that section gets `WEBX_ADMIN_TITLE` and two nulls. There is one brand, so it is a
+binding and not a registry: a second source would only raise the question of which logo wins.
 
 ## Responses
 
