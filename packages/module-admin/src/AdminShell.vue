@@ -253,6 +253,10 @@ const size = computed(() => shellLayoutFor(width.value, null))
 .wx-admin__screen {
   --wx-fill-height: calc(100dvh - var(--wx-gap) * 2);
 
+  /* And where a screen's own action bar stops, short of the edge, so that it floats with
+     the same air as the sidebar beside it. */
+  --wx-action-bar-bottom: var(--wx-gap);
+
   min-width: 0;
   min-height: 0;
 }

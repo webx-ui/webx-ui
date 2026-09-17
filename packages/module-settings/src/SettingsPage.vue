@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useAdmin, useTranslate, WxScreen } from '@webx-ui/module-admin'
-import { toast, WxButton, WxHeading, WxSkeleton } from '@webx-ui/core'
+import { toast, WxActionBar, WxButton, WxHeading, WxSkeleton } from '@webx-ui/core'
 import type { ScreenModel } from '@webx-ui/schema'
 import { createSettingsApi } from './api'
 import { useSettingsMessages } from './i18n'
 
 /**
- * The settings section: the screen the server describes, and the one button that is the
- * page's own. The screen does not know how it is saved; this does.
+ * The settings section: the screen the server describes, and the saving that is the page's own
+ * — in the head, and again in the bar along the bottom, because the form is taller than a
+ * window and the head goes with the scroll. The screen does not know how it is saved; this does.
  */
 const context = useAdmin()
 const api = createSettingsApi(context)
@@ -80,10 +81,18 @@ async function save(): Promise<void> {
       :errors="errors"
       :disabled="!canManage"
     />
+
+    <!-- The settings are longer than a window, and the button in the head is off the top of it
+         by the second group of fields. This is the same button, where the eye already is. -->
+    <wx-action-bar v-if="canManage && !loading">
+      <wx-button type="primary" :loading="saving" @click="save">{{ t('page.save') }}</wx-button>
+    </wx-action-bar>
   </div>
 </template>
 
 <style scoped>
+/* A column, because the bar along the bottom is pushed there by an auto margin — and it is
+   `WxMain` that gives a screen carrying one the height to push it down through. */
 .wx-settings {
   display: flex;
   flex-direction: column;

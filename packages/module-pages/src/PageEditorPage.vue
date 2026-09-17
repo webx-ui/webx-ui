@@ -10,6 +10,7 @@ import {
   useElementWidth,
   useLocales,
   WxAction,
+  WxActionBar,
   WxAlert,
   WxBadge,
   WxBreadcrumb,
@@ -31,9 +32,9 @@ import type { PageConflict, PageDetail, PageRow } from './types'
  * The editor of one page: a head that stays put, and the described screen under it.
  *
  * What the page itself owns is the head — where this page sits, what state it is in, and the
- * three things that change that state — and the saving. Everything below the head is
- * `pages.form`, so a module or a project adds a tab to the editor with a patch (§12) rather
- * than with a fork of this file.
+ * way out to the site — and the bar along the bottom, which is where the page is saved and
+ * published. Everything between them is `pages.form`, so a module or a project adds a tab to
+ * the editor with a patch (§12) rather than with a fork of this file.
  *
  * Saving is by autosave: a pause after the last keystroke, and the moment a field is left. The
  * explicit button is still there, because a button that says "saved" is the only way a person
@@ -356,15 +357,18 @@ onBeforeRouteLeave(async () => {
               page.is_home ? t('pages.home') : title || t('page.untitled')
             }}</span>
             <wx-badge :type="badge()" dot>{{ t(`page.status-${page.status}`) }}</wx-badge>
-            <wx-text size="sm" tone="muted" class="wx-page-editor__state">
-              {{ t(`page.state-${state}`) }}
-            </wx-text>
           </div>
         </div>
 
+        <!--
+          What is left in the head is what leads away from the page: the draft on the site and
+          the page on the site. Saving and publishing are down in the bar, where the eye is —
+          and only there, because this screen is exactly as tall as the window and the head
+          never leaves it. A second copy of a button already on screen is not a reminder.
+        -->
         <div class="wx-page-editor__actions">
-          <!-- Narrow: everything but publishing folds into a menu. A head three rows tall is a
-               fifth of a phone screen given to buttons above the thing being edited. -->
+          <!-- Narrow: the two links fold into a menu. A head three rows tall is a fifth of a
+               phone screen given to buttons above the thing being edited. -->
           <wx-dropdown v-if="narrow" align="end">
             <template #trigger>
               <wx-action type="more" :title="t('page.more')" />
@@ -386,9 +390,6 @@ onBeforeRouteLeave(async () => {
               rel="noopener"
             >
               {{ t('page.open-on-site') }}
-            </wx-dropdown-item>
-            <wx-dropdown-item v-if="canManage" icon="check" :disabled="!dirty" @click="save">
-              {{ t('page.save') }}
             </wx-dropdown-item>
           </wx-dropdown>
 
@@ -413,28 +414,7 @@ onBeforeRouteLeave(async () => {
             >
               {{ t('page.open-on-site') }}
             </wx-button>
-            <wx-button
-              v-if="canManage"
-              variant="outline"
-              :loading="saving"
-              :disabled="!dirty"
-              @click="save"
-            >
-              {{ t('page.save') }}
-            </wx-button>
           </template>
-
-          <!-- Only the forward action stays out; taking a page off the site and deleting it
-               live in the settings tab, where nothing is one slip away from the save button. -->
-          <wx-button
-            v-if="canManage"
-            type="primary"
-            :loading="working"
-            :disabled="page.status === 'published' && !dirty"
-            @click="publish"
-          >
-            {{ t('page.publish') }}
-          </wx-button>
         </div>
       </div>
 
@@ -465,6 +445,32 @@ onBeforeRouteLeave(async () => {
           :disabled="!canManage || working"
         />
       </div>
+
+      <!--
+        The last row of the screen, not a layer over it: the preview above shrinks by the height
+        of the bar and is never covered by it. Nothing scrolls on this screen, so the bar never
+        has to stick to anything — it is already where sticking would put it.
+      -->
+      <wx-action-bar v-if="canManage">
+        <template #state>
+          <wx-text size="sm" tone="muted">{{ t(`page.state-${state}`) }}</wx-text>
+        </template>
+
+        <wx-button variant="outline" :loading="saving" :disabled="!dirty" @click="save">
+          {{ t('page.save') }}
+        </wx-button>
+
+        <!-- Only the forward action is here; taking a page off the site and deleting it live
+             in the settings tab, where nothing is one slip away from the save button. -->
+        <wx-button
+          type="primary"
+          :loading="working"
+          :disabled="page.status === 'published' && !dirty"
+          @click="publish"
+        >
+          {{ t('page.publish') }}
+        </wx-button>
+      </wx-action-bar>
     </template>
   </div>
 </template>

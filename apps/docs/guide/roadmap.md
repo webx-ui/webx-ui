@@ -130,6 +130,9 @@ and the rest, see [CodeEditor](/components/code-editor). The screens mechanism n
 written somewhere better than a textarea.
 EntityCard ✅ — one record as a row, see [EntityCard](/components/entity-card).
 Actions ✅ — the icon buttons at the end of a row, see [Actions](/components/actions).
+ActionBar ✅ — the same screen's buttons along the bottom of it, see
+[Layout](/components/layout#the-screen-s-own-bar). A panel's screens scroll natively, so the head
+goes with the scroll and takes the save button with it; the bar is where the button waits.
 Kanban ✅ — a board of columns cards are dragged between, see [Kanban](/components/kanban).
 ListDetail ✅ — filters, records, the open one, and the rule for when there is room for all three:
 see [ListDetail](/components/list-detail). An inbox and an orders screen are the same furniture.

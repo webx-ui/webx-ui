@@ -127,6 +127,17 @@ const classes = computed(() => [
 }
 
 /*
+ * A screen with a bar along its bottom is at least as tall as the column, whatever it holds.
+ * The bar is pushed down by an auto margin, and an auto margin needs room to eat: without this
+ * a form of one field puts its bar halfway up the page, where it reads as a stray card rather
+ * than as the foot of the form. A screen that fills the window on purpose says so with
+ * `data-wx-fill` and is already taller than this floor.
+ */
+.wx-main:not(.wx-main--scroll) > .wx-main__inner:has(.wx-action-bar) > :deep(*) {
+  min-height: var(--wx-fill-height, 100dvh);
+}
+
+/*
  * Padding is the first thing to give way on a small screen: 24px of margin around a
  * form is air on a desktop and a third of the line on a phone.
  */
