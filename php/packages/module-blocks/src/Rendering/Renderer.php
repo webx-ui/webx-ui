@@ -13,6 +13,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 use WebxUi\Blocks\BlockType;
 use WebxUi\Blocks\BlockTypes;
+use WebxUi\Blocks\Content;
 use WebxUi\Blocks\Exceptions\BlockNotPublishable;
 
 /**
@@ -198,7 +199,14 @@ final class Renderer
         $index = 0;
 
         foreach ($blocks as $node) {
-            if (is_array($node) && is_string($node['type'] ?? null) && $node['type'] !== '') {
+            /*
+             * The one place a switched-off block is left out (§23), and it is here rather than
+             * in `one()` on purpose: nothing below this line runs for it, so its type never
+             * joins `used[]` and its styles and script stay off the page. Its children go with
+             * it — the recursion simply never reaches them — while their own flags stay in the
+             * content untouched.
+             */
+            if (is_array($node) && is_string($node['type'] ?? null) && $node['type'] !== '' && ! Content::isHidden($node)) {
                 $html .= $this->one($node, $entity, $depth, $index);
             }
 

@@ -30,6 +30,7 @@ import {
   makeNode,
   removeNode,
   replaceList,
+  setHidden,
   updateValues,
 } from './content'
 import { useBlocksMessages } from './i18n'
@@ -255,6 +256,14 @@ function duplicate(key: string): void {
   selectedKey.value = copy.key
 }
 
+/*
+ * No question asked, unlike removing a container: this is one click, it is visible in the row
+ * the moment it happens, and the same click puts it back.
+ */
+function visibility(key: string, hidden: boolean): void {
+  set(setHidden(tree.value, key, hidden))
+}
+
 function reorder(parentKey: string | null, field: string | null, list: BlockNode[]): void {
   set(replaceList(tree.value, parentKey, field, list))
 }
@@ -360,6 +369,7 @@ const formRoot = computed(() =>
           @add="add"
           @remove="remove"
           @duplicate="duplicate"
+          @visibility="visibility"
           @reorder="reorder"
         />
         <wx-button

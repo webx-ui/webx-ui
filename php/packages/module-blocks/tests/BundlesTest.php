@@ -89,6 +89,25 @@ final class BundlesTest extends TestCase
     }
 
     #[Test]
+    public function a_hidden_block_does_not_bring_its_styles_to_the_page(): void
+    {
+        // The skip happens before the type is counted as used, so a switched-off block costs
+        // the page nothing at all — not a tag, not a byte of CSS.
+        $this->publish('section', '<s>@blocks</s>', [], ['styles' => '.section{}']);
+        $this->publish('text', '<p>{{ $body }}</p>', [], ['styles' => '.text{}']);
+
+        $bundle = $this->bundleFor([
+            $this->node('section', ['content' => [$this->node('text', ['body' => 'a'])]]),
+            ['hidden' => true] + $this->node('text', ['body' => 'b']),
+        ]);
+
+        $this->assertNotNull($bundle);
+        $this->assertSame([['section', 1], ['text', 1]], $bundle->types);
+
+        $this->assertNull($this->bundleFor([['hidden' => true] + $this->node('text', ['body' => 'b'])]));
+    }
+
+    #[Test]
     public function a_script_becomes_an_initialiser_per_instance_behind_the_runtime(): void
     {
         $this->publish('hero', '<h1></h1>', [], ['script' => "el.classList.add('ready')"]);

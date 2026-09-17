@@ -29,6 +29,7 @@ const emit = defineEmits<{
   add: [parentKey: string | null, field: string | null, node: ScreenNode | null]
   remove: [key: string]
   duplicate: [key: string]
+  visibility: [key: string, hidden: boolean]
   reorder: [parentKey: string | null, field: string | null, list: BlockNode[]]
 }>()
 
@@ -76,7 +77,7 @@ function iconOf(node: BlockNode): string {
       <div class="wx-blocks-tree__node">
         <div
           class="wx-blocks-tree__row"
-          :class="{ 'is-selected': selected === item.key }"
+          :class="{ 'is-selected': selected === item.key, 'is-hidden': item.hidden === true }"
           role="button"
           tabindex="0"
           @click="emit('select', item.key)"
@@ -104,9 +105,26 @@ function iconOf(node: BlockNode): string {
             class="wx-blocks-tree__flag"
             :title="t('field.disabled-type')"
           >
+            <!-- Not the eye: that one now means this block is off, which is a different thing
+                 from its type being withdrawn from the catalogue. -->
+            <wx-icon name="lock" />
+          </span>
+          <!-- Always, not only on hover: the actions beside it are invisible at rest, and a
+               row that is merely dimmer than its neighbours is not a statement. -->
+          <span
+            v-if="item.hidden === true"
+            class="wx-blocks-tree__flag"
+            :title="t('field.hidden-note')"
+          >
             <wx-icon name="eye-off" />
           </span>
           <span v-if="!disabled" class="wx-blocks-tree__actions" @click.stop>
+            <wx-action
+              :icon="item.hidden === true ? 'eye-off' : 'eye'"
+              size="sm"
+              :title="item.hidden === true ? t('field.show') : t('field.hide')"
+              @click="emit('visibility', item.key, item.hidden !== true)"
+            />
             <wx-action
               icon="copy"
               size="sm"
@@ -136,6 +154,7 @@ function iconOf(node: BlockNode): string {
             @add="(p, f, n) => emit('add', p, f, n)"
             @remove="emit('remove', $event)"
             @duplicate="emit('duplicate', $event)"
+            @visibility="(key, hidden) => emit('visibility', key, hidden)"
             @reorder="(p, f, list) => emit('reorder', p, f, list)"
           />
           <button
@@ -208,6 +227,15 @@ function iconOf(node: BlockNode): string {
   white-space: nowrap;
   font-size: var(--wx-font-size-sm);
   font-weight: var(--wx-font-weight-medium);
+}
+
+/*
+ * A switched-off block is dimmed, not struck out or greyed to illegibility: it is still the
+ * row an editor clicks to edit it, and the eye beside it is what says why it looks different.
+ */
+.wx-blocks-tree__row.is-hidden .wx-blocks-tree__name,
+.wx-blocks-tree__row.is-hidden .wx-blocks-tree__icon {
+  opacity: 0.55;
 }
 
 .wx-blocks-tree__flag {

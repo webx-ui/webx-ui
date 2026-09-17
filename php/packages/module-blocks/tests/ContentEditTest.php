@@ -158,12 +158,53 @@ final class ContentEditTest extends TestCase
     }
 
     #[Test]
+    public function hiding_a_block_writes_the_flag_and_showing_it_takes_it_away(): void
+    {
+        $hidden = ContentEdit::visibility($this->tree(), 'in-left', true);
+
+        $this->assertTrue($hidden[1]['values']['left'][0]['hidden']);
+        $this->assertSame('Inside', $hidden[1]['values']['left'][0]['values']['body'], 'what is in it is untouched');
+
+        // Back on, the node is what it was — no `hidden: false` left lying in the content.
+        $shown = ContentEdit::visibility($hidden, 'in-left', false);
+
+        $this->assertSame($this->tree(), $shown);
+    }
+
+    #[Test]
+    public function hiding_a_block_nobody_has_is_an_error_like_any_other_edit(): void
+    {
+        $this->expectException(BlocksException::class);
+
+        ContentEdit::visibility($this->tree(), 'nope', true);
+    }
+
+    #[Test]
+    public function the_outline_says_which_blocks_are_switched_off(): void
+    {
+        $outline = ContentEdit::outline(ContentEdit::visibility($this->tree(), 'hero', true));
+
+        $this->assertSame(
+            ['key' => 'hero', 'type' => 'hero', 'depth' => 0, 'label' => 'Old', 'hidden' => true],
+            $outline[0],
+        );
+        $this->assertArrayNotHasKey('hidden', $outline[1], 'the rest say nothing rather than false');
+    }
+
+    #[Test]
     public function the_revision_follows_the_content_and_nothing_else(): void
     {
         $this->assertSame(Content::revision($this->tree()), Content::revision($this->tree()));
         $this->assertNotSame(
             Content::revision($this->tree()),
             Content::revision(ContentEdit::set($this->tree(), 'hero', ['title' => 'New'])),
+        );
+
+        // Switching a block off is a change to the page like any other: two people who disagree
+        // about it disagree for real.
+        $this->assertNotSame(
+            Content::revision($this->tree()),
+            Content::revision(ContentEdit::visibility($this->tree(), 'hero', true)),
         );
     }
 }
