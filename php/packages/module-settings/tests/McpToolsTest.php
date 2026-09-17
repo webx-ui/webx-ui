@@ -26,6 +26,8 @@ final class McpToolsTest extends TestCase
     {
         $this->assertSame([
             ['key' => 'general.project-name', 'label' => 'Project name', 'type' => 'wx-input', 'localized' => true],
+            ['key' => 'branding.logo', 'label' => 'Logo', 'type' => 'wx-media', 'localized' => false],
+            ['key' => 'branding.mark', 'label' => 'Mark', 'type' => 'wx-media', 'localized' => false],
         ], $this->invoke('list'));
     }
 

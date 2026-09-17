@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Admin\Manifest;
 
 use Illuminate\Contracts\Config\Repository;
+use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Contracts\Module;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -21,11 +22,13 @@ final class ManifestBuilder
         private readonly Repository $config,
         private readonly Locales $locales,
         private readonly ScreenRegistry $screens,
+        private readonly ?BrandingSource $brand = null,
     ) {}
 
     /**
      * @return array{
      *     title: string,
+     *     branding: array{logo: array{url: string, width: int|null, height: int|null}|null, mark: array{url: string, width: int|null, height: int|null}|null},
      *     path: string,
      *     apiPath: string,
      *     locale: string,
@@ -38,8 +41,14 @@ final class ManifestBuilder
      */
     public function build(): array
     {
+        $brand = $this->brand?->branding() ?? new Branding;
+
         return [
-            'title' => (string) $this->config->get('webx-admin.title'),
+            // The name the client gave the panel, falling back to the one it was deployed with.
+            // It stays in the payload even when there is a logo: it is what the corner shows
+            // until the picture loads, what it shows if the picture is gone, and its alt.
+            'title' => $this->title($brand),
+            'branding' => $brand->toArray(),
             'path' => '/'.ltrim((string) $this->config->get('webx-admin.path'), '/'),
             'apiPath' => '/'.ltrim((string) $this->config->get('webx-admin.api_path'), '/'),
             // The language this administrator reads the panel in — their own choice, not the
@@ -55,6 +64,17 @@ final class ManifestBuilder
             // Only the names: a screen travels on its own, when the page that needs it opens.
             'screens' => $this->screens->names(),
         ];
+    }
+
+    /**
+     * A blank name is no name: a setting saved and then cleared leaves an empty string behind,
+     * and an empty corner is worse than the deployed title.
+     */
+    private function title(Branding $brand): string
+    {
+        $given = trim($brand->title ?? '');
+
+        return $given === '' ? (string) $this->config->get('webx-admin.title') : $given;
     }
 
     /**

@@ -11,6 +11,7 @@ use WebxUi\Admin\Console\InstallCommand;
 use WebxUi\Admin\Console\MakeModuleCommand;
 use WebxUi\Admin\Console\PanelCommand;
 use WebxUi\Admin\Console\PruneVersionsCommand;
+use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Manifest\ManifestBuilder;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -67,6 +68,9 @@ class AdminServiceProvider extends ServiceProvider
                 $app->make('config'),
                 $app->make(Locales::class),
                 $app->make(ScreenRegistry::class),
+                // Optional on purpose: a site without `module-settings` has nowhere to put a
+                // logo, and the frame must not require the section that holds one.
+                $app->bound(BrandingSource::class) ? $app->make(BrandingSource::class) : null,
             ),
         );
     }

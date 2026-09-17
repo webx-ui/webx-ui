@@ -6,6 +6,9 @@ namespace WebxUi\Admin\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\BrandingSource;
+use WebxUi\Admin\Manifest\Branding;
+use WebxUi\Admin\Manifest\BrandingImage;
 use WebxUi\Admin\Tests\Fixtures\MediaModule;
 use WebxUi\Admin\Tests\Fixtures\PagesModule;
 
@@ -78,5 +81,59 @@ final class ManifestTest extends TestCase
             ->assertJsonPath('data.title', 'Acme')
             ->assertJsonPath('data.path', '/panel')
             ->assertJsonPath('data.apiPath', '/api/panel');
+    }
+
+    #[Test]
+    public function a_panel_nobody_has_branded_wears_its_configured_title(): void
+    {
+        $this->getJson('/api/cms/manifest')
+            ->assertOk()
+            ->assertJsonPath('data.title', 'WebX UI')
+            ->assertJsonPath('data.branding.logo', null)
+            ->assertJsonPath('data.branding.mark', null);
+    }
+
+    #[Test]
+    public function a_branding_source_names_the_panel_and_dresses_it(): void
+    {
+        $this->brandedWith(new Branding(
+            title: 'Acme Group',
+            logo: new BrandingImage('https://acme.test/logo.svg', 240, 48),
+            mark: new BrandingImage('https://acme.test/mark.svg'),
+        ));
+
+        $this->getJson('/api/cms/manifest')
+            ->assertOk()
+            ->assertJsonPath('data.title', 'Acme Group')
+            ->assertJsonPath('data.branding.logo.url', 'https://acme.test/logo.svg')
+            ->assertJsonPath('data.branding.logo.width', 240)
+            ->assertJsonPath('data.branding.logo.height', 48)
+            ->assertJsonPath('data.branding.mark.url', 'https://acme.test/mark.svg')
+            ->assertJsonPath('data.branding.mark.width', null);
+    }
+
+    #[Test]
+    public function a_name_cleared_back_to_nothing_is_not_a_name(): void
+    {
+        // A setting saved and then emptied leaves a blank string behind, and an empty corner
+        // is worse than the title the panel was deployed with.
+        $this->brandedWith(new Branding(title: '   '));
+
+        $this->getJson('/api/cms/manifest')
+            ->assertOk()
+            ->assertJsonPath('data.title', 'WebX UI');
+    }
+
+    private function brandedWith(Branding $branding): void
+    {
+        $this->app->instance(BrandingSource::class, new class($branding) implements BrandingSource
+        {
+            public function __construct(private readonly Branding $branding) {}
+
+            public function branding(): Branding
+            {
+                return $this->branding;
+            }
+        });
     }
 }

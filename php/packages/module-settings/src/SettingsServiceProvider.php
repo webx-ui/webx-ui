@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Settings;
 
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 
@@ -15,6 +16,10 @@ class SettingsServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/webx-settings.php', 'webx-settings');
 
         $this->app->singleton(Settings::class);
+
+        // What the panel wears is a setting like any other, so the section that holds the
+        // settings is the one that answers the frame's question about it.
+        $this->app->singleton(BrandingSource::class, PanelBranding::class);
     }
 
     public function boot(): void

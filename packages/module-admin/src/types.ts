@@ -8,7 +8,10 @@ import type { LocaleDescriptor } from './i18n'
  * first thing the front end asks for. Mirrors `WebxUi\Admin\Manifest\ManifestBuilder`.
  */
 export interface Manifest {
+  /** What the panel is called: the corner's text when there is no logo, and the logo's alt. */
   title: string
+  /** The client's own logo, when they have put one in the settings. */
+  branding?: ManifestBranding
   /** Where the panel is served, e.g. `/cms`. Becomes the router's base. */
   path: string
   /** Where its JSON lives, e.g. `/api/cms`. */
@@ -24,6 +27,22 @@ export interface Manifest {
   modules: ManifestModule[]
   /** Names of the screens the server can hand out — the trees themselves travel on request. */
   screens?: string[]
+}
+
+/**
+ * Two pictures rather than one and a cropping rule: a wordmark cut to a square is its first
+ * two letters. A mark left unset means the rail keeps the shape it has always had.
+ */
+export interface ManifestBranding {
+  logo: BrandingImage | null
+  mark: BrandingImage | null
+}
+
+export interface BrandingImage {
+  url: string
+  /** The size the file was made at, when the server knows it — it reserves the room. */
+  width: number | null
+  height: number | null
 }
 
 export interface ManifestGroup {

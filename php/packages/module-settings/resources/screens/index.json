@@ -21,7 +21,39 @@
                   "type": "wx-input",
                   "name": "general.project-name",
                   "label": "trans::webx-settings::screen.project-name",
+                  "help": "trans::webx-settings::screen.project-name-help",
                   "localized": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "branding",
+          "type": "wx-tab",
+          "label": "trans::webx-settings::screen.branding",
+          "children": [
+            {
+              "id": "branding-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "logo",
+                  "type": "wx-media",
+                  "name": "branding.logo",
+                  "label": "trans::webx-settings::screen.logo",
+                  "help": "trans::webx-settings::screen.logo-help",
+                  "slot": "sidebar",
+                  "props": { "accept": "image" }
+                },
+                {
+                  "id": "mark",
+                  "type": "wx-media",
+                  "name": "branding.mark",
+                  "label": "trans::webx-settings::screen.mark",
+                  "help": "trans::webx-settings::screen.mark-help",
+                  "slot": "sidebar",
+                  "props": { "aspect": "1/1", "accept": "image" }
                 }
               ]
             }
