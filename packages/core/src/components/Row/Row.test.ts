@@ -4,10 +4,18 @@ import WxRow from './Row.vue'
 
 describe('WxRow', () => {
   it('publishes the gutter as a variable the columns inherit', () => {
-    const wrapper = mount(WxRow)
+    const wrapper = mount(WxRow, { props: { gutter: 16 } })
 
     expect(wrapper.attributes('style')).toContain('--wx-row-gutter: 16px')
     expect(wrapper.attributes('style')).toContain('--wx-row-gutter-y: 16px')
+  })
+
+  it("falls back to the panel's step when no gutter is given", () => {
+    const wrapper = mount(WxRow)
+
+    expect(wrapper.attributes('style')).toContain(
+      '--wx-row-gutter: var(--wx-gap, var(--wx-space-16))',
+    )
   })
 
   it('takes a separate vertical gutter and CSS lengths', () => {

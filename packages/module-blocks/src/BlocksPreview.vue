@@ -132,6 +132,7 @@ defineExpose({ replace, refresh, open: () => (fullscreen.value = true) })
   <div
     class="wx-blocks-preview"
     :class="{ 'is-fullscreen': fullscreen, 'is-phone': mode === 'phone', 'is-fill': fill }"
+    :style="{ '--wx-preview-scale': scale }"
   >
     <div class="wx-blocks-preview__bar">
       <wx-text size="xs" tone="muted" class="wx-blocks-preview__label" truncate>{{
@@ -234,6 +235,25 @@ defineExpose({ replace, refresh, open: () => (fullscreen.value = true) })
 .is-fill .wx-blocks-preview__ground {
   max-height: none;
   min-height: 0;
+}
+
+/*
+ * All of the height it was given, and no more: the frame is as tall as the ground once the
+ * scale has been applied to it, so the page inside scrolls in its own window rather than in a
+ * box of ours. Without the division the frame is drawn at `height × scale` and the rest of the
+ * ground is empty — a third of the column, at the scale a 420px preview of a 1280px page runs
+ * at, and that emptiness is what the ground used to scroll.
+ */
+.is-fill:not(.is-fullscreen) .wx-blocks-preview__ground {
+  overflow: hidden;
+}
+
+.is-fill:not(.is-fullscreen) .wx-blocks-preview__clip {
+  height: 100%;
+}
+
+.is-fill:not(.is-fullscreen) .wx-blocks-preview__frame {
+  height: calc(100% / var(--wx-preview-scale, 1));
 }
 
 .wx-blocks-preview__clip {

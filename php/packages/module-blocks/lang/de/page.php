@@ -6,6 +6,7 @@ return [
     'blocks' => 'Blöcke',
     'new' => 'Neuer Block',
     'search' => 'Nach Name oder Kennung suchen',
+    'all-groups' => 'Alle Gruppen',
     'empty' => 'Noch keine Blocktypen.',
     'empty-help' => 'Ein Blocktyp entsteht hier vollständig: seine Felder, sein Template, seine Styles und sein Skript.',
     'editing-off' => 'Die Bearbeitung ist auf dieser Site abgeschaltet: Die Typen kommen per Import, der Bereich ist schreibgeschützt.',

@@ -4,7 +4,7 @@ export type RowJustify = 'start' | 'center' | 'end' | 'between' | 'around' | 'ev
 export type RowAlign = 'start' | 'center' | 'end' | 'stretch' | 'baseline'
 
 export interface RowProps {
-  /** Gap between columns: pixels as a number, or any CSS length. */
+  /** Gap between columns: pixels as a number, or any CSS length. Defaults to the panel's step. */
   gutter?: number | string
   /** Gap between rows once the columns wrap. Defaults to `gutter`. */
   gutterY?: number | string

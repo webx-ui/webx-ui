@@ -95,6 +95,7 @@ function copyFailed(file: MediaFile): void {
       :editable="file.editable"
       removable
       copyable
+      actions-menu
       :rename-label="t('manager.rename')"
       :edit-label="t('manager.edit')"
       :remove-label="t('manager.delete')"

@@ -3,10 +3,16 @@
     "op": "replace",
     "target": "seo-placeholder",
     "node": {
-      "id": "seo-fields",
-      "type": "wx-seo",
-      "name": "seo",
-      "props": { "structuredData": true }
+      "id": "seo-card",
+      "type": "wx-card",
+      "children": [
+        {
+          "id": "seo-fields",
+          "type": "wx-seo",
+          "name": "seo",
+          "props": { "structuredData": true }
+        }
+      ]
     }
   }
 ]

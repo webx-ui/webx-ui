@@ -1,6 +1,7 @@
 export * from './Accordion'
 export * from './AccordionItem'
 export * from './Action'
+export * from './ActionBar'
 export * from './Actions'
 export * from './Affix'
 export * from './Alert'

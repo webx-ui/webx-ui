@@ -167,9 +167,14 @@ const size = computed(() => shellLayoutFor(width.value, null))
 }
 
 /*
- * One step for the whole frame — the air around the sidebar, around the bar, and between them
- * and the screen. §6 of the visual spec makes this the panel's single spacing unit; here it
- * spaces the frame, and the screens inside it follow later.
+ * One step for the whole panel (§6 of the visual spec) — the air around the sidebar, around
+ * the bar and between them and the screen, and, because a custom property inherits, the air
+ * between the cards on a screen, down the columns of a grid, between the fields of a form and
+ * inside a card. Everything that lays anything out reads it from here.
+ *
+ * The width decides, and it is the shell's size class that says which width — not a container
+ * query: that would need `container-type` on the panel's root, and with it a containing block
+ * for every `position: fixed` inside. A sidebar collapsed by hand at 1440 is still a desktop.
  */
 .wx-admin--drawer {
   --wx-gap: var(--wx-space-8);
@@ -252,6 +257,10 @@ const size = computed(() => shellLayoutFor(width.value, null))
  */
 .wx-admin__screen {
   --wx-fill-height: calc(100dvh - var(--wx-gap) * 2);
+
+  /* And where a screen's own action bar stops, short of the edge, so that it floats with
+     the same air as the sidebar beside it. */
+  --wx-action-bar-bottom: var(--wx-gap);
 
   min-width: 0;
   min-height: 0;

@@ -159,10 +159,15 @@ defineExpose({ messages, hasError })
   min-width: 0;
 }
 
+/*
+ * A note about the field, not a paragraph of its own: one step below the label, so the eye can
+ * tell where one field ends and the next begins. The error rides the same size because it takes
+ * the help text's place — at 14 the line would jump on the first failed save.
+ */
 .wx-form-item__error,
 .wx-form-item__help {
   margin: 0;
-  font-size: var(--wx-font-size-sm);
+  font-size: var(--wx-font-size-xs);
   line-height: var(--wx-font-line-height-normal);
 }
 

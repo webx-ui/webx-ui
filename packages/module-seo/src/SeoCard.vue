@@ -310,13 +310,13 @@ function tone(count: number, limit: number): 'muted' | 'warning' {
   flex-direction: column;
   gap: var(--wx-space-2);
   padding: var(--wx-space-12);
-  border: 1px solid var(--wx-color-border);
+  border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-md);
-  background: var(--wx-color-surface-sunken);
+  background: var(--wx-bg-subtle);
 }
 
 .wx-seo__snippet-address {
-  color: var(--wx-color-text-muted);
+  color: var(--wx-text-muted);
   font-size: var(--wx-font-size-sm);
   overflow-wrap: anywhere;
 }
@@ -328,7 +328,7 @@ function tone(count: number, limit: number): 'muted' | 'warning' {
 }
 
 .wx-seo__snippet-text {
-  color: var(--wx-color-text);
+  color: var(--wx-text-default);
   font-size: var(--wx-font-size-sm);
   overflow-wrap: anywhere;
 }

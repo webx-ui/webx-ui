@@ -9,7 +9,33 @@ export type TabsOrientation = 'horizontal' | 'vertical'
 export type TabsAlign = 'start' | 'center' | 'end' | 'stretch'
 export type TabsActivationMode = 'automatic' | 'manual'
 
+/** One tab of a strip that has no panels of its own. */
+export interface TabItem {
+  value: TabValue
+  label?: string
+  icon?: IconName
+  badge?: string | number
+  disabled?: boolean
+}
+
 export interface TabsProps {
+  /**
+   * Builds the strip from a list instead of from the `WxTab`s in the slot, and treats the
+   * default slot as the one panel under it — the panel does not change with the tab, what
+   * is inside it does.
+   *
+   * This is what a list screen switches views with: the table stays mounted, keeping its
+   * search, its page and its scroll, and the tab only says which rows it is asking for.
+   */
+  items?: TabItem[]
+  /**
+   * Below this container width the strip folds into a single switch labelled with the view
+   * that is open. Only in `items` mode; `0` — the default — never folds.
+   *
+   * A strip is worth scrolling while it is navigation somebody reads along. Five views of a
+   * list on a phone are not that: they are one question with one answer showing.
+   */
+  collapseBelow?: number
   /** Underlined strip, a segmented control, or folder tabs. */
   variant?: TabsVariant
   size?: TabsSize

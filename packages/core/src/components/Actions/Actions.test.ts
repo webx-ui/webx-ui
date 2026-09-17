@@ -153,6 +153,19 @@ describe('WxActions', () => {
     expect(wrapper.classes()).not.toContain('is-collapsed')
   })
 
+  it('is a menu at any width when it is told to be one, and draws no row at all', async () => {
+    setWidths({ row: 10, available: 900 })
+    const wrapper = actions({ collapse: 'always' })
+
+    TestResizeObserver.fire()
+    await nextTick()
+
+    expect(wrapper.classes()).toContain('is-collapsed')
+    // Not hidden — absent. A hidden copy of every action is a second set of targets.
+    expect(wrapper.find('.wx-actions__row').exists()).toBe(false)
+    expect(wrapper.find('.wx-actions__menu').exists()).toBe(true)
+  })
+
   it('reports whether the menu is showing, since its panel is somewhere else', async () => {
     setWidths({ row: 900, available: 50 })
     const wrapper = actions({ collapse: true })

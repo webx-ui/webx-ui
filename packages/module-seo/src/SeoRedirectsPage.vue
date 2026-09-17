@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useTranslate, WxRowMenu, type RowAction } from '@webx-ui/module-admin'
 import {
   confirm,
   createModal,
   toast,
-  WxAction,
-  WxActions,
   WxBadge,
   WxButton,
-  WxCard,
   WxTable,
   WxText,
   type TableColumn,
@@ -59,15 +56,21 @@ const columns = computed<TableColumn<SeoRedirect>[]>(() => [
     hideOnCards: true,
   },
   { key: 'is_active', label: t('page.state'), align: 'center', hideBelow: 660 },
-  {
-    key: 'actions',
-    label: '',
-    width: 56,
-    align: 'right',
-    hidden: !canManage,
-    hideOnCards: true,
-  },
+  { key: 'actions', label: '', width: 56, align: 'right', hidden: !canManage, hideOnCards: true },
 ])
+
+/** One line, and the same menu every other list of the panel puts a record's actions in. */
+function actionsFor(redirect: SeoRedirect): RowAction[] {
+  return [
+    {
+      key: 'delete',
+      icon: 'trash',
+      label: t('page.delete'),
+      danger: true,
+      run: () => remove(redirect),
+    },
+  ]
+}
 
 async function load(state: TableState): Promise<void> {
   last = state
@@ -114,63 +117,55 @@ async function remove(redirect: SeoRedirect): Promise<void> {
 
 <template>
   <seo-layout :base="props.base" current="redirects" @test="test({})">
-    <wx-card>
-      <template #header>{{ t('page.redirects') }}</template>
+    <template v-if="canManage" #actions>
+      <wx-button type="primary" icon="add" @click="open(null)">
+        {{ t('page.new-redirect') }}
+      </wx-button>
+    </template>
 
-      <template v-if="canManage" #extra>
-        <wx-button type="primary" icon="add" @click="open(null)">
-          {{ t('page.new-redirect') }}
-        </wx-button>
+    <wx-table
+      :data="page"
+      :columns="columns"
+      row-key="id"
+      searchable
+      hover
+      flush
+      :loading="loading"
+      :search-placeholder="t('page.search-redirects')"
+      :empty-text="t('page.empty')"
+      @state-change="load"
+      @row-click="canManage ? open($event) : undefined"
+    >
+      <template #cell-pattern="{ row }">
+        <wx-text mono size="sm">{{ row.pattern }}</wx-text>
+        <!-- Said out loud rather than refused on save: the middleware steps over it, and a
+               row that quietly does nothing is a row nobody ever fixes. -->
+        <wx-badge v-if="row.is_loop" type="warning">{{ t('page.loop') }}</wx-badge>
       </template>
 
-      <wx-table
-        :data="page"
-        :columns="columns"
-        row-key="id"
-        searchable
-        hover
-        flush
-        :loading="loading"
-        :search-placeholder="t('page.search-redirects')"
-        :empty-text="t('page.empty')"
-        @state-change="load"
-        @row-click="canManage ? open($event) : undefined"
-      >
-        <template #cell-pattern="{ row }">
-          <wx-text mono size="sm">{{ row.pattern }}</wx-text>
-          <!-- Said out loud rather than refused on save: the middleware steps over it, and a
-               row that quietly does nothing is a row nobody ever fixes. -->
-          <wx-badge v-if="row.is_loop" type="warning">{{ t('page.loop') }}</wx-badge>
-        </template>
+      <template #cell-target="{ row }">
+        <wx-text mono size="sm">{{ row.target }}</wx-text>
+      </template>
 
-        <template #cell-target="{ row }">
-          <wx-text mono size="sm">{{ row.target }}</wx-text>
-        </template>
+      <template #cell-last_hit_at="{ row }">
+        <wx-text size="sm" :tone="row.last_hit_at ? 'default' : 'muted'">
+          {{ row.last_hit_at ? new Date(row.last_hit_at).toLocaleString() : t('page.never') }}
+        </wx-text>
+      </template>
 
-        <template #cell-last_hit_at="{ row }">
-          <wx-text size="sm" :tone="row.last_hit_at ? 'default' : 'muted'">
-            {{ row.last_hit_at ? new Date(row.last_hit_at).toLocaleString() : t('page.never') }}
-          </wx-text>
-        </template>
+      <template #cell-is_active="{ row }">
+        <wx-badge :type="row.is_active ? 'success' : 'default'" dot>
+          {{ row.is_active ? t('page.active') : t('page.inactive') }}
+        </wx-badge>
+      </template>
 
-        <template #cell-is_active="{ row }">
-          <wx-badge :type="row.is_active ? 'success' : 'default'" dot>
-            {{ row.is_active ? t('page.active') : t('page.inactive') }}
-          </wx-badge>
-        </template>
+      <template #card-actions="{ row }">
+        <wx-row-menu v-if="canManage" :actions="actionsFor(row)" :label="row.pattern" />
+      </template>
 
-        <template #card-actions="{ row }">
-          <wx-actions v-if="canManage" size="sm" @click.stop>
-            <wx-action type="remove" :title="t('page.delete')" @click="remove(row)" />
-          </wx-actions>
-        </template>
-
-        <template #cell-actions="{ row }">
-          <wx-actions size="sm" @click.stop>
-            <wx-action type="remove" :title="t('page.delete')" @click="remove(row)" />
-          </wx-actions>
-        </template>
-      </wx-table>
-    </wx-card>
+      <template #cell-actions="{ row }">
+        <wx-row-menu :actions="actionsFor(row)" :label="row.pattern" />
+      </template>
+    </wx-table>
   </seo-layout>
 </template>

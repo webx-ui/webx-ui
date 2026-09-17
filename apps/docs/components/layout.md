@@ -1,4 +1,5 @@
 <script setup>
+import ActionBarDemo from '../components/demos/ActionBarDemo.vue'
 import LayoutDemo from '../components/demos/LayoutDemo.vue'
 import LayoutTopbarDemo from '../components/demos/LayoutTopbarDemo.vue'
 </script>
@@ -8,7 +9,8 @@ import LayoutTopbarDemo from '../components/demos/LayoutTopbarDemo.vue'
 Five components make the shell an admin panel sits in: `WxContainer` stacks the parts,
 `WxHeader`, `WxAside`, `WxMain` and `WxFooter` are the parts. Each renders the element it is named
 after — `<header>`, `<aside>`, `<main>`, `<footer>` — so the page has real landmarks, and a screen
-reader can jump to the content without being told how.
+reader can jump to the content without being told how. A sixth, `WxActionBar`, belongs to the
+screen rather than to the shell: see [The screen's own bar](#the-screen-s-own-bar).
 
 For the grid inside a screen, see [Row and Col](/components/grid).
 
@@ -311,6 +313,55 @@ padding and the background still run the full width of the column:
 </template>
 ```
 
+## The screen's own bar
+
+A screen's buttons live in its head, and the head scrolls away with everything else — so a form
+long enough to need saving is a form whose save button is off the top of the window by the time it
+is needed. `WxActionBar` is that button brought back: the state of the work on the left, what can
+be done about it on the right.
+
+<ActionBarDemo />
+
+```vue
+<template>
+  <div class="screen">
+    <wx-form>…</wx-form>
+
+    <wx-action-bar>
+      <template #state>
+        <wx-badge type="warning" dot>Not saved yet</wx-badge>
+      </template>
+
+      <wx-button variant="outline">Discard</wx-button>
+      <wx-button type="primary" @click="save">Save</wx-button>
+    </wx-action-bar>
+  </div>
+</template>
+```
+
+It is part of the screen, not of the shell — a list has none, a form has one — and it is the last
+row of the screen rather than a layer over it. That is the whole of why it never covers anything:
+at the end of a page it is the last thing on it, and above that it sticks to the bottom of the
+window without taking the room it would need to be there.
+
+`--wx-action-bar-bottom` is how far off the bottom edge it stops, so a shell that insets its column
+can say so; the strip between the bar and the edge is painted over, or the page scrolling past
+would show through it.
+
+```css
+.shell__screen {
+  --wx-action-bar-bottom: 16px;
+}
+```
+
+The screen that carries one is a **flex column**, because the bar takes its place at the bottom
+with an auto margin rather than by being positioned there. `WxMain` gives it the room to do that:
+a screen holding a bar is at least as tall as the column, so a form of one field still has its bar
+along the bottom of the window instead of halfway up the page.
+
+`:sticky="false"` is for a screen that never scrolls at all — one marked `data-wx-fill`, where the
+bar is already exactly where sticking would put it.
+
 ## Container
 
 | Prop         | Type                         | Default      | Description                        |
@@ -350,6 +401,16 @@ padding and the background still run the full width of the column:
 | `padding`  | `'none' \| 'sm' \| 'md' \| 'lg'` | `'md'`  | Inner padding                         |
 | `scroll`   | `boolean`                        | `false` | Scrolls on its own                    |
 | `maxWidth` | `number \| string`               | —       | Caps the content width and centres it |
+
+## ActionBar
+
+| Prop       | Type      | Default | Description                       |
+| ---------- | --------- | ------- | --------------------------------- |
+| `sticky`   | `boolean` | `true`  | Stays at the bottom of the window |
+| `bordered` | `boolean` | `true`  | Rule around the bar               |
+
+It takes a `default` slot — the buttons, at the end of the row — and `state`, the line about the
+work that stands at the start of it.
 
 ## Footer
 

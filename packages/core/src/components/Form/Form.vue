@@ -58,8 +58,14 @@ function onReset(event: Event) {
   gap: var(--wx-space-8);
 }
 
+/*
+ * The default is the panel's step (§6 of the visual spec), the same number a card puts
+ * between the things inside it — so a form laid out by a card and a form laid out by itself
+ * have the same rhythm. The step inside a field, label to control, is smaller on purpose and
+ * lives in `WxFormItem`.
+ */
 .wx-form--gap-md {
-  gap: var(--wx-space-24);
+  gap: var(--wx-gap, var(--wx-space-16));
 }
 
 .wx-form--gap-lg {

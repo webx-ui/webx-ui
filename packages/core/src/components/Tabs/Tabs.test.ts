@@ -27,6 +27,48 @@ function openPanel(wrapper: ReturnType<typeof factory>) {
   return wrapper.get('[role="tabpanel"][data-state="active"]')
 }
 
+describe('WxTabs built from a list', () => {
+  const views = [
+    { value: '', label: 'All' },
+    { value: 'draft', label: 'Drafts' },
+    { value: 'bin', label: 'Bin', icon: 'trash' as const },
+  ]
+
+  function list(props: Record<string, unknown> = {}) {
+    return mount(WxTabs, {
+      props: { items: views, modelValue: '', ...props },
+      slots: { default: '<p class="rows">the table</p>' },
+    })
+  }
+
+  it('builds the strip from the list rather than from the slot', () => {
+    const strip = list()
+      .findAll('.wx-tabs__tab')
+      .map((tab) => tab.text())
+
+    expect(strip).toEqual(['All', 'Drafts', 'Bin'])
+  })
+
+  it('keeps one panel under it, so switching a view never takes the table away', async () => {
+    const wrapper = list()
+    const before = wrapper.get('.rows').element
+
+    await wrapper.findAll('.wx-tabs__tab')[1]!.trigger('mousedown')
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['draft'])
+    // The same element, not a new one: a table that was remounted would have lost its search.
+    expect(wrapper.get('.rows').element).toBe(before)
+  })
+
+  it('opens the first view when the one it was given is not among them', async () => {
+    const wrapper = list({ modelValue: 'gone' })
+
+    await flushPromises()
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([''])
+  })
+})
+
 describe('WxTabs', () => {
   it('builds the strip from the tabs in its slot', async () => {
     const wrapper = factory()

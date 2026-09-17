@@ -6,6 +6,7 @@ return [
     'blocks' => 'Bloques',
     'new' => 'Nuevo bloque',
     'search' => 'Buscar por nombre o identificador',
+    'all-groups' => 'Todos los grupos',
     'empty' => 'Todavía no hay tipos de bloque.',
     'empty-help' => 'Un tipo de bloque se crea aquí por completo: sus campos, su plantilla, sus estilos y su script.',
     'editing-off' => 'La edición está desactivada en este sitio: los tipos llegan por importación y la sección es de solo lectura.',

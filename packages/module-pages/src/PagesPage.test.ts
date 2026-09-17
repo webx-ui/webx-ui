@@ -124,7 +124,8 @@ describe('WxPagesPage', () => {
     await flushPromises()
     get.mockClear()
 
-    await wrapper.findAll('.wx-segmented button').at(-1)?.trigger('click')
+    // The views of the list are tabs over the card now; the bin is the last of them.
+    await wrapper.findAll('.wx-tabs__tab').at(-1)?.trigger('mousedown')
     await flushPromises()
 
     expect(get).toHaveBeenCalledWith('/api/cms/pages?trashed=1')

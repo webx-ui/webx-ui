@@ -5,7 +5,6 @@ import {
   createModal,
   WxAlert,
   WxBadge,
-  WxCard,
   WxLink,
   WxTable,
   WxText,
@@ -77,52 +76,48 @@ async function load(state: TableState): Promise<void> {
 
 <template>
   <seo-layout :base="props.base" current="aliases" @test="test({})">
-    <wx-card>
-      <template #header>{{ t('page.automatic') }}</template>
+    <wx-alert
+      type="info"
+      variant="soft"
+      :description="t('page.aliases-help')"
+      class="wx-seo-aliases__note"
+    />
 
-      <wx-alert
-        type="info"
-        variant="soft"
-        :description="t('page.aliases-help')"
-        class="wx-seo-aliases__note"
-      />
+    <wx-table
+      :data="page"
+      :columns="columns"
+      row-key="id"
+      searchable
+      flush
+      :loading="loading"
+      :search-placeholder="t('page.search-aliases')"
+      :empty-text="t('page.aliases-empty')"
+      @state-change="load"
+    >
+      <template #cell-pattern="{ row }">
+        <wx-text mono size="sm">{{ row.pattern }}</wx-text>
+      </template>
 
-      <wx-table
-        :data="page"
-        :columns="columns"
-        row-key="id"
-        searchable
-        flush
-        :loading="loading"
-        :search-placeholder="t('page.search-aliases')"
-        :empty-text="t('page.aliases-empty')"
-        @state-change="load"
-      >
-        <template #cell-pattern="{ row }">
-          <wx-text mono size="sm">{{ row.pattern }}</wx-text>
-        </template>
-
-        <!-- The address it leads to now, as a link: this is the one place in the panel where an
+      <!-- The address it leads to now, as a link: this is the one place in the panel where an
              editor can walk from a dead address to the live page without knowing the section it
              lives in. -->
-        <template #cell-target="{ row }">
-          <wx-link v-if="row.target && row.target_url" :href="row.target_url" external size="sm">
-            <wx-text mono size="sm">{{ row.target }}</wx-text>
-          </wx-link>
-          <wx-badge v-else type="warning">{{ t('page.gone') }}</wx-badge>
-        </template>
+      <template #cell-target="{ row }">
+        <wx-link v-if="row.target && row.target_url" :href="row.target_url" external size="sm">
+          <wx-text mono size="sm">{{ row.target }}</wx-text>
+        </wx-link>
+        <wx-badge v-else type="warning">{{ t('page.gone') }}</wx-badge>
+      </template>
 
-        <template #cell-locale="{ row }">
-          <wx-badge>{{ row.locale }}</wx-badge>
-        </template>
+      <template #cell-locale="{ row }">
+        <wx-badge>{{ row.locale }}</wx-badge>
+      </template>
 
-        <template #cell-created_at="{ row }">
-          <wx-text size="sm" tone="muted">
-            {{ row.created_at ? new Date(row.created_at).toLocaleString() : '' }}
-          </wx-text>
-        </template>
-      </wx-table>
-    </wx-card>
+      <template #cell-created_at="{ row }">
+        <wx-text size="sm" tone="muted">
+          {{ row.created_at ? new Date(row.created_at).toLocaleString() : '' }}
+        </wx-text>
+      </template>
+    </wx-table>
   </seo-layout>
 </template>
 
