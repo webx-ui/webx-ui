@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
-import { useAdmin, useTranslate, WxScreen } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxScreen } from '@webx-ui/module-admin'
 import { provideBlocksPreview } from '@webx-ui/module-blocks'
 import {
   confirm,
@@ -50,6 +50,8 @@ const locales = useLocales()
 usePagesMessages()
 
 const t = useTranslate('webx-pages')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 /** How long after the last keystroke the draft goes to the server. */
 const PAUSE = 1200
@@ -253,8 +255,27 @@ async function keepMine(): Promise<void> {
   await save()
 }
 
+/**
+ * Publishing is asked about, because taking a page off the site is (§14.2).
+ *
+ * It is the one action here that visitors see: everything else on this screen writes a draft
+ * nobody outside the panel can read. The question names the address rather than counting
+ * anything — one page goes on the site, and what matters is where.
+ */
 async function publish(): Promise<void> {
   if (!page.value) return
+
+  const address = page.value.path === null ? null : `/${page.value.path}`
+
+  const agreed = await confirm({
+    title: t('page.publish-title', { title: page.value.title }),
+    message:
+      address === null ? t('page.publish-text-nowhere') : t('page.publish-text', { address }),
+    confirmText: t('page.publish'),
+    cancelText: t('page.cancel'),
+  })
+
+  if (!agreed) return
 
   if (dirty.value) await save()
   if (conflict.value) return
@@ -270,10 +291,6 @@ async function publish(): Promise<void> {
   } finally {
     working.value = false
   }
-}
-
-function message(error: unknown): string {
-  return (error as { body?: { message?: string } }).body?.message ?? String(error)
 }
 
 function badge(): 'default' | 'success' | 'warning' {

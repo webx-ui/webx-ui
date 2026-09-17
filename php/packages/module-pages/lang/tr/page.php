@@ -47,6 +47,7 @@ return [
     'move-title' => '“:title” sayfasını taşı',
     'move-help' => 'İçine gireceği sayfayı seçin. İçindeki her şey onunla birlikte taşınır ve adresler değişir.',
     'move-confirm' => 'Taşı',
+    'move-branch' => ':count adres değişir — sayfanın kendisi ve içindeki her şey. Eskiler bundan sonra yenilere yönlendirir.',
     'moved' => 'Taşındı. :count adres değişti; eskiler yenilere yönlendiriyor.',
     'moved-one' => 'Taşındı. Adres değişti; eskisi yenisine yönlendiriyor.',
 
@@ -55,6 +56,10 @@ return [
     'delete-branch' => 'İçindeki :count sayfa da onunla birlikte gider.',
     'deleted' => 'Sayfa çöp kutusunda.',
     'restored' => 'Sayfa geri geldi.',
+    'restore-page-title' => '“:title” geri getirilsin mi?',
+    'restore-page-text' => 'Sayfa çöp kutusundan çıkar ve adresini geri alır. Sitede olan sayfa yeniden yanıt vermeye başlar.',
+    'restore-branch' => 'Onunla birlikte giden :count sayfa da geri gelir.',
+    'restored-branch' => ':count sayfa geri geldi.',
 
     'copy-of' => ':title (kopya)',
     'duplicated' => 'Kopya hazır ve sitede değil.',
@@ -69,6 +74,9 @@ return [
     'save' => 'Kaydet',
     'save-failed' => 'Sayfa kaydedilmedi.',
     'publish' => 'Yayımla',
+    'publish-title' => '“:title” yayımlansın mı?',
+    'publish-text' => 'O andan itibaren :address adresinde yanıt verir — herkese.',
+    'publish-text-nowhere' => 'O andan itibaren sitede yanıt vermeye başlar — herkese.',
     'published' => 'Sayfa sitede.',
     'preview' => 'Önizleme',
     'more' => 'Daha fazla',

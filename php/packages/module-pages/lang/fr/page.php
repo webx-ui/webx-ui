@@ -47,6 +47,7 @@ return [
     'move-title' => 'Déplacer « :title »',
     'move-help' => 'Choisissez la page qui l’accueille. Tout ce qu’elle contient suit, et les adresses changent avec elle.',
     'move-confirm' => 'Déplacer',
+    'move-branch' => ':count adresses changent — celle de la page et celles de tout ce qu’elle contient. Les anciennes redirigeront vers les nouvelles.',
     'moved' => 'Déplacée. :count adresses ont changé ; les anciennes redirigent vers les nouvelles.',
     'moved-one' => 'Déplacée. L’adresse a changé ; l’ancienne y redirige.',
 
@@ -55,6 +56,10 @@ return [
     'delete-branch' => 'Les :count pages qu’elle contient partent avec elle.',
     'deleted' => 'La page est à la corbeille.',
     'restored' => 'La page est de retour.',
+    'restore-page-title' => 'Ramener « :title » ?',
+    'restore-page-text' => 'La page sort de la corbeille et retrouve son adresse. Celle qui était en ligne répond de nouveau.',
+    'restore-branch' => 'Les :count pages parties avec elle reviennent aussi.',
+    'restored-branch' => ':count pages sont de retour.',
 
     'copy-of' => ':title (copie)',
     'duplicated' => 'La copie est prête, et elle n’est pas sur le site.',
@@ -69,6 +74,9 @@ return [
     'save' => 'Enregistrer',
     'save-failed' => 'La page n\'a pas été enregistrée.',
     'publish' => 'Publier',
+    'publish-title' => 'Publier « :title » ?',
+    'publish-text' => 'Dès cet instant, elle répond à :address, pour tout le monde.',
+    'publish-text-nowhere' => 'Dès cet instant, elle répond sur le site, pour tout le monde.',
     'published' => 'La page est en ligne.',
     'preview' => 'Aperçu',
     'more' => 'Plus',

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef, type Component } from 'vue'
-import { useAdmin, useTranslate, WxListScreen } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxListScreen } from '@webx-ui/module-admin'
 import { confirm, createModal, toast, WxButton } from '@webx-ui/core'
 import AdminDialog from './AdminDialog.vue'
 import AdminList from './AdminList.vue'
@@ -32,6 +32,8 @@ const api = createAdminsApi(context)
 useAuthMessages()
 
 const t = useTranslate('webx-auth')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 const list = useTemplateRef<{ reload: () => void }>('list')
 const editing = ref<Admin | null>(null)
@@ -73,9 +75,7 @@ async function remove(admin: Admin): Promise<void> {
     toast.success(t('admins.deleted'))
     list.value?.reload()
   } catch (error) {
-    const body = (error as { body?: { message?: string } }).body
-
-    toast.danger(body?.message ?? t('errors.forbidden'))
+    toast.danger(message(error))
   }
 }
 </script>

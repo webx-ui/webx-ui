@@ -21,5 +21,20 @@ export const adminMessages: Record<string, Messages> = {
     collapse: 'Collapse the menu',
     expand: 'Expand the menu',
     language: 'Language',
+    // The one menu group the panel names itself; a module's own group is named by the module.
+    system: 'System',
+  },
+  // How a request fails, in the panel's words rather than the server's (§13.3). `errors.ts`
+  // decides which of these a status gets.
+  errors: {
+    'signed-out': 'You are signed out. Sign in again and try once more.',
+    forbidden: 'You are not allowed to do that.',
+    gone: 'It is not there any more — somebody may have deleted it.',
+    conflict: 'Somebody changed this while you were working on it.',
+    throttled: 'Too many attempts. Try again in a moment.',
+    'throttled-in': 'Too many attempts. Try again in :seconds seconds.',
+    server: 'The server could not do that. Try again in a moment.',
+    offline: 'The server did not answer. Check the connection and try again.',
+    unknown: 'That did not work.',
   },
 }

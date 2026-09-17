@@ -47,6 +47,7 @@ return [
     'move-title' => 'Sposta «:title»',
     'move-help' => 'Scegli la pagina che la accoglie. Tutto ciò che contiene si sposta con lei e gli indirizzi cambiano.',
     'move-confirm' => 'Sposta',
+    'move-branch' => 'Cambiano :count indirizzi: quello della pagina e quelli di tutto ciò che contiene. I vecchi rimanderanno ai nuovi.',
     'moved' => 'Spostata. Sono cambiati :count indirizzi; i vecchi rimandano ai nuovi.',
     'moved-one' => 'Spostata. L’indirizzo è cambiato; il vecchio rimanda a quello nuovo.',
 
@@ -55,6 +56,10 @@ return [
     'delete-branch' => 'Le :count pagine al suo interno vanno con lei.',
     'deleted' => 'La pagina è nel cestino.',
     'restored' => 'La pagina è tornata.',
+    'restore-page-title' => 'Riportare indietro «:title»?',
+    'restore-page-text' => 'La pagina esce dal cestino e riprende il suo indirizzo. Quella che era sul sito risponde di nuovo.',
+    'restore-branch' => 'Tornano anche le :count pagine finite lì insieme a lei.',
+    'restored-branch' => 'Sono tornate :count pagine.',
 
     'copy-of' => ':title (copia)',
     'duplicated' => 'La copia è pronta e non è sul sito.',
@@ -69,6 +74,9 @@ return [
     'save' => 'Salva',
     'save-failed' => 'La pagina non è stata salvata.',
     'publish' => 'Pubblica',
+    'publish-title' => 'Pubblicare «:title»?',
+    'publish-text' => 'Da quel momento risponde a :address, per tutti.',
+    'publish-text-nowhere' => 'Da quel momento comincia a rispondere sul sito, per tutti.',
     'published' => 'La pagina è sul sito.',
     'preview' => 'Anteprima',
     'more' => 'Altro',

@@ -9,7 +9,7 @@ return [
     'done' => 'Fatto',
     'remove' => 'Rimuovi',
     'remove-title' => 'Rimuovere «:title»?',
-    'remove-text' => 'I blocchi al suo interno se ne vanno con esso.',
+    'remove-text' => 'I :count blocchi al suo interno se ne vanno con esso.',
     'duplicate' => 'Duplica',
     'empty' => 'Nessun blocco per ora. Aggiungi il primo.',
     'nested-note' => 'I blocchi annidati si modificano nell’albero a sinistra.',

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import { confirm, toast, WxBadge, WxButton, WxSkeleton, WxText } from '@webx-ui/core'
 import { createBlocksApi } from './api'
 import type { BlockType, BlockVersionMeta } from './types'
@@ -16,6 +16,8 @@ const emit = defineEmits<{ restored: [block: BlockType] }>()
 const context = useAdmin()
 const api = createBlocksApi(context)
 const t = useTranslate('webx-blocks')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 const versions = ref<BlockVersionMeta[] | null>(null)
 
@@ -52,7 +54,7 @@ async function restore(version: BlockVersionMeta): Promise<void> {
     emit('restored', block)
     await load()
   } catch (error) {
-    toast.danger((error as { body?: { message?: string } }).body?.message ?? String(error))
+    toast.danger(message(error))
   }
 }
 

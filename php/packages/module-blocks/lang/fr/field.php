@@ -9,7 +9,7 @@ return [
     'done' => 'Terminé',
     'remove' => 'Retirer',
     'remove-title' => 'Retirer « :title » ?',
-    'remove-text' => 'Les blocs qu’il contient partent avec.',
+    'remove-text' => 'Les :count blocs qu’il contient partent avec.',
     'duplicate' => 'Dupliquer',
     'empty' => 'Aucun bloc pour l’instant. Ajoutez le premier.',
     'nested-note' => 'Les blocs imbriqués se modifient dans l’arborescence à gauche.',

@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAdmin, useTranslate, WxListScreen } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxListScreen } from '@webx-ui/module-admin'
 import {
   confirm,
   createModal,
   toast,
-  useElementWidth,
   WxBadge,
   WxButton,
   WxTable,
@@ -45,6 +44,8 @@ const router = useRouter()
 usePagesMessages()
 
 const t = useTranslate('webx-pages')
+/* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
+const message = useErrorText()
 
 const home = ref<PageRow | null>(null)
 const items = ref<PageRow[]>([])
@@ -53,27 +54,20 @@ const search = ref('')
 /* A tab's value is a string; what the server is asked for is read back out of it. */
 const filter = ref<TabValue>('')
 
-/*
- * Below the width where the table becomes cards, the tree becomes a flat list.
- *
- * A card has no indentation to read and no chevron to open, so a tree drawn as cards is a tree
- * nobody can walk — the pages below the first level simply cannot be reached (§9, last
- * paragraph). Flat, with the address under the name, every page is one tap away and the address
- * says where it sits. The width of the section decides it, not the width of the window.
- */
-const CARDS_BELOW = 640
-
-const root = useTemplateRef<HTMLElement>('root')
-const width = useElementWidth(root)
-const narrow = computed(() => width.value > 0 && width.value < CARDS_BELOW)
-
 const create = createModal<PageRow, { parent: PageRow | null }>(PageCreateDialog)
 const pickTarget = createModal<number, { page: PageRow }>(PageMoveDialog)
 
 const canManage = computed(() => context.can('pages.manage'))
 const inBin = computed(() => filter.value === 'trashed')
-/** A search, the bin and a phone are flat lists; only a level of the tree is a tree. */
-const asTree = computed(() => !inBin.value && !narrow.value && search.value.trim() === '')
+/**
+ * A search and the bin are flat lists; everything else is a level of the tree, at every width.
+ *
+ * A narrow screen used to get a flat list instead, on the grounds that cards have no
+ * indentation to read and no chevron to open. The cards were the mistake, not the tree (§11):
+ * the table stays a table and drops columns until only the title and the `···` are left, so the
+ * tree is walked on a phone the same way it is walked on a desk.
+ */
+const asTree = computed(() => !inBin.value && search.value.trim() === '')
 
 const title = computed(
   () =>
@@ -107,10 +101,14 @@ const rows = computed<PageRow[]>(() =>
  * Every column but the title is given a width, and the table is laid out `fixed`, so the
  * widths that are hidden below a breakpoint give what they had to the title rather than to
  * whichever column happened to hold the longest string.
+ *
+ * They go in the order they can be spared — when it was last touched, then what state it is in,
+ * then where it lives — and below the narrowest of them the row is the title and the `···`,
+ * which is the whole of §11: two columns, still a tree.
  */
 const columns = computed<TableColumn<PageRow>[]>(() => [
   { key: 'title', label: t('page.column-title'), minWidth: 200 },
-  { key: 'path', label: t('page.column-address'), width: 200 },
+  { key: 'path', label: t('page.column-address'), width: 200, hideBelow: 560 },
   // In the bin the state of a page is not what it was published as — it is off the site either
   // way — so the column says when it went in, which is what decides whether to bring it back.
   {
@@ -125,10 +123,9 @@ const columns = computed<TableColumn<PageRow>[]>(() => [
     label: t('page.column-updated'),
     width: 180,
     hideBelow: 900,
-    hideOnCards: true,
     hidden: inBin.value,
   },
-  { key: 'actions', label: '', width: 56, align: 'right', hideOnCards: true },
+  { key: 'actions', label: '', width: 56, align: 'right' },
 ])
 
 const tree = computed<TableTreeOptions<PageRow> | undefined>(() =>
@@ -163,7 +160,6 @@ async function load(): Promise<void> {
       search: search.value.trim(),
       status: inBin.value ? '' : (filter.value as PageStatus | ''),
       trashed: inBin.value,
-      flat: narrow.value,
     })
 
     home.value = level.home
@@ -185,6 +181,11 @@ function onState(state: TableState): void {
 /**
  * The editor of a page arrives with the form; until it does, the row opens nothing rather than
  * pushing the router at a route that is not there.
+ *
+ * The bin never reaches here: a page in it has no editor to open — the API answers a 404 for
+ * one — so the table is told the rows lead nowhere (`:clickable="!inBin"`), and it withholds
+ * the click along with the pointer and the highlight (§13). Everything a deleted page can have
+ * done to it is in its `···`.
  */
 function open(page: PageRow): void {
   const path = `${props.base}/${page.id}`
@@ -219,7 +220,38 @@ async function move(page: PageRow): Promise<void> {
   await apply(page, target, 'inside')
 }
 
+/**
+ * A drop asks only when it rewrites more than one address (§14.3).
+ *
+ * The other way out — no question, and an "Undo" in the toast — reads better but is not one:
+ * a move leaves a redirect on every address it vacated, so putting the page back would be a
+ * second move and a pile of redirects, not an undo. Until the server can actually undo one,
+ * dragging a single page stays a gesture and dragging a branch stays a decision.
+ *
+ * The number is known before the request: a move changes the address of the page and of
+ * everything under it, which is what `descendants_count` counts. Landing in the same parent
+ * changes nothing at all, so a reorder is never questioned.
+ */
 async function dropped(event: TableNodeDropEvent<PageRow>): Promise<void> {
+  const parent = event.zone === 'inside' ? event.target.id : event.target.parent_id
+  const moves = event.row.descendants_count + 1
+
+  if (parent !== event.row.parent_id && moves > 1) {
+    const agreed = await confirm({
+      title: t('page.move-title', { title: event.row.title }),
+      message: t('page.move-branch', { count: moves }),
+      confirmText: t('page.move-confirm'),
+      cancelText: t('page.cancel'),
+    })
+
+    if (!agreed) {
+      // The table is showing the row where it was dropped; the server never heard about it.
+      await load()
+
+      return
+    }
+  }
+
   await apply(event.row, event.target.id, event.zone)
 }
 
@@ -267,10 +299,30 @@ async function remove(page: PageRow): Promise<void> {
   }
 }
 
+/**
+ * Coming back out of the bin is asked about too (§14.2): a branch restored by accident is a
+ * section of the site back on it, and the count says how much of one.
+ */
 async function restore(page: PageRow): Promise<void> {
+  const agreed = await confirm({
+    title: t('page.restore-page-title', { title: page.title }),
+    message:
+      page.descendants_count > 0
+        ? `${t('page.restore-page-text')} ${t('page.restore-branch', { count: page.descendants_count })}`
+        : t('page.restore-page-text'),
+    confirmText: t('page.restore'),
+    cancelText: t('page.cancel'),
+  })
+
+  if (!agreed) return
+
   try {
-    await api.restore(page.id)
-    toast.success(t('page.restored'))
+    // The server knows what it actually brought back; the question could only guess at it.
+    const restored = await api.restore(page.id)
+
+    toast.success(
+      restored > 1 ? t('page.restored-branch', { count: restored }) : t('page.restored'),
+    )
     await load()
   } catch (error) {
     toast.danger(message(error))
@@ -301,21 +353,13 @@ function when(page: PageRow): string {
   return at ? new Date(at).toLocaleDateString() : ''
 }
 
-function message(error: unknown): string {
-  return (error as { body?: { message?: string } }).body?.message ?? String(error)
-}
-
 watch(filter, () => void load())
-
-// The answer for a phone is a different answer, not a different stylesheet: crossing the width
-// re-asks the server for a flat list or for a level of the tree.
-watch(narrow, () => void load())
 
 onMounted(load)
 </script>
 
 <template>
-  <div ref="root" class="wx-pages">
+  <div class="wx-pages">
     <wx-list-screen v-model:view="filter" :title="title" :views="views">
       <template v-if="canManage" #actions>
         <wx-button type="primary" icon="plus" @click="add(null)">
@@ -329,19 +373,20 @@ onMounted(load)
         row-key="id"
         :tree="tree"
         searchable
-        hover
+        :clickable="!inBin"
+        :hover="!inBin"
         flush
         layout="fixed"
         :loading="loading"
-        :cards-below="CARDS_BELOW"
+        :cards-below="0"
         :search-placeholder="t('page.search')"
         :empty-text="
           inBin ? t('page.empty-bin') : search ? t('page.empty-search') : t('page.empty')
         "
         :aria-label="title"
+        @row-click="open"
         @state-change="onState"
         @node-drop="dropped"
-        @row-click="open"
       >
         <template #cell-title="{ row }">
           <span class="wx-pages__title">
@@ -398,29 +443,14 @@ onMounted(load)
             @restore="restore"
           />
         </template>
-
-        <!-- The same menu on a card: one place to look, whatever width the list is read at. -->
-        <template #card-actions="{ row }">
-          <page-actions
-            v-if="canManage"
-            :page="row"
-            :in-bin="inBin"
-            @open="open"
-            @add="add"
-            @duplicate="duplicate"
-            @move="move"
-            @copy="copyAddress"
-            @remove="remove"
-            @restore="restore"
-          />
-        </template>
       </wx-table>
     </wx-list-screen>
   </div>
 </template>
 
 <style scoped>
-/* Only here to be measured: the list screen inside it is what lays the screen out. */
+/* The list screen inside it lays the screen out; this only keeps a wide table from pushing the
+   column it sits in. */
 .wx-pages {
   min-width: 0;
 }
