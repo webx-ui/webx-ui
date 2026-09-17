@@ -21,7 +21,6 @@ return [
     'locale' => 'Panel language',
     'locale-auto' => 'Follow the browser',
     'last-login' => 'Last signed in',
-    'never' => 'Never',
     'save' => 'Save',
     'cancel' => 'Cancel',
     'delete' => 'Delete',

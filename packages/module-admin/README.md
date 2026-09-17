@@ -76,6 +76,38 @@ behind it still has labels.
 That is what an editing screen builds its tabs from, and it has nothing to do with the language
 of the interface around them.
 
+## Dates
+
+One way to say when something happened, for every screen in the panel.
+
+```vue
+<script setup lang="ts">
+import { useDates, WxDate } from '@webx-ui/module-admin'
+
+const dates = useDates() // dates.short(row.updated_at), dates.exact(…), dates.iso(…)
+</script>
+
+<template>
+  <wx-date :value="row.last_login_at" />
+</template>
+```
+
+| When         | What it says            |
+| ------------ | ----------------------- |
+| today        | `today at 08:10`        |
+| yesterday    | `yesterday at 14:03`    |
+| this year    | `16 September at 14:03` |
+| earlier      | `16 September 2025`     |
+| never at all | `never`                 |
+
+Twenty-four hours, no seconds; `WxDate` keeps the exact moment in a tip and in `<time
+datetime>`, so a column is read at a glance and an argument about the exact second still has an
+answer. The month names and the order of the parts come from `Intl` in the **panel's** language,
+not the browser's; `today` is counted in the reader's own day, which is why a server sending UTC
+does not turn somebody's morning into yesterday.
+
+Nothing here touches ordering: a sortable column sorts on the value the server sent.
+
 ## Talking to the backend
 
 ```ts
@@ -111,6 +143,7 @@ everything, the same rule the server applies.
 | `useAdmin`                | The context: `http`, `state`, `nav`, `can`     |
 | `createHttp`, `HttpError` | The client, usable on its own                  |
 | `AdminShell`, `AdminNav`  | The layout, for a panel that assembles its own |
+| `useDates`, `WxDate`      | When something happened, in words              |
 
 Styles come with `@webx-ui/core`; this package adds a little of its own:
 

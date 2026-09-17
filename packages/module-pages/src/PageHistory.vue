@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxDate } from '@webx-ui/module-admin'
 import { confirm, toast, WxBadge, WxButton, WxEmpty, WxSkeleton, WxText } from '@webx-ui/core'
 import { createPagesApi } from './api'
 import { usePageEditor } from './editor'
@@ -84,12 +84,6 @@ async function restore(version: PageVersion): Promise<void> {
   }
 }
 
-function when(version: PageVersion): string {
-  if (!version.created_at) return ''
-
-  return new Date(version.created_at).toLocaleString(context.i18n.state.locale)
-}
-
 // The page is reloaded after every publication and every restore, so its stamp is the signal
 // that there is something new to list.
 watch(
@@ -116,7 +110,7 @@ watch(
         t('page.version', { number: version.number })
       }}</code>
       <div class="wx-page-history__who">
-        <wx-text>{{ when(version) }}</wx-text>
+        <wx-date v-if="version.created_at" :value="version.created_at" size="md" tone="default" />
         <wx-text size="sm" tone="muted">
           {{ version.author ?? t(`page.source-${version.source}`) }}
           <template v-if="version.comment"> · {{ version.comment }}</template>

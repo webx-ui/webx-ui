@@ -4,6 +4,7 @@ import {
   useAdmin,
   useErrorText,
   useTranslate,
+  WxDate,
   WxRowMenu,
   type RowAction,
 } from '@webx-ui/module-admin'
@@ -162,9 +163,7 @@ async function remove(redirect: SeoRedirect): Promise<void> {
       </template>
 
       <template #cell-last_hit_at="{ row }">
-        <wx-text size="sm" :tone="row.last_hit_at ? 'default' : 'muted'">
-          {{ row.last_hit_at ? new Date(row.last_hit_at).toLocaleString() : t('page.never') }}
-        </wx-text>
+        <wx-date :value="row.last_hit_at" :tone="row.last_hit_at ? 'default' : 'muted'" />
       </template>
 
       <template #cell-is_active="{ row }">

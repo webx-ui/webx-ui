@@ -24,7 +24,6 @@ return [
     'status' => 'Code',
     'hits' => 'Hits',
     'last-hit' => 'Last used',
-    'never' => 'never',
     'loop' => 'Points at itself',
 
     'any-kind' => 'Any kind',

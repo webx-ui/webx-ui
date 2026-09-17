@@ -21,7 +21,6 @@ return [
     'locale' => 'Język panelu',
     'locale-auto' => 'Jak w przeglądarce',
     'last-login' => 'Ostatnie logowanie',
-    'never' => 'Nigdy',
     'save' => 'Zapisz',
     'cancel' => 'Anuluj',
     'delete' => 'Usuń',
