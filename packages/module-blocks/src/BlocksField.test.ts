@@ -150,7 +150,7 @@ describe('WxBlocks', () => {
     // Outside a panel the words are keys, so the buttons are found by place, not by name.
     await wrapper
       .findAll('.wx-blocks-tree__row')[1]!
-      .findAll('.wx-blocks-tree__actions button')[1]!
+      .findAll('.wx-blocks-tree__actions button')[2]!
       .trigger('click')
 
     await flushPromises()
@@ -171,7 +171,7 @@ describe('WxBlocks', () => {
 
     await wrapper
       .findAll('.wx-blocks-tree__row')[0]!
-      .findAll('.wx-blocks-tree__actions button')[1]!
+      .findAll('.wx-blocks-tree__actions button')[2]!
       .trigger('click')
 
     await flushPromises()
@@ -180,12 +180,44 @@ describe('WxBlocks', () => {
     expect(emitted(wrapper)!.map((node) => node.key)).toEqual(['b'])
   })
 
+  it('switches a block off without touching what is in it', async () => {
+    const wrapper = field()
+
+    // The eye stands first in the row, before duplicate and remove.
+    await wrapper
+      .findAll('.wx-blocks-tree__row')[1]!
+      .findAll('.wx-blocks-tree__actions button')[0]!
+      .trigger('click')
+
+    const off = emitted(wrapper)!
+
+    expect(off[1]!.hidden).toBe(true)
+    expect((off[1]!.values.content as BlockNode[])[0]!.values.title).toBe('Inner')
+    expect(off[0]!.hidden).toBeUndefined()
+  })
+
+  it('shows a switched-off block as switched off, and switching it on leaves no trace', async () => {
+    const off = tree()
+    off[1]!.hidden = true
+
+    const wrapper = field(off)
+    const row = wrapper.findAll('.wx-blocks-tree__row')[1]!
+
+    expect(row.classes()).toContain('is-hidden')
+
+    await row.findAll('.wx-blocks-tree__actions button')[0]!.trigger('click')
+
+    // Back on the key is gone rather than false: the content is again what it was before
+    // anybody hid it, which is what the revision guarding a save compares.
+    expect('hidden' in emitted(wrapper)![1]!).toBe(false)
+  })
+
   it('duplicates a block with fresh keys, right after the original', async () => {
     const wrapper = field()
 
     await wrapper
       .findAll('.wx-blocks-tree__row')[1]!
-      .findAll('.wx-blocks-tree__actions button')[0]!
+      .findAll('.wx-blocks-tree__actions button')[1]!
       .trigger('click')
 
     const next = emitted(wrapper)!

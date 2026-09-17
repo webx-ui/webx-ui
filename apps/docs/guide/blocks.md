@@ -131,6 +131,13 @@ which is all a screen outside the panel can be. After a field changes, the const
 server to draw that one block and swaps it into the frame between the marker comments, so the
 page does not reload on every keystroke.
 
+Every row in the tree carries three buttons: an eye, a copy and a bin. The eye switches that
+block off — it stays in the content and is edited the same way, and the site stops drawing it,
+along with everything nested inside it. Their own switches keep their values, so a container
+turned back on is exactly what it was. A hidden block is dimmed in the tree, carries an
+eye-off beside its name, and is absent from the preview: a preview that still showed it would
+not say which block is the switched-off one.
+
 Inside a block's own schema the same node makes the type a container:
 
 ```json
@@ -323,7 +330,7 @@ that look, `blocks:write` for the ones that change. On the machine the site runs
 | `blocks_render`       | Draw a type on values (the sample by default): HTML, styles, script, or the failing line |
 | `blocks_get_content`  | An entity's blocks: the map with `outline`, one node with `key`, both trees by default   |
 | `blocks_set_content`  | Replace the entity's draft with a tree of nodes; keys are kept or made                   |
-| `blocks_edit_content` | Change one block at a time: `set`, `add`, `move`, `remove`, by key                       |
+| `blocks_edit_content` | Change one block at a time: `set`, `add`, `move`, `remove`, `hide`, `show`, by key       |
 | `blocks_preview_url`  | A signed link to the entity's draft as the page it will be                               |
 
 `render` and `preview_url` are what close the loop: without them an agent writes a template it
@@ -346,7 +353,8 @@ names the node instead, and everything else stays the object it already was:
     { "op": "set", "key": "b7f3", "values": { "title": "A new heading" }, "locale": "en" },
     { "op": "add", "type": "text", "parent": "b1a0", "after": "b7f3", "values": {} },
     { "op": "move", "key": "b9de", "before": "b7f3" },
-    { "op": "remove", "key": "b2c1" }
+    { "op": "remove", "key": "b2c1" },
+    { "op": "hide", "key": "b4aa" }
   ]
 }
 ```
@@ -355,6 +363,10 @@ names the node instead, and everything else stays the object it already was:
   language of a localized field rather than replacing the map with a string.
 - `parent` omitted means the top level; `field` names the `wx-blocks` field when the parent block
   has more than one. `before` and `after` place the node among its siblings.
+- `hide` and `show` switch one block off and back on. A hidden block stays in the content and
+  keeps everything in it; the site simply does not draw it, nor anything nested inside it.
+  `outline` reports `hidden: true` for those, which is the only way to tell from the content
+  that a block is not on the page.
 - `revision` is the one `blocks_get_content` returned. Send it and the edit is refused when the
   entity changed in between, instead of overwriting whoever changed it. `blocks_set_content` takes
   it too.

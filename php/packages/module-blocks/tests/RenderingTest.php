@@ -163,6 +163,56 @@ final class RenderingTest extends TestCase
     }
 
     #[Test]
+    public function a_hidden_block_is_left_out_of_the_page(): void
+    {
+        $this->publish('text', '<p>{{ $body }}</p>');
+
+        $html = $this->render([
+            $this->node('text', ['body' => 'one']),
+            ['hidden' => true] + $this->node('text', ['body' => 'two']),
+            $this->node('text', ['body' => 'three']),
+        ]);
+
+        // Nothing at all, not an empty wrapper: the page reads as if the block were not there.
+        $this->assertSame('<p>one</p><p>three</p>', $html);
+    }
+
+    #[Test]
+    public function a_hidden_block_is_left_out_of_the_preview_too(): void
+    {
+        // Otherwise there is no telling which of the blocks on screen is the switched-off one.
+        $this->publish('text', '<p>{{ $body }}</p>');
+
+        $html = $this->render([
+            ['hidden' => true] + $this->node('text', ['body' => 'off'], 'a'),
+            $this->node('text', ['body' => 'on'], 'b'),
+        ], preview: true);
+
+        $this->assertSame('<!--wx:b--><p>on</p><!--/wx:b-->', $html);
+    }
+
+    #[Test]
+    public function a_hidden_container_takes_what_is_inside_it_and_keeps_it(): void
+    {
+        $this->publish('section', '<section>@blocks</section>', ['allow' => ['text']]);
+        $this->publish('text', '<p>{{ $body }}</p>');
+
+        $inside = [
+            $this->node('text', ['body' => 'one']),
+            ['hidden' => true] + $this->node('text', ['body' => 'two']),
+        ];
+        $tree = [['hidden' => true] + $this->node('section', ['content' => $inside], 'outer')];
+
+        $this->assertSame('', $this->render($tree));
+
+        // Switched back on, the inside is exactly what it was — including the block that was
+        // switched off in there on its own.
+        $tree[0]['hidden'] = false;
+
+        $this->assertSame('<section><p>one</p></section>', $this->render($tree));
+    }
+
+    #[Test]
     public function the_directive_defaults_to_the_content_field_and_tolerates_an_empty_one(): void
     {
         $this->publish('section', '<section>@blocks</section>');

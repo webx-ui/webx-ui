@@ -151,7 +151,8 @@ final class BlockTools
             Tool::mutating(
                 'edit_content',
                 'Change the blocks of an entity a node at a time, by key: set merges values into one block, add puts '
-                .'a new one where you say, move and remove rearrange. Everything not named stays exactly as it is. '
+                .'a new one where you say, move and remove rearrange, hide and show switch one block off and back '
+                .'on without touching what is in it. Everything not named stays exactly as it is. '
                 .'Send the revision blocks_get_content gave you and the edit is refused if the entity changed in '
                 .'between, instead of quietly overwriting somebody.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->editContent($arguments, $user),
@@ -164,9 +165,11 @@ final class BlockTools
                         'items' => ['type' => 'object'],
                         'description' => 'In order: { op: "set", key, values, locale? } · '
                             .'{ op: "add", type, values?, parent?, field?, before?, after? } · '
-                            .'{ op: "move", key, parent?, field?, before?, after? } · { op: "remove", key }. '
+                            .'{ op: "move", key, parent?, field?, before?, after? } · { op: "remove", key } · '
+                            .'{ op: "hide", key } · { op: "show", key }. '
                             .'locale writes one language of a localized field; parent omitted means the top level; '
-                            .'field names the wx-blocks field when the parent has more than one.',
+                            .'field names the wx-blocks field when the parent has more than one. A hidden block '
+                            .'stays in the content and is not drawn on the site, its nested blocks with it.',
                     ],
                 ], 'required' => ['entity', 'id', 'ops']],
             ),
@@ -524,7 +527,9 @@ final class BlockTools
             ),
             'move' => ContentEdit::move($tree, $this->opKey($key), $parent, $field, $before, $after),
             'remove' => ContentEdit::remove($tree, $this->opKey($key)),
-            default => throw new ToolFailure('Unknown operation ['.(is_string($name) ? $name : '?').']: set, add, move or remove.'),
+            'hide' => ContentEdit::visibility($tree, $this->opKey($key), true),
+            'show' => ContentEdit::visibility($tree, $this->opKey($key), false),
+            default => throw new ToolFailure('Unknown operation ['.(is_string($name) ? $name : '?').']: set, add, move, remove, hide or show.'),
         };
     }
 
@@ -706,7 +711,15 @@ final class BlockTools
                 }
             }
 
-            $tree[] = ['key' => $key, 'type' => $node['type'], 'values' => $values];
+            // Rebuilt rather than merged, so that a payload cannot smuggle keys of its own into
+            // the content — which means every structural key has to be named here. Visibility
+            // (§23) is one, and only when it is on.
+            $tree[] = array_filter([
+                'key' => $key,
+                'type' => $node['type'],
+                'hidden' => Content::isHidden($node) ? true : null,
+                'values' => $values,
+            ], static fn (mixed $value): bool => $value !== null);
         }
 
         return $tree;

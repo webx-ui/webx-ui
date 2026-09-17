@@ -93,6 +93,28 @@ final class ContentEdit
     }
 
     /**
+     * Switch one block off or back on (§23).
+     *
+     * The flag is written only when it is true, and removed rather than set to false, so
+     * showing a block again leaves the node exactly as it was before anybody hid it.
+     *
+     * @param  list<array<string, mixed>>  $tree
+     * @return list<array<string, mixed>>
+     */
+    public static function visibility(array $tree, string $key, bool $hidden): array
+    {
+        return self::edit($tree, $key, static function (array $node) use ($hidden): array {
+            if ($hidden) {
+                $node['hidden'] = true;
+            } else {
+                unset($node['hidden']);
+            }
+
+            return $node;
+        });
+    }
+
+    /**
      * @param  list<array<string, mixed>>  $tree
      * @return list<array<string, mixed>>
      */
@@ -162,6 +184,9 @@ final class ContentEdit
                 'depth' => $depth,
                 'parent' => $parent,
                 'label' => self::label($values),
+                // Only when it is on: a reader has no other way of knowing that a block which
+                // is plainly there in the content is not drawn on the site (§23).
+                'hidden' => Content::isHidden($node) ? true : null,
             ], static fn (mixed $value): bool => $value !== null);
 
             foreach ($values as $field => $value) {

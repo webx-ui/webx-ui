@@ -359,6 +359,35 @@ final class McpTest extends TestCase
             'id' => $page->id,
             'ops' => [['op' => 'set', 'key' => 'k-one', 'values' => ['body' => 'One language only']]],
         ], $this->editor())->assertHasErrors(['is localized']);
+
+        // Switching a block off goes through the same door as everything else, and the outline
+        // says so — otherwise an agent has no way of telling that a block it can read is not on
+        // the site.
+        $this->agent('edit_content', [
+            'entity' => 'note',
+            'id' => $page->id,
+            'ops' => [['op' => 'hide', 'key' => 'k-one']],
+        ], $this->editor())->assertOk();
+
+        $page->refresh();
+
+        $this->assertTrue($page->draft['blocks'][0]['hidden']);
+        $this->assertSame(['en' => 'Live words', 'ru' => 'Живые слова'], $page->draft['blocks'][0]['values']['body']);
+
+        $this->agent('get_content', ['entity' => 'note', 'id' => $page->id, 'outline' => true], $this->editor())
+            ->assertOk()
+            ->assertStructuredContent(static function (AssertableJson $json): void {
+                $content = $json->etc()->toArray();
+                self::assertTrue(($content['outline'][0]['hidden'] ?? null) === true, (string) json_encode($content));
+            });
+
+        $this->agent('edit_content', [
+            'entity' => 'note',
+            'id' => $page->id,
+            'ops' => [['op' => 'show', 'key' => 'k-one']],
+        ], $this->editor())->assertOk();
+
+        $this->assertArrayNotHasKey('hidden', $page->refresh()->draft['blocks'][0]);
     }
 
     #[Test]

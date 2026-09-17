@@ -57,6 +57,11 @@ A node is `{ key, type, values }`: `key` identifies the instance and survives a 
 block's slug, `values` are keyed by the ids of the block's fields. A container block holds other
 blocks in one of its values — a list of nodes of the same shape.
 
+A fourth key, `hidden: true`, switches one block off: it stays in the content and is edited in the
+panel as usual, and the site does not draw it — nor anything nested inside it, whose own switches
+keep their values untouched. The key is written only when it is on, so content from before the
+switch existed needs no migration.
+
 ## A block type
 
 ```php
@@ -202,7 +207,8 @@ with `--publish` runs the publish checks — a type that fails stays a draft and
 
 With [`webx-ui/mcp`](../mcp) — it comes with this package — the section is also a set of tools
 for an agent: `blocks_list`, `blocks_get`, `blocks_create`, `blocks_update`, `blocks_publish`,
-`blocks_render`, `blocks_get_content`, `blocks_set_content`, `blocks_preview_url`. The same doors
+`blocks_render`, `blocks_get_content`, `blocks_set_content`, `blocks_edit_content` (`set`, `add`,
+`move`, `remove`, `hide`, `show`, by key), `blocks_preview_url`. The same doors
 the panel uses, with `mcp` as the source in the history; every tool that changes something takes
 `dry_run: true`. Scopes `blocks:read` and `blocks:write` are the abilities of the token
 `php artisan webx:mcp:token` issues. Before writing, an agent reads `blocks://guidelines`,
