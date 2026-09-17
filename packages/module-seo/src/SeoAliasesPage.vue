@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useTranslate, useAdmin } from '@webx-ui/module-admin'
+import { useTranslate, useAdmin, WxDate } from '@webx-ui/module-admin'
 import {
   createModal,
   WxAlert,
@@ -113,9 +113,7 @@ async function load(state: TableState): Promise<void> {
       </template>
 
       <template #cell-created_at="{ row }">
-        <wx-text size="sm" tone="muted">
-          {{ row.created_at ? new Date(row.created_at).toLocaleString() : '' }}
-        </wx-text>
+        <wx-date v-if="row.created_at" :value="row.created_at" />
       </template>
     </wx-table>
   </seo-layout>

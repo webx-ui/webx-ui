@@ -22,7 +22,6 @@ return [
     'status' => 'Codice',
     'hits' => 'Utilizzi',
     'last-hit' => 'Ultima volta',
-    'never' => 'mai',
     'loop' => 'Punta a se stessa',
     'any-kind' => 'Qualsiasi tipo',
     'exact' => 'Esatta',

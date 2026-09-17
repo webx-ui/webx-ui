@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useTranslate, WxRowMenu, type RowAction } from '@webx-ui/module-admin'
+import { useAdmin, useTranslate, WxDate, WxRowMenu, type RowAction } from '@webx-ui/module-admin'
 import {
   WxAvatar,
   WxBadge,
@@ -265,9 +265,7 @@ defineExpose({ reload: () => load(last), chosen: () => selected.value })
       </template>
 
       <template #cell-last_login_at="{ row }">
-        <wx-text size="sm" :tone="row.last_login_at ? 'default' : 'muted'">
-          {{ row.last_login_at ? new Date(row.last_login_at).toLocaleString() : t('admins.never') }}
-        </wx-text>
+        <wx-date :value="row.last_login_at" :tone="row.last_login_at ? 'default' : 'muted'" />
       </template>
     </wx-table>
   </div>
