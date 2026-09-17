@@ -21,7 +21,6 @@ return [
     'locale' => 'Langue de l’interface',
     'locale-auto' => 'Suivre le navigateur',
     'last-login' => 'Dernière connexion',
-    'never' => 'Jamais',
     'save' => 'Enregistrer',
     'cancel' => 'Annuler',
     'delete' => 'Supprimer',

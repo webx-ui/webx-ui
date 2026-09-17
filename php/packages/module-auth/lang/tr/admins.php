@@ -21,7 +21,6 @@ return [
     'locale' => 'Panel dili',
     'locale-auto' => 'Tarayıcıyı izle',
     'last-login' => 'Son giriş',
-    'never' => 'Hiç',
     'save' => 'Kaydet',
     'cancel' => 'Vazgeç',
     'delete' => 'Sil',

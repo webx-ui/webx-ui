@@ -22,7 +22,6 @@ return [
     'status' => 'Code',
     'hits' => 'Treffer',
     'last-hit' => 'Zuletzt',
-    'never' => 'nie',
     'loop' => 'Zeigt auf sich selbst',
     'any-kind' => 'Beliebige Art',
     'exact' => 'Genau',

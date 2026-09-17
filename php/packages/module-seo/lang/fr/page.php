@@ -22,7 +22,6 @@ return [
     'status' => 'Code',
     'hits' => 'Déclenchements',
     'last-hit' => 'Dernière fois',
-    'never' => 'jamais',
     'loop' => 'Pointe sur elle-même',
     'any-kind' => 'Tous types',
     'exact' => 'Exacte',

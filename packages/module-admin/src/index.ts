@@ -21,6 +21,7 @@ export {
   type Translate,
 } from './i18n'
 export { adminMessages } from './messages'
+export { createDates, useDates, type DateLike, type Dates } from './dates'
 export { errorText, useErrorText } from './errors'
 export {
   createHttp,
@@ -46,3 +47,4 @@ export { default as AdminNav } from './AdminNav.vue'
 export { default as WxScreen } from './Screen.vue'
 export { default as WxListScreen } from './ListScreen.vue'
 export { default as WxRowMenu } from './RowMenu.vue'
+export { default as WxDate } from './DateText.vue'

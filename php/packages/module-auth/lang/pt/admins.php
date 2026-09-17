@@ -21,7 +21,6 @@ return [
     'locale' => 'Idioma do painel',
     'locale-auto' => 'Seguir o navegador',
     'last-login' => 'Última entrada',
-    'never' => 'Nunca',
     'save' => 'Guardar',
     'cancel' => 'Cancelar',
     'delete' => 'Eliminar',

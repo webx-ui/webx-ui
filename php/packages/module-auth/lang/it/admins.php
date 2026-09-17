@@ -21,7 +21,6 @@ return [
     'locale' => 'Lingua del pannello',
     'locale-auto' => 'Segui il browser',
     'last-login' => 'Ultimo accesso',
-    'never' => 'Mai',
     'save' => 'Salva',
     'cancel' => 'Annulla',
     'delete' => 'Elimina',
