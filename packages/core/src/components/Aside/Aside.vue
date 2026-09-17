@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useSlots } from 'vue'
 import type { AsideProps } from './types'
 
 defineOptions({ name: 'WxAside' })
@@ -11,7 +11,18 @@ const props = withDefaults(defineProps<AsideProps>(), {
   side: 'start',
   bordered: true,
   scroll: false,
+  sticky: false,
+  floating: false,
 })
+
+const slots = useSlots()
+
+/*
+ * A sidebar with zones is a different column from a sidebar with a menu in it: the
+ * middle one grows and scrolls, and the two around it stay where they are. Whether
+ * it is one or the other is not a prop — it is whether the caller filled the zones.
+ */
+const zoned = computed(() => slots.top !== undefined || slots.bottom !== undefined)
 
 function toLength(value: number | string | undefined) {
   if (value === undefined) return undefined
@@ -34,13 +45,33 @@ const classes = computed(() => [
     'wx-aside--bordered': props.bordered,
     'wx-aside--collapsed': props.collapsed,
     'wx-aside--scroll': props.scroll,
+    'wx-aside--sticky': props.sticky,
+    'wx-aside--floating': props.floating,
+    'wx-aside--zoned': zoned.value,
   },
 ])
 </script>
 
 <template>
   <aside :class="classes" :style="style">
-    <slot />
+    <div v-if="$slots.top" class="wx-aside__top">
+      <slot name="top" />
+    </div>
+
+    <!--
+      Wrapped only where there is something to wrap it against. An element between
+      the column and its menu is one more thing for a caller's own layout to reckon
+      with, and a sidebar that is nothing but a menu has no use for it.
+    -->
+    <div v-if="zoned" class="wx-aside__body">
+      <slot />
+    </div>
+
+    <slot v-else />
+
+    <div v-if="$slots.bottom" class="wx-aside__bottom">
+      <slot name="bottom" />
+    </div>
   </aside>
 </template>
 
@@ -86,12 +117,52 @@ const classes = computed(() => [
  * whole layout then overflows by exactly the header. On a page that scrolls, the row
  * is as tall as the content, and the cap is what keeps the sticky column in view.
  */
-.wx-aside--scroll {
+.wx-aside--scroll:not(.wx-aside--zoned) {
   position: sticky;
   top: 0;
   max-height: 100dvh;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* The zones stay; only what is between them moves. */
+.wx-aside__top,
+.wx-aside__bottom {
+  flex: 0 0 auto;
+}
+
+.wx-aside__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  /* Without this the menu is as tall as its content and nothing ever scrolls. */
+  min-height: 0;
+}
+
+.wx-aside--zoned.wx-aside--scroll .wx-aside__body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/*
+ * The column stands still and the page moves past it. Its height is its own — it is
+ * not the height of a row it shares with the content any more, so it has to be told
+ * one, and `100dvh` is the answer unless a shell insets it.
+ */
+.wx-aside--sticky {
+  position: sticky;
+  top: var(--wx-aside-top, 0px);
+  height: var(--wx-aside-height, 100dvh);
+}
+
+/*
+ * A card rather than a wall. No `overflow` of its own: a rail opens its section
+ * names in flyouts beside itself, and a box that clips is a box they cannot leave.
+ */
+.wx-aside--floating {
+  border: 1px solid var(--wx-border-default);
+  border-radius: var(--wx-radius-md);
+  box-shadow: var(--wx-shadow-card);
 }
 
 @media (prefers-reduced-motion: reduce) {

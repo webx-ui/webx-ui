@@ -19,6 +19,7 @@ export const adminMessages: Record<string, Messages> = {
     sections: 'Sections',
     menu: 'Menu',
     collapse: 'Collapse the menu',
+    expand: 'Expand the menu',
     language: 'Language',
   },
 }

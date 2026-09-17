@@ -116,6 +116,17 @@ const classes = computed(() => [
 }
 
 /*
+ * The other shape: the page scrolls, not the column. A screen that has to be exactly as tall
+ * as the window says so with the same attribute, and here there is no column to measure
+ * against — the window is the answer, less whatever the shell keeps around the column.
+ * `--wx-fill-height` is how the shell says how much that is.
+ */
+.wx-main:not(.wx-main--scroll) > .wx-main__inner > :deep([data-wx-fill]) {
+  height: var(--wx-fill-height, 100dvh);
+  min-height: 0;
+}
+
+/*
  * Padding is the first thing to give way on a small screen: 24px of margin around a
  * form is air on a desktop and a third of the line on a phone.
  */
