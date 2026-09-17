@@ -1,5 +1,6 @@
 import { computed, inject, reactive, type App, type ComputedRef, type InjectionKey } from 'vue'
 import type { Patch, ScreenNode, TypeRegistry } from '@webx-ui/schema'
+import { adminTypes } from './screenTypes'
 import type { Http } from './http'
 import type { I18n } from './i18n'
 import type { AdminModule, AdminStatus, AdminUser, Manifest, NavEntry, NavGroup } from './types'
@@ -156,8 +157,8 @@ export function createAdminContext(options: {
   })
 
   // The core types are the renderer's own default; what is merged here is only what the panel
-  // adds — a module's, then the project's, which therefore wins.
-  const types: TypeRegistry = {}
+  // adds — its own frame, then a module's, then the project's, which therefore wins.
+  const types: TypeRegistry = { ...adminTypes }
 
   for (const module of options.modules) {
     Object.assign(types, module.types)

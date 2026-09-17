@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useTranslate, WxListScreen } from '@webx-ui/module-admin'
 import {
   createModal,
   toast,
   WxAlert,
   WxButton,
   WxEmpty,
-  WxHeading,
   WxInput,
   WxSkeleton,
   WxSkeletonItem,
+  type TabItem,
+  type TabValue,
 } from '@webx-ui/core'
 import { createBlocksApi } from './api'
 import BlockCard from './BlockCard.vue'
@@ -37,6 +38,8 @@ const t = useTranslate('webx-blocks')
 const blocks = ref<BlockType[]>([])
 const loading = ref(true)
 const search = ref('')
+/** Which group is being looked at; `''` is all of them, grouped. */
+const view = ref<TabValue>('')
 
 const create = createModal<BlockType, Record<string, never>>(BlockCreateDialog)
 
@@ -60,10 +63,12 @@ const title = computed(
 
 const shown = computed(() => {
   const needle = search.value.trim().toLowerCase()
+  const inView =
+    view.value === '' ? blocks.value : blocks.value.filter((block) => block.group === view.value)
 
-  if (needle === '') return blocks.value
+  if (needle === '') return inView
 
-  return blocks.value.filter(
+  return inView.filter(
     (block) =>
       block.title.toLowerCase().includes(needle) ||
       block.slug.includes(needle) ||
@@ -72,14 +77,33 @@ const shown = computed(() => {
 })
 
 /** The groups in the site's order, then any a type named that the config does not. */
-const groups = computed(() => {
-  const order = [...meta.value.groups]
+const order = computed(() => {
+  const ids = [...meta.value.groups]
 
-  for (const block of shown.value) {
-    if (!order.includes(block.group)) order.push(block.group)
+  for (const block of blocks.value) {
+    if (!ids.includes(block.group)) ids.push(block.group)
   }
 
-  const sections = order
+  return ids.filter((id) => blocks.value.some((block) => block.group === id))
+})
+
+/**
+ * The groups as the views of the list (§10), with everything at once first — which is how a
+ * section of ten types is read, and what a search wants. Below two groups there is nothing to
+ * choose between, and the strip would be a control that says one thing.
+ */
+const views = computed<TabItem[]>(() =>
+  order.value.length < 2
+    ? []
+    : [
+        { value: '', label: t('page.all-groups') },
+        ...order.value.map((id) => ({ value: id, label: groupLabel(id, t) })),
+      ],
+)
+
+/** What the grid draws: sections with headings, or one flat run of cards. */
+const groups = computed(() => {
+  const sections = order.value
     .map((id) => ({
       id,
       label: groupLabel(id, t),
@@ -87,8 +111,13 @@ const groups = computed(() => {
     }))
     .filter((section) => section.blocks.length > 0)
 
-  // A handful of types needs no headings; a search wants a flat list.
-  const flat = shown.value.length <= 5 || search.value.trim() !== '' || sections.length < 2
+  // A handful of types needs no headings, a search wants a flat list, and a chosen group is
+  // already named by the tab above it.
+  const flat =
+    view.value !== '' ||
+    shown.value.length <= 5 ||
+    search.value.trim() !== '' ||
+    sections.length < 2
 
   return flat ? [{ id: '', label: '', blocks: shown.value }] : sections
 })
@@ -119,13 +148,10 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="wx-blocks-page">
-    <div class="wx-blocks-page__head">
-      <wx-heading :level="2">{{ title }}</wx-heading>
-      <wx-button v-if="canManage" type="primary" icon="plus" @click="add">
-        {{ t('page.new') }}
-      </wx-button>
-    </div>
+  <wx-list-screen v-model:view="view" class="wx-blocks-page" :title="title" :views="views">
+    <template v-if="canManage" #actions>
+      <wx-button type="primary" icon="plus" @click="add">{{ t('page.new') }}</wx-button>
+    </template>
 
     <wx-alert
       v-if="!meta.editing"
@@ -134,14 +160,16 @@ onMounted(load)
       :description="t('page.editing-off')"
     />
 
-    <!-- The search stands over the grid it narrows, not in the corner beside the button. -->
-    <wx-input
-      v-if="loading || blocks.length > 0"
-      v-model="search"
-      class="wx-blocks-page__search"
-      :placeholder="t('page.search')"
-      clearable
-    />
+    <!-- Inside the card and along its top, where every other list of the panel keeps its
+         search: on `Pages` it is the table's own row, and this grid has no table to put it in. -->
+    <div v-if="loading || blocks.length > 0" class="wx-blocks-page__toolbar">
+      <wx-input
+        v-model="search"
+        class="wx-blocks-page__search"
+        :placeholder="t('page.search')"
+        clearable
+      />
+    </div>
 
     <!-- The placeholder is shaped like what is coming: a row of cards, not a paragraph. -->
     <wx-skeleton v-if="loading">
@@ -174,27 +202,18 @@ onMounted(load)
         </div>
       </section>
     </template>
-  </div>
+  </wx-list-screen>
 </template>
 
 <style scoped>
-.wx-blocks-page {
+.wx-blocks-page__toolbar {
   display: flex;
-  flex-direction: column;
-  gap: var(--wx-space-16);
-  container-type: inline-size;
-}
-
-.wx-blocks-page__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wx-space-12);
-  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .wx-blocks-page__search {
-  max-width: 360px;
+  width: 100%;
+  max-width: 280px;
 }
 
 .wx-blocks-page__ghost {
@@ -234,6 +253,6 @@ onMounted(load)
 .wx-blocks-page__cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
 }
 </style>

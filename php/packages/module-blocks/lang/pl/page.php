@@ -6,6 +6,7 @@ return [
     'blocks' => 'Bloki',
     'new' => 'Nowy blok',
     'search' => 'Szukaj po nazwie lub identyfikatorze',
+    'all-groups' => 'Wszystkie grupy',
     'empty' => 'Nie ma jeszcze typów bloków.',
     'empty-help' => 'Typ bloku powstaje tu w całości: jego pola, szablon, style i skrypt.',
     'editing-off' => 'Edycja na tej stronie jest wyłączona: typy przychodzą z importu, a sekcja jest tylko do odczytu.',

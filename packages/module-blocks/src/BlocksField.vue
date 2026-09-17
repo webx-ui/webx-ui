@@ -431,7 +431,7 @@ const formRoot = computed(() =>
 .wx-blocks {
   display: grid;
   grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
   align-items: start;
 }
 
@@ -475,6 +475,22 @@ const formRoot = computed(() =>
 
 .wx-blocks__form {
   padding: var(--wx-space-6);
+}
+
+/*
+ * On a form that scrolls, all three columns stand still and scroll inside themselves. The tree
+ * is the one that makes this worth doing: a page of twenty blocks is a column taller than the
+ * window, and without this the way to the block being edited is off the top of it.
+ *
+ * The cap is the window less the air above and below; the containing block of a sticky grid
+ * item is its grid area, which is the whole row, so a short column still stays with a tall one.
+ */
+.wx-blocks-host:not(.is-fill) .wx-blocks__tree,
+.wx-blocks-host:not(.is-fill) .wx-blocks__fields {
+  position: sticky;
+  top: var(--wx-space-12);
+  max-height: calc(100dvh - var(--wx-space-24));
+  overflow: auto;
 }
 
 .wx-blocks__preview {

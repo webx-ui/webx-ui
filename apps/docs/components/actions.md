@@ -109,6 +109,21 @@ The row is never unmounted, only taken out of the flow — that is how the compo
 room for it again. The container has to have a width of its own (a table cell, a card, a grid
 column); a container that shrinks to fit its content has nothing to measure against.
 
+`collapse="always"` skips the measuring: the actions are a menu at every width, and the row is
+never built. That is what a list wants when every record in a panel has to open the same way —
+one place to look, whether a row offers one action or seven — and it is why the container's width
+stops mattering.
+
+```vue
+<wx-actions collapse="always" align="end" aria-label="Page actions">
+  <template #collapsed>
+    <wx-dropdown-item icon="edit">Open</wx-dropdown-item>
+    <hr class="wx-dropdown__divider" />
+    <wx-dropdown-item icon="trash" tone="danger">Delete</wx-dropdown-item>
+  </template>
+</wx-actions>
+```
+
 ## WxAction props
 
 | Prop       | Type                                                           | Default  | Description                                |
@@ -129,12 +144,12 @@ column); a container that shrinks to fit its content has nothing to measure agai
 
 ## WxActions props
 
-| Prop        | Type                           | Default   | Description                               |
-| ----------- | ------------------------------ | --------- | ----------------------------------------- |
-| `align`     | `'start' \| 'center' \| 'end'` | `'start'` | Where the row sits in its space           |
-| `size`      | `'sm' \| 'md' \| 'lg'`         | `'md'`    | Size for actions that set none            |
-| `collapse`  | `boolean`                      | `false`   | Fold into a dropdown when it does not fit |
-| `ariaLabel` | `string`                       | —         | Accessible name of the group              |
+| Prop        | Type                           | Default   | Description                                                               |
+| ----------- | ------------------------------ | --------- | ------------------------------------------------------------------------- |
+| `align`     | `'start' \| 'center' \| 'end'` | `'start'` | Where the row sits in its space                                           |
+| `size`      | `'sm' \| 'md' \| 'lg'`         | `'md'`    | Size for actions that set none                                            |
+| `collapse`  | `boolean \| 'always'`          | `false`   | Fold into a dropdown when it does not fit; `'always'` never draws the row |
+| `ariaLabel` | `string`                       | —         | Accessible name of the group                                              |
 
 **Models:** `v-model:menuOpen` — whether the folded-up menu is showing.
 

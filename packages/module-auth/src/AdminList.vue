@@ -1,9 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useTranslate, WxRowMenu, type RowAction } from '@webx-ui/module-admin'
 import {
-  WxAction,
-  WxActions,
   WxAvatar,
   WxBadge,
   WxSelect,
@@ -163,6 +161,22 @@ async function resolveAvatars(): Promise<void> {
   }
 }
 
+/**
+ * One line, and the same `···` every other list of the panel puts a record's actions behind.
+ * A bare red bin in every row says deleting somebody is the thing this list is for (§20).
+ */
+function actionsFor(row: Admin): RowAction[] {
+  return [
+    {
+      key: 'delete',
+      icon: 'trash',
+      label: t('admins.delete'),
+      danger: true,
+      run: () => emit('remove', row),
+    },
+  ]
+}
+
 function onRow(row: Admin): void {
   if (!props.picking) {
     emit('open', row)
@@ -234,16 +248,11 @@ defineExpose({ reload: () => load(last), chosen: () => selected.value })
       </template>
 
       <template #card-actions="{ row }">
-        <wx-actions v-if="removable" size="sm" @click.stop>
-          <wx-action type="remove" :title="t('admins.delete')" @click="emit('remove', row)" />
-        </wx-actions>
+        <wx-row-menu v-if="removable" :actions="actionsFor(row)" :label="row.name" />
       </template>
 
       <template #cell-actions="{ row }">
-        <!-- `.stop`: the row opens the form, and removing somebody is not opening them. -->
-        <wx-actions size="sm" @click.stop>
-          <wx-action type="remove" :title="t('admins.delete')" @click="emit('remove', row)" />
-        </wx-actions>
+        <wx-row-menu :actions="actionsFor(row)" :label="row.name" />
       </template>
 
       <template #cell-last_login_at="{ row }">

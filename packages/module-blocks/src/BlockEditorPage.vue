@@ -5,6 +5,7 @@ import { useAdmin, useTranslate } from '@webx-ui/module-admin'
 import {
   confirm,
   toast,
+  WxActionBar,
   WxAlert,
   WxBadge,
   WxButton,
@@ -727,6 +728,32 @@ watch(id, () => void load())
           </wx-card>
         </div>
       </div>
+
+      <!-- The editor is four tabs of code and a column of cards beside them, so the head is
+           long gone by the time there is anything to save. Same two buttons, same state. -->
+      <wx-action-bar v-if="canManage">
+        <template #state>
+          <wx-badge v-if="dirty" type="primary" dot>{{ t('page.unsaved') }}</wx-badge>
+          <wx-badge v-if="block.draft" type="warning" dot>{{
+            t('page.draft', { number: block.draft.number })
+          }}</wx-badge>
+          <wx-badge v-if="block.published" type="success" dot>{{
+            t('page.live', { number: block.published.number })
+          }}</wx-badge>
+        </template>
+
+        <wx-button variant="outline" :loading="saving" @click="save">{{
+          t('page.save')
+        }}</wx-button>
+        <wx-button
+          type="primary"
+          :loading="publishing"
+          :disabled="!block.draft && !dirty"
+          @click="publish"
+        >
+          {{ t('page.publish') }}
+        </wx-button>
+      </wx-action-bar>
     </template>
   </div>
 </template>
@@ -735,7 +762,7 @@ watch(id, () => void load())
 .wx-block-editor {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
   container-type: inline-size;
 }
 
@@ -792,7 +819,7 @@ watch(id, () => void load())
 .wx-block-editor__columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
   align-items: start;
 }
 
@@ -877,7 +904,7 @@ watch(id, () => void load())
 .wx-block-editor__side {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
   min-width: 0;
   position: sticky;
   top: var(--wx-space-12);

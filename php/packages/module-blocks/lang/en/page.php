@@ -6,6 +6,7 @@ return [
     'blocks' => 'Blocks',
     'new' => 'New block',
     'search' => 'Search by name or identifier',
+    'all-groups' => 'All groups',
     'empty' => 'No block types yet.',
     'empty-help' => 'A block type is made here entirely: its fields, its template, its styles and its script.',
     'editing-off' => 'Editing is switched off on this site: the types arrive by import, and the section is read-only.',
