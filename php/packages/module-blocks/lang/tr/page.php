@@ -6,6 +6,7 @@ return [
     'blocks' => 'Bloklar',
     'new' => 'Yeni blok',
     'search' => 'Ada veya tanımlayıcıya göre ara',
+    'all-groups' => 'Tüm gruplar',
     'empty' => 'Henüz blok türü yok.',
     'empty-help' => 'Bir blok türü burada bütünüyle oluşturulur: alanları, şablonu, stilleri ve betiği.',
     'editing-off' => 'Bu sitede düzenleme kapalı: türler içe aktarma ile gelir ve bölüm salt okunurdur.',

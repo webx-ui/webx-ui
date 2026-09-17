@@ -42,6 +42,12 @@ export interface FileCardProps {
   confirmRemove?: boolean
   /** Offers copying `url` to the clipboard. */
   copyable?: boolean
+  /**
+   * The actions are a `···` menu at every width, rather than a row of icons that folds into
+   * one when it runs out of room. For a grid inside a panel where every other list puts a
+   * record's actions behind the same menu — one place to look, whatever the card's size.
+   */
+  actionsMenu?: boolean
 
   /*
    * The card draws its own buttons, so it has to know what to call them. Every label is

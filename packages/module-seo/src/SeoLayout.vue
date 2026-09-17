@@ -1,21 +1,29 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
-import { WxButton, WxHeading, WxSegmented, WxSpace } from '@webx-ui/core'
+import { useAdmin, useTranslate, WxListScreen } from '@webx-ui/module-admin'
+import { WxButton, type TabItem, type TabValue } from '@webx-ui/core'
 import { useSeoMessages } from './i18n'
 
 /**
- * The head of the section: its name, the switch between what it holds, and the one tool that
- * belongs to the whole of it.
+ * The head of the section: its name, the views of what it holds, and the one tool that belongs
+ * to the whole of it.
  *
- * Rules, redirects and the trail of renames are three screens rather than three tabs of one,
- * because they are three tables with their own paging and their own search — and a tab that
- * quietly resets both when you come back to it is worse than a second address.
+ * Rules, redirects and the trail of renames are three routes rather than three panels of one,
+ * because they are three tables with their own paging and their own search — and a panel that
+ * quietly resets both when you come back to it is worse than a second address. What they share
+ * is the frame: one heading, one strip of tabs, one card under it (§19).
  */
 const props = defineProps<{ base: string; current: 'rules' | 'redirects' | 'aliases' }>()
 
 const emit = defineEmits<{ test: [] }>()
+
+defineSlots<{
+  /** The table. */
+  default?: () => unknown
+  /** The view's own main action — `New rule` — before the section's `Check an address`. */
+  actions?: () => unknown
+}>()
 
 const context = useAdmin()
 const router = useRouter()
@@ -32,15 +40,15 @@ const title = computed(
     t('module.title'),
 )
 
-const options = computed(() => [
+const views = computed<TabItem[]>(() => [
   { value: 'rules', label: t('page.rules') },
   { value: 'redirects', label: t('page.redirects') },
   { value: 'aliases', label: t('page.automatic') },
 ])
 
-const where = computed({
+const where = computed<TabValue>({
   get: () => props.current,
-  set: (next: string | number) => {
+  set: (next) => {
     const path = next === 'rules' ? props.base : `${props.base}/${String(next)}`
 
     if (path !== route.path) void router.push(path)
@@ -49,43 +57,15 @@ const where = computed({
 </script>
 
 <template>
-  <div class="wx-seo-layout">
-    <div class="wx-seo-layout__head">
-      <wx-heading :level="2">{{ title }}</wx-heading>
+  <wx-list-screen v-model:view="where" :title="title" :views="views">
+    <template #actions>
+      <slot name="actions" />
 
-      <wx-space size="sm">
-        <wx-segmented v-model="where" :options="options" size="sm" />
-        <wx-button variant="outline" icon="search" @click="emit('test')">
-          {{ t('page.test') }}
-        </wx-button>
-      </wx-space>
-    </div>
+      <wx-button variant="outline" icon="search" @click="emit('test')">
+        {{ t('page.test') }}
+      </wx-button>
+    </template>
 
     <slot />
-  </div>
+  </wx-list-screen>
 </template>
-
-<style scoped>
-.wx-seo-layout {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wx-gap, var(--wx-space-16));
-  container-type: inline-size;
-}
-
-.wx-seo-layout__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wx-space-12);
-  flex-wrap: wrap;
-}
-
-/* On a phone the heading takes the first line and the controls the second, full width, rather
-   than three things elbowing each other on one. */
-@container (max-width: 560px) {
-  .wx-seo-layout__head > * {
-    flex: 1 1 100%;
-  }
-}
-</style>

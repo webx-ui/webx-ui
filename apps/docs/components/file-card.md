@@ -144,6 +144,7 @@ that asks its own question or where the deletion can be undone.
 | `confirmRemove`     | `boolean`              | `true`           | Asks before deleting                                          |
 | `removeConfirmText` | `string`               | `Delete <name>?` | The question it asks                                          |
 | `copyable`          | `boolean`              | `false`          | Offers copying the link                                       |
+| `actionsMenu`       | `boolean`              | `false`          | The actions are a `···` menu at every width, never a row      |
 | `renameLabel`       | `string`               | `'Rename'`       | Tooltip and accessible name                                   |
 | `saveLabel`         | `string`               | `'Save'`         | The two buttons under the rename field                        |
 | `cancelLabel`       | `string`               | `'Cancel'`       | —                                                             |

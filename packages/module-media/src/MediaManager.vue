@@ -48,8 +48,16 @@ const props = withDefaults(
     multiple?: boolean
     /** The most that may be held at once, when picking several. */
     max?: number | null
+    /**
+     * Drawn as a section of the panel rather than inside a picker.
+     *
+     * The screen around it then carries the two things a section carries — the main action and
+     * the views of the list — so the toolbar stops offering an upload icon and a kind filter
+     * of its own. In a dialog there is no screen around it, and it keeps both.
+     */
+    inPage?: boolean
   }>(),
-  { picking: false, accept: null, multiple: false, max: null },
+  { picking: false, accept: null, multiple: false, max: null, inPage: false },
 )
 
 const emit = defineEmits<{ pick: [file: MediaFile]; selection: [files: MediaFile[]] }>()
@@ -101,7 +109,9 @@ const search = ref('')
  * What the caller asked for is not a default the person can put back: a field that wants a
  * picture would otherwise be handed a PDF, and find out when the page renders.
  */
-const type = ref<MediaKind | 'all'>(props.accept ?? 'all')
+const type = defineModel<MediaKind | 'all'>('type', { default: 'all' })
+
+if (props.accept) type.value = props.accept
 
 watch(
   () => props.accept,
@@ -435,6 +445,9 @@ function messageOf(error: unknown): string | null {
   return (error as { message?: string })?.message ?? null
 }
 
+/* The page's own upload button opens the same file dialog the toolbar's icon does. */
+defineExpose({ upload: choose })
+
 function debounce(run: () => void, wait: number): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined
 
@@ -478,8 +491,8 @@ function debounce(run: () => void, wait: number): () => void {
         v-model:search="search"
         v-model:type="type"
         v-model:sort="sort"
-        :can-upload="canUpload"
-        :fixed-type="accept !== null"
+        :can-upload="canUpload && !inPage"
+        :fixed-type="accept !== null || inPage"
         :can-manage="canManage"
         :selected="selected.length"
         :compact="compact"

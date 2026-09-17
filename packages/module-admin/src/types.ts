@@ -1,4 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router'
+import type { IconName } from '@webx-ui/core'
 import type { TypeRegistry } from '@webx-ui/schema'
 import type { LocaleDescriptor } from './i18n'
 
@@ -102,4 +103,30 @@ export interface NavGroup {
   id: string
   title: string
   entries: NavEntry[]
+}
+
+/**
+ * One line of a record's `···` menu.
+ *
+ * Written as data rather than as markup because the same list is read twice: the menu draws
+ * it, and a section decides what belongs in it from what the server said the reader may do.
+ * An action somebody has no right to is left out of the array, not passed with `disabled`.
+ */
+export interface RowAction {
+  /** Unique within the menu. */
+  key: string
+  /** What it does, in words. Every line has them — that is the point of a menu. */
+  label: string
+  icon?: IconName
+  /**
+   * Destructive. Red, and moved to the bottom behind a rule wherever it was written.
+   * It is never the thing a reader meant to hit.
+   */
+  danger?: boolean
+  /** Offered but not possible right now — an address that does not exist yet. */
+  disabled?: boolean
+  /** Renders the line as a link. Opens in a new tab unless `target` says otherwise. */
+  href?: string
+  target?: string
+  run?: () => void
 }
