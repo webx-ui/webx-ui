@@ -143,7 +143,33 @@ export function cloneNode(node: BlockNode): BlockNode {
     values[name] = isNodeList(value) ? value.map(cloneNode) : clone(value)
   }
 
-  return { key: newKey(), type: node.type, values }
+  // A copy of a switched-off block is switched off too: otherwise duplicating one quietly puts
+  // it on the site.
+  return node.hidden === true
+    ? { key: newKey(), type: node.type, hidden: true, values }
+    : { key: newKey(), type: node.type, values }
+}
+
+/**
+ * Switch a block off, or back on.
+ *
+ * Showing it removes the key rather than writing `false`, so a block that was never hidden and
+ * one that was hidden and shown again are the same content — and the revision that guards a
+ * save says so.
+ */
+export function setHidden(tree: BlockNode[], key: string, hidden: boolean): BlockNode[] {
+  const next = clone(tree)
+  const found = locate(next, key)
+
+  if (!found) return tree
+
+  if (hidden) {
+    found.node.hidden = true
+  } else {
+    delete found.node.hidden
+  }
+
+  return next
 }
 
 /** The list a parent holds in a field, or the root when there is no parent. */

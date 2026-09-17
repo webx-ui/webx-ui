@@ -133,4 +133,10 @@ export interface BlockNode {
   key: string
   type: string
   values: Record<string, unknown>
+  /**
+   * Switched off: in the content and editable here, not drawn on the site — and neither is
+   * anything nested inside it. The key is there only when it is true, so every tree written
+   * before the switch existed reads as visible.
+   */
+  hidden?: boolean
 }

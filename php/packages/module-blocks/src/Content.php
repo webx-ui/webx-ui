@@ -86,6 +86,21 @@ final class Content
         return is_array($node) && is_string($node['type'] ?? null) && $node['type'] !== '';
     }
 
+    /**
+     * Whether a block is switched off: in the content, editable in the panel, not drawn on the
+     * site (§23).
+     *
+     * The flag is only ever there when it is true. Content written before the switch existed is
+     * therefore visible without a migration, and a tree shows the key only for the blocks
+     * somebody deliberately turned off.
+     *
+     * @param  array<string, mixed>  $node
+     */
+    public static function isHidden(array $node): bool
+    {
+        return ($node['hidden'] ?? null) === true;
+    }
+
     /** A list of nodes — a nested constructor's value — as opposed to a list of strings or a map. */
     public static function isNodeList(mixed $value): bool
     {
