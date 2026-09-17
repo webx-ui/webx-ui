@@ -469,9 +469,10 @@ defineExpose({ measure, revealActive })
   padding-left: var(--wx-space-8);
 }
 
+/* The air between the strip and what it switches — the panel's step, like everything else. */
 .wx-tabs__panels {
   min-width: 0;
-  padding-top: var(--wx-space-16);
+  padding-top: var(--wx-gap, var(--wx-space-16));
 }
 
 /* Line — the default: a rule under the strip with the active tab standing on it. */
@@ -553,7 +554,7 @@ defineExpose({ measure, revealActive })
 .wx-tabs--vertical .wx-tabs__layout {
   flex-direction: row;
   align-items: flex-start;
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
 }
 
 .wx-tabs--vertical .wx-tabs__bar {
@@ -623,7 +624,7 @@ defineExpose({ measure, revealActive })
   }
 
   .wx-tabs--vertical .wx-tabs__panels {
-    padding-top: var(--wx-space-16);
+    padding-top: var(--wx-gap, var(--wx-space-16));
   }
 
   .wx-tabs--vertical.wx-tabs--line .wx-tabs__bar {

@@ -5,7 +5,7 @@ import type { RowProps } from './types'
 defineOptions({ name: 'WxRow' })
 
 const props = withDefaults(defineProps<RowProps>(), {
-  gutter: 16,
+  gutter: undefined,
   gutterY: undefined,
   justify: undefined,
   align: undefined,
@@ -13,7 +13,15 @@ const props = withDefaults(defineProps<RowProps>(), {
   as: 'div',
 })
 
-function toLength(value: number | string) {
+/*
+ * Unasked, the gutter between columns is the panel's step (§6 of the visual spec): the same
+ * number that stands between cards and around the sidebar, so a grid does not have a rhythm of
+ * its own. Outside a panel the fallback is the desktop step, which is what it always was.
+ */
+const STEP = 'var(--wx-gap, var(--wx-space-16))'
+
+function toLength(value: number | string | undefined) {
+  if (value === undefined) return STEP
   return typeof value === 'number' ? `${value}px` : value
 }
 

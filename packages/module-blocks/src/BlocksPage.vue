@@ -181,7 +181,7 @@ onMounted(load)
 .wx-blocks-page {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
   container-type: inline-size;
 }
 
@@ -234,6 +234,6 @@ onMounted(load)
 .wx-blocks-page__cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
 }
 </style>

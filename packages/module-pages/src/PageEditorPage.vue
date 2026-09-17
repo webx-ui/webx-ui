@@ -479,7 +479,7 @@ onBeforeRouteLeave(async () => {
 .wx-page-editor {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-12);
+  gap: var(--wx-gap, var(--wx-space-16));
   /* The constructor is the whole screen below the head, so the page is as tall as what it
      is drawn in and never taller: the tree, the form and the preview scroll inside
      themselves, and the head stays where it was put (§10). */

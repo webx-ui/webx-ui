@@ -85,7 +85,7 @@ const classes = computed(() => [
 .wx-card__header,
 .wx-card__body,
 .wx-card__footer {
-  padding: var(--wx-card-padding, var(--wx-space-16));
+  padding: var(--wx-card-padding, var(--wx-gap, var(--wx-space-16)));
 }
 
 .wx-card--padding-none {
@@ -96,8 +96,14 @@ const classes = computed(() => [
   --wx-card-padding: var(--wx-space-12);
 }
 
+/*
+ * The default padding is the panel's own step (§6 of the visual spec): the air inside a card
+ * is the air between the things in it, and it narrows with the window. Outside a panel — the
+ * docs, a dialog mounted off the app tree — the variable is not there and the desktop step is
+ * the fallback.
+ */
 .wx-card--padding-md {
-  --wx-card-padding: var(--wx-space-16);
+  --wx-card-padding: var(--wx-gap, var(--wx-space-16));
 }
 
 .wx-card--padding-lg {
@@ -135,7 +141,7 @@ const classes = computed(() => [
 .wx-card__content {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-card-padding, var(--wx-space-16));
+  gap: var(--wx-card-padding, var(--wx-gap, var(--wx-space-16)));
 }
 
 .wx-card__body {
@@ -150,7 +156,7 @@ const classes = computed(() => [
 .wx-card__layout {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-card-padding, var(--wx-space-16));
+  gap: var(--wx-card-padding, var(--wx-gap, var(--wx-space-16)));
 }
 
 .wx-card__sidebar,

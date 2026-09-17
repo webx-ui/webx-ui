@@ -69,7 +69,7 @@ const where = computed({
 .wx-seo-layout {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
   container-type: inline-size;
 }
 

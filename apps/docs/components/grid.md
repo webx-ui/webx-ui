@@ -27,8 +27,9 @@ controls, [Space](/components/space) is less machinery.
 
 ## Gutters
 
-`gutter` is the gap between columns, in pixels or as any CSS length. Once the columns wrap, the
-gap between lines is the same — unless `gutter-y` says otherwise:
+`gutter` is the gap between columns, in pixels or as any CSS length. Left alone it is `--wx-gap`,
+the step the surrounding layout spaces everything else by — 16 where nothing sets one. Once the
+columns wrap, the gap between lines is the same — unless `gutter-y` says otherwise:
 
 ```vue
 <template>
@@ -98,7 +99,7 @@ phone and last on a desktop:
 
 | Prop      | Type                                                                | Default  | Description                |
 | --------- | ------------------------------------------------------------------- | -------- | -------------------------- |
-| `gutter`  | `number \| string`                                                  | `16`     | Gap between columns        |
+| `gutter`  | `number \| string`                                                  | step     | Gap between columns        |
 | `gutterY` | `number \| string`                                                  | `gutter` | Gap between wrapped lines  |
 | `justify` | `'start' \| 'center' \| 'end' \| 'between' \| 'around' \| 'evenly'` | —        | Distribution along the row |
 | `align`   | `'start' \| 'center' \| 'end' \| 'stretch' \| 'baseline'`           | —        | Alignment across it        |

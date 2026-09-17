@@ -762,7 +762,7 @@ watch(id, () => void load())
 .wx-block-editor {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
   container-type: inline-size;
 }
 
@@ -819,7 +819,7 @@ watch(id, () => void load())
 .wx-block-editor__columns {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
   align-items: start;
 }
 
@@ -904,7 +904,7 @@ watch(id, () => void load())
 .wx-block-editor__side {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
   min-width: 0;
   position: sticky;
   top: var(--wx-space-12);

@@ -431,7 +431,7 @@ const formRoot = computed(() =>
 .wx-blocks {
   display: grid;
   grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
   align-items: start;
 }
 

@@ -569,7 +569,7 @@ function debounce(run: () => void, wait: number): () => void {
 .wx-media {
   display: grid;
   grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
   min-height: 0;
   height: 100%;
 }

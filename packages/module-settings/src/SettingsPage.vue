@@ -96,7 +96,7 @@ async function save(): Promise<void> {
 .wx-settings {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
 }
 
 .wx-settings__head {
