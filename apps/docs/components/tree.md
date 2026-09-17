@@ -172,7 +172,7 @@ cannot tell "not loaded yet" from "nothing there".
 | `load`             | `(node) => T[] \| Promise<T[]>` | —                    | Fetches one branch                             |
 | `filter`           | `string`                        | —                    | Shows matches and the branches leading to them |
 | `showLines`        | `boolean`                       | `true`               | Guide lines down the indentation               |
-| `indent`           | `number`                        | `20`                 | Pixels per level                               |
+| `indent`           | `number`                        | `16`                 | Pixels per level, guide line included          |
 | `size`             | `'sm' \| 'md'`                  | `'md'`               | Row height and text size                       |
 | `emptyText`        | `string`                        | `'Nothing here yet'` | Shown when there is nothing to draw            |
 | `dragLabel`        | `string`                        | `'Move'`             | What the grip is called                        |

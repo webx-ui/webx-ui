@@ -19,9 +19,10 @@ function card(props: Record<string, unknown> = {}, slots: Record<string, string>
 const glyph = (wrapper: VueWrapper) => wrapper.find('.wx-file-card__glyph')
 const name = (wrapper: VueWrapper) => wrapper.find('.wx-file-card__name')
 
-/** The action whose tooltip and accessible name is `label`. */
+/** The action whose tooltip and accessible name is `label`. The name, since the tip is
+ * drawn by `WxTooltip` and only exists while the pointer is on the button. */
 const action = (wrapper: VueWrapper, label: string) =>
-  wrapper.findAll('button').find((button) => button.attributes('title') === label)
+  wrapper.findAll('button').find((button) => button.attributes('aria-label') === label)
 
 /*
  * The rename panel is a popover, so it is teleported: it is in the document rather than

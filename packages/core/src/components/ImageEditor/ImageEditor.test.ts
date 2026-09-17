@@ -97,7 +97,7 @@ describe('WxImageEditor', () => {
   it('turns the picture, and the crop with it', async () => {
     const wrapper = await loaded(editor())
 
-    await wrapper.get('[title="Turn right"]').trigger('click')
+    await wrapper.get('[aria-label="Turn right"]').trigger('click')
 
     /* The sides have swapped, and the crop is still the whole picture. */
     expect(cropOf(wrapper)).toEqual({ x: 0, y: 0, width: 600, height: 800 })
@@ -107,7 +107,7 @@ describe('WxImageEditor', () => {
   it('mirrors it', async () => {
     const wrapper = await loaded(editor())
 
-    await wrapper.get('[title="Mirror across"]').trigger('click')
+    await wrapper.get('[aria-label="Mirror across"]').trigger('click')
     const result = await (
       wrapper.vm as unknown as { apply: () => Promise<ImageEditorResult> }
     ).apply()
@@ -119,7 +119,7 @@ describe('WxImageEditor', () => {
   it('goes back to the whole picture when it is reset', async () => {
     const wrapper = await loaded(editor())
 
-    await wrapper.get('[title="Turn right"]').trigger('click')
+    await wrapper.get('[aria-label="Turn right"]').trigger('click')
     await wrapper.get('.wx-image-editor__reset').trigger('click')
 
     expect(cropOf(wrapper)).toEqual({ x: 0, y: 0, width: 800, height: 600 })
@@ -128,7 +128,7 @@ describe('WxImageEditor', () => {
   it('draws the crop under the transform the picture was turned by', async () => {
     const wrapper = await loaded(editor())
 
-    await wrapper.get('[title="Turn right"]').trigger('click')
+    await wrapper.get('[aria-label="Turn right"]').trigger('click')
     await (wrapper.vm as unknown as { apply: () => Promise<unknown> }).apply()
 
     /* The turned picture is 600×800, and the whole of it is asked for. */
@@ -216,7 +216,7 @@ describe('WxImageEditor', () => {
   it('does nothing at all when it is disabled', async () => {
     const wrapper = await loaded(editor({ disabled: true }))
 
-    await wrapper.get('[title="Turn right"]').trigger('click')
+    await wrapper.get('[aria-label="Turn right"]').trigger('click')
 
     expect(cropOf(wrapper)).toEqual({ x: 0, y: 0, width: 800, height: 600 })
   })

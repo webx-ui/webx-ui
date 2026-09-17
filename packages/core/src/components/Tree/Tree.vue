@@ -32,7 +32,7 @@ const props = withDefaults(defineProps<TreeProps<T>>(), {
   load: undefined,
   filter: undefined,
   showLines: true,
-  indent: 20,
+  indent: 16,
   size: 'md',
   emptyText: 'Nothing here yet',
   dragLabel: 'Move',
@@ -559,9 +559,15 @@ defineExpose({
 .wx-tree {
   position: relative;
   box-sizing: border-box;
+  /* What a row keeps to its left. A tree that can be dragged parks the grip in it. */
+  --wx-tree-pad: var(--wx-space-8);
   color: var(--wx-text-default);
   font-family: var(--wx-font-family-sans);
   font-size: var(--wx-font-size-sm);
+}
+
+.wx-tree.is-draggable {
+  --wx-tree-pad: var(--wx-space-16);
 }
 
 .wx-tree__row {
@@ -579,10 +585,19 @@ defineExpose({
    * is nothing to clear.
    */
   padding-block: var(--wx-space-4);
-  padding-inline: var(--wx-space-8);
+  padding-inline: var(--wx-tree-pad) var(--wx-space-8);
   border-radius: var(--wx-radius-control);
   cursor: pointer;
   user-select: none;
+}
+
+/*
+ * A couple of pixels, which is all it takes for a list of names to stop reading as one
+ * block of text. Between the rows rather than around them: the gap belongs to the pair,
+ * and the tree has no room to give away at its ends.
+ */
+.wx-tree__row + .wx-tree__row {
+  margin-block-start: var(--wx-space-2);
 }
 
 /*
@@ -620,11 +635,16 @@ defineExpose({
   opacity: 0.4;
 }
 
-/* The guide is a level of indentation that also draws the line down from the parent. */
+/*
+ * The guide is a level of indentation that also draws the line down from the parent. The
+ * border is inside the width, so `indent` is the whole step — a lined tree and a plain one
+ * indent by the same amount, and four levels deep the difference is not a rounding error.
+ */
 .wx-tree__guide {
   flex: none;
   align-self: stretch;
-  width: var(--wx-tree-indent, 20px);
+  box-sizing: border-box;
+  width: var(--wx-tree-indent, 16px);
 }
 
 .wx-tree.is-lined .wx-tree__guide {
@@ -663,11 +683,20 @@ defineExpose({
   transform: rotate(90deg);
 }
 
+/*
+ * In the row's left margin rather than in its flow. The handle is wanted for the length of
+ * one drag and is in the way for the rest of the time — and it was in the way of every
+ * level at once, since everything after it moved right by its width. Absolute, it costs the
+ * margin the row already has, and it is the margin's own width, so it never lands on the
+ * chevron of a node at the top level.
+ */
 .wx-tree__grip {
-  flex: none;
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
   display: grid;
   place-items: center;
-  width: 16px;
+  width: var(--wx-tree-pad);
   color: var(--wx-text-placeholder);
   cursor: grab;
   opacity: 0;
@@ -723,7 +752,7 @@ defineExpose({
 .wx-tree__row.is-drop-after::after {
   content: '';
   position: absolute;
-  inset-inline: calc(var(--wx-space-8) + var(--wx-tree-depth, 0) * var(--wx-tree-indent, 20px))
+  inset-inline: calc(var(--wx-tree-pad) + var(--wx-tree-depth, 0) * var(--wx-tree-indent, 16px))
     var(--wx-space-8);
   height: 2px;
   border-radius: var(--wx-radius-full);
@@ -731,12 +760,13 @@ defineExpose({
   pointer-events: none;
 }
 
+/* Two pixels tall in a two-pixel gap: the line lands between the rows, not across one. */
 .wx-tree__row.is-drop-before::after {
-  top: -1px;
+  top: calc(var(--wx-space-2) * -1);
 }
 
 .wx-tree__row.is-drop-after::after {
-  bottom: -1px;
+  bottom: calc(var(--wx-space-2) * -1);
 }
 
 .wx-tree__row.is-drop-inside {

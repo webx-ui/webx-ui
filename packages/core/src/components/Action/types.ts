@@ -1,5 +1,6 @@
 import type { Component } from 'vue'
 import type { IconName } from '../Icon/types'
+import type { TooltipSide } from '../Tooltip/types'
 
 /**
  * What the action does. It picks the icon, the colour and the accessible name, so a
@@ -34,7 +35,7 @@ export interface ActionProps {
   icon?: IconName
   /** Colour to use instead of the one the type picks. */
   tone?: ActionTone
-  /** Native tooltip; also the accessible name when `label` is not given. */
+  /** What the tooltip says; also the accessible name when `label` is not given. */
   title?: string
   /** Accessible name. Needed whenever `title` is absent and the type is not enough. */
   label?: string
@@ -51,6 +52,8 @@ export interface ActionProps {
   hidden?: boolean
   /** Defaults to the size of the enclosing `WxActions`. */
   size?: ActionSize
+  /** Which side of the button the tooltip prefers. It flips when there is no room. */
+  tooltipSide?: TooltipSide
 }
 
 export interface ActionEmits {

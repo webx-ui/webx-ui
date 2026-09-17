@@ -352,7 +352,6 @@ watch(open, async (isOpen) => {
             :load="load"
             :filter="term"
             :size="field.size.value === 'lg' ? 'md' : 'sm'"
-            :indent="16"
             :empty-text="emptyText"
             :aria-label="ariaLabel ?? placeholder"
             @select="onSelect"

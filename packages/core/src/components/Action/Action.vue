@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import WxIcon from '../Icon/Icon.vue'
+import WxTooltip from '../Tooltip/Tooltip.vue'
 import { useActions } from '../../composables/useActions'
 import type { ActionEmits, ActionProps, ActionTone, ActionType } from './types'
 import type { IconName } from '../Icon/types'
@@ -19,6 +20,7 @@ const props = withDefaults(defineProps<ActionProps>(), {
   disabled: false,
   hidden: false,
   size: undefined,
+  tooltipSide: 'top',
 })
 
 const emit = defineEmits<ActionEmits>()
@@ -54,6 +56,30 @@ const accessibleName = computed(() => props.label ?? props.title ?? preset.value
 
 const tag = computed(() => props.as ?? (props.href ? 'a' : 'button'))
 
+/*
+ * About the tooltip in the template below.
+ *
+ * It is ours rather than the browser's `title`: one shape for the whole panel, a delay we
+ * choose and a side that can be pointed away from the edge of a dialog. It gives no
+ * accessible name of its own, which is why `aria-label` stays on the control either way.
+ * It is always mounted and switched off rather than added only when there is something to
+ * say, so that an action with a tip and one without are the same markup.
+ *
+ * What it costs: the action is no longer a single root node. The tooltip draws nothing of its
+ * own — the DOM is the same button in the same place — but the tip lives beside the control in
+ * the component tree, so Vue's root here is a fragment and `$el` is its anchor rather than the
+ * button. Nothing in a template notices; `wrapper.element` in a test does, and asks for
+ * `wrapper.get('button')` instead.
+ */
+
+/*
+ * A disabled button says so with `aria-disabled`, the way the link and the `as` forms here
+ * already do, and leaves the tab order with `tabindex` instead of with the attribute. The
+ * attribute does both — and a third thing: the browser stops dispatching pointer events
+ * anywhere near a disabled control, and a button nobody can hover is a button whose tooltip
+ * never comes. An icon is at its least readable exactly when it is greyed out, so that tip is
+ * the one worth keeping. Clicks and keys are turned away in `onClick`.
+ */
 const nativeAttrs = computed(() => {
   if (props.href) {
     return {
@@ -64,7 +90,11 @@ const nativeAttrs = computed(() => {
     }
   }
   if (props.as) return { 'aria-disabled': props.disabled ? 'true' : undefined }
-  return { type: 'button' as const, disabled: props.disabled }
+  return {
+    type: 'button' as const,
+    'aria-disabled': props.disabled ? 'true' : undefined,
+    tabindex: props.disabled ? -1 : undefined,
+  }
 })
 
 const classes = computed(() => [
@@ -92,19 +122,19 @@ function onClick(event: MouseEvent) {
     aria-hidden="true"
   />
 
-  <component
-    :is="tag"
-    v-else
-    v-bind="{ ...nativeAttrs, ...$attrs }"
-    :class="classes"
-    :title="title"
-    :aria-label="accessibleName"
-    @click="onClick"
-  >
-    <slot>
-      <wx-icon :name="icon" />
-    </slot>
-  </component>
+  <wx-tooltip v-else :content="title" :disabled="!title" :side="tooltipSide">
+    <component
+      :is="tag"
+      v-bind="{ ...nativeAttrs, ...$attrs }"
+      :class="classes"
+      :aria-label="accessibleName"
+      @click="onClick"
+    >
+      <slot>
+        <wx-icon :name="icon" />
+      </slot>
+    </component>
+  </wx-tooltip>
 </template>
 
 <style scoped>

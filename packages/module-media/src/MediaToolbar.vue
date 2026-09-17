@@ -55,9 +55,14 @@ const sortLabel = computed(() => sorts.value.find((one) => one.value === sort.va
 
 <template>
   <header class="wx-media-toolbar">
+    <!--
+      `sidebar`, the same icon the shell shows and hides its own column with: the gesture is
+      the same one, so the sign is the same one. A folder would only say "folder", which is
+      also what the button further along this row would be saying.
+    -->
     <wx-action
       v-if="compact"
-      icon="folder"
+      icon="sidebar"
       :title="t('manager.folders')"
       size="sm"
       @click="emit('folders')"
@@ -114,7 +119,7 @@ const sortLabel = computed(() => sorts.value.find((one) => one.value === sort.va
          be used while nothing is selected, so the grid never moves down a line. -->
     <wx-actions v-if="canManage" size="sm">
       <wx-action
-        icon="folder"
+        icon="folder-move"
         :title="t('manager.move')"
         :disabled="props.selected === 0"
         @click="emit('move')"
