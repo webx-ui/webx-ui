@@ -9,7 +9,16 @@ use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use WebxUi\Inbox\Http\Controllers\ScriptController;
 use WebxUi\Inbox\Http\Controllers\SubmitController;
+
+$prefix = trim((string) config('webx-inbox.path', 'webx/forms'), '/');
+
+// Outside every group: a script needs no session, and a cookie on it would only stop a proxy
+// from sharing what is meant to be shared. Declared before the intake so that `inbox.js` is
+// not read as the slug of a form (the intake is a POST and this a GET, but a route that
+// depends on that is a route waiting for somebody to add a verb).
+Route::get("{$prefix}/inbox.js", ScriptController::class)->name('webx.inbox.script');
 
 /**
  * The door a form on the site posts to (§6).
@@ -23,7 +32,7 @@ use WebxUi\Inbox\Http\Controllers\SubmitController;
  * Everything else stays, the session included: a form without JavaScript reports its errors
  * through `back()->withErrors()`, and that needs somewhere to put them.
  */
-Route::post(trim((string) config('webx-inbox.path', 'webx/forms'), '/').'/{slug}', SubmitController::class)
+Route::post("{$prefix}/{slug}", SubmitController::class)
     ->middleware([
         EncryptCookies::class,
         AddQueuedCookiesToResponse::class,
