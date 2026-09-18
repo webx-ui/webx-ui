@@ -275,7 +275,7 @@ function iconOf(node: BlockNode): string {
 .wx-blocks-tree__add {
   width: 100%;
   padding: var(--wx-space-6);
-  border: 1px dashed var(--wx-color-border-strong, var(--wx-border-default));
+  border: 1px dashed var(--wx-border-strong);
   border-radius: var(--wx-radius-control);
   background: transparent;
   color: var(--wx-text-muted);

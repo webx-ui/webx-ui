@@ -108,7 +108,7 @@ watch(
   align-items: center;
   gap: var(--wx-space-12);
   padding: var(--wx-space-10) var(--wx-space-12);
-  border-block-end: 1px solid var(--wx-color-border-muted, var(--wx-border-default));
+  border-block-end: 1px solid var(--wx-border-muted);
   flex-wrap: wrap;
 }
 
