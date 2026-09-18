@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Media\Screens;
 
 use Closure;
+use WebxUi\Admin\Screens\ScreenValues;
+use WebxUi\Localization\Locales;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Storage\FileUrls;
 use WebxUi\Media\Support\MediaType;
@@ -25,6 +27,7 @@ final class MediaValues
     public function __construct(
         private readonly MediaFiles $files,
         private readonly FileUrls $urls,
+        private readonly Locales $locales,
     ) {}
 
     /**
@@ -155,15 +158,21 @@ final class MediaValues
      * to a document. There is nothing in a template to reach the library with, so what is not
      * handed over here is not available at all.
      *
+     * The captions come back in one language. They are written in all of them — the field gives
+     * `alt` and `title` a language switcher each — and a template printing `{{ $picture['alt'] }}`
+     * is Blade being handed an array and refusing. This is the step a localized value already
+     * takes on its way to the site ({@see ScreenValues::resolve()}), one layer further in: a
+     * picture's words are translated inside a field that is not.
+     *
      * @return array<string, mixed>|null
      */
-    public function resolve(mixed $stored): ?array
+    public function resolve(mixed $stored, ?string $locale = null): ?array
     {
         if (! is_array($stored) || ! is_string($stored['path'] ?? null)) {
             return null;
         }
 
-        return $stored + $this->details($this->files->find($stored['path']));
+        return $this->captions($stored, $locale) + $this->details($this->files->find($stored['path']));
     }
 
     /**
@@ -171,7 +180,7 @@ final class MediaValues
      *
      * @return list<array<string, mixed>>
      */
-    public function resolveList(mixed $stored): array
+    public function resolveList(mixed $stored, ?string $locale = null): array
     {
         if (! is_array($stored)) {
             return [];
@@ -184,7 +193,7 @@ final class MediaValues
         $resolved = [];
 
         foreach ($items as $item) {
-            $one = $this->resolve($item);
+            $one = $this->resolve($item, $locale);
 
             if ($one !== null) {
                 $resolved[] = $one;
@@ -192,6 +201,48 @@ final class MediaValues
         }
 
         return $resolved;
+    }
+
+    /**
+     * The words of one element, in the language it is being read in.
+     *
+     * A caption written before the site had a second language is a plain string, and an agent
+     * writing one through a tool has no reason to send a map either. Both stay as they are:
+     * what is picked apart is a map, and a map is what the field writes.
+     *
+     * @param  array<string, mixed>  $stored
+     * @return array<string, mixed>
+     */
+    private function captions(array $stored, ?string $locale): array
+    {
+        foreach (['alt', 'title'] as $caption) {
+            $words = $stored[$caption] ?? null;
+
+            if (is_array($words)) {
+                $stored[$caption] = $this->pick($words, $locale);
+            }
+        }
+
+        return $stored;
+    }
+
+    /**
+     * The language asked for, then the site's default, then its fallback — the chain every
+     * localized value is read through. A caption half-translated prints the half that exists.
+     *
+     * @param  array<string, mixed>  $translations
+     */
+    private function pick(array $translations, ?string $locale): mixed
+    {
+        foreach ($this->locales->chain($locale) as $code) {
+            $candidate = $translations[$code] ?? null;
+
+            if ($candidate !== null && $candidate !== '') {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     /**

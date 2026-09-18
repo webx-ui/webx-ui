@@ -39,6 +39,6 @@ final class MediaFieldType implements FieldType
      */
     public function resolve(mixed $stored, array $node, ?string $locale = null): mixed
     {
-        return $this->values->resolve($stored);
+        return $this->values->resolve($stored, $locale);
     }
 }
