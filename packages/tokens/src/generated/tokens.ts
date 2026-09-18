@@ -117,7 +117,8 @@ export const tokens = {
       "none": "none",
       "sm": "0 0 8px 0 rgb(0 0 0 / 0.1)",
       "md": "0 4px 16px 0 rgb(0 0 0 / 0.12)",
-      "lg": "0 8px 32px 0 rgb(0 0 0 / 0.16)"
+      "lg": "0 8px 32px 0 rgb(0 0 0 / 0.16)",
+      "up": "0 -4px 16px -4px rgb(0 0 0 / 0.14)"
     },
     "size": {
       "control-sm": "34px",
@@ -197,6 +198,7 @@ export const tokens = {
       "border-focus": "#a1bfee",
       "ring-focus": "0 0 0 3px rgb(66 126 221 / 0.25)",
       "shadow-card": "{primitive.shadow.sm}",
+      "shadow-bar": "{primitive.shadow.up}",
       "shadow-popover": "{primitive.shadow.md}",
       "shadow-dialog": "{primitive.shadow.lg}"
     },
@@ -253,6 +255,7 @@ export const tokens = {
       "border-focus": "{primitive.color.blue.base}",
       "ring-focus": "0 0 0 3px rgb(91 149 239 / 0.35)",
       "shadow-card": "0 0 8px 0 rgb(0 0 0 / 0.4)",
+      "shadow-bar": "0 -4px 16px -4px rgb(0 0 0 / 0.5)",
       "shadow-popover": "0 4px 16px 0 rgb(0 0 0 / 0.5)",
       "shadow-dialog": "0 8px 32px 0 rgb(0 0 0 / 0.6)"
     }
@@ -358,6 +361,7 @@ export const lightVars: Record<string, string> = {
   '--wx-shadow-sm': "0 0 8px 0 rgb(0 0 0 / 0.1)",
   '--wx-shadow-md': "0 4px 16px 0 rgb(0 0 0 / 0.12)",
   '--wx-shadow-lg': "0 8px 32px 0 rgb(0 0 0 / 0.16)",
+  '--wx-shadow-up': "0 -4px 16px -4px rgb(0 0 0 / 0.14)",
   '--wx-size-control-sm': "34px",
   '--wx-size-control-md': "42px",
   '--wx-size-control-lg': "50px",
@@ -425,6 +429,7 @@ export const lightVars: Record<string, string> = {
   '--wx-border-focus': "#a1bfee",
   '--wx-ring-focus': "0 0 0 3px rgb(66 126 221 / 0.25)",
   '--wx-shadow-card': "var(--wx-shadow-sm)",
+  '--wx-shadow-bar': "var(--wx-shadow-up)",
   '--wx-shadow-popover': "var(--wx-shadow-md)",
   '--wx-shadow-dialog': "var(--wx-shadow-lg)",
 }
@@ -483,6 +488,7 @@ export const darkVars: Record<string, string> = {
   '--wx-border-focus': "var(--wx-color-blue-base)",
   '--wx-ring-focus': "0 0 0 3px rgb(91 149 239 / 0.35)",
   '--wx-shadow-card': "0 0 8px 0 rgb(0 0 0 / 0.4)",
+  '--wx-shadow-bar': "0 -4px 16px -4px rgb(0 0 0 / 0.5)",
   '--wx-shadow-popover': "0 4px 16px 0 rgb(0 0 0 / 0.5)",
   '--wx-shadow-dialog': "0 8px 32px 0 rgb(0 0 0 / 0.6)",
 }

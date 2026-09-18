@@ -69,11 +69,22 @@ const classes = computed(() => [
   border: 1px solid var(--wx-border-default);
 }
 
+/*
+ * The shadow rises rather than surrounds, and it is the strip below that makes that the only
+ * option: an element's outer shadow is painted with its background, before any of its
+ * descendants, so a pseudo-element laid under the bar erases the part of the shadow that falls
+ * there — measured, a flat 8px band gone and a stub of it left showing at each bottom corner.
+ * No stacking order fixes that; a descendant is always on top of its ancestor's shadow.
+ *
+ * Which is fair enough: a bar standing at the bottom edge of the window is lifted off what it
+ * covers, and that is above it. The token's offset clears its own blur, so nothing of it falls
+ * below the bar to be cut off.
+ */
 .wx-action-bar--sticky {
   position: sticky;
   bottom: var(--wx-action-bar-bottom, 0px);
   z-index: var(--wx-z-index-sticky);
-  box-shadow: var(--wx-shadow-card);
+  box-shadow: var(--wx-shadow-bar);
 }
 
 /*
