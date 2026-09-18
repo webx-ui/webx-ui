@@ -226,6 +226,8 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
 interface NavSlotProps {
   collapsed?: boolean
   select?: () => void
+  /** Whether the corner it is drawing the account in has room for a name beside the face. */
+  expanded?: boolean
 }
 
 function rootComponent(options: CreateAdminOptions): Component {
@@ -241,8 +243,10 @@ function rootComponent(options: CreateAdminOptions): Component {
     slots.brand = () => h(options.brand as Component)
   }
 
+  // The shell draws the account in three corners of different widths and says which; the menu
+  // decides what it can show there.
   if (options.userMenu !== undefined) {
-    slots.user = () => h(options.userMenu as Component)
+    slots.user = (props) => h(options.userMenu as Component, { expanded: props.expanded === true })
   }
 
   return { render: () => h(AdminShell, null, slots) }

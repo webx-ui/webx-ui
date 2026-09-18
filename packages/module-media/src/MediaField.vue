@@ -126,6 +126,15 @@ async function choose(): Promise<void> {
 
   if (!file) return
 
+  /*
+   * Remembered against the key as well as put on the value. The address on the value is the
+   * session's own and does not survive a save — the server stores the key and answers with
+   * what it stored — and the key has not changed, so the watcher above does not fire either.
+   * Without this the picture vanishes from the field the moment the form is saved and comes
+   * back only on a reload.
+   */
+  resolved.value = { ...resolved.value, [file.path]: file.url }
+
   // The captions belong to the entity, so picking a different picture keeps them: usually the
   // words are still right and retyping them in three languages is the punishment for a swap.
   value.value = { ...value.value, path: file.path, url: file.url }

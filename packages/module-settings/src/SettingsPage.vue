@@ -50,6 +50,12 @@ async function save(): Promise<void> {
   try {
     values.value = await api.save(values.value)
     toast.success(t('page.saved'))
+
+    // Some of what this screen holds is also what the panel is wearing — the logo in the
+    // corner, the mark on the rail, the name of the site. The manifest is where the shell
+    // reads those, so saving them here has to hand the shell a new one; otherwise the logo
+    // somebody has just replaced goes on being the old one until the page is reloaded.
+    void context.refreshManifest()
   } catch (error) {
     const body = (error as { body?: { errors?: Record<string, string[]>; message?: string } }).body
 
