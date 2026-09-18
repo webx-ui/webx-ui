@@ -26,6 +26,7 @@ export default defineConfig({
             { text: 'Introduction', link: '/guide/' },
             { text: 'Installation', link: '/guide/installation' },
             { text: 'Theming', link: '/guide/theming' },
+            { text: 'Languages', link: '/guide/languages' },
             { text: 'Dialogs from code', link: '/guide/modals' },
             { text: 'The file manager', link: '/guide/media' },
             { text: 'Administrators', link: '/guide/admins' },
