@@ -350,7 +350,7 @@ onBeforeRouteLeave(async () => {
     </template>
 
     <template v-else>
-      <div class="wx-page-editor__head">
+      <div class="wx-page-editor__head" :class="{ 'is-narrow': narrow }">
         <!-- The trail says where the reader is; this is the way out of it, and on a phone it
              is the only one that is a control rather than four words in the smallest type. -->
         <wx-back-button class="wx-page-editor__back" :to="base" :label="t('module.title')" />
@@ -556,6 +556,31 @@ onBeforeRouteLeave(async () => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/*
+ * Narrow: the head is one row and stays one row. The menu of what leads away from the page
+ * belongs beside the name — wrapped onto a line of its own it reads as a third thing in the
+ * head, and costs a phone another 40px above the editor.
+ *
+ * A grid rather than the flex row it is at every other width: as flex items the three parts
+ * were sized from their own content, and the menu — one 30px button — claimed 225px of a
+ * 359px head while the name was squeezed to 81 and wrapped away from its badge. Three explicit
+ * columns say what was meant: the arrow, everything the page is called, and the menu.
+ *
+ * Level with the name rather than with the trail above it: the trail is the smaller line, and
+ * a button lined up with it hangs over the title.
+ */
+.wx-page-editor__head.is-narrow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+/* The arrow belongs to the trail, which is the top line; everything else lines up with the
+   name, which is the bottom one. */
+.wx-page-editor__head.is-narrow .wx-back-button {
+  align-self: start;
 }
 
 .wx-page-editor__actions {
