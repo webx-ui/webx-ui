@@ -70,6 +70,37 @@ return [
         (`props.span`, out of 24), `wx-divider`. `wx-text` and `wx-alert` say something to the
         editor and store nothing.
 
+        ## Fields in more than one language
+
+        A field marked `localized` holds one value per language the site publishes in, rather
+        than one value:
+
+        ```json
+        { "id": "title", "type": "wx-input", "label": "Headline", "localized": true }
+        ```
+
+        The form gives that field a language switcher, and the block stores a map —
+        `{ "en": "Shoes", "uk": "Взуття" }`. The template does not see the map. It is handed
+        the language the page is being read in, so `{{ $title }}` stays `{{ $title }}` and
+        needs to know nothing about languages at all.
+
+        A language nobody has written falls back: the one asked for, then the site's default,
+        then its fallback. So a block half-translated prints the half that exists rather than
+        an empty heading.
+
+        Two things worth knowing before you mark a field:
+
+        - **Only where the words differ.** A colour, a number of columns, a switch, an address
+          — these are the same in every language, and marking them makes an editor fill the
+          same value in three times.
+        - **It changes what is stored.** A field that has content and then becomes `localized`
+          has a string where a map is expected, and one that stops being localized has a map
+          where a string is expected. Decide before the type is used on a page; afterwards it
+          is a migration, not an edit.
+
+        A picture is rarely one of them: the same photograph usually serves every language, and
+        what differs is the words beside it.
+
         ## A worked example
 
         ```json
