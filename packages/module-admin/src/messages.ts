@@ -24,6 +24,13 @@ export const adminMessages: Record<string, Messages> = {
     // The one menu group the panel names itself; a module's own group is named by the module.
     system: 'System',
   },
+  // What a screen that edits one record offers whatever the record is: the way out of it, and
+  // the way to rename it. A module that opens an editor should not be inventing these.
+  editor: {
+    back: 'Back',
+    rename: 'Rename',
+    save: 'Save',
+  },
   // When something happened, said the way a person would. The month names and the order of
   // the parts come from `Intl` — only the words that no formatter knows are here.
   dates: {

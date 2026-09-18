@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
-import { useAdmin, useErrorText, useTranslate, WxScreen } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxBackButton, WxScreen } from '@webx-ui/module-admin'
 import { provideBlocksPreview } from '@webx-ui/module-blocks'
 import {
   confirm,
@@ -351,6 +351,10 @@ onBeforeRouteLeave(async () => {
 
     <template v-else>
       <div class="wx-page-editor__head">
+        <!-- The trail says where the reader is; this is the way out of it, and on a phone it
+             is the only one that is a control rather than four words in the smallest type. -->
+        <wx-back-button class="wx-page-editor__back" :to="base" :label="t('module.title')" />
+
         <div class="wx-page-editor__id">
           <wx-breadcrumb size="sm" :label="t('page.trail')">
             <wx-breadcrumb-item :as="'router-link'" :to="base">
@@ -523,6 +527,11 @@ onBeforeRouteLeave(async () => {
   flex-wrap: wrap;
   padding-block-end: var(--wx-space-12);
   border-block-end: 1px solid var(--wx-border-default);
+}
+
+/* Level with the trail, which is the first line of the head, not the middle of both lines. */
+.wx-page-editor__back {
+  flex: none;
 }
 
 .wx-page-editor__id {
