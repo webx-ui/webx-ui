@@ -15,18 +15,17 @@ import {
   localizedValue,
   toast,
   useLocales,
-  WxAction,
   WxBadge,
   WxButton,
   WxCard,
   WxEmpty,
-  WxHeading,
   WxListDetail,
   WxSkeleton,
   WxSortableList,
   WxText,
 } from '@webx-ui/core'
 import FormCreateDialog from './FormCreateDialog.vue'
+import SubmissionList from './SubmissionList.vue'
 import { createInboxApi } from './api'
 import { useInboxMessages } from './i18n'
 import type { InboxForm } from './types'
@@ -297,27 +296,20 @@ async function reorder(): Promise<void> {
         </template>
 
         <!--
-          The submissions of the chosen form. Their list is the next session's; what stands
-          here is what the pane is headed by either way — which form this is, and the way into
-          what it asks.
+          The submissions of the chosen form. The pane is the list's, head and all: what is
+          above the rows — which form this is, the way back on a phone, the way into what it
+          asks — belongs beside the tabs and not above the drawer.
         -->
         <template #detail="{ inline, back }">
-          <div v-if="chosen" class="wx-inbox__detail">
-            <div class="wx-inbox__head">
-              <!-- On a phone the pane is a screen of its own and the drawer carries no close
-                   of its own, so the way back has to be here. Beside the list there is
-                   nothing to go back to. -->
-              <wx-action v-if="!inline" icon="arrow-left" :title="t('panel.forms')" @click="back" />
-
-              <div class="wx-inbox__who">
-                <wx-heading :level="3">{{ name(chosen) }}</wx-heading>
-                <wx-text size="sm" tone="muted" mono>{{ chosen.slug }}</wx-text>
-              </div>
-              <wx-button v-if="canManage" variant="outline" icon="settings" @click="edit(chosen)">
-                {{ t('panel.settings') }}
-              </wx-button>
-            </div>
-          </div>
+          <submission-list
+            v-if="chosen"
+            :key="chosen.id"
+            :form="chosen"
+            :base="props.base"
+            :inline="inline"
+            @back="back"
+            @changed="load"
+          />
         </template>
       </wx-list-detail>
     </wx-card>
@@ -349,29 +341,6 @@ async function reorder(): Promise<void> {
 
 .wx-inbox__forms {
   padding: var(--wx-space-8);
-}
-
-.wx-inbox__detail {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wx-space-16);
-  padding: var(--wx-space-16);
-  min-width: 0;
-}
-
-.wx-inbox__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wx-space-12);
-  flex-wrap: wrap;
-}
-
-/* The name takes the middle, so the way back stays at the start of the line and the one
-   action stays at its end. */
-.wx-inbox__who {
-  flex: 1 1 auto;
-  min-width: 0;
 }
 
 .wx-inbox-form {

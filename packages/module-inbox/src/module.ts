@@ -2,6 +2,7 @@ import type { AdminModule } from '@webx-ui/module-admin'
 import FormEditorPage from './FormEditorPage.vue'
 import InboxPage from './InboxPage.vue'
 import StatusesPage from './StatusesPage.vue'
+import SubmissionPage from './SubmissionPage.vue'
 
 export interface InboxOptions {
   /** Where the section lives inside the panel. */
@@ -45,6 +46,14 @@ export function inbox(options: InboxOptions = {}): AdminModule {
         path: `${path}/forms/:id(\\d+)`,
         name: 'webx.inbox.form',
         component: FormEditorPage,
+        props: { base: path },
+      },
+      // A submission has an address of its own, not a dialog over the list (§11): it goes in
+      // the mail to whoever deals with it, it gets pasted into a chat, an agent links to it.
+      {
+        path: `${path}/submissions/:id(\\d+)`,
+        name: 'webx.inbox.submission',
+        component: SubmissionPage,
         props: { base: path },
       },
     ],
