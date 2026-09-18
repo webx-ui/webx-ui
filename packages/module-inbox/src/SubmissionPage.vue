@@ -312,24 +312,34 @@ const details = computed(() => {
 <template>
   <div class="wx-submission">
     <div class="wx-submission__head">
-      <wx-back-button :to="backTo" />
+      <wx-back-button :to="backTo" size="lg" />
 
       <div class="wx-submission__who">
         <wx-heading :level="2" truncate>{{ heading }}</wx-heading>
         <wx-text size="sm" tone="muted" truncate>{{ formTitle }}</wx-text>
       </div>
 
-      <!-- The same pile the reader was looking at, one step at a time. An arrow with nowhere
-           to go is disabled rather than hidden: the pair is a control, and a control that
-           changes shape at the ends is one that moves under the hand. -->
+      <!--
+        One height for everything on this line, and the button with a word on it is what sets
+        it: an icon button at `lg` is 42px, which is what a `md` button measures. Left to their
+        defaults they came out four different sizes — 30 for the way back, 36 for the arrows,
+        42 for the reply, 30 for the menu — and a row of controls that each picked their own
+        reads as four unrelated things rather than as one set.
+
+        The same pile the reader was looking at, one step at a time. An arrow with nowhere to
+        go is disabled rather than hidden: the pair is a control, and a control that changes
+        shape at the ends is one that moves under the hand.
+      -->
       <wx-action
         icon="chevron-left"
+        size="lg"
         :title="t('panel.previous')"
         :disabled="!submission?.previous_id"
         @click="go(submission?.previous_id ?? null)"
       />
       <wx-action
         icon="chevron-right"
+        size="lg"
         :title="t('panel.next')"
         :disabled="!submission?.next_id"
         @click="go(submission?.next_id ?? null)"
@@ -339,7 +349,7 @@ const details = computed(() => {
         {{ t('panel.reply') }}
       </wx-button>
 
-      <wx-row-menu :actions="actions" :label="heading" />
+      <wx-row-menu :actions="actions" size="lg" :label="heading" />
     </div>
 
     <wx-skeleton v-if="loading" :rows="6" />
