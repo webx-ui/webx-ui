@@ -357,7 +357,7 @@ function settings(): void {
 </script>
 
 <template>
-  <div class="wx-submissions">
+  <div class="wx-submissions" :class="{ 'is-sheet': !inline }">
     <div class="wx-submissions__head">
       <!-- On a phone the pane is a screen of its own and the drawer carries no close of its
            own, so the way back has to be here. Beside the list there is nothing to go back to. -->
@@ -491,6 +491,18 @@ function settings(): void {
   min-width: 0;
   height: 100%;
   min-height: 0;
+}
+
+/*
+ * On a phone the pane is the sheet, and the sheet has already done the insetting.
+ *
+ * Its own padding on top of the drawer's put the search and the rows 20px from the edge
+ * sideways while every step down the pane was 12 — the same content standing at two distances
+ * from the same border, which is what a list of cards makes impossible to miss: the card's
+ * left edge and the gap above it disagree by eight pixels down the whole screen.
+ */
+.wx-submissions.is-sheet {
+  padding: 0;
 }
 
 /*
