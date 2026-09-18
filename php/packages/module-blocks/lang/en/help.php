@@ -99,7 +99,12 @@ return [
           is a migration, not an edit.
 
         A picture is rarely one of them: the same photograph usually serves every language, and
-        what differs is the words beside it.
+        what differs is the words beside it. Which is why a field of files refuses `localized`
+        outright and translates the captions inside it instead — `alt` and `title` have a
+        language switcher each, on every picture, in all four of `wx-media`, `wx-file`,
+        `wx-gallery` and `wx-files`. Those come out the same way a marked field does:
+        `{{ $picture['alt'] }}` is the caption in the language the page is being read in, down
+        the same fallback chain, so a template prints it without asking either.
 
         ## A worked example
 

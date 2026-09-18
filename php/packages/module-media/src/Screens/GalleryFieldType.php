@@ -40,6 +40,6 @@ final class GalleryFieldType implements FieldType
      */
     public function resolve(mixed $stored, array $node, ?string $locale = null): mixed
     {
-        return $this->values->resolveList($stored);
+        return $this->values->resolveList($stored, $locale);
     }
 }
