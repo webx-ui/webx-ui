@@ -1236,14 +1236,10 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 }
 
 /* Inside a card the margins are the card's; the search field lines up with what the card has above it. */
-/*
- * Flush means the box around it already does the spacing — so the head starts where the box
- * says, not a step below it. Only at the top: what is under the search is the rows, and those
- * two do need air between them.
- */
+/* Flush means the box around it already does the spacing sideways. The step above the search
+   is the table's own, and taking it away left the box hanging off the edge it sits under. */
 .wx-table--flush .wx-table__header {
   padding-inline: 0;
-  padding-block-start: 0;
 }
 
 .wx-table__scroll {
@@ -1785,6 +1781,15 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 .wx-table--flush.wx-table--cards .wx-table__header {
   padding-inline: var(--wx-space-8);
   padding-block-start: var(--wx-space-8);
+}
+
+/*
+ * Under the search, the step between cards and not the head's own: in card mode the search is
+ * one more box in the same column, and a column reads as a column only while the steps down it
+ * are equal. The list of cards carries that step as its own top padding.
+ */
+.wx-table--cards .wx-table__header {
+  padding-block-end: 0;
 }
 
 .wx-table__card {

@@ -199,8 +199,16 @@ watch(filtersInline, (inline) => {
 </style>
 
 <style>
-/* The panel is teleported, so its padding cannot be set from a scoped rule. */
-.wx-list-detail__drawer .wx-drawer__body {
+/*
+ * The panel is teleported, so its padding cannot be set from a scoped rule.
+ *
+ * Neither the body nor the sheet inside it insets anything. A drawer pads what it holds
+ * because what it holds is usually a form or a note; this one holds a screen, and a screen
+ * brings its own margins — two insets stacked put the same content further from the edge here
+ * than the same content is on every other screen of the application.
+ */
+.wx-list-detail__drawer .wx-drawer__body,
+.wx-list-detail__drawer .wx-drawer__content {
   padding: 0;
 }
 </style>
