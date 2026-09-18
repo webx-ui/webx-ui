@@ -31,6 +31,11 @@ export const adminMessages: Record<string, Messages> = {
     rename: 'Rename',
     save: 'Save',
   },
+  // The page behind a '?'. Only the heading is the panel's: what the page says belongs to
+  // whatever is being explained, and travels with that module's own words.
+  help: {
+    title: 'Help',
+  },
   // When something happened, said the way a person would. The month names and the order of
   // the parts come from `Intl` — only the words that no formatter knows are here.
   dates: {

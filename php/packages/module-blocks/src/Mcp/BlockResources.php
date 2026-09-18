@@ -63,6 +63,14 @@ final class BlockResources
             ),
 
             new McpResource(
+                'blocks://schema',
+                'How a block schema is written',
+                'What a schema is, what a node is, and every node type a schema may hold, with a worked example. The same page the panel shows behind the ? beside the schema editor.',
+                static fn (): string => (string) trans('webx-blocks::help.schema'),
+                'text/markdown',
+            ),
+
+            new McpResource(
                 'blocks://catalog',
                 'Block catalog',
                 'Every block type of this site with its fields and sample values — what already exists, to reuse before making more.',

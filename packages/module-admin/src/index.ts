@@ -21,6 +21,7 @@ export {
   type Translate,
 } from './i18n'
 export { adminMessages } from './messages'
+export { renderMarkdown } from './markdown'
 export { createDates, useDates, type DateLike, type Dates } from './dates'
 export { errorText, useErrorText } from './errors'
 export {
@@ -49,4 +50,5 @@ export { default as WxListScreen } from './ListScreen.vue'
 export { default as WxRowMenu } from './RowMenu.vue'
 export { default as WxBackButton } from './BackButton.vue'
 export { default as WxRenameButton } from './RenameButton.vue'
+export { default as WxHelpButton } from './HelpButton.vue'
 export { default as WxDate } from './DateText.vue'
