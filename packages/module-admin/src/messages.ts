@@ -58,4 +58,27 @@ export const adminMessages: Record<string, Messages> = {
     offline: 'The server did not answer. Check the connection and try again.',
     unknown: 'That did not work.',
   },
+  // What one administrator writes on a record for the next one. Not the property of any
+  // section: the same feed hangs off a submission, an order and a client, so the words are
+  // the panel's own.
+  notes: {
+    title: 'Notes',
+    placeholder: 'A note for whoever picks this up next…',
+    add: 'Add a note',
+    empty: 'No notes yet.',
+    edit: 'Edit',
+    delete: 'Delete',
+    save: 'Save',
+    cancel: 'Cancel',
+    saved: 'Saved.',
+    deleted: 'Deleted.',
+    'delete-title': 'Delete this note?',
+    'delete-text': 'It goes for everybody. This cannot be undone.',
+    'unknown-author': 'A deleted account',
+    // The three the server says and the browser only ever repeats.
+    'no-type': 'That kind of record does not carry notes.',
+    missing: 'That record no longer exists.',
+    forbidden: 'You may not read the notes of this record.',
+    'not-yours': 'A note is edited by whoever wrote it.',
+  },
 }
