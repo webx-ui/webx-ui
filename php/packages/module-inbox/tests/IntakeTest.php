@@ -50,6 +50,44 @@ final class IntakeTest extends TestCase
     }
 
     #[Test]
+    public function it_answers_in_the_language_the_page_was_printed_in(): void
+    {
+        // The intake's middleware is written out by hand, so nothing the site puts in its own
+        // `web` group runs here — the language above all. Without the form saying which
+        // language it came out in, a Russian page was answered in the application's default.
+        config(['webx-localization.locales' => [
+            ['code' => 'en', 'default' => true],
+            ['code' => 'ru'],
+        ]]);
+
+        $this->form('contact', [], [
+            'thank-you.heading' => ['en' => 'Thank you', 'ru' => 'Спасибо'],
+        ]);
+
+        $this->postJson($this->intake(), [
+            'fields' => ['name' => 'Ада', 'email' => 'ada@example.test'],
+            'webx_locale' => 'ru',
+        ])->assertOk()->assertJson(['heading' => 'Спасибо']);
+
+        // And the submission remembers it, because the letter to whoever wrote in is sent in
+        // the language they were reading.
+        $this->assertSame('ru', Submission::query()->sole()->meta['locale']);
+    }
+
+    #[Test]
+    public function it_ignores_a_language_this_site_does_not_have(): void
+    {
+        $this->form('contact', [], ['thank-you.heading' => ['en' => 'Thank you']]);
+
+        $this->postJson($this->intake(), [
+            'fields' => ['name' => 'Ada', 'email' => 'ada@example.test'],
+            'webx_locale' => 'ru',
+        ])->assertOk()->assertJson(['heading' => 'Thank you']);
+
+        $this->assertSame('en', Submission::query()->sole()->meta['locale']);
+    }
+
+    #[Test]
     public function it_refuses_a_submission_the_fields_do_not_allow(): void
     {
         $this->form();

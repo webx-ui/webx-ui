@@ -11,6 +11,8 @@
 
       · the `webx_form` marker — a page may carry two forms, and it is how one of them knows
         that what came back in the session is its own,
+      · `webx_locale` — the intake stands outside the site's own middleware, so the language
+        it answers in is the one this says the page was printed in,
       · the honeypot and the timestamp — the antispam that costs the visitor nothing,
       · `data-webx-*` — what the enhancement script looks for; drop them and the form still
         works, it just reloads the page to say so.
@@ -30,6 +32,10 @@
     {{-- The page the form stands on. The referrer of a POST usually says the same thing, and
          usually is not what a browser that was told to send no referrer sends. --}}
     <input type="hidden" name="webx_page" value="{{ $page }}">
+
+    {{-- The language this page is printed in. The intake's stack is written out by hand and so
+         carries nothing the site added to its `web` group, the language included. --}}
+    <input type="hidden" name="webx_locale" value="{{ $locale }}">
 
     <input type="hidden" name="{{ $timestampField }}" value="{{ $timestamp }}">
 

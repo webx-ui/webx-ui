@@ -16,3 +16,10 @@ A field the panel says is not full width carries `wx-form__field--half`. Without
 the editor meant nothing on the site, which is worse than not offering it: the package has no
 layout of its own to apply, so naming the field is all it can do and the site's stylesheet does
 the rest.
+
+The form says which language it was printed in (`webx_locale`), and the intake answers in that
+one. Its middleware is written out by hand and so runs nothing the site added to its own `web`
+group — the language above all — so a Russian page was thanked in English, refused in English,
+and the submission recorded English as the visitor's language. How a site chooses its language is
+the site's business; the one thing always known is what the page came out in, so the form says
+it, exactly as the panel tells the server in `X-Webx-Locale`.
