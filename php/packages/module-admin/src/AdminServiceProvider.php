@@ -13,6 +13,7 @@ use WebxUi\Admin\Console\PanelCommand;
 use WebxUi\Admin\Console\PruneVersionsCommand;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Manifest\ManifestBuilder;
+use WebxUi\Admin\Notes\NoteTypes;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\BooleanType;
@@ -37,6 +38,10 @@ class AdminServiceProvider extends ServiceProvider
         // Same for screens and the field types they are written in: modules and the project
         // add theirs from `boot()`, and the endpoints read the sum.
         $this->app->singleton(ScreenRegistry::class);
+
+        // Which records have notes. A register rather than the morph map alone, because the
+        // type comes out of an address and must not be able to name anything else.
+        $this->app->singleton(NoteTypes::class);
         $this->app->singleton(FieldTypes::class, static function ($app): FieldTypes {
             $types = new FieldTypes;
 

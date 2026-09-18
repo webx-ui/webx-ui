@@ -100,6 +100,15 @@ export interface AdminModule {
    */
   public?: boolean
   /**
+   * The section the panel opens on.
+   *
+   * A panel is opened in the morning to see what happened overnight, and which section
+   * answers that is a property of the installation rather than of the shell — so the module
+   * says it, and the root route sends anybody who arrives at `/` there. Two modules claiming
+   * it is not an error: the first one listed wins, and the other is still a section.
+   */
+  landing?: boolean
+  /**
    * Screen node types this module brings — `wx-media` from the media module. Merged into the
    * registry every screen in the panel is drawn with.
    */

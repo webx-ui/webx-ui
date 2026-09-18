@@ -87,11 +87,11 @@ REPOSITORY="$(
     # this checkout, and the whole run would prove nothing about the change under test.
     $COMPOSER_BIN config repositories.packagist.org \
         '{"type":"composer","url":"https://repo.packagist.org","exclude":["webx-ui/*"]}'
-    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' webx-ui/module-pages:'*' --no-interaction --no-progress --quiet
+    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' webx-ui/module-pages:'*' webx-ui/module-inbox:'*' --no-interaction --no-progress --quiet
 )
 
 step "The packages came from the checkout, not from Packagist"
-for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages nested-set routing; do
+for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages module-inbox nested-set routing; do
     [ -L "$APP/vendor/webx-ui/$package" ] || [ -f "$APP/vendor/webx-ui/$package/.git" ] \
         || fail "vendor/webx-ui/$package is a copy, so a released version was installed instead of this checkout"
     note "webx-ui/$package is linked to the checkout"
@@ -113,6 +113,7 @@ step "Providers are found by discovery, not by hand"
         "webx-ui/routing" => "WebxUi\\Routing\\RoutingServiceProvider",
         "webx-ui/module-blocks" => "WebxUi\\Blocks\\BlocksServiceProvider",
         "webx-ui/module-pages" => "WebxUi\\Pages\\PagesServiceProvider",
+        "webx-ui/module-inbox" => "WebxUi\\Inbox\\InboxServiceProvider",
     ];
     foreach ($expected as $package => $provider) {
         if (! in_array($provider, $manifest[$package]["providers"] ?? [], true)) {
@@ -425,6 +426,90 @@ echo "$SMOKE_HOME" | grep -q 'child address: \[about-pages\]' \
     || fail "a child of the home page is not addressed from the root: $SMOKE_HOME"
 note 'its child is /about-pages, not /home/about-pages'
 
+step "Give the site a form to receive"
+# The intake of module-inbox is the one route in the ecosystem that is deliberately outside
+# `VerifyCsrfToken` (§2.8 of the spec), and a POST with no token is exactly what Testbench
+# cannot prove: there the middleware is off for every route anyway.
+cat > "$APP/app/Console/Commands/SmokeFormCommand.php" <<'PHP'
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use WebxUi\Inbox\Fields\FieldType;
+use WebxUi\Inbox\Models\Form;
+use WebxUi\Inbox\Models\SubmissionFile;
+
+class SmokeFormCommand extends Command
+{
+    protected $signature = 'smoke:form
+        {--count : Print how many submissions the form has}
+        {--attachment : Print the ids of the last attachment received}';
+
+    protected $description = 'Build a contact form for webx-ui/module-inbox';
+
+    public function handle(): int
+    {
+        $form = Form::query()->where('slug', 'smoke-contact')->first();
+
+        if ($this->option('count') && $form !== null) {
+            $this->line('submissions: '.$form->submissions()->count());
+
+            return self::SUCCESS;
+        }
+
+        // The address the panel would serve the last attachment at, so the script can ask for
+        // it as a stranger and then as somebody with `inbox.view`.
+        if ($this->option('attachment') && $form !== null) {
+            $file = SubmissionFile::query()->latest('id')->first();
+
+            if ($file === null) {
+                $this->error('No attachment has been received.');
+
+                return self::FAILURE;
+            }
+
+            $this->line("attachment: {$file->submission_id}/files/{$file->getKey()}");
+
+            return self::SUCCESS;
+        }
+
+        $form = Form::query()->firstOrCreate(
+            ['slug' => 'smoke-contact'],
+            ['title' => ['en' => 'Contact us'], 'is_enabled' => true, 'options' => [
+                'thank-you.heading' => ['en' => 'Thank you'],
+                // The default is five a minute, and this script posts to the form six times
+                // in two phases — the antispam doing its job would read here as a broken
+                // intake. The limit itself is covered by the tests.
+                'antispam.throttle' => 50,
+            ]],
+        );
+
+        if ($form->fields()->count() === 0) {
+            $form->fields()->create([
+                'name' => 'name', 'type' => FieldType::Text, 'title' => ['en' => 'Name'],
+                'is_required' => true, 'in_table' => true, 'position' => 0,
+            ]);
+            $form->fields()->create([
+                'name' => 'email', 'type' => FieldType::Email, 'title' => ['en' => 'E-mail'],
+                'is_required' => true, 'in_table' => true, 'position' => 1,
+            ]);
+            $form->fields()->create([
+                'name' => 'attachment', 'type' => FieldType::File, 'title' => ['en' => 'Attachment'],
+                'position' => 2,
+            ]);
+        }
+
+        $this->line('form: '.$form->slug);
+
+        return self::SUCCESS;
+    }
+}
+PHP
+
+"$PHP_BIN" "$APP/artisan" smoke:form --no-interaction > /dev/null
+note 'a form with two fields'
+
 step "The modules answer to artisan"
 "$PHP_BIN" "$APP/artisan" webx:mcp-tools | grep -q 'admins_grant_role' \
     || fail 'the auth module offers no MCP tools'
@@ -549,6 +634,50 @@ run_http_checks() {
         || fail "[$phase] webx:routes:check found problems in the registry"
     note "[$phase] webx:routes:check is quiet"
 
+    # The intake of module-inbox: a POST with no CSRF token at all, which is the whole point of
+    # the hand-built middleware stack. A page cached whole carries a token minted when the cache
+    # was written, and Testbench cannot show this — there the middleware is off for every route.
+    local before after answer attachment
+    before="$("$PHP_BIN" "$APP/artisan" smoke:form --count --no-interaction | tr -dc '0-9')"
+
+    answer="$(curl -s -H 'Accept: application/json' -H 'Content-Type: application/json' \
+        -d "{\"fields\":{\"name\":\"Ada $phase\",\"email\":\"ada-$phase@example.test\"}}" \
+        "$BASE/webx/forms/smoke-contact")"
+
+    printf '%s' "$answer" | grep -q '"ok":true' \
+        || fail "[$phase] the intake refused a form posted without a CSRF token: $answer"
+
+    after="$("$PHP_BIN" "$APP/artisan" smoke:form --count --no-interaction | tr -dc '0-9')"
+    [ "$after" -gt "$before" ] || fail "[$phase] the intake answered but wrote nothing"
+    note "[$phase] a form posts without a CSRF token and the submission lands"
+
+    expect 422 "$(
+        curl -s -o /dev/null -w '%{http_code}' -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' -d '{"fields":{"name":"Ada"}}' \
+            "$BASE/webx/forms/smoke-contact"
+    )" "[$phase] and a form missing a required field is refused"
+
+    # A submission with an attachment, posted as a browser posts a multipart form. The bytes
+    # land on the module's own disk and come back only through the panel (§8).
+    printf 'attached in %s\n' "$phase" > "$WORKDIR/attachment.txt"
+
+    answer="$(curl -s -H 'Accept: application/json' \
+        -F "fields[name]=Bob $phase" -F "fields[email]=bob-$phase@example.test" \
+        -F "fields[attachment]=@$WORKDIR/attachment.txt" \
+        "$BASE/webx/forms/smoke-contact")"
+
+    printf '%s' "$answer" | grep -q '"ok":true' \
+        || fail "[$phase] the intake refused a submission with a file: $answer"
+
+    attachment="$("$PHP_BIN" "$APP/artisan" smoke:form --attachment --no-interaction | sed 's/.*: //' | tr -d '\r')"
+    [ -n "$attachment" ] || fail "[$phase] no attachment was written"
+    note "[$phase] an attachment arrives and is stored off the web root"
+
+    curl -s -c "$COOKIES" -b "$COOKIES" "$BASE/api/cms/inbox/submissions/$attachment" \
+        | grep -q "attached in $phase" \
+        || fail "[$phase] the panel did not serve the attachment back"
+    note "[$phase] and the panel serves it back to somebody with inbox.view"
+
     expect 204 "$(
         curl -s -o /dev/null -w '%{http_code}' -c "$COOKIES" -b "$COOKIES" \
             -H 'Accept: application/json' -H "X-XSRF-TOKEN: $(xsrf_token)" -X POST \
@@ -556,6 +685,11 @@ run_http_checks() {
     )" "[$phase] sign out"
 
     expect 401 "$(status "$BASE/api/cms/manifest")" "[$phase] and the panel is closed again"
+
+    # A visitor's attachment is served by the panel and by nothing else (§8): no signed link to
+    # a bucket, so there is no address that outlives the permission.
+    expect 401 "$(status "$BASE/api/cms/inbox/submissions/1/files/1")" \
+        "[$phase] an attachment is closed to strangers"
 
     # The MCP server: outside the `web` group, so no session and no CSRF — a bearer token or
     # nothing. Its routes are registered by a provider, which is exactly what the route cache
