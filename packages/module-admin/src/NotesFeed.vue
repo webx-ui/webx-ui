@@ -284,25 +284,46 @@ function who(note: EntityNote): string {
   color: var(--wx-text-default);
 }
 
-.wx-note__buttons,
-.wx-notes__new {
+.wx-note__buttons {
   display: flex;
   align-items: flex-start;
   gap: var(--wx-space-8);
 }
 
+/*
+ * The button stands under the box, not beside it.
+ *
+ * Beside it, the button took its own width off the box at every width, so the thing being
+ * written was always narrower than the room there was for it — and the two lined up along
+ * their tops, which put a button at the height of the first line of a note that had not been
+ * typed yet. Under it, the box is the width of the card and the button is the width of its
+ * own word.
+ */
+.wx-notes__new {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--wx-space-8);
+}
+
 .wx-notes__new > :first-child {
-  flex: 1 1 auto;
   min-width: 0;
 }
 
-/* Where the box and the button will not sit side by side without squeezing the box to three
-   words a line, the button goes under it. */
+.wx-notes__new > :last-child {
+  align-self: flex-start;
+}
+
+/* On a phone it takes the width instead: a target for a finger, and there is nothing beside
+   it to line up with anyway. */
 @container (max-width: 440px) {
-  .wx-note__buttons,
-  .wx-notes__new {
+  .wx-note__buttons {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .wx-notes__new > :last-child {
+    align-self: stretch;
   }
 }
 </style>
