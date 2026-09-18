@@ -322,12 +322,21 @@ async function reorder(): Promise<void> {
   min-height: 0;
 }
 
-/* The card is the screen: what scrolls is inside it, not the page behind it. */
+/*
+ * The card is the screen: what scrolls is inside it, not the page behind it.
+ *
+ * And the card's corners are the screen's corners. The two panes inside are square and paint
+ * their own background right up to the edge, so without the clip they covered the rounding —
+ * four white notches poking out of the card, most visible where the column divider and the
+ * bottom rule of the list meet it.
+ */
 .wx-inbox > .wx-card__body {
   height: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  border-radius: inherit;
 }
 
 .wx-inbox__panes {
@@ -340,7 +349,17 @@ async function reorder(): Promise<void> {
 }
 
 .wx-inbox__forms {
-  padding: var(--wx-space-8);
+  padding: var(--wx-space-8) var(--wx-space-12);
+}
+
+/*
+ * A plain list draws its rows edge to edge, which is right until one of them is tinted: the
+ * highlight then starts exactly at the first letter and ends exactly at the `···`, so the
+ * chosen form reads as a stain rather than as a row, and it sits flush against the rule that
+ * divides the two columns. The padding is inside the tint, not around it.
+ */
+.wx-inbox__forms.is-plain .wx-sortable-list__row {
+  padding-inline: var(--wx-space-8);
 }
 
 .wx-inbox-form {

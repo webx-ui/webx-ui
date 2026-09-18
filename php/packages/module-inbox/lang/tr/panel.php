@@ -46,6 +46,8 @@ return [
     'add-admin' => 'Yönetici ekle',
     'add-email' => 'Adres ekle',
     'remove' => 'Çıkar',
+    'remove-recipient-title' => 'Bu alıcı çıkarılsın mı?',
+    'remove-recipient-text' => 'Bir şey geldiğinde artık haber almaz.',
     'email-field' => 'Gönderenin adresini taşıyan alan',
     'email-field-help' => 'Bildirime verilen yanıt o zaman yazan kişiye gider.',
     'no-email-field' => 'Yok',

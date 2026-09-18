@@ -10,6 +10,7 @@ return [
     'remove' => 'Kaldır',
     'remove-title' => '":title" kaldırılsın mı?',
     'remove-text' => 'İçindeki :count blok da onunla birlikte gider.',
+    'remove-alone' => 'Bu sayfadan çıkar. Taslak eski hâlini saklar.',
     'duplicate' => 'Çoğalt',
     'hide' => 'Siteden gizle',
     'show' => 'Sitede göster',

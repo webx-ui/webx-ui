@@ -116,6 +116,7 @@ export const blocksMessages: Record<string, Messages> = {
     remove: 'Remove',
     'remove-title': 'Remove ":title"?',
     'remove-text': 'The :count blocks inside it go with it.',
+    'remove-alone': 'It leaves this page. The draft keeps what it was.',
     duplicate: 'Duplicate',
     hide: 'Hide from the site',
     show: 'Show on the site',

@@ -1236,8 +1236,14 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 }
 
 /* Inside a card the margins are the card's; the search field lines up with what the card has above it. */
+/*
+ * Flush means the box around it already does the spacing — so the head starts where the box
+ * says, not a step below it. Only at the top: what is under the search is the rows, and those
+ * two do need air between them.
+ */
 .wx-table--flush .wx-table__header {
   padding-inline: 0;
+  padding-block-start: 0;
 }
 
 .wx-table__scroll {
@@ -1512,7 +1518,21 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   background: var(--wx-bg-subtle);
 }
 
+/*
+ * A tone softer than `--wx-bg-fill`, and that is the whole reason it is not that token: the
+ * `···` at the end of the row is filled with `--wx-bg-fill` at rest, so a row that took the
+ * same colour swallowed the one control it carries — the button was there, and hovering the
+ * row was what made it disappear.
+ */
 .wx-table--hover .wx-table__row:hover {
+  --wx-table-row-bg: var(--wx-bg-subtle);
+
+  background: var(--wx-bg-subtle);
+}
+
+/* A striped row is already that colour, so it takes the next one up — nothing to swallow
+   there, the buttons of a striped table sit on grey either way. */
+.wx-table--stripe.wx-table--hover .wx-table__row.is-striped:hover {
   --wx-table-row-bg: var(--wx-bg-fill);
 
   background: var(--wx-bg-fill);

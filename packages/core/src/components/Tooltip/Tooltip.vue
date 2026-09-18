@@ -8,6 +8,7 @@ import {
   TooltipRoot,
   TooltipTrigger,
 } from 'reka-ui'
+import { useHoverPointer } from '../../composables/useHoverPointer'
 import type { TooltipProps } from './types'
 
 defineOptions({ name: 'WxTooltip', inheritAttrs: false })
@@ -48,6 +49,18 @@ const open = defineModel<boolean | undefined>('open', { default: undefined })
 const width = computed(() =>
   typeof props.maxWidth === 'number' ? `${props.maxWidth}px` : props.maxWidth,
 )
+
+/*
+ * Nothing opens by itself on a touch screen. The tap that would open a tip is the tap that
+ * was meant for the button under it, so the reader gets a black label over the thing they
+ * were aiming at — every icon button in the panel, on every phone.
+ *
+ * A tip somebody opens from code is left alone: `open` is the rare hint shown after a failed
+ * save, and that one is deliberate rather than a side effect of pointing.
+ */
+const hoverable = useHoverPointer()
+
+const shut = computed(() => props.disabled || (!hoverable.value && open.value === undefined))
 </script>
 
 <template>
@@ -56,7 +69,7 @@ const width = computed(() =>
     :skip-delay-duration="300"
     :disable-hoverable-content="true"
   >
-    <tooltip-root v-model:open="open" :disabled="disabled">
+    <tooltip-root v-model:open="open" :disabled="shut">
       <!--
         `as-child`: the trigger is the control that was passed in. Wrapping it in a
         span of our own would put a box in the layout that nobody asked for, and

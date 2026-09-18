@@ -95,7 +95,7 @@ export function renderNode(node: ScreenNode, context: RenderContext): VNode | nu
     })
     return h(
       WxFormItem,
-      { key: node.id, name, label, help: words(node.help, translate) },
+      { key: node.id, name, label, help: words(node.help, translate), wide: entry.wide },
       () => control,
     )
   }

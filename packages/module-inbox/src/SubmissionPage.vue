@@ -28,6 +28,8 @@ import {
   WxHeading,
   WxSelect,
   WxSkeleton,
+  WxTab,
+  WxTabs,
   WxText,
   WxTimeline,
   WxTimelineItem,
@@ -56,6 +58,9 @@ const locales = useLocales()
 useInboxMessages()
 
 const t = useTranslate('webx-inbox')
+/* The notes feed is the panel's own, and so is the word for it: a second "Notes" in this
+   module's dictionary would be the same line translated twice. */
+const panel = useTranslate('webx-admin')
 /* Not the server's `message`: the panel says how a request failed in its own words. */
 const message = useErrorText()
 
@@ -378,11 +383,86 @@ const details = computed(() => {
           </div>
         </wx-card>
 
-        <!-- The feed is the panel's own, not this module's: the same one will hang off an
-             order and a client (§2.17). It carries its own heading. -->
-        <wx-card>
-          <wx-notes :id="submission.id" type="inbox_submission" :can="canUpdate" @change="load" />
-        </wx-card>
+        <!--
+          Everything about the submission rather than in it, behind one strip.
+
+          Three cards stacked down a column is three headings to read past before the eye gets
+          to the one that was wanted, and on a phone it is three screens of scrolling. They are
+          not read together — a note is written while replying, the log is opened when
+          something looks wrong, the metadata once — so only one of them is ever the answer.
+          Pills rather than a line: this is one card changing its contents, not a place in the
+          panel that can be navigated to.
+        -->
+        <wx-tabs variant="pill" class="wx-submission__more" :aria-label="heading">
+          <wx-tab value="notes" :label="panel('notes.title')">
+            <wx-card>
+              <!-- The feed is the panel's own, not this module's: the same one will hang off
+                   an order and a client (§2.17). Its heading is the tab. -->
+              <wx-notes
+                :id="submission.id"
+                type="inbox_submission"
+                title=""
+                :can="canUpdate"
+                @change="load"
+              />
+            </wx-card>
+          </wx-tab>
+
+          <wx-tab value="log" :label="t('panel.log')">
+            <wx-card>
+              <wx-timeline size="sm">
+                <wx-timeline-item v-for="event in submission.events" :key="event.id">
+                  <!-- What happened on one line and who did it when on the next: three inline
+                       pieces in a row run into each other, and a log is read down. -->
+                  <wx-text size="sm" as="p" class="wx-submission__event">{{ line(event) }}</wx-text>
+                  <p class="wx-submission__by">
+                    <wx-text size="sm" tone="muted">
+                      {{ event.author?.name ?? t('panel.system') }}
+                    </wx-text>
+                    <wx-date :value="event.created_at" />
+                  </p>
+                </wx-timeline-item>
+              </wx-timeline>
+            </wx-card>
+          </wx-tab>
+
+          <wx-tab value="details" :label="t('panel.details')">
+            <wx-card>
+              <div class="wx-submission__fields">
+                <wx-descriptions :columns="1" layout="vertical" size="sm">
+                  <wx-descriptions-item :label="t('panel.received')">
+                    <wx-date :value="submission.created_at" tone="default" />
+                  </wx-descriptions-item>
+                  <wx-descriptions-item :label="t('panel.meta-source')">
+                    <wx-badge :type="submission.source === 'panel' ? 'info' : 'default'">
+                      {{
+                        submission.source === 'panel'
+                          ? t('panel.source-panel')
+                          : t('panel.source-web')
+                      }}
+                    </wx-badge>
+                  </wx-descriptions-item>
+                  <wx-descriptions-item v-for="row in details" :key="row.label" :label="row.label">
+                    <a v-if="row.link" :href="row.value" target="_blank" rel="noreferrer">{{
+                      row.value
+                    }}</a>
+                    <span v-else class="wx-submission__detail">{{ row.value }}</span>
+                  </wx-descriptions-item>
+                </wx-descriptions>
+
+                <!-- An unsent notification is a mark on the submission, not a lost one
+                     (§2.10), and the only place it is ever said out loud is here. -->
+                <wx-alert v-if="submission.notify_error" type="warning" :closable="false">
+                  {{ t('panel.notify-failed') }}
+                </wx-alert>
+                <wx-text v-else-if="submission.notified_at" size="sm" tone="muted">
+                  {{ t('panel.notified') }}
+                </wx-text>
+                <wx-text v-else size="sm" tone="muted">{{ t('panel.not-notified') }}</wx-text>
+              </div>
+            </wx-card>
+          </wx-tab>
+        </wx-tabs>
       </div>
 
       <aside class="wx-submission__aside">
@@ -411,55 +491,6 @@ const details = computed(() => {
             </label>
           </div>
         </wx-card>
-
-        <wx-card :title="t('panel.details')">
-          <div class="wx-submission__fields">
-            <wx-descriptions :columns="1" layout="vertical" size="sm">
-              <wx-descriptions-item :label="t('panel.received')">
-                <wx-date :value="submission.created_at" tone="default" />
-              </wx-descriptions-item>
-              <wx-descriptions-item :label="t('panel.meta-source')">
-                <wx-badge :type="submission.source === 'panel' ? 'info' : 'default'">
-                  {{
-                    submission.source === 'panel' ? t('panel.source-panel') : t('panel.source-web')
-                  }}
-                </wx-badge>
-              </wx-descriptions-item>
-              <wx-descriptions-item v-for="row in details" :key="row.label" :label="row.label">
-                <a v-if="row.link" :href="row.value" target="_blank" rel="noreferrer">{{
-                  row.value
-                }}</a>
-                <span v-else class="wx-submission__detail">{{ row.value }}</span>
-              </wx-descriptions-item>
-            </wx-descriptions>
-
-            <!-- An unsent notification is a mark on the submission, not a lost one (§2.10),
-                 and the only place it is ever said out loud is here. -->
-            <wx-alert v-if="submission.notify_error" type="warning" :closable="false">
-              {{ t('panel.notify-failed') }}
-            </wx-alert>
-            <wx-text v-else-if="submission.notified_at" size="sm" tone="muted">
-              {{ t('panel.notified') }}
-            </wx-text>
-            <wx-text v-else size="sm" tone="muted">{{ t('panel.not-notified') }}</wx-text>
-          </div>
-        </wx-card>
-
-        <wx-card :title="t('panel.log')">
-          <wx-timeline size="sm">
-            <wx-timeline-item v-for="event in submission.events" :key="event.id">
-              <!-- What happened on one line and who did it when on the next: three inline
-                   pieces in a row run into each other, and a log is read down. -->
-              <wx-text size="sm" as="p" class="wx-submission__event">{{ line(event) }}</wx-text>
-              <p class="wx-submission__by">
-                <wx-text size="sm" tone="muted">
-                  {{ event.author?.name ?? t('panel.system') }}
-                </wx-text>
-                <wx-date :value="event.created_at" />
-              </p>
-            </wx-timeline-item>
-          </wx-timeline>
-        </wx-card>
       </aside>
     </div>
   </div>
@@ -469,16 +500,24 @@ const details = computed(() => {
 .wx-submission {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
+  /* The panel says how far apart things stand, and it says something different on a phone
+     than on a desktop (8, 12, 16). Writing the desktop number here is what made this screen
+     the one place in the panel with desktop air on a 375px screen. */
+  gap: var(--wx-gap, var(--wx-space-16));
   min-width: 0;
   /* The panes below decide their own layout from the width of the screen rather than of the
      window: the panel has a sidebar, and the window knows nothing about it. */
   container-type: inline-size;
 }
 
+/*
+ * The way out lines up with the heading, not with the pair of lines under it: what stands
+ * beside it is two lines — which submission this is and which form it came through — and a
+ * centred row put the arrow level with the gap between them.
+ */
 .wx-submission__head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--wx-space-8);
   flex-wrap: wrap;
 }
@@ -491,7 +530,7 @@ const details = computed(() => {
 .wx-submission__panes {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
   min-width: 0;
 }
 
@@ -499,7 +538,7 @@ const details = computed(() => {
 .wx-submission__aside {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
   min-width: 0;
 }
 

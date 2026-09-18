@@ -46,6 +46,8 @@ return [
     'add-admin' => 'Dodaj administratora',
     'add-email' => 'Dodaj adres',
     'remove' => 'Usuń',
+    'remove-recipient-title' => 'Usunąć tego odbiorcę?',
+    'remove-recipient-text' => 'Przestanie dostawać wiadomość o nowych zgłoszeniach.',
     'email-field' => 'Pole z adresem nadawcy',
     'email-field-help' => 'Odpowiedź na powiadomienie pójdzie wtedy do tego, kto napisał.',
     'no-email-field' => 'Brak',

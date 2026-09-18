@@ -38,6 +38,7 @@ export function blocks(options: BlocksOptions = {}): AdminModule {
         component: BlocksField,
         kind: 'field',
         nested: true,
+        wide: true,
         bind: () => ({ blocksPath: path }),
       },
     },

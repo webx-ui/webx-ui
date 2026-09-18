@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useAdmin, useTranslate } from '@webx-ui/module-admin'
 import {
+  confirm,
   WxAction,
   WxAlert,
   WxButton,
@@ -68,7 +69,30 @@ function add(recipient: Recipient): void {
   recipients.value = [...recipients.value, recipient]
 }
 
-function remove(index: number): void {
+/**
+ * A recipient goes behind a question, unless there is nothing there to lose.
+ *
+ * The row that was just added and never filled in is a blank line, and asking about a blank
+ * line teaches the reader to click through the question without reading it — which is the
+ * one thing a confirmation must not do.
+ */
+async function remove(index: number): Promise<void> {
+  const recipient = recipients.value[index]
+  const written =
+    recipient !== undefined && (isAdmin(recipient) || (recipient.email ?? '').trim() !== '')
+
+  if (written) {
+    const agreed = await confirm({
+      title: t('panel.remove-recipient-title'),
+      message: t('panel.remove-recipient-text'),
+      confirmText: t('panel.remove'),
+      cancelText: t('panel.cancel'),
+      tone: 'danger',
+    })
+
+    if (!agreed) return
+  }
+
   recipients.value = recipients.value.filter((_, at) => at !== index)
 }
 
@@ -112,7 +136,9 @@ function setEmail(index: number, email: string): void {
           @update:model-value="(email) => setEmail(index, String(email))"
         />
 
-        <wx-action icon="trash" :title="t('panel.remove')" @click="remove(index)" />
+        <!-- Red, like every other way of taking something away in the panel: the colour is
+             what tells the two buttons of a row apart before either is read. -->
+        <wx-action icon="trash" tone="danger" :title="t('panel.remove')" @click="remove(index)" />
       </div>
     </div>
 
@@ -137,11 +163,17 @@ function setEmail(index: number, email: string): void {
 </template>
 
 <style scoped>
+/*
+ * As wide as a field, because that is what each row is: an address is typed into it and read
+ * back off it. The rows are not form items — one of them is a select, the next an input, and
+ * both carry a bin — so the cap that a form item applies has to be said here.
+ */
 .wx-inbox-recipients {
   display: flex;
   flex-direction: column;
   gap: var(--wx-space-8);
   margin-block: var(--wx-space-12);
+  max-width: var(--wx-field-max-width, 640px);
 }
 
 .wx-inbox-recipients__row {

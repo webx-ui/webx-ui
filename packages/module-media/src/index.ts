@@ -37,9 +37,9 @@ export function media(options: MediaOptions = {}): AdminModule {
     // `multiple: true` and `accept: document`".
     types: {
       'wx-media': { component: MediaField, kind: 'field' },
-      'wx-gallery': { component: GalleryField, kind: 'field' },
+      'wx-gallery': { component: GalleryField, kind: 'field', wide: true },
       'wx-file': { component: FileField, kind: 'field' },
-      'wx-files': { component: FilesField, kind: 'field' },
+      'wx-files': { component: FilesField, kind: 'field', wide: true },
     },
   }
 }
