@@ -13,6 +13,7 @@
             <directory>packages/mcp/tests</directory>
             <directory>packages/module-auth/tests</directory>
             <directory>packages/module-blocks/tests</directory>
+            <directory>packages/module-inbox/tests</directory>
             <directory>packages/module-media/tests</directory>
             <directory>packages/module-pages/tests</directory>
             <directory>packages/module-seo/tests</directory>
@@ -28,6 +29,7 @@
             <directory>packages/mcp/src</directory>
             <directory>packages/module-auth/src</directory>
             <directory>packages/module-blocks/src</directory>
+            <directory>packages/module-inbox/src</directory>
             <directory>packages/module-media/src</directory>
             <directory>packages/module-pages/src</directory>
             <directory>packages/module-seo/src</directory>
