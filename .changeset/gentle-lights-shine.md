@@ -46,6 +46,12 @@ frame to it.
 files — and `module-blocks` hands the identical page to an agent at
 `blocks://schema`.
 
+The page explains fields in more than one language, and writing it turned up that they
+did not work: a block with a `localized` field handed its template the whole language
+map, Blade refused to print an array, and the renderer caught that and printed nothing —
+the block vanished from the page. It is given one language now, down the same chain every
+localized value is read through.
+
 **The library.** A file can be downloaded from its card: `WxFileCard` takes
 `download-url`.
 

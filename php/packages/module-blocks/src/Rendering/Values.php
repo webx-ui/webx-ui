@@ -8,6 +8,7 @@ use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Screens\Tree;
 use WebxUi\Blocks\BlockType;
+use WebxUi\Localization\Locales;
 
 /**
  * What a block stores, turned into what its template reads.
@@ -25,7 +26,10 @@ use WebxUi\Blocks\BlockType;
  */
 final readonly class Values
 {
-    public function __construct(private FieldTypes $types) {}
+    public function __construct(
+        private FieldTypes $types,
+        private Locales $locales,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $values
@@ -42,12 +46,40 @@ final readonly class Values
 
         foreach ($values as $name => $value) {
             $node = $fields[(string) $name] ?? null;
+
+            // A localized field keeps a language map, and a template wants one language. This
+            // is the same step a described screen takes on the way to the site
+            // ({@see ScreenValues::resolve()}) — without it the template is handed the map,
+            // Blade refuses to print an array, and the block renders as nothing at all.
+            if ($node !== null && ($node['localized'] ?? false) === true && is_array($value)) {
+                $value = $this->pick($value);
+            }
+
             $field = $node === null ? null : $this->types->get((string) ($node['type'] ?? ''));
 
             $resolved[$name] = $field === null || $node === null ? $value : $field->resolve($value, $node);
         }
 
         return $resolved;
+    }
+
+    /**
+     * The language the site is being read in, then the site's default, then its fallback —
+     * the chain every localized value is read through.
+     *
+     * @param  array<string, mixed>  $translations
+     */
+    private function pick(array $translations): mixed
+    {
+        foreach ($this->locales->chain() as $code) {
+            $candidate = $translations[$code] ?? null;
+
+            if ($candidate !== null && $candidate !== '') {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     /**
