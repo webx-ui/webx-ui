@@ -97,7 +97,10 @@ watch(
 
 <template>
   <div class="wx-page-history">
-    <wx-skeleton v-if="versions === null" :rows="3" />
+    <!-- Where a row would stand, not against the border: a skeleton flush with a rounded
+         corner has its ends clipped by it, which reads as a drawing fault rather than as
+         something loading. -->
+    <wx-skeleton v-if="versions === null" class="wx-page-history__ghost" :rows="3" />
     <wx-empty v-else-if="versions.length === 0" :description="t('page.history-empty')" />
     <div
       v-for="version in versions"
@@ -139,6 +142,13 @@ watch(
   border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-md);
   background: var(--wx-bg-surface);
+  /* Nothing reaches past the rounding: a row, or the skeleton standing in for three of them,
+     is a square box and its corners showed through the panel's. */
+  overflow: hidden;
+}
+
+.wx-page-history__ghost {
+  padding: var(--wx-space-10) var(--wx-space-12);
 }
 
 .wx-page-history__row {

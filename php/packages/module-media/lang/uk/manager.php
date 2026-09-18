@@ -33,6 +33,7 @@ return [
     'folders' => 'Папки',
     'edit' => 'Редагувати',
     'copy-link' => 'Скопіювати посилання',
+    'download' => 'Завантажити',
     'link-copied' => 'Посилання скопійовано',
     'status-files' => 'Файлів: :count',
     'status-selected' => 'обрано: :count',

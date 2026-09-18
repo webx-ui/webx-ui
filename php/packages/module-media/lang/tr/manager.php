@@ -33,6 +33,7 @@ return [
     'folders' => 'Klasörler',
     'edit' => 'Düzenle',
     'copy-link' => 'Bağlantıyı kopyala',
+    'download' => 'İndir',
     'link-copied' => 'Bağlantı kopyalandı',
     'status-files' => 'Dosyalar: :count',
     'status-selected' => 'seçili: :count',

@@ -272,6 +272,20 @@ function select(key: string): void {
   selectedKey.value = selectedKey.value === key ? null : key
 }
 
+/**
+ * A block clicked in the preview opens for editing.
+ *
+ * Not a toggle, unlike the row in the tree: pointing at a thing on the page and having it
+ * close is not what anybody means by it. A click that lands on no block at all — the margin
+ * of the page, the space between two sections — is left alone rather than treated as "close",
+ * because missing is easy and losing the form over it is not what was meant either.
+ */
+function selectFromPreview(key: string | null): void {
+  if (key === null || !locate(tree.value, key)) return
+
+  selectedKey.value = key
+}
+
 function done(): void {
   selectedKey.value = null
 }
@@ -372,25 +386,31 @@ const formRoot = computed(() =>
           @visibility="visibility"
           @reorder="reorder"
         />
-        <wx-button
-          v-if="!disabled && (max === null || tree.length < max)"
-          variant="outline"
-          block
-          icon="plus"
-          class="wx-blocks__add"
-          @click="add(null, null, null)"
-        >
-          {{ t('field.add') }}
-        </wx-button>
-        <wx-button
-          v-if="preview && preview.url.value"
-          variant="text"
-          block
-          class="wx-blocks__preview-button"
-          @click="previewEl?.open()"
-        >
-          {{ t('field.preview') }}
-        </wx-button>
+        <!--
+          One row, not two stacked full-width buttons: they are not two steps of the same
+          thing, and a column of blocks that ends in a column of buttons reads as two more
+          blocks. Adding is the one that grows, because it is the one that is always there.
+        -->
+        <div class="wx-blocks__tools">
+          <wx-button
+            v-if="!disabled && (max === null || tree.length < max)"
+            variant="outline"
+            icon="plus"
+            class="wx-blocks__add"
+            @click="add(null, null, null)"
+          >
+            {{ t('field.add') }}
+          </wx-button>
+          <wx-button
+            v-if="preview && preview.url.value"
+            variant="outline"
+            icon="eye"
+            class="wx-blocks__preview-button"
+            @click="previewEl?.open()"
+          >
+            {{ t('field.preview') }}
+          </wx-button>
+        </div>
       </div>
 
       <div v-if="selected" class="wx-blocks__fields">
@@ -431,6 +451,7 @@ const formRoot = computed(() =>
           :mode="selected ? 'phone' : 'wide'"
           :reload="preview.reload?.value ?? 0"
           :fill="fill"
+          @select="selectFromPreview"
         />
       </div>
     </div>
@@ -538,8 +559,22 @@ const formRoot = computed(() =>
   top: var(--wx-space-12);
 }
 
+/* The foot of the tree: one row, the adding taking whatever the other one leaves. */
+.wx-blocks__tools {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-8);
+  flex: none;
+}
+
+.wx-blocks__add {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .wx-blocks__preview-button {
   display: none;
+  flex: none;
 }
 
 /* Below the width where three columns fit, the phone beside the form folds into a button

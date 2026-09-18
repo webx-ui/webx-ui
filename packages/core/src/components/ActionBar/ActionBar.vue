@@ -69,27 +69,24 @@ const classes = computed(() => [
   border: 1px solid var(--wx-border-default);
 }
 
+/*
+ * A floating card, and it casts the shadow of one, all the way round.
+ *
+ * It used to paint a strip of the body colour in the gap it keeps above the bottom of the
+ * window, so that the page scrolling past did not show through. That strip is gone. An
+ * element's outer shadow is painted with its background, before any of its descendants, so a
+ * pseudo-element under the bar erased the part of the shadow that fell there — a flat band
+ * with a stub of it left showing at each corner — and no stacking order fixes that, because a
+ * descendant is always on top of its ancestor's shadow.
+ *
+ * What is seen through the gap instead is a sliver of the page still moving, which is honest:
+ * the bar is floating over a page that scrolls, and that is what it looks like.
+ */
 .wx-action-bar--sticky {
   position: sticky;
   bottom: var(--wx-action-bar-bottom, 0px);
   z-index: var(--wx-z-index-sticky);
   box-shadow: var(--wx-shadow-card);
-}
-
-/*
- * The strip between the bar and the bottom edge of the window. A shell that insets its
- * column stops the bar short of the edge, and without this the page scrolling past shows
- * through the gap — a sliver of moving text under a bar that is standing still. Where the
- * bar has settled into the flow the strip is the shell's own padding, which is this colour
- * already, so it is only ever visible while the bar is stuck.
- */
-.wx-action-bar--sticky::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  top: 100%;
-  height: var(--wx-action-bar-bottom, 0px);
-  background: var(--wx-bg-body);
 }
 
 /* The left side is whatever the screen says about the state of the work — saved, a draft,

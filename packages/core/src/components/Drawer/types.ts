@@ -35,6 +35,12 @@ export interface DrawerProps {
   resizable?: boolean
   /** Remember the size under this key, in `localStorage`. */
   persist?: string
+  /**
+   * On a narrow screen the panel takes the whole of it. Off keeps the declared size there,
+   * so a strip of the page stays visible — which is right for a panel that is navigation
+   * rather than work: a menu 260px wide is a menu, and one that covers the phone is a page.
+   */
+  fullScreen?: boolean
   /** Accessible name for the panel when it has no visible heading. */
   ariaLabel?: string
   /** Label of the resize handle, for screen readers. */

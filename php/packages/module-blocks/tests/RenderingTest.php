@@ -31,6 +31,45 @@ final class RenderingTest extends TestCase
         );
     }
 
+    /*
+     * A localized field keeps a language map, and a template wants one language. Before this
+     * the map reached the template whole, Blade refused to print an array, and the renderer
+     * caught that and printed nothing — a block that vanished from the page rather than one
+     * that looked wrong.
+     */
+    #[Test]
+    public function a_localized_field_reaches_the_template_in_one_language(): void
+    {
+        $this->publish('greet', '<p>{{ $title }}</p>', [], [
+            'schema' => [['id' => 'title', 'type' => 'wx-input', 'localized' => true]],
+        ]);
+
+        $node = $this->node('greet', ['title' => ['en' => 'Hello', 'ru' => 'Привет']]);
+
+        app()->setLocale('ru');
+        $this->assertSame('<p>Привет</p>', $this->render([$node]));
+
+        app()->setLocale('en');
+        $this->assertSame('<p>Hello</p>', $this->render([$node]));
+    }
+
+    /* Down the same chain every localized value is read through: asked for, default, fallback. */
+    #[Test]
+    public function a_language_nobody_wrote_falls_back_rather_than_blanking_the_block(): void
+    {
+        $this->publish('greet', '<p>{{ $title }}</p>', [], [
+            'schema' => [['id' => 'title', 'type' => 'wx-input', 'localized' => true]],
+        ]);
+
+        app()->setLocale('uk');
+
+        $html = $this->render([
+            $this->node('greet', ['title' => ['en' => 'Hello', 'uk' => '']]),
+        ]);
+
+        $this->assertSame('<p>Hello</p>', $html);
+    }
+
     #[Test]
     public function the_template_sees_the_block_and_the_entity(): void
     {

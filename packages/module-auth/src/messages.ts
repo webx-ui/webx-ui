@@ -65,6 +65,21 @@ export const authMessages: Record<string, Messages> = {
     'not-yourself': 'You cannot do that to your own account.',
     'last-super': 'There has to be one super administrator left.',
   },
+  // Somebody editing themselves, which is a shorter list than an administrator editing them.
+  profile: {
+    title: 'Your profile',
+    menu: 'Edit your profile',
+    name: 'Name',
+    avatar: 'Photo',
+    password: 'New password',
+    'password-hint': 'At least 12 characters. Leave blank to keep the current one.',
+    'current-password': 'Current password',
+    'current-password-hint': 'Asked for before the password is changed.',
+    'wrong-password': 'That is not the current password.',
+    saved: 'Your profile is saved.',
+    save: 'Save',
+    cancel: 'Cancel',
+  },
   menu: {
     'sign-out': 'Sign out',
     language: 'Interface language',
