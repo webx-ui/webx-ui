@@ -556,6 +556,33 @@ const details = computed(() => {
 }
 
 /*
+ * On a phone the icons set the height and the word follows them.
+ *
+ * The panel keeps a smaller scale for icon buttons where the menu is a drawer — 36 instead of
+ * 42 — and a button with a word on it knows nothing about that, so the row came out 36, 36, 42,
+ * 36. The height of a button is read off `--wx-size-control-md` and never declared on the
+ * button itself, so handing the group a different value is enough (CLAUDE.md §4). Keyed off
+ * the shell's own class rather than a width, because that is what the panel keys its icons off:
+ * a narrow screen inside a desktop panel is still a desktop.
+ */
+.wx-admin--drawer .wx-submission__tools {
+  --wx-size-control-md: 36px;
+}
+
+/*
+ * And the `···` comes down to the same height.
+ *
+ * `WxActions` grows its menu to 44 on a touch screen, because in a table row that menu is the
+ * only way into what the row offers and a finger has to hit it. This is not a table row: it is
+ * a head where the same finger has three targets of 36 beside it, and one of them a button 219
+ * wide. Set on the action itself — a size class declares `--wx-action-size` on its own element,
+ * so an inherited value never reaches it (CLAUDE.md §4).
+ */
+.wx-admin--drawer .wx-submission__tools :deep(.wx-actions__menu .wx-action) {
+  --wx-action-size: 36px;
+}
+
+/*
  * On a phone the group takes the line under the name, whole, and the one control with a word
  * on it takes what the icons leave — a button that says "reply by mail" in the middle of a
  * row of empty space is a button that looks like it did not fit.
