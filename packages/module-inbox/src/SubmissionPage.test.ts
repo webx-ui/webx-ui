@@ -1,5 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { adminKey, createI18n, i18nKey, type AdminContext } from '@webx-ui/module-admin'
 import SubmissionPage from './SubmissionPage.vue'
@@ -133,7 +134,13 @@ describe('WxInboxSubmissionPage', () => {
     expect(wrapper.text()).toContain('Your name')
     expect(wrapper.text()).toContain('Ada')
     expect(wrapper.text()).toContain('Your e-mail')
+
     // Where it came from, which is the first question asked of a form that sits on nine pages.
+    // Behind the third tab: everything about the submission rather than in it is one card that
+    // changes its contents. Reka opens a tab on `mousedown`, not on a click (CLAUDE.md §4).
+    await wrapper.findAll('.wx-tabs__tab')[2]!.trigger('mousedown')
+    await nextTick()
+
     expect(wrapper.text()).toContain('https://example.test/contacts')
   })
 

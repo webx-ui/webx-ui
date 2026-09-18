@@ -10,6 +10,7 @@ return [
     'remove' => 'Entfernen',
     'remove-title' => '„:title“ entfernen?',
     'remove-text' => 'Die :count Blöcke darin gehen mit.',
+    'remove-alone' => 'Er verlässt diese Seite. Der Entwurf behält, was er war.',
     'duplicate' => 'Duplizieren',
     'hide' => 'Von der Website ausblenden',
     'show' => 'Auf der Website zeigen',

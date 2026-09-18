@@ -19,6 +19,7 @@ import {
   WxButton,
   WxCard,
   WxEmpty,
+  WxIndicator,
   WxListDetail,
   WxSkeleton,
   WxSortableList,
@@ -261,28 +262,30 @@ async function reorder(): Promise<void> {
                 <span class="wx-inbox-form__name">
                   <wx-text truncate weight="medium">{{ name(item) }}</wx-text>
                   <wx-badge v-if="!item.is_enabled" type="default">{{ t('panel.off') }}</wx-badge>
+
+                  <!--
+                    On the name's line, not under it. The list stacks what the slot hands it, so
+                    a count standing beside the form was a third line under the address — the
+                    row grew by a line to say a single digit. Unread first and in colour; the
+                    total behind it, quietly, because it is context rather than work.
+                  -->
+                  <wx-indicator
+                    v-if="item.unread_count"
+                    class="wx-inbox-form__count"
+                    type="primary"
+                    :value="item.unread_count"
+                    :label="t('panel.unread')"
+                  />
+                  <wx-indicator
+                    v-else-if="item.submissions_count"
+                    class="wx-inbox-form__count"
+                    type="neutral"
+                    :value="item.submissions_count"
+                    :label="t('panel.submissions')"
+                  />
                 </span>
                 <wx-text size="sm" tone="muted" truncate>{{ item.slug }}</wx-text>
               </button>
-
-              <!-- Unread first and in colour; the total behind it, quietly, because it is
-                   context rather than work. -->
-              <wx-badge
-                v-if="item.unread_count"
-                type="primary"
-                class="wx-inbox-form__count"
-                :title="t('panel.unread')"
-              >
-                {{ item.unread_count }}
-              </wx-badge>
-              <wx-text
-                v-else-if="item.submissions_count"
-                size="sm"
-                tone="muted"
-                :title="t('panel.submissions')"
-              >
-                {{ item.submissions_count }}
-              </wx-text>
             </template>
 
             <template #actions="{ item }">
@@ -322,12 +325,21 @@ async function reorder(): Promise<void> {
   min-height: 0;
 }
 
-/* The card is the screen: what scrolls is inside it, not the page behind it. */
+/*
+ * The card is the screen: what scrolls is inside it, not the page behind it.
+ *
+ * And the card's corners are the screen's corners. The two panes inside are square and paint
+ * their own background right up to the edge, so without the clip they covered the rounding —
+ * four white notches poking out of the card, most visible where the column divider and the
+ * bottom rule of the list meet it.
+ */
 .wx-inbox > .wx-card__body {
   height: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  border-radius: inherit;
 }
 
 .wx-inbox__panes {
@@ -340,7 +352,28 @@ async function reorder(): Promise<void> {
 }
 
 .wx-inbox__forms {
-  padding: var(--wx-space-8);
+  padding: var(--wx-space-8) var(--wx-space-12);
+}
+
+/*
+ * A plain list draws its rows edge to edge, which is right until one of them is tinted: the
+ * highlight then starts exactly at the first letter and ends exactly at the `···`, so the
+ * chosen form reads as a stain rather than as a row, and it sits flush against the rule that
+ * divides the two columns. The padding is inside the tint, not around it.
+ */
+.wx-inbox__forms.is-plain .wx-sortable-list__row {
+  padding-inline: var(--wx-space-8);
+}
+
+/*
+ * Air under the rule that carries the column's name.
+ *
+ * The first row started exactly where the line ended, and the first row here is usually the
+ * tinted one — so the chosen form read as hanging off the heading rather than as the first of
+ * a list. Visible in the dark theme first, where the tint is a shape of its own.
+ */
+.wx-inbox__forms.is-plain .wx-sortable-list__head {
+  margin-block-end: var(--wx-space-6);
 }
 
 .wx-inbox-form {

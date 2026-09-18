@@ -10,6 +10,7 @@ return [
     'remove' => 'Rimuovi',
     'remove-title' => 'Rimuovere «:title»?',
     'remove-text' => 'I :count blocchi al suo interno se ne vanno con esso.',
+    'remove-alone' => 'Se ne va da questa pagina. La bozza conserva com’era.',
     'duplicate' => 'Duplica',
     'hide' => 'Nascondi dal sito',
     'show' => 'Mostra sul sito',

@@ -10,6 +10,7 @@ return [
     'remove' => 'Usuń',
     'remove-title' => 'Usunąć „:title”?',
     'remove-text' => 'Razem z nim odejdzie :count bloków w środku.',
+    'remove-alone' => 'Znika z tej strony. W szkicu zostaje to, czym był.',
     'duplicate' => 'Duplikuj',
     'hide' => 'Ukryj w witrynie',
     'show' => 'Pokaż w witrynie',

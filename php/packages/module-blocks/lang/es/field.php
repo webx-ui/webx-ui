@@ -10,6 +10,7 @@ return [
     'remove' => 'Quitar',
     'remove-title' => '¿Quitar «:title»?',
     'remove-text' => 'Los :count bloques que contiene se van con él.',
+    'remove-alone' => 'Se va de esta página. El borrador guarda lo que era.',
     'duplicate' => 'Duplicar',
     'hide' => 'Ocultar del sitio',
     'show' => 'Mostrar en el sitio',

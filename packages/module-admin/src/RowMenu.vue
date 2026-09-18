@@ -51,6 +51,7 @@ const divided = computed(() => {
   -->
   <wx-actions
     v-if="ordered.length > 0"
+    class="wx-row-menu"
     collapse="always"
     align="end"
     :size="size"
@@ -75,3 +76,18 @@ const divided = computed(() => {
     </template>
   </wx-actions>
 </template>
+
+<style scoped>
+/*
+ * Nothing at rest, grey under the pointer.
+ *
+ * A grey square at the end of every row is a column of grey squares, and the eye reads them
+ * before it reads the rows. Worse, the fill was the same colour the row takes when it is
+ * hovered, so the one control the row carries went missing exactly when somebody reached for
+ * it. The variable rather than a rule on the button: `WxAction` only ever reads
+ * `--wx-action-bg`, never declares it, so an inherited value is what it uses (CLAUDE.md §4).
+ */
+.wx-row-menu {
+  --wx-action-bg: transparent;
+}
+</style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onUnmounted, ref, watchEffect } from 'vue'
 import { shellLayoutFor, useResponsiveShell, WxToaster } from '@webx-ui/core'
 import { useAdmin } from './admin'
 import { useTranslate } from './i18n'
@@ -48,6 +48,25 @@ const mark = computed(() => admin.state.manifest?.branding?.mark ?? null)
  * 1440px desktop is still a desktop, and air measured off the menu would shrink with it.
  */
 const size = computed(() => shellLayoutFor(width.value, null))
+
+/*
+ * The same size, written on the document as well as on the shell.
+ *
+ * A custom property inherits down the tree, and a drawer, a dialog and a toast are not in the
+ * tree: they are teleported to the end of `<body>`, outside the element that declares the step.
+ * So the panel's own drawer — which on a phone is the whole screen — laid itself out with the
+ * desktop step of 16 while everything behind it used 8. Declared on the root as well, the step
+ * reaches the portals too, and nothing inside them has to know it is in one.
+ */
+watchEffect(() => {
+  if (typeof document === 'undefined') return
+
+  document.documentElement.dataset.wxShell = size.value
+})
+
+onUnmounted(() => {
+  if (typeof document !== 'undefined') delete document.documentElement.dataset.wxShell
+})
 </script>
 
 <template>
@@ -177,6 +196,7 @@ const size = computed(() => shellLayoutFor(width.value, null))
     -->
     <wx-drawer
       v-model:open="drawerOpen"
+      class="wx-admin__drawer"
       :title="title === '' ? t('nav.menu') : title"
       side="left"
       :size="260"
@@ -400,5 +420,37 @@ body:has(> #webx-app) {
 
 .wx-admin--drawer .wx-action--lg {
   --wx-action-size: 36px;
+}
+
+/*
+ * One left edge down the drawer.
+ *
+ * The drawer already insets what it holds by its own step, and `WxMenu` adds a second one of
+ * its own — so the highlighted row started eight pixels further in than the account block under
+ * it and the name over it. With every block the same colour as the sheet that is invisible; in
+ * the dark theme, where each tint is a shape of its own, it is three blocks and three edges.
+ * Unscoped and named on the drawer itself: the drawer is teleported to the end of the document,
+ * so nothing that begins at `.wx-admin` reaches it.
+ */
+.wx-admin__drawer .wx-drawer__content > .wx-menu {
+  padding-inline: 0;
+}
+
+/*
+ * The panel's step where the tree cannot reach: on the document root, for everything the panel
+ * teleports out of itself — drawers, dialogs, the toaster. The shell writes the size class here
+ * as a data attribute, and these three lines say the same thing the three above `.wx-admin`
+ * say. Unscoped, because `:root` is nobody's element.
+ */
+:root[data-wx-shell='drawer'] {
+  --wx-gap: var(--wx-space-8);
+}
+
+:root[data-wx-shell='rail'] {
+  --wx-gap: var(--wx-space-12);
+}
+
+:root[data-wx-shell='sidebar'] {
+  --wx-gap: var(--wx-space-16);
 }
 </style>

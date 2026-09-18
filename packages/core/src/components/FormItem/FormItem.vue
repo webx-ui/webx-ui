@@ -21,6 +21,7 @@ const props = withDefaults(defineProps<FormItemProps>(), {
   size: undefined,
   labelWidth: undefined,
   reserveErrorSpace: false,
+  wide: false,
 })
 
 const form = inject(formContextKey, null)
@@ -87,7 +88,12 @@ defineExpose({ messages, hasError })
   <div
     :class="[
       'wx-form-item',
-      { 'wx-form-item--inline': isInline, 'is-error': hasError, 'is-required': required },
+      {
+        'wx-form-item--inline': isInline,
+        'wx-form-item--wide': wide,
+        'is-error': hasError,
+        'is-required': required,
+      },
     ]"
     :style="isInline && labelWidth ? { '--wx-form-item-label-width': labelWidth } : undefined"
   >
@@ -152,11 +158,31 @@ defineExpose({ messages, hasError })
   color: var(--wx-color-danger);
 }
 
+/*
+ * A field stops at a width it can be read at.
+ *
+ * A panel is as wide as the monitor it is opened on, and an input that follows it is a line
+ * 1700px long whose label is a screen away from its end — on the same screen as a second
+ * field of the same width, so nothing on it has a shape. The cap is on the control rather
+ * than on the form, because the label, the hint and the error under it are text and wrap on
+ * their own, and because a card that shrank with its fields would leave the screen looking
+ * like a column of narrow boxes rather than a page.
+ *
+ * `--wx-field-max-width` so a screen can widen the fields it knows are not fields — and
+ * `wide` for the single one.
+ */
 .wx-form-item__control {
   display: flex;
   flex-direction: column;
   gap: var(--wx-space-4);
   min-width: 0;
+  max-width: var(--wx-field-max-width, 640px);
+}
+
+/* Its own control, not every control inside it: a field that says it is wide because it holds
+   an editor or a card of its own must not widen the ordinary fields that card is made of. */
+.wx-form-item--wide > .wx-form-item__control {
+  max-width: none;
 }
 
 /*

@@ -64,6 +64,7 @@ export function seo(options: SeoOptions = {}): AdminModule {
       'wx-seo': {
         component: SeoCard,
         kind: 'field',
+        wide: true,
         bind: () => ({ mediaField }),
       },
     },

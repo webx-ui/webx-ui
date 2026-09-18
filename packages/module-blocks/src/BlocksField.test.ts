@@ -84,6 +84,27 @@ function field(value: BlockNode[] = tree()) {
 }
 
 /**
+ * Choose something from a row's `···`.
+ *
+ * The menu's panel is teleported, so it is found in the document and clicked for real rather
+ * than through the wrapper. Outside a panel the words are keys, so the lines are found by
+ * place: what the row offers is switch off, duplicate, remove — and remove is destructive, so
+ * `WxRowMenu` keeps it last whatever order it was written in.
+ */
+async function choose(wrapper: ReturnType<typeof field>, row: number, item: number): Promise<void> {
+  await wrapper
+    .findAll('.wx-blocks-tree__row')
+    [row]!.get('.wx-actions__menu button')
+    .trigger('click')
+
+  const lines = [...document.querySelectorAll<HTMLElement>('.wx-dropdown-item')]
+
+  lines[item]!.click()
+
+  await flushPromises()
+}
+
+/**
  * Press the confirming button of the dialog `confirm()` mounted.
  *
  * It lives outside the wrapper — that is the whole point of a dialog from code — so it is
@@ -147,13 +168,7 @@ describe('WxBlocks', () => {
   it('asks before removing a block that holds others', async () => {
     const wrapper = field()
 
-    // Outside a panel the words are keys, so the buttons are found by place, not by name.
-    await wrapper
-      .findAll('.wx-blocks-tree__row')[1]!
-      .findAll('.wx-blocks-tree__actions button')[2]!
-      .trigger('click')
-
-    await flushPromises()
+    await choose(wrapper, 1, 2)
 
     // Nothing has gone yet: what leaves with a container is not on screen, so it is asked
     // about. The count in the question is a translated line, so it reads as a key here.
@@ -166,28 +181,28 @@ describe('WxBlocks', () => {
     expect(emitted(wrapper)!.map((node) => node.key)).toEqual(['a'])
   })
 
-  it('removes a block that holds nothing without asking', async () => {
+  it('asks before removing a block that holds nothing either', async () => {
     const wrapper = field()
 
-    await wrapper
-      .findAll('.wx-blocks-tree__row')[0]!
-      .findAll('.wx-blocks-tree__actions button')[2]!
-      .trigger('click')
+    await choose(wrapper, 0, 2)
 
+    // A block of its own used to go without a question. It is still one thing leaving a page
+    // by one click, and the row it left from says its type rather than its words — so what
+    // vanished was never named.
+    expect(emitted(wrapper)).toBeNull()
+    expect(document.querySelector('.wx-confirm__message')).not.toBeNull()
+
+    confirmIt()
     await flushPromises()
 
-    expect(document.querySelector('.wx-confirm__message')).toBeNull()
     expect(emitted(wrapper)!.map((node) => node.key)).toEqual(['b'])
   })
 
   it('switches a block off without touching what is in it', async () => {
     const wrapper = field()
 
-    // The eye stands first in the row, before duplicate and remove.
-    await wrapper
-      .findAll('.wx-blocks-tree__row')[1]!
-      .findAll('.wx-blocks-tree__actions button')[0]!
-      .trigger('click')
+    // Switching off stands first in the menu, before duplicate and remove.
+    await choose(wrapper, 1, 0)
 
     const off = emitted(wrapper)!
 
@@ -201,11 +216,10 @@ describe('WxBlocks', () => {
     off[1]!.hidden = true
 
     const wrapper = field(off)
-    const row = wrapper.findAll('.wx-blocks-tree__row')[1]!
 
-    expect(row.classes()).toContain('is-hidden')
+    expect(wrapper.findAll('.wx-blocks-tree__row')[1]!.classes()).toContain('is-hidden')
 
-    await row.findAll('.wx-blocks-tree__actions button')[0]!.trigger('click')
+    await choose(wrapper, 1, 0)
 
     // Back on the key is gone rather than false: the content is again what it was before
     // anybody hid it, which is what the revision guarding a save compares.
@@ -215,10 +229,7 @@ describe('WxBlocks', () => {
   it('duplicates a block with fresh keys, right after the original', async () => {
     const wrapper = field()
 
-    await wrapper
-      .findAll('.wx-blocks-tree__row')[1]!
-      .findAll('.wx-blocks-tree__actions button')[1]!
-      .trigger('click')
+    await choose(wrapper, 1, 1)
 
     const next = emitted(wrapper)!
     expect(next.length).toBe(3)

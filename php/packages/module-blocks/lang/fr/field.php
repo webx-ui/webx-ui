@@ -10,6 +10,7 @@ return [
     'remove' => 'Retirer',
     'remove-title' => 'Retirer « :title » ?',
     'remove-text' => 'Les :count blocs qu’il contient partent avec.',
+    'remove-alone' => 'Il quitte cette page. Le brouillon garde ce qu’il était.',
     'duplicate' => 'Dupliquer',
     'hide' => 'Masquer du site',
     'show' => 'Afficher sur le site',

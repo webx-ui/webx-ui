@@ -46,6 +46,8 @@ return [
     'add-admin' => 'Add an administrator',
     'add-email' => 'Add an address',
     'remove' => 'Remove',
+    'remove-recipient-title' => 'Remove this recipient?',
+    'remove-recipient-text' => 'They stop being told when something arrives.',
     'email-field' => 'The field holding the sender’s address',
     'email-field-help' => 'A reply to the notification then goes to whoever wrote in.',
     'no-email-field' => 'None',

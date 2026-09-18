@@ -22,4 +22,13 @@ export interface FormItemProps {
   labelWidth?: string
   /** Renders the error slot area even when empty, so rows do not jump. */
   reserveErrorSpace?: boolean
+  /**
+   * Lets the control take the whole width instead of stopping at the readable one.
+   *
+   * A field is read and typed into, so it stops at `--wx-field-max-width` however wide the
+   * screen is: an input stretched across a 2000px monitor is a line the eye cannot follow
+   * back to its label. What is not a field in that sense — an editor, a table, a list of
+   * blocks — says so with this.
+   */
+  wide?: boolean
 }

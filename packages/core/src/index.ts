@@ -17,6 +17,7 @@ export {
   type LocalizedFieldProps,
 } from './composables/useLocalized'
 export { useElementWidth } from './composables/useElementWidth'
+export { useHoverPointer } from './composables/useHoverPointer'
 export {
   useToast,
   toast,

@@ -48,7 +48,12 @@ const selected = computed(() => orders.find((order) => order.id === selectedId.v
 ```
 
 It fills the space it is given, so it belongs in a `WxMain` with no padding of its own — which is
-exactly where a `<router-view />` sits in an admin shell:
+exactly where a `<router-view />` sits in an admin shell.
+
+Neither pane is inset by the component, on either side of the breakpoint: on a narrow screen the
+detail becomes a sheet, and that sheet pads nothing either. What it holds is a screen rather than
+a note, and a screen knows its own margins — two insets stacked would put the same content further
+from the edge inside the sheet than it stands anywhere else.
 
 ```vue
 <template>

@@ -94,8 +94,25 @@ then `WxForm`.
 | `size`              | `'sm' \| 'md' \| 'lg'` | —       | Size for controls inside this item                 |
 | `labelWidth`        | `string`               | —       | Overrides the form's label width                   |
 | `reserveErrorSpace` | `boolean`              | `false` | Keeps room for a message so rows do not jump       |
+| `wide`              | `boolean`              | `false` | Lets the control take the whole width              |
 
 **Slots:** `default` (the control), `label`.
+
+### How wide a field is
+
+A field is read and typed into, so the control stops at `--wx-field-max-width` — 640px — however
+wide the screen is. An input stretched across a 2000px monitor is a line whose end is a screen away
+from its label, and a form of them has no shape at all. The label, the hint and the error under the
+control are text and wrap on their own.
+
+What is not a field in that sense — a rich-text editor, a table, a list of blocks — says so with
+`wide`, and a screen that wants a different measure sets the variable:
+
+```css
+.my-screen {
+  --wx-field-max-width: 480px;
+}
+```
 
 ## Accessibility
 

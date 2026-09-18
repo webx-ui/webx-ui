@@ -46,6 +46,8 @@ return [
     'add-admin' => 'Adicionar um administrador',
     'add-email' => 'Adicionar um endereço',
     'remove' => 'Retirar',
+    'remove-recipient-title' => 'Retirar este destinatário?',
+    'remove-recipient-text' => 'Deixa de ser avisado quando algo chega.',
     'email-field' => 'O campo com o endereço de quem escreve',
     'email-field-help' => 'A resposta ao aviso vai então para quem escreveu.',
     'no-email-field' => 'Nenhum',

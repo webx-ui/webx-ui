@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useTranslate } from '@webx-ui/module-admin'
-import { WxAction, WxIcon, WxSortableList } from '@webx-ui/core'
+import { useTranslate, WxRowMenu, type RowAction } from '@webx-ui/module-admin'
+import { WxIcon, WxSortableList } from '@webx-ui/core'
 import type { ScreenNode } from '@webx-ui/schema'
 import { nestedFields } from './content'
 import type { BlockNode, BlockType } from './types'
@@ -57,6 +57,38 @@ function childrenIn(node: BlockNode, field: ScreenNode): BlockNode[] {
 
 function iconOf(node: BlockNode): string {
   return typeOf(node)?.icon ?? 'grid'
+}
+
+/**
+ * What a block offers, as the panel's own `···` rather than a row of icons.
+ *
+ * Three bare icons on a row that is itself a click target is three chances to hit the wrong
+ * one, and the tree is the narrowest column on the screen: at the width a nested block has,
+ * the icons took the name's place and the row read as a dash. The menu also has room for the
+ * word, which an icon only says to whoever has already learned it (§20).
+ */
+function actionsFor(node: BlockNode): RowAction[] {
+  return [
+    {
+      key: 'visibility',
+      icon: node.hidden === true ? 'eye' : 'eye-off',
+      label: node.hidden === true ? t('field.show') : t('field.hide'),
+      run: () => emit('visibility', node.key, node.hidden !== true),
+    },
+    {
+      key: 'duplicate',
+      icon: 'copy',
+      label: t('field.duplicate'),
+      run: () => emit('duplicate', node.key),
+    },
+    {
+      key: 'remove',
+      icon: 'trash',
+      label: t('field.remove'),
+      danger: true,
+      run: () => emit('remove', node.key),
+    },
+  ]
 }
 </script>
 
@@ -118,26 +150,8 @@ function iconOf(node: BlockNode): string {
           >
             <wx-icon name="eye-off" />
           </span>
-          <span v-if="!disabled" class="wx-blocks-tree__actions" @click.stop>
-            <wx-action
-              :icon="item.hidden === true ? 'eye-off' : 'eye'"
-              size="sm"
-              :title="item.hidden === true ? t('field.show') : t('field.hide')"
-              @click="emit('visibility', item.key, item.hidden !== true)"
-            />
-            <wx-action
-              icon="copy"
-              size="sm"
-              :title="t('field.duplicate')"
-              @click="emit('duplicate', item.key)"
-            />
-            <wx-action
-              icon="trash"
-              size="sm"
-              tone="danger"
-              :title="t('field.remove')"
-              @click="emit('remove', item.key)"
-            />
+          <span v-if="!disabled" class="wx-blocks-tree__actions">
+            <wx-row-menu :actions="actionsFor(item)" :label="titleOf(item)" />
           </span>
         </div>
 
@@ -251,16 +265,14 @@ function iconOf(node: BlockNode): string {
   color: var(--wx-color-danger);
 }
 
+/*
+ * There at rest, not on hover. The icons that used to live here appeared under the pointer,
+ * which on a phone is nowhere: a tree that can be built with a finger has to be one a finger
+ * can also take a block out of. One quiet `···` is affordable in a way three icons were not.
+ */
 .wx-blocks-tree__actions {
   display: flex;
-  gap: var(--wx-space-2);
-  opacity: 0;
-}
-
-.wx-blocks-tree__row:hover .wx-blocks-tree__actions,
-.wx-blocks-tree__row:focus-within .wx-blocks-tree__actions,
-.wx-blocks-tree__row.is-selected .wx-blocks-tree__actions {
-  opacity: 1;
+  flex: none;
 }
 
 .wx-blocks-tree__kids {

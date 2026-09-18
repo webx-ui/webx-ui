@@ -9,6 +9,7 @@ import {
   WxActionBar,
   WxBadge,
   WxButton,
+  WxCard,
   WxSkeleton,
   WxTab,
   WxTabs,
@@ -121,8 +122,21 @@ async function save(): Promise<void> {
 </script>
 
 <template>
-  <div class="wx-inbox-editor" data-wx-fill>
-    <wx-skeleton v-if="loading" title :rows="8" />
+  <!--
+    Not a screen that fills its column, whatever the first draft said. `data-wx-fill` makes the
+    screen exactly as tall as the window, and nothing inside these tabs scrolls on its own — so
+    a form longer than the window grew straight through the box, and the save bar, which is the
+    next thing in the column, was drawn across the middle of it with fields still going on
+    underneath. What this screen wants is the ordinary thing: the page scrolls, the bar sticks
+    to the bottom of it, and `WxMain` gives the screen a floor to push that bar down to.
+  -->
+  <div class="wx-inbox-editor">
+    <!-- On a card, like everything else on this screen: a bare skeleton flush against the
+         page is a shape the form that follows it never takes, so the screen jumps twice —
+         once when the card appears around it, once when the fields land inside. -->
+    <wx-card v-if="loading">
+      <wx-skeleton title :rows="8" />
+    </wx-card>
 
     <template v-else-if="form">
       <div class="wx-inbox-editor__head">
@@ -173,15 +187,33 @@ async function save(): Promise<void> {
 .wx-inbox-editor {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
-  min-height: 0;
+  /* The panel's own step, which is smaller on a phone than on a desktop. */
+  gap: var(--wx-gap, var(--wx-space-16));
 }
 
+/*
+ * The way out lines up with the name, not with the pair of lines under it.
+ *
+ * The block beside it is two lines — the name and the address it posts to — so centring the
+ * row put the arrow halfway down, level with the gap between them: it read as belonging to
+ * the slug rather than to the screen. Aligned to the top and nudged by the difference between
+ * the line it stands next to and its own height, it sits on the name.
+ */
 .wx-inbox-editor__head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--wx-space-12);
   flex-wrap: wrap;
+}
+
+/*
+ * The button (30px) is taller than the line it stands beside (25px), so aligning their boxes
+ * leaves its centre low; half the difference back up puts the two centres together. `:deep()`
+ * because the class is ours but the element it rides is `WxAction`'s, and a scoped rule would
+ * be looking for our attribute on somebody else's markup (CLAUDE.md §4).
+ */
+.wx-inbox-editor__head > :deep(.wx-back-button) {
+  margin-block-start: -2px;
 }
 
 .wx-inbox-editor__id {
@@ -195,9 +227,9 @@ async function save(): Promise<void> {
   line-height: var(--wx-font-line-height-tight);
 }
 
-/* The tabs take what is left, and what scrolls is inside them. */
+/* The tabs take what is left of the column, so the save bar under them is at its bottom
+   rather than under the last field. Nothing inside them scrolls on its own — the page does. */
 .wx-inbox-editor__tabs {
   flex: 1 1 auto;
-  min-height: 0;
 }
 </style>

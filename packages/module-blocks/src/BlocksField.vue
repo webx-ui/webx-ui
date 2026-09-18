@@ -217,9 +217,13 @@ function structuredSample(type: BlockType): Record<string, unknown> {
 }
 
 /**
- * A block on its own goes without a question — it is one row in a tree that is right there, and
- * the draft keeps a version of what it was. A container is asked about, because what leaves
- * with it is not on screen: collapse a section and its twelve blocks are one row (§14.2).
+ * Always a question, and the question says what is leaving.
+ *
+ * A single block used to go without one — one row in a tree that is right there, with a draft
+ * that kept a version of it. That was wrong twice over: the row says the block's type and not
+ * its words, so what vanished was never named, and a page is edited by pointing at things. A
+ * container says how much goes with it, because that part is not on screen: collapse a section
+ * and its twelve blocks are one row (§14.2).
  */
 async function remove(key: string): Promise<void> {
   const found = locate(tree.value, key)
@@ -228,20 +232,17 @@ async function remove(key: string): Promise<void> {
 
   const inside = countInside(found.node)
 
-  if (inside > 0) {
-    const agreed = await confirm({
-      title: t('field.remove-title', {
-        title:
-          catalog.value.find((type) => type.slug === found.node.type)?.title ?? found.node.type,
-      }),
-      message: t('field.remove-text', { count: inside }),
-      confirmText: t('field.remove'),
-      cancelText: t('page.cancel'),
-      tone: 'danger',
-    })
+  const agreed = await confirm({
+    title: t('field.remove-title', {
+      title: catalog.value.find((type) => type.slug === found.node.type)?.title ?? found.node.type,
+    }),
+    message: inside > 0 ? t('field.remove-text', { count: inside }) : t('field.remove-alone'),
+    confirmText: t('field.remove'),
+    cancelText: t('page.cancel'),
+    tone: 'danger',
+  })
 
-    if (!agreed) return
-  }
+  if (!agreed) return
 
   if (selectedKey.value === key) selectedKey.value = null
   set(removeNode(tree.value, key))
@@ -560,14 +561,24 @@ const formRoot = computed(() =>
 }
 
 /* The foot of the tree: one row, the adding taking whatever the other one leaves. */
+/*
+ * One row while they fit, a column the moment they do not.
+ *
+ * The tree is the narrowest column on the screen and the words on these two buttons are as
+ * long as the language makes them: side by side in a 220px column they ran out over its edge
+ * rather than wrapping, because a button is a flex item that does not break. Wrapping is the
+ * whole fix — each one keeps its own line and the line is the column's width.
+ */
 .wx-blocks__tools {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--wx-space-8);
   flex: none;
 }
 
-.wx-blocks__add {
+.wx-blocks__add,
+.wx-blocks__preview-button {
   flex: 1 1 auto;
   min-width: 0;
 }

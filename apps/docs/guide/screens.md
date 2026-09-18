@@ -267,6 +267,10 @@ and passes them as `types` — or, inside a panel, as `createAdmin({ types })`. 
 (where the node's `label` goes — `title` on a card), and `bind`, a function from the node to
 extra props: a tab, for instance, takes its `value` from the node's id.
 
+A `field` is wrapped in a `WxFormItem`, which stops its control at the width a field is read at.
+An entry whose control is not a field in that sense — an editor, a table, a list of blocks — says
+`wide: true`, and the form item lets it take the whole width.
+
 ## Conditional visibility
 
 "Show this when that field holds this value":

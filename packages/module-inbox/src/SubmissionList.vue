@@ -357,11 +357,17 @@ function settings(): void {
 </script>
 
 <template>
-  <div class="wx-submissions">
+  <div class="wx-submissions" :class="{ 'is-pane': inline }">
     <div class="wx-submissions__head">
       <!-- On a phone the pane is a screen of its own and the drawer carries no close of its
            own, so the way back has to be here. Beside the list there is nothing to go back to. -->
-      <wx-action v-if="!inline" icon="arrow-left" :title="t('panel.forms')" @click="emit('back')" />
+      <wx-action
+        v-if="!inline"
+        class="wx-submissions__back"
+        icon="arrow-left"
+        :title="t('panel.forms')"
+        @click="emit('back')"
+      />
 
       <div class="wx-submissions__who">
         <wx-heading :level="3" truncate>{{ formName() }}</wx-heading>
@@ -471,21 +477,39 @@ function settings(): void {
 </template>
 
 <style scoped>
+/*
+ * The panel's own step, which is 8 on a phone and 16 on a desktop — not a number of this
+ * screen's own. Written as 16 here, the pane kept desktop air inside a 375px drawer: the head,
+ * the tabs and the rows each took a line of nothing between them, and four rows fitted where
+ * six do now.
+ */
 .wx-submissions {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-12);
-  padding: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
+  padding: var(--wx-gap, var(--wx-space-16));
   min-width: 0;
   height: 100%;
   min-height: 0;
 }
 
+/*
+ * The way back lines up with the name, not with the pair of lines under it: what stands beside
+ * it is the form's name and the address it posts to, and a centred row put the arrow level with
+ * the gap between the two.
+ */
 .wx-submissions__head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--wx-space-8);
   flex-wrap: wrap;
+}
+
+/* The button is taller than the line it stands beside, so aligning their boxes leaves its
+   centre low; half the difference back up puts the two centres together. `:deep()` because
+   the class is ours and the element it rides is `WxAction`'s (CLAUDE.md §4). */
+.wx-submissions__head > :deep(.wx-submissions__back) {
+  margin-block-start: -2px;
 }
 
 /* The name takes the middle, so the way back stays at the start of the line and the buttons
@@ -498,6 +522,29 @@ function settings(): void {
 .wx-submissions__views {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+/*
+ * Beside the forms, the cards stand a step further in than the pane's own padding.
+ *
+ * There the pane is a column of a card — a rule down its left side, the card's frame on its
+ * right — and a list of boxes that begins where the column begins reads as glued to both. As a
+ * sheet the same list has the edge of the screen for a boundary and wants nothing extra, which
+ * is why this belongs to the pane and not to the table: only the pane knows which one it is.
+ * Rows want neither, and do not get it — they are the table's own width by design.
+ */
+.wx-submissions.is-pane :deep(.wx-table--cards) {
+  padding-inline: var(--wx-table-padding-x);
+}
+
+/*
+ * The tabs and the rows they filter are one thing, so they stand closer than two things do.
+ * `WxTabs` leaves the panel's step under the strip, which is right where a card follows it;
+ * here what follows is the search box of the same table, and a full step between a filter and
+ * what it filters reads as a gap between two screens.
+ */
+.wx-submissions__views :deep(.wx-tabs__panels) {
+  padding-top: var(--wx-space-8);
 }
 
 .wx-submissions__mass {
