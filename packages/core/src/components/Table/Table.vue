@@ -1768,8 +1768,23 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   padding: var(--wx-space-8);
 }
 
-.wx-table--flush .wx-table__cards {
+/*
+ * Cards keep their inset even where the table is told to be flush.
+ *
+ * `flush` is about rows: a row runs the whole width of the card it lives in, and the padding
+ * inside its cells is what keeps the words off the edge — so taking the table's own padding
+ * away is exactly right there. A card cannot do that. It is a box with corners of its own, and
+ * a rounded box that touches the wall it stands against reads as stuck to it: on a phone the
+ * list ran into both edges of the screen with its corners cut off by them. The head goes with
+ * the cards, or the search would stand at one distance from the edge and the rows at another.
+ */
+.wx-table--flush:not(.wx-table--cards) .wx-table__cards {
   padding: 0;
+}
+
+.wx-table--flush.wx-table--cards .wx-table__header {
+  padding-inline: var(--wx-space-8);
+  padding-block-start: var(--wx-space-8);
 }
 
 .wx-table__card {
