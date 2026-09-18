@@ -138,7 +138,10 @@ return [
     'preview' => [
         'path' => '_preview',
         'ttl' => 60,
-        'middleware' => ['web'],
+        // `webx.locale` and not `web` alone: the language of a page is decided by a middleware
+        // the site puts on its own routes, so a preview without it answered in the
+        // application's default — an editor was shown their Russian page in English.
+        'middleware' => ['web', 'webx.locale'],
     ],
 
 ];

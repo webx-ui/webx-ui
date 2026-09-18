@@ -127,6 +127,31 @@ final class PreviewTest extends TestCase
     }
 
     #[Test]
+    public function the_preview_answers_in_the_language_the_site_answers_in(): void
+    {
+        // The site's language is decided by a middleware on the route that answers for a page,
+        // and a preview that runs without it shows the application's default instead: an
+        // editor was being shown their Russian page in English, and everything localized in it
+        // — the words of a block, the fields of a form — came out in the wrong language.
+        config(['webx-localization.locales' => [
+            ['code' => 'ru', 'default' => true],
+            ['code' => 'en'],
+        ]]);
+        app()->setLocale('en');
+
+        $this->publish('greet', '<p>{{ $title }}</p>', [], [
+            'schema' => [['id' => 'title', 'type' => 'wx-input', 'localized' => true]],
+        ]);
+
+        $page = RoutedPage::query()->create(['slug' => 'about', 'title' => 'About']);
+        $page->saveDraft(['title' => 'About', 'blocks' => [
+            $this->node('greet', ['title' => ['en' => 'Hello', 'ru' => 'Привет']], 'k1'),
+        ]]);
+
+        $this->get(Preview::url($page))->assertOk()->assertSee('<p>Привет</p>', false);
+    }
+
+    #[Test]
     public function an_unknown_type_or_id_is_a_404_even_with_a_token(): void
     {
         $page = RoutedPage::query()->create(['slug' => 'about', 'title' => 'About']);
@@ -149,6 +174,6 @@ final class PreviewTest extends TestCase
         $route = Route::getRoutes()->getByName('webx.blocks.preview');
         $this->assertNotNull($route);
         (clone $route)->prepareForSerialization();
-        $this->assertSame(['web'], $route->middleware());
+        $this->assertSame(['web', 'webx.locale'], $route->middleware());
     }
 }
