@@ -143,14 +143,17 @@ const columns = computed<TableColumn<SubmissionRow>[]>(() => {
       key: `values.${column.key}`,
       label: column.label,
       sortable: true,
-      // The first answer is what the row is recognised by; every one after it is worth less
-      // than the room it takes, so it goes a step sooner.
-      hideBelow: index === 0 ? undefined : 420 + index * 160,
+      // The first answer is what the row is recognised by and stays at any width; every one
+      // after it is worth less than the room it takes, so it goes a step sooner. The steps are
+      // wide — 640, 960 — because an answer is a sentence and not a number: two of them plus
+      // the status and the date is already what a 755px pane holds without scrolling sideways,
+      // which is what the pane beside the forms actually is on a 1280 screen (§11).
+      hideBelow: index === 0 ? undefined : 320 + index * 320,
     })),
     // A floor rather than a width: the cell holds a badge, sometimes an avatar and sometimes
     // a paperclip, and a fixed width that any of them overflows makes the whole table scroll
     // sideways by two pixels.
-    { key: 'status', label: t('panel.status'), minWidth: 120 },
+    { key: 'status', label: t('panel.status'), minWidth: 100 },
     {
       key: 'created_at',
       label: t('panel.received'),
