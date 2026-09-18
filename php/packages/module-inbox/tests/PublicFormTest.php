@@ -131,6 +131,20 @@ final class PublicFormTest extends TestCase
     }
 
     #[Test]
+    public function a_field_that_is_not_full_width_says_so_in_its_class(): void
+    {
+        // The panel has a switch for this, so the markup has to carry it somewhere: a site
+        // laying the fields out in a grid has nothing else to go on.
+        $form = $this->form('contact', [['name' => 'name', 'type' => FieldType::Text, 'is_fullsize' => false]]);
+        $this->field($form, ['name' => 'message', 'type' => FieldType::Textarea]);
+
+        $html = $this->render();
+
+        $this->assertMatchesRegularExpression('/wx-form__field[^"]*--half[^"]*"[^>]*data-webx-field="name"/s', $html);
+        $this->assertDoesNotMatchRegularExpression('/--half[^"]*"[^>]*data-webx-field="message"/s', $html);
+    }
+
+    #[Test]
     public function the_site_fills_the_hidden_fields_by_their_machine_name(): void
     {
         $this->form('contact', [

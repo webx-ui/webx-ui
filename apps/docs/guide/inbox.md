@@ -136,8 +136,10 @@ php artisan vendor:publish --tag=webx-inbox-views
 
 What ships is the least markup that works — `wx-form`, `wx-form__field`, `wx-form__control`,
 `is-invalid` — with no colours, no spacing and no stylesheet. The package's design tokens are not
-pulled onto the site: a site is not obliged to have them. After publishing, the views belong to
-the project:
+pulled onto the site: a site is not obliged to have them. A field the panel says is not full
+width adds `wx-form__field--half`, and that class is the whole of what the switch means here:
+the package has no layout to apply it to, and the site's stylesheet decides what half a row is.
+After publishing, the views belong to the project:
 
 ```
 resources/views/vendor/webx-inbox/form.blade.php            the frame
