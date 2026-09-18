@@ -877,7 +877,7 @@ watch(id, () => void load())
   align-items: center;
   gap: var(--wx-space-6);
   padding: var(--wx-space-8) var(--wx-space-12);
-  border-block-start: 1px solid var(--wx-color-border-muted, var(--wx-border-default));
+  border-block-start: 1px solid var(--wx-border-muted);
 }
 
 .wx-block-editor__pill {

@@ -73,7 +73,7 @@ const passed = computed(() => {
   gap: var(--wx-space-4);
   padding: var(--wx-space-8) var(--wx-space-12);
   font-size: var(--wx-font-size-sm);
-  border-block-start: 1px solid var(--wx-color-border-muted, var(--wx-border-default));
+  border-block-start: 1px solid var(--wx-border-muted);
 }
 
 .wx-block-checks__line {
@@ -96,10 +96,10 @@ const passed = computed(() => {
 }
 
 .is-warning {
-  color: var(--wx-color-warning-text, var(--wx-color-warning));
+  color: var(--wx-color-warning);
 }
 
 .is-error {
-  color: var(--wx-color-danger-text, var(--wx-color-danger));
+  color: var(--wx-color-danger);
 }
 </style>
