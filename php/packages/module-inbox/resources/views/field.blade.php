@@ -31,7 +31,15 @@
     @include('webx-inbox::fields.hidden', $control)
 @else
     <div
-        @class(['wx-form__field', 'wx-form__field--'.$type, 'is-invalid' => $messages !== []])
+        @class([
+            'wx-form__field',
+            'wx-form__field--'.$type,
+            // The panel offers "full width" per field, and this class is the whole of what
+            // that switch means on the site: the package has no layout of its own to apply
+            // it to, so it names the field and the site's own stylesheet does the rest.
+            'wx-form__field--half' => ! $field->is_fullsize,
+            'is-invalid' => $messages !== [],
+        ])
         data-webx-field="{{ $field->key() }}"
     >
         @if ($label !== '' && $type !== 'consent')
