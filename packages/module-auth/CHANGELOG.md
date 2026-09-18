@@ -1,5 +1,13 @@
 # @webx-ui/module-auth
 
+## 0.6.2
+
+### Patch Changes
+
+- Updated dependencies [74d1369]
+  - @webx-ui/core@0.23.0
+  - @webx-ui/module-admin@0.8.0
+
 ## 0.6.1
 
 ### Patch Changes
