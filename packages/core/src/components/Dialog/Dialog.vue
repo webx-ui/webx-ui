@@ -534,6 +534,19 @@ defineExpose({ close, reset })
   padding: var(--wx-dialog-body-pad);
 }
 
+/*
+ * Air between whatever the body was given, so that a dialog that is three fields stacked one
+ * after another does not read as one block of controls. A form item carries no margin of its
+ * own — the gap belongs to the form around it — and a dialog is not a form.
+ *
+ * A margin between siblings rather than a flex gap: turning the body into a flex container
+ * would also change how a body that is one thing sizes itself, and some of those are meant to
+ * fill it. Nothing happens here to a body that is a single element.
+ */
+.wx-dialog__content > * + * {
+  margin-block-start: var(--wx-space-14);
+}
+
 .wx-dialog__sidebar {
   flex: 0 0 auto;
   width: var(--wx-dialog-sidebar-width, 200px);

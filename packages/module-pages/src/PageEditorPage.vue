@@ -341,16 +341,17 @@ onBeforeRouteLeave(async () => {
 </script>
 
 <template>
-  <!-- `data-wx-fill`: this screen is as tall as the column it is drawn in and scrolls its own
-       panes, rather than growing and taking the page with it (§10). -->
-  <div ref="root" class="wx-page-editor" data-wx-fill @focusout="onFocusOut">
+  <!-- No `data-wx-fill`: this screen is a window tall only while the constructor is the tab
+       on screen, and that is a question only CSS can ask (§10). `WxMain` still gives it a
+       floor of one window, because it carries an action bar. -->
+  <div ref="root" class="wx-page-editor" @focusout="onFocusOut">
     <template v-if="loading || !page">
       <wx-skeleton class="wx-page-editor__ghost" title :rows="1" />
       <wx-skeleton :rows="8" />
     </template>
 
     <template v-else>
-      <div class="wx-page-editor__head" :class="{ 'is-narrow': narrow }">
+      <div class="wx-page-editor__head">
         <!-- The trail says where the reader is; this is the way out of it, and on a phone it
              is the only one that is a control rather than four words in the smallest type. -->
         <wx-back-button class="wx-page-editor__back" :to="base" :label="t('module.title')" />
@@ -417,7 +418,7 @@ onBeforeRouteLeave(async () => {
           <template v-else>
             <wx-button
               v-if="previewUrl"
-              variant="text"
+              variant="outline"
               icon="eye"
               :href="previewUrl"
               target="_blank"
@@ -427,7 +428,7 @@ onBeforeRouteLeave(async () => {
             </wx-button>
             <wx-button
               v-if="page.url && page.status !== 'draft'"
-              variant="text"
+              variant="outline"
               icon="link"
               :href="page.url"
               target="_blank"
@@ -518,20 +519,29 @@ onBeforeRouteLeave(async () => {
  * it scrolls the page — each tab scrolls inside itself. A sticky bar would be a bar that never
  * has anything to stick to.
  */
+/*
+ * Three columns: the way out, what the page is called, and what leads away from it.
+ *
+ * A grid rather than the flex row this was: as flex items the three parts were sized from
+ * their own content, and on a phone the menu — one 30px button — claimed 225px of a 359px head
+ * while the name was squeezed to 81 and wrapped away from its badge.
+ *
+ * Everything sits on the bottom line, which is the name. The trail above it is the smaller
+ * type, and a button lined up with that hangs over the title.
+ */
 .wx-page-editor__head {
   flex: none;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
   gap: var(--wx-space-12);
-  flex-wrap: wrap;
   padding-block-end: var(--wx-space-12);
   border-block-end: 1px solid var(--wx-border-default);
 }
 
-/* Level with the trail, which is the first line of the head, not the middle of both lines. */
+/* The arrow belongs to the trail, which is the top line. */
 .wx-page-editor__back {
-  flex: none;
+  align-self: start;
 }
 
 .wx-page-editor__id {
@@ -556,31 +566,6 @@ onBeforeRouteLeave(async () => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/*
- * Narrow: the head is one row and stays one row. The menu of what leads away from the page
- * belongs beside the name — wrapped onto a line of its own it reads as a third thing in the
- * head, and costs a phone another 40px above the editor.
- *
- * A grid rather than the flex row it is at every other width: as flex items the three parts
- * were sized from their own content, and the menu — one 30px button — claimed 225px of a
- * 359px head while the name was squeezed to 81 and wrapped away from its badge. Three explicit
- * columns say what was meant: the arrow, everything the page is called, and the menu.
- *
- * Level with the name rather than with the trail above it: the trail is the smaller line, and
- * a button lined up with it hangs over the title.
- */
-.wx-page-editor__head.is-narrow {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: end;
-}
-
-/* The arrow belongs to the trail, which is the top line; everything else lines up with the
-   name, which is the bottom one. */
-.wx-page-editor__head.is-narrow .wx-back-button {
-  align-self: start;
 }
 
 .wx-page-editor__actions {
@@ -622,8 +607,20 @@ onBeforeRouteLeave(async () => {
  * one on screen should have had. Measured — a constructor 181px tall in a 740px column.
  */
 
-/* A tab is ordinary content and scrolls the way a form does; the constructor fills instead. */
-.wx-page-editor__screen :deep(.wx-tab:not([hidden])) {
+/*
+ * Only the tab that holds the constructor is a box of a fixed height with its own scrollbar.
+ *
+ * Everywhere else the tab grows with its content and the page scrolls, because a scroll box
+ * clips: the cards inside one had their shadows cut off square at all four edges, which reads
+ * as a drawing fault rather than as a scrolling region. The screen is exactly a window tall
+ * for the same reason and under the same condition — `WxMain` keeps a screen with an action
+ * bar at least that tall anyway, which is what holds the bar at the bottom of a short tab.
+ */
+.wx-page-editor:has(.wx-tab:not([hidden]) .wx-blocks-host.is-fill) {
+  height: var(--wx-fill-height);
+}
+
+.wx-page-editor__screen :deep(.wx-tab:not([hidden]):has(.wx-blocks-host.is-fill)) {
   overflow: auto;
 }
 
@@ -638,11 +635,5 @@ onBeforeRouteLeave(async () => {
   flex-direction: column;
   flex: 1;
   min-height: 0;
-}
-
-@container (max-width: 640px) {
-  .wx-page-editor__actions {
-    width: 100%;
-  }
 }
 </style>

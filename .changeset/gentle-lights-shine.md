@@ -23,12 +23,19 @@ from its field when the form is saved, and the logo in the corner changes with
 it: `AdminContext` gained `refreshManifest()`, which fetches a new manifest
 without the panel passing through `loading`.
 
-**`WxActionBar`.** The shadow rises instead of being cut off underneath by the
-strip the bar paints in the gap below it. New token: `--wx-shadow-bar`.
+**`WxActionBar`.** The strip of body colour the bar painted in the gap below it
+is gone: it erased the part of the bar's own shadow that fell there, and a
+descendant is always on top of its ancestor's shadow. What shows through the gap
+instead is a sliver of the page still moving, which is what a bar floating over
+a scrolling page looks like.
 
 **Editors.** `WxBackButton` and `WxRenameButton` in `@webx-ui/module-admin`: a
 way out of a screen that opens one record, and renaming as an act rather than as
 typing into what looks like a heading. Both editors use them.
+
+**Tabs that hold a form.** Only the tab holding the constructor is a box of a fixed height
+with its own scrollbar; the others grow with their content and the page scrolls. A scroll box
+clips, and the cards inside one had their shadows cut off square at all four edges.
 
 **The constructor.** The preview is a picture of the page rather than the page:
 nothing in it navigates or submits, a click opens the block it landed in, the
@@ -41,6 +48,11 @@ files — and `module-blocks` hands the identical page to an agent at
 
 **The library.** A file can be downloaded from its card: `WxFileCard` takes
 `download-url`.
+
+**Smaller things.** A dialog puts air between whatever its body was given, so three stacked
+fields are not one block of controls. `WxSkeleton` is `border-box`, so a loader given padding
+no longer stands wider than the card it is in. And there is a guide to
+[languages](https://webx-ui.github.io/webx-ui/guide/languages).
 
 **Yourself.** `PUT auth/me` and the profile dialog behind the corner menu: your
 name, your photograph, your password — the last of those only with the current

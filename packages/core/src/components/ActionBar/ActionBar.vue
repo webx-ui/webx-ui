@@ -70,37 +70,23 @@ const classes = computed(() => [
 }
 
 /*
- * The shadow rises rather than surrounds, and it is the strip below that makes that the only
- * option: an element's outer shadow is painted with its background, before any of its
- * descendants, so a pseudo-element laid under the bar erases the part of the shadow that falls
- * there — measured, a flat 8px band gone and a stub of it left showing at each bottom corner.
- * No stacking order fixes that; a descendant is always on top of its ancestor's shadow.
+ * A floating card, and it casts the shadow of one, all the way round.
  *
- * Which is fair enough: a bar standing at the bottom edge of the window is lifted off what it
- * covers, and that is above it. The token's offset clears its own blur, so nothing of it falls
- * below the bar to be cut off.
+ * It used to paint a strip of the body colour in the gap it keeps above the bottom of the
+ * window, so that the page scrolling past did not show through. That strip is gone. An
+ * element's outer shadow is painted with its background, before any of its descendants, so a
+ * pseudo-element under the bar erased the part of the shadow that fell there — a flat band
+ * with a stub of it left showing at each corner — and no stacking order fixes that, because a
+ * descendant is always on top of its ancestor's shadow.
+ *
+ * What is seen through the gap instead is a sliver of the page still moving, which is honest:
+ * the bar is floating over a page that scrolls, and that is what it looks like.
  */
 .wx-action-bar--sticky {
   position: sticky;
   bottom: var(--wx-action-bar-bottom, 0px);
   z-index: var(--wx-z-index-sticky);
-  box-shadow: var(--wx-shadow-bar);
-}
-
-/*
- * The strip between the bar and the bottom edge of the window. A shell that insets its
- * column stops the bar short of the edge, and without this the page scrolling past shows
- * through the gap — a sliver of moving text under a bar that is standing still. Where the
- * bar has settled into the flow the strip is the shell's own padding, which is this colour
- * already, so it is only ever visible while the bar is stuck.
- */
-.wx-action-bar--sticky::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  top: 100%;
-  height: var(--wx-action-bar-bottom, 0px);
-  background: var(--wx-bg-body);
+  box-shadow: var(--wx-shadow-card);
 }
 
 /* The left side is whatever the screen says about the state of the work — saved, a draft,

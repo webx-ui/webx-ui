@@ -81,7 +81,14 @@ const lines = computed(() => Math.max(0, props.rows))
 </template>
 
 <style scoped>
+/*
+ * `border-box`, because `width: 100%` and a padding the caller adds are otherwise the width of
+ * the parent *plus* that padding — measured, a loader 23px wider than the card it was standing
+ * in, hanging over both of its rounded corners. A skeleton stands where the content it stands
+ * in for would, and that content is usually inset.
+ */
 .wx-skeleton {
+  box-sizing: border-box;
   width: 100%;
 }
 
