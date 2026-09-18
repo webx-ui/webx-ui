@@ -24,6 +24,7 @@ export { adminMessages } from './messages'
 export { renderMarkdown } from './markdown'
 export { createDates, useDates, type DateLike, type Dates } from './dates'
 export { errorText, useErrorText } from './errors'
+export { createNotesApi, type EntityNote, type NoteAuthor, type NotesApi } from './notes'
 export {
   createHttp,
   readCookie,
@@ -53,3 +54,4 @@ export { default as WxBackButton } from './BackButton.vue'
 export { default as WxRenameButton } from './RenameButton.vue'
 export { default as WxHelpButton } from './HelpButton.vue'
 export { default as WxDate } from './DateText.vue'
+export { default as WxNotes } from './NotesFeed.vue'
