@@ -148,7 +148,7 @@ passed, which reads as a form that simply does not work.
 
 ## Antispam
 
-Four layers, in the order they run:
+Five layers, in the order they run:
 
 | Layer            | What                                              | Refusal                       |
 | ---------------- | ------------------------------------------------- | ----------------------------- |
@@ -204,6 +204,39 @@ The letter is a published view:
 ```bash
 php artisan vendor:publish --tag=webx-inbox-views
 ```
+
+## For an agent
+
+The section is also six MCP tools, served by `webx-ui/mcp` at `/api/cms/mcp` under the scopes
+`inbox:read` and `inbox:write`:
+
+| Tool               | What it does                                                             |
+| ------------------ | ------------------------------------------------------------------------ |
+| `inbox_forms_list` | Every form: slug, title, whether it is on, how much is waiting           |
+| `inbox_form_get`   | One form with its questions — the shape the public door expects          |
+| `inbox_form_save`  | Create or change a form and its fields in one call                       |
+| `inbox_list`       | The submissions of a form: status, unread, assignee, dates, search       |
+| `inbox_get`        | One submission: the answers, the files, the metadata, the notes, the log |
+| `inbox_set_status` | The status, the assignee and a note, in one call                         |
+
+They go through the same rules the panel's editor does, so a slug that is not an address is
+refused here too, and everything that changes something takes `dry_run: true`.
+
+Receiving a submission is not a tool: the intake is a public door with the antispam in front of
+it, and a second way in that skipped both would be the one somebody points at a mailing list.
+Deleting one is not a tool either — that is `webx:inbox:prune`, below.
+
+## Keeping submissions
+
+```bash
+php artisan webx:inbox:prune                        # the ages from the config
+php artisan webx:inbox:prune --days=365 --dry-run   # count what would go, delete nothing
+```
+
+Two ages, because they are two decisions: spam is rubbish and goes after a month, a real enquiry
+is a record of a conversation and goes only when a site has said how long it keeps one. Zero means
+never, and `days` is zero by default. Rows go one at a time through the model, so the files on the
+disk go with them.
 
 ## Configuration
 

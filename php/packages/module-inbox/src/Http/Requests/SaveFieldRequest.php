@@ -5,23 +5,16 @@ declare(strict_types=1);
 namespace WebxUi\Inbox\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
-use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
-use WebxUi\Inbox\Panel\FieldOptions;
+use WebxUi\Inbox\Panel\FieldInput;
 
 /**
  * One question of a form, as the dialog saves it.
  *
- * The machine name is the part with rules behind it (§2.6). It has to survive being written
- * into HTML as `fields[name]` and read back out as `fields.name`, which is why a dot is
- * refused: a name with one in it would make the validator of the intake look for a nested
- * array and report the error under a key nothing on the page has.
- *
- * It also has to be unique — among the live fields of this form only. A deleted field keeps
- * its name in the table so that the answers pointing at it still read (§2.3), and a name
- * reserved for ever by a field nobody can see is a name whose owner cannot be found.
+ * The rules and the row are {@see FieldInput} — an agent writes fields through the same pair
+ * (§14), and a name refused in the panel has to be refused there too. What stays here is
+ * which form and which field the address named.
  */
 final class SaveFieldRequest extends FormRequest
 {
@@ -30,27 +23,9 @@ final class SaveFieldRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'name' => [
-                'nullable',
-                'string',
-                'max:64',
-                'regex:/^[a-z][a-z0-9_-]*$/i',
-                Rule::unique('inbox_form_fields', 'name')
-                    ->where('form_id', $this->formId())
-                    ->whereNull('deleted_at')
-                    ->ignore($this->field()?->getKey()),
-            ],
-            'type' => ['required', Rule::enum(FieldType::class)],
-            'title' => ['required'],
-            'placeholder' => ['nullable'],
-            'help' => ['nullable'],
-            'options' => ['nullable', 'array'],
-            'is_enabled' => ['nullable', 'boolean'],
-            'is_required' => ['nullable', 'boolean'],
-            'is_fullsize' => ['nullable', 'boolean'],
-            'in_table' => ['nullable', 'boolean'],
-        ];
+        $field = $this->field();
+
+        return FieldInput::rules($this->formId(), $field === null ? null : (int) $field->getKey());
     }
 
     /**
@@ -58,7 +33,7 @@ final class SaveFieldRequest extends FormRequest
      */
     public function messages(): array
     {
-        return ['name.regex' => (string) trans('webx-inbox::errors.field-name-shape')];
+        return FieldInput::messages();
     }
 
     /**
@@ -66,36 +41,7 @@ final class SaveFieldRequest extends FormRequest
      */
     public function values(): array
     {
-        $type = FieldType::from((string) $this->string('type'));
-        $name = trim((string) $this->string('name'));
-        $options = $this->input('options');
-
-        return [
-            'name' => $name === '' ? null : $name,
-            'type' => $type,
-            'title' => $this->words('title'),
-            'placeholder' => $this->words('placeholder'),
-            'help' => $this->words('help'),
-            'options' => FieldOptions::clean($type, is_array($options) ? $options : []),
-            'is_enabled' => $this->boolean('is_enabled', true),
-            'is_required' => $this->boolean('is_required'),
-            // Most fields take the whole line, and a form of half-width fields is the rarer
-            // thing to ask for; the default matches the column of the migration.
-            'is_fullsize' => $this->boolean('is_fullsize', true),
-            'in_table' => $this->boolean('in_table'),
-        ];
-    }
-
-    /**
-     * A language map as the panel edits it, or one line for a caller that sent one.
-     *
-     * @return array<string, mixed>|string
-     */
-    private function words(string $key): array|string
-    {
-        $value = $this->input($key);
-
-        return is_array($value) ? $value : (string) $value;
+        return FieldInput::values($this->all());
     }
 
     private function formId(): ?int

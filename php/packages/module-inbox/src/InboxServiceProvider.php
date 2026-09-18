@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Notes\NoteTypes;
+use WebxUi\Inbox\Console\PruneSubmissionsCommand;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Panel\InboxModule;
 use WebxUi\Inbox\Rendering\Assets;
@@ -57,6 +58,10 @@ class InboxServiceProvider extends ServiceProvider
         if (! $this->app->runningInConsole()) {
             return;
         }
+
+        // Not something a schedule is given by default (§15): what it forgets is a visitor's
+        // enquiry, and the site says how long it keeps one before anything is forgotten.
+        $this->commands([PruneSubmissionsCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-inbox.php' => config_path('webx-inbox.php'),
