@@ -1,6 +1,7 @@
 import { computed, createApp, h, ref, type App, type Component } from 'vue'
 import { createRouter, createWebHistory, type Router, type RouteRecordRaw } from 'vue-router'
 import { localesKey, WebxUI, type LocaleOption } from '@webx-ui/core'
+import AdminLanding from './AdminLanding.vue'
 import AdminNav from './AdminNav.vue'
 import AdminShell from './AdminShell.vue'
 import { createAdminContext, provideAdmin, type AdminContext } from './admin'
@@ -97,6 +98,19 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
 
   for (const module of modules) {
     routes.push(...(module.routes ?? []))
+  }
+
+  // The root, unless the panel brought its own — a project with a dashboard has already
+  // answered this question and should not be overruled.
+  if (!routes.some((route) => route.path === '/')) {
+    const landing = modules.find((module) => module.landing === true)
+
+    routes.push({
+      path: '/',
+      name: 'webx.home',
+      component: AdminLanding,
+      props: { landing: landing?.path ?? landing?.routes?.[0]?.path ?? null },
+    })
   }
 
   const router = createRouter({
