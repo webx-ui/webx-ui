@@ -77,6 +77,22 @@ describe('WxDrawer', () => {
     expect(panel()?.style.getPropertyValue('--wx-drawer-size')).toBe('40%')
   })
 
+  /*
+   * What the class stands for happens in a media query, which jsdom does not lay out — the
+   * test is that the panel asks for it, and the browser is where it is seen.
+   */
+  it('can be told to keep its size on a narrow screen', async () => {
+    const wrapper = factory({ open: true, side: 'left' })
+    await nextTick()
+
+    expect(panel()?.classList.contains('wx-drawer--contained')).toBe(false)
+
+    await wrapper.setProps({ fullScreen: false })
+    await nextTick()
+
+    expect(panel()?.classList.contains('wx-drawer--contained')).toBe(true)
+  })
+
   it('keeps the heading and the buttons out of the scrolling part', async () => {
     factory(
       { open: true, title: 'Order' },

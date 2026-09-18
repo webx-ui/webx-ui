@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, inject, ref, watch } from 'vue'
+import { computed, inject, ref, watch, type Component } from 'vue'
 import { useAdmin, useI18n, useTranslate } from '@webx-ui/module-admin'
-import { avatarResolverKey, useAuth, type AvatarResolver } from './session'
+import { createModal } from '@webx-ui/core'
+import ProfileDialog from './ProfileDialog.vue'
+import { avatarFieldKey, avatarResolverKey, useAuth, type AvatarResolver } from './session'
 
 /**
  * The corner of the header: who this is, which language they read the panel in, and the way
@@ -16,8 +18,18 @@ const props = withDefaults(
     signOutLabel?: string
     /** Overrides the resolver `auth()` was given. Without either, initials. */
     resolveAvatar?: AvatarResolver
+    /**
+     * The field to pick a photograph with, handed down from the plugin. Without one the
+     * profile still opens — a panel with no library edits everything else about a person.
+     */
+    avatarField?: Component
+    /**
+     * There is room beside the face for a name. The shell says so: the foot of an open
+     * sidebar and the foot of the drawer have it, the icon rail and a phone's bar do not.
+     */
+    expanded?: boolean
   }>(),
-  { signOutLabel: undefined, resolveAvatar: undefined },
+  { signOutLabel: undefined, resolveAvatar: undefined, avatarField: undefined, expanded: false },
 )
 
 const admin = useAdmin()
@@ -33,6 +45,7 @@ const languages = computed(() =>
 )
 
 const provided = inject(avatarResolverKey, null)
+const providedField = inject(avatarFieldKey, null)
 const avatarUrl = ref<string | undefined>(undefined)
 
 /*
@@ -62,6 +75,20 @@ watch(
   { immediate: true },
 )
 
+/*
+ * Opened from a menu, which is itself a dismissable layer: Reka builds the dialog's own layer
+ * in the middle of handling this very click, then sees the click end outside it and treats
+ * that as a click away. So it opens on the next turn of the loop instead.
+ */
+const editProfile = createModal<true, { avatarField?: Component }>(ProfileDialog)
+
+function openProfile(): void {
+  setTimeout(
+    () => void editProfile({ avatarField: props.avatarField ?? providedField ?? undefined }),
+    0,
+  )
+}
+
 async function choose(code: string): Promise<void> {
   if (code === i18n.state.locale) {
     return
@@ -79,13 +106,30 @@ async function choose(code: string): Promise<void> {
       signed in.
     -->
     <template #trigger>
-      <button type="button" class="wx-user-menu__trigger" :title="user.name">
+      <button
+        type="button"
+        class="wx-user-menu__trigger"
+        :class="{ 'wx-user-menu__trigger--named': expanded }"
+        :title="user.name"
+      >
         <wx-avatar :name="user.name" :src="avatarUrl" size="lg" />
+
+        <!--
+          Initials are a way of telling two people apart, not of saying who somebody is. Where
+          the corner is wide enough, it says it.
+        -->
+        <span v-if="expanded" class="wx-user-menu__name">{{ user.name }}</span>
       </button>
     </template>
 
     <wx-dropdown-item disabled>
       <wx-text size="sm">{{ user.email }}</wx-text>
+    </wx-dropdown-item>
+
+    <wx-divider spacing="sm" />
+
+    <wx-dropdown-item icon="user" @click="openProfile">
+      {{ t('profile.menu') }}
     </wx-dropdown-item>
 
     <template v-if="languages.length > 0">
@@ -136,5 +180,36 @@ async function choose(code: string): Promise<void> {
 .wx-user-menu__trigger:focus-visible {
   outline: 2px solid var(--wx-border-focus);
   outline-offset: 2px;
+}
+
+/*
+ * With a name beside it the button is a row rather than a circle, so it takes the width it is
+ * given and rounds like the menu items above it instead of like the picture inside it.
+ */
+.wx-user-menu__trigger--named {
+  align-items: center;
+  gap: var(--wx-space-8);
+  width: 100%;
+  min-width: 0;
+  padding: var(--wx-space-4);
+  border-radius: var(--wx-radius-control);
+  text-align: start;
+}
+
+.wx-user-menu__trigger--named:hover {
+  opacity: 1;
+  background: var(--wx-bg-subtle);
+}
+
+.wx-user-menu__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wx-text-default);
+  font-family: var(--wx-font-family-sans);
+  font-size: var(--wx-font-size-sm);
+  font-weight: var(--wx-font-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

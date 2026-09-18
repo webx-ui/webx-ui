@@ -28,6 +28,7 @@ function panel(user: AdminUser): AdminContext {
     loadScreen: () => Promise.resolve([]),
     screenPatch: () => [],
     reload: () => Promise.resolve(),
+    refreshManifest: () => Promise.resolve(),
     setLocale: () => Promise.resolve(),
     setUser() {},
     useSessionLoader() {},
@@ -40,12 +41,14 @@ const session: AuthSession = {
   login: () => Promise.reject(new Error('not stubbed')),
   logout: () => Promise.resolve(),
   setLocale: () => Promise.resolve(),
+  updateProfile: () => Promise.reject(new Error('not stubbed')),
 }
 
-function draw(user: AdminUser, resolve: AvatarResolver | null) {
+function draw(user: AdminUser, resolve: AvatarResolver | null, expanded = false) {
   const admin = panel(user)
 
   return mount(UserMenu, {
+    props: { expanded },
     global: {
       plugins: [WebxUI],
       provide: {
@@ -87,5 +90,14 @@ describe('WxUserMenu', () => {
 
     expect(wrapper.find('.wx-avatar img').exists()).toBe(false)
     expect(wrapper.text()).toContain('AL')
+  })
+
+  /* Initials tell two people apart; a name says who somebody is. The shell says which fits. */
+  it('says the name where the shell reports room for it', async () => {
+    expect(draw(alexx, null).find('.wx-user-menu__name').exists()).toBe(false)
+
+    const wide = draw(alexx, null, true)
+
+    expect(wide.find('.wx-user-menu__name').text()).toBe('Alexx')
   })
 })

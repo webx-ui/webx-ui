@@ -43,6 +43,7 @@ export const mediaMessages: Record<string, Messages> = {
     folders: 'Folders',
     edit: 'Edit',
     'copy-link': 'Copy the link',
+    download: 'Download',
     'link-copied': 'Link copied',
     'status-files': 'Files: :count',
     'status-selected': 'selected: :count',

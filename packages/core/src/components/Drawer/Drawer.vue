@@ -35,6 +35,7 @@ const props = withDefaults(defineProps<DrawerProps>(), {
   closeOnEscape: true,
   overlay: true,
   modal: true,
+  fullScreen: true,
   resizable: false,
   persist: undefined,
   ariaLabel: undefined,
@@ -269,7 +270,11 @@ defineExpose({ close, reset })
         class="wx-drawer"
         :class="[
           `wx-drawer--${side}`,
-          { 'wx-drawer--resizing': resizing, 'wx-drawer--split': hasSidebar },
+          {
+            'wx-drawer--resizing': resizing,
+            'wx-drawer--split': hasSidebar,
+            'wx-drawer--contained': !fullScreen,
+          },
         ]"
         :style="panelVars"
         :aria-describedby="undefined"
@@ -608,10 +613,23 @@ defineExpose({ close, reset })
     --wx-drawer-pad-x: var(--wx-space-12);
     --wx-drawer-pad-y: var(--wx-space-10);
     --wx-drawer-body-pad: var(--wx-space-12);
+  }
+
+  /* All but a panel that asked to keep its declared size — see `fullScreen`. */
+  .wx-drawer:not(.wx-drawer--contained) {
     inset: 0;
     width: 100%;
     height: 100dvh;
     border: none;
+  }
+
+  /*
+   * A contained panel is still bound by the screen it is on: whatever it was told to be,
+   * it leaves a strip of the page showing, so that what it covers is obviously still there.
+   */
+  .wx-drawer--contained.wx-drawer--left,
+  .wx-drawer--contained.wx-drawer--right {
+    width: min(var(--wx-drawer-size, 380px), 82%);
   }
 
   .wx-drawer__head {

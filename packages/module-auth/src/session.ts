@@ -1,4 +1,4 @@
-import { inject, type App, type InjectionKey } from 'vue'
+import { inject, type App, type Component, type InjectionKey } from 'vue'
 import type { AdminContext, AdminUser } from '@webx-ui/module-admin'
 
 export interface Credentials {
@@ -21,6 +21,23 @@ export interface AuthSession {
    * the label above it.
    */
   setLocale(code: string): Promise<void>
+  /**
+   * Change what is yours to change about yourself: your name, your photograph, your password.
+   *
+   * Not the administrators endpoint. That one is behind `admins.manage`, which is a permission
+   * about other people — an editor who may not manage anybody still has a name to spell and
+   * a password to rotate.
+   */
+  updateProfile(profile: ProfileInput): Promise<AdminUser>
+}
+
+/** What somebody may send about themselves. A blank password is "leave it alone". */
+export interface ProfileInput {
+  name: string
+  avatar: string | null
+  password?: string
+  /** Required by the server whenever `password` is filled in. */
+  current_password?: string
 }
 
 export const authKey: InjectionKey<AuthSession> = Symbol('webx-auth')
@@ -85,6 +102,19 @@ export function createAuthSession(admin: AdminContext): AuthSession {
       await admin.setLocale(code)
     },
 
+    async updateProfile(profile) {
+      const body = await admin.http.put<{ data: AdminUser }>(
+        `${base}/me`,
+        profile as unknown as Record<string, unknown>,
+      )
+
+      // The corner of the panel is drawn from this, so the new name and the new photograph
+      // are on screen before the dialog has finished closing.
+      admin.setUser(body.data)
+
+      return body.data
+    },
+
     async logout() {
       try {
         await admin.http.post(`${base}/logout`)
@@ -109,13 +139,24 @@ export type AvatarResolver = (key: string) => Promise<string | null>
  */
 export const avatarResolverKey: InjectionKey<AvatarResolver | null> = Symbol('webx-auth-avatar')
 
+/**
+ * The field the panel picks photographs with, for the profile dialog behind the corner menu.
+ *
+ * Provided rather than passed: the shell renders the user menu itself, and a component it
+ * builds is not a place to hand a component down through. Null in a panel with no library —
+ * the profile still opens, with everything but the photograph.
+ */
+export const avatarFieldKey: InjectionKey<Component | null> = Symbol('webx-auth-avatar-field')
+
 export function provideAuth(
   app: App,
   session: AuthSession,
   resolveAvatar: AvatarResolver | null = null,
+  avatarField: Component | null = null,
 ): void {
   app.provide(authKey, session)
   app.provide(avatarResolverKey, resolveAvatar)
+  app.provide(avatarFieldKey, avatarField)
 }
 
 function isUnauthenticated(error: unknown): boolean {

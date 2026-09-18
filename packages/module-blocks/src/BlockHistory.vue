@@ -61,7 +61,8 @@ watch(
 
 <template>
   <div class="wx-block-history">
-    <wx-skeleton v-if="versions === null" :rows="3" />
+    <!-- Where a row would stand: see the same note on the pages history. -->
+    <wx-skeleton v-if="versions === null" class="wx-block-history__ghost" :rows="3" />
     <div v-for="version in versions" v-else :key="version.number" class="wx-block-history__row">
       <code class="wx-block-history__number">{{
         t('page.version', { number: version.number })
@@ -96,6 +97,10 @@ watch(
 .wx-block-history {
   display: flex;
   flex-direction: column;
+}
+
+.wx-block-history__ghost {
+  padding: var(--wx-space-10) var(--wx-space-12);
 }
 
 .wx-block-history__row {

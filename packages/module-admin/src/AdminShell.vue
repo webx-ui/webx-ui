@@ -100,8 +100,9 @@ const size = computed(() => shellLayoutFor(width.value, null))
           <wx-text v-else weight="semibold" truncate>{{ title }}</wx-text>
         </slot>
 
+        <!-- The corner of a phone's bar has room for a face and nothing else. -->
         <template #end>
-          <slot name="user" />
+          <slot name="user" :expanded="false" />
         </template>
       </wx-header>
 
@@ -150,9 +151,14 @@ const size = computed(() => shellLayoutFor(width.value, null))
 
         <slot name="nav" :collapsed="collapsed" />
 
+        <!--
+          The zone at the foot of the sidebar is as wide as the sidebar, so an open one has
+          room to say who this is rather than only show them. The rail does not, and there
+          the face is the whole of it.
+        -->
         <template #bottom>
           <div class="wx-admin__user">
-            <slot name="user" />
+            <slot name="user" :expanded="!collapsed" />
           </div>
         </template>
       </wx-aside>
@@ -162,19 +168,26 @@ const size = computed(() => shellLayoutFor(width.value, null))
       </wx-main>
     </wx-container>
 
-    <!-- The same three zones the sidebar has, in the one place a phone can put them. -->
+    <!--
+      The same three zones the sidebar has, in the one place a phone can put them.
+
+      Not full-screen, which is what a drawer does on a narrow screen by default: this one is
+      a menu, and a menu that covers the page reads as having navigated away from it. Kept to
+      its width, the page it came from stays visible behind.
+    -->
     <wx-drawer
       v-model:open="drawerOpen"
       :title="title === '' ? t('nav.menu') : title"
       side="left"
       :size="260"
+      :full-screen="false"
       closable
     >
       <slot name="nav" :collapsed="false" :select="close" />
 
       <template #footer>
         <div class="wx-admin__user wx-admin__user--drawer">
-          <slot name="user" />
+          <slot name="user" :expanded="true" />
         </div>
       </template>
     </wx-drawer>
@@ -260,6 +273,19 @@ const size = computed(() => shellLayoutFor(width.value, null))
 .wx-admin__title {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/*
+ * The button for collapsing the sidebar stands at the far end of the brand row, against the
+ * edge the sidebar closes towards. A title gets it there by growing into the space; a logo
+ * is only as wide as its file, so the space has to be given to it explicitly.
+ *
+ * Only in this row: the phone's bar puts the account at its far end by the same means, and a
+ * second automatic margin there would share the space between them and leave the logo adrift
+ * in the middle.
+ */
+.wx-admin__brand > .wx-admin__logo {
+  margin-inline-end: auto;
 }
 
 /*
@@ -352,5 +378,27 @@ const size = computed(() => shellLayoutFor(width.value, null))
 html:has(> body > #webx-app),
 body:has(> #webx-app) {
   margin: 0;
+}
+
+/*
+ * A phone's icon buttons are one size down from a desktop's. On a card list the `···` at the
+ * corner of every record was drawn at the same 36px as on a 1440px screen, where it is one
+ * item among many — here it is the second thing on the card after its title.
+ *
+ * Set on the buttons themselves rather than on the shell: `.wx-action--md` declares this
+ * variable on its own element, and a value inherited from an ancestor never beats one
+ * declared on the element that reads it, however far up the ancestor is. Unscoped for the
+ * same reason — the buttons belong to other components, and a scoped rule carries an
+ * attribute only this one's elements have.
+ *
+ * The shell's own size class rather than a media query: it is the panel's width that decides
+ * everything else here, and a panel is not always the window.
+ */
+.wx-admin--drawer .wx-action--md {
+  --wx-action-size: 30px;
+}
+
+.wx-admin--drawer .wx-action--lg {
+  --wx-action-size: 36px;
 }
 </style>

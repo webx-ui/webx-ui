@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
+import {
+  useAdmin,
+  useErrorText,
+  useTranslate,
+  WxBackButton,
+  WxHelpButton,
+  WxRenameButton,
+} from '@webx-ui/module-admin'
 import {
   confirm,
   toast,
@@ -428,14 +435,23 @@ watch(id, () => void load())
 
     <template v-else>
       <div class="wx-block-editor__head">
+        <!--
+          The way out, said with a control rather than with a line of small grey type — and
+          renaming with a control rather than by typing into what looks like a heading. Both
+          are the panel's, not this editor's: every screen that opens one record needs them.
+        -->
+        <wx-back-button class="wx-block-editor__back" :to="base" :label="t('page.back')" />
+
         <div class="wx-block-editor__id">
-          <router-link :to="base" class="wx-block-editor__back">‹ {{ t('page.back') }}</router-link>
-          <input
-            v-model="settings.title"
-            class="wx-block-editor__title"
-            :aria-label="t('page.title')"
-            :disabled="!canManage"
-          />
+          <div class="wx-block-editor__name">
+            <h1 class="wx-block-editor__title">{{ settings.title }}</h1>
+            <wx-rename-button
+              v-if="canManage"
+              :name="settings.title"
+              :placeholder="t('page.title')"
+              @rename="(name: string) => (settings.title = name)"
+            />
+          </div>
           <wx-text size="sm" tone="muted">
             <code>{{ settings.slug }}</code>
             · {{ groupLabel(settings.group, t) }} ·
@@ -566,6 +582,11 @@ watch(id, () => void load())
                     errorOf('content.schema')
                   }}</wx-text>
                   <wx-text v-else size="sm" tone="muted">{{ t('page.fields-help') }}</wx-text>
+
+                  <!-- The whole of what a schema is, in the one place somebody writing one is
+                       looking. The same page an agent is handed over MCP, from the same
+                       `help.schema` line, so that the two cannot drift apart. -->
+                  <wx-help-button :title="t('help.schema-title')" :body="t('help.schema')" />
                 </div>
               </div>
             </wx-tab>
@@ -788,27 +809,29 @@ watch(id, () => void load())
   min-width: 0;
 }
 
+/* Level with the name rather than with the middle of the whole block of text under it. */
 .wx-block-editor__back {
-  font-size: var(--wx-font-size-sm);
-  color: var(--wx-text-muted);
-  text-decoration: none;
+  flex: none;
+  margin-block-start: var(--wx-space-2);
+}
+
+.wx-block-editor__name {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-8);
+  min-width: 0;
 }
 
 .wx-block-editor__title {
-  width: 100%;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wx-text-default);
   font-size: var(--wx-font-size-xl);
   font-weight: var(--wx-font-weight-bold);
-}
-
-.wx-block-editor__title:focus-visible {
-  outline: 2px solid var(--wx-color-primary);
-  outline-offset: 2px;
-  border-radius: var(--wx-radius-xs);
+  line-height: var(--wx-font-line-height-tight);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .wx-block-editor__actions {
@@ -872,12 +895,18 @@ watch(id, () => void load())
   border-color: var(--wx-color-primary);
 }
 
+/* A row: what the editor is being told, and the `?` that tells it at length, at the end. */
 .wx-block-editor__note {
   display: flex;
-  flex-direction: column;
-  gap: var(--wx-space-4);
+  align-items: center;
+  gap: var(--wx-space-8);
   padding: var(--wx-space-8) var(--wx-space-12);
-  border-block-start: 1px solid var(--wx-color-border-muted, var(--wx-border-default));
+  border-block-start: 1px solid var(--wx-border-muted);
+}
+
+.wx-block-editor__note > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 /* The settings and the history sit on a card, the way the side column does: the code tabs
