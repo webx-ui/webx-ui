@@ -157,6 +157,7 @@ export const inboxMessages: Record<string, Messages> = {
     download: 'Download',
     'no-files-by-hand':
       'A file cannot be attached by hand: the files a submission carries are what was posted with it.',
+    'submissions-none': 'Nothing here under this filter.',
   },
 
   fields: {

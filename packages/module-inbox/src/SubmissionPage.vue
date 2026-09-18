@@ -232,13 +232,27 @@ function go(to: number | null): void {
   void router.push({ path: `${props.base}/submissions/${to}`, query: { ...route.query } })
 }
 
+/**
+ * A status the log names, in the words the panel calls it by.
+ *
+ * The log stores the key on purpose — read months later, the row it pointed at may have been
+ * renamed or deleted, and history must not be rewritten by either. So the key is translated
+ * where the panel still has that status, and shown as it stands where it does not: `spam` is
+ * a poorer line than "Спам", and an invented one would be worse than both.
+ */
+function statusName(key: string): string {
+  const status = statuses.value.find((one) => one.key === key)
+
+  return status === undefined ? key : name(status)
+}
+
 /** One line of the log, in words rather than as a pair of columns. */
 function line(event: SubmissionEvent): string {
   switch (event.type) {
     case 'created':
       return t('panel.event-created')
     case 'status':
-      return t('panel.event-status', { to: event.to ?? '' })
+      return t('panel.event-status', { to: statusName(event.to ?? '') })
     case 'assignee':
       return event.to === null || event.to === ''
         ? t('panel.event-unassigned')
@@ -434,11 +448,15 @@ const details = computed(() => {
         <wx-card :title="t('panel.log')">
           <wx-timeline size="sm">
             <wx-timeline-item v-for="event in submission.events" :key="event.id">
-              <wx-text size="sm">{{ line(event) }}</wx-text>
-              <wx-text size="sm" tone="muted">
-                {{ event.author?.name ?? t('panel.system') }}
-              </wx-text>
-              <wx-date :value="event.created_at" />
+              <!-- What happened on one line and who did it when on the next: three inline
+                   pieces in a row run into each other, and a log is read down. -->
+              <wx-text size="sm" as="p" class="wx-submission__event">{{ line(event) }}</wx-text>
+              <p class="wx-submission__by">
+                <wx-text size="sm" tone="muted">
+                  {{ event.author?.name ?? t('panel.system') }}
+                </wx-text>
+                <wx-date :value="event.created_at" />
+              </p>
             </wx-timeline-item>
           </wx-timeline>
         </wx-card>
@@ -511,6 +529,18 @@ const details = computed(() => {
 
 .wx-submission__detail {
   overflow-wrap: anywhere;
+}
+
+.wx-submission__event {
+  margin: 0;
+}
+
+.wx-submission__by {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wx-space-6);
+  flex-wrap: wrap;
+  margin: 0;
 }
 
 .wx-submission__files {

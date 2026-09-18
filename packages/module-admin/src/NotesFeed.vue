@@ -235,6 +235,9 @@ function who(note: EntityNote): string {
   flex-direction: column;
   gap: var(--wx-space-12);
   min-width: 0;
+  /* The feed decides its own layout from its own width and not the window's: it hangs in a
+     card beside other cards, and the window knows nothing about how wide that is. */
+  container-type: inline-size;
 }
 
 .wx-notes__list {
@@ -291,5 +294,15 @@ function who(note: EntityNote): string {
 .wx-notes__new > :first-child {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* Where the box and the button will not sit side by side without squeezing the box to three
+   words a line, the button goes under it. */
+@container (max-width: 440px) {
+  .wx-note__buttons,
+  .wx-notes__new {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 </style>

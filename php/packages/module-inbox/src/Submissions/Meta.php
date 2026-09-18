@@ -6,6 +6,7 @@ namespace WebxUi\Inbox\Submissions;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Http\Request;
+use WebxUi\Inbox\Models\Submission;
 
 /**
  * What was around the submission: the page, the language, the campaign, the address.
@@ -24,10 +25,18 @@ final class Meta
     public function __construct(private readonly Config $config) {}
 
     /**
+     * @param  string  $source  where the submission came from — see `Submission::SOURCE_*`
      * @return array<string, mixed>
      */
-    public function of(Request $request): array
+    public function of(Request $request, string $source = Submission::SOURCE_WEB): array
     {
+        // A submission typed in by hand has no visitor: the address, the browser and the page
+        // would be the administrator's own, and a card that showed them beside "how it
+        // arrived" would be answering a question nobody asked with somebody else's facts.
+        if ($source !== Submission::SOURCE_WEB) {
+            return array_filter(['locale' => app()->getLocale()]);
+        }
+
         return array_filter([
             'ip' => $this->ip($request),
             'user_agent' => mb_substr((string) $request->userAgent(), 0, 500),

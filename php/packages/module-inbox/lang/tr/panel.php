@@ -136,4 +136,5 @@ return [
     'no-answers' => 'Hiçbir şey doldurulmadı.',
     'download' => 'İndir',
     'no-files-by-hand' => 'Dosya elle eklenemez: ekler, kayıtla birlikte gelenlerdir.',
+    'submissions-none' => 'Bu süzgece uyan bir şey yok.',
 ];
