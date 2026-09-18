@@ -14,6 +14,8 @@ use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\InboxServiceProvider;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
+use WebxUi\Inbox\Models\Status;
+use WebxUi\Inbox\Models\Submission;
 use WebxUi\Localization\LocalizationServiceProvider;
 use WebxUi\Mcp\McpServiceProvider;
 
@@ -118,6 +120,32 @@ abstract class TestCase extends Orchestra
     protected function intake(string $slug = 'contact'): string
     {
         return '/'.trim((string) config('webx-inbox.path'), '/').'/'.$slug;
+    }
+
+    /** Where the panel asks (§12). */
+    protected function api(string $path): string
+    {
+        return '/api/cms/inbox/'.ltrim($path, '/');
+    }
+
+    /**
+     * A submission, made without going through the door.
+     *
+     * The intake is tested on its own; everything about the panel is about rows that are
+     * already there, and posting a form to make one would tie those tests to the antispam.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    protected function submission(Form $form, array $attributes = []): Submission
+    {
+        return Submission::query()->create([
+            'form_id' => $form->getKey(),
+            'status_id' => Status::default()?->getKey(),
+            'hash' => md5(uniqid('', true)),
+            'source' => Submission::SOURCE_WEB,
+            'meta' => [],
+            ...$attributes,
+        ]);
     }
 
     /**

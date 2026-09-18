@@ -8,4 +8,8 @@ return [
     'status-in-use' => 'Des soumissions sont encore au statut « :status » : il ne peut pas être supprimé.',
     'no-statuses' => 'Aucun statut à donner à une nouvelle soumission. Lancez les migrations.',
     'file-missing' => 'Ce fichier n\'est plus là.',
+
+    'slug-shape' => 'Une adresse s’écrit en minuscules, chiffres et traits d’union : « contact-us ».',
+    'field-name-shape' => 'Un nom commence par une lettre, puis lettres, chiffres, tirets et tirets bas.',
+    'recipient-shape' => 'Un destinataire est un administrateur ou une adresse e-mail.',
 ];

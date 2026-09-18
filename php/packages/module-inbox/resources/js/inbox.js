@@ -10,7 +10,7 @@
  * a site that never rebuilds anything still gets it; a site that would rather bundle it
  * publishes it (`webx-inbox-assets`) and switches `webx-inbox.script` off.
  */
-(function () {
+;(function () {
   'use strict'
 
   var FORMS = 'form[data-webx-form]'
@@ -158,23 +158,30 @@
 
     if (!box) return
 
-    box.textContent = message || box.getAttribute('data-webx-failed') || form.dataset.webxFailed || ''
+    box.textContent =
+      message || box.getAttribute('data-webx-failed') || form.dataset.webxFailed || ''
     box.hidden = box.textContent === ''
   }
 
   function clear(form) {
-    Array.prototype.forEach.call(form.querySelectorAll(HOOK.field + '.is-invalid'), function (wrapper) {
-      wrapper.classList.remove('is-invalid')
-    })
+    Array.prototype.forEach.call(
+      form.querySelectorAll(HOOK.field + '.is-invalid'),
+      function (wrapper) {
+        wrapper.classList.remove('is-invalid')
+      },
+    )
 
     Array.prototype.forEach.call(form.querySelectorAll('[aria-invalid]'), function (control) {
       control.removeAttribute('aria-invalid')
     })
 
-    Array.prototype.forEach.call(form.querySelectorAll(HOOK.error + ', ' + HOOK.formError), function (box) {
-      box.textContent = ''
-      box.hidden = true
-    })
+    Array.prototype.forEach.call(
+      form.querySelectorAll(HOOK.error + ', ' + HOOK.formError),
+      function (box) {
+        box.textContent = ''
+        box.hidden = true
+      },
+    )
 
     var message = form.querySelector(HOOK.message)
 
@@ -217,7 +224,7 @@
     try {
       if (provider === 'turnstile' && window.turnstile) window.turnstile.reset()
       if (provider === 'recaptcha' && window.grecaptcha) window.grecaptcha.reset()
-    } catch (error) {
+    } catch {
       // A provider that is not loaded yet, or one that has nothing to reset. Neither is worth
       // taking the submission down over.
     }
@@ -225,7 +232,9 @@
 
   /** A field name goes into a selector, and a machine name is not guaranteed to be tame. */
   function cssEscape(value) {
-    return window.CSS && window.CSS.escape ? window.CSS.escape(value) : value.replace(/["\\]/g, '\\$&')
+    return window.CSS && window.CSS.escape
+      ? window.CSS.escape(value)
+      : value.replace(/["\\]/g, '\\$&')
   }
 
   function scan(root) {

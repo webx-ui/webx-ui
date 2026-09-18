@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import { h } from 'vue'
 import { createAdmin } from './createAdmin'
 import type { Http } from './http'
@@ -287,5 +288,63 @@ describe('createAdmin', () => {
 
     expect(admin.i18n.state.locale).toBe('de')
     expect(admin.context.nav.value[0]?.title).toBe('Dateien')
+  })
+  it('opens on the section that claimed the root, and on the first one when none did', async () => {
+    // Nothing answered at '/' until now: the routes are the modules', and none of them was
+    // the front page. Signing in landed on a blank screen.
+    const section = (name: string) => ({ render: () => h('p', name) })
+
+    const listed: Manifest = {
+      ...manifest,
+      modules: [
+        { id: 'pages', title: 'Pages', icon: null, order: 0, permissions: [], meta: {} },
+        { id: 'inbox', title: 'Inbox', icon: null, order: 1, permissions: [], meta: {} },
+      ],
+    }
+
+    const http = stubHttp({
+      get: ((url: string) =>
+        Promise.resolve(url.includes('/manifest') ? { data: listed } : answer(url))) as never,
+    })
+
+    const pages = {
+      id: 'pages',
+      path: '/pages',
+      routes: [{ path: '/pages', component: section('pages') }],
+    }
+    const inbox = {
+      id: 'inbox',
+      path: '/inbox',
+      landing: true,
+      routes: [{ path: '/inbox', component: section('inbox') }],
+    }
+
+    const claimed = createAdmin({
+      el: mountPoint(),
+      basePath: '/cms',
+      http,
+      modules: [pages, inbox],
+    })
+
+    await claimed.mount()
+    await flushPromises()
+
+    expect(claimed.router.currentRoute.value.path).toBe('/inbox')
+
+    // Without a claim it is the first entry of the menu, which is the order the server gave.
+    document.body.innerHTML = ''
+    window.history.replaceState({}, '', '/cms')
+
+    const unclaimed = createAdmin({
+      el: mountPoint(),
+      basePath: '/cms',
+      http,
+      modules: [pages, { ...inbox, landing: false }],
+    })
+
+    await unclaimed.mount()
+    await flushPromises()
+
+    expect(unclaimed.router.currentRoute.value.path).toBe('/pages')
   })
 })
