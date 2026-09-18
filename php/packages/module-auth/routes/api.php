@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use WebxUi\Auth\Http\Controllers\AdminController;
 use WebxUi\Auth\Http\Controllers\MeController;
 use WebxUi\Auth\Http\Controllers\PanelLocaleController;
+use WebxUi\Auth\Http\Controllers\ProfileController;
 use WebxUi\Auth\Http\Controllers\RoleController;
 use WebxUi\Auth\Http\Controllers\SessionController;
 
@@ -23,6 +24,9 @@ Route::prefix((string) config('webx-admin.api_path').'/auth')
         Route::middleware('cms.auth')->group(function (): void {
             Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
             Route::get('me', MeController::class)->name('me');
+            // Yourself, and only the parts of yourself that are yours to change. Deliberately
+            // not behind 'admins.manage': that permission is about other people.
+            Route::put('me', ProfileController::class)->name('me.update');
             Route::put('locale', PanelLocaleController::class)->name('locale');
 
             // Reading the list is not managing it: a module that wants to show who wrote

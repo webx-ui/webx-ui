@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, inject, ref, watch } from 'vue'
+import { computed, inject, ref, watch, type Component } from 'vue'
 import { useAdmin, useI18n, useTranslate } from '@webx-ui/module-admin'
-import { avatarResolverKey, useAuth, type AvatarResolver } from './session'
+import { createModal } from '@webx-ui/core'
+import ProfileDialog from './ProfileDialog.vue'
+import { avatarFieldKey, avatarResolverKey, useAuth, type AvatarResolver } from './session'
 
 /**
  * The corner of the header: who this is, which language they read the panel in, and the way
@@ -17,12 +19,17 @@ const props = withDefaults(
     /** Overrides the resolver `auth()` was given. Without either, initials. */
     resolveAvatar?: AvatarResolver
     /**
+     * The field to pick a photograph with, handed down from the plugin. Without one the
+     * profile still opens — a panel with no library edits everything else about a person.
+     */
+    avatarField?: Component
+    /**
      * There is room beside the face for a name. The shell says so: the foot of an open
      * sidebar and the foot of the drawer have it, the icon rail and a phone's bar do not.
      */
     expanded?: boolean
   }>(),
-  { signOutLabel: undefined, resolveAvatar: undefined, expanded: false },
+  { signOutLabel: undefined, resolveAvatar: undefined, avatarField: undefined, expanded: false },
 )
 
 const admin = useAdmin()
@@ -38,6 +45,7 @@ const languages = computed(() =>
 )
 
 const provided = inject(avatarResolverKey, null)
+const providedField = inject(avatarFieldKey, null)
 const avatarUrl = ref<string | undefined>(undefined)
 
 /*
@@ -66,6 +74,20 @@ watch(
   },
   { immediate: true },
 )
+
+/*
+ * Opened from a menu, which is itself a dismissable layer: Reka builds the dialog's own layer
+ * in the middle of handling this very click, then sees the click end outside it and treats
+ * that as a click away. So it opens on the next turn of the loop instead.
+ */
+const editProfile = createModal<true, { avatarField?: Component }>(ProfileDialog)
+
+function openProfile(): void {
+  setTimeout(
+    () => void editProfile({ avatarField: props.avatarField ?? providedField ?? undefined }),
+    0,
+  )
+}
 
 async function choose(code: string): Promise<void> {
   if (code === i18n.state.locale) {
@@ -102,6 +124,12 @@ async function choose(code: string): Promise<void> {
 
     <wx-dropdown-item disabled>
       <wx-text size="sm">{{ user.email }}</wx-text>
+    </wx-dropdown-item>
+
+    <wx-divider spacing="sm" />
+
+    <wx-dropdown-item icon="user" @click="openProfile">
+      {{ t('profile.menu') }}
     </wx-dropdown-item>
 
     <template v-if="languages.length > 0">

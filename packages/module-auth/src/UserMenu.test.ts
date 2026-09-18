@@ -41,6 +41,7 @@ const session: AuthSession = {
   login: () => Promise.reject(new Error('not stubbed')),
   logout: () => Promise.resolve(),
   setLocale: () => Promise.resolve(),
+  updateProfile: () => Promise.reject(new Error('not stubbed')),
 }
 
 function draw(user: AdminUser, resolve: AvatarResolver | null, expanded = false) {
