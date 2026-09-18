@@ -125,6 +125,13 @@ A page may carry several forms. Each prints a hidden `webx_form`, and that is ho
 knows the errors in the session are its own. Two forms on one page without it both light up red
 over one refusal — and with one form on the page you will never see it.
 
+The form also prints a hidden `webx_locale`: the language the page came out in. The intake writes
+its own middleware stack and so runs nothing the site added to its `web` group, the language
+included — and how a site decides its language is the site's own business, path or header or
+cookie. So the form says which one it was printed in, the intake believes it as far as a language
+the site actually has, and the thank-you, the refusals and the language on the submission are the
+ones the visitor was reading.
+
 There is no code dependency on `module-blocks`: a block type in the constructor prints the same
 tag, so the form works on a site with no block editor at all.
 

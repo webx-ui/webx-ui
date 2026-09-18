@@ -73,6 +73,8 @@ final class FormTag extends Component
             'action' => $this->action($form),
             'multipart' => $fields->contains(static fn (Field $field): bool => $field->type->value === 'file'),
             'page' => $this->request->fullUrl(),
+            // What language this page came out in, for the intake to answer in the same one.
+            'locale' => app()->getLocale(),
             // Not `errors`: that name belongs to Laravel's own bag, and a published view has
             // every right to expect it to be the usual thing.
             'invalid' => $mine ? $this->errors() : [],

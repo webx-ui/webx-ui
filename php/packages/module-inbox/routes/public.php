@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use WebxUi\Inbox\Http\Controllers\ScriptController;
 use WebxUi\Inbox\Http\Controllers\SubmitController;
+use WebxUi\Inbox\Http\Middleware\SpeakTheLanguageOfThePage;
 
 $prefix = trim((string) config('webx-inbox.path', 'webx/forms'), '/');
 
@@ -31,6 +32,10 @@ Route::get("{$prefix}/inbox.js", ScriptController::class)->name('webx.inbox.scri
  *
  * Everything else stays, the session included: a form without JavaScript reports its errors
  * through `back()->withErrors()`, and that needs somewhere to put them.
+ *
+ * What a hand-written stack cannot have is whatever the site added to its own `web` group, and
+ * the language is the one piece of that the answer depends on — hence
+ * {@see SpeakTheLanguageOfThePage}, which takes it from the form rather than guessing.
  */
 Route::post("{$prefix}/{slug}", SubmitController::class)
     ->middleware([
@@ -39,6 +44,7 @@ Route::post("{$prefix}/{slug}", SubmitController::class)
         StartSession::class,
         ShareErrorsFromSession::class,
         SubstituteBindings::class,
+        SpeakTheLanguageOfThePage::class,
         ThrottleRequests::class.':webx-inbox',
     ])
     ->name('webx.inbox.submit');

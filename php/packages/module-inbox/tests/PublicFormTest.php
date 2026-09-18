@@ -131,6 +131,17 @@ final class PublicFormTest extends TestCase
     }
 
     #[Test]
+    public function it_says_which_language_the_page_was_printed_in(): void
+    {
+        $this->form();
+
+        $this->assertStringContainsString(
+            '<input type="hidden" name="webx_locale" value="en">',
+            $this->render(),
+        );
+    }
+
+    #[Test]
     public function a_field_that_is_not_full_width_says_so_in_its_class(): void
     {
         // The panel has a switch for this, so the markup has to carry it somewhere: a site
