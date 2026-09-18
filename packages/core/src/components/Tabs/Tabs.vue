@@ -460,6 +460,14 @@ defineExpose({ measure, revealActive })
   /* Narrower than the scroller, the list still has to span it for the rule under it. */
   width: max-content;
   min-width: 100%;
+  /*
+   * With the padding counted inside that 100%. A segmented strip pads its track by four on
+   * each side, and on the default box those eight pixels are added to the full width the
+   * `min-width` just asked for — so a strip with three tabs and room to spare overflowed its
+   * scroller by exactly its own padding, faded at the end and grew a pair of arrows for a
+   * journey of eight pixels.
+   */
+  box-sizing: border-box;
 }
 
 .wx-tabs__tab {
