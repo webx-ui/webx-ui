@@ -19,6 +19,7 @@ import {
   WxButton,
   WxCard,
   WxEmpty,
+  WxIndicator,
   WxListDetail,
   WxSkeleton,
   WxSortableList,
@@ -261,28 +262,30 @@ async function reorder(): Promise<void> {
                 <span class="wx-inbox-form__name">
                   <wx-text truncate weight="medium">{{ name(item) }}</wx-text>
                   <wx-badge v-if="!item.is_enabled" type="default">{{ t('panel.off') }}</wx-badge>
+
+                  <!--
+                    On the name's line, not under it. The list stacks what the slot hands it, so
+                    a count standing beside the form was a third line under the address — the
+                    row grew by a line to say a single digit. Unread first and in colour; the
+                    total behind it, quietly, because it is context rather than work.
+                  -->
+                  <wx-indicator
+                    v-if="item.unread_count"
+                    class="wx-inbox-form__count"
+                    type="primary"
+                    :value="item.unread_count"
+                    :label="t('panel.unread')"
+                  />
+                  <wx-indicator
+                    v-else-if="item.submissions_count"
+                    class="wx-inbox-form__count"
+                    type="neutral"
+                    :value="item.submissions_count"
+                    :label="t('panel.submissions')"
+                  />
                 </span>
                 <wx-text size="sm" tone="muted" truncate>{{ item.slug }}</wx-text>
               </button>
-
-              <!-- Unread first and in colour; the total behind it, quietly, because it is
-                   context rather than work. -->
-              <wx-badge
-                v-if="item.unread_count"
-                type="primary"
-                class="wx-inbox-form__count"
-                :title="t('panel.unread')"
-              >
-                {{ item.unread_count }}
-              </wx-badge>
-              <wx-text
-                v-else-if="item.submissions_count"
-                size="sm"
-                tone="muted"
-                :title="t('panel.submissions')"
-              >
-                {{ item.submissions_count }}
-              </wx-text>
             </template>
 
             <template #actions="{ item }">
