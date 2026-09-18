@@ -1,0 +1,66 @@
+{
+    "name": "webx-ui/module-inbox",
+    "description": "Forms and submissions for the WebX UI admin panel: forms built in the panel, a public intake with antispam, notifications by mail and a list of submissions with statuses, an assignee and a log.",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "webx-ui",
+        "laravel",
+        "admin",
+        "cms",
+        "forms",
+        "inbox"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-inbox"
+    },
+    "require": {
+        "php": "^8.3",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/mail": "^13.0",
+        "illuminate/routing": "^13.0",
+        "illuminate/support": "^13.0",
+        "illuminate/validation": "^13.0",
+        "illuminate/view": "^13.0",
+        "webx-ui/localization": "^0.21.0",
+        "webx-ui/mcp": "^0.21.0",
+        "webx-ui/module-admin": "^0.21.0",
+        "webx-ui/module-auth": "^0.21.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Inbox\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Inbox\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Inbox\\InboxServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
