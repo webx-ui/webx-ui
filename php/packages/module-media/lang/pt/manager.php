@@ -33,6 +33,7 @@ return [
     'folders' => 'Pastas',
     'edit' => 'Editar',
     'copy-link' => 'Copiar a ligação',
+    'download' => 'Descarregar',
     'link-copied' => 'Ligação copiada',
     'status-files' => 'Ficheiros: :count',
     'status-selected' => 'selecionados: :count',

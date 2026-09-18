@@ -46,6 +46,8 @@ const props = withDefaults(defineProps<FileCardProps>(), {
   removeLabel: 'Delete',
   removeConfirmText: undefined,
   copyLabel: 'Copy link',
+  downloadUrl: undefined,
+  downloadLabel: 'Download',
   copiedLabel: 'Copied',
 })
 
@@ -278,6 +280,7 @@ const shows = computed(() => ({
   /* Nothing to open for a `.zip`: the editor this asks for is an image editor. */
   edit: props.editable && picture.value && !props.disabled,
   copy: props.copyable && Boolean(props.url) && !props.disabled,
+  download: Boolean(props.downloadUrl) && !props.disabled,
   remove: props.removable && !props.disabled,
 }))
 
@@ -423,6 +426,13 @@ const classes = computed(() => [
             :title="copied ? copiedLabel : copyLabel"
             @click="copy"
           />
+          <wx-action
+            v-if="shows.download"
+            type="download"
+            :href="downloadUrl"
+            download
+            :title="downloadLabel"
+          />
           <wx-action v-if="shows.remove" type="remove" :title="removeLabel" @click="askRemove" />
           <slot name="actions" />
 
@@ -440,6 +450,9 @@ const classes = computed(() => [
             </wx-dropdown-item>
             <wx-dropdown-item v-if="shows.copy" icon="link" @click="copy">
               {{ copied ? copiedLabel : copyLabel }}
+            </wx-dropdown-item>
+            <wx-dropdown-item v-if="shows.download" icon="download" :href="downloadUrl" download>
+              {{ downloadLabel }}
             </wx-dropdown-item>
             <wx-dropdown-item v-if="shows.remove" icon="trash" tone="danger" @click="askRemove">
               {{ removeLabel }}

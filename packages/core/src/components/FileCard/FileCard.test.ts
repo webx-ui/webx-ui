@@ -144,6 +144,21 @@ describe('WxFileCard', () => {
     expect(action(card({ name: 'p.jpg', editable: true }), 'Edit picture')).toBeDefined()
   })
 
+  /*
+   * A link the browser follows itself, not a click the card reports: saving a file is what a
+   * browser does, and the address is its own because the download attribute is ignored across
+   * origins — there the browser navigates to the file instead of saving it.
+   */
+  it('saves the file from the address it was given, not from the one it shows', () => {
+    const wrapper = card({ url: 'https://cdn.example/f.xlsx', downloadUrl: '/files/7/source' })
+    const link = wrapper.findAll('a').find((a) => a.attributes('aria-label') === 'Download')
+
+    expect(link?.attributes('href')).toBe('/files/7/source')
+    expect(link?.attributes('download')).toBeDefined()
+
+    expect(card({ url: '/f.xlsx' }).findAll('a')).toHaveLength(0)
+  })
+
   it('has nothing to copy without a URL', () => {
     expect(action(card({ copyable: true }), 'Copy link')).toBeUndefined()
   })

@@ -33,6 +33,7 @@ return [
     'folders' => 'Cartelle',
     'edit' => 'Modifica',
     'copy-link' => 'Copia il link',
+    'download' => 'Scarica',
     'link-copied' => 'Link copiato',
     'status-files' => 'File: :count',
     'status-selected' => 'selezionati: :count',
