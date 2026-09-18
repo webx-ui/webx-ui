@@ -135,4 +135,5 @@ return [
     'system' => 'System',
     'no-answers' => 'Nic nie wypełniono.',
     'download' => 'Pobierz',
+    'no-files-by-hand' => 'Pliku nie da się dołączyć ręcznie: załączniki to to, co przyszło razem ze zgłoszeniem.',
 ];

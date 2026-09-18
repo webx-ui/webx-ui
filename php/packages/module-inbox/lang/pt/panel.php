@@ -135,4 +135,5 @@ return [
     'system' => 'Sistema',
     'no-answers' => 'Não foi preenchido nada.',
     'download' => 'Descarregar',
+    'no-files-by-hand' => 'Um ficheiro não se anexa à mão: os anexos são o que chegou com o envio.',
 ];

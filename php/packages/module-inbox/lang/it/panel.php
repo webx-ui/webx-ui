@@ -135,4 +135,5 @@ return [
     'system' => 'Sistema',
     'no-answers' => 'Non è stato compilato nulla.',
     'download' => 'Scarica',
+    'no-files-by-hand' => 'Un file non si allega a mano: gli allegati sono quello che è arrivato con l’invio.',
 ];
