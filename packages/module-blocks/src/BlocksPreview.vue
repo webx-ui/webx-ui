@@ -238,10 +238,19 @@ defineExpose({ replace, refresh, open: () => (fullscreen.value = true) })
   min-width: 0;
 }
 
+/*
+ * Over the panel, header and all.
+ *
+ * It used to carry a bare `40`, which is below everything the panel stacks with — so on a
+ * phone, where the preview is the whole screen, it opened *under* the sticky header and its
+ * own bar went with it: the way out was behind the burger. The overlay layer is what a sheet
+ * covering the page belongs to; toasts still land on top of it, which is right, because a
+ * toast is the only thing that has something to say while this is open.
+ */
 .wx-blocks-preview.is-fullscreen {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: var(--wx-z-index-overlay);
   border: 0;
   border-radius: 0;
 }

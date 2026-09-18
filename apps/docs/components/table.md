@@ -416,36 +416,36 @@ key of `actions` and fill it from `#cell-actions`.
 
 ## Props
 
-| Prop                | Type                                  | Default             | Description                                      |
-| ------------------- | ------------------------------------- | ------------------- | ------------------------------------------------ |
-| `data`              | `T[] \| Paginated<T> \| null`         | `null`              | Rows, or a whole paginator                       |
-| `columns`           | `TableColumn<T>[]`                    | —                   | Required                                         |
-| `rowKey`            | `string \| (row, index) => RowKey`    | `'id'`              | Where a stable id comes from                     |
-| `title`             | `string`                              | —                   | Heading in the header bar                        |
-| `searchable`        | `boolean`                             | `false`             | Adds the search field                            |
-| `searchPlaceholder` | `string`                              | `'Search'`          | Placeholder for it                               |
-| `searchDebounce`    | `number`                              | `300`               | Wait before `search` fires, in ms                |
-| `loading`           | `boolean`                             | `false`             | Dims the table and marks it busy                 |
-| `emptyText`         | `string`                              | `'Nothing to show'` | Shown when there are no rows                     |
-| `stripe`            | `boolean`                             | `false`             | Alternating row background                       |
-| `bordered`          | `boolean`                             | `false`             | Vertical rules between columns                   |
-| `hover`             | `boolean`                             | `true`              | Highlight the row under the pointer              |
-| `clickable`         | `boolean`                             | inferred            | Whether a row leads anywhere                     |
-| `selectable`        | `boolean`                             | `false`             | Adds the checkbox column                         |
-| `selectableIf`      | `(row) => boolean`                    | —                   | Rows that cannot be picked                       |
-| `expandable`        | `boolean`                             | `false`             | Adds the chevron column                          |
-| `expandableIf`      | `(row) => boolean`                    | —                   | Rows with nothing to open                        |
-| `summary`           | `TableSummaryRow[]`                   | `[]`                | Lines under the table                            |
-| `cardsBelow`        | `number`                              | `480`               | Width under which rows become cards              |
-| `flush`             | `boolean`                             | `false`             | No margins of its own, for a table inside a card |
-| `pagination`        | `boolean`                             | paginator           | Pagination in the footer                         |
-| `perPageOptions`    | `number[]`                            | `[]`                | Page sizes it offers                             |
-| `persist`           | `string`                              | —                   | Storage key for the state                        |
-| `maxHeight`         | `string \| number`                    | —                   | Scrolls rows under a stuck header                |
-| `rowClass`          | `(row, index) => string \| undefined` | —                   | Extra class per row                              |
-| `layout`            | `'auto' \| 'fixed'`                   | `'auto'`            | Let the content size columns or not              |
-| `size`              | `'sm' \| 'md' \| 'lg'`                | `'md'`              | Row height                                       |
-| `ariaLabel`         | `string`                              | —                   | Names the table for a screen reader              |
+| Prop                | Type                                  | Default             | Description                                       |
+| ------------------- | ------------------------------------- | ------------------- | ------------------------------------------------- |
+| `data`              | `T[] \| Paginated<T> \| null`         | `null`              | Rows, or a whole paginator                        |
+| `columns`           | `TableColumn<T>[]`                    | —                   | Required                                          |
+| `rowKey`            | `string \| (row, index) => RowKey`    | `'id'`              | Where a stable id comes from                      |
+| `title`             | `string`                              | —                   | Heading in the header bar                         |
+| `searchable`        | `boolean`                             | `false`             | Adds the search field                             |
+| `searchPlaceholder` | `string`                              | `'Search'`          | Placeholder for it                                |
+| `searchDebounce`    | `number`                              | `300`               | Wait before `search` fires, in ms                 |
+| `loading`           | `boolean`                             | `false`             | Dims the table and marks it busy                  |
+| `emptyText`         | `string`                              | `'Nothing to show'` | Shown when there are no rows                      |
+| `stripe`            | `boolean`                             | `false`             | Alternating row background                        |
+| `bordered`          | `boolean`                             | `false`             | Vertical rules between columns                    |
+| `hover`             | `boolean`                             | `true`              | Highlight the row under the pointer               |
+| `clickable`         | `boolean`                             | inferred            | Whether a row leads anywhere                      |
+| `selectable`        | `boolean`                             | `false`             | Adds the checkbox column                          |
+| `selectableIf`      | `(row) => boolean`                    | —                   | Rows that cannot be picked                        |
+| `expandable`        | `boolean`                             | `false`             | Adds the chevron column                           |
+| `expandableIf`      | `(row) => boolean`                    | —                   | Rows with nothing to open                         |
+| `summary`           | `TableSummaryRow[]`                   | `[]`                | Lines under the table                             |
+| `cardsBelow`        | `number`                              | `480`               | Width under which rows become cards               |
+| `flush`             | `boolean`                             | `false`             | Lets the box around it do the spacing (see below) |
+| `pagination`        | `boolean`                             | paginator           | Pagination in the footer                          |
+| `perPageOptions`    | `number[]`                            | `[]`                | Page sizes it offers                              |
+| `persist`           | `string`                              | —                   | Storage key for the state                         |
+| `maxHeight`         | `string \| number`                    | —                   | Scrolls rows under a stuck header                 |
+| `rowClass`          | `(row, index) => string \| undefined` | —                   | Extra class per row                               |
+| `layout`            | `'auto' \| 'fixed'`                   | `'auto'`            | Let the content size columns or not               |
+| `size`              | `'sm' \| 'md' \| 'lg'`                | `'md'`              | Row height                                        |
+| `ariaLabel`         | `string`                              | —                   | Names the table for a screen reader               |
 
 **Models:** `v-model:sort` (`TableSort | null`), `v-model:selected` (`RowKey[]`),
 `v-model:expanded` (`RowKey[]`), `v-model:search` (`string`), `v-model:page` (`number`),
@@ -454,6 +454,24 @@ key of `actions` and fill it from `#cell-actions`.
 **Events:** `state-change` (`TableState`), `row-click` (`row, index, event`), `sort-change`
 (`TableSort | null`), `selection-change` (`keys, rows`), `expand-change` (`keys, rows`), `search`
 (`term`).
+
+## `flush`, and what it does not flatten
+
+A table on its own keeps margins around its head and its rows. Inside a card the card already
+keeps them, so `flush` takes the table's away and the rows reach the card's edges — which is what
+a row should do.
+
+Two things stay. The head is not a row: what stands in it is a search box with a border of its own,
+and that box lines up with the cells rather than with the card's edge. And in card mode the column
+of cards keeps a step above and below it, because a column has to start and end somewhere; sideways
+it is flush like everything else, so the cards stand exactly where the filter above them stands.
+
+## The table scrolls its own rows
+
+Given less height than it needs — a pane in a two-column screen, a sheet on a phone — the table
+scrolls inside instead of spilling out of whatever holds it: the head stays, the rows or the cards
+move under it. Given no such limit it is as tall as its rows and the page does the scrolling, which
+is what an ordinary page wants. `maxHeight` is the way to ask for the first behaviour explicitly.
 
 ## A row that leads nowhere says so
 

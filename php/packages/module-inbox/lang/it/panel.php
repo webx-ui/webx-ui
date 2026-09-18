@@ -46,6 +46,8 @@ return [
     'add-admin' => 'Aggiungi un amministratore',
     'add-email' => 'Aggiungi un indirizzo',
     'remove' => 'Togli',
+    'remove-recipient-title' => 'Togliere questo destinatario?',
+    'remove-recipient-text' => 'Non sarà più avvisato quando arriva qualcosa.',
     'email-field' => 'Il campo con l’indirizzo di chi scrive',
     'email-field-help' => 'La risposta alla notifica andrà allora a chi ha scritto.',
     'no-email-field' => 'Nessuno',

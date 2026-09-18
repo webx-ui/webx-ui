@@ -79,6 +79,19 @@ tips are not.
 
 **Slots:** `default` — the control, exactly one element; `content` — the tip.
 
+## On a touch screen
+
+Nothing opens. A phone has no hover, so the tap that would open a tip is the tap that was meant for
+the button under it: the reader gets a black label over what they were aiming at while the button
+does its job underneath. The question is asked once for the whole application —
+`matchMedia('(hover: hover)')`, through `useHoverPointer()` — and a tablet that gains a mouse
+changes the answer without a reload.
+
+A tip opened from code with `v-model:open` is left alone: that one is deliberate rather than a side
+effect of pointing. And because this only takes away what a touch device never had, what a control
+means still has to be written somewhere a screen reader can reach — `WxAction` puts it in
+`aria-label`.
+
 ## Accessibility
 
 The tip is bound to its trigger, so it is announced when the control is focused as well as hovered,

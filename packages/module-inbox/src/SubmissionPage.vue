@@ -28,6 +28,8 @@ import {
   WxHeading,
   WxSelect,
   WxSkeleton,
+  WxTab,
+  WxTabs,
   WxText,
   WxTimeline,
   WxTimelineItem,
@@ -56,6 +58,9 @@ const locales = useLocales()
 useInboxMessages()
 
 const t = useTranslate('webx-inbox')
+/* The notes feed is the panel's own, and so is the word for it: a second "Notes" in this
+   module's dictionary would be the same line translated twice. */
+const panel = useTranslate('webx-admin')
 /* Not the server's `message`: the panel says how a request failed in its own words. */
 const message = useErrorText()
 
@@ -307,6 +312,8 @@ const details = computed(() => {
 <template>
   <div class="wx-submission">
     <div class="wx-submission__head">
+      <!-- The way back keeps its own size: it belongs to the heading beside it, not to the row
+           of actions at the other end of the line. -->
       <wx-back-button :to="backTo" />
 
       <div class="wx-submission__who">
@@ -314,27 +321,49 @@ const details = computed(() => {
         <wx-text size="sm" tone="muted" truncate>{{ formTitle }}</wx-text>
       </div>
 
-      <!-- The same pile the reader was looking at, one step at a time. An arrow with nowhere
-           to go is disabled rather than hidden: the pair is a control, and a control that
-           changes shape at the ends is one that moves under the hand. -->
-      <wx-action
-        icon="chevron-left"
-        :title="t('panel.previous')"
-        :disabled="!submission?.previous_id"
-        @click="go(submission?.previous_id ?? null)"
-      />
-      <wx-action
-        icon="chevron-right"
-        :title="t('panel.next')"
-        :disabled="!submission?.next_id"
-        @click="go(submission?.next_id ?? null)"
-      />
+      <!--
+        One height for everything on this line, and the button with a word on it is what sets
+        it: an icon button at `lg` is 42px, which is what a `md` button measures. Left to their
+        defaults they came out four different sizes — 30 for the way back, 36 for the arrows,
+        42 for the reply, 30 for the menu — and a row of controls that each picked their own
+        reads as four unrelated things rather than as one set.
 
-      <wx-button v-if="mailto" variant="outline" icon="mail" :href="mailto">
-        {{ t('panel.reply') }}
-      </wx-button>
+        The same pile the reader was looking at, one step at a time. An arrow with nowhere to
+        go is disabled rather than hidden: the pair is a control, and a control that changes
+        shape at the ends is one that moves under the hand.
 
-      <wx-row-menu :actions="actions" :label="heading" />
+        One group and not four items in the head's row, so that on a narrow screen they go to
+        the next line together instead of breaking wherever the wrap happens to fall — which
+        left the arrows up by the name and the reply and the menu alone underneath.
+      -->
+      <div class="wx-submission__tools">
+        <wx-action
+          icon="chevron-left"
+          size="lg"
+          :title="t('panel.previous')"
+          :disabled="!submission?.previous_id"
+          @click="go(submission?.previous_id ?? null)"
+        />
+        <wx-action
+          icon="chevron-right"
+          size="lg"
+          :title="t('panel.next')"
+          :disabled="!submission?.next_id"
+          @click="go(submission?.next_id ?? null)"
+        />
+
+        <wx-button
+          v-if="mailto"
+          class="wx-submission__reply"
+          variant="outline"
+          icon="mail"
+          :href="mailto"
+        >
+          {{ t('panel.reply') }}
+        </wx-button>
+
+        <wx-row-menu :actions="actions" size="lg" :label="heading" />
+      </div>
     </div>
 
     <wx-skeleton v-if="loading" :rows="6" />
@@ -378,10 +407,82 @@ const details = computed(() => {
           </div>
         </wx-card>
 
-        <!-- The feed is the panel's own, not this module's: the same one will hang off an
-             order and a client (§2.17). It carries its own heading. -->
-        <wx-card>
-          <wx-notes :id="submission.id" type="inbox_submission" :can="canUpdate" @change="load" />
+        <!--
+          Everything about the submission rather than in it, behind one strip.
+
+          Three cards stacked down a column is three headings to read past before the eye gets
+          to the one that was wanted, and on a phone it is three screens of scrolling. They are
+          not read together — a note is written while replying, the log is opened when
+          something looks wrong, the metadata once — so only one of them is ever the answer.
+          Pills rather than a line, and inside the card rather than over it: this is one card
+          changing its contents, not a place in the panel that can be navigated to. The strip is
+          the card's heading — which is why there is no other one.
+        -->
+        <wx-card class="wx-submission__more">
+          <wx-tabs variant="pill" :aria-label="heading">
+            <wx-tab value="notes" :label="panel('notes.title')">
+              <!-- The feed is the panel's own, not this module's: the same one will hang off
+                   an order and a client (§2.17). Its heading is the tab. -->
+              <wx-notes
+                :id="submission.id"
+                type="inbox_submission"
+                title=""
+                :can="canUpdate"
+                @change="load"
+              />
+            </wx-tab>
+
+            <wx-tab value="log" :label="t('panel.log')">
+              <wx-timeline size="sm">
+                <wx-timeline-item v-for="event in submission.events" :key="event.id">
+                  <!-- What happened on one line and who did it when on the next: three inline
+                       pieces in a row run into each other, and a log is read down. -->
+                  <wx-text size="sm" as="p" class="wx-submission__event">{{ line(event) }}</wx-text>
+                  <p class="wx-submission__by">
+                    <wx-text size="sm" tone="muted">
+                      {{ event.author?.name ?? t('panel.system') }}
+                    </wx-text>
+                    <wx-date :value="event.created_at" />
+                  </p>
+                </wx-timeline-item>
+              </wx-timeline>
+            </wx-tab>
+
+            <wx-tab value="details" :label="t('panel.details')">
+              <div class="wx-submission__fields">
+                <wx-descriptions :columns="1" layout="vertical" size="sm">
+                  <wx-descriptions-item :label="t('panel.received')">
+                    <wx-date :value="submission.created_at" tone="default" />
+                  </wx-descriptions-item>
+                  <wx-descriptions-item :label="t('panel.meta-source')">
+                    <wx-badge :type="submission.source === 'panel' ? 'info' : 'default'">
+                      {{
+                        submission.source === 'panel'
+                          ? t('panel.source-panel')
+                          : t('panel.source-web')
+                      }}
+                    </wx-badge>
+                  </wx-descriptions-item>
+                  <wx-descriptions-item v-for="row in details" :key="row.label" :label="row.label">
+                    <a v-if="row.link" :href="row.value" target="_blank" rel="noreferrer">{{
+                      row.value
+                    }}</a>
+                    <span v-else class="wx-submission__detail">{{ row.value }}</span>
+                  </wx-descriptions-item>
+                </wx-descriptions>
+
+                <!-- An unsent notification is a mark on the submission, not a lost one
+                     (§2.10), and the only place it is ever said out loud is here. -->
+                <wx-alert v-if="submission.notify_error" type="warning" :closable="false">
+                  {{ t('panel.notify-failed') }}
+                </wx-alert>
+                <wx-text v-else-if="submission.notified_at" size="sm" tone="muted">
+                  {{ t('panel.notified') }}
+                </wx-text>
+                <wx-text v-else size="sm" tone="muted">{{ t('panel.not-notified') }}</wx-text>
+              </div>
+            </wx-tab>
+          </wx-tabs>
         </wx-card>
       </div>
 
@@ -411,55 +512,6 @@ const details = computed(() => {
             </label>
           </div>
         </wx-card>
-
-        <wx-card :title="t('panel.details')">
-          <div class="wx-submission__fields">
-            <wx-descriptions :columns="1" layout="vertical" size="sm">
-              <wx-descriptions-item :label="t('panel.received')">
-                <wx-date :value="submission.created_at" tone="default" />
-              </wx-descriptions-item>
-              <wx-descriptions-item :label="t('panel.meta-source')">
-                <wx-badge :type="submission.source === 'panel' ? 'info' : 'default'">
-                  {{
-                    submission.source === 'panel' ? t('panel.source-panel') : t('panel.source-web')
-                  }}
-                </wx-badge>
-              </wx-descriptions-item>
-              <wx-descriptions-item v-for="row in details" :key="row.label" :label="row.label">
-                <a v-if="row.link" :href="row.value" target="_blank" rel="noreferrer">{{
-                  row.value
-                }}</a>
-                <span v-else class="wx-submission__detail">{{ row.value }}</span>
-              </wx-descriptions-item>
-            </wx-descriptions>
-
-            <!-- An unsent notification is a mark on the submission, not a lost one (§2.10),
-                 and the only place it is ever said out loud is here. -->
-            <wx-alert v-if="submission.notify_error" type="warning" :closable="false">
-              {{ t('panel.notify-failed') }}
-            </wx-alert>
-            <wx-text v-else-if="submission.notified_at" size="sm" tone="muted">
-              {{ t('panel.notified') }}
-            </wx-text>
-            <wx-text v-else size="sm" tone="muted">{{ t('panel.not-notified') }}</wx-text>
-          </div>
-        </wx-card>
-
-        <wx-card :title="t('panel.log')">
-          <wx-timeline size="sm">
-            <wx-timeline-item v-for="event in submission.events" :key="event.id">
-              <!-- What happened on one line and who did it when on the next: three inline
-                   pieces in a row run into each other, and a log is read down. -->
-              <wx-text size="sm" as="p" class="wx-submission__event">{{ line(event) }}</wx-text>
-              <p class="wx-submission__by">
-                <wx-text size="sm" tone="muted">
-                  {{ event.author?.name ?? t('panel.system') }}
-                </wx-text>
-                <wx-date :value="event.created_at" />
-              </p>
-            </wx-timeline-item>
-          </wx-timeline>
-        </wx-card>
       </aside>
     </div>
   </div>
@@ -469,16 +521,24 @@ const details = computed(() => {
 .wx-submission {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
+  /* The panel says how far apart things stand, and it says something different on a phone
+     than on a desktop (8, 12, 16). Writing the desktop number here is what made this screen
+     the one place in the panel with desktop air on a 375px screen. */
+  gap: var(--wx-gap, var(--wx-space-16));
   min-width: 0;
   /* The panes below decide their own layout from the width of the screen rather than of the
      window: the panel has a sidebar, and the window knows nothing about it. */
   container-type: inline-size;
 }
 
+/*
+ * The way out lines up with the heading, not with the pair of lines under it: what stands
+ * beside it is two lines — which submission this is and which form it came through — and a
+ * centred row put the arrow level with the gap between them.
+ */
 .wx-submission__head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--wx-space-8);
   flex-wrap: wrap;
 }
@@ -488,10 +548,59 @@ const details = computed(() => {
   min-width: 0;
 }
 
+.wx-submission__tools {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-8);
+  min-width: 0;
+}
+
+/*
+ * On a phone the whole group is the size of the way back — 30.
+ *
+ * Every control on this line is one of two things: an icon, or a word that does what an icon
+ * cannot say. The arrow at the start of the line is the same kind of thing as the arrows in
+ * the middle of it, so they are all one size, and the button with the word takes that size
+ * too. The height of a button is read off `--wx-size-control-md` and never declared on the
+ * button itself, so handing the group a different value is enough (CLAUDE.md §4). Keyed off
+ * the shell's own class rather than a width, because that is what the panel keys its icons
+ * off: a narrow screen inside a desktop panel is still a desktop.
+ */
+.wx-admin--drawer .wx-submission__tools {
+  --wx-size-control-md: 30px;
+}
+
+/*
+ * The icons and the `···` come down with it. A size class declares `--wx-action-size` on its
+ * own element, so the value has to be set there rather than inherited (CLAUDE.md §4) — and
+ * `WxActions` grows its menu to 44 on a touch screen, which is the rule for a table row, where
+ * that menu is the only control and a finger has nothing else to aim at.
+ */
+.wx-admin--drawer .wx-submission__tools :deep(.wx-action),
+.wx-admin--drawer .wx-submission__tools :deep(.wx-actions__menu .wx-action) {
+  --wx-action-size: 30px;
+}
+
+/*
+ * On a phone the group takes the line under the name, whole, and the one control with a word
+ * on it takes what the icons leave — a button that says "reply by mail" in the middle of a
+ * row of empty space is a button that looks like it did not fit.
+ */
+@container (max-width: 560px) {
+  .wx-submission__tools {
+    flex: 1 1 100%;
+  }
+
+  /* `:deep()` because the class is ours and the element it rides is `WxButton`'s. */
+  .wx-submission__tools > :deep(.wx-submission__reply) {
+    flex: 1 1 auto;
+  }
+}
+
 .wx-submission__panes {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
   min-width: 0;
 }
 
@@ -499,7 +608,7 @@ const details = computed(() => {
 .wx-submission__aside {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
+  gap: var(--wx-gap, var(--wx-space-16));
   min-width: 0;
 }
 

@@ -10,6 +10,7 @@ return [
     'remove' => 'Remover',
     'remove-title' => 'Remover «:title»?',
     'remove-text' => 'Os :count blocos dentro dele vão com ele.',
+    'remove-alone' => 'Sai desta página. O rascunho guarda o que era.',
     'duplicate' => 'Duplicar',
     'hide' => 'Ocultar do site',
     'show' => 'Mostrar no site',

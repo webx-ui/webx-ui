@@ -106,6 +106,11 @@ export interface TypeEntry {
    * one type that needs this — only it knows what one item of its list is.
    */
   nested?: boolean
+  /**
+   * A `field` whose control is not a field in the reading sense — an editor, a list of
+   * blocks, a table. It keeps the whole width instead of stopping at `--wx-field-max-width`.
+   */
+  wide?: boolean
 }
 
 export type TypeRegistry = Record<string, TypeEntry>

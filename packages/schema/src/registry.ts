@@ -48,7 +48,7 @@ export const coreTypes: TypeRegistry = {
   'wx-radio-group': { component: WxRadioGroup, kind: 'field' },
   'wx-date-picker': { component: WxDatePicker, kind: 'field' },
   'wx-color-picker': { component: WxColorPicker, kind: 'field' },
-  'wx-repeater': { component: ScreenRepeater, kind: 'field', nested: true },
+  'wx-repeater': { component: ScreenRepeater, kind: 'field', nested: true, wide: true },
 
   'wx-text': { component: WxText, kind: 'display' },
   'wx-alert': { component: WxAlert, kind: 'display', labelProp: 'title' },

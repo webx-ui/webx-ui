@@ -1160,6 +1160,17 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   z-index: 0;
   box-sizing: border-box;
   /*
+   * A column, so that a table given less height than it needs scrolls its own rows instead of
+   * spilling out of whatever holds it. Left as a block it grew to its full height and the box
+   * around it clipped the overflow — a list of six cards inside a pane 610px tall drew 1793px
+   * of them and could not be scrolled by anything, because nothing in the chain had a scroller.
+   * Unconstrained — a table on an ordinary page — the height stays `auto` and this changes
+   * nothing: the column is as tall as its rows and the page scrolls, as before.
+   */
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /*
    * A flex or grid item will not shrink below its content unless told to, and the
    * content here is a table that can be twice the width of the page. Without this the
    * inner scroller never scrolls and the whole document does instead.
@@ -1236,13 +1247,26 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 }
 
 /* Inside a card the margins are the card's; the search field lines up with what the card has above it. */
+/*
+ * Flush means the box around it does the spacing, so the rows reach its edges — but the head
+ * is not a row. What stands in it is a search box and a filter, and a box with a border of its
+ * own touching the edge of the card it lives in reads as cut off. It lines up with the cells
+ * instead: the same step the columns keep from the table's edge.
+ */
 .wx-table--flush .wx-table__header {
-  padding-inline: 0;
+  padding-inline: var(--wx-table-padding-x);
 }
 
+/* What scrolls when the table is squeezed; the head and the pagination keep their height. */
 .wx-table__scroll {
   overflow: auto;
   border-radius: inherit;
+  min-height: 0;
+}
+
+.wx-table__header,
+.wx-table__cards-footer {
+  flex: none;
 }
 
 /*
@@ -1512,7 +1536,21 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   background: var(--wx-bg-subtle);
 }
 
+/*
+ * A tone softer than `--wx-bg-fill`, and that is the whole reason it is not that token: the
+ * `···` at the end of the row is filled with `--wx-bg-fill` at rest, so a row that took the
+ * same colour swallowed the one control it carries — the button was there, and hovering the
+ * row was what made it disappear.
+ */
 .wx-table--hover .wx-table__row:hover {
+  --wx-table-row-bg: var(--wx-bg-subtle);
+
+  background: var(--wx-bg-subtle);
+}
+
+/* A striped row is already that colour, so it takes the next one up — nothing to swallow
+   there, the buttons of a striped table sit on grey either way. */
+.wx-table--stripe.wx-table--hover .wx-table__row.is-striped:hover {
   --wx-table-row-bg: var(--wx-bg-fill);
 
   background: var(--wx-bg-fill);
@@ -1746,10 +1784,38 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   flex-direction: column;
   gap: var(--wx-space-8);
   padding: var(--wx-space-8);
+  /* The same as the row scroller: squeezed, the list scrolls rather than being cut off. */
+  overflow-y: auto;
+  min-height: 0;
 }
 
+/*
+ * Flush in card mode: nothing sideways, the column's own step above and below.
+ *
+ * Sideways the box around the table is what insets the cards, exactly as it insets the rows —
+ * added here as well, the two stacked and the list stood further from the edge than the head
+ * and the filter above it. Down the column the step is the table's own, because the cards are
+ * a column and a column has to start and end somewhere.
+ */
 .wx-table--flush .wx-table__cards {
-  padding: 0;
+  padding-inline: 0;
+}
+
+.wx-table--flush:not(.wx-table--cards) .wx-table__cards {
+  padding-block: 0;
+}
+
+.wx-table--flush.wx-table--cards .wx-table__header {
+  padding-inline: 0;
+}
+
+/*
+ * Under the search, the step between cards and not the head's own: in card mode the search is
+ * one more box in the same column, and a column reads as a column only while the steps down it
+ * are equal. The list of cards carries that step as its own top padding.
+ */
+.wx-table--cards .wx-table__header {
+  padding-block-end: 0;
 }
 
 .wx-table__card {

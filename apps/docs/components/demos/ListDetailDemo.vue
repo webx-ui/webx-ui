@@ -298,11 +298,14 @@ function pick(order: Order) {
   color: var(--wx-border-default);
 }
 
+/* The pane brings its own margins: on a narrow screen it is the sheet itself, and the sheet
+   insets nothing — what it holds is a screen, and a screen knows its own edges. */
 .pane-demo__detail {
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  padding: var(--wx-space-12);
 }
 
 .pane-demo__bar {
