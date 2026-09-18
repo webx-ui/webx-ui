@@ -357,7 +357,7 @@ function settings(): void {
 </script>
 
 <template>
-  <div class="wx-submissions">
+  <div class="wx-submissions" :class="{ 'is-pane': inline }">
     <div class="wx-submissions__head">
       <!-- On a phone the pane is a screen of its own and the drawer carries no close of its
            own, so the way back has to be here. Beside the list there is nothing to go back to. -->
@@ -522,6 +522,19 @@ function settings(): void {
 .wx-submissions__views {
   flex: 1 1 auto;
   min-height: 0;
+}
+
+/*
+ * Beside the forms, the cards stand a step further in than the pane's own padding.
+ *
+ * There the pane is a column of a card — a rule down its left side, the card's frame on its
+ * right — and a list of boxes that begins where the column begins reads as glued to both. As a
+ * sheet the same list has the edge of the screen for a boundary and wants nothing extra, which
+ * is why this belongs to the pane and not to the table: only the pane knows which one it is.
+ * Rows want neither, and do not get it — they are the table's own width by design.
+ */
+.wx-submissions.is-pane :deep(.wx-table--cards) {
+  padding-inline: var(--wx-table-padding-x);
 }
 
 /*
