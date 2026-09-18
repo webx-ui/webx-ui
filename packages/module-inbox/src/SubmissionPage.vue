@@ -390,12 +390,13 @@ const details = computed(() => {
           to the one that was wanted, and on a phone it is three screens of scrolling. They are
           not read together — a note is written while replying, the log is opened when
           something looks wrong, the metadata once — so only one of them is ever the answer.
-          Pills rather than a line: this is one card changing its contents, not a place in the
-          panel that can be navigated to.
+          Pills rather than a line, and inside the card rather than over it: this is one card
+          changing its contents, not a place in the panel that can be navigated to. The strip is
+          the card's heading — which is why there is no other one.
         -->
-        <wx-tabs variant="pill" class="wx-submission__more" :aria-label="heading">
-          <wx-tab value="notes" :label="panel('notes.title')">
-            <wx-card>
+        <wx-card class="wx-submission__more">
+          <wx-tabs variant="pill" :aria-label="heading">
+            <wx-tab value="notes" :label="panel('notes.title')">
               <!-- The feed is the panel's own, not this module's: the same one will hang off
                    an order and a client (§2.17). Its heading is the tab. -->
               <wx-notes
@@ -405,11 +406,9 @@ const details = computed(() => {
                 :can="canUpdate"
                 @change="load"
               />
-            </wx-card>
-          </wx-tab>
+            </wx-tab>
 
-          <wx-tab value="log" :label="t('panel.log')">
-            <wx-card>
+            <wx-tab value="log" :label="t('panel.log')">
               <wx-timeline size="sm">
                 <wx-timeline-item v-for="event in submission.events" :key="event.id">
                   <!-- What happened on one line and who did it when on the next: three inline
@@ -423,11 +422,9 @@ const details = computed(() => {
                   </p>
                 </wx-timeline-item>
               </wx-timeline>
-            </wx-card>
-          </wx-tab>
+            </wx-tab>
 
-          <wx-tab value="details" :label="t('panel.details')">
-            <wx-card>
+            <wx-tab value="details" :label="t('panel.details')">
               <div class="wx-submission__fields">
                 <wx-descriptions :columns="1" layout="vertical" size="sm">
                   <wx-descriptions-item :label="t('panel.received')">
@@ -460,9 +457,9 @@ const details = computed(() => {
                 </wx-text>
                 <wx-text v-else size="sm" tone="muted">{{ t('panel.not-notified') }}</wx-text>
               </div>
-            </wx-card>
-          </wx-tab>
-        </wx-tabs>
+            </wx-tab>
+          </wx-tabs>
+        </wx-card>
       </div>
 
       <aside class="wx-submission__aside">
