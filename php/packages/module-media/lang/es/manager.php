@@ -33,6 +33,7 @@ return [
     'folders' => 'Carpetas',
     'edit' => 'Editar',
     'copy-link' => 'Copiar el enlace',
+    'download' => 'Descargar',
     'link-copied' => 'Enlace copiado',
     'status-files' => 'Archivos: :count',
     'status-selected' => 'seleccionados: :count',

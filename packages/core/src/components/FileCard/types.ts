@@ -43,6 +43,13 @@ export interface FileCardProps {
   /** Offers copying `url` to the clipboard. */
   copyable?: boolean
   /**
+   * Offers saving the file, from this address. Separate from `url` on purpose: what a card
+   * shows a file with may be a signed address on another host, and a browser ignores the
+   * download attribute across origins — it navigates instead. What downloads is whatever the
+   * caller can serve from its own.
+   */
+  downloadUrl?: string
+  /**
    * The actions are a `···` menu at every width, rather than a row of icons that folds into
    * one when it runs out of room. For a grid inside a panel where every other list puts a
    * record's actions behind the same menu — one place to look, whatever the card's size.
@@ -62,6 +69,7 @@ export interface FileCardProps {
   /** The question `confirmRemove` asks. The file name is worth putting in it. */
   removeConfirmText?: string
   copyLabel?: string
+  downloadLabel?: string
   /** Shown on the copy action for a moment after it worked. */
   copiedLabel?: string
 }
