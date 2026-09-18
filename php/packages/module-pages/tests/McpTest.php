@@ -385,6 +385,13 @@ final class McpTest extends TestCase
                 $this->assertNotNull($content['pages'][0]['deleted_at']);
             });
 
+        // And the bin is searched like the tree is, rather than answering with all of it.
+        $this->agent('tree', ['trashed' => true, 'search' => 'zzzznothing'])
+            ->assertOk()
+            ->assertStructuredContent(function (AssertableJson $json): void {
+                $this->assertSame(0, $json->etc()->toArray()['count']);
+            });
+
         $this->agent('restore', ['page' => '/catalog'])
             ->assertHasErrors(['must be the id']);
 

@@ -130,6 +130,38 @@ final class PanelTest extends TestCase
     }
 
     #[Test]
+    public function the_bin_is_searched_like_any_other_list(): void
+    {
+        $editor = $this->editor();
+        $about = $this->page('about');
+        $catalog = $this->page('catalog');
+
+        foreach ([$about, $catalog] as $page) {
+            $this->actingAs($editor, 'cms')->deleteJson($this->api($page->getKey()))->assertOk();
+        }
+
+        $ids = function (string $query) use ($editor): array {
+            $items = $this->actingAs($editor, 'cms')->getJson($this->api().'?trashed=1'.$query)->json('data.items');
+
+            // Sorted because what the bin is ordered by is when each page was deleted, and two
+            // deletes one line apart share a second.
+            $found = array_column(is_array($items) ? $items : [], 'id');
+            sort($found);
+
+            return $found;
+        };
+
+        // The term narrows the bin instead of being dropped on the way in, so a term nothing in
+        // there matches answers with nothing rather than with the whole bin.
+        $this->assertSame([$catalog->getKey()], $ids('&search=catal'));
+        $this->assertSame([], $ids('&search=zzzznothing'));
+
+        // The title is searched as well as the address, and an empty box leaves the bin whole.
+        $this->assertSame([$about->getKey()], $ids('&search=Abou'));
+        $this->assertSame([$about->getKey(), $catalog->getKey()], $ids(''));
+    }
+
+    #[Test]
     public function the_status_filter_tells_the_three_states_apart(): void
     {
         $this->page('about');

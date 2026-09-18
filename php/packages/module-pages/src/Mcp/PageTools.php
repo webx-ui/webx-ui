@@ -77,7 +77,7 @@ final class PageTools
                 ['properties' => [
                     'parent' => ['type' => ['integer', 'string'], 'description' => 'Start from this page instead of the home page.'],
                     'depth' => ['type' => 'integer', 'description' => 'How many levels below the starting page; 1 is that page and its children. All of them when omitted.'],
-                    'search' => ['type' => 'string', 'description' => 'Pages whose title or address contains this. A flat list of matches, wherever they are.'],
+                    'search' => ['type' => 'string', 'description' => 'Pages whose title or address contains this. A flat list of matches, wherever they are; with trashed, the matches in the bin.'],
                     'status' => ['type' => 'string', 'enum' => [Page::STATUS_DRAFT, Page::STATUS_PUBLISHED, Page::STATUS_MODIFIED], 'description' => 'Never published · on the site · on the site with edits waiting.'],
                     'trashed' => ['type' => 'boolean', 'description' => 'What was deleted, newest first. A page that went down with a branch is restored with it and is not listed on its own.'],
                     'locale' => $locale,
@@ -189,7 +189,7 @@ final class PageTools
         $search = trim((string) ($arguments['search'] ?? ''));
 
         $pages = match (true) {
-            ($arguments['trashed'] ?? false) === true => $this->bin(),
+            ($arguments['trashed'] ?? false) === true => $this->bin($search, $locale),
             $search !== '' => $this->matches($search, $locale, $arguments),
             default => $this->branch($arguments),
         };
@@ -237,14 +237,8 @@ final class PageTools
      */
     private function matches(string $term, string $locale, array $arguments): Collection
     {
-        $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $term).'%';
-
         /** @var Collection<int, Page> $found */
-        $found = $this->listing($arguments)
-            ->where(static function (Builder $query) use ($like, $locale): void {
-                $query->where(static fn (Builder $nested): Builder => $nested->whereTranslationLike('title', $like, $locale))
-                    ->orWhere(static fn (Builder $nested): Builder => $nested->whereTranslationLike('slug', $like, $locale));
-            })
+        $found = $this->searching($this->listing($arguments), $term, $locale)
             ->orderBy('lft')
             ->limit(self::SEARCH_LIMIT)
             ->get();
@@ -253,14 +247,35 @@ final class PageTools
     }
 
     /**
+     * Narrow a query to pages whose name or address contains the term. An empty term narrows
+     * nothing, so the bin and the tree can both hand their query through it.
+     *
+     * @param  Builder<Page>  $query
+     * @return Builder<Page>
+     */
+    private function searching(Builder $query, string $term, string $locale): Builder
+    {
+        if ($term === '') {
+            return $query;
+        }
+
+        $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $term).'%';
+
+        return $query->where(static function (Builder $nested) use ($like, $locale): void {
+            $nested->where(static fn (Builder $half): Builder => $half->whereTranslationLike('title', $like, $locale))
+                ->orWhere(static fn (Builder $half): Builder => $half->whereTranslationLike('slug', $like, $locale));
+        });
+    }
+
+    /**
      * @return Collection<int, Page>
      */
-    private function bin(): Collection
+    private function bin(string $term, string $locale): Collection
     {
+        $query = Page::onlyTrashed()->whereNull('trashed_with')->with('routes');
+
         /** @var Collection<int, Page> $trashed */
-        $trashed = Page::onlyTrashed()
-            ->whereNull('trashed_with')
-            ->with('routes')
+        $trashed = $this->searching($query, $term, $locale)
             ->orderByDesc('deleted_at')
             ->get();
 
