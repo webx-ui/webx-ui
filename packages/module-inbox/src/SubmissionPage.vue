@@ -312,7 +312,9 @@ const details = computed(() => {
 <template>
   <div class="wx-submission">
     <div class="wx-submission__head">
-      <wx-back-button :to="backTo" size="lg" />
+      <!-- The way back keeps its own size: it belongs to the heading beside it, not to the row
+           of actions at the other end of the line. -->
+      <wx-back-button :to="backTo" />
 
       <div class="wx-submission__who">
         <wx-heading :level="2" truncate>{{ heading }}</wx-heading>
