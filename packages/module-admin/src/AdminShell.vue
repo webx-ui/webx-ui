@@ -196,6 +196,7 @@ onUnmounted(() => {
     -->
     <wx-drawer
       v-model:open="drawerOpen"
+      class="wx-admin__drawer"
       :title="title === '' ? t('nav.menu') : title"
       side="left"
       :size="260"
@@ -419,6 +420,20 @@ body:has(> #webx-app) {
 
 .wx-admin--drawer .wx-action--lg {
   --wx-action-size: 36px;
+}
+
+/*
+ * One left edge down the drawer.
+ *
+ * The drawer already insets what it holds by its own step, and `WxMenu` adds a second one of
+ * its own — so the highlighted row started eight pixels further in than the account block under
+ * it and the name over it. With every block the same colour as the sheet that is invisible; in
+ * the dark theme, where each tint is a shape of its own, it is three blocks and three edges.
+ * Unscoped and named on the drawer itself: the drawer is teleported to the end of the document,
+ * so nothing that begins at `.wx-admin` reaches it.
+ */
+.wx-admin__drawer .wx-drawer__content > .wx-menu {
+  padding-inline: 0;
 }
 
 /*
