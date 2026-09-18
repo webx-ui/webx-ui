@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useTranslate } from '@webx-ui/module-admin'
 import { useElementWidth, WxButton, WxSegmented, WxText } from '@webx-ui/core'
-import { highlightBlock, replaceBlock } from './frame'
+import { bindFrame, blockElement, highlightBlock, replaceBlock, type FrameBinding } from './frame'
 
 /**
  * The page in an iframe, the way it will be: the same handler, the same view, the draft
@@ -27,6 +27,11 @@ const props = withDefaults(
   }>(),
   { selected: null, mode: 'wide', reload: 0, fill: false },
 )
+
+const emit = defineEmits<{
+  /** A block was clicked in the page. Null when the click landed outside every block. */
+  select: [key: string | null]
+}>()
 
 const t = useTranslate('webx-blocks')
 
@@ -78,10 +83,47 @@ function doc(): Document | null {
   }
 }
 
+/*
+ * What the page was bound with, so that a reload lets go of the document it was bound to. The
+ * page inside is the site's, not ours, and a listener left on a document nobody can reach any
+ * more keeps that whole document alive.
+ */
+let binding: FrameBinding | null = null
+
+/* Set while the selection is coming out of the page, so that a click is not answered by
+   scrolling the very thing that was just clicked back into the middle of the window. */
+let fromFrame = false
+
 function onLoad(): void {
   ready.value = true
+
   const page = doc()
-  if (page) highlightBlock(page, props.selected ?? null)
+
+  if (!page) return
+
+  binding?.release()
+  binding = bindFrame(page, {
+    select: (key) => {
+      fromFrame = true
+      emit('select', key)
+      fromFrame = false
+    },
+  })
+
+  highlightBlock(page, props.selected ?? null)
+  reveal(page, props.selected ?? null)
+}
+
+/**
+ * Bring the selected block into the window of the frame.
+ *
+ * The frame is scaled with a transform, which does not affect what is inside it: the page
+ * scrolls in its own window, at its own size, and knows nothing about the scale.
+ */
+function reveal(page: Document, key: string | null): void {
+  if (key === null || fromFrame) return
+
+  blockElement(page, key)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 }
 
 /** Swap one block's markup in place; false when the page has to be reloaded instead. */
@@ -112,7 +154,11 @@ watch(
   () => props.selected,
   (key) => {
     const page = doc()
-    if (page && ready.value) highlightBlock(page, key ?? null)
+
+    if (!page || !ready.value) return
+
+    highlightBlock(page, key ?? null)
+    reveal(page, key ?? null)
   },
 )
 
@@ -123,7 +169,10 @@ watch(
 )
 
 onMounted(() => window.addEventListener('keydown', onKey))
-onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKey)
+  binding?.release()
+})
 
 defineExpose({ replace, refresh, open: () => (fullscreen.value = true) })
 </script>
@@ -172,7 +221,14 @@ defineExpose({ replace, refresh, open: () => (fullscreen.value = true) })
 </template>
 
 <style scoped>
+/*
+ * `border-box`, and it is `is-fill` below that needs it: `height: 100%` of a content box is
+ * the height it was given *plus* its two borders, so the preview stood two pixels taller than
+ * the panel holding it and the whole tab grew a scrollbar for them. Measured — 746 against
+ * 744, which is exactly a border on each edge.
+ */
 .wx-blocks-preview {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--wx-border-default);
@@ -196,7 +252,7 @@ defineExpose({ replace, refresh, open: () => (fullscreen.value = true) })
   justify-content: space-between;
   gap: var(--wx-space-8);
   padding: var(--wx-space-8) var(--wx-space-12);
-  border-block-end: 1px solid var(--wx-color-border-muted, var(--wx-border-default));
+  border-block-end: 1px solid var(--wx-border-muted);
 }
 
 .wx-blocks-preview__label {

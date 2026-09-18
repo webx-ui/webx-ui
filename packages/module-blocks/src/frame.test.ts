@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
+  bindFrame,
   blockElement,
   findRange,
   highlightBlock,
+  keyAt,
   replaceBlock,
   SELECTED_CLASS,
   stageDocument,
@@ -18,6 +20,43 @@ function page(): Document {
 
   return doc
 }
+
+describe('which block a point in the page belongs to', () => {
+  it('answers with the innermost one, and with nothing outside every block', () => {
+    const doc = page()
+
+    expect(keyAt(doc.querySelector('p'))).toBe('c')
+    expect(keyAt(doc.querySelector('.b-section'))).toBe('b')
+    expect(keyAt(doc.querySelector('section'))).toBe('a')
+    expect(keyAt(doc.querySelector('footer'))).toBeNull()
+    expect(keyAt(doc.querySelector('header'))).toBeNull()
+  })
+
+  /* A text node is what a click on a word actually lands on. */
+  it('takes a node that is not an element', () => {
+    const doc = page()
+
+    expect(keyAt(doc.querySelector('p')!.firstChild)).toBe('c')
+    expect(keyAt(null)).toBeNull()
+  })
+
+  it('does not let a click out of the preview, and reports the block it landed in', () => {
+    const doc = page()
+    const seen: (string | null)[] = []
+    const binding = bindFrame(doc, { select: (key) => seen.push(key) })
+
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true })
+    doc.querySelector('p')!.dispatchEvent(event)
+
+    expect(seen).toEqual(['c'])
+    expect(event.defaultPrevented).toBe(true)
+
+    binding.release()
+    doc.querySelector('p')!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+
+    expect(seen).toEqual(['c'])
+  })
+})
 
 describe('the markers in the preview', () => {
   it('finds a block by its pair of comments, nested ones too', () => {
