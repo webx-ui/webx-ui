@@ -13,9 +13,9 @@ final class Editor extends GenericUser implements HasPermissions
     /**
      * @param  list<string>  $permissions
      */
-    public function __construct(private readonly array $permissions = [])
+    public function __construct(private readonly array $permissions = [], int $id = 1, string $name = 'Editor')
     {
-        parent::__construct(['id' => 1, 'name' => 'Editor']);
+        parent::__construct(['id' => $id, 'name' => $name]);
     }
 
     public function hasPermission(string $permission): bool
