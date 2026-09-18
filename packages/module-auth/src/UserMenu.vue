@@ -16,8 +16,13 @@ const props = withDefaults(
     signOutLabel?: string
     /** Overrides the resolver `auth()` was given. Without either, initials. */
     resolveAvatar?: AvatarResolver
+    /**
+     * There is room beside the face for a name. The shell says so: the foot of an open
+     * sidebar and the foot of the drawer have it, the icon rail and a phone's bar do not.
+     */
+    expanded?: boolean
   }>(),
-  { signOutLabel: undefined, resolveAvatar: undefined },
+  { signOutLabel: undefined, resolveAvatar: undefined, expanded: false },
 )
 
 const admin = useAdmin()
@@ -79,8 +84,19 @@ async function choose(code: string): Promise<void> {
       signed in.
     -->
     <template #trigger>
-      <button type="button" class="wx-user-menu__trigger" :title="user.name">
+      <button
+        type="button"
+        class="wx-user-menu__trigger"
+        :class="{ 'wx-user-menu__trigger--named': expanded }"
+        :title="user.name"
+      >
         <wx-avatar :name="user.name" :src="avatarUrl" size="lg" />
+
+        <!--
+          Initials are a way of telling two people apart, not of saying who somebody is. Where
+          the corner is wide enough, it says it.
+        -->
+        <span v-if="expanded" class="wx-user-menu__name">{{ user.name }}</span>
       </button>
     </template>
 
@@ -136,5 +152,36 @@ async function choose(code: string): Promise<void> {
 .wx-user-menu__trigger:focus-visible {
   outline: 2px solid var(--wx-border-focus);
   outline-offset: 2px;
+}
+
+/*
+ * With a name beside it the button is a row rather than a circle, so it takes the width it is
+ * given and rounds like the menu items above it instead of like the picture inside it.
+ */
+.wx-user-menu__trigger--named {
+  align-items: center;
+  gap: var(--wx-space-8);
+  width: 100%;
+  min-width: 0;
+  padding: var(--wx-space-4);
+  border-radius: var(--wx-radius-control);
+  text-align: start;
+}
+
+.wx-user-menu__trigger--named:hover {
+  opacity: 1;
+  background: var(--wx-bg-subtle);
+}
+
+.wx-user-menu__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--wx-text-default);
+  font-family: var(--wx-font-family-sans);
+  font-size: var(--wx-font-size-sm);
+  font-weight: var(--wx-font-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

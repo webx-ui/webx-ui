@@ -26,6 +26,15 @@ export interface AdminContext {
   /** Ask the server what the panel is and who is signed in again. */
   reload(): Promise<void>
   /**
+   * Fetch the manifest again and adopt it, without the panel going through `loading` — so the
+   * chrome changes under whoever is looking at it instead of being replaced by a spinner.
+   *
+   * For a screen that has just saved something the manifest reports: the branding, the name of
+   * the site, what a section is called. A failure is swallowed, because what it would cost is
+   * a working panel in exchange for a stale logo.
+   */
+  refreshManifest(): Promise<void>
+  /**
    * Draw the panel in another language: fetches that dictionary and remembers the choice for
    * the next visit. Storing it against the administrator is an auth module's business — this
    * only changes what is on screen.
@@ -237,6 +246,20 @@ export function createAdminContext(options: {
     }
   }
 
+  async function refreshManifest(): Promise<void> {
+    // Nothing to replace before the first load, and nothing worth asking for after a session
+    // has ended: `reload()` owns both of those cases.
+    if (state.manifest === null) {
+      return
+    }
+
+    try {
+      state.manifest = await options.loadManifest()
+    } catch {
+      // Deliberately silent — see the contract.
+    }
+  }
+
   async function setLocale(code: string): Promise<void> {
     if (options.loadDictionary === undefined) {
       options.i18n.state.locale = code
@@ -251,15 +274,10 @@ export function createAdminContext(options: {
     // without this the panel switches everything except its own navigation, and the sidebar
     // goes on naming the section in the language nobody is reading any more until the page is
     // reloaded. Only worth doing once there is a manifest to replace: during the first load
-    // the caller is `reload()` itself, which is about to fetch one.
-    if (state.manifest !== null) {
-      try {
-        state.manifest = await options.loadManifest()
-      } catch {
-        // A manifest that will not come back is `reload()`'s problem to report. The language
-        // did change, and a stale section title is not worth throwing away a working panel.
-      }
-    }
+    // the caller is `reload()` itself, which is about to fetch one. A manifest that will not
+    // come back is `reload()`'s problem to report — the language did change, and a stale
+    // section title is not worth throwing away a working panel for.
+    await refreshManifest()
   }
 
   return {
@@ -273,6 +291,7 @@ export function createAdminContext(options: {
     groups,
     types,
     reload,
+    refreshManifest,
     setLocale,
     setUser(user) {
       state.user = user
