@@ -31,6 +31,7 @@ export default defineConfig({
             { text: 'The file manager', link: '/guide/media' },
             { text: 'Administrators', link: '/guide/admins' },
             { text: 'Pages', link: '/guide/pages' },
+            { text: 'Inbox', link: '/guide/inbox' },
             { text: 'Settings', link: '/guide/settings' },
             { text: 'SEO', link: '/guide/seo' },
             { text: 'Addresses', link: '/guide/routing' },
