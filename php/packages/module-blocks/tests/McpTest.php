@@ -43,7 +43,7 @@ final class McpTest extends TestCase
         $this->assertContains('blocks:write', $registry->scopes());
 
         $this->assertSame(
-            ['blocks://guidelines', 'blocks://catalog', 'blocks://fields', 'blocks://site'],
+            ['blocks://guidelines', 'blocks://schema', 'blocks://catalog', 'blocks://fields', 'blocks://site'],
             array_map(static fn ($resource): string => $resource->uri, $registry->resources()),
         );
 
