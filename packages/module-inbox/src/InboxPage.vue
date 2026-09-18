@@ -362,6 +362,17 @@ async function reorder(): Promise<void> {
   padding-inline: var(--wx-space-8);
 }
 
+/*
+ * Air under the rule that carries the column's name.
+ *
+ * The first row started exactly where the line ended, and the first row here is usually the
+ * tinted one — so the chosen form read as hanging off the heading rather than as the first of
+ * a list. Visible in the dark theme first, where the tint is a shape of its own.
+ */
+.wx-inbox__forms.is-plain .wx-sortable-list__head {
+  margin-block-end: var(--wx-space-6);
+}
+
 .wx-inbox-form {
   display: flex;
   flex-direction: column;
