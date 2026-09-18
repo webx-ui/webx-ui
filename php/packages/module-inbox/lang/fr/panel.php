@@ -135,4 +135,5 @@ return [
     'system' => 'Système',
     'no-answers' => 'Rien n’a été rempli.',
     'download' => 'Télécharger',
+    'no-files-by-hand' => 'Un fichier ne s’ajoute pas à la main : les pièces jointes sont ce qui est arrivé avec l’envoi.',
 ];
