@@ -1,4 +1,4 @@
-import { h, watch } from 'vue'
+import { h, watch, type Component } from 'vue'
 import type { Admin, AdminPlugin } from '@webx-ui/module-admin'
 import LoginCard from './LoginCard.vue'
 import { authMessages } from './messages'
@@ -16,6 +16,12 @@ export interface AuthOptions {
    * that knows both are installed.
    */
   resolveAvatar?: AvatarResolver
+  /**
+   * The field that picks a photograph — `WxMediaField` in a panel with the library. Handed
+   * in for the same reason as the resolver, and used by the profile dialog in the corner
+   * menu. Without it a person edits everything about themselves except their picture.
+   */
+  avatarField?: Component
 }
 
 /**
@@ -36,7 +42,7 @@ export function auth(options: AuthOptions = {}): AdminPlugin {
       // a panel assembled without a server has to fall back on.
       admin.i18n.defaults('webx-auth', authMessages)
 
-      provideAuth(admin.app, session, options.resolveAvatar ?? null)
+      provideAuth(admin.app, session, options.resolveAvatar ?? null, options.avatarField ?? null)
       admin.context.useSessionLoader(() => session.me())
 
       admin.router.addRoute({
@@ -93,7 +99,16 @@ export { selectAdmin, selectAdmins, type AdminPickerOptions } from './selectAdmi
 export { default as WxAdminsPage } from './AdminsPage.vue'
 export { default as WxAdminList } from './AdminList.vue'
 export type { Admin, AdminInput, AdminPage, AdminQuery, AdminRole, Role } from './types'
-export { createAuthSession, provideAuth, useAuth, authKey, avatarResolverKey } from './session'
+export {
+  createAuthSession,
+  provideAuth,
+  useAuth,
+  authKey,
+  avatarFieldKey,
+  avatarResolverKey,
+  type ProfileInput,
+} from './session'
+export { default as WxProfileDialog } from './ProfileDialog.vue'
 export type { AuthSession, AvatarResolver, Credentials } from './session'
 export { default as WxLoginCard } from './LoginCard.vue'
 export { default as WxUserMenu } from './UserMenu.vue'
