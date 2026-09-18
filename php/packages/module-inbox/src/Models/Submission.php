@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use WebxUi\Admin\Notes\HasNotes;
+use WebxUi\Admin\Notes\Notable;
+use WebxUi\Admin\Notes\Note;
 use WebxUi\Auth\Models\CmsUser;
 
 /**
@@ -27,11 +30,20 @@ use WebxUi\Auth\Models\CmsUser;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Submission extends Model
+class Submission extends Model implements Notable
 {
+    use HasNotes;
+
     public const SOURCE_WEB = 'web';
 
     public const SOURCE_PANEL = 'panel';
+
+    /**
+     * What a submission is called in the morph map, and therefore in the address of its
+     * notes. An alias and not a class name: `WebxUi\Inbox\Models\Submission` in a database
+     * column is a namespace nobody is allowed to rename afterwards.
+     */
+    public const MORPH = 'inbox_submission';
 
     protected $table = 'inbox_submissions';
 
@@ -95,6 +107,24 @@ class Submission extends Model
     public function events(): HasMany
     {
         return $this->hasMany(SubmissionEvent::class, 'submission_id')->orderBy('id');
+    }
+
+    /**
+     * Which permission the notes on a submission are behind (§13).
+     *
+     * `inbox.update` rather than `inbox.view`: a note is part of dealing with a submission,
+     * the same as its status and its assignee, and somebody who may only read the list has
+     * nothing to add to the conversation about it.
+     */
+    public function notesPermission(): string
+    {
+        return 'inbox.update';
+    }
+
+    /** A note is something that happened to the submission, so the log says so. */
+    protected function noteAdded(Note $note): void
+    {
+        $this->log(SubmissionEvent::NOTE, null, null, $note->admin_id);
     }
 
     /** The answer to one field, by the machine name it was given under. */

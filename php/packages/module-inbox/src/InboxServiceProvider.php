@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Notes\NoteTypes;
+use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Panel\InboxModule;
 use WebxUi\Inbox\Rendering\Assets;
 use WebxUi\Inbox\Rendering\FormTag;
@@ -45,6 +47,12 @@ class InboxServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(InboxModule::class));
+
+        // Notes on a submission are the panel's own feature, not this module's (§2.17): the
+        // table, the trait and the endpoint live in `module-admin`, and what is said here is
+        // only that submissions are one of the things that carry them — under an alias, so
+        // the address reads `entities/inbox_submission/17/notes` and never a class name.
+        $this->app->make(NoteTypes::class)->register(Submission::MORPH, Submission::class);
 
         if (! $this->app->runningInConsole()) {
             return;

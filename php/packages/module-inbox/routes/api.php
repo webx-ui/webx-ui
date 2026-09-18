@@ -10,7 +10,10 @@ use WebxUi\Inbox\Http\Controllers\FormDuplicateController;
 use WebxUi\Inbox\Http\Controllers\FormSortingController;
 use WebxUi\Inbox\Http\Controllers\RecipientController;
 use WebxUi\Inbox\Http\Controllers\StatusController;
+use WebxUi\Inbox\Http\Controllers\SubmissionController;
+use WebxUi\Inbox\Http\Controllers\SubmissionExportController;
 use WebxUi\Inbox\Http\Controllers\SubmissionFileController;
+use WebxUi\Inbox\Http\Controllers\SubmissionMassController;
 
 /**
  * The panel's side of the module (§12).
@@ -38,6 +41,33 @@ Route::prefix((string) config('webx-admin.api_path').'/inbox')
                 ->whereNumber('submission')
                 ->whereNumber('file')
                 ->name('files.show');
+
+            // Before `{form}/submissions`, for the same reason `forms/sorting` comes before
+            // `forms/{form}`: `export` is a word, not an id.
+            Route::get('forms/{form}/submissions/export', SubmissionExportController::class)
+                ->whereNumber('form')->name('submissions.export');
+
+            Route::get('forms/{form}/submissions', [SubmissionController::class, 'index'])
+                ->whereNumber('form')->name('submissions.index');
+
+            Route::get('submissions/{submission}', [SubmissionController::class, 'show'])
+                ->whereNumber('submission')->name('submissions.show');
+        });
+
+        // Dealing with a submission — moving it along, giving it to somebody, correcting a
+        // digit, throwing it away — is a right of its own (§13): reading the list and
+        // answering it are not the same job.
+        Route::middleware('cms.can:inbox.update')->group(function (): void {
+            Route::post('submissions/mass', SubmissionMassController::class)->name('submissions.mass');
+
+            Route::post('forms/{form}/submissions', [SubmissionController::class, 'store'])
+                ->whereNumber('form')->name('submissions.store');
+
+            Route::put('submissions/{submission}', [SubmissionController::class, 'update'])
+                ->whereNumber('submission')->name('submissions.update');
+
+            Route::delete('submissions/{submission}', [SubmissionController::class, 'destroy'])
+                ->whereNumber('submission')->name('submissions.destroy');
         });
 
         Route::middleware('cms.can:inbox.manage')->group(function (): void {
