@@ -21,7 +21,21 @@ function form(row: Partial<InboxForm> & { id: number }): InboxForm {
 }
 
 function panel(forms: InboxForm[], can: (permission: string) => boolean = () => true) {
-  const get = vi.fn().mockResolvedValue({ data: forms })
+  // By address, because choosing a form mounts the list of its submissions beside it, and a
+  // mock that answered every request with the forms would hand that list a page of them.
+  const get = vi.fn().mockImplementation((path: string) => {
+    if (path.endsWith('/submissions')) {
+      return Promise.resolve({
+        data: [],
+        meta: { current_page: 1, last_page: 1, per_page: 25, total: 0, from: null, to: null },
+        columns: [],
+        counts: { all: 0, unread: 0, statuses: {} },
+      })
+    }
+
+    return Promise.resolve({ data: path.endsWith('/forms') ? forms : [] })
+  })
+
   const post = vi.fn().mockResolvedValue({ data: {} })
 
   // The real dictionary, because the package's own English is what a panel sees before the
