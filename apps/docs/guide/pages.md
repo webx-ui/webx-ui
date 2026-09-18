@@ -127,6 +127,9 @@ of indentation that says nothing.
   fetched whole.
 - **Searching puts the tree away** and answers with a flat list of matches, each with its address
   underneath: a branch drawn for the sake of one match deep inside it tells the reader nothing.
+  The box looks in every language the site has, not in the one the panel is open in — the list
+  shows the title a page carries, so a page named in English alone is on the screen of a Russian
+  panel and is found by that English name.
 - **The bin is a filter, not a section.** It lists the pages somebody deleted; what went down with
   a page comes back with it.
 - **Two ways to move a page:** drag it, or use "Move…" and pick the page it goes inside — which is

@@ -101,6 +101,21 @@ final class McpTest extends TestCase
                 $this->assertSame($shoes->getKey(), $content['pages'][0]['id']);
             });
 
+        // `locale` says which language to answer in, not which one to look in: the tree shows
+        // this page whatever is asked for, so a name it carries in any language finds it.
+        $this->useLocales('en', 'ru');
+        $shoes->setTranslation('title', 'ru', 'Обувь');
+        $shoes->save();
+
+        $this->agent('tree', ['search' => 'Обув', 'locale' => 'en'])
+            ->assertOk()
+            ->assertStructuredContent(function (AssertableJson $json) use ($shoes): void {
+                $content = $json->etc()->toArray();
+
+                $this->assertSame(1, $content['count']);
+                $this->assertSame($shoes->getKey(), $content['pages'][0]['id']);
+            });
+
         $secret = $this->page('secret', published: false);
 
         $this->agent('tree', ['status' => Page::STATUS_DRAFT])

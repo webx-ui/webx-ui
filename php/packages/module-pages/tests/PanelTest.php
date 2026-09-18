@@ -122,11 +122,39 @@ final class PanelTest extends TestCase
         $this->assertNull($response->json('data.home'));
         $this->assertSame(['catalog/shoes'], array_column($response->json('data.items'), 'path'));
 
-        // The title is searched too, and in the language the panel is open in.
+        // The title is searched too.
         $this->assertSame(
             ['about'],
             array_column($this->actingAs($this->editor(), 'cms')->getJson($this->api().'?search=Abou')->json('data.items'), 'path'),
         );
+    }
+
+    #[Test]
+    public function a_page_is_found_by_a_title_in_a_language_the_panel_is_not_open_in(): void
+    {
+        $this->useLocales('en', 'ru');
+
+        $news = $this->page('news');
+        $news->setTranslation('title', 'ru', 'Новости');
+        $news->save();
+
+        $editor = $this->editor();
+
+        $paths = fn (string $term): array => array_column(
+            $this->actingAs($editor, 'cms')
+                ->withHeader('X-Webx-Locale', 'en')
+                ->getJson($this->api().'?search='.urlencode($term))
+                ->json('data.items'),
+            'path',
+        );
+
+        // The English panel shows the English title, and finds the page by it.
+        $this->assertSame(['news'], $paths('New'));
+
+        // And by the Russian one, which is the point: a page titled in one language only is
+        // drawn with that title whatever the panel is open in, so an editor reading it off the
+        // screen and typing it into the box has to get it back.
+        $this->assertSame(['news'], $paths('Новост'));
     }
 
     #[Test]
