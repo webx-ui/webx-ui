@@ -375,7 +375,7 @@ onMounted(load)
         :cards-below="0"
         :search-placeholder="t('page.search')"
         :empty-text="
-          inBin ? t('page.empty-bin') : search ? t('page.empty-search') : t('page.empty')
+          search ? t('page.empty-search') : inBin ? t('page.empty-bin') : t('page.empty')
         "
         :aria-label="title"
         @row-click="open"
