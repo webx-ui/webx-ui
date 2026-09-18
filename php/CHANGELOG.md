@@ -1,5 +1,111 @@
 # @webx-ui/php
 
+## 0.22.0
+
+### Minor Changes
+
+- 4644d28: `webx-ui/module-inbox`: the form on the site.
+
+  `<x-webx-form slug="contact" />` prints a form of the panel — a control per field type, the
+  honeypot, the hidden timestamp, the captcha block a form asks for — out of views the site
+  publishes and rewrites, with no stylesheet and no design tokens of ours following it there.
+
+  It works with JavaScript switched off: the form posts, and the page comes back with the errors
+  under their inputs or the thank-you in place. The script adds only that this happens without a
+  reload; it is one file with no dependencies, served from the package.
+
+  A field the panel says is not full width carries `wx-form__field--half`. Without it the switch in
+  the editor meant nothing on the site, which is worse than not offering it: the package has no
+  layout of its own to apply, so naming the field is all it can do and the site's stylesheet does
+  the rest.
+
+  The form says which language it was printed in (`webx_locale`), and the intake answers in that
+  one. Its middleware is written out by hand and so runs nothing the site added to its own `web`
+  group — the language above all — so a Russian page was thanked in English, refused in English,
+  and the submission recorded English as the visitor's language. How a site chooses its language is
+  the site's business; the one thing always known is what the page came out in, so the form says
+  it, exactly as the panel tells the server in `X-Webx-Locale`.
+
+- 4644d28: `webx-ui/module-inbox`: the section by its other doors, and the command that forgets.
+
+  Six MCP tools under `inbox:read` and `inbox:write` — `inbox_forms_list`, `inbox_form_get`,
+  `inbox_form_save`, `inbox_list`, `inbox_get`, `inbox_set_status` — through the same rules the
+  panel's own editor is refused by: the rules and the row of a form and of a field now live in
+  `FormInput` and `FieldInput`, which the form requests and the agent both go through, so a slug
+  that is not an address is refused at either door. A save changes only what it names, and a field
+  sent with `remove: true` is put aside rather than destroyed, which leaves the answers already
+  given through it readable.
+
+  Receiving a submission is deliberately not a tool, and neither is deleting one. What deletes is
+  `webx:inbox:prune`: spam older than one age, everything older than another, both from the config
+  and both nought by default, row by row through the model so the files on the disk go with them.
+
+- 4644d28: `webx-ui/module-inbox`: the panel's side of the forms, the fields and the statuses (§12).
+
+  Reading the section and changing what it asks are two permissions: `inbox.view` opens the
+  column of forms, because that column is the navigation of the section, and `inbox.manage`
+  writes a form, a field or a status.
+
+  Two things the settings needed saying out loud. Their keys are literal and several have dots
+  in them, so nothing validates them by name — a rule called `options.thank-you.heading` reads
+  the dot as a path and the value disappears without an error — and what is saved goes through a
+  white list instead, which also keeps a `select`'s choices from surviving on a field that is no
+  longer one. A recipient is the one setting refused rather than dropped: an address nobody will
+  ever be written to looks exactly like one that works.
+
+  A field's machine name is unique among the live fields of its form only, so a name comes back
+  when the field that held it is deleted; a name with a dot in it is refused, because the intake
+  would look for a nested array and report the error under a key nothing on the page has. A copy
+  of a form is switched off and carries the questions and none of the answers.
+
+  `GET /inbox/recipients` names the administrators a form can be told to write to — the ones who
+  may actually open a submission, since a notification is a link and the alternative is a letter
+  followed by a 403.
+
+- 4644d28: The submissions: the list, the card, and notes on any record of the panel.
+
+  **`@webx-ui/module-admin` and `webx-ui/module-admin` — notes.** A record somebody can write a
+  note on takes `HasNotes`, declares `Notable` and names the permission its notes are behind; the
+  table, the endpoint and the `WxNotes` feed are the panel's own, so the next section that wants
+  one — an order, a client — adds a trait rather than a copy. Two things the shared endpoint
+  cannot be allowed to get wrong are closed in it: the type in the address is an alias of the
+  morph map and never a class name, and the permission is the record's answer, never the
+  controller's guess.
+
+  **`webx-ui/module-inbox` — the panel's side of a submission.** One form's list, with its own
+  `in_table` fields as columns and the counts of every tab travelling beside the rows; spam out of
+  "all" and reachable by its own tab; a pile moved, marked or thrown away row by row, so the log is
+  written and the attachments go with it. Beside it, one submission opened at an address of its
+  own: the answers with the words they were asked in, the files, what the intake saw around it, the
+  status and the assignee, the notes, the log, a reply by `mailto:`, and the arrows to the next one
+  in the same filtered pile. Submissions can also be typed in by hand, through the same intake as
+  the public door — a call that came by telephone lands in the same list, and carries none of the
+  administrator's own browser and address as if a visitor had them.
+
+- 4644d28: `webx-ui/module-inbox`: forms and submissions, the package half.
+
+  A form and its fields as rows, statuses seeded in ten languages, a public intake standing
+  deliberately outside CSRF, the four antispam layers, attachments on the module's own private
+  disk served only by the panel, and a notification per recipient in that recipient's own
+  language. The submission is written before anything is sent, so a mail server that is down
+  costs a notification and not an enquiry.
+
+  The panel's screens, the site's form component and the agent's tools come in later sessions.
+
+### Patch Changes
+
+- 4644d28: `webx-ui/module-blocks`: the preview answers in the language the site answers in.
+
+  Its route ran through `web` alone, and the language of a page is not decided there — it is
+  decided by a middleware the site puts on the route that answers for a page. So the preview came
+  out in the application's default: an editor writing a Russian page was shown it in English, with
+  every localized thing in it — the words of a block, the labels of a form standing on it — in the
+  wrong language, while the published page was right. The default is now `['web', 'webx.locale']`,
+  which is what the setting already said it was for.
+
+  A site that published `config/webx-blocks.php` keeps its own copy of that list and has to add
+  `'webx.locale'` to `preview.middleware` itself.
+
 ## 0.21.0
 
 ### Minor Changes

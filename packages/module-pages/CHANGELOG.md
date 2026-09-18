@@ -1,5 +1,14 @@
 # @webx-ui/module-pages
 
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [4644d28]
+- Updated dependencies [4644d28]
+  - @webx-ui/module-admin@0.7.0
+  - @webx-ui/module-blocks@0.4.1
+
 ## 0.3.1
 
 ### Patch Changes
