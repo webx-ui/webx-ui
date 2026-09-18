@@ -136,4 +136,5 @@ return [
     'no-answers' => 'Nichts ausgefüllt.',
     'download' => 'Herunterladen',
     'no-files-by-hand' => 'Eine Datei lässt sich nicht von Hand anhängen: die Anhänge sind das, was mitgeschickt wurde.',
+    'submissions-none' => 'Unter diesem Filter ist nichts da.',
 ];

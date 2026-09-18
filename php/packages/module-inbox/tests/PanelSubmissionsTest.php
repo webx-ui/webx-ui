@@ -193,7 +193,11 @@ final class PanelSubmissionsTest extends TestCase
             // Whoever typed it in has read it: otherwise it lands unread in its own list.
             ->assertJsonPath('data.is_read', true);
 
-        $this->assertSame(1, Submission::query()->count());
+        $made = Submission::query()->sole();
+
+        // No visitor, so none of a visitor's facts: the address and the browser would be the
+        // administrator's own, and the card would be answering "how it arrived" with them.
+        $this->assertSame(['locale'], array_keys($made->meta));
 
         // The same rules as the public door, because it is the same intake.
         $this->actingAs($this->editor(), 'cms')

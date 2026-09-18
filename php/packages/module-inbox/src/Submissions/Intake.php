@@ -48,7 +48,7 @@ final class Intake
             // second attempt would leave both answers in the list.
             $submission->files->each->delete();
             $submission->values()->delete();
-            $submission->forceFill(['meta' => $this->meta->of($request)])->save();
+            $submission->forceFill(['meta' => $this->meta->of($request, $source)])->save();
         }
 
         $this->write($submission, $form, $values, $request);
@@ -119,7 +119,7 @@ final class Intake
             'status_id' => $status->getKey(),
             'hash' => $hash,
             'source' => $source,
-            'meta' => $this->meta->of($request),
+            'meta' => $this->meta->of($request, $source),
         ]);
 
         $submission->log(SubmissionEvent::CREATED, null, $status->key);

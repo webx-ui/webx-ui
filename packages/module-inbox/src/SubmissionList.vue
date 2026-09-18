@@ -147,18 +147,38 @@ const columns = computed<TableColumn<SubmissionRow>[]>(() => {
       // than the room it takes, so it goes a step sooner.
       hideBelow: index === 0 ? undefined : 420 + index * 160,
     })),
-    { key: 'status', label: t('panel.status'), width: 180 },
+    // A floor rather than a width: the cell holds a badge, sometimes an avatar and sometimes
+    // a paperclip, and a fixed width that any of them overflows makes the whole table scroll
+    // sideways by two pixels.
+    { key: 'status', label: t('panel.status'), minWidth: 120 },
     {
       key: 'created_at',
       label: t('panel.received'),
       sortable: true,
-      width: 170,
+      width: 150,
+      // "today at 16:22" is three words the table will break over two lines given half a
+      // chance, and a date read down a column has to be one line to be read at all.
+      cellClass: 'wx-submissions__when',
       hideBelow: 520,
-      hideOnCards: true,
+      // Kept on the card, unlike most dates: "when did this come in" is one of the two
+      // questions a submission is looked at for, and the other one is who sent it.
     },
     { key: 'actions', label: '', width: 56, align: 'right', hideOnCards: true },
   ]
 })
+
+/**
+ * Two different nothings, said differently.
+ *
+ * "Nothing has ever come in through this form" is a fact about the form; "nothing matches" is
+ * a fact about the tab somebody is standing on. Saying the first one on a filtered tab tells a
+ * reader their form is dead when it is not.
+ */
+const emptyText = computed(() =>
+  query.value.view === 'all' && query.value.search === '' && query.value.assignee === null
+    ? t('panel.submissions-empty')
+    : t('panel.submissions-none'),
+)
 
 const statusOptions = computed(() =>
   statuses.value.map((status) => ({ value: status.id, label: name(status) })),
@@ -379,7 +399,7 @@ function settings(): void {
         :selectable="canUpdate"
         :row-class="(row: SubmissionRow) => (row.is_read ? undefined : 'is-unread')"
         :search-placeholder="t('panel.search-submissions')"
-        :empty-text="t('panel.submissions-empty')"
+        :empty-text="emptyText"
         :cards-below="640"
         @row-click="open"
         @state-change="onState"
@@ -484,9 +504,16 @@ function settings(): void {
   flex-wrap: wrap;
 }
 
+/* `:deep()` because the cell is the table's element and the class is ours — a scoped rule
+   would be looking for our attribute on somebody else's markup (CLAUDE.md §4). */
+.wx-submissions :deep(.wx-submissions__when) {
+  white-space: nowrap;
+}
+
 .wx-submissions__state {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--wx-space-6);
   min-width: 0;
 }

@@ -136,4 +136,5 @@ return [
     'no-answers' => 'No se rellenó nada.',
     'download' => 'Descargar',
     'no-files-by-hand' => 'Un archivo no se puede adjuntar a mano: los adjuntos son lo que llegó con el envío.',
+    'submissions-none' => 'Nada coincide con este filtro.',
 ];
