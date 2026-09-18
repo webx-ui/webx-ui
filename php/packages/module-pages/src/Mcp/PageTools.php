@@ -189,8 +189,8 @@ final class PageTools
         $search = trim((string) ($arguments['search'] ?? ''));
 
         $pages = match (true) {
-            ($arguments['trashed'] ?? false) === true => $this->bin($search, $locale),
-            $search !== '' => $this->matches($search, $locale, $arguments),
+            ($arguments['trashed'] ?? false) === true => $this->bin($search),
+            $search !== '' => $this->matches($search, $arguments),
             default => $this->branch($arguments),
         };
 
@@ -235,10 +235,10 @@ final class PageTools
      * @param  array<string, mixed>  $arguments
      * @return Collection<int, Page>
      */
-    private function matches(string $term, string $locale, array $arguments): Collection
+    private function matches(string $term, array $arguments): Collection
     {
         /** @var Collection<int, Page> $found */
-        $found = $this->searching($this->listing($arguments), $term, $locale)
+        $found = $this->searching($this->listing($arguments), $term)
             ->orderBy('lft')
             ->limit(self::SEARCH_LIMIT)
             ->get();
@@ -247,13 +247,17 @@ final class PageTools
     }
 
     /**
-     * Narrow a query to pages whose name or address contains the term. An empty term narrows
-     * nothing, so the bin and the tree can both hand their query through it.
+     * Narrow a query to pages whose name or address contains the term, in any language the
+     * site has. An empty term narrows nothing, so the bin and the tree can both hand their
+     * query through it.
+     *
+     * The `locale` argument says which language to answer in, not which one to look in: a page
+     * an agent can see in the tree is a page it can find by name.
      *
      * @param  Builder<Page>  $query
      * @return Builder<Page>
      */
-    private function searching(Builder $query, string $term, string $locale): Builder
+    private function searching(Builder $query, string $term): Builder
     {
         if ($term === '') {
             return $query;
@@ -261,21 +265,21 @@ final class PageTools
 
         $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $term).'%';
 
-        return $query->where(static function (Builder $nested) use ($like, $locale): void {
-            $nested->where(static fn (Builder $half): Builder => $half->whereTranslationLike('title', $like, $locale))
-                ->orWhere(static fn (Builder $half): Builder => $half->whereTranslationLike('slug', $like, $locale));
+        return $query->where(static function (Builder $nested) use ($like): void {
+            $nested->where(static fn (Builder $half): Builder => $half->whereTranslationLikeAny('title', $like))
+                ->orWhere(static fn (Builder $half): Builder => $half->whereTranslationLikeAny('slug', $like));
         });
     }
 
     /**
      * @return Collection<int, Page>
      */
-    private function bin(string $term, string $locale): Collection
+    private function bin(string $term): Collection
     {
         $query = Page::onlyTrashed()->whereNull('trashed_with')->with('routes');
 
         /** @var Collection<int, Page> $trashed */
-        $trashed = $this->searching($query, $term, $locale)
+        $trashed = $this->searching($query, $term)
             ->orderByDesc('deleted_at')
             ->get();
 

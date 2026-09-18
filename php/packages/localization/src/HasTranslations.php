@@ -247,6 +247,43 @@ trait HasTranslations
     }
 
     /**
+     * The same, in every language the site is published in rather than in one.
+     *
+     * What a list shows is the translation a record has, not the one the reader asked for: a
+     * page titled in English alone is drawn with that English title in a Russian panel. A
+     * search that looked at the current language only could not find what the reader is
+     * looking straight at, and said so with an empty list — which reads as a broken box.
+     *
+     * A language nothing is stored in costs a condition and no rows, so the list is the site's
+     * languages rather than the keys each record happens to carry: those are not something a
+     * query can ask the database about without reading the column as text, and as text a
+     * translation is escaped (`Д…`), so a term in anything but ASCII would never match.
+     *
+     * @param  Builder<static>  $query
+     * @param  list<string>|null  $locales
+     * @return Builder<static>
+     */
+    public function scopeWhereTranslationLikeAny(
+        Builder $query,
+        string $key,
+        string $value,
+        ?array $locales = null,
+    ): Builder {
+        // Whatever this record is being read in is a language too, and the only one there is
+        // when the table of languages cannot be reached — an install, a queued job.
+        $codes = array_values(array_unique([
+            ...($locales ?? $this->locales()?->codes() ?? []),
+            $this->translationLocale(),
+        ]));
+
+        return $query->where(function (Builder $nested) use ($key, $value, $codes): void {
+            foreach ($codes as $code) {
+                $nested->orWhere($this->translationPath($key, $code), 'like', $value);
+            }
+        });
+    }
+
+    /**
      * @param  Builder<static>  $query
      * @return Builder<static>
      */

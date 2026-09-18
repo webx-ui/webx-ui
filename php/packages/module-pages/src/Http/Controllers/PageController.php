@@ -10,7 +10,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Http\ApiResponse;
-use WebxUi\Localization\Locales;
 use WebxUi\Pages\Exceptions\PagesException;
 use WebxUi\Pages\Http\Requests\PageRequest;
 use WebxUi\Pages\Http\Resources\PageResource;
@@ -38,15 +37,15 @@ final class PageController
      */
     private const FLAT_LIMIT = 500;
 
-    public function index(Request $request, Locales $locales): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $search = trim((string) $request->query('search', ''));
         $trashed = $request->boolean('trashed');
         $flat = $request->boolean('flat');
 
         $items = match (true) {
-            $trashed => $this->bin($search, $locales->current()),
-            $search !== '' => $this->matches($search, $locales->current(), $request),
+            $trashed => $this->bin($search),
+            $search !== '' => $this->matches($search, $request),
             $flat => $this->everything($request),
             default => $this->level($request),
         };
@@ -176,17 +175,17 @@ final class PageController
     }
 
     /**
-     * Pages whose name or address contains the term, in the language the panel is open in.
+     * Pages whose name or address contains the term, in any language the site has.
      *
      * Ordered by `lft`, which is the order of the tree read top to bottom: matches from the
      * same branch stay together, and that is the only order a flat list of pages has.
      *
      * @return Collection<int, Page>
      */
-    private function matches(string $term, string $locale, Request $request): Collection
+    private function matches(string $term, Request $request): Collection
     {
         /** @var Collection<int, Page> $found */
-        $found = $this->searching($this->listing($request), $term, $locale)
+        $found = $this->searching($this->listing($request), $term)
             ->orderBy('lft')
             ->limit(self::SEARCH_LIMIT)
             ->get();
@@ -195,17 +194,21 @@ final class PageController
     }
 
     /**
-     * Narrow a query to pages whose name or address contains the term, in the language the panel
-     * is open in. An empty term narrows nothing.
+     * Narrow a query to pages whose name or address contains the term. An empty term narrows
+     * nothing.
      *
      * Lives apart from `matches()` because the bin is a search too: an editor who types in the
      * box expects the list under it to answer, and which list that is — the tree or the bin — is
      * not something the box knows about.
      *
+     * Every language, not the one the panel is open in: the list draws the title a page has,
+     * so a page titled in English alone is on the screen in a Russian panel and has to be
+     * findable from it.
+     *
      * @param  Builder<Page>  $query
      * @return Builder<Page>
      */
-    private function searching(Builder $query, string $term, string $locale): Builder
+    private function searching(Builder $query, string $term): Builder
     {
         if ($term === '') {
             return $query;
@@ -213,12 +216,12 @@ final class PageController
 
         $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $term).'%';
 
-        return $query->where(static function (Builder $nested) use ($like, $locale): void {
+        return $query->where(static function (Builder $nested) use ($like): void {
             // Each half through the package's own scope rather than a hand-written `title->en`:
             // how a translation is stored is `webx-ui/localization`'s to know, and a second
             // spelling of it here is one that drifts.
-            $nested->where(static fn (Builder $half): Builder => $half->whereTranslationLike('title', $like, $locale))
-                ->orWhere(static fn (Builder $half): Builder => $half->whereTranslationLike('slug', $like, $locale));
+            $nested->where(static fn (Builder $half): Builder => $half->whereTranslationLikeAny('title', $like))
+                ->orWhere(static fn (Builder $half): Builder => $half->whereTranslationLikeAny('slug', $like));
         });
     }
 
@@ -249,12 +252,12 @@ final class PageController
      *
      * @return Collection<int, Page>
      */
-    private function bin(string $term, string $locale): Collection
+    private function bin(string $term): Collection
     {
         $query = Page::onlyTrashed()->whereNull('trashed_with')->with('routes');
 
         /** @var Collection<int, Page> $trashed */
-        $trashed = $this->searching($query, $term, $locale)
+        $trashed = $this->searching($query, $term)
             ->orderByDesc('deleted_at')
             ->get();
 

@@ -149,6 +149,30 @@ final class HasTranslationsTest extends TestCase
     }
 
     #[Test]
+    public function a_search_across_the_languages_finds_a_value_stored_in_any_of_them(): void
+    {
+        Page::query()->create(['title' => ['en' => 'Fair']]);
+        Page::query()->create(['title' => ['uk' => 'Ярмарок']]);
+        Page::query()->create(['title' => ['en' => 'Contacts', 'uk' => 'Контакти']]);
+
+        $found = fn (string $like): array => Page::query()
+            ->whereTranslationLikeAny('title', $like)
+            ->get()
+            ->map(fn (Page $page): mixed => $page->getTranslations('title'))
+            ->all();
+
+        // The request is in English, and a title kept only in Ukrainian is still found by it —
+        // which is what a list drawn from a fallback needs, because that is what it shows.
+        $this->assertSame([['uk' => 'Ярмарок']], $found('%Ярмар%'));
+
+        // One record, not one per language it matches in.
+        $this->assertSame([['en' => 'Contacts', 'uk' => 'Контакти']], $found('%онтакт%'));
+
+        $this->assertSame([['en' => 'Fair']], $found('%Fai%'));
+        $this->assertSame([], $found('%nothing%'));
+    }
+
+    #[Test]
     public function a_translation_can_be_taken_back_out(): void
     {
         $page = Page::query()->create(['title' => ['en' => 'Contacts', 'uk' => 'Контакти']]);
