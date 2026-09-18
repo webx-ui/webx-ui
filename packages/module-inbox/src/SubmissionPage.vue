@@ -331,27 +331,39 @@ const details = computed(() => {
         The same pile the reader was looking at, one step at a time. An arrow with nowhere to
         go is disabled rather than hidden: the pair is a control, and a control that changes
         shape at the ends is one that moves under the hand.
+
+        One group and not four items in the head's row, so that on a narrow screen they go to
+        the next line together instead of breaking wherever the wrap happens to fall — which
+        left the arrows up by the name and the reply and the menu alone underneath.
       -->
-      <wx-action
-        icon="chevron-left"
-        size="lg"
-        :title="t('panel.previous')"
-        :disabled="!submission?.previous_id"
-        @click="go(submission?.previous_id ?? null)"
-      />
-      <wx-action
-        icon="chevron-right"
-        size="lg"
-        :title="t('panel.next')"
-        :disabled="!submission?.next_id"
-        @click="go(submission?.next_id ?? null)"
-      />
+      <div class="wx-submission__tools">
+        <wx-action
+          icon="chevron-left"
+          size="lg"
+          :title="t('panel.previous')"
+          :disabled="!submission?.previous_id"
+          @click="go(submission?.previous_id ?? null)"
+        />
+        <wx-action
+          icon="chevron-right"
+          size="lg"
+          :title="t('panel.next')"
+          :disabled="!submission?.next_id"
+          @click="go(submission?.next_id ?? null)"
+        />
 
-      <wx-button v-if="mailto" variant="outline" icon="mail" :href="mailto">
-        {{ t('panel.reply') }}
-      </wx-button>
+        <wx-button
+          v-if="mailto"
+          class="wx-submission__reply"
+          variant="outline"
+          icon="mail"
+          :href="mailto"
+        >
+          {{ t('panel.reply') }}
+        </wx-button>
 
-      <wx-row-menu :actions="actions" size="lg" :label="heading" />
+        <wx-row-menu :actions="actions" size="lg" :label="heading" />
+      </div>
     </div>
 
     <wx-skeleton v-if="loading" :rows="6" />
@@ -534,6 +546,29 @@ const details = computed(() => {
 .wx-submission__who {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.wx-submission__tools {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-8);
+  min-width: 0;
+}
+
+/*
+ * On a phone the group takes the line under the name, whole, and the one control with a word
+ * on it takes what the icons leave — a button that says "reply by mail" in the middle of a
+ * row of empty space is a button that looks like it did not fit.
+ */
+@container (max-width: 560px) {
+  .wx-submission__tools {
+    flex: 1 1 100%;
+  }
+
+  /* `:deep()` because the class is ours and the element it rides is `WxButton`'s. */
+  .wx-submission__tools > :deep(.wx-submission__reply) {
+    flex: 1 1 auto;
+  }
 }
 
 .wx-submission__panes {
