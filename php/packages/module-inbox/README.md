@@ -79,6 +79,73 @@ submission it matches instead of making a second one. Outside the window it is a
 without that, the same enquiry sent again next month would overwrite the first one and take its
 date with it.
 
+## The form on the site
+
+```blade
+<x-webx-form slug="contact" />
+<x-webx-form :form="$form" class="my-form" :values="['product' => $product->name]" />
+```
+
+The tag prints the whole thing: the controls the fields ask for, the honeypot, the hidden
+timestamp, the captcha block if the form wants one, the submit button and the two boxes a
+thank-you or a refusal goes in. A slug nobody has a form for — or one that is switched off —
+prints nothing, because a page that says "form not found" to a customer is worse than a page
+with one section missing.
+
+`:values` fills the hidden fields by their machine name: which page, which product, which
+campaign. That is what a machine name is for.
+
+**It works without JavaScript.** The form posts, the intake answers with a redirect, and the
+page comes back with the errors under their inputs or the thank-you in place — through the
+session, which is why the intake keeps one. The script the tag links adds one thing: the same
+two boxes are filled without the page reloading. It is one file with no dependencies and no
+build step, served straight from the package, so a site that has not rebuilt anything since
+last spring still gets it.
+
+A page may carry several forms. Each prints a hidden `webx_form`, and that is how one of them
+knows that the errors — or the thank-you — in the session are its own. Keep it in a view you
+rewrite, or two forms will both light up red over one refusal.
+
+### Making it yours
+
+```bash
+php artisan vendor:publish --tag=webx-inbox-views
+```
+
+What ships is the least markup that works: `wx-form`, `wx-form__field`, `wx-form__control`,
+`is-invalid`, and no colours, no spacing and no stylesheet at all. The package's own design
+tokens are not pulled onto the site — a site is not obliged to have them. After publishing, the
+views belong to the site:
+
+```
+resources/views/vendor/webx-inbox/form.blade.php          the frame
+resources/views/vendor/webx-inbox/field.blade.php         the label, the hint, the error
+resources/views/vendor/webx-inbox/fields/<type>.blade.php one control each
+resources/views/vendor/webx-inbox/message.blade.php       the thank-you and the refusal
+resources/views/vendor/webx-inbox/honeypot.blade.php
+resources/views/vendor/webx-inbox/captcha.blade.php
+```
+
+The script finds its way around by `data-webx-*` attributes and `[name]`, so a rewritten view
+keeps working as long as it keeps those. Drop them and the form still submits — it just
+reloads the page to say what happened.
+
+To bundle the script instead of linking ours:
+
+```bash
+php artisan vendor:publish --tag=webx-inbox-assets   # resources/js/vendor/webx-inbox/inbox.js
+```
+
+and set `webx-inbox.script` to false.
+
+### The captcha block
+
+The widget is drawn by the provider's own script, which the block loads once per page. A form
+says which provider it wants; the site key and the secret are the site's, in
+`webx-inbox.captcha.<provider>`. A token is good once, so the script resets the widget after
+every answer — otherwise a visitor who corrects one typo is refused by a captcha they already
+passed, which reads as a form that simply does not work.
+
 ## Antispam
 
 Four layers, in the order they run:

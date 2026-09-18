@@ -98,19 +98,44 @@ return [
     | here from the Integrations group rather than repeating a secret in each
     | form's options (§5).
     |
+    | `key` is the public half, which the widget on the page is drawn with, and
+    | `secret` the half that verifies the answer. `script` is the provider's own
+    | script, printed once per page beside the first widget that needs it; a
+    | site that loads it itself — or that would rather ask a mirror, which is
+    | what `recaptcha.net` is for — empties or changes it here.
+    |
     */
 
     'captcha' => [
         'recaptcha' => [
+            'key' => env('WEBX_INBOX_RECAPTCHA_KEY'),
             'secret' => env('WEBX_INBOX_RECAPTCHA_SECRET'),
             'verify' => 'https://www.google.com/recaptcha/api/siteverify',
+            'script' => 'https://www.google.com/recaptcha/api.js',
         ],
         'turnstile' => [
+            'key' => env('WEBX_INBOX_TURNSTILE_KEY'),
             'secret' => env('WEBX_INBOX_TURNSTILE_SECRET'),
             'verify' => 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+            'script' => 'https://challenges.cloudflare.com/turnstile/v0/api.js',
         ],
         'timeout' => 5,
     ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | The form on the site
+    |---------------------------------------------------------------------------
+    |
+    | `<x-webx-form>` prints a link to one small script of its own, which turns
+    | a working form into one that answers in place. Without it the form still
+    | submits — it posts, and comes back with the errors or the thank-you in the
+    | session — so this may be switched off by a site that bundles the published
+    | copy (`php artisan vendor:publish --tag=webx-inbox-assets`) instead.
+    |
+    */
+
+    'script' => (bool) env('WEBX_INBOX_SCRIPT', true),
 
     /*
     |---------------------------------------------------------------------------

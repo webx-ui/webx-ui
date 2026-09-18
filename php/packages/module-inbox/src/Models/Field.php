@@ -121,6 +121,20 @@ class Field extends Model
     }
 
     /**
+     * A translated option, read in the language being read — the consent sentence, mostly.
+     *
+     * Options are a JSON column and not a translated one, so `HasTranslations` knows nothing
+     * about what is inside them; the ones that hold words hold a map of languages, and this is
+     * what reads it.
+     */
+    public function optionText(string $key, string $default = ''): string
+    {
+        $text = $this->pick($this->option($key));
+
+        return $text !== '' ? $text : $default;
+    }
+
+    /**
      * The label of a choice, which is translated the way everything else here is: a map of
      * languages, or a plain string from a form written before the site had a second one.
      *
@@ -128,22 +142,28 @@ class Field extends Model
      */
     private function label(array $choice): string
     {
-        $label = $choice['label'] ?? $choice['value'];
+        $label = $this->pick($choice['label'] ?? $choice['value']);
 
-        if (! is_array($label)) {
-            return (string) $label;
+        return $label !== '' ? $label : (string) $choice['value'];
+    }
+
+    /** One value of a map of languages, or the value itself when it is not one. */
+    private function pick(mixed $value): string
+    {
+        if (! is_array($value)) {
+            return is_scalar($value) ? (string) $value : '';
         }
 
-        $locale = app()->getLocale();
-
-        foreach ([$locale, config('app.fallback_locale')] as $candidate) {
-            if (isset($label[$candidate]) && $label[$candidate] !== '') {
-                return (string) $label[$candidate];
+        foreach ([app()->getLocale(), config('app.fallback_locale')] as $candidate) {
+            if (is_string($candidate) && isset($value[$candidate]) && $value[$candidate] !== '') {
+                return (string) $value[$candidate];
             }
         }
 
-        $first = array_filter($label, static fn ($value): bool => is_scalar($value) && (string) $value !== '');
+        // Written in one language and read in another the site does not have a word for: the
+        // first thing anybody wrote beats an empty label.
+        $written = array_filter($value, static fn ($one): bool => is_scalar($one) && (string) $one !== '');
 
-        return $first === [] ? (string) $choice['value'] : (string) reset($first);
+        return $written === [] ? '' : (string) reset($written);
     }
 }

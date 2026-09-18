@@ -109,6 +109,9 @@ final class SubmitController
     {
         $payload = [
             'ok' => true,
+            // Which form this is about. A page may carry three of them, and without the name
+            // all three would show the thank-you belonging to whichever one was sent (§10).
+            'form' => $form->slug,
             'heading' => $this->text($form, 'thank-you.heading'),
             'message' => $this->text($form, 'thank-you.text'),
             'redirect' => $this->redirect($form),

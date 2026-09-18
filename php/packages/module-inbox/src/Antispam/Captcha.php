@@ -29,6 +29,12 @@ final class Captcha
         'turnstile' => 'cf-turnstile-response',
     ];
 
+    /** The class each provider's own script looks for when it goes hunting for widgets. */
+    private const WIDGETS = [
+        'recaptcha' => 'g-recaptcha',
+        'turnstile' => 'cf-turnstile',
+    ];
+
     public function __construct(
         private readonly Config $config,
         private readonly Http $http,
@@ -79,6 +85,43 @@ final class Captcha
     public function responseField(string $provider): ?string
     {
         return self::RESPONSE_FIELDS[$provider] ?? null;
+    }
+
+    /**
+     * What the form on the site draws, or nothing at all.
+     *
+     * Nothing at all covers two cases that look the same on the page and read very differently
+     * in the log: a form that asked for no captcha, and a form that asked for one the site has
+     * no site key for. The second is a form that renders and then refuses every submission —
+     * the verifier has no secret either — so it says so where somebody may see it.
+     *
+     * @return array{provider: string, key: string, widget: string, field: string}|null
+     */
+    public function widget(Form $form): ?array
+    {
+        $provider = $this->provider($form);
+
+        if ($provider === null) {
+            return null;
+        }
+
+        $key = $this->config->get("webx-inbox.captcha.{$provider}.key");
+
+        if (! is_string($key) || $key === '') {
+            $this->log->warning('webx-inbox: the form {form} asks for a {provider} captcha and the site has no site key for it.', [
+                'form' => $form->slug,
+                'provider' => $provider,
+            ]);
+
+            return null;
+        }
+
+        return [
+            'provider' => $provider,
+            'key' => $key,
+            'widget' => self::WIDGETS[$provider],
+            'field' => self::RESPONSE_FIELDS[$provider],
+        ];
     }
 
     private function verify(string $provider, string $secret, string $answer, string $ip): bool

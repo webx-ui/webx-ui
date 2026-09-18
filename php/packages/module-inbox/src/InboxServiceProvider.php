@@ -6,10 +6,13 @@ namespace WebxUi\Inbox;
 
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Inbox\Panel\InboxModule;
+use WebxUi\Inbox\Rendering\Assets;
+use WebxUi\Inbox\Rendering\FormTag;
 use WebxUi\Inbox\Support\Forms;
 
 class InboxServiceProvider extends ServiceProvider
@@ -20,6 +23,9 @@ class InboxServiceProvider extends ServiceProvider
 
         // Looked up by the rate limiter and then by the controller, within one request.
         $this->app->scoped(Forms::class);
+
+        // What a response has already printed, which is a fact about the response.
+        $this->app->scoped(Assets::class);
     }
 
     public function boot(): void
@@ -29,6 +35,11 @@ class InboxServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-inbox');
 
         $this->registerRateLimiter();
+
+        // `<x-webx-form slug="contact" />` — the whole public half of the module, as one tag
+        // (§10). A class component rather than an anonymous one, because what it prints is
+        // decided by a form, a guard and a captcha that all come out of the container.
+        Blade::component(FormTag::class, 'webx-form');
 
         $this->loadRoutesFrom(__DIR__.'/../routes/public.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
@@ -47,11 +58,18 @@ class InboxServiceProvider extends ServiceProvider
             __DIR__.'/../lang' => lang_path('vendor/webx-inbox'),
         ], 'webx-inbox-lang');
 
-        // The letter, mostly: every client wants their own letterhead on it, and publishing
-        // the view is how they get one without this package knowing about it.
+        // The form on the site and the letter. Both ship as the least markup that works, and
+        // both are meant to be published and rewritten: the reference implementation kept the
+        // intake and replaced every control on the page (§2.15).
         $this->publishes([
             __DIR__.'/../resources/views' => resource_path('views/vendor/webx-inbox'),
         ], 'webx-inbox-views');
+
+        // For a site that would rather have the script in its own bundle than as one more
+        // request. It then switches `webx-inbox.script` off, and the form stops linking ours.
+        $this->publishes([
+            __DIR__.'/../resources/js' => resource_path('js/vendor/webx-inbox'),
+        ], 'webx-inbox-assets');
     }
 
     /**
