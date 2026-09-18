@@ -660,8 +660,26 @@ defineExpose({ measure, revealActive })
   border-radius: var(--wx-radius-sm);
 }
 
+/*
+ * A segmented control is a control, not a place in the panel — so its proportions are a
+ * button's and not a heading's.
+ *
+ * Two things follow. It is wider than it is tall: the room goes sideways, where the words
+ * are, rather than above and below them, and a pill as tall as it was reads as a stack of
+ * buttons rather than as one switch. And it keeps the size of a label at every width — the
+ * strip below grows to 16px in a wide container, which is right for tabs somebody navigates
+ * by and monstrous for three pills inside a card.
+ */
 .wx-tabs--pill .wx-tabs__tab {
   border-radius: var(--wx-radius-xs);
+  padding: var(--wx-space-6) var(--wx-space-16);
+  font-size: var(--wx-font-size-sm);
+}
+
+/* The compact scale, in the same proportion. */
+.wx-tabs--pill.wx-tabs--sm .wx-tabs__tab {
+  padding: var(--wx-space-4) var(--wx-space-12);
+  font-size: var(--wx-font-size-xs);
 }
 
 .wx-tabs--pill .wx-tabs__tab[data-state='active'] {
@@ -805,6 +823,16 @@ defineExpose({ measure, revealActive })
 @media (pointer: coarse) {
   .wx-tabs__tab {
     min-height: 44px;
+  }
+
+  /*
+   * A pill is wider than a tab and it is hit sideways: at 44 tall and its own width the
+   * segmented strip on a phone stood as a row of blocks, which is what a switch must not look
+   * like. It keeps the height the panel gives its other controls there instead — the room a
+   * finger needs it takes across.
+   */
+  .wx-tabs--pill .wx-tabs__tab {
+    min-height: 36px;
   }
 
   .wx-tabs__arrow {
