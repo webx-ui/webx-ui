@@ -13,6 +13,7 @@ const props = withDefaults(defineProps<EntityCardProps>(), {
   shape: 'rounded',
   imageSize: undefined,
   meta: () => [],
+  titleLines: 1,
   size: 'md',
   variant: 'card',
   bordered: false,
@@ -43,6 +44,7 @@ const classes = computed(() => [
   `wx-entity-card--${props.variant}`,
   {
     'wx-entity-card--bordered': props.bordered,
+    'wx-entity-card--clamp': props.titleLines > 1,
     'is-selected': props.selected,
   },
 ])
@@ -51,7 +53,7 @@ const classes = computed(() => [
 <template>
   <div
     :class="classes"
-    :style="{ '--wx-entity-card-image': imageSize }"
+    :style="{ '--wx-entity-card-image': imageSize, '--wx-entity-card-title-lines': titleLines }"
     @click="emit('click', $event)"
   >
     <div v-if="hasMedia" class="wx-entity-card__media" :class="`wx-entity-card__media--${shape}`">
@@ -215,6 +217,19 @@ const classes = computed(() => [
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/*
+ * More than one line, and the cut moves from the end of the line to the end of the last one
+ * allowed. Only then: a single line is what most lists want, and `-webkit-box` would turn the
+ * title into a block for all of them.
+ */
+.wx-entity-card--clamp .wx-entity-card__title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: var(--wx-entity-card-title-lines, 1);
+  line-clamp: var(--wx-entity-card-title-lines, 1);
+  white-space: normal;
 }
 
 .wx-entity-card--sm .wx-entity-card__title {

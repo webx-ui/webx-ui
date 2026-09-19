@@ -61,4 +61,8 @@ return [
     'new-title' => 'Нова стаття',
     'field-title' => 'Заголовок',
     'create' => 'Створити',
+
+    'filter-rubric' => 'Рубрика',
+    'filter-tag' => 'Тег',
+    'filter-author' => 'Автор',
 ];

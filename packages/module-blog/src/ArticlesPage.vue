@@ -7,7 +7,9 @@ import {
   useTranslate,
   WxDate,
   WxListScreen,
+  WxFilterChips,
   WxRowMenu,
+  type AppliedFilter,
   type RowAction,
 } from '@webx-ui/module-admin'
 import {
@@ -17,6 +19,8 @@ import {
   useElementWidth,
   WxBadge,
   WxButton,
+  WxEntityCard,
+  WxFormItem,
   WxIcon,
   WxSelect,
   WxTable,
@@ -58,6 +62,8 @@ const router = useRouter()
 useBlogMessages()
 
 const t = useTranslate('webx-blog')
+/* The two words a list needs as soon as it has filters belong to the panel, not to the blog. */
+const admin = useTranslate('webx-admin')
 /* Not the server's `message`: the panel says how a request failed in its own words. */
 const message = useErrorText()
 
@@ -160,6 +166,59 @@ const emptyText = computed(() => {
 
   return inBin.value ? t('panel.empty-bin') : t('panel.empty')
 })
+
+/**
+ * What the three dropdowns are set to, said in the reader's words.
+ *
+ * They live behind the funnel now, and a shut panel says nothing about itself: a list narrowed
+ * by something nobody can see is a list that looks wrong. The chips are the answer, and taking
+ * one off is the same `narrow()` the dropdown itself calls.
+ */
+const applied = computed<AppliedFilter[]>(() => {
+  const chips: AppliedFilter[] = []
+
+  const rubric = filters.value.rubrics.find((item) => item.id === query.value.rubric)
+  if (rubric) {
+    chips.push({
+      key: 'rubric',
+      label: `${t('panel.filter-rubric')}: ${rubric.title}`,
+      clear: () => narrow('rubric', undefined),
+    })
+  }
+
+  const tag = filters.value.tags.find((item) => item.id === query.value.tag)
+  if (tag) {
+    chips.push({
+      key: 'tag',
+      label: `${t('panel.filter-tag')}: ${tag.title}`,
+      clear: () => narrow('tag', undefined),
+    })
+  }
+
+  const author = filters.value.authors.find((item) => item.id === query.value.author)
+  if (author) {
+    chips.push({
+      key: 'author',
+      label: `${t('panel.filter-author')}: ${author.title}`,
+      clear: () => narrow('author', undefined),
+    })
+  }
+
+  return chips
+})
+
+/** All three at once, from inside the panel they were set in. */
+function clearFilters(): void {
+  void router.replace({
+    query: {
+      ...route.query,
+      rubric: undefined,
+      tag: undefined,
+      author: undefined,
+      page: undefined,
+    },
+  })
+}
 
 async function load(state?: TableState): Promise<void> {
   loading.value = true
@@ -420,6 +479,8 @@ function dateOf(article: ArticleRow): string | null {
         layout="fixed"
         :loading="loading"
         :cards-below="CARDS"
+        :filters-count="applied.length"
+        :filters-label="admin('filters.title')"
         :search-placeholder="t('panel.search')"
         :empty-text="emptyText"
         :aria-label="title"
@@ -427,15 +488,13 @@ function dateOf(article: ArticleRow): string | null {
         @state-change="onState"
       >
         <!--
-          The three dropdowns stand in the table's own head, beside the search: they narrow the
-          rows, and a bar of their own above the card would say they narrow the screen.
-
-          They keep a row of their own inside it, which is what the wrapper is for. On cards the
-          table stacks everything in its head into a column, and three filters one under another
-          is three lines of chrome before the first article — on a phone that is half the screen.
+          The three dropdowns live behind the funnel, and what they are set to comes back as
+          chips beside it. Standing open they were three controls of chrome above the first
+          article, and on a phone — where the table stacks everything in its head into a column —
+          three lines of it before any data.
         -->
-        <template #actions>
-          <div class="wx-articles__filters">
+        <template #filters>
+          <wx-form-item :label="t('panel.filter-rubric')">
             <wx-select
               :model-value="query.rubric"
               :options="filters.rubrics.map((item) => ({ value: item.id, label: item.title }))"
@@ -444,6 +503,9 @@ function dateOf(article: ArticleRow): string | null {
               size="sm"
               @update:model-value="(value: unknown) => narrow('rubric', value)"
             />
+          </wx-form-item>
+
+          <wx-form-item :label="t('panel.filter-tag')">
             <wx-select
               :model-value="query.tag"
               :options="filters.tags.map((item) => ({ value: item.id, label: item.title }))"
@@ -453,6 +515,9 @@ function dateOf(article: ArticleRow): string | null {
               size="sm"
               @update:model-value="(value: unknown) => narrow('tag', value)"
             />
+          </wx-form-item>
+
+          <wx-form-item :label="t('panel.filter-author')">
             <wx-select
               :model-value="query.author"
               :options="filters.authors.map((item) => ({ value: item.id, label: item.title }))"
@@ -461,7 +526,19 @@ function dateOf(article: ArticleRow): string | null {
               size="sm"
               @update:model-value="(value: unknown) => narrow('author', value)"
             />
-          </div>
+          </wx-form-item>
+
+          <!-- Taking all of them off belongs with the fields it resets: beside the chips it
+               reads as one more chip, and it is the only control there that does not take
+               exactly one filter away. -->
+          <wx-button v-if="applied.length > 0" variant="text" size="sm" block @click="clearFilters">
+            <template #icon><wx-icon name="close" /></template>
+            {{ admin('filters.reset') }}
+          </wx-button>
+        </template>
+
+        <template #applied>
+          <wx-filter-chips :filters="applied" />
         </template>
 
         <template #cell-cover="{ row }">
@@ -525,40 +602,44 @@ function dateOf(article: ArticleRow): string | null {
           because the table's own stack of "Title: … / Author: … / Date: …" is five lines and
           four hundred pixels for one article (§10).
         -->
+        <!--
+          `WxEntityCard`, `plain` so that the box around it stays the table's own: a picture, a
+          name, its address under it and a row of facts is exactly what the component is, and
+          writing that by hand once per section is how five sections end up with five different
+          cards.
+        -->
         <template #cell-card="{ row }">
-          <div class="wx-articles__card">
-            <span class="wx-articles__cover is-card" :class="{ 'is-empty': !row.cover }">
-              <img v-if="row.cover?.thumb" :src="row.cover.thumb" alt="" loading="lazy" />
-              <wx-icon v-else name="image" size="sm" />
-            </span>
+          <wx-entity-card
+            class="wx-articles__entity"
+            variant="plain"
+            :title="row.title"
+            :image="row.cover?.thumb ?? undefined"
+            image-size="56px"
+            :title-lines="2"
+            :subtitle="address(row)"
+          >
+            <template #title>
+              <wx-icon v-if="row.pinned" class="wx-articles__pin" name="star" size="sm" />
+              {{ row.title }}
+            </template>
 
-            <div class="wx-articles__card-body">
-              <div class="wx-articles__card-title">
-                <wx-icon v-if="row.pinned" class="wx-articles__pin" name="star" size="sm" />
-                <span>{{ row.title }}</span>
-              </div>
+            <template #meta>
+              <wx-badge v-if="row.rubrics[0]" size="sm" round>{{ row.rubrics[0].title }}</wx-badge>
+              <wx-badge :type="badge(row.status)" dot size="sm">
+                {{ t(`panel.status-${row.status}`) }}
+              </wx-badge>
+              <wx-date v-if="dateOf(row)" :value="dateOf(row)" />
+            </template>
+          </wx-entity-card>
+        </template>
 
-              <div class="wx-articles__card-meta">
-                <wx-badge v-if="row.rubrics[0]" size="sm" round>
-                  {{ row.rubrics[0].title }}
-                </wx-badge>
-                <wx-badge :type="badge(row.status)" dot size="sm">
-                  {{ t(`panel.status-${row.status}`) }}
-                </wx-badge>
-                <wx-date v-if="dateOf(row)" :value="dateOf(row)" />
-                <wx-text v-if="row.author" size="sm" tone="muted" truncate>
-                  {{ row.author.name }}
-                </wx-text>
-              </div>
-            </div>
-
-            <!--
-              Inside the card rather than in the table's own `card-actions`, which is a strip
-              above the fields: a whole line of nothing for one `···` is 44 of the 120 pixels a
-              card has, measured. Here it sits where a thumb reaches it, beside the title.
-            -->
-            <wx-row-menu :actions="actionsFor(row)" :label="row.title" />
-          </div>
+        <!--
+          The menu goes in the card's own top strip, beside the checkbox: that line is there
+          either way as soon as rows can be picked, and a `···` inside the entity takes width
+          off a title that is already one line short.
+        -->
+        <template #card-actions="{ row }">
+          <wx-row-menu :actions="actionsFor(row)" :label="row.title" />
         </template>
 
         <template #cell-actions="{ row }">
@@ -576,28 +657,6 @@ function dateOf(article: ArticleRow): string | null {
   min-width: 0;
 }
 
-.wx-articles__filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wx-space-8);
-  min-width: 0;
-}
-
-/*
- * Wide enough to read a rubric in, narrow enough that three of them and a search box still fit
- * on one line of the table's head — and able to shrink and share a phone's width between them
- * rather than each taking a line of its own.
- *
- * Through `:deep()` and not through a class handed to `WxSelect`. The select carries its
- * dropdown beside itself, so its root is a fragment, and Vue puts this component's scope
- * attribute only on single-root children: the class arrives on the element and the rule that
- * names it matches nothing. Silent — the selects simply keep their natural width (CLAUDE.md §4).
- */
-.wx-articles__filters > :deep(.wx-select) {
-  flex: 1 1 110px;
-  max-width: 150px;
-}
-
 /*
  * The cover is the picture's box, never the picture: `<img>` has `min-width: auto`, which is
  * its natural width, so a 1600px photograph would take the column and the ones beside it
@@ -613,11 +672,6 @@ function dateOf(article: ArticleRow): string | null {
   border-radius: var(--wx-radius-sm);
   background: var(--wx-bg-subtle);
   color: var(--wx-text-muted);
-}
-
-.wx-articles__cover.is-card {
-  width: 76px;
-  height: 58px;
 }
 
 .wx-articles__cover.is-empty {
@@ -679,53 +733,5 @@ function dateOf(article: ArticleRow): string | null {
    would be looking for our attribute on somebody else's markup (CLAUDE.md §4). */
 .wx-articles :deep(.wx-articles__when) {
   white-space: nowrap;
-}
-
-.wx-articles__card {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--wx-space-10);
-  min-width: 0;
-}
-
-/* The menu keeps its own size whatever the title does beside it. */
-.wx-articles__card > :deep(.wx-row-menu) {
-  flex: none;
-}
-
-.wx-articles__card-body {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: var(--wx-space-6);
-  min-width: 0;
-}
-
-/*
- * Two lines and then an ellipsis. A headline is a sentence, and one line of it on a phone is
- * half a thought; three is a card that no longer fits ten to a screen.
- */
-.wx-articles__card-title {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--wx-space-6);
-  font-weight: var(--wx-font-weight-semibold);
-  line-height: var(--wx-font-line-height-tight);
-}
-
-.wx-articles__card-title span {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-}
-
-.wx-articles__card-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wx-space-6);
-  min-width: 0;
 }
 </style>

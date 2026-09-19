@@ -144,6 +144,10 @@ describe('WxArticlesPage', () => {
     await flushPromises()
     get.mockClear()
 
+    // The dropdowns live behind the funnel, and a shut panel has no fields to find.
+    await wrapper.get('.wx-table__filter button').trigger('click')
+    await flushPromises()
+
     wrapper.findAllComponents({ name: 'WxSelect' })[0]?.vm.$emit('update:modelValue', 3)
     await flushPromises()
 
