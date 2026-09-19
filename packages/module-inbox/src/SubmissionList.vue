@@ -6,6 +6,7 @@ import {
   useErrorText,
   useTranslate,
   WxDate,
+  rowMenuWidth,
   WxRowMenu,
   type RowAction,
 } from '@webx-ui/module-admin'
@@ -195,7 +196,7 @@ const columns = computed<TableColumn<SubmissionRow>[]>(() => {
       // Kept on the card, unlike most dates: "when did this come in" is one of the two
       // questions a submission is looked at for, and the other one is who sent it.
     },
-    { key: 'actions', label: '', width: 56, align: 'right', hideOnCards: true },
+    { key: 'actions', label: '', width: rowMenuWidth, align: 'right', hideOnCards: true },
   ]
 })
 

@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAdmin, useErrorText, useTranslate, WxDate, WxListScreen } from '@webx-ui/module-admin'
+import {
+  rowMenuWidth,
+  useAdmin,
+  useErrorText,
+  useTranslate,
+  WxDate,
+  WxListScreen,
+} from '@webx-ui/module-admin'
 import {
   confirm,
   createModal,
@@ -125,7 +132,7 @@ const columns = computed<TableColumn<PageRow>[]>(() => [
     hideBelow: 900,
     hidden: inBin.value,
   },
-  { key: 'actions', label: '', width: 56, align: 'right' },
+  { key: 'actions', label: '', width: rowMenuWidth, align: 'right' },
 ])
 
 const tree = computed<TableTreeOptions<PageRow> | undefined>(() =>

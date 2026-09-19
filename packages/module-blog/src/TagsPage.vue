@@ -6,6 +6,7 @@ import {
   useErrorText,
   useTranslate,
   WxListScreen,
+  rowMenuWidth,
   WxRowMenu,
   type RowAction,
 } from '@webx-ui/module-admin'
@@ -126,7 +127,7 @@ const columns = computed<TableColumn<TagRow>[]>(() => [
   // at 180px of text, and a cell keeps 32 of its own. Narrower, the ruled row wrapped and
   // stood eighteen pixels taller than the ones around it.
   { key: 'indexing', label: t('tag.column-indexing'), width: 230, hideBelow: 560 },
-  { key: 'actions', label: '', width: 56, align: 'right' },
+  { key: 'actions', label: '', width: rowMenuWidth, align: 'right' },
 ])
 
 function query(state?: TableState): TagQuery {
@@ -278,6 +279,38 @@ async function remove(tag: TagRow): Promise<void> {
     toast.danger(message(error))
   }
 }
+
+/**
+ * What can be done to the pile, behind the same `···` a single row has.
+ *
+ * Three buttons in the bar were three lines of chrome on a phone and the same three words every
+ * row already offers; merging stays a button because it is the one thing here that cannot be
+ * done to a row on its own.
+ */
+const massActions = computed<RowAction[]>(() => [
+  {
+    key: 'index',
+    icon: 'eye',
+    label: t('tag.index'),
+    disabled: working.value,
+    run: () => void massSelected('index'),
+  },
+  {
+    key: 'noindex',
+    icon: 'eye-off',
+    label: t('tag.noindex'),
+    disabled: working.value,
+    run: () => void massSelected('noindex'),
+  },
+  {
+    key: 'delete',
+    icon: 'trash',
+    label: t('tag.delete'),
+    danger: true,
+    disabled: working.value,
+    run: () => void massSelected('delete'),
+  },
+])
 
 function actionsFor(tag: TagRow): RowAction[] {
   if (!canManage.value) return []
@@ -461,34 +494,25 @@ async function massSelected(action: 'index' | 'noindex' | 'delete'): Promise<voi
         <wx-text weight="medium">{{ t('tag.selected', { count: chosen.length }) }}</wx-text>
       </template>
 
-      <!-- The icon is a slot and not a prop: `WxButton` takes `#icon`, and `icon="…"` lands on
-           the element as an attribute and draws nothing at all (CLAUDE.md §4). -->
+      <!--
+        One button and a menu. Merging is what this bar exists for — it is the only thing here
+        that cannot be done to a row on its own — and the other three are the row's own menu
+        applied to several rows at once, which is where a reader already looks for them.
+
+        The icon is a slot and not a prop: `WxButton` takes `#icon`, and `icon="…"` lands on the
+        element as an attribute and draws nothing at all (CLAUDE.md §4).
+      -->
       <wx-button type="primary" :disabled="chosen.length < 2 || working" @click="mergeSelected">
         <template #icon><wx-icon name="link" /></template>
         {{ t('tag.merge') }}
       </wx-button>
-      <wx-button variant="outline" :disabled="working" @click="massSelected('index')">
-        <template #icon><wx-icon name="eye" /></template>
-        {{ t('tag.index') }}
-      </wx-button>
-      <wx-button variant="outline" :disabled="working" @click="massSelected('noindex')">
-        <template #icon><wx-icon name="eye-off" /></template>
-        {{ t('tag.noindex') }}
-      </wx-button>
-      <wx-button
-        variant="outline"
-        type="danger"
-        :disabled="working"
-        @click="massSelected('delete')"
-      >
-        <template #icon><wx-icon name="trash" /></template>
-        {{ t('tag.delete') }}
-      </wx-button>
-      <!-- Icon only, so the label is the only name it has: without `#icon` this button is a
-           38-pixel blank, which is how the missing prop was found. -->
-      <wx-button variant="text" :aria-label="t('tag.clear')" @click="selected = []">
-        <template #icon><wx-icon name="close" /></template>
-      </wx-button>
+
+      <!--
+        No way out of the selection here. Untick the rows, or untick them all from the box in
+        the heading — a × beside a red "Delete" is a button whose whole job is to undo something
+        harmless, standing where the dangerous one is, and it read as a way to close the bar.
+      -->
+      <wx-row-menu :actions="massActions" :label="t('tag.selected', { count: chosen.length })" />
     </wx-action-bar>
   </div>
 </template>

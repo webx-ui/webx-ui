@@ -156,7 +156,15 @@ describe('WxTagsPage', () => {
     const bar = wrapper.get('.wx-action-bar')
     expect(bar.text()).toContain('2 selected')
 
-    await bar.findAll('button')[1]?.trigger('click')
+    // The three that are not merging live behind the bar's own `···`, where the same three
+    // words sit on every row. The panel is teleported to the end of the document, so it is
+    // looked for there rather than inside the wrapper.
+    await bar.get('.wx-actions__menu button').trigger('click')
+    await flushPromises()
+
+    const items = [...document.querySelectorAll<HTMLElement>('.wx-dropdown-item')]
+
+    items.find((item) => item.textContent?.trim() === 'Index')?.click()
     await flushPromises()
 
     expect(post).toHaveBeenCalledWith('/api/cms/blog/tags/mass', { ids: [5, 6], action: 'index' })
