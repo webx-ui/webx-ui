@@ -113,11 +113,23 @@ const classes = computed(() => [
 
 /* Against the end of the bar on one line and on two: on a line of its own the buttons would
    otherwise start at the left, under the words, which reads as a second, unrelated row. */
+/*
+ * The buttons wrap too, for the same reason the bar does.
+ *
+ * `flex: 0 0 auto` kept them on one line whatever the width, and a line of five was 815px inside
+ * a bar 359 wide — measured on a 375px screen, where it took the whole page sideways with it and
+ * left a scrollbar under a list that fitted perfectly well. They keep the end of the bar while
+ * there is room and fold into rows when there is not; `justify-content` is what keeps the fold
+ * aligned with the edge the buttons came from.
+ */
 .wx-action-bar__actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: var(--wx-space-8);
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
   margin-inline-start: auto;
 }
 </style>
