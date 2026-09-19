@@ -81,9 +81,12 @@ final class ScreenValues
                 continue;
             }
 
+            // `$type === null` rather than `?? $value`: a type is entitled to store null — an
+            // emptied editor keeps nothing — and coalescing would hand the raw value back as
+            // though no type had been registered at all.
             $stored[$name] = $localized && is_array($value)
-                ? array_map(static fn (mixed $one): mixed => $type?->store($one, $node) ?? $one, $value)
-                : ($type?->store($value, $node) ?? $value);
+                ? array_map(static fn (mixed $one): mixed => $type === null ? $one : $type->store($one, $node), $value)
+                : ($type === null ? $value : $type->store($value, $node));
         }
 
         if ($errors !== []) {
@@ -107,7 +110,7 @@ final class ScreenValues
             $stored = $this->pick($stored, $locale);
         }
 
-        return $type?->resolve($stored, $node, $locale) ?? $stored;
+        return $type === null ? $stored : $type->resolve($stored, $node, $locale);
     }
 
     /**

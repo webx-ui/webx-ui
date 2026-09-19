@@ -48,6 +48,9 @@ return [
 
         - `wx-input` — one line of text. `props`: `placeholder`, `maxlength`.
         - `wx-textarea` — several lines. `props`: `rows`, `placeholder`.
+        - `wx-rich-text` — a formatted document, stored as HTML: headings, lists, tables,
+          links, pictures from the library. Print it with `{!! !!}` rather than `{{ }}`.
+          `props`: `placeholder`, `minHeight`, `tools`.
         - `wx-input-number` — a number. `props`: `min`, `max`, `step`.
         - `wx-switch`, `wx-checkbox` — a boolean.
         - `wx-select`, `wx-radio-group` — one of `props.options`, written as

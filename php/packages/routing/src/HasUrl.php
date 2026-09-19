@@ -108,6 +108,22 @@ trait HasUrl
         $canonical = $this->routeCanonical($locale);
         $path = $canonical instanceof Route ? $canonical->path : $this->routePath($locale);
 
+        return $this->urlOf($path, $locale);
+    }
+
+    /**
+     * The same address, out of a path the caller already has.
+     *
+     * For a list: a screen that has loaded the `routes` relation for a page of rows knows every
+     * path already, and `url()` would go back to the registry once per row to learn what
+     * it was handed. The language prefix is the only thing left to add, and it is the one part
+     * a caller must not work out for itself — a second reading of the strategy is a second
+     * reading that drifts.
+     */
+    public function urlOf(string $path, ?string $locale = null): string
+    {
+        $locale ??= $this->routeLocale();
+
         return URL::to(UrlNormaliser::join($this->localePrefix($locale), $path));
     }
 

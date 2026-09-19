@@ -11,6 +11,7 @@ use WebxUi\Admin\Console\InstallCommand;
 use WebxUi\Admin\Console\MakeModuleCommand;
 use WebxUi\Admin\Console\PanelCommand;
 use WebxUi\Admin\Console\PruneVersionsCommand;
+use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Manifest\ManifestBuilder;
 use WebxUi\Admin\Notes\NoteTypes;
@@ -22,6 +23,7 @@ use WebxUi\Admin\Screens\Types\DateType;
 use WebxUi\Admin\Screens\Types\NumberType;
 use WebxUi\Admin\Screens\Types\OptionType;
 use WebxUi\Admin\Screens\Types\RepeaterType;
+use WebxUi\Admin\Screens\Types\RichTextType;
 use WebxUi\Admin\Screens\Types\StringType;
 use WebxUi\Localization\Locales;
 
@@ -54,6 +56,11 @@ class AdminServiceProvider extends ServiceProvider
             $types->register('wx-radio-group', new OptionType);
             $types->register('wx-date-picker', new DateType);
             $types->register('wx-color-picker', new ColorType);
+            // The library is a module's, not the panel's — a site with no file manager has
+            // nothing to ask where a picture lives, and the type then leaves addresses alone.
+            $types->register('wx-rich-text', new RichTextType(
+                $app->bound(AssetUrls::class) ? $app->make(AssetUrls::class) : null,
+            ));
 
             // The repeater checks and casts its items with the other types, so it is handed
             // the registry it is being put into.
