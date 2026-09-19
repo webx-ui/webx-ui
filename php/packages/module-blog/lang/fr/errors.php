@@ -1,0 +1,8 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'rubric-in-use' => 'Cette rubrique contient encore :count articles. Déplacez-les d’abord, sinon la rubrique qu’ils nomment disparaît du site alors qu’ils restent accessibles.',
+    'merge-into-self' => 'Une étiquette ne peut pas être fusionnée avec elle-même.',
+];
