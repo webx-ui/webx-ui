@@ -533,6 +533,9 @@ function settings(): void {
  * screen's own. Written as 16 here, the pane kept desktop air inside a 375px drawer: the head,
  * the tabs and the rows each took a line of nothing between them, and four rows fitted where
  * six do now.
+ *
+ * The head and the tabs stand this far from the edge on both. The table takes a step of its
+ * own on top of it in the column and none on a sheet — see below for why.
  */
 .wx-submissions {
   display: flex;
@@ -576,16 +579,39 @@ function settings(): void {
 }
 
 /*
- * Beside the forms, the cards stand a step further in than the pane's own padding.
+ * A step of the table's own, on all four sides, and the same one in both of its views.
  *
- * There the pane is a column of a card — a rule down its left side, the card's frame on its
- * right — and a list of boxes that begins where the column begins reads as glued to both. As a
- * sheet the same list has the edge of the screen for a boundary and wants nothing extra, which
- * is why this belongs to the pane and not to the table: only the pane knows which one it is.
- * Rows want neither, and do not get it — they are the table's own width by design.
+ * The pane is a column of a card — a rule down its left side, the card's frame on its right —
+ * and a list that begins on the column's own boundary reads as glued to it. One number for the
+ * whole table rather than one for the cards: the search field, the rows and the boxes are the
+ * same list seen at three widths, and a step that only one of them keeps is a step that shows.
  */
-.wx-submissions.is-pane :deep(.wx-table--cards) {
-  padding-inline: var(--wx-table-padding-x);
+.wx-submissions :deep(.wx-table) {
+  padding: var(--wx-table-padding-x);
+}
+
+/* As a sheet there is no column and no frame — the screen's edge is the boundary, and the
+   pane's own step is all the air the list needs. A second one inside it stood the same list
+   further from the edge than it stands on every other screen. */
+.wx-drawer .wx-submissions :deep(.wx-table) {
+  padding: 0;
+}
+
+/*
+ * The scroll bar rides in that step rather than in the cards' own right edge.
+ *
+ * A list that scrolls inside itself is given its bar out of its own width: the cards ended
+ * fifteen pixels short of where the search field above them ends, and the step stood beyond the
+ * bar rather than beside the cards — air on the wrong side of it, and a list that looks pushed
+ * left. Padding cannot answer that; the bar is laid inside the padding box whatever is there.
+ * So the scroller reaches the end of the table's padding and keeps its gutter reserved: the
+ * cards end where everything above them ends, and the bar stands in the step. `stable`, so a
+ * list short enough not to scroll is not a wider list. Only in the column — as a sheet the
+ * drawer does the scrolling and there is no bar here to make room for.
+ */
+.wx-submissions.is-pane :deep(.wx-table__cards) {
+  margin-inline-end: calc(-1 * var(--wx-table-padding-x));
+  scrollbar-gutter: stable;
 }
 
 /*
