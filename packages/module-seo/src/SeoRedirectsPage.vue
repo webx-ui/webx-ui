@@ -132,7 +132,7 @@ async function remove(redirect: SeoRedirect): Promise<void> {
 <template>
   <seo-layout :base="props.base" current="redirects" @test="test({})">
     <template v-if="canManage" #actions>
-      <wx-button type="primary" icon="add" @click="open(null)">
+      <wx-button type="primary" icon="plus" @click="open(null)">
         {{ t('page.new-redirect') }}
       </wx-button>
     </template>

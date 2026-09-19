@@ -84,7 +84,7 @@ async function remove(admin: Admin): Promise<void> {
   <wx-list-screen :title="title">
     <template v-if="canManage" #actions>
       <!-- Short enough for a phone, where the heading and the button share one line. -->
-      <wx-button type="primary" icon="add" @click="open(null)">
+      <wx-button type="primary" icon="plus" @click="open(null)">
         {{ t('admins.new-short') }}
       </wx-button>
     </template>
