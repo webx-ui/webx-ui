@@ -39,9 +39,12 @@ final class PanelTest extends TestCase
         $this->assertSame(['blog.taxonomy.manage'], $blog['tags']['permissions']);
 
         // The group has to be declared as well, or the entries fall out of it and stand at the
-        // top level — which is what happens to a group nobody registered.
-        $ids = array_column((array) $response->json('data.groups'), 'id');
-        $this->assertContains('blog', $ids);
+        // top level — which is what happens to a group nobody registered. And it has to carry
+        // its own icon: without one the branch falls back to the gear, and the blog looks like
+        // the System group.
+        $icons = array_column((array) $response->json('data.groups'), 'icon', 'id');
+        $this->assertArrayHasKey('blog', $icons);
+        $this->assertSame('newspaper', $icons['blog']);
     }
 
     #[Test]
