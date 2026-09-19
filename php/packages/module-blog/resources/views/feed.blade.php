@@ -1,3 +1,5 @@
+@php($seo = app(WebxUi\Seo\Rendering\Seo::class))
+@php($meta = $seo->for($seo->currentUrl(), null))
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -6,6 +8,11 @@
     @include('webx-blog::partials.base')
     {{-- No entity: the feed is a route, not a record (§2.11), so what it says comes from the site's SEO defaults. --}}
     @webxSeo
+    @if ($meta->title === null)
+        {{-- The defaults name a title only if the site wrote one, and a feed with no
+             <title> at all is worse than a plain one. --}}
+        <title>{{ trans('webx-blog::blog.title') }}</title>
+    @endif
     <link rel="alternate" type="application/rss+xml" title="{{ trans('webx-blog::blog.rss') }}" href="{{ route('webx.blog.rss') }}">
 </head>
 <body>
