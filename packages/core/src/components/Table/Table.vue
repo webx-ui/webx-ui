@@ -459,11 +459,21 @@ function widthOf(column: TableColumn<T>): number {
   return 0
 }
 
+/**
+ * The column's own widths, for the `<col>` that carries them.
+ *
+ * `width` only. A `<col>` takes four properties and `min-width` is not one of them: declared
+ * there it computes, shows up in devtools and does nothing at all — measured, a column with
+ * `min-width: 130px` and no width came out 0 wide. The floor goes on the heading instead, which
+ * is an ordinary cell and honours it.
+ */
 function colStyle(column: TableColumn<T>) {
-  return {
-    width: column.width === undefined ? undefined : length(column.width),
-    minWidth: column.minWidth === undefined ? undefined : length(column.minWidth),
-  }
+  return { width: column.width === undefined ? undefined : length(column.width) }
+}
+
+/** The floor, on the one element that respects it. */
+function minStyle(column: TableColumn<T>) {
+  return column.minWidth === undefined ? undefined : { minWidth: length(column.minWidth) }
 }
 
 /* ------------------------------------------------------------- measurement --- */
@@ -1024,7 +1034,7 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
               scope="col"
               class="wx-table__cell"
               :class="[alignClass(column), fixedClass(column), column.headerClass]"
-              :style="fixedStyle(column)"
+              :style="[fixedStyle(column), minStyle(column)]"
               :aria-sort="ariaSort(column)"
             >
               <button
@@ -1505,6 +1515,17 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   padding: var(--wx-table-padding-y) var(--wx-table-padding-x);
   text-align: left;
   vertical-align: middle;
+  /*
+   * A cell keeps what it holds inside its own column.
+   *
+   * `table-layout: fixed` gives a column the width it was declared and nothing else, so a value
+   * wider than that — a date in a language with long month names, a badge with a longer word —
+   * used to be painted straight across the column beside it. Measured on the panel: a date cell
+   * 130px wide with 152px of text, its tail sitting under the status badge. Cut at the edge is
+   * not pretty, but it is the column saying it is too narrow rather than the next one appearing
+   * to hold rubbish.
+   */
+  overflow: hidden;
 }
 
 .wx-table__cell--center {
