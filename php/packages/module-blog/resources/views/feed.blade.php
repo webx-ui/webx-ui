@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    @include('webx-blog::partials.base')
     {{-- No entity: the feed is a route, not a record (§2.11), so what it says comes from the site's SEO defaults. --}}
     @webxSeo
     <link rel="alternate" type="application/rss+xml" title="{{ trans('webx-blog::blog.rss') }}" href="{{ route('webx.blog.rss') }}">

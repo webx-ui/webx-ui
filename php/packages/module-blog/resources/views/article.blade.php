@@ -5,6 +5,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    @include('webx-blog::partials.base')
     {{-- Everything the article says about itself; the title is in there too. --}}
     @webxSeo($article)
     {{-- The styles and scripts of exactly the block types this article used. --}}

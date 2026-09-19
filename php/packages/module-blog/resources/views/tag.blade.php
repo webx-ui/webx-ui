@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    @include('webx-blog::partials.base')
     {{--
         The tag is named on purpose. Whether this page carries `noindex` is worked out from it
         and from whether a rule covers this address (§12), and that answer comes out of
