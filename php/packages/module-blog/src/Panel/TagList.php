@@ -189,13 +189,25 @@ final class TagList
      */
     private function sorted(Builder $query, string $sort, string $locale): Builder
     {
-        if ($sort === self::SORT_NAME) {
+        // A leading minus turns the order around, the way every other list of the panel says it.
+        // The bare names are the ones the tools use and stay what they were: the word from A,
+        // the used ones first.
+        $descending = str_starts_with($sort, '-');
+        $key = $descending ? substr($sort, 1) : $sort;
+
+        if ($key === self::SORT_NAME) {
             // By the word as this panel spells it. A tag with no title in this language sorts
             // by the empty string and lands at the top, which is where something to fix belongs.
-            return $query->orderBy('title->'.$locale)->orderBy('id');
+            return $query
+                ->orderBy('title->'.$locale, $descending ? 'desc' : 'asc')
+                ->orderBy('id');
         }
 
-        return $query->orderByDesc('articles_count')->orderBy('id');
+        // "Most used first" is what the bare name has always meant here and what the tools ask
+        // for, so the minus is the other way round rather than the descending one.
+        return $query
+            ->orderBy('articles_count', $descending ? 'asc' : 'desc')
+            ->orderBy('id');
     }
 
     /**

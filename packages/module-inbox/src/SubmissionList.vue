@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
 import {
   useAdmin,
   useErrorText,
   useTranslate,
   WxDate,
+  rowMenuWidth,
   WxRowMenu,
   type RowAction,
 } from '@webx-ui/module-admin'
@@ -25,7 +26,9 @@ import {
   WxTable,
   WxTabs,
   WxText,
+  WxEntityCard,
   WxTooltip,
+  useElementWidth,
   type TabItem,
   type TableColumn,
   type TableState,
@@ -79,6 +82,13 @@ const route = useRoute()
 const router = useRouter()
 const locales = useLocales()
 useInboxMessages()
+
+/** Where a row stops being a row: the table and the columns read the same number. */
+const CARDS = 640
+
+const root = useTemplateRef<HTMLElement>('root')
+const width = useElementWidth(root)
+const asCards = computed(() => width.value > 0 && width.value < CARDS)
 
 const t = useTranslate('webx-inbox')
 /* Not the server's `message`: the panel says how a request failed in its own words. */
@@ -135,8 +145,28 @@ const views = computed<TabItem[]>(() => {
   return items
 })
 
+/**
+ * The n-th answer of a submission, for the card that has no columns to put them in.
+ *
+ * By position rather than by name, because a form's fields are the form's own: the first answer
+ * is what the row is recognised by wherever it came from, and the second is the next most likely
+ * way to reach whoever wrote it.
+ */
+function answer(row: SubmissionRow, index: number): string {
+  const column = page.value?.columns?.[index]
+
+  return column ? (row.values[column.key] ?? '') : ''
+}
+
 const columns = computed<TableColumn<SubmissionRow>[]>(() => {
   const answers = page.value?.columns ?? []
+
+  /*
+   * Narrow, a submission is one entity rather than five labelled lines: who wrote it, the next
+   * answer under that, and the state of it beside the date. Five lines of "Label: value" is four
+   * hundred pixels for one enquiry, and an inbox is read in a list.
+   */
+  if (asCards.value) return [{ key: 'card', label: '' }]
 
   return [
     ...answers.map((column, index) => ({
@@ -158,7 +188,7 @@ const columns = computed<TableColumn<SubmissionRow>[]>(() => {
       key: 'created_at',
       label: t('panel.received'),
       sortable: true,
-      width: 150,
+      width: 120,
       // "today at 16:22" is three words the table will break over two lines given half a
       // chance, and a date read down a column has to be one line to be read at all.
       cellClass: 'wx-submissions__when',
@@ -166,7 +196,7 @@ const columns = computed<TableColumn<SubmissionRow>[]>(() => {
       // Kept on the card, unlike most dates: "when did this come in" is one of the two
       // questions a submission is looked at for, and the other one is who sent it.
     },
-    { key: 'actions', label: '', width: 56, align: 'right', hideOnCards: true },
+    { key: 'actions', label: '', width: rowMenuWidth, align: 'right', hideOnCards: true },
   ]
 })
 
@@ -357,7 +387,7 @@ function settings(): void {
 </script>
 
 <template>
-  <div class="wx-submissions" :class="{ 'is-pane': inline }">
+  <div ref="root" class="wx-submissions" :class="{ 'is-pane': inline }">
     <div class="wx-submissions__head">
       <!-- On a phone the pane is a screen of its own and the drawer carries no close of its
            own, so the way back has to be here. Beside the list there is nothing to go back to. -->
@@ -461,7 +491,28 @@ function settings(): void {
         </template>
 
         <template #cell-created_at="{ row }">
-          <wx-date :value="row.created_at" />
+          <wx-date :value="row.created_at" compact />
+        </template>
+
+        <template #cell-card="{ row }">
+          <wx-entity-card variant="plain" shape="circle" :title="answer(row, 0)">
+            <template #subtitle>{{ answer(row, 1) }}</template>
+
+            <template #meta>
+              <wx-badge v-if="row.status" :type="row.status.color" size="sm">
+                {{ name(row.status) }}
+              </wx-badge>
+              <wx-avatar
+                v-if="row.assignee"
+                :name="row.assignee.name"
+                :title="row.assignee.name"
+                size="xs"
+                tone="auto"
+              />
+              <wx-icon v-if="row.files_count > 0" name="file" size="sm" />
+              <wx-date :value="row.created_at" />
+            </template>
+          </wx-entity-card>
         </template>
 
         <template #card-actions="{ row }">

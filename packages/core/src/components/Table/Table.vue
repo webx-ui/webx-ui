@@ -13,7 +13,10 @@ import WxCheckbox from '../Checkbox/Checkbox.vue'
 import WxInput from '../Input/Input.vue'
 import type { InputModelValue } from '../Input/types'
 import WxIcon from '../Icon/Icon.vue'
+import WxAction from '../Action/Action.vue'
+import WxIndicator from '../Indicator/Indicator.vue'
 import WxPagination from '../Pagination/Pagination.vue'
+import WxPopover from '../Popover/Popover.vue'
 import { useElementWidth } from '../../composables/useElementWidth'
 import {
   useTreeNodes,
@@ -45,6 +48,9 @@ const props = withDefaults(defineProps<TableProps<T>>(), {
   searchable: false,
   searchPlaceholder: 'Search',
   searchDebounce: 300,
+  filtersCount: 0,
+  filtersLabel: 'Filters',
+  filtersWidth: 300,
   loading: false,
   emptyText: 'Nothing to show',
   stripe: false,
@@ -331,6 +337,23 @@ const columnCount = computed(() => visibleColumns.value.length + utilityCount.va
 defineSlots<{
   title?: () => unknown
   actions?: () => unknown
+  /**
+   * The fields of the filter, inside the panel a funnel in the header opens.
+   *
+   * Three dropdowns standing open in the header is three controls of chrome above the first
+   * row, and on a phone that is half the screen before any data. Behind the funnel they cost
+   * one button, and what they are set to is said by `applied` instead.
+   */
+  filters?: () => unknown
+  /**
+   * What the filters are set to, as chips the reader can take off — the strip between the
+   * header and the rows.
+   *
+   * The table gives the place and the spacing; the chips are the caller's, because only the
+   * caller knows what "rubric: News" is called and what taking it off means. Nothing is drawn
+   * while the strip holds no elements.
+   */
+  applied?: () => unknown
   empty?: () => unknown
   footer?: () => unknown
   loading?: () => unknown
@@ -348,7 +371,14 @@ defineSlots<{
 const slots = useSlots()
 
 const hasHeader = computed<boolean>(() =>
-  Boolean(props.title || props.searchable || slots.title || slots.actions),
+  Boolean(
+    props.title ||
+    props.searchable ||
+    slots.title ||
+    slots.actions ||
+    slots.filters ||
+    slots.applied,
+  ),
 )
 
 /*
@@ -429,11 +459,21 @@ function widthOf(column: TableColumn<T>): number {
   return 0
 }
 
+/**
+ * The column's own widths, for the `<col>` that carries them.
+ *
+ * `width` only. A `<col>` takes four properties and `min-width` is not one of them: declared
+ * there it computes, shows up in devtools and does nothing at all — measured, a column with
+ * `min-width: 130px` and no width came out 0 wide. The floor goes on the heading instead, which
+ * is an ordinary cell and honours it.
+ */
 function colStyle(column: TableColumn<T>) {
-  return {
-    width: column.width === undefined ? undefined : length(column.width),
-    minWidth: column.minWidth === undefined ? undefined : length(column.minWidth),
-  }
+  return { width: column.width === undefined ? undefined : length(column.width) }
+}
+
+/** The floor, on the one element that respects it. */
+function minStyle(column: TableColumn<T>) {
+  return column.minWidth === undefined ? undefined : { minWidth: length(column.minWidth) }
 }
 
 /* ------------------------------------------------------------- measurement --- */
@@ -823,12 +863,53 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 <template>
   <div ref="root" :class="classes">
     <header v-if="hasHeader" class="wx-table__header">
-      <div class="wx-table__title">
+      <!--
+        Only when there is one. An empty box is still a flex item: it took the first line of the
+        head to itself and left the row gap above the search — 12px of nothing over every table
+        that has no title, and on a phone, where the tools take a line of their own, it was the
+        whole of the space above the field.
+      -->
+      <div v-if="title || $slots.title" class="wx-table__title">
         <slot name="title">{{ title }}</slot>
+      </div>
+
+      <!-- What the filters are set to, in the head rather than under it: the row already has
+           the room, and a strip of its own costs a line above every filtered list. -->
+      <div v-if="$slots.applied" class="wx-table__applied">
+        <slot name="applied" />
       </div>
 
       <div class="wx-table__tools">
         <slot name="actions" />
+
+        <!--
+          The funnel. The panel hangs off the indicator rather than off the button, because the
+          trigger has to be one element and `WxAction` carries its tooltip beside itself — its
+          root is a fragment (CLAUDE.md §4).
+        -->
+        <wx-popover
+          v-if="$slots.filters"
+          :title="filtersLabel"
+          :width="filtersWidth"
+          side="bottom"
+          align="end"
+        >
+          <template #trigger>
+            <wx-indicator
+              class="wx-table__filter"
+              :value="filtersCount"
+              :hidden="filtersCount === 0"
+              type="primary"
+              :label="filtersLabel"
+            >
+              <wx-action icon="filter" :size="size" :title="filtersLabel" />
+            </wx-indicator>
+          </template>
+
+          <div class="wx-table__filter-fields">
+            <slot name="filters" />
+          </div>
+        </wx-popover>
 
         <div v-if="searchable" class="wx-table__search">
           <wx-input
@@ -953,7 +1034,7 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
               scope="col"
               class="wx-table__cell"
               :class="[alignClass(column), fixedClass(column), column.headerClass]"
-              :style="fixedStyle(column)"
+              :style="[fixedStyle(column), minStyle(column)]"
               :aria-sort="ariaSort(column)"
             >
               <button
@@ -1235,26 +1316,96 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   max-width: 100%;
 }
 
+/* The funnel keeps its size whatever the row it is in does. */
+.wx-table__filter {
+  flex: none;
+}
+
+/*
+ * As tall as the search field beside it, not as tall as an icon button: the two stand in one
+ * row and are read as one control, and 36 next to 42 reads as a mistake.
+ *
+ * Declared on the button rather than on the wrapper. `.wx-action--md` declares this variable on
+ * its own element, and a value inherited from an ancestor never beats one declared on the
+ * element that reads it (CLAUDE.md §4) — and through `:deep()` because the button is another
+ * component's, so a scoped rule would be looking for this component's attribute on it.
+ */
+.wx-table__filter :deep(.wx-action) {
+  --wx-action-size: var(--wx-size-control-md);
+}
+
+.wx-table--sm .wx-table__filter :deep(.wx-action) {
+  --wx-action-size: var(--wx-size-control-sm);
+}
+
+.wx-table--lg .wx-table__filter :deep(.wx-action) {
+  --wx-action-size: var(--wx-size-control-lg);
+}
+
+/* The panel is a column of fields, spaced the way a form is. */
+.wx-table__filter-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-12);
+}
+
+/*
+ * The chips take the room the head has spare — between the title and the tools — and wrap into
+ * it rather than pushing the search field off the row.
+ */
+.wx-table__applied {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-8);
+  min-width: 0;
+}
+
+/*
+ * Nothing in it, nothing drawn. `:empty` cannot say this: a `v-if` that rendered nothing
+ * leaves a comment node behind, and a comment is a child — `:has(*)` asks about elements,
+ * which is the question being asked.
+ */
+.wx-table__applied:not(:has(*)) {
+  display: none;
+}
+
 /* Once the rows are cards there is no width to share: the filters become a column of their own. */
 .wx-table--cards .wx-table__tools {
-  flex-direction: column;
-  align-items: stretch;
   width: 100%;
 }
 
-.wx-table--cards .wx-table__search {
-  width: 100%;
+/* Whatever the caller put in `#actions` takes a line of its own: on a phone there is no width
+   to share, and a button too narrow to hold its word is not a button. */
+.wx-table--cards .wx-table__tools > :not(.wx-table__search):not(.wx-table__filter) {
+  flex: 1 1 100%;
 }
 
-/* Inside a card the margins are the card's; the search field lines up with what the card has above it. */
 /*
- * Flush means the box around it does the spacing, so the rows reach its edges — but the head
- * is not a row. What stands in it is a search box and a filter, and a box with a border of its
- * own touching the edge of the card it lives in reads as cut off. It lines up with the cells
- * instead: the same step the columns keep from the table's edge.
+ * The funnel and the search are the exception, and they keep one line between them: a button
+ * with a field beside it is read as one control, and split over two lines it is two — on a
+ * phone that is a second of the five lines the head is allowed.
  */
-.wx-table--flush .wx-table__header {
-  padding-inline: var(--wx-table-padding-x);
+.wx-table--cards .wx-table__search {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+/*
+ * Flush means the box around it does the spacing — for the head as much as for the rows.
+ *
+ * It used to keep the cells' own step as well, so that a search box with a border would not
+ * touch the edge of whatever holds it. Inside a card it never does: the card's own padding is
+ * already there, and the second inset only stood the head 16px further in than the row of
+ * headings under it. Measured: the search ended at 1278 where the table ended at 1294.
+ *
+ * What is left is the space under it, and that is the panel's step rather than the table's —
+ * the head and the rows are two things in a card, and everything else in one is spaced by it.
+ */
+.wx-table--flush:not(.wx-table--cards) .wx-table__header {
+  padding: 0 0 var(--wx-gap, var(--wx-space-16));
 }
 
 /* What scrolls when the table is squeezed; the head and the pagination keep their height. */
@@ -1364,6 +1515,17 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
   padding: var(--wx-table-padding-y) var(--wx-table-padding-x);
   text-align: left;
   vertical-align: middle;
+  /*
+   * A cell keeps what it holds inside its own column.
+   *
+   * `table-layout: fixed` gives a column the width it was declared and nothing else, so a value
+   * wider than that — a date in a language with long month names, a badge with a longer word —
+   * used to be painted straight across the column beside it. Measured on the panel: a date cell
+   * 130px wide with 152px of text, its tail sitting under the status badge. Cut at the edge is
+   * not pretty, but it is the column saying it is too narrow rather than the next one appearing
+   * to hold rubbish.
+   */
+  overflow: hidden;
 }
 
 .wx-table__cell--center {
@@ -1790,23 +1952,21 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 }
 
 /*
- * Flush in card mode: nothing sideways, the column's own step above and below.
- *
- * Sideways the box around the table is what insets the cards, exactly as it insets the rows —
- * added here as well, the two stacked and the list stood further from the edge than the head
- * and the filter above it. Down the column the step is the table's own, because the cards are
- * a column and a column has to start and end somewhere.
+ * Flush in card mode: the column reaches every edge of the box around it, because that box is
+ * what keeps the air. Its own step above and below would be that air twice — measured, the last
+ * card stood 16 from the card's edge where the first stood 8 from the search.
  */
 .wx-table--flush .wx-table__cards {
-  padding-inline: 0;
+  padding: 0;
 }
 
-.wx-table--flush:not(.wx-table--cards) .wx-table__cards {
-  padding-block: 0;
-}
-
+/*
+ * And so is the head, for the same reason: its 12 on top of the card's 8 made the space above
+ * the search 20 where the space beside it was 8. What is left is the step under it, which is
+ * the same one everything else in a card is spaced by.
+ */
 .wx-table--flush.wx-table--cards .wx-table__header {
-  padding-inline: 0;
+  padding: 0 0 var(--wx-gap, var(--wx-space-8));
 }
 
 /*

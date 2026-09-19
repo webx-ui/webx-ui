@@ -21,6 +21,8 @@ export const authMessages: Record<string, Messages> = {
   },
   admins: {
     title: 'Administrators',
+    'filter-role': 'Role',
+    'filter-state': 'State',
     search: 'Search administrators',
     new: 'New administrator',
     edit: 'Edit administrator',

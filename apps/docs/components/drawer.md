@@ -81,6 +81,12 @@ stacks above the body instead of standing beside it.
 Those paddings are custom properties — `--wx-drawer-pad-x`, `--wx-drawer-pad-y` and
 `--wx-drawer-body-pad` — so a panel that wants roomier or tighter chrome can set them itself.
 
+Sideways they follow `--wx-gap` where something declares it. A drawer is teleported to the end of
+the document, so it inherits nothing from the application's own tree; an application that spaces
+itself by that step declares it on the root as well, and then the same list is the same distance
+from the edge in a card and in a drawer. With nothing declaring it the drawer keeps its own 18
+(12 on a narrow screen).
+
 ## Focus and the page behind it
 
 Focus moves into the panel when it opens and back to the trigger when it closes, it is trapped

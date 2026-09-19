@@ -38,6 +38,13 @@ export const adminMessages: Record<string, Messages> = {
   },
   // When something happened, said the way a person would. The month names and the order of
   // the parts come from `Intl` — only the words that no formatter knows are here.
+  // The two words every list needs the moment it has filters: what the funnel is called,
+  // and the way out of all of them at once. The names of the filters themselves belong to
+  // whatever is being filtered, and travel with that module's own words.
+  filters: {
+    title: 'Filters',
+    reset: 'Reset all',
+  },
   dates: {
     today: 'today at :time',
     yesterday: 'yesterday at :time',

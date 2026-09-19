@@ -1,13 +1,27 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { useAdmin, useTranslate, WxDate, WxRowMenu, type RowAction } from '@webx-ui/module-admin'
+import { computed, ref, useTemplateRef, watch } from 'vue'
+import {
+  useAdmin,
+  useTranslate,
+  WxDate,
+  WxFilterChips,
+  rowMenuWidth,
+  WxRowMenu,
+  type AppliedFilter,
+  type RowAction,
+} from '@webx-ui/module-admin'
 import {
   WxAvatar,
   WxBadge,
+  WxButton,
+  WxEntityCard,
+  WxFormItem,
+  WxIcon,
   WxSelect,
   WxSpace,
   WxTable,
   WxText,
+  useElementWidth,
   type TableColumn,
   type TableState,
 } from '@webx-ui/core'
@@ -61,7 +75,17 @@ const admin = useAdmin()
 const api = createAdminsApi(admin)
 useAuthMessages()
 
+/** Where a row stops being a row. The table and the columns read the same number. */
+const CARDS = 480
+
+const root = useTemplateRef<HTMLElement>('root')
+const width = useElementWidth(root)
+const asCards = computed(() => width.value > 0 && width.value < CARDS)
+
 const t = useTranslate('webx-auth')
+/* The funnel and 'reset all' are the panel's words, not this module's. `admin` is taken:
+   in this file that is the panel context. */
+const panel = useTranslate('webx-admin')
 
 const page = ref<AdminPage | null>(null)
 const roles = ref<Role[]>([])
@@ -86,6 +110,42 @@ const stateOptions = computed(() => [
   { value: 'no', label: t('admins.only-inactive') },
 ])
 
+/**
+ * Which of the two are on, in the reader's words.
+ *
+ * They stand behind the funnel now, and a shut panel says nothing about itself — a list of six
+ * people showing two of them looks broken until something says why.
+ */
+const applied = computed<AppliedFilter[]>(() => {
+  const chips: AppliedFilter[] = []
+
+  const picked = roles.value.find((one) => one.slug === role.value)
+  if (picked) {
+    chips.push({
+      key: 'role',
+      label: `${t('admins.filter-role')}: ${picked.name}`,
+      clear: () => (role.value = 'all'),
+    })
+  }
+
+  if (active.value !== 'any') {
+    chips.push({
+      key: 'state',
+      label: `${t('admins.filter-state')}: ${
+        active.value === 'yes' ? t('admins.only-active') : t('admins.only-inactive')
+      }`,
+      clear: () => (active.value = 'any'),
+    })
+  }
+
+  return chips
+})
+
+function clearFilters(): void {
+  role.value = 'all'
+  active.value = 'any'
+}
+
 /*
  * No widths but the one the buttons need.
  *
@@ -93,30 +153,34 @@ const stateOptions = computed(() => [
  * screen — so it scrolls sideways while half the row is whitespace. Left alone, the columns take
  * what their contents need. What does not fit is dropped instead, in the order it can be spared.
  */
-const columns = computed<TableColumn<Admin>[]>(() => [
-  { key: 'name', label: t('admins.name'), sortable: true },
-  { key: 'email', label: t('admins.email'), sortable: true, hideBelow: 560 },
-  { key: 'roles', label: t('admins.roles'), hideBelow: 760 },
-  { key: 'is_active', label: t('admins.active'), align: 'center', hideBelow: 660 },
-  {
-    key: 'last_login_at',
-    label: t('admins.last-login'),
-    sortable: true,
-    hideBelow: 900,
-    // The first thing to go when a row becomes a card: it is a date somebody scans down a
-    // column, and a card has no column to scan.
-    hideOnCards: true,
-  },
-  {
-    key: 'actions',
-    label: '',
-    width: 56,
-    align: 'right',
-    hidden: !props.removable,
-    // A card puts them along its top instead, through the `card-actions` slot.
-    hideOnCards: true,
-  },
-])
+const columns = computed<TableColumn<Admin>[]>(() => {
+  if (asCards.value) return [{ key: 'card', label: '' }]
+
+  return [
+    { key: 'name', label: t('admins.name'), sortable: true },
+    { key: 'email', label: t('admins.email'), sortable: true, hideBelow: 560 },
+    { key: 'roles', label: t('admins.roles'), hideBelow: 760 },
+    { key: 'is_active', label: t('admins.active'), align: 'center', hideBelow: 660 },
+    {
+      key: 'last_login_at',
+      label: t('admins.last-login'),
+      sortable: true,
+      hideBelow: 900,
+      // The first thing to go when a row becomes a card: it is a date somebody scans down a
+      // column, and a card has no column to scan.
+      hideOnCards: true,
+    },
+    {
+      key: 'actions',
+      label: '',
+      width: rowMenuWidth,
+      align: 'right',
+      hidden: !props.removable,
+      // A card puts them along its top instead, through the `card-actions` slot.
+      hideOnCards: true,
+    },
+  ]
+})
 
 void api.roles().then((all) => (roles.value = all))
 
@@ -207,7 +271,7 @@ defineExpose({ reload: () => load(last), chosen: () => selected.value })
 </script>
 
 <template>
-  <div class="wx-admin-list">
+  <div ref="root" class="wx-admin-list">
     <wx-table
       :data="page"
       :columns="columns"
@@ -220,15 +284,32 @@ defineExpose({ reload: () => load(last), chosen: () => selected.value })
       :search-placeholder="t('admins.search')"
       :empty-text="t('admins.empty')"
       :selectable="picking && multiple"
+      :cards-below="CARDS"
+      :filters-count="applied.length"
+      :filters-label="panel('filters.title')"
       @row-click="onRow"
       @state-change="load"
       @selection-change="onSelection"
     >
-      <template v-if="filters" #actions>
-        <wx-space size="sm">
-          <wx-select v-model="role" :options="roleOptions" size="sm" style="width: 180px" />
-          <wx-select v-model="active" :options="stateOptions" size="sm" style="width: 180px" />
-        </wx-space>
+      <!-- Behind the funnel, and what they are set to comes back as chips beside it: two
+           dropdowns standing open over six people are two controls to read before the rows. -->
+      <template v-if="filters" #filters>
+        <wx-form-item :label="t('admins.filter-role')">
+          <wx-select v-model="role" :options="roleOptions" size="sm" />
+        </wx-form-item>
+
+        <wx-form-item :label="t('admins.filter-state')">
+          <wx-select v-model="active" :options="stateOptions" size="sm" />
+        </wx-form-item>
+
+        <wx-button v-if="applied.length > 0" variant="text" size="sm" block @click="clearFilters">
+          <template #icon><wx-icon name="close" /></template>
+          {{ panel('filters.reset') }}
+        </wx-button>
+      </template>
+
+      <template v-if="filters" #applied>
+        <wx-filter-chips :filters="applied" />
       </template>
 
       <template #cell-name="{ row }">
@@ -265,7 +346,35 @@ defineExpose({ reload: () => load(last), chosen: () => selected.value })
       </template>
 
       <template #cell-last_login_at="{ row }">
-        <wx-date :value="row.last_login_at" :tone="row.last_login_at ? 'default' : 'muted'" />
+        <wx-date
+          :value="row.last_login_at"
+          :tone="row.last_login_at ? 'default' : 'muted'"
+          compact
+        />
+      </template>
+
+      <!--
+        Narrow, a row is one entity rather than four labelled lines: a face, a name, the address
+        that identifies them and what they are allowed. `circle`, because these are people.
+      -->
+      <template #cell-card="{ row }">
+        <wx-entity-card
+          variant="plain"
+          shape="circle"
+          :title="row.name"
+          :image="row.avatar ? avatars[row.avatar] : undefined"
+          :subtitle="row.email"
+        >
+          <template #meta>
+            <wx-badge v-if="row.is_super" type="warning" size="sm">
+              {{ t('admins.super') }}
+            </wx-badge>
+            <wx-badge v-for="one in row.roles" :key="one.id" size="sm">{{ one.name }}</wx-badge>
+            <wx-badge :type="row.is_active ? 'success' : 'default'" dot size="sm">
+              {{ row.is_active ? t('admins.active') : t('admins.only-inactive') }}
+            </wx-badge>
+          </template>
+        </wx-entity-card>
       </template>
     </wx-table>
   </div>

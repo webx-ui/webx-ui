@@ -39,4 +39,7 @@ return [
     'deleted' => 'Administrador eliminado',
     'new-short' => 'Adicionar',
     'edit-short' => 'Editar',
+
+    'filter-role' => 'Função',
+    'filter-state' => 'Estado',
 ];

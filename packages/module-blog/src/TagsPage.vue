@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
 import {
   useAdmin,
   useErrorText,
   useTranslate,
   WxListScreen,
+  rowMenuWidth,
   WxRowMenu,
   type RowAction,
 } from '@webx-ui/module-admin'
@@ -16,17 +17,18 @@ import {
   WxActionBar,
   WxButton,
   WxIcon,
-  WxInput,
   WxTable,
   WxText,
   WxTooltip,
   type RowKey,
   type TabItem,
   type TableColumn,
+  type TableSort,
   type TableState,
   type TabValue,
 } from '@webx-ui/core'
 import TagCreateDialog from './TagCreateDialog.vue'
+import TagRenameDialog from './TagRenameDialog.vue'
 import TagMergeDialog from './TagMergeDialog.vue'
 import { createBlogApi } from './api'
 import { useBlogMessages } from './i18n'
@@ -65,10 +67,7 @@ const loading = ref(true)
 const selected = ref<RowKey[]>([])
 const working = ref(false)
 
-/** The tag being renamed, and what is in the box. `null` — nothing is being renamed. */
-const renaming = ref<number | null>(null)
-const draft = ref('')
-const box = useTemplateRef<HTMLElement>('box')
+const rename = createModal<string, { name: string }>(TagRenameDialog)
 
 const create = createModal<TagRow, Record<string, never>>(TagCreateDialog)
 const merge = createModal<TagMerged, { tags: TagRow[] }>(TagMergeDialog)
@@ -111,18 +110,24 @@ const chosen = computed(() => rows.value.filter((tag) => selected.value.includes
  * a word, a number and a `···`, which is the screen this is (CLAUDE.md §4).
  */
 const columns = computed<TableColumn<TagRow>[]>(() => [
-  { key: 'title', label: t('tag.column-title'), minWidth: 150 },
+  { key: 'title', label: t('tag.column-title'), minWidth: 150, sortable: true },
   // The number is what the other columns and the narrowest the title may be add up to without
   // this one: below it the address is what does not fit, and a fixed table does not shrink —
   // it scrolls sideways and takes the ··· with it (CLAUDE.md §4). Measured, not guessed: at
   // 375px the row is the word, the number and the menu, and nothing hangs off the edge.
   { key: 'path', label: t('tag.column-address'), width: 180, hideBelow: 760 },
-  { key: 'articles_count', label: t('tag.column-articles'), width: 70, align: 'right' },
+  {
+    key: 'articles_count',
+    label: t('tag.column-articles'),
+    width: 80,
+    align: 'right',
+    sortable: true,
+  },
   // Wide enough for the longest of the three states on one line, in every language: measured
   // at 180px of text, and a cell keeps 32 of its own. Narrower, the ruled row wrapped and
   // stood eighteen pixels taller than the ones around it.
   { key: 'indexing', label: t('tag.column-indexing'), width: 230, hideBelow: 560 },
-  { key: 'actions', label: '', width: 56, align: 'right' },
+  { key: 'actions', label: '', width: rowMenuWidth, align: 'right' },
 ])
 
 function query(state?: TableState): TagQuery {
@@ -132,7 +137,7 @@ function query(state?: TableState): TagQuery {
     noindex: view.value === 'noindex',
     // Only when it is not the default: most used first is what the list is, and a query
     // string that repeats the default is a link that outlives a change of mind about it.
-    sort: route.query.sort === 'name' ? 'name' : undefined,
+    sort: sortOf(state),
     page: state?.page ?? (Number(route.query.page ?? 1) || 1),
     per_page: state?.perPage,
   }
@@ -150,11 +155,42 @@ async function load(state?: TableState): Promise<void> {
   }
 }
 
+/**
+ * The order the table asks for, in the words the server knows.
+ *
+ * Two keys and a direction: the word from A, or the used ones first — and a minus turns either
+ * of them around. The default is most used first, so the query string leaves it out: a link that
+ * repeats the default outlives a change of mind about it.
+ */
+function sortOf(state?: TableState): TagQuery['sort'] {
+  const from = state?.sort ?? sortFromRoute()
+
+  if (!from) return undefined
+
+  const key = from.key === 'title' ? 'name' : 'articles'
+  const sort = `${from.order === 'desc' ? '-' : ''}${key}` as NonNullable<TagQuery['sort']>
+
+  return sort === 'articles' ? undefined : sort
+}
+
+/** What the address says the order is, for a list arrived at by a link. */
+function sortFromRoute(): TableSort | null {
+  const value = typeof route.query.sort === 'string' ? route.query.sort : ''
+
+  if (value === '') return null
+
+  const desc = value.startsWith('-')
+  const key = (desc ? value.slice(1) : value) === 'name' ? 'title' : 'articles_count'
+
+  return { key, order: desc ? 'desc' : 'asc' }
+}
+
 /** The table reports everything it knows in one event, and the address is written from it. */
 function onState(state: TableState): void {
   const wanted: LocationQueryRaw = {
     ...route.query,
     q: state.search === '' ? undefined : state.search,
+    sort: sortOf(state),
     page: state.page === 1 ? undefined : String(state.page),
   }
 
@@ -171,52 +207,22 @@ watch(view, () => {
 
 void load()
 
-/** Alphabetical or most used: the two orders a pile of near-duplicates is read in. */
-function sortBy(sort: 'articles' | 'name'): void {
-  void router.replace({
-    query: { ...route.query, sort: sort === 'articles' ? undefined : sort, page: undefined },
-  })
-  void load()
-}
-
-const sort = computed(() => (route.query.sort === 'name' ? 'name' : 'articles'))
-
 async function add(): Promise<void> {
   if (await create({})) await load()
 }
 
 /**
- * Renaming in place.
+ * Renaming, as an act rather than a side effect.
  *
- * Enter saves, Escape puts back what was there — and the address does not move with the word.
- * A tag spelled three ways before lunch would otherwise leave three aliases behind a decision
- * nobody made; the address is on its own menu item.
+ * A dialog with one field, because a name that is quietly an `<input>` reads as a name: nothing
+ * says it can be typed in, and a stray click on a row is a rename nobody asked for. The address
+ * does not move with the word — a tag respelled three times before lunch would leave three
+ * aliases behind a decision nobody made — so it has a menu item of its own.
  */
 async function startRename(tag: TagRow): Promise<void> {
-  renaming.value = tag.id
-  draft.value = tag.title
-  await nextTick()
-  // The box is the rename: opening one nobody's cursor is in would be a row that looks
-  // different and does nothing.
-  box.value?.querySelector('input')?.focus()
-}
+  const title = await rename({ name: tag.title })
 
-function cancelRename(): void {
-  renaming.value = null
-  draft.value = ''
-}
-
-async function commitRename(tag: TagRow): Promise<void> {
-  const title = draft.value.trim()
-
-  if (title === '' || title === tag.title) {
-    cancelRename()
-
-    return
-  }
-
-  cancelRename()
-  await patch(tag, { title }, t('tag.renamed'))
+  if (title) await patch(tag, { title }, t('tag.renamed'))
 }
 
 async function setIndexing(tag: TagRow, noindex: boolean): Promise<void> {
@@ -273,6 +279,38 @@ async function remove(tag: TagRow): Promise<void> {
     toast.danger(message(error))
   }
 }
+
+/**
+ * What can be done to the pile, behind the same `···` a single row has.
+ *
+ * Three buttons in the bar were three lines of chrome on a phone and the same three words every
+ * row already offers; merging stays a button because it is the one thing here that cannot be
+ * done to a row on its own.
+ */
+const massActions = computed<RowAction[]>(() => [
+  {
+    key: 'index',
+    icon: 'eye',
+    label: t('tag.index'),
+    disabled: working.value,
+    run: () => void massSelected('index'),
+  },
+  {
+    key: 'noindex',
+    icon: 'eye-off',
+    label: t('tag.noindex'),
+    disabled: working.value,
+    run: () => void massSelected('noindex'),
+  },
+  {
+    key: 'delete',
+    icon: 'trash',
+    label: t('tag.delete'),
+    danger: true,
+    disabled: working.value,
+    run: () => void massSelected('delete'),
+  },
+])
 
 function actionsFor(tag: TagRow): RowAction[] {
   if (!canManage.value) return []
@@ -410,43 +448,8 @@ async function massSelected(action: 'index' | 'noindex' | 'delete'): Promise<voi
         :aria-label="title"
         @state-change="onState"
       >
-        <template #actions>
-          <div class="wx-tags__sort">
-            <wx-button
-              v-for="option in ['articles', 'name'] as const"
-              :key="option"
-              size="sm"
-              :variant="sort === option ? 'outline' : 'text'"
-              @click="sortBy(option)"
-            >
-              {{ t(`tag.sort-${option}`) }}
-            </wx-button>
-          </div>
-        </template>
-
         <template #cell-title="{ row }">
-          <!-- Enter saves, Escape puts back what was there, and leaving the box does the same
-               as Enter: a name half typed and clicked away from is a name somebody meant. -->
-          <span v-if="renaming === row.id" ref="box" class="wx-tags__rename">
-            <wx-input
-              v-model="draft"
-              size="sm"
-              :aria-label="t('tag.rename')"
-              @keyup.enter="commitRename(row)"
-              @keyup.esc="cancelRename"
-              @blur="commitRename(row)"
-            />
-          </span>
-          <button
-            v-else-if="canManage"
-            type="button"
-            class="wx-tags__name"
-            :title="t('tag.rename')"
-            @click="startRename(row)"
-          >
-            {{ row.title }}
-          </button>
-          <span v-else>{{ row.title }}</span>
+          <wx-text truncate>{{ row.title }}</wx-text>
         </template>
 
         <template #cell-path="{ row }">
@@ -487,38 +490,29 @@ async function massSelected(action: 'index' | 'noindex' | 'delete'): Promise<voi
       "what can be done from here", and a second one would be a second one to keep in step.
     -->
     <wx-action-bar v-if="chosen.length > 0" class="wx-tags__bar" sticky>
-      <wx-text weight="medium">{{ t('tag.selected', { count: chosen.length }) }}</wx-text>
+      <template #state>
+        <wx-text weight="medium">{{ t('tag.selected', { count: chosen.length }) }}</wx-text>
+      </template>
 
-      <span class="wx-tags__bar-spacer"></span>
+      <!--
+        One button and a menu. Merging is what this bar exists for — it is the only thing here
+        that cannot be done to a row on its own — and the other three are the row's own menu
+        applied to several rows at once, which is where a reader already looks for them.
 
-      <!-- The icon is a slot and not a prop: `WxButton` takes `#icon`, and `icon="…"` lands on
-           the element as an attribute and draws nothing at all (CLAUDE.md §4). -->
+        The icon is a slot and not a prop: `WxButton` takes `#icon`, and `icon="…"` lands on the
+        element as an attribute and draws nothing at all (CLAUDE.md §4).
+      -->
       <wx-button type="primary" :disabled="chosen.length < 2 || working" @click="mergeSelected">
         <template #icon><wx-icon name="link" /></template>
         {{ t('tag.merge') }}
       </wx-button>
-      <wx-button variant="outline" :disabled="working" @click="massSelected('index')">
-        <template #icon><wx-icon name="eye" /></template>
-        {{ t('tag.index') }}
-      </wx-button>
-      <wx-button variant="outline" :disabled="working" @click="massSelected('noindex')">
-        <template #icon><wx-icon name="eye-off" /></template>
-        {{ t('tag.noindex') }}
-      </wx-button>
-      <wx-button
-        variant="outline"
-        type="danger"
-        :disabled="working"
-        @click="massSelected('delete')"
-      >
-        <template #icon><wx-icon name="trash" /></template>
-        {{ t('tag.delete') }}
-      </wx-button>
-      <!-- Icon only, so the label is the only name it has: without `#icon` this button is a
-           38-pixel blank, which is how the missing prop was found. -->
-      <wx-button variant="text" :aria-label="t('tag.clear')" @click="selected = []">
-        <template #icon><wx-icon name="close" /></template>
-      </wx-button>
+
+      <!--
+        No way out of the selection here. Untick the rows, or untick them all from the box in
+        the heading — a × beside a red "Delete" is a button whose whole job is to undo something
+        harmless, standing where the dangerous one is, and it read as a way to close the bar.
+      -->
+      <wx-row-menu :actions="massActions" :label="t('tag.selected', { count: chosen.length })" />
     </wx-action-bar>
   </div>
 </template>
@@ -568,9 +562,5 @@ async function massSelected(action: 'index' | 'noindex' | 'delete'): Promise<voi
 
 .wx-tags__bar {
   flex-wrap: wrap;
-}
-
-.wx-tags__bar-spacer {
-  flex: 1 1 auto;
 }
 </style>

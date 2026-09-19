@@ -4,6 +4,9 @@ import {
   useAdmin,
   useErrorText,
   useTranslate,
+  WxFilterChips,
+  type AppliedFilter,
+  rowMenuWidth,
   WxRowMenu,
   type RowAction,
 } from '@webx-ui/module-admin'
@@ -13,6 +16,7 @@ import {
   toast,
   WxBadge,
   WxButton,
+  WxFormItem,
   WxSelect,
   WxTable,
   WxText,
@@ -44,6 +48,8 @@ const api = createSeoApi(context)
 useSeoMessages()
 
 const t = useTranslate('webx-seo')
+/* The funnel and "reset all" are the panel's own words. */
+const panel = useTranslate('webx-admin')
 /* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
 const message = useErrorText()
 
@@ -69,13 +75,35 @@ const kindOptions = computed(() => [
   { value: 'regex', label: t('page.regex') },
 ])
 
+/** The one dropdown, said in the reader's words while the panel it lives in is shut. */
+const applied = computed<AppliedFilter[]>(() =>
+  kind.value === 'any'
+    ? []
+    : [
+        {
+          key: 'kind',
+          label: `${t('page.filter-kind')}: ${
+            kindOptions.value.find((option) => option.value === kind.value)?.label ?? kind.value
+          }`,
+          clear: () => (kind.value = 'any'),
+        },
+      ],
+)
+
 const columns = computed<TableColumn<SeoUrlRule>[]>(() => [
   { key: 'pattern', label: t('page.address') },
   { key: 'match_type', label: t('page.kind'), hideBelow: 560 },
   { key: 'title', label: t('page.title'), hideBelow: 900 },
   { key: 'priority', label: t('page.priority'), align: 'center', hideBelow: 760 },
   { key: 'is_active', label: t('page.state'), align: 'center', hideBelow: 660 },
-  { key: 'actions', label: '', width: 56, align: 'right', hidden: !canManage, hideOnCards: true },
+  {
+    key: 'actions',
+    label: '',
+    width: rowMenuWidth,
+    align: 'right',
+    hidden: !canManage,
+    hideOnCards: true,
+  },
 ])
 
 /**
@@ -163,11 +191,20 @@ async function remove(rule: SeoUrlRule): Promise<void> {
       :loading="loading"
       :search-placeholder="t('page.search-rules')"
       :empty-text="t('page.empty')"
+      :filters-count="applied.length"
+      :filters-label="panel('filters.title')"
       @row-click="open"
       @state-change="load"
     >
-      <template #actions>
-        <wx-select v-model="kind" :options="kindOptions" class="wx-seo-urls__kind" />
+      <!-- Behind the funnel, and what it is set to comes back as a chip beside it. -->
+      <template #filters>
+        <wx-form-item :label="t('page.filter-kind')">
+          <wx-select v-model="kind" :options="kindOptions" size="sm" />
+        </wx-form-item>
+      </template>
+
+      <template #applied>
+        <wx-filter-chips :filters="applied" />
       </template>
 
       <template #cell-pattern="{ row }">
@@ -199,14 +236,3 @@ async function remove(rule: SeoUrlRule): Promise<void> {
     </wx-table>
   </seo-layout>
 </template>
-
-<style scoped>
-.wx-seo-urls__kind {
-  width: 200px;
-}
-
-/* Once the rows are cards the filters are a column, and a fixed width leaves this one short. */
-.wx-table--cards .wx-seo-urls__kind {
-  width: 100%;
-}
-</style>

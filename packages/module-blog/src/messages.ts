@@ -43,6 +43,9 @@ export const blogMessages: Record<string, Messages> = {
     'view-unpublished': 'Off the site',
     bin: 'Bin',
 
+    'filter-rubric': 'Rubric',
+    'filter-tag': 'Tag',
+    'filter-author': 'Author',
     'any-rubric': 'Any rubric',
     'any-tag': 'Any tag',
     'any-author': 'Any author',

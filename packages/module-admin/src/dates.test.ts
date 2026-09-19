@@ -144,3 +144,24 @@ describe('today', () => {
     expect(createDates(panel('en')).short('2026-09-16T20:30:00Z')).toBe('yesterday at 23:30')
   })
 })
+
+describe('the column line', () => {
+  it('shows today as the time alone — it is the only row wearing a clock', () => {
+    expect(createDates(panel('en')).compact(new Date(2026, 8, 17, 8, 10))).toBe('08:10')
+  })
+
+  it('gives every other day of this year a short month and no time', () => {
+    const dates = createDates(panel('en'))
+
+    expect(dates.compact(new Date(2026, 8, 16, 14, 3))).toBe('Sep 16')
+    expect(dates.compact(new Date(2026, 8, 10, 14, 3))).toBe('Sep 10')
+  })
+
+  it('falls back to digits once the year has to be said', () => {
+    expect(createDates(panel('en')).compact(new Date(2025, 8, 16, 14, 3))).toBe('9/16/25')
+  })
+
+  it('still answers a date that never happened in words', () => {
+    expect(createDates(panel('ru', russian)).compact(null)).toBe('ни разу')
+  })
+})

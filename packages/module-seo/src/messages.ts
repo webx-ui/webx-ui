@@ -20,6 +20,7 @@ export const seoMessages: Record<string, Messages> = {
     rules: 'Rules',
     redirects: 'Redirects',
     test: 'Check an address',
+    'filter-kind': 'Kind',
 
     'new-rule': 'New rule',
     'new-redirect': 'New redirect',
