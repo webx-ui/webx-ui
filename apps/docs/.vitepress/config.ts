@@ -28,6 +28,7 @@ export default defineConfig({
             { text: 'Theming', link: '/guide/theming' },
             { text: 'Languages', link: '/guide/languages' },
             { text: 'Dialogs from code', link: '/guide/modals' },
+            { text: 'Lists', link: '/guide/lists' },
             { text: 'The file manager', link: '/guide/media' },
             { text: 'Administrators', link: '/guide/admins' },
             { text: 'Pages', link: '/guide/pages' },

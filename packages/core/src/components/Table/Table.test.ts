@@ -620,3 +620,53 @@ describe('WxTable header', () => {
     expect(wrapper.emitted('search')?.at(-1)).toEqual(['ad'])
   })
 })
+
+describe('WxTable filters', () => {
+  it('draws no funnel until there is something to put behind it', () => {
+    const wrapper = mountTable({ searchable: true })
+
+    expect(wrapper.find('.wx-table__filter').exists()).toBe(false)
+  })
+
+  it('gives the header a funnel when the filters slot is filled', () => {
+    const wrapper = mountTable(
+      { filtersLabel: 'Filters' },
+      { slots: { filters: '<label>Rubric</label>' } },
+    )
+
+    expect(wrapper.find('.wx-table__filter').exists()).toBe(true)
+    expect(wrapper.get('.wx-table__filter button').attributes('aria-label')).toBe('Filters')
+  })
+
+  /* The panel is shut, so its fields are not in the document — that is the point of it. */
+  it('keeps the fields out of the document while the panel is shut', () => {
+    const wrapper = mountTable({}, { slots: { filters: '<label>Rubric</label>' } })
+
+    expect(wrapper.find('label').exists()).toBe(false)
+  })
+
+  it('brings the header with it when nothing else would have drawn one', () => {
+    const wrapper = mountTable({}, { slots: { filters: '<label>Rubric</label>' } })
+
+    expect(wrapper.find('.wx-table__header').exists()).toBe(true)
+  })
+
+  it('puts what the applied slot draws in the header, beside the tools', () => {
+    const wrapper = mountTable(
+      { searchable: true },
+      { slots: { applied: '<span class="chip">Rubric: News</span>' } },
+    )
+
+    const strip = wrapper.get('.wx-table__applied')
+
+    expect(strip.find('.chip').exists()).toBe(true)
+    expect(strip.element.parentElement).toBe(wrapper.get('.wx-table__header').element)
+    expect(strip.element.nextElementSibling).toBe(wrapper.get('.wx-table__tools').element)
+  })
+
+  it('brings the header with it when the chips are the only thing in it', () => {
+    const wrapper = mountTable({}, { slots: { applied: '<span class="chip">Rubric: News</span>' } })
+
+    expect(wrapper.find('.wx-table__header').exists()).toBe(true)
+  })
+})
