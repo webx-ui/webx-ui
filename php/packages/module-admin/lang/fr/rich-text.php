@@ -1,0 +1,37 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'bold' => 'Gras',
+    'italic' => 'Italique',
+    'strike' => 'Barré',
+    'code' => 'Code en ligne',
+    'h2' => 'Titre 2',
+    'h3' => 'Titre 3',
+    'h4' => 'Titre 4',
+    'bullet-list' => 'Liste à puces',
+    'ordered-list' => 'Liste numérotée',
+    'blockquote' => 'Citation',
+    'hr' => 'Séparateur',
+    'link' => 'Lien',
+    'table' => 'Tableau',
+    'image' => 'Image',
+    'youtube' => 'Vidéo YouTube',
+    'undo' => 'Annuler',
+    'redo' => 'Rétablir',
+    'row-below' => 'Ligne en dessous',
+    'row-above' => 'Ligne au-dessus',
+    'column-after' => 'Colonne à droite',
+    'column-before' => 'Colonne à gauche',
+    'delete-row' => 'Supprimer la ligne',
+    'delete-column' => 'Supprimer la colonne',
+    'merge-cells' => 'Fusionner ou scinder les cellules',
+    'delete-table' => 'Supprimer le tableau',
+    'toolbar' => 'Mise en forme du texte',
+    'link-address' => 'Adresse du lien',
+    'youtube-address' => 'Adresse YouTube',
+    'apply' => 'Appliquer',
+    'cancel' => 'Annuler',
+    'uploading' => 'Envoi en cours…',
+];

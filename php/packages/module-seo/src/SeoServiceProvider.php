@@ -73,6 +73,7 @@ class SeoServiceProvider extends ServiceProvider
         // patch on a screen that is not registered — a panel without `module-pages` — is
         // simply never applied.
         $screens->extend('pages.form', __DIR__.'/../resources/screens/pages.form.json');
+        $screens->extend('blog.article-form', __DIR__.'/../resources/screens/blog.article-form.json');
 
         if (! $this->app->runningInConsole()) {
             return;

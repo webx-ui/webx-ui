@@ -1,16 +1,30 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { nextTick } from 'vue'
+import { computed, nextTick, ref } from 'vue'
+import { localesKey } from '../../composables/useLocalized'
 import WxRichText from './RichText.vue'
 
 type Wrapper = ReturnType<typeof mount>
 
 /** The editor is created on mount, so every test starts by letting that settle. */
-async function mountEditor(props: Record<string, unknown> = {}) {
-  const wrapper = mount(WxRichText, { props, attachTo: document.body })
+async function mountEditor(props: Record<string, unknown> = {}, provide?: Record<symbol, unknown>) {
+  const wrapper = mount(WxRichText, { props, global: { provide }, attachTo: document.body })
   await nextTick()
   await nextTick()
   return wrapper
+}
+
+/** The two languages a localized field is handed by the panel around it. */
+function twoLocales() {
+  const active = ref('en')
+
+  return {
+    [localesKey as symbol]: {
+      list: computed(() => [{ code: 'en' }, { code: 'ru' }]),
+      active,
+    },
+    active,
+  }
 }
 
 /**
@@ -277,5 +291,91 @@ describe('WxRichText', () => {
     const wrapper = await mountEditor({ tools: ['bold', 'italic'] })
 
     expect(wrapper.findAll('.wx-rich-text__tool')).toHaveLength(2)
+  })
+
+  describe('the library key of a picture', () => {
+    it('is written into the document and survives a reparse', async () => {
+      const wrapper = await mountEditor({
+        pickImage: () => Promise.resolve({ url: '/files/hero.png?v=1', path: '2026/09/hero.png' }),
+      })
+
+      await toolByLabel(wrapper, 'Image').trigger('click')
+      await flush()
+
+      const html = editorOf(wrapper).getHTML()
+
+      expect(html).toContain('data-wx-path="2026/09/hero.png"')
+
+      // The way back in: ProseMirror keeps only declared attributes, so a document read from a
+      // column has to come back with the key still on it.
+      editorOf(wrapper).commands.setContent(html)
+      await flush()
+
+      expect(editorOf(wrapper).getHTML()).toContain('data-wx-path="2026/09/hero.png"')
+    })
+
+    it('is absent for a picker that only has an address', async () => {
+      const wrapper = await mountEditor({ pickImage: () => Promise.resolve('/files/hero.png') })
+
+      await toolByLabel(wrapper, 'Image').trigger('click')
+      await flush()
+
+      const html = editorOf(wrapper).getHTML()
+
+      expect(html).toContain('src="/files/hero.png"')
+      expect(html).not.toContain('data-wx-path')
+    })
+  })
+
+  it('calls a button what it was told to, and English otherwise', async () => {
+    const wrapper = await mountEditor({
+      tools: ['bold', 'italic'],
+      labels: { bold: 'Жирный' },
+    })
+
+    expect(toolByLabel(wrapper, 'Жирный').attributes('aria-label')).toBe('Жирный')
+    expect(toolByLabel(wrapper, 'Italic').attributes('aria-label')).toBe('Italic')
+  })
+
+  describe('localized', () => {
+    it('edits one language at a time and keeps the other', async () => {
+      const { active, ...provide } = twoLocales()
+      const wrapper = await mountEditor(
+        { localized: true, modelValue: { en: '<p>Hello</p>', ru: '<p>Привет</p>' } },
+        provide as Record<symbol, unknown>,
+      )
+
+      expect(editorOf(wrapper).getHTML()).toContain('Hello')
+
+      active.value = 'ru'
+      await flush()
+
+      expect(editorOf(wrapper).getHTML()).toContain('Привет')
+    })
+
+    it('writes into the language on screen', async () => {
+      const { active, ...provide } = twoLocales()
+      const wrapper = await mountEditor(
+        { localized: true, modelValue: { en: '<p>Hello</p>' } },
+        provide as Record<symbol, unknown>,
+      )
+
+      active.value = 'ru'
+      await flush()
+
+      editorOf(wrapper).commands.setContent('<p>Привет</p>')
+      await flush()
+
+      const emitted = wrapper.emitted('update:modelValue')?.at(-1)?.[0]
+
+      expect(emitted).toEqual({ en: '<p>Hello</p>', ru: '<p>Привет</p>' })
+    })
+
+    it('stays a plain string when nobody asked for languages', async () => {
+      const wrapper = await mountEditor({ modelValue: '<p>Hello</p>' }, twoLocales())
+
+      expect(wrapper.classes()).not.toContain('is-localized')
+      expect(wrapper.find('.wx-locale-picker').exists()).toBe(false)
+    })
   })
 })
