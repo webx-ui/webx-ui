@@ -511,8 +511,16 @@ async function massSelected(action: 'index' | 'noindex' | 'delete'): Promise<voi
         No way out of the selection here. Untick the rows, or untick them all from the box in
         the heading — a × beside a red "Delete" is a button whose whole job is to undo something
         harmless, standing where the dangerous one is, and it read as a way to close the bar.
+
+        `lg` because the menu stands beside a button rather than at the end of a row: a row menu
+        is 30px, a button is 42, and the pair read as a control and a leftover. In a bar the two
+        are the same two things and have to be the same size.
       -->
-      <wx-row-menu :actions="massActions" :label="t('tag.selected', { count: chosen.length })" />
+      <wx-row-menu
+        size="lg"
+        :actions="massActions"
+        :label="t('tag.selected', { count: chosen.length })"
+      />
     </wx-action-bar>
   </div>
 </template>
@@ -560,7 +568,17 @@ async function massSelected(action: 'index' | 'noindex' | 'delete'): Promise<voi
   text-decoration-style: dotted;
 }
 
-.wx-tags__bar {
-  flex-wrap: wrap;
+/*
+ * One line on a phone, not two.
+ *
+ * The bar keeps its state box at 220px so that a sentence about a draft — "Saved · goes out on
+ * 25 September" — has room to be read before the buttons take a line of their own. What stands
+ * here is two words and a number, and asking for 220 of them pushed "Merge" and the ··· onto a
+ * second line at every phone width. `:deep()` because the box is the bar's element and the rule
+ * is ours. Measured at 375: the words 89px, the button and the ··· 203, and 41px of air left
+ * between them.
+ */
+.wx-tags__bar :deep(.wx-action-bar__state) {
+  flex: 0 1 auto;
 }
 </style>
