@@ -135,6 +135,39 @@ The feed is at `{prefix}` and the RSS at `{prefix}/rss`; page two of any listing
 rather than an address of its own. With no prefix the feed route is not registered at all: `/`
 belongs to the site, and a list of articles on it is a page the site writes.
 
+## For an agent
+
+The three sections are also MCP tools, served through the same doors the panel uses — the same
+list query, the same screen validation, the same revision check — so an article an agent wrote is
+one the panel would have accepted, with `mcp` in its history.
+
+| Tool                                      | Scope                      |
+| ----------------------------------------- | -------------------------- |
+| `articles_list` · `articles_get`          | `articles:read`            |
+| `articles_create` · `articles_update`     | `articles:write`           |
+| `articles_publish` · `articles_unpublish` | `articles:write`           |
+| `articles_delete`                         | `articles:write`           |
+| `rubrics_list`                            | `rubrics:read`             |
+| `tags_list` · `tags_merge`                | `tags:read` · `tags:write` |
+
+Plus the resource `blog://feed` — the last thirty articles as a reader sees them, which is what an
+agent reads to find out whether this has been written already and how the blog writes — and the
+prompt `write_article`.
+
+Every mutating tool takes `dry_run: true`. An article is named by its id or by its address; a
+rubric or a tag by its id or its slug.
+
+**The body of an article does not travel through these tools.** Blocks are `blocks_edit_content`,
+and a `blocks` key sent to `articles_update` is refused with that sentence rather than ignored.
+
+There is no `rubrics_create` and no `tags_create`. Deciding the site has a ninth section is a
+decision about its navigation, and inventing a tag while writing one sentence is how a blog ends
+up holding three spellings of one word — which is what `tags_merge` then has to untangle.
+
+**In this module the date is the publication,** so an agent that writes `published_at` while
+filling in the settings has put a half-written article on the site without calling anything named
+"publish". The prompt says so; a project writing its own instructions should too.
+
 ## Configuration
 
 ```bash
