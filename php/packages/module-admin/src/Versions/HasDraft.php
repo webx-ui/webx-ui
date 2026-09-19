@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Versions;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -124,13 +125,21 @@ trait HasDraft
      * Copy the draft into the columns, stamp the publication, and clear the draft — then, with
      * {@see HasVersions}, write the publication into the history and drop the autosaves it was
      * insuring. One transaction: a version without the columns to match is a lie in the history.
+     *
+     * `$at` is the date the entity is published *under*, which is not always now: an article
+     * dated next Tuesday, or one backdated to when it was actually written. It cannot travel
+     * through the draft — {@see applyDraft()} skips this column on purpose, so that saving a
+     * draft never puts anything on the site — and the alternative is a second save right after
+     * publishing, which would leave a version in the history carrying the wrong date. Whether a
+     * date in the future means published is the entity's own question to answer; all this does
+     * is write what it was given.
      */
-    public function publish(?int $authorId = null, string $source = EntityVersion::SOURCE_PANEL, ?string $comment = null): static
+    public function publish(?int $authorId = null, string $source = EntityVersion::SOURCE_PANEL, ?string $comment = null, ?CarbonInterface $at = null): static
     {
-        $this->getConnection()->transaction(function () use ($authorId, $source, $comment): void {
+        $this->getConnection()->transaction(function () use ($authorId, $source, $comment, $at): void {
             $this->applyDraft($this->draftValues());
             $this->setAttribute($this->draftColumn(), null);
-            $this->setAttribute($this->publishedAtColumn(), Carbon::now());
+            $this->setAttribute($this->publishedAtColumn(), $at ?? Carbon::now());
             $this->save();
 
             if ($this->hasVersions()) {

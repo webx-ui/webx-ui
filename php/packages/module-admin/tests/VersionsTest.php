@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Admin\Tests;
 
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 use LogicException;
 use PHPUnit\Framework\Attributes\Test;
@@ -82,6 +83,29 @@ final class VersionsTest extends TestCase
         $article->unpublish();
         $this->assertFalse($article->refresh()->isPublished());
         $this->assertSame('Second', $article->title, 'the columns stay; only the stamp goes');
+    }
+
+    #[Test]
+    public function a_date_can_be_chosen_and_without_one_it_is_now(): void
+    {
+        Carbon::setTestNow('2026-09-19 10:00:00');
+
+        $now = Article::query()->create(['slug' => 'now']);
+        $now->saveDraft(['title' => ['en' => 'Now']]);
+        $now->publish();
+
+        $this->assertTrue($now->refresh()->published_at->equalTo(Carbon::now()), 'no date still means now');
+
+        // The date the entity is published under, which the draft cannot carry: `applyDraft()`
+        // skips this column so that saving a draft never puts anything on the site.
+        $later = Article::query()->create(['slug' => 'later']);
+        $later->saveDraft(['title' => ['en' => 'Later'], 'published_at' => '2020-01-01 00:00:00']);
+        $later->publish(at: Carbon::parse('2026-10-01 09:00:00'));
+
+        $this->assertSame('2026-10-01 09:00:00', $later->refresh()->published_at->toDateTimeString());
+        $this->assertSame('Later', $later->title, 'the rest of the draft still lands');
+
+        Carbon::setTestNow();
     }
 
     #[Test]

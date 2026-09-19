@@ -113,6 +113,31 @@ export interface AdminModule {
    * registry every screen in the panel is drawn with.
    */
   types?: TypeRegistry
+  /**
+   * Opens a library and answers with the picture that was chosen, or `null` if nobody chose
+   * one.
+   *
+   * The seam exists because the panel's own fields need a picture — `wx-rich-text` has an
+   * image button — and the panel cannot depend on the module that has the files: it is the
+   * other way round. A module supplies this, the panel asks for it, and a panel without one
+   * simply does not offer the button.
+   */
+  pickImage?: () => Promise<PickedImage | null>
+}
+
+/**
+ * A picture out of a library: where it is right now, and the key it is filed under.
+ *
+ * Both, because they answer different questions. The address is what draws the picture in this
+ * browser this minute — it may be signed and about to expire, and it carries a version stamp
+ * that changes the moment somebody crops the image. The key is what goes into the record, so
+ * the address can be worked out again: a library that moves to another bucket, a site deployed
+ * against a different CDN and an image edited in place all change the address and none of them
+ * change the key.
+ */
+export interface PickedImage {
+  url: string
+  path?: string
 }
 
 export type AdminStatus = 'loading' | 'ready' | 'unauthenticated' | 'error'

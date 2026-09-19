@@ -41,6 +41,7 @@ export type {
   Manifest,
   ManifestModule,
   NavEntry,
+  PickedImage,
   RowAction,
 } from './types'
 
@@ -55,3 +56,4 @@ export { default as WxRenameButton } from './RenameButton.vue'
 export { default as WxHelpButton } from './HelpButton.vue'
 export { default as WxDate } from './DateText.vue'
 export { default as WxNotes } from './NotesFeed.vue'
+export { default as WxRichTextField } from './RichTextField.vue'
