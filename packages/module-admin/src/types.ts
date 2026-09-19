@@ -186,3 +186,19 @@ export interface RowAction {
   target?: string
   run?: () => void
 }
+
+/**
+ * One filter that is on, said in the reader's words.
+ *
+ * A shut panel of filters says nothing about itself, and a list narrowed by something nobody
+ * can see is a list that looks wrong. Sections build these — only a section knows that
+ * `rubric=2` reads "Rubric: News" — and `WxFilterChips` draws them the same way everywhere.
+ */
+export interface AppliedFilter {
+  /** Unique within the strip. */
+  key: string
+  /** What it says on the chip: the field and its value. */
+  label: string
+  /** Takes this one filter off. */
+  clear: () => void
+}

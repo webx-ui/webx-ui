@@ -61,4 +61,8 @@ return [
     'new-title' => 'Nouvel article',
     'field-title' => 'Titre',
     'create' => 'Créer',
+
+    'filter-rubric' => 'Rubrique',
+    'filter-tag' => 'Étiquette',
+    'filter-author' => 'Auteur',
 ];

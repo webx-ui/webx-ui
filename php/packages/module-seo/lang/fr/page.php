@@ -58,4 +58,6 @@ return [
     'gone' => 'Ne mène nulle part',
     'occupied' => 'Une page du site répond à :path. Une redirection passe avant elle : la page ne sera plus accessible à cette adresse.',
     'occupied-alias' => 'Cette adresse mène déjà à :target — la trace d’un déménagement. Une redirection écrite ici passe avant.',
+
+    'filter-kind' => 'Type',
 ];

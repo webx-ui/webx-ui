@@ -61,4 +61,8 @@ return [
     'new-title' => 'Yeni makale',
     'field-title' => 'Başlık',
     'create' => 'Oluştur',
+
+    'filter-rubric' => 'Bölüm',
+    'filter-tag' => 'Etiket',
+    'filter-author' => 'Yazar',
 ];
