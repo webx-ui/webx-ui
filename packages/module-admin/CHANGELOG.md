@@ -1,5 +1,76 @@
 # @webx-ui/admin
 
+## 0.10.0
+
+### Minor Changes
+
+- 937f4e2: The blog gets a picture of its own, and so can every other navigation group
+
+  Two separate things made the sidebar say the wrong thing about the blog.
+
+  **A group could not carry an icon at all.** `AdminNav` drew `icon="gear"` on every branch, so
+  "Blog" and "System" looked like the same kind of thing — one is what the site is about, the other
+  is what keeps the panel running. A group now names its own picture: `'icon' => 'newspaper'` beside
+  the title in `webx-admin.groups`, through the manifest, into `NavGroup`. The key is optional and
+  falls back to the gear, so a site that published `webx-admin.php` before this — or a group written
+  by a module that has not been updated — looks exactly as it looked.
+
+  **`ArticlesModule` named `file-text`, which was not an icon.** The set has `file-txt`, `file-md`
+  and the rest of the file family, but nothing under that name, so `resolveIcon` came back empty and
+  `WxIcon` rendered no `<svg>` at all: no warning, no placeholder, just a menu line whose label had
+  slid left into the room the picture was meant to occupy. Both halves type-check a name neither of
+  them can check, so the seam is now tested — every `icon()` and every `'icon' =>` in the PHP
+  packages is looked up in the set.
+
+  New in `@webx-ui/core`: `file-text`, the page with three lines of prose that the file family
+  already drew, under the name a section full of writing asks for; and `newspaper`, a folded sheet
+  with the one behind it curling out at the bottom left — the fold is the only thing that tells a
+  paper from a document at 16 px.
+
+- 852883d: `rowMenuWidth` says how wide a column holding a `···` has to be, and every list reads it. The menu
+  is a finger target — 44px under `(pointer: coarse)` — and the cell keeps 16 on either side of it,
+  so the 56 the sections declared was never enough: the button painted outside its column, which
+  nothing said out loud until cells began to clip what does not fit.
+
+  On the tags screen the selection bar keeps the one button it exists for and puts the other three
+  behind the same `···` a row has. The × that cleared the selection is gone: a button whose whole
+  job is to undo something harmless, standing beside a red "Delete", read as a way to close the bar.
+
+- 852883d: `WxDate` has a column form. `compact` shows the time alone for today — it is the only row in the
+  column wearing a clock, so it reads as today without spending a word on saying so — a short month
+  for the rest of this year, and digits once the year has to be said. What it leaves out is in the
+  tip, which is where "when exactly" was always answered.
+
+  The lists use it, and their date columns went from 185px to 120: the full line is the reason the
+  column had to be that wide in Russian and wider in German. The article covers take the smallest
+  radius in the scale with it, the one `WxEntityCard` gives its own thumbnail — 12 on a box 32px
+  tall reads as a pill.
+
+- 852883d: The panel's lists take their filters behind the funnel and draw their narrow rows as entities.
+
+  `WxFilterChips` and `AppliedFilter` in `module-admin` give every section the same chip, and the
+  panel's own two words — the name of the funnel and "reset all" — live with it in all ten
+  languages. Articles, the SEO rules and the administrators put their dropdowns in `#filters` and
+  what they are set to in `#applied`; submissions, administrators and articles draw a card below
+  their breakpoint as `WxEntityCard` rather than as a stack of labelled lines, with the `···` in
+  the card's own top strip beside the checkbox.
+
+  `WxEntityCard` gained `titleLines`, because an article's headline is a sentence: one line of it
+  on a phone is half a thought, and the list it replaced already clamped at two.
+
+### Patch Changes
+
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [937f4e2]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+  - @webx-ui/core@0.25.0
+  - @webx-ui/schema@0.3.2
+
 ## 0.9.0
 
 ### Minor Changes
