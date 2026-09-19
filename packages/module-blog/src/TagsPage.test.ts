@@ -117,37 +117,29 @@ describe('WxTagsPage', () => {
     expect(get).toHaveBeenCalledWith('/api/cms/blog/tags?noindex=1')
   })
 
-  it('renames in place and leaves the address where it was', async () => {
-    const { wrapper, put } = panel([tag({ id: 5 })])
+  it('leaves the name a name: renaming is a dialog, not a box in the cell', async () => {
+    const { wrapper } = panel([tag({ id: 5 })])
 
     await flushPromises()
-    await wrapper.get('.wx-tags__name').trigger('click')
-    await flushPromises()
 
-    const input = wrapper.get('.wx-tags__rename input')
-    await input.setValue('drive belts')
-    await input.trigger('keyup.enter')
-    await flushPromises()
-
-    // The title alone: a word spelled three ways before lunch would otherwise leave three
-    // aliases behind a decision nobody made.
-    expect(put).toHaveBeenCalledWith('/api/cms/blog/tags/5', { title: 'drive belts' })
+    // A name that is quietly an <input> reads as a name, and a stray click on a row is a
+    // rename nobody asked for. The cell shows the word; the menu opens the form.
+    expect(wrapper.find('.wx-tags__rename').exists()).toBe(false)
+    expect(wrapper.find('tbody input[type="text"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('belts')
   })
 
-  it('puts nothing back when Escape is pressed', async () => {
-    const { wrapper, put } = panel([tag({ id: 5 })])
+  it('asks the server for the order the heading was clicked', async () => {
+    const { wrapper, get } = panel([tag({ id: 5 })])
 
     await flushPromises()
-    await wrapper.get('.wx-tags__name').trigger('click')
+    get.mockClear()
+
+    const heading = wrapper.findAll('thead button').find((button) => button.text() !== '')
+    await heading?.trigger('click')
     await flushPromises()
 
-    const input = wrapper.get('.wx-tags__rename input')
-    await input.setValue('drive belts')
-    await input.trigger('keyup.esc')
-    await flushPromises()
-
-    expect(put).not.toHaveBeenCalled()
-    expect(wrapper.find('.wx-tags__rename').exists()).toBe(false)
+    expect(get).toHaveBeenCalledWith('/api/cms/blog/tags?sort=name&per_page=15')
   })
 
   it('raises the selection bar once something is chosen, and opens the pile at once', async () => {
