@@ -121,7 +121,7 @@ const columns = computed<TableColumn<PageRow>[]>(() => [
   {
     key: 'updated_at',
     label: t('page.column-updated'),
-    width: 185,
+    width: 150,
     hideBelow: 900,
     hidden: inBin.value,
   },
@@ -419,7 +419,7 @@ onMounted(load)
 
         <template #cell-updated_at="{ row }">
           <wx-text size="sm" tone="muted">
-            <wx-date :value="row.updated_at" /><template v-if="row.edited_by && !inBin"
+            <wx-date :value="row.updated_at" compact /><template v-if="row.edited_by && !inBin"
               >, {{ row.edited_by }}</template
             >
           </wx-text>

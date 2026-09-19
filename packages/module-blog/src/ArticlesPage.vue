@@ -151,7 +151,7 @@ const columns = computed<TableColumn<ArticleRow>[]>(() => {
     {
       key: 'date',
       label: inBin.value ? t('panel.column-deleted') : t('panel.column-date'),
-      width: 185,
+      width: 120,
       hideBelow: 700,
       // "today at 16:22" is three words the table will break over two lines given half a
       // chance, and a date read down a column has to be one line to be read at all.
@@ -581,7 +581,7 @@ function dateOf(article: ArticleRow): string | null {
         </template>
 
         <template #cell-date="{ row }">
-          <wx-date v-if="dateOf(row)" :value="dateOf(row)" />
+          <wx-date v-if="dateOf(row)" :value="dateOf(row)" compact />
           <wx-text v-else size="sm" tone="muted">—</wx-text>
         </template>
 
@@ -670,7 +670,9 @@ function dateOf(article: ArticleRow): string | null {
   width: 44px;
   height: 32px;
   overflow: hidden;
-  border-radius: var(--wx-radius-sm);
+  /* The smallest step in the scale, and what `WxEntityCard` gives its own thumbnail: on a box
+     32px tall the next one up is 12, which is over a third of it. */
+  border-radius: var(--wx-radius-xs);
   background: var(--wx-bg-subtle);
   color: var(--wx-text-muted);
 }

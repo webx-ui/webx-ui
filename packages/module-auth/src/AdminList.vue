@@ -345,7 +345,11 @@ defineExpose({ reload: () => load(last), chosen: () => selected.value })
       </template>
 
       <template #cell-last_login_at="{ row }">
-        <wx-date :value="row.last_login_at" :tone="row.last_login_at ? 'default' : 'muted'" />
+        <wx-date
+          :value="row.last_login_at"
+          :tone="row.last_login_at ? 'default' : 'muted'"
+          compact
+        />
       </template>
 
       <!--
