@@ -1,4 +1,5 @@
 import type { ControlSize, ControlStatus } from '../../composables/useFormField'
+import type { DateFnsLocale } from '../../internal/dateLocale'
 
 /** `[start, end]`, or `null` while nothing is picked. */
 export type DateRangePickerModelValue = string[] | Date[] | null
@@ -14,6 +15,13 @@ export interface DateRangePickerProps {
   maxDate?: string | Date
   /** How many months to show side by side. Two makes picking across a boundary easy. */
   months?: number
+  /**
+   * Language the calendar is drawn in: a BCP-47 tag such as `'ru'` or `'pt-BR'`, whose
+   * month and weekday names come from the browser, or a date-fns locale object for a
+   * language the browser does not carry. Defaults to what the application provided with
+   * `provideDateLocale`, then to the browser's own language.
+   */
+  locale?: string | DateFnsLocale
   /** First day of the week: 0 is Sunday, 1 is Monday. */
   weekStart?: number
   /** Apply as soon as the second date is picked, with no confirm button. */

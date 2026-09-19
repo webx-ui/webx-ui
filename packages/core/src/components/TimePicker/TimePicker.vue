@@ -21,6 +21,7 @@ withDefaults(defineProps<Omit<DatePickerProps, 'type'>>(), {
   seconds: undefined,
   minutesIncrement: undefined,
   is24: undefined,
+  locale: undefined,
   weekStart: undefined,
   autoApply: undefined,
   textInput: undefined,

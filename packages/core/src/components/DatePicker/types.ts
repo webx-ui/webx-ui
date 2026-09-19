@@ -1,4 +1,5 @@
 import type { ControlSize, ControlStatus } from '../../composables/useFormField'
+import type { DateFnsLocale } from '../../internal/dateLocale'
 
 export type DatePickerType = 'date' | 'datetime' | 'time'
 export type DatePickerModelValue = string | Date | null
@@ -24,6 +25,13 @@ export interface DatePickerProps {
   minutesIncrement?: number
   /** 24-hour clock. Off means AM/PM. */
   is24?: boolean
+  /**
+   * Language the calendar is drawn in: a BCP-47 tag such as `'ru'` or `'pt-BR'`, whose
+   * month and weekday names come from the browser, or a date-fns locale object for a
+   * language the browser does not carry. Defaults to what the application provided with
+   * `provideDateLocale`, then to the browser's own language.
+   */
+  locale?: string | DateFnsLocale
   /** First day of the week: 0 is Sunday, 1 is Monday. */
   weekStart?: number
   /** Apply the value as soon as it is picked, with no confirm button. */
