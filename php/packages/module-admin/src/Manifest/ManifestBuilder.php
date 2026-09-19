@@ -34,7 +34,7 @@ final class ManifestBuilder
      *     locale: string,
      *     locales: list<array{code: string, name: string, nativeName: string, direction: string, default: bool}>,
      *     panelLocales: list<array{code: string, name: string, nativeName: string, direction: string, default: bool}>,
-     *     groups: list<array{id: string, title: string, order: int}>,
+     *     groups: list<array{id: string, title: string, icon: string|null, order: int}>,
      *     modules: list<array<string, mixed>>,
      *     screens: list<string>,
      * }
@@ -96,10 +96,14 @@ final class ManifestBuilder
     }
 
     /**
-     * The navigation groups, translated: `webx-admin.groups` maps an id to a title key and an
-     * order, and a module names the id.
+     * The navigation groups, translated: `webx-admin.groups` maps an id to a title key, an icon
+     * and an order, and a module names the id.
      *
-     * @return list<array{id: string, title: string, order: int}>
+     * The icon is optional and stays `null` when nobody named one — the front end then draws
+     * the branch with the picture it has always drawn, so a group written before this existed
+     * looks exactly as it looked.
+     *
+     * @return list<array{id: string, title: string, icon: string|null, order: int}>
      */
     private function groups(): array
     {
@@ -108,10 +112,12 @@ final class ManifestBuilder
 
         foreach (is_array($configured) ? $configured : [] as $id => $group) {
             $title = is_array($group) ? (string) ($group['title'] ?? $id) : (string) $group;
+            $icon = is_array($group) && isset($group['icon']) ? (string) $group['icon'] : null;
 
             $groups[] = [
                 'id' => (string) $id,
                 'title' => (string) __($title),
+                'icon' => $icon,
                 'order' => is_array($group) ? (int) ($group['order'] ?? 0) : 0,
             ];
         }

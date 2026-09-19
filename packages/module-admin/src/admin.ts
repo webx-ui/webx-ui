@@ -173,6 +173,7 @@ export function createAdminContext(options: {
         .map((group) => ({
           id: group.id,
           title: group.title,
+          icon: group.icon ?? null,
           entries: byGroup.get(group.id) ?? [],
         })),
     }

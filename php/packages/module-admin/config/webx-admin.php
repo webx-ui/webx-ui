@@ -51,14 +51,15 @@ return [
     |---------------------------------------------------------------------------
     |
     | A module may name a group it belongs under; this is where the groups are
-    | described. The title is a translation key. `system` holds what keeps the
-    | panel running — settings, administrators — apart from what the site is
-    | about.
+    | described. The title is a translation key, the icon is a name from the
+    | icon set and may be left out — a group without one gets a gear. `system`
+    | holds what keeps the panel running — settings, administrators — apart
+    | from what the site is about.
     |
     */
 
     'groups' => [
-        'system' => ['title' => 'webx-admin::nav.system', 'order' => 900],
+        'system' => ['title' => 'webx-admin::nav.system', 'icon' => 'gear', 'order' => 900],
     ],
 
     /*

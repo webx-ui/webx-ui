@@ -209,7 +209,11 @@ class BlogServiceProvider extends ServiceProvider
         if (! array_key_exists(BlogModule::GROUP, $groups)) {
             $config->set('webx-admin.groups', [
                 ...$groups,
-                BlogModule::GROUP => ['title' => 'webx-blog::module.group', 'order' => 300],
+                BlogModule::GROUP => [
+                    'title' => 'webx-blog::module.group',
+                    'icon' => 'newspaper',
+                    'order' => 300,
+                ],
             ]);
         }
 
