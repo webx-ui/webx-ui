@@ -187,7 +187,7 @@ const columns = computed<TableColumn<SubmissionRow>[]>(() => {
       key: 'created_at',
       label: t('panel.received'),
       sortable: true,
-      width: 185,
+      width: 120,
       // "today at 16:22" is three words the table will break over two lines given half a
       // chance, and a date read down a column has to be one line to be read at all.
       cellClass: 'wx-submissions__when',
@@ -490,7 +490,7 @@ function settings(): void {
         </template>
 
         <template #cell-created_at="{ row }">
-          <wx-date :value="row.created_at" />
+          <wx-date :value="row.created_at" compact />
         </template>
 
         <template #cell-card="{ row }">
