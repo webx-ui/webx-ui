@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import WxIcon from '../Icon/Icon.vue'
 import { useButtonGroup } from '../../composables/useButtonGroup'
 import type { ButtonEmits, ButtonProps } from './types'
 
@@ -12,6 +13,7 @@ defineOptions({ name: 'WxButton', inheritAttrs: false })
  */
 const props = withDefaults(defineProps<ButtonProps>(), {
   type: undefined,
+  icon: undefined,
   variant: undefined,
   size: undefined,
   disabled: false,
@@ -81,8 +83,10 @@ function onClick(event: MouseEvent) {
     @click="onClick"
   >
     <span v-if="loading" class="wx-button__spinner" aria-hidden="true" />
-    <span v-else-if="$slots.icon" class="wx-button__icon">
-      <slot name="icon" />
+    <span v-else-if="icon || $slots.icon" class="wx-button__icon">
+      <slot name="icon">
+        <wx-icon v-if="icon" :name="icon" />
+      </slot>
     </span>
     <span v-if="$slots.default" class="wx-button__label">
       <slot />

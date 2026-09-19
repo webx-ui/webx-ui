@@ -147,7 +147,7 @@ async function remove(rule: SeoUrlRule): Promise<void> {
 <template>
   <seo-layout :base="props.base" current="rules" @test="test({})">
     <template v-if="canManage" #actions>
-      <wx-button type="primary" icon="add" @click="open(null)">
+      <wx-button type="primary" icon="plus" @click="open(null)">
         {{ t('page.new-rule') }}
       </wx-button>
     </template>
