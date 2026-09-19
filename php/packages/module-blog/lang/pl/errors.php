@@ -8,4 +8,8 @@ return [
 
     'slug-shape' => 'W adresie mogą być litery, cyfry, myślniki i podkreślenia.',
     'conflict' => 'Artykuł zmienił się, gdy go redagowałeś.',
+
+    'unknown-rubric' => 'Jednego z tych działów już nie ma.',
+    'unknown-tag' => 'Jednego z tych tagów już nie ma.',
+    'unknown-article' => 'Jednego z tych artykułów już nie ma.',
 ];

@@ -8,4 +8,8 @@ return [
 
     'slug-shape' => 'Una dirección admite letras, dígitos, guiones y guiones bajos.',
     'conflict' => 'El artículo cambió mientras lo editabas.',
+
+    'unknown-rubric' => 'Una de estas secciones ya no existe.',
+    'unknown-tag' => 'Una de estas etiquetas ya no existe.',
+    'unknown-article' => 'Uno de estos artículos ya no existe.',
 ];

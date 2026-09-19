@@ -6,11 +6,11 @@ namespace WebxUi\Blog\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blog\Http\Resources\ArticleResource;
 use WebxUi\Blog\Models\Article;
+use WebxUi\Blog\Panel\Instant;
 
 /**
  * On the site and off it — and, for an article, "on the site from Tuesday" as well (§7).
@@ -30,10 +30,12 @@ final class ArticlePublicationController
     public function publish(Request $request, Article $article): JsonResponse
     {
         $validated = $request->validate(['at' => ['sometimes', 'nullable', 'date']]);
-        $when = $validated['at'] ?? null;
-        $at = is_string($when) && $when !== '' ? Carbon::parse($when) : null;
 
-        $article->publish($this->author($request), EntityVersion::SOURCE_PANEL, at: $at);
+        $article->publish(
+            $this->author($request),
+            EntityVersion::SOURCE_PANEL,
+            at: Instant::from($validated['at'] ?? null),
+        );
 
         return ApiResponse::data(new ArticleResource($this->loaded($article->refresh())));
     }

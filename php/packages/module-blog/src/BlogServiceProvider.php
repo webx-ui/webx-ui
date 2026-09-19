@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace WebxUi\Blog;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Blog\Handlers\ArticleHandler;
 use WebxUi\Blog\Handlers\RubricHandler;
 use WebxUi\Blog\Handlers\TagHandler;
@@ -17,10 +20,13 @@ use WebxUi\Blog\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Blog\Models\Article;
 use WebxUi\Blog\Models\Rubric;
 use WebxUi\Blog\Models\Tag;
+use WebxUi\Blog\Panel\ArticleForm;
 use WebxUi\Blog\Panel\ArticlesModule;
 use WebxUi\Blog\Panel\BlogModule;
 use WebxUi\Blog\Panel\RubricsModule;
 use WebxUi\Blog\Panel\TagsModule;
+use WebxUi\Blog\Screens\AuthorType;
+use WebxUi\Blog\Screens\IdsType;
 use WebxUi\Blog\Seo\TagSource;
 use WebxUi\Routing\Formatters\Prefixed;
 use WebxUi\Routing\Formatters\Slug;
@@ -54,6 +60,7 @@ class BlogServiceProvider extends ServiceProvider
         $this->registerFeedRoutes();
         $this->registerBlockEntity();
         $this->registerSeoSource();
+        $this->registerScreens();
         $this->registerPanel();
 
         if (! $this->app->runningInConsole()) {
@@ -211,6 +218,32 @@ class BlogServiceProvider extends ServiceProvider
         foreach ([ArticlesModule::class, RubricsModule::class, TagsModule::class] as $module) {
             $modules->register($this->app->make($module));
         }
+    }
+
+    /**
+     * The editor is a described screen, so a project — or `module-seo` (§12) — adds a tab to it
+     * with a patch instead of a fork.
+     *
+     * The four types registered beside it are the fields of that screen that only this module
+     * can answer for: three lists of ids and one author. They are types rather than one loose
+     * `wx-select` each because the server has to know what a value of theirs is — a rubric that
+     * is not a rubric has to be refused here, where every screen is checked, rather than
+     * wherever somebody remembered to check it.
+     */
+    private function registerScreens(): void
+    {
+        $this->app->make(ScreenRegistry::class)->register(
+            ArticleForm::SCREEN,
+            __DIR__.'/../resources/screens/article-form.json',
+        );
+
+        $types = $this->app->make(FieldTypes::class);
+        $connection = $this->app->make(ConnectionResolverInterface::class);
+
+        $types->register('wx-article-rubrics', new IdsType($connection, 'rubrics', 'webx-blog::errors.unknown-rubric'));
+        $types->register('wx-article-tags', new IdsType($connection, 'tags', 'webx-blog::errors.unknown-tag'));
+        $types->register('wx-article-related', new IdsType($connection, 'articles', 'webx-blog::errors.unknown-article'));
+        $types->register('wx-article-author', new AuthorType);
     }
 
     /** What a tag page says about itself, and whether it is in the index at all (§12). */

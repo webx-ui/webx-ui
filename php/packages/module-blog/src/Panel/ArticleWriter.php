@@ -48,10 +48,25 @@ final class ArticleWriter
         ?int $authorId = null,
     ): Article {
         $pinned = $columns['pinned'] ?? null;
-        unset($columns['pinned']);
+        $date = array_key_exists('published_at', $columns) ? $columns['published_at'] : false;
+        unset($columns['pinned'], $columns['published_at']);
 
         if ($pinned !== null) {
             $article->forceFill(['pinned' => (bool) $pinned])->save();
+        }
+
+        if (is_string($date) && $date !== '') {
+            // The date of an article that is already on the site — or waiting for its day — is
+            // the column, not the draft: it is what every listing orders by, and a date that
+            // moved only in a draft would leave the article in the wrong place in the feed
+            // until somebody published something unrelated. One that has never been on the site
+            // has no column to move — `published_at` is what "on the site" means — so its day
+            // waits in the draft, and `publish()` is handed it when the moment comes.
+            if ($article->published_at !== null) {
+                $article->forceFill(['published_at' => Instant::from($date)])->save();
+            } else {
+                $columns['published_at'] = $date;
+            }
         }
 
         if ($columns !== []) {
@@ -103,6 +118,19 @@ final class ArticleWriter
         foreach ($columns as $field => $value) {
             if (! in_array($field, self::TRANSLATED, true)) {
                 $values[$field] = $value;
+
+                continue;
+            }
+
+            // The form edits every language at once and sends the whole map; an agent, or a
+            // script, sends the words it has and means the language it is speaking. Both are
+            // let through, and neither is ever written over the whole field: a map is laid over
+            // what is there and a string goes into one slot. A language the editor emptied
+            // still comes back empty — it travels as `''`, which is a key like any other —
+            // while a language nobody mentioned is a language nobody meant to delete.
+            if (is_array($value)) {
+                $current = $values[$field] ?? [];
+                $values[$field] = is_array($current) ? [...$current, ...$value] : $value;
 
                 continue;
             }

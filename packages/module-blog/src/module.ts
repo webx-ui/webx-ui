@@ -1,4 +1,11 @@
 import type { AdminModule } from '@webx-ui/module-admin'
+import ArticleAddress from './ArticleAddress.vue'
+import ArticleAuthor from './ArticleAuthor.vue'
+import ArticleEditorPage from './ArticleEditorPage.vue'
+import ArticleHistory from './ArticleHistory.vue'
+import ArticleRelated from './ArticleRelated.vue'
+import ArticleRubrics from './ArticleRubrics.vue'
+import ArticleTags from './ArticleTags.vue'
 import ArticlesPage from './ArticlesPage.vue'
 
 export interface BlogOptions {
@@ -34,7 +41,31 @@ export function blog(options: BlogOptions = {}): AdminModule[] {
           component: ArticlesPage,
           props: { base: path },
         },
+        {
+          path: `${path}/articles/:id(\\d+)`,
+          name: 'webx.blog.articles.edit',
+          component: ArticleEditorPage,
+          props: { base: path },
+        },
       ],
+      /*
+       * The parts of `blog.article-form` that only this module can draw.
+       *
+       * The editor is a described screen so that a module can add a tab to it with a patch, and
+       * the price of that is that everything on it has to be a node type. Five of these are
+       * fields — the value is ids, and the control over them is a list that can be dragged or a
+       * box that makes a tag — and two only draw. Each reads the article from the editor above
+       * it rather than from the description, because a screen is a description and not a
+       * binding.
+       */
+      types: {
+        'wx-article-address': { component: ArticleAddress, kind: 'display' },
+        'wx-article-author': { component: ArticleAuthor, kind: 'field' },
+        'wx-article-rubrics': { component: ArticleRubrics, kind: 'field' },
+        'wx-article-tags': { component: ArticleTags, kind: 'field' },
+        'wx-article-related': { component: ArticleRelated, kind: 'field' },
+        'wx-article-history': { component: ArticleHistory, kind: 'display' },
+      },
     },
   ]
 }

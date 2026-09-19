@@ -210,12 +210,14 @@ final class PanelTest extends TestCase
 
         $this->actingAs($this->editor(), 'cms')
             ->putJson($this->api($article->getKey()), [
-                'title' => 'Seven signs of wear',
-                'rubrics' => [$repairs->getKey()],
+                'values' => [
+                    'title' => ['en' => 'Seven signs of wear'],
+                    'rubrics' => [$repairs->getKey()],
+                ],
             ])
             ->assertOk()
-            ->assertJsonPath('data.title', 'Seven signs of wear')
-            ->assertJsonPath('data.status', Article::STATUS_MODIFIED);
+            ->assertJsonPath('data.article.title', 'Seven signs of wear')
+            ->assertJsonPath('data.article.status', Article::STATUS_MODIFIED);
 
         $article->refresh();
 
@@ -241,13 +243,16 @@ final class PanelTest extends TestCase
         $article->saveDraft(['title' => ['en' => 'Theirs']]);
 
         $this->actingAs($editor, 'cms')
-            ->putJson($this->api($article->getKey()), ['title' => 'Mine', 'revision' => $read])
+            ->putJson($this->api($article->getKey()), [
+                'values' => ['title' => ['en' => 'Mine']],
+                'revision' => $read,
+            ])
             ->assertStatus(409)
-            ->assertJsonPath('data.title', 'Theirs');
+            ->assertJsonPath('data.article.title', 'Theirs');
 
         // A request that names no revision did not read the article first and is let through.
         $this->actingAs($editor, 'cms')
-            ->putJson($this->api($article->getKey()), ['title' => 'A script'])
+            ->putJson($this->api($article->getKey()), ['values' => ['title' => ['en' => 'A script']]])
             ->assertOk();
     }
 
@@ -310,11 +315,12 @@ final class PanelTest extends TestCase
         $article = $this->article('belts', at: Carbon::now()->subDay());
         $article->setTranslation('title', 'ru', 'Ремни')->save();
 
-        // Saved from a Russian panel: the English title is a fallback on that screen, and
-        // writing back what the screen is showing would copy it over the Russian one.
+        // The form sends the languages it edited and no others. A language nobody mentioned is
+        // a language nobody meant to delete, so the map is laid over what is there rather than
+        // put in its place.
         $this->actingAs($this->editor(), 'cms')
             ->withHeader('X-Webx-Locale', 'ru')
-            ->putJson($this->api($article->getKey()), ['title' => 'Приводные ремни'])
+            ->putJson($this->api($article->getKey()), ['values' => ['title' => ['ru' => 'Приводные ремни']]])
             ->assertOk();
 
         $shown = $article->refresh()->withDraft();

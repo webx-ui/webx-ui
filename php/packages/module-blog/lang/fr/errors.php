@@ -8,4 +8,8 @@ return [
 
     'slug-shape' => 'Une adresse accepte des lettres, des chiffres, des tirets et des tirets bas.',
     'conflict' => 'L’article a changé pendant que vous le modifiiez.',
+
+    'unknown-rubric' => 'L’une de ces rubriques n’existe plus.',
+    'unknown-tag' => 'L’une de ces étiquettes n’existe plus.',
+    'unknown-article' => 'L’un de ces articles n’existe plus.',
 ];

@@ -8,4 +8,8 @@ return [
 
     'slug-shape' => 'An address may hold letters, digits, hyphens and underscores.',
     'conflict' => 'This article changed while you were editing it.',
+
+    'unknown-rubric' => 'One of these rubrics no longer exists.',
+    'unknown-tag' => 'One of these tags no longer exists.',
+    'unknown-article' => 'One of these articles no longer exists.',
 ];

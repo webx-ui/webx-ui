@@ -8,4 +8,8 @@ return [
 
     'slug-shape' => 'Um endereço aceita letras, dígitos, hifens e sublinhados.',
     'conflict' => 'O artigo mudou enquanto você o editava.',
+
+    'unknown-rubric' => 'Uma destas rubricas já não existe.',
+    'unknown-tag' => 'Uma destas etiquetas já não existe.',
+    'unknown-article' => 'Um destes artigos já não existe.',
 ];

@@ -1,6 +1,6 @@
 # `webx-ui/module-blog` — спецификация и план реализации
 
-Статус: спроектирован 18.09.2026, пишется с 19.09.2026 — сессии A и B закрыты (§17). Пакеты —
+Статус: спроектирован 18.09.2026, пишется с 19.09.2026 — сессии A, B и C закрыты (§17). Пакеты —
 `webx-ui/module-blog` (composer) и `@webx-ui/module-blog` (npm).
 
 Блог: статьи, рубрики, теги. Содержимое статьи — блоки конструктора (`webx-ui/module-blocks`),
@@ -285,14 +285,16 @@ public function scopePublished(Builder $q): Builder
 
 ```
 GET    /api/cms/blog/articles            список: q, rubric, tag, author, status, sort, page
-POST   /api/cms/blog/articles
-GET    /api/cms/blog/articles/{id}
-PUT    /api/cms/blog/articles/{id}       revision — против затирания, 409
-PATCH  /api/cms/blog/articles/{id}/draft автосейв
+POST   /api/cms/blog/articles            { title, slug? } — заголовок и адрес, больше ничего
+GET    /api/cms/blog/articles/{id}       запись целиком: values экрана, ревизия, предпросмотр
+PUT    /api/cms/blog/articles/{id}       { values, revision } — против затирания, 409
+POST   /api/cms/blog/articles/{id}/discard     отменить правки
 POST   /api/cms/blog/articles/{id}/publish     { at? }
 POST   /api/cms/blog/articles/{id}/unpublish
 DELETE /api/cms/blog/articles/{id}
 POST   /api/cms/blog/articles/{id}/restore
+GET    /api/cms/blog/articles/{id}/versions
+POST   /api/cms/blog/articles/{id}/versions/{number}/restore
 
 GET    /api/cms/blog/rubrics             POST · PUT · DELETE
 POST   /api/cms/blog/rubrics/reorder     { ids: [] }
@@ -304,6 +306,13 @@ POST   /api/cms/blog/tags/merge          { ids: [], keep: id, redirect: bool }
 
 Ресурс статьи несёт адрес, статус, рубрики, теги, автора, обложку (с `url` и `source`, как в
 `module-media`) и ревизию.
+
+**Отдельного `PATCH .../draft` нет** (решение 19.09.2026). Автосейв и «Сохранить черновик» — одно
+и то же действие: и то и другое пишет черновик и обязано проверять ревизию, так что второй маршрут
+был бы копией `PUT` с другим глаголом. Как у `module-pages`.
+
+`GET /api/cms/blog/tags` (поиск по `q`, с числом статей) и `POST /api/cms/blog/tags` приехали
+вместе с редактором: комбобокс тегов без них не работает. Остальное по тегам и рубрикам — сессия D.
 
 ## 12. SEO
 
@@ -383,15 +392,15 @@ POST   /api/cms/blog/tags/merge          { ids: [], keep: id, redirect: bool }
 
 ## 17. Пошаговый план
 
-| Сессия | Что                                                              | Ветка               |
-| ------ | ---------------------------------------------------------------- | ------------------- |
-| **1**  | ✅ `module-admin`: тип поля `wx-rich-text`, дата у `publish()`   | `feat/wx-rich-text` |
-| **A**  | ✅ пакет: схема, модели, адреса, обработчики, вьюхи, RSS         | `feat/module-blog`  |
-| **B**  | ✅ API панели и экран списка статей                              | та же               |
-| **C**  | редактор статьи: вкладки, блоки, автосейв, ревизия, предпросмотр | та же               |
-| **D**  | рубрики и теги: экраны, порядок, инлайн-переименование, слияние  | та же               |
-| **E**  | MCP, гайд `apps/docs/guide/blog.md`                              | та же               |
-| **F**  | выпуск, оба демо, наполнение                                     | —                   |
+| Сессия | Что                                                                 | Ветка               |
+| ------ | ------------------------------------------------------------------- | ------------------- |
+| **1**  | ✅ `module-admin`: тип поля `wx-rich-text`, дата у `publish()`      | `feat/wx-rich-text` |
+| **A**  | ✅ пакет: схема, модели, адреса, обработчики, вьюхи, RSS            | `feat/module-blog`  |
+| **B**  | ✅ API панели и экран списка статей                                 | та же               |
+| **C**  | ✅ редактор статьи: вкладки, блоки, автосейв, ревизия, предпросмотр | та же               |
+| **D**  | рубрики и теги: экраны, порядок, инлайн-переименование, слияние     | та же               |
+| **E**  | MCP, гайд `apps/docs/guide/blog.md`                                 | та же               |
+| **F**  | выпуск, оба демо, наполнение                                        | —                   |
 
 Промпты ниже самодостаточны: в каждом сказано, что прочитать, что сделать и чего не делать.
 

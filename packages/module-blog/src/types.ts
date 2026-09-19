@@ -1,4 +1,5 @@
 import type { Paginated } from '@webx-ui/core'
+import type { ScreenModel } from '@webx-ui/schema'
 
 /**
  * Never published · waiting for its day · on the site · on the site with edits waiting · taken
@@ -106,17 +107,77 @@ export interface ArticleQuery {
   per_page?: number
 }
 
-/** What a save carries: the article's own fields, the pivots, and what was read. */
+/** What starting an article carries: a title, and an address if somebody typed one. */
 export interface ArticleInput {
   title?: string
   slug?: string
-  lead?: string
-  cover_id?: number | null
-  author_id?: number | null
-  pinned?: boolean
-  /** In the order they are to be kept; the first rubric is the main one. */
-  rubrics?: number[]
-  tags?: number[]
-  related?: number[]
+}
+
+/**
+ * What a save carries: the values of the described screen, and what was read.
+ *
+ * The values are keyed by field name — `title`, `slug`, `blocks`, `rubrics`, `seo` — because
+ * the form is a description (`blog.article-form`) and the server checks what comes in against
+ * that same description. Which is what lets `module-seo` put its card on the editor without
+ * either half of this module hearing about it.
+ *
+ * Only the fields that travelled are touched, so saving one tab cannot empty another.
+ */
+export interface ArticleSave {
+  values: ScreenModel
+  /** Left out, the save goes through: a request that read nothing has no editor to surprise. */
   revision?: string
+}
+
+/** One publication in the history. The payload is not in it — see {@link BlogApi.versions}. */
+export interface ArticleVersion {
+  number: number
+  created_at: string | null
+  author: string | null
+  source: string
+  comment: string | null
+  is_pinned: boolean
+}
+
+/** An id with something to draw beside it: a rubric, an administrator, another article. */
+export interface ArticleOption {
+  id: number
+  title: string
+}
+
+/** A tag as the article form offers it, with the number of articles filed under it (§10). */
+export interface BlogTag {
+  id: number
+  title: string
+  slug: string
+  articles_count: number
+}
+
+/**
+ * One article as its editor opens it: the record, the values of the screen, and the few things
+ * around them that the description cannot carry.
+ *
+ * The preview link is minted per response rather than stored: it is signed and short-lived, and
+ * a form left open all morning would otherwise offer a link that expired before lunch.
+ */
+export interface ArticleDetail {
+  article: ArticleRow
+  values: ScreenModel
+  /** The article as it was read, to be handed back with the next save. */
+  revision: string
+  /** The first segment of every blog address — the same in every language (§2.2). */
+  prefix: string
+  preview_url: string | null
+  options: {
+    rubrics: ArticleOption[]
+    authors: ArticleOption[]
+  }
+  /** Titles for the ids in `values.related`; nothing else carries them. */
+  related: ArticleOption[]
+}
+
+/** The body of a 409: somebody else wrote while this editor was typing. */
+export interface ArticleConflict {
+  message: string
+  data: ArticleDetail
 }

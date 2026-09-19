@@ -326,7 +326,7 @@ async function unpublish(article: ArticleRow): Promise<void> {
 
 async function setPinned(article: ArticleRow, pinned: boolean): Promise<void> {
   await run(
-    () => api.save(article.id, { pinned, revision: article.revision }),
+    () => api.save(article.id, { values: { pinned }, revision: article.revision }),
     pinned ? t('panel.pinned-done') : t('panel.unpinned'),
   )
 }

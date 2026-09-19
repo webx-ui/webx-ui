@@ -6,28 +6,34 @@ namespace WebxUi\Blog\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Blog\Http\Requests\ArticleRequest;
 use WebxUi\Blog\Http\Resources\ArticleResource;
 use WebxUi\Blog\Models\Article;
 use WebxUi\Blog\Panel\ArticleFilters;
+use WebxUi\Blog\Panel\ArticleForm;
 use WebxUi\Blog\Panel\ArticleList;
-use WebxUi\Blog\Panel\ArticleWriter;
 use WebxUi\Blog\Panel\Revision;
 
 /**
- * The section's list, and one article as a record (§11).
+ * The section's list, and one article as its editor opens it (§11).
  *
  * A paginator and not a level of a tree, which is the whole difference from `module-pages`: a
  * blog is a hundred articles that all sit at the same depth, so the shape of the screen is a
  * page of twenty with filters over it rather than a branch somebody opens.
+ *
+ * The record is thin on purpose. The form is a described screen, so what an article's values
+ * are is decided by the description and checked by `ScreenValues` — which is what lets
+ * `module-seo` put its card on the editor without this class hearing about it. What is left
+ * here is the one thing the screen cannot answer: whether this editor is writing over somebody
+ * else.
  */
 final class ArticleController
 {
     public function __construct(
         private readonly ArticleList $list,
         private readonly ArticleFilters $filters,
-        private readonly ArticleWriter $writer,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -55,9 +61,9 @@ final class ArticleController
         ]);
     }
 
-    public function show(Article $article): JsonResponse
+    public function show(Request $request, Article $article, ArticleForm $form): JsonResponse
     {
-        return ApiResponse::data(new ArticleResource($this->loaded($article)));
+        return ApiResponse::data($form->describe($this->loaded($article), $this->author($request)));
     }
 
     /**
@@ -78,30 +84,31 @@ final class ArticleController
     }
 
     /**
-     * Save.
+     * Save the draft.
      *
-     * What goes into the draft and what takes effect at once is {@see ArticleWriter}'s to
-     * decide. What is left here is the one thing it cannot answer — whether this editor is
-     * writing over somebody else.
+     * A request that names no revision is one that did not read the article first — an import,
+     * a script — and is let through: the check protects an editor from a surprise, and there is
+     * no editor to surprise.
      */
-    public function update(ArticleRequest $request, Article $article): JsonResponse
+    public function update(Request $request, Article $article, ArticleForm $form): JsonResponse
     {
-        $sent = $request->revision();
+        $sent = $request->input('revision');
 
-        if ($sent !== null && $sent !== Revision::of($article)) {
-            return $this->conflict($request, $article);
+        if (is_string($sent) && $sent !== Revision::of($article)) {
+            return $this->conflict($request, $article, $form);
         }
 
-        $this->writer->save(
+        $user = $request->user();
+        $input = $request->input('values');
+
+        $form->save(
             $article,
-            $request->columns(),
-            $request->ids('rubrics'),
-            $request->ids('tags'),
-            $request->ids('related'),
+            is_array($input) ? $input : [],
+            static fn (string $permission): bool => $user instanceof HasPermissions && $user->hasPermission($permission),
             $this->author($request),
         );
 
-        return ApiResponse::data(new ArticleResource($this->loaded($article->refresh())));
+        return ApiResponse::data($form->describe($this->loaded($article->refresh()), $this->author($request)));
     }
 
     /**
@@ -122,11 +129,11 @@ final class ArticleController
      * keeping one of the two edits. The same answer covers two editors and an agent: what is
      * stale is the request, not whoever made it.
      */
-    private function conflict(Request $request, Article $article): JsonResponse
+    private function conflict(Request $request, Article $article, ArticleForm $form): JsonResponse
     {
         return new JsonResponse([
             'message' => (string) __('webx-blog::errors.conflict'),
-            'data' => (new ArticleResource($this->loaded($article)))->resolve($request),
+            'data' => $form->describe($this->loaded($article), $this->author($request)),
         ], 409);
     }
 

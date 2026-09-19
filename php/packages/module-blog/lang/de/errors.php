@@ -8,4 +8,8 @@ return [
 
     'slug-shape' => 'Eine Adresse darf Buchstaben, Ziffern, Bindestriche und Unterstriche enthalten.',
     'conflict' => 'Der Artikel hat sich geändert, während Sie ihn bearbeitet haben.',
+
+    'unknown-rubric' => 'Eine dieser Rubriken gibt es nicht mehr.',
+    'unknown-tag' => 'Eines dieser Tags gibt es nicht mehr.',
+    'unknown-article' => 'Einen dieser Artikel gibt es nicht mehr.',
 ];

@@ -32,6 +32,10 @@ final class Revision
             'author_id' => $shown->author_id,
             'pinned' => $shown->pinned,
             'published_at' => $article->published_at?->toAtomString(),
+            // The day an article that has never been on the site is meant to go out. It lives
+            // in the draft rather than in the column, and moving it is an edit like any other:
+            // two editors who each picked a different Tuesday have to find out about it.
+            'planned' => $article->draftValues()['published_at'] ?? null,
             'rubrics' => self::keys($article, 'rubrics'),
             'tags' => self::keys($article, 'tags'),
             'related' => self::keys($article, 'related'),
