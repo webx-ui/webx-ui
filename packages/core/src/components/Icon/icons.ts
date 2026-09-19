@@ -120,6 +120,19 @@ export const builtinIcons = {
     '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
   home: '<path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15V14H9v6.5H5.5A1.5 1.5 0 0 1 4 19Z"/>',
   file: '<path d="M13.5 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9zm0 0V9H19"/>',
+  /*
+   * A page with prose on it — the same picture `file-txt` draws, under the name a section
+   * full of writing asks for. The two are deliberately one drawing: an article and a text
+   * file are the same thing to a reader glancing at a 16 px menu.
+   */
+  'file-text': TEXT,
+  /*
+   * A folded newspaper: the sheet, the one behind it curling out at the bottom left, a
+   * masthead and two lines of column. Drawn at this size because a paper without the fold
+   * is a document, and the fold is the only thing that tells the two apart.
+   */
+  newspaper:
+    '<path d="M5 20.5h13.5a2 2 0 0 0 2-2v-13a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v13a2 2 0 0 1-2 2Z"/><path d="M5 20.5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2"/><path d="M9.8 6.8h8.2v3.6h-8.2z"/><path d="M9.8 13.6h8.2M9.8 16.6h5.2"/>',
   folder: FOLDER,
   /*
    * Moving something into a folder. The arrow points down into the folder rather than

@@ -48,6 +48,8 @@ export interface BrandingImage {
 export interface ManifestGroup {
   id: string
   title: string
+  /** A name from the icon set; `null` or absent leaves the branch with the default picture. */
+  icon?: string | null
   order: number
 }
 
@@ -155,6 +157,7 @@ export interface NavEntry {
 export interface NavGroup {
   id: string
   title: string
+  icon: string | null
   entries: NavEntry[]
 }
 
