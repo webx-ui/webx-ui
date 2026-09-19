@@ -16,6 +16,12 @@ use Illuminate\Support\Facades\Schema;
  *
  * No unique index on the slug here either: uniqueness of an address lives in `routes`, which
  * is unique on `(locale, path)` and knows about articles and pages too.
+ *
+ * The whole module migrates on the second day, not the first. Laravel sorts every package's
+ * migrations together by filename, so `2026_01_01_…` is the day on which each package builds
+ * what is its own — and a foreign key to somebody else's table cannot be added on it: `rubrics`
+ * ran before `media_files` existed and MariaDB refused the constraint outright (sqlite says
+ * nothing about it, so only the smoke against a real database sees this).
  */
 return new class extends Migration
 {
