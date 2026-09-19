@@ -340,10 +340,18 @@ defineExpose({ close, reset })
 }
 
 .wx-drawer {
-  /* One set of paddings for the three parts, so the small screens can halve them once. */
-  --wx-drawer-pad-x: var(--wx-space-18);
+  /*
+   * One set of paddings for the three parts, so the small screens can halve them once — and
+   * sideways it is the panel's step rather than a number of the drawer's own.
+   *
+   * The same list in a card stood 16 from the edge and in a drawer 18, which is two owners for
+   * one distance (§6 of the visual spec). The step reaches here because the shell writes it on
+   * the document as well as on itself, which is what a drawer teleported to the end of `<body>`
+   * can inherit. Outside a panel there is no such variable and the drawer keeps the 18 it had.
+   */
+  --wx-drawer-pad-x: var(--wx-gap, var(--wx-space-18));
   --wx-drawer-pad-y: var(--wx-space-14);
-  --wx-drawer-body-pad: var(--wx-space-18);
+  --wx-drawer-body-pad: var(--wx-gap, var(--wx-space-18));
   position: fixed;
   z-index: var(--wx-z-index-dialog);
   box-sizing: border-box;
@@ -609,10 +617,11 @@ defineExpose({ close, reset })
  */
 @media (max-width: 640px) {
   .wx-drawer {
-    /* Tighter than on a desktop: every pixel of padding is a line of content lost. */
-    --wx-drawer-pad-x: var(--wx-space-12);
+    /* Tighter than on a desktop: every pixel of padding is a line of content lost. Inside a
+       panel the step has already shrunk to 8 by this width, and it stays the one owner. */
+    --wx-drawer-pad-x: var(--wx-gap, var(--wx-space-12));
     --wx-drawer-pad-y: var(--wx-space-10);
-    --wx-drawer-body-pad: var(--wx-space-12);
+    --wx-drawer-body-pad: var(--wx-gap, var(--wx-space-12));
   }
 
   /* All but a panel that asked to keep its declared size — see `fullScreen`. */
