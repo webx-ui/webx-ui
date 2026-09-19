@@ -166,6 +166,18 @@ export interface TableProps<T = TableRow> {
   /** Adds the search field to the header. */
   searchable?: boolean
   searchPlaceholder?: string
+  /**
+   * How many filters are on.
+   *
+   * A panel of filters says nothing about itself once it is shut, and a list narrowed by
+   * something the reader cannot see is a list that looks wrong. The number rides on the funnel,
+   * and `0` leaves it bare. What the filters actually are is said by the `applied` slot.
+   */
+  filtersCount?: number
+  /** Name of the funnel — its tooltip, its accessible name and the heading of the panel. */
+  filtersLabel?: string
+  /** Width of that panel: a number in pixels, or any CSS length. */
+  filtersWidth?: number | string
   /** How long typing settles before `search` fires. Zero reports every keystroke. */
   searchDebounce?: number
   loading?: boolean
