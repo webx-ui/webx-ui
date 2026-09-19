@@ -6,6 +6,7 @@ import {
   useTranslate,
   WxFilterChips,
   type AppliedFilter,
+  rowMenuWidth,
   WxRowMenu,
   type RowAction,
 } from '@webx-ui/module-admin'
@@ -95,7 +96,14 @@ const columns = computed<TableColumn<SeoUrlRule>[]>(() => [
   { key: 'title', label: t('page.title'), hideBelow: 900 },
   { key: 'priority', label: t('page.priority'), align: 'center', hideBelow: 760 },
   { key: 'is_active', label: t('page.state'), align: 'center', hideBelow: 660 },
-  { key: 'actions', label: '', width: 56, align: 'right', hidden: !canManage, hideOnCards: true },
+  {
+    key: 'actions',
+    label: '',
+    width: rowMenuWidth,
+    align: 'right',
+    hidden: !canManage,
+    hideOnCards: true,
+  },
 ])
 
 /**

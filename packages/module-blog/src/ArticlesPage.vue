@@ -8,6 +8,7 @@ import {
   WxDate,
   WxListScreen,
   WxFilterChips,
+  rowMenuWidth,
   WxRowMenu,
   type AppliedFilter,
   type RowAction,
@@ -158,7 +159,7 @@ const columns = computed<TableColumn<ArticleRow>[]>(() => {
       cellClass: 'wx-articles__when',
     },
     { key: 'status', label: t('panel.column-status'), width: 170 },
-    { key: 'actions', label: '', width: 56, align: 'right' },
+    { key: 'actions', label: '', width: rowMenuWidth, align: 'right' },
   ]
 })
 

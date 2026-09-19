@@ -5,6 +5,7 @@ import {
   useErrorText,
   useTranslate,
   WxDate,
+  rowMenuWidth,
   WxRowMenu,
   type RowAction,
 } from '@webx-ui/module-admin'
@@ -65,7 +66,14 @@ const columns = computed<TableColumn<SeoRedirect>[]>(() => [
     hideOnCards: true,
   },
   { key: 'is_active', label: t('page.state'), align: 'center', hideBelow: 660 },
-  { key: 'actions', label: '', width: 56, align: 'right', hidden: !canManage, hideOnCards: true },
+  {
+    key: 'actions',
+    label: '',
+    width: rowMenuWidth,
+    align: 'right',
+    hidden: !canManage,
+    hideOnCards: true,
+  },
 ])
 
 /** One line, and the same menu every other list of the panel puts a record's actions in. */

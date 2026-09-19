@@ -5,6 +5,7 @@ import {
   useTranslate,
   WxDate,
   WxFilterChips,
+  rowMenuWidth,
   WxRowMenu,
   type AppliedFilter,
   type RowAction,
@@ -172,7 +173,7 @@ const columns = computed<TableColumn<Admin>[]>(() => {
     {
       key: 'actions',
       label: '',
-      width: 56,
+      width: rowMenuWidth,
       align: 'right',
       hidden: !props.removable,
       // A card puts them along its top instead, through the `card-actions` slot.
