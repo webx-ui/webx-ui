@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\File;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Auth\AuthServiceProvider;
+use WebxUi\Auth\Models\CmsUser;
+use WebxUi\Auth\Models\Role;
 use WebxUi\Blocks\BlocksServiceProvider;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Rendering\TemplateCompiler;
@@ -114,6 +116,35 @@ abstract class TestCase extends Orchestra
             'slug' => $slug,
             'noindex' => $noindex,
         ]);
+    }
+
+    /**
+     * Somebody the panel lets in, with the permissions this test wants them to have.
+     *
+     * @param  list<string>  $permissions
+     */
+    protected function editor(array $permissions = ['blog.articles.view', 'blog.articles.manage']): CmsUser
+    {
+        static $count = 0;
+        $count++;
+
+        $user = CmsUser::query()->create([
+            'name' => 'Editor',
+            'email' => "editor-{$count}@example.test",
+            'password' => 'correct-horse-battery',
+            'is_super' => false,
+            'is_active' => true,
+        ]);
+
+        $role = Role::query()->create(['slug' => "editor-{$count}", 'name' => 'Editor', 'permissions' => $permissions]);
+        $user->roles()->attach($role->getKey());
+
+        return $user;
+    }
+
+    protected function api(string|int $path = ''): string
+    {
+        return rtrim('/api/cms/blog/articles/'.$path, '/');
     }
 
     /** The languages the site is published in, for a test about translated addresses. */

@@ -7,6 +7,7 @@ namespace WebxUi\Blog;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Blog\Handlers\ArticleHandler;
 use WebxUi\Blog\Handlers\RubricHandler;
 use WebxUi\Blog\Handlers\TagHandler;
@@ -16,6 +17,10 @@ use WebxUi\Blog\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Blog\Models\Article;
 use WebxUi\Blog\Models\Rubric;
 use WebxUi\Blog\Models\Tag;
+use WebxUi\Blog\Panel\ArticlesModule;
+use WebxUi\Blog\Panel\BlogModule;
+use WebxUi\Blog\Panel\RubricsModule;
+use WebxUi\Blog\Panel\TagsModule;
 use WebxUi\Blog\Seo\TagSource;
 use WebxUi\Routing\Formatters\Prefixed;
 use WebxUi\Routing\Formatters\Slug;
@@ -43,10 +48,13 @@ class BlogServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-blog');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-blog');
 
+        $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+
         $this->registerRouteTypes();
         $this->registerFeedRoutes();
         $this->registerBlockEntity();
         $this->registerSeoSource();
+        $this->registerPanel();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -171,6 +179,37 @@ class BlogServiceProvider extends ServiceProvider
 
         if (! in_array(Article::class, $entities, true)) {
             $config->set('webx-blocks.entities', [...$entities, Article::class]);
+        }
+    }
+
+    /**
+     * Three sections in one group of the navigation (§10).
+     *
+     * The group is written into `webx-admin.groups` here rather than shipped as a default of
+     * that config, because a site that published `webx-admin.php` has its own copy of the list
+     * and a new default would never reach it (CLAUDE.md §4). Written only if it is not there
+     * already, so a site that named the group itself — a different title, a different place in
+     * the order — keeps what it wrote.
+     */
+    private function registerPanel(): void
+    {
+        /** @var Config $config */
+        $config = $this->app->make('config');
+
+        /** @var array<string, mixed> $groups */
+        $groups = (array) $config->get('webx-admin.groups', []);
+
+        if (! array_key_exists(BlogModule::GROUP, $groups)) {
+            $config->set('webx-admin.groups', [
+                ...$groups,
+                BlogModule::GROUP => ['title' => 'webx-blog::module.group', 'order' => 300],
+            ]);
+        }
+
+        $modules = $this->app->make(ModuleRegistry::class);
+
+        foreach ([ArticlesModule::class, RubricsModule::class, TagsModule::class] as $module) {
+            $modules->register($this->app->make($module));
         }
     }
 

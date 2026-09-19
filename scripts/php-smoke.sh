@@ -577,6 +577,16 @@ run_http_checks() {
     expect 200 "$(status "$BASE/api/cms/manifest")" "[$phase] the manifest opens for an administrator"
     expect 200 "$(status "$BASE/api/cms/auth/me")" "[$phase] me answers"
 
+    # module-blog puts its three sections in a navigation group it writes into `webx-admin.groups`
+    # at boot — the one place a cached config could have made that a no-op. The tests cannot see
+    # it: Testbench never caches the config.
+    curl -s -c "$COOKIES" -b "$COOKIES" -H 'Accept: application/json' "$BASE/api/cms/manifest" \
+        | grep -q '"id":"blog"' \
+        || fail "[$phase] the blog group is missing from the manifest"
+    note "[$phase] the blog's navigation group survived the config cache"
+
+    expect 200 "$(status "$BASE/api/cms/blog/articles")" "[$phase] the blog's panel API answers"
+
     # module-seo. Both of these are invisible to the tests: a redirect only fires because the
     # middleware reached the real `web` group, and `/robots.txt` only answers because a route
     # registered by a package survived `route:cache`.
