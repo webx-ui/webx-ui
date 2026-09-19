@@ -41,6 +41,13 @@ export interface TableColumn<T = TableRow> {
   /** Heading text. Use the `header-<key>` slot for anything richer. */
   label?: string
   width?: string | number
+  /**
+   * A floor for the column — and only with `layout="auto"`.
+   *
+   * The fixed algorithm reads `width` and nothing else, and the widths ride on a `<col>`, where
+   * `min-width` is not one of the four properties that apply: declared there it computes, shows
+   * in devtools and does nothing. A fixed table sizes its columns by `width`.
+   */
   minWidth?: string | number
   align?: TableAlign
   /** Adds a sort control to the heading. The table reports, it does not reorder. */

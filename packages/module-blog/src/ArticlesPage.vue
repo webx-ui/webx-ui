@@ -144,19 +144,20 @@ const columns = computed<TableColumn<ArticleRow>[]>(() => {
 
   return [
     { key: 'cover', label: '', width: 68 },
+    /* The one that takes what the others leave, and the only one without a number. */
     { key: 'title', label: t('panel.column-title'), minWidth: 220 },
-    { key: 'rubrics', label: t('panel.column-rubrics'), width: 190, hideBelow: 840 },
-    { key: 'author', label: t('panel.column-author'), width: 160, hideBelow: 1000 },
+    { key: 'rubrics', label: t('panel.column-rubrics'), width: 190, hideBelow: 1000 },
+    { key: 'author', label: t('panel.column-author'), width: 160, hideBelow: 1200 },
     {
       key: 'date',
       label: inBin.value ? t('panel.column-deleted') : t('panel.column-date'),
-      width: 130,
+      width: 185,
       hideBelow: 700,
       // "today at 16:22" is three words the table will break over two lines given half a
       // chance, and a date read down a column has to be one line to be read at all.
       cellClass: 'wx-articles__when',
     },
-    { key: 'status', label: t('panel.column-status'), width: 150 },
+    { key: 'status', label: t('panel.column-status'), width: 170 },
     { key: 'actions', label: '', width: 56, align: 'right' },
   ]
 })
@@ -476,8 +477,8 @@ function dateOf(article: ArticleRow): string | null {
         :clickable="!inBin"
         :hover="!inBin"
         flush
-        layout="fixed"
         :loading="loading"
+        layout="fixed"
         :cards-below="CARDS"
         :filters-count="applied.length"
         :filters-label="admin('filters.title')"

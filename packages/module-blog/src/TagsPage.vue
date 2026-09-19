@@ -117,7 +117,7 @@ const columns = computed<TableColumn<TagRow>[]>(() => [
   // it scrolls sideways and takes the ··· with it (CLAUDE.md §4). Measured, not guessed: at
   // 375px the row is the word, the number and the menu, and nothing hangs off the edge.
   { key: 'path', label: t('tag.column-address'), width: 180, hideBelow: 760 },
-  { key: 'articles_count', label: t('tag.column-articles'), width: 70, align: 'right' },
+  { key: 'articles_count', label: t('tag.column-articles'), width: 80, align: 'right' },
   // Wide enough for the longest of the three states on one line, in every language: measured
   // at 180px of text, and a cell keeps 32 of its own. Narrower, the ruled row wrapped and
   // stood eighteen pixels taller than the ones around it.

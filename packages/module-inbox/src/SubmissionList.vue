@@ -187,7 +187,7 @@ const columns = computed<TableColumn<SubmissionRow>[]>(() => {
       key: 'created_at',
       label: t('panel.received'),
       sortable: true,
-      width: 150,
+      width: 185,
       // "today at 16:22" is three words the table will break over two lines given half a
       // chance, and a date read down a column has to be one line to be read at all.
       cellClass: 'wx-submissions__when',
