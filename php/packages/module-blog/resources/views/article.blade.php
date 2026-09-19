@@ -19,7 +19,7 @@
         @endif
         <h1>{{ $article->title }}</h1>
         @if ($article->published_at)
-            <time datetime="{{ $article->published_at->toIso8601String() }}">{{ $article->published_at->toFormattedDateString() }}</time>
+            <time datetime="{{ $article->published_at->toIso8601String() }}">{{ $article->published_at->locale(app()->getLocale())->isoFormat('LL') }}</time>
         @endif
         @if ($article->author)
             <p>{{ $article->author->name }}</p>

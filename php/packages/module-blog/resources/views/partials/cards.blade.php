@@ -14,7 +14,7 @@
                 <h2>{{ $article->title }}</h2>
             </a>
             @if ($article->published_at)
-                <time datetime="{{ $article->published_at->toIso8601String() }}">{{ $article->published_at->toFormattedDateString() }}</time>
+                <time datetime="{{ $article->published_at->toIso8601String() }}">{{ $article->published_at->locale(app()->getLocale())->isoFormat('LL') }}</time>
             @endif
             @if ($article->lead)
                 <p>{{ $article->lead }}</p>
