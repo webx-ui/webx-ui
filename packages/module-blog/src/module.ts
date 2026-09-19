@@ -7,6 +7,8 @@ import ArticleRelated from './ArticleRelated.vue'
 import ArticleRubrics from './ArticleRubrics.vue'
 import ArticleTags from './ArticleTags.vue'
 import ArticlesPage from './ArticlesPage.vue'
+import RubricsPage from './RubricsPage.vue'
+import TagsPage from './TagsPage.vue'
 
 export interface BlogOptions {
   /** Where the blog lives inside the panel. The three sections sit under it. */
@@ -14,7 +16,7 @@ export interface BlogOptions {
 }
 
 /**
- * The blog as sections of the panel: articles, and — once they are written — rubrics and tags.
+ * The blog as sections of the panel: articles, rubrics and tags.
  *
  * Three modules rather than one, because the navigation is one entry per module and the blog
  * wants three of them; the server puts all three in the `blog` group, which is what draws them
@@ -22,8 +24,7 @@ export interface BlogOptions {
  *
  * A section whose server half is not installed never appears — the entry is built from the
  * manifest — and so does one whose front end is missing. That is what makes it safe to return
- * the sections that do not have their screens yet: they are declared on the server and silently
- * skipped here until the screen arrives.
+ * all three from one call: a panel that installed only part of the blog gets only that part.
  */
 export function blog(options: BlogOptions = {}): AdminModule[] {
   const path = options.path ?? '/blog'
@@ -66,6 +67,30 @@ export function blog(options: BlogOptions = {}): AdminModule[] {
         'wx-article-related': { component: ArticleRelated, kind: 'field' },
         'wx-article-history': { component: ArticleHistory, kind: 'display' },
       },
+    },
+    {
+      id: 'rubrics',
+      path: `${path}/rubrics`,
+      routes: [
+        {
+          path: `${path}/rubrics`,
+          name: 'webx.blog.rubrics',
+          component: RubricsPage,
+          props: { base: path },
+        },
+      ],
+    },
+    {
+      id: 'tags',
+      path: `${path}/tags`,
+      routes: [
+        {
+          path: `${path}/tags`,
+          name: 'webx.blog.tags',
+          component: TagsPage,
+          props: { base: path },
+        },
+      ],
     },
   ]
 }

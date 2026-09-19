@@ -1,4 +1,4 @@
-import type { Paginated } from '@webx-ui/core'
+import type { LocalizedValue, Paginated } from '@webx-ui/core'
 import type { ScreenModel } from '@webx-ui/schema'
 
 /**
@@ -180,4 +180,121 @@ export interface ArticleDetail {
 export interface ArticleConflict {
   message: string
   data: ArticleDetail
+}
+
+/**
+ * One rubric, as both halves of its screen need it (§10).
+ *
+ * The left column reads `name`, `path` and `articles_count`; the form beside it edits the same
+ * record in every language at once, which is why the three translated fields are maps and the
+ * name is worked out beside them. A rubric named in one language and not in another is still a
+ * row somebody has to be able to click.
+ */
+export interface RubricRow {
+  id: number
+  /** What to show: the title of this language, its address, or its number — in that order. */
+  name: string
+  title: LocalizedValue
+  slug: LocalizedValue
+  lead: LocalizedValue
+  /** `null` — this rubric names no address in the language the panel is open in (§9). */
+  path: string | null
+  url: string | null
+  cover: ArticleCover | null
+  is_visible: boolean
+  position: number
+  /** Why the delete button is out of reach, and what its explanation says (§6). */
+  articles_count: number
+  /** What the rubric says about its own page, over whatever the SEO rules say (§12). */
+  seo: Record<string, unknown>
+}
+
+/** What a rubric's form sends. Only the fields that travelled are touched. */
+export interface RubricInput {
+  title?: LocalizedValue | string
+  slug?: LocalizedValue | string
+  lead?: LocalizedValue | string
+  cover?: { path: string } | null
+  is_visible?: boolean
+  seo?: Record<string, unknown> | null
+}
+
+/**
+ * Whether a tag page is in the index, and why (§12).
+ *
+ * Three answers and not two. A tag is out of the index by default; an editor opens it either by
+ * clearing the flag or by writing a rule in the SEO section for its address — and the second one
+ * has to be visible here, or whoever wrote that rule spends an afternoon looking at a row that
+ * says `noindex` and disagreeing with it.
+ */
+export type TagIndexing = 'open' | 'rule' | 'noindex'
+
+/** One tag as its screen lists it — and as the article form's dropdown offers it. */
+export interface TagRow {
+  id: number
+  /** The word in the language the panel is open in, falling back on the address. */
+  title: string
+  /** Every language of it, for a rename that must not touch the others. */
+  titles: LocalizedValue
+  slug: string
+  /** The address a SEO rule for this page would be written for: language prefix and all. */
+  path: string | null
+  url: string | null
+  noindex: boolean
+  indexing: TagIndexing
+  articles_count: number
+  // A row of `WxTable`, which reads its cells by name.
+  [key: string]: unknown
+}
+
+/** What the pills over the list count, before any of them is pressed. */
+export interface TagCounts {
+  total: number
+  empty: number
+  noindex: number
+}
+
+export interface TagQuery {
+  q?: string
+  /** Tags nothing is filed under — the half of the screen that exists to be emptied. */
+  empty?: boolean
+  /** Out of the index by the same rule the rendered page follows, rules included (§12). */
+  noindex?: boolean
+  sort?: 'articles' | 'name'
+  page?: number
+  per_page?: number
+}
+
+export interface TagsPage extends Paginated<TagRow> {
+  filters: TagCounts
+}
+
+/** What a rename or the switch on the index sends; absent means "leave it alone". */
+export interface TagInput {
+  title?: string
+  slug?: string
+  noindex?: boolean
+}
+
+/** What the selection bar does to a pile of tags at once (§10). */
+export type TagMassAction = 'index' | 'noindex' | 'delete'
+
+/** What came of a merge, for the sentence the panel says afterwards. */
+export interface TagMerged {
+  tag: TagRow
+  /** How many articles ended up carrying the surviving word. */
+  articles_count: number
+  merged: number
+}
+
+/**
+ * Every rubric, with the first segment of every blog address beside them.
+ *
+ * The prefix travels with the list rather than being asked for separately: the form prints the
+ * whole address as it is typed, and `remont` on its own says nothing about whether the blog
+ * lives at the root of the site or under `/blog/`.
+ */
+export interface RubricsPayload {
+  data: RubricRow[]
+  prefix: string
 }

@@ -8,6 +8,15 @@ import type {
   ArticleVersion,
   ArticlesPage,
   BlogTag,
+  RubricInput,
+  RubricRow,
+  RubricsPayload,
+  TagInput,
+  TagMassAction,
+  TagMerged,
+  TagQuery,
+  TagRow,
+  TagsPage,
 } from './types'
 
 export interface BlogApi {
@@ -30,18 +39,45 @@ export interface BlogApi {
   restoreVersion(id: number, number: number): Promise<ArticleDetail>
   /** Tags matching what is being typed, most used first. */
   tags(term?: string): Promise<BlogTag[]>
-  /** A tag made from the article being written, because that is where tags come from (§2.8). */
-  createTag(title: string): Promise<BlogTag>
+  /**
+   * A tag made from the article being written, because that is where tags come from (§2.8) —
+   * and from the tags screen, which is the other place somebody spells a new word.
+   */
+  createTag(input: TagInput): Promise<TagRow>
   /** On the site. `at` in the future schedules it; left out, it goes on now (§7). */
   publish(id: number, at?: string | null): Promise<ArticleRow>
   unpublish(id: number): Promise<ArticleRow>
   remove(id: number): Promise<void>
   restore(id: number): Promise<ArticleRow>
+
+  /** Every rubric there is, in the order the menu of the site has them (§6). */
+  rubrics(): Promise<RubricsPayload>
+  createRubric(input: RubricInput): Promise<RubricRow>
+  saveRubric(id: number, input: RubricInput): Promise<RubricRow>
+  /**
+   * Into the bin — refused with a 422 naming the number of articles while it still holds any
+   * (§6). The panel keeps the button out of reach, so reaching this is somebody else's save
+   * landing between the list and the click.
+   */
+  removeRubric(id: number): Promise<void>
+  /** The whole order, as it is on screen. */
+  sortRubrics(ids: number[]): Promise<void>
+
+  /** A page of tags with the counts the pills wear (§10). */
+  tagsPage(query?: TagQuery): Promise<TagsPage>
+  /** A rename, or the switch on the index. Only what travels is touched. */
+  saveTag(id: number, input: TagInput): Promise<TagRow>
+  removeTag(id: number): Promise<void>
+  /** What the selection bar does to a pile of them at once. */
+  massTags(ids: number[], action: TagMassAction): Promise<number>
+  /** Several into one. Irreversible, and `redirect` is what outlives the tags that go (§6). */
+  mergeTags(ids: number[], keep: number, redirect: boolean): Promise<TagMerged>
 }
 
 /** Everything under `/blog`, below the panel's API path. */
 export function createBlogApi(admin: AdminContext): BlogApi {
   const base = `${admin.apiPath}/blog/articles`
+  const rubricsBase = `${admin.apiPath}/blog/rubrics`
   const tagsBase = `${admin.apiPath}/blog/tags`
   const data = <T>(body: { data: T }): T => body.data
 
@@ -87,7 +123,7 @@ export function createBlogApi(admin: AdminContext): BlogApi {
 
       return admin.http.get<{ data: BlogTag[] }>(`${tagsBase}${suffix}`).then(data)
     },
-    createTag: (title) => admin.http.post<{ data: BlogTag }>(tagsBase, { title }).then(data),
+    createTag: (input) => admin.http.post<{ data: TagRow }>(tagsBase, input).then(data),
     publish: (id, at) =>
       admin.http
         .post<{ data: ArticleRow }>(`${base}/${id}/publish`, at == null ? {} : { at })
@@ -96,5 +132,43 @@ export function createBlogApi(admin: AdminContext): BlogApi {
       admin.http.post<{ data: ArticleRow }>(`${base}/${id}/unpublish`, {}).then(data),
     remove: (id) => admin.http.delete<void>(`${base}/${id}`).then(() => undefined),
     restore: (id) => admin.http.post<{ data: ArticleRow }>(`${base}/${id}/restore`, {}).then(data),
+
+    rubrics: () => admin.http.get<RubricsPayload>(rubricsBase),
+    createRubric: (input) => admin.http.post<{ data: RubricRow }>(rubricsBase, input).then(data),
+    saveRubric: (id, input) =>
+      admin.http.put<{ data: RubricRow }>(`${rubricsBase}/${id}`, input).then(data),
+    removeRubric: (id) => admin.http.delete<void>(`${rubricsBase}/${id}`).then(() => undefined),
+    sortRubrics: (ids) =>
+      admin.http.post<void>(`${rubricsBase}/reorder`, { ids }).then(() => undefined),
+
+    tagsPage: (query = {}) => {
+      const search = new URLSearchParams()
+
+      if (query.q) search.set('q', query.q)
+      // Only when they are on: `empty=0` would be a question the screen never means to put.
+      if (query.empty) search.set('empty', '1')
+      if (query.noindex) search.set('noindex', '1')
+      if (query.sort) search.set('sort', query.sort)
+      if (query.page && query.page > 1) search.set('page', String(query.page))
+      if (query.per_page) search.set('per_page', String(query.per_page))
+
+      const suffix = search.size > 0 ? `?${search}` : ''
+
+      return admin.http
+        .get<{
+          data: TagRow[]
+          meta: Omit<TagsPage, 'data' | 'filters'>
+          filters: TagsPage['filters']
+        }>(`${tagsBase}${suffix}`)
+        .then((body) => ({ ...body.meta, data: body.data, filters: body.filters }))
+    },
+    saveTag: (id, input) => admin.http.put<{ data: TagRow }>(`${tagsBase}/${id}`, input).then(data),
+    removeTag: (id) => admin.http.delete<void>(`${tagsBase}/${id}`).then(() => undefined),
+    massTags: (ids, action) =>
+      admin.http
+        .post<{ data: { affected: number } }>(`${tagsBase}/mass`, { ids, action })
+        .then((body) => body.data.affected),
+    mergeTags: (ids, keep, redirect) =>
+      admin.http.post<{ data: TagMerged }>(`${tagsBase}/merge`, { ids, keep, redirect }).then(data),
   }
 }

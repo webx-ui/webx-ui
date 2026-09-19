@@ -136,7 +136,7 @@ async function create(): Promise<void> {
   working.value = true
 
   try {
-    const tag = await api.createTag(title)
+    const tag = await api.createTag({ title })
 
     known.value = new Map(known.value).set(tag.id, tag.title)
     found.value = [tag, ...found.value]

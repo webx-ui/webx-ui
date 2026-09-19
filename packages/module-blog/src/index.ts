@@ -8,6 +8,11 @@ export {
   type ArticleEditorContext,
 } from './editor'
 export { default as WxArticlesPage } from './ArticlesPage.vue'
+export { default as WxRubricsPage } from './RubricsPage.vue'
+export { default as WxRubricForm } from './RubricForm.vue'
+export { default as WxTagsPage } from './TagsPage.vue'
+export { default as WxTagCreateDialog } from './TagCreateDialog.vue'
+export { default as WxTagMergeDialog } from './TagMergeDialog.vue'
 export { default as WxArticleCreateDialog } from './ArticleCreateDialog.vue'
 export { default as WxArticleEditorPage } from './ArticleEditorPage.vue'
 export { default as WxArticleAddress } from './ArticleAddress.vue'
@@ -32,4 +37,15 @@ export type {
   ArticlesPage,
   BlogNamed,
   BlogTag,
+  RubricInput,
+  RubricRow,
+  RubricsPayload,
+  TagCounts,
+  TagIndexing,
+  TagInput,
+  TagMassAction,
+  TagMerged,
+  TagQuery,
+  TagRow,
+  TagsPage,
 } from './types'

@@ -4,109 +4,125 @@ declare(strict_types=1);
 
 namespace WebxUi\Blog\Http\Controllers;
 
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Blog\Http\Requests\TagMassRequest;
+use WebxUi\Blog\Http\Requests\TagMergeRequest;
+use WebxUi\Blog\Http\Requests\TagRequest;
 use WebxUi\Blog\Models\Tag;
-use WebxUi\Localization\Locales;
+use WebxUi\Blog\Panel\TagList;
+use WebxUi\Blog\Support\TagMerge;
 
 /**
- * Tags, as the article form needs them: find one while typing, and make one that is not there
- * (§10).
+ * Tags: made from the article form by the hundred, raked over on a screen of their own (§10).
  *
- * The screen that rakes them over — renaming, merging, the three states of indexing — is its
- * own thing and comes with its own filters. This is the other half of the story and the one
- * that comes first: tags are entered from the article, by the hundred, and a field that could
- * only pick from what already exists would mean leaving the article to go and make a word.
+ * One endpoint serves both, which is why the list is paginated and the dropdown on the article
+ * form works anyway: it asks for the first page of thirty, most used first, and that is exactly
+ * what a dropdown is worth scrolling. Splitting them would have been two answers to one
+ * question — "which tags are there" — kept in step by hand.
+ *
+ * What is here and nowhere else is the raking: renaming in place, opening a pile of them to the
+ * index or shutting it, deleting, and merging. The merge itself lives in {@see TagMerge},
+ * because it is a piece of reasoning about pivots and redirects rather than about HTTP.
  */
 final class TagController
 {
-    /** As many as a dropdown is worth scrolling; past that the answer is to type more. */
-    private const LIMIT = 30;
-
-    public function __construct(private readonly Locales $locales) {}
+    public function __construct(private readonly TagList $list) {}
 
     public function index(Request $request): JsonResponse
     {
-        $term = trim((string) $request->query('q', ''));
-        $locale = $this->locales->current();
-
-        $query = Tag::query()->withCount('articles');
-
-        if ($term !== '') {
-            $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $term).'%';
-
-            // The title in every language and the address, because a tag is looked for by the
-            // word somebody remembers rather than by the language the panel is open in.
-            $query->where(static function (Builder $nested) use ($like): void {
-                $nested->where(static fn (Builder $half): Builder => $half->whereTranslationLikeAny('title', $like))
-                    ->orWhere(static fn (Builder $half): Builder => $half->whereTranslationLikeAny('slug', $like));
-            });
-        }
-
-        // Most used first: a field offering "belts" before "belt" is a field that stops the
-        // third spelling of one word from being made (§2.8).
-        $tags = $query->orderByDesc('articles_count')->orderBy('id')->limit(self::LIMIT)->get();
-
-        return ApiResponse::data(
-            $tags
-                ->map(fn (Tag $tag): array => [
-                    'id' => (int) $tag->getKey(),
-                    'title' => $this->name($tag, $locale),
-                    'slug' => (string) $tag->getTranslation('slug', $locale, fallback: false),
-                    'articles_count' => (int) $tag->getAttribute('articles_count'),
-                ])
-                ->values()
-                ->all(),
-        );
+        return new JsonResponse($this->list->page($request));
     }
 
     /**
-     * A new tag, made from the article being written.
+     * A new tag, usually made from the article being written.
      *
-     * The address is made out of the title the same way an article's is, and the flag it starts
-     * with is the one in the config: a tag page is out of the index until somebody decides
-     * otherwise (§2.9), and that decision is made on the tags screen rather than in passing.
+     * The flag it starts with is the one in the config: a tag page is out of the index until
+     * somebody decides otherwise (§2.9), and that decision belongs on the tags screen rather
+     * than in passing while writing a sentence.
      */
-    public function store(Request $request): JsonResponse
+    public function store(TagRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'title' => ['required', 'string', 'max:190'],
-            'slug' => ['nullable', 'string', 'max:190', 'regex:/^[\p{L}\p{N}]+(?:[-_][\p{L}\p{N}]+)*$/u'],
-        ], ['slug.regex' => (string) __('webx-blog::errors.slug-shape')]);
-
-        $title = trim((string) $validated['title']);
-        $slug = trim((string) ($validated['slug'] ?? ''));
-
-        $tag = new Tag([
-            'title' => $title,
-            'slug' => $slug !== '' ? $slug : Str::slug($title),
-            'noindex' => (bool) config('webx-blog.tags.noindex', true),
-        ]);
+        $tag = new Tag($request->values());
+        $tag->noindex = $request->has('noindex')
+            ? $request->boolean('noindex')
+            : (bool) config('webx-blog.tags.noindex', true);
         $tag->save();
 
-        $locale = $this->locales->current();
-
-        return ApiResponse::data([
-            'id' => (int) $tag->getKey(),
-            'title' => $this->name($tag, $locale),
-            'slug' => (string) $tag->getTranslation('slug', $locale, fallback: false),
-            'articles_count' => 0,
-        ], 201);
+        return ApiResponse::data($this->list->row($tag), 201);
     }
 
     /**
-     * A tag named in one language and not in another is still offered: its address is the name
-     * it has everywhere, and an unnamed row nobody can pick is worse than one named after it.
+     * Renaming one, or changing its mind about the index.
+     *
+     * A rename is a rename: the address moves only when the address was sent, because a word
+     * spelled three ways before lunch would otherwise leave three aliases behind a decision
+     * nobody made ({@see TagRequest}).
      */
-    private function name(Tag $tag, string $locale): string
+    public function update(TagRequest $request, Tag $tag): JsonResponse
     {
-        $title = $tag->getTranslation('title', $locale);
+        $tag->fill($request->values());
+        $tag->save();
 
-        return is_string($title) && trim($title) !== ''
-            ? $title
-            : (string) $tag->getTranslation('slug', $locale);
+        return ApiResponse::data($this->list->row($tag->refresh()));
+    }
+
+    /**
+     * Gone, and gone for good — a tag has no bin.
+     *
+     * What it was filed under goes with it: the pivot rows are keyed to the tag and the cascade
+     * takes them, and so do its rows in the registry, which is why an address that is to survive
+     * a merge has to be a redirect rather than an alias (§6).
+     */
+    public function destroy(Tag $tag): JsonResponse
+    {
+        $tag->articles()->detach();
+        $tag->delete();
+
+        return ApiResponse::noContent();
+    }
+
+    /** What the selection bar does to a pile of them at once (§10). */
+    public function mass(TagMassRequest $request): JsonResponse
+    {
+        $tags = Tag::query()->whereIn('id', $request->ids())->get();
+
+        foreach ($tags as $tag) {
+            if ($request->action() === TagMassRequest::DELETE) {
+                $tag->articles()->detach();
+                $tag->delete();
+
+                continue;
+            }
+
+            $tag->noindex = $request->action() === TagMassRequest::NOINDEX;
+            $tag->save();
+        }
+
+        return ApiResponse::data(['affected' => $tags->count()]);
+    }
+
+    /**
+     * Several tags into one (§6).
+     *
+     * Irreversible, and the dialog says so before this is reached: the pivot rows that go are
+     * gone, and putting a tag back would not put back which articles carried it.
+     */
+    public function merge(TagMergeRequest $request, TagMerge $merge): JsonResponse
+    {
+        $keep = Tag::query()->findOrFail($request->keep());
+
+        /** @var list<Tag> $merged */
+        $merged = Tag::query()->whereIn('id', $request->merged())->get()->all();
+
+        $carried = $merge->merge($merged, $keep, $request->redirect());
+
+        return ApiResponse::data([
+            'tag' => $this->list->row($keep->refresh()),
+            // What the toast says: how many articles came out wearing the surviving word.
+            'articles_count' => $carried,
+            'merged' => count($merged),
+        ]);
     }
 }
