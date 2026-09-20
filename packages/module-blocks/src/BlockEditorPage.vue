@@ -20,6 +20,7 @@ import {
   WxCard,
   WxCodeEditor,
   WxFormItem,
+  WxIconPicker,
   WxInput,
   WxInputNumber,
   WxPopover,
@@ -405,6 +406,31 @@ const refusalError = computed(() =>
     : null,
 )
 
+/** The two tabs the picture belongs to: the markup and the styles both change it. */
+const withStage = computed(() => tab.value === 'template' || tab.value === 'styles')
+
+/**
+ * What the script field is, in three lines of it.
+ *
+ * The body of `async (el, values) => { … }` is a contract nobody guesses from an empty
+ * editor: the sentence under it names `el` and `values`, and these say what they are for.
+ * The code is code and stays in English; what each one does is a line of the dictionary.
+ */
+const examples = computed(() => [
+  {
+    title: t('page.example-handler'),
+    code: `el.querySelector('.b-hero__button')?.addEventListener('click', (event) => {\n  event.preventDefault()\n  el.classList.toggle('is-open')\n})`,
+  },
+  {
+    title: t('page.example-values'),
+    code: `const seconds = Number(values.delay ?? 5)\n\nsetInterval(() => el.classList.toggle('is-second'), seconds * 1000)`,
+  },
+  {
+    title: t('page.example-provided'),
+    code: `const Swiper = await webx.use('swiper')\n\nnew Swiper(el.querySelector('.b-slider__viewport'), { loop: true })`,
+  },
+])
+
 const shownUsage = computed(() => usage.value.slice(0, 5))
 
 function errorOf(field: string): string | undefined {
@@ -531,15 +557,15 @@ const actions = computed<ScreenAction[]>(() =>
         :description="t('page.editing-off')"
       />
 
-      <wx-tabs v-model="tab" keep-alive>
-        <!--
-          The block stands beside the template and nowhere else. It used to be a column of its
-          own down the whole screen, which meant it was also beside the settings and the
-          history — and half the width of them. The tabs that are not the block's markup get
-          the screen instead.
-        -->
-        <wx-tab value="template" :label="t('page.tab-template')">
-          <div class="wx-block-editor__split">
+      <!--
+        The block stands beside the two files that draw it and nowhere else: it used to be a
+        column down the whole screen, half the width of the settings and of the history, which
+        have nothing to do with how the block looks. One stage and not one per tab — `v-show`,
+        because a frame taken out of the document and put back reloads.
+      -->
+      <div class="wx-block-editor__columns" :class="{ 'is-alone': !withStage }">
+        <wx-tabs v-model="tab" keep-alive>
+          <wx-tab value="template" :label="t('page.tab-template')">
             <div class="wx-block-editor__pane">
               <wx-code-editor
                 ref="templateEditor"
@@ -569,211 +595,240 @@ const actions = computed<ScreenAction[]>(() =>
                 :error="refusalError"
               />
             </div>
+          </wx-tab>
 
-            <block-stage
-              class="wx-block-editor__stage"
-              :html="stage.html"
-              :styles="stage.styles"
-              :script="stage.script"
-              :runtime="stage.runtime"
-              :loading="stage.loading"
-            />
-          </div>
-        </wx-tab>
-
-        <wx-tab value="styles" :label="t('page.tab-styles')">
-          <div class="wx-block-editor__pane">
-            <wx-code-editor
-              v-model="content.styles"
-              language="css"
-              :readonly="!canManage"
-              min-height="340px"
-              max-height="70vh"
-            />
-            <block-checks file="styles" :lints="lints" :slug="settings.slug" />
-          </div>
-        </wx-tab>
-
-        <wx-tab value="script" :label="t('page.tab-script')">
-          <div class="wx-block-editor__pane">
-            <wx-code-editor
-              :model-value="content.script ?? ''"
-              language="javascript"
-              :readonly="!canManage"
-              min-height="340px"
-              max-height="70vh"
-              @update:model-value="content.script = $event || null"
-            />
-            <div class="wx-block-editor__note">
-              <wx-text size="sm" tone="muted">{{ t('page.script-help') }}</wx-text>
-              <wx-text size="sm" tone="muted">
-                {{
-                  meta.provides.length
-                    ? t('page.provides', { names: meta.provides.join(', ') })
-                    : t('page.provides-none')
-                }}
-              </wx-text>
+          <wx-tab value="styles" :label="t('page.tab-styles')">
+            <div class="wx-block-editor__pane">
+              <wx-code-editor
+                v-model="content.styles"
+                language="css"
+                :readonly="!canManage"
+                min-height="340px"
+                max-height="70vh"
+              />
+              <block-checks file="styles" :lints="lints" :slug="settings.slug" />
             </div>
-          </div>
-        </wx-tab>
+          </wx-tab>
 
-        <!--
+          <wx-tab value="script" :label="t('page.tab-script')">
+            <div class="wx-block-editor__pane">
+              <wx-code-editor
+                :model-value="content.script ?? ''"
+                language="javascript"
+                :readonly="!canManage"
+                min-height="340px"
+                max-height="70vh"
+                @update:model-value="content.script = $event || null"
+              />
+              <div class="wx-block-editor__note">
+                <wx-text size="sm" tone="muted">{{ t('page.script-help') }}</wx-text>
+                <wx-text size="sm" tone="muted">
+                  {{
+                    meta.provides.length
+                      ? t('page.provides', { names: meta.provides.join(', ') })
+                      : t('page.provides-none')
+                  }}
+                </wx-text>
+              </div>
+            </div>
+
+            <!--
+            What the two names in scope are actually for. The examples are code and stay in
+            English; what each one is for is a line of the dictionary. Reading, not inserting:
+            dropping four lines into the middle of somebody's function is not a favour.
+          -->
+            <wx-card class="wx-block-editor__examples" :title="t('page.examples')">
+              <div
+                v-for="example in examples"
+                :key="example.title"
+                class="wx-block-editor__example"
+              >
+                <wx-text size="sm" tone="muted">{{ example.title }}</wx-text>
+                <pre><code>{{ example.code }}</code></pre>
+              </div>
+            </wx-card>
+          </wx-tab>
+
+          <!--
           The schema and the form it builds, side by side: the sample used to stand in the
           column beside the stage, where it pushed the picture up and stood open on every tab
           — including the four where nobody is looking at values. Here it is the other half of
           the tab it belongs to, and editing a field shows what it becomes.
         -->
-        <wx-tab value="fields" :label="t('page.tab-fields')">
-          <div class="wx-block-editor__split">
-            <div class="wx-block-editor__pane">
-              <wx-code-editor
-                :model-value="schemaText"
-                language="json"
-                lint
-                :readonly="!canManage"
-                min-height="340px"
-                max-height="70vh"
-                @update:model-value="onSchemaText"
-              />
-              <div class="wx-block-editor__note">
-                <wx-text v-if="schemaError" size="sm" tone="danger">{{ schemaError }}</wx-text>
-                <wx-text v-else-if="errorOf('content.schema')" size="sm" tone="danger">{{
-                  errorOf('content.schema')
-                }}</wx-text>
-                <wx-text v-else size="sm" tone="muted">{{ t('page.fields-help') }}</wx-text>
+          <wx-tab value="fields" :label="t('page.tab-fields')">
+            <div class="wx-block-editor__split">
+              <div class="wx-block-editor__pane">
+                <wx-code-editor
+                  :model-value="schemaText"
+                  language="json"
+                  lint
+                  :readonly="!canManage"
+                  min-height="340px"
+                  max-height="70vh"
+                  @update:model-value="onSchemaText"
+                />
+                <div class="wx-block-editor__note">
+                  <wx-text v-if="schemaError" size="sm" tone="danger">{{ schemaError }}</wx-text>
+                  <wx-text v-else-if="errorOf('content.schema')" size="sm" tone="danger">{{
+                    errorOf('content.schema')
+                  }}</wx-text>
+                  <wx-text v-else size="sm" tone="muted">{{ t('page.fields-help') }}</wx-text>
 
-                <!-- The whole of what a schema is, in the one place somebody writing one is
+                  <!-- The whole of what a schema is, in the one place somebody writing one is
                        looking. The same page an agent is handed over MCP, from the same
                        `help.schema` line, so that the two cannot drift apart. -->
-                <wx-help-button :title="t('help.schema-title')" :body="t('help.schema')" />
+                  <wx-help-button :title="t('help.schema-title')" :body="t('help.schema')" />
+                </div>
               </div>
+
+              <wx-card class="wx-block-editor__sample" :title="t('page.sample')">
+                <wx-screen-renderer
+                  v-if="content.schema.length"
+                  v-model="sampleModel"
+                  :root="formSchema(content.schema)"
+                  :types="context.types"
+                  :translate="context.i18n.t"
+                  :can="context.can"
+                  :disabled="!canManage"
+                  size="sm"
+                />
+              </wx-card>
             </div>
+          </wx-tab>
 
-            <wx-card class="wx-block-editor__sample" :title="t('page.sample')">
-              <wx-screen-renderer
-                v-if="content.schema.length"
-                v-model="sampleModel"
-                :root="formSchema(content.schema)"
-                :types="context.types"
-                :translate="context.i18n.t"
-                :can="context.can"
-                :disabled="!canManage"
-                size="sm"
-              />
-              <wx-text size="sm" tone="muted">{{ t('page.sample-help') }}</wx-text>
-            </wx-card>
-          </div>
-        </wx-tab>
-
-        <wx-tab value="settings" :label="t('page.tab-settings')">
-          <wx-card class="wx-block-editor__sheet">
-            <div class="wx-block-editor__settings">
-              <wx-form-item
-                :label="t('page.identifier')"
-                :help="t('page.identifier-help')"
-                :error="errorOf('slug')"
-                :disabled="!canManage"
-              >
-                <wx-input v-model="settings.slug" />
-              </wx-form-item>
-              <wx-form-item
-                :label="t('page.group')"
-                :help="t('page.group-help')"
-                :error="errorOf('group')"
-                :disabled="!canManage"
-              >
-                <wx-select v-model="settings.group" :options="groupOptions" />
-              </wx-form-item>
-              <wx-form-item
-                class="is-wide"
-                :label="t('page.description')"
-                :help="t('page.description-help')"
-                :error="errorOf('description')"
-                :disabled="!canManage"
-              >
-                <wx-textarea
-                  :model-value="settings.description ?? ''"
-                  :rows="2"
-                  @update:model-value="settings.description = String($event ?? '')"
-                />
-              </wx-form-item>
-              <wx-form-item :label="t('page.icon')" :error="errorOf('icon')" :disabled="!canManage">
-                <wx-input
-                  :model-value="settings.icon ?? ''"
-                  placeholder="grid"
-                  @update:model-value="settings.icon = String($event ?? '')"
-                />
-              </wx-form-item>
-              <wx-form-item
-                :label="t('page.sort')"
-                :help="t('page.sort-help')"
-                :error="errorOf('sort')"
-                :disabled="!canManage"
-              >
-                <wx-input-number v-model="settings.sort" />
-              </wx-form-item>
-              <wx-form-item
-                :label="t('page.allow')"
-                :help="t('page.allow-help')"
-                :error="errorOf('allow')"
-                :disabled="!canManage"
-              >
-                <wx-tags-input v-model="settings.allow" allow-create />
-              </wx-form-item>
-              <wx-form-item
-                :label="t('page.allowed-in')"
-                :help="t('page.allowed-in-help')"
-                :error="errorOf('allowed_in')"
-                :disabled="!canManage"
-              >
-                <wx-tags-input v-model="settings.allowed_in" allow-create :suggestions="['root']" />
-              </wx-form-item>
-              <wx-form-item
-                :label="t('page.max-per-entity')"
-                :help="t('page.max-per-entity-help')"
-                :error="errorOf('max_per_entity')"
-                :disabled="!canManage"
-              >
-                <wx-input-number
-                  :model-value="settings.max_per_entity ?? undefined"
-                  :min="1"
-                  @update:model-value="settings.max_per_entity = $event ?? null"
-                />
-              </wx-form-item>
-              <wx-form-item
-                :label="t('page.enabled')"
-                :help="t('page.enabled-help')"
-                :disabled="!canManage"
-              >
-                <wx-switch v-model="settings.is_enabled" />
-              </wx-form-item>
-              <div v-if="canManage" class="is-wide wx-block-editor__danger">
-                <wx-button
-                  type="danger"
-                  variant="outline"
-                  :disabled="block.usage_count > 0"
-                  @click="remove"
+          <wx-tab value="settings" :label="t('page.tab-settings')">
+            <wx-card class="wx-block-editor__sheet">
+              <div class="wx-block-editor__settings">
+                <wx-form-item
+                  :label="t('page.identifier')"
+                  :help="t('page.identifier-help')"
+                  :error="errorOf('slug')"
+                  :disabled="!canManage"
                 >
-                  {{ t('page.delete') }}
-                </wx-button>
-                <wx-text v-if="block.usage_count > 0" size="sm" tone="muted">
-                  {{
-                    block.usage_count === 1
-                      ? t('page.delete-used-one')
-                      : t('page.delete-used', { count: block.usage_count })
-                  }}
-                </wx-text>
+                  <wx-input v-model="settings.slug" />
+                </wx-form-item>
+                <wx-form-item
+                  :label="t('page.group')"
+                  :help="t('page.group-help')"
+                  :error="errorOf('group')"
+                  :disabled="!canManage"
+                >
+                  <wx-select v-model="settings.group" :options="groupOptions" />
+                </wx-form-item>
+                <wx-form-item
+                  class="is-wide"
+                  :label="t('page.description')"
+                  :help="t('page.description-help')"
+                  :error="errorOf('description')"
+                  :disabled="!canManage"
+                >
+                  <wx-textarea
+                    :model-value="settings.description ?? ''"
+                    :rows="2"
+                    @update:model-value="settings.description = String($event ?? '')"
+                  />
+                </wx-form-item>
+                <wx-form-item
+                  :label="t('page.icon')"
+                  :error="errorOf('icon')"
+                  :disabled="!canManage"
+                >
+                  <!-- Picked, not typed: a name the set does not have draws nothing at all,
+                       and nothing on the screen would say which of the two it was. -->
+                  <wx-icon-picker
+                    :model-value="settings.icon"
+                    clearable
+                    :placeholder="t('page.icon-search')"
+                    :empty-text="t('page.icon-none')"
+                    :clear-label="t('page.icon-clear')"
+                    @update:model-value="settings.icon = $event"
+                  />
+                </wx-form-item>
+                <wx-form-item
+                  :label="t('page.sort')"
+                  :help="t('page.sort-help')"
+                  :error="errorOf('sort')"
+                  :disabled="!canManage"
+                >
+                  <wx-input-number v-model="settings.sort" />
+                </wx-form-item>
+                <wx-form-item
+                  :label="t('page.allow')"
+                  :help="t('page.allow-help')"
+                  :error="errorOf('allow')"
+                  :disabled="!canManage"
+                >
+                  <wx-tags-input v-model="settings.allow" allow-create />
+                </wx-form-item>
+                <wx-form-item
+                  :label="t('page.allowed-in')"
+                  :help="t('page.allowed-in-help')"
+                  :error="errorOf('allowed_in')"
+                  :disabled="!canManage"
+                >
+                  <wx-tags-input
+                    v-model="settings.allowed_in"
+                    allow-create
+                    :suggestions="['root']"
+                  />
+                </wx-form-item>
+                <wx-form-item
+                  :label="t('page.max-per-entity')"
+                  :help="t('page.max-per-entity-help')"
+                  :error="errorOf('max_per_entity')"
+                  :disabled="!canManage"
+                >
+                  <wx-input-number
+                    :model-value="settings.max_per_entity ?? undefined"
+                    :min="1"
+                    @update:model-value="settings.max_per_entity = $event ?? null"
+                  />
+                </wx-form-item>
+                <wx-form-item
+                  :label="t('page.enabled')"
+                  :help="t('page.enabled-help')"
+                  :disabled="!canManage"
+                >
+                  <wx-switch v-model="settings.is_enabled" />
+                </wx-form-item>
+                <div v-if="canManage" class="is-wide wx-block-editor__danger">
+                  <wx-button
+                    type="danger"
+                    variant="outline"
+                    :disabled="block.usage_count > 0"
+                    @click="remove"
+                  >
+                    {{ t('page.delete') }}
+                  </wx-button>
+                  <wx-text v-if="block.usage_count > 0" size="sm" tone="muted">
+                    {{
+                      block.usage_count === 1
+                        ? t('page.delete-used-one')
+                        : t('page.delete-used', { count: block.usage_count })
+                    }}
+                  </wx-text>
+                </div>
               </div>
-            </div>
-          </wx-card>
-        </wx-tab>
+            </wx-card>
+          </wx-tab>
 
-        <wx-tab value="history" :label="t('page.tab-history')">
-          <wx-card class="wx-block-editor__sheet" padding="none">
-            <block-history :block="block" :can-manage="canManage" @restored="take" />
-          </wx-card>
-        </wx-tab>
-      </wx-tabs>
+          <wx-tab value="history" :label="t('page.tab-history')">
+            <wx-card class="wx-block-editor__sheet" padding="none">
+              <block-history :block="block" :can-manage="canManage" @restored="take" />
+            </wx-card>
+          </wx-tab>
+        </wx-tabs>
+
+        <block-stage
+          v-show="withStage"
+          class="wx-block-editor__stage"
+          :html="stage.html"
+          :styles="stage.styles"
+          :script="stage.script"
+          :runtime="stage.runtime"
+          :loading="stage.loading"
+        />
+      </div>
 
       <!-- The editor is six tabs of code and the stage beside them, so the head is long gone
            by the time there is anything to save: the two buttons stand here as well.
@@ -809,7 +864,21 @@ const actions = computed<ScreenAction[]>(() =>
   max-width: 420px;
 }
 
-/* What a tab puts side by side: the file and the block, the schema and the form it builds.
+/* The tabs and the block beside them, while a tab that draws the block is the open one.
+   `is-alone` is the same grid with the second track taken away: a hidden item still leaves
+   its column standing, and the tabs would keep half the screen with nothing in the rest. */
+.wx-block-editor__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--wx-gap, var(--wx-space-16));
+  align-items: start;
+}
+
+.wx-block-editor__columns.is-alone {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* What a tab puts side by side: the schema and the form it builds.
    One column below 1080, where two of anything is two half-width columns of nothing. */
 .wx-block-editor__split {
   display: grid;
@@ -819,9 +888,35 @@ const actions = computed<ScreenAction[]>(() =>
 }
 
 @container (max-width: 1080px) {
+  .wx-block-editor__columns,
   .wx-block-editor__split {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* Read, not copied: monospace, wrapped, and no box that says "editor". */
+.wx-block-editor__examples {
+  min-width: 0;
+}
+
+.wx-block-editor__example + .wx-block-editor__example {
+  margin-block-start: var(--wx-space-12);
+}
+
+.wx-block-editor__example pre {
+  margin: var(--wx-space-4) 0 0;
+  padding: var(--wx-space-10) var(--wx-space-12);
+  border-radius: var(--wx-radius-sm);
+  background: var(--wx-bg-subtle);
+  overflow-x: auto;
+}
+
+.wx-block-editor__example code {
+  font-family: var(--wx-font-family-mono);
+  font-size: var(--wx-font-size-xs);
+  line-height: 1.6;
+  color: var(--wx-text-default);
+  white-space: pre;
 }
 
 /* The picture stays put while the template scrolls under it. */

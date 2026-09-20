@@ -9,9 +9,12 @@ of its sample and a card saying where the type stands. So the picture of the blo
 standing beside the settings and beside the history, at half their width, and the sample's form
 was open on all six tabs — including the four where nobody is looking at values.
 
-The columns are inside the tabs now. **Template** has the block drawn beside it, sticky, so the
-picture stays while the markup scrolls under it. **Fields** has the form its schema builds.
-The other four have the width of the screen. **Where the type stands** is a popover behind the
+What stands beside the tabs is what the open one needs. **Template** and **Styles** — both draw
+the block — have the block, sticky, so the picture stays while the file scrolls under it.
+**Fields** has the form its schema builds. **Script** has three examples under the editor instead:
+a handler, a value out of `values`, and a library through `webx.use()`. The rest have the width
+of the screen. The icon of a type is picked from the set now (`WxIconPicker`) rather than typed
+into a box that accepts anything and draws nothing. **Where the type stands** is a popover behind the
 words "on 3 pages" in the subtitle, styled as the link it is: five page names took a quarter of
 a column to say what the subtitle already says in three words.
 
