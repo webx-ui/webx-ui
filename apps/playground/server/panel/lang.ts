@@ -38,6 +38,21 @@ type Messages = { [key: string]: string | Messages }
  * default with no sign that anything is stale. Ten flat files parsed inside a request that
  * already waits 220 ms on purpose is not a cost worth that.
  */
+/**
+ * What this site adds to a package's dictionary — `lang/vendor/webx-blocks/<locale>` on a
+ * Laravel site, an object here.
+ *
+ * The blocks module ships three groups and says a site adds its own and translates it there
+ * (`config/blocks.php`). This demo's types stand in a fourth, `marketing`, and without these
+ * two lines the Russian panel labels the tab `Marketing` — the capitalised id, which is the
+ * module being honest about a word nobody gave it, and looks exactly like a bug.
+ */
+const SITE: Record<string, Record<string, Record<string, Messages>>> = {
+  ru: { 'webx-blocks': { groups: { marketing: 'Маркетинг' } } },
+  uk: { 'webx-blocks': { groups: { marketing: 'Маркетинг' } } },
+  en: { 'webx-blocks': { groups: { marketing: 'Marketing' } } },
+}
+
 export function dictionary(locale: string): Record<string, Record<string, Messages>> {
   const namespaces: Record<string, Record<string, Messages>> = {}
 
@@ -59,6 +74,16 @@ export function dictionary(locale: string): Record<string, Record<string, Messag
     }
 
     namespaces[namespace] = groups
+  }
+
+  for (const [namespace, groups] of Object.entries(SITE[locale] ?? {})) {
+    for (const [group, lines] of Object.entries(groups)) {
+      namespaces[namespace] = namespaces[namespace] ?? {}
+      namespaces[namespace][group] = {
+        ...((namespaces[namespace][group] as Messages | undefined) ?? {}),
+        ...lines,
+      }
+    }
   }
 
   return namespaces

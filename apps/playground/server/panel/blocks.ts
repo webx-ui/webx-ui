@@ -1,4 +1,9 @@
-import type { BlockType } from '../../../../packages/module-blocks/src/types'
+import type {
+  BlockContent,
+  BlockNode,
+  BlockType,
+  BlockVersionMeta,
+} from '../../../../packages/module-blocks/src/types'
 
 /**
  * The block types the playground's site is built from, and a renderer small enough to live in
@@ -318,6 +323,14 @@ const FORM_TEMPLATE = `<section class="b-form" data-wx-block="form">
 </section>
 `
 
+/** What `<x-webx-form>` puts on the page: the fields of the demo's feedback form. */
+const FORM_MARKUP = `<form class="b-form__form">
+        <input class="b-form__field" type="text" placeholder="Имя" />
+        <input class="b-form__field" type="email" placeholder="Почта" />
+        <textarea class="b-form__field" rows="3" placeholder="Сообщение"></textarea>
+        <button class="b-form__submit" type="button">Отправить</button>
+    </form>`
+
 const FORM_STYLES = `.b-form {
     container-type: inline-size;
     background: #f4f6fa;
@@ -340,9 +353,39 @@ const FORM_STYLES = `.b-form {
     margin: 0 0 1.5rem;
     color: #55617a;
 }
+
+.b-form__form {
+    display: grid;
+    gap: 0.75rem;
+    text-align: start;
+}
+
+.b-form__field {
+    padding: 0.75rem 1rem;
+    border: 1px solid #d7dde8;
+    border-radius: 0.5rem;
+    background: #fff;
+    font: inherit;
+    color: #1c2434;
+}
+
+.b-form__submit {
+    padding: 0.75rem 1.5rem;
+    border: 0;
+    border-radius: 999px;
+    background: #10224b;
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
 `
 
+/* The one type written wrong on purpose: `@marker` is not a directive this site has. The
+   preview shows it as the words it is, and publishing refuses with the line it is on — which
+   is the only way to see that screen without breaking a working type first. */
 const MAP_TEMPLATE = `<section class="b-map" data-wx-block="map" data-address="{{ $address }}" data-zoom="{{ $zoom }}">
+    @marker($address, $zoom)
     <p class="b-map__address">{{ $address }}</p>
 </section>
 `
@@ -375,7 +418,7 @@ export const blockTypes: BlockType[] = [
     max_per_entity: 1,
     is_enabled: true,
     draft: version(4, '2026-09-18T09:12:00+00:00', 'Кнопка стала необязательной'),
-    published: version(3, '2026-09-10T11:40:00+00:00', 'Первая версия обложки'),
+    published: version(3, '2026-09-10T11:40:00+00:00', 'Подпись стала необязательной'),
     usage_count: 6,
     thumbnail: null,
     created_at: '2026-08-14T10:00:00+00:00',
@@ -448,7 +491,32 @@ export const blockTypes: BlockType[] = [
       template: COLUMNS_TEMPLATE,
       styles: COLUMNS_STYLES,
       script: null,
-      sample: { ratio: 'equal', children: [] },
+      /* A container drawn on an empty list is a grey strip: the sample holds two blocks, so
+         that the preview of `columns` is columns. */
+      sample: {
+        ratio: 'equal',
+        children: [
+          {
+            key: 'sample-text',
+            type: 'text',
+            values: {
+              title: 'Что входит в работу',
+              body: '<p>Прототип, вёрстка, админка и передача в поддержку — одной командой и по одному договору.</p>',
+            },
+          },
+          {
+            key: 'sample-cta',
+            type: 'cta',
+            values: {
+              title: 'Нужна оценка?',
+              text: 'Пришлите задачу — ответим в тот же день.',
+              button_label: 'Написать',
+              button_url: '/contacts',
+              background: '#1f4f9c',
+            },
+          },
+        ] satisfies BlockNode[],
+      },
     },
   },
   {
@@ -719,6 +787,242 @@ function version(
 export const blockGroups = ['layout', 'content', 'marketing']
 
 /**
+ * Every version a type has ever had, oldest first — with what was in it.
+ *
+ * The history screen asks for the list, and restoring asks for one of them back; a fixture
+ * that answered the list and then restored nothing would be a green "восстановлено" over a
+ * type that did not change, which is the one thing a playground must not do. So an older
+ * version here holds real older content: restoring `v1` of the cover really does take the
+ * eyebrow back out of the template, the schema and the sample.
+ */
+export interface BlockVersionRecord extends BlockVersionMeta {
+  content: BlockContent
+}
+
+export const blockVersions = new Map<number, BlockVersionRecord[]>()
+
+/** The cover before it had an eyebrow — what `v1` restores. */
+const HERO_TEMPLATE_PLAIN = `<section class="b-hero" data-wx-block="hero">
+    <div class="b-hero__inner">
+        <h1 class="b-hero__title">{{ $title }}</h1>
+        <p class="b-hero__subtitle">{{ $subtitle }}</p>
+        <a class="b-hero__button" href="{{ $button_url }}">{{ $button_label }}</a>
+    </div>
+</section>
+`
+
+/** What the older versions of a type differ by: a patch on the content it has now. */
+type Patch = (content: BlockContent) => BlockContent
+
+interface Past {
+  number: number
+  source: BlockVersionMeta['source']
+  created_at: string
+  comment: string | null
+  patch: Patch
+}
+
+function past(type: BlockType, versions: Past[]): void {
+  const content = type.content ?? { schema: [], template: '', styles: '', script: null, sample: {} }
+  const records: BlockVersionRecord[] = versions.map((version) => ({
+    number: version.number,
+    source: version.source,
+    comment: version.comment,
+    author_id: version.source === 'panel' ? 1 : null,
+    author: version.source === 'panel' ? 'Анна Ковальчук' : null,
+    created_at: version.created_at,
+    content: version.patch(clone(content)),
+  }))
+
+  /* The two the type is standing on are the last of the list, not a separate thing. */
+  for (const meta of [type.published, type.draft]) {
+    if (meta !== null && !records.some((record) => record.number === meta.number)) {
+      records.push({ ...meta, content: clone(content) })
+    }
+  }
+
+  blockVersions.set(
+    type.id,
+    records.sort((one, other) => one.number - other.number),
+  )
+}
+
+/** The template as it was before a field became optional: the `@if` around it taken off. */
+function unwrap(template: string, field: string): string {
+  return template.replace(
+    new RegExp(`^ {8}@if \\(\\$${field}\\)\\n([\\s\\S]*?)\\n {8}@endif\\n`, 'm'),
+    (_match, body: string) => `${body.replace(/^ {4}/gm, '')}\n`,
+  )
+}
+
+function without(sample: Record<string, unknown>, key: string): Record<string, unknown> {
+  const copy = { ...sample }
+
+  delete copy[key]
+
+  return copy
+}
+
+export function clone<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T
+}
+
+for (const type of blockTypes) {
+  switch (type.slug) {
+    case 'hero':
+      past(type, [
+        {
+          number: 1,
+          source: 'import',
+          created_at: '2026-08-14T10:00:00+00:00',
+          comment: 'Импорт из макета',
+          patch: (content) => ({
+            ...content,
+            template: HERO_TEMPLATE_PLAIN,
+            schema: content.schema.filter((node) => node.id !== 'eyebrow'),
+            sample: without(content.sample, 'eyebrow'),
+          }),
+        },
+        {
+          number: 2,
+          source: 'panel',
+          created_at: '2026-08-28T15:30:00+00:00',
+          comment: 'Надзаголовок',
+          /* Everything was still compulsory then: v3 made the subtitle optional, v4 the
+             button, and that is what restoring either of these two takes back. */
+          patch: (content) => ({
+            ...content,
+            template: unwrap(unwrap(content.template, 'subtitle'), 'button_label'),
+          }),
+        },
+        {
+          number: 3,
+          source: 'panel',
+          created_at: '2026-09-10T11:40:00+00:00',
+          comment: 'Подпись стала необязательной',
+          patch: (content) => ({
+            ...content,
+            template: unwrap(content.template, 'button_label'),
+          }),
+        },
+      ])
+      break
+
+    case 'text':
+      past(type, [
+        {
+          number: 1,
+          source: 'import',
+          created_at: '2026-08-14T10:05:00+00:00',
+          comment: null,
+          patch: (content) => ({
+            ...content,
+            styles: content.styles.replace('max-width: 42rem', 'max-width: 36rem'),
+          }),
+        },
+      ])
+      break
+
+    case 'cta':
+      past(type, [
+        {
+          number: 1,
+          source: 'panel',
+          created_at: '2026-08-30T15:00:00+00:00',
+          comment: null,
+          patch: (content) => ({
+            ...content,
+            schema: content.schema.filter((node) => node.id !== 'background'),
+            template: content.template.replace(' style="--b-cta-bg: {{ $background }}"', ''),
+            /* Before the row learned to wrap: on a phone the button used to stand beside the
+               words and be a hundred pixels wide. */
+            styles: content.styles.replace('    flex-wrap: wrap;\n', ''),
+            sample: without(content.sample, 'background'),
+          }),
+        },
+        {
+          number: 2,
+          source: 'panel',
+          created_at: '2026-09-11T10:15:00+00:00',
+          comment: null,
+          patch: (content) => ({
+            ...content,
+            schema: content.schema.filter((node) => node.id !== 'background'),
+            template: content.template.replace(' style="--b-cta-bg: {{ $background }}"', ''),
+            sample: without(content.sample, 'background'),
+          }),
+        },
+      ])
+      break
+
+    default:
+      past(type, [])
+  }
+}
+
+/**
+ * Why a template cannot go on the site — the fixture's stand-in for Blade failing to compile.
+ *
+ * It knows the five directives this renderer knows and refuses anything else, with the line
+ * it stands on: that is the shape of a real refusal (§15), and the only thing the panel needs
+ * from it is a sentence and a number.
+ */
+export function templateFailure(template: string): { reason: string; line: number } | null {
+  const known = ['if', 'endif', 'foreach', 'endforeach', 'blocks']
+  const lines = template.split('\n')
+
+  for (let index = 0; index < lines.length; index++) {
+    const match = /@([a-z]+)/i.exec(lines[index])
+
+    if (match !== null && !known.includes(match[1])) {
+      return { reason: `Неизвестная директива @${match[1]}.`, line: index + 1 }
+    }
+  }
+
+  return null
+}
+
+/**
+ * A block and everything inside it, drawn: the markup and every type's styles that went into
+ * it. A container that arrived without its children's CSS would draw them stacked and bare.
+ */
+export function draw(
+  content: BlockContent,
+  values: Record<string, unknown>,
+  depth = 0,
+): { html: string; styles: string } {
+  const styles = [content.styles ?? '']
+  const nested: Record<string, string> = {}
+
+  for (const node of content.schema) {
+    if (node.type !== 'wx-blocks') continue
+
+    const list = (values[node.id] ?? []) as BlockNode[]
+    const drawn: string[] = []
+
+    for (const child of list) {
+      if (child.hidden === true || depth >= 5) continue
+
+      const type = blockTypes.find((item) => item.slug === child.type)
+
+      if (type?.content === undefined) continue
+
+      const inside = draw(type.content, child.values, depth + 1)
+
+      drawn.push(inside.html)
+      styles.push(inside.styles)
+    }
+
+    nested[node.id] = drawn.join('\n')
+  }
+
+  return {
+    html: renderTemplate(content.template ?? '', values, nested),
+    styles: styles.filter((sheet) => sheet !== '').join('\n'),
+  }
+}
+
+/**
  * A block drawn: the template with its values in it.
  *
  * Deliberately naive — see the note at the top of the file. Unknown directives are left alone
@@ -755,6 +1059,11 @@ export function renderTemplate(
 
   /* `@blocks('children')` prints the blocks held in one field — the drawn ones arrive here. */
   html = html.replace(/@blocks\s*\('([\w-]+)'\)/g, (_match, key: string) => children[key] ?? '')
+
+  /* The one Blade component of the site, drawn as what it draws. A tag nobody knows is a tag
+     the browser leaves out, and the block that embeds a form would preview as its heading and
+     nothing else — which reads as a broken block rather than a form. */
+  html = html.replace(/<x-webx-form[^>]*\/>/g, FORM_MARKUP)
 
   html = html.replace(/\{!! \$([\w-]+) !!\}/g, (_match, key: string) => text(values[key]))
   html = html.replace(/\{\{ \$([\w-]+) \}\}/g, (_match, key: string) => escape(text(values[key])))

@@ -6,11 +6,20 @@ import type {
   InboxStatus,
   SubmissionCounts,
 } from '../../../../packages/module-inbox/src/types'
-import type { BlockType } from '../../../../packages/module-blocks/src/types'
+import type { BlockType, BlockUsage } from '../../../../packages/module-blocks/src/types'
 import type { PageRow } from '../../../../packages/module-pages/src/types'
 import type { RubricRow, TagRow } from '../../../../packages/module-blog/src/types'
 import type { MediaDirectory, MediaFile } from '../../../../packages/module-media/src/types'
-import { blockGroups, blockTypes, renderTemplate } from './blocks'
+import {
+  blockGroups,
+  blockTypes,
+  blockVersions,
+  clone as blockClone,
+  draw as drawContent,
+  renderTemplate,
+  templateFailure,
+  type BlockVersionRecord,
+} from './blocks'
 import {
   admins,
   countForms,
@@ -473,8 +482,24 @@ on('POST', '/pages/(\\d+)/versions/(\\d+)/restore', ({ params }) => {
 
 on('GET', '/blocks', () => ({ data: blockTypes.map(withoutContent) }))
 
+/* What the panel would get from a server that keeps one: the type drawn on its own sample,
+   ready for the card's iframe. Without it the section is eight grey rectangles. */
+function thumbnailOf(type: BlockType): BlockType['thumbnail'] {
+  if (type.content === undefined) {
+    return null
+  }
+
+  const drawn = drawContent(type.content, type.content.sample)
+
+  return { html: drawn.html, styles: drawn.styles }
+}
+
+/* With content, because the field draws a block's form from its schema — and with a picture,
+   because the picker offers types by their picture the same way the section lists them. */
 on('GET', '/blocks/catalog', () => ({
-  data: blockTypes.filter((type) => type.is_enabled && type.published !== null),
+  data: blockTypes
+    .filter((type) => type.is_enabled && type.published !== null)
+    .map((type) => ({ ...type, thumbnail: thumbnailOf(type) })),
 }))
 
 on('POST', '/blocks', ({ body }) => {
@@ -515,10 +540,17 @@ on('POST', '/blocks', ({ body }) => {
 
   blockTypes.push(type)
 
-  return { data: type }
+  return { data: counted(type) }
 })
 
-on('GET', '/blocks/(\\d+)', ({ params }) => ({ data: blockType(params[0]) }))
+on('GET', '/blocks/(\\d+)', ({ params }) => ({ data: counted(blockType(params[0])) }))
+
+/** The editor asks how many entities stand on the type; the answer is taken, not stored. */
+function counted(type: BlockType): BlockType {
+  type.usage_count = usageOf(type.slug).length
+
+  return type
+}
 
 on('PUT', '/blocks/(\\d+)', ({ params, body }) => {
   const type = blockType(params[0])
@@ -531,8 +563,14 @@ on('PUT', '/blocks/(\\d+)', ({ params, body }) => {
   }
 
   type.updated_at = new Date().toISOString()
+
+  /* A save without a draft opens one; a save on top of a draft stays that same number, the
+     way the module's own versioning works — the history gets a row per draft, not per key. */
+  const opened = type.draft === null
+  const record = history(type).find((item) => item.number === type.draft?.number)
+
   type.draft = {
-    number: (type.draft?.number ?? type.published?.number ?? 0) + (type.draft === null ? 1 : 0),
+    number: opened ? next(type) : (type.draft?.number ?? 1),
     source: 'panel',
     comment: (body.comment as string | null) ?? null,
     author_id: 1,
@@ -540,7 +578,13 @@ on('PUT', '/blocks/(\\d+)', ({ params, body }) => {
     created_at: type.updated_at,
   }
 
-  return { data: type }
+  if (opened || record === undefined) {
+    history(type).push({ ...type.draft, content: blockClone(contentOf(type)) })
+  } else {
+    Object.assign(record, { ...type.draft, content: blockClone(contentOf(type)) })
+  }
+
+  return { data: counted(type) }
 })
 
 on('DELETE', '/blocks/(\\d+)', ({ params }) => {
@@ -559,12 +603,25 @@ on('DELETE', '/blocks/(\\d+)', ({ params }) => {
 
 on('POST', '/blocks/(\\d+)/publish', ({ params }) => {
   const type = blockType(params[0])
+  const failure = templateFailure(contentOf(type).template)
+
+  /* The gate before a version goes live (§15): a template that does not compile is a 422 in
+     the shape the panel reads — the sentence under `template`, and the line it is on. */
+  if (failure !== null) {
+    throw new HttpFailure(
+      422,
+      failure.reason,
+      undefined,
+      { template: [failure.reason] },
+      { line: failure.line, entity: null },
+    )
+  }
 
   type.published = type.draft ?? type.published
   type.draft = null
   type.updated_at = new Date().toISOString()
 
-  return { data: type }
+  return { data: counted(type) }
 })
 
 on('POST', '/blocks/(\\d+)/render', ({ params, body }) => {
@@ -574,11 +631,14 @@ on('POST', '/blocks/(\\d+)/render', ({ params, body }) => {
     ...((body.content ?? {}) as Record<string, unknown>),
   } as NonNullable<BlockType['content']>
   const values = (body.values ?? content.sample ?? {}) as Record<string, unknown>
+  const drawn = drawContent(content, values)
 
   return {
     data: {
-      html: renderTemplate(content.template ?? '', values),
-      styles: content.styles ?? '',
+      html: drawn.html,
+      /* The styles of everything in the picture, not only of the type being edited: a
+         container drawn without its children's CSS is a stack of bare paragraphs. */
+      styles: drawn.styles,
       script: content.script,
       runtime: '/blocks-runtime.js',
       version: type.published?.number ?? type.draft?.number ?? 1,
@@ -586,47 +646,114 @@ on('POST', '/blocks/(\\d+)/render', ({ params, body }) => {
   }
 })
 
-on('GET', '/blocks/(\\d+)/usage', ({ params }) => {
-  const type = blockType(params[0])
-  const used: { model: string; id: number; title: string | null; published: boolean }[] = []
+on('GET', '/blocks/(\\d+)/usage', ({ params }) => ({ data: usageOf(blockType(params[0]).slug) }))
+
+/**
+ * Where a type stands, counted rather than remembered.
+ *
+ * Both kinds of entity, because both are made of blocks: a count that skipped the articles
+ * would tell an editor a type is free to delete while the blog is standing on it. Nested
+ * blocks count too — a type inside a container is on the page as much as one at the root.
+ */
+function usageOf(slug: string): BlockUsage[] {
+  const used: BlockUsage[] = []
 
   for (const record of pages.values()) {
-    const blocks = (record.values.blocks ?? []) as { type: string }[]
-
-    if (blocks.some((node) => node.type === type.slug)) {
+    if (record.row.deleted_at === null && holds((record.values.blocks ?? []) as Block[], slug)) {
       used.push({
         model: 'page',
         id: record.row.id,
         title: record.row.title,
-        published: record.row.status !== 'draft',
+        published: record.row.status === 'published',
       })
     }
   }
 
-  return { data: used }
+  for (const record of articles) {
+    if (record.deleted_at === null && holds((record.values.blocks ?? []) as Block[], slug)) {
+      used.push({
+        model: 'article',
+        id: record.id,
+        title: blogText(record.values.title, 'ru') || `#${record.id}`,
+        published: record.status === 'published' || record.status === 'modified',
+      })
+    }
+  }
+
+  return used
+}
+
+function holds(nodes: Block[], slug: string): boolean {
+  return nodes.some((node) => types(node).includes(slug))
+}
+
+/* Newest first: the history reads downwards from what is being worked on. The content of a
+   version is not in the list — that is what asking for one of them is for. */
+on('GET', '/blocks/(\\d+)/versions', ({ params }) => ({
+  data: history(blockType(params[0]))
+    .map((record) => ({ ...record, content: undefined }))
+    .reverse(),
+}))
+
+on('GET', '/blocks/(\\d+)/versions/(\\d+)', ({ params }) => ({
+  data: version(blockType(params[0]), Number(params[1])),
+}))
+
+/* Restoring is a save of old content, not a pointer moved: the type gets a new draft with
+   what that version held, and publishing it stays the separate step it always is. */
+on('POST', '/blocks/(\\d+)/versions/(\\d+)/restore', ({ params }) => {
+  const type = blockType(params[0])
+  const restored = version(type, Number(params[1]))
+
+  type.content = blockClone(restored.content)
+  type.updated_at = new Date().toISOString()
+  type.draft = {
+    number: next(type),
+    source: 'panel',
+    comment: `Восстановлена версия ${restored.number}`,
+    author_id: 1,
+    author: 'Анна Ковальчук',
+    created_at: type.updated_at,
+  }
+
+  history(type).push({ ...type.draft, content: blockClone(type.content) })
+
+  return { data: counted(type) }
 })
 
-on('GET', '/blocks/(\\d+)/versions', ({ params }) => {
-  const type = blockType(params[0])
+/** The content a type is holding — an empty one for a type that somehow has none. */
+function contentOf(type: BlockType): NonNullable<BlockType['content']> {
+  return type.content ?? { schema: [], template: '', styles: '', script: null, sample: {} }
+}
 
-  return { data: [type.draft, type.published].filter((version) => version !== null) }
-})
+function history(type: BlockType): BlockVersionRecord[] {
+  const versions = blockVersions.get(type.id)
 
-on('GET', '/blocks/(\\d+)/versions/(\\d+)', ({ params }) => {
-  const type = blockType(params[0])
-  const number = Number(params[1])
-  const meta = [type.draft, type.published].find((version) => version?.number === number)
+  if (versions === undefined) {
+    const started: BlockVersionRecord[] = []
 
-  if (meta === undefined || meta === null) {
+    blockVersions.set(type.id, started)
+
+    return started
+  }
+
+  return versions
+}
+
+function version(type: BlockType, number: number): BlockVersionRecord {
+  const found = history(type).find((record) => record.number === number)
+
+  if (found === undefined) {
     throw new HttpFailure(404, 'No such version.')
   }
 
-  return { data: { ...meta, content: type.content } }
-})
+  return found
+}
 
-on('POST', '/blocks/(\\d+)/versions/(\\d+)/restore', ({ params }) => ({
-  data: blockType(params[0]),
-}))
+/** One past the highest number the type has ever had — numbers are not reused. */
+function next(type: BlockType): number {
+  return Math.max(0, ...history(type).map((record) => record.number)) + 1
+}
 
 /* ------------------------------------------------------------------------------ inbox ----- */
 
@@ -1667,6 +1794,8 @@ class HttpFailure extends Error {
     message: string,
     readonly data?: unknown,
     readonly errors?: Record<string, string[]>,
+    /** Keys of the body itself, for a refusal whose shape is more than message and errors. */
+    readonly extra?: Record<string, unknown>,
   ) {
     super(message)
   }
@@ -1794,8 +1923,9 @@ function localized(value: unknown): string {
   return String(map.ru ?? map.en ?? '')
 }
 
+/** The list's shape: no content, a picture instead, and a count taken rather than stored. */
 function withoutContent(type: BlockType): BlockType {
-  const copy = { ...type }
+  const copy = { ...type, thumbnail: thumbnailOf(type), usage_count: usageOf(type.slug).length }
 
   delete copy.content
 
@@ -2270,7 +2400,12 @@ async function answer(request: IncomingMessage, response: ServerResponse, url: U
     if (error instanceof HttpFailure) {
       response.statusCode = error.status
       response.end(
-        JSON.stringify({ message: error.message, errors: error.errors ?? {}, data: error.data }),
+        JSON.stringify({
+          message: error.message,
+          errors: error.errors ?? {},
+          data: error.data,
+          ...error.extra,
+        }),
       )
 
       return
