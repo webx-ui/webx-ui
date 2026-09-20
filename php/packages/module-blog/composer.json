@@ -30,14 +30,14 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "illuminate/view": "^13.0",
-        "webx-ui/localization": "^0.24.1",
-        "webx-ui/mcp": "^0.24.1",
-        "webx-ui/module-admin": "^0.24.1",
-        "webx-ui/module-auth": "^0.24.1",
-        "webx-ui/module-blocks": "^0.24.1",
-        "webx-ui/module-media": "^0.24.1",
-        "webx-ui/module-seo": "^0.24.1",
-        "webx-ui/routing": "^0.24.1"
+        "webx-ui/localization": "^0.25.0",
+        "webx-ui/mcp": "^0.25.0",
+        "webx-ui/module-admin": "^0.25.0",
+        "webx-ui/module-auth": "^0.25.0",
+        "webx-ui/module-blocks": "^0.25.0",
+        "webx-ui/module-media": "^0.25.0",
+        "webx-ui/module-seo": "^0.25.0",
+        "webx-ui/routing": "^0.25.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
