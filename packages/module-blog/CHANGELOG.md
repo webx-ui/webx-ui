@@ -1,5 +1,42 @@
 # @webx-ui/module-blog
 
+## 0.2.2
+
+### Patch Changes
+
+- 537df98: `WxSaveState`: the save says so with a mark, and then stops saying it
+
+  The bar of the page and article editors carried the word "Saved". It is right nearly all of the
+  time, which is what makes it furniture: it is on screen when nothing is happening, and nothing is
+  happening is exactly when nobody is asking. What anyone wants to know is whether _this_ save
+  landed, and only until it has.
+
+  So the word is a mark now: a wheel while the save is in flight, a green tick when it lands, and
+  nothing two seconds later. Nothing for unsaved work either — the head already carries a badge
+  beside the name, and the enabled save button is the plainest statement that there is something to
+  save. The element keeps its place while it is empty, or the buttons beside it would shift by its
+  width twice per save.
+
+  The words stay for whoever is not looking at the bar: the mark is a live region carrying "Saving…"
+  and then "Saved", which is what a screen reader hears. Its own `state-saved` and `state-saving`
+  lines are gone from both modules, along with the `state-unsaved` that nothing says any more.
+
+- 537df98: The content tab is no longer a box of a fixed height
+
+  Both editors kept a tab exactly one window tall, with its own scrollbar, for the sake of a
+  constructor whose three columns scrolled inside themselves. The constructor does not work that way
+  any more — its preview is as tall as the page it shows and the browser scrolls it — so the rules
+  that arranged all that are gone with the `fill` prop they hung on. A tab that grows with its
+  contents is also the only kind that does not clip them.
+
+- Updated dependencies [537df98]
+- Updated dependencies [537df98]
+- Updated dependencies [537df98]
+  - @webx-ui/module-blocks@0.6.0
+  - @webx-ui/module-admin@0.12.0
+  - @webx-ui/core@0.27.0
+  - @webx-ui/schema@0.3.4
+
 ## 0.2.1
 
 ### Patch Changes
