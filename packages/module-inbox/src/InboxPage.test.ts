@@ -93,17 +93,57 @@ describe('WxInboxPage', () => {
     // Unread in colour; a form nobody has written to says nothing rather than zero.
     expect(wrapper.text()).toContain('3')
     expect(wrapper.text()).not.toContain('12')
-    expect(wrapper.text()).toContain('Off')
+
+    // Switched off is said by the name — struck through and grey — and not by a badge that
+    // would not fit beside the count and the ··· in a 270px column.
+    const rows = wrapper.findAll('.wx-inbox-form')
+
+    expect(rows[0].classes()).not.toContain('is-off')
+    expect(rows[1].classes()).toContain('is-off')
+    expect(wrapper.text()).not.toContain('Off')
   })
 
-  it('keeps the chosen form in the address, so coming back lands on it', async () => {
-    const { wrapper, router } = panel([form({ id: 7 })])
+  it('opens the first form by itself, so the section opens on the submissions', async () => {
+    // The reader came to see what has come in; a list of three form names is not that.
+    const { wrapper, router } = panel([form({ id: 7 }), form({ id: 9, slug: 'callback' })])
 
-    await flushPromises()
-    await wrapper.get('.wx-inbox-form').trigger('click')
     await flushPromises()
 
     expect(router.currentRoute.value.query.form).toBe('7')
+    expect(wrapper.find('.wx-submissions').exists()).toBe(true)
+  })
+
+  it('keeps the chosen form in the address, so coming back lands on it', async () => {
+    const { wrapper, router } = panel([form({ id: 7 }), form({ id: 9, slug: 'callback' })])
+
+    await flushPromises()
+    await wrapper.findAll('.wx-inbox-form')[1].trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query.form).toBe('9')
+  })
+
+  it('offers a submission in the head and a form over the list of forms', async () => {
+    // The section is opened to read what came in, so that is the one action it exists for;
+    // a new form is one more of the things in the column, and stands over them.
+    const { wrapper } = panel([form({ id: 1 })])
+
+    await flushPromises()
+
+    const head = wrapper.get('.wx-list-screen__head')
+
+    expect(head.text()).toContain('New submission')
+    expect(head.text()).not.toContain('New form')
+    expect(wrapper.get('.wx-sortable-list__extra button').attributes('aria-label')).toBe('New form')
+  })
+
+  it('leaves what the form is to the form, and does not say it twice', async () => {
+    // The way into the fields and the letters is the form's own ··· in the list of forms.
+    const { wrapper } = panel([form({ id: 1 })])
+
+    await flushPromises()
+
+    expect(wrapper.get('.wx-submissions__head').text()).not.toContain('Settings')
   })
 
   it('offers no delete for a form that has taken submissions', async () => {
