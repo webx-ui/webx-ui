@@ -39,7 +39,7 @@ import BlockStage from './BlockStage.vue'
 import { clone } from './content'
 import { useBlocksMessages } from './i18n'
 import { lintBlock } from './lint'
-import { formSchema, groupLabel } from './schema'
+import { formSchema, groupLabel, usageWords } from './schema'
 import type { BlockContent, BlocksMeta, BlockType, BlockUsage, PublishRefusal } from './types'
 
 /**
@@ -481,12 +481,7 @@ const actions = computed<ScreenAction[]>(() =>
 
         <template #subtitle>
           <code>{{ settings.slug }}</code>
-          · {{ groupLabel(settings.group, t) }} ·
-          {{
-            block.usage_count > 0
-              ? t('page.on-pages', { count: block.usage_count })
-              : t('page.not-used')
-          }}
+          · {{ groupLabel(settings.group, t) }} · {{ usageWords(block.usage_count, t) }}
         </template>
       </wx-screen-head>
 
@@ -694,7 +689,11 @@ const actions = computed<ScreenAction[]>(() =>
                       {{ t('page.delete') }}
                     </wx-button>
                     <wx-text v-if="block.usage_count > 0" size="sm" tone="muted">
-                      {{ t('page.delete-used', { count: block.usage_count }) }}
+                      {{
+                        block.usage_count === 1
+                          ? t('page.delete-used-one')
+                          : t('page.delete-used', { count: block.usage_count })
+                      }}
                     </wx-text>
                   </div>
                 </div>
@@ -756,18 +755,11 @@ const actions = computed<ScreenAction[]>(() =>
       </div>
 
       <!-- The editor is four tabs of code and a column of cards beside them, so the head is
-           long gone by the time there is anything to save. Same two buttons, same state. -->
+           long gone by the time there is anything to save: the two buttons stand here as well.
+           The three badges do not. What state the type is in is a fact about the type, not
+           about the last keystroke, and it is already said once — beside the name, where this
+           panel says the state of a record. Twice on one screen is not twice as clear. -->
       <wx-action-bar v-if="canManage">
-        <template #state>
-          <wx-badge v-if="dirty" type="primary" dot>{{ t('page.unsaved') }}</wx-badge>
-          <wx-badge v-if="block.draft" type="warning" dot>{{
-            t('page.draft', { number: block.draft.number })
-          }}</wx-badge>
-          <wx-badge v-if="block.published" type="success" dot>{{
-            t('page.live', { number: block.published.number })
-          }}</wx-badge>
-        </template>
-
         <wx-button variant="outline" :loading="saving" @click="save">{{
           t('page.save')
         }}</wx-button>

@@ -20,6 +20,7 @@ export const blocksMessages: Record<string, Messages> = {
     'editing-off':
       'Editing is switched off on this site: the types arrive by import, and the section is read-only.',
     'on-pages': 'on :count pages',
+    'on-page': 'on one page',
     'not-used': 'not used yet',
     draft: 'Draft v:number',
     live: 'Live v:number',
@@ -89,6 +90,7 @@ export const blocksMessages: Record<string, Messages> = {
     'delete-title': 'Delete ":title"?',
     'delete-text': 'Every version goes with it. This cannot be undone.',
     'delete-used': 'The block stands on :count pages and cannot be deleted.',
+    'delete-used-one': 'The block stands on one page and cannot be deleted.',
     deleted: 'Deleted.',
     cancel: 'Cancel',
     create: 'Create',
