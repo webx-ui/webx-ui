@@ -2,10 +2,18 @@
 '@webx-ui/module-blocks': patch
 ---
 
-The editor of a block type says its state once, and the stage shows a block rather than a
-picture of one
+The editor of a block type is its files and the block, and nothing else beside them
 
-Three things a second look at the screen found.
+A second look at the screen, and the column beside the stage is gone.
+
+**The sample's form is the second half of the Fields tab**, where the schema that builds it is.
+It used to be a card in the right column, which meant it stood open on all six tabs — including
+the four where nobody is looking at values — and pushed the picture of the block up by its own
+height. **Where the type stands is a popover** behind the words "on 3 pages" in the subtitle,
+styled as the link it is: five page names took a quarter of a column to say what the subtitle
+says in three words. What is left beside the tabs is the block itself.
+
+Three more things the same look found.
 
 **The action bar no longer repeats the state.** It carried the same three badges as the head —
 draft, live, unsaved — and on a 1440×900 window both pairs are on screen at once, on a phone

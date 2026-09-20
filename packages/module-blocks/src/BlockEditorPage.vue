@@ -22,6 +22,7 @@ import {
   WxFormItem,
   WxInput,
   WxInputNumber,
+  WxPopover,
   WxSelect,
   WxSkeleton,
   WxSwitch,
@@ -43,10 +44,13 @@ import { formSchema, groupLabel, usageWords } from './schema'
 import type { BlockContent, BlocksMeta, BlockType, BlockUsage, PublishRefusal } from './types'
 
 /**
- * The editor of one type: two columns. On the left the four files and the settings, on the
- * right the block drawn on its sample, the sample's form built from the schema being edited,
- * and where the type stands. The loop is closed — edit the schema and the form rebuilds,
- * edit the values and the stage redraws, edit the template or the styles and so does it.
+ * The editor of one type: two columns. On the left the tabs — the four files, the settings and
+ * the history — and on the right the block, drawn on its sample and nothing else beside it.
+ * The sample's own form is the second half of the Fields tab, and where the type stands is a
+ * list behind one word of the subtitle.
+ *
+ * The loop is closed either way: edit the schema and the form rebuilds, edit the values and
+ * the stage redraws, edit the template or the styles and so does it.
  */
 const props = withDefaults(defineProps<{ base?: string }>(), { base: '/blocks' })
 
@@ -479,9 +483,43 @@ const actions = computed<ScreenAction[]>(() =>
           <wx-badge v-else type="default">{{ t('page.never-published') }}</wx-badge>
         </template>
 
+        <!--
+          Where the type stands is one line of the subtitle and a list behind it: a card of
+          five page names took a quarter of the column beside the stage to say what the head
+          already says in three words. The words are the door.
+        -->
         <template #subtitle>
           <code>{{ settings.slug }}</code>
-          · {{ groupLabel(settings.group, t) }} · {{ usageWords(block.usage_count, t) }}
+          · {{ groupLabel(settings.group, t) }} ·
+          <wx-popover
+            v-if="block.usage_count > 0"
+            :title="t('page.usage')"
+            :width="260"
+            align="start"
+          >
+            <template #trigger>
+              <button type="button" class="wx-block-editor__uses">
+                {{ usageWords(block.usage_count, t) }}
+              </button>
+            </template>
+
+            <div class="wx-block-editor__usage">
+              <div
+                v-for="entity in shownUsage"
+                :key="`${entity.model}:${entity.id}`"
+                class="wx-block-editor__use"
+              >
+                <span>{{ entity.title ?? `#${entity.id}` }}</span>
+                <wx-badge v-if="!entity.published" type="warning" size="sm">{{
+                  t('page.unpublished-page')
+                }}</wx-badge>
+              </div>
+              <wx-text v-if="usage.length > shownUsage.length" size="sm" tone="muted">
+                {{ t('page.usage-more', { count: usage.length - shownUsage.length }) }}
+              </wx-text>
+            </div>
+          </wx-popover>
+          <template v-else>{{ usageWords(block.usage_count, t) }}</template>
         </template>
       </wx-screen-head>
 
@@ -563,29 +601,51 @@ const actions = computed<ScreenAction[]>(() =>
               </div>
             </wx-tab>
 
+            <!--
+              The schema and the form it builds, one under the other: the sample used to stand
+              in the column beside the stage, where it pushed the picture up and stood open on
+              every tab — including the four where nobody is looking at values. Here it is the
+              other half of the tab it belongs to, and editing a field shows what it becomes.
+            -->
             <wx-tab value="fields" :label="t('page.tab-fields')">
-              <div class="wx-block-editor__pane">
-                <wx-code-editor
-                  :model-value="schemaText"
-                  language="json"
-                  lint
-                  :readonly="!canManage"
-                  min-height="340px"
-                  max-height="70vh"
-                  @update:model-value="onSchemaText"
-                />
-                <div class="wx-block-editor__note">
-                  <wx-text v-if="schemaError" size="sm" tone="danger">{{ schemaError }}</wx-text>
-                  <wx-text v-else-if="errorOf('content.schema')" size="sm" tone="danger">{{
-                    errorOf('content.schema')
-                  }}</wx-text>
-                  <wx-text v-else size="sm" tone="muted">{{ t('page.fields-help') }}</wx-text>
+              <div class="wx-block-editor__fields">
+                <div class="wx-block-editor__pane">
+                  <wx-code-editor
+                    :model-value="schemaText"
+                    language="json"
+                    lint
+                    :readonly="!canManage"
+                    min-height="340px"
+                    max-height="70vh"
+                    @update:model-value="onSchemaText"
+                  />
+                  <div class="wx-block-editor__note">
+                    <wx-text v-if="schemaError" size="sm" tone="danger">{{ schemaError }}</wx-text>
+                    <wx-text v-else-if="errorOf('content.schema')" size="sm" tone="danger">{{
+                      errorOf('content.schema')
+                    }}</wx-text>
+                    <wx-text v-else size="sm" tone="muted">{{ t('page.fields-help') }}</wx-text>
 
-                  <!-- The whole of what a schema is, in the one place somebody writing one is
+                    <!-- The whole of what a schema is, in the one place somebody writing one is
                        looking. The same page an agent is handed over MCP, from the same
                        `help.schema` line, so that the two cannot drift apart. -->
-                  <wx-help-button :title="t('help.schema-title')" :body="t('help.schema')" />
+                    <wx-help-button :title="t('help.schema-title')" :body="t('help.schema')" />
+                  </div>
                 </div>
+
+                <wx-card class="wx-block-editor__sample" :title="t('page.sample')">
+                  <wx-screen-renderer
+                    v-if="content.schema.length"
+                    v-model="sampleModel"
+                    :root="formSchema(content.schema)"
+                    :types="context.types"
+                    :translate="context.i18n.t"
+                    :can="context.can"
+                    :disabled="!canManage"
+                    size="sm"
+                  />
+                  <wx-text size="sm" tone="muted">{{ t('page.sample-help') }}</wx-text>
+                </wx-card>
               </div>
             </wx-tab>
 
@@ -716,46 +776,11 @@ const actions = computed<ScreenAction[]>(() =>
             :runtime="stage.runtime"
             :loading="stage.loading"
           />
-
-          <wx-card :title="t('page.sample')">
-            <wx-screen-renderer
-              v-if="content.schema.length"
-              v-model="sampleModel"
-              :root="formSchema(content.schema)"
-              :types="context.types"
-              :translate="context.i18n.t"
-              :can="context.can"
-              :disabled="!canManage"
-              size="sm"
-            />
-            <wx-text size="sm" tone="muted">{{ t('page.sample-help') }}</wx-text>
-          </wx-card>
-
-          <wx-card :title="t('page.usage')">
-            <wx-text v-if="usage.length === 0" size="sm" tone="muted">{{
-              t('page.usage-empty')
-            }}</wx-text>
-            <div v-else class="wx-block-editor__usage">
-              <div
-                v-for="entity in shownUsage"
-                :key="`${entity.model}:${entity.id}`"
-                class="wx-block-editor__use"
-              >
-                <span>{{ entity.title ?? `#${entity.id}` }}</span>
-                <wx-badge v-if="!entity.published" type="warning" size="sm">{{
-                  t('page.unpublished-page')
-                }}</wx-badge>
-              </div>
-              <wx-text v-if="usage.length > shownUsage.length" size="sm" tone="muted">
-                {{ t('page.usage-more', { count: usage.length - shownUsage.length }) }}
-              </wx-text>
-            </div>
-          </wx-card>
         </div>
       </div>
 
-      <!-- The editor is four tabs of code and a column of cards beside them, so the head is
-           long gone by the time there is anything to save: the two buttons stand here as well.
+      <!-- The editor is six tabs of code and the stage beside them, so the head is long gone
+           by the time there is anything to save: the two buttons stand here as well.
            The three badges do not. What state the type is in is a fact about the type, not
            about the last keystroke, and it is already said once — beside the name, where this
            panel says the state of a record. Twice on one screen is not twice as clear. -->
@@ -816,6 +841,17 @@ const actions = computed<ScreenAction[]>(() =>
 .wx-block-editor__pane :deep(.wx-code-editor) {
   border: 0;
   border-radius: 0;
+}
+
+/* The schema above, the form it builds below. */
+.wx-block-editor__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-gap, var(--wx-space-16));
+}
+
+.wx-block-editor__sample {
+  min-width: 0;
 }
 
 .wx-block-editor__pills {
@@ -886,6 +922,27 @@ const actions = computed<ScreenAction[]>(() =>
   min-width: 0;
   position: sticky;
   top: var(--wx-space-12);
+}
+
+/* A word in the subtitle that opens the list: a link, because that is what it does. */
+.wx-block-editor__uses {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--wx-text-link);
+  cursor: pointer;
+}
+
+.wx-block-editor__uses:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.wx-block-editor__uses:focus-visible {
+  outline: none;
+  border-radius: var(--wx-radius-xs);
+  box-shadow: var(--wx-ring-focus);
 }
 
 .wx-block-editor__usage {

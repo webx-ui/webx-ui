@@ -48,7 +48,7 @@ return [
     'script-help' => 'Der Rumpf eines Initialisierers: el ist die Wurzel einer Instanz, values sind ihre Werte. Wird für jede Instanz aufgerufen, und erneut für einen Block, der in der Vorschau ersetzt wurde.',
     'provides' => 'Diese Site stellt über webx.provide() bereit: :names',
     'provides-none' => 'Diese Site hat nichts über webx.provide() deklariert.',
-    'fields-help' => 'Bildschirmknoten, dieselben, aus denen beschriebene Bildschirme gebaut werden. Das Beispielformular rechts entsteht daraus.',
+    'fields-help' => 'Bildschirmknoten, dieselben, aus denen beschriebene Bildschirme gebaut werden. Das Beispielformular darunter entsteht daraus.',
     'schema-invalid' => 'Das Schema ist kein gültiges JSON: :error',
     'sample' => 'Beispielwerte',
     'sample-help' => 'Darauf wird die Miniatur gezeichnet und die Prüfung vor der Veröffentlichung ausgeführt.',
@@ -58,7 +58,6 @@ return [
     'width-tablet' => 'Tablet',
     'width-phone' => 'Telefon',
     'usage' => 'Wo er verwendet wird',
-    'usage-empty' => 'Noch auf keiner Seite.',
     'usage-more' => 'und :count weitere',
     'unpublished-page' => 'Entwurf',
 

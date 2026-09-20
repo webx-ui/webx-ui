@@ -48,7 +48,7 @@ return [
     'script-help' => 'Bir başlatıcının gövdesi: el bir örneğin kökü, values onun değerleridir. Her örnek için ve önizlemede değiştirilen bir blok için yeniden çağrılır.',
     'provides' => 'Bu site webx.provide() ile şunları sağlıyor: :names',
     'provides-none' => 'Bu site webx.provide() ile hiçbir şey bildirmedi.',
-    'fields-help' => 'Ekran düğümleri, tanımlanmış ekranların yapıldığı düğümlerin aynısı. Sağdaki örnek formu bunlardan oluşturulur.',
+    'fields-help' => 'Ekran düğümleri, tanımlanmış ekranların yapıldığı düğümlerin aynısı. Aşağıdaki örnek formu bunlardan oluşturulur.',
     'schema-invalid' => 'Şema geçerli JSON değil: :error',
     'sample' => 'Örnek değerler',
     'sample-help' => 'Küçük resim bunlarla çizilir ve yayımlama öncesi denetim bunlarla çalışır.',
@@ -58,7 +58,6 @@ return [
     'width-tablet' => 'Tablet',
     'width-phone' => 'Telefon',
     'usage' => 'Nerede kullanılıyor',
-    'usage-empty' => 'Henüz hiçbir sayfada yok.',
     'usage-more' => 've :count daha',
     'unpublished-page' => 'taslak',
 

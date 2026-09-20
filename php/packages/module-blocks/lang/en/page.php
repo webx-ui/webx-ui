@@ -48,7 +48,7 @@ return [
     'script-help' => 'The body of an initialiser: el is the root of one instance, values are its values. Called for every instance, and again for a block replaced in the preview.',
     'provides' => 'This site provides through webx.provide(): :names',
     'provides-none' => 'This site has not declared anything through webx.provide().',
-    'fields-help' => 'Screen nodes, the same ones described screens are built from. The sample form on the right is built from them.',
+    'fields-help' => 'Screen nodes, the same ones described screens are built from. The sample form below is built from them.',
     'schema-invalid' => 'The schema is not valid JSON: :error',
     'sample' => 'Sample values',
     'sample-help' => 'What the thumbnail is drawn on, and what the publish check runs on.',
@@ -58,7 +58,6 @@ return [
     'width-tablet' => 'Tablet',
     'width-phone' => 'Phone',
     'usage' => 'Where it is used',
-    'usage-empty' => 'Not on any page yet.',
     'usage-more' => 'and :count more',
     'unpublished-page' => 'draft',
 
