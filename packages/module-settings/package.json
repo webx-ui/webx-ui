@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-settings",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Site settings for the WebX UI admin panel: the section that draws the settings screen and saves it.",
   "license": "MIT",
   "type": "module",

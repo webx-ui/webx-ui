@@ -32,19 +32,19 @@
             "options": {
                 "//": "Without this the packages take the version of the git branch, and a constraint between two of them cannot be satisfied locally. scripts/sync-php-version.mjs keeps the map in step with php/package.json.",
                 "versions": {
-                    "webx-ui/localization": "0.24.0",
-                    "webx-ui/mcp": "0.24.0",
-                    "webx-ui/module-admin": "0.24.0",
-                    "webx-ui/module-auth": "0.24.0",
-                    "webx-ui/module-blocks": "0.24.0",
-                    "webx-ui/module-blog": "0.24.0",
-                    "webx-ui/module-inbox": "0.24.0",
-                    "webx-ui/module-media": "0.24.0",
-                    "webx-ui/module-pages": "0.24.0",
-                    "webx-ui/module-seo": "0.24.0",
-                    "webx-ui/module-settings": "0.24.0",
-                    "webx-ui/nested-set": "0.24.0",
-                    "webx-ui/routing": "0.24.0"
+                    "webx-ui/localization": "0.24.1",
+                    "webx-ui/mcp": "0.24.1",
+                    "webx-ui/module-admin": "0.24.1",
+                    "webx-ui/module-auth": "0.24.1",
+                    "webx-ui/module-blocks": "0.24.1",
+                    "webx-ui/module-blog": "0.24.1",
+                    "webx-ui/module-inbox": "0.24.1",
+                    "webx-ui/module-media": "0.24.1",
+                    "webx-ui/module-pages": "0.24.1",
+                    "webx-ui/module-seo": "0.24.1",
+                    "webx-ui/module-settings": "0.24.1",
+                    "webx-ui/nested-set": "0.24.1",
+                    "webx-ui/routing": "0.24.1"
                 }
             }
         }
