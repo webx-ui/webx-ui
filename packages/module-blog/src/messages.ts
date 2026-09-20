@@ -78,7 +78,7 @@ export const blogMessages: Record<string, Messages> = {
   article: {
     trail: 'Where this article sits',
     untitled: 'Untitled',
-    save: 'Save draft',
+    save: 'Save',
     'save-failed': 'The article was not saved.',
     schedule: 'Schedule',
     scheduled: 'The article is scheduled.',
@@ -103,11 +103,8 @@ export const blogMessages: Record<string, Messages> = {
     leave: 'Leave',
     'leave-title': 'Leave without saving?',
     'leave-text': 'The article could not be saved, and what you wrote is not on the server.',
-    'live-never': 'Never published',
     'live-scheduled': 'Goes out :date',
     'live-since': 'On the site since :date',
-    'live-edited': 'edits waiting',
-    'live-off': 'Off the site',
     address: 'Address',
     'no-address': 'No address in this language',
     'address-moving':
