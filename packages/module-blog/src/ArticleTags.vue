@@ -3,7 +3,6 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import {
   toast,
-  WxAction,
   WxBadge,
   WxButton,
   WxSelect,
@@ -161,16 +160,20 @@ onBeforeUnmount(() => clearTimeout(timer))
 <template>
   <div class="wx-article-tags">
     <div v-if="chips.length > 0" class="wx-article-tags__chips">
-      <wx-badge v-for="chip in chips" :key="chip.id" type="default" class="wx-article-tags__chip">
+      <!-- The badge closes itself. It used to carry a `WxAction` in its slot, and an icon
+           button of the panel is thirty pixels tall inside a chip whose words are fifteen: the
+           chip grew to fit the button, the word sat on its own baseline three pixels below the
+           cross, and the air left of the word was half the air right of it. `closable` is the
+           badge's own cross, sized to the words it stands beside. -->
+      <wx-badge
+        v-for="chip in chips"
+        :key="chip.id"
+        type="default"
+        :closable="!disabled"
+        :close-label="t('article.tag-remove')"
+        @close="remove(chip.id)"
+      >
         {{ chip.title }}
-        <wx-action
-          icon="close"
-          tone="neutral"
-          size="sm"
-          :disabled="disabled"
-          :title="t('article.tag-remove')"
-          @click="remove(chip.id)"
-        />
       </wx-badge>
     </div>
     <wx-text v-else size="sm" tone="muted">{{ t('article.tags-empty') }}</wx-text>
@@ -216,12 +219,6 @@ onBeforeUnmount(() => clearTimeout(timer))
   display: flex;
   flex-wrap: wrap;
   gap: var(--wx-space-6);
-}
-
-.wx-article-tags__chip {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wx-space-4);
 }
 
 .wx-article-tags__pick {

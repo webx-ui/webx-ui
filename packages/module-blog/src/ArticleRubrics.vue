@@ -122,8 +122,22 @@ function remove(id: number): void {
   gap: var(--wx-space-8);
 }
 
+/*
+ * The cell a row's content goes into is a block, so the name and the "main" badge stood against
+ * each other with nothing between them — and `flex: 1` on the name did nothing at all, along
+ * with the clipping it was there to enable. The slot makes a line of its own contents; through
+ * `:deep()`, because the cell belongs to `WxSortableList`.
+ */
+.wx-article-rubrics :deep(.wx-sortable-list__content) {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-8);
+  min-width: 0;
+}
+
+/* Shrinks rather than grows: a name that pushed the badge to the far end of the row would say
+   "main" about the distance instead of about the rubric. */
 .wx-article-rubrics__name {
-  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;

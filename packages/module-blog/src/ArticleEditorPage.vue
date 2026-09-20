@@ -23,6 +23,7 @@ import {
   WxBreadcrumb,
   WxBreadcrumbItem,
   WxButton,
+  WxCard,
   WxSkeleton,
   type LocalizedValue,
 } from '@webx-ui/core'
@@ -466,8 +467,11 @@ const actions = computed<ScreenAction[]>(() => {
        window, because it carries an action bar. -->
   <div class="wx-article-editor" @focusout="onFocusOut">
     <template v-if="loading || !article">
+      <!-- Shaped like the screen it stands in for: the head on the ground, and what it is
+           waiting for on the card that will hold it. Two bare strips on an empty background
+           read as a page that failed rather than one that is a moment away. -->
       <wx-skeleton class="wx-article-editor__ghost" title :rows="1" />
-      <wx-skeleton :rows="8" />
+      <wx-card><wx-skeleton :rows="8" /></wx-card>
     </template>
 
     <template v-else>

@@ -15,11 +15,12 @@ export { default as WxTagCreateDialog } from './TagCreateDialog.vue'
 export { default as WxTagMergeDialog } from './TagMergeDialog.vue'
 export { default as WxArticleCreateDialog } from './ArticleCreateDialog.vue'
 export { default as WxArticleEditorPage } from './ArticleEditorPage.vue'
-export { default as WxArticleAddress } from './ArticleAddress.vue'
+export { default as WxArticleSlug } from './ArticleSlug.vue'
 export { default as WxArticleAuthorField } from './ArticleAuthor.vue'
 export { default as WxArticleRubrics } from './ArticleRubrics.vue'
 export { default as WxArticleTags } from './ArticleTags.vue'
 export { default as WxArticleRelated } from './ArticleRelated.vue'
+export { default as WxArticleUnpublish } from './ArticleUnpublish.vue'
 export { default as WxArticleHistory } from './ArticleHistory.vue'
 export type {
   ArticleAuthor,
