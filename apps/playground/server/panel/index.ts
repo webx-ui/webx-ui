@@ -195,7 +195,9 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 600,
         group: 'system',
         permissions: ['blocks.view', 'blocks.manage'],
-        meta: { groups: blockGroups, editing: true, provides: ['pages'] },
+        /* Nothing: this demo has no bundle of its own, so a block asking for a library
+           through `webx.use()` would wait forever. The editor says so in as many words. */
+        meta: { groups: blockGroups, editing: true, provides: [] },
       },
       {
         id: 'articles',
