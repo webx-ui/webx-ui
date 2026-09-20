@@ -61,7 +61,7 @@ export const blocksMessages: Record<string, Messages> = {
     provides: 'This site provides through webx.provide(): :names',
     'provides-none': 'This site has not declared anything through webx.provide().',
     'fields-help':
-      'Screen nodes, the same ones described screens are built from. The sample form below is built from them.',
+      'Screen nodes, the same ones described screens are built from. The sample form is built from them.',
     'schema-invalid': 'The schema is not valid JSON: :error',
     sample: 'Sample values',
     'sample-help': 'What the thumbnail is drawn on, and what the publish check runs on.',

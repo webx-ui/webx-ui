@@ -100,6 +100,13 @@ function onLoad(): void {
 
 watch(width, () => setTimeout(measure, 50))
 
+/* A stage that lives in a tab is measured while that tab is hidden, and a hidden document
+   has no height: every redraw made behind another tab would leave the frame at its floor.
+   The width coming back is the tab coming back. */
+watch(boxWidth, (now, before) => {
+  if (now > 0 && before === 0) setTimeout(measure, 50)
+})
+
 const frameStyle = computed(() => ({
   width: `${width.value}px`,
   height: `${contentHeight.value}px`,

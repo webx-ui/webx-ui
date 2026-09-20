@@ -48,7 +48,7 @@ return [
     'script-help' => 'O corpo de um inicializador: el é a raiz de uma instância, values são os seus valores. Chamado para cada instância, e de novo para um bloco substituído na pré-visualização.',
     'provides' => 'Este site fornece através de webx.provide(): :names',
     'provides-none' => 'Este site não declarou nada através de webx.provide().',
-    'fields-help' => 'Nós de ecrã, os mesmos com que se constroem os ecrãs descritos. O formulário de amostra abaixo é construído a partir deles.',
+    'fields-help' => 'Nós de ecrã, os mesmos com que se constroem os ecrãs descritos. O formulário de amostra é construído a partir deles.',
     'schema-invalid' => 'O esquema não é JSON válido: :error',
     'sample' => 'Valores de amostra',
     'sample-help' => 'Sobre eles é desenhada a miniatura e corre a verificação antes de publicar.',

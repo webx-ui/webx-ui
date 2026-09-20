@@ -48,7 +48,7 @@ return [
     'script-help' => 'Ciało inicjalizatora: el to korzeń jednego wystąpienia, values to jego wartości. Wywoływane dla każdego wystąpienia i ponownie dla bloku podmienionego w podglądzie.',
     'provides' => 'Ta strona udostępnia przez webx.provide(): :names',
     'provides-none' => 'Ta strona nie zadeklarowała niczego przez webx.provide().',
-    'fields-help' => 'Węzły ekranu, te same, z których budowane są opisane ekrany. Formularz próbki poniżej powstaje z nich.',
+    'fields-help' => 'Węzły ekranu, te same, z których budowane są opisane ekrany. Formularz próbki powstaje z nich.',
     'schema-invalid' => 'Schemat nie jest poprawnym JSON-em: :error',
     'sample' => 'Wartości próbne',
     'sample-help' => 'Na nich rysowana jest miniatura i uruchamiane sprawdzenie przed publikacją.',

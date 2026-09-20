@@ -48,7 +48,7 @@ return [
     'script-help' => 'Le corps d’un initialiseur : el est la racine d’une instance, values ses valeurs. Appelé pour chaque instance, et de nouveau pour un bloc remplacé dans l’aperçu.',
     'provides' => 'Ce site fournit via webx.provide() : :names',
     'provides-none' => 'Ce site n’a rien déclaré via webx.provide().',
-    'fields-help' => 'Des nœuds d’écran, les mêmes que ceux dont sont faits les écrans décrits. Le formulaire d’exemple ci-dessous en est construit.',
+    'fields-help' => 'Des nœuds d’écran, les mêmes que ceux dont sont faits les écrans décrits. Le formulaire d’exemple en est construit.',
     'schema-invalid' => 'Le schéma n’est pas un JSON valide : :error',
     'sample' => 'Valeurs d’exemple',
     'sample-help' => 'Ce sur quoi la miniature est dessinée, et sur quoi tourne la vérification avant publication.',

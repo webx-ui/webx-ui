@@ -48,7 +48,7 @@ return [
     'script-help' => 'El cuerpo de un inicializador: el es la raíz de una instancia, values son sus valores. Se llama por cada instancia, y de nuevo para un bloque reemplazado en la vista previa.',
     'provides' => 'Este sitio ofrece mediante webx.provide(): :names',
     'provides-none' => 'Este sitio no ha declarado nada mediante webx.provide().',
-    'fields-help' => 'Nodos de pantalla, los mismos con los que se construyen las pantallas descritas. El formulario de muestra de abajo se construye con ellos.',
+    'fields-help' => 'Nodos de pantalla, los mismos con los que se construyen las pantallas descritas. El formulario de muestra se construye con ellos.',
     'schema-invalid' => 'El esquema no es JSON válido: :error',
     'sample' => 'Valores de muestra',
     'sample-help' => 'Sobre ellos se dibuja la miniatura y se ejecuta la comprobación antes de publicar.',

@@ -2,16 +2,18 @@
 '@webx-ui/module-blocks': patch
 ---
 
-The editor of a block type is its files and the block, and nothing else beside them
+Each tab of the block type editor gets what it needs beside it, and the others get the screen
 
-A second look at the screen, and the column beside the stage is gone.
+The screen was two columns: six tabs in the left one, and in the right one the block, the form
+of its sample and a card saying where the type stands. So the picture of the block was also
+standing beside the settings and beside the history, at half their width, and the sample's form
+was open on all six tabs — including the four where nobody is looking at values.
 
-**The sample's form is the second half of the Fields tab**, where the schema that builds it is.
-It used to be a card in the right column, which meant it stood open on all six tabs — including
-the four where nobody is looking at values — and pushed the picture of the block up by its own
-height. **Where the type stands is a popover** behind the words "on 3 pages" in the subtitle,
-styled as the link it is: five page names took a quarter of a column to say what the subtitle
-says in three words. What is left beside the tabs is the block itself.
+The columns are inside the tabs now. **Template** has the block drawn beside it, sticky, so the
+picture stays while the markup scrolls under it. **Fields** has the form its schema builds.
+The other four have the width of the screen. **Where the type stands** is a popover behind the
+words "on 3 pages" in the subtitle, styled as the link it is: five page names took a quarter of
+a column to say what the subtitle already says in three words.
 
 Three more things the same look found.
 
@@ -29,7 +31,8 @@ better, and from the first click on the switch the width is the editor's.
 **The frame is the height of the block again.** It measured `documentElement.scrollHeight`,
 which is never shorter than the frame's own window: once the frame had been given a height, it
 was measuring itself, so a block that got shorter kept the height of the one before it with
-white space under it. Measured on the body, as everything else that watches a frame here does.
+white space under it. Measured on the body, as everything else that watches a frame here does — and measured again
+when the tab holding it comes back, since a document nobody is showing has no height at all.
 
 Plus one line that read wrong: `on :count pages` said "on 1 pages" exactly when a type had
 just been put on its first page. There is a line for one now — `page.on-page`, and

@@ -48,7 +48,7 @@ return [
     'script-help' => 'Il corpo di un inizializzatore: el è la radice di un’istanza, values sono i suoi valori. Chiamato per ogni istanza, e di nuovo per un blocco sostituito nell’anteprima.',
     'provides' => 'Questo sito fornisce tramite webx.provide(): :names',
     'provides-none' => 'Questo sito non ha dichiarato nulla tramite webx.provide().',
-    'fields-help' => 'Nodi di schermata, gli stessi con cui sono costruite le schermate descritte. Il modulo di esempio qui sotto è costruito da essi.',
+    'fields-help' => 'Nodi di schermata, gli stessi con cui sono costruite le schermate descritte. Il modulo di esempio è costruito da essi.',
     'schema-invalid' => 'Lo schema non è JSON valido: :error',
     'sample' => 'Valori di esempio',
     'sample-help' => 'Su di essi viene disegnata la miniatura ed eseguito il controllo prima della pubblicazione.',
