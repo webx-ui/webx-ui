@@ -1,5 +1,13 @@
 # @webx-ui/schema
 
+## 0.3.3
+
+### Patch Changes
+
+- Updated dependencies [a9383bb]
+- Updated dependencies [b6a09a6]
+  - @webx-ui/core@0.26.0
+
 ## 0.3.2
 
 ### Patch Changes
