@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-seo",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "SEO for the WebX UI admin panel: rules for addresses, redirects, and the card that edits what a page says about itself.",
   "license": "MIT",
   "type": "module",
