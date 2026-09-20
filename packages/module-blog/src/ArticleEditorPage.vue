@@ -24,7 +24,6 @@ import {
   WxBreadcrumbItem,
   WxButton,
   WxSkeleton,
-  WxText,
   type LocalizedValue,
 } from '@webx-ui/core'
 import type { ScreenModel } from '@webx-ui/schema'
@@ -47,7 +46,7 @@ import type { ArticleConflict, ArticleDetail, ArticleOption, ArticleRow } from '
  *
  * The one thing here that a page editor does not have is the day. An article carries a date
  * that may be in the future, so "publish" means "publish under the date in the settings tab",
- * and the bar says which day that is before it is pressed (§7).
+ * and which day that is stands under the name before the button is pressed (§7).
  */
 const props = withDefaults(defineProps<{ base?: string }>(), { base: '/blog' })
 
@@ -128,12 +127,12 @@ const future = computed(() => {
 })
 
 /**
- * What the bar says about the site: whether the article is on it, since when, and whether
- * there is something written that is not.
+ * When the article goes out, under its name.
  *
- * Together in one sentence rather than in a badge and a hint at opposite ends of the screen —
- * "live since the twelfth, with edits waiting" is the one thing somebody about to press
- * "publish" needs to know, and it is one thought.
+ * Only the day, and only when there is one. What state it is in the badges beside the name say
+ * already — live, scheduled, with edits waiting — and saying it twice in two shapes is how a
+ * screen teaches an editor to read neither. The day is the part a badge cannot carry, and the
+ * part somebody about to press "publish" actually weighs.
  */
 const publication = computed(() => {
   const row = article.value
@@ -143,12 +142,10 @@ const publication = computed(() => {
   const when = dates.short(row.published_at)
 
   const line = {
-    draft: t('article.live-never'),
     scheduled: t('article.live-scheduled', { date: when }),
     published: t('article.live-since', { date: when }),
-    modified: `${t('article.live-since', { date: when })} · ${t('article.live-edited')}`,
-    unpublished: t('article.live-off'),
-  }[row.status]
+    modified: t('article.live-since', { date: when }),
+  }[row.status as 'scheduled' | 'published' | 'modified']
 
   return line ?? ''
 })
@@ -442,6 +439,23 @@ const actions = computed<ScreenAction[]>(() => {
     })
   }
 
+  /*
+   * Throwing away what was written since the last publication: in the `···` at every width and
+   * never a button, which is what `menu` is for. It used to stand in the action bar next to
+   * "publish", one slip away from it — and it is offered at all only while there is a
+   * difference between what is written and what is on the site.
+   */
+  if (article.value?.status === 'modified') {
+    leads.push({
+      key: 'discard',
+      label: t('article.discard'),
+      icon: 'refresh',
+      danger: true,
+      menu: true,
+      run: () => void discard(),
+    })
+  }
+
   return leads
 })
 </script>
@@ -468,6 +482,7 @@ const actions = computed<ScreenAction[]>(() => {
         :back="list"
         :back-label="t('module.articles')"
         :title="title || t('article.untitled')"
+        :subtitle="publication"
         :actions="actions"
       >
         <template #trail>
@@ -481,6 +496,13 @@ const actions = computed<ScreenAction[]>(() => {
 
         <template #title-after>
           <wx-badge :type="badge()" dot>{{ t(`panel.status-${article.status}`) }}</wx-badge>
+          <!-- What is waiting, said beside the state rather than instead of it, exactly as the
+               list says it: the article is on the site, and there is something that is not.
+               The bar used to carry this in words; the head is where the state of the record
+               already lives. -->
+          <wx-badge v-if="article.status === 'modified'" type="primary" round>
+            {{ t('panel.edits') }}
+          </wx-badge>
         </template>
       </wx-screen-head>
 
@@ -511,24 +533,20 @@ const actions = computed<ScreenAction[]>(() => {
         The last row of the screen, not a layer over it: the tab above shrinks by the height of
         the bar and is never covered by it.
       -->
+      <!--
+        Two buttons and a mark, the same bar the page editor has.
+
+        What used to stand here besides them: a sentence saying since when the article is on the
+        site and that there are unpublished edits, and a third button to throw those edits away.
+        Half the sentence is what the badge beside the name already says, the other half is a
+        fact about the article rather than about the last keystroke and now stands under its
+        name; and throwing work away is not a button to keep beside "publish" — it is in the
+        `···`, where this panel keeps everything that cannot be undone.
+      -->
       <wx-action-bar v-if="canManage">
-        <!-- The state is a mark that comes and goes; the publication line stays, because when
-             the article goes out is a fact about the article and not about the last keystroke. -->
         <template #state>
           <wx-save-state :state="state" />
-          <wx-text v-if="publication" size="sm" tone="muted">{{ publication }}</wx-text>
         </template>
-
-        <!-- Only while there is a difference between what is written and what is on the site:
-             a button offering to throw away nothing is a button that reads as dangerous. -->
-        <wx-button
-          v-if="article.status === 'modified'"
-          variant="text"
-          :loading="working"
-          @click="discard"
-        >
-          {{ t('article.discard') }}
-        </wx-button>
 
         <wx-button variant="outline" :loading="saving" :disabled="!dirty" @click="save">
           {{ t('article.save') }}
