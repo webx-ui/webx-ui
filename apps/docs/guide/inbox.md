@@ -92,8 +92,14 @@ panel like this.
   keep the filters to hand, but a submission needs a link: it goes in the letter to the recipient,
   it is pasted into a chat, an agent points at it. Going back keeps the form, the tab and the page
   you were on; the arrows in its head walk the same filtered pile.
-- **On a phone** there are no two columns: the forms, then the submissions of one of them, then
-  back — the same `WxListDetail` the panel already has.
+- **On a phone** there is one column, and it is the submissions. The forms are the chooser in
+  front of the list — the `filters` column of `WxListDetail` — so what folds away is them, behind
+  a **Forms** button that stands in the head of the section beside **New submission**; the reader
+  opens the section and sees what has come in, which is what they came for. One form is always
+  open, the first unless the address names another.
+- **The action the section exists for is a submission**, so that is the button in its head. A new
+  form is the `+` over the list of forms — beside the things it makes one more of — because a
+  panel opens this section to read what came in dozens of times for every once it adds a form.
 
 Statuses are their own screen under `inbox.manage`: the label, the colour, and three flags —
 which one a submission arrives in, which one means spam, which ones mean closed. Rows rather than

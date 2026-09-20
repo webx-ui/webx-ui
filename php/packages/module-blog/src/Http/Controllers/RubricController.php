@@ -52,7 +52,7 @@ final class RubricController
 
     public function store(RubricRequest $request): JsonResponse
     {
-        $rubric = new Rubric($request->values());
+        $rubric = new Rubric($this->values($request));
         $rubric->cover_id = $this->coverId($request->coverPath());
         // At the end of the menu, which is the only place a new section can go without moving
         // one somebody else put where it is.
@@ -66,7 +66,7 @@ final class RubricController
 
     public function update(RubricRequest $request, Rubric $rubric): JsonResponse
     {
-        $rubric->fill($request->values());
+        $rubric->fill($this->values($request));
 
         // Only when the field travelled: a form that saved one part of itself must not empty
         // the picture in another.
@@ -100,6 +100,37 @@ final class RubricController
         Sorting::apply(Rubric::query(), $request->ids());
 
         return ApiResponse::noContent();
+    }
+
+    /**
+     * What the model is filled with, with the introduction run through its own field type.
+     *
+     * Through the type rather than a call to the sanitiser here, for the reason the SEO card
+     * goes through `module-seo`'s: the type is what decides what a document may contain and
+     * what an emptied editor means, and a second copy of those rules here would be a second
+     * copy that drifts. `wx-rich-text` takes one value at a time and an introduction is a map
+     * of languages, so the loop is what this adds — the one thing `ScreenValues` does for a
+     * described screen, and a rubric is not one (§12).
+     *
+     * @return array<string, mixed>
+     */
+    private function values(RubricRequest $request): array
+    {
+        $values = $request->values();
+        $type = $this->types->get('wx-rich-text');
+        $lead = $values['lead'] ?? null;
+
+        if ($type === null || ! is_array($lead)) {
+            return $values;
+        }
+
+        foreach ($lead as $code => $value) {
+            $lead[$code] = $type->store($value, []);
+        }
+
+        $values['lead'] = $lead;
+
+        return $values;
     }
 
     /**

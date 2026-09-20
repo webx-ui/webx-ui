@@ -58,6 +58,53 @@ final class TaxonomyPanelTest extends TestCase
         $this->get('/blog/spare-parts')->assertOk();
     }
 
+    /**
+     * The introduction is a document now, and it goes through the field type both ways.
+     *
+     * In: the allowlist takes out everything it does not name, because the editor is not the
+     * only way to this endpoint. Out: the panel gets the document as it is stored — it edits
+     * what is in the column — while the page prints it raw, so a `<script>` that survived here
+     * would be a `<script>` on the site.
+     */
+    #[Test]
+    public function the_introduction_is_cleaned_on_the_way_in_and_printed_on_the_page(): void
+    {
+        $rubric = $this->rubric('repairs');
+
+        $response = $this->actingAs($this->editor(['blog.taxonomy.manage']), 'cms')
+            ->putJson('/api/cms/blog/rubrics/'.$rubric->getKey(), [
+                'title' => ['en' => 'Repairs'],
+                'slug' => ['en' => 'repairs'],
+                'lead' => ['en' => '<p>What <em>we</em> fix.</p><script>alert(1)</script>'],
+            ])
+            ->assertOk();
+
+        $this->assertSame('<p>What <em>we</em> fix.</p>', $response->json('data.lead.en'));
+
+        $this->get('/blog/repairs')
+            ->assertOk()
+            ->assertSee('<p>What <em>we</em> fix.</p>', false)
+            ->assertDontSee('alert(1)', false);
+    }
+
+    /** An emptied editor leaves `<p></p>` behind, and nothing is what that means. */
+    #[Test]
+    public function an_emptied_introduction_is_stored_as_nothing(): void
+    {
+        $rubric = $this->rubric('repairs');
+        $rubric->setTranslation('lead', 'en', '<p>Something.</p>')->save();
+
+        $this->actingAs($this->editor(['blog.taxonomy.manage']), 'cms')
+            ->putJson('/api/cms/blog/rubrics/'.$rubric->getKey(), [
+                'title' => ['en' => 'Repairs'],
+                'slug' => ['en' => 'repairs'],
+                'lead' => ['en' => '<p></p>'],
+            ])
+            ->assertOk();
+
+        $this->assertSame('', $rubric->refresh()->leadHtml('en'));
+    }
+
     #[Test]
     public function a_rubric_that_still_holds_articles_is_refused_with_the_number(): void
     {

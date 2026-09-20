@@ -1,5 +1,6 @@
 @php($seo = app(WebxUi\Seo\Rendering\Seo::class))
 @php($meta = $seo->for($seo->currentUrl(), $rubric))
+@php($lead = $rubric->leadHtml())
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -17,8 +18,10 @@
 <body>
 <header>
     <h1>{{ $rubric->title }}</h1>
-    @if ($rubric->lead)
-        <p>{{ $rubric->lead }}</p>
+    {{-- A document and not a line since the panel grew an editor for it: printed raw, because
+         what is stored has already been through the allowlist of its field type. --}}
+    @if ($lead !== '')
+        <div class="rubric-lead">{!! $lead !!}</div>
     @endif
 </header>
 

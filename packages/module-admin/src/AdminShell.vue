@@ -392,9 +392,21 @@ onUnmounted(() => {
 </style>
 
 <style>
-/* Not scoped, and global on purpose: the panel is the whole page, so the browser default
-   margin on <body> shows up as a gap around the shell — and an uneven one, since the shell
-   already keeps its own air around the frame. */
+/*
+ * Not scoped, and global on purpose: the panel is the whole page, so the browser default
+ * margin on <body> shows up as a gap around the shell — and an uneven one, since the shell
+ * already keeps its own air around the frame.
+ *
+ * Off the attribute the shell writes on the root as well as off the mount point, because
+ * `#webx-app` is only what the Blade shell renders and a panel mounted anywhere else kept the
+ * margin. What that cost was not the gap. Every dialog locks the page, and the lock zeroes
+ * `margin-right` and pays the scrollbar back as padding — so a body with a margin gets that
+ * margin's width back as content, and the whole page steps sideways each time a dialog opens
+ * (CLAUDE.md §4). The two `:has()` selectors stay for the Blade page, where they hold from the
+ * first paint rather than from the mount.
+ */
+:root[data-wx-shell],
+:root[data-wx-shell] > body,
 html:has(> body > #webx-app),
 body:has(> #webx-app) {
   margin: 0;

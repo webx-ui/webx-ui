@@ -11,6 +11,7 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Screens\Types\StringType;
 use WebxUi\Blog\Handlers\ArticleHandler;
 use WebxUi\Blog\Handlers\RubricHandler;
 use WebxUi\Blog\Handlers\TagHandler;
@@ -228,11 +229,13 @@ class BlogServiceProvider extends ServiceProvider
      * The editor is a described screen, so a project — or `module-seo` (§12) — adds a tab to it
      * with a patch instead of a fork.
      *
-     * The four types registered beside it are the fields of that screen that only this module
-     * can answer for: three lists of ids and one author. They are types rather than one loose
-     * `wx-select` each because the server has to know what a value of theirs is — a rubric that
-     * is not a rubric has to be refused here, where every screen is checked, rather than
-     * wherever somebody remembered to check it.
+     * The types registered beside it are the fields of that screen that only this module can
+     * answer for: three lists of ids, an author, and the slug. The first four are types rather
+     * than one loose `wx-select` each because the server has to know what a value of theirs is
+     * — a rubric that is not a rubric has to be refused here, where every screen is checked,
+     * rather than wherever somebody remembered to check it. The slug is the odd one out: its
+     * value is an ordinary string, and it is a type of ours only so the panel can draw it with
+     * the prefix of the blog in front of it.
      */
     private function registerScreens(): void
     {
@@ -243,6 +246,12 @@ class BlogServiceProvider extends ServiceProvider
 
         $types = $this->app->make(FieldTypes::class);
         $connection = $this->app->make(ConnectionResolverInterface::class);
+
+        // Text like any other input. The type exists so that the field is still checked where
+        // every field is checked, and the field is this module's rather than `wx-input` because
+        // the control prints the prefix of the blog in front of what is typed — and the prefix
+        // is configuration, which a description has no way to carry.
+        $types->register('wx-article-slug', new StringType(2000));
 
         $types->register('wx-article-rubrics', new IdsType($connection, 'rubrics', 'webx-blog::errors.unknown-rubric'));
         $types->register('wx-article-tags', new IdsType($connection, 'tags', 'webx-blog::errors.unknown-tag'));

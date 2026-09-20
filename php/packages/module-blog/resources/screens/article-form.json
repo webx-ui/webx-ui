@@ -38,15 +38,11 @@
                 },
                 {
                   "id": "slug",
-                  "type": "wx-input",
+                  "type": "wx-article-slug",
                   "name": "slug",
                   "label": "trans::webx-blog::screen.slug",
                   "help": "trans::webx-blog::screen.slug-help",
                   "localized": true
-                },
-                {
-                  "id": "address",
-                  "type": "wx-article-address"
                 },
                 {
                   "id": "lead",
@@ -55,7 +51,11 @@
                   "label": "trans::webx-blog::screen.lead",
                   "help": "trans::webx-blog::screen.lead-help",
                   "localized": true,
-                  "props": { "rows": 3, "maxlength": 2000, "showCount": true }
+                  "props": {
+                    "rows": 3,
+                    "maxlength": 2000,
+                    "showCount": true
+                  }
                 }
               ]
             },
@@ -76,6 +76,10 @@
                     "teleport": true,
                     "valueFormat": "yyyy-MM-dd'T'HH:mm:ssXXX"
                   }
+                },
+                {
+                  "id": "unpublish",
+                  "type": "wx-article-unpublish"
                 },
                 {
                   "id": "author",
@@ -123,7 +127,11 @@
                   "type": "wx-media",
                   "name": "cover",
                   "label": "trans::webx-blog::screen.cover",
-                  "props": { "accept": "image", "captions": false, "aspect": "16/9" }
+                  "props": {
+                    "accept": "image",
+                    "captions": false,
+                    "aspect": "16/9"
+                  }
                 }
               ]
             },
@@ -152,7 +160,10 @@
               "id": "seo-placeholder",
               "type": "wx-alert",
               "label": "trans::webx-blog::screen.seo-empty",
-              "props": { "type": "info", "variant": "soft" }
+              "props": {
+                "type": "info",
+                "variant": "soft"
+              }
             }
           ]
         },

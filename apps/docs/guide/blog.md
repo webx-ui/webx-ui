@@ -173,8 +173,15 @@ what is held in the pivots — and a save whose revision is no longer the curren
 with a `409` carrying the article as it now is. Two writers who saved the same thing did not
 conflict, and the check says so. The same guard covers an agent.
 
-**Rubrics** is a `WxListDetail`: the menu on the left, dragged into its order, the form on the
-right. **Tags** is a table with selection, inline renaming, and a selection bar that opens, closes
+**Rubrics** is the whole menu of the site on one screen, dragged into its order, and a dialog over
+it for the one being edited — a form beside the list would take two thirds of the view the drag
+needs. The dialog has three tabs. **Content** is the words: the name, the address, whether it is
+on the site, and the introduction — a rich text editor, printed above the list of articles.
+**Image** is the cover, which is a frame rather than a field and does not sit well beside a
+column of inputs. **SEO** is the card, written once and then left to the rules. One `Save` for
+all three, and a `422` opens the tab the failing field is on.
+
+**Tags** is a table with selection, inline renaming, and a selection bar that opens, closes
 or deletes thirty tags in one gesture — thirty requests for one gesture is thirty chances to do
 half of it.
 

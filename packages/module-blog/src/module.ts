@@ -1,11 +1,12 @@
 import type { AdminModule } from '@webx-ui/module-admin'
-import ArticleAddress from './ArticleAddress.vue'
 import ArticleAuthor from './ArticleAuthor.vue'
 import ArticleEditorPage from './ArticleEditorPage.vue'
 import ArticleHistory from './ArticleHistory.vue'
 import ArticleRelated from './ArticleRelated.vue'
 import ArticleRubrics from './ArticleRubrics.vue'
+import ArticleSlug from './ArticleSlug.vue'
 import ArticleTags from './ArticleTags.vue'
+import ArticleUnpublish from './ArticleUnpublish.vue'
 import ArticlesPage from './ArticlesPage.vue'
 import RubricsPage from './RubricsPage.vue'
 import TagsPage from './TagsPage.vue'
@@ -58,13 +59,18 @@ export function blog(options: BlogOptions = {}): AdminModule[] {
        * box that makes a tag — and two only draw. Each reads the article from the editor above
        * it rather than from the description, because a screen is a description and not a
        * binding.
+       *
+       * The slug is here for a different reason: what it edits is an ordinary string, but the
+       * whole address is the prefix of the blog and that string, and the prefix is not in the
+       * description — it is configuration the editor was handed with the record.
        */
       types: {
-        'wx-article-address': { component: ArticleAddress, kind: 'display' },
+        'wx-article-slug': { component: ArticleSlug, kind: 'field' },
         'wx-article-author': { component: ArticleAuthor, kind: 'field' },
         'wx-article-rubrics': { component: ArticleRubrics, kind: 'field' },
         'wx-article-tags': { component: ArticleTags, kind: 'field' },
         'wx-article-related': { component: ArticleRelated, kind: 'field' },
+        'wx-article-unpublish': { component: ArticleUnpublish, kind: 'display' },
         'wx-article-history': { component: ArticleHistory, kind: 'display' },
       },
     },

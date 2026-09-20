@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useSlots, watch } from 'vue'
 import WxDrawer from '../Drawer/Drawer.vue'
 import { useElementWidth } from '../../composables/useElementWidth'
 import type { ListDetailProps } from './types'
@@ -14,12 +14,21 @@ const props = withDefaults(defineProps<ListDetailProps>(), {
   detailLabel: 'Details',
 })
 
+const emit = defineEmits<{
+  /**
+   * Whether the chooser still has a column of its own, said whenever it changes and once at
+   * the start. The `list` slot is handed the same thing; this is for a head that stands
+   * outside the pane and has to offer the way in when the column is gone.
+   */
+  'filters-inline': [inline: boolean]
+}>()
+
 defineSlots<{
   /** What narrows the list: views, folders, filters. The column is optional. */
   filters?: (props: { inline: boolean; close: () => void }) => unknown
-  /** The records. */
+  /** The records. Left alone by a screen with no `detail`, it is the screen. */
   list?: (props: { filtersInline: boolean; openFilters: () => void }) => unknown
-  /** The record that is open. */
+  /** The record that is open. Optional: a list whose records open elsewhere has none. */
   detail?: (props: { inline: boolean; back: () => void }) => unknown
   /** Shown in the pane's place while nothing is selected. */
   empty?: () => unknown
@@ -31,6 +40,19 @@ defineSlots<{
  */
 const open = defineModel<boolean>('open', { default: false })
 const filtersOpen = defineModel<boolean>('filtersOpen', { default: false })
+
+const slots = useSlots()
+
+/**
+ * Whether one record is opened beside the list at all.
+ *
+ * Without it this is a list with a chooser in front of it — which form's submissions, which
+ * folder's files — and the list is the screen rather than a column of one. The difference is
+ * the whole of what the narrow screen does: a pane that exists goes into the panel and the
+ * chooser keeps its column for longer; a pane that does not means the chooser is what folds
+ * away, and what the reader is left looking at is the records.
+ */
+const hasDetail = computed(() => Boolean(slots.detail))
 
 const root = ref<HTMLElement | null>(null)
 
@@ -48,16 +70,25 @@ function toPx(value: number | string) {
  * Both thresholds are the widths the caller gave, added up — not numbers of their
  * own. A wider list or a roomier detail moves them by itself, which is the only way
  * they stay right for a screen we have never seen.
+ *
+ * `detailMin` is the main pane's floor, and which pane that is depends on whether there
+ * is a detail: with one, the column of records stands between the two and is counted;
+ * without, the records are the main pane and the chooser folds when they would go under
+ * that same floor.
  */
 const filtersInline = computed(
   () =>
     width.value === 0 ||
-    width.value >= toPx(props.filtersWidth) + toPx(props.listWidth) + props.detailMin,
+    width.value >=
+      toPx(props.filtersWidth) + (hasDetail.value ? toPx(props.listWidth) : 0) + props.detailMin,
 )
 
 const detailInline = computed(
   () => width.value === 0 || width.value >= toPx(props.listWidth) + props.detailMin,
 )
+
+/** The list is the screen: nothing stands beside it, so it takes what is left. */
+const listAlone = computed(() => !hasDetail.value || !detailInline.value)
 
 const style = computed(() => ({
   '--wx-list-detail-filters': toLength(props.filtersWidth),
@@ -85,9 +116,15 @@ function back() {
  * becomes the column it always wanted to be. The filters have no such continuity:
  * their column is back, so the panel has nothing left to show.
  */
-watch(filtersInline, (inline) => {
-  if (inline) filtersOpen.value = false
-})
+watch(
+  filtersInline,
+  (inline) => {
+    if (inline) filtersOpen.value = false
+
+    emit('filters-inline', inline)
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -96,11 +133,11 @@ watch(filtersInline, (inline) => {
       <slot name="filters" :inline="true" :close="closeFilters" />
     </div>
 
-    <div class="wx-list-detail__list" :class="{ 'wx-list-detail__list--alone': !detailInline }">
+    <div class="wx-list-detail__list" :class="{ 'wx-list-detail__list--alone': listAlone }">
       <slot name="list" :filters-inline="filtersInline" :open-filters="openFilters" />
     </div>
 
-    <section v-if="detailInline" class="wx-list-detail__detail">
+    <section v-if="hasDetail && detailInline" class="wx-list-detail__detail">
       <slot v-if="open" name="detail" :inline="true" :back="back" />
       <div v-else class="wx-list-detail__empty">
         <slot name="empty" />
@@ -112,7 +149,7 @@ watch(filtersInline, (inline) => {
       a panel. Both are the same slots — the caller writes them once.
     -->
     <wx-drawer
-      v-if="!detailInline"
+      v-if="hasDetail && !detailInline"
       v-model:open="open"
       side="right"
       size="100%"

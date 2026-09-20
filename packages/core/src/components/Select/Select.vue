@@ -21,6 +21,9 @@ defineOptions({ name: 'WxSelect', inheritAttrs: false })
 /* `class` and `style` belong to the control; the rest belongs to its input. */
 const { rootAttrs, controlAttrs } = useControlAttrs()
 
+/** The box that filters, when there is one — its `$el` is the `<input>` itself. */
+const filterRef = ref<{ $el: HTMLInputElement } | null>(null)
+
 const props = withDefaults(defineProps<SelectProps>(), {
   options: () => [],
   multiple: false,
@@ -111,9 +114,21 @@ watch(open, (value) => {
   emit('close')
 })
 
-/** Clicking the field is how everyone expects a select to open. */
+/**
+ * Clicking the field is how everyone expects a select to open — and, when it filters, how the
+ * caret gets into the box that does the filtering.
+ *
+ * The caret is put there here and not by Reka's `autoFocus`, which fires once on mount: on a
+ * form the filter is the field itself rather than a box inside an open list, so a mounted
+ * `autoFocus` never focused anything anybody had just opened, and instead handed the focus to
+ * whichever select was drawn last. A tab of the panel with four of them scrolled itself to the
+ * bottom the moment it appeared.
+ */
 function openList() {
-  if (!field.disabled.value) open.value = true
+  if (field.disabled.value) return
+
+  open.value = true
+  filterRef.value?.$el?.focus()
 }
 
 /**
@@ -183,6 +198,7 @@ function removeTag(value: SelectValue) {
         <combobox-input
           v-if="filterable"
           :id="field.id.value"
+          ref="filterRef"
           v-bind="controlAttrs"
           v-model="searchText"
           class="wx-select__input"
@@ -191,7 +207,6 @@ function removeTag(value: SelectValue) {
           :aria-describedby="field.describedBy.value"
           :aria-invalid="field.status.value === 'error' || undefined"
           :display-value="multiple ? undefined : displayValue"
-          auto-focus
           @input="onSearch"
         />
 

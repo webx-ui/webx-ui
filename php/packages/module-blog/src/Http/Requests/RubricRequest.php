@@ -6,6 +6,7 @@ namespace WebxUi\Blog\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
+use WebxUi\Admin\Screens\Types\RichTextType;
 use WebxUi\Localization\Locales;
 
 /**
@@ -38,8 +39,12 @@ final class RubricRequest extends FormRequest
             'title.*' => ['nullable', 'string', 'max:255'],
             'slug' => ['required', 'array'],
             'slug.*' => ['nullable', 'string', 'max:190', 'regex:/^[\p{L}\p{N}]+(?:[-_][\p{L}\p{N}]+)*$/u'],
+            // A document rather than a line since the form grew a tab for it, so the limit is
+            // the one every rich text field in the panel has. What may be inside it is not
+            // checked here: the field type takes out everything it does not name, and the
+            // controller is where a value goes through it.
             'lead' => ['nullable', 'array'],
-            'lead.*' => ['nullable', 'string', 'max:2000'],
+            'lead.*' => ['nullable', 'string', 'max:'.RichTextType::MAX],
             // What `wx-media` holds is a library key; the column holds the id of a row, and the
             // controller is where one becomes the other.
             'cover' => ['nullable', 'array'],

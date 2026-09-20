@@ -102,6 +102,31 @@ Widen the list and the thresholds move with it:
 </template>
 ```
 
+## With no detail, the list is the screen
+
+Leave the `detail` slot out and this is a list with a chooser in front of it — which form's
+submissions, which folder's files — rather than a record standing beside one. The list then takes
+the room the detail would have had, and the only threshold left is the chooser's:
+`filtersWidth + detailMin`, because `detailMin` is the floor of whichever pane is the main one.
+
+That is the shape to reach for when a record opens on a route of its own. What folds on a phone is
+then the chooser rather than the records: the reader sees the list first and reaches the chooser
+through the button the `list` slot is handed.
+
+```vue
+<template>
+  <wx-list-detail :filters-width="270" filters-title="Forms">
+    <template #filters="{ inline, close }">
+      <form-list :heading="inline" @pick="close" />
+    </template>
+
+    <template #list="{ filtersInline, openFilters }">
+      <submission-list :picker="!filtersInline" @pick="openFilters" />
+    </template>
+  </wx-list-detail>
+</template>
+```
+
 ## Where the filters go
 
 When the column does not fit, the `filters` slot moves into a drawer — the same markup, no second
@@ -113,6 +138,25 @@ copy. The `list` slot is handed the button to open it:
     Status
   </wx-button>
   …
+</template>
+```
+
+A head that stands outside the pane — the screen's own, above the card — cannot be handed that
+slot prop, so the component says it as an event instead: `filters-inline` fires whenever the column
+appears or folds, and once at the start. Pair it with `v-model:filtersOpen` to raise the drawer
+from up there:
+
+```vue
+<template>
+  <wx-screen-head :actions="actions">
+    <template v-if="!columnInline" #extra>
+      <wx-button variant="outline" @click="filtersOpen = true">Forms</wx-button>
+    </template>
+  </wx-screen-head>
+
+  <wx-list-detail v-model:filters-open="filtersOpen" @filters-inline="columnInline = $event">
+    …
+  </wx-list-detail>
 </template>
 ```
 
@@ -128,25 +172,28 @@ makes sense in the column can stand down:
 
 ## Props
 
-| Prop           | Type               | Default     | Description                                       |
-| -------------- | ------------------ | ----------- | ------------------------------------------------- |
-| `filtersWidth` | `number \| string` | `240`       | Width of the filters column                       |
-| `listWidth`    | `number \| string` | `380`       | Width of the list column                          |
-| `detailMin`    | `number`           | `420`       | Narrowest the detail may be; sets both thresholds |
-| `filtersTitle` | `string`           | `'Filters'` | Heading of the drawer the filters move into       |
-| `detailLabel`  | `string`           | `'Details'` | Accessible name of the detail panel               |
+| Prop           | Type               | Default     | Description                                          |
+| -------------- | ------------------ | ----------- | ---------------------------------------------------- |
+| `filtersWidth` | `number \| string` | `240`       | Width of the filters column                          |
+| `listWidth`    | `number \| string` | `380`       | Width of the list column                             |
+| `detailMin`    | `number`           | `420`       | Narrowest the main pane may be; sets both thresholds |
+| `filtersTitle` | `string`           | `'Filters'` | Heading of the drawer the filters move into          |
+| `detailLabel`  | `string`           | `'Details'` | Accessible name of the detail panel                  |
 
 **Models:** `v-model:open` (`boolean`) — whether a record is open; `v-model:filtersOpen`
 (`boolean`) — the filters drawer, if you want to drive it yourself.
 
+**Events:** `filters-inline` (`boolean`) — whether the filters still have a column, said on every
+change and once at the start.
+
 ## Slots
 
-| Slot      | Props                          | Description                                            |
-| --------- | ------------------------------ | ------------------------------------------------------ |
-| `filters` | `inline`, `close`              | Views, folders, filters. Optional — no slot, no column |
-| `list`    | `filtersInline`, `openFilters` | The records                                            |
-| `detail`  | `inline`, `back`               | The open record                                        |
-| `empty`   | —                              | Shown in the pane's place while nothing is open        |
+| Slot      | Props                          | Description                                                   |
+| --------- | ------------------------------ | ------------------------------------------------------------- |
+| `filters` | `inline`, `close`              | Views, folders, filters. Optional — no slot, no column        |
+| `list`    | `filtersInline`, `openFilters` | The records                                                   |
+| `detail`  | `inline`, `back`               | The open record. Optional — without it the list is the screen |
+| `empty`   | —                              | Shown in the pane's place while nothing is open               |
 
 ## What it does not do
 

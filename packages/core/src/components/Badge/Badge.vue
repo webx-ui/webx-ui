@@ -178,6 +178,10 @@ const classes = computed(() => [
   /* Keeps the badge from growing taller than its text. */
   margin-right: -2px;
   padding: 0;
+  /* The cross is as big as the words it stands beside, which is a twelve-pixel target: what
+     is drawn stays that size and what can be pressed grows around it. Four pixels and not
+     more, because badges sit six apart and a bigger reach would take its neighbour's. */
+  position: relative;
   background: transparent;
   border: none;
   border-radius: var(--wx-radius-full);
@@ -186,6 +190,12 @@ const classes = computed(() => [
   line-height: 1;
   opacity: 0.65;
   cursor: pointer;
+}
+
+.wx-badge__close::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
 }
 
 .wx-badge__close:hover {

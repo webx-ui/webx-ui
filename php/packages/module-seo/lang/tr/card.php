@@ -27,4 +27,6 @@ return [
     'json-ld-help' => 'Bir JSON-LD nesnesi ya da nesne listesi. Sitenin kendisi hakkında söyledikleri ayarlardan gelir; burası kendi işaretlemesine ihtiyaç duyan sayfa içindir.',
     'json-ld-invalid' => 'Bu geçerli bir JSON değil.',
     'preview' => 'Arama sonuçlarında',
+    'share-preview' => 'Paylaşımda',
+    'share-auto' => 'Siteyi doldurur — kaydın kendi görseli ya da varsayılan görsel',
 ];

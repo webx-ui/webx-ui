@@ -32,4 +32,6 @@ return [
     'json-ld-invalid' => 'This is not valid JSON.',
 
     'preview' => 'In search results',
+    'share-preview' => 'When shared',
+    'share-auto' => 'The site fills this in — the record’s own picture, or the default one',
 ];

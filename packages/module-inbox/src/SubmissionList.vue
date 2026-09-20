@@ -63,15 +63,11 @@ const props = withDefaults(
     form: InboxForm
     /** Where the section is mounted. */
     base?: string
-    /** Whether the pane is beside the list of forms or is the whole screen. */
-    inline?: boolean
   }>(),
-  { base: '/inbox', inline: true },
+  { base: '/inbox' },
 )
 
 const emit = defineEmits<{
-  /** The pane wants out — only ever on a phone, where it is the screen. */
-  back: []
   /** Something changed that the column of forms counts. */
   changed: []
 }>()
@@ -83,12 +79,23 @@ const router = useRouter()
 const locales = useLocales()
 useInboxMessages()
 
-/** Where a row stops being a row: the table and the columns read the same number. */
+/** Where a row stops being a row. */
 const CARDS = 640
 
 const root = useTemplateRef<HTMLElement>('root')
 const width = useElementWidth(root)
 const asCards = computed(() => width.value > 0 && width.value < CARDS)
+
+/**
+ * One decision about it, not two.
+ *
+ * The pane measures itself and the table measures itself, and between the two stands the
+ * pane's own step — so the same number meant two different widths, and in the band between
+ * them the table drew cards out of the full set of columns: five lines of "Label: value" for
+ * one enquiry, which is exactly what the card exists instead of. The table is told rather
+ * than left to work it out: never, or always, and by the same measurement the columns use.
+ */
+const cardsBelow = computed(() => (asCards.value ? Number.POSITIVE_INFINITY : 0))
 
 const t = useTranslate('webx-inbox')
 /* Not the server's `message`: the panel says how a request failed in its own words. */
@@ -101,7 +108,6 @@ const selected = ref<SubmissionRow[]>([])
 const moving = ref(false)
 
 const canUpdate = computed(() => context.can('inbox.update'))
-const canManage = computed(() => context.can('inbox.manage'))
 
 const add = createModal<InboxSubmission, { form: InboxForm }>(SubmissionCreateDialog)
 
@@ -381,46 +387,31 @@ const exportHref = computed(() =>
   }),
 )
 
-function settings(): void {
-  void router.push(`${props.base}/forms/${props.form.id}`)
-}
 /*
- * The tools of the pane: none of them is the reason somebody opened it — that is the list
- * itself — so none is primary, and on a narrow pane they all fold behind the ···.
+ * The tools of the pane are what is done to this list of answers, and that is one thing:
+ * take them away as a file.
+ *
+ * What the form is — its fields, its letters, its address — belongs to the form's own ··· in
+ * the list of forms. And writing a submission is the section's own action, so it stands in
+ * the head of the section beside its name (§11); the dialog is still this component's, which
+ * is why it is exposed rather than moved: what is created has to land in this list, in this
+ * filter, and be counted in these tabs.
  */
-const actions = computed<ScreenAction[]>(() => {
-  const list: ScreenAction[] = []
+const actions = computed<ScreenAction[]>(() => [
+  { key: 'export', label: t('panel.export'), icon: 'download', href: exportHref.value },
+])
 
-  if (canUpdate.value) {
-    list.push({
-      key: 'new',
-      label: t('panel.new-submission'),
-      icon: 'plus',
-      run: () => void byHand(),
-    })
-  }
-
-  list.push({ key: 'export', label: t('panel.export'), icon: 'download', href: exportHref.value })
-
-  if (canManage.value) {
-    list.push({ key: 'settings', label: t('panel.settings'), icon: 'settings', run: settings })
-  }
-
-  return list
-})
+defineExpose({ create: byHand })
 </script>
 
 <template>
-  <div ref="root" class="wx-submissions" :class="{ 'is-pane': inline }">
+  <div ref="root" class="wx-submissions">
     <wx-screen-head
       class="wx-submissions__head"
       :level="3"
       :title="formName()"
       :subtitle="form.slug"
-      :back="!inline"
-      :back-label="t('panel.forms')"
       :actions="actions"
-      @back="emit('back')"
     />
 
     <!--
@@ -447,7 +438,7 @@ const actions = computed<ScreenAction[]>(() => {
         :row-class="(row: SubmissionRow) => (row.is_read ? undefined : 'is-unread')"
         :search-placeholder="t('panel.search-submissions')"
         :empty-text="emptyText"
-        :cards-below="640"
+        :cards-below="cardsBelow"
         @row-click="open"
         @state-change="onState"
         @selection-change="(_keys: unknown, rows: SubmissionRow[]) => (selected = rows)"
@@ -537,13 +528,17 @@ const actions = computed<ScreenAction[]>(() => {
 
 <style scoped>
 /*
- * The panel's own step, which is 8 on a phone and 16 on a desktop — not a number of this
- * screen's own. Written as 16 here, the pane kept desktop air inside a 375px drawer: the head,
- * the tabs and the rows each took a line of nothing between them, and four rows fitted where
- * six do now.
+ * One step, and everything in the pane keeps it.
  *
- * The head and the tabs stand this far from the edge on both. The table takes a step of its
- * own on top of it in the column and none on a sheet — see below for why.
+ * The panel's own — 8 on a phone and 16 on a desktop — and not a number of this screen's own.
+ * Written as 16 here, the pane kept desktop air on a 375px screen: the head, the tabs and the
+ * rows each took a line of nothing between them, and four rows fitted where six do now.
+ *
+ * It is the pane that holds it, so the name of the form, the tabs, the search box and the rows
+ * all begin on the same line down the left. The table used to add a step of its own inside
+ * this one — measured on a phone: the head at 17 and the search at 33 — and two insets, one
+ * for the words and one for the list they are about, read as two panels stacked rather than as
+ * one screen.
  */
 .wx-submissions {
   display: flex;
@@ -551,59 +546,11 @@ const actions = computed<ScreenAction[]>(() => {
   gap: var(--wx-gap, var(--wx-space-16));
   padding: var(--wx-gap, var(--wx-space-16));
   min-width: 0;
-  height: 100%;
-  min-height: 0;
 }
 
-/*
- * The way back lines up with the name, not with the pair of lines under it: what stands beside
- * it is the form's name and the address it posts to, and a centred row put the arrow level with
- * the gap between the two.
- */
 /* The address the form posts to, in the type an address is written in. */
 .wx-submissions__head :deep(.wx-screen-head__subtitle) {
   font-family: var(--wx-font-family-mono);
-}
-
-.wx-submissions__views {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-/*
- * A step of the table's own, on all four sides, and the same one in both of its views.
- *
- * The pane is a column of a card — a rule down its left side, the card's frame on its right —
- * and a list that begins on the column's own boundary reads as glued to it. One number for the
- * whole table rather than one for the cards: the search field, the rows and the boxes are the
- * same list seen at three widths, and a step that only one of them keeps is a step that shows.
- */
-.wx-submissions :deep(.wx-table) {
-  padding: var(--wx-table-padding-x);
-}
-
-/* As a sheet there is no column and no frame — the screen's edge is the boundary, and the
-   pane's own step is all the air the list needs. A second one inside it stood the same list
-   further from the edge than it stands on every other screen. */
-.wx-drawer .wx-submissions :deep(.wx-table) {
-  padding: 0;
-}
-
-/*
- * The scroll bar rides in that step rather than in the cards' own right edge.
- *
- * A list that scrolls inside itself is given its bar out of its own width: the cards ended
- * fifteen pixels short of where the search field above them ends, and the step stood beyond the
- * bar rather than beside the cards — air on the wrong side of it, and a list that looks pushed
- * left. Padding cannot answer that; the bar is laid inside the padding box whatever is there.
- * So the scroller reaches the end of the table's padding and keeps its gutter reserved: the
- * cards end where everything above them ends, and the bar stands in the step. `stable`, so a
- * list short enough not to scroll is not a wider list. Only in the column — as a sheet the
- * drawer does the scrolling and there is no bar here to make room for.
- */
-.wx-submissions.is-pane :deep(.wx-table__cards) {
-  margin-inline-end: calc(-1 * var(--wx-table-padding-x));
-  scrollbar-gutter: stable;
 }
 
 /*

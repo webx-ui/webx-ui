@@ -27,4 +27,6 @@ return [
     'json-ld-help' => 'Un oggetto JSON-LD, o un elenco. Quello che il sito dice di sé viene dalle impostazioni; questo è per una pagina che ha bisogno di markup suo.',
     'json-ld-invalid' => 'Questo non è JSON valido.',
     'preview' => 'Nei risultati',
+    'share-preview' => 'Nella condivisione',
+    'share-auto' => 'La mette il sito: l’immagine del record stesso, o quella predefinita',
 ];
