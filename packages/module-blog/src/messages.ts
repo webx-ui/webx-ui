@@ -105,8 +105,11 @@ export const blogMessages: Record<string, Messages> = {
     'leave-text': 'The article could not be saved, and what you wrote is not on the server.',
     'live-scheduled': 'Goes out :date',
     'live-since': 'On the site since :date',
-    address: 'Address',
-    'no-address': 'No address in this language',
+    'unpublish-title': 'Take “:title” off the site?',
+    'unpublish-text':
+      'It stops answering at its address. The draft, the history and the rubrics stay — publishing puts it back.',
+    'unpublish-waiting': 'It has not gone out yet. The day it was set for will pass without it.',
+    'unpublish-help': 'Takes the article off the site without deleting it.',
     'address-moving':
       'The address is changing. The old one keeps working and leads to the new one.',
     author: 'Author',
@@ -144,28 +147,29 @@ export const blogMessages: Record<string, Messages> = {
     new: 'New rubric',
     empty: 'No rubrics yet.',
     'empty-help': 'A rubric is a section of the blog. An article can be in several of them.',
-    choose: 'Pick a rubric to edit it.',
     order: 'The order here is the order on the site',
     hidden: 'Hidden from the site',
     'no-address': 'No address in this language',
-    back: 'Rubrics',
     articles: ':count articles',
     'show-articles': 'Show its articles',
+    edit: 'Edit',
+
+    'tab-content': 'Content',
+    'tab-cover': 'Image',
+    'tab-seo': 'SEO',
 
     'field-title': 'Name',
     'field-slug': 'Address',
-    'field-lead': 'Introduction',
-    'lead-help': 'Printed above the list of articles.',
-    'field-cover': 'Cover',
     visible: 'Show on the site',
     'visible-help':
       'Hidden, it drops out of the menu and answers 404. Its articles go on answering at their own addresses.',
+    'field-lead': 'Introduction',
+    'lead-help': 'Printed above the list of articles.',
+    'cover-help': 'Shown wherever the site lists the sections.',
     'address-moving':
       'The address is changing. The old one keeps working and leads to the new one.',
 
-    seo: 'SEO for this rubric',
-    'seo-help': 'The title and the description of this page come from the SEO rules.',
-    'seo-override': 'Write them for “:name”',
+    'seo-help': 'Left empty, the title and the description of this page come from the SEO rules.',
 
     delete: 'Delete',
     'delete-blocked': 'While it holds articles it cannot go — move them first.',

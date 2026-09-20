@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Blog\Exceptions\BlogException;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Routing\HasUrl;
@@ -69,6 +70,31 @@ class Rubric extends Model
     public function hasUrlIn(string $locale): bool
     {
         return $this->hasTranslation('slug', $locale);
+    }
+
+    /**
+     * The introduction as a page prints it: a document, with every library picture pointed at
+     * where it lives now.
+     *
+     * The column holds what the editor wrote, and what it wrote records a picture by its key
+     * rather than by its address (CLAUDE.md §4) — a signed link expires within the hour and a
+     * cropped picture keeps its key. So the addresses are worked out on every read, by the
+     * same field type that cleaned the document on the way in. A panel with no `module-admin`
+     * types registered at all gets the document as it was stored, which is the honest fallback:
+     * the words are right and the pictures are wherever they were.
+     */
+    public function leadHtml(?string $locale = null): string
+    {
+        $stored = $this->getTranslation('lead', $locale ?? app()->getLocale());
+
+        if (! is_string($stored) || trim($stored) === '') {
+            return '';
+        }
+
+        $type = app(FieldTypes::class)->get('wx-rich-text');
+        $resolved = $type === null ? $stored : $type->resolve($stored, [], $locale);
+
+        return is_string($resolved) ? $resolved : $stored;
     }
 
     /**

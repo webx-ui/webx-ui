@@ -107,6 +107,12 @@ function toggleTheme() {
 
       <wx-divider direction="vertical" spacing="sm" />
 
+      <!-- The other half of the playground: the real panel, on a server that lives in the
+           Vite config. A link rather than a page, because it is a second application. -->
+      <wx-button size="sm" variant="text" href="/panel/inbox">Панель</wx-button>
+
+      <wx-divider direction="vertical" spacing="sm" />
+
       <wx-action
         :icon="theme === 'light' ? 'moon' : 'sun'"
         :title="theme === 'light' ? 'Темна тема' : 'Світла тема'"

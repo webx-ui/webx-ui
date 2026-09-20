@@ -7,9 +7,11 @@ export interface ListDetailProps {
   /** Width of the list of records. */
   listWidth?: number | string
   /**
-   * The narrowest the detail pane may be. It is what the two thresholds are made
+   * The narrowest the main pane may be. It is what the two thresholds are made
    * of: the filters column folds away when it would push the pane under this, and
    * the pane stops standing beside the list when it no longer fits either.
+   *
+   * With no `detail` slot the list is the main pane, and this is its floor.
    */
   detailMin?: number
   /** Heading of the panel the filters move into once the column does not fit. */

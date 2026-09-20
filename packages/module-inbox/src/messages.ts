@@ -22,7 +22,6 @@ export const inboxMessages: Record<string, Messages> = {
     'new-form': 'New form',
     'no-forms': 'No forms yet.',
     'no-forms-help': 'A form is a few questions and a list of who hears the answers.',
-    'choose-form': 'Choose a form to see what has come in.',
     unread: 'Unread',
     submissions: 'Submissions in all',
     off: 'Off',
@@ -117,7 +116,7 @@ export const inboxMessages: Record<string, Messages> = {
     'view-all': 'All',
     'view-unread': 'Unread',
     export: 'Export',
-    'new-submission': 'Add by hand',
+    'new-submission': 'New submission',
     'new-submission-title': 'A submission by hand',
     'new-submission-help':
       'For one that came by telephone or on paper. It is written the same way and lands in the same list.',

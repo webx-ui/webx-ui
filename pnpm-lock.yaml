@@ -228,12 +228,39 @@ importers:
       '@webx-ui/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@webx-ui/module-admin':
+        specifier: workspace:*
+        version: link:../../packages/module-admin
+      '@webx-ui/module-blocks':
+        specifier: workspace:*
+        version: link:../../packages/module-blocks
+      '@webx-ui/module-blog':
+        specifier: workspace:*
+        version: link:../../packages/module-blog
+      '@webx-ui/module-inbox':
+        specifier: workspace:*
+        version: link:../../packages/module-inbox
+      '@webx-ui/module-media':
+        specifier: workspace:*
+        version: link:../../packages/module-media
+      '@webx-ui/module-pages':
+        specifier: workspace:*
+        version: link:../../packages/module-pages
+      '@webx-ui/module-seo':
+        specifier: workspace:*
+        version: link:../../packages/module-seo
+      '@webx-ui/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
       '@webx-ui/tokens':
         specifier: workspace:*
         version: link:../../packages/tokens
       vue:
         specifier: ^3.5.24
         version: 3.5.42(typescript@5.9.3)
+      vue-router:
+        specifier: ^4.5.1
+        version: 4.6.4(vue@3.5.42(typescript@5.9.3))
     devDependencies:
       '@types/node':
         specifier: ^24.10.1

@@ -87,4 +87,59 @@ describe('WxSeo', () => {
 
     expect(emitted(wrapper)?.canonical).toBeNull()
   })
+
+  /*
+   * What the share preview says, which is the one thing about it jsdom can check: how it looks
+   * is measured in a browser, but which words end up in it is arithmetic between four fields.
+   */
+  describe('the share preview', () => {
+    const share = (wrapper: ReturnType<typeof card>) => wrapper.find('.wx-seo__share')
+
+    it('falls back on what the page says when the share fields are empty', () => {
+      const wrapper = card({
+        title: { en: 'A panel nobody has to explain' },
+        description: { en: 'How we rewrote it.' },
+      })
+
+      expect(share(wrapper).find('.wx-seo__share-title').text()).toBe(
+        'A panel nobody has to explain',
+      )
+      expect(share(wrapper).find('.wx-seo__share-text').text()).toBe('How we rewrote it.')
+    })
+
+    it('prefers the share fields when they are written', () => {
+      const wrapper = card({
+        title: { en: 'A panel nobody has to explain' },
+        og_title: { en: 'We rewrote the panel' },
+      })
+
+      expect(share(wrapper).find('.wx-seo__share-title').text()).toBe('We rewrote the panel')
+    })
+
+    /* The address the server worked out beside the key — never the key itself, which is not a
+       thing a browser can load. */
+    it('draws the picture by the address that travelled with the value', () => {
+      const wrapper = card({
+        title: { en: 'Something' },
+        og_image: { path: 'blog/cover.jpg', url: '/files/blog/cover.jpg' },
+      })
+
+      expect(share(wrapper).find('img').attributes('src')).toBe('/files/blog/cover.jpg')
+    })
+
+    /* A page whose picture is left to the site is not a page with no picture, and saying
+       nothing there would read as "nothing will be shown". */
+    it('says the site fills the picture in when none is chosen', () => {
+      const wrapper = card({ title: { en: 'Something' } })
+
+      expect(share(wrapper).find('img').exists()).toBe(false)
+      // The key rather than the sentence: mounted outside a panel there is no dictionary, and
+      // `useTranslate` hands back what it was asked for.
+      expect(share(wrapper).text()).toContain('card.share-auto')
+    })
+
+    it('is not drawn at all for a record that says nothing about itself', () => {
+      expect(share(card()).exists()).toBe(false)
+    })
+  })
 })

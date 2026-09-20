@@ -27,4 +27,6 @@ return [
     'json-ld-help' => 'Um objeto JSON-LD, ou uma lista deles. O que o site diz sobre si vem das definições; isto é para uma página que precisa da sua própria marcação.',
     'json-ld-invalid' => 'Isto não é JSON válido.',
     'preview' => 'Nos resultados',
+    'share-preview' => 'Ao partilhar',
+    'share-auto' => 'O site preenche — a imagem do próprio registo, ou a predefinida',
 ];
