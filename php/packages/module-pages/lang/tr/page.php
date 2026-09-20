@@ -68,9 +68,6 @@ return [
     // The editor.
     'trail' => 'Bu sayfa nerede duruyor',
     'untitled' => 'Başlıksız',
-    'state-saved' => 'Kaydedildi',
-    'state-saving' => 'Kaydediliyor…',
-    'state-unsaved' => 'Kaydedilmedi',
     'save' => 'Kaydet',
     'save-failed' => 'Sayfa kaydedilmedi.',
     'publish' => 'Yayımla',

@@ -5,9 +5,6 @@ declare(strict_types=1);
 return [
     'trail' => 'Где эта статья',
     'untitled' => 'Без заголовка',
-    'state-saved' => 'Сохранено',
-    'state-saving' => 'Сохраняем…',
-    'state-unsaved' => 'Ещё не сохранено',
     'save' => 'Сохранить черновик',
     'save-failed' => 'Статью не сохранили.',
     'schedule' => 'Запланировать',

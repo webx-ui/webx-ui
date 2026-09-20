@@ -30,10 +30,14 @@ return [
     'pick-nothing-allowed' => 'Внутрь «:parent» ничего класть нельзя.',
     'limit-reached' => 'На странице уже :count — это предел для такого блока',
 
+    'previous' => 'Предыдущий блок',
+    'next' => 'Следующий блок',
+
     'preview' => 'Предпросмотр',
     'open-site' => 'Открыть на сайте',
     'fullscreen' => 'Во весь экран',
     'close' => 'Закрыть',
+    'width' => 'Ширина',
     'width-desktop' => 'Десктоп',
     'width-tablet' => 'Планшет',
     'width-phone' => 'Телефон',

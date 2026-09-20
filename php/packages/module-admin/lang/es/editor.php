@@ -6,5 +6,7 @@ return [
     'back' => 'Atrás',
     'rename' => 'Renombrar',
     'save' => 'Guardar',
+    'saving' => 'Guardando…',
+    'saved' => 'Guardado',
     'more' => 'Más',
 ];

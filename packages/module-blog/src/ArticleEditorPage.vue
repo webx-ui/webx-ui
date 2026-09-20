@@ -6,6 +6,7 @@ import {
   useDates,
   useErrorText,
   useTranslate,
+  WxSaveState,
   WxScreen,
   WxScreenHead,
   type ScreenAction,
@@ -511,11 +512,11 @@ const actions = computed<ScreenAction[]>(() => {
         the bar and is never covered by it.
       -->
       <wx-action-bar v-if="canManage">
+        <!-- The state is a mark that comes and goes; the publication line stays, because when
+             the article goes out is a fact about the article and not about the last keystroke. -->
         <template #state>
-          <wx-text size="sm" tone="muted">
-            {{ t(`article.state-${state}`)
-            }}<template v-if="publication"> · {{ publication }}</template>
-          </wx-text>
+          <wx-save-state :state="state" />
+          <wx-text v-if="publication" size="sm" tone="muted">{{ publication }}</wx-text>
         </template>
 
         <!-- Only while there is a difference between what is written and what is on the site:
@@ -592,31 +593,9 @@ const actions = computed<ScreenAction[]>(() => {
 }
 
 /*
- * Only the tab that holds the constructor is a box of a fixed height with its own scrollbar.
- *
- * Everywhere else the tab grows with its content and the page scrolls, because a scroll box
- * clips: the cards inside one had their shadows cut off square at all four edges, which reads
- * as a drawing fault rather than as a scrolling region.
+ * No tab is a box of a fixed height any more, and none has a scrollbar of its own: the
+ * constructor's preview is as tall as the page it shows and the browser scrolls it. A tab
+ * that grows with its contents is also the only kind that does not clip them — a scroll box
+ * cut the shadows off the cards inside it square at all four edges.
  */
-.wx-article-editor:has(.wx-tab:not([hidden]) .wx-blocks-host.is-fill) {
-  height: var(--wx-fill-height);
-}
-
-.wx-article-editor__screen :deep(.wx-tab:not([hidden]):has(.wx-blocks-host.is-fill)) {
-  overflow: auto;
-}
-
-/*
- * The renderer wraps every field in a form item, so the height has to travel through that as
- * well — and through that one only. `:has()` picks the wrapper of a field that fills and leaves
- * the ordinary fields of the settings tab the height of their own contents.
- */
-.wx-article-editor__screen :deep(.wx-form-item:has(.wx-blocks-host.is-fill)),
-.wx-article-editor__screen
-  :deep(.wx-form-item:has(.wx-blocks-host.is-fill) .wx-form-item__control) {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-}
 </style>

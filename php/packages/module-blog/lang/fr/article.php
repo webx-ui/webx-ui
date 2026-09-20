@@ -5,9 +5,6 @@ declare(strict_types=1);
 return [
     'trail' => 'Où se trouve cet article',
     'untitled' => 'Sans titre',
-    'state-saved' => 'Enregistré',
-    'state-saving' => 'Enregistrement…',
-    'state-unsaved' => 'Pas encore enregistré',
     'save' => 'Enregistrer le brouillon',
     'save-failed' => 'L’article n’a pas été enregistré.',
     'schedule' => 'Programmer',

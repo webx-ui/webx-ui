@@ -30,10 +30,14 @@ return [
     'pick-nothing-allowed' => '":parent" içine hiçbir şey konamaz.',
     'limit-reached' => 'Bu sayfada zaten :count var, bu blok için sınır bu',
 
+    'previous' => 'Önceki blok',
+    'next' => 'Sonraki blok',
+
     'preview' => 'Önizleme',
     'open-site' => 'Sitede aç',
     'fullscreen' => 'Tam ekran',
     'close' => 'Kapat',
+    'width' => 'Genişlik',
     'width-desktop' => 'Masaüstü',
     'width-tablet' => 'Tablet',
     'width-phone' => 'Telefon',

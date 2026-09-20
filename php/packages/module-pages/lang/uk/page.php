@@ -68,9 +68,6 @@ return [
     // The editor.
     'trail' => 'Де стоїть ця сторінка',
     'untitled' => 'Без заголовка',
-    'state-saved' => 'Збережено',
-    'state-saving' => 'Зберігаємо…',
-    'state-unsaved' => 'Є незбережене',
     'save' => 'Зберегти',
     'save-failed' => 'Сторінку не збережено.',
     'publish' => 'Опублікувати',

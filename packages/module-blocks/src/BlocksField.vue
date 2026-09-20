@@ -10,7 +10,17 @@ import {
   watch,
 } from 'vue'
 import { adminKey, useErrorText, useTranslate, type AdminContext } from '@webx-ui/module-admin'
-import { confirm, createModal, toast, WxButton, WxText } from '@webx-ui/core'
+import {
+  confirm,
+  createModal,
+  toast,
+  useElementWidth,
+  WxAction,
+  WxButton,
+  WxDrawer,
+  WxIcon,
+  WxText,
+} from '@webx-ui/core'
 import {
   coreTypes,
   WxScreenRenderer,
@@ -32,6 +42,7 @@ import {
   replaceList,
   setHidden,
   updateValues,
+  walk,
 } from './content'
 import { useBlocksMessages } from './i18n'
 import { blocksPreviewKey, blocksRootKey } from './preview'
@@ -41,13 +52,14 @@ import type { BlockNode, BlockType } from './types'
 /**
  * The constructor — the `wx-blocks` field.
  *
- * Two states (§14). Nothing selected: the tree and the preview of the whole page, wide,
- * for looking at the layout, the order and the seams. A block selected: the tree, a wide
- * form of the block's fields, and the preview shrunk to a phone at one to one — a desktop
- * in a 420 px column is unreadable, and a phone is where things break first.
+ * Two states (§14), and two columns in both of them. The narrow one holds the tree, or the
+ * open block's form in its place; the wide one holds the preview of the whole page, at the
+ * width the preview's own bar is set to. One column of the two changes, the other does not:
+ * the page under the form is the page the form is about, and it neither moves nor shrinks
+ * when a block is opened.
  *
  * Inside a block's own form the same node type means a nested constructor, and those are
- * edited in the tree on the left — so a nested instance draws a note and nothing else.
+ * edited in the tree — so a nested instance draws a note and nothing else.
  */
 defineOptions({ name: 'WxBlocks', inheritAttrs: false })
 
@@ -70,16 +82,6 @@ const props = withDefaults(
     disabled?: boolean
     /** Where the section lives, for the picker's "make one" link. */
     blocksPath?: string
-    /**
-     * Be as tall as what the field is drawn in, and let each of the three panels scroll inside
-     * itself.
-     *
-     * Off by default, because the ordinary case is a field on a form that scrolls: there the
-     * constructor is as tall as it needs to be and the preview sticks. A screen that has given
-     * the constructor the whole area below its head says so — otherwise the field grows, the
-     * page scrolls, and the tree, the form and the preview all leave the screen together.
-     */
-    fill?: boolean
   }>(),
   {
     node: undefined,
@@ -91,7 +93,6 @@ const props = withDefaults(
     catalog: null,
     disabled: false,
     blocksPath: '/blocks',
-    fill: false,
   },
 )
 
@@ -124,8 +125,104 @@ const selectedType = computed(() =>
     : null,
 )
 
+/** What a block is called in the catalogue, falling back to the raw type. */
+function titleOf(node: BlockNode): string {
+  return catalog.value.find((type) => type.slug === node.type)?.title ?? node.type
+}
+
+/**
+ * Every block of the page in the order the page draws them, nested ones included — the tree
+ * flattened, which is what "the next block" means with the tree off the screen.
+ */
+const order = computed(() => {
+  const keys: string[] = []
+
+  walk(tree.value, (node) => keys.push(node.key))
+
+  return keys
+})
+
+/** The block before the open one and the block after it, null at either end. */
+const steps = computed(() => {
+  const at = selectedKey.value ? order.value.indexOf(selectedKey.value) : -1
+
+  return {
+    previous: at > 0 ? order.value[at - 1]! : null,
+    next: at >= 0 && at < order.value.length - 1 ? order.value[at + 1]! : null,
+  }
+})
+
+/** The blocks the open one is inside, outermost first. Empty at the top level. */
+const trail = computed(() => {
+  const steps: { key: string; title: string }[] = []
+
+  let at = selected.value?.parent ?? null
+
+  while (at) {
+    steps.unshift({ key: at.key, title: titleOf(at) })
+    at = locate(tree.value, at.key)?.parent ?? null
+  }
+
+  return steps
+})
+
 const preview = inject(blocksPreviewKey, null)
 const previewEl = ref<InstanceType<typeof BlocksPreview> | null>(null)
+
+const host = ref<HTMLElement | null>(null)
+const hostWidth = useElementWidth(host)
+
+/**
+ * The panel has room for the page and one thing beside it, or for the page alone.
+ *
+ * Measured and not asked of CSS, because what changes is not the arrangement but where the
+ * tree and the form are rendered — a column of the grid, or a sheet over the page. The
+ * threshold is the narrow column at its widest plus a preview still worth looking at: below
+ * it the preview would be drawn at a third of its size, which is a picture, not a page.
+ *
+ * Only with a preview, and that is not a detail: the way into the sheet is a button on the
+ * preview's bar, so without one the sheet would be a room with no door.
+ */
+const hasPreview = computed(() => preview !== null && preview.url.value !== null)
+const compact = computed(() => hasPreview.value && hostWidth.value > 0 && hostWidth.value <= 900)
+
+/** Open while the blocks are being worked on over the page. Compact panels only. */
+const sheet = ref(false)
+
+/** What the sheet is showing: the open block with its containers, or the list. */
+const sheetTitle = computed(() => {
+  if (!selected.value) return undefined
+
+  const name = selectedType.value?.title ?? selected.value.node.type
+
+  return [...trail.value.map((step) => step.title), name].join(' / ')
+})
+
+const sideProps = computed(() =>
+  compact.value
+    ? {
+        /* Up from the bottom, and not all the way: the strip of page left above it is what
+           says the sheet is over the page rather than instead of it. No heading of its own —
+           the panels inside carry theirs, and the × is the one thing the sheet has to add. */
+        side: 'bottom' as const,
+        size: '88%',
+        /* Off, or the size above is ignored on exactly the screens this is for: a drawer
+           takes a narrow screen whole unless it is told not to. */
+        fullScreen: false,
+        closable: true,
+        closeLabel: t('field.close'),
+        ariaLabel: t('field.blocks'),
+        /* The open block's name goes in the sheet's own head, where there is a whole line for
+           it: in the form's head it shared a row with four controls and wrapped onto two. With
+           the blocks it is inside spelled out in front of it, because the trail that says so
+           in the column is part of the heading this replaces. The tree keeps its own heading,
+           which already says what it is and how many. */
+        title: sheetTitle.value,
+        open: sheet.value,
+        'onUpdate:open': (value: boolean) => (sheet.value = value),
+      }
+    : {},
+)
 
 const groups = computed<string[]>(
   () =>
@@ -285,6 +382,8 @@ function selectFromPreview(key: string | null): void {
   if (key === null || !locate(tree.value, key)) return
 
   selectedKey.value = key
+  /* On a phone the block clicked in the page opens for editing where the editing lives. */
+  if (compact.value) sheet.value = true
 }
 
 function done(): void {
@@ -360,9 +459,7 @@ const formRoot = computed(() =>
     <wx-text size="sm" tone="muted">{{ t('field.nested-note') }}</wx-text>
   </div>
 
-  <!-- The host is the container the queries below measure: a query on an element's own
-       class resolves against its nearest ancestor container, never against itself. -->
-  <div v-else class="wx-blocks-host" :class="{ 'is-fill': fill }">
+  <div v-else ref="host" class="wx-blocks-host" :class="{ 'is-compact': compact }">
     <div
       class="wx-blocks"
       :class="{
@@ -370,89 +467,153 @@ const formRoot = computed(() =>
         'has-preview': preview !== null && preview.url.value !== null,
       }"
     >
-      <div class="wx-blocks__tree">
-        <div class="wx-blocks__panel-head">
-          <span class="wx-blocks__panel-title">{{ t('field.blocks') }}</span>
-          <wx-text size="sm" tone="muted">{{ tree.length }}</wx-text>
-        </div>
-        <blocks-tree
-          :nodes="tree"
-          :catalog="catalog"
-          :selected="selectedKey"
-          :disabled="disabled"
-          @select="select"
-          @add="add"
-          @remove="remove"
-          @duplicate="duplicate"
-          @visibility="visibility"
-          @reorder="reorder"
-        />
-        <!--
+      <!--
+        The tree and the form share one column and take turns in it.
+
+        They are two views of the same thing — the blocks of this page — and a page has room
+        for one of them beside a preview, not two. Side by side the form took whatever the
+        preview was not given, and the preview was given the 420 px a desktop does not fit in:
+        every block was edited against a picture of a phone. The way back out is the done
+        button, or Escape; the way to the next block is in the form's own head.
+
+        On a narrow panel that column is a sheet instead, and the same two panels take turns
+        inside it — which is why they are wrapped rather than written twice. A phone has room
+        for one thing at a time, and the thing worth the room is the page itself.
+      -->
+      <component :is="compact ? WxDrawer : 'div'" v-bind="sideProps" class="wx-blocks__side">
+        <div v-if="!selected" class="wx-blocks__tree">
+          <div class="wx-blocks__panel-head">
+            <span class="wx-blocks__panel-title">{{ t('field.blocks') }}</span>
+            <wx-text size="sm" tone="muted">{{ tree.length }}</wx-text>
+          </div>
+          <blocks-tree
+            :nodes="tree"
+            :catalog="catalog"
+            :selected="selectedKey"
+            :disabled="disabled"
+            @select="select"
+            @add="add"
+            @remove="remove"
+            @duplicate="duplicate"
+            @visibility="visibility"
+            @reorder="reorder"
+          />
+          <!--
           One row, not two stacked full-width buttons: they are not two steps of the same
           thing, and a column of blocks that ends in a column of buttons reads as two more
           blocks. Adding is the one that grows, because it is the one that is always there.
         -->
-        <div class="wx-blocks__tools">
-          <wx-button
-            v-if="!disabled && (max === null || tree.length < max)"
-            variant="outline"
-            icon="plus"
-            class="wx-blocks__add"
-            @click="add(null, null, null)"
-          >
-            {{ t('field.add') }}
-          </wx-button>
-          <wx-button
-            v-if="preview && preview.url.value"
-            variant="outline"
-            icon="eye"
-            class="wx-blocks__preview-button"
-            @click="previewEl?.open()"
-          >
-            {{ t('field.preview') }}
-          </wx-button>
-        </div>
-      </div>
-
-      <div v-if="selected" class="wx-blocks__fields">
-        <div class="wx-blocks__panel-head">
-          <span class="wx-blocks__panel-title">{{
-            selectedType?.title ?? selected.node.type
-          }}</span>
-          <span class="wx-blocks__panel-extra">
-            <code>{{ selected.node.type }}</code>
-            <wx-button size="sm" variant="outline" @click="done"
-              >{{ t('field.done') }} · Esc</wx-button
+          <div class="wx-blocks__tools">
+            <wx-button
+              v-if="!disabled && (max === null || tree.length < max)"
+              variant="outline"
+              icon="plus"
+              class="wx-blocks__add"
+              @click="add(null, null, null)"
             >
-          </span>
+              {{ t('field.add') }}
+            </wx-button>
+            <!-- Not in the sheet: the preview is what the sheet is covering. -->
+            <wx-button
+              v-if="!compact && preview && preview.url.value"
+              variant="outline"
+              icon="eye"
+              class="wx-blocks__preview-button"
+              @click="previewEl?.open()"
+            >
+              {{ t('field.preview') }}
+            </wx-button>
+          </div>
         </div>
-        <div class="wx-blocks__form">
-          <wx-screen-renderer
-            v-if="selectedType?.content"
-            :key="selected.node.key"
-            :model-value="selected.node.values"
-            :root="formRoot"
-            :types="types"
-            :translate="translate"
-            :can="can"
-            :disabled="disabled"
-            @update:model-value="onValues"
-          />
-          <wx-text v-else size="sm" tone="danger">{{
-            t('field.unknown-type', { type: selected.node.type })
-          }}</wx-text>
+
+        <div v-if="selected" class="wx-blocks__fields">
+          <div class="wx-blocks__panel-head">
+            <span class="wx-blocks__panel-title">
+              <!-- The blocks this one is inside, because the tree that used to show them is
+                 not on screen while it is open. Nothing at all at the top level. -->
+              <span v-if="trail.length" class="wx-blocks__trail">
+                <template v-for="step in trail" :key="step.key">
+                  <button type="button" class="wx-blocks__trail-step" @click="select(step.key)">
+                    {{ step.title }}
+                  </button>
+                  <wx-icon name="chevron-right" />
+                </template>
+              </span>
+              <span class="wx-blocks__panel-name">{{
+                selectedType?.title ?? selected.node.type
+              }}</span>
+            </span>
+            <span class="wx-blocks__panel-extra">
+              <!-- Not in the sheet: the identifier is for whoever writes the block type, and
+                   the phone is where somebody fills one in. It costs a slot in a row of four
+                   controls, and the name above already says which block this is. -->
+              <code v-if="!compact">{{ selected.node.type }}</code>
+              <!-- The tree's next row and previous row, kept where the tree is not. Every block
+                 of the page in the order the page draws them, nested ones included. -->
+              <wx-action
+                size="sm"
+                tone="neutral"
+                icon="chevron-up"
+                :title="t('field.previous')"
+                :disabled="steps.previous === null"
+                @click="steps.previous && select(steps.previous)"
+              />
+              <wx-action
+                size="sm"
+                tone="neutral"
+                icon="chevron-down"
+                :title="t('field.next')"
+                :disabled="steps.next === null"
+                @click="steps.next && select(steps.next)"
+              />
+              <!-- The same button the tree's foot carries, and hidden by the same rule: below
+                 the width where the preview folds away, the tree's foot is not on screen
+                 while a block is open, and that is exactly when it is needed. -->
+              <wx-button
+                v-if="!compact && preview && preview.url.value"
+                size="sm"
+                variant="outline"
+                icon="eye"
+                class="wx-blocks__preview-button"
+                :aria-label="t('field.preview')"
+                @click="previewEl?.open()"
+              />
+              <!-- The key is named only where there is one to press: a sheet on a phone is
+                   left by the button or by the × above it, and "Esc" there is a word about
+                   furniture nobody in the room has. -->
+              <wx-button size="sm" variant="outline" @click="done">{{
+                compact ? t('field.done') : `${t('field.done')} · Esc`
+              }}</wx-button>
+            </span>
+          </div>
+          <div class="wx-blocks__form">
+            <wx-screen-renderer
+              v-if="selectedType?.content"
+              :key="selected.node.key"
+              :model-value="selected.node.values"
+              :root="formRoot"
+              :types="types"
+              :translate="translate"
+              :can="can"
+              :disabled="disabled"
+              @update:model-value="onValues"
+            />
+            <wx-text v-else size="sm" tone="danger">{{
+              t('field.unknown-type', { type: selected.node.type })
+            }}</wx-text>
+          </div>
         </div>
-      </div>
+      </component>
 
       <div v-if="preview && preview.url.value" class="wx-blocks__preview">
         <blocks-preview
           ref="previewEl"
           :url="preview.url.value"
           :selected="selectedKey"
-          :mode="selected ? 'phone' : 'wide'"
           :reload="preview.reload?.value ?? 0"
-          :fill="fill"
+          :compact="compact"
           @select="selectFromPreview"
+          @edit="sheet = true"
         />
       </div>
     </div>
@@ -465,43 +626,25 @@ const formRoot = computed(() =>
 }
 
 /*
- * Filling the area it was given: the grid stretches to it, and each panel scrolls in itself.
- * The preview stops sticking — there is nothing to stick to when the page does not move — and
- * it is the panels that scroll instead.
+ * One width for the tree and for the form, because they stand in the same column and taking
+ * turns in it is the whole idea: a column that changed size would move the preview and
+ * rescale it on every block opened, which is a bigger thing to watch than the room it saves.
+ *
+ * Twice what the tree used to have. It was 260, which cut the name of every block that was
+ * not called something short, and the form that now shares the column needs more than that
+ * anyway. The upper bound is what a form of fields reads well at rather than what is left
+ * over, and the percentage is what gives a narrow panel back to the preview.
  */
-.wx-blocks-host.is-fill,
-.wx-blocks-host.is-fill .wx-blocks {
-  height: 100%;
-  min-height: 0;
-}
-
-.wx-blocks-host.is-fill .wx-blocks {
-  align-items: stretch;
-}
-
-.wx-blocks-host.is-fill .wx-blocks__tree,
-.wx-blocks-host.is-fill .wx-blocks__fields {
-  overflow: auto;
-}
-
-.wx-blocks-host.is-fill .wx-blocks__preview {
-  position: static;
-  min-height: 0;
-}
-
 .wx-blocks {
   display: grid;
-  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  grid-template-columns: clamp(360px, 34%, 520px) minmax(0, 1fr);
   gap: var(--wx-gap, var(--wx-space-16));
   align-items: start;
 }
 
-.wx-blocks.is-editing {
-  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
-}
-
-.wx-blocks.is-editing.has-preview {
-  grid-template-columns: minmax(220px, 260px) minmax(360px, 1fr) 420px;
+/* Without a preview there is no second column to leave room for. */
+.wx-blocks:not(.has-preview) {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .wx-blocks__tree,
@@ -525,7 +668,53 @@ const formRoot = computed(() =>
 }
 
 .wx-blocks__panel-title {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-4);
+  min-width: 0;
   font-weight: var(--wx-font-weight-semibold);
+}
+
+/* One line and an ellipsis: the head is a row of controls with a name in it, and a name that
+   wraps pushes the row into two. The whole of it is one hover away, and in the sheet it is
+   spelled out along the top anyway. */
+.wx-blocks__panel-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* In the sheet the name is the sheet's heading, on a line of its own. */
+.wx-drawer .wx-blocks__fields .wx-blocks__panel-title {
+  display: none;
+}
+
+/* The way back up, and quieter than the block it leads to: the name of the open block is
+   what the head is for. */
+.wx-blocks__trail {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-4);
+  min-width: 0;
+  color: var(--wx-text-muted);
+  font-weight: var(--wx-font-weight-regular);
+  font-size: var(--wx-font-size-sm);
+}
+
+.wx-blocks__trail-step {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.wx-blocks__trail-step:hover {
+  color: var(--wx-text-default);
+  text-decoration: underline;
 }
 
 .wx-blocks__panel-extra {
@@ -539,15 +728,15 @@ const formRoot = computed(() =>
 }
 
 /*
- * On a form that scrolls, all three columns stand still and scroll inside themselves. The tree
- * is the one that makes this worth doing: a page of twenty blocks is a column taller than the
- * window, and without this the way to the block being edited is off the top of it.
+ * The narrow column stands still and scrolls inside itself. The tree is the one that makes
+ * this worth doing: a page of twenty blocks is a column taller than the window, and without
+ * this the way to the block being edited is off the top of it.
  *
  * The cap is the window less the air above and below; the containing block of a sticky grid
  * item is its grid area, which is the whole row, so a short column still stays with a tall one.
  */
-.wx-blocks-host:not(.is-fill) .wx-blocks__tree,
-.wx-blocks-host:not(.is-fill) .wx-blocks__fields {
+.wx-blocks-host:not(.is-compact) .wx-blocks__side {
+  min-width: 0;
   position: sticky;
   top: var(--wx-space-12);
   max-height: calc(100dvh - var(--wx-space-24));
@@ -558,6 +747,23 @@ const formRoot = computed(() =>
   min-width: 0;
   position: sticky;
   top: var(--wx-space-12);
+}
+
+/*
+ * A preview as tall as the page it shows is taller than the window, and a sticky box taller
+ * than the window pins its head and puts its foot out of reach — the end of the page could
+ * never be scrolled to. It stands still instead, and the tree beside it is the one that
+ * follows.
+ *
+ * Full screen is in here for a different reason: `position: sticky` makes a stacking context
+ * whatever its `z-index` says, so the sheet inside — fixed, and over everything by its own
+ * number — could only ever be over what is in this column. It opened *under* the action bar,
+ * which sits lower in the panel's stack and higher in the document. Nothing looked wrong in
+ * the rule that draws it; the column it came out of was the one that had to move.
+ */
+.wx-blocks__preview:has(.is-grown),
+.wx-blocks__preview:has(.is-fullscreen) {
+  position: static;
 }
 
 /* The foot of the tree: one row, the adding taking whatever the other one leaves. */
@@ -592,47 +798,31 @@ const formRoot = computed(() =>
    that opens it full screen. The two-column state — the tree and the whole page — keeps its
    preview: a laptop's panel is narrower than three columns and wide enough for two. The
    threshold is the three columns at their minimum — 260 + 360 + 420 and the two gaps. */
-@container (max-width: 1080px) {
-  .wx-blocks.is-editing.has-preview {
-    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
-  }
-
-  .wx-blocks.is-editing .wx-blocks__preview {
-    display: none;
-  }
-
-  .wx-blocks.is-editing.has-preview .wx-blocks__preview-button {
-    display: inline-flex;
-  }
-
-  /* Full screen still needs the node in the tree: it is drawn there, only unstuck. */
-  .wx-blocks.is-editing .wx-blocks__preview:has(.is-fullscreen) {
-    display: block;
-    position: static;
-  }
+/*
+ * One column: the preview is a button in either state.
+ *
+ * The threshold above this one is gone with the layout that needed it — there used to be a
+ * width at which three columns no longer fitted and the preview folded away while a block
+ * was open. There are two columns now, in both states, so there is one width to speak of.
+ *
+ * And it is not a container query any more: the narrow panel does not rearrange its columns,
+ * it renders the tree and the form somewhere else entirely, which only the component can
+ * decide. What is left here is the column the page keeps.
+ */
+.wx-blocks-host.is-compact .wx-blocks,
+.wx-blocks-host.is-compact .wx-blocks.has-preview {
+  grid-template-columns: minmax(0, 1fr);
 }
 
-/* One column: the preview is a button in either state. */
-@container (max-width: 720px) {
-  .wx-blocks,
-  .wx-blocks.is-editing,
-  .wx-blocks.has-preview,
-  .wx-blocks.is-editing.has-preview {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .wx-blocks__preview {
-    display: none;
-  }
-
-  .wx-blocks.has-preview .wx-blocks__preview-button {
-    display: inline-flex;
-  }
-
-  .wx-blocks__preview:has(.is-fullscreen) {
-    display: block;
-    position: static;
-  }
+/*
+ * Inside the sheet a panel is not a card — the sheet is the card, and one inside another is
+ * two borders and two paddings for one thing. The sheet's own body brings the room.
+ */
+.wx-drawer .wx-blocks__tree,
+.wx-drawer .wx-blocks__fields {
+  border: 0;
+  padding: 0;
+  background: none;
 }
 
 code {

@@ -5,9 +5,6 @@ declare(strict_types=1);
 return [
     'trail' => 'Gdzie jest ten artykuł',
     'untitled' => 'Bez tytułu',
-    'state-saved' => 'Zapisano',
-    'state-saving' => 'Zapisywanie…',
-    'state-unsaved' => 'Jeszcze nie zapisano',
     'save' => 'Zapisz szkic',
     'save-failed' => 'Artykuł nie został zapisany.',
     'schedule' => 'Zaplanuj',
