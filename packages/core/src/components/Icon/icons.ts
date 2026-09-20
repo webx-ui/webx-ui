@@ -163,6 +163,18 @@ export const builtinIcons = {
   phone:
     '<path d="M7 3.5 9.5 4l1.2 3.4-1.9 1.6a11 11 0 0 0 5.2 5.2l1.6-1.9 3.4 1.2.5 2.5a2 2 0 0 1-2 2.3A15.5 15.5 0 0 1 4.7 5.5a2 2 0 0 1 2.3-2Z"/>',
   bell: '<path d="M7 10a5 5 0 0 1 10 0c0 4 1.5 5.5 1.5 5.5h-13S7 14 7 10Z"/><path d="M10.2 18.5a2 2 0 0 0 3.6 0"/>',
+  /*
+   * A pin on a map: the teardrop and the hole in it. A set for a CMS without one is a set a
+   * contacts page cannot use, and the drop is the one shape everybody reads as "here".
+   */
+  'map-pin':
+    '<path d="M12 21s6.5-6 6.5-10.5a6.5 6.5 0 0 0-13 0C5.5 15 12 21 12 21Z"/><circle cx="12" cy="10.3" r="2.4"/>',
+  /*
+   * A megaphone, for the block every site has that asks for something. The horn points up
+   * and to the right — level, it reads as a traffic cone on its side.
+   */
+  megaphone:
+    '<path d="M4.5 10.2v3.6a1.6 1.6 0 0 0 1.6 1.6h2.2l8.4 4.1a1 1 0 0 0 1.4-.9V5.4a1 1 0 0 0-1.4-.9L8.3 8.6H6.1a1.6 1.6 0 0 0-1.6 1.6Z"/><path d="M8.3 15.4v2.8a2 2 0 0 0 2 2h.4a1 1 0 0 0 1-1.2l-.7-3.2"/>',
   cart: '<path d="M3 4.5h2.2l2.3 10.2a1.6 1.6 0 0 0 1.6 1.3h7.4a1.6 1.6 0 0 0 1.6-1.2L20 8H6"/><circle cx="10" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/>',
   tag: '<path d="M4 11.2V5.5A1.5 1.5 0 0 1 5.5 4h5.7a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8l-5.2 5.2a2 2 0 0 1-2.8 0l-7-7a2 2 0 0 1-.6-1.4Z"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/>',
   link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7L11.5 7"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7L12.5 17"/>',

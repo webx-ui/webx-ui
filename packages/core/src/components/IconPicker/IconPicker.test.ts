@@ -26,6 +26,16 @@ describe('WxIconPicker', () => {
     expect(wrapper.get('.wx-icon-picker__preview').classes()).toContain('is-empty')
   })
 
+  /* Picking cannot produce a name the set does not have, but an import or an older field can,
+     and "draws nothing" must not look the same as "nothing chosen yet". */
+  it('marks a name the set does not have', () => {
+    const wrapper = mountPicker({ modelValue: 'map-pin-outline', unknownText: 'Not in the set' })
+    const preview = wrapper.get('.wx-icon-picker__preview')
+
+    expect(preview.classes()).toContain('is-unknown')
+    expect(preview.attributes('title')).toBe('Not in the set')
+  })
+
   it('opens on focus with the whole set in it', async () => {
     const wrapper = mountPicker({ modelValue: null })
 

@@ -26,6 +26,7 @@ return [
     'icon' => 'Ícone',
     'icon-search' => 'Procurar ícones',
     'icon-none' => 'Não há ícone com esse nome',
+    'icon-unknown' => 'Esse nome não está no conjunto de ícones, nada é desenhado',
     'icon-clear' => 'Remover o ícone',
     'group' => 'Grupo',
     'group-help' => 'A secção da lista de onde um editor escolhe um bloco.',

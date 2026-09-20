@@ -26,6 +26,7 @@ return [
     'icon' => 'Symbol',
     'icon-search' => 'Symbole durchsuchen',
     'icon-none' => 'Kein Symbol mit diesem Namen',
+    'icon-unknown' => 'Dieser Name ist nicht im Symbolsatz, es wird nichts gezeichnet',
     'icon-clear' => 'Symbol entfernen',
     'group' => 'Gruppe',
     'group-help' => 'Der Abschnitt der Liste, aus dem ein Redakteur einen Block auswählt.',

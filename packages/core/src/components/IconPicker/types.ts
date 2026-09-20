@@ -4,6 +4,8 @@ export interface IconPickerProps {
   /** Show a button that empties the field. */
   clearable?: boolean
   placeholder?: string
+  /** What the field says when the name it holds is not in the set. */
+  unknownText?: string
   /** What the panel says when nothing matches what was typed. */
   emptyText?: string
   /** Label of the button that empties the field, for screen readers. */

@@ -26,6 +26,7 @@ return [
     'icon' => 'Simge',
     'icon-search' => 'Simgelerde ara',
     'icon-none' => 'Bu adda bir simge yok',
+    'icon-unknown' => 'Bu ad simge setinde yok, hiçbir şey çizilmiyor',
     'icon-clear' => 'Simgeyi kaldır',
     'group' => 'Grup',
     'group-help' => 'Editörün blok seçtiği listenin bölümü.',

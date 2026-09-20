@@ -24,6 +24,7 @@ const props = withDefaults(defineProps<IconPickerProps>(), {
   clearable: false,
   placeholder: 'Search icons',
   emptyText: 'No icon of that name',
+  unknownText: 'This name is not in the icon set, so nothing is drawn',
   clearLabel: 'Clear',
   teleport: true,
   disabled: undefined,
@@ -53,6 +54,18 @@ watch(model, (value) => {
 })
 
 const all = iconNames()
+
+/**
+ * The name it holds is not in the set.
+ *
+ * Picking cannot produce one, but a server can: a type imported from a file, a name that was
+ * typed into this field before it was a picker, an icon a site registered and then stopped
+ * registering. The field says so rather than showing the same emptiness as "no icon yet",
+ * which is the very confusion the component exists to end.
+ */
+const unknown = computed(
+  () => model.value !== null && model.value !== '' && !all.includes(model.value),
+)
 
 const shown = computed(() => {
   const query = text.value.trim().toLowerCase()
@@ -140,8 +153,13 @@ watch(open, (value) => {
     <div :class="classes" v-bind="rootAttrs">
       <popover-anchor as-child>
         <div class="wx-icon-picker__field">
-          <span class="wx-icon-picker__preview" :class="{ 'is-empty': !model }">
-            <wx-icon v-if="model" :name="model" />
+          <span
+            class="wx-icon-picker__preview"
+            :class="{ 'is-empty': !model, 'is-unknown': unknown }"
+            :title="unknown ? unknownText : undefined"
+          >
+            <wx-icon v-if="unknown" name="warning" />
+            <wx-icon v-else-if="model" :name="model" />
           </span>
 
           <input
@@ -256,6 +274,11 @@ watch(open, (value) => {
   border: 1px dashed var(--wx-border-default);
 }
 
+.wx-icon-picker__preview.is-unknown {
+  border: 0;
+  color: var(--wx-color-warning);
+}
+
 .wx-icon-picker__input {
   flex: 1 1 auto;
   min-inline-size: 0;
@@ -296,6 +319,7 @@ watch(open, (value) => {
 /* Teleported panel: it is portalled out of the component, so the scope attribute never
    reaches it and a scoped rule matches nothing at all — the panel would draw transparent. */
 .wx-icon-picker__panel {
+  font-family: var(--wx-font-family-sans);
   inline-size: min(360px, calc(100vw - var(--wx-space-16)));
   padding: var(--wx-space-8);
   border: 1px solid var(--wx-border-default);

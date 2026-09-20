@@ -26,6 +26,7 @@ return [
     'icon' => 'Icône',
     'icon-search' => 'Rechercher une icône',
     'icon-none' => 'Aucune icône de ce nom',
+    'icon-unknown' => 'Ce nom n’est pas dans le jeu d’icônes, rien n’est dessiné',
     'icon-clear' => 'Retirer l’icône',
     'group' => 'Groupe',
     'group-help' => 'La section de la liste dans laquelle un rédacteur choisit un bloc.',

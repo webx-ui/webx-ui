@@ -742,6 +742,7 @@ const actions = computed<ScreenAction[]>(() =>
                     clearable
                     :placeholder="t('page.icon-search')"
                     :empty-text="t('page.icon-none')"
+                    :unknown-text="t('page.icon-unknown')"
                     :clear-label="t('page.icon-clear')"
                     @update:model-value="settings.icon = $event"
                   />

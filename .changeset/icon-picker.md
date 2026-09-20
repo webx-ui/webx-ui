@@ -15,4 +15,12 @@ ever becomes a name the set has — typing one in full and pressing Enter counts
 since by then it is the only match left. `iconNames()` is the list, so icons a site registered
 itself are offered too.
 
+A name that arrives from somewhere else — an import, a field that used to be a text box — is
+marked rather than shown as the same emptiness as "nothing chosen": a warning glyph and a
+tooltip that says the set does not have it.
+
+The set gained the two icons this found missing: `map-pin` and `megaphone`. A CMS icon set
+without a pin is one a contacts page cannot use, and every site has the block that asks for
+something.
+
 See [IconPicker](/components/icon-picker).

@@ -26,6 +26,7 @@ return [
     'icon' => 'Icon',
     'icon-search' => 'Search icons',
     'icon-none' => 'No icon of that name',
+    'icon-unknown' => 'This name is not in the icon set, so nothing is drawn',
     'icon-clear' => 'Clear the icon',
     'group' => 'Group',
     'group-help' => 'The section of the list an editor picks a block from.',

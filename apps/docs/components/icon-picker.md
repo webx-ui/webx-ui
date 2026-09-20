@@ -36,20 +36,26 @@ hold a name like that: what is typed is a filter, and the value only ever become
 picked out of the panel. Typing a name in full and pressing <kbd>Enter</kbd> picks it, since by
 then it is the only match left.
 
+A name can still arrive from elsewhere — a type imported from a file, a field that was a text box
+last year, an icon a site registered and then stopped registering. The field marks it: the
+preview shows a warning glyph and says so in its tooltip, rather than the same emptiness as "no
+icon chosen".
+
 ## Props
 
-| Prop          | Type                   | Default                  | Description                                |
-| ------------- | ---------------------- | ------------------------ | ------------------------------------------ |
-| `modelValue`  | `string \| null`       | `null`                   | Icon name                                  |
-| `clearable`   | `boolean`              | `false`                  | Show a button that empties the field       |
-| `placeholder` | `string`               | `'Search icons'`         | Placeholder of the search box              |
-| `emptyText`   | `string`               | `'No icon of that name'` | Shown when nothing matches                 |
-| `clearLabel`  | `string`               | `'Clear'`                | Accessible name of the clear button        |
-| `teleport`    | `boolean`              | `true`                   | Render the panel in a portal               |
-| `disabled`    | `boolean`              | —                        | Inherited from the form field when unset   |
-| `size`        | `'sm' \| 'md' \| 'lg'` | —                        | Inherited from the form field when unset   |
-| `status`      | `'default' \| 'error'` | —                        | Inherited from the form field when unset   |
-| `ariaLabel`   | `string`               | —                        | Accessible name when there is no `<label>` |
+| Prop          | Type                   | Default                  | Description                                  |
+| ------------- | ---------------------- | ------------------------ | -------------------------------------------- |
+| `modelValue`  | `string \| null`       | `null`                   | Icon name                                    |
+| `clearable`   | `boolean`              | `false`                  | Show a button that empties the field         |
+| `placeholder` | `string`               | `'Search icons'`         | Placeholder of the search box                |
+| `emptyText`   | `string`               | `'No icon of that name'` | Shown when nothing matches                   |
+| `unknownText` | `string`               | see below                | Tooltip when the held name is not in the set |
+| `clearLabel`  | `string`               | `'Clear'`                | Accessible name of the clear button          |
+| `teleport`    | `boolean`              | `true`                   | Render the panel in a portal                 |
+| `disabled`    | `boolean`              | —                        | Inherited from the form field when unset     |
+| `size`        | `'sm' \| 'md' \| 'lg'` | —                        | Inherited from the form field when unset     |
+| `status`      | `'default' \| 'error'` | —                        | Inherited from the form field when unset     |
+| `ariaLabel`   | `string`               | —                        | Accessible name when there is no `<label>`   |
 
 ## Events
 

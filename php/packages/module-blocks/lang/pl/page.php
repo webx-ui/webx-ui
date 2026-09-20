@@ -26,6 +26,7 @@ return [
     'icon' => 'Ikona',
     'icon-search' => 'Szukaj ikon',
     'icon-none' => 'Nie ma ikony o tej nazwie',
+    'icon-unknown' => 'Nie ma takiej nazwy w zestawie ikon, nic się nie rysuje',
     'icon-clear' => 'Usuń ikonę',
     'group' => 'Grupa',
     'group-help' => 'Sekcja listy, z której redaktor wybiera blok.',
