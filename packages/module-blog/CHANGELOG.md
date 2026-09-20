@@ -1,5 +1,87 @@
 # @webx-ui/module-blog
 
+## 0.4.0
+
+### Minor Changes
+
+- cca572f: The address of an article is one row, not two
+
+  The settings tab used to hold a field labelled "Address" and, directly under it, a row also
+  labelled "Address" printing the whole thing. A full row of the form, and a second label, spent
+  on one constant segment — `/blog/` — which taught the reader to skim both. The spec had asked
+  for the other thing all along: "the address, with the prefix pasted on the left".
+
+  So the prefix moves inside the control. `wx-article-slug` replaces the pair of `wx-input` and
+  `wx-article-address`: a localized text field whose `#prefix` is the prefix of the blog, set in
+  the same monospace face the address is read in, with the language chip still on the right. The
+  whole address is now read and written in one place, and the card is a row shorter.
+
+  What is kept is the part that is not a duplicate: the line that says an article on the site is
+  about to answer at a different address and that the old one will keep working. It appears only
+  when there is something to lose, and it still appears before the save rather than in a toast
+  after it.
+
+  Gone with the row: `WxArticleAddress` and the node type `wx-article-address`, and the words
+  `article.address` and `article.no-address` on both halves. A project that patched the `address`
+  node of `blog.article-form` has no node to patch any more — the id is not in the screen.
+
+  The server registers `wx-article-slug` as the text type `wx-input` already was, so what a save
+  is checked against does not change.
+
+- cca572f: An article can be taken off the site from its editor, and its tags stand on one line
+
+  **Off the site, from the publication card.** Taking an article off the site was a line in the
+  `···` of a row of the list and nowhere else — so an editor looking at the article, on the tab
+  where its day and its author are decided, had to go back to the list to pull it. Now
+  `wx-article-unpublish` sits under the date, where the rest of the publication is settled. It is
+  offered only while there is something to take off — a draft was never there, and one already
+  off has nowhere further to go; the way back is "Publish", which stays in the bar. It asks
+  first, because this is the one thing on that tab visitors see happen, and the question names
+  what survives: the draft, the history and the rubrics all stay, and publishing puts the article
+  back exactly where it was. A scheduled article gets its own sentence — it never went out, and
+  the day it was set for will pass without it.
+
+  **Tags.** A chip carried a `WxAction` in its slot, and an icon button of the panel is thirty
+  pixels tall inside a badge whose words are fifteen: the chip grew to fit the button, the word
+  sat three pixels below the cross it stood beside, and the air to the left of the word was half
+  the air to its right. `WxBadge` has had `closable` all along, sized to the words — measured, the
+  chip is 22.6 px instead of 37.6 and the drift is zero.
+
+  **Rubrics.** The "main" badge stood against the name of the first rubric with nothing between
+  them, because the cell a row's content goes into is a block and the `gap` meant for it was
+  never applied — and neither was the clipping on the name, which had been written for a flex
+  parent that was not there. The slot now makes a line of its own contents: eight pixels between
+  the name and the badge, and a rubric with a long name is cut with an ellipsis rather than
+  pushing the badge to the far end of the row.
+
+- cca572f: Rubrics are one list and a dialog over it
+
+  The section used to be a list beside a form, and the form took two thirds of a screen whose
+  whole job is the drag: the order of this list is the order of the menu on the site. Now the list
+  is the screen — grip, name, address, the number of articles, and a `···` with `Edit`, `Show its
+articles` and `Delete` — and a rubric is edited in a dialog with three tabs: `Content` (the
+  name, the address, the switch and the introduction), `Image` and `SEO`. One `Save` for all
+  three, and a `422` opens the tab the failing field is on.
+
+  The introduction is a rich text document now (`wx-rich-text`) rather than a line of plain text:
+  cleaned by its own field type on the way in, printed with its library pictures resolved on the
+  way out. Nothing migrates — the column is the same one, and a line of text is a document with no
+  markup in it.
+
+  Two things this fixes on the way: the SEO card used to open at zero width inside the old form,
+  and the footer of that form broke apart onto three rows on a one-pixel overflow.
+
+### Patch Changes
+
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+  - @webx-ui/core@0.28.0
+  - @webx-ui/module-admin@0.12.1
+  - @webx-ui/module-blocks@0.6.2
+  - @webx-ui/schema@0.3.5
+
 ## 0.3.0
 
 ### Minor Changes
