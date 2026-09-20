@@ -81,9 +81,6 @@ export const pagesMessages: Record<string, Messages> = {
     // The editor.
     trail: 'Where this page sits',
     untitled: 'Untitled',
-    'state-saved': 'Saved',
-    'state-saving': 'Saving…',
-    'state-unsaved': 'Not saved yet',
     save: 'Save',
     'save-failed': 'The page was not saved.',
     publish: 'Publish',

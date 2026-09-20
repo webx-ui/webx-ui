@@ -5,9 +5,6 @@ declare(strict_types=1);
 return [
     'trail' => 'Dove si trova questo articolo',
     'untitled' => 'Senza titolo',
-    'state-saved' => 'Salvato',
-    'state-saving' => 'Salvataggio…',
-    'state-unsaved' => 'Non ancora salvato',
     'save' => 'Salva la bozza',
     'save-failed' => 'L’articolo non è stato salvato.',
     'schedule' => 'Programma',

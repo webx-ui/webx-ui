@@ -30,10 +30,14 @@ return [
     'pick-nothing-allowed' => 'Nothing can be put inside ":parent".',
     'limit-reached' => 'Already :count on this page, the limit for this block',
 
+    'previous' => 'Previous block',
+    'next' => 'Next block',
+
     'preview' => 'Preview',
     'open-site' => 'Open on the site',
     'fullscreen' => 'Full screen',
     'close' => 'Close',
+    'width' => 'Width',
     'width-desktop' => 'Desktop',
     'width-tablet' => 'Tablet',
     'width-phone' => 'Phone',

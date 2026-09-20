@@ -6,5 +6,7 @@ return [
     'back' => 'Retour',
     'rename' => 'Renommer',
     'save' => 'Enregistrer',
+    'saving' => 'Enregistrement…',
+    'saved' => 'Enregistré',
     'more' => 'Plus',
 ];
