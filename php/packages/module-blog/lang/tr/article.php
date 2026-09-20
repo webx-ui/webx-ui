@@ -5,9 +5,6 @@ declare(strict_types=1);
 return [
     'trail' => 'Bu yazı nerede',
     'untitled' => 'Başlıksız',
-    'state-saved' => 'Kaydedildi',
-    'state-saving' => 'Kaydediliyor…',
-    'state-unsaved' => 'Henüz kaydedilmedi',
     'save' => 'Taslağı kaydet',
     'save-failed' => 'Yazı kaydedilmedi.',
     'schedule' => 'Planla',

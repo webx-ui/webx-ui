@@ -51,11 +51,11 @@ const classes = computed(() => [
   /*
    * Two lines rather than one, once the buttons no longer leave the state room to be read.
    *
-   * Without this the state box is shrunk to nothing — `min-width: 0` lets it — and its text
-   * goes on being painted where the box no longer is, straight across the buttons. Measured on
-   * a 375px screen with "Saved · goes out on 25 September at 17:06" beside two buttons: the box
-   * 0px wide and 105 tall, the words over the top of "Save draft". Nothing about it looks like
-   * a layout that ran out of room; it looks like the bar is broken.
+   * Without this there is nowhere for the state to go once the buttons have taken the width,
+   * and what it does instead is overflow them: measured on a 375px screen with "Saved · goes
+   * out on 25 September at 17:06" beside two buttons, the words ran over the top of "Save
+   * draft". Nothing about that looks like a layout that ran out of room; it looks like the bar
+   * is broken. The `min-width` on the state box below is the other half of the same fix.
    */
   flex-wrap: wrap;
   box-sizing: border-box;
@@ -102,12 +102,27 @@ const classes = computed(() => [
 /* The left side is whatever the screen says about the state of the work — saved, a draft,
    a version number. It gives way as the row narrows, down to the width of a short sentence;
    past that the buttons take a line of their own rather than the words giving way to nothing. */
+/*
+ * As wide as what it holds, and never narrower than the longest word in it.
+ *
+ * It used to ask for 220px whatever it was given — which is right for a sentence and wrong for
+ * everything else: a state that is one small mark took a line of its own on a phone and left an
+ * empty strip above the buttons, because 220 plus two buttons does not fit 375. The basis is
+ * the content now, so a mark sits beside the buttons and a sentence still pushes itself onto
+ * the next line the moment it no longer fits.
+ *
+ * `min-width` is what the sentence is saved by, and it replaces the `0` that used to be here:
+ * at zero the box was shrunk to nothing while its words went on being painted where the box no
+ * longer was, straight across the buttons — measured on a 375px screen, the box 0 wide and the
+ * words over the top of "Save draft". At `min-content` it cannot be shrunk past its longest
+ * word, so it wraps instead of overflowing.
+ */
 .wx-action-bar__state {
   display: flex;
   align-items: center;
   gap: var(--wx-space-8);
-  flex: 1 1 220px;
-  min-width: 0;
+  flex: 1 1 auto;
+  min-width: min-content;
   flex-wrap: wrap;
 }
 

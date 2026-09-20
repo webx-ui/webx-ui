@@ -68,9 +68,6 @@ return [
     // The editor.
     'trail' => 'Onde esta página fica',
     'untitled' => 'Sem título',
-    'state-saved' => 'Guardado',
-    'state-saving' => 'A guardar…',
-    'state-unsaved' => 'Por guardar',
     'save' => 'Guardar',
     'save-failed' => 'A página não foi guardada.',
     'publish' => 'Publicar',

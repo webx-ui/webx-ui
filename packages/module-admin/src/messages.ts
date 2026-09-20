@@ -32,6 +32,9 @@ export const adminMessages: Record<string, Messages> = {
     more: 'More',
     rename: 'Rename',
     save: 'Save',
+    // Said out loud to a screen reader while the little wheel turns, and after it stops.
+    saving: 'Saving…',
+    saved: 'Saved',
   },
   // The page behind a '?'. Only the heading is the panel's: what the page says belongs to
   // whatever is being explained, and travels with that module's own words.

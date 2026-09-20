@@ -103,6 +103,20 @@ export const builtinIcons = {
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
   /* The sidebar toggle: a page with a column down its left. */
   sidebar: '<rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="M9.5 4.5v15"/>',
+  /*
+   * The three screens, and they are told apart by their proportions rather than by any
+   * detail: at 1em a tablet and a phone are the same rounded rectangle, so the tablet is
+   * drawn wide enough that the difference survives the size — 13 against 8. The desktop
+   * gets its stand for the same reason.
+   */
+  monitor: '<rect x="3" y="4" width="18" height="12.5" rx="2.5"/><path d="M12 16.5v3.5M8.5 20h7"/>',
+  tablet: '<rect x="5.5" y="3" width="13" height="18" rx="2.5"/><path d="M10.7 17.6h2.6"/>',
+  smartphone: '<rect x="8" y="2.5" width="8" height="19" rx="2.2"/><path d="M10.9 18.7h2.2"/>',
+  /* Four corners, pointing out of the picture and back into it. */
+  maximize:
+    '<path d="M9 4H5.5A1.5 1.5 0 0 0 4 5.5V9"/><path d="M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9"/><path d="M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20H9"/>',
+  minimize:
+    '<path d="M4 9h3.5A1.5 1.5 0 0 0 9 7.5V4"/><path d="M20 9h-3.5A1.5 1.5 0 0 1 15 7.5V4"/><path d="M15 20v-3.5a1.5 1.5 0 0 1 1.5-1.5H20"/><path d="M9 20v-3.5A1.5 1.5 0 0 0 7.5 15H4"/>',
   'more-horizontal':
     '<circle cx="5.5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
   'more-vertical':

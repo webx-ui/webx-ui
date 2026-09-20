@@ -5,9 +5,6 @@ declare(strict_types=1);
 return [
     'trail' => 'Де ця стаття',
     'untitled' => 'Без заголовка',
-    'state-saved' => 'Збережено',
-    'state-saving' => 'Зберігаємо…',
-    'state-unsaved' => 'Ще не збережено',
     'save' => 'Зберегти чернетку',
     'save-failed' => 'Статтю не збережено.',
     'schedule' => 'Запланувати',

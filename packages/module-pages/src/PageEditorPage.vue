@@ -5,6 +5,7 @@ import {
   useAdmin,
   useErrorText,
   useTranslate,
+  WxSaveState,
   WxScreen,
   WxScreenHead,
   type ScreenAction,
@@ -22,7 +23,6 @@ import {
   WxBreadcrumbItem,
   WxButton,
   WxSkeleton,
-  WxText,
   type LocalizedValue,
 } from '@webx-ui/core'
 import type { ScreenModel } from '@webx-ui/schema'
@@ -431,7 +431,7 @@ const actions = computed<ScreenAction[]>(() => {
       -->
       <wx-action-bar v-if="canManage">
         <template #state>
-          <wx-text size="sm" tone="muted">{{ t(`page.state-${state}`) }}</wx-text>
+          <wx-save-state :state="state" />
         </template>
 
         <wx-button variant="outline" :loading="saving" :disabled="!dirty" @click="save">
@@ -504,32 +504,12 @@ const actions = computed<ScreenAction[]>(() => {
  */
 
 /*
- * Only the tab that holds the constructor is a box of a fixed height with its own scrollbar.
+ * No tab is a box of a fixed height any more, and none has a scrollbar of its own.
  *
- * Everywhere else the tab grows with its content and the page scrolls, because a scroll box
- * clips: the cards inside one had their shadows cut off square at all four edges, which reads
- * as a drawing fault rather than as a scrolling region. The screen is exactly a window tall
- * for the same reason and under the same condition — `WxMain` keeps a screen with an action
- * bar at least that tall anyway, which is what holds the bar at the bottom of a short tab.
+ * The constructor used to make this one exactly a window tall, so that its three columns
+ * scrolled inside themselves. It does not: the preview is as tall as the page it shows, and
+ * it is the browser that scrolls it. A tab that grows with its contents is also the only kind
+ * that does not clip them — a scroll box cut the shadows off the cards inside it square at all
+ * four edges, which reads as a drawing fault rather than as a scrolling region.
  */
-.wx-page-editor:has(.wx-tab:not([hidden]) .wx-blocks-host.is-fill) {
-  height: var(--wx-fill-height);
-}
-
-.wx-page-editor__screen :deep(.wx-tab:not([hidden]):has(.wx-blocks-host.is-fill)) {
-  overflow: auto;
-}
-
-/*
- * The renderer wraps every field in a form item, so the height has to travel through that as
- * well — and through that one only. `:has()` picks the wrapper of a field that fills and leaves
- * the ordinary fields of the settings tab the height of their own contents.
- */
-.wx-page-editor__screen :deep(.wx-form-item:has(.wx-blocks-host.is-fill)),
-.wx-page-editor__screen :deep(.wx-form-item:has(.wx-blocks-host.is-fill) .wx-form-item__control) {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-}
 </style>

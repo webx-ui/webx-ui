@@ -78,9 +78,6 @@ export const blogMessages: Record<string, Messages> = {
   article: {
     trail: 'Where this article sits',
     untitled: 'Untitled',
-    'state-saved': 'Saved',
-    'state-saving': 'Saving…',
-    'state-unsaved': 'Not saved yet',
     save: 'Save draft',
     'save-failed': 'The article was not saved.',
     schedule: 'Schedule',
