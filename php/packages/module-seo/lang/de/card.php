@@ -27,4 +27,6 @@ return [
     'json-ld-help' => 'Ein JSON-LD-Objekt oder eine Liste davon. Was die Website über sich sagt, kommt aus den Einstellungen; das hier ist für eine Seite, die eigene Auszeichnung braucht.',
     'json-ld-invalid' => 'Das ist kein gültiges JSON.',
     'preview' => 'In den Suchergebnissen',
+    'share-preview' => 'Beim Teilen',
+    'share-auto' => 'Die Website setzt es ein — das Bild des Eintrags oder das Standardbild',
 ];
