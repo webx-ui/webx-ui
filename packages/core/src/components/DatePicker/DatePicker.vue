@@ -5,6 +5,7 @@ import { useFormField } from '../../composables/useFormField'
 import '../../styles/datepicker.css'
 import type { DatePickerEmits, DatePickerModelValue, DatePickerProps } from './types'
 import { useControlAttrs } from '../../composables/useControlAttrs'
+import { useDateLocale } from '../../composables/useDateLocale'
 
 defineOptions({ name: 'WxDatePicker', inheritAttrs: false })
 
@@ -22,6 +23,7 @@ const props = withDefaults(defineProps<DatePickerProps>(), {
   seconds: false,
   minutesIncrement: 1,
   is24: true,
+  locale: undefined,
   weekStart: 1,
   autoApply: true,
   textInput: false,
@@ -49,6 +51,12 @@ defineSlots<Record<string, (props: Record<string, unknown>) => unknown>>()
 const model = defineModel<DatePickerModelValue>({ default: null })
 
 const field = useFormField(props)
+
+/*
+ * The picker bundles English and nothing else, so without this the month header and the
+ * weekday row stay English under a panel drawn in any other language.
+ */
+const locale = useDateLocale(() => props.locale)
 
 const hasTime = computed(() => props.type !== 'date')
 
@@ -133,6 +141,7 @@ function onCleared() {
       :placeholder="placeholder"
       :min-date="minDate"
       :max-date="maxDate"
+      :locale="locale"
       :week-start="weekStart"
       :auto-apply="autoApply"
       :text-input="textInput"

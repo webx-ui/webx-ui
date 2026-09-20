@@ -66,6 +66,7 @@ All three take the same props; `WxDateTimePicker` and `WxTimePicker` simply fix 
 | `seconds`          | `boolean`                                        | `false`     | Include seconds                                                   |
 | `minutesIncrement` | `number`                                         | `1`         | Step of the minutes column                                        |
 | `is24`             | `boolean`                                        | `true`      | 24-hour clock                                                     |
+| `locale`           | `string \| Locale`                               | the browser | Language of the calendar                                          |
 | `weekStart`        | `number`                                         | `1`         | 0 is Sunday, 1 is Monday                                          |
 | `autoApply`        | `boolean`                                        | `true`      | Apply on pick, with no confirm button                             |
 | `textInput`        | `boolean`                                        | `false`     | Allow typing as well as picking                                   |
@@ -83,10 +84,38 @@ All three take the same props; `WxDateTimePicker` and `WxTimePicker` simply fix 
 `teleport` is on by default on purpose: a picker inside a `WxCard` or a scrolling table would
 otherwise be clipped by `overflow: hidden`.
 
-## Anything else the library takes
+## Language
 
-Unknown attributes are passed straight through to the underlying picker, so its whole prop surface
-stays reachable without us re-declaring it:
+The library underneath carries exactly one language, `en-US`, so a calendar left alone heads a
+Russian screen with "Sep 2026" over a "Mo Tu We" row. `locale` takes a BCP-47 tag and the month and
+weekday names come from the browser's own `Intl` data — no language packs to import, and any tag
+the browser knows works:
+
+```vue
+<template>
+  <wx-date-picker v-model="publishedAt" locale="ru" />
+</template>
+```
+
+An application in one language throughout says it once, and every picker under it follows — that
+is what an admin panel wants, because the calendar has to follow the language the user picked in
+the interface rather than the one their browser is set to:
+
+```ts
+import { dateLocaleKey } from '@webx-ui/core'
+
+app.provide(
+  dateLocaleKey,
+  computed(() => i18n.state.locale),
+)
+```
+
+`provideDateLocale(locale)` does the same from inside a component. A `locale` prop on a field still
+wins over both, and with neither the browser's own language is used.
+
+The library's own convention — a **date-fns locale object** — is still accepted, for a language the
+browser does not carry or a calendar that needs wording of its own. `date-fns` comes along with the
+picker, so it is importable without installing anything else:
 
 ```vue
 <script setup lang="ts">
@@ -94,12 +123,20 @@ import { uk } from 'date-fns/locale'
 </script>
 
 <template>
-  <wx-date-picker v-model="value" :locale="uk" :disabled-week-days="[6, 0]" range />
+  <wx-date-picker v-model="value" :locale="uk" />
 </template>
 ```
 
-`locale` is a **date-fns locale object**, not a language tag — that is the library's own convention.
-`date-fns` comes along with the picker, so it is importable without installing anything else.
+## Anything else the library takes
+
+Unknown attributes are passed straight through to the underlying picker, so its whole prop surface
+stays reachable without us re-declaring it:
+
+```vue
+<template>
+  <wx-date-picker v-model="value" :disabled-week-days="[6, 0]" range />
+</template>
+```
 
 ## Theming
 

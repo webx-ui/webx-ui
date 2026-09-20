@@ -1,6 +1,6 @@
 import { computed, createApp, h, ref, type App, type Component } from 'vue'
 import { createRouter, createWebHistory, type Router, type RouteRecordRaw } from 'vue-router'
-import { localesKey, WebxUI, type LocaleOption } from '@webx-ui/core'
+import { dateLocaleKey, localesKey, WebxUI, type LocaleOption } from '@webx-ui/core'
 import AdminLanding from './AdminLanding.vue'
 import AdminNav from './AdminNav.vue'
 import AdminShell from './AdminShell.vue'
@@ -177,6 +177,16 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
    * switch between yet.
    */
   const editing = ref('')
+
+  /*
+   * A calendar is drawn in the language of the panel, not of the browser: the picker
+   * would otherwise head a Russian screen with "Sep 2026" while every other date on it
+   * goes through `useDates()` and reads Russian.
+   */
+  app.provide(
+    dateLocaleKey,
+    computed(() => i18n.state.locale),
+  )
 
   app.provide(localesKey, {
     list: computed<LocaleOption[]>(() =>
