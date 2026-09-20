@@ -1,5 +1,62 @@
 # @webx-ui/admin
 
+## 0.11.0
+
+### Minor Changes
+
+- a9383bb: Date pickers are drawn in the language they are asked for
+
+  `@vuepic/vue-datepicker` bundles `en-US` and nothing else, so every calendar in the kit headed a
+  Russian screen with "Sep 2026" over a "Mo Tu We" row. `WxDatePicker`, `WxDateTimePicker`,
+  `WxTimePicker` and `WxDateRangePicker` now take a `locale` prop — a BCP-47 tag, whose month and
+  weekday names come from the browser's own `Intl` data rather than an imported language pack — and
+  `provideDateLocale` / `dateLocaleKey` say it once for a whole application. The library's own
+  date-fns locale object is still accepted. With nothing given, the browser's language is used.
+
+  The panel hands every picker below it the language the interface is drawn in, so a calendar follows
+  the administrator's choice rather than their browser's setting.
+
+- 48dfd9e: One head for every screen of the panel
+
+  Eight screens each answered "what goes at the top" on their own, and gave eight answers: the
+  heading at three sizes, the way out as an arrow on four of them and as a line of breadcrumbs on the
+  rest, the buttons folding into a `···` on two editors and wrapping onto a third line everywhere
+  else. Writing a new screen meant writing that line again and getting it slightly different again.
+
+  `WxScreenHead` is that line, once: the way out, the name with the state said beside it, the line
+  under it that says which record this is, and what can be done here. `WxListScreen` is built on it,
+  so a list and the editor a row opens are the same object rather than two similar ones — and it
+  takes `back` now, which is what the statuses screen used to draw above its own heading for want of
+  anywhere to put it.
+
+  **The actions are declared rather than drawn.** The same action has to be a button on a desktop and
+  a line of a menu on a phone, and one vnode cannot be mounted in two places — as markup it had to be
+  written twice, which is exactly what the page and article editors did. As `ScreenAction[]` it is
+  written once: `primary` is the one thing the screen exists for and the one that keeps a button when
+  the head runs out of room, `danger` is never a button at all, `menu` is in the `···` at every
+  width, and `loading`, `disabled` and `href` mean what they say. Below 720px — 480 on a list, which
+  carries one word and no trail — everything but the primary folds behind the `···` and that primary
+  takes the line under the name, full width.
+
+  The name’s line is the head: the way out at the start of it and the actions at the end, both
+  centred on it however many badges stand beside the name. The trail is the line above, and it
+  scrolls sideways with no scrollbar showing rather than wrapping — on a phone a path four levels
+  deep was two lines of the smallest type on the screen, standing between the reader and the name of
+  what they had opened.
+
+  Two things that were quietly wrong come out with it. Nineteen buttons across the panel passed
+  `icon="plus"` to `WxButton`, which has no such prop: the attribute landed on the `<button>` and
+  drew nothing, so the panel’s main actions had no icons at all. And the `···` said `More` in English
+  in every language, because the core carries English defaults and knows no dictionary — the panel
+  gives it the word now, in all ten.
+
+### Patch Changes
+
+- Updated dependencies [a9383bb]
+- Updated dependencies [b6a09a6]
+  - @webx-ui/core@0.26.0
+  - @webx-ui/schema@0.3.3
+
 ## 0.10.0
 
 ### Minor Changes

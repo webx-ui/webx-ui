@@ -1,5 +1,33 @@
 # @webx-ui/core
 
+## 0.26.0
+
+### Minor Changes
+
+- a9383bb: Date pickers are drawn in the language they are asked for
+
+  `@vuepic/vue-datepicker` bundles `en-US` and nothing else, so every calendar in the kit headed a
+  Russian screen with "Sep 2026" over a "Mo Tu We" row. `WxDatePicker`, `WxDateTimePicker`,
+  `WxTimePicker` and `WxDateRangePicker` now take a `locale` prop — a BCP-47 tag, whose month and
+  weekday names come from the browser's own `Intl` data rather than an imported language pack — and
+  `provideDateLocale` / `dateLocaleKey` say it once for a whole application. The library's own
+  date-fns locale object is still accepted. With nothing given, the browser's language is used.
+
+  The panel hands every picker below it the language the interface is drawn in, so a calendar follows
+  the administrator's choice rather than their browser's setting.
+
+- b6a09a6: `WxButton` takes an `icon` name
+
+  The button had an `icon` slot and no `icon` prop, so `<wx-button icon="plus">` — which is how two
+  dozen call sites across the panel wrote it — fell through to the `<button>` element as an attribute
+  and drew nothing at all. Every other component that carries a picture beside its label takes the
+  name (`WxDropdownItem`, `WxMenuItem`, `WxTab`), and this one now does too: `icon?: IconName` renders
+  a `WxIcon` into the existing `.wx-button__icon` span. The slot still wins when both are given, and
+  `loading` still replaces both with the spinner.
+
+  The call sites themselves were repaired in the meantime — the head of a screen draws its actions
+  from `ScreenAction.icon` now — so this is the missing prop rather than a fix to any of them.
+
 ## 0.25.0
 
 ### Minor Changes
