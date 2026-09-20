@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef, type Component } from 'vue'
-import { useAdmin, useErrorText, useTranslate, WxListScreen } from '@webx-ui/module-admin'
-import { confirm, createModal, toast, WxButton } from '@webx-ui/core'
+import {
+  useAdmin,
+  useErrorText,
+  useTranslate,
+  WxListScreen,
+  type ScreenAction,
+} from '@webx-ui/module-admin'
+import { confirm, createModal, toast } from '@webx-ui/core'
 import AdminDialog from './AdminDialog.vue'
 import AdminList from './AdminList.vue'
 import { createAdminsApi } from './admins'
@@ -49,6 +55,21 @@ const title = computed(
     t('admins.title'),
 )
 
+/* Short enough for a phone, where the name and the button share one line. */
+const actions = computed<ScreenAction[]>(() =>
+  canManage
+    ? [
+        {
+          key: 'new',
+          label: t('admins.new-short'),
+          icon: 'plus',
+          primary: true,
+          run: () => void open(null),
+        },
+      ]
+    : [],
+)
+
 async function open(admin: Admin | null): Promise<void> {
   editing.value = admin
 
@@ -81,14 +102,7 @@ async function remove(admin: Admin): Promise<void> {
 </script>
 
 <template>
-  <wx-list-screen :title="title">
-    <template v-if="canManage" #actions>
-      <!-- Short enough for a phone, where the heading and the button share one line. -->
-      <wx-button type="primary" icon="add" @click="open(null)">
-        {{ t('admins.new-short') }}
-      </wx-button>
-    </template>
-
+  <wx-list-screen :title="title" :actions="actions">
     <admin-list
       ref="list"
       :removable="canManage"

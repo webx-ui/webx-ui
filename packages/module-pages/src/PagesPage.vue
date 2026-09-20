@@ -8,13 +8,13 @@ import {
   useTranslate,
   WxDate,
   WxListScreen,
+  type ScreenAction,
 } from '@webx-ui/module-admin'
 import {
   confirm,
   createModal,
   toast,
   WxBadge,
-  WxButton,
   WxTable,
   WxText,
   type TabItem,
@@ -357,17 +357,18 @@ function badge(status: PageStatus): 'default' | 'success' | 'warning' {
 watch(filter, () => void load())
 
 onMounted(load)
+
+/* What the section offers. Declared, because on a phone the head folds it into the ···. */
+const actions = computed<ScreenAction[]>(() =>
+  canManage.value
+    ? [{ key: 'new', label: t('page.new'), icon: 'plus', primary: true, run: () => void add(null) }]
+    : [],
+)
 </script>
 
 <template>
   <div class="wx-pages">
-    <wx-list-screen v-model:view="filter" :title="title" :views="views">
-      <template v-if="canManage" #actions>
-        <wx-button type="primary" icon="plus" @click="add(null)">
-          {{ t('page.new') }}
-        </wx-button>
-      </template>
-
+    <wx-list-screen v-model:view="filter" :title="title" :views="views" :actions="actions">
       <wx-table
         :data="rows"
         :columns="columns"

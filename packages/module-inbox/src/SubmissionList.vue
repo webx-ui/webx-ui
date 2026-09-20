@@ -8,7 +8,9 @@ import {
   WxDate,
   rowMenuWidth,
   WxRowMenu,
+  WxScreenHead,
   type RowAction,
+  type ScreenAction,
 } from '@webx-ui/module-admin'
 import {
   confirm,
@@ -16,11 +18,9 @@ import {
   localizedValue,
   toast,
   useLocales,
-  WxAction,
   WxAvatar,
   WxBadge,
   WxButton,
-  WxHeading,
   WxIcon,
   WxSelect,
   WxTable,
@@ -384,36 +384,44 @@ const exportHref = computed(() =>
 function settings(): void {
   void router.push(`${props.base}/forms/${props.form.id}`)
 }
+/*
+ * The tools of the pane: none of them is the reason somebody opened it — that is the list
+ * itself — so none is primary, and on a narrow pane they all fold behind the ···.
+ */
+const actions = computed<ScreenAction[]>(() => {
+  const list: ScreenAction[] = []
+
+  if (canUpdate.value) {
+    list.push({
+      key: 'new',
+      label: t('panel.new-submission'),
+      icon: 'plus',
+      run: () => void byHand(),
+    })
+  }
+
+  list.push({ key: 'export', label: t('panel.export'), icon: 'download', href: exportHref.value })
+
+  if (canManage.value) {
+    list.push({ key: 'settings', label: t('panel.settings'), icon: 'settings', run: settings })
+  }
+
+  return list
+})
 </script>
 
 <template>
   <div ref="root" class="wx-submissions" :class="{ 'is-pane': inline }">
-    <div class="wx-submissions__head">
-      <!-- On a phone the pane is a screen of its own and the drawer carries no close of its
-           own, so the way back has to be here. Beside the list there is nothing to go back to. -->
-      <wx-action
-        v-if="!inline"
-        class="wx-submissions__back"
-        icon="arrow-left"
-        :title="t('panel.forms')"
-        @click="emit('back')"
-      />
-
-      <div class="wx-submissions__who">
-        <wx-heading :level="3" truncate>{{ formName() }}</wx-heading>
-        <wx-text size="sm" tone="muted" mono truncate>{{ form.slug }}</wx-text>
-      </div>
-
-      <wx-button v-if="canUpdate" variant="outline" icon="plus" size="sm" @click="byHand">{{
-        t('panel.new-submission')
-      }}</wx-button>
-      <wx-button variant="outline" icon="download" size="sm" :href="exportHref">
-        {{ t('panel.export') }}
-      </wx-button>
-      <wx-button v-if="canManage" variant="outline" icon="settings" size="sm" @click="settings">
-        {{ t('panel.settings') }}
-      </wx-button>
-    </div>
+    <wx-screen-head
+      class="wx-submissions__head"
+      :level="3"
+      :title="formName()"
+      :subtitle="form.slug"
+      :back="!inline"
+      :back-label="t('panel.forms')"
+      :actions="actions"
+      @back="emit('back')"
+    />
 
     <!--
       `items` and one panel: the table stays mounted while the tab changes, so the search
@@ -552,25 +560,9 @@ function settings(): void {
  * it is the form's name and the address it posts to, and a centred row put the arrow level with
  * the gap between the two.
  */
-.wx-submissions__head {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--wx-space-8);
-  flex-wrap: wrap;
-}
-
-/* The button is taller than the line it stands beside, so aligning their boxes leaves its
-   centre low; half the difference back up puts the two centres together. `:deep()` because
-   the class is ours and the element it rides is `WxAction`'s (CLAUDE.md §4). */
-.wx-submissions__head > :deep(.wx-submissions__back) {
-  margin-block-start: -2px;
-}
-
-/* The name takes the middle, so the way back stays at the start of the line and the buttons
-   stay at its end. */
-.wx-submissions__who {
-  flex: 1 1 auto;
-  min-width: 0;
+/* The address the form posts to, in the type an address is written in. */
+.wx-submissions__head :deep(.wx-screen-head__subtitle) {
+  font-family: var(--wx-font-family-mono);
 }
 
 .wx-submissions__views {

@@ -1,12 +1,8 @@
 <script setup lang="ts">
-import {
-  WxCard,
-  WxHeading,
-  WxTabs,
-  type CardPadding,
-  type TabItem,
-  type TabValue,
-} from '@webx-ui/core'
+import { WxCard, WxTabs, type CardPadding, type TabItem, type TabValue } from '@webx-ui/core'
+import type { RouteLocationRaw } from 'vue-router'
+import WxScreenHead from './ScreenHead.vue'
+import type { ScreenAction } from './types'
 
 /**
  * The frame every list of the panel is drawn in.
@@ -22,6 +18,10 @@ import {
  * and the line above says which section (§19). The search stays inside the table, where it is
  * a property of the rows rather than of the screen (§10).
  *
+ * That first line is `WxScreenHead`, the same one an editor carries: a list and the record it
+ * opens are two screens of one panel, and a head that differs between them is a head the
+ * reader has to read twice.
+ *
  * What it deliberately does not do is fetch, filter or page. It is a frame; the section still
  * owns its data, and the tabs only say which view is open.
  */
@@ -29,6 +29,17 @@ withDefaults(
   defineProps<{
     /** The section's name. The one heading on the screen. */
     title?: string
+    /** The line under it, when the name alone does not say which list this is. */
+    subtitle?: string
+    /** Where the list goes back to, for one that stands under another screen. */
+    back?: RouteLocationRaw
+    /** What the arrow's tooltip says. The panel's own word for it when not given. */
+    backLabel?: string
+    /**
+     * What the section offers: `New article`, `Check an address`. The one it exists for is
+     * `primary`, and it is the one that survives a narrow screen.
+     */
+    actions?: ScreenAction[]
     /**
      * The views of the same list — "All / Drafts / Published", "Rules / Redirects". Not a
      * navigation between screens: everything under them is the same table.
@@ -45,6 +56,10 @@ withDefaults(
   }>(),
   {
     title: undefined,
+    subtitle: undefined,
+    back: undefined,
+    backLabel: undefined,
+    actions: undefined,
     views: undefined,
     card: true,
     padding: undefined,
@@ -57,8 +72,9 @@ defineSlots<{
   /** The rows: a table, a grid of cards, a manager. */
   default?: () => unknown
   /**
-   * The screen's buttons, beside the heading. One of them — the reason the section exists —
-   * is a filled primary button with a word on it; everything else is outlined or an icon.
+   * Controls beside the heading that are not one-word actions and so cannot be declared —
+   * a switch, a picker. Everything a button can say belongs in `actions`, which is what folds
+   * into the `···` on a phone; what is written here stays drawn at every width.
    */
   actions?: () => unknown
 }>()
@@ -68,12 +84,21 @@ const view = defineModel<TabValue | undefined>('view', { default: undefined })
 
 <template>
   <div class="wx-list-screen" :class="{ 'is-fill': fill }" :data-wx-fill="fill ? '' : undefined">
-    <div v-if="title || $slots.actions" class="wx-list-screen__head">
-      <wx-heading v-if="title" :level="2" class="wx-list-screen__title">{{ title }}</wx-heading>
-      <div v-if="$slots.actions" class="wx-list-screen__actions">
-        <slot name="actions" />
-      </div>
-    </div>
+    <!-- A list folds its buttons later than an editor does: what stands beside the name here is
+         one word and no trail, and a `New page` that takes the whole line on a tablet reads as
+         a screen with nothing else on it. -->
+    <wx-screen-head
+      v-if="title || actions || $slots.actions"
+      class="wx-list-screen__head"
+      :title="title"
+      :subtitle="subtitle"
+      :back="back"
+      :back-label="backLabel"
+      :actions="actions"
+      :collapse-below="480"
+    >
+      <template v-if="$slots.actions" #extra><slot name="actions" /></template>
+    </wx-screen-head>
 
     <!--
       `items` rather than a tab each with its own panel: switching a view must not take the
@@ -110,40 +135,6 @@ const view = defineModel<TabValue | undefined>('view', { default: undefined })
   min-width: 0;
   /* The width that decides the layout is the screen's own, not the window's. */
   container-type: inline-size;
-}
-
-.wx-list-screen__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wx-space-12);
-  flex-wrap: wrap;
-}
-
-.wx-list-screen__title {
-  min-width: 0;
-}
-
-.wx-list-screen__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--wx-space-8);
-  flex-wrap: wrap;
-}
-
-/*
- * On a phone the name takes the first line and the buttons the second, full width: three
- * things elbowing each other across 343 px is not a row, and a primary button too narrow to
- * hold its word is not a button.
- */
-@container (max-width: 480px) {
-  .wx-list-screen__head > * {
-    flex: 1 1 100%;
-  }
-
-  .wx-list-screen__actions > * {
-    flex: 1 1 auto;
-  }
 }
 
 /*

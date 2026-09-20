@@ -43,6 +43,7 @@ export type {
   NavEntry,
   PickedImage,
   RowAction,
+  ScreenAction,
   AppliedFilter,
 } from './types'
 
@@ -51,6 +52,7 @@ export { default as AdminNav } from './AdminNav.vue'
 export { default as AdminLanding } from './AdminLanding.vue'
 export { default as WxScreen } from './Screen.vue'
 export { default as WxListScreen } from './ListScreen.vue'
+export { default as WxScreenHead } from './ScreenHead.vue'
 export { rowMenuWidth } from './rowMenu'
 export { default as WxRowMenu } from './RowMenu.vue'
 export { default as WxFilterChips } from './FilterChips.vue'
