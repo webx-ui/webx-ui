@@ -8,11 +8,7 @@ rule exists it is because something looked broken before it did.
 ## The frame
 
 ```vue
-<wx-list-screen v-model:view="view" :title="title" :views="views">
-  <template #actions>
-    <wx-button type="primary" icon="plus" @click="add">New article</wx-button>
-  </template>
-
+<wx-list-screen v-model:view="view" :title="title" :views="views" :actions="actions">
   <wx-table :data="page" :columns="columns" flush layout="fixed" @state-change="load" />
 </wx-list-screen>
 ```
@@ -25,6 +21,18 @@ inside the table, because it belongs to the rows rather than to the screen.
 `WxListScreen` is in `@webx-ui/module-admin`. Use it rather than arranging the three parts
 yourself — five sections each answering "where does the heading go" gave five answers once, and the
 cost is not the extra markup, it is that nobody knows where to look.
+
+## The head
+
+The line above the card — the section's name, the one action it exists for, and the way out when
+the list stands under another screen — is `WxScreenHead`, the same head an editor carries. Pass
+`title`, `subtitle`, `back` and `actions` to `WxListScreen` and it draws it; what goes in
+`actions`, and what the head does with them on a phone, is in
+[Building a screen](/guide/building-a-screen).
+
+A list folds its buttons later than an editor does — 480px rather than 720 — because what stands
+beside the name here is one word and no trail, and a `New page` that takes the whole line on a
+tablet reads as a screen with nothing else on it.
 
 ## The table's own spacing
 

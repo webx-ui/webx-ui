@@ -5,9 +5,10 @@ import {
   useAdmin,
   useErrorText,
   useTranslate,
-  WxBackButton,
   WxHelpButton,
   WxRenameButton,
+  WxScreenHead,
+  type ScreenAction,
 } from '@webx-ui/module-admin'
 import {
   confirm,
@@ -420,6 +421,22 @@ onBeforeUnmount(() => {
 })
 
 watch(id, () => void load())
+/* The two things this editor is for. The bar along the bottom repeats them (§3.3). */
+const actions = computed<ScreenAction[]>(() =>
+  canManage.value
+    ? [
+        { key: 'save', label: t('page.save'), loading: saving.value, run: () => void save() },
+        {
+          key: 'publish',
+          label: t('page.publish'),
+          primary: true,
+          loading: publishing.value,
+          disabled: !block.value?.draft && !dirty.value,
+          run: () => void publish(),
+        },
+      ]
+    : [],
+)
 </script>
 
 <template>
@@ -434,35 +451,24 @@ watch(id, () => void load())
     </template>
 
     <template v-else>
-      <div class="wx-block-editor__head">
-        <!--
-          The way out, said with a control rather than with a line of small grey type — and
-          renaming with a control rather than by typing into what looks like a heading. Both
-          are the panel's, not this editor's: every screen that opens one record needs them.
-        -->
-        <wx-back-button class="wx-block-editor__back" :to="base" :label="t('page.back')" />
-
-        <div class="wx-block-editor__id">
-          <div class="wx-block-editor__name">
-            <h1 class="wx-block-editor__title">{{ settings.title }}</h1>
-            <wx-rename-button
-              v-if="canManage"
-              :name="settings.title"
-              :placeholder="t('page.title')"
-              @rename="(name: string) => (settings.title = name)"
-            />
-          </div>
-          <wx-text size="sm" tone="muted">
-            <code>{{ settings.slug }}</code>
-            · {{ groupLabel(settings.group, t) }} ·
-            {{
-              block.usage_count > 0
-                ? t('page.on-pages', { count: block.usage_count })
-                : t('page.not-used')
-            }}
-          </wx-text>
-        </div>
-        <div class="wx-block-editor__actions">
+      <!--
+        The panel's head, not this editor's: the way out, the name, what state the type is in
+        and what can be done with it. Renaming is a control beside the name rather than typing
+        into what looks like a heading.
+      -->
+      <wx-screen-head
+        :title="settings.title"
+        :back="base"
+        :back-label="t('page.back')"
+        :actions="actions"
+      >
+        <template #title-after>
+          <wx-rename-button
+            v-if="canManage"
+            :name="settings.title"
+            :placeholder="t('page.title')"
+            @rename="(name: string) => (settings.title = name)"
+          />
           <wx-badge v-if="dirty" type="primary" dot>{{ t('page.unsaved') }}</wx-badge>
           <wx-badge v-if="block.draft" type="warning" dot>{{
             t('page.draft', { number: block.draft.number })
@@ -471,21 +477,18 @@ watch(id, () => void load())
             t('page.live', { number: block.published.number })
           }}</wx-badge>
           <wx-badge v-else type="default">{{ t('page.never-published') }}</wx-badge>
-          <template v-if="canManage">
-            <wx-button variant="outline" :loading="saving" @click="save">{{
-              t('page.save')
-            }}</wx-button>
-            <wx-button
-              type="primary"
-              :loading="publishing"
-              :disabled="!block.draft && !dirty"
-              @click="publish"
-            >
-              {{ t('page.publish') }}
-            </wx-button>
-          </template>
-        </div>
-      </div>
+        </template>
+
+        <template #subtitle>
+          <code>{{ settings.slug }}</code>
+          · {{ groupLabel(settings.group, t) }} ·
+          {{
+            block.usage_count > 0
+              ? t('page.on-pages', { count: block.usage_count })
+              : t('page.not-used')
+          }}
+        </template>
+      </wx-screen-head>
 
       <wx-alert
         v-if="!meta.editing"
@@ -789,56 +792,8 @@ watch(id, () => void load())
   container-type: inline-size;
 }
 
-.wx-block-editor__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--wx-space-16);
-  flex-wrap: wrap;
-}
-
 .wx-block-editor__ghost-head {
   max-width: 420px;
-}
-
-.wx-block-editor__id {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wx-space-4);
-  flex: 1 1 280px;
-  min-width: 0;
-}
-
-/* Level with the name rather than with the middle of the whole block of text under it. */
-.wx-block-editor__back {
-  flex: none;
-  margin-block-start: var(--wx-space-2);
-}
-
-.wx-block-editor__name {
-  display: flex;
-  align-items: center;
-  gap: var(--wx-space-8);
-  min-width: 0;
-}
-
-.wx-block-editor__title {
-  margin: 0;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--wx-text-default);
-  font-size: var(--wx-font-size-xl);
-  font-weight: var(--wx-font-weight-bold);
-  line-height: var(--wx-font-line-height-tight);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.wx-block-editor__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--wx-space-8);
-  flex-wrap: wrap;
 }
 
 .wx-block-editor__columns {

@@ -15,6 +15,7 @@ import {
   useLocales,
   WxBadge,
   WxButton,
+  WxIcon,
   WxCard,
   WxEmpty,
   WxSortableList,
@@ -125,7 +126,8 @@ async function reorder(): Promise<void> {
 <template>
   <wx-card :title="t('panel.tab-fields')">
     <template v-if="canManage" #extra>
-      <wx-button type="primary" size="sm" icon="plus" @click="open(null)">
+      <wx-button type="primary" size="sm" @click="open(null)">
+        <template #icon><wx-icon name="plus" /></template>
         {{ t('fields.new-field') }}
       </wx-button>
     </template>

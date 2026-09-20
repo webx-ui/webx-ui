@@ -9,6 +9,7 @@ import {
   rowMenuWidth,
   WxRowMenu,
   type RowAction,
+  type ScreenAction,
 } from '@webx-ui/module-admin'
 import {
   confirm,
@@ -419,18 +420,18 @@ async function massSelected(action: 'index' | 'noindex' | 'delete'): Promise<voi
     working.value = false
   }
 }
+
+/* What the section offers. Declared, because on a phone the head folds it into the ···. */
+const actions = computed<ScreenAction[]>(() =>
+  canManage.value
+    ? [{ key: 'new', label: t('tag.new'), icon: 'plus', primary: true, run: () => void add() }]
+    : [],
+)
 </script>
 
 <template>
   <div class="wx-tags">
-    <wx-list-screen v-model:view="view" :title="title" :views="views">
-      <template v-if="canManage" #actions>
-        <wx-button type="primary" @click="add">
-          <template #icon><wx-icon name="plus" /></template>
-          {{ t('tag.new') }}
-        </wx-button>
-      </template>
-
+    <wx-list-screen v-model:view="view" :title="title" :views="views" :actions="actions">
       <wx-table
         v-model:selected="selected"
         :data="page"

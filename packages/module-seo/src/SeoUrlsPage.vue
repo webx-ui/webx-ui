@@ -9,13 +9,13 @@ import {
   rowMenuWidth,
   WxRowMenu,
   type RowAction,
+  type ScreenAction,
 } from '@webx-ui/module-admin'
 import {
   confirm,
   createModal,
   toast,
   WxBadge,
-  WxButton,
   WxFormItem,
   WxSelect,
   WxTable,
@@ -170,16 +170,25 @@ async function remove(rule: SeoUrlRule): Promise<void> {
     toast.danger(message(error))
   }
 }
+
+/* What the section offers. Declared, because on a phone the head folds it into the ···. */
+const actions = computed<ScreenAction[]>(() =>
+  canManage
+    ? [
+        {
+          key: 'rule',
+          label: t('page.new-rule'),
+          icon: 'plus',
+          primary: true,
+          run: () => void open(null),
+        },
+      ]
+    : [],
+)
 </script>
 
 <template>
-  <seo-layout :base="props.base" current="rules" @test="test({})">
-    <template v-if="canManage" #actions>
-      <wx-button type="primary" icon="add" @click="open(null)">
-        {{ t('page.new-rule') }}
-      </wx-button>
-    </template>
-
+  <seo-layout :base="props.base" current="rules" :actions="actions" @test="test({})">
     <wx-table
       :data="page"
       :columns="columns"

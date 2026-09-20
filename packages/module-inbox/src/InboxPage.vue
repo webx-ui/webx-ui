@@ -8,6 +8,7 @@ import {
   WxListScreen,
   WxRowMenu,
   type RowAction,
+  type ScreenAction,
 } from '@webx-ui/module-admin'
 import {
   confirm,
@@ -16,7 +17,6 @@ import {
   toast,
   useLocales,
   WxBadge,
-  WxButton,
   WxCard,
   WxEmpty,
   WxIndicator,
@@ -201,24 +201,31 @@ async function reorder(): Promise<void> {
     await load()
   }
 }
+
+/* What the section offers. Declared, because on a phone the head folds it into the ···. */
+const actions = computed<ScreenAction[]>(() =>
+  canManage.value
+    ? [
+        {
+          key: 'statuses',
+          label: t('panel.statuses'),
+          icon: 'tag',
+          run: () => void router.push(`${props.base}/statuses`),
+        },
+        {
+          key: 'new',
+          label: t('panel.new-form'),
+          icon: 'plus',
+          primary: true,
+          run: () => void add(),
+        },
+      ]
+    : [],
+)
 </script>
 
 <template>
-  <wx-list-screen :title="title" :card="false" fill>
-    <template #actions>
-      <wx-button
-        v-if="canManage"
-        variant="outline"
-        icon="tag"
-        @click="router.push(`${props.base}/statuses`)"
-      >
-        {{ t('panel.statuses') }}
-      </wx-button>
-      <wx-button v-if="canManage" type="primary" icon="plus" @click="add">
-        {{ t('panel.new-form') }}
-      </wx-button>
-    </template>
-
+  <wx-list-screen :title="title" :actions="actions" :card="false" fill>
     <wx-card class="wx-inbox" padding="none">
       <wx-list-detail
         v-model:open="open"

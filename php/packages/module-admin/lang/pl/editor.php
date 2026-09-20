@@ -6,4 +6,5 @@ return [
     'back' => 'Wstecz',
     'rename' => 'Zmień nazwę',
     'save' => 'Zapisz',
+    'more' => 'Więcej',
 ];

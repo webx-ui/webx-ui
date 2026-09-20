@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAdmin, useErrorText, useTranslate, WxBackButton } from '@webx-ui/module-admin'
+import { useAdmin, useErrorText, useTranslate, WxScreenHead } from '@webx-ui/module-admin'
 import {
   localizedValue,
   toast,
@@ -13,7 +13,6 @@ import {
   WxSkeleton,
   WxTab,
   WxTabs,
-  WxText,
   type LocalizedValue,
 } from '@webx-ui/core'
 import FieldList from './FieldList.vue'
@@ -139,16 +138,17 @@ async function save(): Promise<void> {
     </wx-card>
 
     <template v-else-if="form">
-      <div class="wx-inbox-editor__head">
-        <wx-back-button :to="backTo" :label="t('panel.forms')" />
-
-        <div class="wx-inbox-editor__id">
-          <h1 class="wx-inbox-editor__title">{{ name }}</h1>
-          <wx-text size="sm" tone="muted" mono>{{ form.slug }}</wx-text>
-        </div>
-
-        <wx-badge v-if="!settings.is_enabled" type="default">{{ t('panel.off') }}</wx-badge>
-      </div>
+      <wx-screen-head
+        class="wx-inbox-editor__head"
+        :title="name"
+        :subtitle="form.slug"
+        :back="backTo"
+        :back-label="t('panel.forms')"
+      >
+        <template #title-after>
+          <wx-badge v-if="!settings.is_enabled" type="default">{{ t('panel.off') }}</wx-badge>
+        </template>
+      </wx-screen-head>
 
       <!--
         Every tab is mounted at once and the hidden ones keep their state: somebody who wrote
@@ -191,44 +191,13 @@ async function save(): Promise<void> {
   gap: var(--wx-gap, var(--wx-space-16));
 }
 
-/*
- * The way out lines up with the name, not with the pair of lines under it.
- *
- * The block beside it is two lines — the name and the address it posts to — so centring the
- * row put the arrow halfway down, level with the gap between them: it read as belonging to
- * the slug rather than to the screen. Aligned to the top and nudged by the difference between
- * the line it stands next to and its own height, it sits on the name.
- */
-.wx-inbox-editor__head {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--wx-space-12);
-  flex-wrap: wrap;
-}
-
-/*
- * The button (30px) is taller than the line it stands beside (25px), so aligning their boxes
- * leaves its centre low; half the difference back up puts the two centres together. `:deep()`
- * because the class is ours but the element it rides is `WxAction`'s, and a scoped rule would
- * be looking for our attribute on somebody else's markup (CLAUDE.md §4).
- */
-.wx-inbox-editor__head > :deep(.wx-back-button) {
-  margin-block-start: -2px;
-}
-
-.wx-inbox-editor__id {
-  min-width: 0;
-}
-
-.wx-inbox-editor__title {
-  margin: 0;
-  font-size: var(--wx-font-size-xl);
-  font-weight: var(--wx-font-weight-semibold);
-  line-height: var(--wx-font-line-height-tight);
-}
-
 /* The tabs take what is left of the column, so the save bar under them is at its bottom
    rather than under the last field. Nothing inside them scrolls on its own — the page does. */
+/* The address it posts to, in the type an address is written in. */
+.wx-inbox-editor__head :deep(.wx-screen-head__subtitle) {
+  font-family: var(--wx-font-family-mono);
+}
+
 .wx-inbox-editor__tabs {
   flex: 1 1 auto;
 }

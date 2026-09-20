@@ -1,23 +1,26 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
-import { useAdmin, useErrorText, useTranslate, WxBackButton, WxScreen } from '@webx-ui/module-admin'
+import {
+  useAdmin,
+  useErrorText,
+  useTranslate,
+  WxScreen,
+  WxScreenHead,
+  type ScreenAction,
+} from '@webx-ui/module-admin'
 import { provideBlocksPreview } from '@webx-ui/module-blocks'
 import {
   confirm,
   localizedValue,
   toast,
-  useElementWidth,
   useLocales,
-  WxAction,
   WxActionBar,
   WxAlert,
   WxBadge,
   WxBreadcrumb,
   WxBreadcrumbItem,
   WxButton,
-  WxDropdown,
-  WxDropdownItem,
   WxSkeleton,
   WxText,
   type LocalizedValue,
@@ -75,16 +78,6 @@ const snapshot = ref('')
 const reloadToken = ref(0)
 
 const canManage = computed(() => context.can('pages.manage'))
-
-/*
- * Where the head stops being a row and becomes three. Decided by the width of the panel rather
- * than of the window, the same way the section's list decides between a table and cards.
- */
-const NARROW = 720
-
-const root = useTemplateRef<HTMLElement>('root')
-const width = useElementWidth(root)
-const narrow = computed(() => width.value > 0 && width.value < NARROW)
 
 const current = computed(() => JSON.stringify(values.value))
 const dirty = computed(() => snapshot.value !== '' && current.value !== snapshot.value)
@@ -338,25 +331,48 @@ onBeforeRouteLeave(async () => {
     tone: 'danger',
   })
 })
+/* What leads away from the page. On a phone the head folds them into the ···. */
+const actions = computed<ScreenAction[]>(() => {
+  const list: ScreenAction[] = []
+
+  if (previewUrl.value) {
+    list.push({ key: 'preview', label: t('page.preview'), icon: 'eye', href: previewUrl.value })
+  }
+
+  if (page.value?.url && page.value.status !== 'draft') {
+    list.push({ key: 'site', label: t('page.open-on-site'), icon: 'link', href: page.value.url })
+  }
+
+  return list
+})
 </script>
 
 <template>
   <!-- No `data-wx-fill`: this screen is a window tall only while the constructor is the tab
        on screen, and that is a question only CSS can ask (§10). `WxMain` still gives it a
        floor of one window, because it carries an action bar. -->
-  <div ref="root" class="wx-page-editor" @focusout="onFocusOut">
+  <div class="wx-page-editor" @focusout="onFocusOut">
     <template v-if="loading || !page">
       <wx-skeleton class="wx-page-editor__ghost" title :rows="1" />
       <wx-skeleton :rows="8" />
     </template>
 
     <template v-else>
-      <div class="wx-page-editor__head">
-        <!-- The trail says where the reader is; this is the way out of it, and on a phone it
-             is the only one that is a control rather than four words in the smallest type. -->
-        <wx-back-button class="wx-page-editor__back" :to="base" :label="t('module.title')" />
-
-        <div class="wx-page-editor__id">
+      <!--
+        The panel's head: the way out, the trail, the name and the state of the page. What is
+        left in it is what leads away from the page — the draft on the site and the page on the
+        site. Saving and publishing are down in the bar, and only there: this screen is exactly
+        as tall as the window, the head never leaves it, and a second copy of a button already
+        on screen is not a reminder (§3.3).
+      -->
+      <wx-screen-head
+        divider
+        :back="base"
+        :back-label="t('module.title')"
+        :title="page.is_home ? t('pages.home') : title || t('page.untitled')"
+        :actions="actions"
+      >
+        <template #trail>
           <wx-breadcrumb size="sm" :label="t('page.trail')">
             <wx-breadcrumb-item :as="'router-link'" :to="base">
               {{ t('module.title') }}
@@ -373,72 +389,12 @@ onBeforeRouteLeave(async () => {
               {{ page.is_home ? t('pages.home') : title }}
             </wx-breadcrumb-item>
           </wx-breadcrumb>
+        </template>
 
-          <div class="wx-page-editor__name">
-            <span class="wx-page-editor__title">{{
-              page.is_home ? t('pages.home') : title || t('page.untitled')
-            }}</span>
-            <wx-badge :type="badge()" dot>{{ t(`page.status-${page.status}`) }}</wx-badge>
-          </div>
-        </div>
-
-        <!--
-          What is left in the head is what leads away from the page: the draft on the site and
-          the page on the site. Saving and publishing are down in the bar, where the eye is —
-          and only there, because this screen is exactly as tall as the window and the head
-          never leaves it. A second copy of a button already on screen is not a reminder.
-        -->
-        <div class="wx-page-editor__actions">
-          <!-- Narrow: the two links fold into a menu. A head three rows tall is a fifth of a
-               phone screen given to buttons above the thing being edited. -->
-          <wx-dropdown v-if="narrow" align="end">
-            <template #trigger>
-              <wx-action type="more" :title="t('page.more')" />
-            </template>
-            <wx-dropdown-item
-              v-if="previewUrl"
-              icon="eye"
-              :href="previewUrl"
-              target="_blank"
-              rel="noopener"
-            >
-              {{ t('page.preview') }}
-            </wx-dropdown-item>
-            <wx-dropdown-item
-              v-if="page.url && page.status !== 'draft'"
-              icon="link"
-              :href="page.url"
-              target="_blank"
-              rel="noopener"
-            >
-              {{ t('page.open-on-site') }}
-            </wx-dropdown-item>
-          </wx-dropdown>
-
-          <template v-else>
-            <wx-button
-              v-if="previewUrl"
-              variant="outline"
-              icon="eye"
-              :href="previewUrl"
-              target="_blank"
-              rel="noopener"
-            >
-              {{ t('page.preview') }}
-            </wx-button>
-            <wx-button
-              v-if="page.url && page.status !== 'draft'"
-              variant="outline"
-              icon="link"
-              :href="page.url"
-              target="_blank"
-              rel="noopener"
-            >
-              {{ t('page.open-on-site') }}
-            </wx-button>
-          </template>
-        </div>
-      </div>
+        <template #title-after>
+          <wx-badge :type="badge()" dot>{{ t(`page.status-${page.status}`) }}</wx-badge>
+        </template>
+      </wx-screen-head>
 
       <!-- Somebody else wrote while this editor was typing. Both versions still exist, so the
            question is which one the site gets — and it is a question, not a toast that
@@ -514,67 +470,7 @@ onBeforeRouteLeave(async () => {
   max-width: 420px;
 }
 
-/*
- * The head stays put by standing still: the screen is as tall as its column, so nothing under
- * it scrolls the page — each tab scrolls inside itself. A sticky bar would be a bar that never
- * has anything to stick to.
- */
-/*
- * Three columns: the way out, what the page is called, and what leads away from it.
- *
- * A grid rather than the flex row this was: as flex items the three parts were sized from
- * their own content, and on a phone the menu — one 30px button — claimed 225px of a 359px head
- * while the name was squeezed to 81 and wrapped away from its badge.
- *
- * Everything sits on the bottom line, which is the name. The trail above it is the smaller
- * type, and a button lined up with that hangs over the title.
- */
-.wx-page-editor__head {
-  flex: none;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: end;
-  gap: var(--wx-space-12);
-  padding-block-end: var(--wx-space-12);
-  border-block-end: 1px solid var(--wx-border-default);
-}
-
-/* The arrow belongs to the trail, which is the top line. */
-.wx-page-editor__back {
-  align-self: start;
-}
-
-.wx-page-editor__id {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wx-space-4);
-  flex: 1 1 260px;
-  min-width: 0;
-}
-
-.wx-page-editor__name {
-  display: flex;
-  align-items: center;
-  gap: var(--wx-space-8);
-  flex-wrap: wrap;
-  min-width: 0;
-}
-
-.wx-page-editor__title {
-  font-size: var(--wx-font-size-xl);
-  font-weight: var(--wx-font-weight-bold);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.wx-page-editor__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--wx-space-8);
-  flex-wrap: wrap;
-}
-
+/* The head stays put by standing still: what scrolls is each tab, inside itself. */
 .wx-page-editor__screen {
   display: flex;
   flex-direction: column;

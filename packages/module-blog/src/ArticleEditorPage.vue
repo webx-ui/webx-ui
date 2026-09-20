@@ -1,30 +1,27 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import {
   useAdmin,
   useDates,
   useErrorText,
   useTranslate,
-  WxBackButton,
   WxScreen,
+  WxScreenHead,
+  type ScreenAction,
 } from '@webx-ui/module-admin'
 import { provideBlocksPreview } from '@webx-ui/module-blocks'
 import {
   confirm,
   localizedValue,
   toast,
-  useElementWidth,
   useLocales,
-  WxAction,
   WxActionBar,
   WxAlert,
   WxBadge,
   WxBreadcrumb,
   WxBreadcrumbItem,
   WxButton,
-  WxDropdown,
-  WxDropdownItem,
   WxSkeleton,
   WxText,
   type LocalizedValue,
@@ -92,16 +89,6 @@ const canManage = computed(() => context.can('blog.articles.manage'))
 
 /** Closed for writing: no permission, or a publication in flight. */
 const locked = computed(() => !canManage.value || working.value)
-
-/*
- * Where the head stops being a row and becomes three. Decided by the width of the panel rather
- * than of the window, the same way the section's list decides between a table and cards.
- */
-const NARROW = 720
-
-const root = useTemplateRef<HTMLElement>('root')
-const width = useElementWidth(root)
-const narrow = computed(() => width.value > 0 && width.value < NARROW)
 
 const current = computed(() => JSON.stringify(values.value))
 const dirty = computed(() => snapshot.value !== '' && current.value !== snapshot.value)
@@ -437,95 +424,64 @@ onBeforeRouteLeave(async () => {
     tone: 'danger',
   })
 })
+/* What leads away from the article. On a phone the head folds them into the ···. */
+const actions = computed<ScreenAction[]>(() => {
+  const leads: ScreenAction[] = []
+
+  if (previewUrl.value) {
+    leads.push({ key: 'preview', label: t('article.preview'), icon: 'eye', href: previewUrl.value })
+  }
+
+  if (article.value?.url && article.value.status !== 'draft') {
+    leads.push({
+      key: 'site',
+      label: t('panel.open-on-site'),
+      icon: 'link',
+      href: article.value.url,
+    })
+  }
+
+  return leads
+})
 </script>
 
 <template>
   <!-- No `data-wx-fill`: this screen is a window tall only while the constructor is the tab on
        screen, and that is a question only CSS can ask. `WxMain` still gives it a floor of one
        window, because it carries an action bar. -->
-  <div ref="root" class="wx-article-editor" @focusout="onFocusOut">
+  <div class="wx-article-editor" @focusout="onFocusOut">
     <template v-if="loading || !article">
       <wx-skeleton class="wx-article-editor__ghost" title :rows="1" />
       <wx-skeleton :rows="8" />
     </template>
 
     <template v-else>
-      <div class="wx-article-editor__head">
-        <!-- The trail says where the reader is; this is the way out of it, and on a phone it
-             is the only one that is a control rather than four words in the smallest type. -->
-        <wx-back-button class="wx-article-editor__back" :to="list" :label="t('module.articles')" />
-
-        <div class="wx-article-editor__id">
+      <!--
+        The panel's head: the way out, the trail, the name and the state of the article. What is
+        left in it is what leads away from the article — the draft on the site and the article on
+        the site. Saving and publishing are down in the bar, where the eye is, and only there: a
+        second copy of a button already on screen is not a reminder (§3.3).
+      -->
+      <wx-screen-head
+        divider
+        :back="list"
+        :back-label="t('module.articles')"
+        :title="title || t('article.untitled')"
+        :actions="actions"
+      >
+        <template #trail>
           <wx-breadcrumb size="sm" :label="t('article.trail')">
             <wx-breadcrumb-item :as="'router-link'" :to="list">
               {{ t('module.articles') }}
             </wx-breadcrumb-item>
             <wx-breadcrumb-item current>{{ title || t('article.untitled') }}</wx-breadcrumb-item>
           </wx-breadcrumb>
+        </template>
 
-          <div class="wx-article-editor__name">
-            <span class="wx-article-editor__title">{{ title || t('article.untitled') }}</span>
-            <wx-badge :type="badge()" dot>{{ t(`panel.status-${article.status}`) }}</wx-badge>
-          </div>
-        </div>
-
-        <!--
-          What is left in the head is what leads away from the article: the draft on the site
-          and the article on the site. Saving and publishing are down in the bar, where the eye
-          is — and only there, because a second copy of a button already on screen is not a
-          reminder.
-        -->
-        <div class="wx-article-editor__actions">
-          <!-- Narrow: the two links fold into a menu. A head three rows tall is a fifth of a
-               phone screen given to buttons above the thing being edited. -->
-          <wx-dropdown v-if="narrow" align="end">
-            <template #trigger>
-              <wx-action type="more" :title="t('article.more')" />
-            </template>
-            <wx-dropdown-item
-              v-if="previewUrl"
-              icon="eye"
-              :href="previewUrl"
-              target="_blank"
-              rel="noopener"
-            >
-              {{ t('article.preview') }}
-            </wx-dropdown-item>
-            <wx-dropdown-item
-              v-if="article.url && article.status !== 'draft'"
-              icon="link"
-              :href="article.url"
-              target="_blank"
-              rel="noopener"
-            >
-              {{ t('panel.open-on-site') }}
-            </wx-dropdown-item>
-          </wx-dropdown>
-
-          <template v-else>
-            <wx-button
-              v-if="previewUrl"
-              variant="outline"
-              icon="eye"
-              :href="previewUrl"
-              target="_blank"
-              rel="noopener"
-            >
-              {{ t('article.preview') }}
-            </wx-button>
-            <wx-button
-              v-if="article.url && article.status !== 'draft'"
-              variant="outline"
-              icon="link"
-              :href="article.url"
-              target="_blank"
-              rel="noopener"
-            >
-              {{ t('panel.open-on-site') }}
-            </wx-button>
-          </template>
-        </div>
-      </div>
+        <template #title-after>
+          <wx-badge :type="badge()" dot>{{ t(`panel.status-${article.status}`) }}</wx-badge>
+        </template>
+      </wx-screen-head>
 
       <!-- Somebody else wrote while this editor was typing. Both versions still exist, so the
            question is which one the site gets — and it is a question, not a toast that
@@ -605,58 +561,6 @@ onBeforeRouteLeave(async () => {
 
 .wx-article-editor__ghost {
   max-width: 420px;
-}
-
-/*
- * Three columns: the way out, what the article is called, and what leads away from it.
- *
- * A grid rather than a flex row: as flex items the three parts are sized from their own
- * content, and on a phone a menu of one 30px button claims a third of the head while the name
- * is squeezed away from its badge.
- */
-.wx-article-editor__head {
-  flex: none;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: end;
-  gap: var(--wx-space-12);
-  padding-block-end: var(--wx-space-12);
-  border-block-end: 1px solid var(--wx-border-default);
-}
-
-/* The arrow belongs to the trail, which is the top line. */
-.wx-article-editor__back {
-  align-self: start;
-}
-
-.wx-article-editor__id {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wx-space-4);
-  min-width: 0;
-}
-
-.wx-article-editor__name {
-  display: flex;
-  align-items: center;
-  gap: var(--wx-space-8);
-  flex-wrap: wrap;
-  min-width: 0;
-}
-
-.wx-article-editor__title {
-  font-size: var(--wx-font-size-xl);
-  font-weight: var(--wx-font-weight-bold);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.wx-article-editor__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--wx-space-8);
-  flex-wrap: wrap;
 }
 
 .wx-article-editor__screen {

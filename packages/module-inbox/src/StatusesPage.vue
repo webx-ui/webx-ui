@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import {
   useAdmin,
   useErrorText,
   useTranslate,
-  WxBackButton,
   WxListScreen,
   WxRowMenu,
   type RowAction,
+  type ScreenAction,
 } from '@webx-ui/module-admin'
 import {
   confirm,
@@ -16,7 +16,6 @@ import {
   toast,
   useLocales,
   WxBadge,
-  WxButton,
   WxEmpty,
   WxSortableList,
   WxText,
@@ -117,6 +116,21 @@ function actionsFor(status: InboxStatus): RowAction[] {
   ]
 }
 
+/* What the section offers. Declared, because on a phone the head folds it into the ···. */
+const actions = computed<ScreenAction[]>(() =>
+  canManage
+    ? [
+        {
+          key: 'new',
+          label: t('panel.new-status'),
+          icon: 'plus',
+          primary: true,
+          run: () => void open(null),
+        },
+      ]
+    : [],
+)
+
 async function reorder(): Promise<void> {
   try {
     await api.sortStatuses(statuses.value.map((status) => status.id))
@@ -129,17 +143,12 @@ async function reorder(): Promise<void> {
 
 <template>
   <div class="wx-inbox-statuses">
-    <!-- Above the heading, where the way out of a screen is on every other one: beside the
-         primary action it reads as a second thing to do rather than as a way back. -->
-    <wx-back-button :to="props.base" :label="t('panel.forms')" />
-
-    <wx-list-screen :title="t('panel.statuses')">
-      <template #actions>
-        <wx-button v-if="canManage" type="primary" icon="plus" @click="open(null)">
-          {{ t('panel.new-status') }}
-        </wx-button>
-      </template>
-
+    <wx-list-screen
+      :title="t('panel.statuses')"
+      :back="props.base"
+      :back-label="t('panel.forms')"
+      :actions="actions"
+    >
       <wx-empty v-if="!loading && statuses.length === 0" :title="t('panel.no-statuses')" />
 
       <wx-sortable-list

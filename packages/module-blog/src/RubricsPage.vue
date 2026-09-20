@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAdmin, useErrorText, useTranslate, WxListScreen } from '@webx-ui/module-admin'
+import {
+  useAdmin,
+  useErrorText,
+  useTranslate,
+  WxListScreen,
+  type ScreenAction,
+} from '@webx-ui/module-admin'
 import {
   toast,
-  WxButton,
   WxCard,
   WxEmpty,
   WxIcon,
@@ -147,6 +152,13 @@ function articlesOf(rubric: RubricRow): void {
  * it says anything — so this only has to agree with what is there, and a failure has to put the
  * list back rather than leave the screen disagreeing with the database.
  */
+/* What the section offers. Declared, because on a phone the head folds it into the ···. */
+const actions = computed<ScreenAction[]>(() =>
+  canManage.value
+    ? [{ key: 'new', label: t('rubric.new'), icon: 'plus', primary: true, run: () => void add() }]
+    : [],
+)
+
 async function reorder(): Promise<void> {
   try {
     await api.sortRubrics(rubrics.value.map((rubric) => rubric.id))
@@ -158,14 +170,7 @@ async function reorder(): Promise<void> {
 </script>
 
 <template>
-  <wx-list-screen :title="title" :card="false" fill>
-    <template #actions>
-      <wx-button v-if="canManage" type="primary" @click="add">
-        <template #icon><wx-icon name="plus" /></template>
-        {{ t('rubric.new') }}
-      </wx-button>
-    </template>
-
+  <wx-list-screen :title="title" :actions="actions" :card="false" fill>
     <wx-card class="wx-rubrics" padding="none">
       <wx-list-detail
         v-model:open="open"

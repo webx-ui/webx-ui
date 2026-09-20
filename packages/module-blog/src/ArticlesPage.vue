@@ -12,6 +12,7 @@ import {
   WxRowMenu,
   type AppliedFilter,
   type RowAction,
+  type ScreenAction,
 } from '@webx-ui/module-admin'
 import {
   confirm,
@@ -459,17 +460,18 @@ function address(article: ArticleRow): string {
 function dateOf(article: ArticleRow): string | null {
   return inBin.value ? article.deleted_at : article.published_at
 }
+
+/* What the section offers. Declared, because on a phone the head folds it into the ···. */
+const actions = computed<ScreenAction[]>(() =>
+  canManage.value
+    ? [{ key: 'new', label: t('panel.new'), icon: 'plus', primary: true, run: () => void add() }]
+    : [],
+)
 </script>
 
 <template>
   <div ref="root" class="wx-articles">
-    <wx-list-screen v-model:view="view" :title="title" :views="views">
-      <template v-if="canManage" #actions>
-        <wx-button type="primary" icon="plus" @click="add">
-          {{ t('panel.new') }}
-        </wx-button>
-      </template>
-
+    <wx-list-screen v-model:view="view" :title="title" :views="views" :actions="actions">
       <wx-table
         :data="page"
         :columns="columns"

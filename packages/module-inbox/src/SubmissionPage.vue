@@ -5,11 +5,10 @@ import {
   useAdmin,
   useErrorText,
   useTranslate,
-  WxBackButton,
   WxDate,
   WxNotes,
-  WxRowMenu,
-  type RowAction,
+  WxScreenHead,
+  type ScreenAction,
 } from '@webx-ui/module-admin'
 import {
   confirm,
@@ -19,13 +18,11 @@ import {
   WxAction,
   WxAlert,
   WxBadge,
-  WxButton,
   WxCard,
   WxDescriptions,
   WxDescriptionsItem,
   WxEmpty,
   WxFileCard,
-  WxHeading,
   WxSelect,
   WxSkeleton,
   WxTab,
@@ -180,24 +177,45 @@ function onAssignee(value: unknown): void {
   void save({ assignee_id: typeof value === 'number' ? value : null })
 }
 
-const actions = computed<RowAction[]>(() => {
-  if (!canUpdate.value || submission.value === null) return []
+/*
+ * What the screen offers: answering it, and — behind the `···` — what is done to the pile it
+ * came from. Replying is the main action by §18.3, so it is the one that keeps a button of its
+ * own once the head runs out of room.
+ */
+const actions = computed<ScreenAction[]>(() => {
+  const list: ScreenAction[] = []
 
-  return [
-    {
-      key: 'unread',
-      icon: 'eye-off',
-      label: t('panel.mark-unread'),
-      run: () => void unread(),
-    },
-    {
-      key: 'delete',
-      icon: 'trash',
-      label: t('panel.delete'),
-      danger: true,
-      run: () => void remove(),
-    },
-  ]
+  if (mailto.value) {
+    list.push({
+      key: 'reply',
+      label: t('panel.reply'),
+      icon: 'mail',
+      primary: true,
+      href: mailto.value,
+      target: '_self',
+    })
+  }
+
+  if (canUpdate.value && submission.value !== null) {
+    list.push(
+      {
+        key: 'unread',
+        icon: 'eye-off',
+        label: t('panel.mark-unread'),
+        menu: true,
+        run: () => void unread(),
+      },
+      {
+        key: 'delete',
+        icon: 'trash',
+        label: t('panel.delete'),
+        danger: true,
+        run: () => void remove(),
+      },
+    )
+  }
+
+  return list
 })
 
 async function unread(): Promise<void> {
@@ -311,32 +329,14 @@ const details = computed(() => {
 
 <template>
   <div class="wx-submission">
-    <div class="wx-submission__head">
-      <!-- The way back keeps its own size: it belongs to the heading beside it, not to the row
-           of actions at the other end of the line. -->
-      <wx-back-button :to="backTo" />
-
-      <div class="wx-submission__who">
-        <wx-heading :level="2" truncate>{{ heading }}</wx-heading>
-        <wx-text size="sm" tone="muted" truncate>{{ formTitle }}</wx-text>
-      </div>
-
+    <wx-screen-head :title="heading" :subtitle="formTitle" :back="backTo" :actions="actions">
       <!--
-        One height for everything on this line, and the button with a word on it is what sets
-        it: an icon button at `lg` is 42px, which is what a `md` button measures. Left to their
-        defaults they came out four different sizes — 30 for the way back, 36 for the arrows,
-        42 for the reply, 30 for the menu — and a row of controls that each picked their own
-        reads as four unrelated things rather than as one set.
-
-        The same pile the reader was looking at, one step at a time. An arrow with nowhere to
-        go is disabled rather than hidden: the pair is a control, and a control that changes
-        shape at the ends is one that moves under the hand.
-
-        One group and not four items in the head's row, so that on a narrow screen they go to
-        the next line together instead of breaking wherever the wrap happens to fall — which
-        left the arrows up by the name and the reply and the menu alone underneath.
+        The same pile the reader was looking at, one step at a time. Not an action with a word
+        on it, so not something the head can fold into a menu: an arrow with nowhere to go is
+        disabled rather than hidden, because a control that changes shape at the ends is one
+        that moves under the hand.
       -->
-      <div class="wx-submission__tools">
+      <template #extra>
         <wx-action
           icon="chevron-left"
           size="lg"
@@ -351,20 +351,8 @@ const details = computed(() => {
           :disabled="!submission?.next_id"
           @click="go(submission?.next_id ?? null)"
         />
-
-        <wx-button
-          v-if="mailto"
-          class="wx-submission__reply"
-          variant="outline"
-          icon="mail"
-          :href="mailto"
-        >
-          {{ t('panel.reply') }}
-        </wx-button>
-
-        <wx-row-menu :actions="actions" size="lg" :label="heading" />
-      </div>
-    </div>
+      </template>
+    </wx-screen-head>
 
     <wx-skeleton v-if="loading" :rows="6" />
 
@@ -529,72 +517,6 @@ const details = computed(() => {
   /* The panes below decide their own layout from the width of the screen rather than of the
      window: the panel has a sidebar, and the window knows nothing about it. */
   container-type: inline-size;
-}
-
-/*
- * The way out lines up with the heading, not with the pair of lines under it: what stands
- * beside it is two lines — which submission this is and which form it came through — and a
- * centred row put the arrow level with the gap between them.
- */
-.wx-submission__head {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--wx-space-8);
-  flex-wrap: wrap;
-}
-
-.wx-submission__who {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.wx-submission__tools {
-  display: flex;
-  align-items: center;
-  gap: var(--wx-space-8);
-  min-width: 0;
-}
-
-/*
- * On a phone the whole group is the size of the way back — 30.
- *
- * Every control on this line is one of two things: an icon, or a word that does what an icon
- * cannot say. The arrow at the start of the line is the same kind of thing as the arrows in
- * the middle of it, so they are all one size, and the button with the word takes that size
- * too. The height of a button is read off `--wx-size-control-md` and never declared on the
- * button itself, so handing the group a different value is enough (CLAUDE.md §4). Keyed off
- * the shell's own class rather than a width, because that is what the panel keys its icons
- * off: a narrow screen inside a desktop panel is still a desktop.
- */
-.wx-admin--drawer .wx-submission__tools {
-  --wx-size-control-md: 30px;
-}
-
-/*
- * The icons and the `···` come down with it. A size class declares `--wx-action-size` on its
- * own element, so the value has to be set there rather than inherited (CLAUDE.md §4) — and
- * `WxActions` grows its menu to 44 on a touch screen, which is the rule for a table row, where
- * that menu is the only control and a finger has nothing else to aim at.
- */
-.wx-admin--drawer .wx-submission__tools :deep(.wx-action),
-.wx-admin--drawer .wx-submission__tools :deep(.wx-actions__menu .wx-action) {
-  --wx-action-size: 30px;
-}
-
-/*
- * On a phone the group takes the line under the name, whole, and the one control with a word
- * on it takes what the icons leave — a button that says "reply by mail" in the middle of a
- * row of empty space is a button that looks like it did not fit.
- */
-@container (max-width: 560px) {
-  .wx-submission__tools {
-    flex: 1 1 100%;
-  }
-
-  /* `:deep()` because the class is ours and the element it rides is `WxButton`'s. */
-  .wx-submission__tools > :deep(.wx-submission__reply) {
-    flex: 1 1 auto;
-  }
 }
 
 .wx-submission__panes {
