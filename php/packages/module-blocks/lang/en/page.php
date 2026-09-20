@@ -52,6 +52,7 @@ return [
     'sample' => 'Sample values',
     'sample-help' => 'What the thumbnail is drawn on, and what the publish check runs on.',
     'preview' => 'Preview',
+    'width' => 'Width',
     'width-desktop' => 'Desktop',
     'width-tablet' => 'Tablet',
     'width-phone' => 'Phone',

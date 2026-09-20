@@ -52,6 +52,7 @@ return [
     'sample' => 'Wartości próbne',
     'sample-help' => 'Na nich rysowana jest miniatura i uruchamiane sprawdzenie przed publikacją.',
     'preview' => 'Podgląd',
+    'width' => 'Szerokość',
     'width-desktop' => 'Desktop',
     'width-tablet' => 'Tablet',
     'width-phone' => 'Telefon',

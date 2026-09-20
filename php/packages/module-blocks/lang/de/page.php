@@ -52,6 +52,7 @@ return [
     'sample' => 'Beispielwerte',
     'sample-help' => 'Darauf wird die Miniatur gezeichnet und die Prüfung vor der Veröffentlichung ausgeführt.',
     'preview' => 'Vorschau',
+    'width' => 'Breite',
     'width-desktop' => 'Desktop',
     'width-tablet' => 'Tablet',
     'width-phone' => 'Telefon',

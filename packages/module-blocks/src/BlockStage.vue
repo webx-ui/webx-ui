@@ -22,10 +22,12 @@ const props = withDefaults(
 
 const t = useTranslate('webx-blocks')
 
+/* Pictures on screen and words as the accessible name, the same way the page preview does it:
+   a device is one of the few things a picture says faster than a word. */
 const widths = computed(() => [
-  { value: 1280, label: t('page.width-desktop') },
-  { value: 834, label: t('page.width-tablet') },
-  { value: 390, label: t('page.width-phone') },
+  { value: 1280, icon: 'monitor', ariaLabel: t('page.width-desktop') },
+  { value: 834, icon: 'tablet', ariaLabel: t('page.width-tablet') },
+  { value: 390, icon: 'smartphone', ariaLabel: t('page.width-phone') },
 ])
 
 const width = ref<number>(1280)
@@ -82,7 +84,7 @@ const clipStyle = computed(() => ({
 <template>
   <div class="wx-block-stage">
     <div class="wx-block-stage__bar">
-      <wx-segmented v-model="width" :options="widths" size="sm" />
+      <wx-segmented v-model="width" :options="widths" size="sm" :aria-label="t('page.width')" />
     </div>
     <div ref="box" class="wx-block-stage__ground">
       <wx-skeleton v-if="loading && !html" :rows="3" />
