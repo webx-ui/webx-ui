@@ -58,4 +58,6 @@ return [
     'gone' => 'Prowadzi donikąd',
     'occupied' => 'Pod adresem :path odpowiada strona witryny. Przekierowanie działa wcześniej — strona przestanie być dostępna pod tym adresem.',
     'occupied-alias' => 'Ten adres prowadzi już do :target — ślad po przeniesieniu. Przekierowanie napisane tutaj zadziała wcześniej.',
+
+    'filter-kind' => 'Rodzaj',
 ];

@@ -58,4 +58,6 @@ return [
     'gone' => 'Non porta da nessuna parte',
     'occupied' => 'A :path risponde una pagina del sito. Il redirect viene provato prima: a quell’indirizzo la pagina non sarà più raggiungibile.',
     'occupied-alias' => 'Questo indirizzo porta già a :target — la traccia di uno spostamento. Un redirect scritto qui viene provato prima.',
+
+    'filter-kind' => 'Tipo',
 ];

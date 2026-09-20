@@ -1,5 +1,163 @@
 # @webx-ui/core
 
+## 0.25.0
+
+### Minor Changes
+
+- 937f4e2: The blog gets a picture of its own, and so can every other navigation group
+
+  Two separate things made the sidebar say the wrong thing about the blog.
+
+  **A group could not carry an icon at all.** `AdminNav` drew `icon="gear"` on every branch, so
+  "Blog" and "System" looked like the same kind of thing — one is what the site is about, the other
+  is what keeps the panel running. A group now names its own picture: `'icon' => 'newspaper'` beside
+  the title in `webx-admin.groups`, through the manifest, into `NavGroup`. The key is optional and
+  falls back to the gear, so a site that published `webx-admin.php` before this — or a group written
+  by a module that has not been updated — looks exactly as it looked.
+
+  **`ArticlesModule` named `file-text`, which was not an icon.** The set has `file-txt`, `file-md`
+  and the rest of the file family, but nothing under that name, so `resolveIcon` came back empty and
+  `WxIcon` rendered no `<svg>` at all: no warning, no placeholder, just a menu line whose label had
+  slid left into the room the picture was meant to occupy. Both halves type-check a name neither of
+  them can check, so the seam is now tested — every `icon()` and every `'icon' =>` in the PHP
+  packages is looked up in the set.
+
+  New in `@webx-ui/core`: `file-text`, the page with three lines of prose that the file family
+  already drew, under the name a section full of writing asks for; and `newspaper`, a folded sheet
+  with the one behind it curling out at the bottom left — the fold is the only thing that tells a
+  paper from a document at 16 px.
+
+- 852883d: `WxTable` takes its filters behind a funnel. `#filters` is the panel one opens beside the search,
+  `filtersCount` puts the number of them on the button, and `#applied` says what they are set to — chips the
+  reader can take off, standing in the header row itself. Nothing is drawn while the strip holds
+  nothing, so a list with no filters on looks exactly as it did before.
+- 852883d: The panel's lists take their filters behind the funnel and draw their narrow rows as entities.
+
+  `WxFilterChips` and `AppliedFilter` in `module-admin` give every section the same chip, and the
+  panel's own two words — the name of the funnel and "reset all" — live with it in all ten
+  languages. Articles, the SEO rules and the administrators put their dropdowns in `#filters` and
+  what they are set to in `#applied`; submissions, administrators and articles draw a card below
+  their breakpoint as `WxEntityCard` rather than as a stack of labelled lines, with the `···` in
+  the card's own top strip beside the checkbox.
+
+  `WxEntityCard` gained `titleLines`, because an article's headline is a sentence: one line of it
+  on a phone is half a thought, and the list it replaced already clamped at two.
+
+### Patch Changes
+
+- 852883d: Tags: the order is on the headings, and renaming is a form.
+
+  The two buttons over the list are gone — the name and the count sort from their own headings, in
+  either direction, and the address carries the order so a link lands on the list somebody meant.
+  The server takes a leading minus for it and keeps the bare names it had: alphabetical, and most
+  used first.
+
+  Renaming opens a dialog with one field. In the cell it was a name that turned into an `<input>`,
+  which reads as a name — nothing said it could be typed in — and it saved itself on `blur`, an
+  event that does not bubble, so the listener on the field's wrapper heard nothing and clicking away
+  lost what had been typed.
+
+  `WxActionBar` wraps its buttons. They were `flex: 0 0 auto` and stayed on one line whatever the
+  width: measured on a 375px screen, five of them were 815px inside a bar 359 wide, and they took
+  the whole page sideways with them.
+
+- 852883d: A shut branch of `WxMenu` shows that the page you are on is inside it. It has carried `is-trail`
+  all along, but the two things that class did — strong text and semibold — are what a vertical menu
+  looks like anyway, and on an icon rail there is no text to make strong at all. The icon takes the
+  accent colour instead: the branch is where you are, the entry inside it is what you are looking at,
+  and on a rail it is the only mark a branch can wear.
+- 852883d: A cell keeps what it holds inside its own column. `table-layout: fixed` gives a column the width
+  it was declared and nothing else, so a value wider than that used to be painted straight across
+  the column beside it — measured on the panel, a date cell 130px wide with 152px of text, its tail
+  sitting under the status badge. Cells clip now.
+
+  `TableColumn.minWidth` says what it can and cannot do: a `<col>` takes four properties and
+  `min-width` is not one of them, so the floor only means something with `layout="auto"`.
+
+  The lists that showed it — articles, pages, tags and submissions — carry the widths their longest
+  values actually need, and the columns that can be spared step aside a little later so that the
+  name keeps the room.
+
+- 852883d: A `flush` table is flush on every side, in both of its shapes. The head kept the cells' own step
+  and the column of cards kept its own above and below, so inside a card the air was 16 at the sides
+  and 28 over the search, and the last card stood twice as far from the edge as the first stood from
+  the field. Both are the box's now, and what is left between the head and the rows is the panel's
+  step.
+
+  An empty title is no longer drawn at all. It was still a flex item, so every table without one
+  carried a 12px row gap above its search — and in card mode, where the tools take a line of their
+  own, that gap was the whole of the space above the field.
+
+- 852883d: A drawer is spaced by the panel's step where there is one. Its sideways padding now reads
+  `--wx-gap` and keeps its own 18 (12 on a narrow screen) as the fallback, so the same list is the
+  same distance from the edge in a card and in a drawer — it was 16 against 18 on a desktop and 8
+  against 12 on a phone. A drawer is teleported out of the application's tree, which is why the
+  shell writes that step on the document as well.
+
+## 0.24.0
+
+### Minor Changes
+
+- f87e4ec: `wx-rich-text`: the editor as a field of a screen
+
+  A node type on both halves. On the server it is checked against `props.maxlength`, stored
+  through an allowlist — a `<script>`, an `onclick` or a `javascript:` address does not survive —
+  and an emptied editor is stored as `null` rather than as `<p></p>`. `localized` needs nothing of
+  its own: the language map is picked apart one layer up, so a translated article is the same type
+  run once per language.
+
+  Pictures come from the file manager. `AdminModule` gains `pickImage`, which `module-media`
+  supplies and the panel hands to every editor on every screen; a panel without a file manager
+  draws no image button, because the editor does not offer what it cannot do.
+
+  What a document keeps for a picture is the library's **key**, as `data-wx-path`, and the address
+  is worked out again on every read through `WebxUi\Admin\Contracts\AssetUrls`. The same rule
+  `wx-media` has always followed, one layer in: the address differs between deployments of one
+  site, a private bucket's address expires, and an image edited in place changes the version stamp
+  without changing the key.
+
+  `WxRichText` itself gains `localized` — one editor with a language chip, as `WxInput` and
+  `WxTextarea` have — and `labels`, so the panel can put its own words on the toolbar.
+
+  `HasDraft::publish()` takes an optional `?CarbonInterface $at`: the date an entity is published
+  under is not always now, and it cannot travel through the draft.
+
+### Patch Changes
+
+- f87e4ec: The article editor: tabs, blocks, autosave, the day it goes out
+
+  `blog.article-form` is a described screen, like the page editor and for the same reason: the SEO
+  card arrives as a patch from `module-seo` rather than being named in the blog's own description,
+  and a project adds a tab the same way. Four tabs — the block constructor, the settings, SEO and
+  the history — with a head above them that never moves and an action bar below.
+
+  The settings are §10 of the spec: the address printed whole under the field that edits its last
+  segment, the lead with a counter, the rubrics as a list that is dragged into order because the
+  first one is the main one, a tag box that makes the tag it cannot find, the author, the cover,
+  the pin, and the articles pinned under this one by hand. Five of them are node types the blog
+  registers on both halves, so a rubric that is not a rubric is refused where every screen is
+  checked rather than wherever somebody remembered.
+
+  **The day is the part that is not a page editor.** The date in the settings tab is what
+  "publish" publishes under, and the bar says which day that is before it is pressed: ahead, the
+  article waits and answers 404 until its morning; behind, it moves down the feed. For an article
+  that has never been on the site the day waits in the draft, because `published_at` is what "on
+  the site" means and there is no column for a date that has not happened yet. For one that is
+  already dated, moving the date writes the column at once — every listing orders by it.
+
+  `WxActionBar` wraps. Its state box may shrink to nothing, and the words in it went on being
+  painted where the box no longer was — straight across the buttons. Measured on a 375px screen:
+  the box 0px wide and 105 tall, "Saved · goes out on 25 September at 17:06" over the top of "Save
+  draft". Past the width of a short sentence the buttons now take a line of their own, still
+  against the end of the bar.
+
+  Saving is autosave, checked against the revision the form read and refused with a 409 when
+  somebody wrote in between; the answer carries the article as it now is, so the panel asks which
+  version the site gets instead of keeping one of the two silently. `PUT` now takes the screen's
+  `values`, the history has its own two routes, `POST .../discard` throws away what is waiting,
+  and `GET|POST /blog/tags` is the half of the tags API the article form needs — the screen that
+  rakes them over comes with session D.
+
 ## 0.23.0
 
 ### Minor Changes

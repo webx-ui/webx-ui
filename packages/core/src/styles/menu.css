@@ -67,6 +67,19 @@
 }
 
 /*
+ * And the icon carries the accent, because the two lines above say nothing where it matters: a
+ * vertical menu is semibold already and its rows are `--wx-text-strong` to begin with, so a shut
+ * branch looked exactly like every other. On an icon rail there is no text at all — the icon is
+ * the whole row, and this is the only mark a branch can wear.
+ *
+ * The colour on the icon rather than on the row: the branch is where you are, the entry inside it
+ * is what you are looking at, and two rows in the accent would say the same thing twice.
+ */
+.wx-menu-row.is-trail .wx-menu-row__icon {
+  color: var(--wx-color-primary);
+}
+
+/*
  * A sidebar is the page's own table of contents and is looked at all day; a bar
  * across the top is chrome standing between a logo and a user menu, and reads
  * better a step lighter. Panels keep the lighter weight with it.

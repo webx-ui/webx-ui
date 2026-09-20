@@ -48,6 +48,16 @@ const classes = computed(() => [
   display: flex;
   align-items: center;
   gap: var(--wx-space-12);
+  /*
+   * Two lines rather than one, once the buttons no longer leave the state room to be read.
+   *
+   * Without this the state box is shrunk to nothing — `min-width: 0` lets it — and its text
+   * goes on being painted where the box no longer is, straight across the buttons. Measured on
+   * a 375px screen with "Saved · goes out on 25 September at 17:06" beside two buttons: the box
+   * 0px wide and 105 tall, the words over the top of "Save draft". Nothing about it looks like
+   * a layout that ran out of room; it looks like the bar is broken.
+   */
+  flex-wrap: wrap;
   box-sizing: border-box;
   /* Never squeezed by a screen that is exactly as tall as the window: the bar keeps its
      height and the content above it is what shrinks. */
@@ -90,20 +100,36 @@ const classes = computed(() => [
 }
 
 /* The left side is whatever the screen says about the state of the work — saved, a draft,
-   a version number — and it is what gives way when the row runs out of width. */
+   a version number. It gives way as the row narrows, down to the width of a short sentence;
+   past that the buttons take a line of their own rather than the words giving way to nothing. */
 .wx-action-bar__state {
   display: flex;
   align-items: center;
   gap: var(--wx-space-8);
-  flex: 1 1 auto;
+  flex: 1 1 220px;
   min-width: 0;
   flex-wrap: wrap;
 }
 
+/* Against the end of the bar on one line and on two: on a line of its own the buttons would
+   otherwise start at the left, under the words, which reads as a second, unrelated row. */
+/*
+ * The buttons wrap too, for the same reason the bar does.
+ *
+ * `flex: 0 0 auto` kept them on one line whatever the width, and a line of five was 815px inside
+ * a bar 359 wide — measured on a 375px screen, where it took the whole page sideways with it and
+ * left a scrollbar under a list that fitted perfectly well. They keep the end of the bar while
+ * there is room and fold into rows when there is not; `justify-content` is what keeps the fold
+ * aligned with the edge the buttons came from.
+ */
 .wx-action-bar__actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: var(--wx-space-8);
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-inline-start: auto;
 }
 </style>

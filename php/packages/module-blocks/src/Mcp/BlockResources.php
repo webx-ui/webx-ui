@@ -23,6 +23,7 @@ final class BlockResources
     private const NODES = [
         'wx-input' => ['kind' => 'field', 'note' => 'One line of text. props: placeholder, maxlength.'],
         'wx-textarea' => ['kind' => 'field', 'note' => 'Several lines of plain text. props: rows, placeholder.'],
+        'wx-rich-text' => ['kind' => 'field', 'note' => 'A formatted document, stored as HTML — headings, lists, tables, links, pictures from the library. The template prints it with {!! !!}. props: placeholder, minHeight, tools.'],
         'wx-input-number' => ['kind' => 'field', 'note' => 'A number. props: min, max, step.'],
         'wx-switch' => ['kind' => 'field', 'note' => 'A boolean.'],
         'wx-checkbox' => ['kind' => 'field', 'note' => 'A boolean with a label beside the box.'],

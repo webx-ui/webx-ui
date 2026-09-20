@@ -1,5 +1,262 @@
 # @webx-ui/php
 
+## 0.24.0
+
+### Minor Changes
+
+- 937f4e2: The blog gets a picture of its own, and so can every other navigation group
+
+  Two separate things made the sidebar say the wrong thing about the blog.
+
+  **A group could not carry an icon at all.** `AdminNav` drew `icon="gear"` on every branch, so
+  "Blog" and "System" looked like the same kind of thing — one is what the site is about, the other
+  is what keeps the panel running. A group now names its own picture: `'icon' => 'newspaper'` beside
+  the title in `webx-admin.groups`, through the manifest, into `NavGroup`. The key is optional and
+  falls back to the gear, so a site that published `webx-admin.php` before this — or a group written
+  by a module that has not been updated — looks exactly as it looked.
+
+  **`ArticlesModule` named `file-text`, which was not an icon.** The set has `file-txt`, `file-md`
+  and the rest of the file family, but nothing under that name, so `resolveIcon` came back empty and
+  `WxIcon` rendered no `<svg>` at all: no warning, no placeholder, just a menu line whose label had
+  slid left into the room the picture was meant to occupy. Both halves type-check a name neither of
+  them can check, so the seam is now tested — every `icon()` and every `'icon' =>` in the PHP
+  packages is looked up in the set.
+
+  New in `@webx-ui/core`: `file-text`, the page with three lines of prose that the file family
+  already drew, under the name a section full of writing asks for; and `newspaper`, a folded sheet
+  with the one behind it curling out at the bottom left — the fold is the only thing that tells a
+  paper from a document at 16 px.
+
+- 852883d: The panel's lists take their filters behind the funnel and draw their narrow rows as entities.
+
+  `WxFilterChips` and `AppliedFilter` in `module-admin` give every section the same chip, and the
+  panel's own two words — the name of the funnel and "reset all" — live with it in all ten
+  languages. Articles, the SEO rules and the administrators put their dropdowns in `#filters` and
+  what they are set to in `#applied`; submissions, administrators and articles draw a card below
+  their breakpoint as `WxEntityCard` rather than as a stack of labelled lines, with the `···` in
+  the card's own top strip beside the checkbox.
+
+  `WxEntityCard` gained `titleLines`, because an article's headline is a sentence: one line of it
+  on a phone is half a thought, and the list it replaced already clamped at two.
+
+### Patch Changes
+
+- 852883d: Tags: the order is on the headings, and renaming is a form.
+
+  The two buttons over the list are gone — the name and the count sort from their own headings, in
+  either direction, and the address carries the order so a link lands on the list somebody meant.
+  The server takes a leading minus for it and keeps the bare names it had: alphabetical, and most
+  used first.
+
+  Renaming opens a dialog with one field. In the cell it was a name that turned into an `<input>`,
+  which reads as a name — nothing said it could be typed in — and it saved itself on `blur`, an
+  event that does not bubble, so the listener on the field's wrapper heard nothing and clicking away
+  lost what had been typed.
+
+  `WxActionBar` wraps its buttons. They were `flex: 0 0 auto` and stayed on one line whatever the
+  width: measured on a 375px screen, five of them were 815px inside a bar 359 wide, and they took
+  the whole page sideways with them.
+
+## 0.23.0
+
+### Minor Changes
+
+- f87e4ec: The article editor: tabs, blocks, autosave, the day it goes out
+
+  `blog.article-form` is a described screen, like the page editor and for the same reason: the SEO
+  card arrives as a patch from `module-seo` rather than being named in the blog's own description,
+  and a project adds a tab the same way. Four tabs — the block constructor, the settings, SEO and
+  the history — with a head above them that never moves and an action bar below.
+
+  The settings are §10 of the spec: the address printed whole under the field that edits its last
+  segment, the lead with a counter, the rubrics as a list that is dragged into order because the
+  first one is the main one, a tag box that makes the tag it cannot find, the author, the cover,
+  the pin, and the articles pinned under this one by hand. Five of them are node types the blog
+  registers on both halves, so a rubric that is not a rubric is refused where every screen is
+  checked rather than wherever somebody remembered.
+
+  **The day is the part that is not a page editor.** The date in the settings tab is what
+  "publish" publishes under, and the bar says which day that is before it is pressed: ahead, the
+  article waits and answers 404 until its morning; behind, it moves down the feed. For an article
+  that has never been on the site the day waits in the draft, because `published_at` is what "on
+  the site" means and there is no column for a date that has not happened yet. For one that is
+  already dated, moving the date writes the column at once — every listing orders by it.
+
+  `WxActionBar` wraps. Its state box may shrink to nothing, and the words in it went on being
+  painted where the box no longer was — straight across the buttons. Measured on a 375px screen:
+  the box 0px wide and 105 tall, "Saved · goes out on 25 September at 17:06" over the top of "Save
+  draft". Past the width of a short sentence the buttons now take a line of their own, still
+  against the end of the bar.
+
+  Saving is autosave, checked against the revision the form read and refused with a 409 when
+  somebody wrote in between; the answer carries the article as it now is, so the panel asks which
+  version the site gets instead of keeping one of the two silently. `PUT` now takes the screen's
+  `values`, the history has its own two routes, `POST .../discard` throws away what is waiting,
+  and `GET|POST /blog/tags` is the half of the tags API the article form needs — the screen that
+  rakes them over comes with session D.
+
+- f87e4ec: `Blog`: the section, the panel API and the list of articles
+
+  The blog arrives in the navigation as three entries under one heading — Articles, Rubrics,
+  Tags — because the panel draws one entry per module and a blog wants three. Rubrics and tags are
+  declared on the server and stay out of the menu until their screens are written: an entry with
+  no screen has nowhere to send anybody, so it is silently skipped.
+
+  The API is a paginator rather than a level of a tree, which is the whole difference from
+  `Pages`: `GET /api/cms/blog/articles` with a search term, a rubric, a tag, an author and a
+  state, plus create, save, publish, unpublish, delete and restore. Every filter is a subquery and
+  none of them is a join — an article is in several rubrics and carries several tags, and joining
+  the pivot turns a page of twenty into seventeen articles with three of them drawn twice.
+
+  Five states, and the pair worth keeping apart is the last two: an article that was never
+  published and one that was taken off the site this morning both have no publication date, and
+  only the history tells them apart. Publishing takes an optional date, so "on the site next
+  Tuesday" is that date and not a scheduler.
+
+  What is saved goes to two places, and the split is deliberate. The title, the address, the lead
+  and the cover go into the draft — the site keeps showing what was published. The rubrics, the
+  tags, the related articles and the pin do not, and cannot: a pivot row is not a column, and
+  there is no such thing as half a row. A translated field travels as its whole language map, so
+  saving from a Russian panel that is showing an English fallback no longer copies the English
+  title into the Russian slot.
+
+  `@webx-ui/module-blog` is the front end: the list with its filters, its views as tabs, the bin,
+  and a row menu. Below 640 pixels the row becomes a card with the cover on the left and the title,
+  one rubric, the state, the date and the author beside it — ten articles on a phone screen rather
+  than two.
+
+- f87e4ec: The blog through an agent's doors, and the guide
+
+  Nine tools, one resource and one prompt, all of them the same doors the panel uses: `articles_list`
+  is the panel's own query, so the five states of an article are one answer and not two;
+  `articles_update` goes through the described screen, so a tab `module-seo` put on the editor is a
+  field an agent can write; `articles_publish` takes `at`, because in this module the date _is_ the
+  publication and there is nowhere else for it to live.
+
+  `rubrics_list` only looks, and `tags_create` does not exist — both on purpose. Deciding the site
+  has a ninth section is a decision about its navigation, and inventing a tag while writing one
+  sentence is exactly how a blog ends up holding "belts", "belt" and "drive belts". What an agent
+  gets instead is `tags_merge`, sorted by use so the duplicates stand next to the word they
+  duplicate: the irreversible half of the job nobody gets round to, with a dry run that reports how
+  many articles would come out carrying the surviving word — counted once, because an article that
+  carried both tags is one article.
+
+  `blog://feed` is the last thirty articles as a reader sees them rather than a second editor's
+  view. Half of what it is for is finding out that this was published in March; the other half is
+  picking up how the blog writes before writing for it. The prompt `write_article` puts the loop in
+  front of the agent, and spends two of its lines on the step a first attempt gets wrong twice: the
+  body is `blocks_edit_content` and not `articles_update`, and writing `published_at` while filling
+  in the settings puts a half-written article on the site without anything named "publish" being
+  called.
+
+  `apps/docs/guide/blog.md` is both halves on one page, and the package README now says what an
+  agent may do.
+
+- f87e4ec: Blog: the screens for rubrics and tags
+
+  **Rubrics** are a menu, so they are edited as one: `WxListDetail` with the list on the left,
+  dragged into the order the site has them in, and the form for the one that is open on the right.
+  No paginator and no search — a site has eight rubrics, and a menu you have to search is a menu
+  that is already wrong. The form looks up `wx-media` and `wx-seo` in the panel's own type
+  registry rather than importing either, so a panel without the file manager or without SEO gets a
+  shorter form instead of one that will not mount. The SEO card starts folded behind a sentence
+  saying where the title of the page comes from without it.
+
+  Deleting a rubric that still holds articles is refused with the number in the message, and the
+  button stays on screen and out of reach with the reason beside it: a button that disappears does
+  not answer "why can I not delete this".
+
+  **Tags** are entered from the article form by the hundred, so the screen is built for raking them
+  over. Renaming happens in the row — Enter saves, Escape puts back — and the address does not move
+  with the word, because a tag spelled three ways before lunch would otherwise leave three aliases
+  behind a decision nobody made. Selecting rows raises a bar that opens, closes or deletes the pile
+  at once, and merges it: the articles move over, the pivot deduplicates, and a checkbox decides
+  whether the addresses that existed go on answering as redirects. The merge is irreversible and
+  the dialog says so.
+
+  The column **Indexing** has three states, not two — `indexed`, `indexed — SEO rule`, `noindex` —
+  and the filter beside it counts by the same rule the rendered page follows, through
+  `UrlRuleSource::hasRuleFor()`. Anything less leaves the editor who wrote the rule looking at a row
+  that says `noindex` about a page that is in the index.
+
+  Server side: `GET/POST/PUT/DELETE /api/cms/blog/rubrics` with `rubrics/reorder`, and
+  `GET/POST/PUT/DELETE /api/cms/blog/tags` with `tags/merge` and `tags/mass`. The tags endpoint is
+  one answer to "which tags are there": the dropdown on the article form asks for its first page.
+  `HasUrl` gains `urlOf()`, so a screen that has already loaded the `routes` relation for a page of
+  rows does not go back to the registry once per row to learn what it was handed.
+
+- f87e4ec: `webx-ui/module-blog`: the package, the addresses and the public half
+
+  Articles, rubrics and tags. Almost none of it is written here — the address is `routing`, the
+  content is `module-blocks`, the draft and the history are `module-admin`, the covers are
+  `module-media`, what a page says about itself is `module-seo` — and what the package adds is the
+  three things that make an article an article rather than a page: a date, several rubrics, and
+  tags.
+
+  Three types in the registry under one prefix (`webx-blog.prefix`, `blog` by default), all
+  `OnConflict::Fail` in one flat namespace: a rubric called "Repairs" and an article slugged
+  `repairs` are one address, and the second of them is an error under the field rather than a
+  quiet `repairs-2`. The rubric is deliberately not part of an article's address — an article has
+  three of them, "which one" has no answer, and any answer would be a hidden main rubric that
+  moved the article when somebody reordered the checkboxes.
+
+  Publication is one column and no scheduler. `published_at` in the future means the article is
+  waiting, in the past means it sits where that date puts it in the feed, and which of the two it
+  is gets decided where the article is read. Worth remembering: to the frame underneath, a
+  scheduled article is already published, so a general count of live records elsewhere in the
+  panel counts it.
+
+  A rubric has `is_visible` instead of a draft, and refuses to be deleted while it holds articles,
+  naming how many — its articles are not its property, and a soft-deleted rubric with live
+  articles in it is a hole in the navigation nobody notices. Tags merge into one, and the
+  addresses that existed can be kept as rows in `seo_redirects`: an alias of `routing` is keyed to
+  the entity and dies with it.
+
+  A tag page is out of the index by default, and a rule in `seo_urls` for its address opens it
+  completely. That cannot be a merge of fields — a rule filling in a title and leaving `robots`
+  empty would leave the module's `noindex` standing underneath it, and the editor who wrote the
+  rule would never find out — so `Panel\UrlRuleSource` in `module-seo` gains `hasRuleFor()`, over
+  the same compiled list `UrlMatcher` works on, and the blog asks that instead of matching masks
+  of its own.
+
+  The public half ships as five bare views, a feed at `{prefix}` with `?page=`, an RSS, and worked
+  out "read next": pinned first, then most tags in common, then the main rubric.
+
+- f87e4ec: `wx-rich-text`: the editor as a field of a screen
+
+  A node type on both halves. On the server it is checked against `props.maxlength`, stored
+  through an allowlist — a `<script>`, an `onclick` or a `javascript:` address does not survive —
+  and an emptied editor is stored as `null` rather than as `<p></p>`. `localized` needs nothing of
+  its own: the language map is picked apart one layer up, so a translated article is the same type
+  run once per language.
+
+  Pictures come from the file manager. `AdminModule` gains `pickImage`, which `module-media`
+  supplies and the panel hands to every editor on every screen; a panel without a file manager
+  draws no image button, because the editor does not offer what it cannot do.
+
+  What a document keeps for a picture is the library's **key**, as `data-wx-path`, and the address
+  is worked out again on every read through `WebxUi\Admin\Contracts\AssetUrls`. The same rule
+  `wx-media` has always followed, one layer in: the address differs between deployments of one
+  site, a private bucket's address expires, and an image edited in place changes the version stamp
+  without changing the key.
+
+  `WxRichText` itself gains `localized` — one editor with a language chip, as `WxInput` and
+  `WxTextarea` have — and `labels`, so the panel can put its own words on the toolbar.
+
+  `HasDraft::publish()` takes an optional `?CarbonInterface $at`: the date an entity is published
+  under is not always now, and it cannot travel through the draft.
+
+### Patch Changes
+
+- 5d24fd2: The blog's five public views are plain, not broken
+
+  Two things an unstyled page still owes the reader. Without `max-width: 100%` a 1200px cover
+  pushed a phone's page out to 1248px and took every line of text off the screen with it — three
+  rules in a partial the four page views include, the same three `module-pages` shows in its own
+  example. And nothing derives a title from an entity, so an article whose SEO card was never
+  filled had no `<title>` at all: each view now falls back to what it is about when the card and
+  the defaults are silent, which is what the demo site had already written by hand for pages.
+
 ## 0.22.1
 
 ### Patch Changes

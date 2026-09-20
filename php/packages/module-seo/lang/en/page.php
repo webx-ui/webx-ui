@@ -64,4 +64,6 @@ return [
     'gone' => 'Leads nowhere',
     'occupied' => 'A page of the site answers at :path. A redirect is tried before it, so the page stops being reachable there.',
     'occupied-alias' => 'This address already leads to :target — what a move left behind. A redirect written here is tried first.',
+
+    'filter-kind' => 'Kind',
 ];

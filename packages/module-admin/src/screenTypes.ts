@@ -1,5 +1,6 @@
 import type { TypeRegistry } from '@webx-ui/schema'
 import ListScreen from './ListScreen.vue'
+import RichTextField from './RichTextField.vue'
 
 /**
  * Node types the panel itself brings, under every module's and every project's.
@@ -12,7 +13,14 @@ import ListScreen from './ListScreen.vue'
  *
  * The rows themselves are still a module's own type — `wx-pages-table`, `wx-media` — because
  * only the module knows what it is listing and where it asks for it.
+ *
+ * `wx-rich-text` is here rather than in `@webx-ui/schema` because it is not the editor that
+ * makes it a panel field: it is the panel's words on its toolbar and the panel's library behind
+ * its image button, and the schema package knows about neither.
  */
 export const adminTypes: TypeRegistry = {
   'wx-list': { component: ListScreen, kind: 'layout', labelProp: 'title' },
+  // Full width: an editor shares a row with nothing, and a form of two columns would give it
+  // half a line to write a page of text in.
+  'wx-rich-text': { component: RichTextField, kind: 'field', wide: true },
 }

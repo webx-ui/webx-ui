@@ -6,6 +6,7 @@ import {
   WxAction,
   WxAlert,
   WxButton,
+  WxIcon,
   WxCard,
   WxFormItem,
   WxInput,
@@ -151,7 +152,8 @@ function setEmail(index: number, email: string): void {
       >
         {{ t('panel.add-admin') }}
       </wx-button>
-      <wx-button variant="outline" icon="mail" @click="add({ email: '' })">
+      <wx-button variant="outline" @click="add({ email: '' })">
+        <template #icon><wx-icon name="mail" /></template>
         {{ t('panel.add-email') }}
       </wx-button>
     </wx-space>

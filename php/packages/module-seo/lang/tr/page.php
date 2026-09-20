@@ -58,4 +58,6 @@ return [
     'gone' => 'Hiçbir yere gitmiyor',
     'occupied' => ':path adresinde sitenin bir sayfası yanıt veriyor. Yönlendirme ondan önce denenir, yani sayfa bu adresten açılmaz olur.',
     'occupied-alias' => 'Bu adres zaten :target adresine gidiyor — bir taşınmanın izi. Burada yazılan bir yönlendirme önce denenir.',
+
+    'filter-kind' => 'Tür',
 ];

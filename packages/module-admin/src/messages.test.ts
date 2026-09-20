@@ -24,7 +24,7 @@ function keysOf(group: string): string[] {
  * browser never asks for one by key.
  */
 describe('the English here matches the English the server ships', () => {
-  it.each(['shell', 'nav', 'dates', 'errors', 'notes'])('%s', (group) => {
+  it.each(['shell', 'nav', 'dates', 'errors', 'notes', 'rich-text'])('%s', (group) => {
     const ours = Object.keys(adminMessages[group] ?? {}).sort()
 
     expect(ours).toEqual(keysOf(group))

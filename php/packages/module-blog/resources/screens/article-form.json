@@ -1,0 +1,174 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "blog.article-form",
+  "model": "article",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "content",
+          "type": "wx-tab",
+          "label": "trans::webx-blog::screen.content",
+          "children": [
+            {
+              "id": "blocks",
+              "type": "wx-blocks",
+              "name": "blocks",
+              "props": { "fill": true }
+            }
+          ]
+        },
+        {
+          "id": "settings",
+          "type": "wx-tab",
+          "label": "trans::webx-blog::screen.settings",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "label": "trans::webx-blog::screen.naming",
+              "children": [
+                {
+                  "id": "title",
+                  "type": "wx-input",
+                  "name": "title",
+                  "label": "trans::webx-blog::screen.title",
+                  "localized": true
+                },
+                {
+                  "id": "slug",
+                  "type": "wx-input",
+                  "name": "slug",
+                  "label": "trans::webx-blog::screen.slug",
+                  "help": "trans::webx-blog::screen.slug-help",
+                  "localized": true
+                },
+                {
+                  "id": "address",
+                  "type": "wx-article-address"
+                },
+                {
+                  "id": "lead",
+                  "type": "wx-textarea",
+                  "name": "lead",
+                  "label": "trans::webx-blog::screen.lead",
+                  "help": "trans::webx-blog::screen.lead-help",
+                  "localized": true,
+                  "props": { "rows": 3, "maxlength": 2000, "showCount": true }
+                }
+              ]
+            },
+            {
+              "id": "publication",
+              "type": "wx-card",
+              "label": "trans::webx-blog::screen.publication",
+              "children": [
+                {
+                  "id": "published-at",
+                  "type": "wx-date-picker",
+                  "name": "published_at",
+                  "label": "trans::webx-blog::screen.published-at",
+                  "help": "trans::webx-blog::screen.published-at-help",
+                  "props": {
+                    "type": "datetime",
+                    "clearable": true,
+                    "teleport": true,
+                    "valueFormat": "yyyy-MM-dd'T'HH:mm:ssXXX"
+                  }
+                },
+                {
+                  "id": "author",
+                  "type": "wx-article-author",
+                  "name": "author_id",
+                  "label": "trans::webx-blog::screen.author"
+                },
+                {
+                  "id": "pinned",
+                  "type": "wx-switch",
+                  "name": "pinned",
+                  "label": "trans::webx-blog::screen.pinned",
+                  "help": "trans::webx-blog::screen.pinned-help"
+                }
+              ]
+            },
+            {
+              "id": "taxonomy",
+              "type": "wx-card",
+              "label": "trans::webx-blog::screen.taxonomy",
+              "children": [
+                {
+                  "id": "rubrics",
+                  "type": "wx-article-rubrics",
+                  "name": "rubrics",
+                  "label": "trans::webx-blog::screen.rubrics",
+                  "help": "trans::webx-blog::screen.rubrics-help"
+                },
+                {
+                  "id": "tags",
+                  "type": "wx-article-tags",
+                  "name": "tags",
+                  "label": "trans::webx-blog::screen.tags",
+                  "help": "trans::webx-blog::screen.tags-help"
+                }
+              ]
+            },
+            {
+              "id": "presentation",
+              "type": "wx-card",
+              "label": "trans::webx-blog::screen.presentation",
+              "children": [
+                {
+                  "id": "cover",
+                  "type": "wx-media",
+                  "name": "cover",
+                  "label": "trans::webx-blog::screen.cover",
+                  "props": { "accept": "image", "captions": false, "aspect": "16/9" }
+                }
+              ]
+            },
+            {
+              "id": "relations",
+              "type": "wx-card",
+              "label": "trans::webx-blog::screen.related",
+              "children": [
+                {
+                  "id": "related",
+                  "type": "wx-article-related",
+                  "name": "related",
+                  "label": "trans::webx-blog::screen.related-manual",
+                  "help": "trans::webx-blog::screen.related-help"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "seo",
+          "type": "wx-tab",
+          "label": "trans::webx-blog::screen.seo",
+          "children": [
+            {
+              "id": "seo-placeholder",
+              "type": "wx-alert",
+              "label": "trans::webx-blog::screen.seo-empty",
+              "props": { "type": "info", "variant": "soft" }
+            }
+          ]
+        },
+        {
+          "id": "history",
+          "type": "wx-tab",
+          "label": "trans::webx-blog::screen.history",
+          "children": [
+            {
+              "id": "versions",
+              "type": "wx-article-history"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

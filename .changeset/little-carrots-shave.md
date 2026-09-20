@@ -1,14 +1,15 @@
 ---
 '@webx-ui/core': minor
-'@webx-ui/module-auth': patch
-'@webx-ui/module-seo': patch
 ---
 
 `WxButton` takes an `icon` name
 
-Twenty-three call sites across the panel wrote `<wx-button icon="plus">`, but the button only had
-an `icon` slot: the attribute fell through to the `<button>` element and drew nothing. Rather than
-rewrite them all, `WxButton` now has a real `icon?: IconName` prop that renders a `WxIcon` into the
-existing `.wx-button__icon` span; the `icon` slot still wins when both are given, and `loading`
-still replaces both with the spinner. Three of those call sites also asked for `add`, which is not
-an icon in the set — they now ask for `plus`.
+The button had an `icon` slot and no `icon` prop, so `<wx-button icon="plus">` — which is how two
+dozen call sites across the panel wrote it — fell through to the `<button>` element as an attribute
+and drew nothing at all. Every other component that carries a picture beside its label takes the
+name (`WxDropdownItem`, `WxMenuItem`, `WxTab`), and this one now does too: `icon?: IconName` renders
+a `WxIcon` into the existing `.wx-button__icon` span. The slot still wins when both are given, and
+`loading` still replaces both with the spinner.
+
+The call sites themselves were repaired in the meantime — the head of a screen draws its actions
+from `ScreenAction.icon` now — so this is the missing prop rather than a fix to any of them.
