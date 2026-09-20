@@ -1,5 +1,23 @@
 # @webx-ui/php
 
+## 0.25.1
+
+### Patch Changes
+
+- 0aea1bb: Fewer words in the article editor's bar
+
+  `webx-blog::article.save` is "Save" rather than "Save draft" in all ten languages: the button
+  beside it is the publication, so there is nothing left to tell apart. The three lines the bar
+  used to build its sentence from — `live-never`, `live-edited`, `live-off` — go with the sentence;
+  what is left of it is the day, and the day is said by `live-since` and `live-scheduled` under the
+  article's name.
+
+- e98734c: One word for the block preview's width switcher
+
+  `webx-blocks::page.width` in all ten languages: the name of the group of three device icons that
+  replaced the three words in the Blocks section's preview. The icons carry the old lines as their
+  own accessible names, so nothing else moves.
+
 ## 0.25.0
 
 ### Minor Changes
