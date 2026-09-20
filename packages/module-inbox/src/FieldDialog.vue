@@ -6,6 +6,7 @@ import {
   useModal,
   WxAction,
   WxButton,
+  WxIcon,
   WxCheckbox,
   WxDialog,
   WxFormItem,
@@ -233,7 +234,8 @@ async function save(): Promise<void> {
           <wx-action icon="trash" :title="t('fields.delete')" @click="removeChoice(index)" />
         </div>
 
-        <wx-button variant="outline" size="sm" icon="plus" @click="addChoice">
+        <wx-button variant="outline" size="sm" @click="addChoice">
+          <template #icon><wx-icon name="plus" /></template>
           {{ t('fields.add-choice') }}
         </wx-button>
       </div>

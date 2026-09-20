@@ -12,6 +12,15 @@ export interface Dates {
    */
   short(value: DateLike): string
   /**
+   * The same moment, as narrow as a column can take it: the time alone for today, the day and a
+   * short month for the rest of this year, digits for anything older.
+   *
+   * A column is scanned, not read — and the full line is the reason a date column had to be 185px
+   * wide in Russian and wider in German. What it drops is in the tip, which is where "when
+   * exactly" was always answered.
+   */
+  compact(value: DateLike): string
+  /**
    * Everything there is, down to the second — what the tip holds when the short line is not
    * precise enough to settle an argument. Empty when there is no date.
    */
@@ -90,6 +99,26 @@ export function createDates(i18n: I18n): Dates {
             at,
           )
         : format('earlier', { day: 'numeric', month: 'long', year: 'numeric' }, at)
+    },
+    compact(value) {
+      const at = toDate(value)
+
+      if (at === null) {
+        return t('dates.never')
+      }
+
+      const now = new Date()
+
+      /*
+       * Today is the time and nothing else: it is the only row in the column that shows a clock,
+       * so it reads as today without spending a word on saying so. Yesterday takes the ordinary
+       * date — one day back is not worth a word either, and the tip has the whole of it.
+       */
+      if (daysApart(at, now) === 0) return time(at)
+
+      return at.getFullYear() === now.getFullYear()
+        ? format('compact', { day: 'numeric', month: 'short' }, at)
+        : format('compact-earlier', { dateStyle: 'short' }, at)
     },
     exact(value) {
       const at = toDate(value)

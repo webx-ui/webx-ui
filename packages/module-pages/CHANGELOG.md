@@ -1,5 +1,66 @@
 # @webx-ui/module-pages
 
+## 0.3.5
+
+### Patch Changes
+
+- 852883d: A cell keeps what it holds inside its own column. `table-layout: fixed` gives a column the width
+  it was declared and nothing else, so a value wider than that used to be painted straight across
+  the column beside it — measured on the panel, a date cell 130px wide with 152px of text, its tail
+  sitting under the status badge. Cells clip now.
+
+  `TableColumn.minWidth` says what it can and cannot do: a `<col>` takes four properties and
+  `min-width` is not one of them, so the floor only means something with `layout="auto"`.
+
+  The lists that showed it — articles, pages, tags and submissions — carry the widths their longest
+  values actually need, and the columns that can be spared step aside a little later so that the
+  name keeps the room.
+
+- 852883d: `rowMenuWidth` says how wide a column holding a `···` has to be, and every list reads it. The menu
+  is a finger target — 44px under `(pointer: coarse)` — and the cell keeps 16 on either side of it,
+  so the 56 the sections declared was never enough: the button painted outside its column, which
+  nothing said out loud until cells began to clip what does not fit.
+
+  On the tags screen the selection bar keeps the one button it exists for and puts the other three
+  behind the same `···` a row has. The × that cleared the selection is gone: a button whose whole
+  job is to undo something harmless, standing beside a red "Delete", read as a way to close the bar.
+
+- 852883d: `WxDate` has a column form. `compact` shows the time alone for today — it is the only row in the
+  column wearing a clock, so it reads as today without spending a word on saying so — a short month
+  for the rest of this year, and digits once the year has to be said. What it leaves out is in the
+  tip, which is where "when exactly" was always answered.
+
+  The lists use it, and their date columns went from 185px to 120: the full line is the reason the
+  column had to be that wide in Russian and wider in German. The article covers take the smallest
+  radius in the scale with it, the one `WxEntityCard` gives its own thumbnail — 12 on a box 32px
+  tall reads as a pill.
+
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [937f4e2]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+  - @webx-ui/core@0.25.0
+  - @webx-ui/module-admin@0.10.0
+  - @webx-ui/module-blocks@0.5.2
+  - @webx-ui/schema@0.3.2
+
+## 0.3.4
+
+### Patch Changes
+
+- Updated dependencies [f87e4ec]
+- Updated dependencies [f87e4ec]
+  - @webx-ui/core@0.24.0
+  - @webx-ui/module-admin@0.9.0
+  - @webx-ui/module-blocks@0.5.1
+  - @webx-ui/schema@0.3.1
+
 ## 0.3.3
 
 ### Patch Changes

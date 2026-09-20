@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAdmin, useErrorText, useTranslate, WxListScreen } from '@webx-ui/module-admin'
+import {
+  useAdmin,
+  useErrorText,
+  useTranslate,
+  WxListScreen,
+  type ScreenAction,
+} from '@webx-ui/module-admin'
 import {
   createModal,
   toast,
   WxAlert,
-  WxButton,
   WxEmpty,
   WxInput,
   WxSkeleton,
@@ -147,14 +152,23 @@ async function add(): Promise<void> {
 }
 
 onMounted(load)
+
+/* What the section offers. Declared, because on a phone the head folds it into the ···. */
+const actions = computed<ScreenAction[]>(() =>
+  canManage.value
+    ? [{ key: 'new', label: t('page.new'), icon: 'plus', primary: true, run: () => void add() }]
+    : [],
+)
 </script>
 
 <template>
-  <wx-list-screen v-model:view="view" class="wx-blocks-page" :title="title" :views="views">
-    <template v-if="canManage" #actions>
-      <wx-button type="primary" icon="plus" @click="add">{{ t('page.new') }}</wx-button>
-    </template>
-
+  <wx-list-screen
+    v-model:view="view"
+    class="wx-blocks-page"
+    :title="title"
+    :views="views"
+    :actions="actions"
+  >
     <wx-alert
       v-if="!meta.editing"
       type="info"

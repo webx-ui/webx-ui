@@ -26,6 +26,14 @@ export interface EntityCardProps {
   imageSize?: number | string
   /** Facts under the title. Use the `meta` slot when a fact needs markup. */
   meta?: EntityCardMeta[]
+  /**
+   * How many lines the name may take before it is cut.
+   *
+   * One by default, because a row of entities reads as a row only while every one of them is
+   * the same height. Two is for a list where the name is a sentence rather than a label — an
+   * article headline cut to one line on a phone is half a thought.
+   */
+  titleLines?: number
   size?: EntityCardSize
   /** `card` sits on its own surface; `plain` drops the background for use inside one. */
   variant?: EntityCardVariant

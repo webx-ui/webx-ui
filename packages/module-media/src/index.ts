@@ -5,6 +5,7 @@ import GalleryField from './GalleryField.vue'
 import MediaField from './MediaField.vue'
 import MediaPage from './MediaPage.vue'
 import { mediaMessages } from './messages'
+import { openMediaPicker } from './openMediaPicker'
 
 export interface MediaOptions {
   /** Where the section lives inside the panel. */
@@ -40,6 +41,19 @@ export function media(options: MediaOptions = {}): AdminModule {
       'wx-gallery': { component: GalleryField, kind: 'field', wide: true },
       'wx-file': { component: FileField, kind: 'field' },
       'wx-files': { component: FilesField, kind: 'field', wide: true },
+    },
+    /**
+     * Where the panel's own fields get a picture from. `wx-rich-text` lives in
+     * `module-admin`, which cannot reach the library — the dependency runs this way — so the
+     * module that has the files hands the way in, and a panel without a file manager simply
+     * has no image button in its editors.
+     */
+    pickImage: async () => {
+      const file = await openMediaPicker({ accept: 'image' })
+
+      // The key travels with the address, and it is the key that is kept: a document written
+      // today has to still find its pictures after the library moves disks.
+      return file ? { url: file.url, path: file.path } : null
     },
   }
 }

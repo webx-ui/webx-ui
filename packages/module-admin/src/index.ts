@@ -41,7 +41,10 @@ export type {
   Manifest,
   ManifestModule,
   NavEntry,
+  PickedImage,
   RowAction,
+  ScreenAction,
+  AppliedFilter,
 } from './types'
 
 export { default as AdminShell } from './AdminShell.vue'
@@ -49,9 +52,13 @@ export { default as AdminNav } from './AdminNav.vue'
 export { default as AdminLanding } from './AdminLanding.vue'
 export { default as WxScreen } from './Screen.vue'
 export { default as WxListScreen } from './ListScreen.vue'
+export { default as WxScreenHead } from './ScreenHead.vue'
+export { rowMenuWidth } from './rowMenu'
 export { default as WxRowMenu } from './RowMenu.vue'
+export { default as WxFilterChips } from './FilterChips.vue'
 export { default as WxBackButton } from './BackButton.vue'
 export { default as WxRenameButton } from './RenameButton.vue'
 export { default as WxHelpButton } from './HelpButton.vue'
 export { default as WxDate } from './DateText.vue'
 export { default as WxNotes } from './NotesFeed.vue'
+export { default as WxRichTextField } from './RichTextField.vue'

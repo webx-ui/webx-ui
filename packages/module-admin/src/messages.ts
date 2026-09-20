@@ -28,6 +28,8 @@ export const adminMessages: Record<string, Messages> = {
   // the way to rename it. A module that opens an editor should not be inventing these.
   editor: {
     back: 'Back',
+    // The head's ··· on a screen that has no name to give the menu.
+    more: 'More',
     rename: 'Rename',
     save: 'Save',
   },
@@ -38,6 +40,13 @@ export const adminMessages: Record<string, Messages> = {
   },
   // When something happened, said the way a person would. The month names and the order of
   // the parts come from `Intl` — only the words that no formatter knows are here.
+  // The two words every list needs the moment it has filters: what the funnel is called,
+  // and the way out of all of them at once. The names of the filters themselves belong to
+  // whatever is being filtered, and travel with that module's own words.
+  filters: {
+    title: 'Filters',
+    reset: 'Reset all',
+  },
   dates: {
     today: 'today at :time',
     yesterday: 'yesterday at :time',
@@ -57,6 +66,41 @@ export const adminMessages: Record<string, Messages> = {
     server: 'The server could not do that. Try again in a moment.',
     offline: 'The server did not answer. Check the connection and try again.',
     unknown: 'That did not work.',
+  },
+  // The toolbar of `wx-rich-text`. The editor is a component of the design system and carries
+  // English defaults; these are what the panel calls the same buttons.
+  'rich-text': {
+    bold: 'Bold',
+    italic: 'Italic',
+    strike: 'Strikethrough',
+    code: 'Inline code',
+    h2: 'Heading 2',
+    h3: 'Heading 3',
+    h4: 'Heading 4',
+    'bullet-list': 'Bulleted list',
+    'ordered-list': 'Numbered list',
+    blockquote: 'Quote',
+    hr: 'Divider',
+    link: 'Link',
+    table: 'Table',
+    image: 'Image',
+    youtube: 'YouTube video',
+    undo: 'Undo',
+    redo: 'Redo',
+    'row-below': 'Row below',
+    'row-above': 'Row above',
+    'column-after': 'Column after',
+    'column-before': 'Column before',
+    'delete-row': 'Delete row',
+    'delete-column': 'Delete column',
+    'merge-cells': 'Merge or split cells',
+    'delete-table': 'Delete table',
+    toolbar: 'Text formatting',
+    'link-address': 'Link address',
+    'youtube-address': 'YouTube URL',
+    apply: 'Apply',
+    cancel: 'Cancel',
+    uploading: 'Uploading…',
   },
   // What one administrator writes on a record for the next one. Not the property of any
   // section: the same feed hangs off a submission, an order and a client, so the words are

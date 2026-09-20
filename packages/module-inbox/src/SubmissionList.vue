@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter, type LocationQueryRaw } from 'vue-router'
 import {
   useAdmin,
   useErrorText,
   useTranslate,
   WxDate,
+  rowMenuWidth,
   WxRowMenu,
+  WxScreenHead,
   type RowAction,
+  type ScreenAction,
 } from '@webx-ui/module-admin'
 import {
   confirm,
@@ -15,17 +18,17 @@ import {
   localizedValue,
   toast,
   useLocales,
-  WxAction,
   WxAvatar,
   WxBadge,
   WxButton,
-  WxHeading,
   WxIcon,
   WxSelect,
   WxTable,
   WxTabs,
   WxText,
+  WxEntityCard,
   WxTooltip,
+  useElementWidth,
   type TabItem,
   type TableColumn,
   type TableState,
@@ -79,6 +82,13 @@ const route = useRoute()
 const router = useRouter()
 const locales = useLocales()
 useInboxMessages()
+
+/** Where a row stops being a row: the table and the columns read the same number. */
+const CARDS = 640
+
+const root = useTemplateRef<HTMLElement>('root')
+const width = useElementWidth(root)
+const asCards = computed(() => width.value > 0 && width.value < CARDS)
 
 const t = useTranslate('webx-inbox')
 /* Not the server's `message`: the panel says how a request failed in its own words. */
@@ -135,8 +145,28 @@ const views = computed<TabItem[]>(() => {
   return items
 })
 
+/**
+ * The n-th answer of a submission, for the card that has no columns to put them in.
+ *
+ * By position rather than by name, because a form's fields are the form's own: the first answer
+ * is what the row is recognised by wherever it came from, and the second is the next most likely
+ * way to reach whoever wrote it.
+ */
+function answer(row: SubmissionRow, index: number): string {
+  const column = page.value?.columns?.[index]
+
+  return column ? (row.values[column.key] ?? '') : ''
+}
+
 const columns = computed<TableColumn<SubmissionRow>[]>(() => {
   const answers = page.value?.columns ?? []
+
+  /*
+   * Narrow, a submission is one entity rather than five labelled lines: who wrote it, the next
+   * answer under that, and the state of it beside the date. Five lines of "Label: value" is four
+   * hundred pixels for one enquiry, and an inbox is read in a list.
+   */
+  if (asCards.value) return [{ key: 'card', label: '' }]
 
   return [
     ...answers.map((column, index) => ({
@@ -158,7 +188,7 @@ const columns = computed<TableColumn<SubmissionRow>[]>(() => {
       key: 'created_at',
       label: t('panel.received'),
       sortable: true,
-      width: 150,
+      width: 120,
       // "today at 16:22" is three words the table will break over two lines given half a
       // chance, and a date read down a column has to be one line to be read at all.
       cellClass: 'wx-submissions__when',
@@ -166,7 +196,7 @@ const columns = computed<TableColumn<SubmissionRow>[]>(() => {
       // Kept on the card, unlike most dates: "when did this come in" is one of the two
       // questions a submission is looked at for, and the other one is who sent it.
     },
-    { key: 'actions', label: '', width: 56, align: 'right', hideOnCards: true },
+    { key: 'actions', label: '', width: rowMenuWidth, align: 'right', hideOnCards: true },
   ]
 })
 
@@ -354,36 +384,44 @@ const exportHref = computed(() =>
 function settings(): void {
   void router.push(`${props.base}/forms/${props.form.id}`)
 }
+/*
+ * The tools of the pane: none of them is the reason somebody opened it — that is the list
+ * itself — so none is primary, and on a narrow pane they all fold behind the ···.
+ */
+const actions = computed<ScreenAction[]>(() => {
+  const list: ScreenAction[] = []
+
+  if (canUpdate.value) {
+    list.push({
+      key: 'new',
+      label: t('panel.new-submission'),
+      icon: 'plus',
+      run: () => void byHand(),
+    })
+  }
+
+  list.push({ key: 'export', label: t('panel.export'), icon: 'download', href: exportHref.value })
+
+  if (canManage.value) {
+    list.push({ key: 'settings', label: t('panel.settings'), icon: 'settings', run: settings })
+  }
+
+  return list
+})
 </script>
 
 <template>
-  <div class="wx-submissions" :class="{ 'is-pane': inline }">
-    <div class="wx-submissions__head">
-      <!-- On a phone the pane is a screen of its own and the drawer carries no close of its
-           own, so the way back has to be here. Beside the list there is nothing to go back to. -->
-      <wx-action
-        v-if="!inline"
-        class="wx-submissions__back"
-        icon="arrow-left"
-        :title="t('panel.forms')"
-        @click="emit('back')"
-      />
-
-      <div class="wx-submissions__who">
-        <wx-heading :level="3" truncate>{{ formName() }}</wx-heading>
-        <wx-text size="sm" tone="muted" mono truncate>{{ form.slug }}</wx-text>
-      </div>
-
-      <wx-button v-if="canUpdate" variant="outline" icon="plus" size="sm" @click="byHand">{{
-        t('panel.new-submission')
-      }}</wx-button>
-      <wx-button variant="outline" icon="download" size="sm" :href="exportHref">
-        {{ t('panel.export') }}
-      </wx-button>
-      <wx-button v-if="canManage" variant="outline" icon="settings" size="sm" @click="settings">
-        {{ t('panel.settings') }}
-      </wx-button>
-    </div>
+  <div ref="root" class="wx-submissions" :class="{ 'is-pane': inline }">
+    <wx-screen-head
+      class="wx-submissions__head"
+      :level="3"
+      :title="formName()"
+      :subtitle="form.slug"
+      :back="!inline"
+      :back-label="t('panel.forms')"
+      :actions="actions"
+      @back="emit('back')"
+    />
 
     <!--
       `items` and one panel: the table stays mounted while the tab changes, so the search
@@ -461,7 +499,28 @@ function settings(): void {
         </template>
 
         <template #cell-created_at="{ row }">
-          <wx-date :value="row.created_at" />
+          <wx-date :value="row.created_at" compact />
+        </template>
+
+        <template #cell-card="{ row }">
+          <wx-entity-card variant="plain" shape="circle" :title="answer(row, 0)">
+            <template #subtitle>{{ answer(row, 1) }}</template>
+
+            <template #meta>
+              <wx-badge v-if="row.status" :type="row.status.color" size="sm">
+                {{ name(row.status) }}
+              </wx-badge>
+              <wx-avatar
+                v-if="row.assignee"
+                :name="row.assignee.name"
+                :title="row.assignee.name"
+                size="xs"
+                tone="auto"
+              />
+              <wx-icon v-if="row.files_count > 0" name="file" size="sm" />
+              <wx-date :value="row.created_at" />
+            </template>
+          </wx-entity-card>
         </template>
 
         <template #card-actions="{ row }">
@@ -482,6 +541,9 @@ function settings(): void {
  * screen's own. Written as 16 here, the pane kept desktop air inside a 375px drawer: the head,
  * the tabs and the rows each took a line of nothing between them, and four rows fitted where
  * six do now.
+ *
+ * The head and the tabs stand this far from the edge on both. The table takes a step of its
+ * own on top of it in the column and none on a sheet — see below for why.
  */
 .wx-submissions {
   display: flex;
@@ -498,25 +560,9 @@ function settings(): void {
  * it is the form's name and the address it posts to, and a centred row put the arrow level with
  * the gap between the two.
  */
-.wx-submissions__head {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--wx-space-8);
-  flex-wrap: wrap;
-}
-
-/* The button is taller than the line it stands beside, so aligning their boxes leaves its
-   centre low; half the difference back up puts the two centres together. `:deep()` because
-   the class is ours and the element it rides is `WxAction`'s (CLAUDE.md §4). */
-.wx-submissions__head > :deep(.wx-submissions__back) {
-  margin-block-start: -2px;
-}
-
-/* The name takes the middle, so the way back stays at the start of the line and the buttons
-   stay at its end. */
-.wx-submissions__who {
-  flex: 1 1 auto;
-  min-width: 0;
+/* The address the form posts to, in the type an address is written in. */
+.wx-submissions__head :deep(.wx-screen-head__subtitle) {
+  font-family: var(--wx-font-family-mono);
 }
 
 .wx-submissions__views {
@@ -525,16 +571,39 @@ function settings(): void {
 }
 
 /*
- * Beside the forms, the cards stand a step further in than the pane's own padding.
+ * A step of the table's own, on all four sides, and the same one in both of its views.
  *
- * There the pane is a column of a card — a rule down its left side, the card's frame on its
- * right — and a list of boxes that begins where the column begins reads as glued to both. As a
- * sheet the same list has the edge of the screen for a boundary and wants nothing extra, which
- * is why this belongs to the pane and not to the table: only the pane knows which one it is.
- * Rows want neither, and do not get it — they are the table's own width by design.
+ * The pane is a column of a card — a rule down its left side, the card's frame on its right —
+ * and a list that begins on the column's own boundary reads as glued to it. One number for the
+ * whole table rather than one for the cards: the search field, the rows and the boxes are the
+ * same list seen at three widths, and a step that only one of them keeps is a step that shows.
  */
-.wx-submissions.is-pane :deep(.wx-table--cards) {
-  padding-inline: var(--wx-table-padding-x);
+.wx-submissions :deep(.wx-table) {
+  padding: var(--wx-table-padding-x);
+}
+
+/* As a sheet there is no column and no frame — the screen's edge is the boundary, and the
+   pane's own step is all the air the list needs. A second one inside it stood the same list
+   further from the edge than it stands on every other screen. */
+.wx-drawer .wx-submissions :deep(.wx-table) {
+  padding: 0;
+}
+
+/*
+ * The scroll bar rides in that step rather than in the cards' own right edge.
+ *
+ * A list that scrolls inside itself is given its bar out of its own width: the cards ended
+ * fifteen pixels short of where the search field above them ends, and the step stood beyond the
+ * bar rather than beside the cards — air on the wrong side of it, and a list that looks pushed
+ * left. Padding cannot answer that; the bar is laid inside the padding box whatever is there.
+ * So the scroller reaches the end of the table's padding and keeps its gutter reserved: the
+ * cards end where everything above them ends, and the bar stands in the step. `stable`, so a
+ * list short enough not to scroll is not a wider list. Only in the column — as a sheet the
+ * drawer does the scrolling and there is no bar here to make room for.
+ */
+.wx-submissions.is-pane :deep(.wx-table__cards) {
+  margin-inline-end: calc(-1 * var(--wx-table-padding-x));
+  scrollbar-gutter: stable;
 }
 
 /*
