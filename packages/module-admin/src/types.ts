@@ -1,5 +1,5 @@
 import type { RouteRecordRaw } from 'vue-router'
-import type { IconName } from '@webx-ui/core'
+import type { ButtonVariant, IconName } from '@webx-ui/core'
 import type { TypeRegistry } from '@webx-ui/schema'
 import type { LocaleDescriptor } from './i18n'
 
@@ -185,6 +185,32 @@ export interface RowAction {
   href?: string
   target?: string
   run?: () => void
+}
+
+/**
+ * One thing a screen offers, in its head.
+ *
+ * The same reason a row's menu is data: the head draws the action twice over its life — as a
+ * button while there is room for one, as a line of the `···` once there is not — and a vnode
+ * cannot be mounted in two places (CLAUDE.md §4). Declared once, `WxScreenHead` decides which
+ * it is at the width it happens to have.
+ */
+export interface ScreenAction extends RowAction {
+  /**
+   * The one action the screen exists for: filled, blue, with the word on it. It is the one
+   * that stays a button when everything else folds into the menu. One per screen (§18.3) —
+   * a screen with two of these has none.
+   */
+  primary?: boolean
+  /**
+   * Never a button: this one lives in the `···` at every width. A destructive action is there
+   * whether it says so or not — red beside the name of the record is not where it belongs.
+   */
+  menu?: boolean
+  /** Shows a spinner and blocks the button: saving, publishing. */
+  loading?: boolean
+  /** Weight of a button that is not the primary one. `outline` unless said otherwise. */
+  variant?: ButtonVariant
 }
 
 /**

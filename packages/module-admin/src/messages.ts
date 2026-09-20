@@ -28,6 +28,8 @@ export const adminMessages: Record<string, Messages> = {
   // the way to rename it. A module that opens an editor should not be inventing these.
   editor: {
     back: 'Back',
+    // The head's ··· on a screen that has no name to give the menu.
+    more: 'More',
     rename: 'Rename',
     save: 'Save',
   },
