@@ -69,6 +69,32 @@ describe('WxButton', () => {
     expect(wrapper.attributes('aria-disabled')).toBe('true')
   })
 
+  it('renders the icon prop as a WxIcon', () => {
+    const wrapper = mount(WxButton, { props: { icon: 'plus' }, slots: { default: 'New' } })
+
+    // WxIcon renders nothing for a name it does not know, so this also proves it resolved.
+    expect(wrapper.find('.wx-button__icon .wx-icon').exists()).toBe(true)
+    // And the name no longer falls through to the <button> as an attribute.
+    expect(wrapper.attributes('icon')).toBeUndefined()
+  })
+
+  it('lets the icon slot win over the icon prop', () => {
+    const wrapper = mount(WxButton, {
+      props: { icon: 'plus' },
+      slots: { icon: '<b class="mine">!</b>' },
+    })
+
+    expect(wrapper.find('.wx-button__icon .mine').exists()).toBe(true)
+    expect(wrapper.find('.wx-button__icon .wx-icon').exists()).toBe(false)
+  })
+
+  it('hides the icon while loading', () => {
+    const wrapper = mount(WxButton, { props: { icon: 'plus', loading: true } })
+
+    expect(wrapper.find('.wx-button__spinner').exists()).toBe(true)
+    expect(wrapper.find('.wx-button__icon').exists()).toBe(false)
+  })
+
   it('passes fallthrough attributes to the root element', () => {
     const wrapper = mount(WxButton, { attrs: { 'data-test': 'submit', id: 'save' } })
 
