@@ -679,8 +679,11 @@ export const blockTypes: BlockType[] = [
       ],
       template: MAP_TEMPLATE,
       styles: MAP_STYLES,
+      /* The body of `async (el, values) => { … }` and nothing around it — which is what the
+         line under the editor says and what the runtime calls. A fixture written as a module
+         taught the one shape that cannot work. */
       script:
-        "export default function (node) {\n    node.querySelector('.b-map__address').textContent = node.dataset.address\n}\n",
+        "const line = el.querySelector('.b-map__address')\n\nline.textContent = `${el.dataset.address} · ${el.dataset.zoom}×`\n",
       sample: { address: 'Киев, улица Крещатик, 22', zoom: 15 },
     },
   },

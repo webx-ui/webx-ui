@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
 import type {
@@ -639,7 +641,13 @@ on('POST', '/blocks/(\\d+)/render', ({ params, body }) => {
       /* The styles of everything in the picture, not only of the type being edited: a
          container drawn without its children's CSS is a stack of bare paragraphs. */
       styles: drawn.styles,
-      script: content.script,
+      /* Wrapped the way the server wraps it (`Bundles::wrapScript`): the field holds the body
+         of the initialiser, and the frame is handed the initialiser. Sent raw, it is a `el is
+         not defined` in a console nobody has open. */
+      script:
+        content.script === null || content.script.trim() === ''
+          ? null
+          : `webx.block(${JSON.stringify(type.slug)}, async (el, values) => {\n${content.script.trim()}\n});\n`,
       runtime: '/blocks-runtime.js',
       version: type.published?.number ?? type.draft?.number ?? 1,
     },
@@ -2304,6 +2312,20 @@ function types(node: Block): string[] {
 }
 
 /**
+ * The runtime a block's script is mounted by, read off the composer package on every request
+ * for the same reason the dictionary is: Vite watches what it imports, and this file is not
+ * imported by anything.
+ */
+function blocksRuntime(): string {
+  return readFileSync(
+    fileURLToPath(
+      new URL('../../../../php/packages/module-blocks/resources/js/runtime.js', import.meta.url),
+    ),
+    'utf8',
+  )
+}
+
+/**
  * The panel's own API, its preview, and the history fallback that makes `/panel/...` a page.
  */
 export function panelServer(): Plugin {
@@ -2340,6 +2362,17 @@ export function panelServer(): Plugin {
           response.setHeader('Content-Type', found.mime)
           response.setHeader('Cache-Control', 'no-store')
           response.end(found.bytes)
+
+          return
+        }
+
+        /* The blocks runtime, the same file the composer package ships: the preview tells the
+           frame to load it, and without it a block's script is fetched into a 404 and never
+           runs at all — which looks exactly like a block that has no script. */
+        if (url.pathname === '/blocks-runtime.js') {
+          response.setHeader('Content-Type', 'text/javascript; charset=utf-8')
+          response.setHeader('Cache-Control', 'no-store')
+          response.end(blocksRuntime())
 
           return
         }

@@ -423,7 +423,9 @@ const examples = computed(() => [
   },
   {
     title: t('page.example-values'),
-    code: `const seconds = Number(values.delay ?? 5)\n\nsetInterval(() => el.classList.toggle('is-second'), seconds * 1000)`,
+    /* The one thing the sentence above the examples does not say: values reach the script
+       only through the attribute, and a template that never prints it hands over `{}`. */
+    code: `// <section data-wx-values="{{ json_encode($block->values) }}">\nconst seconds = Number(values.delay ?? 5)\n\nsetInterval(() => el.classList.toggle('is-second'), seconds * 1000)`,
   },
   {
     title: t('page.example-provided'),
