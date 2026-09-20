@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { cover, query, titleOf } from './server/records'
+import { panelServer } from './server/panel'
 
 /**
  * The table lab talks to a server, and this is it.
@@ -57,20 +58,37 @@ function sendCover(response: ServerResponse, id: number): void {
   response.end(cover(id, titleOf(id)))
 }
 
-// Alias to the package sources so edits in packages/* hot-reload without a rebuild.
+// Alias to the package sources so edits in packages/* hot-reload without a rebuild — and so
+// every package resolves the same copy of the core rather than one from its own dist.
+const pkg = (name: string) => ({
+  find: new RegExp(`^@webx-ui/${name}$`),
+  replacement: fileURLToPath(new URL(`../../packages/${name}/src/index.ts`, import.meta.url)),
+})
+
 export default defineConfig({
-  plugins: [vue(), mockApi()],
+  plugins: [vue(), mockApi(), panelServer()],
   resolve: {
     alias: [
-      {
-        find: /^@webx-ui\/core$/,
-        replacement: fileURLToPath(new URL('../../packages/core/src/index.ts', import.meta.url)),
-      },
-      {
-        find: /^@webx-ui\/tokens$/,
-        replacement: fileURLToPath(new URL('../../packages/tokens/src/index.ts', import.meta.url)),
-      },
+      pkg('core'),
+      pkg('tokens'),
+      pkg('schema'),
+      pkg('module-admin'),
+      pkg('module-blocks'),
+      pkg('module-blog'),
+      pkg('module-inbox'),
+      pkg('module-media'),
+      pkg('module-pages'),
+      pkg('module-seo'),
     ],
+  },
+  // Two pages: the component playground, and the panel with the module screens in it.
+  build: {
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('index.html', import.meta.url)),
+        panel: fileURLToPath(new URL('panel.html', import.meta.url)),
+      },
+    },
   },
   server: {
     port: 5174,
