@@ -88,21 +88,22 @@ function rubric(title: [string, string], slug: string, lead: [string, string]): 
   return row
 }
 
+/* HTML, because the introduction is an editor now and what it holds is a document. */
 rubric(['Разработка', 'Development'], 'development', [
-  'Как мы собираем сайты и панели — и почему именно так.',
-  'How we build sites and panels.',
+  '<p>Как мы собираем сайты и панели — <strong>и почему именно так</strong>.</p>',
+  '<p>How we build sites and panels, <strong>and why that way</strong>.</p>',
 ])
 rubric(['Дизайн', 'Design'], 'design', [
-  'Интерфейсы, токены и то, что видно только на настоящем устройстве.',
-  'Interfaces, tokens and what only a real device shows.',
+  '<p>Интерфейсы, токены и то, что видно только на настоящем устройстве.</p>',
+  '<p>Interfaces, tokens and what only a real device shows.</p>',
 ])
 rubric(['Поддержка', 'Support'], 'support', [
-  'Что происходит с сайтом после запуска.',
-  'What happens to a site after launch.',
+  '<p>Что происходит с сайтом после запуска.</p>',
+  '<p>What happens to a site after launch.</p>',
 ])
 rubric(['Кейсы', 'Cases'], 'cases', [
-  'Проекты целиком: задача, решение и что из этого вышло.',
-  'Whole projects: the problem, the answer and what came of it.',
+  '<p>Проекты целиком: задача, решение и что из этого вышло.</p>',
+  '<p>Whole projects: the problem, the answer and what came of it.</p>',
 ])
 
 /* ------------------------------------------------------------------------------- tags ----- */

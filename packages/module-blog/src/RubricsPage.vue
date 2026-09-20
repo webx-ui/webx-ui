@@ -6,31 +6,35 @@ import {
   useErrorText,
   useTranslate,
   WxListScreen,
+  WxRowMenu,
+  type RowAction,
   type ScreenAction,
 } from '@webx-ui/module-admin'
 import {
+  confirm,
+  createModal,
   toast,
-  WxCard,
+  WxAlert,
   WxEmpty,
   WxIcon,
-  WxListDetail,
   WxSkeleton,
   WxSortableList,
   WxText,
   WxTooltip,
 } from '@webx-ui/core'
-import RubricForm from './RubricForm.vue'
+import RubricDialog from './RubricDialog.vue'
 import { createBlogApi } from './api'
 import { useBlogMessages } from './i18n'
 import type { RubricRow } from './types'
 
 /**
- * The sections of the blog: the menu on the left, the one that is open on the right (§10).
+ * The sections of the blog: the whole menu of the site, in the order it has on it (§6, §10).
  *
- * `WxListDetail` rather than a list and a form on two screens, and the reason is the drag. The
- * order of this list *is* the order of the menu on the site (§6), so it is edited by moving
- * rows — and a screen where moving a row means leaving the record you were editing is a screen
- * where nobody reorders anything.
+ * One list and nothing beside it. The order here *is* the order on the site, so the screen the
+ * section needs most is the one where every rubric is visible at once and can be dragged past
+ * the others — and a form taking two thirds of the width is two thirds of that view gone. What
+ * a rubric is edited in is a dialog over this list ({@link RubricDialog}), which is also what
+ * makes reordering safe: nothing here is half-typed, so a row that moves loses nothing.
  *
  * There is no paginator and no search: a rubric is a section, a site has eight of them, and a
  * menu you have to search is a menu that is already wrong.
@@ -50,9 +54,6 @@ const message = useErrorText()
 const rubrics = ref<RubricRow[]>([])
 const prefix = ref('')
 const loading = ref(true)
-const open = ref(false)
-/** A rubric that has not been saved yet — the form of a row that is not in the list. */
-const draft = ref(false)
 
 const canManage = computed(() => context.can('blog.taxonomy.manage'))
 
@@ -62,19 +63,25 @@ const title = computed(
     t('module.rubrics'),
 )
 
-/**
- * Which rubric is open, kept in the address.
- *
- * So that a link to "the repairs rubric" is a link somebody can send, and so that coming back
- * from the articles of a rubric lands on the rubric rather than on the top of the list.
- */
-const current = computed<number | null>(() => {
-  const asked = route.query.rubric
+const edit = createModal<
+  RubricRow,
+  { rubric: RubricRow | null; prefix: string; disabled: boolean }
+>(RubricDialog)
 
-  return typeof asked === 'string' && asked !== '' ? Number(asked) : null
-})
-
-const chosen = computed(() => rubrics.value.find((rubric) => rubric.id === current.value) ?? null)
+/* What the section offers. Declared, because on a phone the head folds it into the ···. */
+const actions = computed<ScreenAction[]>(() =>
+  canManage.value
+    ? [
+        {
+          key: 'new',
+          label: t('rubric.new'),
+          icon: 'plus',
+          primary: true,
+          run: () => void openFor(null),
+        },
+      ]
+    : [],
+)
 
 async function load(): Promise<void> {
   loading.value = true
@@ -92,57 +99,143 @@ async function load(): Promise<void> {
 
 void load()
 
-/* A rubric chosen while the list was still loading is still chosen once it arrives. */
-watch(chosen, (rubric) => {
-  if (rubric !== null) open.value = true
-})
+/**
+ * Which rubric is open, kept in the address.
+ *
+ * So that a link to "the repairs rubric" is a link somebody can send, and so that coming back
+ * from the articles of a rubric opens the rubric rather than the top of the list. The dialog
+ * is opened from here rather than bound to the query, because a modal is a promise and not a
+ * piece of state: two of them for one address is two dialogs stacked on each other.
+ */
+let opening = false
+/* The rubric this address has already opened — a save rewrites the query with the same id, and
+   without this the dialog reopens the moment it is saved. */
+let handled: string | null = null
 
-function choose(rubric: RubricRow): void {
-  draft.value = false
-  void router.replace({ query: { ...route.query, rubric: String(rubric.id) } })
-  open.value = true
+watch(
+  [() => route.query.rubric, loading],
+  ([asked, busy]) => {
+    const id = typeof asked === 'string' && asked !== '' ? asked : null
+
+    if (id === null) {
+      handled = null
+
+      return
+    }
+
+    if (busy || opening || id === handled) return
+
+    const found = rubrics.value.find((rubric) => rubric.id === Number(id))
+
+    if (found) void openFor(found)
+  },
+  { immediate: true },
+)
+
+function remember(id: number | null): void {
+  const query = { ...route.query }
+
+  if (id === null) delete query.rubric
+  else query.rubric = String(id)
+
+  void router.replace({ query })
 }
 
 /**
- * A new one: the form, empty, in the pane — not a dialog.
+ * The dialog, and the address that says it is open.
  *
- * A dialog asking for a name would be a second place to type the same six fields, and the
- * second place is the one that ends up missing whatever is added to the first.
+ * A save reloads rather than patching the row in place: the address of a rubric is worked out
+ * by the registry, not by the form, and a renamed section changes the line under its own name
+ * and nothing else on this screen.
  */
-function add(): void {
-  draft.value = true
-  forget()
-  open.value = true
-}
+async function openFor(rubric: RubricRow | null): Promise<void> {
+  if (opening) return
 
-function forget(): void {
-  const rest = { ...route.query }
-  delete rest.rubric
-  void router.replace({ query: rest })
-}
+  opening = true
+  handled = rubric === null ? null : String(rubric.id)
+  remember(rubric?.id ?? null)
 
-async function saved(rubric: RubricRow): Promise<void> {
-  draft.value = false
-  await load()
-  void router.replace({ query: { ...route.query, rubric: String(rubric.id) } })
-}
+  try {
+    const saved = await edit({ rubric, prefix: prefix.value, disabled: !canManage.value })
 
-async function deleted(): Promise<void> {
-  draft.value = false
-  forget()
-  open.value = false
-  await load()
-}
+    if (saved === undefined) {
+      remember(null)
 
-function close(): void {
-  draft.value = false
-  forget()
-  open.value = false
+      return
+    }
+
+    await load()
+    handled = String(saved.id)
+    remember(saved.id)
+  } finally {
+    opening = false
+  }
 }
 
 /** The articles of this rubric, in the section that lists them. */
 function articlesOf(rubric: RubricRow): void {
   void router.push({ path: `${props.base}/articles`, query: { rubric: String(rubric.id) } })
+}
+
+/**
+ * Into the bin, and only while it is empty.
+ *
+ * The line stays in the menu and refuses rather than being left out, because "why can I not
+ * delete this" is the question, and an item that is not there does not answer it (§6). The
+ * number it refuses with is already in the row.
+ */
+async function remove(rubric: RubricRow): Promise<void> {
+  if (rubric.articles_count > 0) {
+    toast.warning(t('rubric.delete-blocked'))
+
+    return
+  }
+
+  const agreed = await confirm({
+    title: t('rubric.delete-title', { name: rubric.name }),
+    message: t('rubric.delete-text'),
+    confirmText: t('rubric.delete'),
+    cancelText: t('rubric.cancel'),
+    tone: 'danger',
+  })
+
+  if (!agreed) return
+
+  try {
+    await api.removeRubric(rubric.id)
+    toast.success(t('rubric.deleted'))
+    remember(null)
+    await load()
+  } catch (error) {
+    toast.danger(message(error))
+  }
+}
+
+function menuOf(rubric: RubricRow): RowAction[] {
+  const items: RowAction[] = [
+    { key: 'edit', label: t('rubric.edit'), icon: 'edit', run: () => void openFor(rubric) },
+  ]
+
+  if (rubric.articles_count > 0) {
+    items.push({
+      key: 'articles',
+      label: t('rubric.show-articles'),
+      icon: 'file-text',
+      run: () => articlesOf(rubric),
+    })
+  }
+
+  if (canManage.value) {
+    items.push({
+      key: 'delete',
+      label: t('rubric.delete'),
+      icon: 'trash',
+      danger: true,
+      run: () => void remove(rubric),
+    })
+  }
+
+  return items
 }
 
 /**
@@ -152,13 +245,6 @@ function articlesOf(rubric: RubricRow): void {
  * it says anything — so this only has to agree with what is there, and a failure has to put the
  * list back rather than leave the screen disagreeing with the database.
  */
-/* What the section offers. Declared, because on a phone the head folds it into the ···. */
-const actions = computed<ScreenAction[]>(() =>
-  canManage.value
-    ? [{ key: 'new', label: t('rubric.new'), icon: 'plus', primary: true, run: () => void add() }]
-    : [],
-)
-
 async function reorder(): Promise<void> {
   try {
     await api.sortRubrics(rubrics.value.map((rubric) => rubric.id))
@@ -170,141 +256,87 @@ async function reorder(): Promise<void> {
 </script>
 
 <template>
-  <wx-list-screen :title="title" :actions="actions" :card="false" fill>
-    <wx-card class="wx-rubrics" padding="none">
-      <wx-list-detail
-        v-model:open="open"
-        class="wx-rubrics__panes"
-        :list-width="320"
-        :detail-min="440"
-        :detail-label="chosen ? chosen.name : t('rubric.new')"
+  <wx-list-screen class="wx-rubrics" :title="title" :actions="actions" padding="sm">
+    <wx-skeleton v-if="loading" class="wx-rubrics__loading" :rows="5" />
+
+    <wx-empty
+      v-else-if="rubrics.length === 0"
+      :title="t('rubric.empty')"
+      :description="t('rubric.empty-help')"
+    />
+
+    <template v-else>
+      <!--
+        A grip and not the whole row: the row is what opens a rubric, and a list whose rows both
+        open and drag is a list where one of the two happens by accident.
+      -->
+      <wx-sortable-list
+        v-model="rubrics"
+        class="wx-rubrics__list"
+        plain
+        item-key="id"
+        :item-label="(item: RubricRow) => item.name"
+        :disabled="!canManage"
+        @move="reorder"
       >
-        <template #list>
-          <wx-skeleton v-if="loading" class="wx-rubrics__loading" :rows="5" />
-
-          <wx-empty
-            v-else-if="rubrics.length === 0"
-            :title="t('rubric.empty')"
-            :description="t('rubric.empty-help')"
-          />
-
-          <!--
-            A grip and not the whole row: the row is what opens a rubric, and a list whose rows
-            both open and drag is a list where one of the two happens by accident.
-          -->
-          <wx-sortable-list
-            v-else
-            v-model="rubrics"
-            class="wx-rubrics__list"
-            plain
-            size="sm"
-            item-key="id"
-            :item-label="(item: RubricRow) => item.name"
-            :disabled="!canManage"
-            :title="t('rubric.order')"
-            @move="reorder"
+        <template #default="{ item }">
+          <button
+            type="button"
+            class="wx-rubric-row"
+            :class="{ 'is-hidden': !item.is_visible }"
+            @click="openFor(item)"
           >
-            <template #default="{ item }">
-              <button
-                type="button"
-                class="wx-rubric-row"
-                :class="{ 'is-current': item.id === current, 'is-hidden': !item.is_visible }"
-                @click="choose(item)"
-              >
-                <span class="wx-rubric-row__name">
-                  <wx-text truncate weight="medium">{{ item.name }}</wx-text>
-                  <wx-tooltip v-if="!item.is_visible" :content="t('rubric.hidden')">
-                    <wx-icon name="eye-off" size="sm" />
-                  </wx-tooltip>
-                </span>
-                <wx-text size="sm" tone="muted" truncate>
-                  {{ item.path === null ? t('rubric.no-address') : `/${item.path}` }}
-                </wx-text>
-              </button>
-            </template>
-
-            <!-- How many articles would be left without this section: the number the refusal
-                 to delete names, said before anybody presses anything (§6). -->
-            <template #actions="{ item }">
-              <wx-text class="wx-rubric-row__count" size="sm" tone="muted">
-                {{ item.articles_count }}
-              </wx-text>
-            </template>
-          </wx-sortable-list>
+            <span class="wx-rubric-row__name">
+              <wx-text truncate weight="medium">{{ item.name }}</wx-text>
+              <wx-tooltip v-if="!item.is_visible" :content="t('rubric.hidden')">
+                <wx-icon name="eye-off" size="sm" />
+              </wx-tooltip>
+            </span>
+            <wx-text size="sm" tone="muted" truncate>
+              {{ item.path === null ? t('rubric.no-address') : `/${item.path}` }}
+            </wx-text>
+          </button>
         </template>
 
-        <template #empty>
-          <wx-empty :description="t('rubric.choose')" />
-        </template>
+        <!-- How many articles would be left without this section: the number the refusal to
+           delete names, said before anybody presses anything (§6). -->
+        <template #actions="{ item }">
+          <wx-text class="wx-rubric-row__count" size="sm" tone="muted">
+            {{ t('rubric.articles', { count: item.articles_count }) }}
+          </wx-text>
 
-        <template #detail="{ inline, back }">
-          <rubric-form
-            v-if="draft || chosen"
-            :key="draft ? 'new' : String(chosen?.id)"
-            :rubric="draft ? null : chosen"
-            :prefix="prefix"
-            :inline="inline"
-            :disabled="!canManage"
-            @back="
-              () => {
-                back()
-                close()
-              }
-            "
-            @articles="articlesOf"
-            @saved="saved"
-            @deleted="deleted"
-          />
+          <wx-row-menu :actions="menuOf(item)" :label="item.name" />
         </template>
-      </wx-list-detail>
-    </wx-card>
+      </wx-sortable-list>
+
+      <!-- What the drag is for, under the rows it is about: over them it read as a heading for
+           the list, which it is not — the list is already named by the screen. -->
+      <wx-alert class="wx-rubrics__note" type="info" :description="t('rubric.order')" />
+    </template>
   </wx-list-screen>
 </template>
 
 <style>
-/*
- * The card is the screen: what scrolls is inside it, not the page behind it. And the card's
- * corners are the screen's corners — the two panes inside are square and paint their own
- * background right up to the edge, so without the clip they cover the rounding.
- */
-.wx-rubrics {
-  height: 100%;
-  min-height: 0;
-}
-
-.wx-rubrics > .wx-card__body {
-  height: 100%;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border-radius: inherit;
-}
-
-.wx-rubrics__panes {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
 .wx-rubrics__loading {
-  padding: var(--wx-space-16);
-}
-
-.wx-rubrics__list {
-  padding: var(--wx-space-8) var(--wx-space-12);
+  padding: var(--wx-space-8);
 }
 
 /*
  * A plain list draws its rows edge to edge, which is right until one of them is tinted: the
- * highlight then starts exactly at the first letter, so the chosen rubric reads as a stain
+ * highlight then starts exactly at the first letter, so a hovered rubric reads as a stain
  * rather than as a row. The padding is inside the tint, not around it.
  */
 .wx-rubrics__list.is-plain .wx-sortable-list__row {
   padding-inline: var(--wx-space-8);
 }
 
-.wx-rubrics__list.is-plain .wx-sortable-list__head {
-  margin-block-end: var(--wx-space-6);
+.wx-rubrics__note {
+  margin-block-start: var(--wx-space-8);
+}
+
+.wx-rubrics__list .wx-sortable-list__row:hover {
+  background: var(--wx-bg-subtle);
+  border-radius: var(--wx-radius-sm);
 }
 
 .wx-rubric-row {
@@ -339,21 +371,7 @@ async function reorder(): Promise<void> {
   color: var(--wx-text-muted);
 }
 
-/*
- * The chosen rubric, marked on the whole row rather than on the name inside it: the row is
- * what was clicked, and a colour on the words alone leaves the grip and the count looking like
- * they belong to something else. `:has()` because the row is the list's element and the class
- * is ours (CLAUDE.md §4).
- */
-.wx-rubrics__list .wx-sortable-list__row:has(.wx-rubric-row.is-current) {
-  background: var(--wx-bg-subtle);
-  border-radius: var(--wx-radius-sm);
-}
-
-.wx-rubric-row.is-current {
-  color: var(--wx-color-primary);
-}
-
+/* The count is beside the menu and must not be pushed into it by a long name. */
 .wx-rubric-row__count {
   flex: none;
   font-variant-numeric: tabular-nums;

@@ -9,7 +9,7 @@ export {
 } from './editor'
 export { default as WxArticlesPage } from './ArticlesPage.vue'
 export { default as WxRubricsPage } from './RubricsPage.vue'
-export { default as WxRubricForm } from './RubricForm.vue'
+export { default as WxRubricDialog } from './RubricDialog.vue'
 export { default as WxTagsPage } from './TagsPage.vue'
 export { default as WxTagCreateDialog } from './TagCreateDialog.vue'
 export { default as WxTagMergeDialog } from './TagMergeDialog.vue'
