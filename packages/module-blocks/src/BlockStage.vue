@@ -36,6 +36,31 @@ const frame = ref<HTMLIFrameElement | null>(null)
 const boxWidth = useElementWidth(box)
 const contentHeight = ref(360)
 
+/**
+ * Which width the stage opens at: the widest one the column can draw at half size or better.
+ *
+ * A desktop is the right answer on a desktop and the wrong one on a phone, where 1280 in a
+ * 340px column is a picture of a page rather than a page — the words in it are two pixels
+ * tall. Until the editor picks a width the stage keeps choosing, so a column that grows or a
+ * phone that turns gets the picture it can show; from the first click the choice is theirs.
+ */
+const picked = ref(false)
+
+watch([boxWidth, widths], () => {
+  if (picked.value || boxWidth.value === 0) return
+
+  /* Under about half size the words in a block stop being words, so a narrower device is a
+     better picture of the block than a desktop nobody can read. */
+  const fits = widths.value.find((option) => boxWidth.value / option.value >= 0.45)
+
+  width.value = (fits ?? widths.value[widths.value.length - 1]).value
+})
+
+function pick(value: number): void {
+  picked.value = true
+  width.value = value
+}
+
 const scale = computed(() => {
   if (boxWidth.value === 0) return 1
 
@@ -52,13 +77,19 @@ const srcdoc = computed(() =>
   }),
 )
 
-/** The frame grows to its content: a stage that scrolls inside itself hides half the block. */
+/**
+ * The frame is as tall as the block: a stage that scrolls inside itself hides half of it.
+ *
+ * Measured on the body, never on `documentElement` — that one is never shorter than the
+ * frame's own window, so once the frame has been given a height it measures itself and a
+ * block that got shorter keeps the height of the one before it, with white under it.
+ */
 function measure(): void {
-  const doc = frame.value?.contentDocument
+  const body = frame.value?.contentDocument?.body
 
-  if (!doc?.documentElement) return
+  if (!body) return
 
-  contentHeight.value = Math.max(120, doc.documentElement.scrollHeight)
+  contentHeight.value = Math.max(120, body.scrollHeight)
 }
 
 function onLoad(): void {
@@ -68,6 +99,13 @@ function onLoad(): void {
 }
 
 watch(width, () => setTimeout(measure, 50))
+
+/* A stage that lives in a tab is measured while that tab is hidden, and a hidden document
+   has no height: every redraw made behind another tab would leave the frame at its floor.
+   The width coming back is the tab coming back. */
+watch(boxWidth, (now, before) => {
+  if (now > 0 && before === 0) setTimeout(measure, 50)
+})
 
 const frameStyle = computed(() => ({
   width: `${width.value}px`,
@@ -84,7 +122,13 @@ const clipStyle = computed(() => ({
 <template>
   <div class="wx-block-stage">
     <div class="wx-block-stage__bar">
-      <wx-segmented v-model="width" :options="widths" size="sm" :aria-label="t('page.width')" />
+      <wx-segmented
+        :model-value="width"
+        :options="widths"
+        size="sm"
+        :aria-label="t('page.width')"
+        @update:model-value="pick(Number($event))"
+      />
     </div>
     <div ref="box" class="wx-block-stage__ground">
       <wx-skeleton v-if="loading && !html" :rows="3" />

@@ -127,6 +127,7 @@ export default defineConfig({
             { text: 'DatePicker', link: '/components/date-picker' },
             { text: 'DateRangePicker', link: '/components/date-range-picker' },
             { text: 'ColorPicker', link: '/components/color-picker' },
+            { text: 'IconPicker', link: '/components/icon-picker' },
             { text: 'TagsInput', link: '/components/tags-input' },
             { text: 'Slider', link: '/components/slider' },
             { text: 'Transfer', link: '/components/transfer' },

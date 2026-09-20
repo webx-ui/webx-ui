@@ -132,6 +132,10 @@ next deployment. On a screen it is `wx-rich-text`, from `module-admin` — see
 CodeEditor (CodeMirror 6) ✅ — the same field for code: JSON with a linter, HTML, CSS, PHP, YAML
 and the rest, see [CodeEditor](/components/code-editor). The screens mechanism needs its patches
 written somewhere better than a textarea.
+IconPicker ✅ — the icon set, picked from rather than typed into, see
+[IconPicker](/components/icon-picker). A name the set does not have draws nothing and says
+nothing, so anywhere an editor names an icon — a block type, a menu entry — the name has to come
+out of the set rather than out of a keyboard.
 EntityCard ✅ — one record as a row, see [EntityCard](/components/entity-card).
 Actions ✅ — the icon buttons at the end of a row, see [Actions](/components/actions).
 ActionBar ✅ — the same screen's buttons along the bottom of it, see
