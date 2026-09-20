@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { ref } from 'vue'
 import { VueDatePicker } from '@vuepic/vue-datepicker'
 import WxDatePicker from './DatePicker.vue'
 import WxDateTimePicker from '../DateTimePicker/DateTimePicker.vue'
 import WxTimePicker from '../TimePicker/TimePicker.vue'
+import WxDateRangePicker from '../DateRangePicker/DateRangePicker.vue'
+import { dateLocaleKey } from '../../composables/useDateLocale'
+import type { DateFnsLocale } from '../../internal/dateLocale'
+
+type DateFnsLocalize = DateFnsLocale['localize']
 
 /** Props the wrapper hands to the underlying picker. */
 function picker(wrapper: ReturnType<typeof mount>) {
@@ -112,6 +118,59 @@ describe('WxDatePicker', () => {
     const wrapper = mount(WxDatePicker)
 
     expect(picker(wrapper).props('weekStart')).toBe(1)
+  })
+})
+
+/**
+ * The picker bundles `en-US` and nothing else, so a calendar left to itself heads a
+ * Russian screen with "Sep 2026" and a "Mo Tu We" row.
+ */
+describe('WxDatePicker language', () => {
+  it('draws the calendar in the asked-for language', () => {
+    const wrapper = mount(WxDatePicker, { props: { locale: 'ru' } })
+    const locale = picker(wrapper).props('locale') as { localize: DateFnsLocalize }
+
+    expect(locale.localize.month(8, { width: 'wide', context: 'standalone' })).toBe('сентябрь')
+  })
+
+  it('takes the application’s language when the field says nothing', () => {
+    const wrapper = mount(WxDatePicker, {
+      global: { provide: { [dateLocaleKey as symbol]: ref('ru') } },
+    })
+    const locale = picker(wrapper).props('locale') as { code: string }
+
+    expect(locale.code).toBe('ru')
+  })
+
+  it('follows the application when it switches language', async () => {
+    const locale = ref('ru')
+    const wrapper = mount(WxDatePicker, {
+      global: { provide: { [dateLocaleKey as symbol]: locale } },
+    })
+
+    locale.value = 'de'
+    await wrapper.vm.$nextTick()
+
+    expect((picker(wrapper).props('locale') as { code: string }).code).toBe('de')
+  })
+
+  it('lets the field override the application', () => {
+    const wrapper = mount(WxDatePicker, {
+      props: { locale: 'de' },
+      global: { provide: { [dateLocaleKey as symbol]: ref('ru') } },
+    })
+
+    expect((picker(wrapper).props('locale') as { code: string }).code).toBe('de')
+  })
+
+  it.each([
+    ['WxDateTimePicker', WxDateTimePicker],
+    ['WxTimePicker', WxTimePicker],
+    ['WxDateRangePicker', WxDateRangePicker],
+  ])('%s passes the language through', (_name, Component) => {
+    const wrapper = mount(Component, { props: { locale: 'ru' } })
+
+    expect((picker(wrapper).props('locale') as { code: string }).code).toBe('ru')
   })
 })
 
