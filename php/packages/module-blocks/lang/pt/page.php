@@ -52,6 +52,7 @@ return [
     'sample' => 'Valores de amostra',
     'sample-help' => 'Sobre eles é desenhada a miniatura e corre a verificação antes de publicar.',
     'preview' => 'Pré-visualização',
+    'width' => 'Largura',
     'width-desktop' => 'Computador',
     'width-tablet' => 'Tablet',
     'width-phone' => 'Telemóvel',
