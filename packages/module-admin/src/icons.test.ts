@@ -39,9 +39,35 @@ function sources(): string[] {
   return found
 }
 
+/**
+ * The playground's fixtures, which are a site's data rather than a test's: every block type
+ * there carries an icon the panel draws. All eight named icons from another set entirely, and
+ * nothing said so until a picker put the set on screen beside them.
+ */
+const fixtures = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../../apps/playground/server/panel',
+)
+
+function demoNames(): Array<[string, string]> {
+  const names: Array<[string, string]> = []
+
+  if (!existsSync(fixtures)) return names
+
+  for (const entry of readdirSync(fixtures)) {
+    if (!entry.endsWith('.ts')) continue
+
+    for (const match of readFileSync(join(fixtures, entry), 'utf8').matchAll(/icon: '([^']+)'/g)) {
+      names.push([match[1]!, `playground/${entry}`])
+    }
+  }
+
+  return names
+}
+
 /** Every name a server-side module hands the front end to draw, with the file that named it. */
 function named(): Array<[string, string]> {
-  const names: Array<[string, string]> = []
+  const names: Array<[string, string]> = [...demoNames()]
 
   for (const file of sources()) {
     const source = readFileSync(file, 'utf8')
