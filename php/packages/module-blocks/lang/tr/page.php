@@ -52,6 +52,7 @@ return [
     'sample' => 'Örnek değerler',
     'sample-help' => 'Küçük resim bunlarla çizilir ve yayımlama öncesi denetim bunlarla çalışır.',
     'preview' => 'Önizleme',
+    'width' => 'Genişlik',
     'width-desktop' => 'Masaüstü',
     'width-tablet' => 'Tablet',
     'width-phone' => 'Telefon',

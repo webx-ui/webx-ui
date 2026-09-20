@@ -52,6 +52,7 @@ return [
     'sample' => 'Valori di esempio',
     'sample-help' => 'Su di essi viene disegnata la miniatura ed eseguito il controllo prima della pubblicazione.',
     'preview' => 'Anteprima',
+    'width' => 'Larghezza',
     'width-desktop' => 'Desktop',
     'width-tablet' => 'Tablet',
     'width-phone' => 'Telefono',
