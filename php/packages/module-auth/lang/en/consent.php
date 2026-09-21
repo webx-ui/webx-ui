@@ -20,6 +20,6 @@ return [
     'read-only' => 'Read only — let it look, but change nothing',
     'allow' => 'Allow',
     'cancel' => 'Cancel',
-    'disconnect' => 'You can disconnect it in the panel: Profile → Connections.',
+    'disconnect' => 'You can disconnect it in the panel: Administrators → Connections.',
     'returns-to' => 'The answer goes to :host',
 ];

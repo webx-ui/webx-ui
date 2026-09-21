@@ -17,6 +17,6 @@ return [
     'read-only' => 'Salt okunur — baksın, ama hiçbir şeyi değiştirmesin',
     'allow' => 'İzin ver',
     'cancel' => 'İptal',
-    'disconnect' => 'Panelden bağlantısını kesebilirsiniz: Profil → Bağlantılar.',
+    'disconnect' => 'Panelden bağlantısını kesebilirsiniz: Yöneticiler → Bağlantılar.',
     'returns-to' => 'Yanıt :host adresine gidecek',
 ];
