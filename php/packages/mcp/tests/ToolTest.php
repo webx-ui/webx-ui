@@ -96,4 +96,27 @@ final class ToolTest extends TestCase
         $this->assertSame(['changed' => 0], ($tool->handler)(['dry_run' => true]));
         $this->assertSame(['changed' => 7], ($tool->handler)(['dry_run' => false]));
     }
+
+    #[Test]
+    public function a_tool_carries_its_permission_as_a_list_or_leaves_it_to_the_module(): void
+    {
+        $plain = Tool::read('list', 'List.', static fn (): array => []);
+        $one = Tool::read('list', 'List.', static fn (): array => [], permission: 'blog.articles.view');
+        $any = Tool::mutating('merge', 'Merge.', static fn (): array => [], permission: ['blog.articles.manage', 'blog.taxonomy.manage']);
+
+        $this->assertNull($plain->permissions);
+        $this->assertSame(['blog.articles.view'], $one->permissions);
+        $this->assertSame(['blog.articles.manage', 'blog.taxonomy.manage'], $any->permissions);
+    }
+
+    #[Test]
+    public function an_empty_list_of_permissions_is_refused(): void
+    {
+        // A tool "behind no permission" would be open to everybody, which is not what a
+        // forgotten argument should mean; the default is spelled by leaving it out.
+        $this->expectException(McpException::class);
+        $this->expectExceptionMessage('[merge]');
+
+        Tool::mutating('merge', 'Merge.', static fn (): array => [], permission: ['', ' ']);
+    }
 }

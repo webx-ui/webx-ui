@@ -75,6 +75,7 @@ final class InboxTools
                 ['properties' => [
                     'disabled' => ['type' => 'boolean', 'description' => 'Include the forms that are switched off; true when omitted.'],
                 ]],
+                permission: ['inbox.view', 'inbox.manage'],
             ),
 
             Tool::read(
@@ -84,6 +85,7 @@ final class InboxTools
                 .'— the answer says where that door is and what a submission has to carry.',
                 fn (array $arguments): array => $this->formGet($arguments),
                 ['properties' => ['form' => $form], 'required' => ['form']],
+                permission: 'inbox.manage',
             ),
 
             Tool::mutating(
@@ -116,6 +118,7 @@ final class InboxTools
                         ]],
                     ],
                 ]],
+                permission: 'inbox.manage',
             ),
 
             Tool::read(
@@ -136,6 +139,7 @@ final class InboxTools
                     'page' => ['type' => 'integer'],
                     'per_page' => ['type' => 'integer', 'description' => '5 to 100; 25 when omitted.'],
                 ], 'required' => ['form']],
+                permission: 'inbox.view',
             ),
 
             Tool::read(
@@ -148,6 +152,7 @@ final class InboxTools
                 ['properties' => [
                     'submission' => ['type' => 'integer', 'description' => 'The id, as inbox_list reports it.'],
                 ], 'required' => ['submission']],
+                permission: 'inbox.view',
             ),
 
             Tool::mutating(
@@ -163,6 +168,7 @@ final class InboxTools
                     'assignee' => ['type' => ['integer', 'string', 'null'], 'description' => 'An administrator by id or by email address; null takes it off everybody.'],
                     'note' => ['type' => 'string', 'description' => 'A line for whoever picks this up next.'],
                 ], 'required' => ['submission']],
+                permission: 'inbox.update',
             ),
         ];
     }

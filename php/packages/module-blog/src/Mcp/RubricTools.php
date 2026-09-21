@@ -39,6 +39,7 @@ final class RubricTools
                 ['properties' => [
                     'visible' => ['type' => 'boolean', 'description' => 'Only the ones a reader can reach. All of them when omitted.'],
                 ]],
+                permission: ['blog.articles.view', 'blog.articles.manage', 'blog.taxonomy.manage'],
             ),
         ];
     }
