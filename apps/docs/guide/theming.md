@@ -34,10 +34,57 @@ import { applyTheme } from '@webx-ui/tokens'
 
 applyTheme('dark') // sets data-theme on <html>
 applyTheme('light', panelElement) // or on any element
+applyTheme('system') // removes it again: follow the machine
 ```
 
-Because `data-theme` works on any element, a single page can mix themes — a dark sidebar inside a
-light admin panel, for example.
+Because `data-theme` works on any element, a single page can mix themes, in either direction: a
+dark sidebar inside a light panel, or a light preview inside a dark one. Both values are written
+out, so an island declares its own theme rather than inheriting the page's.
+
+## Three states
+
+What somebody chooses is not the same thing as what is on screen. `system` is a standing
+instruction to follow the machine, and it resolves anew every time the machine changes its mind —
+which is why `applyTheme('system')` **removes** the attribute rather than writing a third value:
+the stylesheet already follows `prefers-color-scheme` for everything that is not pinned to light.
+
+The stylesheet needs nothing else. Anything that has to _know_ — a canvas painting its own
+background, an editor handed a colour scheme — can ask:
+
+```ts
+import { systemTheme, watchSystemTheme } from '@webx-ui/tokens'
+
+systemTheme() // 'light' | 'dark', right now
+const stop = watchSystemTheme((theme) => redraw(theme))
+```
+
+[ThemeSwitch](/components/theme-switch) is the control for all three. In an admin panel it is
+already placed, translated and stored against the administrator — see
+[the panel's own theme](#the-panel-s-own-theme) below.
+
+## The panel's own theme
+
+`createAdmin()` builds a theme controller before it mounts anything, so the sign-in screen is
+already the colour this browser was left in, and hands it to the panel:
+
+```ts
+import { useTheme } from '@webx-ui/module-admin'
+
+const theme = useTheme()
+
+theme.state.preference // 'light' | 'dark' | 'system'
+theme.state.resolved // 'light' | 'dark' — what is actually on screen
+theme.set('dark')
+```
+
+Two copies of the choice, deliberately. The one in `localStorage` is what paints the first frame,
+before anybody is known; the one stored against the administrator is the one that lasts, and it
+wins the moment the session says who they are — so a theme chosen on a laptop at night is waiting
+at the desk in the morning. `@webx-ui/module-auth` puts the switch in the account menu and writes
+it down; `null` there means _follow the machine_, which is a choice too.
+
+A panel served by `webx-ui/module-admin` also paints before its bundle runs: the Blade shell reads
+the browser's copy in a three-line script, so a dark panel never starts white.
 
 ## Colour states
 

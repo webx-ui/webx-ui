@@ -7,6 +7,7 @@ import AdminShell from './AdminShell.vue'
 import { createAdminContext, provideAdmin, type AdminContext } from './admin'
 import { createHttp, type Http } from './http'
 import { createI18n, provideI18n, type Dictionary, type I18n, type LocaleDescriptor } from './i18n'
+import { createTheme, provideTheme, type ThemeController } from './theme'
 import { adminMessages } from './messages'
 import type { Patch, TypeRegistry } from '@webx-ui/schema'
 import type { AdminModule, Manifest } from './types'
@@ -76,6 +77,8 @@ export interface Admin {
   router: Router
   context: AdminContext
   i18n: I18n
+  /** Light, dark or the machine's — applied before anything is drawn. */
+  theme: ThemeController
   mount(): Promise<void>
 }
 
@@ -120,6 +123,14 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
 
   const i18n = createI18n({ locale: options.locale ?? preferredLocale() })
 
+  /*
+   * Made here rather than after mounting, because making it is what paints: the sign-in
+   * screen is the first thing anybody sees and it should already be the colour they left the
+   * panel in. What this browser remembers is the guess; the administrator's own record
+   * replaces it the moment the session says who they are.
+   */
+  const theme = createTheme()
+
   const http =
     options.http ??
     createHttp({
@@ -149,6 +160,7 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
 
   const context = createAdminContext({
     http,
+    theme,
     basePath,
     apiPath,
     modules,
@@ -168,6 +180,7 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
   app.use(WebxUI)
   provideAdmin(app, context)
   provideI18n(app, i18n)
+  provideTheme(app, theme)
 
   /*
    * The languages a localized field offers are the site's *content* languages, not the ones the
@@ -208,6 +221,7 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
     router,
     context,
     i18n,
+    theme,
     async mount() {
       // The one thing worth waiting for. It is a public, cached request, and painting the
       // sign-in screen in English and then swapping every label a moment later looks like a

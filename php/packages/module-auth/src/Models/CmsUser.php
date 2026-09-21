@@ -25,6 +25,7 @@ use WebxUi\Localization\Contracts\HasPanelLocale;
  * @property bool $is_super
  * @property bool $is_active
  * @property string|null $locale
+ * @property string|null $theme
  * @property Carbon|null $last_login_at
  * @property Carbon|null $created_at
  */

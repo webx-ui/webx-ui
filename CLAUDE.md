@@ -61,7 +61,7 @@ Laravel. Библиотека публикуется в npm, админки — 
 - **94 компонента.** Волны 1 и 2 закрыты полностью, волна 3 — частично.
 - Сверх списка Element Plus: `WxListDetail`, `WxKanban`, `WxEntityCard`, `WxFileCard`,
   `WxActions`/`WxAction`, `WxImageEditor`, `WxSelectionArea` (+ директива `v-wx-select`),
-  `WxSortableList`, `WxRichText`, `WxCodeEditor` (CodeMirror 6).
+  `WxSortableList`, `WxRichText`, `WxCodeEditor` (CodeMirror 6), `WxThemeSwitch`.
 - **Не компоненты:** `useToast`/`toast` — очередь уведомлений, вызываемая откуда угодно;
   `openModal` / `createModal` / `useModal` / `confirm` / `openImageEditor` — «диалоги из
   кода»: любой компонент монтируется вне дерева приложения и возвращает промис с ответом

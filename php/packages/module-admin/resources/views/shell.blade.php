@@ -9,6 +9,25 @@
         {{-- The panel reads this before it draws anything. --}}
         <meta name="webx-manifest" content="{{ $manifestUrl }}">
 
+        {{--
+            The theme before the stylesheet, not after the bundle: the panel sets `data-theme`
+            as it starts up, but that is one network round trip later, and a dark panel that
+            begins white flashes on every full page load. Whatever this browser last used is
+            good enough to paint with — the administrator's own record arrives with the session
+            and corrects it if they have since changed their mind on another machine.
+        --}}
+        <script>
+            try {
+                var webxTheme = localStorage.getItem('webx.theme');
+
+                if (webxTheme === 'light' || webxTheme === 'dark') {
+                    document.documentElement.setAttribute('data-theme', webxTheme);
+                }
+            } catch (error) {
+                /* Private windows, blocked site data: the panel picks it up either way. */
+            }
+        </script>
+
         @foreach ($styles as $stylesheet)
             <link rel="stylesheet" href="{{ $stylesheet }}">
         @endforeach
