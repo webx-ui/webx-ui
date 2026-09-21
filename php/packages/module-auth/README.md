@@ -119,8 +119,11 @@ Both role tools honour `dry_run`, so an agent can be asked what it would change 
 
 ## Not here yet
 
-Password reset, two-factor, and invitations. Sanctum is a dependency and the model carries
-`HasApiTokens`, so scoped tokens for MCP have somewhere to go when that arrives.
+Password reset, two-factor, and invitations.
+
+An administrator is also the account an agent acts as, so the model carries Passport's
+`HasApiTokens` and Passport is a dependency. It stays inert until a site publishes Passport's
+migrations and generates its keys — see `webx-ui/mcp` for what that opens.
 
 ## Languages
 

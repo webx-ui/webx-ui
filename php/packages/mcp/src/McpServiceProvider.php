@@ -4,13 +4,20 @@ declare(strict_types=1);
 
 namespace WebxUi\Mcp;
 
+use DateInterval;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\CachesRoutes;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Mcp\Facades\Mcp;
 use Laravel\Mcp\Server\McpServiceProvider as LaravelMcpServiceProvider;
+use Laravel\Mcp\Server\Registrar;
+use Laravel\Passport\Contracts\AuthorizationViewResponse;
+use Laravel\Passport\Passport;
 use WebxUi\Admin\ModuleRegistry;
-use WebxUi\Mcp\Console\IssueTokenCommand;
 use WebxUi\Mcp\Console\ListToolsCommand;
 use WebxUi\Mcp\Http\Middleware\AuthenticateAgent;
 use WebxUi\Mcp\Registry\ToolRegistry;
@@ -30,6 +37,8 @@ class McpServiceProvider extends ServiceProvider
             ToolRegistry::class,
             static fn ($app): ToolRegistry => new ToolRegistry($app->make(ModuleRegistry::class)),
         );
+
+        $this->configurePassport();
     }
 
     public function boot(): void
@@ -38,17 +47,199 @@ class McpServiceProvider extends ServiceProvider
         $router = $this->app->make('router');
         $router->aliasMiddleware('webx.mcp-auth', AuthenticateAgent::class);
 
+        $this->registerTokenGuard();
+        $this->registerOAuthRoutes($router);
         $this->registerServers();
 
         if (! $this->app->runningInConsole()) {
             return;
         }
 
-        $this->commands([ListToolsCommand::class, IssueTokenCommand::class]);
+        $this->commands([ListToolsCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-mcp.php' => config_path('webx-mcp.php'),
         ], 'webx-mcp-config');
+
+        $this->publishes([
+            __DIR__.'/../resources/views' => resource_path('views/vendor/webx-mcp'),
+        ], 'webx-mcp-views');
+    }
+
+    /**
+     * The guard the HTTP door asks, over the panel's own people.
+     *
+     * Registered in boot() rather than register(): the provider it names belongs to
+     * `webx-ui/module-auth`, which registers after this package — it depends on it — so in
+     * register() there would be nothing to point at yet. Nothing reads a guard before a
+     * request, so the later moment costs nothing.
+     */
+    private function registerTokenGuard(): void
+    {
+        if (! class_exists(Passport::class)) {
+            return;
+        }
+
+        $config = $this->app->make('config');
+        $guard = (string) $config->get('webx-mcp.guard', 'api');
+        $provider = $config->get('webx-auth.provider');
+
+        // Anything the application has already defined under this name wins — it knows
+        // something we do not — and without a panel to belong to there is nobody to let in.
+        if ($guard === '' || $config->has("auth.guards.{$guard}") || ! is_string($provider)) {
+            return;
+        }
+
+        if (! $config->has("auth.providers.{$provider}")) {
+            return;
+        }
+
+        $config->set("auth.guards.{$guard}", ['driver' => 'passport', 'provider' => $provider]);
+    }
+
+    /**
+     * Point Passport at the panel, and close the two doors it and `laravel/mcp` ship open.
+     *
+     * In register(), not boot(), because of one line in Passport's own routes file: the
+     * middleware of `POST /oauth/authorize` is `'auth:'.config('passport.guard')`, read the
+     * moment its provider boots and baked into the route. Setting the guard afterwards
+     * leaves the approve step asking the site's guard about an administrator it has never
+     * heard of — while the consent page before it, which resolves the guard lazily, shows
+     * the right person and looks entirely correct.
+     */
+    private function configurePassport(): void
+    {
+        $config = $this->app->make('config');
+
+        if (! class_exists(Passport::class) || $config->get('webx-mcp.oauth.enabled') === false) {
+            return;
+        }
+
+        $guard = $config->get('webx-mcp.oauth.guard');
+
+        if (is_string($guard) && $guard !== '') {
+            $config->set('passport.guard', $guard);
+        }
+
+        foreach (['redirect_domains', 'custom_schemes'] as $key) {
+            $value = $config->get("webx-mcp.oauth.{$key}");
+
+            if (is_array($value)) {
+                $config->set("mcp.{$key}", $value);
+            }
+        }
+
+        Passport::tokensExpireIn(new DateInterval('PT'.(int) $config->get('webx-mcp.oauth.access_token_hours', 1).'H'));
+        Passport::refreshTokensExpireIn(new DateInterval('P'.(int) $config->get('webx-mcp.oauth.refresh_token_days', 30).'D'));
+
+        // A client that asks for no scope at all would otherwise be handed a token that can
+        // do nothing, and every tool would refuse it for a scope it was never offered.
+        if (Passport::defaultScopes() === []) {
+            Passport::defaultScopes([Registrar::OAUTH_SCOPE]);
+        }
+
+        // Also done by `oauthRoutes()`, and needed even when the routes come from the cache:
+        // an authorization request is refused for a scope Passport has not been told about.
+        Registrar::ensureMcpScope();
+    }
+
+    /**
+     * The way in for an agent whose person has only an address to paste: discovery, dynamic
+     * client registration and PKCE, all of it written by `laravel/mcp`.
+     */
+    private function registerOAuthRoutes(Router $router): void
+    {
+        $config = $this->app->make('config');
+
+        if (! class_exists(Passport::class) || $config->get('webx-mcp.oauth.enabled') === false) {
+            return;
+        }
+
+        // Passport ships no consent page — it asks the application for one, and without it
+        // the flow ends in "not instantiable" on the last screen the person sees. This is
+        // the plain one; a panel with screens of its own replaces the binding afterwards,
+        // which is what `Passport::authorizationView()` does.
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-mcp');
+
+        if (! $this->app->bound(AuthorizationViewResponse::class)) {
+            Passport::authorizationView('webx-mcp::authorize');
+        }
+
+        $prefix = trim((string) $config->get('webx-mcp.oauth.prefix', 'oauth'), '/');
+
+        // Defined whether or not the routes are registered here, because a cached route still
+        // names its limiter and `ThrottleRequests` given a name nothing answers to reads it as
+        // a number instead — zero — and refuses every request. Loudly, but only on a deployed
+        // site, and only once somebody ran `route:cache`.
+        $limiters = [
+            $prefix.'/register' => ['webx-mcp-register', $config->get('webx-mcp.oauth.register_throttle')],
+            $prefix.'/token' => ['webx-mcp-token', $config->get('webx-mcp.oauth.token_throttle')],
+        ];
+
+        foreach ($limiters as [$limiter, $throttle]) {
+            $this->defineLimiter($limiter, $throttle);
+        }
+
+        if ($this->routesAreCached()) {
+            return;
+        }
+
+        Mcp::oauthRoutes($prefix);
+
+        foreach ($limiters as $uri => [$limiter, $throttle]) {
+            if (is_string($throttle) && $throttle !== '') {
+                $this->throttle($router, $uri, $limiter);
+            }
+        }
+    }
+
+    /**
+     * A counter of one route's own.
+     *
+     * Not `throttle:10,60`: for a caller who is not signed in, Laravel keys that counter by
+     * address alone, so every throttled route in the application shares it and the lowest
+     * limit among them decides. Registration is the loud one and the panel's sign-in form is
+     * the low one, which makes "a stranger registering clients" and "an administrator locked
+     * out of their own panel" the same event. A named limiter is how a route gets its own.
+     *
+     * @param  mixed  $throttle  attempts and minutes, `10,60`; anything else defines nothing
+     */
+    private function defineLimiter(string $limiter, mixed $throttle): void
+    {
+        if (! is_string($throttle) || ! preg_match('/^(\d+),(\d+)$/', $throttle, $limits)) {
+            return;
+        }
+
+        RateLimiter::for($limiter, static fn (Request $request): Limit => Limit::perMinutes(
+            (int) $limits[2],
+            (int) $limits[1],
+        )->by($limiter.'|'.$request->ip()));
+    }
+
+    /**
+     * Put the route at this address on that limiter.
+     *
+     * Registration opens before anybody has signed in, so a limit is all there is to have.
+     */
+    private function throttle(Router $router, string $uri, string $limiter): void
+    {
+        foreach ($router->getRoutes()->getRoutes() as $route) {
+            if (! $route instanceof Route || $route->uri() !== $uri || ! in_array('POST', $route->methods(), true)) {
+                continue;
+            }
+
+            // Passport's own token route carries a bare `throttle`, which is the shared
+            // counter this is here to get off. Only that exact spelling goes — a limit the
+            // application put there itself is its business.
+            $action = $route->getAction();
+            $action['middleware'] = array_values(array_filter(
+                (array) ($action['middleware'] ?? []),
+                static fn (mixed $middleware): bool => $middleware !== 'throttle',
+            ));
+
+            $route->setAction($action);
+            $route->middleware('throttle:'.$limiter);
+        }
     }
 
     /**

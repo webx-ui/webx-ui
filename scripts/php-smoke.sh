@@ -174,8 +174,8 @@ note "$(grep -E '^DB_CONNECTION=|^DB_DATABASE=' "$APP/.env" | tr '\n' ' ')"
 
 [ "$DB_CONNECTION" = "sqlite" ] && : > "$APP/database/database.sqlite"
 
-# Sanctum only publishes its migration; an agent's MCP token lives in that table.
-"$PHP_BIN" "$APP/artisan" vendor:publish --tag=sanctum-migrations --no-interaction --quiet
+# Passport only publishes its migrations; an agent's token lives in those tables.
+"$PHP_BIN" "$APP/artisan" vendor:publish --tag=passport-migrations --no-interaction --quiet
 
 "$PHP_BIN" "$APP/artisan" migrate --force --no-interaction
 note 'migrations ran'
@@ -190,12 +190,11 @@ WEBX_ADMIN_PASSWORD="$ADMIN_PASSWORD" "$PHP_BIN" "$APP/artisan" webx:admin \
     --name=Smoke --email="$ADMIN_EMAIL" --no-interaction
 note "$ADMIN_EMAIL created"
 
-step "Issue an MCP token"
-# The token is the one bare `id|secret` line of the output.
-MCP_TOKEN="$("$PHP_BIN" "$APP/artisan" webx:mcp:token "$ADMIN_EMAIL" --scopes=blocks:read --no-ansi \
-    | grep -E '^[0-9]+\|[A-Za-z0-9]+$' | head -1)"
-[ -n "$MCP_TOKEN" ] || fail 'webx:mcp:token did not print a token'
-note 'a token with blocks:read issued'
+step "Generate the OAuth keys"
+# A deployment step, and one worth having here: without the keys the `api` guard cannot even be
+# built, so a call with no token at all answers 500 where it should answer 401.
+"$PHP_BIN" "$APP/artisan" passport:keys --quiet
+note 'passport:keys'
 
 step "Give the site something with a public address"
 # webx-ui/routing has no module of its own and no consumer yet, so the only way to exercise it
@@ -521,7 +520,7 @@ note 'webx:mcp-tools lists the auth tools'
 # Read the token out of the cookie jar. Signing in regenerates the session — session fixation
 # is exactly what that is for — so the token has to be read again after it, not reused.
 xsrf_token() {
-    curl -s -o /dev/null -c "$COOKIES" -b "$COOKIES" "$BASE/sanctum/csrf-cookie"
+    curl -s -o /dev/null -c "$COOKIES" -b "$COOKIES" "$BASE/api/cms/auth/csrf-cookie"
 
     "$PHP_BIN" -r '
         foreach (explode("\n", (string) file_get_contents($argv[1])) as $line) {
@@ -553,6 +552,83 @@ send_json() {
         -H 'Accept: application/json' -H 'Content-Type: application/json' \
         -H "X-XSRF-TOKEN: $(xsrf_token)" \
         -X "$method" -d "$body" "$url"
+}
+
+# Everything a person does to connect their agent, with curl standing in for the client.
+#
+# This is the one place the whole flow runs in a real application: real keys, a real session,
+# a real CSRF token, and in the second phase the caches a deploy turns on. Testbench can show
+# none of that, and `.well-known` routes are closures registered by a package — exactly the
+# shape that `route:cache` is worst at.
+#
+# Sets MCP_TOKEN. Has to run while somebody is signed in: the consent screen is a panel page.
+connect_an_agent() {
+    local phase="$1" verifier challenge client_id consent auth_token location code
+
+    verifier="$("$PHP_BIN" -r 'echo rtrim(strtr(base64_encode(random_bytes(32)), "+/", "-_"), "=");')"
+    challenge="$("$PHP_BIN" -r 'echo rtrim(strtr(base64_encode(hash("sha256", $argv[1], true)), "+/", "-_"), "=");' "$verifier")"
+
+    curl -s "$BASE/.well-known/oauth-protected-resource/api/cms/mcp" | grep -q '"mcp:use"' \
+        || fail "[$phase] the protected resource metadata says nothing"
+    curl -s "$BASE/.well-known/oauth-authorization-server" | grep -q '"registration_endpoint"' \
+        || fail "[$phase] the authorization server metadata says nothing"
+    note "[$phase] a client finds the authorization server from the address alone"
+
+    # An address nobody listed. This is what stops a stranger registering a client called
+    # "Site panel" that takes the code to their own server. The status comes along because
+    # "not refused" and "refused by the rate limiter instead" look the same otherwise, and
+    # the second is what a named limiter that nothing defined looks like.
+    local refused
+    refused="$(curl -s -w '|%{http_code}' -X POST -H 'Content-Type: application/json' \
+        -d '{"client_name":"Not Claude","redirect_uris":["https://collector.example/cb"]}' \
+        "$BASE/oauth/register")"
+    case "$refused" in
+        *invalid_redirect_uri*'|400') ;;
+        *) fail "[$phase] an unlisted redirect domain was not refused as one: $refused" ;;
+    esac
+
+    client_id="$(curl -s -X POST -H 'Content-Type: application/json' \
+        -d '{"client_name":"Smoke client","redirect_uris":["http://localhost:51999/callback"]}' \
+        "$BASE/oauth/register" \
+        | "$PHP_BIN" -r 'echo json_decode(stream_get_contents(STDIN), true)["client_id"] ?? "";')"
+    [ -n "$client_id" ] || fail "[$phase] the client could not register itself"
+    note "[$phase] it registers itself, and an unlisted address does not"
+
+    consent="$(curl -s -c "$COOKIES" -b "$COOKIES" \
+        "$BASE/oauth/authorize?response_type=code&client_id=$client_id&redirect_uri=http%3A%2F%2Flocalhost%3A51999%2Fcallback&scope=mcp%3Ause&state=smoke-$phase&code_challenge=$challenge&code_challenge_method=S256")"
+
+    # The administrator, not a visitor of the site: Passport asks whichever guard it was given,
+    # and its own default is the wrong one.
+    printf '%s' "$consent" | grep -q 'Smoke client' \
+        || fail "[$phase] the consent page did not draw: $(printf '%s' "$consent" | head -c 400)"
+    printf '%s' "$consent" | grep -q 'localhost' \
+        || fail "[$phase] the consent page does not say where the code is sent"
+
+    auth_token="$(printf '%s' "$consent" | grep -o 'name="auth_token" value="[^"]*"' | head -1 \
+        | sed 's/.*value="//; s/"$//')"
+    [ -n "$auth_token" ] || fail "[$phase] the consent page carries no auth_token"
+
+    # Approving is a POST through the `web` group by an administrator — the step whose guard is
+    # baked into the route when Passport boots, and which looks fine until somebody presses it.
+    location="$(curl -s -o /dev/null -w '%{redirect_url}' -c "$COOKIES" -b "$COOKIES" \
+        -H "X-XSRF-TOKEN: $(xsrf_token)" \
+        -d "auth_token=$auth_token" "$BASE/oauth/authorize")"
+
+    code="$(printf '%s' "$location" | sed 's/.*[?&]code=//; s/&.*//')"
+    [ -n "$code" ] && [ "$code" != "$location" ] \
+        || fail "[$phase] approving brought back no code: $location"
+    note "[$phase] the administrator allows it and a code comes back"
+
+    MCP_TOKEN="$(curl -s -H 'Accept: application/json' \
+        -d 'grant_type=authorization_code' \
+        -d "client_id=$client_id" \
+        -d 'redirect_uri=http://localhost:51999/callback' \
+        -d "code_verifier=$verifier" \
+        -d "code=$code" \
+        "$BASE/oauth/token" \
+        | "$PHP_BIN" -r 'echo json_decode(stream_get_contents(STDIN), true)["access_token"] ?? "";')"
+    [ -n "$MCP_TOKEN" ] || fail "[$phase] the code did not become a token"
+    note "[$phase] and the code becomes a token"
 }
 
 run_http_checks() {
@@ -700,6 +776,8 @@ run_http_checks() {
         || fail "[$phase] the panel did not serve the attachment back"
     note "[$phase] and the panel serves it back to somebody with inbox.view"
 
+    connect_an_agent "$phase"
+
     expect 204 "$(
         curl -s -o /dev/null -w '%{http_code}' -c "$COOKIES" -b "$COOKIES" \
             -H 'Accept: application/json' -H "X-XSRF-TOKEN: $(xsrf_token)" -X POST \
@@ -721,12 +799,25 @@ run_http_checks() {
     expect 401 "$(status -X POST -H 'Content-Type: application/json' -d "$rpc" "$BASE/api/cms/mcp")" \
         "[$phase] the MCP server is closed to strangers"
 
+    # The token outlives the session it was granted in — that is the whole point of it.
     local tools
     tools="$(curl -s -H 'Accept: application/json' -H 'Content-Type: application/json' \
         -H "Authorization: Bearer $MCP_TOKEN" -X POST -d "$rpc" "$BASE/api/cms/mcp")"
     printf '%s' "$tools" | grep -q '"blocks_list"' \
         || fail "[$phase] the MCP server did not list the blocks tools to a token: $tools"
-    note "[$phase] and lists the blocks tools to a token"
+    note "[$phase] and lists the blocks tools to the agent's token"
+
+    # A token granted over OAuth carries one scope for the whole server, so a tool that writes
+    # has to answer it too. Reading module scopes off such a token refuses everything, and only
+    # ever where somebody has connected for real.
+    local created
+    created="$(curl -s -H 'Accept: application/json' -H 'Content-Type: application/json' \
+        -H "Authorization: Bearer $MCP_TOKEN" -X POST \
+        -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"blocks_create","arguments":{"slug":"smoke-'"$phase"'","title":"Smoke"}}}' \
+        "$BASE/api/cms/mcp")"
+    printf '%s' "$created" | grep -q '"slug":"smoke-'"$phase"'"' \
+        || fail "[$phase] the agent's token could not write: $created"
+    note "[$phase] and writes with it"
 }
 
 serve() {

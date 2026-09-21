@@ -10,12 +10,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
-use Laravel\Sanctum\HasApiTokens;
+use Laravel\Passport\Contracts\OAuthenticatable;
+use Laravel\Passport\HasApiTokens;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Localization\Contracts\HasPanelLocale;
 
 /**
  * Somebody who administers the site — not somebody who uses it.
+ *
+ * Also the account an agent acts as. An agent is not a second kind of person: it holds an
+ * OAuth token that an administrator granted it over their own account, so authorship, roles
+ * and `is_active` mean the same thing whether a hand or a program is at the other end.
  *
  * @property int $id
  * @property string $name
@@ -29,7 +34,7 @@ use WebxUi\Localization\Contracts\HasPanelLocale;
  * @property Carbon|null $last_login_at
  * @property Carbon|null $created_at
  */
-class CmsUser extends Model implements AuthenticatableContract, HasPanelLocale, HasPermissions
+class CmsUser extends Model implements AuthenticatableContract, HasPanelLocale, HasPermissions, OAuthenticatable
 {
     use Authenticatable;
     use HasApiTokens;
