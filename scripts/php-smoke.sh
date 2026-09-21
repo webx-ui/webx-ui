@@ -566,7 +566,9 @@ connect_an_agent() {
     local phase="$1" verifier challenge client_id consent auth_token location code
 
     verifier="$("$PHP_BIN" -r 'echo rtrim(strtr(base64_encode(random_bytes(32)), "+/", "-_"), "=");')"
-    challenge="$("$PHP_BIN" -r 'echo rtrim(strtr(base64_encode(hash("sha256", $argv[1], true)), "+/", "-_"), "=");' "$verifier")"
+    # `--` because the verifier is base64url and one in sixty-four of them starts with a dash,
+    # which php reads as an option of its own and refuses.
+    challenge="$("$PHP_BIN" -r 'echo rtrim(strtr(base64_encode(hash("sha256", $argv[1], true)), "+/", "-_"), "=");' -- "$verifier")"
 
     curl -s "$BASE/.well-known/oauth-protected-resource/api/cms/mcp" | grep -q '"mcp:use"' \
         || fail "[$phase] the protected resource metadata says nothing"
