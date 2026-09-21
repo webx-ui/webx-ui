@@ -50,6 +50,41 @@ final class ToolRegistryTest extends TestCase
     }
 
     #[Test]
+    public function permissions_default_to_view_and_manage_per_module_unless_the_tool_says_otherwise(): void
+    {
+        $this->register(new SeoModule, new MediaLibraryModule, new class extends AbstractModule implements ProvidesMcpTools
+        {
+            use ProvidesMcpDefaults;
+
+            public function id(): string
+            {
+                return 'tags';
+            }
+
+            /**
+             * @return list<Tool>
+             */
+            public function mcpTools(): array
+            {
+                return [Tool::mutating('merge', 'Merge tags.', static fn (): array => [], permission: 'blog.taxonomy.manage')];
+            }
+        });
+
+        $tools = $this->tools();
+
+        // Reading is open to whoever may manage as well: the panel's own routes let an
+        // editor at the list without a separate `view`.
+        $this->assertSame(['seo.view', 'seo.manage'], $tools->tool('seo_get_seo')->permissions());
+        $this->assertSame(['seo.manage'], $tools->tool('seo_bulk_update_seo')->permissions());
+
+        // The permission follows the module id as written, dashes and all: that is the name
+        // the module's own routes use, not the agent-safe one.
+        $this->assertSame(['media-library.view', 'media-library.manage'], $tools->tool('media_library_find_unused')->permissions());
+
+        $this->assertSame(['blog.taxonomy.manage'], $tools->tool('tags_merge')->permissions());
+    }
+
+    #[Test]
     public function a_tool_can_be_found_by_its_full_name(): void
     {
         $this->register(new SeoModule);

@@ -13,6 +13,7 @@ use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Tool as McpTool;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Grants\Grants;
+use WebxUi\Mcp\Permissions;
 use WebxUi\Mcp\Registry\BoundTool;
 use WebxUi\Mcp\Scopes;
 
@@ -22,8 +23,8 @@ use WebxUi\Mcp\Scopes;
  * The module declared a name, a description, a JSON Schema and a closure; this is the class
  * the transport expects around them. The schema goes out as the module wrote it — the
  * builder `laravel/mcp` offers is for tools written as classes, and a module's schema is
- * already the array the protocol wants. The scope and the grant are checked here, once,
- * before any handler runs: a handler never has to ask who is calling.
+ * already the array the protocol wants. The scope, the grant and the permission are checked
+ * here, once, before any handler runs: a handler never has to ask who is calling.
  */
 final class RegistryTool extends McpTool
 {
@@ -33,15 +34,19 @@ final class RegistryTool extends McpTool
      * Whether the caller is shown this tool at all.
      *
      * An agent shown forty tools and refused on half of them spends its attempts and tells
-     * the person it cannot do what it was never going to be allowed to. So a tool the grant
-     * refuses — everything that writes, for a connection made read-only — is left out of the
-     * list rather than listed and refused. `laravel/mcp` asks this through the container, and
-     * on the local stdio server the request it resolves is an empty one with no user, which
-     * is right: there is nobody there to refuse.
+     * the person it cannot do what it was never going to be allowed to. So a tool the caller
+     * may not use — one behind a permission they do not hold, or one that writes on a
+     * connection made read-only — is left out of the list rather than listed and refused.
+     * `laravel/mcp` asks this through the container, and on the local stdio server the
+     * request it resolves is an empty one with no user, which is right: there is nobody
+     * there to refuse, so everything is shown.
      */
     public function shouldRegister(HttpRequest $request, Grants $grants): bool
     {
-        return $grants->refusal($request->user(), $this->bound->tool) === null;
+        $user = $request->user();
+
+        return Permissions::allows($user, $this->bound)
+            && $grants->refusal($user, $this->bound->tool) === null;
     }
 
     public function name(): string
@@ -115,6 +120,17 @@ final class RegistryTool extends McpTool
 
         if ($refusal !== null) {
             return Response::error("[{$this->name()}] is not allowed on this connection. {$refusal}");
+        }
+
+        // The administrator's own permissions, the ones the panel asks for the same work. Hidden
+        // from the list too; checked again here for a client that remembers the tool from a
+        // listing made by somebody else, or before a role was taken away.
+        if (! Permissions::allows($user, $this->bound)) {
+            $needed = implode('] or [', $this->bound->permissions());
+
+            return Response::error(
+                "The administrator this call acts as does not hold the [{$needed}] permission, which [{$this->name()}] needs."
+            );
         }
 
         try {

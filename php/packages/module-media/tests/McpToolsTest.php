@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Mcp\Registry\BoundTool;
 use WebxUi\Media\MediaModule;
 use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Models\MediaFile;
@@ -50,6 +51,24 @@ final class McpToolsTest extends TestCase
         // Recursive deletion is the one thing here a mistaken call cannot take back, and an
         // agent cannot ask the question the panel asks first.
         $this->assertSame([], array_filter($names, static fn (string $name): bool => str_contains($name, 'directory') && str_contains($name, 'delete')));
+    }
+
+    #[Test]
+    public function uploading_is_behind_the_upload_permission_and_the_rest_behind_the_defaults(): void
+    {
+        $module = new MediaModule;
+        $permissions = [];
+
+        foreach ($module->mcpTools() as $tool) {
+            $permissions[$tool->name] = (new BoundTool($module->id(), $tool))->permissions();
+        }
+
+        // The panel lets `media.upload` put files in without letting it rename or delete
+        // anything; the one tool that only adds is behind the same permission.
+        $this->assertSame(['media.upload', 'media.manage'], $permissions['upload_from_url']);
+        $this->assertSame(['media.view', 'media.manage'], $permissions['list_files']);
+        $this->assertSame(['media.manage'], $permissions['delete_files']);
+        $this->assertSame(['media.manage'], $permissions['rename_file']);
     }
 
     #[Test]

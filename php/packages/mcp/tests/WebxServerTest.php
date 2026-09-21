@@ -7,6 +7,7 @@ namespace WebxUi\Mcp\Tests;
 use Illuminate\Auth\GenericUser;
 use Laravel\Mcp\Server\Transport\FakeTransporter;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\Exceptions\ToolFailure;
@@ -15,6 +16,7 @@ use WebxUi\Mcp\Server\RegistryPrompt;
 use WebxUi\Mcp\Server\RegistryResource;
 use WebxUi\Mcp\Server\RegistryTool;
 use WebxUi\Mcp\Server\WebxServer;
+use WebxUi\Mcp\Tests\Fixtures\Administrator;
 use WebxUi\Mcp\Tests\Fixtures\MediaLibraryModule;
 use WebxUi\Mcp\Tests\Fixtures\SeoModule;
 use WebxUi\Mcp\Tests\Fixtures\TokenUser;
@@ -109,6 +111,136 @@ final class WebxServerTest extends TestCase
         WebxServer::actingAs(new GenericUser(['id' => 2]))
             ->tool($this->tool('seo_bulk_update_seo'), [])
             ->assertOk();
+    }
+
+    #[Test]
+    public function an_administrator_without_the_permission_is_refused_before_the_handler_runs(): void
+    {
+        $this->register(new class extends AbstractModule implements ProvidesMcpTools
+        {
+            use ProvidesMcpDefaults;
+
+            public function id(): string
+            {
+                return 'pages';
+            }
+
+            /**
+             * @return list<Tool>
+             */
+            public function mcpTools(): array
+            {
+                return [
+                    Tool::read('list', 'List the pages.', static fn (): array => ['pages' => 3]),
+                    Tool::mutating('delete', 'Delete a page.', static fn (): never => throw new RuntimeException('The handler ran.')),
+                ];
+            }
+        });
+
+        $viewer = new Administrator(['pages.view']);
+
+        WebxServer::actingAs($viewer)
+            ->tool($this->tool('pages_delete'), ['id' => 1])
+            ->assertHasErrors(['[pages.manage]', '[pages_delete]']);
+
+        WebxServer::actingAs($viewer)
+            ->tool($this->tool('pages_list'))
+            ->assertOk();
+
+        // Somebody who may edit pages may look at them: the panel opens the list to them
+        // without a separate `view`, and so does this.
+        WebxServer::actingAs(new Administrator(['pages.manage']))
+            ->tool($this->tool('pages_list'))
+            ->assertOk();
+
+        WebxServer::actingAs(new Administrator(['blog.articles.view']))
+            ->tool($this->tool('pages_list'))
+            ->assertHasErrors(['[pages.view] or [pages.manage]']);
+    }
+
+    #[Test]
+    public function a_tool_that_names_its_permission_is_checked_against_that_one(): void
+    {
+        $this->register(new class extends AbstractModule implements ProvidesMcpTools
+        {
+            use ProvidesMcpDefaults;
+
+            public function id(): string
+            {
+                return 'tags';
+            }
+
+            /**
+             * @return list<Tool>
+             */
+            public function mcpTools(): array
+            {
+                return [
+                    Tool::read('list', 'List the tags.', static fn (): array => [], permission: ['blog.articles.view', 'blog.taxonomy.manage']),
+                    Tool::mutating('merge', 'Merge tags.', static fn (): array => ['merged' => 2], permission: 'blog.taxonomy.manage'),
+                ];
+            }
+        });
+
+        WebxServer::actingAs(new Administrator(['blog.articles.view']))
+            ->tool($this->tool('tags_list'))
+            ->assertOk();
+
+        WebxServer::actingAs(new Administrator(['blog.articles.view']))
+            ->tool($this->tool('tags_merge'))
+            ->assertHasErrors(['[blog.taxonomy.manage]']);
+
+        WebxServer::actingAs(new Administrator(['tags.manage']))
+            ->tool($this->tool('tags_merge'))
+            ->assertHasErrors(['[blog.taxonomy.manage]']);
+
+        WebxServer::actingAs(new Administrator(['blog.taxonomy.manage']))
+            ->tool($this->tool('tags_merge'))
+            ->assertOk();
+    }
+
+    #[Test]
+    public function the_list_shows_an_administrator_only_what_they_may_use(): void
+    {
+        $this->register(new SeoModule, new MediaLibraryModule);
+
+        $this->app['config']->set('webx-mcp.guard', 'web');
+
+        $names = fn (Administrator $user): array => $this->actingAs($user, 'web')
+            ->postJson('/api/cms/mcp', $this->rpc('tools/list'))
+            ->assertOk()
+            ->json('result.tools.*.name');
+
+        $this->assertSame(['seo_get_seo'], $names(new Administrator(['seo.view'])));
+        $this->assertSame(['seo_get_seo', 'seo_bulk_update_seo'], $names(new Administrator(['seo.manage'])));
+        $this->assertSame(['media_library_find_unused'], $names(new Administrator(['media-library.view'])));
+        $this->assertSame([], $names(new Administrator([])));
+
+        // A tool the list left out is not there to call either: `laravel/mcp` looks the name
+        // up in the same filtered list, so the handler is never reached by name.
+        $this->actingAs(new Administrator(['seo.view']), 'web')
+            ->postJson('/api/cms/mcp', $this->rpc('tools/call', ['name' => 'seo_bulk_update_seo', 'arguments' => []]))
+            ->assertBadRequest()
+            ->assertJsonPath('error.message', 'Tool [seo_bulk_update_seo] not found.');
+    }
+
+    #[Test]
+    public function a_caller_with_no_permissions_to_ask_about_sees_everything(): void
+    {
+        $this->register(new SeoModule, new MediaLibraryModule);
+
+        $this->app['config']->set('webx-mcp.guard', 'web');
+
+        // A session user the auth module did not hand over as an administrator: whoever let
+        // them in decides, as with scopes.
+        $this->actingAs(new GenericUser(['id' => 1]), 'web')
+            ->postJson('/api/cms/mcp', $this->rpc('tools/list'))
+            ->assertOk()
+            ->assertJsonCount(3, 'result.tools');
+
+        // The local stdio server, where there is no request: the tests above build the
+        // context the same way, so the full list is the one they already assert.
+        $this->assertCount(3, $this->server()->createContext()->tools());
     }
 
     #[Test]
