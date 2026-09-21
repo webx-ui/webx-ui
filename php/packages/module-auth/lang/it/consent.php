@@ -17,6 +17,6 @@ return [
     'read-only' => 'Sola lettura — che guardi, ma non cambi nulla',
     'allow' => 'Consenti',
     'cancel' => 'Annulla',
-    'disconnect' => 'Puoi scollegarlo nel pannello: Profilo → Connessioni.',
+    'disconnect' => 'Puoi scollegarlo nel pannello: Amministratori → Connessioni.',
     'returns-to' => 'La risposta andrà a :host',
 ];
