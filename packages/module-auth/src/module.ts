@@ -25,21 +25,24 @@ export interface AdminsOptions {
 export function admins(options: AdminsOptions = {}): AdminModule {
   const path = options.path ?? '/admins'
 
+  const page = (current: 'admins' | 'calls') => ({
+    render: () =>
+      h(AdminsPage, {
+        base: path,
+        current,
+        avatarField: options.avatarField,
+        resolveAvatar: options.resolveAvatar,
+      }),
+  })
+
   return {
     id: 'admins',
     path,
     routes: [
-      {
-        path,
-        name: 'webx.admins',
-        component: {
-          render: () =>
-            h(AdminsPage, {
-              avatarField: options.avatarField,
-              resolveAvatar: options.resolveAvatar,
-            }),
-        },
-      },
+      { path, name: 'webx.admins', component: page('admins') },
+      // What their agents did: a second view of the same section, with an address of its
+      // own so that its filters survive a trip to the people and back.
+      { path: `${path}/calls`, name: 'webx.admins.calls', component: page('calls') },
     ],
   }
 }

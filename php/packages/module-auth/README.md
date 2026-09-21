@@ -112,6 +112,19 @@ review afterwards. A test asserts that no such tool appears.
 
 Both role tools honour `dry_run`, so an agent can be asked what it would change first.
 
+### What agents did
+
+Every tool call an agent makes lands in `mcp_calls` — written by `webx-ui/mcp`, around every
+call, whichever way it went. This module shows it as the **Agent calls** view of the
+administrators section, behind `admins.audit`: who the agent acted as, on which connection,
+which tool, with what, whether it was answered or refused and why, and how long it took. The
+view narrows by administrator, by tool and by outcome, and the choices on offer are the ones
+that actually appear in the log.
+
+`GET /api/cms/auth/mcp-calls` answers it, paginated newest first, with `user`, `tool`
+(`pages_create`) and `outcome` (`ok`, `failed`, `dry`) as query parameters; `user=none` is the
+stdio server, where there was nobody to act as. Retention is `webx-mcp.calls.days`.
+
 ## Configuration
 
 `config/webx-auth.php`. If you keep your own middleware stack on the panel's API, set

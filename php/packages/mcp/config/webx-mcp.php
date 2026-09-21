@@ -128,6 +128,31 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Call log
+    |---------------------------------------------------------------------------
+    |
+    | Every tool call, answered or refused, lands in `mcp_calls`: who the agent
+    | acted as, on which connection, which tool, with what, and how it went.
+    | The panel shows it as a tab next to the administrators, behind
+    | `admins.audit`. Kept for `days` days and pruned nightly, the way the
+    | sign-in trail is; null keeps it forever. Arguments are cut to
+    | `arguments_length` characters, and anything named like a secret in them
+    | is blanked before writing.
+    |
+    */
+
+    'calls' => [
+
+        'enabled' => (bool) env('WEBX_MCP_CALL_LOG', true),
+
+        'days' => 90,
+
+        'arguments_length' => 4000,
+
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
     | Local server
     |---------------------------------------------------------------------------
     |

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef, type Component } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import {
   useAdmin,
   useErrorText,
@@ -7,19 +8,28 @@ import {
   WxListScreen,
   type ScreenAction,
 } from '@webx-ui/module-admin'
-import { confirm, createModal, toast } from '@webx-ui/core'
+import { confirm, createModal, toast, type TabItem, type TabValue } from '@webx-ui/core'
 import AdminDialog from './AdminDialog.vue'
 import AdminList from './AdminList.vue'
+import CallList from './CallList.vue'
 import { createAdminsApi } from './admins'
 import { useAuthMessages } from './i18n'
 import type { Admin } from './types'
 
 /**
- * The administrators section: the list, and the form over it.
+ * The administrators section: the list, the form over it, and the trail of what their agents
+ * did.
  *
- * A dialog rather than a second route. Editing somebody is half a dozen fields, and a screen
- * that takes over the page for that loses the list you were reading — which is where you
- * decide who to open next.
+ * A dialog rather than a second route for the form. Editing somebody is half a dozen fields,
+ * and a screen that takes over the page for that loses the list you were reading — which is
+ * where you decide who to open next.
+ *
+ * The agent calls are a second view of the same section rather than a section of their own:
+ * "who did what" is a question about these people, whether a hand or a program was at the
+ * other end. Two routes rather than two panels of one, because they are two tables with
+ * their own paging and filters, and a view that quietly resets both when you come back to it
+ * is worse than a second address. The view is shown to whoever holds `admins.audit`, the
+ * permission the sign-in trail is behind.
  *
  * The heading and `Add` used to live inside the card, which made this the one section of the
  * panel with no line of its own at the top. They stand outside it now, where every other list
@@ -27,14 +37,20 @@ import type { Admin } from './types'
  */
 const props = withDefaults(
   defineProps<{
+    /** The section's own path, for the address of the second view. */
+    base?: string
+    /** Which view is open. */
+    current?: 'admins' | 'calls'
     avatarField?: Component
     resolveAvatar?: (key: string) => Promise<string | null>
   }>(),
-  { avatarField: undefined, resolveAvatar: undefined },
+  { base: '/admins', current: 'admins', avatarField: undefined, resolveAvatar: undefined },
 )
 
 const context = useAdmin()
 const api = createAdminsApi(context)
+const router = useRouter()
+const route = useRoute()
 useAuthMessages()
 
 const t = useTranslate('webx-auth')
@@ -47,6 +63,7 @@ const editing = ref<Admin | null>(null)
 const edit = createModal<Admin, { admin: Admin | null; avatarField?: Component }>(AdminDialog)
 
 const canManage = context.can('admins.manage')
+const canAudit = context.can('admins.audit')
 
 /** The section's name as the server translated it; the built-in English until it arrives. */
 const title = computed(
@@ -55,9 +72,29 @@ const title = computed(
     t('admins.title'),
 )
 
-/* Short enough for a phone, where the name and the button share one line. */
+/* One view is no view: the strip is drawn only for somebody who can see the second. */
+const views = computed<TabItem[] | undefined>(() =>
+  canAudit
+    ? [
+        { value: 'admins', label: title.value },
+        { value: 'calls', label: t('calls.title') },
+      ]
+    : undefined,
+)
+
+const where = computed<TabValue>({
+  get: () => props.current,
+  set: (next) => {
+    const path = next === 'admins' ? props.base : `${props.base}/${String(next)}`
+
+    if (path !== route.path) void router.push(path)
+  },
+})
+
+/* Short enough for a phone, where the name and the button share one line. `Add` belongs to
+   the people, not to the log. */
 const actions = computed<ScreenAction[]>(() =>
-  canManage
+  canManage && props.current === 'admins'
     ? [
         {
           key: 'new',
@@ -102,8 +139,10 @@ async function remove(admin: Admin): Promise<void> {
 </script>
 
 <template>
-  <wx-list-screen :title="title" :actions="actions">
+  <wx-list-screen v-model:view="where" :title="title" :views="views" :actions="actions">
+    <call-list v-if="current === 'calls'" />
     <admin-list
+      v-else
       ref="list"
       :removable="canManage"
       :resolve-avatar="props.resolveAvatar"

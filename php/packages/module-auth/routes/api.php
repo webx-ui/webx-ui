@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use WebxUi\Auth\Http\Controllers\AdminController;
 use WebxUi\Auth\Http\Controllers\CsrfCookieController;
+use WebxUi\Auth\Http\Controllers\McpCallController;
 use WebxUi\Auth\Http\Controllers\MeController;
 use WebxUi\Auth\Http\Controllers\PanelLocaleController;
 use WebxUi\Auth\Http\Controllers\PanelThemeController;
@@ -49,6 +50,12 @@ Route::prefix((string) config('webx-admin.api_path').'/auth')
                 Route::post('admins', [AdminController::class, 'store'])->name('admins.store');
                 Route::patch('admins/{admin}', [AdminController::class, 'update'])->name('admins.update');
                 Route::delete('admins/{admin}', [AdminController::class, 'destroy'])->name('admins.destroy');
+            });
+
+            // What agents did, behind the permission the sign-in trail is behind: the same
+            // question, asked about a program rather than a hand.
+            Route::middleware('cms.can:admins.audit')->group(function (): void {
+                Route::get('mcp-calls', McpCallController::class)->name('mcp-calls');
             });
         });
     });

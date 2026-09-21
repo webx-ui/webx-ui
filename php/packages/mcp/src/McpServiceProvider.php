@@ -6,6 +6,7 @@ namespace WebxUi\Mcp;
 
 use DateInterval;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Foundation\CachesRoutes;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
@@ -19,6 +20,7 @@ use Laravel\Passport\Contracts\AuthorizationViewResponse;
 use Laravel\Passport\Passport;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Mcp\Console\ListToolsCommand;
+use WebxUi\Mcp\Console\PruneCallsCommand;
 use WebxUi\Mcp\Grants\Grants;
 use WebxUi\Mcp\Http\Middleware\AuthenticateAgent;
 use WebxUi\Mcp\Registry\ToolRegistry;
@@ -57,12 +59,13 @@ class McpServiceProvider extends ServiceProvider
         $this->registerTokenGuard();
         $this->registerOAuthRoutes($router);
         $this->registerServers();
+        $this->registerPruneSchedule();
 
         if (! $this->app->runningInConsole()) {
             return;
         }
 
-        $this->commands([ListToolsCommand::class]);
+        $this->commands([ListToolsCommand::class, PruneCallsCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-mcp.php' => config_path('webx-mcp.php'),
@@ -276,6 +279,27 @@ class McpServiceProvider extends ServiceProvider
         if (is_string($local) && $local !== '') {
             Mcp::local($local, WebxServer::class);
         }
+    }
+
+    /**
+     * The call log kept to its retention, nightly, by the package rather than by the site —
+     * the way the nightly dump is. `callAfterResolving` because the scheduler is built on the
+     * first console command that needs one, not during boot.
+     */
+    private function registerPruneSchedule(): void
+    {
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $config = $this->app->make('config');
+            $days = $config->get('webx-mcp.calls.days');
+
+            if (! $config->get('webx-mcp.calls.enabled', true) || ! is_int($days) || $days < 1) {
+                return;
+            }
+
+            $schedule->command(PruneCallsCommand::class)
+                ->daily()
+                ->onOneServer();
+        });
     }
 
     private function routesAreCached(): bool
