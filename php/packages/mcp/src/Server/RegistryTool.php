@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace WebxUi\Mcp\Server;
 
 use Illuminate\Container\Container;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Support\Str;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Tool as McpTool;
+use WebxUi\Mcp\Calls\Recorder;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Grants\Grants;
 use WebxUi\Mcp\Permissions;
@@ -102,9 +104,28 @@ final class RegistryTool extends McpTool
         ];
     }
 
+    /**
+     * The call, written down whichever way it goes: the log is around the whole of it, so
+     * that a refusal at the door is a row a person can read, not only an answer the agent got.
+     */
     public function handle(Request $request): Response|ResponseFactory
     {
         $user = $request->user();
+        $arguments = $request->all();
+
+        return $this->recorder()->record(
+            $this->bound,
+            $user,
+            $arguments,
+            fn (): Response|ResponseFactory => $this->attempt($user, $arguments),
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    private function attempt(?Authenticatable $user, array $arguments): Response|ResponseFactory
+    {
         $scope = $this->bound->scope();
 
         if (! Scopes::allows($user, $scope)) {
@@ -134,7 +155,7 @@ final class RegistryTool extends McpTool
         }
 
         try {
-            $result = ($this->bound->tool->handler)($request->all(), $user);
+            $result = ($this->bound->tool->handler)($arguments, $user);
         } catch (ToolFailure $failure) {
             return Response::error($failure->getMessage());
         }
@@ -149,5 +170,10 @@ final class RegistryTool extends McpTool
     private function grants(): Grants
     {
         return Container::getInstance()->make(Grants::class);
+    }
+
+    private function recorder(): Recorder
+    {
+        return Container::getInstance()->make(Recorder::class);
     }
 }

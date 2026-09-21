@@ -63,6 +63,56 @@ export interface AdminPage {
   to: number | null
 }
 
+/**
+ * One tool call an agent made, as `GET /api/cms/auth/mcp-calls` answers it.
+ *
+ * `user` is null for a call on the stdio server, where there was nobody to act as; a user with
+ * no `name` was deleted since. `arguments` is the JSON as the server kept it — secrets blanked,
+ * cut to a length — and so is text to show, not an object to read.
+ */
+export interface AgentCall {
+  id: number
+  at: string | null
+  user: { id: number; name: string | null } | null
+  /** What the client called itself on the consent screen; null off a connection. */
+  client: string | null
+  tool: string
+  arguments: string | null
+  dry_run: boolean
+  ok: boolean
+  error: string | null
+  duration_ms: number
+  [key: string]: unknown
+}
+
+export type AgentCallOutcome = 'ok' | 'failed' | 'dry'
+
+export interface AgentCallQuery {
+  /** An administrator's id, or `none` for the stdio server. */
+  user?: string | null
+  tool?: string | null
+  outcome?: AgentCallOutcome | null
+  page?: number
+  per_page?: number
+}
+
+/** What the log can be narrowed by: the people and the tools that actually appear in it. */
+export interface AgentCallFilters {
+  users: { id: number | null; name: string | null }[]
+  tools: string[]
+}
+
+export interface AgentCallPage {
+  data: AgentCall[]
+  current_page: number
+  last_page: number
+  per_page: number
+  total: number
+  from: number | null
+  to: number | null
+  filters: AgentCallFilters
+}
+
 /** What a form sends. `password` left out is a password left alone. */
 export interface AdminInput {
   name: string

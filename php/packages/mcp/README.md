@@ -177,6 +177,7 @@ third of them and conclude the rest do not exist.
 | `middleware` | `['webx.mcp-auth']` | What guards it                                                   |
 | `guard`      | `api`               | The guard `webx.mcp-auth` asks for a user                        |
 | `oauth`      | see below           | How a person connects their agent; ignored without Passport      |
+| `calls`      | see below           | The call log: on, kept 90 days, arguments cut to 4000 characters |
 | `local`      | `webx`              | The name of the stdio server (`mcp:start webx`); `null` for none |
 
 `webx.mcp-auth` answers 401 as JSON without a user, 403 for an administrator switched off since
@@ -203,10 +204,30 @@ The permissions are the administrator's own, as the panel checks them (`HasPermi
 nobody to ask, so everything is listed. "Read only" on the consent screen sits above both: it
 refuses every tool that writes, whatever the person may do themselves.
 
+## The call log
+
+Every tool call lands in `mcp_calls`: who the agent acted as (`cms_user_id`), on which
+connection (`grant_id`), which tool, the arguments, whether it was a dry run, whether it was
+answered or refused and with what words, and how long it took. It is written in one place,
+around the whole of the call — so a refusal at the door for a scope, a read-only connection or
+a missing permission is a row, and so is what the handler threw. A handler that answers
+`['ok' => false, 'reason' => …]` is written down as refused too: that is what the person
+reading the log would call it.
+
+No secret reaches it. The token and the headers are never looked at, and any argument named
+like one — `password`, `token`, `api_key`, `secret`, `authorization` — is blanked before
+writing. Arguments are cut to `calls.arguments_length` characters. There is deliberately no
+link from a call to a page or a file: tools are about different things, and a log that
+pretended otherwise would be wrong more often than useful.
+
+`webx:mcp:prune-calls` removes rows older than `calls.days` and runs nightly on the scheduler;
+`null` keeps them forever, `calls.enabled` false writes nothing. `webx-ui/module-auth` shows
+the log in the panel, next to the administrators, behind `admins.audit`.
+
 ## What is not here yet
 
-A call log, a queue of changes awaiting approval in the panel, a screen for the connections, and
-keys for machines — CI and scripts, which have no browser to send anybody to.
+A queue of changes awaiting approval in the panel, a screen for the connections, and keys for
+machines — CI and scripts, which have no browser to send anybody to.
 
 ## Licence
 
