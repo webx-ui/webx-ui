@@ -1,4 +1,4 @@
-import type { Admin, AgentCall, Role } from '../../../../packages/module-auth/src/types'
+import type { Admin, AgentCall, Connection, Role } from '../../../../packages/module-auth/src/types'
 import { admins } from './inbox'
 
 /**
@@ -413,4 +413,70 @@ export function listCalls(query: URLSearchParams): {
     },
     filters: { users, tools: [...new Set(agentCalls.map((call) => call.tool))].sort() },
   }
+}
+
+/**
+ * The agents these three let in.
+ *
+ * One each, and one that was ended, because that is what the list is read for: Anna's Claude
+ * with everything she can do, Dmytro's Cursor kept to reading — which is why half his calls
+ * above are refusals — and Olha's Codex, disconnected a week ago and still in the log.
+ */
+export const connections: Connection[] = [
+  {
+    id: 1,
+    client: 'Claude',
+    host: 'claude.ai',
+    read_only: false,
+    user: { id: anna, name: admins.find((one) => one.id === anna)?.name ?? null },
+    connected_at: at(14, 11, 30),
+    last_used_at: at(0, 9, 16),
+    revoked_at: null,
+  },
+  {
+    id: 2,
+    client: 'Cursor',
+    host: 'cursor.sh',
+    read_only: true,
+    user: { id: dmytro, name: admins.find((one) => one.id === dmytro)?.name ?? null },
+    connected_at: at(6, 18, 5),
+    last_used_at: at(1, 14, 31),
+    revoked_at: null,
+  },
+  {
+    id: 3,
+    client: 'Codex',
+    host: 'chatgpt.com',
+    read_only: false,
+    user: { id: olha, name: admins.find((one) => one.id === olha)?.name ?? null },
+    connected_at: at(30, 10, 0),
+    last_used_at: at(9, 16, 45),
+    revoked_at: at(7, 12, 0),
+  },
+]
+
+/** `GET /auth/connections`: this person's, or everybody's for whoever may see them. */
+export function listConnections(query: URLSearchParams): {
+  data: Connection[]
+  meta: { scope: 'mine' | 'all'; can_see_everybody: boolean }
+} {
+  const all = query.get('all') === '1'
+
+  return {
+    // The playground signs everybody in as Anna, and she is a super administrator — so both
+    // lists are reachable here, and `mine` is hers.
+    data: all ? connections : connections.filter((one) => one.user.id === anna),
+    meta: { scope: all ? 'all' : 'mine', can_see_everybody: true },
+  }
+}
+
+/** `DELETE /auth/connections/{id}`: the row stays, the connection ends. */
+export function endConnection(id: number): Connection {
+  const found = connections.find((one) => one.id === id)
+
+  if (found === undefined) return connections[0]
+
+  found.revoked_at = new Date().toISOString()
+
+  return found
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use WebxUi\Auth\Http\Controllers\AdminController;
+use WebxUi\Auth\Http\Controllers\ConnectionController;
 use WebxUi\Auth\Http\Controllers\CsrfCookieController;
 use WebxUi\Auth\Http\Controllers\McpCallController;
 use WebxUi\Auth\Http\Controllers\MeController;
@@ -36,6 +37,13 @@ Route::prefix((string) config('webx-admin.api_path').'/auth')
             Route::put('me', ProfileController::class)->name('me.update');
             Route::put('locale', PanelLocaleController::class)->name('locale');
             Route::put('theme', PanelThemeController::class)->name('theme');
+
+            // The agents this person let in, like the profile above: your own connections are
+            // yours to see and to end, and somebody else's needs `admins.manage` — which the
+            // controller asks for itself, because one endpoint answers both questions.
+            Route::get('connections', [ConnectionController::class, 'index'])->name('connections.index');
+            Route::delete('connections/{connection}', [ConnectionController::class, 'destroy'])
+                ->name('connections.destroy');
 
             // Reading the list is not managing it: a module that wants to show who wrote
             // something, or offer a picker of people to assign work to, needs the first and

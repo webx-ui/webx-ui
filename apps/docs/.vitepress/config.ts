@@ -32,6 +32,7 @@ export default defineConfig({
             { text: 'Lists', link: '/guide/lists' },
             { text: 'The file manager', link: '/guide/media' },
             { text: 'Administrators', link: '/guide/admins' },
+            { text: 'AI agents', link: '/guide/agents' },
             { text: 'Pages', link: '/guide/pages' },
             { text: 'Blog', link: '/guide/blog' },
             { text: 'Inbox', link: '/guide/inbox' },

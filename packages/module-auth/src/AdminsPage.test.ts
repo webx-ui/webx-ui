@@ -51,8 +51,9 @@ function panel(permissions: string[], current: 'admins' | 'calls' = 'admins') {
 }
 
 describe('WxAdminsPage', () => {
-  it('shows the calls view only to somebody who may audit', async () => {
-    const { wrapper } = panel(['admins.manage'])
+  it('offers each further view only to somebody who may see it, and no strip for one view', async () => {
+    // Reading the list is not managing it and not auditing it: one view is no view.
+    const { wrapper } = panel(['admins.view'])
     await flushPromises()
 
     expect(wrapper.find('.wx-tabs').exists()).toBe(false)
@@ -61,8 +62,19 @@ describe('WxAdminsPage', () => {
     const { wrapper: auditor } = panel(['admins.audit'])
     await flushPromises()
 
-    const tabs = auditor.findAll('.wx-tabs__tab').map((tab) => tab.text())
-    expect(tabs).toEqual(['Administrators', 'Agent calls'])
+    expect(auditor.findAll('.wx-tabs__tab').map((tab) => tab.text())).toEqual([
+      'Administrators',
+      'Agent calls',
+    ])
+
+    // Everybody's connections are the same question as everybody's accounts.
+    const { wrapper: manager } = panel(['admins.manage'])
+    await flushPromises()
+
+    expect(manager.findAll('.wx-tabs__tab').map((tab) => tab.text())).toEqual([
+      'Administrators',
+      'Connections',
+    ])
   })
 
   it('draws the log on its own address, and keeps `Add` for the people', async () => {

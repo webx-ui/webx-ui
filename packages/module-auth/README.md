@@ -66,6 +66,27 @@ Placed outside a panel, with no server to ask, the card falls back to the Englis
 
 `WxLoginCard` is exported for a panel that wants to place it itself.
 
+## The sections
+
+Two of them, alongside the plugin:
+
+```ts
+import { admins, connect } from '@webx-ui/module-auth'
+
+createAdmin({ modules: [admins(), connect()] })
+```
+
+`admins()` is the people, and two more views of the same section for whoever may see them:
+**Agent calls** (`admins.audit`) — every tool call an agent made, narrowed by person, tool and
+outcome — and **Connections** (`admins.manage`), the agents everybody has let in, with a
+button that ends one.
+
+`connect()` is the page that tells somebody how to connect their own agent: the address, a
+button that copies it, three steps per client, one-click links for Cursor and VS Code, and
+their own connections underneath. It carries no permission — whoever got into the panel may
+connect an agent, and the agent cannot do anything they cannot. Both appear only where the
+server reports them, so a panel with no agent server has no such entry.
+
 ## The session
 
 ```ts

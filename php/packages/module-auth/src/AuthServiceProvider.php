@@ -44,7 +44,14 @@ class AuthServiceProvider extends ServiceProvider
 
         $this->routeConsent($router);
 
-        $this->app->make(ModuleRegistry::class)->register(new AuthModule);
+        $registry = $this->app->make(ModuleRegistry::class);
+        $registry->register(new AuthModule);
+
+        $connect = new ConnectModule($this->app->make('config'));
+
+        if ($connect->available()) {
+            $registry->register($connect);
+        }
 
         /** @var Dispatcher $events */
         $events = $this->app->make('events');
