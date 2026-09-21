@@ -6,6 +6,8 @@ namespace WebxUi\Mcp\Grants;
 
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Carbon;
+use Laravel\Passport\RefreshToken;
+use Laravel\Passport\Token;
 use WebxUi\Mcp\Scopes;
 use WebxUi\Mcp\Tool;
 
@@ -80,6 +82,45 @@ final class Grants
         }
 
         return $this->found[$key];
+    }
+
+    /**
+     * End a connection: the row says so, and the tokens behind it stop working.
+     *
+     * Both kinds of token, which is the whole point. An access token lives an hour, so
+     * revoking only those would leave the agent a month of refreshing — the connection would
+     * outlive the decision to end it by exactly as long as nobody was looking.
+     *
+     * The row is kept rather than deleted. It is what the call log points at, and a line
+     * saying the connection was ended on the 21st is worth more than a gap where it was.
+     */
+    public function revoke(Grant $grant): void
+    {
+        if (! $grant->isRevoked()) {
+            $grant->forceFill(['revoked_at' => Carbon::now()])->saveQuietly();
+        }
+
+        // Anything looked up earlier in this request was told the connection was live.
+        $this->found = [];
+
+        if (! class_exists(Token::class)) {
+            return;
+        }
+
+        $tokens = Token::query()
+            ->where('user_id', $grant->cms_user_id)
+            ->where('client_id', $grant->oauth_client_id)
+            ->where('revoked', false)
+            ->pluck('id');
+
+        if ($tokens->isEmpty()) {
+            return;
+        }
+
+        // The refresh tokens first: they are reached through the access tokens, and there is
+        // no order in which that is cheaper to do the other way round.
+        RefreshToken::query()->whereIn('access_token_id', $tokens)->update(['revoked' => true]);
+        Token::query()->whereIn('id', $tokens)->update(['revoked' => true]);
     }
 
     /**

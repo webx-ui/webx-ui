@@ -71,7 +71,7 @@ import {
   receive,
   recount as mediaRecount,
 } from './media'
-import { adminRows, listCalls, roles as adminRoles } from './agents'
+import { adminRows, endConnection, listCalls, listConnections, roles as adminRoles } from './agents'
 import { dictionary, panelLocales } from './lang'
 import { screen, screenNames } from './screens'
 
@@ -253,6 +253,18 @@ on('GET', '/manifest', ({ locale }) => ({
         group: 'system',
         permissions: ['admins.view', 'admins.manage', 'admins.audit'],
         meta: { roles: true, loginLog: true },
+      },
+      {
+        id: 'connect',
+        title: line(locale, 'webx-auth', 'connect.title'),
+        icon: 'link',
+        order: 950,
+        group: 'system',
+        /* Nobody needs one: whoever got into the panel may connect an agent. */
+        permissions: [],
+        /* Not a real door — there is no MCP server behind the playground — but the address
+           is what the page is about, and a made-up host would read as one. */
+        meta: { url: 'https://webx-demo.test/api/cms/mcp' },
       },
     ],
     screens: screenNames,
@@ -1036,6 +1048,12 @@ on('GET', '/auth/admins', ({ query }) => {
 })
 
 on('GET', '/auth/mcp-calls', ({ query }) => listCalls(query))
+
+on('GET', '/auth/connections', ({ query }) => listConnections(query))
+
+on('DELETE', '/auth/connections/(\\d+)', ({ params }) => ({
+  data: endConnection(Number(params[0])),
+}))
 
 on('GET', '/inbox/forms/(\\d+)/submissions', ({ params, query }) => {
   const formId = Number(params[0])
