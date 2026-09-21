@@ -62,6 +62,31 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function the_tools_are_behind_the_permissions_the_panel_asks_for_the_same_work(): void
+    {
+        $registry = $this->app->make(ToolRegistry::class);
+
+        // The module ids are `articles`, `rubrics` and `tags`, and none of the permissions is
+        // named after them: every tool says which one it is behind.
+        $this->assertSame(['blog.articles.view', 'blog.articles.manage'], $registry->tool('articles_list')->permissions());
+        $this->assertSame(['blog.articles.manage'], $registry->tool('articles_publish')->permissions());
+        $this->assertSame(['blog.articles.view', 'blog.articles.manage', 'blog.taxonomy.manage'], $registry->tool('rubrics_list')->permissions());
+        $this->assertSame(['blog.taxonomy.manage'], $registry->tool('tags_merge')->permissions());
+
+        $reader = $this->editor(['blog.articles.view']);
+
+        $this->agent('articles_list', [], $reader)->assertOk();
+        $this->agent('rubrics_list', [], $reader)->assertOk();
+        $this->agent('articles_create', ['title' => 'Nope'], $reader)->assertHasErrors(['[blog.articles.manage]']);
+        $this->agent('tags_merge', ['into' => 1, 'tags' => [2]], $reader)->assertHasErrors(['[blog.taxonomy.manage]']);
+
+        $taxonomist = $this->editor(['blog.taxonomy.manage']);
+
+        $this->agent('rubrics_list', [], $taxonomist)->assertOk();
+        $this->agent('articles_list', [], $taxonomist)->assertHasErrors(['[blog.articles.view] or [blog.articles.manage]']);
+    }
+
+    #[Test]
     public function the_list_answers_the_blog_and_narrows_by_state_rubric_and_tag(): void
     {
         $repairs = $this->rubric('repairs');

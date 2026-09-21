@@ -89,6 +89,7 @@ final class ArticleTools
                     'page' => ['type' => 'integer', 'description' => 'Which page of the list; 1 when omitted.'],
                     'per_page' => ['type' => 'integer', 'description' => 'How many on a page, at most '.self::PER_PAGE.'.'],
                 ]],
+                permission: ['blog.articles.view', 'blog.articles.manage'],
             ),
 
             Tool::read(
@@ -103,6 +104,7 @@ final class ArticleTools
                     'article' => $article,
                     'blocks' => ['type' => 'boolean', 'description' => 'The block tree in the values; true when omitted.'],
                 ], 'required' => ['article']],
+                permission: ['blog.articles.view', 'blog.articles.manage'],
             ),
 
             Tool::mutating(
@@ -118,6 +120,7 @@ final class ArticleTools
                     'slug' => $text + ['description' => 'The last segment of the address, per language; made from the title when omitted.'],
                     'values' => ['type' => 'object', 'description' => 'The rest of the editor\'s fields — the lead, the rubrics, the tags, the SEO card — as articles_get returns them.'],
                 ], 'required' => ['title']],
+                permission: 'blog.articles.manage',
             ),
 
             Tool::mutating(
@@ -133,6 +136,7 @@ final class ArticleTools
                     'values' => ['type' => 'object', 'description' => 'Field name → value, as articles_get returns them. Localized fields take { "en": "…" }.'],
                     'revision' => ['type' => 'string', 'description' => 'The revision articles_get returned. Left out, the write goes in over whatever happened since.'],
                 ], 'required' => ['article', 'values']],
+                permission: 'blog.articles.manage',
             ),
 
             Tool::mutating(
@@ -146,6 +150,7 @@ final class ArticleTools
                     'article' => $article,
                     'at' => ['type' => 'string', 'description' => 'The day and hour it goes out, with an offset: "2026-10-01T09:00:00+03:00". Now, or the day already chosen, when omitted.'],
                 ], 'required' => ['article']],
+                permission: 'blog.articles.manage',
             ),
 
             Tool::mutating(
@@ -154,6 +159,7 @@ final class ArticleTools
                 .'address stays reserved and whatever was being prepared is still being prepared.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->unpublish($arguments)),
                 ['properties' => ['article' => $article], 'required' => ['article']],
+                permission: 'blog.articles.manage',
             ),
 
             Tool::mutating(
@@ -164,6 +170,7 @@ final class ArticleTools
                 .'as nobody has taken its address in the meantime.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->delete($arguments)),
                 ['properties' => ['article' => $article], 'required' => ['article']],
+                permission: 'blog.articles.manage',
             ),
         ];
     }

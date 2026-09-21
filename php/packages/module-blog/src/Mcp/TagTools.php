@@ -64,6 +64,7 @@ final class TagTools
                     'page' => ['type' => 'integer', 'description' => 'Which page of the list; 1 when omitted.'],
                     'per_page' => ['type' => 'integer', 'description' => 'How many on a page, at most '.self::PER_PAGE.'.'],
                 ]],
+                permission: ['blog.articles.view', 'blog.articles.manage', 'blog.taxonomy.manage'],
             ),
 
             Tool::mutating(
@@ -84,6 +85,7 @@ final class TagTools
                     ],
                     'redirect' => ['type' => 'boolean', 'description' => 'Leave a permanent redirect from each old address onto the survivor. False when omitted: a tag made by mistake this morning does not deserve one.'],
                 ], 'required' => ['keep', 'merged']],
+                permission: 'blog.taxonomy.manage',
             ),
         ];
     }
