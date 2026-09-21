@@ -76,6 +76,7 @@ export default defineConfig({
             { text: 'Image', link: '/components/image' },
             { text: 'ImageEditor', link: '/components/image-editor' },
             { text: 'Segmented', link: '/components/segmented' },
+            { text: 'ThemeSwitch', link: '/components/theme-switch' },
           ],
         },
         {

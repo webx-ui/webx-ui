@@ -165,6 +165,13 @@ that is already in a library. Everything on screen is geometry, and the picture 
 once — at the end, under one transform — because a chain of canvases softens a photograph at every
 link.
 
+ThemeSwitch ✅ — light, dark, or whatever the machine says: see
+[ThemeSwitch](/components/theme-switch). Three states rather than two, because a toggle cannot
+say _I have not decided_, which is the state most people are in — and following the machine is
+what makes a panel go dark at sunset along with everything else on the desk. It reports the
+choice and nothing else: applying it is `applyTheme()`, and remembering it belongs to whoever
+knows where that person's settings live.
+
 SortableList ✅ — a list whose order is the point, dragged by a grip or moved with the arrow keys:
 see [SortableList](/components/sortable-list).
 
