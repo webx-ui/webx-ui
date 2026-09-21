@@ -254,7 +254,7 @@ final class PageController
      */
     private function bin(string $term): Collection
     {
-        $query = Page::onlyTrashed()->whereNull('trashed_with')->with('routes');
+        $query = Page::onlyTrashed()->whereNull('trashed_with')->with('routes')->withBranchCount();
 
         /** @var Collection<int, Page> $trashed */
         $trashed = $this->searching($query, $term)
@@ -269,7 +269,7 @@ final class PageController
      */
     private function listing(Request $request): Builder
     {
-        $query = Page::query()->with('routes')->withCount('children');
+        $query = Page::query()->with('routes')->withCount('children')->withBranchCount();
 
         return $this->withStatus($query, (string) $request->query('status', ''));
     }

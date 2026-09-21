@@ -337,6 +337,14 @@ export function recount(): void {
 
   for (const record of pages.values()) {
     if (record.row.deleted_at !== null) {
+      // A page in the bin carries the branch that went down with it, which is what a restore
+      // brings back; it is under nobody on the site, so it adds to no live page's count.
+      const root = record.row.trashed_with === null ? null : pages.get(record.row.trashed_with)
+
+      if (root !== undefined && root !== null) {
+        root.row.descendants_count += 1
+      }
+
       continue
     }
 

@@ -424,6 +424,26 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function a_page_in_the_bin_is_counted_under_nothing_on_the_site(): void
+    {
+        $catalog = $this->page('catalog');
+        $shoes = $this->page('shoes', $catalog);
+        $red = $this->page('red', $shoes);
+
+        $red->delete();
+
+        // `descendants` is the size of what a delete would take, and a page already in the bin
+        // is not part of it — the bounds it keeps for its own restore said otherwise.
+        $content = $this->content($this->agent('get', ['page' => $shoes->getKey()]));
+
+        $this->assertSame(0, $content['page']['descendants']);
+
+        // The trail above it answers the same way: the home page with two pages under it and
+        // the catalogue with one.
+        $this->assertSame([2, 1], array_column($content['ancestors'], 'descendants'));
+    }
+
+    #[Test]
     public function the_home_page_keeps_its_place_and_its_address(): void
     {
         $home = $this->home();
