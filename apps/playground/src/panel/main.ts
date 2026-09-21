@@ -1,4 +1,5 @@
 import { createAdmin, type Admin, type AdminPlugin } from '@webx-ui/module-admin'
+import { admins } from '@webx-ui/module-auth'
 import { blocks } from '@webx-ui/module-blocks'
 import { blog } from '@webx-ui/module-blog'
 import { inbox } from '@webx-ui/module-inbox'
@@ -37,7 +38,9 @@ const admin = createAdmin({
   el: '#panel',
   basePath: '/panel',
   apiPath: '/api/cms',
-  modules: [inbox(), pages(), ...blog(), media(), blocks(), seo()],
+  // The administrators section without the sign-in plugin: the session above stands in for
+  // it, and what is looked at here is the list and the trail of what agents did.
+  modules: [inbox(), pages(), ...blog(), media(), blocks(), seo(), admins()],
   plugins: [session],
   userMenu: UserMenu,
 })

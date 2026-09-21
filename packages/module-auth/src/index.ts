@@ -121,7 +121,20 @@ export { createAdminsApi, type AdminsApi } from './admins'
 export { selectAdmin, selectAdmins, type AdminPickerOptions } from './selectAdmin'
 export { default as WxAdminsPage } from './AdminsPage.vue'
 export { default as WxAdminList } from './AdminList.vue'
-export type { Admin, AdminInput, AdminPage, AdminQuery, AdminRole, Role } from './types'
+export { default as WxAgentCallList } from './CallList.vue'
+export type {
+  Admin,
+  AdminInput,
+  AdminPage,
+  AdminQuery,
+  AdminRole,
+  AgentCall,
+  AgentCallFilters,
+  AgentCallOutcome,
+  AgentCallPage,
+  AgentCallQuery,
+  Role,
+} from './types'
 export {
   createAuthSession,
   provideAuth,

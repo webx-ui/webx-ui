@@ -73,6 +73,7 @@ export default defineConfig({
       pkg('tokens'),
       pkg('schema'),
       pkg('module-admin'),
+      pkg('module-auth'),
       pkg('module-blocks'),
       pkg('module-blog'),
       pkg('module-inbox'),

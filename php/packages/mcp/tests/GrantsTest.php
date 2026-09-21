@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Mcp\Tests;
 
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Carbon;
 use Laravel\Mcp\Server\Transport\FakeTransporter;
 use PHPUnit\Framework\Attributes\Test;
@@ -23,19 +22,6 @@ use WebxUi\Mcp\Tests\Fixtures\TokenUser;
 final class GrantsTest extends TestCase
 {
     private const CLIENT = '9d2f6c1e-0a7b-4c3d-8e5f-1a2b3c4d5e6f';
-
-    /**
-     * @param  Application  $app
-     */
-    protected function defineEnvironment($app): void
-    {
-        $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $this->artisan('migrate')->run();
-    }
 
     #[Test]
     public function a_read_only_connection_may_look_and_may_not_change(): void
