@@ -1,5 +1,12 @@
 # @webx-ui/php
 
+## 0.27.1
+
+### Patch Changes
+
+- d5b26d6: The dumping tool takes its extra flags from the environment, because only the machine knows it needs them
+- 1d3a8a6: The consent screen points at the tab that actually holds the connections
+
 ## 0.27.0
 
 ### Minor Changes
