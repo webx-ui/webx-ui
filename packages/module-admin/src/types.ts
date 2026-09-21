@@ -28,6 +28,23 @@ export interface Manifest {
   modules: ManifestModule[]
   /** Names of the screens the server can hand out — the trees themselves travel on request. */
   screens?: string[]
+  /**
+   * When the database was last dumped. Absent or `null` on a site that has switched the
+   * nightly backup off, and present with `at: null` on one that has it on and has never
+   * produced a file — which is the case the panel most needs to say out loud.
+   */
+  backup?: ManifestBackup | null
+}
+
+/**
+ * The nightly dump, as the server sees it: the newest file in the backup directory and how
+ * big it is. There is no record of it anywhere else on purpose — a task that failed is the
+ * file that is not there.
+ */
+export interface ManifestBackup {
+  /** ISO-8601, UTC. `null` when the directory is empty. */
+  at: string | null
+  bytes: number | null
 }
 
 /**

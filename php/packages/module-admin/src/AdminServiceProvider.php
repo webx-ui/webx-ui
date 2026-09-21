@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Backups\Backups;
+use WebxUi\Admin\Console\BackupCommand;
 use WebxUi\Admin\Console\InstallCommand;
 use WebxUi\Admin\Console\MakeModuleCommand;
 use WebxUi\Admin\Console\PanelCommand;
@@ -73,6 +76,10 @@ class AdminServiceProvider extends ServiceProvider
             return $types;
         });
 
+        // The backup directory has no state anywhere else, so this holds no state either: it
+        // is a singleton to be injectable by name, not because it remembers anything.
+        $this->app->singleton(Backups::class);
+
         $this->app->bind(
             ManifestBuilder::class,
             static fn ($app): ManifestBuilder => new ManifestBuilder(
@@ -80,6 +87,7 @@ class AdminServiceProvider extends ServiceProvider
                 $app->make('config'),
                 $app->make(Locales::class),
                 $app->make(ScreenRegistry::class),
+                $app->make(Backups::class),
                 // Optional on purpose: a site without `module-settings` has nowhere to put a
                 // logo, and the frame must not require the section that holds one.
                 $app->bound(BrandingSource::class) ? $app->make(BrandingSource::class) : null,
@@ -95,6 +103,7 @@ class AdminServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         $this->registerDraftMacro();
+        $this->registerBackupSchedule();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -115,11 +124,41 @@ class AdminServiceProvider extends ServiceProvider
         ], 'webx-admin-lang');
 
         $this->commands([
+            BackupCommand::class,
             InstallCommand::class,
             MakeModuleCommand::class,
             PanelCommand::class,
             PruneVersionsCommand::class,
         ]);
+    }
+
+    /**
+     * The nightly dump, put on the schedule by the package rather than by the site.
+     *
+     * A backup nobody remembered to schedule is the ordinary way to have no backup, so the
+     * default is on and the site turns it off rather than on. What the site does have to
+     * supply is the system cron behind `schedule:run` — there is no way to do that from here,
+     * and the panel's own line is what notices when it is missing.
+     *
+     * `callAfterResolving` because the scheduler is built on the first console command that
+     * needs one: asking for it here would build it during boot, before the application has
+     * finished deciding what it is.
+     */
+    private function registerBackupSchedule(): void
+    {
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $backups = $this->app->make(Backups::class);
+
+            if (! $backups->enabled()) {
+                return;
+            }
+
+            $schedule->command(BackupCommand::class)
+                ->dailyAt($backups->at())
+                // Two web servers behind one database would otherwise dump it twice a night.
+                ->onOneServer()
+                ->withoutOverlapping();
+        });
     }
 
     /**
