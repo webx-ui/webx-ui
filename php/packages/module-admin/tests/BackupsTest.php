@@ -227,6 +227,24 @@ final class BackupsTest extends TestCase
     }
 
     #[Test]
+    public function extra_flags_reach_the_tool_as_a_list_or_as_a_line(): void
+    {
+        $this->assertContains(
+            '--ssl-verify-server-cert=0',
+            $this->mysqlDumper(['options' => ['--ssl-verify-server-cert=0']])->mysqlCommand('x'),
+        );
+
+        // What an environment variable can carry, because it cannot carry a list. A container is
+        // where this comes up: the client in the image is not the server it is dumping.
+        $line = $this->mysqlDumper(['options' => '  --ssl-verify-server-cert=0   --set-gtid-purged=OFF '])
+            ->mysqlCommand('x');
+
+        $this->assertContains('--ssl-verify-server-cert=0', $line);
+        $this->assertContains('--set-gtid-purged=OFF', $line);
+        $this->assertNotContains('', $line);
+    }
+
+    #[Test]
     public function the_password_is_in_a_file_and_never_in_an_argument(): void
     {
         $dumper = $this->mysqlDumper();

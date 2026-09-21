@@ -327,11 +327,22 @@ final class Dumper
     }
 
     /**
+     * Extra flags for the dumping tool.
+     *
+     * A published config names them one per line; an environment variable has no other shape
+     * than a string, so a string is split on whitespace. A flag with a space inside it is not
+     * reachable this way and does not need to be: these are `--ssl-verify-server-cert=0` and
+     * its kind.
+     *
      * @return list<string>
      */
     private function options(): array
     {
         $options = $this->settings['options'] ?? [];
+
+        if (is_string($options)) {
+            $options = preg_split('/\s+/', trim($options), flags: PREG_SPLIT_NO_EMPTY) ?: [];
+        }
 
         return array_values(array_map(strval(...), is_array($options) ? $options : []));
     }
