@@ -116,12 +116,15 @@ function isPageOnThisSite(next: string): boolean {
   }
 }
 
-export { admins, type AdminsOptions } from './module'
+export { admins, connect, type AdminsOptions, type AdminsView, type ConnectOptions } from './module'
 export { createAdminsApi, type AdminsApi } from './admins'
+export { createConnectionsApi, type ConnectionsApi } from './connections'
 export { selectAdmin, selectAdmins, type AdminPickerOptions } from './selectAdmin'
 export { default as WxAdminsPage } from './AdminsPage.vue'
 export { default as WxAdminList } from './AdminList.vue'
 export { default as WxAgentCallList } from './CallList.vue'
+export { default as WxConnectionList } from './ConnectionList.vue'
+export { default as WxConnectPage } from './ConnectPage.vue'
 export type {
   Admin,
   AdminInput,
@@ -133,6 +136,9 @@ export type {
   AgentCallOutcome,
   AgentCallPage,
   AgentCallQuery,
+  Connection,
+  ConnectionScope,
+  Connections,
   Role,
 } from './types'
 export {

@@ -125,6 +125,29 @@ that actually appear in the log.
 (`pages_create`) and `outcome` (`ok`, `failed`, `dry`) as query parameters; `user=none` is the
 stdio server, where there was nobody to act as. Retention is `webx-mcp.calls.days`.
 
+### Connections
+
+An agent's access refreshes itself for a month, so a connection lives long enough to be worth
+seeing and ending. `GET /api/cms/auth/connections` lists the ones this person made;
+`?all=1` lists everybody's and needs `admins.manage`. `DELETE /api/cms/auth/connections/{id}`
+ends one — your own always, somebody else's with `admins.manage` — and revokes the refresh
+token as well as the access token, without which the connection would outlive the decision by
+a month. The row is kept, greyed in the list: the call log points at it.
+
+The panel shows everybody's as the **Connections** view of the administrators section, and a
+person's own at the foot of the connect page.
+
+### Connect an agent
+
+A second section, `connect`, in the system group and behind no permission at all: the address
+of this panel for agents, a button that copies it, three steps for each client, and one-click
+links for Cursor and VS Code. The address carries no secret — that is the point of the OAuth
+path — so it is printable, readable aloud and safe to leave on a page.
+
+It is registered only where there is a door to connect to: Passport installed and
+`webx-mcp.path` not `false`. The address it prints is `url(webx-mcp.path)`, absolute, because
+it is pasted into a program on another machine.
+
 ## Configuration
 
 `config/webx-auth.php`. If you keep your own middleware stack on the panel's API, set

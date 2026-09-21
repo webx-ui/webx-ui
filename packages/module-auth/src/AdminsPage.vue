@@ -12,24 +12,27 @@ import { confirm, createModal, toast, type TabItem, type TabValue } from '@webx-
 import AdminDialog from './AdminDialog.vue'
 import AdminList from './AdminList.vue'
 import CallList from './CallList.vue'
+import ConnectionList from './ConnectionList.vue'
 import { createAdminsApi } from './admins'
+import type { AdminsView } from './module'
 import { useAuthMessages } from './i18n'
 import type { Admin } from './types'
 
 /**
- * The administrators section: the list, the form over it, and the trail of what their agents
- * did.
+ * The administrators section: the list, the form over it, the trail of what their agents did,
+ * and the agents themselves.
  *
  * A dialog rather than a second route for the form. Editing somebody is half a dozen fields,
  * and a screen that takes over the page for that loses the list you were reading — which is
  * where you decide who to open next.
  *
- * The agent calls are a second view of the same section rather than a section of their own:
- * "who did what" is a question about these people, whether a hand or a program was at the
- * other end. Two routes rather than two panels of one, because they are two tables with
- * their own paging and filters, and a view that quietly resets both when you come back to it
- * is worse than a second address. The view is shown to whoever holds `admins.audit`, the
- * permission the sign-in trail is behind.
+ * The calls and the connections are further views of the same section rather than sections of
+ * their own: "who did what" is a question about these people, whether a hand or a program was
+ * at the other end. A route each rather than panels of one, because each has its own paging
+ * and filters, and a view that quietly resets both when you come back to it is worse than a
+ * second address. The calls are behind `admins.audit`, the permission the sign-in trail is
+ * behind; everybody's connections are behind `admins.manage`, the one that is about other
+ * people's accounts.
  *
  * The heading and `Add` used to live inside the card, which made this the one section of the
  * panel with no line of its own at the top. They stand outside it now, where every other list
@@ -40,7 +43,7 @@ const props = withDefaults(
     /** The section's own path, for the address of the second view. */
     base?: string
     /** Which view is open. */
-    current?: 'admins' | 'calls'
+    current?: AdminsView
     avatarField?: Component
     resolveAvatar?: (key: string) => Promise<string | null>
   }>(),
@@ -72,15 +75,21 @@ const title = computed(
     t('admins.title'),
 )
 
-/* One view is no view: the strip is drawn only for somebody who can see the second. */
-const views = computed<TabItem[] | undefined>(() =>
-  canAudit
-    ? [
-        { value: 'admins', label: title.value },
-        { value: 'calls', label: t('calls.title') },
-      ]
-    : undefined,
-)
+/*
+ * One view is no view: the strip is drawn only for somebody who can see a second one.
+ *
+ * The connections here are everybody's, which is `admins.manage` — the permission that is
+ * already about other people's accounts. Your own live on the connect page, where anybody
+ * signed in reaches them without a permission at all.
+ */
+const views = computed<TabItem[] | undefined>(() => {
+  const items: TabItem[] = [{ value: 'admins', label: title.value }]
+
+  if (canAudit) items.push({ value: 'calls', label: t('calls.title') })
+  if (canManage) items.push({ value: 'connections', label: t('connections.title') })
+
+  return items.length > 1 ? items : undefined
+})
 
 const where = computed<TabValue>({
   get: () => props.current,
@@ -141,6 +150,7 @@ async function remove(admin: Admin): Promise<void> {
 <template>
   <wx-list-screen v-model:view="where" :title="title" :views="views" :actions="actions">
     <call-list v-if="current === 'calls'" />
+    <connection-list v-else-if="current === 'connections'" scope="all" />
     <admin-list
       v-else
       ref="list"

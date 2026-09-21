@@ -124,3 +124,33 @@ export interface AdminInput {
   locale?: string | null
   roles?: number[]
 }
+
+/**
+ * One agent somebody let into the panel, as `GET /api/cms/auth/connections` answers it.
+ *
+ * `client` is the name the client chose for itself on the consent screen and `host` is where
+ * the code was sent — both, always, because only the second is evidence. `revoked_at` is set
+ * on a connection that was ended: the row is kept, since it is what the call log points at.
+ */
+export interface Connection {
+  id: number
+  client: string
+  host: string
+  read_only: boolean
+  user: { id: number; name: string | null }
+  connected_at: string | null
+  last_used_at: string | null
+  revoked_at: string | null
+  [key: string]: unknown
+}
+
+/** The list, with what the reader may ask for next. */
+export interface Connections {
+  data: Connection[]
+  /** Which list this is: only this person's, or everybody's. */
+  scope: ConnectionScope
+  /** Whether everybody's is a list this reader would be allowed. */
+  canSeeEverybody: boolean
+}
+
+export type ConnectionScope = 'mine' | 'all'
