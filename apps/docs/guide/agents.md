@@ -170,6 +170,20 @@ should answer 401. The connect page does not appear in the menu on a panel with 
 connect to — `webx-mcp.path` set to `false`, or Passport missing — so an installation that has
 not done this simply has no such section.
 
+The page also has a front end, and a section appears only where both halves are:
+
+```ts
+import { admins, auth, connect } from '@webx-ui/module-auth'
+
+createAdmin({
+  modules: [/* … */ admins(), connect()],
+})
+```
+
+Leave that line out and the panel has no such entry, while the server goes on reporting the
+section — which looks exactly like the door being switched off, and sends you to the wrong
+half to find out why.
+
 ## What is deliberately not here
 
 - **A chat with the agent inside the panel.** Whoever wants to work through an agent pays for
