@@ -135,6 +135,7 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
     options.http ??
     createHttp({
       baseUrl: '',
+      csrfUrl: `${apiPath}/auth/csrf-cookie`,
       onUnauthenticated: () => {
         context.setUser(null)
         context.state.status = 'unauthenticated'

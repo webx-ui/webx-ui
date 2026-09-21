@@ -15,11 +15,13 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * The door of the HTTP server.
  *
- * Asks the configured guard — Sanctum's, reading a bearer token — for a user and answers 401
+ * Asks the configured guard — Passport's, reading a bearer token — for a user and answers 401
  * without one, as JSON: an MCP client is a program, and a redirect to a login page would be
- * a parse error to it. An administrator switched off since the token was issued is refused
- * too, the way the panel refuses a session of theirs. From here on the guard is the default,
- * so that `$request->user()` in a tool is this administrator.
+ * a parse error to it. `laravel/mcp` turns that 401 into the challenge a client follows to
+ * find the authorization server, so this is also where a connection begins. An administrator
+ * switched off since the token was issued is refused too, the way the panel refuses a session
+ * of theirs. From here on the guard is the default, so that `$request->user()` in a tool is
+ * this administrator.
  */
 final class AuthenticateAgent
 {
@@ -30,7 +32,7 @@ final class AuthenticateAgent
 
     public function handle(Request $request, Closure $next): Response
     {
-        $guard = (string) $this->config->get('webx-mcp.guard', 'sanctum');
+        $guard = (string) $this->config->get('webx-mcp.guard', 'api');
         $user = $this->auth->guard($guard)->user();
 
         if ($user === null) {

@@ -30,6 +30,16 @@ final class SignInTest extends TestCase
     }
 
     #[Test]
+    public function a_browser_can_fetch_the_csrf_cookie_before_it_has_signed_in(): void
+    {
+        // The panel's first write needs the `XSRF-TOKEN` cookie, and signing in is that
+        // first write. This used to be Sanctum's route, which left with the package.
+        $this->get('/api/cms/auth/csrf-cookie')
+            ->assertNoContent()
+            ->assertCookie('XSRF-TOKEN');
+    }
+
+    #[Test]
     public function the_password_is_never_in_the_answer(): void
     {
         $this->admin();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use WebxUi\Auth\Http\Controllers\AdminController;
+use WebxUi\Auth\Http\Controllers\CsrfCookieController;
 use WebxUi\Auth\Http\Controllers\MeController;
 use WebxUi\Auth\Http\Controllers\PanelLocaleController;
 use WebxUi\Auth\Http\Controllers\PanelThemeController;
@@ -17,6 +18,10 @@ Route::prefix((string) config('webx-admin.api_path').'/auth')
     ->middleware(['web', 'webx.panel-locale'])
     ->name('webx.auth.')
     ->group(function (): void {
+        // The cookie a browser needs before its first write, and the only thing here that is
+        // public on purpose rather than by necessity.
+        Route::get('csrf-cookie', CsrfCookieController::class)->name('csrf-cookie');
+
         // Public by necessity, throttled because of it.
         Route::post('login', [SessionController::class, 'store'])
             ->middleware('throttle:'.(string) config('webx-auth.throttle'))
