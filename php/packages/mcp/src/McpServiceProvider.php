@@ -19,6 +19,7 @@ use Laravel\Passport\Contracts\AuthorizationViewResponse;
 use Laravel\Passport\Passport;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Mcp\Console\ListToolsCommand;
+use WebxUi\Mcp\Grants\Grants;
 use WebxUi\Mcp\Http\Middleware\AuthenticateAgent;
 use WebxUi\Mcp\Registry\ToolRegistry;
 use WebxUi\Mcp\Server\WebxServer;
@@ -38,6 +39,10 @@ class McpServiceProvider extends ServiceProvider
             static fn ($app): ToolRegistry => new ToolRegistry($app->make(ModuleRegistry::class)),
         );
 
+        // Scoped, not a singleton: it remembers what it looked up, and a memory that outlived
+        // the request would keep a connection alive after the person switched it off.
+        $this->app->scoped(Grants::class);
+
         $this->configurePassport();
     }
 
@@ -46,6 +51,8 @@ class McpServiceProvider extends ServiceProvider
         /** @var Router $router */
         $router = $this->app->make('router');
         $router->aliasMiddleware('webx.mcp-auth', AuthenticateAgent::class);
+
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         $this->registerTokenGuard();
         $this->registerOAuthRoutes($router);

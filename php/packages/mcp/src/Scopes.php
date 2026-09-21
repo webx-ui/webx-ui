@@ -37,7 +37,7 @@ final class Scopes
             return true;
         }
 
-        if (self::token($user) === null) {
+        if (self::tokenOf($user) === null) {
             return true;
         }
 
@@ -51,7 +51,7 @@ final class Scopes
      * asking `tokenCan()` alone would not tell the two apart, and a session user would be
      * refused everything rather than left to the middleware.
      */
-    private static function token(Authenticatable $user): ?object
+    public static function tokenOf(Authenticatable $user): ?object
     {
         foreach (['currentAccessToken', 'token'] as $method) {
             if (! method_exists($user, $method)) {

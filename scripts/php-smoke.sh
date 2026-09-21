@@ -562,8 +562,10 @@ send_json() {
 # shape that `route:cache` is worst at.
 #
 # Sets MCP_TOKEN. Has to run while somebody is signed in: the consent screen is a panel page.
+# The second argument is the "read only" box on that screen, 1 to tick it; each call registers
+# a client of its own, so two connections on different terms can live side by side.
 connect_an_agent() {
-    local phase="$1" verifier challenge client_id consent auth_token location code
+    local phase="$1" read_only="${2:-0}" verifier challenge client_id consent auth_token location code
 
     verifier="$("$PHP_BIN" -r 'echo rtrim(strtr(base64_encode(random_bytes(32)), "+/", "-_"), "=");')"
     # `--` because the verifier is base64url and one in sixty-four of them starts with a dash,
@@ -605,6 +607,12 @@ connect_an_agent() {
         || fail "[$phase] the consent page did not draw: $(printf '%s' "$consent" | head -c 400)"
     printf '%s' "$consent" | grep -q 'localhost' \
         || fail "[$phase] the consent page does not say where the code is sent"
+    # The panel's own screen and not the plain one: the warning about responsibility is the
+    # line a grant on file says the person was shown.
+    printf '%s' "$consent" | grep -q 'You are responsible for what the agent does' \
+        || fail "[$phase] the consent page is not the panel's own"
+    printf '%s' "$consent" | grep -q 'name="read_only"' \
+        || fail "[$phase] the consent page offers no read-only box"
 
     auth_token="$(printf '%s' "$consent" | grep -o 'name="auth_token" value="[^"]*"' | head -1 \
         | sed 's/.*value="//; s/"$//')"
@@ -612,9 +620,10 @@ connect_an_agent() {
 
     # Approving is a POST through the `web` group by an administrator — the step whose guard is
     # baked into the route when Passport boots, and which looks fine until somebody presses it.
+    # It goes to the panel's own route, which writes the consent down on its way to Passport.
     location="$(curl -s -o /dev/null -w '%{redirect_url}' -c "$COOKIES" -b "$COOKIES" \
         -H "X-XSRF-TOKEN: $(xsrf_token)" \
-        -d "auth_token=$auth_token" "$BASE/oauth/authorize")"
+        -d "auth_token=$auth_token" -d "read_only=$read_only" "$BASE/oauth/consent")"
 
     code="$(printf '%s' "$location" | sed 's/.*[?&]code=//; s/&.*//')"
     [ -n "$code" ] && [ "$code" != "$location" ] \
@@ -778,6 +787,9 @@ run_http_checks() {
         || fail "[$phase] the panel did not serve the attachment back"
     note "[$phase] and the panel serves it back to somebody with inbox.view"
 
+    # Twice, as two clients: one let in to look only, one to do whatever the administrator can.
+    connect_an_agent "$phase" 1
+    MCP_READ_TOKEN="$MCP_TOKEN"
     connect_an_agent "$phase"
 
     expect 204 "$(
@@ -820,6 +832,27 @@ run_http_checks() {
     printf '%s' "$created" | grep -q '"slug":"smoke-'"$phase"'"' \
         || fail "[$phase] the agent's token could not write: $created"
     note "[$phase] and writes with it"
+
+    # The connection the administrator made read-only. The choice lives in `mcp_grants`, not in
+    # the token, and it is stronger than their permissions: the tools that write are neither
+    # listed to it nor answered.
+    local read_tools
+    read_tools="$(curl -s -H 'Accept: application/json' -H 'Content-Type: application/json' \
+        -H "Authorization: Bearer $MCP_READ_TOKEN" -X POST -d "$rpc" "$BASE/api/cms/mcp")"
+    printf '%s' "$read_tools" | grep -q '"blocks_list"' \
+        || fail "[$phase] a read-only connection was not shown the tools that look: $read_tools"
+    printf '%s' "$read_tools" | grep -q '"blocks_create"' \
+        && fail "[$phase] a read-only connection was shown a tool that writes"
+    note "[$phase] a read-only connection sees the tools that look and not the ones that write"
+
+    local refused_write
+    refused_write="$(curl -s -H 'Accept: application/json' -H 'Content-Type: application/json' \
+        -H "Authorization: Bearer $MCP_READ_TOKEN" -X POST \
+        -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"blocks_create","arguments":{"slug":"read-only-'"$phase"'","title":"Nope"}}}' \
+        "$BASE/api/cms/mcp")"
+    printf '%s' "$refused_write" | grep -q '"error"' \
+        || fail "[$phase] a read-only connection was allowed to write: $refused_write"
+    note "[$phase] and is refused when it tries to write anyway"
 }
 
 serve() {
