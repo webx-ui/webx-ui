@@ -29,8 +29,12 @@
         "webx-ui/module-admin": "^0.26.1"
     },
     "require-dev": {
+        "laravel/passport": "^13.8",
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0"
+    },
+    "suggest": {
+        "laravel/passport": "Lets a person connect their own agent over OAuth; without it the server answers over stdio only."
     },
     "autoload": {
         "psr-4": {
