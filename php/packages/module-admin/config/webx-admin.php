@@ -130,6 +130,13 @@ return [
     | on that; only the machine knows which pair it has. Set `false` for the
     | first case and leave it alone for the second.
     |
+    | `options` are extra flags for that tool, and a container is what they
+    | are for: Alpine's `mysql-client` is MariaDB's client, and MariaDB's
+    | client offers TLS to a MySQL 8 server and then refuses its self-signed
+    | certificate. `WEBX_BACKUP_OPTIONS="--ssl-verify-server-cert=0"` is the
+    | whole fix, and only the machine knows it needs one. Space-separated in
+    | the environment, a list in a published config.
+    |
     | `skip_data` names the tables whose structure is worth keeping and whose
     | rows are not. They are rebuilt by the application, and they are usually
     | most of the file.
@@ -144,7 +151,7 @@ return [
         'path' => env('WEBX_BACKUP_PATH', 'backups'),
         'binary' => env('WEBX_BACKUP_BINARY'),
         'column_statistics' => null,
-        'options' => [],
+        'options' => env('WEBX_BACKUP_OPTIONS', []),
 
         'skip_data' => [
             'cache',
