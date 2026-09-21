@@ -40,6 +40,7 @@ export default defineConfig({
             { text: 'Addresses', link: '/guide/routing' },
             { text: 'Blocks', link: '/guide/blocks' },
             { text: 'Screens', link: '/guide/screens' },
+            { text: 'Database backups', link: '/guide/backups' },
             { text: 'Roadmap', link: '/guide/roadmap' },
           ],
         },
