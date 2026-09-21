@@ -213,10 +213,24 @@ excepted; `webx:versions:prune` trims everything to a limit lowered after the fa
 A handler answering a public address reads `isPublished()`; the preview that shows a draft
 lives in `webx-ui/module-blocks`.
 
+## Nightly database backup
+
+```
+php artisan webx:db:backup
+```
+
+A gzipped dump into `storage/app/private/backups`, on the scheduler at `webx-admin.backup.at`
+and kept for `keep` days. Insurance rather than a restore system — the file is on the same disk
+as the database — and there is no restore anywhere in the panel; what the panel has is one line
+at the foot of the settings screen saying when the last one was, and a warning when there has
+not been one for two days. The site still needs a system cron on `schedule:run`. The whole of
+it, including how to pull one table out of a finished dump, is in
+[the guide](https://webx-ui.github.io/webx-ui/guide/backups).
+
 ## Configuration
 
-`config/webx-admin.php` covers the title, the two paths, the middleware groups and the version
-limits. Moving the panel means clearing the route cache afterwards.
+`config/webx-admin.php` covers the title, the two paths, the middleware groups, the version
+limits and the nightly backup. Moving the panel means clearing the route cache afterwards.
 
 ## Languages
 

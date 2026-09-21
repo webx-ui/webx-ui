@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Admin\Manifest;
 
 use Illuminate\Contracts\Config\Repository;
+use Throwable;
+use WebxUi\Admin\Backups\Backups;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Contracts\Module;
 use WebxUi\Admin\ModuleRegistry;
@@ -22,6 +24,7 @@ final class ManifestBuilder
         private readonly Repository $config,
         private readonly Locales $locales,
         private readonly ScreenRegistry $screens,
+        private readonly Backups $backups,
         private readonly ?BrandingSource $brand = null,
     ) {}
 
@@ -37,6 +40,7 @@ final class ManifestBuilder
      *     groups: list<array{id: string, title: string, icon: string|null, order: int}>,
      *     modules: list<array<string, mixed>>,
      *     screens: list<string>,
+     *     backup: array{at: string|null, bytes: int|null}|null,
      * }
      */
     public function build(): array
@@ -63,6 +67,43 @@ final class ManifestBuilder
             'modules' => array_map($this->describe(...), $this->registry->all()),
             // Only the names: a screen travels on its own, when the page that needs it opens.
             'screens' => $this->screens->names(),
+            'backup' => $this->backup(),
+        ];
+    }
+
+    /**
+     * When the database was last dumped, for the one line the panel says about it (§6 of the
+     * backups spec). `null` for a site that has switched the nightly dump off — there is
+     * nothing to report and nothing to warn about — and a pair of nulls for a site that has it
+     * on and has never produced a file, which is exactly the case worth showing.
+     *
+     * It travels in the manifest rather than behind a request of its own because it is one
+     * directory listing, it cannot change while a page is open, and a second round trip for a
+     * date and a file size is a second round trip.
+     *
+     * Not filtered by permission here: the panel shows the line to whoever may see the system
+     * section, and what is sent is a timestamp and a byte count. The file itself never leaves
+     * `storage/app`, and that is where the secrecy in §5 lives.
+     *
+     * @return array{at: string|null, bytes: int|null}|null
+     */
+    private function backup(): ?array
+    {
+        try {
+            if (! $this->backups->enabled()) {
+                return null;
+            }
+
+            $latest = $this->backups->latest();
+        } catch (Throwable) {
+            // A misconfigured disk is worth an exception in the command, which somebody reads,
+            // and is not worth a panel that will not start.
+            return null;
+        }
+
+        return [
+            'at' => $latest?->takenAt->format(DATE_ATOM),
+            'bytes' => $latest?->bytes,
         ];
     }
 

@@ -66,6 +66,14 @@ export const adminMessages: Record<string, Messages> = {
     // whether the panel failed to load it.
     never: 'never',
   },
+  // The one line the panel says about the nightly database dump. It lives at the foot of the
+  // settings screen, and the warning is the whole point of it: a backup whose breakage is
+  // discovered on the day it was needed is not a backup.
+  backup: {
+    title: 'Last database snapshot:',
+    stale: 'No database snapshot since :date. Check the schedule.',
+    never: 'The database has never been backed up. Check the schedule.',
+  },
   // How a request fails, in the panel's words rather than the server's (§13.3). `errors.ts`
   // decides which of these a status gets.
   errors: {
