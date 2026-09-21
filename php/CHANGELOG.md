@@ -1,5 +1,11 @@
 # @webx-ui/php
 
+## 0.27.2
+
+### Patch Changes
+
+- 3926a30: Both connector vendors answer at two domains, and the list of return addresses now says so
+
 ## 0.27.1
 
 ### Patch Changes

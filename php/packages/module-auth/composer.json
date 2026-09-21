@@ -32,9 +32,9 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "laravel/passport": "^13.8",
-        "webx-ui/module-admin": "^0.27.1",
-        "webx-ui/localization": "^0.27.1",
-        "webx-ui/mcp": "^0.27.1"
+        "webx-ui/module-admin": "^0.27.2",
+        "webx-ui/localization": "^0.27.2",
+        "webx-ui/mcp": "^0.27.2"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
