@@ -71,6 +71,7 @@ import {
   receive,
   recount as mediaRecount,
 } from './media'
+import { adminRows, listCalls, roles as adminRoles } from './agents'
 import { dictionary, panelLocales } from './lang'
 import { screen, screenNames } from './screens'
 
@@ -243,6 +244,15 @@ on('GET', '/manifest', ({ locale }) => ({
         group: 'system',
         permissions: ['seo.view', 'seo.manage'],
         meta: {},
+      },
+      {
+        id: 'admins',
+        title: line(locale, 'webx-auth', 'module.title'),
+        icon: 'users',
+        order: 900,
+        group: 'system',
+        permissions: ['admins.view', 'admins.manage', 'admins.audit'],
+        meta: { roles: true, loginLog: true },
       },
     ],
     screens: screenNames,
@@ -964,6 +974,68 @@ on('DELETE', '/inbox/statuses/(\\d+)', ({ params }) => {
 })
 
 on('GET', '/inbox/recipients', () => ({ data: admins }))
+
+/* ------------------------------------------------------------------ administrators ------- */
+
+/*
+ * The people, and the trail of what their agents did. Enough of `module-auth`'s API for its
+ * section to open: the list with its search and filters, the roles the form offers, and the
+ * call log with the filters the server derives from it. Nobody signs in here — the session is
+ * the plugin in `main.ts` — so there is no `me`, `login` or `logout`.
+ */
+
+on('GET', '/auth/roles', () => ({ data: adminRoles }))
+
+on('GET', '/auth/admins/(\\d+)', ({ params }) => {
+  const found = adminRows.find((row) => row.id === Number(params[0]))
+
+  if (found === undefined) throw new HttpFailure(404, 'No such administrator.')
+
+  return { data: found }
+})
+
+on('GET', '/auth/admins', ({ query }) => {
+  const search = (query.get('q') ?? '').trim().toLowerCase()
+  const role = query.get('role')
+  const active = query.get('active')
+  const sort = query.get('sort') ?? 'name'
+  const page = Math.max(1, Number(query.get('page') ?? 1))
+  const perPage = Math.min(100, Math.max(1, Number(query.get('per_page') ?? 20)))
+
+  let found = adminRows.filter(
+    (row) =>
+      (search === '' ||
+        row.name.toLowerCase().includes(search) ||
+        row.email.toLowerCase().includes(search)) &&
+      (!role || row.roles.some((one) => one.slug === role)) &&
+      (!active || row.is_active === (active === 'yes')),
+  )
+
+  const key = sort.replace(/^-/, '') as 'name' | 'email' | 'last_login_at'
+  found = [...found].sort(
+    (one, two) =>
+      String(one[key] ?? '').localeCompare(String(two[key] ?? '')) *
+      (sort.startsWith('-') ? -1 : 1),
+  )
+
+  const total = found.length
+  const from = (page - 1) * perPage
+  const rows = found.slice(from, from + perPage)
+
+  return {
+    data: rows,
+    meta: {
+      current_page: page,
+      last_page: Math.max(1, Math.ceil(total / perPage)),
+      per_page: perPage,
+      total,
+      from: total === 0 ? null : from + 1,
+      to: total === 0 ? null : from + rows.length,
+    },
+  }
+})
+
+on('GET', '/auth/mcp-calls', ({ query }) => listCalls(query))
 
 on('GET', '/inbox/forms/(\\d+)/submissions', ({ params, query }) => {
   const formId = Number(params[0])

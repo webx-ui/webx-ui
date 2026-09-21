@@ -23,6 +23,23 @@ abstract class TestCase extends Orchestra
         return [AdminServiceProvider::class, McpServiceProvider::class];
     }
 
+    /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+    }
+
+    /**
+     * The package's own tables, for every test: a call is written down whichever way it went,
+     * so even a test about a refusal needs somewhere to write it.
+     */
+    protected function defineDatabaseMigrations(): void
+    {
+        $this->artisan('migrate')->run();
+    }
+
     protected function register(Module ...$modules): void
     {
         $registry = $this->app->make(ModuleRegistry::class);
