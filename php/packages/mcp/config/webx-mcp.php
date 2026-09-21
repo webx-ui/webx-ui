@@ -116,11 +116,25 @@ return [
         | and answer the callback themselves. A client that is not on the list
         | cannot connect until it is added, which is the point.
         |
+        | Each vendor is here twice because each answers at two domains and
+        | only one of them is the one you meet: Claude connects from
+        | `claude.ai` today and Anthropic is moving to `claude.com`, and
+        | ChatGPT's own address is `chatgpt.com` while `chat.openai.com` is
+        | still the callback of anything set up before the rename. A list with
+        | one of each looks complete right up to the day it refuses somebody,
+        | and what they see then is their client's own error, not ours.
+        |
         | Null for either leaves `config('mcp.*')` alone, for a site that keeps
         | the list in its own published `config/mcp.php`.
         */
 
-        'redirect_domains' => ['https://claude.ai', 'https://chatgpt.com', 'http://localhost'],
+        'redirect_domains' => [
+            'https://claude.ai',
+            'https://claude.com',
+            'https://chatgpt.com',
+            'https://chat.openai.com',
+            'http://localhost',
+        ],
 
         'custom_schemes' => ['claude', 'cursor', 'vscode'],
 

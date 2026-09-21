@@ -135,9 +135,18 @@ itself before anybody has signed in. What keeps that from being a way in is
 ships a list, not a wildcard:
 
 ```php
-'redirect_domains' => ['https://claude.ai', 'https://chatgpt.com', 'http://localhost'],
+'redirect_domains' => [
+    'https://claude.ai', 'https://claude.com',
+    'https://chatgpt.com', 'https://chat.openai.com',
+    'http://localhost',
+],
 'custom_schemes'   => ['claude', 'cursor', 'vscode'],
 ```
+
+Each vendor is there twice because each answers at two domains and only one of them is the one
+you meet: Claude connects from `claude.ai` today and Anthropic is moving to `claude.com`, and
+ChatGPT's own address is `chatgpt.com` while `chat.openai.com` is still the callback of
+anything set up before the rename.
 
 These are the **clients'** addresses, not yours; a list containing only your own domain lets
 nobody in at all. A client that is not on the list cannot connect until somebody adds it,
