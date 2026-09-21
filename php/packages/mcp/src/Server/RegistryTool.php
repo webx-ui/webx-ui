@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace WebxUi\Mcp\Server;
 
+use Illuminate\Container\Container;
+use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Support\Str;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Tool as McpTool;
 use WebxUi\Mcp\Exceptions\ToolFailure;
+use WebxUi\Mcp\Grants\Grants;
 use WebxUi\Mcp\Registry\BoundTool;
 use WebxUi\Mcp\Scopes;
 
@@ -19,12 +22,27 @@ use WebxUi\Mcp\Scopes;
  * The module declared a name, a description, a JSON Schema and a closure; this is the class
  * the transport expects around them. The schema goes out as the module wrote it — the
  * builder `laravel/mcp` offers is for tools written as classes, and a module's schema is
- * already the array the protocol wants. The scope is checked here, once, before any handler
- * runs: a handler never has to ask who is calling.
+ * already the array the protocol wants. The scope and the grant are checked here, once,
+ * before any handler runs: a handler never has to ask who is calling.
  */
 final class RegistryTool extends McpTool
 {
     public function __construct(private readonly BoundTool $bound) {}
+
+    /**
+     * Whether the caller is shown this tool at all.
+     *
+     * An agent shown forty tools and refused on half of them spends its attempts and tells
+     * the person it cannot do what it was never going to be allowed to. So a tool the grant
+     * refuses — everything that writes, for a connection made read-only — is left out of the
+     * list rather than listed and refused. `laravel/mcp` asks this through the container, and
+     * on the local stdio server the request it resolves is an empty one with no user, which
+     * is right: there is nobody there to refuse.
+     */
+    public function shouldRegister(HttpRequest $request, Grants $grants): bool
+    {
+        return $grants->refusal($request->user(), $this->bound->tool) === null;
+    }
 
     public function name(): string
     {
@@ -90,6 +108,15 @@ final class RegistryTool extends McpTool
             );
         }
 
+        // The terms the person set when they let the agent in, which are stronger than the
+        // permissions they hold: hidden from the list too, but a client that remembers a
+        // tool from before the terms changed still has to be told no.
+        $refusal = $this->grants()->refusal($user, $this->bound->tool);
+
+        if ($refusal !== null) {
+            return Response::error("[{$this->name()}] is not allowed on this connection. {$refusal}");
+        }
+
         try {
             $result = ($this->bound->tool->handler)($request->all(), $user);
         } catch (ToolFailure $failure) {
@@ -97,5 +124,14 @@ final class RegistryTool extends McpTool
         }
 
         return Results::toResponse($result);
+    }
+
+    /**
+     * Resolved per call rather than injected: `laravel/mcp` builds this class around the
+     * module's tool with no container in between, the way the server's boot does.
+     */
+    private function grants(): Grants
+    {
+        return Container::getInstance()->make(Grants::class);
     }
 }

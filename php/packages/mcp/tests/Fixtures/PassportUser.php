@@ -28,12 +28,17 @@ final class PassportUser extends Model implements OAuthenticatable
 
     /**
      * @param  list<string>  $scopes
+     * @param  string|null  $client  the client the token was issued to, as a token granted through consent names it
      */
-    public static function bearing(array $scopes): self
+    public static function bearing(array $scopes, ?string $client = null): self
     {
         $user = new self(['id' => 1, 'name' => 'Agent']);
 
-        $user->withAccessToken(new AccessToken(['oauth_user_id' => 1, 'oauth_scopes' => $scopes]));
+        $user->withAccessToken(new AccessToken(array_filter([
+            'oauth_user_id' => 1,
+            'oauth_scopes' => $scopes,
+            'oauth_client_id' => $client,
+        ])));
 
         return $user;
     }

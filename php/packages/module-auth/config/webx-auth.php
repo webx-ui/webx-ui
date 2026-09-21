@@ -59,4 +59,17 @@ return [
     // Keep sign-in records for this many days; null keeps them forever.
     'login_log_days' => 90,
 
+    /*
+    |---------------------------------------------------------------------------
+    | Consent
+    |---------------------------------------------------------------------------
+    |
+    | Where the panel draws its sign-in screen, inside the panel's own path —
+    | the `path` option of the `auth()` plugin. A guest whose agent asks to be
+    | let in is sent there and brought back to the consent screen afterwards.
+    |
+    */
+
+    'login_path' => 'login',
+
 ];
