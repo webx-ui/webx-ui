@@ -85,11 +85,34 @@ export function auth(options: AuthOptions = {}): AdminPlugin {
           if (status === 'ready' && current.path === path) {
             const next = current.query.next
 
+            // A whole address rather than a path is a page outside the panel that sent the
+            // person here to sign in — the consent screen an agent opens — and it is a page
+            // to load, not a route to resolve. Only on this site: an address elsewhere would
+            // make the sign-in form a way to send people anywhere.
+            if (typeof next === 'string' && isPageOnThisSite(next)) {
+              location.assign(next)
+
+              return
+            }
+
             void admin.router.replace(typeof next === 'string' ? next : '/')
           }
         },
       )
     },
+  }
+}
+
+/** An absolute address on the same origin as the panel — the only kind worth following whole. */
+function isPageOnThisSite(next: string): boolean {
+  if (!/^https?:\/\//i.test(next)) {
+    return false
+  }
+
+  try {
+    return new URL(next).origin === location.origin
+  } catch {
+    return false
   }
 }
 
