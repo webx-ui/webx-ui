@@ -1,6 +1,7 @@
 import type { RouteRecordRaw } from 'vue-router'
 import type { ButtonVariant, IconName } from '@webx-ui/core'
 import type { TypeRegistry } from '@webx-ui/schema'
+import type { ThemePreference } from '@webx-ui/tokens'
 import type { LocaleDescriptor } from './i18n'
 
 /**
@@ -77,6 +78,12 @@ export interface AdminUser {
   permissions: string[]
   /** The panel language they chose, or null if they never have. */
   locale?: string | null
+  /**
+   * The theme they chose, or null for the machine's — which is a choice too, and one that
+   * has to travel with them. A server that has never heard of themes sends nothing at all,
+   * and then this browser's own choice stands.
+   */
+  theme?: ThemePreference | null
   /** The key their photograph is stored under — not an address; the panel resolves it. */
   avatar?: string | null
   [key: string]: unknown

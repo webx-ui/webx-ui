@@ -20,6 +20,17 @@ export {
   type Messages,
   type Translate,
 } from './i18n'
+export {
+  createTheme,
+  provideTheme,
+  useTheme,
+  themeKey,
+  type CreateThemeOptions,
+  type Theme,
+  type ThemeController,
+  type ThemePreference,
+  type ThemeState,
+} from './theme'
 export { adminMessages } from './messages'
 export { renderMarkdown } from './markdown'
 export { createDates, useDates, type DateLike, type Dates } from './dates'
