@@ -62,9 +62,9 @@ final class PageResource extends JsonResource
             // Present only where the query counted it; a row from the bin has no level below
             // it to open, and `0` there would be a claim rather than a silence.
             'children_count' => (int) ($page->getAttribute('children_count') ?? 0),
-            // The whole branch, which is what a delete takes (§7) — and it is arithmetic on the
-            // bounds rather than a query, because that is what a nested set is for.
-            'descendants_count' => intdiv($page->rgt - $page->lft - 1, 2),
+            // The whole branch, which is what a delete takes (§7) and what a restore brings
+            // back — never a page that is already in the bin and going nowhere.
+            'descendants_count' => $page->branchCount(),
             'deleted_at' => $page->deleted_at?->toAtomString(),
             'trashed_with' => $page->trashed_with,
             'can' => $page->capabilities(),

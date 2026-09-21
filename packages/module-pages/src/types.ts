@@ -34,7 +34,10 @@ export interface PageRow {
   /** Who wrote the newest version of it. */
   edited_by: string | null
   children_count: number
-  /** Everything below it, at any depth — what a delete takes with it. */
+  /**
+   * The branch this page carries: what a delete takes with it, and for a row in the bin what a
+   * restore brings back. Pages already in the bin are in neither number.
+   */
   descendants_count: number
   deleted_at: string | null
   /** Which page's deletion put this one in the bin. */

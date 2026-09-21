@@ -184,6 +184,74 @@ class Page extends Model
     }
 
     /**
+     * How many pages this one carries with it: what a delete would take off the site, and what
+     * a restore would bring back to it.
+     *
+     * Not arithmetic on the bounds, tempting as that is in a nested set. A trashed page keeps
+     * its place in the tree ({@see softDeletesInTree()}), so `(rgt - lft - 1) / 2` counts pages
+     * that are already in the bin and are going nowhere — the home page of a site with one
+     * deleted page under it reported six below it and had five. The panel says this number out
+     * loud before a delete and before a restore, so it has to be the pages that actually move:
+     * the live descendants of a live page, and for a page in the bin the branch that went down
+     * with it ({@see trashedBranch()}) — which is not every trashed page under it, because one
+     * deleted separately beforehand stays where it is.
+     */
+    public function branchCount(): int
+    {
+        $counted = $this->getAttribute('branch_count');
+
+        if ($counted !== null) {
+            return (int) $counted;
+        }
+
+        return $this->trashed() ? $this->trashedBranch()->count() : $this->descendants()->count();
+    }
+
+    /**
+     * The same number for a whole list, counted by the database inside the query that reads it.
+     *
+     * Rows rather than a row, because that is where it matters: the flat list a phone asks for
+     * is up to five hundred pages, and one count each is five hundred round trips.
+     * {@see branchCount()} asks for itself where nothing primed it, so a page that never went
+     * through this scope still answers the same number.
+     *
+     * One subquery covering both cases rather than two, because a list is either live rows or
+     * the bin and neither of them should have to say which.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeWithBranchCount(Builder $query): Builder
+    {
+        $table = $this->getTable();
+        $key = $this->getKeyName();
+        $deletedAt = $this->getDeletedAtColumn();
+        $lft = $this->getLftName();
+        $rgt = $this->getRgtName();
+
+        // From the model this query is bound to rather than from `static::query()`: the second
+        // builds on the default connection whatever the outer query is on, and the two halves of
+        // a join have to be quoted and prefixed by the same grammar. Without the global scopes,
+        // because `SoftDeletes` qualifies its column with the model's table — which down here is
+        // the outer one, and the alias is all that keeps the two sides apart.
+        $branch = $this->newModelQuery()
+            ->from($table.' as branch')
+            ->selectRaw('count(*)')
+            ->where(static function (Builder $under) use ($table, $deletedAt, $lft, $rgt): void {
+                $under->whereNull($table.'.'.$deletedAt)
+                    ->whereNull('branch.'.$deletedAt)
+                    ->whereColumn('branch.'.$lft, '>', $table.'.'.$lft)
+                    ->whereColumn('branch.'.$rgt, '<', $table.'.'.$rgt);
+            })
+            ->orWhere(static function (Builder $binned) use ($table, $deletedAt, $key): void {
+                $binned->whereNotNull($table.'.'.$deletedAt)
+                    ->whereColumn('branch.trashed_with', $table.'.'.$key);
+            });
+
+        return $query->addSelect(['branch_count' => $branch]);
+    }
+
+    /**
      * Take the page and everything that went down with it back out of the bin.
      *
      * The address comes back on its own: a restore is a `save()` of a row whose `deleted_at`
