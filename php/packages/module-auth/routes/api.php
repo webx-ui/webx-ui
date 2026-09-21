@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use WebxUi\Auth\Http\Controllers\AdminController;
 use WebxUi\Auth\Http\Controllers\MeController;
 use WebxUi\Auth\Http\Controllers\PanelLocaleController;
+use WebxUi\Auth\Http\Controllers\PanelThemeController;
 use WebxUi\Auth\Http\Controllers\ProfileController;
 use WebxUi\Auth\Http\Controllers\RoleController;
 use WebxUi\Auth\Http\Controllers\SessionController;
@@ -28,6 +29,7 @@ Route::prefix((string) config('webx-admin.api_path').'/auth')
             // not behind 'admins.manage': that permission is about other people.
             Route::put('me', ProfileController::class)->name('me.update');
             Route::put('locale', PanelLocaleController::class)->name('locale');
+            Route::put('theme', PanelThemeController::class)->name('theme');
 
             // Reading the list is not managing it: a module that wants to show who wrote
             // something, or offer a picker of people to assign work to, needs the first and

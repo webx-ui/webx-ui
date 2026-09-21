@@ -76,6 +76,18 @@ ${block(light)}
 ${block(dark)}
 }
 
+/*
+ * The other direction, and the reason it is written out rather than left to :root: a light
+ * island inside a dark page — a preview, a printed sheet, a panel somebody pinned — has to
+ * declare the light values on itself. Inherited ones from :root lose to the dark block above,
+ * which is sitting on an ancestor.
+ */
+[data-theme='light'] {
+  color-scheme: light;
+
+${block(light)}
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
     color-scheme: dark;

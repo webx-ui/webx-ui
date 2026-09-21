@@ -30,6 +30,9 @@ final class CmsUserPayload
             // Null until they choose: the panel then follows the browser rather than pinning
             // somebody to a language they never asked for.
             'locale' => $user->locale,
+            // Null here is a choice as well: it says this person reads the panel in whatever
+            // the machine in front of them is set to, on every machine.
+            'theme' => $user->theme,
             // The key the photograph is stored under, as the admin resource sends it: which
             // library turns it into an address is the panel's business, not this package's.
             'avatar' => $user->avatar,

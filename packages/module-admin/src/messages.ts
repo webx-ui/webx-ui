@@ -24,6 +24,15 @@ export const adminMessages: Record<string, Messages> = {
     // The one menu group the panel names itself; a module's own group is named by the module.
     system: 'System',
   },
+  // The three words on the theme switch. They belong to the panel rather than to whoever
+  // places the switch: a core component ships English prop defaults and knows nothing about
+  // a dictionary, so the panel is the one that has to say them.
+  theme: {
+    label: 'Theme',
+    light: 'Light',
+    dark: 'Dark',
+    system: 'Follow the system',
+  },
   // What a screen that edits one record offers whatever the record is: the way out of it, and
   // the way to rename it. A module that opens an editor should not be inventing these.
   editor: {
