@@ -123,6 +123,19 @@ runs, so no handler has to ask who is calling.
 $tool->isDryRun($arguments); // the handler decides what to do about it
 ```
 
+The same split names the panel permission the tool is behind: a mutating tool needs
+`<module>.manage`, a read tool `<module>.view` — or `<module>.manage`, because somebody who may
+edit may look, the way the module's own routes let them. A module whose permissions are not named
+after its id says so on the tool, with one name or several that mean "any of these":
+
+```php
+Tool::read('list', '…', $handler, permission: ['blog.articles.view', 'blog.taxonomy.manage']);
+Tool::mutating('merge', '…', $handler, permission: 'blog.taxonomy.manage');
+```
+
+Both are checked in the same place as the scope, before the handler; and `tools/list` leaves out
+what the caller may not use, so an agent is never shown a tool only to be refused it.
+
 A tool without a description is refused, and so is a name a model could not call — the name goes
 to the agent verbatim, so it must be lowercase letters, digits and underscores.
 
@@ -183,6 +196,12 @@ talk to the panel and nothing about which module, and what limits the call is th
 administrator's own permissions. A token that names module scopes is read scope by scope. A
 caller without a token at all — the stdio server, or a person signed in through a session — is
 not asked for one: the middleware that let them in decides.
+
+The permissions are the administrator's own, as the panel checks them (`HasPermissions` from
+`webx-ui/module-admin`): an agent let in by an editor can do what that editor can do, and its
+`tools/list` is already that — a narrower role sees a shorter list. On the stdio server there is
+nobody to ask, so everything is listed. "Read only" on the consent screen sits above both: it
+refuses every tool that writes, whatever the person may do themselves.
 
 ## What is not here yet
 
