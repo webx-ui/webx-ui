@@ -17,6 +17,7 @@ use WebxUi\Admin\Console\InstallCommand;
 use WebxUi\Admin\Console\MakeModuleCommand;
 use WebxUi\Admin\Console\PanelCommand;
 use WebxUi\Admin\Console\PruneVersionsCommand;
+use WebxUi\Admin\Console\SetupCommand;
 use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Demo\DemoLedger;
@@ -143,6 +144,7 @@ class AdminServiceProvider extends ServiceProvider
             MakeModuleCommand::class,
             PanelCommand::class,
             PruneVersionsCommand::class,
+            SetupCommand::class,
         ]);
     }
 
