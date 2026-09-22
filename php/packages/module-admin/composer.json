@@ -32,6 +32,8 @@
         "illuminate/http": "^13.0",
         "illuminate/routing": "^13.0",
         "illuminate/support": "^13.0",
+        "laravel/prompts": "^0.3.11",
+        "symfony/process": "^7.4 || ^8.0",
         "webx-ui/localization": "^0.27.2"
     },
     "require-dev": {

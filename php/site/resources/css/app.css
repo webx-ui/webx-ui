@@ -1,0 +1,12 @@
+/*
+ * The site's own stylesheet — empty, because a design system you did not choose is worse than
+ * none at all.
+ *
+ * What the public pages look like until you fill this in is eighty lines of `<style>` in
+ * `resources/views/components/layout.blade.php`: enough that nothing is broken, little enough
+ * that deleting it is one keystroke. Nothing else in this project styles anything — the views
+ * that come from the panel's modules carry semantic markup and no classes, so whatever you
+ * write here reaches them too.
+ *
+ * The panel has its own stylesheet and does not read this one.
+ */

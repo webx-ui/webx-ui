@@ -152,3 +152,6 @@ apps/docs/.vitepress/dist
 
 # Local tooling
 .claude/
+
+# The project skeleton ships Laravel's empty storage tree, and `logs` above hides one of it.
+!php/site/storage/logs/
