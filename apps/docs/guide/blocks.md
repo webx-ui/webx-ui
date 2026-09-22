@@ -305,6 +305,12 @@ fails is left as a draft and the command says so with its exit code. Keep the ex
 repository as a seed for a fresh install and as the thing that gets reviewed; moving types from a
 local site to a production one becomes two commands.
 
+The two drift apart quietly, so export on the day you edit. A type changed in the panel and not
+written back leaves the file describing the release before: the site is fine, because the site
+reads the database — what breaks is the next fresh install, the next deploy that seeds from the
+files, and the test run that builds a page out of them. That is a failure somewhere else
+entirely, one release later, and it reads like a broken package rather than a stale file.
+
 ## For an agent: MCP
 
 The section is also a set of tools. With `webx-ui/mcp` installed (it comes with the blocks

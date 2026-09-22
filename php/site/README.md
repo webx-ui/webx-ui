@@ -52,6 +52,27 @@ in `boot()`. Where the site adds something beside what a package does rather tha
 a route type, a field type, an SEO source — there is a registry to put it in, and that is the
 usual answer.
 
+## Containers
+
+Optional, and yours to delete like everything else here: `Dockerfile`, the two compose files
+and `docker/`.
+
+```bash
+docker compose up -d --build                                        # the production shape
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up   # somewhere to work
+```
+
+One image — Composer dependencies, the front end built by this site's own Vite, then php-fpm,
+nginx, a queue worker and the scheduler under supervisor — beside a MariaDB. Build it after
+`webx:setup`: both lock files are what the image installs. Nothing here terminates TLS; the
+container listens on `${APP_BIND}:${APP_PORT}` and a proxy in front of it holds the
+certificate. The development stack mounts this checkout into the same image, adds the Vite dev
+server and a Mailpit, and caches nothing.
+
+The variables they read are at the bottom of `.env.example`, in the same `.env` as everything
+else. What a container does between starting and serving is `php artisan webx:boot` — run it
+with `--pretend` to see the list.
+
 ## Day to day
 
 ```bash
