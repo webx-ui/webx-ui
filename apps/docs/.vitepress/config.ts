@@ -25,6 +25,7 @@ export default defineConfig({
           items: [
             { text: 'Introduction', link: '/guide/' },
             { text: 'Installation', link: '/guide/installation' },
+            { text: 'A new site', link: '/guide/new-site' },
             { text: 'Theming', link: '/guide/theming' },
             { text: 'Languages', link: '/guide/languages' },
             { text: 'Dialogs from code', link: '/guide/modals' },
@@ -42,6 +43,7 @@ export default defineConfig({
             { text: 'Blocks', link: '/guide/blocks' },
             { text: 'Screens', link: '/guide/screens' },
             { text: 'Database backups', link: '/guide/backups' },
+            { text: 'Extending', link: '/guide/extending' },
             { text: 'Roadmap', link: '/guide/roadmap' },
           ],
         },

@@ -13,6 +13,7 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Backups\Backups;
 use WebxUi\Admin\Console\BackupCommand;
 use WebxUi\Admin\Console\DemoCommand;
+use WebxUi\Admin\Console\DoctorCommand;
 use WebxUi\Admin\Console\InstallCommand;
 use WebxUi\Admin\Console\MakeModuleCommand;
 use WebxUi\Admin\Console\PanelCommand;
@@ -140,6 +141,7 @@ class AdminServiceProvider extends ServiceProvider
         $this->commands([
             BackupCommand::class,
             DemoCommand::class,
+            DoctorCommand::class,
             InstallCommand::class,
             MakeModuleCommand::class,
             PanelCommand::class,
