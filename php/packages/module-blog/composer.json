@@ -58,6 +58,17 @@
             "providers": [
                 "WebxUi\\Blog\\BlogServiceProvider"
             ]
+        },
+        "webx": {
+            "module": "blog",
+            "npm": {
+                "@webx-ui/module-blog": "^0.4.2"
+            },
+            "panel": {
+                "import": "import { blog } from '@webx-ui/module-blog'",
+                "style": "@webx-ui/module-blog/style.css",
+                "register": "...blog()"
+            }
         }
     },
     "config": {

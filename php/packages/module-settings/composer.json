@@ -55,6 +55,17 @@
             "providers": [
                 "WebxUi\\Settings\\SettingsServiceProvider"
             ]
+        },
+        "webx": {
+            "module": "settings",
+            "npm": {
+                "@webx-ui/module-settings": "^0.3.9"
+            },
+            "panel": {
+                "import": "import { settings } from '@webx-ui/module-settings'",
+                "style": "@webx-ui/module-settings/style.css",
+                "register": "settings()"
+            }
         }
     },
     "config": {

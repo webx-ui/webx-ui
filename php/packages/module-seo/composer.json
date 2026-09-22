@@ -56,6 +56,17 @@
             "providers": [
                 "WebxUi\\Seo\\SeoServiceProvider"
             ]
+        },
+        "webx": {
+            "module": "seo",
+            "npm": {
+                "@webx-ui/module-seo": "^0.4.2"
+            },
+            "panel": {
+                "import": "import { seo } from '@webx-ui/module-seo'",
+                "style": "@webx-ui/module-seo/style.css",
+                "register": "seo()"
+            }
         }
     },
     "config": {
