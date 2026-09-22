@@ -242,6 +242,60 @@ The one exception is written for you: on a site **without** `module-pages`, `web
 demo page on `/` behind a marker of its own, and takes the line back out the day you install
 `module-pages`.
 
+## Containers
+
+The skeleton carries a `Dockerfile`, two compose files and a `docker/` directory, and they are
+yours like everything else here — delete them on a site that deploys some other way.
+
+```bash
+docker compose up -d --build                                        # the production shape
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up   # somewhere to work
+```
+
+The first builds one image — Composer dependencies, the front end built by the site's own Vite,
+then php-fpm, nginx, a queue worker and the scheduler under supervisor — and starts it beside a
+MariaDB. Nothing terminates TLS: the container listens on `${APP_BIND}:${APP_PORT}` and a proxy
+in front of it holds the certificate. The second mounts the checkout into the same image, adds
+the Vite dev server and a Mailpit, and caches nothing, so a machine with no PHP and no Node on
+it is still a machine you can work on.
+
+Both read the `.env` you already have. The variables the containers add are at the bottom of
+`.env.example`: where to bind, which port, the database root password, and the first
+administrator.
+
+### `webx:boot`
+
+What a container does between starting and serving is one command:
+
+```bash
+php artisan webx:boot --pretend    # the list, without running any of it
+```
+
+It waits for the database, migrates, links storage, writes Passport's keys if they are not
+there yet, seeds the languages and clears the dictionary the release before it built, imports
+the block types the repository carries, creates the first administrator out of the environment,
+and caches configuration, routes, views and events. Which of those a site needs it works out
+from what is installed, so a module added six months from now brings its step with it — and
+`--no-cache` is the development container's whole difference.
+
+Every step is idempotent, because every boot runs all of them. The one thing it will not do is
+publish Passport's migrations: the copy is stamped with the minute it was made, so a boot that
+published would hand each container a migration under a name the migrations table has never
+seen, and the second deployment would stop on `table oauth_auth_codes already exists`.
+Publishing is `webx:setup`'s, once, into the repository.
+
+### Two things worth knowing before the second deploy
+
+**Storage is one volume, not two.** Uploads, the nightly dumps and the logs are the obvious
+part; Passport writes its keys a level above them, in `storage/` itself. A volume around
+`storage/app` alone leaves the keys inside the image, and then an upgrade hands out new ones and
+disconnects every agent that was connected, with nothing anywhere saying why.
+
+**A volume takes its contents from the image once** — the first time it is used, and never
+again. So the entrypoint creates the directories under `storage` on every boot: a release that
+starts writing somewhere new finds nothing there on a site that has been running since before
+it, and what fails is whatever first tried to write.
+
 ## Where to go next
 
 - [Extending](./extending.md) — publishing a module's views, replacing its services, the
