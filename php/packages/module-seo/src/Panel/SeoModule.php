@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Panel;
 
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\ProvidesDemo;
+use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\ProvidesMcpDefaults;
 use WebxUi\Mcp\Tool;
+use WebxUi\Seo\Demo\SeoDemo;
 use WebxUi\Seo\Mcp\SeoTools;
 
 /**
@@ -17,9 +20,11 @@ use WebxUi\Seo\Mcp\SeoTools;
  * Sits above the settings in the system group, because it is the one an editor opens weekly and
  * the settings are the one they open twice.
  */
-final class SeoModule extends AbstractModule implements ProvidesMcpTools
+final class SeoModule extends AbstractModule implements ProvidesDemo, ProvidesMcpTools
 {
     use ProvidesMcpDefaults;
+
+    public function __construct(private readonly SeoDemo $demo) {}
 
     public function id(): string
     {
@@ -52,6 +57,22 @@ final class SeoModule extends AbstractModule implements ProvidesMcpTools
     public function permissions(): array
     {
         return ['seo.view', 'seo.manage'];
+    }
+
+    /**
+     * The blog: the demo rule is a mask over its addresses, and a rule for a shape of address
+     * nothing answers would be a rule nobody can see working (§9).
+     *
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return ['articles'];
+    }
+
+    public function seed(DemoLedger $ledger): void
+    {
+        $this->demo->seed($ledger);
     }
 
     /**

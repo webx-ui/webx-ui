@@ -6,12 +6,15 @@ namespace WebxUi\Settings;
 
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\ProvidesDemo;
+use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Screens\Tree;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\ProvidesMcpDefaults;
 use WebxUi\Mcp\Tool;
+use WebxUi\Settings\Demo\SettingsDemo;
 
 /**
  * The panel section for the site's settings.
@@ -20,9 +23,11 @@ use WebxUi\Mcp\Tool;
  * tree declares, and `settings_set` accepts only those, checked with the same rules the form
  * is. A key nobody described cannot be written from anywhere.
  */
-final class SettingsModule extends AbstractModule implements ProvidesMcpTools
+final class SettingsModule extends AbstractModule implements ProvidesDemo, ProvidesMcpTools
 {
     use ProvidesMcpDefaults;
+
+    public function __construct(private readonly SettingsDemo $demo) {}
 
     public function id(): string
     {
@@ -63,6 +68,22 @@ final class SettingsModule extends AbstractModule implements ProvidesMcpTools
     public function manifest(): array
     {
         return ['screen' => Settings::SCREEN];
+    }
+
+    /**
+     * Nothing: the general settings are words, and the branding fields are left empty on
+     * purpose — a demo logo is the one demo thing nobody notices is still there (§9).
+     *
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return [];
+    }
+
+    public function seed(DemoLedger $ledger): void
+    {
+        $this->demo->seed($ledger);
     }
 
     /**

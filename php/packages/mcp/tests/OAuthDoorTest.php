@@ -116,7 +116,16 @@ final class OAuthDoorTest extends TestCase
             ->assertStatus(400)
             ->assertJsonPath('error', 'invalid_redirect_uri');
 
-        foreach (['https://claude.ai/api/mcp/auth_callback', 'http://localhost:53535/callback', 'cursor://anysphere.cursor-retrieval/oauth/callback'] as $uri) {
+        $permitted = [
+            'https://claude.ai/api/mcp/auth_callback',
+            'https://claude.com/api/mcp/auth_callback',
+            'https://chatgpt.com/connector_platform_oauth_redirect',
+            'https://chat.openai.com/oauth/callback',
+            'http://localhost:53535/callback',
+            'cursor://anysphere.cursor-retrieval/oauth/callback',
+        ];
+
+        foreach ($permitted as $uri) {
             $this->postJson('/oauth/register', ['client_name' => 'A client', 'redirect_uris' => [$uri]])
                 ->assertCreated()
                 ->assertJsonPath('scope', 'mcp:use');

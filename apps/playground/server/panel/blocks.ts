@@ -318,12 +318,12 @@ const FORM_TEMPLATE = `<section class="b-form" data-wx-block="form">
     <div class="b-form__inner">
         <h2 class="b-form__title">{{ $title }}</h2>
         <p class="b-form__text">{{ $text }}</p>
-        <x-webx-form :form="$form" />
+        <x-webx-inbox::form :form="$form" />
     </div>
 </section>
 `
 
-/** What `<x-webx-form>` puts on the page: the fields of the demo's feedback form. */
+/** What `<x-webx-inbox::form>` puts on the page: the fields of the demo's feedback form. */
 const FORM_MARKUP = `<form class="b-form__form">
         <input class="b-form__field" type="text" placeholder="Имя" />
         <input class="b-form__field" type="email" placeholder="Почта" />
@@ -1066,7 +1066,7 @@ export function renderTemplate(
   /* The one Blade component of the site, drawn as what it draws. A tag nobody knows is a tag
      the browser leaves out, and the block that embeds a form would preview as its heading and
      nothing else — which reads as a broken block rather than a form. */
-  html = html.replace(/<x-webx-form[^>]*\/>/g, FORM_MARKUP)
+  html = html.replace(/<x-webx-inbox::form[^>]*\/>/g, FORM_MARKUP)
 
   html = html.replace(/\{!! \$([\w-]+) !!\}/g, (_match, key: string) => text(values[key]))
   html = html.replace(/\{\{ \$([\w-]+) \}\}/g, (_match, key: string) => escape(text(values[key])))

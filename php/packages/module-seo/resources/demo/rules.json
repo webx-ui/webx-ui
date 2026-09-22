@@ -1,0 +1,10 @@
+[
+  {
+    "match_type": "mask",
+    "pattern": "/blog/*",
+    "priority": 0,
+    "description": "A note from the demo blog — and an example of a rule written for a shape of address rather than for one page.",
+    "robots": "index, follow",
+    "is_active": true
+  }
+]

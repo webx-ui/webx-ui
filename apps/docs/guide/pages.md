@@ -178,18 +178,60 @@ The handler hands the page to `webx-pages.view`, which defaults to `pages.show`,
 
 ```blade
 @php($content = $page->renderBlocks())
-<!doctype html>
-<html>
-<head>
-    @webxSeo($page)
-    @webxBlocks
-</head>
-<body>{!! $content !!}</body>
-</html>
+
+<x-dynamic-component :component="config('webx-pages.layout') ?: 'webx-pages::standalone'">
+    <x-slot:head>
+        @webxSeo($page)
+        @webxBlocks
+    </x-slot:head>
+
+    {!! $content !!}
+</x-dynamic-component>
 ```
 
 Until the site has written that view, the package prints its own — the blocks, the SEO head and
 nothing else — so a fresh installation serves a page rather than an error.
+
+## The layout
+
+A package cannot assume the site has a layout, so the view above asks. `webx-pages.layout` names a
+Blade component; empty means `webx-pages::standalone`, the bare document the module ships. One
+line, and the page stands in the site's header and footer instead:
+
+```php
+// config/webx-pages.php
+'layout' => 'layout',   // <x-layout>
+```
+
+`php artisan webx:panel --sync` writes that line itself when the site has
+`resources/views/components/layout.blade.php`.
+
+The deal is the same for every module: a **`head` slot**, and the **default slot** for the content.
+
+```blade
+<!doctype html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {{ $head ?? '' }}
+    @stack('head')
+</head>
+<body>
+    <x-header />
+    <main>{{ $slot }}</main>
+    <x-footer />
+    @stack('scripts')
+</body>
+</html>
+```
+
+Both places for the head, and that costs nothing: a slot is one place, filled by the view itself,
+and a stack is as many as needed — what a block type or a partial pushes cannot reach a slot. A
+layout with no `@stack('head')` looks whole and quietly drops what was pushed into it.
+
+Publishing the views stays what it is for — "I want different markup for an article" — rather than
+the only way to get a header.
 
 ## For an agent: MCP
 
@@ -240,9 +282,10 @@ person.
 
 `config/webx-pages.php`:
 
-| Key    | Default      | What it is                                                                 |
-| ------ | ------------ | -------------------------------------------------------------------------- |
-| `view` | `pages.show` | The view the handler prints a page with; the package's own until it exists |
+| Key      | Default      | What it is                                                                    |
+| -------- | ------------ | ----------------------------------------------------------------------------- |
+| `view`   | `pages.show` | The view the handler prints a page with; the package's own until it exists    |
+| `layout` | —            | The Blade component that view stands in; the package's bare document if empty |
 
 ## What is deferred
 

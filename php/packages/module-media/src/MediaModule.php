@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace WebxUi\Media;
 
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\ProvidesDemo;
+use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\ProvidesMcpDefaults;
 use WebxUi\Mcp\Tool;
+use WebxUi\Media\Demo\MediaDemo;
 use WebxUi\Media\Mcp\MediaTools;
 
 /**
@@ -18,9 +21,11 @@ use WebxUi\Media\Mcp\MediaTools;
  * own media when they are attached, so a product's ten thousand photographs never land in a
  * tree an editor has to browse.
  */
-final class MediaModule extends AbstractModule implements ProvidesMcpTools
+final class MediaModule extends AbstractModule implements ProvidesDemo, ProvidesMcpTools
 {
     use ProvidesMcpDefaults;
+
+    public function __construct(private readonly MediaDemo $demo) {}
 
     public function id(): string
     {
@@ -61,6 +66,21 @@ final class MediaModule extends AbstractModule implements ProvidesMcpTools
     public function permissions(): array
     {
         return ['media.view', 'media.upload', 'media.manage'];
+    }
+
+    /**
+     * Nothing: a file needs no other section to exist, and half of them need it (§9).
+     *
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return [];
+    }
+
+    public function seed(DemoLedger $ledger): void
+    {
+        $this->demo->seed($ledger);
     }
 
     /**
