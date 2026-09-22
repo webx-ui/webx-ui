@@ -15,7 +15,6 @@ use WebxUi\Inbox\Console\PruneSubmissionsCommand;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Panel\InboxModule;
 use WebxUi\Inbox\Rendering\Assets;
-use WebxUi\Inbox\Rendering\FormTag;
 use WebxUi\Inbox\Support\Forms;
 
 class InboxServiceProvider extends ServiceProvider
@@ -39,10 +38,14 @@ class InboxServiceProvider extends ServiceProvider
 
         $this->registerRateLimiter();
 
-        // `<x-webx-form slug="contact" />` — the whole public half of the module, as one tag
-        // (§10). A class component rather than an anonymous one, because what it prints is
+        // `<x-webx-inbox::form slug="contact" />` — the whole public half of the module, as one
+        // tag (§10). A class component rather than an anonymous one, because what it prints is
         // decided by a form, a guard and a captcha that all come out of the container.
-        Blade::component(FormTag::class, 'webx-form');
+        //
+        // A namespace rather than an alias: the prefix is the one the views already answer to,
+        // so the tag names the package to install, and the next component of this module is a
+        // file in the same directory rather than another global name to keep clear of.
+        Blade::componentNamespace('WebxUi\\Inbox\\View\\Components', 'webx-inbox');
 
         $this->loadRoutesFrom(__DIR__.'/../routes/public.php');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');

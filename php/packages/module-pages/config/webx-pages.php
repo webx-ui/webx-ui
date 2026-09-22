@@ -21,4 +21,26 @@ return [
 
     'view' => env('WEBX_PAGES_VIEW', 'pages.show'),
 
+    /*
+    |---------------------------------------------------------------------------
+    | The layout a page stands in
+    |---------------------------------------------------------------------------
+    |
+    | The name of a Blade component: `'layout'` for the `<x-layout>` a site keeps
+    | in `resources/views/components/layout.blade.php`. Empty prints the package's
+    | own `webx-pages::standalone` — a bare document, which is the right default
+    | for a package that cannot assume the site has a layout at all.
+    |
+    | The deal is two slots and no more: `head`, and the default slot for the
+    | content. A layout is expected to carry `@stack('head')` beside `{{ $head }}`
+    | as well — a slot is one place, and what a block type pushes cannot reach it.
+    | `php artisan webx:doctor` says so if it does not.
+    |
+    | This is not the same seam as `view` above: that one replaces the markup of
+    | the page, this one only says what it stands in.
+    |
+    */
+
+    'layout' => env('WEBX_PAGES_LAYOUT'),
+
 ];

@@ -20,7 +20,6 @@ use WebxUi\Seo\Panel\UrlMatcher;
 use WebxUi\Seo\Panel\UrlRuleSource;
 use WebxUi\Seo\Rendering\EntitySource;
 use WebxUi\Seo\Rendering\Seo;
-use WebxUi\Seo\Rendering\SeoHead;
 use WebxUi\Seo\Rendering\SeoSources;
 use WebxUi\Seo\Screens\SeoFieldType;
 use WebxUi\Settings\Settings;
@@ -119,12 +118,16 @@ class SeoServiceProvider extends ServiceProvider
     }
 
     /**
-     * `@webxSeo` and `<x-webx-seo />` are the same call written two ways: a template that has
-     * an entity to name wants the tag, one that does not wants the directive.
+     * `@webxSeo` and `<x-webx-seo::head />` are the same call written two ways: a template that
+     * has an entity to name wants the tag, one that does not wants the directive.
+     *
+     * A namespace rather than an alias: the prefix is the one the views already answer to, so
+     * the tag names the package to install, and the next component of this module is a file in
+     * the same directory rather than another global name to keep clear of.
      */
     private function registerRendering(): void
     {
-        Blade::component(SeoHead::class, 'webx-seo');
+        Blade::componentNamespace('WebxUi\\Seo\\View\\Components', 'webx-seo');
 
         Blade::directive('webxSeo', static function (string $expression): string {
             $subject = trim($expression) === '' ? 'null' : $expression;
