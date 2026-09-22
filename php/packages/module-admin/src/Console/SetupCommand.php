@@ -11,12 +11,14 @@ use Illuminate\Support\Str;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\multiselect;
+use function Laravel\Prompts\password;
 use function Laravel\Prompts\text;
 
 use PDO;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 use WebxUi\Admin\Setup\Catalogue;
+use WebxUi\Admin\Setup\Connection;
 use WebxUi\Admin\Setup\Database;
 use WebxUi\Admin\Setup\EnvFile;
 use WebxUi\Admin\Setup\LocalesConfig;
@@ -65,6 +67,8 @@ final class SetupCommand extends Command
     private Catalogue $catalogue;
 
     private Composer $composer;
+
+    private Connection $server;
 
     /** @var array<string, string> */
     private array $answers = [];
@@ -157,14 +161,16 @@ final class SetupCommand extends Command
 
         $this->modules = $this->chooseModules();
 
-        $this->answers['db-connection'] = $this->option('db-connection')
-            ?? $this->env->chosen('DB_CONNECTION') ?? 'mysql';
+        $given = $this->option('db-connection');
 
-        if ($this->answers['db-connection'] !== 'sqlite') {
-            $this->answers['db-host'] = (string) ($this->option('db-host') ?? $this->env->chosen('DB_HOST') ?? '127.0.0.1');
-            $this->answers['db-port'] = (string) ($this->option('db-port') ?? $this->env->chosen('DB_PORT') ?? '3306');
-            $this->answers['db-username'] = (string) ($this->option('db-username') ?? $this->env->chosen('DB_USERNAME') ?? 'root');
-            $this->answers['db-password'] = (string) ($this->option('db-password') ?? $this->env->get('DB_PASSWORD') ?? '');
+        $this->server = Connection::resolve(
+            is_string($given) && $given !== '' ? $given : ($this->env->chosen('DB_CONNECTION') ?? 'mysql'),
+            $this->databaseOptions(),
+            $this->env,
+        );
+
+        if (! $this->server->isSqlite()) {
+            $this->findTheServer();
 
             $this->answers['db'] = $this->answer(
                 'db',
@@ -205,6 +211,78 @@ final class SetupCommand extends Command
         }
 
         return trim(text(label: $question, default: $default, required: false)) ?: $default;
+    }
+
+    /**
+     * What `--db-host` and its friends said, null where they said nothing.
+     *
+     * @return array<string, string|null>
+     */
+    private function databaseOptions(): array
+    {
+        $given = [];
+
+        foreach (['host', 'port', 'username', 'password'] as $name) {
+            $value = $this->option('db-'.$name);
+            $given[$name] = is_string($value) ? $value : null;
+        }
+
+        return $given;
+    }
+
+    /**
+     * Reach the server, and ask where it is only when what is already known does not.
+     *
+     * Nothing is asked on a machine that answers: the address is not a question anybody wants
+     * on a laptop with one MySQL on the usual port, and the database *name* stays the only
+     * thing between the languages and the modules. It is a question on the machines where the
+     * default is wrong, and those used to be told about it six questions later, by the step
+     * that had already written `.env`.
+     *
+     * A run with nobody in front of it is left exactly as it was: it asks nothing, reaches
+     * nothing here, and stops in `prepareDatabase()` with the message that names `--db-host`.
+     * `scripts/php-smoke.sh` stands on that.
+     *
+     * The asking is counted rather than repeated until something answers, and that is not
+     * politeness. A prompt whose input is not a terminal does not always refuse: Laravel
+     * Prompts can hand the default straight back, and the default here is the host that has
+     * just been tried. Unbounded, a run piped from a script or a CI job that forgot
+     * `--no-interaction` would reconnect to the same refused port for as long as anybody let
+     * it, printing the same warning each time. Three is enough for a typo.
+     */
+    private function findTheServer(): void
+    {
+        if (! $this->input->isInteractive()) {
+            return;
+        }
+
+        for ($asks = 3; ($refused = $this->server->unreachable()) !== null; $asks--) {
+            if ($asks === 0) {
+                throw SetupFailed::noDatabaseServer(
+                    $this->server->host,
+                    $this->server->port,
+                    $this->server->username,
+                    $refused,
+                );
+            }
+
+            $this->newLine();
+            $this->components->warn(sprintf(
+                'No answer from %s:%s as [%s] — %s. Say where the server is, or stop here and '
+                .'run again with --db-connection=sqlite.',
+                $this->server->host,
+                $this->server->port,
+                $this->server->username,
+                rtrim($refused, '. '),
+            ));
+
+            $this->server = $this->server->with(
+                host: trim(text(label: 'Where the database server is', default: $this->server->host)),
+                port: trim(text(label: 'The port it listens on', default: $this->server->port)),
+                username: trim(text(label: 'The user to connect as', default: $this->server->username)),
+                password: password(label: "That user's password", placeholder: 'Enter keeps what .env has'),
+            );
+        }
     }
 
     /** @return list<string> */
@@ -268,17 +346,11 @@ final class SetupCommand extends Command
             'APP_URL' => $url,
             'APP_LOCALE' => LocalesConfig::codes($this->answers['locales'])[0] ?? 'en',
             'WEBX_ADMIN_TITLE' => $this->answers['name'],
-            'DB_CONNECTION' => $this->answers['db-connection'],
+            'DB_CONNECTION' => $this->server->connection,
         ];
 
-        if ($this->answers['db-connection'] !== 'sqlite') {
-            $values += [
-                'DB_HOST' => $this->answers['db-host'],
-                'DB_PORT' => $this->answers['db-port'],
-                'DB_DATABASE' => $this->answers['db'],
-                'DB_USERNAME' => $this->answers['db-username'],
-                'DB_PASSWORD' => $this->answers['db-password'],
-            ];
+        if (! $this->server->isSqlite()) {
+            $values += $this->server->env($this->answers['db']);
         }
 
         $this->env->write($values);
@@ -289,7 +361,7 @@ final class SetupCommand extends Command
 
     private function prepareDatabase(): void
     {
-        if ($this->answers['db-connection'] === 'sqlite') {
+        if ($this->server->isSqlite()) {
             $path = $this->laravel->databasePath('database.sqlite');
 
             if (! file_exists($path)) {
@@ -301,27 +373,20 @@ final class SetupCommand extends Command
             return;
         }
 
-        $server = new Database(
-            $this->answers['db-connection'] === 'mariadb' ? 'mysql' : $this->answers['db-connection'],
-            $this->answers['db-host'],
-            (int) $this->answers['db-port'],
-            $this->answers['db-username'],
-            $this->answers['db-password'],
-        );
+        $server = $this->server->database();
 
+        // Interactively this is settled already: `findTheServer()` either reached a server or
+        // stopped the run with this same message. What is left here is the run with nobody to
+        // ask, which is the one `scripts/php-smoke.sh` runs.
         $refused = $server->unreachable();
 
         if ($refused !== null) {
-            throw new SetupFailed(sprintf(
-                'No answer from %s:%s as [%s] — %s. Start the server, or say where it is with '
-                .'--db-host and --db-port, or pass --db-connection=sqlite to stand on a file. '
-                .'sqlite hides three things a real server refuses, so it is worth a minute of '
-                .'looking first.',
-                $this->answers['db-host'],
-                $this->answers['db-port'],
-                $this->answers['db-username'],
-                rtrim($refused, '. '),
-            ));
+            throw SetupFailed::noDatabaseServer(
+                $this->server->host,
+                $this->server->port,
+                $this->server->username,
+                $refused,
+            );
         }
 
         if ($server->has($this->answers['db'])) {
@@ -533,7 +598,7 @@ final class SetupCommand extends Command
      */
     private function administrators(): int
     {
-        if ($this->answers['db-connection'] === 'sqlite') {
+        if ($this->server->isSqlite()) {
             try {
                 $found = (new PDO('sqlite:'.$this->laravel->databasePath('database.sqlite')))
                     ->query('select count(*) from cms_users')?->fetchColumn();
@@ -544,15 +609,7 @@ final class SetupCommand extends Command
             return is_numeric($found) ? (int) $found : 0;
         }
 
-        $count = (new Database(
-            $this->answers['db-connection'] === 'mariadb' ? 'mysql' : $this->answers['db-connection'],
-            $this->answers['db-host'],
-            (int) $this->answers['db-port'],
-            $this->answers['db-username'],
-            $this->answers['db-password'],
-        ))->count($this->answers['db'], 'cms_users');
-
-        return $count ?? 0;
+        return $this->server->database()->count($this->answers['db'], 'cms_users') ?? 0;
     }
 
     private function build(): void
