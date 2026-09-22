@@ -1,0 +1,64 @@
+# The site in production shape: one application container and a database beside it.
+#
+#   cp .env.example .env && php artisan key:generate    (once, before the first build)
+#   docker compose up -d --build
+#
+# Compose reads the same .env as the application: the app container is handed it whole, and
+# ${...} below is substituted out of it. So the database the application connects to and the
+# database the server creates are one answer written once.
+#
+# Nothing here terminates TLS. The container listens on ${APP_BIND}:${APP_PORT} and a proxy in
+# front of it — Nginx Proxy Manager, Caddy, Traefik — is what holds the certificate and sets
+# X-Forwarded-Proto, which nginx.conf turns back into https for PHP.
+
+services:
+  app:
+    image: ${APP_IMAGE:-webx-site:latest}
+    build:
+      context: .
+      target: app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # The service beside this one, whatever .env says for a developer's own machine.
+      DB_HOST: database
+    ports:
+      - "${APP_BIND:-127.0.0.1}:${APP_PORT:-8080}:80"
+    volumes:
+      # What the site accumulates rather than what it is built from: uploads, the nightly
+      # dumps, the logs — and the Passport keys, which is why this is the whole of `storage`
+      # and not `storage/app` under it. Passport writes them a level higher, so a volume
+      # around `storage/app` alone would leave them inside the image: a deploy would then
+      # hand out new keys, and every agent connected through the old ones would be
+      # disconnected by an upgrade with nothing anywhere saying why.
+      - app-storage:/var/www/html/storage
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      # The first boot migrates every module's tables, which on a small machine is minutes.
+      start_period: 120s
+
+  database:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_DATABASE:-laravel}
+      MARIADB_USER: ${DB_USERNAME:-laravel}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required — a site behind a proxy is not a site without a password}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD is required}
+    volumes:
+      - database-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  database-data:
+  app-storage:
