@@ -22,7 +22,11 @@ use WebxUi\Admin\Console\PruneVersionsCommand;
 use WebxUi\Admin\Console\SetupCommand;
 use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Contracts\BrandingSource;
+use WebxUi\Admin\Contracts\SiteUrls;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Links\LinkSources;
+use WebxUi\Admin\Links\LinkUrls;
+use WebxUi\Admin\Links\RoutingSiteUrls;
 use WebxUi\Admin\Manifest\ManifestBuilder;
 use WebxUi\Admin\Notes\NoteTypes;
 use WebxUi\Admin\Screens\FieldTypes;
@@ -30,12 +34,14 @@ use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\BooleanType;
 use WebxUi\Admin\Screens\Types\ColorType;
 use WebxUi\Admin\Screens\Types\DateType;
+use WebxUi\Admin\Screens\Types\LinkType;
 use WebxUi\Admin\Screens\Types\NumberType;
 use WebxUi\Admin\Screens\Types\OptionType;
 use WebxUi\Admin\Screens\Types\RepeaterType;
 use WebxUi\Admin\Screens\Types\RichTextType;
 use WebxUi\Admin\Screens\Types\StringType;
 use WebxUi\Localization\Locales;
+use WebxUi\Routing\SiteUrl;
 
 class AdminServiceProvider extends ServiceProvider
 {
@@ -54,6 +60,24 @@ class AdminServiceProvider extends ServiceProvider
         // Which records have notes. A register rather than the morph map alone, because the
         // type comes out of an address and must not be able to name anything else.
         $this->app->singleton(NoteTypes::class);
+
+        // What this panel can link to (§3 of the menu spec). A singleton for the same reason as
+        // the two above: content modules register into it from their own providers.
+        $this->app->singleton(LinkSources::class);
+
+        // The language prefix, when there is an address registry to ask. Behind `class_exists`
+        // because the frame does not require `webx-ui/routing` — a panel of settings and
+        // administrators has no addresses at all — and a path is then handed on as written.
+        if (class_exists(SiteUrl::class)) {
+            $this->app->singleton(SiteUrls::class, RoutingSiteUrls::class);
+        }
+
+        $this->app->bind(LinkUrls::class, static fn ($app): LinkUrls => new LinkUrls(
+            $app->make(LinkSources::class),
+            $app->make(Locales::class),
+            $app->bound(SiteUrls::class) ? $app->make(SiteUrls::class) : null,
+        ));
+
         $this->app->singleton(FieldTypes::class, static function ($app): FieldTypes {
             $types = new FieldTypes;
 
@@ -70,6 +94,13 @@ class AdminServiceProvider extends ServiceProvider
             // nothing to ask where a picture lives, and the type then leaves addresses alone.
             $types->register('wx-rich-text', new RichTextType(
                 $app->bound(AssetUrls::class) ? $app->make(AssetUrls::class) : null,
+            ));
+
+            // A link: the entity or the path, never the address. The picker behind it is the
+            // panel's own, and the sections in it are whatever the content modules registered.
+            $types->register('wx-link', new LinkType(
+                $app->make(LinkSources::class),
+                $app->make(LinkUrls::class),
             ));
 
             // The repeater checks and casts its items with the other types, so it is handed

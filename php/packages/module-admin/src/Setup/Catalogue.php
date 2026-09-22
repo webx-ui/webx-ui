@@ -66,6 +66,11 @@ final class Catalogue
             'label' => 'Blog — articles, rubrics and tags',
             'default' => false,
         ],
+        'menu' => [
+            'package' => 'webx-ui/module-menu',
+            'label' => 'Menus — the header and the footer, and what each entry points at',
+            'default' => true,
+        ],
         'admins' => [
             'package' => 'webx-ui/module-auth',
             'label' => 'Administrators — signing in, roles and permissions',

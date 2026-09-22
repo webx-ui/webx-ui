@@ -37,6 +37,7 @@ export default defineConfig({
             { text: 'Pages', link: '/guide/pages' },
             { text: 'Blog', link: '/guide/blog' },
             { text: 'Inbox', link: '/guide/inbox' },
+            { text: 'Menus', link: '/guide/menu' },
             { text: 'Settings', link: '/guide/settings' },
             { text: 'SEO', link: '/guide/seo' },
             { text: 'Addresses', link: '/guide/routing' },

@@ -8,6 +8,7 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -18,6 +19,9 @@ use WebxUi\Blog\Handlers\TagHandler;
 use WebxUi\Blog\Http\Controllers\FeedController;
 use WebxUi\Blog\Http\Controllers\RssController;
 use WebxUi\Blog\Http\Middleware\OneSpellingPerAddress;
+use WebxUi\Blog\Links\ArticleLinkSource;
+use WebxUi\Blog\Links\RubricLinkSource;
+use WebxUi\Blog\Links\TagLinkSource;
 use WebxUi\Blog\Models\Article;
 use WebxUi\Blog\Models\Rubric;
 use WebxUi\Blog\Models\Tag;
@@ -61,6 +65,7 @@ class BlogServiceProvider extends ServiceProvider
         $this->registerFeedRoutes();
         $this->registerBlockEntity();
         $this->registerSeoSource();
+        $this->registerLinkSources();
         $this->registerScreens();
         $this->registerPanel();
 
@@ -263,6 +268,20 @@ class BlogServiceProvider extends ServiceProvider
     private function registerSeoSource(): void
     {
         $this->app->make(SeoSources::class)->register($this->app->make(TagSource::class));
+    }
+
+    /**
+     * All three of the blog's entities are things a menu, a block or a described screen may want
+     * to point at — a rubric above all, since a header naming three sections of the blog is three
+     * links to rubrics (§3 of the menu spec).
+     */
+    private function registerLinkSources(): void
+    {
+        $links = $this->app->make(LinkSources::class);
+
+        $links->register($this->app->make(ArticleLinkSource::class));
+        $links->register($this->app->make(RubricLinkSource::class));
+        $links->register($this->app->make(TagLinkSource::class));
     }
 
     private function prefix(): string

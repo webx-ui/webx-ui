@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use WebxUi\Admin\Links\SiteRoutes;
 
 return [
 
@@ -44,6 +45,23 @@ return [
     'middleware' => ['web'],
 
     'api_middleware' => ['api', 'webx.panel-locale'],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Links
+    |---------------------------------------------------------------------------
+    |
+    | Where a link field offers a path of this site, it offers the named GET
+    | routes that take no parameters. Most of those are nobody's page: an
+    | authorisation dance, a discovery document, a script. These masks are what
+    | stays out of the list — add your own rather than replacing them, since the
+    | defaults are the machinery every installation has.
+    |
+    */
+
+    'links' => [
+        'exclude' => SiteRoutes::EXCLUDE,
+    ],
 
     /*
     |---------------------------------------------------------------------------

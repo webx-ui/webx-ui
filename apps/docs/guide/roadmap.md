@@ -211,9 +211,11 @@ of components:
 1. `@webx-ui/adapter-laravel` — paginator, 422 validation errors, sort/filter query parameters.
 2. CMS building blocks on top of `core`: the panel's sections, each a pair of packages — the
    [file manager](/guide/media), [administrators](/guide/admins), [settings](/guide/settings),
-   [SEO](/guide/seo), the [block constructor](/guide/blocks) and, newest,
-   [pages](/guide/pages) — the first entity that puts the tree, the address registry, the blocks,
-   the drafts and the SEO card together on something real. Each of them is also a set of MCP
-   tools, so an agent reaches the panel through the same doors an editor does.
+   [SEO](/guide/seo), the [block constructor](/guide/blocks), [pages](/guide/pages) — the first
+   entity that puts the tree, the address registry, the blocks, the drafts and the SEO card
+   together on something real — the [blog](/guide/blog), the [inbox](/guide/inbox) and, newest,
+   the [menus](/guide/menu), which are what turns all of those into something a visitor can reach.
+   Each of them is also a set of MCP tools, so an agent reaches the panel through the same doors
+   an editor does.
 3. An in-admin component editor: fields defined as JSON plus a Blade template and CSS, generated
    into files by Laravel.

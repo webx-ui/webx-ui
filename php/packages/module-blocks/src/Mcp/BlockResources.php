@@ -31,6 +31,7 @@ final class BlockResources
         'wx-radio-group' => ['kind' => 'field', 'note' => 'One of props.options, all shown.'],
         'wx-date-picker' => ['kind' => 'field', 'note' => 'A date, stored as YYYY-MM-DD.'],
         'wx-color-picker' => ['kind' => 'field', 'note' => 'A colour, stored as a CSS colour string.'],
+        'wx-link' => ['kind' => 'field', 'note' => 'Somewhere to go: a page of this site, an address, or nowhere. Stored as { target, entity_type, entity_id, url, hash, new_tab, rel } — the entity, never its address. The template gets url worked out when the block is printed, with the anchor already on the end of it, plus label, available, new_tab and rel. props: allowNone, attributes.'],
         'wx-repeater' => ['kind' => 'field', 'note' => 'A list of records; children are the fields of one record. props: itemLabel, min, max.'],
         'wx-media' => ['kind' => 'field', 'note' => 'A file from the media library; the value is { path, alt, title }, and the template also gets url, worked out when the block is printed. props: accept.'],
         'wx-gallery' => ['kind' => 'field', 'note' => 'Pictures from the media library, in the order they were dragged into; a list of wx-media values, each resolved with url, thumb, name, size, width and height. Use this rather than a wx-repeater around a wx-media. props: max, min, columns, aspect, captions.'],

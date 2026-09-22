@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'target-entity' => 'Questo sito',
+    'target-url' => 'Un indirizzo',
+    'target-none' => 'Da nessuna parte',
+    'section' => 'Sezione',
+    'search' => 'Inizia a scrivere un nome',
+    'searching' => 'Ricerca in corso…',
+    'empty' => 'Nessun risultato',
+    'clear' => 'Rimuovi il collegamento',
+    'unavailable' => 'Non è ancora sul sito',
+    'missing' => 'Ciò a cui puntava questo collegamento non esiste più',
+    'url-label' => 'Indirizzo',
+    'url-placeholder' => '/account oppure https://example.com',
+    'hash' => 'Ancora',
+    'hash-placeholder' => 'sezione-della-pagina',
+    'url-routes' => 'Indirizzi di questo sito',
+    'new-tab' => 'Apri in una nuova scheda',
+    'rel' => 'Relazione',
+    'rel-nofollow' => 'Non trasmettere peso del collegamento',
+    'rel-sponsored' => 'Posizionamento a pagamento',
+    'rel-ugc' => 'Scritto da un visitatore',
+    'shape' => 'Questo campo accetta un collegamento.',
+    'target' => 'Questo campo non conosce questo tipo di destinazione.',
+    'no-source' => 'Qui non si può collegare a questo.',
+    'no-entity' => 'Scegli dove porta il collegamento.',
+    'url-length' => 'Un indirizzo può essere lungo al massimo :max caratteri.',
+    'url-scheme' => 'Un indirizzo deve essere un percorso o iniziare con http, https, mailto o tel.',
+    'hash-length' => 'Un’ancora può essere lunga al massimo :max caratteri.',
+    'hash-shape' => 'Un’ancora è un nome nella pagina: senza spazi.',
+    'not-localized' => 'Un collegamento è lo stesso in ogni lingua e non si traduce.',
+];
