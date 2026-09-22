@@ -63,6 +63,56 @@ export interface AdminPage {
   to: number | null
 }
 
+/**
+ * One tool call an agent made, as `GET /api/cms/auth/mcp-calls` answers it.
+ *
+ * `user` is null for a call on the stdio server, where there was nobody to act as; a user with
+ * no `name` was deleted since. `arguments` is the JSON as the server kept it — secrets blanked,
+ * cut to a length — and so is text to show, not an object to read.
+ */
+export interface AgentCall {
+  id: number
+  at: string | null
+  user: { id: number; name: string | null } | null
+  /** What the client called itself on the consent screen; null off a connection. */
+  client: string | null
+  tool: string
+  arguments: string | null
+  dry_run: boolean
+  ok: boolean
+  error: string | null
+  duration_ms: number
+  [key: string]: unknown
+}
+
+export type AgentCallOutcome = 'ok' | 'failed' | 'dry'
+
+export interface AgentCallQuery {
+  /** An administrator's id, or `none` for the stdio server. */
+  user?: string | null
+  tool?: string | null
+  outcome?: AgentCallOutcome | null
+  page?: number
+  per_page?: number
+}
+
+/** What the log can be narrowed by: the people and the tools that actually appear in it. */
+export interface AgentCallFilters {
+  users: { id: number | null; name: string | null }[]
+  tools: string[]
+}
+
+export interface AgentCallPage {
+  data: AgentCall[]
+  current_page: number
+  last_page: number
+  per_page: number
+  total: number
+  from: number | null
+  to: number | null
+  filters: AgentCallFilters
+}
+
 /** What a form sends. `password` left out is a password left alone. */
 export interface AdminInput {
   name: string
@@ -74,3 +124,33 @@ export interface AdminInput {
   locale?: string | null
   roles?: number[]
 }
+
+/**
+ * One agent somebody let into the panel, as `GET /api/cms/auth/connections` answers it.
+ *
+ * `client` is the name the client chose for itself on the consent screen and `host` is where
+ * the code was sent — both, always, because only the second is evidence. `revoked_at` is set
+ * on a connection that was ended: the row is kept, since it is what the call log points at.
+ */
+export interface Connection {
+  id: number
+  client: string
+  host: string
+  read_only: boolean
+  user: { id: number; name: string | null }
+  connected_at: string | null
+  last_used_at: string | null
+  revoked_at: string | null
+  [key: string]: unknown
+}
+
+/** The list, with what the reader may ask for next. */
+export interface Connections {
+  data: Connection[]
+  /** Which list this is: only this person's, or everybody's. */
+  scope: ConnectionScope
+  /** Whether everybody's is a list this reader would be allowed. */
+  canSeeEverybody: boolean
+}
+
+export type ConnectionScope = 'mine' | 'all'

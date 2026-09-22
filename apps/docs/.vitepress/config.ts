@@ -25,6 +25,7 @@ export default defineConfig({
           items: [
             { text: 'Introduction', link: '/guide/' },
             { text: 'Installation', link: '/guide/installation' },
+            { text: 'A new site', link: '/guide/new-site' },
             { text: 'Theming', link: '/guide/theming' },
             { text: 'Languages', link: '/guide/languages' },
             { text: 'Dialogs from code', link: '/guide/modals' },
@@ -32,6 +33,7 @@ export default defineConfig({
             { text: 'Lists', link: '/guide/lists' },
             { text: 'The file manager', link: '/guide/media' },
             { text: 'Administrators', link: '/guide/admins' },
+            { text: 'AI agents', link: '/guide/agents' },
             { text: 'Pages', link: '/guide/pages' },
             { text: 'Blog', link: '/guide/blog' },
             { text: 'Inbox', link: '/guide/inbox' },
@@ -40,6 +42,8 @@ export default defineConfig({
             { text: 'Addresses', link: '/guide/routing' },
             { text: 'Blocks', link: '/guide/blocks' },
             { text: 'Screens', link: '/guide/screens' },
+            { text: 'Database backups', link: '/guide/backups' },
+            { text: 'Extending', link: '/guide/extending' },
             { text: 'Roadmap', link: '/guide/roadmap' },
           ],
         },
@@ -76,6 +80,7 @@ export default defineConfig({
             { text: 'Image', link: '/components/image' },
             { text: 'ImageEditor', link: '/components/image-editor' },
             { text: 'Segmented', link: '/components/segmented' },
+            { text: 'ThemeSwitch', link: '/components/theme-switch' },
           ],
         },
         {

@@ -1,5 +1,15 @@
 import type { AdminContext } from '@webx-ui/module-admin'
-import type { Admin, AdminInput, AdminPage, AdminQuery, Role } from './types'
+import type {
+  Admin,
+  AdminInput,
+  AdminPage,
+  AdminQuery,
+  AgentCall,
+  AgentCallFilters,
+  AgentCallPage,
+  AgentCallQuery,
+  Role,
+} from './types'
 
 export interface AdminsApi {
   list(query?: AdminQuery): Promise<AdminPage>
@@ -8,6 +18,8 @@ export interface AdminsApi {
   update(id: number, input: AdminInput): Promise<Admin>
   remove(id: number): Promise<void>
   roles(): Promise<Role[]>
+  /** What agents did, newest first. Behind `admins.audit`. */
+  calls(query?: AgentCallQuery): Promise<AgentCallPage>
 }
 
 /**
@@ -46,5 +58,22 @@ export function createAdminsApi(admin: AdminContext): AdminsApi {
     remove: (id) => admin.http.delete<void>(`${base}/admins/${id}`),
 
     roles: () => admin.http.get<{ data: Role[] }>(`${base}/roles`).then(data),
+
+    calls: (query = {}) =>
+      admin.http
+        .get<{
+          data: AgentCall[]
+          meta: Omit<AgentCallPage, 'data' | 'filters'>
+          filters: AgentCallFilters
+        }>(`${base}/mcp-calls`, {
+          query: {
+            user: query.user ?? undefined,
+            tool: query.tool ?? undefined,
+            outcome: query.outcome ?? undefined,
+            page: query.page,
+            per_page: query.per_page,
+          },
+        })
+        .then((body) => ({ ...body.meta, data: body.data, filters: body.filters })),
   }
 }

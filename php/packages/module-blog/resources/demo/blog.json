@@ -1,0 +1,57 @@
+{
+  "rubric": {
+    "slug": "notes",
+    "title": "Notes",
+    "lead": "Short pieces about how this site is put together."
+  },
+  "tags": [
+    { "slug": "blocks", "title": "Blocks" },
+    { "slug": "demo", "title": "Demo" }
+  ],
+  "articles": [
+    {
+      "slug": "a-site-made-of-blocks",
+      "title": "A site made of blocks",
+      "lead": "An article is a list of blocks, the same ones a page is made of — so a writer never waits for a deployment to get a layout.",
+      "published_in_days": -2,
+      "cover": true,
+      "pinned": true,
+      "tags": ["blocks", "demo"],
+      "blocks": [
+        {
+          "key": "demo-article-one-intro",
+          "type": "text",
+          "values": {
+            "heading": "Written in the panel",
+            "body": "This article was seeded by the command php artisan webx:demo, and it is an ordinary article: edit it, publish it, delete it.\nIts content is blocks, which means the block types in the panel are what an article can be made of."
+          }
+        },
+        {
+          "key": "demo-article-one-more",
+          "type": "text",
+          "values": {
+            "heading": "Rubrics and tags",
+            "body": "It sits in a rubric and carries two tags. A tag is in the index only once a rule has been written for its address, which is why an empty tag page never reaches a search engine."
+          }
+        }
+      ]
+    },
+    {
+      "slug": "what-comes-next-week",
+      "title": "What comes next week",
+      "lead": "Dated ahead of time: the site answers 404 for it and the panel says «Scheduled» until the day arrives.",
+      "published_in_days": 7,
+      "tags": ["demo"],
+      "blocks": [
+        {
+          "key": "demo-article-two-intro",
+          "type": "text",
+          "values": {
+            "heading": "A date instead of a scheduler",
+            "body": "There is no job waiting to publish this. The date is the whole of it: before it the article is not on the site, after it it is."
+          }
+        }
+      ]
+    }
+  ]
+}

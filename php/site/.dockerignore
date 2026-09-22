@@ -1,0 +1,35 @@
+# What the build does not need, and what it must not carry.
+#
+# The two directories at the top cost the most: `vendor` and `node_modules` are installed
+# inside the image from the lock files, and copying the host's copies over them is both slow
+# and wrong — they were built for another platform.
+vendor
+node_modules
+
+.git
+.github
+.idea
+.vscode
+
+# The secrets. The container is handed its environment by compose; a .env baked into an image
+# travels wherever the image does.
+.env
+.env.*
+!.env.example
+
+public/build
+public/hot
+public/storage
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/*
+database/database.sqlite
+*.log
+
+.phpunit.cache
+.phpunit.result.cache
+
+CLAUDE.md
+AGENTS.md

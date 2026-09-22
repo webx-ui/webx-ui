@@ -19,6 +19,7 @@ final class ListToolsCommandTest extends TestCase
             ->expectsOutputToContain('seo_bulk_update_seo')
             ->expectsOutputToContain('media_library_find_unused')
             ->expectsOutputToContain('media:audit')
+            ->expectsOutputToContain('seo.view | seo.manage')
             ->assertSuccessful();
     }
 

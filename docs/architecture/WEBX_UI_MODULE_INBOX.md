@@ -316,8 +316,8 @@ GET {api}/inbox/submissions/{submission}/files/{file}      cms.can:inbox.view
 ## 10. Форма на сайте
 
 ```blade
-<x-webx-form slug="contact" />
-<x-webx-form :form="$form" class="my-form" />
+<x-webx-inbox::form slug="contact" />
+<x-webx-inbox::form :form="$form" class="my-form" />
 ```
 
 Компонент рисует `<form method="post">` на адрес приёма, поля по типам, кнопку, honeypot и метку
@@ -554,7 +554,7 @@ middleware; антиспам §7; файлы §8 на своём диске; mai
 components/{inbox-form,form,form-control}.blade.php и resources/assets/alfatech-market/form.js —
 образец разметки и скрипта; module-blocks/src/Rendering — как пакет печатает на сайте.
 
-Сделать: компонент <x-webx-form>, вьюхи каркаса, поля и сообщения по каждому типу §4, honeypot и
+Сделать: компонент <x-webx-inbox::form>, вьюхи каркаса, поля и сообщения по каждому типу §4, honeypot и
 метку времени, блок капчи; публикацию вьюх тегом webx-inbox-views; скрипт без зависимостей —
 перехват submit, ошибки под полями, сообщение или редирект; тесты рендера и отправки без JS.
 

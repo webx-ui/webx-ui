@@ -1,5 +1,250 @@
 # @webx-ui/php
 
+## 0.29.0
+
+### Minor Changes
+
+- 240ea2e: `webx:boot` is what a container does between starting and serving — waiting for the database, migrating, keys, languages, block types, the first administrator, caches — worked out from the modules installed rather than written into a script; the skeleton ships the Dockerfile and the two compose stacks that call it
+
+## 0.28.0
+
+### Minor Changes
+
+- 483c692: Each Composer package names its npm half, and `webx:panel --sync` wires in what is installed
+- 3aa2f5d: Every module brings its own demo content, and `webx:demo --remove` takes all of it back out
+- b24f7d1: The public views of `module-pages` and `module-blog` stand in the site's layout, and the two Blade tags are namespaced: `<x-webx-inbox::form>` and `<x-webx-seo::head>`
+- 0396cc0: `webx:doctor` checks a site the way a deploy needs it checked: both halves, the bundle, npm ranges, migrations, storage, the layout seam, languages, caches and limiters
+- 9ef9a3d: A new site is one command: the `webx-ui/site` skeleton and `php artisan webx:setup`
+
+  `composer create-project webx-ui/site example.local` now leaves a Laravel application with the
+  panel on it, the modules that were asked for, a database that did not exist a minute ago, an
+  administrator and something to look at. The skeleton lives in `php/site` and mirrors to
+  `webx-ui/site` the way the packages mirror to theirs.
+
+  `webx:setup` asks the questions with defaults read off the directory, the `.env` and `git
+config`, writes the `.env` by replacing rather than appending, creates the database over PDO,
+  installs the chosen modules, wires the panel in through `webx:panel --sync`, migrates, seeds the
+  languages, creates the first administrator, builds the front end and seeds the demo content. It
+  is the same command on a site that has been running for months: run it again after installing a
+  module and it adds what is missing and changes nothing else.
+
+## 0.27.2
+
+### Patch Changes
+
+- 3926a30: Both connector vendors answer at two domains, and the list of return addresses now says so
+
+## 0.27.1
+
+### Patch Changes
+
+- d5b26d6: The dumping tool takes its extra flags from the environment, because only the machine knows it needs them
+- 1d3a8a6: The consent screen points at the tab that actually holds the connections
+
+## 0.27.0
+
+### Minor Changes
+
+- dce896c: Every call an agent makes is written down, and the panel shows who did what
+
+  An agent acts in an administrator's name, and until now nothing said afterwards what it had
+  done. Now every tool call lands in `mcp_calls`, the way every sign-in lands in
+  `cms_login_records`, and the administrators section shows the trail:
+
+  - **One row per call, whichever way it went.** `webx-ui/mcp` writes it in one place, around the
+    whole of the call — so a refusal at the door for a scope, a read-only connection or a missing
+    permission is a row with its reason, and so is what the handler threw. A handler that answers
+    `ok: false` is written down as refused too. Each row carries who the agent acted as, on which
+    connection, the tool, its arguments, whether it was a dry run, and how long it took. No secret
+    reaches it: the token and the headers are never looked at, and an argument named like one is
+    blanked. There is deliberately no link to what the call was about — tools are about
+    different things.
+  - **Kept by days.** `webx-mcp.calls.days` (90) is the retention; `webx:mcp:prune-calls` runs
+    nightly on the scheduler. `calls.enabled` switches the log off, `calls.arguments_length`
+    cuts long arguments.
+  - **A view next to the administrators.** `@webx-ui/module-auth` draws **Agent calls** as a
+    second view of the section, at `/admins/calls`, for whoever holds `admins.audit` — the
+    permission the sign-in trail is behind. It narrows by administrator, by tool and by outcome,
+    and the choices on offer are the ones that actually appear in the log. Arguments and the
+    refusal's words open under a row. `GET /api/cms/auth/mcp-calls` answers it.
+  - The playground panel now has the administrators section, so the view can be looked at on
+    `localhost:5174/panel/admins/calls`.
+
+- 5309e37: An address is all a person needs to connect their own agent, and a list is all they need to end it
+
+  The dance, the consent screen, the permissions and the log were done; what was missing was the
+  part a person actually looks at. Two screens and a guide.
+
+  - **Connect an agent** — a new section in the system group, behind no permission at all:
+    whoever got into the panel may connect an agent, and the agent cannot do anything they
+    cannot. It has the address of this panel for agents, large, with a button that copies it;
+    three steps for Claude and ChatGPT; a line for a terminal for Claude Code and two lines of
+    TOML for Codex; and one-click install links for Cursor and VS Code. The address carries no
+    secret — that is the whole point of the OAuth path — so it can be printed, read aloud, or
+    left on a page. The server prints it absolute, because it is pasted into a program on
+    another machine, and the name the server takes in the client's own list comes from its host,
+    so somebody with three sites connected can tell them apart. The section is registered only
+    where there is a door to connect to: Passport installed and `webx-mcp.path` not `false`.
+  - **Connections** — the agents that have been let in, with what each may do, when it was
+    connected and when it was last heard from. Everybody's, as a third view of the
+    administrators section, for whoever holds `admins.manage`; their own, at the foot of the
+    connect page, for anybody signed in. **Disconnect** revokes the refresh token as well as the
+    access token — without the second, a connection that the panel says has ended goes on
+    refreshing itself for the month it was given. The row is kept, greyed: the call log points
+    at it, and a line saying the connection ended on the 21st is worth more than a gap.
+  - `GET /api/cms/auth/connections` (`?all=1` for everybody's) and
+    `DELETE /api/cms/auth/connections/{id}` answer both, and `WebxUi\Mcp\Grants\Grants::revoke()`
+    is where a connection ends.
+  - A guide, `apps/docs/guide/agents.md`: how to connect, what an agent may do and why that is
+    exactly what you may do, why not to connect a super administrator, and the two things —
+    nightly dumps and the list of return addresses — to have in place before switching it on.
+  - The playground panel has both screens, on `localhost:5174/panel/connect` and
+    `localhost:5174/panel/admins/connections`.
+
+- 87a538c: The consent screen is the panel's own, and "read only" is a box on it
+
+  When an agent asks to be let in, the person now sees a page of the panel rather than the plain
+  one: the site's logo, who is asking and where the answer will be sent, and what the agent will be
+  able to do — in the words of the panel's modules ("Pages — view and edit", "Files — view"), not in
+  scopes. Under it, the warning that the agent acts in their name and that they are responsible for
+  what it does. In the panel's language, all ten.
+
+  - **Read only.** One box instead of a matrix of scopes: tick it and the agent may look and may
+    not change anything, whatever the person's own permissions say. A read-only connection is not
+    shown the tools that write, and is refused if it calls one it remembers from before.
+  - **The consent is written down.** No "I understand" box — the fact of pressing Allow goes into
+    `mcp_grants` in `webx-ui/mcp`: who, which client, the address the code went to, whether they
+    said read only, which version of the text they were shown, and when. The same row is updated
+    when the same person lets the same client in again. `last_used_at` is kept to the minute, so
+    a list of connections can say when each was last seen.
+  - **A guest is sent to the panel to sign in and brought back.** Passport sends a stranger to a
+    route named `login`, which no site with this panel has; now they are sent to the panel's own
+    sign-in screen with the consent page as `next`, and `@webx-ui/module-auth` follows a whole
+    address on the same site as a page rather than as a route. "Sign in as somebody else" on the
+    consent screen ends the session and goes the same way. The sign-in path is
+    `webx-auth.login_path`, `login` under the panel's path.
+  - The consent screen posts to `{oauth prefix}/consent` rather than to Passport's approve route;
+    `scripts/php-smoke.sh` walks the dance both ways, read-only and not, in a real application.
+
+- f623fac: A person connects their own agent with an address and three clicks
+
+  The MCP server used to open only for a token printed from the console, which is fine for whoever
+  can already run artisan on the server and no use at all for a designer or a client. Now the
+  address alone is enough — `https://example.com/api/cms/mcp`, nothing secret in it — and the
+  client finds its own way from there: it reads the 401, discovers the authorization server,
+  registers itself, sends the person to the panel to sign in and agree, and leaves with a token of
+  theirs. The agent acts as that administrator, so authorship, roles and `is_active` already mean
+  what they should.
+
+  - **Passport replaces Sanctum.** Two `HasApiTokens` traits cannot share a model, and Passport is
+    the one that can register a client it has never met. `webx-ui/module-auth` carries it, because
+    `CmsUser` is what an agent acts as and Passport's user provider accepts only a model that
+    implements its `OAuthenticatable`. A site switches it on once, with
+    `vendor:publish --tag=passport-migrations`, `migrate` and `passport:keys`; without the keys the
+    guard cannot be built and a call with no token answers 500 instead of 401.
+  - **The `api` guard** — Passport's driver over the panel's own people — is registered for you
+    unless the application has defined one under that name, and `webx.mcp-auth` asks it.
+  - **Two doors that ship open are closed.** `config('mcp.redirect_domains')` is `['*']` by default,
+    which lets anybody register a client called "Site panel" that takes the code to their own
+    server; the list is now Claude, ChatGPT and localhost, and the consent page always shows the
+    address a person is about to be sent back to, not only the name the client chose for itself.
+    Client registration is rate limited, because nobody has signed in when it happens.
+  - **A token granted this way carries one scope for the whole server**, `mcp:use`, because that is
+    the only one a client is ever offered. Read module scope by module scope it would be refused
+    everything, so it passes the scope gate whole; what limits it is the administrator's own
+    permissions. A key that names module scopes is still read scope by scope.
+  - **The panel fetches its CSRF cookie from its own route**, `{api_path}/auth/csrf-cookie`, rather
+    than Sanctum's — which left with the package. `createHttp` defaults to it.
+  - `webx:mcp:token` is gone with Sanctum. Keys for machines, which have no browser to send anybody
+    to, come back later as their own thing.
+
+- f5b4d44: An agent can do what the administrator who connected it can do, and is shown exactly that
+
+  Until now the MCP door checked the token's scope and the terms of the connection, and never the
+  administrator's own permissions — and a token granted through consent carries one scope for the
+  whole server, so an editor's agent could do anything any module offered. Now every tool is behind
+  a panel permission, checked in the same place as the scope, before any handler runs:
+
+  - **A permission per tool, derived the way the scope is.** A tool that writes needs
+    `<module>.manage`; one that reads needs `<module>.view` — or `<module>.manage`, because the
+    panel's own routes let an editor at the list without a separate `view`. A module whose
+    permissions are not named after it says so on the tool: `Tool::read(..., permission: …)`, one
+    name or several that mean "any of these". `webx-ui/module-blog` (`blog.articles.*` and
+    `blog.taxonomy.manage` for three module ids), `webx-ui/module-inbox` (`inbox.update` for
+    moving a submission along, `inbox.manage` for the forms) and `webx-ui/module-media`
+    (`media.upload` for `upload_from_url`) say so; the sign-in audit tools of
+    `webx-ui/module-auth` are behind `admins.audit`.
+  - **`tools/list` is what the caller may use.** A narrower role sees a shorter list, and a tool
+    that is not listed is not there to call by name either. On the stdio server there is nobody to
+    ask, so everything is listed. A call that gets past the list — a client remembering a tool
+    from before a role was taken away — is refused with the permission it lacks.
+  - `webx:mcp-tools` shows the permission next to the scope.
+
+- cd95a2e: A gzipped dump of the database every night, and one line in the panel saying so
+
+  Insurance, not a restore system. The file lands on the same disk as the database it came from,
+  so it survives a mistake and not a dead server, and there is no restore button anywhere — what
+  it is for is getting yesterday's version of one row, one table or one article back by hand. It
+  exists because backups are an extra on a good many hosts and absent on the rest, and having
+  something is better than having nothing.
+
+  - `webx:db:backup` writes `storage/app/private/backups/<database>-2026-09-21-0310.sql.gz`,
+    gzipped as the dump comes out, so no uncompressed copy of the database ever touches the disk.
+    `mysqldump` for MySQL and MariaDB, `pg_dump` for PostgreSQL, a copy of the file for SQLite.
+  - Rotation runs **after** a dump has succeeded and never touches the newest file. Clearing out
+    last week without having written tonight is the one thing a backup command must not do, and
+    it is exactly what happens if the two steps are written the other way round. A failure exits
+    non-zero, logs why, deletes its own half-written file and leaves everything else alone.
+  - Structure for every table, rows for the ones worth keeping: `cache`, `sessions`, `jobs` and
+    the rest of `skip_data` are dumped with `--no-data`, which on most sites is most of the file.
+    The tables that keep their rows are dumped structure-and-data together, so pulling one table
+    out of the finished file is a single contiguous range — the guide has the one-liner.
+  - The password never appears in an argument, where `ps` would show it to anybody with a shell:
+    MySQL gets a 0600 defaults file and PostgreSQL a 0600 `.pgpass`, both removed in a `finally`.
+    `--single-transaction --quick` so the nightly dump does not lock the site, `--no-tablespaces`
+    so it runs as a shared-hosting user, `utf8mb4` so the translated JSON columns survive.
+  - `module-admin` puts the task on the scheduler itself, at `webx-admin.backup.at`. What it
+    cannot do is run the scheduler: the site still needs a system cron on `schedule:run`, and the
+    line in the panel is what notices when there is not one.
+  - That line is at the foot of the settings screen, for whoever has `settings.view`: "Last
+    database snapshot: today at 03:10 · 4.2 MB", and the same line as a warning when the newest
+    file is more than two days old or there is none. Nothing is recorded in the database — the
+    line is the newest file in the directory, and a task that failed is the file that is not
+    there. `WxBackupNote`, fed from a new `backup` key in the manifest.
+
+- b1aeb52: Light, dark or the machine's — chosen in the account menu, stored against the person
+
+  The tokens have carried both themes since the beginning, and nothing in the panel ever wrote
+  `data-theme`: the only way to see the dark one was to set the whole machine to it. Now there is a
+  control, and the choice belongs to the person rather than to the browser — somebody who works
+  dark at night on a laptop finds the panel dark in the morning at a desk.
+
+  Three states rather than two. A toggle can say light and dark; it cannot say _I have not
+  decided_, which is the state almost everybody is in, because their machine has already decided
+  for them. `system` is a real answer and the one the switch starts on, and it goes on following
+  the machine afterwards — the panel darkens at sunset along with everything else on the desk.
+
+  - `WxThemeSwitch` — the control, in the core: three cells, a thumb that slides between them and a
+    picture that arrives rather than appears. It is a radio group, the arrow keys move within it,
+    and both animations stop under `prefers-reduced-motion`. Like everything in the core it ships
+    English and knows nothing about a dictionary, so its three words are props.
+  - `applyTheme()` now takes `system`, which removes the attribute rather than writing a third
+    value — the stylesheet already follows `prefers-color-scheme` for anything not pinned to light.
+    `systemTheme()` and `watchSystemTheme()` are there for whatever has to _know_ rather than be
+    painted. New `--wx-easing-emphasized`, a curve with a little overshoot in it.
+  - The theme contract now works both ways round. The tokens have always had a `data-theme="dark"`
+    block and never a light one, so a light island inside a dark page — a preview, a printed
+    sheet — inherited the dark values and quietly stayed dark, while the guide claimed a page could
+    mix the two. There is a `[data-theme='light']` block now, and it can.
+  - `createAdmin()` builds the theme before it mounts, so the sign-in screen is already the colour
+    this browser was left in, and `useTheme()` hands it to anybody who asks. The administrator's own
+    record replaces the browser's guess the moment the session says who they are.
+  - `PUT /api/cms/auth/theme` and a `theme` column on `cms_users`, beside the language and for the
+    same reasons. `null` means follow the machine — a choice, and one that has to travel between
+    machines like any other.
+  - The Blade shell paints before its bundle runs: three lines that read the browser's copy, so a
+    dark panel never starts white.
+
 ## 0.26.1
 
 ### Patch Changes

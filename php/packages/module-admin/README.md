@@ -144,13 +144,47 @@ decision only the site can make, so there is no one bundle to ship.
 php artisan webx:panel
 ```
 
-writes `resources/js/admin.ts`, adds it to the `laravel()` plugin's inputs, and points
-`webx-admin.vite` at it. Then install the front-end packages it names and build:
+writes `resources/js/admin.ts`, adds it to the `laravel()` plugin's inputs, points
+`webx-admin.vite` at it, and puts the npm halves of the installed packages into `package.json`.
+Then:
 
 ```bash
-npm install @webx-ui/module-admin @webx-ui/module-auth
+npm install
 npm run build      # or npm run dev while working — @vite serves from the dev server
 ```
+
+Which npm package goes with which Composer one is not something to remember: each package says
+so itself, in its own manifest.
+
+```json
+"extra": {
+    "webx": {
+        "module": "pages",
+        "npm": { "@webx-ui/module-pages": "^0.3.10" },
+        "panel": {
+            "import": "import { pages } from '@webx-ui/module-pages'",
+            "style": "@webx-ui/module-pages/style.css",
+            "register": "pages()"
+        }
+    }
+}
+```
+
+Install a module six months later and
+
+```bash
+php artisan webx:panel --sync
+```
+
+adds its four lines to the entry file and its dependency to `package.json`, leaving everything
+else where it is. Run it twice and the second run changes nothing.
+
+The entry file carries three pairs of markers — `webx:imports`, `webx:styles`, `webx:modules` —
+and the command writes between those and nowhere else. Everything outside them is the site's:
+the avatar resolver, the media field handed to the modules that take one, whatever else only
+the site knows. A module the site has configured its own way (`seo({ mediaField: WxMediaField })`)
+counts as registered and is left alone; delete the markers and the command prints the lines to
+add by hand rather than guessing where they went.
 
 If your Vite configuration is shaped in a way the command does not recognise, it says which
 line to add rather than rewriting a build it does not understand.
@@ -213,10 +247,68 @@ excepted; `webx:versions:prune` trims everything to a limit lowered after the fa
 A handler answering a public address reads `isPublished()`; the preview that shows a draft
 lives in `webx-ui/module-blocks`.
 
+## Demo content
+
+```bash
+php artisan webx:demo            # something to look at on a site nobody has written into yet
+php artisan webx:demo --remove   # and all of it back out again
+```
+
+Every module brings its own: a section with something worth showing implements `ProvidesDemo`,
+and the command walks the ones that do. `requires()` names the modules it has nothing to seed
+without — and is the order too, so a page made of blocks is seeded after the block types
+whatever the navigation says. A module whose requirement is not installed is skipped out loud
+(`blog skipped: no media`) rather than failing halfway.
+
+```php
+final class ProductsModule extends AbstractModule implements ProvidesDemo
+{
+    /** @return list<string> */
+    public function requires(): array
+    {
+        return ['categories'];
+    }
+
+    public function seed(DemoLedger $ledger): void
+    {
+        $product = Product::query()->create([...]);
+
+        $ledger->created($product);                 // removing it deletes it
+        $ledger->changed($catalogue, ['intro']);    // called before the change; removing puts it back
+        $ledger->note('the catalogue page was left alone: …');   // printed as a warning
+    }
+}
+```
+
+Removal follows the journal in `storage/app/webx-demo.json` backwards and knows nothing else:
+what a module did not write down is not removed, and nothing is guessed from a slug. A record
+that was there before the demo is restored rather than deleted — the home page of
+`webx-ui/module-pages` comes from a migration and has to survive this — so afterwards the
+database holds what it held before, which for a page that was an unpublished stub means an
+unpublished stub again.
+
+`webx:make-module` generates the interface and an empty `resources/demo/<id>` with the class,
+so a new section starts with somewhere to put its fixtures.
+
+## Nightly database backup
+
+```
+php artisan webx:db:backup
+```
+
+A gzipped dump into `backup.path` under the root of `backup.disk` — with the defaults,
+`storage/app/private/backups` — on the scheduler at `webx-admin.backup.at`
+and kept for `keep` days. Insurance rather than a restore system — the file is on the same disk
+as the database — and there is no restore anywhere in the panel; what the panel has is one line
+at the foot of the settings screen saying when the last one was, and a warning when there has
+not been one for two days. The site still needs a system cron on `schedule:run`. The whole of
+it, including how to pull one table out of a finished dump, is in
+[the guide](https://webx-ui.github.io/webx-ui/guide/backups).
+
 ## Configuration
 
-`config/webx-admin.php` covers the title, the two paths, the middleware groups and the version
-limits. Moving the panel means clearing the route cache afterwards.
+`config/webx-admin.php` covers the title, the two paths, the middleware groups, the version
+limits and the nightly backup. Moving the panel means clearing the route cache afterwards.
 
 ## Languages
 

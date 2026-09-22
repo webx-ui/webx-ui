@@ -112,6 +112,42 @@ review afterwards. A test asserts that no such tool appears.
 
 Both role tools honour `dry_run`, so an agent can be asked what it would change first.
 
+### What agents did
+
+Every tool call an agent makes lands in `mcp_calls` — written by `webx-ui/mcp`, around every
+call, whichever way it went. This module shows it as the **Agent calls** view of the
+administrators section, behind `admins.audit`: who the agent acted as, on which connection,
+which tool, with what, whether it was answered or refused and why, and how long it took. The
+view narrows by administrator, by tool and by outcome, and the choices on offer are the ones
+that actually appear in the log.
+
+`GET /api/cms/auth/mcp-calls` answers it, paginated newest first, with `user`, `tool`
+(`pages_create`) and `outcome` (`ok`, `failed`, `dry`) as query parameters; `user=none` is the
+stdio server, where there was nobody to act as. Retention is `webx-mcp.calls.days`.
+
+### Connections
+
+An agent's access refreshes itself for a month, so a connection lives long enough to be worth
+seeing and ending. `GET /api/cms/auth/connections` lists the ones this person made;
+`?all=1` lists everybody's and needs `admins.manage`. `DELETE /api/cms/auth/connections/{id}`
+ends one — your own always, somebody else's with `admins.manage` — and revokes the refresh
+token as well as the access token, without which the connection would outlive the decision by
+a month. The row is kept, greyed in the list: the call log points at it.
+
+The panel shows everybody's as the **Connections** view of the administrators section, and a
+person's own at the foot of the connect page.
+
+### Connect an agent
+
+A second section, `connect`, in the system group and behind no permission at all: the address
+of this panel for agents, a button that copies it, three steps for each client, and one-click
+links for Cursor and VS Code. The address carries no secret — that is the point of the OAuth
+path — so it is printable, readable aloud and safe to leave on a page.
+
+It is registered only where there is a door to connect to: Passport installed and
+`webx-mcp.path` not `false`. The address it prints is `url(webx-mcp.path)`, absolute, because
+it is pasted into a program on another machine.
+
 ## Configuration
 
 `config/webx-auth.php`. If you keep your own middleware stack on the panel's API, set
@@ -119,8 +155,11 @@ Both role tools honour `dry_run`, so an agent can be asked what it would change 
 
 ## Not here yet
 
-Password reset, two-factor, and invitations. Sanctum is a dependency and the model carries
-`HasApiTokens`, so scoped tokens for MCP have somewhere to go when that arrives.
+Password reset, two-factor, and invitations.
+
+An administrator is also the account an agent acts as, so the model carries Passport's
+`HasApiTokens` and Passport is a dependency. It stays inert until a site publishes Passport's
+migrations and generates its keys — see `webx-ui/mcp` for what that opens.
 
 ## Languages
 

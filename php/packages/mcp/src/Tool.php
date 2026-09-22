@@ -13,7 +13,7 @@ use WebxUi\Mcp\Exceptions\McpException;
  * Built through {@see self::read()} or {@see self::mutating()} rather than a constructor,
  * because the difference between the two is the whole safety story: a mutating tool is given
  * a `dry_run` argument whether its author remembered one or not, and carries a scope that a
- * token has to hold.
+ * token has to hold and a permission that the administrator has to hold.
  *
  * The handler is `fn (array $arguments, ?Authenticatable $user = null)`: the arguments as the
  * agent sent them, and the administrator the call acts as — null on the local stdio server,
@@ -26,6 +26,7 @@ final class Tool
 
     /**
      * @param  array<string, mixed>  $inputSchema  JSON Schema for the arguments
+     * @param  list<string>|null  $permissions  panel permissions, any of which lets the caller use the tool; null for the module's default
      */
     private function __construct(
         public readonly string $name,
@@ -33,6 +34,7 @@ final class Tool
         public readonly array $inputSchema,
         public readonly bool $mutating,
         public readonly ?string $scope,
+        public readonly ?array $permissions,
         public readonly Closure $handler,
     ) {
         if (preg_match('/^[a-z][a-z0-9_]*$/', $name) !== 1) {
@@ -48,6 +50,7 @@ final class Tool
      * A tool that only looks.
      *
      * @param  array<string, mixed>  $inputSchema
+     * @param  string|list<string>|null  $permission  the panel permission this tool is behind, when it is not the module's `<id>.view`; several mean any of them, the way a route's `cms.can` does
      */
     public static function read(
         string $name,
@@ -55,8 +58,17 @@ final class Tool
         Closure $handler,
         array $inputSchema = [],
         ?string $scope = null,
+        string|array|null $permission = null,
     ): self {
-        return new self($name, $description, self::normaliseSchema($inputSchema), false, $scope, $handler);
+        return new self(
+            $name,
+            $description,
+            self::normaliseSchema($inputSchema),
+            false,
+            $scope,
+            self::normalisePermission($name, $permission),
+            $handler,
+        );
     }
 
     /**
@@ -64,6 +76,7 @@ final class Tool
      * such tool can be asked what it would do, without each author having to remember.
      *
      * @param  array<string, mixed>  $inputSchema
+     * @param  string|list<string>|null  $permission  the panel permission this tool is behind, when it is not the module's `<id>.manage`; several mean any of them
      */
     public static function mutating(
         string $name,
@@ -71,6 +84,7 @@ final class Tool
         Closure $handler,
         array $inputSchema = [],
         ?string $scope = null,
+        string|array|null $permission = null,
     ): self {
         $schema = self::normaliseSchema($inputSchema);
         $schema['properties'][self::DRY_RUN] = [
@@ -79,7 +93,15 @@ final class Tool
             'default' => false,
         ];
 
-        return new self($name, $description, $schema, true, $scope, $handler);
+        return new self(
+            $name,
+            $description,
+            $schema,
+            true,
+            $scope,
+            self::normalisePermission($name, $permission),
+            $handler,
+        );
     }
 
     /**
@@ -100,5 +122,30 @@ final class Tool
         $schema['properties'] ??= [];
 
         return $schema;
+    }
+
+    /**
+     * One name or several, as a list — and never an empty one: a tool "behind no permission"
+     * would be open to everybody, which is not what a forgotten argument should mean.
+     *
+     * @param  string|list<string>|null  $permission
+     * @return list<string>|null
+     */
+    private static function normalisePermission(string $name, string|array|null $permission): ?array
+    {
+        if ($permission === null) {
+            return null;
+        }
+
+        $permissions = array_values(array_filter(
+            is_string($permission) ? [$permission] : $permission,
+            static fn (string $one): bool => trim($one) !== '',
+        ));
+
+        if ($permissions === []) {
+            throw McpException::emptyPermission($name);
+        }
+
+        return $permissions;
     }
 }
