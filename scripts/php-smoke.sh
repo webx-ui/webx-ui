@@ -1030,6 +1030,20 @@ note 'the public views stand in the layout of the skeleton'
 [ -f "$SITE/storage/app/webx-demo.json" ] || fail 'the demo journal is not there'
 note 'the demo journal is there'
 
+step "Run webx:doctor"
+# Against the real database, which is the half of this the doctor cannot be tested on anywhere
+# else. Exactly one refusal is expected and it is the bundle: this run passed `--no-build`, so
+# there is nothing in `public/build` — and a doctor that does not notice that is worth nothing.
+site_artisan webx:doctor > "$WORKDIR/doctor.log" 2>&1 || true
+
+grep -q 'npm run build' "$WORKDIR/doctor.log" \
+    || { cat "$WORKDIR/doctor.log" >&2; fail 'the doctor did not notice that nothing was built'; }
+
+grep -q '1 of the things this site needs is not in place' "$WORKDIR/doctor.log" \
+    || { cat "$WORKDIR/doctor.log" >&2; fail 'the doctor refused something other than the missing bundle'; }
+
+note 'the doctor checks a real site and names the one thing missing from it'
+
 step "Serve the site"
 site_artisan serve --host=127.0.0.1 --port="$SITE_PORT" > "$WORKDIR/site-serve.log" 2>&1 &
 SITE_PID=$!
