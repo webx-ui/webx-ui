@@ -20,7 +20,7 @@ class BackupCommand extends Command
 {
     protected $signature = 'webx:db:backup {--keep= : How many days of snapshots to keep}';
 
-    protected $description = 'Write a compressed dump of the database to storage/app/backups';
+    protected $description = 'Write a compressed dump of the database to the backups directory on the local disk';
 
     public function handle(Backups $backups): int
     {

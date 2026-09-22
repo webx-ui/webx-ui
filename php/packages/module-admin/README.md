@@ -296,7 +296,8 @@ so a new section starts with somewhere to put its fixtures.
 php artisan webx:db:backup
 ```
 
-A gzipped dump into `storage/app/private/backups`, on the scheduler at `webx-admin.backup.at`
+A gzipped dump into `backup.path` under the root of `backup.disk` — with the defaults,
+`storage/app/private/backups` — on the scheduler at `webx-admin.backup.at`
 and kept for `keep` days. Insurance rather than a restore system — the file is on the same disk
 as the database — and there is no restore anywhere in the panel; what the panel has is one line
 at the foot of the settings screen saying when the last one was, and a warning when there has

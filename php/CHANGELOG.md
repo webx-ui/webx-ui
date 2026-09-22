@@ -1,5 +1,33 @@
 # @webx-ui/php
 
+## 0.29.0
+
+### Minor Changes
+
+- 240ea2e: `webx:boot` is what a container does between starting and serving — waiting for the database, migrating, keys, languages, block types, the first administrator, caches — worked out from the modules installed rather than written into a script; the skeleton ships the Dockerfile and the two compose stacks that call it
+
+## 0.28.0
+
+### Minor Changes
+
+- 483c692: Each Composer package names its npm half, and `webx:panel --sync` wires in what is installed
+- 3aa2f5d: Every module brings its own demo content, and `webx:demo --remove` takes all of it back out
+- b24f7d1: The public views of `module-pages` and `module-blog` stand in the site's layout, and the two Blade tags are namespaced: `<x-webx-inbox::form>` and `<x-webx-seo::head>`
+- 0396cc0: `webx:doctor` checks a site the way a deploy needs it checked: both halves, the bundle, npm ranges, migrations, storage, the layout seam, languages, caches and limiters
+- 9ef9a3d: A new site is one command: the `webx-ui/site` skeleton and `php artisan webx:setup`
+
+  `composer create-project webx-ui/site example.local` now leaves a Laravel application with the
+  panel on it, the modules that were asked for, a database that did not exist a minute ago, an
+  administrator and something to look at. The skeleton lives in `php/site` and mirrors to
+  `webx-ui/site` the way the packages mirror to theirs.
+
+  `webx:setup` asks the questions with defaults read off the directory, the `.env` and `git
+config`, writes the `.env` by replacing rather than appending, creates the database over PDO,
+  installs the chosen modules, wires the panel in through `webx:panel --sync`, migrates, seeds the
+  languages, creates the first administrator, builds the front end and seeds the demo content. It
+  is the same command on a site that has been running for months: run it again after installing a
+  module and it adds what is missing and changes nothing else.
+
 ## 0.27.2
 
 ### Patch Changes
