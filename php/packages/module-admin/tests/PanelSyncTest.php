@@ -43,6 +43,7 @@ final class PanelSyncTest extends TestCase
 
         $this->files->delete($this->app->configPath('webx-admin.php'));
         $this->files->deleteDirectory($this->app->basePath('resources/js'));
+        $this->files->deleteDirectory($this->app->basePath('resources/views/components'));
 
         parent::tearDown();
     }
@@ -298,6 +299,78 @@ final class PanelSyncTest extends TestCase
         $this->artisan('webx:panel', ['--sync' => true])
             ->expectsOutputToContain('plugins: [auth()]')
             ->assertSuccessful();
+    }
+
+    #[Test]
+    public function it_stands_the_public_pages_of_a_module_in_the_site_layout(): void
+    {
+        $this->withLayoutSeam();
+        $config = $this->at('config/webx-pages.php');
+        $this->writeFile($config, $this->publishedConfig());
+        $this->writeFile($this->at('resources/views/components/layout.blade.php'), '<html>{{ $slot }}</html>');
+
+        $this->artisan('webx:panel')->assertSuccessful();
+
+        $this->assertStringContainsString("'layout' => env('WEBX_PAGES_LAYOUT', 'layout')", $this->readFile($config));
+    }
+
+    #[Test]
+    public function a_site_without_a_layout_keeps_the_module_printing_its_own_document(): void
+    {
+        // The seam is the site's to open. Pointing a module at `<x-layout>` that nobody wrote
+        // is a blog that answers with an exception instead of a bare page.
+        $this->withLayoutSeam();
+        $config = $this->at('config/webx-pages.php');
+        $this->writeFile($config, $this->publishedConfig());
+
+        $this->artisan('webx:panel')->assertSuccessful();
+
+        $this->assertSame($this->publishedConfig(), $this->readFile($config));
+    }
+
+    #[Test]
+    public function a_layout_the_site_chose_is_left_alone(): void
+    {
+        $this->withLayoutSeam('shell');
+        $config = $this->at('config/webx-pages.php');
+        $this->writeFile($config, str_replace("env('WEBX_PAGES_LAYOUT')", "'shell'", $this->publishedConfig()));
+        $this->writeFile($this->at('resources/views/components/layout.blade.php'), '<html>{{ $slot }}</html>');
+
+        $this->artisan('webx:panel')->assertSuccessful();
+
+        $this->assertStringContainsString("'layout' => 'shell'", $this->readFile($config));
+    }
+
+    #[Test]
+    public function running_it_again_leaves_the_layout_alone(): void
+    {
+        // The second run is the one that matters: the configuration was published by the first
+        // and is not in `config()` of this process, so only the file itself can say it is done.
+        $this->withLayoutSeam();
+        $config = $this->at('config/webx-pages.php');
+        $this->writeFile($config, $this->publishedConfig());
+        $this->writeFile($this->at('resources/views/components/layout.blade.php'), '<html>{{ $slot }}</html>');
+
+        $this->artisan('webx:panel')->assertSuccessful();
+        $after = $this->readFile($config);
+
+        $this->artisan('webx:panel', ['--sync' => true])->assertSuccessful();
+
+        $this->assertSame($after, $this->readFile($config));
+    }
+
+    /**
+     * `module-pages` as installed: a module whose configuration carries a layout key, which is
+     * the whole of how a package says it has a public half to stand somewhere.
+     */
+    private function withLayoutSeam(?string $layout = null): void
+    {
+        config()->set('webx-pages', ['view' => 'pages.show', 'layout' => $layout]);
+    }
+
+    private function publishedConfig(): string
+    {
+        return "<?php\n\nreturn [\n\n    'view' => env('WEBX_PAGES_VIEW', 'pages.show'),\n\n    'layout' => env('WEBX_PAGES_LAYOUT'),\n\n];\n";
     }
 
     /** An entry file the way a site ends up writing one: markers kept, everything else its own. */

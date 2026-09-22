@@ -166,4 +166,80 @@ final class PublicTest extends TestCase
 
         $this->assertNotFalse($document, 'The RSS document did not parse as XML.');
     }
+
+    #[Test]
+    public function a_site_without_a_layout_gets_a_whole_document(): void
+    {
+        $body = $this->get($this->styledArticle())->assertOk()->getContent();
+
+        $this->assertWholeDocument((string) $body);
+        $this->assertStringNotContainsString('The site header', (string) $body);
+    }
+
+    #[Test]
+    public function a_site_with_a_layout_gets_the_article_inside_it(): void
+    {
+        $this->siteLayout();
+
+        $body = $this->get($this->styledArticle())->assertOk()->getContent();
+
+        $this->assertWholeDocument((string) $body);
+        $this->assertStringContainsString('The site header', (string) $body);
+        $this->assertStringContainsString('The site footer', (string) $body);
+    }
+
+    #[Test]
+    public function the_three_listings_stand_in_the_layout_too(): void
+    {
+        $this->siteLayout();
+
+        $rubric = $this->rubric('repairs');
+        $this->tag('belts');
+
+        foreach (['/blog', $rubric->url(), '/blog/tag/belts'] as $url) {
+            $body = (string) $this->get($url)->assertOk()->getContent();
+
+            $this->assertStringStartsWith('<!doctype html', ltrim($body));
+            $this->assertStringContainsString('The site header', $body, "{$url} did not stand in the layout.");
+        }
+    }
+
+    /**
+     * A published article with a block type that has styles of its own, at its address.
+     *
+     * The styles are the point: `@webxBlocks` prints the bundle of what was rendered, so it only
+     * has anything to print if the content was rendered before the head — which is what the line
+     * at the top of the view is for, and what a layout between the two could have undone.
+     */
+    private function styledArticle(): string
+    {
+        $type = $this->blockType('text', '<p class="b-text">{{ $text }}</p>');
+        $type->saveVersion(['styles' => '.b-text { color: rebeccapurple; }']);
+        $type->publish();
+
+        $article = $this->article('changing-a-belt', published: false);
+        $article->blocks = [['key' => 'a', 'type' => 'text', 'values' => ['text' => 'Hello']]];
+        $article->save();
+        $article->publish();
+
+        return '/blog/changing-a-belt';
+    }
+
+    /** The site's layout, named the way its configuration would name it. */
+    private function siteLayout(): void
+    {
+        config()->set('webx-blog.layout', 'site::layout');
+    }
+
+    /** A document either way: doctype, one head with everything in it, the content in the body. */
+    private function assertWholeDocument(string $body): void
+    {
+        $this->assertStringStartsWith('<!doctype html', ltrim($body));
+
+        $head = substr($body, 0, (int) strpos($body, '</head>'));
+
+        $this->assertStringContainsString('<title>Changing a belt</title>', $head, 'The SEO head did not reach the layout.');
+        $this->assertStringContainsString('rel="stylesheet"', $head, 'The block styles did not reach the layout.');
+        $this->assertStringContainsString('<p class="b-text">Hello</p>', $body);
+    }
 }
