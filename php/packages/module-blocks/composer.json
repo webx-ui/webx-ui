@@ -33,11 +33,11 @@
         "illuminate/validation": "^13.0",
         "illuminate/view": "^13.0",
         "php": "^8.3",
-        "webx-ui/localization": "^0.28.0",
-        "webx-ui/mcp": "^0.28.0",
-        "webx-ui/module-admin": "^0.28.0",
-        "webx-ui/module-auth": "^0.28.0",
-        "webx-ui/routing": "^0.28.0"
+        "webx-ui/localization": "^0.29.0",
+        "webx-ui/mcp": "^0.29.0",
+        "webx-ui/module-admin": "^0.29.0",
+        "webx-ui/module-auth": "^0.29.0",
+        "webx-ui/routing": "^0.29.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
