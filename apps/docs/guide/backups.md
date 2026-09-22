@@ -25,8 +25,10 @@ well. This is the floor, not the ceiling.
 php artisan webx:db:backup [--keep=30]
 ```
 
-It writes `storage/app/private/backups/<database>-2026-09-21-0310.sql.gz`, gzipped as the dump
-comes out, so no uncompressed copy of the database ever touches the disk. Then, and only then,
+It writes `<database>-2026-09-21-0310.sql.gz` into `path` under the root of `disk` — with the
+defaults, `storage/app/private/backups`, because that is where Laravel 11+ roots the `local`
+disk. Gzipped as the dump comes out, so no uncompressed copy of the database ever touches the
+disk. Then, and only then,
 it deletes the files older than `--keep` days — clearing out last week without having written
 tonight is the one thing a backup command must never do, and it is exactly what happens if the
 two steps are written the other way round. The newest file is never deleted, whatever its age.

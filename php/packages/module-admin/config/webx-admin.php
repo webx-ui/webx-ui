@@ -108,15 +108,17 @@ return [
     | Nightly database backup
     |---------------------------------------------------------------------------
     |
-    | A gzipped dump of the database, written to `storage/app/backups` at `at`
-    | every night and kept for `keep` days. It is insurance and not a restore
-    | system: the file lands beside the database it came from, so it survives a
-    | mistake and not a dead server. Where the host already takes backups, this
-    | is one more copy and no harm; where it does not, it is the only one.
+    | A gzipped dump of the database, written to `path` under the root of
+    | `disk` at `at` every night and kept for `keep` days. It is insurance and
+    | not a restore system: the file lands beside the database it came from, so
+    | it survives a mistake and not a dead server. Where the host already takes
+    | backups, this is one more copy and no harm; where it does not, it is the
+    | only one.
     |
-    | Add `storage/app/backups` to the site's `.gitignore`, and treat a dump
-    | copied anywhere else as what it is — every password hash and every
-    | telephone number the site holds, in one file.
+    | Laravel's own `storage/app/.gitignore` already keeps the dumps out of the
+    | repository — check that it is still there rather than assuming it, and
+    | treat a dump copied anywhere else as what it is: every password hash and
+    | every telephone number the site holds, in one file.
     |
     | It needs the system cron running `php artisan schedule:run`; without one
     | nothing happens and the panel says so.
