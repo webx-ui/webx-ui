@@ -20,6 +20,17 @@ export {
   type Messages,
   type Translate,
 } from './i18n'
+export {
+  createTheme,
+  provideTheme,
+  useTheme,
+  themeKey,
+  type CreateThemeOptions,
+  type Theme,
+  type ThemeController,
+  type ThemePreference,
+  type ThemeState,
+} from './theme'
 export { adminMessages } from './messages'
 export { renderMarkdown } from './markdown'
 export { createDates, useDates, type DateLike, type Dates } from './dates'
@@ -62,4 +73,5 @@ export { default as WxRenameButton } from './RenameButton.vue'
 export { default as WxHelpButton } from './HelpButton.vue'
 export { default as WxDate } from './DateText.vue'
 export { default as WxNotes } from './NotesFeed.vue'
+export { default as WxBackupNote } from './BackupNote.vue'
 export { default as WxRichTextField } from './RichTextField.vue'

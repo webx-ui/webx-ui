@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/tokens",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Design tokens for WebX UI — colors, spacing, typography, radii, shadows.",
   "license": "MIT",
   "type": "module",

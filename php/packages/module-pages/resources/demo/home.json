@@ -1,0 +1,52 @@
+{
+  "title": "Home",
+  "seo": {
+    "title": "A site made of blocks",
+    "description": "The demo content of a fresh WebX UI site: a page built out of block types made in the panel."
+  },
+  "blocks": [
+    {
+      "key": "demo-hero",
+      "type": "hero",
+      "values": {
+        "title": "A site made of blocks",
+        "subtitle": "Every block on this page is a type made in the panel: its fields, its Blade, its styles. Nothing here is written into the layout.",
+        "button_label": "Open the panel",
+        "button_url": "/cms"
+      }
+    },
+    {
+      "key": "demo-home-text",
+      "type": "text",
+      "values": {
+        "heading": "What you are looking at",
+        "body": "This page, the one beside it and the block types behind them came from the command php artisan webx:demo.\nEdit any of it in the panel, or run php artisan webx:demo --remove and the site is empty again — still working, still yours."
+      }
+    },
+    {
+      "key": "demo-home-columns",
+      "type": "columns",
+      "values": {
+        "columns": "2",
+        "items": [
+          {
+            "key": "demo-home-column-left",
+            "type": "text",
+            "values": {
+              "heading": "Blocks inside blocks",
+              "body": "A container block prints its children, so a layout is content rather than a template a developer has to deploy."
+            }
+          },
+          {
+            "key": "demo-home-column-right",
+            "type": "text",
+            "values": {
+              "heading": "Addresses come from the registry",
+              "body": "Renaming this page rewrites its address and leaves a redirect behind it. Nothing in the layout has to know."
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

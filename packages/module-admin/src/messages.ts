@@ -24,6 +24,15 @@ export const adminMessages: Record<string, Messages> = {
     // The one menu group the panel names itself; a module's own group is named by the module.
     system: 'System',
   },
+  // The three words on the theme switch. They belong to the panel rather than to whoever
+  // places the switch: a core component ships English prop defaults and knows nothing about
+  // a dictionary, so the panel is the one that has to say them.
+  theme: {
+    label: 'Theme',
+    light: 'Light',
+    dark: 'Dark',
+    system: 'Follow the system',
+  },
   // What a screen that edits one record offers whatever the record is: the way out of it, and
   // the way to rename it. A module that opens an editor should not be inventing these.
   editor: {
@@ -56,6 +65,14 @@ export const adminMessages: Record<string, Messages> = {
     // Not an empty cell and not a dash: a column that says nothing leaves a reader wondering
     // whether the panel failed to load it.
     never: 'never',
+  },
+  // The one line the panel says about the nightly database dump. It lives at the foot of the
+  // settings screen, and the warning is the whole point of it: a backup whose breakage is
+  // discovered on the day it was needed is not a backup.
+  backup: {
+    title: 'Last database snapshot:',
+    stale: 'No database snapshot since :date. Check the schedule.',
+    never: 'The database has never been backed up. Check the schedule.',
   },
   // How a request fails, in the panel's words rather than the server's (§13.3). `errors.ts`
   // decides which of these a status gets.

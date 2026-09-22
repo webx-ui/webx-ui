@@ -4,6 +4,7 @@ import {
   useAdmin,
   useErrorText,
   useTranslate,
+  WxBackupNote,
   WxScreen,
   WxScreenHead,
   type ScreenAction,
@@ -104,6 +105,15 @@ const actions = computed<ScreenAction[]>(() =>
       :errors="errors"
       :disabled="!canManage"
     />
+
+    <!--
+      Where the panel says when the database was last dumped (§6 of the backups spec). It is
+      the section this belongs in — System is Settings and Administrators, and of those two
+      this is the one somebody opens to ask how the installation is doing — and `settings.view`
+      is the right the line itself asks for. A footnote under the form rather than a field in
+      it: the form is what the site is, and this is what the server did last night.
+    -->
+    <wx-backup-note />
 
     <!-- The settings are longer than a window, and the button in the head is off the top of it
          by the second group of fields. This is the same button, where the eye already is. -->

@@ -1,5 +1,5 @@
 import { inject, type App, type Component, type InjectionKey } from 'vue'
-import type { AdminContext, AdminUser } from '@webx-ui/module-admin'
+import type { AdminContext, AdminUser, ThemePreference } from '@webx-ui/module-admin'
 
 export interface Credentials {
   email: string
@@ -21,6 +21,14 @@ export interface AuthSession {
    * the label above it.
    */
   setLocale(code: string): Promise<void>
+  /**
+   * Write down which theme this administrator reads the panel in.
+   *
+   * Only writes it down: the screen has already changed by the time this is called. Painting
+   * is instant and local, and an account that has not caught up yet costs nobody anything —
+   * whereas a panel that waits for the network before it changes colour looks broken.
+   */
+  setTheme(preference: ThemePreference): Promise<void>
   /**
    * Change what is yours to change about yourself: your name, your photograph, your password.
    *
@@ -100,6 +108,16 @@ export function createAuthSession(admin: AdminContext): AuthSession {
       admin.setUser(body.data)
 
       await admin.setLocale(code)
+    },
+
+    async setTheme(preference) {
+      // Null rather than the word: "follow the machine" is the absence of a choice, and the
+      // column says so the same way the language column does.
+      const body = await admin.http.put<{ data: AdminUser }>(`${base}/theme`, {
+        theme: preference === 'system' ? null : preference,
+      })
+
+      admin.setUser(body.data)
     },
 
     async updateProfile(profile) {

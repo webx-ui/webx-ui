@@ -228,6 +228,26 @@ installation serves a blog rather than an error. Publish them and rewrite them:
 php artisan vendor:publish --tag=webx-blog-views
 ```
 
+Publishing is by file and not by directory: keep `article.blade.php`, delete the other four, and
+those go on coming from the package — fresh with every release — rather than being four files you
+now maintain for the sake of one.
+
+### The layout
+
+A blog with no header reads as a different site, and until now the only cure was publishing all
+five views. `webx-blog.layout` names a Blade component for the four pages to stand in; empty means
+`webx-blog::standalone`, the bare document the module ships:
+
+```php
+// config/webx-blog.php
+'layout' => 'layout',   // <x-layout>
+```
+
+`php artisan webx:panel --sync` writes that line itself when the site has
+`resources/views/components/layout.blade.php`. The deal is the same for every module — a **`head`
+slot** and the **default slot** for the content — and it is written out in full under
+[Pages](./pages.md#the-layout). The RSS has no layout: it is a feed, not a page.
+
 With no prefix the feed route is not registered at all: `/` belongs to the site, and a list of
 articles on it is a page the site writes. The RSS still gets an address, because a site without
 one has nothing to subscribe to.
@@ -241,13 +261,18 @@ common, then the main rubric, published only, never the article itself. How many
 The three sections are also a set of tools. With `webx-ui/mcp` installed (it comes with this
 module), the panel serves one MCP server at `/api/cms/mcp`:
 
+Passport comes with the panel, and a site switches it on once:
+
 ```bash
-php artisan vendor:publish --tag=sanctum-migrations && php artisan migrate   # once per site
-php artisan webx:mcp:token admin@example.com --name=claude
+php artisan vendor:publish --tag=passport-migrations && php artisan migrate
+php artisan passport:keys
 ```
 
-The agent then acts as that administrator, within the token's scopes: `articles:read` and
-`articles:write`, `rubrics:read`, `tags:read` and `tags:write`.
+Somebody then connects their own agent to it: they paste that address into Claude, ChatGPT or
+`claude mcp add --transport http webx <address>`, the client sends them to the panel to sign in
+and agree, and it leaves with a token of theirs. The agent acts as that administrator. On the
+machine the site runs on, `php artisan mcp:start webx` is the same server over stdio, trusted the
+way tinker is.
 
 | Tool               | What it does                                                               |
 | ------------------ | -------------------------------------------------------------------------- |
@@ -300,6 +325,7 @@ named "publish" being called.
 | `related`      | `3`     | How many "read next" are worked out beyond the pinned |
 | `tags.noindex` | `true`  | What a new tag starts with                            |
 | `views.*`      |         | The views each page is printed with                   |
+| `layout`       |         | The Blade component those views stand in              |
 | `middleware`   |         | What the feed and the RSS run through                 |
 
 ## What is deferred

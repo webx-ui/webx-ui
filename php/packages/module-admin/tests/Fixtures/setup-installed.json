@@ -1,0 +1,9 @@
+{
+  "packages": [
+    { "name": "webx-ui/module-admin", "version": "0.28.0" },
+    { "name": "webx-ui/module-auth", "version": "0.28.0" },
+    { "name": "webx-ui/module-pages", "version": "0.28.0" },
+    { "name": "laravel/passport", "version": "13.8.1" },
+    { "name": "vendor/nothing-to-do-with-us", "version": "1.0.0" }
+  ]
+}

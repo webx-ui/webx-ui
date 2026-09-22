@@ -311,4 +311,47 @@ final class PanelTest extends TestCase
             array_column($this->actingAs($editor, 'cms')->getJson($this->api().'?parent='.$catalog->getKey())->json('data.items'), 'path'),
         );
     }
+
+    #[Test]
+    public function a_page_in_the_bin_is_counted_under_nothing_on_the_site(): void
+    {
+        $catalog = $this->page('catalog');
+        $shoes = $this->page('shoes', $catalog);
+        $red = $this->page('red', $shoes);
+
+        $red->delete();
+
+        $rows = array_column(
+            $this->actingAs($this->editor(), 'cms')->getJson($this->api().'?flat=1')->assertOk()->json('data.items'),
+            null,
+            'id',
+        );
+
+        // A trashed page keeps its bounds so that a restore can put it back where it was, so
+        // `(rgt - lft - 1) / 2` went on counting it as standing under everything above it — and
+        // the panel offered to delete a branch of two with one page left in it.
+        $this->assertSame(0, $rows[$shoes->getKey()]['descendants_count']);
+        $this->assertSame(1, $rows[$catalog->getKey()]['descendants_count']);
+        $this->assertSame(2, $rows[$this->home()->getKey()]['descendants_count']);
+    }
+
+    #[Test]
+    public function a_row_in_the_bin_counts_the_branch_a_restore_would_bring_back(): void
+    {
+        $catalog = $this->page('catalog');
+        $shoes = $this->page('shoes', $catalog);
+        $red = $this->page('red', $shoes);
+
+        // Deleted first and on its own, so it stays in the bin when the branch above it comes
+        // back — and the number the panel says before a restore must not promise it.
+        $red->delete();
+        $catalog->delete();
+
+        $bin = $this->actingAs($this->editor(), 'cms')->getJson($this->api().'?trashed=1')->assertOk();
+        $rows = array_column($bin->json('data.items'), null, 'id');
+
+        $this->assertSame(1, $rows[$catalog->getKey()]['descendants_count'], 'the shoes and not the red ones');
+        $this->assertSame(0, $rows[$red->getKey()]['descendants_count']);
+        $this->assertSame($shoes->getKey(), $catalog->trashedBranch()->first()?->getKey());
+    }
 }

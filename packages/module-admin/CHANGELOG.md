@@ -1,5 +1,113 @@
 # @webx-ui/admin
 
+## 0.13.0
+
+### Minor Changes
+
+- cd95a2e: A gzipped dump of the database every night, and one line in the panel saying so
+
+  Insurance, not a restore system. The file lands on the same disk as the database it came from,
+  so it survives a mistake and not a dead server, and there is no restore button anywhere — what
+  it is for is getting yesterday's version of one row, one table or one article back by hand. It
+  exists because backups are an extra on a good many hosts and absent on the rest, and having
+  something is better than having nothing.
+
+  - `webx:db:backup` writes `storage/app/private/backups/<database>-2026-09-21-0310.sql.gz`,
+    gzipped as the dump comes out, so no uncompressed copy of the database ever touches the disk.
+    `mysqldump` for MySQL and MariaDB, `pg_dump` for PostgreSQL, a copy of the file for SQLite.
+  - Rotation runs **after** a dump has succeeded and never touches the newest file. Clearing out
+    last week without having written tonight is the one thing a backup command must not do, and
+    it is exactly what happens if the two steps are written the other way round. A failure exits
+    non-zero, logs why, deletes its own half-written file and leaves everything else alone.
+  - Structure for every table, rows for the ones worth keeping: `cache`, `sessions`, `jobs` and
+    the rest of `skip_data` are dumped with `--no-data`, which on most sites is most of the file.
+    The tables that keep their rows are dumped structure-and-data together, so pulling one table
+    out of the finished file is a single contiguous range — the guide has the one-liner.
+  - The password never appears in an argument, where `ps` would show it to anybody with a shell:
+    MySQL gets a 0600 defaults file and PostgreSQL a 0600 `.pgpass`, both removed in a `finally`.
+    `--single-transaction --quick` so the nightly dump does not lock the site, `--no-tablespaces`
+    so it runs as a shared-hosting user, `utf8mb4` so the translated JSON columns survive.
+  - `module-admin` puts the task on the scheduler itself, at `webx-admin.backup.at`. What it
+    cannot do is run the scheduler: the site still needs a system cron on `schedule:run`, and the
+    line in the panel is what notices when there is not one.
+  - That line is at the foot of the settings screen, for whoever has `settings.view`: "Last
+    database snapshot: today at 03:10 · 4.2 MB", and the same line as a warning when the newest
+    file is more than two days old or there is none. Nothing is recorded in the database — the
+    line is the newest file in the directory, and a task that failed is the file that is not
+    there. `WxBackupNote`, fed from a new `backup` key in the manifest.
+
+- b1aeb52: Light, dark or the machine's — chosen in the account menu, stored against the person
+
+  The tokens have carried both themes since the beginning, and nothing in the panel ever wrote
+  `data-theme`: the only way to see the dark one was to set the whole machine to it. Now there is a
+  control, and the choice belongs to the person rather than to the browser — somebody who works
+  dark at night on a laptop finds the panel dark in the morning at a desk.
+
+  Three states rather than two. A toggle can say light and dark; it cannot say _I have not
+  decided_, which is the state almost everybody is in, because their machine has already decided
+  for them. `system` is a real answer and the one the switch starts on, and it goes on following
+  the machine afterwards — the panel darkens at sunset along with everything else on the desk.
+
+  - `WxThemeSwitch` — the control, in the core: three cells, a thumb that slides between them and a
+    picture that arrives rather than appears. It is a radio group, the arrow keys move within it,
+    and both animations stop under `prefers-reduced-motion`. Like everything in the core it ships
+    English and knows nothing about a dictionary, so its three words are props.
+  - `applyTheme()` now takes `system`, which removes the attribute rather than writing a third
+    value — the stylesheet already follows `prefers-color-scheme` for anything not pinned to light.
+    `systemTheme()` and `watchSystemTheme()` are there for whatever has to _know_ rather than be
+    painted. New `--wx-easing-emphasized`, a curve with a little overshoot in it.
+  - The theme contract now works both ways round. The tokens have always had a `data-theme="dark"`
+    block and never a light one, so a light island inside a dark page — a preview, a printed
+    sheet — inherited the dark values and quietly stayed dark, while the guide claimed a page could
+    mix the two. There is a `[data-theme='light']` block now, and it can.
+  - `createAdmin()` builds the theme before it mounts, so the sign-in screen is already the colour
+    this browser was left in, and `useTheme()` hands it to anybody who asks. The administrator's own
+    record replaces the browser's guess the moment the session says who they are.
+  - `PUT /api/cms/auth/theme` and a `theme` column on `cms_users`, beside the language and for the
+    same reasons. `null` means follow the machine — a choice, and one that has to travel between
+    machines like any other.
+  - The Blade shell paints before its bundle runs: three lines that read the browser's copy, so a
+    dark panel never starts white.
+
+### Patch Changes
+
+- f623fac: A person connects their own agent with an address and three clicks
+
+  The MCP server used to open only for a token printed from the console, which is fine for whoever
+  can already run artisan on the server and no use at all for a designer or a client. Now the
+  address alone is enough — `https://example.com/api/cms/mcp`, nothing secret in it — and the
+  client finds its own way from there: it reads the 401, discovers the authorization server,
+  registers itself, sends the person to the panel to sign in and agree, and leaves with a token of
+  theirs. The agent acts as that administrator, so authorship, roles and `is_active` already mean
+  what they should.
+
+  - **Passport replaces Sanctum.** Two `HasApiTokens` traits cannot share a model, and Passport is
+    the one that can register a client it has never met. `webx-ui/module-auth` carries it, because
+    `CmsUser` is what an agent acts as and Passport's user provider accepts only a model that
+    implements its `OAuthenticatable`. A site switches it on once, with
+    `vendor:publish --tag=passport-migrations`, `migrate` and `passport:keys`; without the keys the
+    guard cannot be built and a call with no token answers 500 instead of 401.
+  - **The `api` guard** — Passport's driver over the panel's own people — is registered for you
+    unless the application has defined one under that name, and `webx.mcp-auth` asks it.
+  - **Two doors that ship open are closed.** `config('mcp.redirect_domains')` is `['*']` by default,
+    which lets anybody register a client called "Site panel" that takes the code to their own
+    server; the list is now Claude, ChatGPT and localhost, and the consent page always shows the
+    address a person is about to be sent back to, not only the name the client chose for itself.
+    Client registration is rate limited, because nobody has signed in when it happens.
+  - **A token granted this way carries one scope for the whole server**, `mcp:use`, because that is
+    the only one a client is ever offered. Read module scope by module scope it would be refused
+    everything, so it passes the scope gate whole; what limits it is the administrator's own
+    permissions. A key that names module scopes is still read scope by scope.
+  - **The panel fetches its CSRF cookie from its own route**, `{api_path}/auth/csrf-cookie`, rather
+    than Sanctum's — which left with the package. `createHttp` defaults to it.
+  - `webx:mcp:token` is gone with Sanctum. Keys for machines, which have no browser to send anybody
+    to, come back later as their own thing.
+
+- Updated dependencies [b1aeb52]
+  - @webx-ui/tokens@0.4.0
+  - @webx-ui/core@0.30.0
+  - @webx-ui/schema@0.3.7
+
 ## 0.12.2
 
 ### Patch Changes

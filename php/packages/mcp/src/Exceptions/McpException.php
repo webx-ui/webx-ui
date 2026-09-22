@@ -24,6 +24,14 @@ class McpException extends RuntimeException
         );
     }
 
+    public static function emptyPermission(string $name): self
+    {
+        return new self(
+            "Tool [{$name}] names an empty list of permissions. Leave the argument out for the "
+            .'module\'s default; a tool open to everybody is not something a forgotten argument should mean.'
+        );
+    }
+
     public static function unknownTool(string $name): self
     {
         return new self("No tool is registered under the name [{$name}].");

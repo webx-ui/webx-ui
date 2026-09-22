@@ -46,6 +46,33 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function the_tools_are_behind_the_permissions_the_panel_asks_for_the_same_work(): void
+    {
+        $registry = $this->app->make(ToolRegistry::class);
+
+        // Three permissions rather than two, and writing is split by what it writes: moving
+        // a submission along is `inbox.update`, changing what a form asks is `inbox.manage`.
+        $this->assertSame(['inbox.view', 'inbox.manage'], $registry->tool('inbox_forms_list')->permissions());
+        $this->assertSame(['inbox.view'], $registry->tool('inbox_list')->permissions());
+        $this->assertSame(['inbox.update'], $registry->tool('inbox_set_status')->permissions());
+        $this->assertSame(['inbox.manage'], $registry->tool('inbox_form_save')->permissions());
+
+        $form = $this->form();
+        $reader = $this->editor(['inbox.view']);
+
+        $this->agent('forms_list', [], $reader)->assertOk();
+        $this->agent('list', ['form' => $form->slug], $reader)->assertOk();
+        $this->agent('set_status', ['submission' => 1, 'status' => 'done'], $reader)->assertHasErrors(['[inbox.update]']);
+        $this->agent('form_save', ['slug' => 'nope', 'title' => 'Nope'], $reader)->assertHasErrors(['[inbox.manage]']);
+
+        // Somebody who designs the forms does not thereby read what came in through them.
+        $designer = $this->editor(['inbox.manage']);
+
+        $this->agent('forms_list', [], $designer)->assertOk();
+        $this->agent('list', ['form' => $form->slug], $designer)->assertHasErrors(['[inbox.view]']);
+    }
+
+    #[Test]
     public function the_list_of_forms_says_what_has_come_in_and_what_nobody_has_read(): void
     {
         $form = $this->form();

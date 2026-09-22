@@ -97,6 +97,29 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | The layout the four public pages stand in
+    |---------------------------------------------------------------------------
+    |
+    | The name of a Blade component: `'layout'` for the `<x-layout>` a site keeps
+    | in `resources/views/components/layout.blade.php`. Empty prints the package's
+    | own `webx-blog::standalone` — a bare document, which is the right default
+    | for a package that cannot assume the site has a layout at all.
+    |
+    | The deal is two slots and no more: `head`, and the default slot for the
+    | content. A layout is expected to carry `@stack('head')` beside `{{ $head }}`
+    | as well — a slot is one place, and what a block type pushes cannot reach it.
+    | `php artisan webx:doctor` says so if it does not.
+    |
+    | This is not the same seam as `views` above: those replace the markup of a
+    | page, this one only says what it stands in. The RSS route has no layout: it
+    | is a feed, not a page.
+    |
+    */
+
+    'layout' => env('WEBX_BLOG_LAYOUT'),
+
+    /*
+    |---------------------------------------------------------------------------
     | What the feed and the RSS route run through
     |---------------------------------------------------------------------------
     |
