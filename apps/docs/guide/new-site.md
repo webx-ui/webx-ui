@@ -23,6 +23,31 @@ Then questions, with the answers already worked out from the directory you are s
 At the end it prints the panel's address, the login and a generated password. Roughly three
 minutes, most of it `npm install`.
 
+**Where the server is, is not among the questions on purpose.** What `.env` already says, or
+`127.0.0.1:3306` as `root`, is reached for before anything about the database is asked, and a
+machine that answers is never asked about it. A machine that does not — OSPanel gives each of
+its database modules a loopback address of its own — is told so and asked for the host, the
+port, the user and the password, with what was just tried as the defaults:
+
+```
+ No answer from 127.0.0.1:3306 as [root] — …actively refused it. Say where the server
+ is, or stop here and run again with --db-connection=sqlite.
+
+ Where the database server is .. 127.0.1.14
+ The port it listens on ........ 3306
+ The user to connect as ........ root
+ That user's password .......... ← Enter keeps what .env has
+```
+
+Then it tries again. Three answers that still reach nothing end the run with the message below,
+and so does the first failure on a run with nobody in front of it — `--no-interaction` never
+asks anything:
+
+```
+No answer from 127.0.0.1:3306 as [root] — … Start the server, or say where it is with
+--db-host and --db-port, or pass --db-connection=sqlite to stand on a file.
+```
+
 All of it takes flags instead, for a machine that has nobody to ask. The questions belong to
 `webx:setup` rather than to Composer, so this is two steps: `create-project` cannot forward
 anything to them — after `--` its third positional argument is the version, and it answers

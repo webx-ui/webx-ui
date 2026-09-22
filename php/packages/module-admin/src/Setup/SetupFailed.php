@@ -23,6 +23,27 @@ final class SetupFailed extends RuntimeException
         );
     }
 
+    /**
+     * Only ever seen by a run with nobody in front of it.
+     *
+     * Asked interactively, this is a question rather than a failure — `webx:setup` says the
+     * same thing and then asks where the server is. A script has nobody to ask, so it gets the
+     * three ways of telling it instead.
+     */
+    public static function noDatabaseServer(string $host, string $port, string $username, string $refused): self
+    {
+        return new self(sprintf(
+            'No answer from %s:%s as [%s] — %s. Start the server, or say where it is with '
+            .'--db-host and --db-port, or pass --db-connection=sqlite to stand on a file. '
+            .'sqlite hides three things a real server refuses, so it is worth a minute of '
+            .'looking first.',
+            $host,
+            $port,
+            $username,
+            rtrim($refused, '. '),
+        ));
+    }
+
     public static function unknownModule(string $id, string $known): self
     {
         return new self("There is no module called [{$id}]. The ones there are: {$known}.");
