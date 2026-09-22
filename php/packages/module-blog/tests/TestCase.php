@@ -6,6 +6,7 @@ namespace WebxUi\Blog\Tests;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
 use Orchestra\Testbench\TestCase as Orchestra;
 use WebxUi\Admin\AdminServiceProvider;
@@ -69,6 +70,21 @@ abstract class TestCase extends Orchestra
     protected function defineDatabaseMigrations(): void
     {
         $this->artisan('migrate')->run();
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // A layout of the site's own, the way a real one is reached. Registered for every test
+        // rather than only for the one that uses it, and under a prefix rather than as a bare
+        // `<x-layout>`: `DynamicComponent` keeps its tag compiler in one static property and the
+        // names it has already resolved in another, so the first page rendered in the process
+        // decides what `<x-dynamic-component>` can find for every test after it — in this package
+        // and in the next one. A prefix is what makes that survivable: the view namespace is
+        // hashed from the prefix and not from the path, so two packages registering `site` both
+        // resolve, each to its own directory.
+        Blade::anonymousComponentPath(__DIR__.'/Fixtures/views', 'site');
     }
 
     protected function tearDown(): void

@@ -57,6 +57,7 @@ final class PanelCommand extends Command
         $this->syncDependencies($files, $registry->npm());
         $this->pointConfigAtEntry($files, $entry);
         $this->addViteInput($files, $entry);
+        $this->syncLayouts($files, $packages);
 
         $this->newLine();
         $this->components->twoColumnDetail('Then', 'npm install && npm run build — or npm run dev while working');
@@ -353,6 +354,113 @@ final class PanelCommand extends Command
 
         $files->put($path, $updated);
         $this->components->info("{$name} now builds {$entry}.");
+    }
+
+    /**
+     * Stand the public pages of every installed module in the site's layout.
+     *
+     * A module that has a layout seam says so by carrying a `layout` key in its configuration,
+     * and there is nothing else to declare: a package with no public half has no key, and one
+     * written before this existed keeps installing. The site's side of it is the component the
+     * skeleton writes — `resources/views/components/layout.blade.php`, which is `<x-layout>` —
+     * and without that file there is nothing to point at, so the modules keep printing their own
+     * bare documents and this says so once.
+     *
+     * Never over a value somebody chose: a site that named its own layout, in the configuration
+     * or in `.env`, has answered this question already.
+     *
+     * @param  list<PanelPackage>  $packages
+     */
+    private function syncLayouts(Filesystem $files, array $packages): void
+    {
+        $modules = [];
+
+        foreach ($packages as $package) {
+            $settings = $package->module === null ? null : config("webx-{$package->module}");
+
+            if (is_array($settings) && array_key_exists('layout', $settings)) {
+                $modules[$package->module] = $settings['layout'];
+            }
+        }
+
+        if ($modules === []) {
+            return;
+        }
+
+        $layout = $files->exists($this->laravel->resourcePath('views/components/layout.blade.php'))
+            ? 'layout'
+            : null;
+
+        if ($layout === null) {
+            $this->components->twoColumnDetail(
+                'Layout',
+                'none at resources/views/components/layout.blade.php — public pages print their own document',
+            );
+
+            return;
+        }
+
+        foreach ($modules as $module => $current) {
+            $this->pointModuleAtLayout($files, (string) $module, is_string($current) ? $current : '', $layout);
+        }
+    }
+
+    private function pointModuleAtLayout(Filesystem $files, string $module, string $current, string $layout): void
+    {
+        $name = "config/webx-{$module}.php";
+        $path = $this->laravel->configPath("webx-{$module}.php");
+
+        if ($current !== '') {
+            $this->components->twoColumnDetail($name, "already stands in <x-{$current}>");
+
+            return;
+        }
+
+        if (! $files->exists($path)) {
+            $this->callSilently('vendor:publish', ['--tag' => "webx-{$module}-config"]);
+        }
+
+        if (! $files->exists($path)) {
+            $this->tell($name, "'layout' => '{$layout}',");
+
+            return;
+        }
+
+        $contents = $files->get($path);
+
+        // The file, not only the value: a configuration that was published after this process
+        // booted is not in `config()` yet, and writing the same line twice is how a run that
+        // was meant to change nothing changes something.
+        if (preg_match("/'layout'\s*=>\s*(?:env\([^)]*,\s*)?'".preg_quote($layout, '/')."'/", $contents) === 1) {
+            $this->components->twoColumnDetail($name, "already stands in <x-{$layout}>");
+
+            return;
+        }
+
+        // The key ships as `env('WEBX_PAGES_LAYOUT')`, and keeping the call is the point: the
+        // default moves into it, so a site can still say something else per environment.
+        $updated = preg_replace(
+            [
+                "/'layout'\s*=>\s*env\(\s*('[A-Z0-9_]+')\s*\)/",
+                "/'layout'\s*=>\s*(?:null|'')/",
+            ],
+            [
+                "'layout' => env($1, '{$layout}')",
+                "'layout' => '{$layout}'",
+            ],
+            $contents,
+            1,
+            $count,
+        );
+
+        if ($count === 0 || $updated === null) {
+            $this->tell($name, "'layout' => '{$layout}',");
+
+            return;
+        }
+
+        $files->put($path, $updated);
+        $this->components->info("{$name} now stands in <x-{$layout}>.");
     }
 
     private function tell(string $file, string $instruction): void
