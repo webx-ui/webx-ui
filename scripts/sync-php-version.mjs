@@ -18,10 +18,18 @@ const constraint = `^${version}`
 
 const rewritten = []
 
-for (const entry of readdirSync(packagesRoot, { withFileTypes: true })) {
-  if (!entry.isDirectory()) continue
+// The project skeleton is not a package — it is never required by anything and never appears
+// in the path repository — but it asks for the same packages as everybody else, and a
+// `composer create-project webx-ui/site` that asks for a version nobody tagged is the one
+// place where being one release behind is fatal rather than annoying.
+const manifests = [
+  ...readdirSync(packagesRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => [entry.name, join(packagesRoot, entry.name, 'composer.json')]),
+  ['site', join(phpRoot, 'site', 'composer.json')],
+]
 
-  const manifestPath = join(packagesRoot, entry.name, 'composer.json')
+for (const [name, manifestPath] of manifests) {
   let raw
 
   try {
@@ -50,7 +58,7 @@ for (const entry of readdirSync(packagesRoot, { withFileTypes: true })) {
 
   // Composer's own indentation, so `composer require` does not reformat the file back.
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 4)}\n`)
-  rewritten.push(entry.name)
+  rewritten.push(name)
 }
 
 if (rewritten.length === 0) {
