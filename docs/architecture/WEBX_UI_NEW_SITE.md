@@ -101,10 +101,21 @@ composer create-project webx-ui/site kolesa.local
 Всё то же самое флагами, когда вопросов не надо:
 
 ```bash
-composer create-project webx-ui/site kolesa.local -- \
+composer create-project webx-ui/site kolesa.local --no-scripts
+cd kolesa.local
+cp .env.example .env && php artisan key:generate
+
+php artisan webx:setup --no-interaction \
   --modules=pages,media,seo,settings,blocks,inbox,admins \
-  --db=kolesa --locales=ru,uk --demo --no-interaction
+  --db=kolesa --locales=ru,uk --demo
 ```
+
+**Двумя шагами, а не одним, и это не оговорка.** Здесь раньше стояло
+`composer create-project … -- --modules=…`, и так нельзя: после `--` у `create-project` идут
+позиционные аргументы, третий из них — версия, поэтому composer отвечает «Too many arguments to
+"create-project" command». Проброса флагов в скрипт у него нет вовсе. `--no-scripts` отключает
+интерактивный прогон, а две строки за ним — это ровно то, что делал бы
+`post-create-project-cmd`. Проверено 22.09.2026 на релизе v0.28.0.
 
 Порядок шагов и что каждый из них стоит по времени:
 
