@@ -20,6 +20,7 @@ import {
   draw as drawContent,
   renderTemplate,
   templateFailure,
+  useLinkResolver,
   type BlockVersionRecord,
 } from './blocks'
 import {
@@ -1246,6 +1247,152 @@ on('DELETE', '/notes/(\\d+)', ({ params }) => {
 
   return { data: null }
 })
+
+/* ------------------------------------------------------------------------------ links ----- */
+
+/**
+ * What the panel can be asked to link to.
+ *
+ * The four sections are the ones the PHP sources register, answered out of the same fixtures the
+ * sections themselves are drawn from — so a link picker here offers the pages and rubrics that are
+ * on the screen next to it. `available` is the part worth keeping honest: a draft page has an
+ * address and is not on the site, and it is offered marked rather than hidden.
+ */
+interface LinkRow {
+  id: number
+  title: string
+  url: string | null
+  available: boolean
+  hint: string | null
+}
+
+const LINK_SOURCES = [
+  { type: 'page', title: { en: 'Pages', ru: 'Страницы' }, icon: 'file' },
+  { type: 'article', title: { en: 'Articles', ru: 'Статьи' }, icon: 'file-text' },
+  { type: 'rubric', title: { en: 'Rubrics', ru: 'Рубрики' }, icon: 'folder' },
+  { type: 'tag', title: { en: 'Tags', ru: 'Теги' }, icon: 'tag' },
+] as const
+
+function linkRows(type: string, locale: string): LinkRow[] {
+  if (type === 'page') {
+    return [...pages.values()]
+      .filter((record) => record.row.deleted_at === null)
+      .map((record) => ({
+        id: record.row.id,
+        title: record.row.is_home ? 'Главная' : record.row.title,
+        url: record.row.url,
+        available: record.row.status !== 'draft' && record.row.url !== null,
+        // The line of titles above it, which is what tells two pages of the same name apart.
+        hint:
+          ancestorsOf(record.row)
+            .filter((node) => !node.is_home)
+            .map((node) => node.title)
+            .join(' / ') || null,
+      }))
+  }
+
+  if (type === 'article') {
+    return articles
+      .filter((record) => record.deleted_at === null)
+      .map((record) => articleRow(record, locale))
+      .map((row) => ({
+        id: row.id,
+        title: row.title,
+        url: row.url,
+        available: row.status === 'published' || row.status === 'modified',
+        hint:
+          row.rubrics.map((one) => one.title).join(', ') || row.published_at?.slice(0, 10) || null,
+      }))
+  }
+
+  if (type === 'rubric') {
+    return rubrics.map((row) => ({
+      id: row.id,
+      title: row.name,
+      url: row.url,
+      available: row.is_visible && row.url !== null,
+      hint: null,
+    }))
+  }
+
+  return tags.map((row) => ({
+    id: row.id,
+    title: row.title,
+    url: row.url,
+    available: row.url !== null,
+    hint: null,
+  }))
+}
+
+/*
+ * A link printed by a block template: the entity's address, worked out now rather than stored —
+ * which is the whole point of keeping the entity and not the address.
+ */
+useLinkResolver((link) => {
+  const type =
+    typeof link.target === 'string' && link.target === 'entity' ? String(link.entity_type) : null
+  const found =
+    type === null
+      ? null
+      : (linkRows(type, 'ru').find((row) => row.id === Number(link.entity_id)) ?? null)
+
+  const address = found?.url ?? (link.target === 'url' ? link.url : null)
+
+  /* The anchor is appended rather than stored in the address, as `LinkUrls::href()` does it: an
+     anchor with no address is a link to a place on the page the block is printed on. */
+  const fragment = typeof link.hash === 'string' && link.hash !== '' ? `#${link.hash}` : ''
+
+  return {
+    ...link,
+    url: typeof address === 'string' ? address + fragment : fragment || null,
+    label: found?.title ?? null,
+    available: link.target === 'entity' ? (found?.available ?? false) : true,
+  }
+})
+
+on('GET', '/links/sources', ({ locale }) => ({
+  data: LINK_SOURCES.map((source) => ({
+    type: source.type,
+    title: source.title[locale === 'ru' ? 'ru' : 'en'],
+    icon: source.icon,
+  })),
+}))
+
+on('GET', '/links/search', ({ locale, query }) => {
+  const term = String(query.get('q') ?? '')
+    .trim()
+    .toLowerCase()
+  const found = linkRows(String(query.get('type') ?? 'page'), locale).filter(
+    (row) => term === '' || row.title.toLowerCase().includes(term),
+  )
+
+  return { data: found.slice(0, Number(query.get('limit') ?? 20)) }
+})
+
+on('POST', '/links/resolve', ({ locale, body }) => {
+  const asked = Array.isArray(body.links) ? (body.links as { type: string; id: number }[]) : []
+  const resolved: (LinkRow & { type: string })[] = []
+
+  for (const { type, id } of asked) {
+    const row = linkRows(String(type), locale).find((one) => one.id === Number(id))
+
+    // A link whose entity is gone comes back missing rather than as an error: the form has to be
+    // able to show which one fell out.
+    if (row !== undefined) {
+      resolved.push({ type: String(type), ...row })
+    }
+  }
+
+  return { data: resolved }
+})
+
+/** The addresses this site has that no entity owns — two of them, as on the demo site. */
+on('GET', '/links/routes', () => ({
+  data: [
+    { name: 'webx.blog.feed', path: '/blog' },
+    { name: 'webx.blog.rss', path: '/blog/rss' },
+  ],
+}))
 
 /* -------------------------------------------------------------------------------- blog ----- */
 

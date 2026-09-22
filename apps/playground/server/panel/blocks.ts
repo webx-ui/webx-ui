@@ -223,7 +223,7 @@ const CTA_TEMPLATE = `<section class="b-cta" data-wx-block="cta" style="--b-cta-
             <h2 class="b-cta__title">{{ $title }}</h2>
             <p class="b-cta__text">{{ $text }}</p>
         </div>
-        <a class="b-cta__button" href="{{ $button_url }}">{{ $button_label }}</a>
+        <a class="b-cta__button" href="{{ $button['url'] }}">{{ $button_label }}</a>
     </div>
 </section>
 `
@@ -511,7 +511,15 @@ export const blockTypes: BlockType[] = [
               title: 'Нужна оценка?',
               text: 'Пришлите задачу — ответим в тот же день.',
               button_label: 'Написать',
-              button_url: '/contacts',
+              button: {
+                target: 'entity',
+                entity_type: 'page',
+                entity_id: 13,
+                url: null,
+                hash: null,
+                new_tab: false,
+                rel: [],
+              },
               background: '#1f4f9c',
             },
           },
@@ -710,7 +718,7 @@ export const blockTypes: BlockType[] = [
         { id: 'title', type: 'wx-input', label: 'Заголовок', localized: true },
         { id: 'text', type: 'wx-input', label: 'Подпись', localized: true },
         { id: 'button_label', type: 'wx-input', label: 'Кнопка', localized: true },
-        { id: 'button_url', type: 'wx-input', label: 'Адрес кнопки' },
+        { id: 'button', type: 'wx-link', label: 'Куда ведёт кнопка', props: { allowNone: false } },
         { id: 'background', type: 'wx-color-picker', label: 'Фон' },
       ],
       template: CTA_TEMPLATE,
@@ -720,7 +728,15 @@ export const blockTypes: BlockType[] = [
         title: 'Расскажите о проекте',
         text: 'Ответим в течение дня и предложим план работ.',
         button_label: 'Написать нам',
-        button_url: '/contacts',
+        button: {
+          target: 'entity',
+          entity_type: 'page',
+          entity_id: 13,
+          url: null,
+          hash: null,
+          new_tab: false,
+          rel: [],
+        },
         background: '#10224b',
       },
     },
@@ -989,6 +1005,19 @@ export function templateFailure(template: string): { reason: string; line: numbe
  * A block and everything inside it, drawn: the markup and every type's styles that went into
  * it. A container that arrived without its children's CSS would draw them stacked and bare.
  */
+/**
+ * How a `wx-link` value becomes an address.
+ *
+ * A link stores the entity and never its address, so a template printing one needs the lookup the
+ * server does on every read — and what an entity's address is belongs to the module that has it.
+ * Set once by the mock's router, which is the only place that knows every fixture.
+ */
+let resolveLink: (value: Record<string, unknown>) => Record<string, unknown> = (value) => value
+
+export function useLinkResolver(resolver: typeof resolveLink): void {
+  resolveLink = resolver
+}
+
 export function draw(
   content: BlockContent,
   values: Record<string, unknown>,
@@ -1038,6 +1067,18 @@ export function renderTemplate(
 ): string {
   let html = template
 
+  /*
+   * A link, with its address worked out — which is what `LinkType::resolve()` does on the server:
+   * what is stored is the entity, never where it currently lives.
+   *
+   * Recognised by the shape rather than by the schema, because the schema is not here — the page
+   * preview draws a block out of its values alone, and a resolve that needed the schema would be
+   * right in the constructor and missing on every page.
+   */
+  values = Object.fromEntries(
+    Object.entries(values).map(([key, value]) => [key, isLink(value) ? resolveLink(value) : value]),
+  )
+
   html = html.replace(
     /@foreach\s*\(\$([\w-]+) as \$(\w+)\)([\s\S]*?)@endforeach/g,
     (_match, key: string, alias: string, body: string) => {
@@ -1069,6 +1110,14 @@ export function renderTemplate(
   html = html.replace(/<x-webx-inbox::form[^>]*\/>/g, FORM_MARKUP)
 
   html = html.replace(/\{!! \$([\w-]+) !!\}/g, (_match, key: string) => text(values[key]))
+
+  /* One key of a field whose value is a record: a picture's `url`, a link's. Blade does this
+     without being asked, and a field type that stores a shape rather than a string is now the
+     ordinary case — `wx-media`, `wx-gallery`, `wx-link`. */
+  html = html.replace(/\{\{ \$([\w-]+)\['([\w-]+)'\] \}\}/g, (_match, key: string, inner: string) =>
+    escape(text(record(values[key])?.[inner])),
+  )
+
   html = html.replace(/\{\{ \$([\w-]+) \}\}/g, (_match, key: string) => escape(text(values[key])))
 
   return html
@@ -1100,6 +1149,22 @@ function text(value: unknown): string {
   }
 
   return String(value)
+}
+
+const TARGETS = ['entity', 'url', 'none']
+
+/** Is this the value of a `wx-link` field? Its target says so, and nothing else stores one. */
+function isLink(value: unknown): value is Record<string, unknown> {
+  const fields = record(value)
+
+  return fields !== null && typeof fields.target === 'string' && TARGETS.includes(fields.target)
+}
+
+/** The value of a field that holds a record rather than a string, or nothing when it holds one. */
+function record(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
 }
 
 function isEmpty(value: unknown): boolean {

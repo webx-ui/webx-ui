@@ -21,6 +21,15 @@ const emit = defineEmits<{
    * outside the pane and has to offer the way in when the column is gone.
    */
   'filters-inline': [inline: boolean]
+  /**
+   * Whether an open record still stands beside the list, said the same way.
+   *
+   * What it is for is the first record: beside the list, a screen that opens on nothing wastes
+   * its whole width on the words "choose one", so the caller opens the first by itself — and
+   * on a phone that same line would raise a panel over a list nobody has touched yet. Only the
+   * pane knows which of the two it is.
+   */
+  'detail-inline': [inline: boolean]
 }>()
 
 defineSlots<{
@@ -122,6 +131,20 @@ watch(
     if (inline) filtersOpen.value = false
 
     emit('filters-inline', inline)
+  },
+  { immediate: true },
+)
+
+/*
+ * Only once the pane has been measured. Before that the width is zero and every threshold
+ * answers "inline" — which is right for the layout, since a pane that has not been measured
+ * renders as columns — and wrong for a caller that would open the first record on the strength
+ * of it, on a phone, over a list nobody has touched.
+ */
+watch(
+  [width, detailInline],
+  () => {
+    if (width.value > 0) emit('detail-inline', detailInline.value)
   },
   { immediate: true },
 )

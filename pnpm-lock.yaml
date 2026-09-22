@@ -606,6 +606,40 @@ importers:
         specifier: ^3.1.3
         version: 3.3.11(typescript@5.9.3)
 
+  packages/module-menu:
+    dependencies:
+      '@webx-ui/core':
+        specifier: workspace:^
+        version: link:../core
+      '@webx-ui/module-admin':
+        specifier: workspace:^
+        version: link:../module-admin
+    devDependencies:
+      '@types/node':
+        specifier: ^24.10.1
+        version: 24.13.3
+      '@vitejs/plugin-vue':
+        specifier: ^6.0.1
+        version: 6.0.8(vite@7.3.6(@types/node@24.13.3))(vue@3.5.42(typescript@5.9.3))
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.1.14
+        version: 7.3.6(@types/node@24.13.3)
+      vite-plugin-dts:
+        specifier: ^4.5.4
+        version: 4.5.4(@types/node@24.13.3)(rollup@4.63.1)(supports-color@8.1.1)(typescript@5.9.3)(vite@7.3.6(@types/node@24.13.3))
+      vue:
+        specifier: ^3.5.24
+        version: 3.5.42(typescript@5.9.3)
+      vue-router:
+        specifier: ^4.5.1
+        version: 4.6.4(vue@3.5.42(typescript@5.9.3))
+      vue-tsc:
+        specifier: ^3.1.3
+        version: 3.3.11(typescript@5.9.3)
+
   packages/module-pages:
     dependencies:
       '@webx-ui/core':

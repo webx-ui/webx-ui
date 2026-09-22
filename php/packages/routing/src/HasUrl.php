@@ -123,30 +123,13 @@ trait HasUrl
     public function urlOf(string $path, ?string $locale = null): string
     {
         $locale ??= $this->routeLocale();
+        $prefix = Container::getInstance()->make(SiteUrl::class)->prefix($locale);
 
-        return URL::to(UrlNormaliser::join($this->localePrefix($locale), $path));
+        return URL::to(UrlNormaliser::join($prefix, $path));
     }
 
     private function routeLocale(): string
     {
         return Container::getInstance()->make(Locales::class)->current();
-    }
-
-    /** Empty unless the site puts the language in the path, and unless this language needs it. */
-    private function localePrefix(string $locale): string
-    {
-        $config = Container::getInstance()->make('config');
-
-        if ((string) $config->get('webx-localization.strategy', 'prefix') !== 'prefix') {
-            return '';
-        }
-
-        $locales = Container::getInstance()->make(Locales::class);
-
-        if ($locale === $locales->defaultCode() && ! (bool) $config->get('webx-localization.prefix_default', false)) {
-            return '';
-        }
-
-        return $locale;
     }
 }

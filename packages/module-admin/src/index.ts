@@ -37,6 +37,17 @@ export { createDates, useDates, type DateLike, type Dates } from './dates'
 export { errorText, useErrorText } from './errors'
 export { createNotesApi, type EntityNote, type NoteAuthor, type NotesApi } from './notes'
 export {
+  createLinksApi,
+  emptyLink,
+  type LinkCandidate,
+  type LinkRel,
+  type LinkSourceInfo,
+  type LinkTarget,
+  type LinkValue,
+  type LinksApi,
+  type ResolvedLink,
+} from './links'
+export {
   createHttp,
   readCookie,
   HttpError,
@@ -75,3 +86,5 @@ export { default as WxDate } from './DateText.vue'
 export { default as WxNotes } from './NotesFeed.vue'
 export { default as WxBackupNote } from './BackupNote.vue'
 export { default as WxRichTextField } from './RichTextField.vue'
+export { default as WxLinkPicker } from './LinkPicker.vue'
+export { default as WxLinkField } from './LinkField.vue'

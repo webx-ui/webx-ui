@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'target-entity' => 'This site',
+    'target-url' => 'An address',
+    'target-none' => 'Nowhere',
+    'section' => 'Section',
+    'search' => 'Start typing a name',
+    'searching' => 'Searching…',
+    'empty' => 'Nothing found',
+    'clear' => 'Clear the link',
+    'unavailable' => 'Not on the site yet',
+    'missing' => 'What this pointed at is gone',
+    'url-label' => 'Address',
+    'url-placeholder' => '/account or https://example.com',
+    'hash' => 'Anchor',
+    'hash-placeholder' => 'section-on-the-page',
+    'url-routes' => 'Addresses of this site',
+    'new-tab' => 'Open in a new tab',
+    'rel' => 'Relationship',
+    'rel-nofollow' => 'Pass no link weight',
+    'rel-sponsored' => 'Paid placement',
+    'rel-ugc' => 'Written by a visitor',
+    'shape' => 'This field takes a link.',
+    'target' => 'This field does not know that kind of target.',
+    'no-source' => 'Nothing here can link to that.',
+    'no-entity' => 'Choose what to link to.',
+    'url-length' => 'An address may be at most :max characters long.',
+    'url-scheme' => 'An address has to be a path or start with http, https, mailto or tel.',
+    'hash-length' => 'An anchor may be at most :max characters long.',
+    'hash-shape' => 'An anchor is a name on the page: no spaces in it.',
+    'not-localized' => 'A link is the same in every language and cannot be translated.',
+];

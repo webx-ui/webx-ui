@@ -24,6 +24,9 @@ class RoutingServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/webx-routing.php', 'webx-routing');
 
         $this->app->singleton(RouteTypes::class);
+        // Stateless, and a singleton only so that whoever needs the language prefix — the
+        // trait, a menu, a field holding a hand-written path — asks the same object for it.
+        $this->app->singleton(SiteUrl::class);
         $this->app->singleton(Reserved::class);
         $this->app->singleton(UniquePath::class);
         $this->app->singleton(RouteSync::class);
