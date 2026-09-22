@@ -1,5 +1,11 @@
 # @webx-ui/module-inbox
 
+## 0.4.3
+
+### Patch Changes
+
+- b24f7d1: The snippet the Embedding tab hands an editor is the renamed tag: `<x-webx-inbox::form slug="…" />`
+
 ## 0.4.2
 
 ### Patch Changes
