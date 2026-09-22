@@ -14,6 +14,9 @@ export default ts.config(
       'packages/tokens/src/generated/**',
       // Composer dependencies ship their own bundled JavaScript.
       'php/vendor/**',
+      // The project skeleton is a Laravel application in Laravel's own style, shipped to
+      // sites that run their own tooling over it.
+      'php/site/**',
       // Scratch copies of the repository another session is working in.
       '.claude/**',
     ],

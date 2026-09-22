@@ -28,7 +28,7 @@ final class McpToolsTest extends TestCase
     #[Test]
     public function the_module_offers_the_tools_the_specification_names(): void
     {
-        $names = array_map(static fn ($tool): string => $tool->name, (new MediaModule)->mcpTools());
+        $names = array_map(static fn ($tool): string => $tool->name, $this->module()->mcpTools());
 
         $this->assertSame([
             'list_directories',
@@ -46,7 +46,7 @@ final class McpToolsTest extends TestCase
     #[Test]
     public function there_is_no_tool_that_deletes_a_folder(): void
     {
-        $names = array_map(static fn ($tool): string => $tool->name, (new MediaModule)->mcpTools());
+        $names = array_map(static fn ($tool): string => $tool->name, $this->module()->mcpTools());
 
         // Recursive deletion is the one thing here a mistaken call cannot take back, and an
         // agent cannot ask the question the panel asks first.
@@ -56,7 +56,7 @@ final class McpToolsTest extends TestCase
     #[Test]
     public function uploading_is_behind_the_upload_permission_and_the_rest_behind_the_defaults(): void
     {
-        $module = new MediaModule;
+        $module = $this->module();
         $permissions = [];
 
         foreach ($module->mcpTools() as $tool) {
@@ -139,13 +139,19 @@ final class McpToolsTest extends TestCase
         $this->assertSame('Pictures', MediaDirectory::query()->find($answer['id'])?->title);
     }
 
+    /** Through the container: the section has been given a demo to seed, and that is a dependency. */
+    private function module(): MediaModule
+    {
+        return $this->app->make(MediaModule::class);
+    }
+
     /**
      * @param  array<string, mixed>  $arguments
      * @return array<string, mixed>
      */
     private function invoke(string $name, array $arguments): array
     {
-        foreach ((new MediaModule)->mcpTools() as $tool) {
+        foreach ($this->module()->mcpTools() as $tool) {
             if ($tool->name === $name) {
                 /** @var array<string, mixed> $result */
                 $result = ($tool->handler)($arguments);

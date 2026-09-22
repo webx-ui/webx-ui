@@ -16,7 +16,7 @@ use WebxUi\Settings\Settings;
 /**
  * What a page says about itself, worked out and printed.
  *
- * The only thing a template needs: `@webxSeo` inside `<head>`, or `<x-webx-seo :for="$page" />`
+ * The only thing a template needs: `@webxSeo` inside `<head>`, or `<x-webx-seo::head :for="$page" />`
  * when there is an entity to name. Everything behind it — which rule matched, which language was
  * asked for, where the picture lives — is somebody else's business by then.
  */
@@ -100,7 +100,7 @@ final class Seo
     /**
      * The entity the address registry found for this request, when the template named none.
      *
-     * `<x-webx-seo :for="$page" />` is still the explicit way to say it, and a template that
+     * `<x-webx-seo::head :for="$page" />` is still the explicit way to say it, and a template that
      * renders something other than what the address belongs to has to. But a page reached
      * through `webx-ui/routing` was already looked up once, and making the template repeat the
      * lookup is how the two end up disagreeing about what the page is.

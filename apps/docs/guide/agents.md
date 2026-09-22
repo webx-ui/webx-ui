@@ -135,9 +135,18 @@ itself before anybody has signed in. What keeps that from being a way in is
 ships a list, not a wildcard:
 
 ```php
-'redirect_domains' => ['https://claude.ai', 'https://chatgpt.com', 'http://localhost'],
+'redirect_domains' => [
+    'https://claude.ai', 'https://claude.com',
+    'https://chatgpt.com', 'https://chat.openai.com',
+    'http://localhost',
+],
 'custom_schemes'   => ['claude', 'cursor', 'vscode'],
 ```
+
+Each vendor is there twice because each answers at two domains and only one of them is the one
+you meet: Claude connects from `claude.ai` today and Anthropic is moving to `claude.com`, and
+ChatGPT's own address is `chatgpt.com` while `chat.openai.com` is still the callback of
+anything set up before the rename.
 
 These are the **clients'** addresses, not yours; a list containing only your own domain lets
 nobody in at all. A client that is not on the list cannot connect until somebody adds it,
@@ -160,6 +169,20 @@ Without the keys the guard cannot be built, and a call with no token answers 500
 should answer 401. The connect page does not appear in the menu on a panel with no door to
 connect to — `webx-mcp.path` set to `false`, or Passport missing — so an installation that has
 not done this simply has no such section.
+
+The page also has a front end, and a section appears only where both halves are:
+
+```ts
+import { admins, auth, connect } from '@webx-ui/module-auth'
+
+createAdmin({
+  modules: [/* … */ admins(), connect()],
+})
+```
+
+Leave that line out and the panel has no such entry, while the server goes on reporting the
+section — which looks exactly like the door being switched off, and sends you to the wrong
+half to find out why.
 
 ## What is deliberately not here
 

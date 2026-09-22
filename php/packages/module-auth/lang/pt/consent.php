@@ -17,6 +17,6 @@ return [
     'read-only' => 'Somente leitura — que ele veja, mas não mude nada',
     'allow' => 'Permitir',
     'cancel' => 'Cancelar',
-    'disconnect' => 'Você pode desconectá-lo no painel: Perfil → Conexões.',
+    'disconnect' => 'Você pode desconectá-lo no painel: Administradores → Ligações.',
     'returns-to' => 'A resposta irá para :host',
 ];

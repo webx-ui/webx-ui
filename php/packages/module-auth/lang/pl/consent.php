@@ -17,6 +17,6 @@ return [
     'read-only' => 'Tylko odczyt — niech ogląda, ale niczego nie zmienia',
     'allow' => 'Zezwól',
     'cancel' => 'Anuluj',
-    'disconnect' => 'Odłączyć go można w panelu: Profil → Połączenia.',
+    'disconnect' => 'Odłączyć go można w panelu: Administratorzy → Połączenia.',
     'returns-to' => 'Odpowiedź trafi do :host',
 ];

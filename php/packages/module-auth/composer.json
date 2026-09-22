@@ -32,9 +32,9 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "laravel/passport": "^13.8",
-        "webx-ui/module-admin": "^0.27.0",
-        "webx-ui/localization": "^0.27.0",
-        "webx-ui/mcp": "^0.27.0"
+        "webx-ui/module-admin": "^0.29.0",
+        "webx-ui/localization": "^0.29.0",
+        "webx-ui/mcp": "^0.29.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
@@ -55,6 +55,20 @@
             "providers": [
                 "WebxUi\\Auth\\AuthServiceProvider"
             ]
+        },
+        "webx": {
+            "module": "auth",
+            "npm": {
+                "@webx-ui/module-auth": "^0.8.0"
+            },
+            "panel": {
+                "import": "import { admins, connect } from '@webx-ui/module-auth'",
+                "style": "@webx-ui/module-auth/style.css",
+                "register": [
+                    "admins()",
+                    "connect()"
+                ]
+            }
         }
     },
     "config": {

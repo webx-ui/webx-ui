@@ -2,10 +2,15 @@
 #
 # Install the PHP packages into a real Laravel application and check that the panel behaves.
 #
-# Shallow on purpose: the 92 tests in php/ cover the logic, and they run under Testbench, where
+# Shallow on purpose: the tests in php/ cover the logic, and they run under Testbench, where
 # the providers are wired by hand, the database is sqlite in memory and CSRF is switched off.
 # This covers what that cannot — package discovery, a real database, a real session with a real
 # CSRF token, and the config and route caches a production deploy turns on.
+#
+# Two applications, because there are two ways in. The first is built here by hand, the way a
+# site older than the skeleton was. The second is `composer create-project webx-ui/site` and
+# `webx:setup`, the way a new one is made — and that half exists to be run against a real
+# server, because creating the database is the step sqlite does not have.
 #
 # Locally:
 #   scripts/php-smoke.sh
@@ -892,3 +897,205 @@ step "Check the panel again"
 run_http_checks 'cached'
 
 printf '\n\033[32m== The panel installs, migrates, signs in and stays closed to strangers.\033[0m\n'
+
+# --------------------------------------------------------------------------------------------
+#
+# The other way in: `composer create-project webx-ui/site`.
+#
+# Everything above installs the packages into an application by hand, the way a site that
+# predates the skeleton does. This is the way a new one is made — one command, and `webx:setup`
+# doing the rest — and the reason it needs a real server is §7 of the plan: the step that
+# creates the database is the step sqlite does not have.
+
+SITE="$WORKDIR/site"
+SITE_PORT="$((PORT + 1))"
+SITE_BASE="http://127.0.0.1:${SITE_PORT}"
+SITE_PID=""
+
+site_cleanup() {
+    if [ -n "$SITE_PID" ] && kill -0 "$SITE_PID" 2>/dev/null; then
+        kill "$SITE_PID" 2>/dev/null || true
+        wait "$SITE_PID" 2>/dev/null || true
+    fi
+    cleanup
+}
+trap site_cleanup EXIT
+
+# The database of the application above is named in this script's own environment, and Laravel
+# reads `.env` immutably in both directions: a name already in the environment wins over the
+# file. So the site would be told to use its own database in `.env` and then migrate the other
+# one — which it does without a word, because both exist. The variables are dropped on the way
+# in, and the site is left to read the file it has just been given.
+site_artisan() {
+    env -u DB_CONNECTION -u DB_HOST -u DB_PORT -u DB_DATABASE -u DB_USERNAME -u DB_PASSWORD \
+        "$PHP_BIN" "$SITE/artisan" "$@"
+}
+
+step "Create a site from the skeleton"
+# A path repository has no tags, so the skeleton would be `dev-<branch>` and `create-project`
+# refuses anything below stable. The version it ships on is the shared one, and naming it here
+# is the same pin the development root puts on the packages themselves.
+SHARED_VERSION="$("$PHP_BIN" -r 'echo json_decode(file_get_contents($argv[1]), true)["version"];' "$MONOREPO/php/package.json")"
+
+# Built by PHP rather than written out here, and for the same reason as the one above: Git Bash
+# rewrites an argument that looks like an absolute POSIX path on its way into a child process,
+# and a path buried inside a JSON string does not look like one. `/c/Work/...` then reaches
+# Composer as it stands and there is no such directory on Windows.
+SITE_REPOSITORY="$(
+    "$PHP_BIN" -r '
+        echo json_encode([
+            "type" => "path",
+            "url" => $argv[1]."/php/site",
+            "options" => ["symlink" => false, "versions" => ["webx-ui/site" => $argv[2]]],
+        ]);
+    ' "$MONOREPO" "$SHARED_VERSION"
+)"
+
+$COMPOSER_BIN create-project webx-ui/site "$SITE" \
+    --repository="$SITE_REPOSITORY" \
+    --no-install --no-scripts --no-interaction --quiet
+note "webx-ui/site $SHARED_VERSION in $SITE"
+
+[ -f "$SITE/resources/views/components/layout.blade.php" ] || fail 'the skeleton brought no layout'
+# At the start of a line: the file explains this very trap in prose, and names it while doing so.
+grep -qE '^[[:space:]]*(\\?Illuminate|Route::)' "$SITE/routes/web.php" \
+    && fail 'the skeleton declares a route, and / belongs to the page tree'
+note 'a layout, and no routes taking addresses from the registry'
+
+(
+    cd "$SITE"
+    $COMPOSER_BIN config repositories.webx "$REPOSITORY"
+    $COMPOSER_BIN config repositories.packagist.org \
+        '{"type":"composer","url":"https://repo.packagist.org","exclude":["webx-ui/*"]}'
+    $COMPOSER_BIN install --no-interaction --no-progress --quiet
+)
+
+# What `post-create-project-cmd` does before handing over to the command; `--no-install` above
+# means Composer has not run the install-time half of it either.
+cp "$SITE/.env.example" "$SITE/.env"
+site_artisan key:generate --quiet
+
+step "Run webx:setup"
+SETUP_DB="${DB_DATABASE:-webx}_site"
+
+# The command finds Composer on the PATH or as a `composer.phar` beside the application, which
+# is every machine CI runs on and not every machine a person has. Naming it is the third way.
+SETUP_COMPOSER=()
+COMPOSER_PHAR="$(printf '%s' "$COMPOSER_BIN" | grep -o '[^ ]*composer\.phar' || true)"
+[ -n "$COMPOSER_PHAR" ] && SETUP_COMPOSER=(--composer="$COMPOSER_PHAR")
+
+if [ "$DB_CONNECTION" = "sqlite" ]; then
+    SETUP_DATABASE=(--db-connection=sqlite)
+else
+    SETUP_DATABASE=(
+        --db-connection="$DB_CONNECTION"
+        --db="$SETUP_DB"
+        --db-host="${DB_HOST:-127.0.0.1}"
+        --db-port="${DB_PORT:-3306}"
+        --db-username="${DB_USERNAME:-root}"
+        --db-password="${DB_PASSWORD:-}"
+    )
+fi
+
+# `--no-build` because the npm halves come from the registry, and a run that installs them is
+# testing what has been released rather than what is in this checkout.
+WEBX_ADMIN_PASSWORD="$ADMIN_PASSWORD" site_artisan webx:setup \
+    --no-interaction \
+    --name='Smoke Site' \
+    --domain="127.0.0.1:${SITE_PORT}" \
+    --modules=all \
+    --locales=en,ru \
+    --admin="site@example.test" \
+    --admin-name=Smoke \
+    --demo \
+    --no-build \
+    "${SETUP_DATABASE[@]}" "${SETUP_COMPOSER[@]}"
+
+step "What setup left behind"
+# One assignment, not two: `.env` is read immutably and the first one wins, so a value appended
+# under one already there is a value nobody reads.
+[ "$(grep -c '^DB_DATABASE=' "$SITE/.env")" = "1" ] || fail '.env has more than one DB_DATABASE'
+grep -q '^APP_URL=http://127.0.0.1' "$SITE/.env" || fail 'APP_URL did not follow the domain'
+note '.env replaced rather than appended to'
+
+for call in 'pages()' 'inbox()' 'blog()' 'admins()'; do
+    grep -qF "$call" "$SITE/resources/js/admin.ts" || fail "resources/js/admin.ts does not register $call"
+done
+note 'the entry file registers every module that was installed'
+
+grep -q "'layout' => env('WEBX_PAGES_LAYOUT', 'layout')" "$SITE/config/webx-pages.php" \
+    || fail 'the pages module was not pointed at the layout'
+note 'the public views stand in the layout of the skeleton'
+
+[ -f "$SITE/storage/app/webx-demo.json" ] || fail 'the demo journal is not there'
+note 'the demo journal is there'
+
+step "Run webx:doctor"
+# Against the real database, which is the half of this the doctor cannot be tested on anywhere
+# else. Exactly one refusal is expected and it is the bundle: this run passed `--no-build`, so
+# there is nothing in `public/build` — and a doctor that does not notice that is worth nothing.
+site_artisan webx:doctor > "$WORKDIR/doctor.log" 2>&1 || true
+
+grep -q 'npm run build' "$WORKDIR/doctor.log" \
+    || { cat "$WORKDIR/doctor.log" >&2; fail 'the doctor did not notice that nothing was built'; }
+
+grep -q '1 of the things this site needs is not in place' "$WORKDIR/doctor.log" \
+    || { cat "$WORKDIR/doctor.log" >&2; fail 'the doctor refused something other than the missing bundle'; }
+
+note 'the doctor checks a real site and names the one thing missing from it'
+
+step "Serve the site"
+site_artisan serve --host=127.0.0.1 --port="$SITE_PORT" > "$WORKDIR/site-serve.log" 2>&1 &
+SITE_PID=$!
+
+for _ in $(seq 1 40); do
+    if curl -s -o /dev/null "$SITE_BASE/"; then
+        break
+    fi
+    sleep 0.5
+done
+
+HOME_PAGE="$(curl -s "$SITE_BASE/")"
+
+printf '%s' "$HOME_PAGE" | grep -q '<!doctype html>' || fail "the home page is not a document: $HOME_PAGE"
+# The layout seam, both halves of it: the skeleton's header around the module's view, and a
+# metatag that only reaches the head through @stack.
+printf '%s' "$HOME_PAGE" | grep -q 'site-header' || fail 'the home page did not stand in the layout'
+printf '%s' "$HOME_PAGE" | grep -q '<title>' || fail 'the SEO card did not reach the head'
+note 'the demo home page renders inside the layout, with its head filled in'
+
+expect 200 "$(status "$SITE_BASE/")" 'GET /'
+
+step "Run webx:setup a second time"
+# The promise in the plan: the same command on a site that is already up adds what is missing
+# and changes nothing else. Anything that publishes on every run — Passport's migrations are
+# stamped with the time they were copied — turns the next `migrate` into a duplicate table.
+BEFORE="$("$PHP_BIN" -r 'echo md5_file($argv[1]).md5_file($argv[2]).md5_file($argv[3]);' \
+    "$SITE/resources/js/admin.ts" "$SITE/package.json" "$SITE/.env")"
+
+site_artisan webx:setup \
+    --no-interaction \
+    --name='Smoke Site' \
+    --domain="127.0.0.1:${SITE_PORT}" \
+    --modules=all \
+    --locales=en,ru \
+    --admin="site@example.test" \
+    --demo \
+    --no-build \
+    "${SETUP_DATABASE[@]}" "${SETUP_COMPOSER[@]}" > "$WORKDIR/setup-again.log" 2>&1 \
+    || { cat "$WORKDIR/setup-again.log" >&2; fail 'the second webx:setup did not succeed'; }
+
+grep -q 'Nothing to migrate' "$WORKDIR/setup-again.log" || {
+    cat "$WORKDIR/setup-again.log" >&2
+    fail 'the second run had migrations to apply, so something published itself twice'
+}
+
+AFTER="$("$PHP_BIN" -r 'echo md5_file($argv[1]).md5_file($argv[2]).md5_file($argv[3]);' \
+    "$SITE/resources/js/admin.ts" "$SITE/package.json" "$SITE/.env")"
+
+[ "$BEFORE" = "$AFTER" ] || fail 'the second webx:setup changed the files it had already written'
+note 'the second run changed nothing'
+
+expect 200 "$(status "$SITE_BASE/")" 'GET / after the second run'
+
+printf '\n\033[32m== And one command turns an empty directory into a site with a panel on it.\033[0m\n'

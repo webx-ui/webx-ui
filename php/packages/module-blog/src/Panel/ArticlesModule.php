@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace WebxUi\Blog\Panel;
 
+use WebxUi\Admin\Contracts\ProvidesDemo;
+use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Blog\Demo\BlogDemo;
 use WebxUi\Blog\Mcp\ArticleTools;
 use WebxUi\Blog\Mcp\BlogPrompts;
 use WebxUi\Blog\Mcp\BlogResources;
@@ -25,12 +28,13 @@ use WebxUi\Mcp\Tool;
  * hang off this module rather than off a fourth one, because a blog has one front page and the
  * section that writes it is this one.
  */
-final class ArticlesModule extends BlogModule implements ProvidesMcpTools
+final class ArticlesModule extends BlogModule implements ProvidesDemo, ProvidesMcpTools
 {
     public function __construct(
         private readonly ArticleTools $tools,
         private readonly BlogResources $resources,
         private readonly BlogPrompts $prompts,
+        private readonly BlogDemo $demo,
     ) {}
 
     public function id(): string
@@ -59,6 +63,25 @@ final class ArticlesModule extends BlogModule implements ProvidesMcpTools
     public function permissions(): array
     {
         return ['blog.articles.view', 'blog.articles.manage'];
+    }
+
+    /**
+     * The block types an article is written in, and the library its cover comes out of (§9).
+     *
+     * The whole blog is seeded from here — one rubric, two tags, two articles — rather than a
+     * third of it from each of the three sections: it is one thing to look at, and taking it
+     * out again has to happen in one order.
+     *
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return ['blocks', 'media'];
+    }
+
+    public function seed(DemoLedger $ledger): void
+    {
+        $this->demo->seed($ledger);
     }
 
     /**

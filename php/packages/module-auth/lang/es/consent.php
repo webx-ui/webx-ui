@@ -17,6 +17,6 @@ return [
     'read-only' => 'Solo lectura — que mire, pero no cambie nada',
     'allow' => 'Permitir',
     'cancel' => 'Cancelar',
-    'disconnect' => 'Puede desconectarlo en el panel: Perfil → Conexiones.',
+    'disconnect' => 'Puede desconectarlo en el panel: Administradores → Conexiones.',
     'returns-to' => 'La respuesta irá a :host',
 ];

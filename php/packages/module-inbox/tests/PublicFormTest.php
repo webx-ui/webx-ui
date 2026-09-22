@@ -13,7 +13,7 @@ use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Submission;
 
 /**
- * `<x-webx-form>` — the form of the panel, printed on the site (§10).
+ * `<x-webx-inbox::form>` — the form of the panel, printed on the site (§10).
  *
  * Everything here is about the half of the module a visitor meets, and most of it is about the
  * half that works with JavaScript switched off: the markup, what the fields become, and what
@@ -48,7 +48,7 @@ final class PublicFormTest extends TestCase
         $this->form('contact')->update(['is_enabled' => false]);
 
         $this->assertSame('', trim($this->render()));
-        $this->assertSame('', trim($this->render('<x-webx-form slug="nothing-like-it" />')));
+        $this->assertSame('', trim($this->render('<x-webx-inbox::form slug="nothing-like-it" />')));
     }
 
     #[Test]
@@ -76,7 +76,7 @@ final class PublicFormTest extends TestCase
             ['name' => 'product', 'type' => FieldType::Hidden],
         ]);
 
-        $html = $this->render('<x-webx-form slug="everything" />');
+        $html = $this->render('<x-webx-inbox::form slug="everything" />');
 
         $this->assertStringContainsString('type="text"', $html);
         $this->assertStringContainsString('maxlength="40"', $html);
@@ -112,7 +112,7 @@ final class PublicFormTest extends TestCase
             ]],
         ]);
 
-        $html = $this->render('<x-webx-form slug="survey" />');
+        $html = $this->render('<x-webx-inbox::form slug="survey" />');
 
         $this->assertStringContainsString('name="fields[extras][]"', $html);
         $this->assertDoesNotMatchRegularExpression('/<input[^>]*type="checkbox"[^>]*\srequired/s', $html);
@@ -163,7 +163,7 @@ final class PublicFormTest extends TestCase
             ['name' => 'product', 'type' => FieldType::Hidden],
         ]);
 
-        $html = $this->render('<x-webx-form slug="contact" :values="[\'product\' => \'A frame, 2026\']" />');
+        $html = $this->render('<x-webx-inbox::form slug="contact" :values="[\'product\' => \'A frame, 2026\']" />');
 
         $this->assertStringContainsString('value="A frame, 2026"', $html);
     }
@@ -219,7 +219,7 @@ final class PublicFormTest extends TestCase
         $this->form('first', [['name' => 'name', 'type' => FieldType::Text]]);
         $this->form('second', [['name' => 'name', 'type' => FieldType::Text]]);
 
-        $html = $this->render('<x-webx-form slug="first" /><x-webx-form slug="second" />');
+        $html = $this->render('<x-webx-inbox::form slug="first" /><x-webx-inbox::form slug="second" />');
 
         $this->assertSame(1, substr_count($html, 'inbox.js'));
     }
@@ -305,7 +305,7 @@ final class PublicFormTest extends TestCase
             'heading' => 'Subscribed',
             'message' => null,
             'redirect' => null,
-        ]])->render('<x-webx-form slug="contact" />');
+        ]])->render('<x-webx-inbox::form slug="contact" />');
 
         $this->assertStringNotContainsString('Subscribed', $html);
     }
@@ -359,7 +359,7 @@ final class PublicFormTest extends TestCase
                 'fields.email' => ['The e-mail is required.'],
             ])),
             '_old_input' => ['webx_form' => 'subscribe', 'fields' => []],
-        ])->render('<x-webx-form slug="contact" />');
+        ])->render('<x-webx-inbox::form slug="contact" />');
 
         $this->assertStringNotContainsString('The e-mail is required.', $html);
         $this->assertStringNotContainsString('is-invalid', $html);
@@ -370,7 +370,7 @@ final class PublicFormTest extends TestCase
      * does to it: `$errors` and the old input arrive through the `web` group, and a form
      * rendered outside a request has neither.
      */
-    private function render(string $blade = '<x-webx-form slug="contact" />'): string
+    private function render(string $blade = '<x-webx-inbox::form slug="contact" />'): string
     {
         // A response prints the script once, and each of these is a response of its own.
         $this->app->forgetScopedInstances();

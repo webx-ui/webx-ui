@@ -17,6 +17,6 @@ return [
     'read-only' => 'Nur lesen — er darf schauen, aber nichts ändern',
     'allow' => 'Erlauben',
     'cancel' => 'Abbrechen',
-    'disconnect' => 'Trennen können Sie ihn im Panel: Profil → Verbindungen.',
+    'disconnect' => 'Trennen können Sie ihn im Panel: Administratoren → Verbindungen.',
     'returns-to' => 'Die Antwort geht an :host',
 ];

@@ -82,8 +82,8 @@ date with it.
 ## The form on the site
 
 ```blade
-<x-webx-form slug="contact" />
-<x-webx-form :form="$form" class="my-form" :values="['product' => $product->name]" />
+<x-webx-inbox::form slug="contact" />
+<x-webx-inbox::form :form="$form" class="my-form" :values="['product' => $product->name]" />
 ```
 
 The tag prints the whole thing: the controls the fields ask for, the honeypot, the hidden

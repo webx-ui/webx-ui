@@ -131,6 +131,22 @@ installation serves a blog rather than an error. Publish them and rewrite them:
 php artisan vendor:publish --tag=webx-blog-views
 ```
 
+Publishing is by file, not by directory: keep `article.blade.php`, delete the other four, and
+those go on coming from the package.
+
+`webx-blog.layout` names the Blade component the four pages stand in; empty means
+`webx-blog::standalone`, the bare document. One line and the blog is inside the site's header and
+footer:
+
+```php
+'layout' => 'layout',   // <x-layout>
+```
+
+`php artisan webx:panel --sync` writes it when the site has
+`resources/views/components/layout.blade.php`. The deal is a **`head` slot** and the **default
+slot** for the content, and a layout wants `@stack('head')` beside `{{ $head }}` — a slot is one
+place, and what a block type pushes cannot reach it. The RSS has no layout: it is a feed.
+
 The feed is at `{prefix}` and the RSS at `{prefix}/rss`; page two of any listing is `?page=2`
 rather than an address of its own. With no prefix the feed route is not registered at all: `/`
 belongs to the site, and a list of articles on it is a page the site writes.
@@ -181,6 +197,7 @@ php artisan vendor:publish --tag=webx-blog-config
 | `related`      | `3`     | How many "read next" are worked out beyond the pinned |
 | `tags.noindex` | `true`  | What a new tag starts with                            |
 | `views.*`      |         | The views each page is printed with                   |
+| `layout`       |         | The Blade component those views stand in              |
 | `middleware`   |         | What the feed and the RSS run through                 |
 
 ## License

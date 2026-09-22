@@ -7,5 +7,5 @@
             "sort_algorithm": "alpha"
         }
     },
-    "exclude": ["vendor"]
+    "exclude": ["vendor", "site"]
 }
