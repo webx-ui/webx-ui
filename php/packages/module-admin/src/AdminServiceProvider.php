@@ -5,17 +5,21 @@ declare(strict_types=1);
 namespace WebxUi\Admin;
 
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Backups\Backups;
 use WebxUi\Admin\Console\BackupCommand;
+use WebxUi\Admin\Console\DemoCommand;
 use WebxUi\Admin\Console\InstallCommand;
 use WebxUi\Admin\Console\MakeModuleCommand;
 use WebxUi\Admin\Console\PanelCommand;
 use WebxUi\Admin\Console\PruneVersionsCommand;
 use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Contracts\BrandingSource;
+use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Manifest\ManifestBuilder;
 use WebxUi\Admin\Notes\NoteTypes;
 use WebxUi\Admin\Screens\FieldTypes;
@@ -80,6 +84,15 @@ class AdminServiceProvider extends ServiceProvider
         // is a singleton to be injectable by name, not because it remembers anything.
         $this->app->singleton(Backups::class);
 
+        // One journal for the run, shared by every module that seeds into it. The path is
+        // fixed rather than configurable: it is a file two commands pass between them, and a
+        // site that moved it would gain nothing and lose the answer to "where is it".
+        $this->app->singleton(DemoLedger::class, static fn ($app): DemoLedger => new DemoLedger(
+            $app->make(Filesystem::class),
+            $app->make(FilesystemFactory::class),
+            $app->storagePath('app/webx-demo.json'),
+        ));
+
         $this->app->bind(
             ManifestBuilder::class,
             static fn ($app): ManifestBuilder => new ManifestBuilder(
@@ -125,6 +138,7 @@ class AdminServiceProvider extends ServiceProvider
 
         $this->commands([
             BackupCommand::class,
+            DemoCommand::class,
             InstallCommand::class,
             MakeModuleCommand::class,
             PanelCommand::class,

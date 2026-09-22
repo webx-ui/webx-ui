@@ -52,7 +52,7 @@ class MediaServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-media');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
-        $this->app->make(ModuleRegistry::class)->register(new MediaModule);
+        $this->app->make(ModuleRegistry::class)->register($this->app->make(MediaModule::class));
 
         // What a screen means by these names, on the server: the keys the fields store and the
         // addresses the site reads. The front end registers the same names for the components.
