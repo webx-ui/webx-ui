@@ -1,0 +1,49 @@
+{
+  "slug": "hero",
+  "title": "Hero",
+  "description": "The first screen: a headline, a line under it, one button.",
+  "icon": null,
+  "group": "content",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": ["root"],
+  "max_per_entity": 1,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "title",
+      "type": "wx-input",
+      "label": "Headline"
+    },
+    {
+      "id": "subtitle",
+      "type": "wx-textarea",
+      "label": "Under it",
+      "props": {
+        "rows": 3
+      }
+    },
+    {
+      "id": "button_label",
+      "type": "wx-input",
+      "label": "Button"
+    },
+    {
+      "id": "button_url",
+      "type": "wx-input",
+      "label": "Button address",
+      "props": {
+        "placeholder": "/about"
+      }
+    }
+  ],
+  "template": "<section class=\"b-hero\" data-wx-block=\"hero\">\n    <div class=\"b-hero__inner\">\n        <h1 class=\"b-hero__title\">{{ $title }}</h1>\n        @if ($subtitle)\n            <p class=\"b-hero__subtitle\">{{ $subtitle }}</p>\n        @endif\n        @if ($button_label && $button_url)\n            <a class=\"b-hero__button\" href=\"{{ $button_url }}\">{{ $button_label }}</a>\n        @endif\n    </div>\n</section>\n",
+  "styles": ".b-hero {\n    container-type: inline-size;\n    background: #0f172a;\n    color: #fff;\n}\n\n.b-hero__inner {\n    max-width: 64rem;\n    margin: 0 auto;\n    padding: 4rem 1.25rem;\n}\n\n.b-hero__title {\n    font-size: 2.25rem;\n    line-height: 1.1;\n    margin: 0 0 1rem;\n}\n\n.b-hero__subtitle {\n    font-size: 1.125rem;\n    color: #cbd5e1;\n    max-width: 36rem;\n    margin: 0 0 1.5rem;\n}\n\n.b-hero__button {\n    display: inline-block;\n    padding: 0.75rem 1.25rem;\n    border-radius: 0.5rem;\n    background: #3b82f6;\n    color: #fff;\n    text-decoration: none;\n    font-weight: 600;\n}\n\n@container (min-width: 48rem) {\n    .b-hero__inner {\n        padding: 6rem 1.25rem;\n    }\n\n    .b-hero__title {\n        font-size: 3.5rem;\n    }\n}\n",
+  "script": null,
+  "sample": {
+    "title": "Pages made of blocks",
+    "subtitle": "Every block on this site is a type made in the panel: its fields, its Blade, its styles.",
+    "button_label": "Open the panel",
+    "button_url": "/cms"
+  }
+}

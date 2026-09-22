@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace WebxUi\Pages\Panel;
 
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\ProvidesDemo;
+use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\Prompt;
 use WebxUi\Mcp\Tool;
+use WebxUi\Pages\Demo\PagesDemo;
 use WebxUi\Pages\Mcp\PagePrompts;
 use WebxUi\Pages\Mcp\PageResources;
 use WebxUi\Pages\Mcp\PageTools;
@@ -23,12 +26,13 @@ use WebxUi\Pages\Mcp\PageTools;
  * To an agent it is the same section by other doors (§13): nine tools, the sitemap to read
  * first, and one prompt. The scopes are `pages:read` and `pages:write`.
  */
-final class PagesModule extends AbstractModule implements ProvidesMcpTools
+final class PagesModule extends AbstractModule implements ProvidesDemo, ProvidesMcpTools
 {
     public function __construct(
         private readonly PageTools $tools,
         private readonly PageResources $resources,
         private readonly PagePrompts $prompts,
+        private readonly PagesDemo $demo,
     ) {}
 
     public function id(): string
@@ -57,6 +61,21 @@ final class PagesModule extends AbstractModule implements ProvidesMcpTools
     public function permissions(): array
     {
         return ['pages.view', 'pages.manage'];
+    }
+
+    /**
+     * The block types, because the demo pages are made of them (§9).
+     *
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return ['blocks'];
+    }
+
+    public function seed(DemoLedger $ledger): void
+    {
+        $this->demo->seed($ledger);
     }
 
     /**
