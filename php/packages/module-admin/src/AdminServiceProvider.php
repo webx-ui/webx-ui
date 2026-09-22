@@ -12,6 +12,7 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Backups\Backups;
 use WebxUi\Admin\Console\BackupCommand;
+use WebxUi\Admin\Console\BootCommand;
 use WebxUi\Admin\Console\DemoCommand;
 use WebxUi\Admin\Console\DoctorCommand;
 use WebxUi\Admin\Console\InstallCommand;
@@ -140,6 +141,7 @@ class AdminServiceProvider extends ServiceProvider
 
         $this->commands([
             BackupCommand::class,
+            BootCommand::class,
             DemoCommand::class,
             DoctorCommand::class,
             InstallCommand::class,
