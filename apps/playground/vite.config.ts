@@ -78,6 +78,7 @@ export default defineConfig({
       pkg('module-blog'),
       pkg('module-inbox'),
       pkg('module-media'),
+      pkg('module-menu'),
       pkg('module-pages'),
       pkg('module-seo'),
     ],

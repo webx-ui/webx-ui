@@ -4,6 +4,7 @@ import { blocks } from '@webx-ui/module-blocks'
 import { blog } from '@webx-ui/module-blog'
 import { inbox } from '@webx-ui/module-inbox'
 import { media } from '@webx-ui/module-media'
+import { menu } from '@webx-ui/module-menu'
 import { pages } from '@webx-ui/module-pages'
 import { seo } from '@webx-ui/module-seo'
 /* The opt-in typeface; the tokens themselves come in with the core stylesheet. */
@@ -40,7 +41,7 @@ const admin = createAdmin({
   apiPath: '/api/cms',
   // The administrators section without the sign-in plugin: the session above stands in for
   // it, and what is looked at here is the list and the trail of what agents did.
-  modules: [inbox(), pages(), ...blog(), media(), blocks(), seo(), admins(), connect()],
+  modules: [inbox(), pages(), ...blog(), menu(), media(), blocks(), seo(), admins(), connect()],
   plugins: [session],
   userMenu: UserMenu,
 })

@@ -22,6 +22,7 @@ const NAMESPACES: Record<string, string> = {
   'module-blog': 'webx-blog',
   'module-inbox': 'webx-inbox',
   'module-media': 'webx-media',
+  'module-menu': 'webx-menu',
   'module-pages': 'webx-pages',
   'module-seo': 'webx-seo',
   'module-settings': 'webx-settings',
