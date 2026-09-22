@@ -44,9 +44,13 @@ final class Backups
     }
 
     /**
-     * Where the files go. Deliberately a local disk and nothing else: a dump is the whole
-     * database in one file — password hashes, the telephone numbers on every enquiry, tokens —
-     * and it belongs under `storage/app`, which nothing serves (§5).
+     * Where the files go: `path` under the root of the `disk`. Deliberately a local disk and
+     * nothing else: a dump is the whole database in one file — password hashes, the telephone
+     * numbers on every enquiry, tokens — and it belongs somewhere nothing serves (§5).
+     *
+     * The root is the disk's, not a path of ours, so it moves when Laravel moves it: on 11+
+     * `local` is rooted at `storage/app/private`, and that is where the backups are. Naming a
+     * literal path anywhere is how that stops being true without anybody noticing.
      */
     public function directory(): string
     {
