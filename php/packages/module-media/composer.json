@@ -31,16 +31,16 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "intervention/image": "^3.11",
-        "webx-ui/module-admin": "^0.29.1",
-        "webx-ui/localization": "^0.29.1",
-        "webx-ui/mcp": "^0.29.1",
-        "webx-ui/module-auth": "^0.29.1",
-        "webx-ui/nested-set": "^0.29.1"
+        "webx-ui/module-admin": "^0.30.0",
+        "webx-ui/localization": "^0.30.0",
+        "webx-ui/mcp": "^0.30.0",
+        "webx-ui/module-auth": "^0.30.0",
+        "webx-ui/nested-set": "^0.30.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/module-blocks": "^0.29.1"
+        "webx-ui/module-blocks": "^0.30.0"
     },
     "autoload": {
         "psr-4": {
@@ -61,7 +61,7 @@
         "webx": {
             "module": "media",
             "npm": {
-                "@webx-ui/module-media": "^0.8.6"
+                "@webx-ui/module-media": "^0.8.7"
             },
             "panel": {
                 "import": "import { media } from '@webx-ui/module-media'",

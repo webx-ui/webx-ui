@@ -1,5 +1,185 @@
 # @webx-ui/php
 
+## 0.30.0
+
+### Minor Changes
+
+- 8e0d587: A link is chosen rather than typed: the contract for what a panel can point at
+
+  The address registry answers "what is this entity's address". Nothing answered "what can I link to
+  at all" — a `RouteType` has a model, a formatter and a handler, and nowhere in it a title to show or
+  a way to search — so every field that wanted a link had to be told by hand. This is that second
+  question, and it lives in the frame rather than in any one section, because the menu is only the
+  first of the fields that will ask it.
+
+  On the server: `LinkSource`, `LinkCandidate` and the `LinkSources` register that content modules fill
+  on boot, the `Link` value every place keeps a link as, and four addresses under `/api/cms/links` —
+  the sections of the picker filtered by the reader's permissions, a search inside one, a resolve of
+  several types in one query per type, and the site's own named addresses for the field where a path
+  is typed. `module-pages` registers pages, `module-blog` registers articles, rubrics and tags.
+
+  `available` is deliberately apart from having an address: the registry holds one for a draft too, so
+  a picker that trusted it would offer a link to a page the site answers 404 for. A draft is offered,
+  drawn dimmed, and left out by whoever renders.
+
+  The anchor is a field of the link rather than part of the address. A typed address can carry one
+  inline; a chosen page has nowhere to write one, because its address is looked up rather than
+  written. So `hash` sits beside the target, is kept without its `#`, and is appended on every read —
+  and an address typed as `/about#team` is taken apart on the way in, so that a link cannot end
+  `#team#top`.
+
+  In the browser: `WxLinkPicker`, `wx-link` on described screens, and `createLinksApi`.
+
+  In `webx-ui/routing`: `SiteUrl`, with the language prefix that used to be private to `HasUrl` — a
+  hand-written `/account` needs the same prefix an entity's address gets, and a second reading of the
+  strategy is a second reading that drifts.
+
+- 8e0d587: The menus by their other doors: six tools for an agent, the catalogue to read first, and demo
+  content
+
+  `webx-ui/module-menu` now offers `menu_list_menus`, `menu_get_tree`, `menu_add_link`,
+  `menu_update_link`, `menu_move_link` and `menu_remove_link`, under `menu:read` and `menu:write`.
+  The names are longer than the module prefix needs and deliberately so: a real client shows a tool
+  by the part of its name after that prefix, and `menu_list` beside `menu_get` would stand in a
+  connector's settings as "List" and "Get" next to everybody else's.
+
+  They go through the doors the panel goes through. Where an item points is normalised by the same
+  `Link` a block field keeps and checked by the same rules the dialog is checked by — now
+  `Menu\Panel\ItemInput`, so there is one list rather than two that look alike — and what a position
+  among siblings means is `Menu\Tree\Placement`, which the drag and the tool now share. An item an
+  agent wrote is an item the panel would have accepted, and the cache is forgotten by the model
+  events either of them raises rather than by a line in a handler.
+
+  Every writing tool takes `dry_run: true`. Menus themselves are not made here at all: a declared
+  menu is a template asking for that spelling, and one of somebody's own is made for a template a
+  person is writing.
+
+  `menu://menus` is what an agent reads first — the menus with the looks each one offers, the kinds
+  of thing that can be linked to, and the house rules that are easy to get wrong silently: hang an
+  item on an entity rather than on a path, because an entity carries its address and a typed path
+  goes stale without saying so; write a path without its language prefix; leave the label out where
+  the entity's own name will do.
+
+  `webx:demo` now fills a header and a footer out of the pages it has just created — all three kinds
+  of target on one site, since the difference between them is the thing a screenshot cannot show.
+  The pages come out of the run's journal rather than out of a query, which is what `requires:
+['pages']` buys. The `menus` rows are deliberately not written down: the only ones this creates
+  are declared, a declared menu refuses to be deleted because a template names it, and an entry
+  `--remove` could not undo would be worse than an empty menu left behind.
+
+- 8e0d587: The **Menus** section: the menus of a site on the left, the tree of one of them on the right
+
+  `@webx-ui/module-menu` is the panel half of `webx-ui/module-menu`. One screen and no editor under
+  it — a menu is arranged in place and an item is a dialog over the tree it belongs to — with which
+  menu is open kept in the address, so that "the footer" is a link somebody can send.
+
+  Dragging changes both the order and the parent. Every level is its own list and they share a group,
+  so where a row ends up is where it is, rather than a guess about how far sideways it was dropped.
+  Each level reports its own new order and the screen works out which item moved; one drag is one
+  `move`, and a refusal puts the tree back rather than leaving the screen disagreeing with the
+  database.
+
+  An item points at one of three things and says which: an entity chosen from `WxLinkPicker` — the
+  same picker every link field in the panel opens — an address of your own, or nothing at all, which
+  is what a heading is. A draft target is drawn dimmed and marked **Not on the site** rather than
+  hidden, because a menu is built before the pages in it are published.
+
+  The cache is marked under every menu — "built today at 08:10", "not built", "off" — with a reset
+  beside it and one for every menu in the head of the section. It is not "rebuild": the records are
+  forgotten and the next visitor builds them again. It exists because the list of places a menu can
+  change from ends where bulk operations begin, and it is what somebody presses to test the guess
+  that they are looking at something stale, instead of finding out where artisan lives. The mark is
+  read again after the reset, since a button that leaves it saying "built today at 08:10" is a button
+  nobody believes twice.
+
+  On the server: nine addresses under `/api/cms/menus`, including both cache resets, a menu resource
+  carrying `cache: { enabled, built_at }` and an item resource carrying the resolved target, so the
+  screen never goes looking for a name.
+
+  In `@webx-ui/core`, `WxListDetail` now also says whether an open record still stands beside the
+  list (`detail-inline`), the way it already said it about the chooser's column. It is what lets a
+  screen open its first record where there is room for one without raising a panel over a list
+  nobody has touched on a phone — and it is only said once the pane has been measured, since an
+  unmeasured pane answers "inline" to every threshold.
+
+  In `@webx-ui/module-admin`, `LinkUrls` gains `candidates()` and `hrefWith()`: a screen that draws
+  forty links resolves them in one query per kind instead of forty.
+
+- 8e0d587: A new site can be built with menus, and the skeleton's header hands over to one
+
+  `webx:setup` offers the modules `Setup\Catalogue` knows by name, and a name it does not know is
+  a refusal rather than a `composer require` of whatever turns up — so a section missing from that
+  list is one a new site cannot install at all. `webx-ui/module-menu` joins it, and joins it among
+  the defaults: the header of a site is not an optional part of it.
+
+  The skeleton's own header was the example that module was written to end. It asks `menu('header')`
+  first now and keeps the page tree underneath it, for the day between creating a site and filling
+  its menu in: a header that is empty on the day a site is created reads as broken rather than as
+  waiting.
+
+- 8e0d587: `webx-ui/module-menu`: the menus of a site, and the helper that prints them
+
+  One tree per menu, scoped by `menu_id`, with items that point at an entity, at a path, or
+  deliberately nowhere — said out loud in a `target` column rather than guessed from which other
+  column happens to be empty. A group heading is a flag of its own beside it, because how to draw an
+  item and where it goes are two questions, and a heading with children and a page of its own is an
+  ordinary thing.
+
+  Which menus exist is configuration: `webx-menu.menus` names the ones the templates ask for, and the
+  row in `menus` appears the first time one is saved — no write on boot, no synchronise command. A
+  declared menu can be emptied but not deleted and not renamed, because a template refers to its
+  spelling; an administrator makes and removes their own.
+
+  Outwards it hands over data rather than markup:
+
+  ```blade
+  @foreach (menu('header') as $item)
+      <a href="{{ $item->url }}" @class(['is-active' => $item->isActive()])>{{ $item->label }}</a>
+  @endforeach
+  ```
+
+  A `MenuLink` carries the label, the address, the children, the flags and `attrs()`. There is a
+  `<x-webx-menu::menu>` too, and it is second on purpose: a component that has to be overridden is
+  worse than a collection somebody writes ten lines against, and `vendor:publish
+--tag=webx-menu-views` is how it stops being used.
+
+  One tree for every language, with the labels translated — an item points at an entity, and that
+  entity already has a row per language in the registry, so the same item resolves to the right
+  address in each. An item nobody has translated is left out of that language rather than printed
+  empty, and `locales` covers the case a second tree would have: something in the English footer that
+  is not in the Russian one.
+
+  Highlighting is worked out after the cache, on every request, and the front page is the exception it
+  has to be: its path is empty, which is a prefix of every address on the site.
+
+  The cache is per menu and per language, forgotten by name. Everything that changes what a menu looks
+  like forgets it, including the two things that are easy to miss: **moving** an item, which rewrites
+  bounds in bulk and never raises `updated`, and publishing an entity, which changes no address at all
+  and would otherwise keep a page out of the menu until something unrelated was edited. Beyond that a
+  TTL of an hour and a switch, because "my edit has not arrived" looks like a broken save rather than
+  like a cache.
+
+  Two or three queries per menu whatever its size: the items in one ordered walk, then one `resolve()`
+  per kind of entity in it.
+
+### Patch Changes
+
+- 1dd017c: Setup: the database server is a question now, but only when it needs to be
+
+  `webx:setup` asked for the database _name_ and took the address it would be created at without
+  ever asking: the `--db-*` options, then `.env`, then `127.0.0.1:3306` as `root`. On a machine
+  where the local MariaDB listens somewhere else — OSPanel gives each of its database modules a
+  loopback address of its own — that meant six answered questions and then a stop at the step
+  that had already rewritten `.env`, on a host nobody had been offered the chance to name.
+
+  The address is now reached for before anything about the database is asked. A machine that
+  answers is never asked about it and the run reads exactly as it did. A machine that does not is
+  told what refused it, and asked for the host, the port, the user and the password with what was
+  just tried as the defaults — an empty answer to the hidden password field keeps the one in
+  `.env` — and then it tries again. Three answers that still reach nothing end the run with the
+  message that names `--db-host`, `--db-port` and `--db-connection=sqlite`; so does the very first
+  failure on a run with nobody in front of it, so `--no-interaction` behaves exactly as before.
+
 ## 0.29.1
 
 ### Patch Changes
