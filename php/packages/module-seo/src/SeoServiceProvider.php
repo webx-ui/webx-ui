@@ -57,7 +57,7 @@ class SeoServiceProvider extends ServiceProvider
         $this->registerRedirects();
         $this->registerFieldType();
 
-        $this->app->make(ModuleRegistry::class)->register(new SeoModule);
+        $this->app->make(ModuleRegistry::class)->register($this->app->make(SeoModule::class));
 
         // The SEO tab on the settings screen. A patch may name a screen nobody has registered
         // yet — the registry applies it when the tree is first built — so the order in which

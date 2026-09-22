@@ -1,0 +1,64 @@
+{
+  "slug": "columns",
+  "title": "Columns",
+  "description": "Two or three columns, each holding blocks of its own.",
+  "icon": null,
+  "group": "layout",
+  "sort": 10,
+  "allow": ["text"],
+  "allowed_in": ["root"],
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "columns",
+      "type": "wx-select",
+      "label": "Columns",
+      "props": {
+        "options": [
+          {
+            "label": "Two",
+            "value": "2"
+          },
+          {
+            "label": "Three",
+            "value": "3"
+          }
+        ]
+      }
+    },
+    {
+      "id": "items",
+      "type": "wx-blocks",
+      "label": "Inside",
+      "props": {
+        "allow": ["text"],
+        "max": 6
+      }
+    }
+  ],
+  "template": "<section class=\"b-columns b-columns--{{ $columns ?: 2 }}\" data-wx-block=\"columns\">\n    <div class=\"b-columns__grid\">\n        @blocks('items')\n    </div>\n</section>\n",
+  "styles": ".b-columns {\n    container-type: inline-size;\n    padding: 1rem 1.25rem;\n}\n\n.b-columns__grid {\n    display: grid;\n    gap: 1.5rem;\n    grid-template-columns: 1fr;\n    max-width: 64rem;\n    margin: 0 auto;\n}\n\n.b-columns .b-text {\n    padding: 0;\n    margin: 0;\n}\n\n@container (min-width: 40rem) {\n    .b-columns--2 .b-columns__grid {\n        grid-template-columns: repeat(2, minmax(0, 1fr));\n    }\n\n    .b-columns--3 .b-columns__grid {\n        grid-template-columns: repeat(3, minmax(0, 1fr));\n    }\n}\n",
+  "script": null,
+  "sample": {
+    "columns": "2",
+    "items": [
+      {
+        "key": "sample-left",
+        "type": "text",
+        "values": {
+          "heading": "Left",
+          "body": "A block inside a block: the container prints its children with @blocks."
+        }
+      },
+      {
+        "key": "sample-right",
+        "type": "text",
+        "values": {
+          "heading": "Right",
+          "body": "The columns are a container query, so they stack when the block is narrow."
+        }
+      }
+    ]
+  }
+}

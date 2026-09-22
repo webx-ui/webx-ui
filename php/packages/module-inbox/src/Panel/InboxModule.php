@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace WebxUi\Inbox\Panel;
 
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\ProvidesDemo;
+use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Inbox\Demo\InboxDemo;
 use WebxUi\Inbox\Mcp\InboxTools;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\ProvidesMcpDefaults;
@@ -25,11 +28,14 @@ use WebxUi\Mcp\Tool;
  * `inbox:read` and `inbox:write`. No resource and no prompt — what an agent needs to read
  * first is the list of forms, and that is a tool.
  */
-final class InboxModule extends AbstractModule implements ProvidesMcpTools
+final class InboxModule extends AbstractModule implements ProvidesDemo, ProvidesMcpTools
 {
     use ProvidesMcpDefaults;
 
-    public function __construct(private readonly InboxTools $tools) {}
+    public function __construct(
+        private readonly InboxTools $tools,
+        private readonly InboxDemo $demo,
+    ) {}
 
     public function id(): string
     {
@@ -57,6 +63,21 @@ final class InboxModule extends AbstractModule implements ProvidesMcpTools
     public function permissions(): array
     {
         return ['inbox.view', 'inbox.update', 'inbox.manage'];
+    }
+
+    /**
+     * Nothing: a form asks questions and stores answers, and needs no other section for it.
+     *
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return [];
+    }
+
+    public function seed(DemoLedger $ledger): void
+    {
+        $this->demo->seed($ledger);
     }
 
     /**

@@ -6,6 +6,9 @@ namespace WebxUi\Blocks\Panel;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\ProvidesDemo;
+use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Blocks\Demo\BlocksDemo;
 use WebxUi\Blocks\Mcp\BlockPrompts;
 use WebxUi\Blocks\Mcp\BlockResources;
 use WebxUi\Blocks\Mcp\BlockTools;
@@ -26,13 +29,14 @@ use WebxUi\Mcp\Tool;
  * To an agent the module is the same section by other doors (§18): the tools, the resources
  * it should read first, and one prompt. The scopes are `blocks:read` and `blocks:write`.
  */
-final class BlocksModule extends AbstractModule implements ProvidesMcpTools
+final class BlocksModule extends AbstractModule implements ProvidesDemo, ProvidesMcpTools
 {
     public function __construct(
         private readonly Config $config,
         private readonly BlockTools $tools,
         private readonly BlockResources $resources,
         private readonly BlockPrompts $prompts,
+        private readonly BlocksDemo $demo,
     ) {}
 
     public function id(): string
@@ -85,6 +89,21 @@ final class BlocksModule extends AbstractModule implements ProvidesMcpTools
             'editing' => (bool) $this->config->get('webx-blocks.editing', true),
             'provides' => is_array($provides) ? array_values(array_map('strval', $provides)) : [],
         ];
+    }
+
+    /**
+     * Nothing: block types are what everything else builds on, so they go first (§9).
+     *
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return [];
+    }
+
+    public function seed(DemoLedger $ledger): void
+    {
+        $this->demo->seed($ledger);
     }
 
     /**
