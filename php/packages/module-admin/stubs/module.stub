@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace {{ namespace }};
 
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\ProvidesDemo;
+use WebxUi\Admin\Demo\DemoLedger;
 
-class {{ class }} extends AbstractModule
+class {{ class }} extends AbstractModule implements ProvidesDemo
 {
     public function id(): string
     {
@@ -35,5 +37,29 @@ class {{ class }} extends AbstractModule
     public function manifest(): array
     {
         return [];
+    }
+
+    /**
+     * Modules this one has nothing to seed without — they are the order too.
+     *
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return [];
+    }
+
+    /**
+     * Something to look at on a site nobody has written into yet; `webx:demo` runs it.
+     *
+     * Fixtures go in resources/demo/{{ id }}, and everything created has to be written down —
+     * `webx:demo --remove` plays the journal backwards and knows nothing else about it:
+     *
+     *     $record = Thing::query()->create([...]);
+     *     $ledger->created($record);
+     */
+    public function seed(DemoLedger $ledger): void
+    {
+        //
     }
 }

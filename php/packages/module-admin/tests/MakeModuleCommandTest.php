@@ -7,6 +7,7 @@ namespace WebxUi\Admin\Tests;
 use Illuminate\Filesystem\Filesystem;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Contracts\Module;
+use WebxUi\Admin\Contracts\ProvidesDemo;
 
 final class MakeModuleCommandTest extends TestCase
 {
@@ -22,6 +23,7 @@ final class MakeModuleCommandTest extends TestCase
     protected function tearDown(): void
     {
         (new Filesystem)->deleteDirectory($this->directory);
+        (new Filesystem)->deleteDirectory($this->app->resourcePath('demo'));
 
         parent::tearDown();
     }
@@ -84,5 +86,14 @@ final class MakeModuleCommandTest extends TestCase
 
         $this->assertTrue(class_exists($class), 'The generated file declares no such class.');
         $this->assertTrue(is_subclass_of($class, Module::class), 'The generated class is not a module.');
+        $this->assertTrue(is_subclass_of($class, ProvidesDemo::class), 'The generated class cannot seed a demo.');
+    }
+
+    #[Test]
+    public function it_makes_somewhere_for_the_demo_fixtures_to_live(): void
+    {
+        $this->artisan('webx:make-module', ['name' => 'MediaLibrary'])->assertSuccessful();
+
+        $this->assertFileExists($this->app->resourcePath('demo/media-library/.gitkeep'));
     }
 }

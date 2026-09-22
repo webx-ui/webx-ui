@@ -247,6 +247,49 @@ excepted; `webx:versions:prune` trims everything to a limit lowered after the fa
 A handler answering a public address reads `isPublished()`; the preview that shows a draft
 lives in `webx-ui/module-blocks`.
 
+## Demo content
+
+```bash
+php artisan webx:demo            # something to look at on a site nobody has written into yet
+php artisan webx:demo --remove   # and all of it back out again
+```
+
+Every module brings its own: a section with something worth showing implements `ProvidesDemo`,
+and the command walks the ones that do. `requires()` names the modules it has nothing to seed
+without — and is the order too, so a page made of blocks is seeded after the block types
+whatever the navigation says. A module whose requirement is not installed is skipped out loud
+(`blog skipped: no media`) rather than failing halfway.
+
+```php
+final class ProductsModule extends AbstractModule implements ProvidesDemo
+{
+    /** @return list<string> */
+    public function requires(): array
+    {
+        return ['categories'];
+    }
+
+    public function seed(DemoLedger $ledger): void
+    {
+        $product = Product::query()->create([...]);
+
+        $ledger->created($product);                 // removing it deletes it
+        $ledger->changed($catalogue, ['intro']);    // called before the change; removing puts it back
+        $ledger->note('the catalogue page was left alone: …');   // printed as a warning
+    }
+}
+```
+
+Removal follows the journal in `storage/app/webx-demo.json` backwards and knows nothing else:
+what a module did not write down is not removed, and nothing is guessed from a slug. A record
+that was there before the demo is restored rather than deleted — the home page of
+`webx-ui/module-pages` comes from a migration and has to survive this — so afterwards the
+database holds what it held before, which for a page that was an unpublished stub means an
+unpublished stub again.
+
+`webx:make-module` generates the interface and an empty `resources/demo/<id>` with the class,
+so a new section starts with somewhere to put its fixtures.
+
 ## Nightly database backup
 
 ```
