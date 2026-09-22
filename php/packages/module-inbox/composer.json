@@ -56,6 +56,17 @@
             "providers": [
                 "WebxUi\\Inbox\\InboxServiceProvider"
             ]
+        },
+        "webx": {
+            "module": "inbox",
+            "npm": {
+                "@webx-ui/module-inbox": "^0.4.2"
+            },
+            "panel": {
+                "import": "import { inbox } from '@webx-ui/module-inbox'",
+                "style": "@webx-ui/module-inbox/style.css",
+                "register": "inbox()"
+            }
         }
     },
     "config": {

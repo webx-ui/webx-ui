@@ -57,6 +57,17 @@
             "providers": [
                 "WebxUi\\Media\\MediaServiceProvider"
             ]
+        },
+        "webx": {
+            "module": "media",
+            "npm": {
+                "@webx-ui/module-media": "^0.8.6"
+            },
+            "panel": {
+                "import": "import { media } from '@webx-ui/module-media'",
+                "style": "@webx-ui/module-media/style.css",
+                "register": "media()"
+            }
         }
     },
     "config": {
