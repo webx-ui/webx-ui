@@ -23,13 +23,23 @@ Then questions, with the answers already worked out from the directory you are s
 At the end it prints the panel's address, the login and a generated password. Roughly three
 minutes, most of it `npm install`.
 
-All of it takes flags instead, for a machine that has nobody to ask:
+All of it takes flags instead, for a machine that has nobody to ask. The questions belong to
+`webx:setup` rather than to Composer, so this is two steps: `create-project` cannot forward
+anything to them — after `--` its third positional argument is the version, and it answers
+"Too many arguments".
 
 ```bash
-composer create-project webx-ui/site example.local -- \
+composer create-project webx-ui/site example.local --no-scripts
+cd example.local
+cp .env.example .env && php artisan key:generate
+
+php artisan webx:setup --no-interaction \
   --modules=pages,media,seo,settings,blocks,inbox,admins \
-  --db=example --locales=en,uk --demo --no-interaction
+  --db=example --locales=en,uk --demo
 ```
+
+`--no-scripts` is what skips the interactive run, and the two lines after it are the rest of
+what that script would have done.
 
 ## The same command, six months later
 
