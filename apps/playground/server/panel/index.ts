@@ -72,6 +72,27 @@ import {
   receive,
   recount as mediaRecount,
 } from './media'
+import {
+  CACHE_ENABLED,
+  addItem as addMenuItem,
+  childrenOf,
+  countItems as countMenuItems,
+  create as createMenu,
+  depthOf,
+  ensure as ensureMenu,
+  find as findMenu,
+  forget as forgetMenu,
+  forgetAll as forgetAllMenus,
+  isDeclared as isDeclaredMenu,
+  itemOf,
+  list as listMenus,
+  moveItem as moveMenuItem,
+  remove as removeMenu,
+  removeItem as removeMenuItem,
+  rename as renameMenu,
+  type ItemRecord,
+  type MenuRecord,
+} from './menus'
 import { adminRows, endConnection, listCalls, listConnections, roles as adminRoles } from './agents'
 import { dictionary, panelLocales } from './lang'
 import { screen, screenNames } from './screens'
@@ -226,6 +247,17 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 320,
         group: 'blog',
         permissions: ['blog.taxonomy.manage'],
+        meta: {},
+      },
+      {
+        id: 'menu',
+        title: line(locale, 'webx-menu', 'module.title'),
+        icon: 'menu',
+        /* Among the content sections and after them: a menu is a way of pointing at pages and
+           articles rather than a thing of its own. */
+        order: 400,
+        group: null,
+        permissions: ['menu.view', 'menu.manage'],
         meta: {},
       },
       {
@@ -1393,6 +1425,287 @@ on('GET', '/links/routes', () => ({
     { name: 'webx.blog.rss', path: '/blog/rss' },
   ],
 }))
+
+/* ------------------------------------------------------------------------------ menus ----- */
+
+/**
+ * The menus of the site, and the tree of one of them (§10).
+ *
+ * A menu is addressed by its key throughout, because a key is what a template calls it by — and
+ * because a declared menu has no row until somebody saves into it, so for part of its life it
+ * has no id to be addressed by.
+ *
+ * The tree comes back whole and nested: menus are small, and a level at a time would cost a
+ * request per fold on a screen that is opened to see the shape of the thing. What is not small
+ * is what the items point at, so every target is resolved here — the row draws a title and an
+ * address, and neither of those is a column of the item.
+ */
+
+/** One menu as the left-hand list draws it. */
+function menuRow(record: MenuRecord): unknown {
+  return {
+    id: record.id,
+    key: record.key,
+    title: record.title,
+    declared: record.declared,
+    items_count: countMenuItems(record.key),
+    variants: record.variants,
+    cache: { enabled: CACHE_ENABLED, built_at: CACHE_ENABLED ? record.built_at : null },
+    // The session here is a superuser, so `menu.manage` is the half that is always true; what
+    // is left is the rule itself — a declared menu keeps its key and keeps existing, because a
+    // template names it by that spelling.
+    can: { rename: !record.declared, delete: !record.declared },
+  }
+}
+
+/** One item of the tree, with its target already resolved and its children under it. */
+function menuItem(item: ItemRecord, locale: string): unknown {
+  const candidate =
+    item.target === 'entity' && item.entity_type !== null && item.entity_id !== null
+      ? (linkRows(item.entity_type, locale).find((row) => row.id === item.entity_id) ?? null)
+      : null
+
+  const address = candidate?.url ?? (item.target === 'url' ? item.url : null)
+  /* Appended rather than stored, as `LinkUrls::href()` does it: an anchor with no address is a
+     link to a place on the page the menu is printed on. */
+  const fragment = item.hash === null || item.hash === '' ? '' : `#${item.hash}`
+
+  return {
+    id: item.id,
+    parent_id: item.parent_id,
+    depth: depthOf(item),
+    title: item.title,
+    label: menuLabel(item, candidate, locale),
+    target: item.target,
+    entity_type: item.entity_type,
+    entity_id: item.entity_id,
+    url: item.url,
+    hash: item.hash,
+    href: address === null ? (fragment === '' ? null : fragment) : address + fragment,
+    variant: item.variant,
+    is_heading: item.is_heading,
+    new_tab: item.new_tab,
+    rel: item.rel,
+    locales: item.locales,
+    visible: item.visible,
+    // A draft is a legitimate target — menus are built before the pages in them are published —
+    // so the row is drawn dimmed rather than left out.
+    available: item.target !== 'entity' || (candidate?.available ?? false),
+    resolved: candidate,
+    children: childrenOf(item.menu, item.id).map((child) => menuItem(child, locale)),
+  }
+}
+
+/** What the row says: the item's own label, else the name of the thing it points at. */
+function menuLabel(item: ItemRecord, candidate: LinkRow | null, locale: string): string {
+  const written = (item.title[locale] ?? '').trim()
+
+  return written === '' ? (candidate?.title ?? '').trim() : written
+}
+
+/** A key that is either declared or in the table; anything else is a menu that is not here. */
+function knownMenu(key: string): string {
+  if (findMenu(key) === null && !isDeclaredMenu(key)) {
+    throw new HttpFailure(404, `No menu called ${key}.`)
+  }
+
+  return key
+}
+
+/** The row of a menu that has one. A declared menu that nobody has saved into has not. */
+function savedMenu(key: string): MenuRecord {
+  const record = findMenu(knownMenu(key))
+
+  if (record === null) {
+    throw new HttpFailure(404, `No menu called ${key}.`)
+  }
+
+  return record
+}
+
+function menuItemOf(key: string, id: string): ItemRecord {
+  const item = itemOf(key, Number(id))
+
+  if (item === null) {
+    throw new HttpFailure(404, 'No such menu item.')
+  }
+
+  return item
+}
+
+/** The link a dialog sent, in the shape the columns keep it. */
+function menuLink(body: Record<string, unknown>): Partial<ItemRecord> {
+  const link = (body.link ?? {}) as Record<string, unknown>
+
+  return {
+    target: (link.target ?? 'none') as ItemRecord['target'],
+    entity_type: typeof link.entity_type === 'string' ? link.entity_type : null,
+    entity_id: typeof link.entity_id === 'number' ? link.entity_id : null,
+    url: typeof link.url === 'string' && link.url !== '' ? link.url : null,
+    hash: typeof link.hash === 'string' && link.hash !== '' ? link.hash : null,
+    new_tab: link.new_tab === true,
+    rel: Array.isArray(link.rel) ? (link.rel as ItemRecord['rel']) : [],
+  }
+}
+
+/** Everything the item dialog sends beside the link itself. */
+function menuFields(body: Record<string, unknown>): Partial<ItemRecord> {
+  const fields: Partial<ItemRecord> = {}
+
+  if (typeof body.title === 'object' && body.title !== null) {
+    fields.title = body.title as ItemRecord['title']
+  }
+
+  if (typeof body.variant === 'string') fields.variant = body.variant
+  if (typeof body.is_heading === 'boolean') fields.is_heading = body.is_heading
+  if (typeof body.visible === 'boolean') fields.visible = body.visible
+  if (Array.isArray(body.locales)) fields.locales = body.locales.map(String)
+
+  return fields
+}
+
+/**
+ * The spelling a template writes inside `menu('…')`, and the one thing this dialog can be
+ * refused over — under the field it was typed into, which is where the dialog reads it.
+ */
+function checkMenuKey(key: string, current: string | null): void {
+  if (!/^[a-z0-9]+(?:[-_][a-z0-9]+)*$/.test(key)) {
+    throw new HttpFailure(422, 'The key is not one a template could write.', undefined, {
+      key: ['Lower case letters and digits, with single hyphens or underscores between them.'],
+    })
+  }
+
+  if (key !== current && (findMenu(key) !== null || isDeclaredMenu(key))) {
+    throw new HttpFailure(422, 'That key is taken.', undefined, {
+      key: ['A menu with this key already exists.'],
+    })
+  }
+}
+
+on('GET', '/menus', () => ({ data: listMenus().map(menuRow) }))
+
+/*
+ * Written before the one for a single menu: `{key}` would otherwise match the word `cache` and
+ * take the request meant for all of them.
+ */
+on('POST', '/menus/cache/flush', () => {
+  forgetAllMenus()
+
+  return { data: null }
+})
+
+on('POST', '/menus', ({ body }) => {
+  const key = String(body.key ?? '').trim()
+
+  checkMenuKey(key, null)
+
+  return { data: menuRow(createMenu(key, String(body.title ?? '').trim())) }
+})
+
+/* This is where a declared menu's row first appears: what was sent is written over it. */
+on('PATCH', '/menus/([A-Za-z0-9_-]+)', ({ params, body }) => {
+  const record = ensureMenu(knownMenu(params[0]))
+  const wanted = typeof body.key === 'string' ? body.key.trim() : ''
+
+  // Only when it was sent and only when it differs: a request that merely echoed the key back
+  // would otherwise be refused for doing nothing.
+  if (wanted !== '' && wanted !== record.key) {
+    checkMenuKey(wanted, record.key)
+    renameMenu(record, wanted)
+  }
+
+  record.title = String(body.title ?? record.title).trim()
+
+  return { data: menuRow(record) }
+})
+
+on('DELETE', '/menus/([A-Za-z0-9_-]+)', ({ params }) => {
+  const record = savedMenu(params[0])
+
+  // The rule lives with the menu rather than with the button that is not drawn: an import and
+  // an agent come through the same door as the panel.
+  if (record.declared) {
+    throw new HttpFailure(422, 'A menu a template asks for cannot be deleted.')
+  }
+
+  removeMenu(record.key)
+
+  return { data: null }
+})
+
+on('POST', '/menus/([A-Za-z0-9_-]+)/cache/flush', ({ params }) => {
+  forgetMenu(knownMenu(params[0]))
+
+  return { data: null }
+})
+
+on('GET', '/menus/([A-Za-z0-9_-]+)/items', ({ params, locale }) => {
+  const record = findMenu(knownMenu(params[0]))
+
+  // A declared menu with no row is an empty tree rather than a 404: the section shows it from
+  // the first day, and the first item saved into it is what makes the row.
+  return {
+    data: record === null ? [] : childrenOf(record.key, null).map((item) => menuItem(item, locale)),
+  }
+})
+
+on('POST', '/menus/([A-Za-z0-9_-]+)/items', ({ params, body, locale }) => {
+  const record = ensureMenu(knownMenu(params[0]))
+  const parent = typeof body.parent_id === 'number' ? body.parent_id : null
+
+  if (parent !== null && itemOf(record.key, parent) === null) {
+    throw new HttpFailure(404, 'No such parent item.')
+  }
+
+  // At the end of its level and not where a form said: where an item sits is the tree's
+  // business, and there is one gesture for it.
+  const item = addMenuItem(record.key, {
+    ...menuLink(body),
+    ...menuFields(body),
+    parent_id: parent,
+  })
+
+  forgetMenu(record.key)
+
+  return { data: menuItem(item, locale) }
+})
+
+on('PATCH', '/menus/([A-Za-z0-9_-]+)/items/(\\d+)', ({ params, body, locale }) => {
+  const record = savedMenu(params[0])
+  const item = menuItemOf(record.key, params[1])
+
+  Object.assign(item, menuLink(body), menuFields(body))
+  forgetMenu(record.key)
+
+  return { data: menuItem(item, locale) }
+})
+
+on('POST', '/menus/([A-Za-z0-9_-]+)/items/(\\d+)/move', ({ params, body }) => {
+  const record = savedMenu(params[0])
+  const item = menuItemOf(record.key, params[1])
+  const parent = typeof body.parent_id === 'number' ? body.parent_id : null
+
+  if (!moveMenuItem(item, parent, Number(body.index ?? 0))) {
+    throw new HttpFailure(404, 'An item cannot be moved inside its own branch.')
+  }
+
+  forgetMenu(record.key)
+
+  return { data: { id: item.id } }
+})
+
+/*
+ * An item and everything under it. How many went is in the answer because the panel says it out
+ * loud before asking, and the promise and the act have to be the same question.
+ */
+on('DELETE', '/menus/([A-Za-z0-9_-]+)/items/(\\d+)', ({ params }) => {
+  const record = savedMenu(params[0])
+  const deleted = removeMenuItem(menuItemOf(record.key, params[1]))
+
+  forgetMenu(record.key)
+
+  return { data: { deleted } }
+})
 
 /* -------------------------------------------------------------------------------- blog ----- */
 

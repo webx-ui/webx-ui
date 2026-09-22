@@ -17,6 +17,7 @@
     "@webx-ui/module-blog": "workspace:*",
     "@webx-ui/module-inbox": "workspace:*",
     "@webx-ui/module-media": "workspace:*",
+    "@webx-ui/module-menu": "workspace:*",
     "@webx-ui/module-pages": "workspace:*",
     "@webx-ui/module-seo": "workspace:*",
     "@webx-ui/schema": "workspace:*",
