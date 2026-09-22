@@ -21,10 +21,11 @@ const props = defineProps<{ form: InboxForm; slug: string; fields: InboxField[] 
 useInboxMessages()
 const t = useTranslate('webx-inbox')
 
-const blade = computed(() => `<x-webx-form slug="${props.slug}" />`)
+const blade = computed(() => `<x-webx-inbox::form slug="${props.slug}" />`)
 
 const block = computed(
-  () => `{{-- resources/views/blocks/contact.blade.php --}}\n<x-webx-form slug="${props.slug}" />`,
+  () =>
+    `{{-- resources/views/blocks/contact.blade.php --}}\n<x-webx-inbox::form slug="${props.slug}" />`,
 )
 
 const columns = computed<TableColumn<InboxField>[]>(() => [

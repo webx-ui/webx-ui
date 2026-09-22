@@ -141,18 +141,34 @@ The handler hands the page to `webx-pages.view`, which defaults to `pages.show`,
 
 ```blade
 @php($content = $page->renderBlocks())
-<!doctype html>
-<html>
-<head>
-    @webxSeo($page)
-    @webxBlocks
-</head>
-<body>{!! $content !!}</body>
-</html>
+
+<x-dynamic-component :component="config('webx-pages.layout') ?: 'webx-pages::standalone'">
+    <x-slot:head>
+        @webxSeo($page)
+        @webxBlocks
+    </x-slot:head>
+
+    {!! $content !!}
+</x-dynamic-component>
 ```
 
 Until the site has written that view, the package prints its own — the blocks, the SEO head and
 nothing else — so a fresh installation serves a page rather than an error.
+
+## The layout
+
+`webx-pages.layout` names the Blade component the page stands in; empty means
+`webx-pages::standalone`, the bare document above. One line and the page is inside the site's
+header and footer:
+
+```php
+'layout' => 'layout',   // <x-layout>
+```
+
+`php artisan webx:panel --sync` writes it when the site has
+`resources/views/components/layout.blade.php`. The deal is a **`head` slot** and the **default
+slot** for the content, and a layout wants `@stack('head')` beside `{{ $head }}` — a slot is one
+place, and what a block type pushes cannot reach it.
 
 ## Licence
 

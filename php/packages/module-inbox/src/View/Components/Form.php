@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebxUi\Inbox\Rendering;
+namespace WebxUi\Inbox\View\Components;
 
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Contracts\View\View;
@@ -14,12 +14,16 @@ use Illuminate\View\Component;
 use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Antispam\Guard;
 use WebxUi\Inbox\Models\Field;
-use WebxUi\Inbox\Models\Form;
+// The component and the model are both called a form, and here the component wins the name:
+// `componentNamespace` looks up the class by what is written after `::`, so `<x-webx-inbox::form>`
+// can only be `View\Components\Form`.
+use WebxUi\Inbox\Models\Form as FormModel;
+use WebxUi\Inbox\Rendering\Assets;
 use WebxUi\Inbox\Storage\FileStore;
 use WebxUi\Inbox\Support\Forms;
 
 /**
- * `<x-webx-form slug="contact" />` — a form of the panel, printed on the site (§10).
+ * `<x-webx-inbox::form slug="contact" />` — a form of the panel, printed on the site (§10).
  *
  * Everything visible is a view of the package, and every one of them is publishable: the markup
  * here is the minimum that works, not a design, and the first thing a real site does is publish
@@ -30,7 +34,7 @@ use WebxUi\Inbox\Support\Forms;
  * the script is one file served from this package, and a form that only submits once that file
  * has arrived is a form that loses the enquiry somebody sent on a train.
  */
-final class FormTag extends Component
+final class Form extends Component
 {
     /** @var array<string, mixed>|null the old input of a submission that came back with errors */
     private ?array $old = null;
@@ -47,7 +51,7 @@ final class FormTag extends Component
         private readonly ViewFactory $views,
         private readonly Request $request,
         private readonly ?string $slug = null,
-        private readonly ?Form $form = null,
+        private readonly ?FormModel $form = null,
         private readonly array $values = [],
         private readonly ?string $action = null,
         private readonly ?string $view = null,
@@ -57,7 +61,7 @@ final class FormTag extends Component
     {
         $form = $this->form();
 
-        if (! $form instanceof Form) {
+        if (! $form instanceof FormModel) {
             // A slug nobody has a form for, or a form that is switched off. Both print
             // nothing: a page that says "form not found" to a customer is worse than a page
             // with one section missing, and the panel is where somebody finds out.
@@ -92,16 +96,16 @@ final class FormTag extends Component
         ]);
     }
 
-    private function form(): ?Form
+    private function form(): ?FormModel
     {
-        if ($this->form instanceof Form) {
+        if ($this->form instanceof FormModel) {
             return $this->form->is_enabled ? $this->form->loadMissing('liveFields') : null;
         }
 
         return $this->slug === null ? null : $this->forms->enabled($this->slug);
     }
 
-    private function action(Form $form): string
+    private function action(FormModel $form): string
     {
         if ($this->action !== null) {
             return $this->action;
@@ -175,7 +179,7 @@ final class FormTag extends Component
      * refusal. Every form prints `webx_form`, so what came back names the form it came from —
      * in the old input for the errors, and in the flash for the thank-you.
      */
-    private function isMine(Form $form): bool
+    private function isMine(FormModel $form): bool
     {
         return ($this->old()['webx_form'] ?? null) === $form->slug;
     }
@@ -204,7 +208,7 @@ final class FormTag extends Component
      *
      * @return array<string, mixed>|null
      */
-    private function message(Form $form): ?array
+    private function message(FormModel $form): ?array
     {
         if (! $this->request->hasSession()) {
             return null;
@@ -219,7 +223,7 @@ final class FormTag extends Component
         return $flash;
     }
 
-    private function submitText(Form $form): string
+    private function submitText(FormModel $form): string
     {
         $text = $form->option('design.submit-text');
 
