@@ -1,0 +1,55 @@
+# The same stack to work in: the checkout mounted into it, nothing cached, mail going nowhere.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# and the site is on http://localhost:8080, the panel on /cms, the mail it sends on
+# http://localhost:8025. No PHP, no Composer and no Node on the machine — the first boot
+# installs both halves into the mount, which takes a few minutes and happens once.
+#
+# On Linux what Composer writes into the mount belongs to root, because that is who the
+# container is. Add `user: "${UID}:${GID}"` to the app service if that is in the way.
+
+services:
+  app:
+    build:
+      target: dev
+    environment:
+      DB_HOST: database
+      MAIL_HOST: mail
+      MAIL_PORT: 1025
+      # Configuration cached from the file you are editing is the file you edited an hour
+      # ago, which in production is the point and here is a whole afternoon.
+      WEBX_BOOT_OPTIONS: --no-cache
+    # !override rather than another entry: the named volumes the production file mounts
+    # inside storage would sit on top of this one, and uploads would stop appearing in the
+    # checkout without saying why.
+    volumes: !override
+      - .:/var/www/html
+
+  # The panel and the site's styles, rebuilt as they are edited. Laravel finds it through
+  # public/hot, which lands in the same mount.
+  vite:
+    image: node:22-alpine
+    working_dir: /var/www/html
+    command: sh -c "npm install --no-audit --no-fund && npm run dev -- --port ${VITE_PORT:-5173}"
+    environment:
+      VITE_DOCKER: '1'
+    volumes:
+      - .:/var/www/html
+    ports:
+      # The same number on both sides, and it has to be: the page the browser loads gets the
+      # dev server's address out of public/hot, which the server inside the container writes
+      # with the port it is listening on. Published on a different one, every asset on the
+      # page points at a port nothing is on.
+      - "${VITE_PORT:-5173}:${VITE_PORT:-5173}"
+
+  mail:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_PORT:-8025}:8025"
+
+  database:
+    ports:
+      # For a client on the machine itself — a GUI, or `mariadb` in a terminal.
+      - "127.0.0.1:${DB_PORT_PUBLISHED:-3306}:3306"
