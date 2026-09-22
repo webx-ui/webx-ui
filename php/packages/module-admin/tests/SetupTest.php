@@ -7,9 +7,11 @@ namespace WebxUi\Admin\Tests;
 use Illuminate\Filesystem\Filesystem;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Setup\Catalogue;
+use WebxUi\Admin\Setup\Connection;
 use WebxUi\Admin\Setup\Database;
 use WebxUi\Admin\Setup\EnvFile;
 use WebxUi\Admin\Setup\LocalesConfig;
+use WebxUi\Admin\Setup\SetupFailed;
 
 /**
  * The parts of `webx:setup` that decide things, apart from the parts that run things.
@@ -219,6 +221,93 @@ final class SetupTest extends TestCase
         $this->assertSame(['en'], LocalesConfig::codes('en,en'));
         $this->assertSame(['pt-br'], LocalesConfig::codes('pt-BR'));
         $this->assertSame([], LocalesConfig::codes('  '));
+    }
+
+    // -- Where the server is --------------------------------------------------------------
+
+    #[Test]
+    public function an_option_beats_the_file_and_the_file_beats_the_default(): void
+    {
+        $env = $this->env("DB_HOST=db.internal\nDB_USERNAME=kolesa\nDB_PASSWORD=secret\n");
+
+        $server = Connection::resolve('mysql', ['host' => '127.0.1.14'], $env);
+
+        $this->assertSame('127.0.1.14', $server->host);
+        $this->assertSame('kolesa', $server->username);
+        $this->assertSame('secret', $server->password);
+        // Nothing says otherwise, on the command line or in the file.
+        $this->assertSame('3306', $server->port);
+    }
+
+    #[Test]
+    public function an_empty_option_is_an_answer_and_an_empty_password_is_a_password(): void
+    {
+        $env = $this->env("DB_PASSWORD=secret\n");
+
+        // `--db-password=` is how a password in the file is taken back off, so it cannot fall
+        // through to the file the way an option nobody passed does.
+        $this->assertSame('', Connection::resolve('mysql', ['password' => ''], $env)->password);
+        $this->assertSame('secret', Connection::resolve('mysql', [], $env)->password);
+    }
+
+    #[Test]
+    public function an_answer_replaces_what_was_tried_and_an_empty_one_keeps_it(): void
+    {
+        $server = (new Connection('mysql', '127.0.0.1', '3306', 'root', 'secret'))
+            ->with(host: '127.0.1.14', port: '3307');
+
+        $this->assertSame('127.0.1.14', $server->host);
+        $this->assertSame('3307', $server->port);
+        $this->assertSame('root', $server->username);
+        // A hidden field has no default, so Enter has to mean the password already in the file
+        // — otherwise being asked where the server is costs you the one thing that was right.
+        $this->assertSame('secret', $server->password);
+    }
+
+    #[Test]
+    public function mariadb_is_a_laravel_connection_that_pdo_has_never_heard_of(): void
+    {
+        $this->assertSame('mysql', (new Connection('mariadb', '127.0.0.1', '3306', 'root', ''))->driver());
+        $this->assertSame('pgsql', (new Connection('pgsql', '127.0.0.1', '5432', 'postgres', ''))->driver());
+        $this->assertTrue((new Connection('sqlite', '', '', '', ''))->isSqlite());
+        $this->assertFalse((new Connection('mariadb', '127.0.0.1', '3306', 'root', ''))->isSqlite());
+    }
+
+    #[Test]
+    public function it_writes_the_server_into_env_under_the_names_the_skeleton_has(): void
+    {
+        $values = (new Connection('mariadb', '127.0.1.14', '3307', 'root', ''))->env('kolesa');
+
+        $this->assertSame(
+            [
+                'DB_HOST' => '127.0.1.14',
+                'DB_PORT' => '3307',
+                'DB_DATABASE' => 'kolesa',
+                'DB_USERNAME' => 'root',
+                'DB_PASSWORD' => '',
+            ],
+            $values,
+        );
+    }
+
+    #[Test]
+    public function giving_up_on_the_server_says_all_three_ways_out(): void
+    {
+        $message = SetupFailed::noDatabaseServer(
+            '127.0.0.1',
+            '3306',
+            'root',
+            'SQLSTATE[HY000] [2002] the target machine actively refused it.',
+        )->getMessage();
+
+        // The end of both roads — the run nobody was there to ask, and the one that asked and
+        // was told the same address three times — so it is the only place the escapes are
+        // written down.
+        $this->assertStringContainsString('No answer from 127.0.0.1:3306 as [root]', $message);
+        $this->assertStringContainsString('actively refused it.', $message);
+        $this->assertStringContainsString('--db-host', $message);
+        $this->assertStringContainsString('--db-port', $message);
+        $this->assertStringContainsString('--db-connection=sqlite', $message);
     }
 
     // -- The database name --------------------------------------------------------------------
