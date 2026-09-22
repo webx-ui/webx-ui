@@ -6,6 +6,7 @@ namespace WebxUi\Admin\Console;
 
 use Illuminate\Console\Command;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Auth\AuthServiceProvider;
 
 final class InstallCommand extends Command
 {
@@ -37,8 +38,12 @@ final class InstallCommand extends Command
         }
 
         // Saying this out loud beats finding out from a search engine: nothing here
-        // authenticates anyone.
-        $this->components->warn("The panel at {$path} is open until an auth module adds its middleware.");
+        // authenticates anyone. Said only when it is true — a site that has installed an auth
+        // module is told this on every `webx:setup` otherwise, and a warning that is wrong
+        // half the time is a warning nobody reads the other half.
+        if (! class_exists(AuthServiceProvider::class)) {
+            $this->components->warn("The panel at {$path} is open until an auth module adds its middleware.");
+        }
 
         return self::SUCCESS;
     }
