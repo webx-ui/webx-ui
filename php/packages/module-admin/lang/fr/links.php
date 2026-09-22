@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'target-entity' => 'Ce site',
+    'target-url' => 'Une adresse',
+    'target-none' => 'Nulle part',
+    'section' => 'Section',
+    'search' => 'Commencez à saisir un nom',
+    'searching' => 'Recherche…',
+    'empty' => 'Aucun résultat',
+    'clear' => 'Retirer le lien',
+    'unavailable' => 'Pas encore en ligne',
+    'missing' => 'Ce vers quoi pointait ce lien n’existe plus',
+    'url-label' => 'Adresse',
+    'url-placeholder' => '/account ou https://example.com',
+    'hash' => 'Ancre',
+    'hash-placeholder' => 'section-de-la-page',
+    'url-routes' => 'Adresses de ce site',
+    'new-tab' => 'Ouvrir dans un nouvel onglet',
+    'rel' => 'Relation',
+    'rel-nofollow' => 'Ne transmettre aucun poids de lien',
+    'rel-sponsored' => 'Placement payant',
+    'rel-ugc' => 'Écrit par un visiteur',
+    'shape' => 'Ce champ attend un lien.',
+    'target' => 'Ce champ ne connaît pas ce type de cible.',
+    'no-source' => 'Impossible de créer un lien vers cela ici.',
+    'no-entity' => 'Choisissez la destination du lien.',
+    'url-length' => 'Une adresse ne peut pas dépasser :max caractères.',
+    'url-scheme' => 'Une adresse doit être un chemin ou commencer par http, https, mailto ou tel.',
+    'hash-length' => 'Une ancre ne peut pas dépasser :max caractères.',
+    'hash-shape' => 'Une ancre est un nom sur la page : sans espaces.',
+    'not-localized' => 'Un lien est le même dans toutes les langues et ne se traduit pas.',
+];

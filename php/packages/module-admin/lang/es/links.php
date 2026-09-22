@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'target-entity' => 'Este sitio',
+    'target-url' => 'Una dirección',
+    'target-none' => 'A ningún sitio',
+    'section' => 'Sección',
+    'search' => 'Empiece a escribir un nombre',
+    'searching' => 'Buscando…',
+    'empty' => 'No se ha encontrado nada',
+    'clear' => 'Quitar el enlace',
+    'unavailable' => 'Todavía no está en el sitio',
+    'missing' => 'Lo que este enlace señalaba ya no existe',
+    'url-label' => 'Dirección',
+    'url-placeholder' => '/account o https://example.com',
+    'hash' => 'Ancla',
+    'hash-placeholder' => 'seccion-de-la-pagina',
+    'url-routes' => 'Direcciones de este sitio',
+    'new-tab' => 'Abrir en una pestaña nueva',
+    'rel' => 'Relación',
+    'rel-nofollow' => 'No transmitir peso del enlace',
+    'rel-sponsored' => 'Colocación pagada',
+    'rel-ugc' => 'Escrito por un visitante',
+    'shape' => 'Este campo acepta un enlace.',
+    'target' => 'Este campo no conoce ese tipo de destino.',
+    'no-source' => 'Aquí no se puede enlazar a eso.',
+    'no-entity' => 'Elija a dónde lleva el enlace.',
+    'url-length' => 'Una dirección puede tener como máximo :max caracteres.',
+    'url-scheme' => 'Una dirección debe ser una ruta o empezar por http, https, mailto o tel.',
+    'hash-length' => 'Un ancla puede tener como máximo :max caracteres.',
+    'hash-shape' => 'Un ancla es un nombre en la página: sin espacios.',
+    'not-localized' => 'Un enlace es el mismo en todos los idiomas y no se traduce.',
+];
