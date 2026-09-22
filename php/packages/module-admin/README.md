@@ -144,13 +144,47 @@ decision only the site can make, so there is no one bundle to ship.
 php artisan webx:panel
 ```
 
-writes `resources/js/admin.ts`, adds it to the `laravel()` plugin's inputs, and points
-`webx-admin.vite` at it. Then install the front-end packages it names and build:
+writes `resources/js/admin.ts`, adds it to the `laravel()` plugin's inputs, points
+`webx-admin.vite` at it, and puts the npm halves of the installed packages into `package.json`.
+Then:
 
 ```bash
-npm install @webx-ui/module-admin @webx-ui/module-auth
+npm install
 npm run build      # or npm run dev while working — @vite serves from the dev server
 ```
+
+Which npm package goes with which Composer one is not something to remember: each package says
+so itself, in its own manifest.
+
+```json
+"extra": {
+    "webx": {
+        "module": "pages",
+        "npm": { "@webx-ui/module-pages": "^0.3.10" },
+        "panel": {
+            "import": "import { pages } from '@webx-ui/module-pages'",
+            "style": "@webx-ui/module-pages/style.css",
+            "register": "pages()"
+        }
+    }
+}
+```
+
+Install a module six months later and
+
+```bash
+php artisan webx:panel --sync
+```
+
+adds its four lines to the entry file and its dependency to `package.json`, leaving everything
+else where it is. Run it twice and the second run changes nothing.
+
+The entry file carries three pairs of markers — `webx:imports`, `webx:styles`, `webx:modules` —
+and the command writes between those and nowhere else. Everything outside them is the site's:
+the avatar resolver, the media field handed to the modules that take one, whatever else only
+the site knows. A module the site has configured its own way (`seo({ mediaField: WxMediaField })`)
+counts as registered and is left alone; delete the markers and the command prints the lines to
+add by hand rather than guessing where they went.
 
 If your Vite configuration is shaped in a way the command does not recognise, it says which
 line to add rather than rewriting a build it does not understand.

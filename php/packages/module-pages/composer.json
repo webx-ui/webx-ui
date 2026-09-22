@@ -58,6 +58,17 @@
             "providers": [
                 "WebxUi\\Pages\\PagesServiceProvider"
             ]
+        },
+        "webx": {
+            "module": "pages",
+            "npm": {
+                "@webx-ui/module-pages": "^0.3.10"
+            },
+            "panel": {
+                "import": "import { pages } from '@webx-ui/module-pages'",
+                "style": "@webx-ui/module-pages/style.css",
+                "register": "pages()"
+            }
         }
     },
     "config": {

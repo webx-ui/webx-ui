@@ -55,6 +55,20 @@
             "providers": [
                 "WebxUi\\Auth\\AuthServiceProvider"
             ]
+        },
+        "webx": {
+            "module": "auth",
+            "npm": {
+                "@webx-ui/module-auth": "^0.8.0"
+            },
+            "panel": {
+                "import": "import { admins, connect } from '@webx-ui/module-auth'",
+                "style": "@webx-ui/module-auth/style.css",
+                "register": [
+                    "admins()",
+                    "connect()"
+                ]
+            }
         }
     },
     "config": {

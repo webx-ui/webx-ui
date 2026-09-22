@@ -1,23 +1,31 @@
 import { createAdmin } from '@webx-ui/module-admin'
+// webx:imports
 import { auth, WxUserMenu } from '@webx-ui/module-auth'
+// /webx:imports
 
 // The components carry no styles of their own: each package ships one stylesheet, and the
 // design tokens travel inside the core one.
 import '@webx-ui/core/style.css'
 import '@webx-ui/module-admin/style.css'
-import '@webx-ui/module-auth/style.css'
+// webx:styles
+// /webx:styles
 // Optional — without it the panel renders in the platform's own UI font.
 import '@webx-ui/tokens/fonts.css'
 
 /**
  * The panel.
  *
- * Add a module's front end to `modules` as you install it. A section appears when both halves
- * are there — the server reports the module in its manifest, and its front end is listed here.
+ * `php artisan webx:panel --sync` fills the three marked regions from the packages installed on
+ * the server, so a module appears here the moment both halves are in place. Everything outside
+ * those markers is yours — it is read by nobody and rewritten by nothing.
  */
 createAdmin({
   basePath: '{{ path }}',
-  modules: [],
+  modules: [
+    // webx:modules
+    // /webx:modules
+  ],
+  // Signing in is a plugin rather than a section, and so is the menu it puts in the corner.
   plugins: [auth()],
   userMenu: WxUserMenu,
 }).mount()
