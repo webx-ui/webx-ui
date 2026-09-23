@@ -39,12 +39,6 @@ class BlogException extends RuntimeException
         ], 422);
     }
 
-    /** A rubric with articles in it (§6): deleting it would leave them without a section. */
-    public static function rubricHasArticles(int $count): self
-    {
-        return new self((string) trans('webx-blog::errors.rubric-in-use', ['count' => $count]));
-    }
-
     /** Merging a tag into itself, or into one of the tags being merged away. */
     public static function tagCannotMergeIntoItself(): self
     {

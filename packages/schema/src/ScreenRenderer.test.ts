@@ -162,8 +162,8 @@ describe('WxScreenRenderer', () => {
           id: 'tabs',
           type: 'wx-tabs',
           children: [
-            { id: 'one', type: 'wx-tab', label: 'One', children: [] },
-            { id: 'two', type: 'wx-tab', label: 'Two', children: [] },
+            { id: 'one', type: 'wx-tab', label: 'One', children: [{ id: 'x', type: 'wx-text' }] },
+            { id: 'two', type: 'wx-tab', label: 'Two', children: [{ id: 'y', type: 'wx-text' }] },
           ],
         },
       ],
@@ -222,5 +222,65 @@ describe('WxScreenRenderer', () => {
     expect(wrapper.findComponent({ name: 'WxDateTimePicker' }).props('valueFormat')).toBe(
       "yyyy-MM-dd'T'HH:mm:ssXXX",
     )
+  })
+
+  it('draws no container that has nothing to show, and keeps one described without children', () => {
+    const wrapper = mountScreen({
+      root: [
+        { id: 'project-fields', type: 'wx-card', label: 'More', children: [] },
+        {
+          id: 'guarded',
+          type: 'wx-card',
+          label: 'Guarded',
+          children: [{ id: 'x', type: 'wx-input', name: 'x', label: 'X', can: 'nobody' }],
+        },
+        { id: 'plain', type: 'wx-card', label: 'Plain' },
+      ],
+      can: () => false,
+    })
+
+    expect(wrapper.text()).not.toContain('More')
+    expect(wrapper.text()).not.toContain('Guarded')
+    expect(wrapper.text()).toContain('Plain')
+  })
+
+  it('opens the tab a refused field is on, unless the one on screen has its own', async () => {
+    const tabs: ScreenNode[] = [
+      {
+        id: 'tabs',
+        type: 'wx-tabs',
+        children: [
+          {
+            id: 'one',
+            type: 'wx-tab',
+            label: 'One',
+            children: [{ id: 'a', type: 'wx-input', name: 'a', label: 'A' }],
+          },
+          {
+            id: 'two',
+            type: 'wx-tab',
+            label: 'Two',
+            children: [{ id: 'b', type: 'wx-input', name: 'b', label: 'B' }],
+          },
+        ],
+      },
+    ]
+    const wrapper = mountScreen({ root: tabs })
+    const selected = () =>
+      wrapper
+        .findAll('.wx-tabs__tab')
+        .find((tab) => tab.attributes('aria-selected') === 'true')
+        ?.text()
+
+    await wrapper.setProps({ errors: { 'b.en': ['Wrong.'] } })
+    await nextTick()
+    expect(selected()).toBe('Two')
+    // Laravel names the language that failed; the message still goes under the field.
+    await nextTick()
+    expect(wrapper.text()).toContain('Wrong.')
+
+    await wrapper.setProps({ errors: { a: ['Wrong.'], b: ['Wrong.'] } })
+    await nextTick()
+    expect(selected()).toBe('Two')
   })
 })

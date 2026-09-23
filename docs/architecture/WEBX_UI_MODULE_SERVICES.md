@@ -1,6 +1,7 @@
 # `webx-ui/module-services` — спецификация и план реализации
 
-Статус: спроектирован 23.09.2026, не начат. Пакеты — `webx-ui/module-services` (composer) и
+Статус: спроектирован 23.09.2026; K1 (php-половина этапа 1) сделан 23.09.2026 на ветке
+`feat/shared-categories`, итог — в конце §6 K1. Пакеты — `webx-ui/module-services` (composer) и
 `@webx-ui/module-services` (npm).
 
 Услуги: каталог услуг с плоскими категориями. Услуга устроена как страница: содержимое —
@@ -173,7 +174,7 @@ $locale = null)` — значение, разрешённое типом пол�
 [
   {
     "op": "add",
-    "parent": "project-fields",
+    "target": "project-fields",
     "node": {
       "id": "price-from",
       "type": "wx-input",
@@ -479,6 +480,31 @@ MCP через общий код, ArticleForm через ScreenRecord; тест�
 Не делать: npm (K2). Имена API и таблиц блога не менять.
 ```
 
+**Итог K1 (23.09.2026)** — что K2 должен знать, потому что в промпте выше этого нет:
+
+- Код — `WebxUi\Admin\Categories\*` (`Category` — контракт, `IsCategory`, `CategoryKind`,
+  `HasCategories`, `Ordering`, `CategoryForm`, `CategoryRoutes`, `CategoryLinkSource`,
+  `Mcp\CategoryTools`, `Http\CategoryController`/`CategoryResource`) и
+  `WebxUi\Admin\Screens\{ScreenRecord,ScreenSplit,HasExtra}`. Всё, что модуль говорит о своих
+  категориях (экран, права, префикс, слова `rubric`/`rubrics`/`articles`), — в
+  `Rubric::categoryKind()`.
+- **Экран `blog.category-form` уже есть на php-половине** (`module-blog/resources/screens/category-form.json`):
+  вкладки «Контент» (`title`, `slug` типа `wx-category-slug`, `is_visible`, `lead` — `wx-rich-text`,
+  карточка `project-fields`) · «Изображение» (`cover`, `wx-media`) · «SEO» (заглушка, её заменяет
+  патч `module-seo`). На npm нужен компонент `wx-category-slug` (адрес с префиксом, как у
+  `wx-article-slug`); серверного типа `wx-categories` ещё нет — поле рубрик статьи пока
+  `wx-article-rubrics` (`IdsType`), и K2 решает, как `wx-categories` узнаёт свою таблицу.
+- **Карточка `project-fields` пустая по умолчанию — и на `blog.article-form` тоже.** Рендерер пустые
+  контейнеры не прячет, так что до K2 в настройках статьи видна пустая карточка «Дополнительно».
+  K2 должен научить рендерер не рисовать контейнер без детей (или прятать именно эту карточку).
+- API: `GET blog/rubrics` — `{ data, prefix }`, строка несёт `articles_count` (ключ — слово модуля);
+  `POST` — `{ title, slug? }`, строкой или картой; `GET` и `PUT blog/rubrics/{id}` отвечают
+  `{ category, values, prefix }`, `PUT` принимает `{ values }` — поля экрана, 422 под именем поля;
+  новые `POST blog/rubrics/{id}/restore`. `RubricDialog` на старом `PUT` с плоскими полями
+  сломан до K2.
+- Патч добавляет в карточку операцией `add` с **`target`**, а не `parent`: пример в §3.4 исправлен.
+- MCP: `rubrics_*` теперь пять, и у модуля появился `rubrics:write`.
+
 ### K2 — страницы категорий (npm)
 
 ```
@@ -500,6 +526,36 @@ RubricDialog и ArticleRubrics; порядок записей в списке п
 Проверить живьём: рубрика открывается страницей на плейграунде и на webx-cms.local; патч сайта
 добавляет рубрике поле, оно сохраняется.
 ```
+
+**Итог K2 (23.09.2026)** — что K3 и сессия B должны знать:
+
+- Общее — `packages/module-admin/src/categories/`: `categoryRoutes(options)` монтирует список
+  (`WxCategoriesPage`) и страницу (`WxCategoryEditorPage`, одна «Сохранить», Ctrl+S, вопрос при
+  уходе с несохранённым), `WxCategoryCreateDialog` — только название, дальше страница. Всё, что
+  модуль говорит о категориях, — объект `CategoriesOptions` (у блога `rubricsOptions()`); слова —
+  ключи `webx-admin::categories.*` по умолчанию («категория», «записи»), модуль подменяет те, что
+  называют его вещи. Гайд — `apps/docs/guide/categories.md`.
+- **Как `wx-categories` узнаёт свою таблицу:** узел несёт `props.source` — путь API категорий
+  (`blog/rubrics`). Панель спрашивает по нему список, сервер — `CategorySources` (синглтон в
+  `module-admin`), куда модуль из своего провайдера кладёт `source → модель` и ключ отказа.
+  Не из файла маршрутов: при `route:cache` он не выполняется. `wx-article-rubrics` и `IdsType`
+  для рубрик удалены; слова поля — пропсы узла (`mainText`, `addText`…), `main: false` снимает
+  метку «главная».
+- **Рендерер схем** теперь не рисует контейнер, у которого нечего показать (карточка
+  `project-fields` без патча не видна), сводит ошибку `slug.en` к полю `slug` (раньше под
+  переводимым полем на любом описанном экране не было ничего) и открывает вкладку с ошибкой сам —
+  `wx-tabs` рисуется `WxScreenTabs`. Это общее для всех экранов, статьи тоже.
+- Порядок записей (решение 5) — `useItemOrder(path, state)`: режим `all`/`category`/`locked`,
+  подсказка и `move(ids)` на `CategoryRoutes::items()`. Блог его не зовёт; первым потребителем
+  будет список услуг (сессия B).
+- Плейграунд: `/panel/blog/rubrics/1` — страница рубрики с патчем «проекта»
+  (`apps/playground/server/panel/project/blog.category-form.json`, поле `menu-badge`); мок
+  складывает неизвестные поля в `extra`.
+- **`webx-cms.local` оставлен в local-режиме на этом worktree** (`MONOREPO=…` `packages.mjs
+local`, composer — симлинки в worktree, npm — симлинки), миграция K1 прогнана, патч сайта лежит
+  в `resources/screens/blog.category-form.json` и подключён в `AppServiceProvider`. Сохранение
+  поля проверено через `CategoryForm` в тинкере; в панели глазами — нет: пароль демо-админа
+  сменился, вход за человеком. Ничего из этого не закоммичено в репозиторий сайта.
 
 ### K3 — выпуск этапа 1
 

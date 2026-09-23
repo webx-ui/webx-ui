@@ -62,6 +62,25 @@ export {
   type RequestOptions,
 } from './http'
 export { adminTypes } from './screenTypes'
+export {
+  categoryRoutes,
+  createCategoriesApi,
+  itemOrderMode,
+  reorderItems,
+  useCategoryEditor,
+  useCategoryWords,
+  useItemOrder,
+  type CategoriesApi,
+  type CategoriesOptions,
+  type CategoriesPayload,
+  type CategoryDetail,
+  type CategoryEditorContext,
+  type CategoryRow,
+  type CategoryWord,
+  type ItemOrder,
+  type ItemOrderMode,
+  type ItemOrderState,
+} from './categories'
 export type {
   AdminModule,
   AdminStatus,
@@ -94,3 +113,8 @@ export { default as WxBackupNote } from './BackupNote.vue'
 export { default as WxRichTextField } from './RichTextField.vue'
 export { default as WxLinkPicker } from './LinkPicker.vue'
 export { default as WxLinkField } from './LinkField.vue'
+export { default as WxCategoriesPage } from './categories/CategoriesPage.vue'
+export { default as WxCategoryCreateDialog } from './categories/CategoryCreateDialog.vue'
+export { default as WxCategoryEditorPage } from './categories/CategoryEditorPage.vue'
+export { default as WxCategoriesField } from './categories/CategoriesField.vue'
+export { default as WxCategorySlug } from './categories/CategorySlug.vue'

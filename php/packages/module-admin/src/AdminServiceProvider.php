@@ -10,7 +10,10 @@ use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use WebxUi\Admin\Backups\Backups;
+use WebxUi\Admin\Categories\CategoriesType;
+use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Console\BackupCommand;
 use WebxUi\Admin\Console\BootCommand;
 use WebxUi\Admin\Console\DemoCommand;
@@ -45,6 +48,7 @@ use WebxUi\Admin\Screens\Types\RateType;
 use WebxUi\Admin\Screens\Types\RepeaterType;
 use WebxUi\Admin\Screens\Types\RichTextType;
 use WebxUi\Admin\Screens\Types\SliderType;
+use WebxUi\Admin\Screens\Types\SlugType;
 use WebxUi\Admin\Screens\Types\StringType;
 use WebxUi\Admin\Screens\Types\TagsType;
 use WebxUi\Admin\Screens\Types\TimeType;
@@ -73,6 +77,9 @@ class AdminServiceProvider extends ServiceProvider
         // What this panel can link to (§3 of the menu spec). A singleton for the same reason as
         // the two above: content modules register into it from their own providers.
         $this->app->singleton(LinkSources::class);
+
+        // Which model's categories a `wx-categories` field is about, by the path they answer at.
+        $this->app->singleton(CategorySources::class);
 
         // The language prefix, when there is an address registry to ask. Behind `class_exists`
         // because the frame does not require `webx-ui/routing` — a panel of settings and
@@ -113,6 +120,12 @@ class AdminServiceProvider extends ServiceProvider
             // server does not know which names exist and checks only that it is a short string.
             $types->register('wx-icon-picker', new StringType(255));
             $types->register('wx-code-editor', new StringType);
+            // The address part of a category (`categoryLinks()` modules): drawn with the module's
+            // prefix in front of it by the panel, checked for its shape here.
+            $types->register('wx-category-slug', new SlugType);
+            // The categories a record is in. Which table is the node's `source`, registered by
+            // the module that owns it — the same string the panel asks for the list at.
+            $types->register('wx-categories', new CategoriesType($app->make(CategorySources::class)));
             $types->register('wx-cascader', new CascaderType);
             $types->register('wx-tree-select', new TreeSelectType);
             $types->register('wx-transfer', new OptionListType('items'));
@@ -176,6 +189,7 @@ class AdminServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         $this->registerDraftMacro();
+        $this->registerCategoryMacros();
         $this->registerBackupSchedule();
 
         if (! $this->app->runningInConsole()) {
@@ -256,6 +270,47 @@ class AdminServiceProvider extends ServiceProvider
             Blueprint::macro('dropDraft', function (string $column = 'draft', string $publishedAt = 'published_at'): void {
                 /** @var Blueprint $this */
                 $this->dropColumn([$column, $publishedAt]);
+            });
+        }
+    }
+
+    /**
+     * `$table->category()` and `$table->categoryLinks()` — the columns every module's categories
+     * have, and the link table with both orders in it (§3.2 of the services spec). A module adds
+     * what only its categories have (a cover, an introduction) beside the macro.
+     */
+    private function registerCategoryMacros(): void
+    {
+        if (! Blueprint::hasMacro('category')) {
+            Blueprint::macro('category', function (): void {
+                /** @var Blueprint $this */
+                // Translatable. A category without addresses leaves the slug empty.
+                $this->json('title')->nullable();
+                $this->json('slug')->nullable();
+                $this->integer('position')->default(0);
+                $this->boolean('is_visible')->default(true);
+                // The fields a project patched onto the category's screen (`HasExtra`).
+                $this->json('extra')->nullable();
+                $this->softDeletes();
+                $this->timestamps();
+
+                $this->index('position');
+            });
+        }
+
+        if (! Blueprint::hasMacro('categoryLinks')) {
+            Blueprint::macro('categoryLinks', function (string $item, string $categories, ?string $items = null): void {
+                /** @var Blueprint $this */
+                $this->foreignId($item.'_id')->constrained($items ?? Str::plural($item))->cascadeOnDelete();
+                $this->foreignId('category_id')->constrained($categories)->cascadeOnDelete();
+
+                // The order of the categories on the item; the first one is the main one.
+                $this->integer('position')->default(0);
+                // The place of the item inside the category, for a list dragged with a filter on.
+                $this->integer('item_position')->default(0);
+
+                $this->unique([$item.'_id', 'category_id']);
+                $this->index(['category_id', 'item_position']);
             });
         }
     }

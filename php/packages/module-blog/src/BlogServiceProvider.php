@@ -8,6 +8,8 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Categories\CategoryLinkSource;
+use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
@@ -20,7 +22,6 @@ use WebxUi\Blog\Http\Controllers\FeedController;
 use WebxUi\Blog\Http\Controllers\RssController;
 use WebxUi\Blog\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Blog\Links\ArticleLinkSource;
-use WebxUi\Blog\Links\RubricLinkSource;
 use WebxUi\Blog\Links\TagLinkSource;
 use WebxUi\Blog\Models\Article;
 use WebxUi\Blog\Models\Rubric;
@@ -250,6 +251,13 @@ class BlogServiceProvider extends ServiceProvider
             __DIR__.'/../resources/screens/article-form.json',
         );
 
+        // A rubric is edited on a page of its own, described like the article so that a project
+        // can give it a field and `module-seo` its card.
+        $this->app->make(ScreenRegistry::class)->register(
+            Rubric::SCREEN,
+            __DIR__.'/../resources/screens/category-form.json',
+        );
+
         $types = $this->app->make(FieldTypes::class);
         $connection = $this->app->make(ConnectionResolverInterface::class);
 
@@ -259,7 +267,10 @@ class BlogServiceProvider extends ServiceProvider
         // is configuration, which a description has no way to carry.
         $types->register('wx-article-slug', new StringType(2000));
 
-        $types->register('wx-article-rubrics', new IdsType($connection, 'rubrics', 'webx-blog::errors.unknown-rubric'));
+        // The rubrics of an article are the panel's shared `wx-categories`; this is where its
+        // `source` — the path the rubrics answer at — is told which table the ids live in.
+        $this->app->make(CategorySources::class)->register('blog/rubrics', Rubric::class, 'webx-blog::errors.unknown-rubric');
+
         $types->register('wx-article-tags', new IdsType($connection, 'tags', 'webx-blog::errors.unknown-tag'));
         $types->register('wx-article-related', new IdsType($connection, 'articles', 'webx-blog::errors.unknown-article'));
         $types->register('wx-article-author', new AuthorType);
@@ -287,7 +298,13 @@ class BlogServiceProvider extends ServiceProvider
         $links = $this->app->make(LinkSources::class);
 
         $links->register($this->app->make(ArticleLinkSource::class));
-        $links->register($this->app->make(RubricLinkSource::class));
+        $links->register(new CategoryLinkSource(
+            Rubric::class,
+            'rubric',
+            static fn (): string => (string) __('webx-blog::module.rubrics'),
+            'folder',
+            210,
+        ));
         $links->register($this->app->make(TagLinkSource::class));
     }
 

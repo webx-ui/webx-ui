@@ -89,6 +89,7 @@ class SeoServiceProvider extends ServiceProvider
         // simply never applied.
         $screens->extend('pages.form', __DIR__.'/../resources/screens/pages.form.json');
         $screens->extend('blog.article-form', __DIR__.'/../resources/screens/blog.article-form.json');
+        $screens->extend('blog.category-form', __DIR__.'/../resources/screens/blog.category-form.json');
 
         if (! $this->app->runningInConsole()) {
             return;
