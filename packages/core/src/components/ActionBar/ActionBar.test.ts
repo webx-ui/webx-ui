@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import WxActionBar from './ActionBar.vue'
 
@@ -25,5 +25,39 @@ describe('WxActionBar', () => {
 
     expect(wrapper.find('.wx-action-bar__state').text()).toBe('Draft 3')
     expect(wrapper.find('.wx-action-bar__actions').text()).toBe('Publish')
+  })
+
+  describe('the room it takes', () => {
+    afterEach(() => vi.unstubAllGlobals())
+
+    function stubObserver() {
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          observe() {}
+          disconnect() {}
+        },
+      )
+    }
+
+    it('tells its parent how much of the window it takes while it sticks', () => {
+      stubObserver()
+      const wrapper = mount(WxActionBar, { attachTo: document.body })
+      const parent = wrapper.element.parentElement as HTMLElement
+
+      expect(parent.style.getPropertyValue('--wx-action-bar-room')).toMatch(/px$/)
+
+      wrapper.unmount()
+      expect(parent.style.getPropertyValue('--wx-action-bar-room')).toBe('')
+    })
+
+    it('takes none when it stays in the flow', () => {
+      stubObserver()
+      const wrapper = mount(WxActionBar, { props: { sticky: false }, attachTo: document.body })
+      const parent = wrapper.element.parentElement as HTMLElement
+
+      expect(parent.style.getPropertyValue('--wx-action-bar-room')).toBe('')
+      wrapper.unmount()
+    })
   })
 })
