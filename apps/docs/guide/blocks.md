@@ -277,6 +277,28 @@ A handler tells a preview from a visit with `PreviewGrant::of($request)` — and
 unpublished entity is a 404 to everybody else. The route runs through `preview.middleware` (`web`
 by default) so the site's locale and session handling apply to the preview as to the page.
 
+## The block editor's stage
+
+The editor draws the block a type is being written for on a page of the site — the site's layout,
+its header, footer, fonts and base styles — because a block judged against the browser's defaults
+looks like a draft, and one judged on the site looks like what it will be.
+
+`/_preview/block-stage` is that page: the component `webx-blocks.layout` names, with an empty
+pair of markers for the content and an empty `<style>` in the head. The panel loads it once and
+then, on every change of the template, the styles or the sample, swaps the block in between the
+markers and its styles into the `<style>`, so the header and footer do not redraw under the
+editor's typing. A new script is the one change that reloads the page: a script registered in a
+page cannot be taken back. Links and forms of the site are inert there.
+
+```php
+// config/webx-blocks.php
+'layout' => 'layout',   // <x-layout>, the same one the pages stand in
+```
+
+Empty prints `webx-blocks::standalone`, a bare document. `php artisan webx:panel --sync` sets the
+key the same way it does for pages and the blog, and `webx:doctor` warns while it is empty. The
+route runs through `preview.middleware` and needs an editor's session with `blocks.view`.
+
 ## Styles and scripts on the site
 
 The types on a page are known from its tree, so the page gets one stylesheet and one script, named
@@ -415,6 +437,7 @@ report — and do not publish unless asked.
 | `preview.path`         | `_preview`                       | The service prefix; closed to the address registry               |
 | `preview.ttl`          | `60`                             | Minutes a preview link lives                                     |
 | `preview.middleware`   | `['web']`                        | What the preview route runs through                              |
+| `layout`               | empty                            | The site's layout the block editor's stage draws a block in      |
 
 ## What is deferred
 
