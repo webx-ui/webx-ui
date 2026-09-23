@@ -12,9 +12,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Blog\Exceptions\BlogException;
+use WebxUi\Blog\Seo\Trail;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
+use WebxUi\Seo\Contracts\Crumb;
+use WebxUi\Seo\Contracts\HasBreadcrumbs;
 use WebxUi\Seo\HasSeo;
 
 /**
@@ -41,7 +44,7 @@ use WebxUi\Seo\HasSeo;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Rubric extends Model implements Visible
+class Rubric extends Model implements HasBreadcrumbs, Visible
 {
     use HasCover;
     use HasSeo;
@@ -114,6 +117,16 @@ class Rubric extends Model implements Visible
     public function isVisible(?string $locale = null): bool
     {
         return $this->is_visible && ! $this->trashed();
+    }
+
+    /**
+     * Feed → the rubric (§17.5 of the SEO spec).
+     *
+     * @return list<Crumb>
+     */
+    public function breadcrumbs(string $locale): array
+    {
+        return Trail::of($locale, new Crumb((string) $this->getTranslation('title', $locale), $this->url($locale)));
     }
 
     /** A rubric has no publication of its own: its page changes when the rubric is saved. */

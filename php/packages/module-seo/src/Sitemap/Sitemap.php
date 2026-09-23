@@ -10,17 +10,19 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\Models\Route as RouteRow;
+use WebxUi\Routing\Resolver;
 use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
 use WebxUi\Routing\SiteUrl;
 use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Rendering\Alternates;
 use WebxUi\Seo\Rendering\Seo;
-use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * `/sitemap.xml`: an index, and a file per type of the address registry (§17.3).
@@ -37,7 +39,8 @@ use WebxUi\Seo\Rendering\SeoData;
  * setting. The time-to-live is for the one change nothing announces: an article dated for
  * tomorrow becomes visible without anything being written.
  *
- * @phpstan-type Entry array{loc: string, lastmod: CarbonInterface|null}
+ * @phpstan-type Entry array{loc: string, lastmod: CarbonInterface|null, locale: string, group: string}
+ * @phpstan-type Status array{enabled: bool, url: string, built_at: string|null, files: array<string, int>, total: int, excluded: array{noindex: int, canonical: int}}
  */
 final class Sitemap
 {
@@ -46,6 +49,13 @@ final class Sitemap
 
     private const CHUNK = 500;
 
+    /**
+     * Visible addresses the resolver closed, by why — counted while building, for the panel.
+     *
+     * @var array{noindex: int, canonical: int}
+     */
+    private array $excluded = ['noindex' => 0, 'canonical' => 0];
+
     public function __construct(
         private readonly RouteTypes $types,
         private readonly SitemapRoutes $routes,
@@ -53,6 +63,8 @@ final class Sitemap
         private readonly SiteUrl $site,
         private readonly Locales $locales,
         private readonly Router $router,
+        private readonly Resolver $resolver,
+        private readonly Alternates $alternates,
         private readonly Cache $cache,
         private readonly Config $config,
     ) {}
@@ -87,25 +99,93 @@ final class Sitemap
     }
 
     /**
+     * What the panel's card and `seo_sitemap_status` say: how many addresses in which file, when
+     * it was built, and how many visible addresses were left out and why (§17.6). The current
+     * build if there is one, a fresh one if there is not — the question is asked about the map a
+     * crawler would get.
+     *
+     * @return Status
+     */
+    public function status(): array
+    {
+        $stats = null;
+
+        if ($this->enabled()) {
+            $cached = $this->cached('stats');
+            $stats = $cached === null ? null : json_decode($cached, true);
+
+            if (! is_array($stats)) {
+                $stats = $this->build()['stats'];
+            }
+        }
+
+        /** @var array{built_at?: string|null, files?: array<string, int>, excluded?: array{noindex: int, canonical: int}} $stats */
+        $stats ??= [];
+        $files = $stats['files'] ?? [];
+
+        return [
+            'enabled' => $this->enabled(),
+            'url' => $this->url(),
+            'built_at' => $stats['built_at'] ?? null,
+            'files' => $files,
+            'total' => array_sum($files),
+            'excluded' => $stats['excluded'] ?? ['noindex' => 0, 'canonical' => 0],
+        ];
+    }
+
+    /**
+     * Is this address in the map, and if not, why not — the line `test-url` adds (§17.6).
+     *
+     * Asked by the same steps the build takes, one address at a time: the registry row, the
+     * entity's own answer, the resolver. The query does not count: the map lists addresses, and
+     * `?page=2` of a feed is found through the feed.
+     *
+     * @return array{included: bool, reason: 'disabled'|'unknown'|'alias'|'hidden'|'noindex'|'canonical'|null}
+     */
+    public function verdict(string $url, ?string $locale = null): array
+    {
+        if (! $this->enabled()) {
+            return ['included' => false, 'reason' => 'disabled'];
+        }
+
+        [$path] = explode('?', UrlNormaliser::normalise($url), 2);
+        [$subject, $rowLocale, $reason] = $this->find($path, $locale);
+
+        if ($reason !== null) {
+            return ['included' => false, 'reason' => $reason];
+        }
+
+        $closed = $this->seo->closedBecause($this->seo->for($path, $subject, $rowLocale), $path);
+
+        return $closed === null
+            ? ['included' => true, 'reason' => null]
+            : ['included' => false, 'reason' => $closed];
+    }
+
+    /**
      * Everything, from scratch, into the cache.
      *
-     * @return array{index: string, files: array<string, string>, counts: array<string, int>}
+     * @return array{index: string, files: array<string, string>, counts: array<string, int>, stats: array{built_at: string, files: array<string, int>, excluded: array{noindex: int, canonical: int}}}
      */
     public function build(): array
     {
         $files = [];
         $counts = [];
         $modified = [];
+        $this->excluded = ['noindex' => 0, 'canonical' => 0];
 
         foreach ($this->entries() as $type => $entries) {
+            $alternates = $this->alternatesOf($entries);
+
             foreach ($this->split($type, $entries) as $name => $part) {
-                $files[$name] = $this->urlset($part);
+                $files[$name] = $this->urlset($part, $alternates);
                 $counts[$name] = count($part);
                 $modified[$name] = $this->latest($part);
             }
         }
 
         $index = $this->sitemapindex($modified);
+        $stats = ['built_at' => Carbon::now()->toAtomString(), 'files' => $counts, 'excluded' => $this->excluded];
 
         if ($this->caching()) {
             $generation = $this->generation();
@@ -115,12 +195,14 @@ final class Sitemap
                 $this->cache->put($this->key($generation, 'file.'.$name), $xml, $ttl);
             }
 
+            $this->cache->put($this->key($generation, 'stats'), (string) json_encode($stats), $ttl);
+
             // The index last: it is what says a build is in the cache, so a request that sees
             // it can trust that every file it names is there too.
             $this->cache->put($this->key($generation, 'index'), $index, $ttl);
         }
 
-        return ['index' => $index, 'files' => $files, 'counts' => $counts];
+        return ['index' => $index, 'files' => $files, 'counts' => $counts, 'stats' => $stats];
     }
 
     /**
@@ -168,6 +250,9 @@ final class Sitemap
      * The canonical rows of one type, a language at a time and five hundred at a time, with
      * the entities behind each batch loaded in one query and their cards in one more.
      *
+     * An address is written once even where two languages share it — with the language outside
+     * the path, every language of an untranslated slug is the same address.
+     *
      * @return list<Entry>
      */
     private function typeEntries(RouteType $type): array
@@ -176,13 +261,14 @@ final class Sitemap
         $prototype = new ($type->model);
         $withSeo = in_array(HasSeo::class, class_uses_recursive($prototype), true);
         $entries = [];
+        $seen = [];
 
         foreach ($this->locales->codes() as $locale) {
             RouteRow::query()
                 ->where('entity_type', $type->type)
                 ->where('kind', RouteRow::CANONICAL)
                 ->where('locale', $locale)
-                ->chunkById(self::CHUNK, function (Collection $rows) use ($prototype, $withSeo, $locale, &$entries): void {
+                ->chunkById(self::CHUNK, function (Collection $rows) use ($prototype, $withSeo, $locale, $type, &$entries, &$seen): void {
                     $query = $prototype->newQuery();
                     $prototype->scopeVisible($query, $locale);
 
@@ -204,9 +290,17 @@ final class Sitemap
 
                         $path = $this->path($row->path, $locale);
 
-                        if ($this->indexable($path, $entity, $locale)) {
-                            $entries[] = ['loc' => URL::to($path), 'lastmod' => $entity->visibleUpdatedAt()];
+                        if (isset($seen[$path]) || ! $this->indexable($path, $entity, $locale)) {
+                            continue;
                         }
+
+                        $seen[$path] = true;
+                        $entries[] = [
+                            'loc' => URL::to($path),
+                            'lastmod' => $entity->visibleUpdatedAt(),
+                            'locale' => $locale,
+                            'group' => $type->type.':'.$row->entity_id,
+                        ];
                     }
                 });
         }
@@ -242,7 +336,7 @@ final class Sitemap
                 }
 
                 $seen[$path] = true;
-                $entries[] = ['loc' => URL::to($path), 'lastmod' => null];
+                $entries[] = ['loc' => URL::to($path), 'lastmod' => null, 'locale' => $locale, 'group' => 'route:'.$name];
             }
         }
 
@@ -250,43 +344,108 @@ final class Sitemap
     }
 
     /**
-     * What the `<head>` of that page would say, asked of the same resolver that prints it.
+     * The entity behind an address and the language of its row — or why the map has nothing
+     * to say about it.
      *
-     * Out: `noindex` in the robots line, or a canonical naming another address — the page
-     * itself asks search engines to take that one instead, and a map that lists it anyway is
-     * the map arguing with the page.
+     * @return array{0: object|null, 1: string|null, 2: 'unknown'|'alias'|'hidden'|null}
+     */
+    private function find(string $path, ?string $locale): array
+    {
+        $resolution = $this->resolver->lookup($path, $locale);
+
+        if ($resolution !== null && $resolution->tail === '') {
+            $row = $resolution->route;
+
+            if ($row->isAlias()) {
+                return [null, null, 'alias'];
+            }
+
+            $type = $this->types->find($row->entity_type);
+
+            if ($type === null || ! is_subclass_of($type->model, Visible::class)) {
+                return [null, null, 'unknown'];
+            }
+
+            /** @var (Model&Visible)|null $entity */
+            $entity = $type->model::query()->find($row->entity_id);
+
+            if ($entity === null || ! $entity->isVisible($row->locale)) {
+                return [null, null, 'hidden'];
+            }
+
+            return [$entity, $row->locale, null];
+        }
+
+        $key = mb_strtolower(UrlNormaliser::normalise($path), 'UTF-8');
+
+        foreach ($this->routes->all() as $name) {
+            $route = $this->router->getRoutes()->getByName($name);
+
+            if ($route === null || $route->parameterNames() !== []) {
+                continue;
+            }
+
+            foreach ($this->locales->codes() as $code) {
+                if (mb_strtolower($this->path($route->uri(), $code), 'UTF-8') === $key) {
+                    return [null, $code, null];
+                }
+            }
+        }
+
+        return [null, null, 'unknown'];
+    }
+
+    /**
+     * What the `<head>` of that page would say, asked of the same resolver that prints it.
+     * A closed address is counted by why, for the line on the panel's card.
      */
     private function indexable(string $path, ?object $subject, string $locale): bool
     {
-        $data = $this->seo->for($path, $subject, $locale);
+        $closed = $this->seo->closedBecause($this->seo->for($path, $subject, $locale), $path);
 
-        return ! $this->closed($data) && ! $this->pointsElsewhere($data->canonical, $path);
+        if ($closed !== null) {
+            $this->excluded[$closed]++;
+        }
+
+        return $closed === null;
     }
 
-    private function closed(SeoData $data): bool
+    /**
+     * Every language of one entity, from the entries already in the map — so an alternate is
+     * never an address the map itself left out, and the `<head>` asks the same three questions
+     * to get the same set (§17.1, decision 8).
+     *
+     * @param  list<Entry>  $entries
+     * @return array<string, array<string, string>>
+     */
+    private function alternatesOf(array $entries): array
     {
-        if ($data->robots === null) {
-            return false;
+        if (! $this->alternates->apply()) {
+            return [];
         }
 
-        $directives = array_map('trim', explode(',', mb_strtolower($data->robots, 'UTF-8')));
+        $groups = [];
 
-        return in_array('noindex', $directives, true) || in_array('none', $directives, true);
-    }
-
-    private function pointsElsewhere(?string $canonical, string $path): bool
-    {
-        if ($canonical === null) {
-            return false;
+        foreach ($entries as $entry) {
+            $groups[$entry['group']][Alternates::hreflang($entry['locale'])] = $entry['loc'];
         }
 
-        $host = parse_url($canonical, PHP_URL_HOST);
+        $default = Alternates::hreflang($this->locales->defaultCode());
+        $alternates = [];
 
-        if (is_string($host) && mb_strtolower($host, 'UTF-8') !== mb_strtolower((string) parse_url(URL::to('/'), PHP_URL_HOST), 'UTF-8')) {
-            return true;
+        foreach ($groups as $group => $links) {
+            if (count($links) < 2) {
+                continue;
+            }
+
+            if (isset($links[$default])) {
+                $links['x-default'] = $links[$default];
+            }
+
+            $alternates[$group] = $links;
         }
 
-        return mb_strtolower(UrlNormaliser::normalise($canonical), 'UTF-8') !== mb_strtolower(UrlNormaliser::normalise($path), 'UTF-8');
+        return $alternates;
     }
 
     /** The path a reader would type: the language prefix, then the registry's path. */
@@ -341,15 +500,23 @@ final class Sitemap
      * compiles as PHP (CLAUDE.md §4), and there is nothing here a template would make clearer.
      *
      * @param  list<Entry>  $entries
+     * @param  array<string, array<string, string>>  $alternates
      */
-    private function urlset(array $entries): string
+    private function urlset(array $entries, array $alternates): string
     {
-        $xml = $this->prologue().'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";
+        $xml = $this->prologue().'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'
+            .($alternates === [] ? '' : ' xmlns:xhtml="http://www.w3.org/1999/xhtml"')
+            .'>'."\n";
 
         foreach ($entries as $entry) {
             $xml .= '<url><loc>'.$this->escape($entry['loc']).'</loc>'
-                .($entry['lastmod'] === null ? '' : '<lastmod>'.$entry['lastmod']->toAtomString().'</lastmod>')
-                ."</url>\n";
+                .($entry['lastmod'] === null ? '' : '<lastmod>'.$entry['lastmod']->toAtomString().'</lastmod>');
+
+            foreach ($alternates[$entry['group']] ?? [] as $hreflang => $href) {
+                $xml .= '<xhtml:link rel="alternate" hreflang="'.$this->escape($hreflang).'" href="'.$this->escape($href).'"/>';
+            }
+
+            $xml .= "</url>\n";
         }
 
         return $xml.'</urlset>'."\n";

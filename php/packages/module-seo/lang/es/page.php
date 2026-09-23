@@ -60,4 +60,22 @@ return [
     'occupied-alias' => 'Esta dirección ya lleva a :target — el rastro de una mudanza. Una redirección escrita aquí se prueba antes.',
 
     'filter-kind' => 'Tipo',
+
+    'sitemap' => 'Mapa del sitio',
+    'sitemap-built' => 'Generado',
+    'sitemap-total' => 'Direcciones: :count',
+    'sitemap-excluded' => 'Fuera — noindex: :noindex, otro canónico: :canonical',
+    'sitemap-empty' => 'Está vacío: ninguna dirección está publicada y abierta al índice.',
+    'sitemap-off' => 'El mapa del sitio está desactivado en este sitio.',
+    'sitemap-rebuild' => 'Regenerar',
+    'sitemap-rebuilt' => 'El mapa del sitio se ha regenerado.',
+    'test-sitemap' => 'Mapa del sitio',
+    'test-sitemap-in' => 'En el mapa del sitio.',
+    'test-sitemap-out' => 'No está en el mapa del sitio: :reason.',
+    'sitemap-reason-disabled' => 'el mapa del sitio está desactivado',
+    'sitemap-reason-unknown' => 'el sitio no tiene aquí una página propia',
+    'sitemap-reason-alias' => 'es una dirección antigua que redirige',
+    'sitemap-reason-hidden' => 'la página no está publicada',
+    'sitemap-reason-noindex' => 'la página dice noindex',
+    'sitemap-reason-canonical' => 'la página indica otra dirección como canónica',
 ];

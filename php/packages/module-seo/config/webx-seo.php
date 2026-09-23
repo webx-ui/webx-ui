@@ -26,6 +26,10 @@ return [
     | A site that writes its own canonical links, or feeds Open Graph from
     | somewhere else, turns that block off here rather than working around it.
     |
+    | `hreflang` is the page in the site's other languages, `breadcrumbs` the
+    | BreadcrumbList, `structured_data` what the entity and the handler add
+    | (`HasStructuredData`, `Seo::push()`), `twitter` the one `twitter:card` line.
+    |
     */
 
     'print' => [
@@ -36,6 +40,10 @@ return [
         'canonical' => true,
         'og' => true,
         'json_ld' => true,
+        'hreflang' => true,
+        'breadcrumbs' => true,
+        'structured_data' => true,
+        'twitter' => true,
     ],
 
     /*

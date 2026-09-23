@@ -9,8 +9,10 @@ use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Http\Request;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use WebxUi\Localization\Locales;
 use WebxUi\Routing\Resolution;
 use WebxUi\Routing\UrlNormaliser;
+use WebxUi\Seo\Contracts\HasStructuredData;
 use WebxUi\Settings\Settings;
 
 /**
@@ -22,6 +24,16 @@ use WebxUi\Settings\Settings;
  */
 final class Seo
 {
+    /** Where `push()` keeps its blocks on the request. */
+    public const PUSHED = 'webx.seo.pushed';
+
+    /**
+     * Blocks pushed outside a request — a console command rendering a page.
+     *
+     * @var list<array<string, mixed>>
+     */
+    private array $pushed = [];
+
     public function __construct(
         private readonly SeoSources $sources,
         private readonly Config $config,
@@ -86,34 +98,204 @@ final class Seo
         return UrlNormaliser::normalise($request instanceof Request ? $request->getRequestUri() : '/');
     }
 
-    /** The `<head>` block, ready to print. */
+    /**
+     * The `<head>` block, ready to print: what `for()` resolved, and around it what only a page
+     * being served can say — its other languages, its trail, the schema.org blocks of the entity
+     * and of the handler (§17.4).
+     */
     public function head(?object $subject = null, ?string $url = null, ?string $locale = null): HtmlString
     {
-        $data = $this->for($url ?? $this->currentUrl(), $subject ?? $this->resolved(), $locale);
+        $subject ??= $this->subject();
+        $url ??= $this->currentUrl();
+        $locale ??= $this->locale();
+
+        $data = $this->for($url, $subject, $locale);
+
+        /** @var array<string, bool> $print */
+        $print = (array) $this->config->get('webx-seo.print', []);
 
         return new HtmlString((string) $this->views->make('webx-seo::head', [
             'seo' => $data,
-            'print' => (array) $this->config->get('webx-seo.print', []),
+            'print' => $print,
+            'alternates' => ($print['hreflang'] ?? true) ? app(Alternates::class)->for($url, $subject, $locale, $data) : [],
+            'blocks' => $this->blocks($data, $subject, $locale, $print),
+            'twitter' => isset($data->og['image']) ? 'summary_large_image' : 'summary',
         ])->render());
     }
 
     /**
-     * The entity the address registry found for this request, when the template named none.
+     * JSON-LD that belongs to this response rather than to the entity — the articles on this
+     * page of a rubric — put in by the handler before the view is rendered (§17.2).
+     *
+     * Kept on the request, so it dies with it: a worker that serves the next request from the
+     * same process must not print this one's list.
+     *
+     * @param  array<string, mixed>  $block
+     */
+    public function push(array $block): void
+    {
+        if ($block === []) {
+            return;
+        }
+
+        $request = $this->request();
+
+        if ($request === null) {
+            $this->pushed[] = $block;
+
+            return;
+        }
+
+        $request->attributes->set(self::PUSHED, [...$this->pushed(), $block]);
+    }
+
+    /**
+     * What has been pushed so far in this request.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function pushed(): array
+    {
+        $request = $this->request();
+
+        if ($request === null) {
+            return $this->pushed;
+        }
+
+        /** @var list<array<string, mixed>> $pushed */
+        $pushed = (array) $request->attributes->get(self::PUSHED, []);
+
+        return $pushed;
+    }
+
+    /**
+     * Why the index is closed to this page, or null when it is open.
+     *
+     * `noindex` in the robots line, or a canonical naming another address — the page itself asks
+     * search engines to take that one instead. The sitemap, the `hreflang` lines and `test-url`
+     * all ask this, so that none of them can disagree with the `<head>` (§17.1, decision 2).
+     *
+     * @return 'noindex'|'canonical'|null
+     */
+    public function closedBecause(SeoData $data, string $path): ?string
+    {
+        if ($data->robots !== null) {
+            $directives = array_map('trim', explode(',', mb_strtolower($data->robots, 'UTF-8')));
+
+            if (in_array('noindex', $directives, true) || in_array('none', $directives, true)) {
+                return 'noindex';
+            }
+        }
+
+        return $this->pointsElsewhere($data->canonical, $path) ? 'canonical' : null;
+    }
+
+    /** Would the `<head>` of this address leave it open to the index? */
+    public function indexable(string $path, ?object $subject, ?string $locale): bool
+    {
+        return $this->closedBecause($this->for($path, $subject, $locale), $path) === null;
+    }
+
+    /**
+     * The part of the query that makes a different page (`?page=2`), with its question mark, or
+     * nothing. The list is the config's, shared with the self canonical.
+     */
+    public function keptQuery(string $url): string
+    {
+        $query = explode('?', $url, 2)[1] ?? '';
+
+        /** @var list<string> $keep */
+        $keep = (array) $this->config->get('webx-seo.canonical.query', ['page']);
+        $kept = [];
+
+        foreach ($query === '' ? [] : explode('&', $query) as $pair) {
+            if (in_array(urldecode(explode('=', $pair, 2)[0]), $keep, true)) {
+                $kept[] = $pair;
+            }
+        }
+
+        return $kept === [] ? '' : '?'.implode('&', $kept);
+    }
+
+    /**
+     * The entity the page is about: the one the address registry found for this request.
      *
      * `<x-webx-seo::head :for="$page" />` is still the explicit way to say it, and a template that
      * renders something other than what the address belongs to has to. But a page reached
      * through `webx-ui/routing` was already looked up once, and making the template repeat the
      * lookup is how the two end up disagreeing about what the page is.
      *
-     * Only here, never in `for()`: that one is given an address to answer about — `/test-url`
-     * asks it about somebody else's page — and the entity of the request being served would be
-     * the wrong subject for every one of those.
+     * Never in `for()`: that one is given an address to answer about — `/test-url` asks it about
+     * somebody else's page — and the entity of the request being served would be the wrong
+     * subject for every one of those.
      */
-    private function resolved(): ?object
+    public function subject(): ?object
+    {
+        $request = $this->request();
+
+        return $request === null ? null : Resolution::of($request)?->entity;
+    }
+
+    /**
+     * The JSON-LD of the page, in the order a reader of the source expects: the site's own and
+     * the rules', the trail, the entity's, the handler's.
+     *
+     * @param  array<string, bool>  $print
+     * @return list<array<string, mixed>>
+     */
+    private function blocks(SeoData $data, ?object $subject, string $locale, array $print): array
+    {
+        $blocks = ($print['json_ld'] ?? true) ? $data->jsonLd : [];
+
+        if ($print['breadcrumbs'] ?? true) {
+            $crumbs = app(Breadcrumbs::class);
+            $trail = $crumbs->jsonLd($crumbs->trail($subject, $locale));
+
+            if ($trail !== null) {
+                $blocks[] = $trail;
+            }
+        }
+
+        if ($print['structured_data'] ?? true) {
+            if ($subject instanceof HasStructuredData) {
+                array_push($blocks, ...$subject->structuredData($locale));
+            }
+
+            array_push($blocks, ...$this->pushed());
+        }
+
+        return array_values(array_filter($blocks, static fn (array $block): bool => $block !== []));
+    }
+
+    private function pointsElsewhere(?string $canonical, string $path): bool
+    {
+        if ($canonical === null) {
+            return false;
+        }
+
+        $host = parse_url($canonical, PHP_URL_HOST);
+        $ours = parse_url(url('/'), PHP_URL_HOST);
+
+        if (is_string($host) && mb_strtolower($host, 'UTF-8') !== mb_strtolower((string) $ours, 'UTF-8')) {
+            return true;
+        }
+
+        [$canonicalPath] = explode('?', UrlNormaliser::normalise($canonical), 2);
+        [$ownPath] = explode('?', UrlNormaliser::normalise($path), 2);
+
+        return mb_strtolower($canonicalPath, 'UTF-8') !== mb_strtolower($ownPath, 'UTF-8');
+    }
+
+    private function locale(): string
+    {
+        return app(Locales::class)->current();
+    }
+
+    private function request(): ?Request
     {
         $request = app()->bound('request') ? app('request') : null;
 
-        return $request instanceof Request ? Resolution::of($request)?->entity : null;
+        return $request instanceof Request ? $request : null;
     }
 
     /**
@@ -161,19 +343,7 @@ final class Seo
             return null;
         }
 
-        [$path, $query] = array_pad(explode('?', $url, 2), 2, '');
-
-        /** @var list<string> $keep */
-        $keep = (array) $this->config->get('webx-seo.canonical.query', ['page']);
-        $kept = [];
-
-        foreach ($query === '' ? [] : explode('&', $query) as $pair) {
-            if (in_array(urldecode(explode('=', $pair, 2)[0]), $keep, true)) {
-                $kept[] = $pair;
-            }
-        }
-
-        return url($path).($kept === [] ? '' : '?'.implode('&', $kept));
+        return url(explode('?', $url, 2)[0]).$this->keptQuery($url);
     }
 
     /**
