@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-inbox",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "description": "Forms and submissions for the WebX UI admin panel: the forms of a site, their fields, their statuses, and what has come in through them.",
   "license": "MIT",
   "type": "module",
