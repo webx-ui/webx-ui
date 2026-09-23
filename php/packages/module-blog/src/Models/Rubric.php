@@ -10,10 +10,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use WebxUi\Admin\Categories\Category;
+use WebxUi\Admin\Categories\CategoryKind;
+use WebxUi\Admin\Categories\IsCategory;
 use WebxUi\Admin\Screens\FieldTypes;
-use WebxUi\Blog\Exceptions\BlogException;
+use WebxUi\Admin\Screens\HasExtra;
 use WebxUi\Blog\Seo\Trail;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Media\Models\MediaFile;
+use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Seo\Contracts\Crumb;
@@ -40,17 +45,26 @@ use WebxUi\Seo\HasSeo;
  * @property int|null $cover_id
  * @property bool $is_visible
  * @property int $position
+ * @property array<string, mixed>|null $extra
  * @property Carbon|null $deleted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Rubric extends Model implements HasBreadcrumbs, Visible
+class Rubric extends Model implements Category, HasBreadcrumbs, Visible
 {
     use HasCover;
+    use HasExtra;
     use HasSeo;
     use HasTranslations;
     use HasUrl;
+    use IsCategory {
+        categoryValue as sharedCategoryValue;
+        writeCategoryValue as writeSharedCategoryValue;
+    }
     use SoftDeletes;
+
+    /** The screen a rubric is edited on, and the one a project patches its own fields onto. */
+    public const SCREEN = 'blog.category-form';
 
     /** @var list<string> */
     protected $fillable = ['title', 'slug', 'lead', 'cover_id', 'is_visible', 'position'];
@@ -61,11 +75,6 @@ class Rubric extends Model implements HasBreadcrumbs, Visible
     public function translatable(): array
     {
         return ['title', 'slug', 'lead'];
-    }
-
-    protected function casts(): array
-    {
-        return ['is_visible' => 'boolean', 'position' => 'integer'];
     }
 
     /**
@@ -100,17 +109,6 @@ class Rubric extends Model implements HasBreadcrumbs, Visible
         $resolved = $type === null ? $stored : $type->resolve($stored, [], $locale);
 
         return is_string($resolved) ? $resolved : $stored;
-    }
-
-    /**
-     * The ones a reader can reach.
-     *
-     * @param  Builder<covariant Model>  $query
-     * @return Builder<covariant Model>
-     */
-    public function scopeVisible(Builder $query, ?string $locale = null): Builder
-    {
-        return $query->where($this->qualifyColumn('is_visible'), true);
     }
 
     /** Shown, and not in the bin — the handler's 404 and the sitemap's line (§17.1 of the SEO spec). */
@@ -149,31 +147,112 @@ class Rubric extends Model implements HasBreadcrumbs, Visible
      */
     public function articles(): BelongsToMany
     {
-        return $this->belongsToMany(Article::class, 'article_rubric')->withPivot('position');
+        return $this->belongsToMany(Article::class, 'article_rubric')->withPivot(['position', 'item_position']);
+    }
+
+    /**
+     * @return BelongsToMany<Article, $this>
+     */
+    public function items(): BelongsToMany
+    {
+        return $this->articles();
     }
 
     /** How many articles would be left without this rubric — the number the refusal names. */
     public function articleCount(): int
     {
-        return $this->articles()->count();
+        return $this->itemCount();
     }
 
-    protected static function booted(): void
+    /**
+     * What a rubric is to the code every module's categories share: edited on its own screen,
+     * read by anybody who may open an article (the article form lists them), written by whoever
+     * looks after the taxonomy.
+     */
+    public static function categoryKind(): CategoryKind
     {
-        static::deleting(static function (self $rubric): void {
-            if ($rubric->isForceDeleting()) {
-                return;
-            }
+        return new CategoryKind(
+            model: self::class,
+            screen: self::SCREEN,
+            view: ['blog.articles.view', 'blog.articles.manage'],
+            manage: 'blog.taxonomy.manage',
+            prefix: static fn (): string => (string) config('webx-blog.prefix', 'blog'),
+            noun: 'rubric',
+            plural: 'rubrics',
+            items: 'articles',
+        );
+    }
 
-            // A soft-deleted rubric with live articles in it is a hole in the navigation that
-            // nobody notices: the articles go on answering, the rubric they name is gone, and
-            // the menu is quietly one item short (§6). Refused instead, with the number, so the
-            // editor can move them or decide the rubric was the wrong idea.
-            $count = $rubric->articleCount();
+    public function extraScreen(): string
+    {
+        return self::SCREEN;
+    }
 
-            if ($count > 0) {
-                throw BlogException::rubricHasArticles($count);
-            }
-        });
+    /**
+     * The shared fields and the blog's own three: the introduction, the picture, and the SEO
+     * card `module-seo` patches onto the screen.
+     *
+     * @return list<string>
+     */
+    public function categoryFields(): array
+    {
+        return ['title', 'slug', 'is_visible', 'lead', 'cover', 'seo'];
+    }
+
+    /**
+     * The picture as `wx-media` holds it — a library key, never an address (CLAUDE.md §4) — and
+     * the SEO card as its field type edits it.
+     */
+    public function categoryValue(string $field): mixed
+    {
+        return match ($field) {
+            'cover' => $this->cover instanceof MediaFile ? ['path' => $this->cover->path] : null,
+            'seo' => $this->seoValue(),
+            default => $this->sharedCategoryValue($field),
+        };
+    }
+
+    public function writeCategoryValue(string $field, mixed $value): void
+    {
+        match ($field) {
+            'cover' => $this->cover_id = $this->coverIdOf($value),
+            // Into its own table, after the save: see categorySaved().
+            'seo' => null,
+            default => $this->writeSharedCategoryValue($field, $value),
+        };
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    public function categorySaved(array $values): void
+    {
+        // Only when the card travelled: a save of the rest of the form must not empty a card
+        // nobody opened.
+        if (array_key_exists('seo', $values)) {
+            $this->saveSeo(is_array($values['seo']) && $values['seo'] !== [] ? $values['seo'] : null);
+        }
+    }
+
+    /** A rubric with articles in it (§6): deleting it would leave them without a section. */
+    public function inUseMessage(int $count): string
+    {
+        return (string) trans('webx-blog::errors.rubric-in-use', ['count' => $count]);
+    }
+
+    /**
+     * The library key the media field holds, as the id of a row: the address is never stored.
+     */
+    private function coverIdOf(mixed $value): ?int
+    {
+        $path = is_array($value) ? $value['path'] ?? null : null;
+
+        if (! is_string($path) || $path === '') {
+            return null;
+        }
+
+        $file = app(MediaFiles::class)->find($path);
+
+        return $file === null ? null : (int) $file->getKey();
     }
 }

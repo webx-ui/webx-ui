@@ -1,0 +1,97 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "blog.category-form",
+  "model": "rubric",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "content",
+          "type": "wx-tab",
+          "label": "trans::webx-blog::rubric.tab-content",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "title",
+                  "type": "wx-input",
+                  "name": "title",
+                  "label": "trans::webx-blog::rubric.field-title",
+                  "localized": true,
+                  "props": { "maxlength": 255 }
+                },
+                {
+                  "id": "slug",
+                  "type": "wx-category-slug",
+                  "name": "slug",
+                  "label": "trans::webx-blog::rubric.field-slug",
+                  "localized": true
+                },
+                {
+                  "id": "is-visible",
+                  "type": "wx-switch",
+                  "name": "is_visible",
+                  "label": "trans::webx-blog::rubric.visible",
+                  "help": "trans::webx-blog::rubric.visible-help"
+                },
+                {
+                  "id": "lead",
+                  "type": "wx-rich-text",
+                  "name": "lead",
+                  "label": "trans::webx-blog::rubric.field-lead",
+                  "help": "trans::webx-blog::rubric.lead-help",
+                  "localized": true
+                }
+              ]
+            },
+            {
+              "id": "project-fields",
+              "type": "wx-card",
+              "label": "trans::webx-admin::screens.project-fields",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "image",
+          "type": "wx-tab",
+          "label": "trans::webx-blog::rubric.tab-cover",
+          "children": [
+            {
+              "id": "cover",
+              "type": "wx-media",
+              "name": "cover",
+              "label": "trans::webx-blog::screen.cover",
+              "help": "trans::webx-blog::rubric.cover-help",
+              "props": {
+                "accept": "image",
+                "captions": false,
+                "aspect": "16/9"
+              }
+            }
+          ]
+        },
+        {
+          "id": "seo",
+          "type": "wx-tab",
+          "label": "trans::webx-blog::rubric.tab-seo",
+          "children": [
+            {
+              "id": "seo-placeholder",
+              "type": "wx-alert",
+              "label": "trans::webx-blog::screen.seo-empty",
+              "props": {
+                "type": "info",
+                "variant": "soft"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -74,7 +74,9 @@ final class ArticleWriter
         }
 
         if ($rubrics !== null) {
-            $article->rubrics()->sync($this->positioned($rubrics));
+            // Through the shared code, which keeps an article's place inside a rubric it was
+            // already in and gives it one by date in a rubric it was not.
+            $article->syncCategories($rubrics);
         }
 
         if ($tags !== null) {
@@ -156,6 +158,7 @@ final class ArticleWriter
             'blocks' => $article->getAttribute('blocks'),
             'cover_id' => $article->cover_id,
             'author_id' => $article->author_id,
+            'extra' => $article->extraRaw(),
         ];
 
         foreach (self::TRANSLATED as $field) {

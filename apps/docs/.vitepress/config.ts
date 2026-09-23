@@ -36,6 +36,7 @@ export default defineConfig({
             { text: 'AI agents', link: '/guide/agents' },
             { text: 'Pages', link: '/guide/pages' },
             { text: 'Blog', link: '/guide/blog' },
+            { text: 'Categories', link: '/guide/categories' },
             { text: 'Inbox', link: '/guide/inbox' },
             { text: 'Menus', link: '/guide/menu' },
             { text: 'Settings', link: '/guide/settings' },

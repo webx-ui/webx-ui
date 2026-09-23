@@ -10,7 +10,7 @@ import type {
 } from '../../../../packages/module-inbox/src/types'
 import type { BlockType, BlockUsage } from '../../../../packages/module-blocks/src/types'
 import type { PageRow } from '../../../../packages/module-pages/src/types'
-import type { RubricRow, TagRow } from '../../../../packages/module-blog/src/types'
+import type { TagRow } from '../../../../packages/module-blog/src/types'
 import type { MediaDirectory, MediaFile } from '../../../../packages/module-media/src/types'
 import {
   blockGroups,
@@ -60,6 +60,7 @@ import {
   text as blogText,
   values as articleValues,
   type ArticleRecord,
+  type RubricRecord,
 } from './blog'
 import {
   bytesOf,
@@ -2030,19 +2031,21 @@ on('GET', '/blog/rubrics', ({ locale }) => ({
 on('POST', '/blog/rubrics', ({ body, locale }) => {
   const title = localized(body.title) || 'Новая рубрика'
   const slug = localized(body.slug) || slugify(title)
-  const row: RubricRow = {
+  const row: RubricRecord = {
     id: Math.max(0, ...rubrics.map((one) => one.id)) + 1,
     name: title,
     title: asMap(body.title, title),
     slug: asMap(body.slug, slug),
-    lead: asMap(body.lead, ''),
+    lead: {},
     path: `${PREFIX}/${slug}`,
     url: `https://webx-demo.test/${PREFIX}/${slug}`,
     cover: null,
-    is_visible: body.is_visible !== false,
+    is_visible: true,
     position: rubrics.length + 1,
     articles_count: 0,
-    seo: (body.seo ?? {}) as Record<string, unknown>,
+    deleted_at: null,
+    seo: {},
+    extra: {},
   }
 
   rubrics.push(row)
@@ -2058,22 +2061,48 @@ on('POST', '/blog/rubrics/reorder', ({ body }) => {
   return { data: null }
 })
 
+on('GET', '/blog/rubrics/(\\d+)', ({ params, locale }) => ({
+  data: rubricDetail(rubric(params[0]), locale),
+}))
+
+/*
+ * The page of one rubric saves the values of `blog.category-form`, the way the real server does
+ * (`CategoryForm::save()`): its own fields into their columns, the SEO card into its table, and
+ * everything else the screen drew — a field a project patched on — into `extra`, merged rather
+ * than replaced.
+ */
 on('PUT', '/blog/rubrics/(\\d+)', ({ params, body, locale }) => {
   const row = rubric(params[0])
+  const values = (body.values ?? {}) as Record<string, unknown>
+  const errors: Record<string, string[]> = {}
 
-  /* Only what travelled: a form that sent the cover alone must not blank the lead. */
-  if (body.title !== undefined) row.title = asMap(body.title, '')
-  if (body.slug !== undefined) row.slug = asMap(body.slug, '')
-  if (body.lead !== undefined) row.lead = asMap(body.lead, '')
-  if (body.is_visible !== undefined) row.is_visible = body.is_visible === true
-  if (body.seo !== undefined) row.seo = (body.seo ?? {}) as Record<string, unknown>
+  if (values.title !== undefined && Object.values(asMap(values.title, '')).every((one) => !one)) {
+    errors.title = ['Название нужно хотя бы на одном языке.']
+  }
 
-  if (body.cover !== undefined) {
-    const path = (body.cover as { path?: string } | null)?.path
-    const file = typeof path === 'string' ? mediaByPath(path) : null
+  const slugs = values.slug === undefined ? {} : asMap(values.slug, '')
 
-    row.cover =
-      file === null ? null : { id: file.id, path: file.path, url: file.url, thumb: file.thumb }
+  for (const [code, slug] of Object.entries(slugs)) {
+    if (slug !== '' && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      errors[`slug.${code}`] = ['Буквы, цифры и одиночные дефисы между ними.']
+    }
+  }
+
+  if (Object.keys(errors).length > 0) throw new HttpFailure(422, 'Invalid', undefined, errors)
+
+  for (const [name, value] of Object.entries(values)) {
+    if (name === 'title') row.title = asMap(value, '')
+    else if (name === 'slug') row.slug = asMap(value, '')
+    else if (name === 'lead') row.lead = asMap(value, '')
+    else if (name === 'is_visible') row.is_visible = value === true
+    else if (name === 'seo') row.seo = (value ?? {}) as Record<string, unknown>
+    else if (name === 'cover') {
+      const path = (value as { path?: string } | null)?.path
+      const file = typeof path === 'string' ? mediaByPath(path) : null
+
+      row.cover =
+        file === null ? null : { id: file.id, path: file.path, url: file.url, thumb: file.thumb }
+    } else row.extra[name] = value
   }
 
   const slug = blogText(row.slug, locale) || blogText(row.slug, 'ru')
@@ -2082,8 +2111,25 @@ on('PUT', '/blog/rubrics/(\\d+)', ({ params, body, locale }) => {
   row.path = `${PREFIX}/${slug}`
   row.url = `https://webx-demo.test/${row.path}`
 
-  return { data: row }
+  return { data: rubricDetail(row, locale) }
 })
+
+/** One rubric as its page opens it: the row, the values of the screen and the prefix. */
+function rubricDetail(row: RubricRecord, locale: string) {
+  return {
+    category: { ...row, name: blogText(row.title, locale) || row.name },
+    values: {
+      ...row.extra,
+      title: row.title,
+      slug: row.slug,
+      is_visible: row.is_visible,
+      lead: row.lead,
+      cover: row.cover === null ? null : { path: row.cover.path, url: row.cover.url },
+      seo: row.seo,
+    },
+    prefix: PREFIX,
+  }
+}
 
 on('DELETE', '/blog/rubrics/(\\d+)', ({ params }) => {
   const row = rubric(params[0])
@@ -2670,7 +2716,7 @@ function article(id: string): ArticleRecord {
   return record
 }
 
-function rubric(id: string): RubricRow {
+function rubric(id: string): RubricRecord {
   const row = rubrics.find((one) => one.id === Number(id))
 
   if (row === undefined) {

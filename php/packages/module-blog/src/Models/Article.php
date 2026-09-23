@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use WebxUi\Admin\Categories\HasCategories;
+use WebxUi\Admin\Screens\HasExtra;
 use WebxUi\Admin\Versions\HasDraft;
 use WebxUi\Admin\Versions\HasVersions;
 use WebxUi\Auth\Models\CmsUser;
@@ -46,6 +48,7 @@ use WebxUi\Seo\HasSeo;
  * @property bool $pinned
  * @property list<array<string, mixed>>|null $blocks
  * @property array<string, mixed>|null $draft
+ * @property array<string, mixed>|null $extra
  * @property Carbon|null $published_at
  * @property Carbon|null $deleted_at
  * @property Carbon|null $created_at
@@ -54,8 +57,10 @@ use WebxUi\Seo\HasSeo;
 class Article extends Model implements HasBreadcrumbs, HasStructuredData, Visible
 {
     use HasBlocks;
+    use HasCategories;
     use HasCover;
     use HasDraft;
+    use HasExtra;
     use HasSeo;
     use HasTranslations;
     use HasUrl;
@@ -313,10 +318,32 @@ class Article extends Model implements HasBreadcrumbs, HasStructuredData, Visibl
      */
     public function rubrics(): BelongsToMany
     {
-        return $this->belongsToMany(Rubric::class, 'article_rubric')
-            ->withPivot('position')
-            ->orderBy('article_rubric.position')
-            ->orderBy('rubrics.id');
+        /** @var BelongsToMany<Rubric, $this> $relation */
+        $relation = $this->belongsToCategories(Rubric::class, 'article_rubric');
+
+        return $relation;
+    }
+
+    public function categoryRelation(): string
+    {
+        return 'rubrics';
+    }
+
+    /**
+     * Newest first: the order a rubric page lists its articles in. An article filed into a rubric
+     * takes its place there by this order — the blog never lets anybody drag them.
+     *
+     * @return array<string, 'asc'|'desc'>
+     */
+    public function categoryItemOrder(): array
+    {
+        return [$this->publishedAtColumn() => 'desc', $this->getKeyName() => 'desc'];
+    }
+
+    /** The fields a project patches onto the editor live in `extra`, and go through the draft. */
+    public function extraScreen(): string
+    {
+        return 'blog.article-form';
     }
 
     /**
@@ -349,7 +376,7 @@ class Article extends Model implements HasBreadcrumbs, HasStructuredData, Visibl
     public function mainRubric(): ?Rubric
     {
         /** @var Rubric|null $rubric */
-        $rubric = $this->rubrics->first();
+        $rubric = $this->mainCategory();
 
         return $rubric;
     }

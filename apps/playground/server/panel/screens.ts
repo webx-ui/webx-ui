@@ -26,6 +26,15 @@ const SCREENS: Record<string, { base: string; patches: string[] }> = {
     // the blog leaves a placeholder there, and `module-seo` replaces it when it is installed.
     patches: ['php/packages/module-seo/resources/screens/blog.article-form.json'],
   },
+  'blog.category-form': {
+    base: 'php/packages/module-blog/resources/screens/category-form.json',
+    // The second patch is the project's, as a site would write it: one field of its own in the
+    // card the screen keeps for that (`project-fields`). Saved into `extra` by the server.
+    patches: [
+      'php/packages/module-seo/resources/screens/blog.category-form.json',
+      'apps/playground/server/panel/project/blog.category-form.json',
+    ],
+  },
 }
 
 const root = (path: string): string =>

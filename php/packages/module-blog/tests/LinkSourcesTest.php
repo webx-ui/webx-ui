@@ -6,11 +6,11 @@ namespace WebxUi\Blog\Tests;
 
 use Illuminate\Support\Carbon;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Categories\CategoryLinkSource;
 use WebxUi\Admin\Contracts\LinkSource;
 use WebxUi\Admin\Links\LinkCandidate;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Blog\Links\ArticleLinkSource;
-use WebxUi\Blog\Links\RubricLinkSource;
 use WebxUi\Blog\Links\TagLinkSource;
 
 /**
@@ -34,7 +34,7 @@ final class LinkSourcesTest extends TestCase
         $rubrics = $sources->find('rubric');
 
         $this->assertInstanceOf(ArticleLinkSource::class, $articles);
-        $this->assertInstanceOf(RubricLinkSource::class, $rubrics);
+        $this->assertInstanceOf(CategoryLinkSource::class, $rubrics);
         $this->assertInstanceOf(TagLinkSource::class, $sources->find('tag'));
 
         $this->assertSame('blog.articles.view', $articles->permission());
@@ -173,9 +173,12 @@ final class LinkSourcesTest extends TestCase
         return $this->app->make(ArticleLinkSource::class);
     }
 
-    private function rubrics(): RubricLinkSource
+    private function rubrics(): LinkSource
     {
-        return $this->app->make(RubricLinkSource::class);
+        $source = $this->app->make(LinkSources::class)->find('rubric');
+        $this->assertInstanceOf(LinkSource::class, $source);
+
+        return $source;
     }
 
     private function tags(): TagLinkSource
