@@ -188,11 +188,6 @@ export function bindFrame(
 
   let hovered: string | null = null
 
-  function swallow(event: Event): void {
-    event.preventDefault()
-    event.stopPropagation()
-  }
-
   function onClick(event: MouseEvent): void {
     swallow(event)
     handlers.select(keyAt(event.target as Node | null))
@@ -231,6 +226,72 @@ export function bindFrame(
       doc.removeEventListener('mouseleave', onLeave)
     },
   }
+}
+
+function swallow(event: Event): void {
+  event.preventDefault()
+  event.stopPropagation()
+}
+
+/**
+ * The same picture without the choosing: nothing in the page navigates, submits or is dragged
+ * away. What the block editor's stage needs — the site's header is full of links, and one
+ * click on them would leave the frame on another page of the site with the block gone.
+ */
+export function freezeFrame(doc: Document): FrameBinding {
+  const events = ['click', 'auxclick', 'submit', 'dragstart']
+
+  for (const name of events) doc.addEventListener(name, swallow, true)
+
+  return {
+    release() {
+      for (const name of events) doc.removeEventListener(name, swallow, true)
+    },
+  }
+}
+
+/** The key the stage draws its block under — `StageController::KEY` on the server. */
+export const STAGE_KEY = 'sample'
+
+/** The `<style>` of the stage the block's styles go into — `StageController::STYLES`. */
+export const STAGE_STYLES = 'wx-stage-styles'
+
+/**
+ * Put a block on the stage page: its styles into the stage's `<style>`, its markup between the
+ * markers. False when the page has no place for it — a layout that dropped its slot.
+ *
+ * The script is not here on purpose: a script registered in a page cannot be taken back, so
+ * a new one means a new page (see `mountScript`).
+ */
+export function fillStage(doc: Document, input: { html: string; styles: string }): boolean {
+  let style = doc.getElementById(STAGE_STYLES)
+
+  if (style === null) {
+    style = doc.createElement('style')
+    style.id = STAGE_STYLES
+    ;(doc.head ?? doc.documentElement).appendChild(style)
+  }
+
+  style.textContent = input.styles
+
+  /* The render carries its own pair; one that does not would leave the page without a place,
+     and the next change would have nowhere to go. */
+  const opener = `<!--wx:${STAGE_KEY}-->`
+  const html = input.html.trimStart().startsWith(opener)
+    ? input.html
+    : `${opener}${input.html}<!--/wx:${STAGE_KEY}-->`
+
+  return replaceBlock(doc, STAGE_KEY, html)
+}
+
+/**
+ * Run a block's script in the page: `webx.block()` registers it and mounts what is already
+ * there. Added as an element, since that is what makes a browser run it.
+ */
+export function mountScript(doc: Document, script: string): void {
+  const element = doc.createElement('script')
+  element.textContent = script
+  doc.body.appendChild(element)
 }
 
 /** The one thing the panel adds to the site's markup: how a block looks under the editor. */

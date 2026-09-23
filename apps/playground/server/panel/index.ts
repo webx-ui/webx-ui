@@ -691,10 +691,13 @@ on('POST', '/blocks/(\\d+)/render', ({ params, body }) => {
   } as NonNullable<BlockType['content']>
   const values = (body.values ?? content.sample ?? {}) as Record<string, unknown>
   const drawn = drawContent(content, values)
+  const key = typeof body.key === 'string' && body.key !== '' ? body.key : 'sample'
 
   return {
     data: {
-      html: drawn.html,
+      /* Between the pair of markers, as `RenderController` draws it: the stage swaps the block
+         between them, and a block without them is a place the next change cannot find. */
+      html: `<!--wx:${key}-->${drawn.html}<!--/wx:${key}-->`,
       /* The styles of everything in the picture, not only of the type being edited: a
          container drawn without its children's CSS is a stack of bare paragraphs. */
       styles: drawn.styles,
@@ -707,6 +710,7 @@ on('POST', '/blocks/(\\d+)/render', ({ params, body }) => {
           : `webx.block(${JSON.stringify(type.slug)}, async (el, values) => {\n${content.script.trim()}\n});\n`,
       runtime: '/blocks-runtime.js',
       version: type.published?.number ?? type.draft?.number ?? 1,
+      stage: '/_preview/block-stage',
     },
   }
 })
@@ -2799,21 +2803,113 @@ function document(title: string, nodes: Block[]): string {
     .map((node) => draw(node))
     .join('\n')
 
+  return siteLayout(title, `<style>${styles}</style>`, html)
+}
+
+/**
+ * The layout of the playground's site — what `<x-layout>` is on a real one: a header with the
+ * `header` menu, a footer with the `footer` one, and the site's own base styles.
+ *
+ * Every picture of the site goes through it: the preview of a page, of an article, and the stage
+ * a block type is drawn on in its editor. A block is only worth judging against the page it will
+ * stand on — against the browser's defaults every block looks like a draft.
+ */
+function siteLayout(title: string, head: string, body: string): string {
+  const top = siteMenu('header')
+    .map((item) => `<a href="${item.href ?? '#'}">${escapeHtml(item.label)}</a>`)
+    .join('')
+
+  const groups = siteMenu('footer')
+    .map((item) =>
+      item.is_heading
+        ? `<div class="site-footer__group"><strong>${escapeHtml(item.label)}</strong>${item.children
+            .map((child) => `<a href="${child.href ?? '#'}">${escapeHtml(child.label)}</a>`)
+            .join('')}</div>`
+        : `<div class="site-footer__group"><a href="${item.href ?? '#'}">${escapeHtml(item.label)}</a></div>`,
+    )
+    .join('')
+
   return `<!doctype html>
 <html lang="ru">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${title}</title>
-    <style>
-      body { margin: 0; font-family: system-ui, sans-serif; background: #fff; }
-      ${styles}
-    </style>
+    <title>${escapeHtml(title)}</title>
+    <style>${SITE_STYLES}</style>
+    ${head}
   </head>
   <body>
-${html}
+    <header class="site-header">
+      <div class="site-wrap site-header__inner">
+        <a class="site-logo" href="/">Webx Demo</a>
+        <nav class="site-nav">${top}</nav>
+      </div>
+    </header>
+    <main class="site-main">
+${body}
+    </main>
+    <footer class="site-footer">
+      <div class="site-wrap site-footer__inner">${groups}</div>
+      <div class="site-wrap site-footer__legal">© 2026 Webx Demo</div>
+    </footer>
   </body>
 </html>`
+}
+
+/** What a site's base CSS does before any block adds its own: a typeface, a ground, a width. */
+const SITE_STYLES = `
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.6 Inter, "Segoe UI", system-ui, -apple-system, sans-serif; color: #1f2430; background: #fff; }
+  h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 .5em; font-weight: 700; }
+  p { margin: 0 0 1em; }
+  a { color: #2f6fdb; }
+  img { max-width: 100%; height: auto; }
+  .site-wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+  .site-header { border-bottom: 1px solid #e6e8ee; background: #fff; }
+  .site-header__inner { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 68px; flex-wrap: wrap; }
+  .site-logo { font-weight: 800; font-size: 20px; color: #1f2430; text-decoration: none; }
+  .site-nav { display: flex; gap: 20px; flex-wrap: wrap; }
+  .site-nav a { color: #1f2430; text-decoration: none; font-weight: 500; }
+  .site-footer { margin-top: 48px; padding: 40px 0 24px; background: #11151f; color: #c7cbd6; }
+  .site-footer a { color: #c7cbd6; text-decoration: none; display: block; margin-top: 6px; }
+  .site-footer strong { color: #fff; }
+  .site-footer__inner { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 24px; }
+  .site-footer__legal { margin-top: 32px; font-size: 14px; color: #7d8494; }
+`
+
+interface SiteLink {
+  label: string
+  href: string | null
+  is_heading: boolean
+  visible: boolean
+  available: boolean
+  children: SiteLink[]
+}
+
+/** A menu as the site prints it: what is switched off or points nowhere is left out. */
+function siteMenu(key: string): SiteLink[] {
+  const shown = (item: SiteLink): boolean => item.visible && item.available
+
+  return childrenOf(key, null)
+    .map((item) => menuItem(item, 'ru') as SiteLink)
+    .filter(shown)
+    .map((item) => ({ ...item, children: item.children.filter(shown) }))
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+/**
+ * The page a block type is drawn on in its editor — `StageController` on a real site: the
+ * layout with an empty place and an empty `<style>`, which the panel fills on every change.
+ */
+function blockStage(): string {
+  return siteLayout(
+    'Block',
+    '<script src="/blocks-runtime.js"></script><style id="wx-stage-styles"></style>',
+    '<!--wx:sample--><!--/wx:sample-->',
+  )
 }
 
 function draw(node: Block): string {
@@ -2886,6 +2982,13 @@ export function panelServer(): Plugin {
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
         const url = new URL(request.url ?? '/', 'http://localhost')
+
+        if (url.pathname === '/_preview/block-stage') {
+          response.setHeader('Content-Type', 'text/html; charset=utf-8')
+          response.end(blockStage())
+
+          return
+        }
 
         const preview = url.pathname.match(/^\/preview\/(page|article)\/(\d+)$/)
 

@@ -228,6 +228,15 @@ function actionsFor(item: MenuItemRow): RowAction[] {
   cursor: pointer;
 }
 
+/*
+ * `flex-start` sizes each line to its content, and a line sized to its content has nothing to
+ * cut: a long address ran out past the card instead of ending in `…`. The cap is what gives
+ * `truncate` a width to work against.
+ */
+.wx-menu-item__open > :deep(*) {
+  max-width: 100%;
+}
+
 .wx-menu-item__open:disabled {
   cursor: default;
 }

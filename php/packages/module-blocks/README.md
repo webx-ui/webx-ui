@@ -179,6 +179,14 @@ A handler tells a preview from a visit with `PreviewGrant::of($request)`, and th
 unpublished entity is a 404 to everybody else. The prefix is closed to the registry, so no page
 can take the address.
 
+### The editor's stage
+
+`/_preview/block-stage` is the page the block editor draws a type on: the component
+`webx-blocks.layout` names — the site's own `<x-layout>`, header and footer included — with an
+empty pair of markers where the content goes. The panel loads it once and swaps the block and its
+styles in on every change. Empty prints `webx-blocks::standalone`, a bare document; it needs an
+editor's session with `blocks.view`.
+
 ## The panel
 
 The section lives in `@webx-ui/module-blocks` on the front end; this package answers it under

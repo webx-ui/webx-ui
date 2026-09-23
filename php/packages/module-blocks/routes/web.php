@@ -5,9 +5,17 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use WebxUi\Blocks\Http\Controllers\BundleController;
 use WebxUi\Blocks\Http\Controllers\PreviewController;
+use WebxUi\Blocks\Http\Controllers\StageController;
 
 $prefix = trim((string) config('webx-blocks.bundles.path', 'blocks'), '/');
 $preview = trim((string) config('webx-blocks.preview.path', '_preview'), '/');
+
+// The site's layout with an empty place for one block: what the block editor draws on. Beside
+// the preview and through the same middleware, because it is the site that answers — its
+// locale, its session — and not the panel; the session is what says an editor is asking.
+Route::get("{$preview}/block-stage", StageController::class)
+    ->middleware([...(array) config('webx-blocks.preview.middleware', ['web']), 'cms.auth', 'cms.can:blocks.view,blocks.manage'])
+    ->name('webx.blocks.stage');
 
 // The draft of an entity, under a signed token. In the `web` group on purpose: the handler
 // behind it is the one that answers the real address, and it expects the same session,
