@@ -1,5 +1,12 @@
 # @webx-ui/module-inbox
 
+## 0.4.8
+
+### Patch Changes
+
+- Updated dependencies [298c894]
+  - @webx-ui/module-admin@0.16.0
+
 ## 0.4.7
 
 ### Patch Changes
