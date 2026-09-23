@@ -127,6 +127,8 @@ export interface BlocksMeta {
   groups: string[]
   editing: boolean
   provides: string[]
+  /** The stage page, when the site has a layout — where thumbnails take the site's styles. */
+  stage?: string | null
 }
 
 /**

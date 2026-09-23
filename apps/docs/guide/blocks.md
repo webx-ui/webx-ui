@@ -299,6 +299,13 @@ Empty prints `webx-blocks::standalone`, a bare document. `php artisan webx:panel
 key the same way it does for pages and the blog, and `webx:doctor` warns while it is empty. The
 route runs through `preview.middleware` and needs an editor's session with `blocks.view`.
 
+The thumbnails in the list and in the picker take the site's look from the same page: the panel
+loads it once, keeps the stylesheets, the `<style>` elements and the font preloads of its head
+and the chain of elements around the markers, and drops the header, the footer and every
+script. Each thumbnail is then its block inside those wrappers, on the site's styles, without a
+newsletter popup in forty cards. With `layout` empty there is nothing to take, and they stay
+bare.
+
 ## What the editor suggests
 
 Each file of a type is written with the other files at hand, and the editor offers what they

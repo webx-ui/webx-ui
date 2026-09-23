@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Blocks\Panel;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Support\Facades\Route;
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Contracts\ProvidesDemo;
 use WebxUi\Admin\Demo\DemoLedger;
@@ -83,11 +84,17 @@ final class BlocksModule extends AbstractModule implements ProvidesDemo, Provide
     {
         $groups = $this->config->get('webx-blocks.groups', []);
         $provides = $this->config->get('webx-blocks.provides', []);
+        $layout = $this->config->get('webx-blocks.layout');
 
         return [
             'groups' => is_array($groups) ? array_values(array_map('strval', $groups)) : [],
             'editing' => (bool) $this->config->get('webx-blocks.editing', true),
             'provides' => is_array($provides) ? array_values(array_map('strval', $provides)) : [],
+            // Where the thumbnails take the site's stylesheets from. Only with a layout: the
+            // standalone document has none, and fetching it for nothing is one more request.
+            'stage' => is_string($layout) && $layout !== '' && Route::has('webx.blocks.stage')
+                ? route('webx.blocks.stage', absolute: false)
+                : null,
         ];
     }
 
