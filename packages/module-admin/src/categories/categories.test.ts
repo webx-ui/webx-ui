@@ -192,7 +192,7 @@ describe('the page of one category', () => {
 
     expect(get).toHaveBeenCalledWith('/api/cms/blog/rubrics/7')
     expect(admin.loadScreen).toHaveBeenCalledWith('blog.category-form')
-    expect(wrapper.find('.wx-category-slug__prefix').text()).toBe('/blog/')
+    expect(wrapper.find('.wx-slug__prefix').text()).toBe('/blog/')
     expect(wrapper.find('.wx-screen-head').text()).toContain('Repairs')
   })
 
@@ -210,7 +210,7 @@ describe('the page of one category', () => {
     const { mount: open } = panel(CategoryEditorPage, { get, put }, '/blog/rubrics/7')
     const wrapper = await open()
 
-    await wrapper.get('.wx-category-slug input').setValue('fixes')
+    await wrapper.get('.wx-slug input').setValue('fixes')
     await wrapper.get('.wx-action-bar button').trigger('click')
     await flushPromises()
 
@@ -228,7 +228,7 @@ describe('the page of one category', () => {
     const { mount: open } = panel(CategoryEditorPage, { get, put }, '/blog/rubrics/7')
     const wrapper = await open()
 
-    await wrapper.get('.wx-category-slug input').setValue('fixes')
+    await wrapper.get('.wx-slug input').setValue('fixes')
     await wrapper.get('.wx-action-bar button').trigger('click')
     await flushPromises()
 

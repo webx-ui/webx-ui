@@ -66,6 +66,11 @@ final class Catalogue
             'label' => 'Blog — articles, rubrics and tags',
             'default' => false,
         ],
+        'services' => [
+            'package' => 'webx-ui/module-services',
+            'label' => 'Services — a catalogue of services with categories, each a page of the site',
+            'default' => false,
+        ],
         'menu' => [
             'package' => 'webx-ui/module-menu',
             'label' => 'Menus — the header and the footer, and what each entry points at',

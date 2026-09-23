@@ -26,6 +26,8 @@ parameters:
         - packages/module-pages/tests
         - packages/module-seo/src
         - packages/module-seo/tests
+        - packages/module-services/src
+        - packages/module-services/tests
         - packages/module-settings/src
         - packages/module-settings/tests
         - packages/nested-set/src

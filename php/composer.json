@@ -16,6 +16,7 @@
         "webx-ui/module-menu": "*",
         "webx-ui/module-pages": "*",
         "webx-ui/module-seo": "*",
+        "webx-ui/module-services": "*",
         "webx-ui/module-settings": "*",
         "webx-ui/nested-set": "*",
         "webx-ui/routing": "*"
@@ -45,6 +46,7 @@
                     "webx-ui/module-menu": "0.34.0",
                     "webx-ui/module-pages": "0.34.0",
                     "webx-ui/module-seo": "0.34.0",
+                    "webx-ui/module-services": "0.34.0",
                     "webx-ui/module-settings": "0.34.0",
                     "webx-ui/nested-set": "0.34.0",
                     "webx-ui/routing": "0.34.0"
@@ -67,6 +69,7 @@
             "WebxUi\\Pages\\Tests\\": "packages/module-pages/tests/",
             "WebxUi\\Routing\\Tests\\": "packages/routing/tests/",
             "WebxUi\\Seo\\Tests\\": "packages/module-seo/tests/",
+            "WebxUi\\Services\\Tests\\": "packages/module-services/tests/",
             "WebxUi\\Settings\\Tests\\": "packages/module-settings/tests/"
         }
     },
