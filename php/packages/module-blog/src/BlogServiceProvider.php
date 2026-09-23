@@ -40,6 +40,7 @@ use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
 use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Rendering\SeoSources;
+use WebxUi\Seo\Sitemap\SitemapRoutes;
 
 /**
  * Three kinds of entity that have addresses, one entity that is made of blocks, two routes that
@@ -264,10 +265,16 @@ class BlogServiceProvider extends ServiceProvider
         $types->register('wx-article-author', new AuthorType);
     }
 
-    /** What a tag page says about itself, and whether it is in the index at all (§12). */
+    /**
+     * What a tag page says about itself, and whether it is in the index at all (§12) — and the
+     * feed as an address of the sitemap, since the registry, where the map takes the rest from,
+     * has no row for a route (§17.3 of the SEO spec). Named by its route, so a feed turned off
+     * with the prefix is simply a name nothing answers to.
+     */
     private function registerSeoSource(): void
     {
         $this->app->make(SeoSources::class)->register($this->app->make(TagSource::class));
+        $this->app->make(SitemapRoutes::class)->register('webx.blog.feed');
     }
 
     /**

@@ -60,4 +60,22 @@ return [
     'occupied-alias' => 'Diese Adresse führt bereits auf :target — die Spur eines Umzugs. Eine hier geschriebene Weiterleitung greift vorher.',
 
     'filter-kind' => 'Art',
+
+    'sitemap' => 'Sitemap',
+    'sitemap-built' => 'Erstellt',
+    'sitemap-total' => 'Adressen: :count',
+    'sitemap-excluded' => 'Ausgelassen — noindex: :noindex, anderer Canonical: :canonical',
+    'sitemap-empty' => 'Sie ist leer: Keine Adresse ist veröffentlicht und für den Index offen.',
+    'sitemap-off' => 'Die Sitemap ist auf dieser Website ausgeschaltet.',
+    'sitemap-rebuild' => 'Neu erstellen',
+    'sitemap-rebuilt' => 'Die Sitemap wurde neu erstellt.',
+    'test-sitemap' => 'Sitemap',
+    'test-sitemap-in' => 'In der Sitemap.',
+    'test-sitemap-out' => 'Nicht in der Sitemap: :reason.',
+    'sitemap-reason-disabled' => 'die Sitemap ist ausgeschaltet',
+    'sitemap-reason-unknown' => 'die Website hat hier keine eigene Seite',
+    'sitemap-reason-alias' => 'das ist eine alte Adresse, die weiterleitet',
+    'sitemap-reason-hidden' => 'die Seite ist nicht veröffentlicht',
+    'sitemap-reason-noindex' => 'die Seite sagt noindex',
+    'sitemap-reason-canonical' => 'die Seite nennt eine andere Adresse als Canonical',
 ];

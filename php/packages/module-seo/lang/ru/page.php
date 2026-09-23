@@ -60,4 +60,22 @@ return [
     'occupied-alias' => 'Этот адрес уже ведёт на :target — след переезда. Редирект, написанный здесь, сработает раньше.',
 
     'filter-kind' => 'Тип',
+
+    'sitemap' => 'Карта сайта',
+    'sitemap-built' => 'Собрана',
+    'sitemap-total' => 'Адресов: :count',
+    'sitemap-excluded' => 'Не вошли — noindex: :noindex, чужой canonical: :canonical',
+    'sitemap-empty' => 'В ней пусто: ни один адрес не опубликован и не открыт для индекса.',
+    'sitemap-off' => 'Карта сайта на этом сайте выключена.',
+    'sitemap-rebuild' => 'Пересобрать',
+    'sitemap-rebuilt' => 'Карта сайта пересобрана.',
+    'test-sitemap' => 'Карта сайта',
+    'test-sitemap-in' => 'В карте сайта.',
+    'test-sitemap-out' => 'Не в карте сайта: :reason.',
+    'sitemap-reason-disabled' => 'карта сайта выключена',
+    'sitemap-reason-unknown' => 'у сайта нет здесь своей страницы',
+    'sitemap-reason-alias' => 'это старый адрес, он перенаправляет',
+    'sitemap-reason-hidden' => 'страница не опубликована',
+    'sitemap-reason-noindex' => 'страница закрыта noindex',
+    'sitemap-reason-canonical' => 'страница называет каноническим другой адрес',
 ];

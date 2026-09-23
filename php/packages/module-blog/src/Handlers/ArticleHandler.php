@@ -21,8 +21,9 @@ use WebxUi\Routing\RouteHandler;
  * shown as it will be, because the preview route of `module-blocks` has already laid the draft
  * over the columns by the time it reaches this.
  *
- * `isPublished()` and not `published_at !== null` is the whole of scheduling (§7). The one thing
- * worth remembering about it is that the answer changes without anything being written: an
+ * `isVisible()` and not `published_at !== null` is the whole of scheduling (§7) — the same
+ * answer the sitemap leaves a waiting article out by. The one thing worth remembering about it
+ * is that the answer changes without anything being written: an
  * article 404s at one minute past and answers at two.
  */
 class ArticleHandler implements RouteHandler
@@ -38,7 +39,7 @@ class ArticleHandler implements RouteHandler
             throw new NotFoundHttpException;
         }
 
-        if (! $entity->isPublished() && PreviewGrant::of($request) === null) {
+        if (! $entity->isVisible() && PreviewGrant::of($request) === null) {
             throw new NotFoundHttpException;
         }
 

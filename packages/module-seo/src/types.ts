@@ -191,6 +191,29 @@ export interface SeoTestResult {
   matched: SeoUrlRule | null
   chain: SeoChainStep[]
   seo: SeoResolved
+  /** Whether the address is in the sitemap, and why not — the first question when a page is missing from a search engine. */
+  sitemap: SeoSitemapVerdict
+}
+
+/** Why an address is not in the sitemap. `null` when it is. */
+export type SeoSitemapReason = 'disabled' | 'unknown' | 'alias' | 'hidden' | 'noindex' | 'canonical'
+
+export interface SeoSitemapVerdict {
+  included: boolean
+  reason: SeoSitemapReason | null
+}
+
+/**
+ * The sitemap as a crawler gets it: the card above the rules. `files` counts the addresses in
+ * each file of the map; `excluded` counts the visible ones the resolver closed, by why.
+ */
+export interface SeoSitemapStatus {
+  enabled: boolean
+  url: string
+  built_at: string | null
+  files: Record<string, number>
+  total: number
+  excluded: { noindex: number; canonical: number }
 }
 
 /** The meta directives the card offers as checkboxes. Anything else is kept as written. */

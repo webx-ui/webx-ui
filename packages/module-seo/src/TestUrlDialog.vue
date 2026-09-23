@@ -105,6 +105,20 @@ async function run(): Promise<void> {
           "
         />
 
+        <!-- In the map or not, and why: the same three questions the map itself asks. -->
+        <wx-alert
+          v-if="result.sitemap"
+          :type="result.sitemap.included ? 'success' : 'warning'"
+          :title="t('page.test-sitemap')"
+          :description="
+            result.sitemap.included
+              ? t('page.test-sitemap-in')
+              : t('page.test-sitemap-out', {
+                  reason: t(`page.sitemap-reason-${result.sitemap.reason ?? 'unknown'}`),
+                })
+          "
+        />
+
         <wx-alert v-if="!result.matched" type="info" :description="t('page.test-none')" />
         <div v-else class="wx-seo-test__matched">
           <wx-text size="sm" tone="muted">{{ t('page.test-matched') }}</wx-text>
