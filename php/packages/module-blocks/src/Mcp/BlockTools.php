@@ -16,6 +16,7 @@ use WebxUi\Blocks\BlockType;
 use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Content;
 use WebxUi\Blocks\ContentEdit;
+use WebxUi\Blocks\ContentValues;
 use WebxUi\Blocks\Exceptions\BlockNotPublishable;
 use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Models\Block;
@@ -577,7 +578,8 @@ final class BlockTools
     }
 
     /**
-     * Normalise a tree, then keep it as the draft — the one way content is written here.
+     * Normalise a tree, cast its values, then keep it as the draft — the one way content is
+     * written here.
      *
      * @param  list<array<string, mixed>>  $tree
      * @param  array<string, mixed>  $extra
@@ -593,6 +595,12 @@ final class BlockTools
         if ($unknown !== []) {
             throw new ToolFailure('Unknown block type(s): '.implode(', ', array_unique($unknown)).'. blocks_list says which exist.');
         }
+
+        // Every value as the field type its schema names keeps it, which is the same step the
+        // panel's save takes: what an agent writes and what an editor writes have to arrive in
+        // the row as the same thing, or the allowlist a type runs its HTML through is a door
+        // with one side.
+        $tree = $this->container->make(ContentValues::class)->store($tree);
 
         $column = $this->column($entity);
         $asDraft = method_exists($entity, 'saveDraft');

@@ -81,9 +81,19 @@ final class ScreenValues
                 continue;
             }
 
+            // A type that was not registered keeps the value as it came; one that was is asked,
+            // and its answer is taken whole. Never `?? $value`: null is an answer — an emptied
+            // colour, a date cleared, a document with nothing left in it — and a fallback would
+            // put back the very value the type refused.
+            if ($type === null) {
+                $stored[$name] = $value;
+
+                continue;
+            }
+
             $stored[$name] = $localized && is_array($value)
-                ? array_map(static fn (mixed $one): mixed => $type?->store($one, $node) ?? $one, $value)
-                : ($type?->store($value, $node) ?? $value);
+                ? array_map(static fn (mixed $one): mixed => $type->store($one, $node), $value)
+                : $type->store($value, $node);
         }
 
         if ($errors !== []) {
