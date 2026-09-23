@@ -452,6 +452,49 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function the_form_controls_beyond_the_first_nine_are_kept_by_their_types_too(): void
+    {
+        $this->app['config']->set('app.timezone', 'UTC');
+
+        $this->publish('event', '<div data-wx-block="event">{{ $starts }}</div>', [], [
+            'schema' => [
+                ['id' => 'starts', 'type' => 'wx-date-time-picker'],
+                ['id' => 'tags', 'type' => 'wx-tags-input'],
+                ['id' => 'price', 'type' => 'wx-slider', 'props' => ['range' => true]],
+                ['id' => 'days', 'type' => 'wx-checkbox-group', 'props' => ['options' => ['mon', 'tue']]],
+                ['id' => 'section', 'type' => 'wx-cascader'],
+                ['id' => 'title', 'type' => 'wx-heading', 'label' => 'When'],
+            ],
+        ]);
+
+        $page = Page::query()->create(['title' => 'Events', 'slug' => 'events']);
+
+        $this->agent('set_content', [
+            'entity' => 'note',
+            'id' => $page->id,
+            'blocks' => [[
+                'key' => 'k-event',
+                'type' => 'event',
+                'values' => [
+                    'starts' => '2026-09-25T11:06:00+03:00',
+                    'tags' => [' jazz ', ''],
+                    'price' => ['10', '20'],
+                    'days' => [],
+                    'section' => [],
+                ],
+            ]],
+        ], $this->editor())->assertOk();
+
+        $this->assertSame([
+            'starts' => '2026-09-25T08:06:00+00:00',
+            'tags' => ['jazz'],
+            'price' => [10, 20],
+            'days' => null,
+            'section' => null,
+        ], $page->refresh()->draft['blocks'][0]['values']);
+    }
+
+    #[Test]
     public function the_http_door_needs_a_token_and_the_token_needs_the_scope(): void
     {
         $editor = $this->editor();

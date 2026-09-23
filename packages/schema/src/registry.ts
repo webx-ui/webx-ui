@@ -1,21 +1,36 @@
 import {
   WxAlert,
+  WxAutocomplete,
   WxCard,
+  WxCascader,
   WxCheckbox,
+  WxCheckboxGroup,
+  WxCodeEditor,
   WxCol,
   WxColorPicker,
   WxDatePicker,
+  WxDateRangePicker,
+  WxDateTimePicker,
   WxDivider,
+  WxHeading,
+  WxIconPicker,
   WxInput,
   WxInputNumber,
   WxRadioGroup,
+  WxRate,
   WxRow,
+  WxSegmented,
   WxSelect,
+  WxSlider,
   WxSwitch,
   WxTab,
   WxTabs,
+  WxTagsInput,
   WxText,
   WxTextarea,
+  WxTimePicker,
+  WxTransfer,
+  WxTreeSelect,
 } from '@webx-ui/core'
 import ScreenRepeater from './ScreenRepeater.vue'
 import type { NodeKind, TypeEntry, TypeRegistry } from './types'
@@ -48,8 +63,32 @@ export const coreTypes: TypeRegistry = {
   'wx-radio-group': { component: WxRadioGroup, kind: 'field' },
   'wx-date-picker': { component: WxDatePicker, kind: 'field' },
   'wx-color-picker': { component: WxColorPicker, kind: 'field' },
+  'wx-checkbox-group': { component: WxCheckboxGroup, kind: 'field' },
+  'wx-segmented': { component: WxSegmented, kind: 'field' },
+  'wx-slider': { component: WxSlider, kind: 'field' },
+  'wx-rate': { component: WxRate, kind: 'field' },
+  'wx-time-picker': { component: WxTimePicker, kind: 'field' },
+  'wx-date-time-picker': {
+    component: WxDateTimePicker,
+    kind: 'field',
+    // A moment, not a wall clock. Without the offset the server reads the hour in its own
+    // timezone and the browser in the reader's, and one value shows two different times. Bound
+    // over `props` on purpose: the server parses exactly this shape.
+    bind: () => ({ valueFormat: "yyyy-MM-dd'T'HH:mm:ssXXX" }),
+  },
+  'wx-date-range-picker': { component: WxDateRangePicker, kind: 'field' },
+  'wx-tags-input': { component: WxTagsInput, kind: 'field' },
+  'wx-autocomplete': { component: WxAutocomplete, kind: 'field' },
+  'wx-icon-picker': { component: WxIconPicker, kind: 'field' },
+  'wx-cascader': { component: WxCascader, kind: 'field' },
+  'wx-tree-select': { component: WxTreeSelect, kind: 'field' },
+  // Wide: two lists with the buttons between them do not fit in half a form.
+  'wx-transfer': { component: WxTransfer, kind: 'field', wide: true },
+  // Wide for the reason an editor is: code is read in long lines.
+  'wx-code-editor': { component: WxCodeEditor, kind: 'field', wide: true },
   'wx-repeater': { component: ScreenRepeater, kind: 'field', nested: true, wide: true },
 
+  'wx-heading': { component: WxHeading, kind: 'display' },
   'wx-text': { component: WxText, kind: 'display' },
   'wx-alert': { component: WxAlert, kind: 'display', labelProp: 'title' },
 }
