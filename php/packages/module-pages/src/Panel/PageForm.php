@@ -162,6 +162,15 @@ final class PageForm
             unset($stored['slug']);
         }
 
+        // `wx-blocks` is a type the server does not register — a tree of blocks is the
+        // renderer's, not a field type's — so the screen hands its value over whole, and what
+        // is inside it has not been near a field type yet. `module-blocks` takes it from here:
+        // every value in every block as the type its schema names keeps it, the same step the
+        // rest of this screen took a line ago.
+        if (array_key_exists('blocks', $stored)) {
+            $stored['blocks'] = $page->storeBlocks(is_iterable($stored['blocks']) ? $stored['blocks'] : []);
+        }
+
         $draft = [...$this->draftable($this->values($page)), ...$this->draftable($stored)];
 
         $page->saveDraft($draft, $authorId, $source);

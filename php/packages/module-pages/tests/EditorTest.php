@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace WebxUi\Pages\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Versions\EntityVersion;
+use WebxUi\Blocks\Models\Block;
 use WebxUi\Pages\Models\Page;
+use WebxUi\Pages\Tests\Fixtures\ProseType;
 
 /**
  * The editor: the described screen, the values it opens with, the save that goes into the
@@ -88,6 +91,44 @@ final class EditorTest extends TestCase
         /** @var array<string, mixed> $values */
         $values = $response->json('data.values');
         $this->assertCount(1, $values['blocks']);
+    }
+
+    #[Test]
+    public function a_save_keeps_a_block_value_the_way_its_field_type_keeps_it(): void
+    {
+        // `wx-blocks` is the one field on this screen the server does not register, so its
+        // value arrives whole and what is inside it is nobody's until `module-blocks` is
+        // asked. Through the endpoint rather than through the form object: the question is
+        // whether the editor's own save runs this at all.
+        $this->app->make(FieldTypes::class)->register('wx-prose', new ProseType);
+
+        $block = Block::query()->create(['slug' => 'article', 'title' => 'Article']);
+        $block->saveVersion([
+            'template' => '<article data-wx-block="article">{!! $body !!}</article>',
+            'schema' => [['id' => 'body', 'type' => 'wx-prose', 'localized' => true]],
+        ]);
+        $block->publish();
+
+        $page = $this->page('about');
+
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson($this->api($page->getKey()), [
+                'values' => [
+                    'blocks' => [[
+                        'key' => 'k1',
+                        'type' => 'article',
+                        'hidden' => true,
+                        'values' => ['body' => ['en' => '<p>Hello<script>steal()</script></p>']],
+                    ]],
+                ],
+            ])
+            ->assertOk();
+
+        $node = $page->refresh()->draftValues()['blocks'][0];
+
+        $this->assertSame('<p>Hello</p>', $node['values']['body']['en']);
+        $this->assertTrue($node['hidden'], 'the node keeps every key it came with');
+        $this->assertSame('k1', $node['key']);
     }
 
     #[Test]

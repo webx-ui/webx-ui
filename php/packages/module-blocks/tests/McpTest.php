@@ -8,10 +8,12 @@ use Illuminate\Testing\Fluent\AssertableJson;
 use Laravel\Mcp\Server\Testing\TestResponse;
 use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blocks\Content;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Tests\Fixtures\Page;
+use WebxUi\Blocks\Tests\Fixtures\ProseType;
 use WebxUi\Mcp\Registry\ToolRegistry;
 use WebxUi\Mcp\Server\RegistryTool;
 use WebxUi\Mcp\Server\WebxServer;
@@ -389,6 +391,64 @@ final class McpTest extends TestCase
         ], $this->editor())->assertOk();
 
         $this->assertArrayNotHasKey('hidden', $page->refresh()->draft['blocks'][0]);
+    }
+
+    #[Test]
+    public function what_an_agent_writes_is_kept_the_way_the_field_type_keeps_it(): void
+    {
+        // Through the tools rather than against the walk itself: what is at stake is whether
+        // the write path runs it at all, and a node rebuilt on its way through would drop
+        // `hidden` without a word — which is the case the last assertions here are about.
+        $this->app->make(FieldTypes::class)->register('wx-prose', new ProseType);
+
+        $this->publish('article', '<article data-wx-block="article">{!! $body !!}</article>', [], [
+            'schema' => [
+                ['id' => 'lead', 'type' => 'wx-card', 'children' => [
+                    ['id' => 'body', 'type' => 'wx-prose', 'localized' => true],
+                ]],
+                ['id' => 'note', 'type' => 'wx-prose'],
+                ['id' => 'inside', 'type' => 'wx-blocks'],
+            ],
+        ]);
+        $this->publish('quote', '<blockquote data-wx-block="quote">{{ $words }}</blockquote>');
+
+        $page = Page::query()->create(['title' => 'About', 'slug' => 'about']);
+
+        $this->agent('set_content', [
+            'entity' => 'note',
+            'id' => $page->id,
+            'blocks' => [[
+                'key' => 'k-one',
+                'type' => 'article',
+                'hidden' => true,
+                'values' => [
+                    'body' => ['en' => '<p>Hello<script>steal()</script></p>', 'ru' => '<p></p>'],
+                    'note' => '<p>Kept</p>',
+                    'gone' => '<p>A field the schema no longer names<script>steal()</script></p>',
+                    'inside' => [['key' => 'k-two', 'type' => 'quote', 'values' => ['words' => '<b>Said once</b>']]],
+                ],
+            ]],
+        ], $this->editor())->assertOk();
+
+        $values = $page->refresh()->draft['blocks'][0]['values'];
+
+        $this->assertSame('<p>Hello</p>', $values['body']['en'], 'the allowlist runs per language');
+        $this->assertNull($values['body']['ru'], 'a document with nothing left in it is null, not its own empty tags');
+        $this->assertSame('<p>Kept</p>', $values['note']);
+        $this->assertSame(
+            '<p>A field the schema no longer names<script>steal()</script></p>',
+            $values['gone'],
+            'nobody knows what a value the schema does not name means, so nothing is done to it',
+        );
+
+        // The nested tree is the renderer's, not a field type's: `wx-prose` is not asked what
+        // to make of a list of blocks. It is walked as blocks, and the one inside is kept by
+        // its own schema, which says `words` is an input and not prose.
+        $this->assertSame('<b>Said once</b>', $values['inside'][0]['values']['words']);
+        $this->assertSame('k-two', $values['inside'][0]['key']);
+
+        $this->assertTrue($page->draft['blocks'][0]['hidden'], 'the node keeps every key it came with');
+        $this->assertSame('k-one', $page->draft['blocks'][0]['key']);
     }
 
     #[Test]
