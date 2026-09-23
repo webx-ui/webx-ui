@@ -6,6 +6,7 @@ namespace WebxUi\Seo\Http\Controllers;
 
 use Illuminate\Contracts\Container\Container;
 use Symfony\Component\HttpFoundation\Response;
+use WebxUi\Seo\Sitemap\Sitemap;
 use WebxUi\Settings\Settings;
 
 /**
@@ -31,7 +32,7 @@ final class RobotsController
             return new Response('', 404, ['Content-Type' => 'text/plain; charset=UTF-8']);
         }
 
-        return new Response($body."\n", 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
+        return new Response($this->withSitemap($body)."\n", 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
     }
 
     private function body(): ?string
@@ -51,5 +52,23 @@ final class RobotsController
         $body = trim($value);
 
         return $body === '' ? null : $body;
+    }
+
+    /**
+     * The `Sitemap:` line, unless somebody already wrote one (§17.3).
+     *
+     * Added here rather than written into the setting, so that the address follows the site to
+     * another domain and the line goes when the map is turned off. Any `Sitemap:` line counts as
+     * written — one pointing at a map the site keeps elsewhere is a decision, not a gap to fill.
+     */
+    private function withSitemap(string $body): string
+    {
+        $sitemap = $this->container->make(Sitemap::class);
+
+        if (! $sitemap->enabled() || preg_match('/^\s*sitemap\s*:/im', $body) === 1) {
+            return $body;
+        }
+
+        return $body."\n\nSitemap: ".$sitemap->url();
     }
 }

@@ -737,6 +737,24 @@ run_http_checks() {
         || fail "[$phase] webx:routes:check found problems in the registry"
     note "[$phase] webx:routes:check is quiet"
 
+    # module-seo, the sitemap: two routes from a package that have to survive `route:cache`, and
+    # a verdict per address from the resolver — the page above is in, its draft sibling is not.
+    "$PHP_BIN" "$APP/artisan" webx:seo:sitemap --no-interaction > /dev/null \
+        || fail "[$phase] webx:seo:sitemap failed"
+    expect 200 "$(status "$BASE/sitemap.xml")" "[$phase] /sitemap.xml answers"
+
+    page_map="$(curl -s -c "$COOKIES" -b "$COOKIES" "$BASE/sitemap-page.xml")"
+    grep -q "/moved-page-$phase<" <<< "$page_map" \
+        || fail "[$phase] the published page is not in the sitemap"
+    if grep -q "/draft-$phase<" <<< "$page_map"; then
+        fail "[$phase] the draft page is in the sitemap"
+    fi
+    note "[$phase] the sitemap has the page and not the draft"
+
+    curl -s "$BASE/robots.txt" | grep -q '^Sitemap: ' \
+        || fail "[$phase] robots.txt does not name the sitemap"
+    note "[$phase] robots.txt names the sitemap"
+
     # module-blog, the two addresses that are routes rather than registry rows. Nothing in the
     # tests can show that they survive `route:cache`, because Testbench never caches routes —
     # and a feed that only answers before a deploy is the shape this would go wrong in.
