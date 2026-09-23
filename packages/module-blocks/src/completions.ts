@@ -51,7 +51,7 @@ const MEDIA_KEYS = ['url', 'alt', 'title', 'path']
 /** One item of `wx-gallery` or `wx-files`: a file plus what a list of them is printed with. */
 const ITEM_KEYS = [...MEDIA_KEYS, 'thumb', 'name', 'extension', 'mime', 'size', 'width', 'height']
 
-const MEDIA_TYPES = ['wx-media', 'wx-image']
+const MEDIA_TYPES = ['wx-media']
 const LIST_TYPES = ['wx-gallery', 'wx-files']
 
 export function templateCompletions({ schema, styles }: TemplateSources): CompletionSource {
