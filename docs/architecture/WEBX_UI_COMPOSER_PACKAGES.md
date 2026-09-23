@@ -406,4 +406,26 @@ MCP: `inbox_forms_list`, `inbox_form_get`, `inbox_form_save`, `inbox_list`, `inb
 - `webx-ui/settings` — настройки сайта в БД с типизированной схемой
 - `webx-ui/activity-log` — журнал действий администраторов
 - `webx-ui/menu` — конструктор меню сайта (дерево)
-- `webx-ui/taxonomy` — категории и теги как общий сервис для news/products
+- ~~`webx-ui/taxonomy` — категории и теги как общий сервис для news/products~~ — отказались
+  23.09.2026: код категорий общий (в `module-admin`), данные у каждого модуля свои
+  (`WEBX_UI_MODULE_SERVICES.md` §2.3).
+
+---
+
+## Запланированы (23.09.2026)
+
+Модули, которые повторяются в практике и уходят в реестр. Почти все — запись с плоскими
+категориями и полями проекта; общее выносится из работающего модуля, а не пишется впрок
+(`WEBX_UI_MODULE_SERVICES.md` §§2,5). Порядок — порядок работы.
+
+1. `webx-ui/module-services` — услуги: категории, блоки, свой адрес. Спека —
+   [`WEBX_UI_MODULE_SERVICES.md`](WEBX_UI_MODULE_SERVICES.md), перед ним — этап 0 SEO
+   ([`WEBX_UI_MODULE_SEO.md`](WEBX_UI_MODULE_SEO.md) §17) и общие категории.
+2. `webx-ui/module-solutions` — как услуги, категории редко.
+3. `webx-ui/module-faq` — вопросы с категориями, общая страница с фильтром, вставка блоком.
+4. `webx-ui/module-team` — люди: фото, имя, должность, текст, соцсети; категории.
+5. `webx-ui/module-reviews` — отзывы: категории, поля проекта.
+6. `webx-ui/module-events` — события: категории, поля, без блоков.
+7. `webx-ui/module-vacancies` — как события.
+8. `webx-ui/module-banners` — баннеры без расписания; слайдер или картинка, вставка блоком.
+9. `webx-ui/module-tariffs` — как события, последним.
