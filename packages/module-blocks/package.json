@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-blocks",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "The block constructor for the WebX UI admin panel: the section where a block type is made — fields, Blade, CSS, script — and the wx-blocks field that builds a page out of them.",
   "license": "MIT",
   "type": "module",
@@ -48,6 +48,9 @@
     "vue-router": "^4.5.0"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.20.3",
+    "@codemirror/state": "^6.7.4",
+    "@codemirror/view": "^6.43.11",
     "@webx-ui/core": "workspace:^",
     "@webx-ui/module-admin": "workspace:^",
     "@webx-ui/schema": "workspace:^"

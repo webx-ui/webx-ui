@@ -29,6 +29,9 @@ export default defineConfig({
         '@webx-ui/tokens',
         '@webx-ui/module-admin',
         '@webx-ui/schema',
+        // One CodeMirror per page: a second copy of @codemirror/state makes the core editor
+        // refuse these extensions as foreign.
+        /^@codemirror\//,
       ],
     },
   },
