@@ -34,7 +34,7 @@
         "illuminate/support": "^13.0",
         "laravel/prompts": "^0.3.11",
         "symfony/process": "^7.4 || ^8.0",
-        "webx-ui/localization": "^0.33.0"
+        "webx-ui/localization": "^0.34.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
@@ -60,7 +60,7 @@
             "module": "admin",
             "npm": {
                 "@webx-ui/core": "^0.33.0",
-                "@webx-ui/module-admin": "^0.14.4",
+                "@webx-ui/module-admin": "^0.15.0",
                 "@webx-ui/tokens": "^0.4.0",
                 "vue": "^3.5.0",
                 "vue-router": "^4.5.0"

@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-admin",
-  "version": "0.14.4",
+  "version": "0.15.0",
   "description": "The frame a WebX UI admin panel runs in: bootstrap, the shell, the HTTP client and the module registry that pairs with webx-ui/module-admin on the server.",
   "license": "MIT",
   "type": "module",
