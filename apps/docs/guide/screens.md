@@ -1,5 +1,6 @@
 <script setup>
 import ScreensDemo from '../components/demos/ScreensDemo.vue'
+import RichTextFieldDemo from '../components/demos/RichTextFieldDemo.vue'
 </script>
 
 # Screens
@@ -180,9 +181,10 @@ The core types, generated from the registry (a test fails when this table is sta
 
 The panel's own frame comes with `module-admin` and is in every screen it draws:
 
-| Type      | From           | Kind     | What it is                             |
-| --------- | -------------- | -------- | -------------------------------------- |
-| `wx-list` | `module-admin` | `layout` | the frame a section's list is drawn in |
+| Type           | From           | Kind     | What it is                             |
+| -------------- | -------------- | -------- | -------------------------------------- |
+| `wx-list`      | `module-admin` | `layout` | the frame a section's list is drawn in |
+| `wx-rich-text` | `module-admin` | `field`  | a document, kept as HTML               |
 
 `wx-list` is one shape for every list in the panel: the section's name on its own line, the one
 action the section exists for beside it, the views of the list as tabs under that, and a card
@@ -208,6 +210,92 @@ screen. `label` becomes its title; `props` take `views` (`{ value, label, icon? 
 The card has no heading of its own: the tab says which view it is and the line above says which
 section, so a second one would be the same words twice. A heading inside a card is for a group of
 fields on a form, where there are two or more of them on a screen.
+
+`wx-rich-text` is the editor — [`WxRichText`](/components/rich-text) — as a field of a screen.
+The value is an HTML string, it takes `localized`, and everything the node puts in `props`
+(`placeholder`, `minHeight`, `tools`) reaches the editor untouched:
+
+```json
+{
+  "id": "body",
+  "type": "wx-rich-text",
+  "name": "body",
+  "label": "Body",
+  "localized": true,
+  "props": { "minHeight": "320px", "placeholder": "Write the article…" }
+}
+```
+
+<RichTextFieldDemo />
+
+It is `module-admin`'s and not the schema package's for two reasons, and both are things the
+editor does not know about. The first is language: a component of the design system carries
+English defaults and is translated by whoever opens it, so the toolbar's words come from the
+panel's own dictionary (`webx-admin::rich-text.*`). The second is pictures. The image button
+needs a library, the library is `module-media`, and `module-admin` cannot depend on it — the
+dependency runs the other way. So a module offers one:
+
+```ts
+export function media(): AdminModule {
+  return {
+    id: 'media',
+    pickImage: async () => {
+      const file = await openMediaPicker({ accept: 'image' })
+
+      return file ? { url: file.url, path: file.path } : null
+    },
+  }
+}
+```
+
+The panel takes the first module that has one and hands it to every editor on every screen. A
+panel with no file manager hands nothing, and the editor then draws no image button — it does
+not offer what it cannot do.
+
+Note what the picker answers with: the address **and** the library's key. The key is what the
+document keeps.
+
+On the server the value is checked as a string against `props.maxlength`, and stored through an
+allowlist: the tags and attributes the editor can produce survive, and a `<script>`, an
+`onclick` or a `javascript:` address does not. That is not a courtesy to the editor — the same
+field takes a POST that never opened one, and an agent writing through a tool never runs it at
+all. An emptied editor leaves `<p></p>` behind, which is stored as `null`, so "did anybody
+write anything" stays a check rather than a parse.
+
+That happens on every save that goes through the type: a described screen (`ScreenValues`) and,
+since `module-blocks` puts block values through their types as well, a rich text field inside a
+block — whether the editor saved it or an agent wrote it through a tool.
+
+### Pictures move; documents do not
+
+`wx-media` keeps the library key and never the address, so a library that moves to another disk
+does not rewrite a single page. A rich text field holds its pictures _inside_ a value instead of
+being one, and follows the same rule one layer in: the editor writes `data-wx-path` beside every
+picture it took from the library, and the type works the address out again on every read.
+
+That is three problems rather than one, and all three are invisible until they bite:
+
+- the same document is deployed against different storage — a CDN on the developer's machine,
+  the application's own disk in production;
+- a private bucket answers with a **signed** address that expires, so any address written into a
+  column stops working within the hour;
+- editing an image writes over the same key rather than making a new one, so an address saved
+  last week carries a `?v=` stamp for the picture before the crop and a CDN will go on serving
+  it forever.
+
+The library is asked once per document, not once per picture, and a key it no longer knows keeps
+whatever address it had — a file deleted out from under a page shows one broken picture rather
+than refusing to render the page. A picture with no key is somebody else's and is left alone.
+
+The `src` that was stored is kept beside the key as a **cache**, and it is the key that is the
+record. It is kept rather than dropped because the panel reads values raw — it edits what is
+stored, not what a site would print — and a document with no addresses in it would open in the
+editor with a hole where every picture was.
+
+The seam is a contract in `module-admin` that `module-media` binds
+(`WebxUiAdminContractsAssetUrls`), for the same reason as `pickImage`: the panel cannot
+depend on the module that has the files. A site with no file manager has nothing to ask, and the
+document is read exactly as it was written.
 
 A module registers its own the same way — its `types` are merged into every panel screen, as are
 `createAdmin({ types })` — so these are here whenever the module is installed on both halves:

@@ -1,5 +1,411 @@
 # @webx-ui/admin
 
+## 0.14.0
+
+### Minor Changes
+
+- 8e0d587: A link is chosen rather than typed: the contract for what a panel can point at
+
+  The address registry answers "what is this entity's address". Nothing answered "what can I link to
+  at all" — a `RouteType` has a model, a formatter and a handler, and nowhere in it a title to show or
+  a way to search — so every field that wanted a link had to be told by hand. This is that second
+  question, and it lives in the frame rather than in any one section, because the menu is only the
+  first of the fields that will ask it.
+
+  On the server: `LinkSource`, `LinkCandidate` and the `LinkSources` register that content modules fill
+  on boot, the `Link` value every place keeps a link as, and four addresses under `/api/cms/links` —
+  the sections of the picker filtered by the reader's permissions, a search inside one, a resolve of
+  several types in one query per type, and the site's own named addresses for the field where a path
+  is typed. `module-pages` registers pages, `module-blog` registers articles, rubrics and tags.
+
+  `available` is deliberately apart from having an address: the registry holds one for a draft too, so
+  a picker that trusted it would offer a link to a page the site answers 404 for. A draft is offered,
+  drawn dimmed, and left out by whoever renders.
+
+  The anchor is a field of the link rather than part of the address. A typed address can carry one
+  inline; a chosen page has nowhere to write one, because its address is looked up rather than
+  written. So `hash` sits beside the target, is kept without its `#`, and is appended on every read —
+  and an address typed as `/about#team` is taken apart on the way in, so that a link cannot end
+  `#team#top`.
+
+  In the browser: `WxLinkPicker`, `wx-link` on described screens, and `createLinksApi`.
+
+  In `webx-ui/routing`: `SiteUrl`, with the language prefix that used to be private to `HasUrl` — a
+  hand-written `/account` needs the same prefix an entity's address gets, and a second reading of the
+  strategy is a second reading that drifts.
+
+- 8e0d587: The **Menus** section: the menus of a site on the left, the tree of one of them on the right
+
+  `@webx-ui/module-menu` is the panel half of `webx-ui/module-menu`. One screen and no editor under
+  it — a menu is arranged in place and an item is a dialog over the tree it belongs to — with which
+  menu is open kept in the address, so that "the footer" is a link somebody can send.
+
+  Dragging changes both the order and the parent. Every level is its own list and they share a group,
+  so where a row ends up is where it is, rather than a guess about how far sideways it was dropped.
+  Each level reports its own new order and the screen works out which item moved; one drag is one
+  `move`, and a refusal puts the tree back rather than leaving the screen disagreeing with the
+  database.
+
+  An item points at one of three things and says which: an entity chosen from `WxLinkPicker` — the
+  same picker every link field in the panel opens — an address of your own, or nothing at all, which
+  is what a heading is. A draft target is drawn dimmed and marked **Not on the site** rather than
+  hidden, because a menu is built before the pages in it are published.
+
+  The cache is marked under every menu — "built today at 08:10", "not built", "off" — with a reset
+  beside it and one for every menu in the head of the section. It is not "rebuild": the records are
+  forgotten and the next visitor builds them again. It exists because the list of places a menu can
+  change from ends where bulk operations begin, and it is what somebody presses to test the guess
+  that they are looking at something stale, instead of finding out where artisan lives. The mark is
+  read again after the reset, since a button that leaves it saying "built today at 08:10" is a button
+  nobody believes twice.
+
+  On the server: nine addresses under `/api/cms/menus`, including both cache resets, a menu resource
+  carrying `cache: { enabled, built_at }` and an item resource carrying the resolved target, so the
+  screen never goes looking for a name.
+
+  In `@webx-ui/core`, `WxListDetail` now also says whether an open record still stands beside the
+  list (`detail-inline`), the way it already said it about the chooser's column. It is what lets a
+  screen open its first record where there is room for one without raising a panel over a list
+  nobody has touched on a phone — and it is only said once the pane has been measured, since an
+  unmeasured pane answers "inline" to every threshold.
+
+  In `@webx-ui/module-admin`, `LinkUrls` gains `candidates()` and `hrefWith()`: a screen that draws
+  forty links resolves them in one query per kind instead of forty.
+
+### Patch Changes
+
+- Updated dependencies [8e0d587]
+  - @webx-ui/core@0.31.0
+  - @webx-ui/schema@0.3.8
+
+## 0.13.0
+
+### Minor Changes
+
+- cd95a2e: A gzipped dump of the database every night, and one line in the panel saying so
+
+  Insurance, not a restore system. The file lands on the same disk as the database it came from,
+  so it survives a mistake and not a dead server, and there is no restore button anywhere — what
+  it is for is getting yesterday's version of one row, one table or one article back by hand. It
+  exists because backups are an extra on a good many hosts and absent on the rest, and having
+  something is better than having nothing.
+
+  - `webx:db:backup` writes `storage/app/private/backups/<database>-2026-09-21-0310.sql.gz`,
+    gzipped as the dump comes out, so no uncompressed copy of the database ever touches the disk.
+    `mysqldump` for MySQL and MariaDB, `pg_dump` for PostgreSQL, a copy of the file for SQLite.
+  - Rotation runs **after** a dump has succeeded and never touches the newest file. Clearing out
+    last week without having written tonight is the one thing a backup command must not do, and
+    it is exactly what happens if the two steps are written the other way round. A failure exits
+    non-zero, logs why, deletes its own half-written file and leaves everything else alone.
+  - Structure for every table, rows for the ones worth keeping: `cache`, `sessions`, `jobs` and
+    the rest of `skip_data` are dumped with `--no-data`, which on most sites is most of the file.
+    The tables that keep their rows are dumped structure-and-data together, so pulling one table
+    out of the finished file is a single contiguous range — the guide has the one-liner.
+  - The password never appears in an argument, where `ps` would show it to anybody with a shell:
+    MySQL gets a 0600 defaults file and PostgreSQL a 0600 `.pgpass`, both removed in a `finally`.
+    `--single-transaction --quick` so the nightly dump does not lock the site, `--no-tablespaces`
+    so it runs as a shared-hosting user, `utf8mb4` so the translated JSON columns survive.
+  - `module-admin` puts the task on the scheduler itself, at `webx-admin.backup.at`. What it
+    cannot do is run the scheduler: the site still needs a system cron on `schedule:run`, and the
+    line in the panel is what notices when there is not one.
+  - That line is at the foot of the settings screen, for whoever has `settings.view`: "Last
+    database snapshot: today at 03:10 · 4.2 MB", and the same line as a warning when the newest
+    file is more than two days old or there is none. Nothing is recorded in the database — the
+    line is the newest file in the directory, and a task that failed is the file that is not
+    there. `WxBackupNote`, fed from a new `backup` key in the manifest.
+
+- b1aeb52: Light, dark or the machine's — chosen in the account menu, stored against the person
+
+  The tokens have carried both themes since the beginning, and nothing in the panel ever wrote
+  `data-theme`: the only way to see the dark one was to set the whole machine to it. Now there is a
+  control, and the choice belongs to the person rather than to the browser — somebody who works
+  dark at night on a laptop finds the panel dark in the morning at a desk.
+
+  Three states rather than two. A toggle can say light and dark; it cannot say _I have not
+  decided_, which is the state almost everybody is in, because their machine has already decided
+  for them. `system` is a real answer and the one the switch starts on, and it goes on following
+  the machine afterwards — the panel darkens at sunset along with everything else on the desk.
+
+  - `WxThemeSwitch` — the control, in the core: three cells, a thumb that slides between them and a
+    picture that arrives rather than appears. It is a radio group, the arrow keys move within it,
+    and both animations stop under `prefers-reduced-motion`. Like everything in the core it ships
+    English and knows nothing about a dictionary, so its three words are props.
+  - `applyTheme()` now takes `system`, which removes the attribute rather than writing a third
+    value — the stylesheet already follows `prefers-color-scheme` for anything not pinned to light.
+    `systemTheme()` and `watchSystemTheme()` are there for whatever has to _know_ rather than be
+    painted. New `--wx-easing-emphasized`, a curve with a little overshoot in it.
+  - The theme contract now works both ways round. The tokens have always had a `data-theme="dark"`
+    block and never a light one, so a light island inside a dark page — a preview, a printed
+    sheet — inherited the dark values and quietly stayed dark, while the guide claimed a page could
+    mix the two. There is a `[data-theme='light']` block now, and it can.
+  - `createAdmin()` builds the theme before it mounts, so the sign-in screen is already the colour
+    this browser was left in, and `useTheme()` hands it to anybody who asks. The administrator's own
+    record replaces the browser's guess the moment the session says who they are.
+  - `PUT /api/cms/auth/theme` and a `theme` column on `cms_users`, beside the language and for the
+    same reasons. `null` means follow the machine — a choice, and one that has to travel between
+    machines like any other.
+  - The Blade shell paints before its bundle runs: three lines that read the browser's copy, so a
+    dark panel never starts white.
+
+### Patch Changes
+
+- f623fac: A person connects their own agent with an address and three clicks
+
+  The MCP server used to open only for a token printed from the console, which is fine for whoever
+  can already run artisan on the server and no use at all for a designer or a client. Now the
+  address alone is enough — `https://example.com/api/cms/mcp`, nothing secret in it — and the
+  client finds its own way from there: it reads the 401, discovers the authorization server,
+  registers itself, sends the person to the panel to sign in and agree, and leaves with a token of
+  theirs. The agent acts as that administrator, so authorship, roles and `is_active` already mean
+  what they should.
+
+  - **Passport replaces Sanctum.** Two `HasApiTokens` traits cannot share a model, and Passport is
+    the one that can register a client it has never met. `webx-ui/module-auth` carries it, because
+    `CmsUser` is what an agent acts as and Passport's user provider accepts only a model that
+    implements its `OAuthenticatable`. A site switches it on once, with
+    `vendor:publish --tag=passport-migrations`, `migrate` and `passport:keys`; without the keys the
+    guard cannot be built and a call with no token answers 500 instead of 401.
+  - **The `api` guard** — Passport's driver over the panel's own people — is registered for you
+    unless the application has defined one under that name, and `webx.mcp-auth` asks it.
+  - **Two doors that ship open are closed.** `config('mcp.redirect_domains')` is `['*']` by default,
+    which lets anybody register a client called "Site panel" that takes the code to their own
+    server; the list is now Claude, ChatGPT and localhost, and the consent page always shows the
+    address a person is about to be sent back to, not only the name the client chose for itself.
+    Client registration is rate limited, because nobody has signed in when it happens.
+  - **A token granted this way carries one scope for the whole server**, `mcp:use`, because that is
+    the only one a client is ever offered. Read module scope by module scope it would be refused
+    everything, so it passes the scope gate whole; what limits it is the administrator's own
+    permissions. A key that names module scopes is still read scope by scope.
+  - **The panel fetches its CSRF cookie from its own route**, `{api_path}/auth/csrf-cookie`, rather
+    than Sanctum's — which left with the package. `createHttp` defaults to it.
+  - `webx:mcp:token` is gone with Sanctum. Keys for machines, which have no browser to send anybody
+    to, come back later as their own thing.
+
+- Updated dependencies [b1aeb52]
+  - @webx-ui/tokens@0.4.0
+  - @webx-ui/core@0.30.0
+  - @webx-ui/schema@0.3.7
+
+## 0.12.2
+
+### Patch Changes
+
+- Updated dependencies [0a506df]
+  - @webx-ui/core@0.29.0
+  - @webx-ui/schema@0.3.6
+
+## 0.12.1
+
+### Patch Changes
+
+- cca572f: A dialog no longer steps the page sideways
+
+  The shell resets the browser's margin on `<body>`, but it did so off `#webx-app` — the mount
+  point the Blade shell renders — so a panel mounted anywhere else kept the eight pixels. What
+  that cost was not the gap around the frame. Every dialog locks the page, and the lock zeroes
+  `margin-right` and pays the scrollbar back as padding, so a body that had a margin got that
+  margin's width back as content: the whole panel widened when a dialog opened and snapped back
+  when it closed.
+
+  The reset now hangs off `data-wx-shell`, the attribute the shell already writes on the document
+  root, so it holds wherever the panel is mounted.
+
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+  - @webx-ui/core@0.28.0
+  - @webx-ui/schema@0.3.5
+
+## 0.12.0
+
+### Minor Changes
+
+- 537df98: `WxSaveState`: the save says so with a mark, and then stops saying it
+
+  The bar of the page and article editors carried the word "Saved". It is right nearly all of the
+  time, which is what makes it furniture: it is on screen when nothing is happening, and nothing is
+  happening is exactly when nobody is asking. What anyone wants to know is whether _this_ save
+  landed, and only until it has.
+
+  So the word is a mark now: a wheel while the save is in flight, a green tick when it lands, and
+  nothing two seconds later. Nothing for unsaved work either — the head already carries a badge
+  beside the name, and the enabled save button is the plainest statement that there is something to
+  save. The element keeps its place while it is empty, or the buttons beside it would shift by its
+  width twice per save.
+
+  The words stay for whoever is not looking at the bar: the mark is a live region carrying "Saving…"
+  and then "Saved", which is what a screen reader hears. Its own `state-saved` and `state-saving`
+  lines are gone from both modules, along with the `state-unsaved` that nothing says any more.
+
+### Patch Changes
+
+- Updated dependencies [537df98]
+  - @webx-ui/core@0.27.0
+  - @webx-ui/schema@0.3.4
+
+## 0.11.0
+
+### Minor Changes
+
+- a9383bb: Date pickers are drawn in the language they are asked for
+
+  `@vuepic/vue-datepicker` bundles `en-US` and nothing else, so every calendar in the kit headed a
+  Russian screen with "Sep 2026" over a "Mo Tu We" row. `WxDatePicker`, `WxDateTimePicker`,
+  `WxTimePicker` and `WxDateRangePicker` now take a `locale` prop — a BCP-47 tag, whose month and
+  weekday names come from the browser's own `Intl` data rather than an imported language pack — and
+  `provideDateLocale` / `dateLocaleKey` say it once for a whole application. The library's own
+  date-fns locale object is still accepted. With nothing given, the browser's language is used.
+
+  The panel hands every picker below it the language the interface is drawn in, so a calendar follows
+  the administrator's choice rather than their browser's setting.
+
+- 48dfd9e: One head for every screen of the panel
+
+  Eight screens each answered "what goes at the top" on their own, and gave eight answers: the
+  heading at three sizes, the way out as an arrow on four of them and as a line of breadcrumbs on the
+  rest, the buttons folding into a `···` on two editors and wrapping onto a third line everywhere
+  else. Writing a new screen meant writing that line again and getting it slightly different again.
+
+  `WxScreenHead` is that line, once: the way out, the name with the state said beside it, the line
+  under it that says which record this is, and what can be done here. `WxListScreen` is built on it,
+  so a list and the editor a row opens are the same object rather than two similar ones — and it
+  takes `back` now, which is what the statuses screen used to draw above its own heading for want of
+  anywhere to put it.
+
+  **The actions are declared rather than drawn.** The same action has to be a button on a desktop and
+  a line of a menu on a phone, and one vnode cannot be mounted in two places — as markup it had to be
+  written twice, which is exactly what the page and article editors did. As `ScreenAction[]` it is
+  written once: `primary` is the one thing the screen exists for and the one that keeps a button when
+  the head runs out of room, `danger` is never a button at all, `menu` is in the `···` at every
+  width, and `loading`, `disabled` and `href` mean what they say. Below 720px — 480 on a list, which
+  carries one word and no trail — everything but the primary folds behind the `···` and that primary
+  takes the line under the name, full width.
+
+  The name’s line is the head: the way out at the start of it and the actions at the end, both
+  centred on it however many badges stand beside the name. The trail is the line above, and it
+  scrolls sideways with no scrollbar showing rather than wrapping — on a phone a path four levels
+  deep was two lines of the smallest type on the screen, standing between the reader and the name of
+  what they had opened.
+
+  Two things that were quietly wrong come out with it. Nineteen buttons across the panel passed
+  `icon="plus"` to `WxButton`, which has no such prop: the attribute landed on the `<button>` and
+  drew nothing, so the panel’s main actions had no icons at all. And the `···` said `More` in English
+  in every language, because the core carries English defaults and knows no dictionary — the panel
+  gives it the word now, in all ten.
+
+### Patch Changes
+
+- Updated dependencies [a9383bb]
+- Updated dependencies [b6a09a6]
+  - @webx-ui/core@0.26.0
+  - @webx-ui/schema@0.3.3
+
+## 0.10.0
+
+### Minor Changes
+
+- 937f4e2: The blog gets a picture of its own, and so can every other navigation group
+
+  Two separate things made the sidebar say the wrong thing about the blog.
+
+  **A group could not carry an icon at all.** `AdminNav` drew `icon="gear"` on every branch, so
+  "Blog" and "System" looked like the same kind of thing — one is what the site is about, the other
+  is what keeps the panel running. A group now names its own picture: `'icon' => 'newspaper'` beside
+  the title in `webx-admin.groups`, through the manifest, into `NavGroup`. The key is optional and
+  falls back to the gear, so a site that published `webx-admin.php` before this — or a group written
+  by a module that has not been updated — looks exactly as it looked.
+
+  **`ArticlesModule` named `file-text`, which was not an icon.** The set has `file-txt`, `file-md`
+  and the rest of the file family, but nothing under that name, so `resolveIcon` came back empty and
+  `WxIcon` rendered no `<svg>` at all: no warning, no placeholder, just a menu line whose label had
+  slid left into the room the picture was meant to occupy. Both halves type-check a name neither of
+  them can check, so the seam is now tested — every `icon()` and every `'icon' =>` in the PHP
+  packages is looked up in the set.
+
+  New in `@webx-ui/core`: `file-text`, the page with three lines of prose that the file family
+  already drew, under the name a section full of writing asks for; and `newspaper`, a folded sheet
+  with the one behind it curling out at the bottom left — the fold is the only thing that tells a
+  paper from a document at 16 px.
+
+- 852883d: `rowMenuWidth` says how wide a column holding a `···` has to be, and every list reads it. The menu
+  is a finger target — 44px under `(pointer: coarse)` — and the cell keeps 16 on either side of it,
+  so the 56 the sections declared was never enough: the button painted outside its column, which
+  nothing said out loud until cells began to clip what does not fit.
+
+  On the tags screen the selection bar keeps the one button it exists for and puts the other three
+  behind the same `···` a row has. The × that cleared the selection is gone: a button whose whole
+  job is to undo something harmless, standing beside a red "Delete", read as a way to close the bar.
+
+- 852883d: `WxDate` has a column form. `compact` shows the time alone for today — it is the only row in the
+  column wearing a clock, so it reads as today without spending a word on saying so — a short month
+  for the rest of this year, and digits once the year has to be said. What it leaves out is in the
+  tip, which is where "when exactly" was always answered.
+
+  The lists use it, and their date columns went from 185px to 120: the full line is the reason the
+  column had to be that wide in Russian and wider in German. The article covers take the smallest
+  radius in the scale with it, the one `WxEntityCard` gives its own thumbnail — 12 on a box 32px
+  tall reads as a pill.
+
+- 852883d: The panel's lists take their filters behind the funnel and draw their narrow rows as entities.
+
+  `WxFilterChips` and `AppliedFilter` in `module-admin` give every section the same chip, and the
+  panel's own two words — the name of the funnel and "reset all" — live with it in all ten
+  languages. Articles, the SEO rules and the administrators put their dropdowns in `#filters` and
+  what they are set to in `#applied`; submissions, administrators and articles draw a card below
+  their breakpoint as `WxEntityCard` rather than as a stack of labelled lines, with the `···` in
+  the card's own top strip beside the checkbox.
+
+  `WxEntityCard` gained `titleLines`, because an article's headline is a sentence: one line of it
+  on a phone is half a thought, and the list it replaced already clamped at two.
+
+### Patch Changes
+
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [937f4e2]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+  - @webx-ui/core@0.25.0
+  - @webx-ui/schema@0.3.2
+
+## 0.9.0
+
+### Minor Changes
+
+- f87e4ec: `wx-rich-text`: the editor as a field of a screen
+
+  A node type on both halves. On the server it is checked against `props.maxlength`, stored
+  through an allowlist — a `<script>`, an `onclick` or a `javascript:` address does not survive —
+  and an emptied editor is stored as `null` rather than as `<p></p>`. `localized` needs nothing of
+  its own: the language map is picked apart one layer up, so a translated article is the same type
+  run once per language.
+
+  Pictures come from the file manager. `AdminModule` gains `pickImage`, which `module-media`
+  supplies and the panel hands to every editor on every screen; a panel without a file manager
+  draws no image button, because the editor does not offer what it cannot do.
+
+  What a document keeps for a picture is the library's **key**, as `data-wx-path`, and the address
+  is worked out again on every read through `WebxUi\Admin\Contracts\AssetUrls`. The same rule
+  `wx-media` has always followed, one layer in: the address differs between deployments of one
+  site, a private bucket's address expires, and an image edited in place changes the version stamp
+  without changing the key.
+
+  `WxRichText` itself gains `localized` — one editor with a language chip, as `WxInput` and
+  `WxTextarea` have — and `labels`, so the panel can put its own words on the toolbar.
+
+  `HasDraft::publish()` takes an optional `?CarbonInterface $at`: the date an entity is published
+  under is not always now, and it cannot travel through the draft.
+
+### Patch Changes
+
+- Updated dependencies [f87e4ec]
+- Updated dependencies [f87e4ec]
+  - @webx-ui/core@0.24.0
+  - @webx-ui/schema@0.3.1
+
 ## 0.8.0
 
 ### Minor Changes

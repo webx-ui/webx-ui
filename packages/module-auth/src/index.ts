@@ -85,6 +85,16 @@ export function auth(options: AuthOptions = {}): AdminPlugin {
           if (status === 'ready' && current.path === path) {
             const next = current.query.next
 
+            // A whole address rather than a path is a page outside the panel that sent the
+            // person here to sign in — the consent screen an agent opens — and it is a page
+            // to load, not a route to resolve. Only on this site: an address elsewhere would
+            // make the sign-in form a way to send people anywhere.
+            if (typeof next === 'string' && isPageOnThisSite(next)) {
+              location.assign(next)
+
+              return
+            }
+
             void admin.router.replace(typeof next === 'string' ? next : '/')
           }
         },
@@ -93,12 +103,44 @@ export function auth(options: AuthOptions = {}): AdminPlugin {
   }
 }
 
-export { admins, type AdminsOptions } from './module'
+/** An absolute address on the same origin as the panel — the only kind worth following whole. */
+function isPageOnThisSite(next: string): boolean {
+  if (!/^https?:\/\//i.test(next)) {
+    return false
+  }
+
+  try {
+    return new URL(next).origin === location.origin
+  } catch {
+    return false
+  }
+}
+
+export { admins, connect, type AdminsOptions, type AdminsView, type ConnectOptions } from './module'
 export { createAdminsApi, type AdminsApi } from './admins'
+export { createConnectionsApi, type ConnectionsApi } from './connections'
 export { selectAdmin, selectAdmins, type AdminPickerOptions } from './selectAdmin'
 export { default as WxAdminsPage } from './AdminsPage.vue'
 export { default as WxAdminList } from './AdminList.vue'
-export type { Admin, AdminInput, AdminPage, AdminQuery, AdminRole, Role } from './types'
+export { default as WxAgentCallList } from './CallList.vue'
+export { default as WxConnectionList } from './ConnectionList.vue'
+export { default as WxConnectPage } from './ConnectPage.vue'
+export type {
+  Admin,
+  AdminInput,
+  AdminPage,
+  AdminQuery,
+  AdminRole,
+  AgentCall,
+  AgentCallFilters,
+  AgentCallOutcome,
+  AgentCallPage,
+  AgentCallQuery,
+  Connection,
+  ConnectionScope,
+  Connections,
+  Role,
+} from './types'
 export {
   createAuthSession,
   provideAuth,

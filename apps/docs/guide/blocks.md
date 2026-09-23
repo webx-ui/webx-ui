@@ -311,20 +311,29 @@ fails is left as a draft and the command says so with its exit code. Keep the ex
 repository as a seed for a fresh install and as the thing that gets reviewed; moving types from a
 local site to a production one becomes two commands.
 
+The two drift apart quietly, so export on the day you edit. A type changed in the panel and not
+written back leaves the file describing the release before: the site is fine, because the site
+reads the database — what breaks is the next fresh install, the next deploy that seeds from the
+files, and the test run that builds a page out of them. That is a failure somewhere else
+entirely, one release later, and it reads like a broken package rather than a stale file.
+
 ## For an agent: MCP
 
 The section is also a set of tools. With `webx-ui/mcp` installed (it comes with the blocks
 module), the panel serves one MCP server at `/api/cms/mcp`:
 
+Passport comes with the panel, and a site switches it on once:
+
 ```bash
-php artisan vendor:publish --tag=sanctum-migrations && php artisan migrate   # once per site
-php artisan webx:mcp:token admin@example.com --name=claude
+php artisan vendor:publish --tag=passport-migrations && php artisan migrate
+php artisan passport:keys
 ```
 
-That prints a token of the administrator, once, and the line that connects Claude Code to it. The
-agent then acts as that administrator, within the token's scopes: `blocks:read` for the tools
-that look, `blocks:write` for the ones that change. On the machine the site runs on,
-`php artisan mcp:start webx` is the same server over stdio, trusted the way tinker is.
+Somebody then connects their own agent to it: they paste that address into Claude, ChatGPT or
+`claude mcp add --transport http webx <address>`, the client sends them to the panel to sign in
+and agree, and it leaves with a token of theirs. The agent acts as that administrator. On the
+machine the site runs on, `php artisan mcp:start webx` is the same server over stdio, trusted the
+way tinker is.
 
 | Tool                  | What it does                                                                             |
 | --------------------- | ---------------------------------------------------------------------------------------- |

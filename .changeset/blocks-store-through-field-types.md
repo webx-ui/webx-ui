@@ -18,7 +18,3 @@ schema does not name, a value of a type nobody registered, and a nested tree of 
 walked as blocks rather than handed to a field type. The node itself is merged rather than rebuilt,
 so `key`, `hidden` and whatever structural key comes next survive a save. The schema walk both
 directions share is now one class, `Blocks\Schema`.
-
-`ScreenValues::validate()` loses its `?? $value` fallback in the same pass: `null` is an answer a
-type is allowed to give — an emptied colour, a date cleared — and the fallback put back the very
-value the type had just refused.

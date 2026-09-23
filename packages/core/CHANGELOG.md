@@ -1,5 +1,420 @@
 # @webx-ui/core
 
+## 0.31.0
+
+### Minor Changes
+
+- 8e0d587: The **Menus** section: the menus of a site on the left, the tree of one of them on the right
+
+  `@webx-ui/module-menu` is the panel half of `webx-ui/module-menu`. One screen and no editor under
+  it — a menu is arranged in place and an item is a dialog over the tree it belongs to — with which
+  menu is open kept in the address, so that "the footer" is a link somebody can send.
+
+  Dragging changes both the order and the parent. Every level is its own list and they share a group,
+  so where a row ends up is where it is, rather than a guess about how far sideways it was dropped.
+  Each level reports its own new order and the screen works out which item moved; one drag is one
+  `move`, and a refusal puts the tree back rather than leaving the screen disagreeing with the
+  database.
+
+  An item points at one of three things and says which: an entity chosen from `WxLinkPicker` — the
+  same picker every link field in the panel opens — an address of your own, or nothing at all, which
+  is what a heading is. A draft target is drawn dimmed and marked **Not on the site** rather than
+  hidden, because a menu is built before the pages in it are published.
+
+  The cache is marked under every menu — "built today at 08:10", "not built", "off" — with a reset
+  beside it and one for every menu in the head of the section. It is not "rebuild": the records are
+  forgotten and the next visitor builds them again. It exists because the list of places a menu can
+  change from ends where bulk operations begin, and it is what somebody presses to test the guess
+  that they are looking at something stale, instead of finding out where artisan lives. The mark is
+  read again after the reset, since a button that leaves it saying "built today at 08:10" is a button
+  nobody believes twice.
+
+  On the server: nine addresses under `/api/cms/menus`, including both cache resets, a menu resource
+  carrying `cache: { enabled, built_at }` and an item resource carrying the resolved target, so the
+  screen never goes looking for a name.
+
+  In `@webx-ui/core`, `WxListDetail` now also says whether an open record still stands beside the
+  list (`detail-inline`), the way it already said it about the chooser's column. It is what lets a
+  screen open its first record where there is room for one without raising a panel over a list
+  nobody has touched on a phone — and it is only said once the pane has been measured, since an
+  unmeasured pane answers "inline" to every threshold.
+
+  In `@webx-ui/module-admin`, `LinkUrls` gains `candidates()` and `hrefWith()`: a screen that draws
+  forty links resolves them in one query per kind instead of forty.
+
+## 0.30.1
+
+### Patch Changes
+
+- 22763a0: A lazy tree keeps its open branches when the level around them is fetched again. Deleting a
+  page used to empty every branch that was open beside it and leave the chevron toggling
+  nothing until the page was reloaded: the fetched children were recorded by key, and the key
+  came back the same on rows that were new objects. They are recorded against the node itself
+  now, and a branch that is open with nothing under it asks for its children once.
+
+## 0.30.0
+
+### Minor Changes
+
+- b1aeb52: Light, dark or the machine's — chosen in the account menu, stored against the person
+
+  The tokens have carried both themes since the beginning, and nothing in the panel ever wrote
+  `data-theme`: the only way to see the dark one was to set the whole machine to it. Now there is a
+  control, and the choice belongs to the person rather than to the browser — somebody who works
+  dark at night on a laptop finds the panel dark in the morning at a desk.
+
+  Three states rather than two. A toggle can say light and dark; it cannot say _I have not
+  decided_, which is the state almost everybody is in, because their machine has already decided
+  for them. `system` is a real answer and the one the switch starts on, and it goes on following
+  the machine afterwards — the panel darkens at sunset along with everything else on the desk.
+
+  - `WxThemeSwitch` — the control, in the core: three cells, a thumb that slides between them and a
+    picture that arrives rather than appears. It is a radio group, the arrow keys move within it,
+    and both animations stop under `prefers-reduced-motion`. Like everything in the core it ships
+    English and knows nothing about a dictionary, so its three words are props.
+  - `applyTheme()` now takes `system`, which removes the attribute rather than writing a third
+    value — the stylesheet already follows `prefers-color-scheme` for anything not pinned to light.
+    `systemTheme()` and `watchSystemTheme()` are there for whatever has to _know_ rather than be
+    painted. New `--wx-easing-emphasized`, a curve with a little overshoot in it.
+  - The theme contract now works both ways round. The tokens have always had a `data-theme="dark"`
+    block and never a light one, so a light island inside a dark page — a preview, a printed
+    sheet — inherited the dark values and quietly stayed dark, while the guide claimed a page could
+    mix the two. There is a `[data-theme='light']` block now, and it can.
+  - `createAdmin()` builds the theme before it mounts, so the sign-in screen is already the colour
+    this browser was left in, and `useTheme()` hands it to anybody who asks. The administrator's own
+    record replaces the browser's guess the moment the session says who they are.
+  - `PUT /api/cms/auth/theme` and a `theme` column on `cms_users`, beside the language and for the
+    same reasons. `null` means follow the machine — a choice, and one that has to travel between
+    machines like any other.
+  - The Blade shell paints before its bundle runs: three lines that read the browser's copy, so a
+    dark panel never starts white.
+
+### Patch Changes
+
+- Updated dependencies [b1aeb52]
+  - @webx-ui/tokens@0.4.0
+
+## 0.29.0
+
+### Minor Changes
+
+- 0a506df: `WxIconPicker`: the icon set, picked from rather than typed into
+
+  Anywhere an editor names an icon — a block type, a section of a menu — the name went into a text
+  box, and a name the set does not have draws nothing at all. No warning, no placeholder: the label
+  beside it quietly moves to where the picture should have been, and the interface says nothing.
+  That is how `file-text` sat in a menu for a month where the set has `file-txt`.
+
+  The field shows the icon it holds and opens the whole set beneath it, four across and scrolled to
+  the one already chosen. The box is the search: typing filters, clicking picks, and the value only
+  ever becomes a name the set has — typing one in full and pressing Enter counts as picking it,
+  since by then it is the only match left. `iconNames()` is the list, so icons a site registered
+  itself are offered too.
+
+  A name that arrives from somewhere else — an import, a field that used to be a text box — is
+  marked rather than shown as the same emptiness as "nothing chosen": a warning glyph and a
+  tooltip that says the set does not have it.
+
+  The set gained the two icons this found missing: `map-pin` and `megaphone`. A CMS icon set
+  without a pin is one a contacts page cannot use, and every site has the block that asks for
+  something.
+
+  See [IconPicker](/components/icon-picker).
+
+## 0.28.0
+
+### Minor Changes
+
+- cca572f: The inbox opens on the submissions, and the forms are the chooser
+
+  Somebody opens "Inbox" to see what has come in. What the section showed them was a column of
+  three form names, and on a phone that column was the whole screen: the submissions were a
+  record opened beside it, so they lived in the drawer and the reader had to pick a form before
+  seeing anything at all.
+
+  The two swap places. The forms are the `filters` column of `WxListDetail` — the thing that
+  narrows the list — and the submissions are the list. Nothing moves on a wide screen: the
+  forms are still 270px down the left. On a narrow one it is the forms that fold, into a panel
+  raised by a **Forms** button in the head of the submissions, and the list is the screen. One
+  form is always open — the first, unless the address names another — which also covers an
+  address naming a form that has since been deleted.
+
+  `WxListDetail` grew the case that makes this possible: with no `detail` slot, the list is the
+  main pane rather than a fixed column with an empty pane beside it, and the only threshold left
+  is the chooser's, `filtersWidth + detailMin`. It is the shape for a list whose records open on
+  a route of their own — which is what a submission does, and what a file in a library does.
+
+  Gone from the head of the submissions: **Settings**. It is an action on the form, and the
+  form's own `···` in the list of forms already offers it beside Duplicate and Delete — a second
+  door on the same strip, one word away from the list it was not about. `panel.choose-form` goes
+  with it on both halves: there is no longer a moment with no form chosen.
+
+  The button in the head is now **New submission**. The section is opened to read what came in
+  dozens of times for every once a form is added, and what stood there in blue was the form: a
+  new form is the `+` over the list of forms, beside the things it makes one more of, and in the
+  drawer — where an icon alone under the drawer's heading reads as a stray mark — it is a button
+  with the word on it. The dialog stays with the list of submissions and is exposed to the head,
+  because what is written has to land in that list, in the filter that is on, and be counted in
+  its tabs. On a narrow screen **Forms** joins it up there, so the two ways out of the list stand
+  together instead of one being in the head of the section and the other in the head of the pane.
+  `panel.new-submission` reads "New submission" rather than "Add by hand" on all ten dictionaries;
+  the dialog it opens still says which case it is for.
+
+  `WxListDetail` says `filters-inline` whenever the chooser's column appears or folds, and once at
+  the start. The `list` slot has always been handed that as a slot prop, but a head that stands
+  outside the pane — above the card, where a screen's actions live — cannot read one.
+
+  One inset, kept by the pane. The name of the form, the tabs, the search box and the rows now
+  all begin on the same line down the left: the table added a step of its own inside the pane's,
+  which is exactly what `flush` says it should not, and on a phone that put the head at 17 and
+  the list at 33 — two panels stacked rather than one screen. The change is a rule removed from
+  this screen, so no other list in the panel moves.
+
+  What scrolls is now the page. The section used to be as tall as the window with the rows
+  scrolling inside a box of their own: a bar down the middle of the screen, and a wheel that
+  meant one thing over the rows and another an inch to the left. Every other list in the panel
+  scrolls as a page, and this one does too — the card is as tall as what is in it.
+
+  A switched-off form is said by its name, struck through and grey, instead of by a badge
+  beside it. The badge did not shrink, so in a 270px column already holding a name, a count and
+  a `···` it ran under the menu — measured at 396px against a row ending at 346 — and it said in
+  a word what the type says at a glance. The strike is on the name only: the count beside it is
+  still true.
+
+  Fixed on the way: between 640 and about 672 pixels the pane and the table measured the same
+  threshold a step apart — the pane's own padding stood between them — and the table drew cards
+  out of the full set of columns, five lines of "Label: value" for one enquiry. The pane decides
+  now and the table is told, so a tablet holds fourteen rows where it held three cards.
+
+### Patch Changes
+
+- cca572f: A badge's cross is easier to hit than it is to see
+
+  `WxBadge`'s close button is as big as the words it stands beside — twelve pixels, which is
+  right for what is drawn and small for what is pressed. It now reaches four pixels further on
+  every side, so the target is twenty while the cross stays twelve. Four and not more, because
+  badges sit six apart and a longer reach would take its neighbour's.
+
+- cca572f: A filterable `WxSelect` no longer takes the focus off whoever was reading
+
+  Reka's `autoFocus` on the filter box fires once, on mount. Inside an open list that is the
+  right moment; on a form it is not, because there the filter _is_ the field — so nothing anybody
+  had just opened was ever focused, and instead the focus went to whichever select was drawn
+  last. A tab holding four of them scrolled itself to the bottom the moment it appeared, and the
+  caret ended up in a field nobody had clicked.
+
+  The caret now goes into the filter when the field is opened, which is what the flag was there
+  for: clicking the box or its arrow puts it where the typing goes, and drawing the field puts it
+  nowhere.
+
+## 0.27.0
+
+### Minor Changes
+
+- 537df98: Five icons for the shape of a screen, and a state box that fits what it holds
+
+  `WxActionBar` asked its state 220px wide whatever was in it, which is right for a sentence and
+  wrong for everything else: a state that is one small mark took a line of its own on a phone and
+  left an empty strip above the buttons, because 220 plus two buttons does not fit 375. The basis
+  is the content now, and `min-width: min-content` is what keeps a sentence from being crushed —
+  it wraps onto its own line instead of overflowing the buttons, which is what the `0` it replaces
+  used to let it do. Measured on a 375px screen: the bar 60px tall with a mark in it, 106 with the
+  old long line, and the line above the buttons rather than across them.
+
+  `monitor`, `tablet`, `smartphone`, `maximize` and `minimize`. The set had nothing for any of them —
+  `phone` is a telephone handset, and there was no way at all to draw "full screen" — so the width
+  switcher of the blocks preview had to spell out three device names in a bar with no room for them.
+
+  The tablet and the phone are told apart by their proportions and not by any detail, because at one
+  em a detail is a smudge: 13 wide against 8, which is a difference that survives the size. The two
+  corner icons are the usual four brackets, pointing out of the picture and back into it.
+
+## 0.26.0
+
+### Minor Changes
+
+- a9383bb: Date pickers are drawn in the language they are asked for
+
+  `@vuepic/vue-datepicker` bundles `en-US` and nothing else, so every calendar in the kit headed a
+  Russian screen with "Sep 2026" over a "Mo Tu We" row. `WxDatePicker`, `WxDateTimePicker`,
+  `WxTimePicker` and `WxDateRangePicker` now take a `locale` prop — a BCP-47 tag, whose month and
+  weekday names come from the browser's own `Intl` data rather than an imported language pack — and
+  `provideDateLocale` / `dateLocaleKey` say it once for a whole application. The library's own
+  date-fns locale object is still accepted. With nothing given, the browser's language is used.
+
+  The panel hands every picker below it the language the interface is drawn in, so a calendar follows
+  the administrator's choice rather than their browser's setting.
+
+- b6a09a6: `WxButton` takes an `icon` name
+
+  The button had an `icon` slot and no `icon` prop, so `<wx-button icon="plus">` — which is how two
+  dozen call sites across the panel wrote it — fell through to the `<button>` element as an attribute
+  and drew nothing at all. Every other component that carries a picture beside its label takes the
+  name (`WxDropdownItem`, `WxMenuItem`, `WxTab`), and this one now does too: `icon?: IconName` renders
+  a `WxIcon` into the existing `.wx-button__icon` span. The slot still wins when both are given, and
+  `loading` still replaces both with the spinner.
+
+  The call sites themselves were repaired in the meantime — the head of a screen draws its actions
+  from `ScreenAction.icon` now — so this is the missing prop rather than a fix to any of them.
+
+## 0.25.0
+
+### Minor Changes
+
+- 937f4e2: The blog gets a picture of its own, and so can every other navigation group
+
+  Two separate things made the sidebar say the wrong thing about the blog.
+
+  **A group could not carry an icon at all.** `AdminNav` drew `icon="gear"` on every branch, so
+  "Blog" and "System" looked like the same kind of thing — one is what the site is about, the other
+  is what keeps the panel running. A group now names its own picture: `'icon' => 'newspaper'` beside
+  the title in `webx-admin.groups`, through the manifest, into `NavGroup`. The key is optional and
+  falls back to the gear, so a site that published `webx-admin.php` before this — or a group written
+  by a module that has not been updated — looks exactly as it looked.
+
+  **`ArticlesModule` named `file-text`, which was not an icon.** The set has `file-txt`, `file-md`
+  and the rest of the file family, but nothing under that name, so `resolveIcon` came back empty and
+  `WxIcon` rendered no `<svg>` at all: no warning, no placeholder, just a menu line whose label had
+  slid left into the room the picture was meant to occupy. Both halves type-check a name neither of
+  them can check, so the seam is now tested — every `icon()` and every `'icon' =>` in the PHP
+  packages is looked up in the set.
+
+  New in `@webx-ui/core`: `file-text`, the page with three lines of prose that the file family
+  already drew, under the name a section full of writing asks for; and `newspaper`, a folded sheet
+  with the one behind it curling out at the bottom left — the fold is the only thing that tells a
+  paper from a document at 16 px.
+
+- 852883d: `WxTable` takes its filters behind a funnel. `#filters` is the panel one opens beside the search,
+  `filtersCount` puts the number of them on the button, and `#applied` says what they are set to — chips the
+  reader can take off, standing in the header row itself. Nothing is drawn while the strip holds
+  nothing, so a list with no filters on looks exactly as it did before.
+- 852883d: The panel's lists take their filters behind the funnel and draw their narrow rows as entities.
+
+  `WxFilterChips` and `AppliedFilter` in `module-admin` give every section the same chip, and the
+  panel's own two words — the name of the funnel and "reset all" — live with it in all ten
+  languages. Articles, the SEO rules and the administrators put their dropdowns in `#filters` and
+  what they are set to in `#applied`; submissions, administrators and articles draw a card below
+  their breakpoint as `WxEntityCard` rather than as a stack of labelled lines, with the `···` in
+  the card's own top strip beside the checkbox.
+
+  `WxEntityCard` gained `titleLines`, because an article's headline is a sentence: one line of it
+  on a phone is half a thought, and the list it replaced already clamped at two.
+
+### Patch Changes
+
+- 852883d: Tags: the order is on the headings, and renaming is a form.
+
+  The two buttons over the list are gone — the name and the count sort from their own headings, in
+  either direction, and the address carries the order so a link lands on the list somebody meant.
+  The server takes a leading minus for it and keeps the bare names it had: alphabetical, and most
+  used first.
+
+  Renaming opens a dialog with one field. In the cell it was a name that turned into an `<input>`,
+  which reads as a name — nothing said it could be typed in — and it saved itself on `blur`, an
+  event that does not bubble, so the listener on the field's wrapper heard nothing and clicking away
+  lost what had been typed.
+
+  `WxActionBar` wraps its buttons. They were `flex: 0 0 auto` and stayed on one line whatever the
+  width: measured on a 375px screen, five of them were 815px inside a bar 359 wide, and they took
+  the whole page sideways with them.
+
+- 852883d: A shut branch of `WxMenu` shows that the page you are on is inside it. It has carried `is-trail`
+  all along, but the two things that class did — strong text and semibold — are what a vertical menu
+  looks like anyway, and on an icon rail there is no text to make strong at all. The icon takes the
+  accent colour instead: the branch is where you are, the entry inside it is what you are looking at,
+  and on a rail it is the only mark a branch can wear.
+- 852883d: A cell keeps what it holds inside its own column. `table-layout: fixed` gives a column the width
+  it was declared and nothing else, so a value wider than that used to be painted straight across
+  the column beside it — measured on the panel, a date cell 130px wide with 152px of text, its tail
+  sitting under the status badge. Cells clip now.
+
+  `TableColumn.minWidth` says what it can and cannot do: a `<col>` takes four properties and
+  `min-width` is not one of them, so the floor only means something with `layout="auto"`.
+
+  The lists that showed it — articles, pages, tags and submissions — carry the widths their longest
+  values actually need, and the columns that can be spared step aside a little later so that the
+  name keeps the room.
+
+- 852883d: A `flush` table is flush on every side, in both of its shapes. The head kept the cells' own step
+  and the column of cards kept its own above and below, so inside a card the air was 16 at the sides
+  and 28 over the search, and the last card stood twice as far from the edge as the first stood from
+  the field. Both are the box's now, and what is left between the head and the rows is the panel's
+  step.
+
+  An empty title is no longer drawn at all. It was still a flex item, so every table without one
+  carried a 12px row gap above its search — and in card mode, where the tools take a line of their
+  own, that gap was the whole of the space above the field.
+
+- 852883d: A drawer is spaced by the panel's step where there is one. Its sideways padding now reads
+  `--wx-gap` and keeps its own 18 (12 on a narrow screen) as the fallback, so the same list is the
+  same distance from the edge in a card and in a drawer — it was 16 against 18 on a desktop and 8
+  against 12 on a phone. A drawer is teleported out of the application's tree, which is why the
+  shell writes that step on the document as well.
+
+## 0.24.0
+
+### Minor Changes
+
+- f87e4ec: `wx-rich-text`: the editor as a field of a screen
+
+  A node type on both halves. On the server it is checked against `props.maxlength`, stored
+  through an allowlist — a `<script>`, an `onclick` or a `javascript:` address does not survive —
+  and an emptied editor is stored as `null` rather than as `<p></p>`. `localized` needs nothing of
+  its own: the language map is picked apart one layer up, so a translated article is the same type
+  run once per language.
+
+  Pictures come from the file manager. `AdminModule` gains `pickImage`, which `module-media`
+  supplies and the panel hands to every editor on every screen; a panel without a file manager
+  draws no image button, because the editor does not offer what it cannot do.
+
+  What a document keeps for a picture is the library's **key**, as `data-wx-path`, and the address
+  is worked out again on every read through `WebxUi\Admin\Contracts\AssetUrls`. The same rule
+  `wx-media` has always followed, one layer in: the address differs between deployments of one
+  site, a private bucket's address expires, and an image edited in place changes the version stamp
+  without changing the key.
+
+  `WxRichText` itself gains `localized` — one editor with a language chip, as `WxInput` and
+  `WxTextarea` have — and `labels`, so the panel can put its own words on the toolbar.
+
+  `HasDraft::publish()` takes an optional `?CarbonInterface $at`: the date an entity is published
+  under is not always now, and it cannot travel through the draft.
+
+### Patch Changes
+
+- f87e4ec: The article editor: tabs, blocks, autosave, the day it goes out
+
+  `blog.article-form` is a described screen, like the page editor and for the same reason: the SEO
+  card arrives as a patch from `module-seo` rather than being named in the blog's own description,
+  and a project adds a tab the same way. Four tabs — the block constructor, the settings, SEO and
+  the history — with a head above them that never moves and an action bar below.
+
+  The settings are §10 of the spec: the address printed whole under the field that edits its last
+  segment, the lead with a counter, the rubrics as a list that is dragged into order because the
+  first one is the main one, a tag box that makes the tag it cannot find, the author, the cover,
+  the pin, and the articles pinned under this one by hand. Five of them are node types the blog
+  registers on both halves, so a rubric that is not a rubric is refused where every screen is
+  checked rather than wherever somebody remembered.
+
+  **The day is the part that is not a page editor.** The date in the settings tab is what
+  "publish" publishes under, and the bar says which day that is before it is pressed: ahead, the
+  article waits and answers 404 until its morning; behind, it moves down the feed. For an article
+  that has never been on the site the day waits in the draft, because `published_at` is what "on
+  the site" means and there is no column for a date that has not happened yet. For one that is
+  already dated, moving the date writes the column at once — every listing orders by it.
+
+  `WxActionBar` wraps. Its state box may shrink to nothing, and the words in it went on being
+  painted where the box no longer was — straight across the buttons. Measured on a 375px screen:
+  the box 0px wide and 105 tall, "Saved · goes out on 25 September at 17:06" over the top of "Save
+  draft". Past the width of a short sentence the buttons now take a line of their own, still
+  against the end of the bar.
+
+  Saving is autosave, checked against the revision the form read and refused with a 409 when
+  somebody wrote in between; the answer carries the article as it now is, so the panel asks which
+  version the site gets instead of keeping one of the two silently. `PUT` now takes the screen's
+  `values`, the history has its own two routes, `POST .../discard` throws away what is waiting,
+  and `GET|POST /blog/tags` is the half of the tags API the article form needs — the screen that
+  rakes them over comes with session D.
+
 ## 0.23.0
 
 ### Minor Changes

@@ -1,5 +1,251 @@
 # @webx-ui/module-inbox
 
+## 0.4.4
+
+### Patch Changes
+
+- Updated dependencies [8e0d587]
+- Updated dependencies [8e0d587]
+  - @webx-ui/module-admin@0.14.0
+  - @webx-ui/core@0.31.0
+
+## 0.4.3
+
+### Patch Changes
+
+- b24f7d1: The snippet the Embedding tab hands an editor is the renamed tag: `<x-webx-inbox::form slug="…" />`
+
+## 0.4.2
+
+### Patch Changes
+
+- Updated dependencies [f623fac]
+- Updated dependencies [cd95a2e]
+- Updated dependencies [b1aeb52]
+  - @webx-ui/module-admin@0.13.0
+  - @webx-ui/core@0.30.0
+
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [0a506df]
+  - @webx-ui/core@0.29.0
+  - @webx-ui/module-admin@0.12.2
+
+## 0.4.0
+
+### Minor Changes
+
+- cca572f: The inbox opens on the submissions, and the forms are the chooser
+
+  Somebody opens "Inbox" to see what has come in. What the section showed them was a column of
+  three form names, and on a phone that column was the whole screen: the submissions were a
+  record opened beside it, so they lived in the drawer and the reader had to pick a form before
+  seeing anything at all.
+
+  The two swap places. The forms are the `filters` column of `WxListDetail` — the thing that
+  narrows the list — and the submissions are the list. Nothing moves on a wide screen: the
+  forms are still 270px down the left. On a narrow one it is the forms that fold, into a panel
+  raised by a **Forms** button in the head of the submissions, and the list is the screen. One
+  form is always open — the first, unless the address names another — which also covers an
+  address naming a form that has since been deleted.
+
+  `WxListDetail` grew the case that makes this possible: with no `detail` slot, the list is the
+  main pane rather than a fixed column with an empty pane beside it, and the only threshold left
+  is the chooser's, `filtersWidth + detailMin`. It is the shape for a list whose records open on
+  a route of their own — which is what a submission does, and what a file in a library does.
+
+  Gone from the head of the submissions: **Settings**. It is an action on the form, and the
+  form's own `···` in the list of forms already offers it beside Duplicate and Delete — a second
+  door on the same strip, one word away from the list it was not about. `panel.choose-form` goes
+  with it on both halves: there is no longer a moment with no form chosen.
+
+  The button in the head is now **New submission**. The section is opened to read what came in
+  dozens of times for every once a form is added, and what stood there in blue was the form: a
+  new form is the `+` over the list of forms, beside the things it makes one more of, and in the
+  drawer — where an icon alone under the drawer's heading reads as a stray mark — it is a button
+  with the word on it. The dialog stays with the list of submissions and is exposed to the head,
+  because what is written has to land in that list, in the filter that is on, and be counted in
+  its tabs. On a narrow screen **Forms** joins it up there, so the two ways out of the list stand
+  together instead of one being in the head of the section and the other in the head of the pane.
+  `panel.new-submission` reads "New submission" rather than "Add by hand" on all ten dictionaries;
+  the dialog it opens still says which case it is for.
+
+  `WxListDetail` says `filters-inline` whenever the chooser's column appears or folds, and once at
+  the start. The `list` slot has always been handed that as a slot prop, but a head that stands
+  outside the pane — above the card, where a screen's actions live — cannot read one.
+
+  One inset, kept by the pane. The name of the form, the tabs, the search box and the rows now
+  all begin on the same line down the left: the table added a step of its own inside the pane's,
+  which is exactly what `flush` says it should not, and on a phone that put the head at 17 and
+  the list at 33 — two panels stacked rather than one screen. The change is a rule removed from
+  this screen, so no other list in the panel moves.
+
+  What scrolls is now the page. The section used to be as tall as the window with the rows
+  scrolling inside a box of their own: a bar down the middle of the screen, and a wheel that
+  meant one thing over the rows and another an inch to the left. Every other list in the panel
+  scrolls as a page, and this one does too — the card is as tall as what is in it.
+
+  A switched-off form is said by its name, struck through and grey, instead of by a badge
+  beside it. The badge did not shrink, so in a 270px column already holding a name, a count and
+  a `···` it ran under the menu — measured at 396px against a row ending at 346 — and it said in
+  a word what the type says at a glance. The strike is on the name only: the count beside it is
+  still true.
+
+  Fixed on the way: between 640 and about 672 pixels the pane and the table measured the same
+  threshold a step apart — the pane's own padding stood between them — and the table drew cards
+  out of the full set of columns, five lines of "Label: value" for one enquiry. The pane decides
+  now and the table is told, so a tablet holds fourteen rows where it held three cards.
+
+### Patch Changes
+
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+  - @webx-ui/core@0.28.0
+  - @webx-ui/module-admin@0.12.1
+
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [537df98]
+- Updated dependencies [537df98]
+  - @webx-ui/module-admin@0.12.0
+  - @webx-ui/core@0.27.0
+
+## 0.3.1
+
+### Patch Changes
+
+- 48dfd9e: One head for every screen of the panel
+
+  Eight screens each answered "what goes at the top" on their own, and gave eight answers: the
+  heading at three sizes, the way out as an arrow on four of them and as a line of breadcrumbs on the
+  rest, the buttons folding into a `···` on two editors and wrapping onto a third line everywhere
+  else. Writing a new screen meant writing that line again and getting it slightly different again.
+
+  `WxScreenHead` is that line, once: the way out, the name with the state said beside it, the line
+  under it that says which record this is, and what can be done here. `WxListScreen` is built on it,
+  so a list and the editor a row opens are the same object rather than two similar ones — and it
+  takes `back` now, which is what the statuses screen used to draw above its own heading for want of
+  anywhere to put it.
+
+  **The actions are declared rather than drawn.** The same action has to be a button on a desktop and
+  a line of a menu on a phone, and one vnode cannot be mounted in two places — as markup it had to be
+  written twice, which is exactly what the page and article editors did. As `ScreenAction[]` it is
+  written once: `primary` is the one thing the screen exists for and the one that keeps a button when
+  the head runs out of room, `danger` is never a button at all, `menu` is in the `···` at every
+  width, and `loading`, `disabled` and `href` mean what they say. Below 720px — 480 on a list, which
+  carries one word and no trail — everything but the primary folds behind the `···` and that primary
+  takes the line under the name, full width.
+
+  The name’s line is the head: the way out at the start of it and the actions at the end, both
+  centred on it however many badges stand beside the name. The trail is the line above, and it
+  scrolls sideways with no scrollbar showing rather than wrapping — on a phone a path four levels
+  deep was two lines of the smallest type on the screen, standing between the reader and the name of
+  what they had opened.
+
+  Two things that were quietly wrong come out with it. Nineteen buttons across the panel passed
+  `icon="plus"` to `WxButton`, which has no such prop: the attribute landed on the `<button>` and
+  drew nothing, so the panel’s main actions had no icons at all. And the `···` said `More` in English
+  in every language, because the core carries English defaults and knows no dictionary — the panel
+  gives it the word now, in all ten.
+
+- Updated dependencies [a9383bb]
+- Updated dependencies [b6a09a6]
+- Updated dependencies [48dfd9e]
+  - @webx-ui/core@0.26.0
+  - @webx-ui/module-admin@0.11.0
+
+## 0.3.0
+
+### Minor Changes
+
+- 852883d: The panel's lists take their filters behind the funnel and draw their narrow rows as entities.
+
+  `WxFilterChips` and `AppliedFilter` in `module-admin` give every section the same chip, and the
+  panel's own two words — the name of the funnel and "reset all" — live with it in all ten
+  languages. Articles, the SEO rules and the administrators put their dropdowns in `#filters` and
+  what they are set to in `#applied`; submissions, administrators and articles draw a card below
+  their breakpoint as `WxEntityCard` rather than as a stack of labelled lines, with the `···` in
+  the card's own top strip beside the checkbox.
+
+  `WxEntityCard` gained `titleLines`, because an article's headline is a sentence: one line of it
+  on a phone is half a thought, and the list it replaced already clamped at two.
+
+### Patch Changes
+
+- bfd7f62: Even air around the submissions list, one line in the tags bar.
+
+  The step the pane keeps around its table was a side padding on the card view alone, so the cards
+  stood further in than the search field above them and the rows below them, and the step showed as
+  a disagreement. It is one padding on the table now, on all four sides and in both views, and none
+  at all in the drawer, where the screen's edge is the boundary and the pane's own step is all the
+  air the list needs. The scroll bar of the card list rides in that step rather than in the cards'
+  own right edge, so the list has the same air on both sides.
+
+  The tags selection bar stays on one line on a phone, and its `···` is the size of the button
+  beside it. The bar keeps its state box at 220px so that a sentence about a draft has room to be
+  read; "2 selected" does not need it, and asking for it put "Merge" and the `···` on a second line
+  at every phone width. A row menu is 30px because it stands at the end of a row; in a bar it stands
+  beside a button, and the pair read as a control and a leftover.
+
+- 852883d: A cell keeps what it holds inside its own column. `table-layout: fixed` gives a column the width
+  it was declared and nothing else, so a value wider than that used to be painted straight across
+  the column beside it — measured on the panel, a date cell 130px wide with 152px of text, its tail
+  sitting under the status badge. Cells clip now.
+
+  `TableColumn.minWidth` says what it can and cannot do: a `<col>` takes four properties and
+  `min-width` is not one of them, so the floor only means something with `layout="auto"`.
+
+  The lists that showed it — articles, pages, tags and submissions — carry the widths their longest
+  values actually need, and the columns that can be spared step aside a little later so that the
+  name keeps the room.
+
+- 852883d: `rowMenuWidth` says how wide a column holding a `···` has to be, and every list reads it. The menu
+  is a finger target — 44px under `(pointer: coarse)` — and the cell keeps 16 on either side of it,
+  so the 56 the sections declared was never enough: the button painted outside its column, which
+  nothing said out loud until cells began to clip what does not fit.
+
+  On the tags screen the selection bar keeps the one button it exists for and puts the other three
+  behind the same `···` a row has. The × that cleared the selection is gone: a button whose whole
+  job is to undo something harmless, standing beside a red "Delete", read as a way to close the bar.
+
+- 852883d: `WxDate` has a column form. `compact` shows the time alone for today — it is the only row in the
+  column wearing a clock, so it reads as today without spending a word on saying so — a short month
+  for the rest of this year, and digits once the year has to be said. What it leaves out is in the
+  tip, which is where "when exactly" was always answered.
+
+  The lists use it, and their date columns went from 185px to 120: the full line is the reason the
+  column had to be that wide in Russian and wider in German. The article covers take the smallest
+  radius in the scale with it, the one `WxEntityCard` gives its own thumbnail — 12 on a box 32px
+  tall reads as a pill.
+
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [937f4e2]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+  - @webx-ui/core@0.25.0
+  - @webx-ui/module-admin@0.10.0
+
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [f87e4ec]
+- Updated dependencies [f87e4ec]
+  - @webx-ui/core@0.24.0
+  - @webx-ui/module-admin@0.9.0
+
 ## 0.2.0
 
 ### Minor Changes

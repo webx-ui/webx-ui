@@ -48,12 +48,20 @@ return [
 
         - `wx-input` — one line of text. `props`: `placeholder`, `maxlength`.
         - `wx-textarea` — several lines. `props`: `rows`, `placeholder`.
+        - `wx-rich-text` — a formatted document, stored as HTML: headings, lists, tables,
+          links, pictures from the library. Print it with `{!! !!}` rather than `{{ }}`.
+          `props`: `placeholder`, `minHeight`, `tools`.
         - `wx-input-number` — a number. `props`: `min`, `max`, `step`.
         - `wx-switch`, `wx-checkbox` — a boolean.
         - `wx-select`, `wx-radio-group` — one of `props.options`, written as
           `[{ "value": "left", "label": "Left" }]`.
         - `wx-date-picker` — a date, stored as `YYYY-MM-DD`.
         - `wx-color-picker` — a colour, stored as a CSS colour.
+        - `wx-link` — somewhere to go, chosen rather than typed: a page of this site, an
+          address, or nowhere. What is kept is the entity, never its address — the template
+          gets `url` worked out when the block is printed, with the anchor already on the end
+          of it, and `label`, `available`, `new_tab` and `rel` beside it.
+          `props`: `allowNone`, `attributes`.
         - `wx-media`, `wx-file` — one picture or one document from the library. The value is
           `{ path, alt, title }`; the template also gets `url`, worked out when the block is
           printed.

@@ -4,14 +4,29 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin;
 
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Backups\Backups;
+use WebxUi\Admin\Console\BackupCommand;
+use WebxUi\Admin\Console\BootCommand;
+use WebxUi\Admin\Console\DemoCommand;
+use WebxUi\Admin\Console\DoctorCommand;
 use WebxUi\Admin\Console\InstallCommand;
 use WebxUi\Admin\Console\MakeModuleCommand;
 use WebxUi\Admin\Console\PanelCommand;
 use WebxUi\Admin\Console\PruneVersionsCommand;
+use WebxUi\Admin\Console\SetupCommand;
+use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Contracts\BrandingSource;
+use WebxUi\Admin\Contracts\SiteUrls;
+use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Links\LinkSources;
+use WebxUi\Admin\Links\LinkUrls;
+use WebxUi\Admin\Links\RoutingSiteUrls;
 use WebxUi\Admin\Manifest\ManifestBuilder;
 use WebxUi\Admin\Notes\NoteTypes;
 use WebxUi\Admin\Screens\FieldTypes;
@@ -19,11 +34,14 @@ use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\BooleanType;
 use WebxUi\Admin\Screens\Types\ColorType;
 use WebxUi\Admin\Screens\Types\DateType;
+use WebxUi\Admin\Screens\Types\LinkType;
 use WebxUi\Admin\Screens\Types\NumberType;
 use WebxUi\Admin\Screens\Types\OptionType;
 use WebxUi\Admin\Screens\Types\RepeaterType;
+use WebxUi\Admin\Screens\Types\RichTextType;
 use WebxUi\Admin\Screens\Types\StringType;
 use WebxUi\Localization\Locales;
+use WebxUi\Routing\SiteUrl;
 
 class AdminServiceProvider extends ServiceProvider
 {
@@ -42,6 +60,24 @@ class AdminServiceProvider extends ServiceProvider
         // Which records have notes. A register rather than the morph map alone, because the
         // type comes out of an address and must not be able to name anything else.
         $this->app->singleton(NoteTypes::class);
+
+        // What this panel can link to (§3 of the menu spec). A singleton for the same reason as
+        // the two above: content modules register into it from their own providers.
+        $this->app->singleton(LinkSources::class);
+
+        // The language prefix, when there is an address registry to ask. Behind `class_exists`
+        // because the frame does not require `webx-ui/routing` — a panel of settings and
+        // administrators has no addresses at all — and a path is then handed on as written.
+        if (class_exists(SiteUrl::class)) {
+            $this->app->singleton(SiteUrls::class, RoutingSiteUrls::class);
+        }
+
+        $this->app->bind(LinkUrls::class, static fn ($app): LinkUrls => new LinkUrls(
+            $app->make(LinkSources::class),
+            $app->make(Locales::class),
+            $app->bound(SiteUrls::class) ? $app->make(SiteUrls::class) : null,
+        ));
+
         $this->app->singleton(FieldTypes::class, static function ($app): FieldTypes {
             $types = new FieldTypes;
 
@@ -54,6 +90,18 @@ class AdminServiceProvider extends ServiceProvider
             $types->register('wx-radio-group', new OptionType);
             $types->register('wx-date-picker', new DateType);
             $types->register('wx-color-picker', new ColorType);
+            // The library is a module's, not the panel's — a site with no file manager has
+            // nothing to ask where a picture lives, and the type then leaves addresses alone.
+            $types->register('wx-rich-text', new RichTextType(
+                $app->bound(AssetUrls::class) ? $app->make(AssetUrls::class) : null,
+            ));
+
+            // A link: the entity or the path, never the address. The picker behind it is the
+            // panel's own, and the sections in it are whatever the content modules registered.
+            $types->register('wx-link', new LinkType(
+                $app->make(LinkSources::class),
+                $app->make(LinkUrls::class),
+            ));
 
             // The repeater checks and casts its items with the other types, so it is handed
             // the registry it is being put into.
@@ -66,6 +114,19 @@ class AdminServiceProvider extends ServiceProvider
             return $types;
         });
 
+        // The backup directory has no state anywhere else, so this holds no state either: it
+        // is a singleton to be injectable by name, not because it remembers anything.
+        $this->app->singleton(Backups::class);
+
+        // One journal for the run, shared by every module that seeds into it. The path is
+        // fixed rather than configurable: it is a file two commands pass between them, and a
+        // site that moved it would gain nothing and lose the answer to "where is it".
+        $this->app->singleton(DemoLedger::class, static fn ($app): DemoLedger => new DemoLedger(
+            $app->make(Filesystem::class),
+            $app->make(FilesystemFactory::class),
+            $app->storagePath('app/webx-demo.json'),
+        ));
+
         $this->app->bind(
             ManifestBuilder::class,
             static fn ($app): ManifestBuilder => new ManifestBuilder(
@@ -73,6 +134,7 @@ class AdminServiceProvider extends ServiceProvider
                 $app->make('config'),
                 $app->make(Locales::class),
                 $app->make(ScreenRegistry::class),
+                $app->make(Backups::class),
                 // Optional on purpose: a site without `module-settings` has nowhere to put a
                 // logo, and the frame must not require the section that holds one.
                 $app->bound(BrandingSource::class) ? $app->make(BrandingSource::class) : null,
@@ -88,6 +150,7 @@ class AdminServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         $this->registerDraftMacro();
+        $this->registerBackupSchedule();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -108,11 +171,45 @@ class AdminServiceProvider extends ServiceProvider
         ], 'webx-admin-lang');
 
         $this->commands([
+            BackupCommand::class,
+            BootCommand::class,
+            DemoCommand::class,
+            DoctorCommand::class,
             InstallCommand::class,
             MakeModuleCommand::class,
             PanelCommand::class,
             PruneVersionsCommand::class,
+            SetupCommand::class,
         ]);
+    }
+
+    /**
+     * The nightly dump, put on the schedule by the package rather than by the site.
+     *
+     * A backup nobody remembered to schedule is the ordinary way to have no backup, so the
+     * default is on and the site turns it off rather than on. What the site does have to
+     * supply is the system cron behind `schedule:run` — there is no way to do that from here,
+     * and the panel's own line is what notices when it is missing.
+     *
+     * `callAfterResolving` because the scheduler is built on the first console command that
+     * needs one: asking for it here would build it during boot, before the application has
+     * finished deciding what it is.
+     */
+    private function registerBackupSchedule(): void
+    {
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $backups = $this->app->make(Backups::class);
+
+            if (! $backups->enabled()) {
+                return;
+            }
+
+            $schedule->command(BackupCommand::class)
+                ->dailyAt($backups->at())
+                // Two web servers behind one database would otherwise dump it twice a night.
+                ->onOneServer()
+                ->withoutOverlapping();
+        });
     }
 
     /**

@@ -68,9 +68,6 @@ return [
     // The editor.
     'trail' => 'Где стоит эта страница',
     'untitled' => 'Без заголовка',
-    'state-saved' => 'Сохранено',
-    'state-saving' => 'Сохраняем…',
-    'state-unsaved' => 'Есть несохранённое',
     'save' => 'Сохранить',
     'save-failed' => 'Страница не сохранена.',
     'publish' => 'Опубликовать',

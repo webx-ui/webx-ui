@@ -50,6 +50,7 @@ would throw away whatever was set on it. Where the ends really are moments, use 
 | `format`      | `string`                                         | `dd.MM.yyyy` | Format the field shows                                            |
 | `minDate`     | `string \| Date`                                 | —            | Earliest selectable date                                          |
 | `maxDate`     | `string \| Date`                                 | —            | Latest selectable date                                            |
+| `locale`      | `string \| Locale`                               | the browser  | Language of the calendar                                          |
 | `weekStart`   | `number`                                         | `1`          | 0 is Sunday, 1 is Monday                                          |
 | `clearable`   | `boolean`                                        | `true`       | Show the clear button                                             |
 | `autoApply`   | `boolean`                                        | `true`       | Apply on the second pick                                          |
@@ -66,5 +67,7 @@ would throw away whatever was set on it. Where the ends really are moments, use 
 
 **Events:** `update:modelValue`, `change`, `clear`, `open`, `close`.
 
-Anything else the underlying picker accepts falls through as an attribute — see
+The calendar is drawn in the browser’s language unless told otherwise, the same way and with the
+same application-wide setting as [DatePicker](/components/date-picker#language). Anything else the
+underlying picker accepts falls through as an attribute — see
 [DatePicker](/components/date-picker#anything-else-the-library-takes).

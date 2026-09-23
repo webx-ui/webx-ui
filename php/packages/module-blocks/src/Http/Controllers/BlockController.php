@@ -92,7 +92,12 @@ final class BlockController
         $count = $usage->counts()[$block->slug] ?? 0;
 
         if ($count > 0) {
-            return ApiResponse::message((string) __('webx-blocks::page.delete-used', ['count' => $count]), 409);
+            // One is one: the line with the number in it reads "on 1 pages" otherwise.
+            $line = $count === 1
+                ? __('webx-blocks::page.delete-used-one')
+                : __('webx-blocks::page.delete-used', ['count' => $count]);
+
+            return ApiResponse::message((string) $line, 409);
         }
 
         $block->delete();

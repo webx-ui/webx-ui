@@ -1,0 +1,18 @@
+{
+  "title": "About",
+  "slug": "about",
+  "seo": {
+    "title": "About this demo",
+    "description": "A page under the home page, to show what the tree of addresses does."
+  },
+  "blocks": [
+    {
+      "key": "demo-about-text",
+      "type": "text",
+      "values": {
+        "heading": "A page under the home page",
+        "body": "Pages are a tree: this one sits under the home page, and its address is built out of the slugs above it.\nMove it and every address under it is rewritten, with a redirect left on each of the old ones."
+      }
+    }
+  ]
+}

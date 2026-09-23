@@ -1,0 +1,14 @@
+{
+  "header": {
+    "external": {
+      "title": "Documentation",
+      "url": "https://webx-ui.github.io/webx-ui/",
+      "variant": "button",
+      "new_tab": true,
+      "rel": ["nofollow"]
+    }
+  },
+  "footer": {
+    "heading": "About the site"
+  }
+}

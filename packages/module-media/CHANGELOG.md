@@ -1,5 +1,156 @@
 # @webx-ui/module-media
 
+## 0.8.7
+
+### Patch Changes
+
+- Updated dependencies [8e0d587]
+- Updated dependencies [8e0d587]
+  - @webx-ui/module-admin@0.14.0
+  - @webx-ui/core@0.31.0
+  - @webx-ui/schema@0.3.8
+
+## 0.8.6
+
+### Patch Changes
+
+- Updated dependencies [f623fac]
+- Updated dependencies [cd95a2e]
+- Updated dependencies [b1aeb52]
+  - @webx-ui/module-admin@0.13.0
+  - @webx-ui/core@0.30.0
+  - @webx-ui/schema@0.3.7
+
+## 0.8.5
+
+### Patch Changes
+
+- Updated dependencies [0a506df]
+  - @webx-ui/core@0.29.0
+  - @webx-ui/module-admin@0.12.2
+  - @webx-ui/schema@0.3.6
+
+## 0.8.4
+
+### Patch Changes
+
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+  - @webx-ui/core@0.28.0
+  - @webx-ui/module-admin@0.12.1
+  - @webx-ui/schema@0.3.5
+
+## 0.8.3
+
+### Patch Changes
+
+- Updated dependencies [537df98]
+- Updated dependencies [537df98]
+  - @webx-ui/module-admin@0.12.0
+  - @webx-ui/core@0.27.0
+  - @webx-ui/schema@0.3.4
+
+## 0.8.2
+
+### Patch Changes
+
+- 48dfd9e: One head for every screen of the panel
+
+  Eight screens each answered "what goes at the top" on their own, and gave eight answers: the
+  heading at three sizes, the way out as an arrow on four of them and as a line of breadcrumbs on the
+  rest, the buttons folding into a `···` on two editors and wrapping onto a third line everywhere
+  else. Writing a new screen meant writing that line again and getting it slightly different again.
+
+  `WxScreenHead` is that line, once: the way out, the name with the state said beside it, the line
+  under it that says which record this is, and what can be done here. `WxListScreen` is built on it,
+  so a list and the editor a row opens are the same object rather than two similar ones — and it
+  takes `back` now, which is what the statuses screen used to draw above its own heading for want of
+  anywhere to put it.
+
+  **The actions are declared rather than drawn.** The same action has to be a button on a desktop and
+  a line of a menu on a phone, and one vnode cannot be mounted in two places — as markup it had to be
+  written twice, which is exactly what the page and article editors did. As `ScreenAction[]` it is
+  written once: `primary` is the one thing the screen exists for and the one that keeps a button when
+  the head runs out of room, `danger` is never a button at all, `menu` is in the `···` at every
+  width, and `loading`, `disabled` and `href` mean what they say. Below 720px — 480 on a list, which
+  carries one word and no trail — everything but the primary folds behind the `···` and that primary
+  takes the line under the name, full width.
+
+  The name’s line is the head: the way out at the start of it and the actions at the end, both
+  centred on it however many badges stand beside the name. The trail is the line above, and it
+  scrolls sideways with no scrollbar showing rather than wrapping — on a phone a path four levels
+  deep was two lines of the smallest type on the screen, standing between the reader and the name of
+  what they had opened.
+
+  Two things that were quietly wrong come out with it. Nineteen buttons across the panel passed
+  `icon="plus"` to `WxButton`, which has no such prop: the attribute landed on the `<button>` and
+  drew nothing, so the panel’s main actions had no icons at all. And the `···` said `More` in English
+  in every language, because the core carries English defaults and knows no dictionary — the panel
+  gives it the word now, in all ten.
+
+- Updated dependencies [a9383bb]
+- Updated dependencies [b6a09a6]
+- Updated dependencies [48dfd9e]
+  - @webx-ui/core@0.26.0
+  - @webx-ui/module-admin@0.11.0
+  - @webx-ui/schema@0.3.3
+
+## 0.8.1
+
+### Patch Changes
+
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [937f4e2]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+  - @webx-ui/core@0.25.0
+  - @webx-ui/module-admin@0.10.0
+  - @webx-ui/schema@0.3.2
+
+## 0.8.0
+
+### Minor Changes
+
+- f87e4ec: `wx-rich-text`: the editor as a field of a screen
+
+  A node type on both halves. On the server it is checked against `props.maxlength`, stored
+  through an allowlist — a `<script>`, an `onclick` or a `javascript:` address does not survive —
+  and an emptied editor is stored as `null` rather than as `<p></p>`. `localized` needs nothing of
+  its own: the language map is picked apart one layer up, so a translated article is the same type
+  run once per language.
+
+  Pictures come from the file manager. `AdminModule` gains `pickImage`, which `module-media`
+  supplies and the panel hands to every editor on every screen; a panel without a file manager
+  draws no image button, because the editor does not offer what it cannot do.
+
+  What a document keeps for a picture is the library's **key**, as `data-wx-path`, and the address
+  is worked out again on every read through `WebxUi\Admin\Contracts\AssetUrls`. The same rule
+  `wx-media` has always followed, one layer in: the address differs between deployments of one
+  site, a private bucket's address expires, and an image edited in place changes the version stamp
+  without changing the key.
+
+  `WxRichText` itself gains `localized` — one editor with a language chip, as `WxInput` and
+  `WxTextarea` have — and `labels`, so the panel can put its own words on the toolbar.
+
+  `HasDraft::publish()` takes an optional `?CarbonInterface $at`: the date an entity is published
+  under is not always now, and it cannot travel through the draft.
+
+### Patch Changes
+
+- Updated dependencies [f87e4ec]
+- Updated dependencies [f87e4ec]
+  - @webx-ui/core@0.24.0
+  - @webx-ui/module-admin@0.9.0
+  - @webx-ui/schema@0.3.1
+
 ## 0.7.2
 
 ### Patch Changes

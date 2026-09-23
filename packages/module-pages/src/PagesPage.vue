@@ -1,13 +1,20 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAdmin, useErrorText, useTranslate, WxDate, WxListScreen } from '@webx-ui/module-admin'
+import {
+  rowMenuWidth,
+  useAdmin,
+  useErrorText,
+  useTranslate,
+  WxDate,
+  WxListScreen,
+  type ScreenAction,
+} from '@webx-ui/module-admin'
 import {
   confirm,
   createModal,
   toast,
   WxBadge,
-  WxButton,
   WxTable,
   WxText,
   type TabItem,
@@ -115,17 +122,17 @@ const columns = computed<TableColumn<PageRow>[]>(() => [
     key: 'status',
     label: inBin.value ? t('page.column-deleted') : t('page.column-status'),
     align: 'center',
-    width: 130,
+    width: 150,
     hideBelow: 620,
   },
   {
     key: 'updated_at',
     label: t('page.column-updated'),
-    width: 180,
+    width: 150,
     hideBelow: 900,
     hidden: inBin.value,
   },
-  { key: 'actions', label: '', width: 56, align: 'right' },
+  { key: 'actions', label: '', width: rowMenuWidth, align: 'right' },
 ])
 
 const tree = computed<TableTreeOptions<PageRow> | undefined>(() =>
@@ -350,17 +357,18 @@ function badge(status: PageStatus): 'default' | 'success' | 'warning' {
 watch(filter, () => void load())
 
 onMounted(load)
+
+/* What the section offers. Declared, because on a phone the head folds it into the ···. */
+const actions = computed<ScreenAction[]>(() =>
+  canManage.value
+    ? [{ key: 'new', label: t('page.new'), icon: 'plus', primary: true, run: () => void add(null) }]
+    : [],
+)
 </script>
 
 <template>
   <div class="wx-pages">
-    <wx-list-screen v-model:view="filter" :title="title" :views="views">
-      <template v-if="canManage" #actions>
-        <wx-button type="primary" icon="plus" @click="add(null)">
-          {{ t('page.new') }}
-        </wx-button>
-      </template>
-
+    <wx-list-screen v-model:view="filter" :title="title" :views="views" :actions="actions">
       <wx-table
         :data="rows"
         :columns="columns"
@@ -419,7 +427,7 @@ onMounted(load)
 
         <template #cell-updated_at="{ row }">
           <wx-text size="sm" tone="muted">
-            <wx-date :value="row.updated_at" /><template v-if="row.edited_by && !inBin"
+            <wx-date :value="row.updated_at" compact /><template v-if="row.edited_by && !inBin"
               >, {{ row.edited_by }}</template
             >
           </wx-text>

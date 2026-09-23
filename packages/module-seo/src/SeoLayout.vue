@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAdmin, useTranslate, WxListScreen } from '@webx-ui/module-admin'
-import { WxButton, type TabItem, type TabValue } from '@webx-ui/core'
+import { useAdmin, useTranslate, WxListScreen, type ScreenAction } from '@webx-ui/module-admin'
+import type { TabItem, TabValue } from '@webx-ui/core'
 import { useSeoMessages } from './i18n'
 
 /**
@@ -14,15 +14,18 @@ import { useSeoMessages } from './i18n'
  * quietly resets both when you come back to it is worse than a second address. What they share
  * is the frame: one heading, one strip of tabs, one card under it (§19).
  */
-const props = defineProps<{ base: string; current: 'rules' | 'redirects' | 'aliases' }>()
+const props = defineProps<{
+  base: string
+  current: 'rules' | 'redirects' | 'aliases'
+  /** The view's own main action — `New rule`. The section's own tool is added after it. */
+  actions?: ScreenAction[]
+}>()
 
 const emit = defineEmits<{ test: [] }>()
 
 defineSlots<{
   /** The table. */
   default?: () => unknown
-  /** The view's own main action — `New rule` — before the section's `Check an address`. */
-  actions?: () => unknown
 }>()
 
 const context = useAdmin()
@@ -46,6 +49,12 @@ const views = computed<TabItem[]>(() => [
   { value: 'aliases', label: t('page.automatic') },
 ])
 
+/* The one tool that belongs to the whole section, after whatever the view itself offers. */
+const actions = computed<ScreenAction[]>(() => [
+  ...(props.actions ?? []),
+  { key: 'test', label: t('page.test'), icon: 'search', run: () => emit('test') },
+])
+
 const where = computed<TabValue>({
   get: () => props.current,
   set: (next) => {
@@ -57,15 +66,7 @@ const where = computed<TabValue>({
 </script>
 
 <template>
-  <wx-list-screen v-model:view="where" :title="title" :views="views">
-    <template #actions>
-      <slot name="actions" />
-
-      <wx-button variant="outline" icon="search" @click="emit('test')">
-        {{ t('page.test') }}
-      </wx-button>
-    </template>
-
+  <wx-list-screen v-model:view="where" :title="title" :views="views" :actions="actions">
     <slot />
   </wx-list-screen>
 </template>

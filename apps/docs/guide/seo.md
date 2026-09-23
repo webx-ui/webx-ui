@@ -12,21 +12,23 @@ those is a source, asked in order and merged field by field.
 
 ```ts
 import { createAdmin } from '@webx-ui/module-admin'
-import { media, WxMediaField } from '@webx-ui/module-media'
+import { media } from '@webx-ui/module-media'
 import { seo } from '@webx-ui/module-seo'
 import '@webx-ui/module-seo/style.css'
 
 createAdmin({
-  modules: [media(), seo({ mediaField: WxMediaField }), settings()],
+  modules: [media(), seo(), settings()],
 })
 ```
 
 It appears under **System** in the navigation, above the settings, once `webx-ui/module-seo` is
 installed and migrated on the server. Permissions: `seo.view` to look, `seo.manage` to change.
 
-`mediaField` is how the share image gets picked. It is handed in rather than imported, so this
-package does not depend on the library being installed — without it every other SEO field still
-works and only the picture is missing.
+The share image is picked with `wx-media`, which the card looks up in the panel’s own registry —
+so installing the library is all it takes. Nothing is imported from it here: this package does
+not depend on the library, and a panel without one still edits every other SEO field and simply
+has no picture. A caller that wants a different field than the registered one passes
+`seo({ mediaField })`.
 
 ## Where a value comes from
 
@@ -75,7 +77,7 @@ With an entity to name:
 ```blade
 @webxSeo($page)
 {{-- or, when a tag reads better --}}
-<x-webx-seo :for="$page" />
+<x-webx-seo::head :for="$page" />
 ```
 
 Both print `<title>`, the description, keywords and robots meta tags, the canonical link, the

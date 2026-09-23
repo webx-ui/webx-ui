@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'target-entity' => 'Diese Website',
+    'target-url' => 'Eine Adresse',
+    'target-none' => 'Nirgendwohin',
+    'section' => 'Bereich',
+    'search' => 'Tippen Sie einen Namen',
+    'searching' => 'Wird gesucht…',
+    'empty' => 'Nichts gefunden',
+    'clear' => 'Link entfernen',
+    'unavailable' => 'Noch nicht auf der Website',
+    'missing' => 'Das Ziel dieses Links gibt es nicht mehr',
+    'url-label' => 'Adresse',
+    'url-placeholder' => '/account oder https://example.com',
+    'hash' => 'Anker',
+    'hash-placeholder' => 'abschnitt-der-seite',
+    'url-routes' => 'Adressen dieser Website',
+    'new-tab' => 'In neuem Tab öffnen',
+    'rel' => 'Beziehung',
+    'rel-nofollow' => 'Kein Linkgewicht weitergeben',
+    'rel-sponsored' => 'Bezahlte Platzierung',
+    'rel-ugc' => 'Von einem Besucher geschrieben',
+    'shape' => 'Dieses Feld nimmt einen Link.',
+    'target' => 'Dieses Feld kennt diese Art von Ziel nicht.',
+    'no-source' => 'Darauf kann hier nicht verlinkt werden.',
+    'no-entity' => 'Wählen Sie, wohin der Link führt.',
+    'url-length' => 'Eine Adresse darf höchstens :max Zeichen lang sein.',
+    'url-scheme' => 'Eine Adresse muss ein Pfad sein oder mit http, https, mailto oder tel beginnen.',
+    'hash-length' => 'Ein Anker darf höchstens :max Zeichen lang sein.',
+    'hash-shape' => 'Ein Anker ist ein Name auf der Seite: ohne Leerzeichen.',
+    'not-localized' => 'Ein Link ist in jeder Sprache derselbe und kann nicht übersetzt werden.',
+];

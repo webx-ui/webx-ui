@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed, inject, ref, watch, type Component } from 'vue'
-import { useAdmin, useI18n, useTranslate } from '@webx-ui/module-admin'
-import { createModal } from '@webx-ui/core'
+import {
+  useAdmin,
+  useI18n,
+  useTheme,
+  useTranslate,
+  type ThemePreference,
+} from '@webx-ui/module-admin'
+import { createModal, WxThemeSwitch } from '@webx-ui/core'
 import ProfileDialog from './ProfileDialog.vue'
 import { avatarFieldKey, avatarResolverKey, useAuth, type AvatarResolver } from './session'
 
@@ -35,7 +41,10 @@ const props = withDefaults(
 const admin = useAdmin()
 const auth = useAuth()
 const i18n = useI18n()
+const theme = useTheme()
 const t = useTranslate('webx-auth')
+// The switch is the panel's own control, so its three words are the panel's own too.
+const panel = i18n.scope('webx-admin')
 
 const user = computed(() => admin.state.user)
 
@@ -89,6 +98,20 @@ function openProfile(): void {
   )
 }
 
+/*
+ * The screen changes first and the account catches up: repainting is local and instant, and
+ * a control that waits for a round trip before it moves feels broken. If the write fails the
+ * panel is still the colour that was asked for, and this browser remembers it — only the
+ * other machines have not heard yet, and the next change tells them.
+ */
+const preference = computed<ThemePreference>({
+  get: () => theme.state.preference,
+  set: (value) => {
+    theme.set(value)
+    void auth.setTheme(value)
+  },
+})
+
 async function choose(code: string): Promise<void> {
   if (code === i18n.state.locale) {
     return
@@ -132,6 +155,28 @@ async function choose(code: string): Promise<void> {
       {{ t('profile.menu') }}
     </wx-dropdown-item>
 
+    <wx-divider spacing="sm" />
+
+    <wx-dropdown-item disabled>
+      <wx-text size="sm" tone="muted">{{ panel('theme.label') }}</wx-text>
+    </wx-dropdown-item>
+
+    <!--
+      The click is stopped here: every click inside the panel closes the menu, and a switch
+      that shuts the thing it lives in can only ever be thrown once at a time.
+    -->
+    <div class="wx-user-menu__theme" @click.stop>
+      <wx-theme-switch
+        v-model="preference"
+        size="sm"
+        block
+        :aria-label="panel('theme.label')"
+        :light-label="panel('theme.light')"
+        :dark-label="panel('theme.dark')"
+        :system-label="panel('theme.system')"
+      />
+    </div>
+
     <template v-if="languages.length > 0">
       <wx-divider spacing="sm" />
 
@@ -158,6 +203,11 @@ async function choose(code: string): Promise<void> {
 </template>
 
 <style scoped>
+/* The row the switch sits on, lined up with the text of the items above it. */
+.wx-user-menu__theme {
+  padding: var(--wx-space-2) var(--wx-space-8) var(--wx-space-6);
+}
+
 /*
  * The avatar is the whole button: no border, no background, nothing of the browser's own —
  * a bordered box around a round picture reads as one more tool in the row of icons, which is

@@ -155,6 +155,7 @@ final class AuthModule extends AbstractModule implements ProvidesMcpTools
                     ],
                 ],
                 scope: 'admins:audit',
+                permission: 'admins.audit',
             ),
 
             Tool::read(
@@ -168,6 +169,7 @@ final class AuthModule extends AbstractModule implements ProvidesMcpTools
                     ],
                 ],
                 scope: 'admins:audit',
+                permission: 'admins.audit',
             ),
         ];
     }

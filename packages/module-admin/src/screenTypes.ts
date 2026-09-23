@@ -1,5 +1,7 @@
 import type { TypeRegistry } from '@webx-ui/schema'
+import LinkField from './LinkField.vue'
 import ListScreen from './ListScreen.vue'
+import RichTextField from './RichTextField.vue'
 
 /**
  * Node types the panel itself brings, under every module's and every project's.
@@ -12,7 +14,21 @@ import ListScreen from './ListScreen.vue'
  *
  * The rows themselves are still a module's own type — `wx-pages-table`, `wx-media` — because
  * only the module knows what it is listing and where it asks for it.
+ *
+ * `wx-rich-text` is here rather than in `@webx-ui/schema` because it is not the editor that
+ * makes it a panel field: it is the panel's words on its toolbar and the panel's library behind
+ * its image button, and the schema package knows about neither.
+ *
+ * `wx-link` is here for the same reason twice over: what it can point at is whatever the installed
+ * content modules registered, and the only thing that knows what those are is the panel's own
+ * backend.
  */
 export const adminTypes: TypeRegistry = {
   'wx-list': { component: ListScreen, kind: 'layout', labelProp: 'title' },
+  // Full width: an editor shares a row with nothing, and a form of two columns would give it
+  // half a line to write a page of text in.
+  'wx-rich-text': { component: RichTextField, kind: 'field', wide: true },
+  // Wide as well: a row of the picker is a segmented switch, a section and a search box, and half
+  // a form's width leaves the search box too narrow to read a page title in.
+  'wx-link': { component: LinkField, kind: 'field', wide: true },
 }

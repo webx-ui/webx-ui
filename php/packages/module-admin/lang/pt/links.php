@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'target-entity' => 'Este site',
+    'target-url' => 'Um endereço',
+    'target-none' => 'Para nenhum lugar',
+    'section' => 'Secção',
+    'search' => 'Comece a escrever um nome',
+    'searching' => 'A procurar…',
+    'empty' => 'Nada encontrado',
+    'clear' => 'Remover a ligação',
+    'unavailable' => 'Ainda não está no site',
+    'missing' => 'Aquilo para onde esta ligação apontava já não existe',
+    'url-label' => 'Endereço',
+    'url-placeholder' => '/account ou https://example.com',
+    'hash' => 'Âncora',
+    'hash-placeholder' => 'seccao-da-pagina',
+    'url-routes' => 'Endereços deste site',
+    'new-tab' => 'Abrir num novo separador',
+    'rel' => 'Relação',
+    'rel-nofollow' => 'Não passar peso da ligação',
+    'rel-sponsored' => 'Colocação paga',
+    'rel-ugc' => 'Escrito por um visitante',
+    'shape' => 'Este campo aceita uma ligação.',
+    'target' => 'Este campo não conhece esse tipo de destino.',
+    'no-source' => 'Aqui não é possível ligar a isso.',
+    'no-entity' => 'Escolha para onde leva a ligação.',
+    'url-length' => 'Um endereço pode ter no máximo :max caracteres.',
+    'url-scheme' => 'Um endereço tem de ser um caminho ou começar por http, https, mailto ou tel.',
+    'hash-length' => 'Uma âncora pode ter no máximo :max caracteres.',
+    'hash-shape' => 'Uma âncora é um nome na página: sem espaços.',
+    'not-localized' => 'Uma ligação é a mesma em todos os idiomas e não se traduz.',
+];

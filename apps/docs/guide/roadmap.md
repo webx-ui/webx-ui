@@ -124,10 +124,18 @@ Still open: Carousel, Anchor, Splitter, Watermark, Marquee.
 
 ## CMS-specific (not in Element Plus)
 
-RichText (Tiptap) ✅ — see [RichText](/components/rich-text).
+RichText (Tiptap) ✅ — see [RichText](/components/rich-text). It edits one language at a time
+under `localized`, its toolbar takes its words as props, and a picture it takes from a library
+carries that library's key into the document rather than an address that will not survive the
+next deployment. On a screen it is `wx-rich-text`, from `module-admin` — see
+[Screens](/guide/screens).
 CodeEditor (CodeMirror 6) ✅ — the same field for code: JSON with a linter, HTML, CSS, PHP, YAML
 and the rest, see [CodeEditor](/components/code-editor). The screens mechanism needs its patches
 written somewhere better than a textarea.
+IconPicker ✅ — the icon set, picked from rather than typed into, see
+[IconPicker](/components/icon-picker). A name the set does not have draws nothing and says
+nothing, so anywhere an editor names an icon — a block type, a menu entry — the name has to come
+out of the set rather than out of a keyboard.
 EntityCard ✅ — one record as a row, see [EntityCard](/components/entity-card).
 Actions ✅ — the icon buttons at the end of a row, see [Actions](/components/actions).
 ActionBar ✅ — the same screen's buttons along the bottom of it, see
@@ -156,6 +164,13 @@ it was cut from, so the same editor crops an avatar before a form is submitted a
 that is already in a library. Everything on screen is geometry, and the picture is drawn exactly
 once — at the end, under one transform — because a chain of canvases softens a photograph at every
 link.
+
+ThemeSwitch ✅ — light, dark, or whatever the machine says: see
+[ThemeSwitch](/components/theme-switch). Three states rather than two, because a toggle cannot
+say _I have not decided_, which is the state most people are in — and following the machine is
+what makes a panel go dark at sunset along with everything else on the desk. It reports the
+choice and nothing else: applying it is `applyTheme()`, and remembering it belongs to whoever
+knows where that person's settings live.
 
 SortableList ✅ — a list whose order is the point, dragged by a grip or moved with the arrow keys:
 see [SortableList](/components/sortable-list).
@@ -196,9 +211,11 @@ of components:
 1. `@webx-ui/adapter-laravel` — paginator, 422 validation errors, sort/filter query parameters.
 2. CMS building blocks on top of `core`: the panel's sections, each a pair of packages — the
    [file manager](/guide/media), [administrators](/guide/admins), [settings](/guide/settings),
-   [SEO](/guide/seo), the [block constructor](/guide/blocks) and, newest,
-   [pages](/guide/pages) — the first entity that puts the tree, the address registry, the blocks,
-   the drafts and the SEO card together on something real. Each of them is also a set of MCP
-   tools, so an agent reaches the panel through the same doors an editor does.
+   [SEO](/guide/seo), the [block constructor](/guide/blocks), [pages](/guide/pages) — the first
+   entity that puts the tree, the address registry, the blocks, the drafts and the SEO card
+   together on something real — the [blog](/guide/blog), the [inbox](/guide/inbox) and, newest,
+   the [menus](/guide/menu), which are what turns all of those into something a visitor can reach.
+   Each of them is also a set of MCP tools, so an agent reaches the panel through the same doors
+   an editor does.
 3. An in-admin component editor: fields defined as JSON plus a Blade template and CSS, generated
    into files by Laravel.

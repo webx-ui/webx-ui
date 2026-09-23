@@ -127,7 +127,7 @@ return [
     | The form on the site
     |---------------------------------------------------------------------------
     |
-    | `<x-webx-form>` prints a link to one small script of its own, which turns
+    | `<x-webx-inbox::form>` prints a link to one small script of its own, which turns
     | a working form into one that answers in place. Without it the form still
     | submits — it posts, and comes back with the errors or the thank-you in the
     | session — so this may be switched off by a site that bundles the published

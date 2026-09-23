@@ -141,6 +141,46 @@ describe('WxListDetail', () => {
     expect(wrapper.emitted('update:filtersOpen')?.at(-1)).toEqual([true])
   })
 
+  it('gives the list the screen when there is no detail to stand beside it', async () => {
+    const wrapper = mount(WxListDetail, {
+      slots: { filters: slots.filters, list: slots.list },
+    })
+
+    emit?.(1200)
+    await nextTick()
+
+    // No empty pane waiting for a record that never opens here.
+    expect(wrapper.find('.wx-list-detail__detail').exists()).toBe(false)
+    expect(wrapper.find('.wx-list-detail__list--alone').exists()).toBe(true)
+    expect(wrapper.find('.wx-list-detail__filters').exists()).toBe(true)
+
+    // 240 + 420, without the column of records the threshold no longer counts.
+    emit?.(660)
+    await nextTick()
+    expect(wrapper.find('.wx-list-detail__filters').exists()).toBe(true)
+
+    emit?.(659)
+    await nextTick()
+    expect(wrapper.find('.wx-list-detail__filters').exists()).toBe(false)
+    // What folded is the chooser; the records stayed on screen.
+    expect(wrapper.get('.t-list').text()).toBe('Rows')
+  })
+
+  it('says when the chooser lost its column, for a head that stands outside', async () => {
+    const wrapper = mountPane()
+
+    // Once at the start, so a head drawn before the first measurement is not wrong.
+    expect(wrapper.emitted('filters-inline')?.at(-1)).toEqual([true])
+
+    emit?.(700)
+    await nextTick()
+    expect(wrapper.emitted('filters-inline')?.at(-1)).toEqual([false])
+
+    emit?.(1400)
+    await nextTick()
+    expect(wrapper.emitted('filters-inline')?.at(-1)).toEqual([true])
+  })
+
   it('closes the filters panel when the column comes back', async () => {
     const wrapper = mountPane({ filtersOpen: true })
 

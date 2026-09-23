@@ -1,0 +1,71 @@
+{
+  "packages": [
+    {
+      "name": "webx-ui/module-pages",
+      "extra": {
+        "laravel": { "providers": ["WebxUi\\Pages\\PagesServiceProvider"] },
+        "webx": {
+          "module": "pages",
+          "npm": { "@webx-ui/module-pages": "^0.3.10" },
+          "panel": {
+            "import": "import { pages } from '@webx-ui/module-pages'",
+            "style": "@webx-ui/module-pages/style.css",
+            "register": "pages()"
+          }
+        }
+      }
+    },
+    {
+      "name": "webx-ui/module-auth",
+      "extra": {
+        "webx": {
+          "module": "auth",
+          "npm": { "@webx-ui/module-auth": "^0.8.0" },
+          "panel": {
+            "import": "import { admins, connect } from '@webx-ui/module-auth'",
+            "style": "@webx-ui/module-auth/style.css",
+            "register": ["admins()", "connect()"]
+          }
+        }
+      }
+    },
+    {
+      "name": "webx-ui/module-seo",
+      "extra": {
+        "webx": {
+          "module": "seo",
+          "npm": { "@webx-ui/module-seo": "^0.4.2" },
+          "panel": {
+            "import": "import { seo } from '@webx-ui/module-seo'",
+            "style": "@webx-ui/module-seo/style.css",
+            "register": "seo()"
+          }
+        }
+      }
+    },
+    {
+      "name": "webx-ui/module-admin",
+      "extra": {
+        "webx": {
+          "module": "admin",
+          "npm": {
+            "@webx-ui/core": "^0.30.0",
+            "@webx-ui/module-admin": "^0.13.0",
+            "@webx-ui/tokens": "^0.4.0",
+            "vue": "^3.5.0",
+            "vue-router": "^4.5.0"
+          }
+        }
+      }
+    },
+    {
+      "name": "webx-ui/nested-set",
+      "extra": {
+        "laravel": { "providers": ["WebxUi\\NestedSet\\NestedSetServiceProvider"] }
+      }
+    },
+    {
+      "name": "vendor/no-extra-at-all"
+    }
+  ]
+}

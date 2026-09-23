@@ -3,7 +3,16 @@ import type { Patch, ScreenNode, TypeRegistry } from '@webx-ui/schema'
 import { adminTypes } from './screenTypes'
 import type { Http } from './http'
 import type { I18n } from './i18n'
-import type { AdminModule, AdminStatus, AdminUser, Manifest, NavEntry, NavGroup } from './types'
+import type { ThemeController } from './theme'
+import type {
+  AdminModule,
+  AdminStatus,
+  AdminUser,
+  Manifest,
+  NavEntry,
+  NavGroup,
+  PickedImage,
+} from './types'
 
 export interface AdminContext {
   /** The panel's own backend. */
@@ -23,6 +32,11 @@ export interface AdminContext {
   readonly groups: ComputedRef<{ top: NavEntry[]; groups: NavGroup[] }>
   /** Node types every screen is drawn with: the modules' and the project's, over the core. */
   readonly types: TypeRegistry
+  /**
+   * How the panel picks a picture, when a module installed here has a library. `null` when
+   * none does — and a field that needs one then does not offer to.
+   */
+  readonly pickImage: (() => Promise<PickedImage | null>) | null
   /** Ask the server what the panel is and who is signed in again. */
   reload(): Promise<void>
   /**
@@ -91,6 +105,8 @@ export function createAdminContext(options: {
   loadDictionary?: (locale: string) => Promise<void>
   types?: TypeRegistry
   screens?: Record<string, Patch>
+  /** Told who is signed in, so the theme they chose follows them to this machine. */
+  theme?: ThemeController
 }): AdminContext {
   const state = reactive<AdminState>({
     status: 'loading',
@@ -160,6 +176,7 @@ export function createAdminContext(options: {
         .map((group) => ({
           id: group.id,
           title: group.title,
+          icon: group.icon ?? null,
           entries: byGroup.get(group.id) ?? [],
         })),
     }
@@ -174,6 +191,10 @@ export function createAdminContext(options: {
   }
 
   Object.assign(types, options.types)
+
+  // The first module that has a library wins. Two of them is not a case worth a setting: a
+  // panel with two file managers has a bigger question to answer than which one this opens.
+  const pickImage = options.modules.find((module) => module.pickImage !== undefined)?.pickImage
 
   const screens = new Map<string, Promise<ScreenNode[]>>()
 
@@ -206,6 +227,7 @@ export function createAdminContext(options: {
     try {
       if (loadSession !== null) {
         state.user = await loadSession()
+        adoptTheme(state.user)
 
         // Asking for the manifest as a stranger would only produce the 401 we already know
         // about, and a spurious one in the network log for whoever is debugging.
@@ -260,6 +282,17 @@ export function createAdminContext(options: {
     }
   }
 
+  /**
+   * The theme is a property of the person, like the language: chosen once and found again on
+   * the next machine they sign in on. Until then the panel is drawn in whatever this browser
+   * remembers, which is what the sign-in screen had to go on.
+   */
+  function adoptTheme(user: AdminUser | null): void {
+    if (user !== null) {
+      options.theme?.adopt(user.theme)
+    }
+  }
+
   async function setLocale(code: string): Promise<void> {
     if (options.loadDictionary === undefined) {
       options.i18n.state.locale = code
@@ -290,11 +323,13 @@ export function createAdminContext(options: {
     nav,
     groups,
     types,
+    pickImage: pickImage ?? null,
     reload,
     refreshManifest,
     setLocale,
     setUser(user) {
       state.user = user
+      adoptTheme(user)
     },
     useSessionLoader(loader) {
       loadSession = loader

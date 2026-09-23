@@ -14,10 +14,14 @@ parameters:
         - packages/module-auth/tests
         - packages/module-blocks/src
         - packages/module-blocks/tests
+        - packages/module-blog/src
+        - packages/module-blog/tests
         - packages/module-inbox/src
         - packages/module-inbox/tests
         - packages/module-media/src
         - packages/module-media/tests
+        - packages/module-menu/src
+        - packages/module-menu/tests
         - packages/module-pages/src
         - packages/module-pages/tests
         - packages/module-seo/src

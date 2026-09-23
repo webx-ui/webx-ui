@@ -41,15 +41,17 @@ jobs:
       - uses: actions/checkout@v5
 
       # The directory listing is the source of truth: a new package needs no workflow edit,
-      # only a repository with a matching name.
+      # only a repository with a matching name. `php/site` is named as well as listed — it is
+      # the project skeleton `composer create-project` reads, so it mirrors and tags like a
+      # package without being one.
       - id: collect
-        name: Read php/packages
+        name: Read php/packages and php/site
         run: |
-          matrix=$(for manifest in php/packages/*/composer.json; do
-            directory=$(basename "$(dirname "$manifest")")
+          matrix=$(for manifest in php/packages/*/composer.json php/site/composer.json; do
+            path=$(dirname "$manifest")
             repository=$(jq -r '.name | sub("^webx-ui/"; "")' "$manifest")
-            jq -n --arg directory "$directory" --arg repository "$repository" \
-              '{directory: $directory, repository: $repository}'
+            jq -n --arg path "$path" --arg repository "$repository" \
+              '{path: $path, repository: $repository}'
           done | jq -s -c .)
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
           echo "$matrix"
@@ -115,7 +117,7 @@ jobs:
           # is "could not read Password" at the push. Naming the username makes both work.
           GITHUB_TOKEN: x-access-token:${{ steps.mirror-token.outputs.token }}
         with:
-          package_directory: php/packages/${{ matrix.package.directory }}
+          package_directory: ${{ matrix.package.path }}
           repository_organization: webx-ui
           repository_name: ${{ matrix.package.repository }}
           user_name: webx-ui-bot

@@ -39,4 +39,7 @@ return [
     'deleted' => 'Yönetici silindi',
     'new-short' => 'Ekle',
     'edit-short' => 'Düzenle',
+
+    'filter-role' => 'Rol',
+    'filter-state' => 'Durum',
 ];

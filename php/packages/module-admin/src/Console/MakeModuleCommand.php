@@ -33,10 +33,17 @@ final class MakeModuleCommand extends Command
         $files->ensureDirectoryExists(dirname($path));
         $files->put($path, $this->render($files, $namespace, $class, $id));
 
+        // The demo folder comes with the module rather than being remembered later: a section
+        // with nothing to show on a fresh site is the ordinary way to have no demo at all.
+        $demo = $this->laravel->resourcePath('demo/'.$id);
+        $files->ensureDirectoryExists($demo);
+        $files->put($demo.'/.gitkeep', '');
+
         $this->components->info("Module [{$class}] created.");
         $this->components->bulletList([
             "Register it: app(WebxUi\\Admin\\ModuleRegistry::class)->register(new \\{$namespace}\\{$class}());",
             'Do that from a service provider, so the panel knows about it on every request.',
+            "Demo fixtures go in resources/demo/{$id}; seed() fills them in and webx:demo runs it.",
         ]);
 
         return self::SUCCESS;

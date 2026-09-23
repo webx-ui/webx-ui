@@ -1,4 +1,4 @@
-import { computed, ref, toValue, type MaybeRefOrGetter, type Ref } from 'vue'
+import { computed, ref, toValue, watch, type MaybeRefOrGetter, type Ref } from 'vue'
 
 export type TreeKey = string | number
 
@@ -91,8 +91,21 @@ export function useTreeNodes<T>(options: UseTreeNodesOptions<T>) {
   const { nodes, accessors, expanded } = options
 
   const loading = ref(new Set<TreeKey>())
-  /** Branches `load` has already answered for — an empty answer still counts. */
-  const loaded = ref(new Set<TreeKey>())
+  /**
+   * Branches `load` has already answered for — an empty answer still counts.
+   *
+   * Held against the node itself rather than its key, because a level that is fetched again
+   * comes back as new objects under the same keys, and the children read into the old ones
+   * are gone with them. Kept by key, the tree would take the new node's missing `children`
+   * for the answer it already has and never ask again: the branch stays open and empty, its
+   * chevron closes and opens the same nothing, and only a page reload brings it back.
+   */
+  const loaded = new WeakSet<object>()
+  /** Nodes whose refill threw, so the retry is the reader's click and not a loop. */
+  const refused = new WeakSet<object>()
+
+  /** A node as the identity those two sets are keyed by. */
+  const identity = (node: T) => node as unknown as object
 
   const entries = computed(() => {
     void fetched.value
@@ -227,22 +240,56 @@ export function useTreeNodes<T>(options: UseTreeNodesOptions<T>) {
     const item = entry(key)
     if (!item) return
 
-    if (toValue(options.lazy) && options.load && !loaded.value.has(key) && !item.children.length) {
-      loading.value = new Set(loading.value).add(key)
-      try {
-        const children = await options.load(item.node)
-        accessors.setChildren(item.node, children)
-        loaded.value = new Set(loaded.value).add(key)
-        fetched.value += 1
-      } finally {
-        const next = new Set(loading.value)
-        next.delete(key)
-        loading.value = next
-      }
+    if (needsChildren(item)) {
+      // Asked for by hand, so a branch the refill below gave up on is worth another try.
+      refused.delete(identity(item.node))
+      await fetchChildren(item)
     }
 
     setExpanded(key, true)
   }
+
+  const needsChildren = (item: TreeEntry<T>) =>
+    Boolean(toValue(options.lazy)) &&
+    Boolean(options.load) &&
+    !item.children.length &&
+    !loaded.has(identity(item.node))
+
+  async function fetchChildren(item: TreeEntry<T>) {
+    loading.value = new Set(loading.value).add(item.key)
+    try {
+      const children = (await options.load?.(item.node)) ?? []
+      accessors.setChildren(item.node, children)
+      loaded.add(identity(item.node))
+      fetched.value += 1
+    } finally {
+      const next = new Set(loading.value)
+      next.delete(item.key)
+      loading.value = next
+    }
+  }
+
+  /**
+   * An open branch with nothing under it fetches, once per node.
+   *
+   * That is the state a lazy tree is left in when the level it stands in is fetched again —
+   * after a delete, a move, a filter: the open branches are keys in `expanded`, so they are
+   * still open, while the nodes under those keys are new objects whose children never
+   * arrived. Nobody would ask for them, since what the reader sees is a branch that is
+   * already open, so the tree asks for itself.
+   */
+  watch(
+    rows,
+    (list) => {
+      for (const item of list) {
+        if (!item.expanded || loading.value.has(item.key)) continue
+        if (refused.has(identity(item.node)) || !needsChildren(item)) continue
+
+        void fetchChildren(item).catch(() => refused.add(identity(item.node)))
+      }
+    },
+    { immediate: true, flush: 'post' },
+  )
 
   const collapse = (key: TreeKey) => setExpanded(key, false)
 

@@ -27,4 +27,6 @@ return [
     'json-ld-help' => 'Un objeto JSON-LD, o una lista de ellos. Lo que el sitio dice de sí mismo viene de los ajustes; esto es para una página que necesita marcado propio.',
     'json-ld-invalid' => 'Esto no es JSON válido.',
     'preview' => 'En los resultados',
+    'share-preview' => 'Al compartir',
+    'share-auto' => 'Lo pone el sitio: la imagen del propio registro o la predeterminada',
 ];

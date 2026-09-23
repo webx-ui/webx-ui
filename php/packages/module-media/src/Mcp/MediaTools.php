@@ -200,6 +200,7 @@ final class MediaTools
                     'required' => ['url', 'directory_id'],
                 ],
                 scope: 'media:write',
+                permission: ['media.upload', 'media.manage'],
             ),
 
             Tool::mutating(

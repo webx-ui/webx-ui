@@ -156,6 +156,34 @@ describe('WxBlocks', () => {
     expect((next[1]!.values.content as BlockNode[])[0]!.values.title).toBe('Changed')
   })
 
+  /**
+   * The tree and the form take turns in one column, so everything the tree was there for
+   * while a block is open has to be somewhere else: the head of the form. Found by place,
+   * because outside a panel the labels are keys — previous, next, then the way out.
+   */
+  it('puts the tree away and steps between blocks in its head', async () => {
+    const wrapper = field()
+    const head = () => wrapper.find('.wx-blocks__panel-title').text()
+    const steps = () => wrapper.findAll('.wx-blocks__panel-extra button')
+
+    await wrapper.findAll('.wx-blocks-tree__row')[0]!.trigger('click')
+
+    expect(wrapper.find('.wx-blocks__tree').exists()).toBe(false)
+    expect(head()).toContain('Hero')
+    /* Nothing above the first one. */
+    expect(steps()[0]!.attributes('aria-disabled')).toBe('true')
+
+    await steps()[1]!.trigger('click')
+    expect(head()).toContain('Section')
+
+    /* Down into what the section holds, not past it: the order is the one the page draws. */
+    await steps()[1]!.trigger('click')
+    expect(head()).toContain('Hero')
+    /* And the trail says where that one lives, which is what the tree used to show. */
+    expect(head()).toContain('Section')
+    expect(steps()[1]!.attributes('aria-disabled')).toBe('true')
+  })
+
   it('draws a note instead of a second constructor for the nested field', async () => {
     const wrapper = field()
 

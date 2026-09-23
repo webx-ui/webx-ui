@@ -1,5 +1,25 @@
 # Installation
 
+Two ways in, and which one you want depends on what you are building.
+
+## A whole site
+
+The usual one: a Laravel application with the panel on it, the modules you chose, an
+administrator and some content to look at — from an empty directory, in one command.
+
+```bash
+composer create-project webx-ui/site example.local
+```
+
+Everything after that — the questions, installing a module six months later, the layout seam, the
+demo content, `webx:doctor` — is in [A new site](./new-site.md). The rest of this page is the
+other way in.
+
+## The library on its own
+
+For a Vue application that wants the components and nothing else: no Laravel, no panel, no
+modules.
+
 ```bash
 pnpm add @webx-ui/core @webx-ui/tokens
 ```
@@ -87,6 +107,11 @@ import '@webx-ui/tokens/tokens.css'
 ```
 
 ## Inside a Laravel app
+
+For the panel itself, do not write any of this by hand — `php artisan webx:panel --sync` writes
+the entry file, the Vite input and the dependencies from the modules installed on the server, and
+[A new site](./new-site.md) is the whole of it. What follows is for an application that wants the
+components in a Vue app of its own.
 
 Laravel ships with Vite. Register the Vue plugin and import the styles from your admin entry point:
 

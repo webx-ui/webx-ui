@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, type Component } from 'vue'
-import { useTranslate } from '@webx-ui/module-admin'
+import { computed, inject, ref, type Component } from 'vue'
+import { adminKey, useTranslate } from '@webx-ui/module-admin'
 import {
   localizedValue,
   useLocales,
@@ -34,8 +34,10 @@ const props = withDefaults(
     /**
      * The field that picks the share image — `WxMediaField` in a panel that has the library.
      *
-     * Handed in rather than imported: this package does not depend on the media one, and a panel
-     * without a library still edits everything else about a page.
+     * Not imported: this package does not depend on the media one, and a panel without a library
+     * still edits everything else about a page. Not usually handed in either — the card looks
+     * `wx-media` up in the panel's own registry, which is where the module that has the library
+     * puts it. This prop is for a caller that wants a different field than the registered one.
      */
     mediaField?: Component
     disabled?: boolean
@@ -65,6 +67,25 @@ const value = defineModel<SeoValue | null>({ default: null })
 useSeoMessages()
 
 const t = useTranslate('webx-seo')
+
+/*
+ * Injected rather than asked for with `useAdmin()`, which throws outside a panel: this card is
+ * also mounted by the docs and by its own tests, and there it has to draw everything but the
+ * picture rather than fail.
+ */
+const admin = inject(adminKey, null)
+
+/**
+ * The field the picture is picked with: whatever this card was given, or `wx-media` as the panel
+ * registered it.
+ *
+ * Looked up rather than only handed in, because a panel that installed the library has already
+ * said so once — and saying it twice is a thing to forget. Forgetting it is silent: every other
+ * SEO field is there, and the picture is simply missing from one screen and present on another.
+ */
+const picker = computed<Component | undefined>(
+  () => props.mediaField ?? admin?.types['wx-media']?.component,
+)
 const locales = useLocales()
 
 const jsonLdText = ref<string | null>(null)
@@ -169,6 +190,27 @@ const preview = computed(() => ({
 
 const hasPreview = computed(() => preview.value.title !== '' || preview.value.description !== '')
 
+/**
+ * What a share card would say, with the fallbacks the fields promise: an empty share title
+ * takes the page's title, an empty share description takes its description.
+ *
+ * The picture is the address the server sent beside the key — `og_image.url`, worked out by
+ * whoever owns `wx-media`. That is the whole reason it travels with the value, so the preview
+ * costs no request and works on a page opened cold, not only on one where the picture was
+ * picked a moment ago.
+ */
+const share = computed(() => ({
+  image: image.value?.url ?? null,
+  title: inLocale(ogTitle.value as LocalizedValue | undefined) || preview.value.title,
+  description:
+    inLocale(ogDescription.value as LocalizedValue | undefined) || preview.value.description,
+  address: preview.value.address,
+}))
+
+const hasShare = computed(
+  () => share.value.image !== null || share.value.title !== '' || share.value.description !== '',
+)
+
 const keptHelp = computed(() =>
   kept.value.length === 0
     ? undefined
@@ -227,9 +269,10 @@ function tone(count: number, limit: number): 'muted' | 'warning' {
       <wx-tab :label="t('card.section-share')" value="share">
         <div class="wx-seo__fields">
           <component
-            :is="mediaField"
-            v-if="mediaField"
+            :is="picker"
+            v-if="picker"
             v-model="image"
+            class="wx-seo__image"
             :label="t('card.og-image')"
             aspect="16/9"
             accept="image"
@@ -243,6 +286,30 @@ function tone(count: number, limit: number): 'muted' | 'warning' {
           <wx-form-item :label="t('card.og-description')" :disabled="disabled">
             <wx-textarea v-model="ogDescription" localized :rows="2" />
           </wx-form-item>
+
+          <!-- The same idea as the snippet on the first tab, for the other place a page is
+               read without being opened. -->
+          <div v-if="hasShare" class="wx-seo__preview">
+            <wx-text size="sm" tone="muted">{{ t('card.share-preview') }}</wx-text>
+
+            <div class="wx-seo__share">
+              <div class="wx-seo__share-image">
+                <!-- Empty is not a mistake to point at: a site fills the picture in from the
+                     record itself, and only it knows with what. Said rather than left blank,
+                     because a blank rectangle reads as "nothing will be shown". -->
+                <img v-if="share.image" :src="share.image" alt="" />
+                <wx-text v-else size="sm" tone="muted">{{ t('card.share-auto') }}</wx-text>
+              </div>
+
+              <div class="wx-seo__share-body">
+                <div v-if="share.address" class="wx-seo__share-address">{{ share.address }}</div>
+                <div class="wx-seo__share-title">{{ share.title }}</div>
+                <div v-if="share.description" class="wx-seo__share-text">
+                  {{ share.description }}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </wx-tab>
 
@@ -293,6 +360,18 @@ function tone(count: number, limit: number): 'muted' | 'warning' {
   padding-block-start: var(--wx-space-12);
 }
 
+/*
+ * As wide as the fields it stands with.
+ *
+ * The picture is the one thing in this card that is not inside a `WxFormItem` — it draws its own
+ * label — so the cap a form item puts on its control never reached it, and a share image ran the
+ * whole width of the card while the title under it stopped at 640. The same variable, so a
+ * screen that widens its fields widens this too.
+ */
+.wx-seo__image {
+  max-width: var(--wx-field-max-width, 640px);
+}
+
 .wx-seo__count {
   display: flex;
   justify-content: flex-end;
@@ -329,6 +408,62 @@ function tone(count: number, limit: number): 'muted' | 'warning' {
 
 .wx-seo__snippet-text {
   color: var(--wx-text-default);
+  font-size: var(--wx-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+/* The share card, at the width of the fields it is made of. */
+.wx-seo__share {
+  max-width: var(--wx-field-max-width, 640px);
+  overflow: hidden;
+  border: 1px solid var(--wx-border-default);
+  border-radius: var(--wx-radius-md);
+  background: var(--wx-bg-subtle);
+}
+
+/*
+ * 1.91:1 is the shape every network crops an unknown picture to, so it is the shape worth
+ * showing: a preview in any other proportion promises a framing the reader will not get.
+ */
+.wx-seo__share-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1.91 / 1;
+  padding: var(--wx-space-16);
+  border-block-end: 1px solid var(--wx-border-default);
+  background: var(--wx-bg-muted);
+  text-align: center;
+}
+
+.wx-seo__share-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wx-seo__share-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-2);
+  padding: var(--wx-space-12);
+}
+
+.wx-seo__share-address {
+  color: var(--wx-text-muted);
+  font-size: var(--wx-font-size-xs);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.wx-seo__share-title {
+  color: var(--wx-text-default);
+  font-weight: var(--wx-font-weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.wx-seo__share-text {
+  color: var(--wx-text-muted);
   font-size: var(--wx-font-size-sm);
   overflow-wrap: anywhere;
 }

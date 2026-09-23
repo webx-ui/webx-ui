@@ -32,11 +32,12 @@ final class ListToolsCommand extends Command
         }
 
         $this->table(
-            ['Tool', 'Module', 'Scope', 'Changes data', 'Description'],
+            ['Tool', 'Module', 'Scope', 'Permission', 'Changes data', 'Description'],
             array_map(static fn (BoundTool $tool): array => [
                 $tool->fullName(),
                 $tool->moduleId,
                 $tool->scope(),
+                implode(' | ', $tool->permissions()),
                 $tool->tool->mutating ? 'yes' : 'no',
                 $tool->tool->description,
             ], $tools),

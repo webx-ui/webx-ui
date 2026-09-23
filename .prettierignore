@@ -10,3 +10,5 @@ php/composer.json
 php/composer.lock
 php/pint.json
 php/packages/*/composer.json
+# The project skeleton is a Laravel application, formatted the way Laravel formats one.
+php/site

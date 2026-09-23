@@ -92,8 +92,14 @@ panel like this.
   keep the filters to hand, but a submission needs a link: it goes in the letter to the recipient,
   it is pasted into a chat, an agent points at it. Going back keeps the form, the tab and the page
   you were on; the arrows in its head walk the same filtered pile.
-- **On a phone** there are no two columns: the forms, then the submissions of one of them, then
-  back — the same `WxListDetail` the panel already has.
+- **On a phone** there is one column, and it is the submissions. The forms are the chooser in
+  front of the list — the `filters` column of `WxListDetail` — so what folds away is them, behind
+  a **Forms** button that stands in the head of the section beside **New submission**; the reader
+  opens the section and sees what has come in, which is what they came for. One form is always
+  open, the first unless the address names another.
+- **The action the section exists for is a submission**, so that is the button in its head. A new
+  form is the `+` over the list of forms — beside the things it makes one more of — because a
+  panel opens this section to read what came in dozens of times for every once it adds a form.
 
 Statuses are their own screen under `inbox.manage`: the label, the colour, and three flags —
 which one a submission arrives in, which one means spam, which ones mean closed. Rows rather than
@@ -103,8 +109,8 @@ so a status renamed from New to «Не разобрано» goes on being the on
 ## The form on the site
 
 ```blade
-<x-webx-form slug="contact" />
-<x-webx-form :form="$form" class="my-form" :values="['product' => $product->name]" />
+<x-webx-inbox::form slug="contact" />
+<x-webx-inbox::form :form="$form" class="my-form" :values="['product' => $product->name]" />
 ```
 
 The tag prints the whole thing: the controls the fields ask for, the honeypot, the hidden
@@ -271,13 +277,18 @@ the same log line — and differs only in its `source`, which is what tells the 
 The section is also a set of tools. With `webx-ui/mcp` installed (it comes with this module), the
 panel serves one MCP server at `/api/cms/mcp`:
 
+Passport comes with the panel, and a site switches it on once:
+
 ```bash
-php artisan vendor:publish --tag=sanctum-migrations && php artisan migrate   # once per site
-php artisan webx:mcp:token admin@example.com --name=claude
+php artisan vendor:publish --tag=passport-migrations && php artisan migrate
+php artisan passport:keys
 ```
 
-The agent then acts as that administrator, within the token's scopes: `inbox:read` for the tools
-that look, `inbox:write` for the ones that change.
+Somebody then connects their own agent to it: they paste that address into Claude, ChatGPT or
+`claude mcp add --transport http webx <address>`, the client sends them to the panel to sign in
+and agree, and it leaves with a token of theirs. The agent acts as that administrator. On the
+machine the site runs on, `php artisan mcp:start webx` is the same server over stdio, trusted the
+way tinker is.
 
 | Tool               | What it does                                                                    |
 | ------------------ | ------------------------------------------------------------------------------- |

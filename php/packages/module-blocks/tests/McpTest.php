@@ -6,6 +6,7 @@ namespace WebxUi\Blocks\Tests;
 
 use Illuminate\Testing\Fluent\AssertableJson;
 use Laravel\Mcp\Server\Testing\TestResponse;
+use Laravel\Passport\Passport;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Auth\Models\CmsUser;
@@ -454,12 +455,10 @@ final class McpTest extends TestCase
     public function the_http_door_needs_a_token_and_the_token_needs_the_scope(): void
     {
         $editor = $this->editor();
-        $reader = $editor->createToken('reader', ['blocks:read'])->plainTextToken;
-        $writer = $editor->createToken('writer', ['blocks:read', 'blocks:write'])->plainTextToken;
 
         $this->postJson('/api/cms/mcp', $this->rpc('tools/list'))->assertUnauthorized();
 
-        $listed = $this->bearing($reader)
+        $listed = $this->bearing($editor, ['blocks:read'])
             ->postJson('/api/cms/mcp', $this->rpc('tools/list'))
             ->assertOk()
             ->json('result.tools.*.name');
@@ -468,7 +467,7 @@ final class McpTest extends TestCase
 
         $create = $this->rpc('tools/call', ['name' => 'blocks_create', 'arguments' => ['slug' => 'hero', 'title' => 'Hero']]);
 
-        $this->bearing($reader)
+        $this->bearing($editor, ['blocks:read'])
             ->postJson('/api/cms/mcp', $create)
             ->assertOk()
             ->assertJsonPath('result.isError', true)
@@ -476,7 +475,10 @@ final class McpTest extends TestCase
 
         $this->assertSame(0, Block::query()->count());
 
-        $created = $this->bearing($writer)->postJson('/api/cms/mcp', $create)->assertOk()->json();
+        $created = $this->bearing($editor, ['blocks:read', 'blocks:write'])
+            ->postJson('/api/cms/mcp', $create)
+            ->assertOk()
+            ->json();
 
         $this->assertSame('hero', data_get($created, 'result.structuredContent.slug'), (string) json_encode($created));
 
@@ -485,28 +487,24 @@ final class McpTest extends TestCase
         // Switched off since the token was issued: the token stops working with the account.
         $editor->forceFill(['is_active' => false])->save();
 
-        $this->bearing($writer)->postJson('/api/cms/mcp', $this->rpc('tools/list'))->assertForbidden();
+        $this->bearing($editor, ['blocks:read'])
+            ->postJson('/api/cms/mcp', $this->rpc('tools/list'))
+            ->assertForbidden();
     }
 
     #[Test]
-    public function a_token_is_issued_from_the_console_with_the_scopes_it_names(): void
+    public function a_token_granted_over_oauth_reaches_the_module(): void
     {
-        $editor = $this->editor();
-
-        $this->artisan('webx:mcp:token', ['email' => $editor->email, '--scopes' => 'blocks:read', '--name' => 'claude'])
-            ->assertSuccessful();
-
-        $token = $editor->tokens()->firstOrFail();
-
-        $this->assertSame('claude', $token->getAttribute('name'));
-        $this->assertSame(['blocks:read'], $token->getAttribute('abilities'));
-
-        $this->artisan('webx:mcp:token', ['email' => $editor->email])->assertSuccessful();
-
-        $this->assertSame($this->app->make(ToolRegistry::class)->scopes(), $editor->tokens()->latest('id')->firstOrFail()->getAttribute('abilities'), 'every scope on offer when none is named');
-
-        $this->artisan('webx:mcp:token', ['email' => $editor->email, '--scopes' => 'blocks:admin'])->assertFailed();
-        $this->artisan('webx:mcp:token', ['email' => 'nobody@example.test'])->assertFailed();
+        // What a client is actually handed: one scope for the whole server, because that is
+        // the only one it is ever offered there. Reading module scopes off such a token
+        // would refuse every call — silently, and only once somebody connected for real.
+        $this->bearing($this->editor(), ['mcp:use'])
+            ->postJson('/api/cms/mcp', $this->rpc('tools/call', [
+                'name' => 'blocks_create',
+                'arguments' => ['slug' => 'hero', 'title' => 'Hero'],
+            ]))
+            ->assertOk()
+            ->assertJsonPath('result.structuredContent.slug', 'hero');
     }
 
     /**
@@ -523,14 +521,22 @@ final class McpTest extends TestCase
     }
 
     /**
-     * The next request with this token. The guard caches the user it resolved for the last
-     * request, as it would within one; between two requests of one test it has to forget.
+     * The next request as this administrator, with a token carrying these scopes.
+     *
+     * `Passport::actingAs()` rather than a real one: issuing a token for real needs the
+     * site's keys and a personal access client, and what is being checked here is the door,
+     * not the crypto. The guard caches the user it resolved for the last request, as it
+     * would within one; between two requests of one test it has to forget.
+     *
+     * @param  list<string>  $scopes
      */
-    private function bearing(string $token): static
+    private function bearing(CmsUser $editor, array $scopes): static
     {
         $this->app['auth']->forgetGuards();
 
-        return $this->withToken($token);
+        Passport::actingAs($editor, $scopes, 'api');
+
+        return $this;
     }
 
     /**

@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useAdmin, useErrorText, useTranslate, WxScreen } from '@webx-ui/module-admin'
-import { toast, WxActionBar, WxButton, WxHeading, WxSkeleton } from '@webx-ui/core'
+import {
+  useAdmin,
+  useErrorText,
+  useTranslate,
+  WxBackupNote,
+  WxScreen,
+  WxScreenHead,
+  type ScreenAction,
+} from '@webx-ui/module-admin'
+import { toast, WxActionBar, WxButton, WxSkeleton } from '@webx-ui/core'
 import type { ScreenModel } from '@webx-ui/schema'
 import { createSettingsApi } from './api'
 import { useSettingsMessages } from './i18n'
@@ -69,16 +77,25 @@ async function save(): Promise<void> {
     saving.value = false
   }
 }
+/* Saving, and again in the bar below: the head goes with the scroll on a form this long (§3.3). */
+const actions = computed<ScreenAction[]>(() =>
+  canManage
+    ? [
+        {
+          key: 'save',
+          label: t('page.save'),
+          primary: true,
+          loading: saving.value,
+          run: () => void save(),
+        },
+      ]
+    : [],
+)
 </script>
 
 <template>
   <div class="wx-settings">
-    <div class="wx-settings__head">
-      <wx-heading :level="2">{{ title }}</wx-heading>
-      <wx-button v-if="canManage" type="primary" :loading="saving" @click="save">
-        {{ t('page.save') }}
-      </wx-button>
-    </div>
+    <wx-screen-head :title="title" :actions="actions" />
 
     <wx-skeleton v-if="loading" :rows="4" />
     <wx-screen
@@ -88,6 +105,15 @@ async function save(): Promise<void> {
       :errors="errors"
       :disabled="!canManage"
     />
+
+    <!--
+      Where the panel says when the database was last dumped (§6 of the backups spec). It is
+      the section this belongs in — System is Settings and Administrators, and of those two
+      this is the one somebody opens to ask how the installation is doing — and `settings.view`
+      is the right the line itself asks for. A footnote under the form rather than a field in
+      it: the form is what the site is, and this is what the server did last night.
+    -->
+    <wx-backup-note />
 
     <!-- The settings are longer than a window, and the button in the head is off the top of it
          by the second group of fields. This is the same button, where the eye already is. -->
@@ -104,12 +130,5 @@ async function save(): Promise<void> {
   display: flex;
   flex-direction: column;
   gap: var(--wx-gap, var(--wx-space-16));
-}
-
-.wx-settings__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wx-space-12);
 }
 </style>

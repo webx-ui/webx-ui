@@ -8,10 +8,9 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
-use Laravel\Sanctum\Sanctum;
-use Laravel\Sanctum\SanctumServiceProvider;
+use Laravel\Passport\PassportServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
-use ReflectionClass;
+use phpseclib4\Crypt\RSA;
 use WebxUi\Admin\AdminServiceProvider;
 use WebxUi\Auth\AuthServiceProvider;
 use WebxUi\Auth\Models\CmsUser;
@@ -43,8 +42,8 @@ abstract class TestCase extends Orchestra
             RoutingServiceProvider::class,
             AdminServiceProvider::class,
             AuthServiceProvider::class,
-            // Sanctum is what an agent's token is; the mcp package is the door it comes through.
-            SanctumServiceProvider::class,
+            // Passport is what an agent's token is; the mcp package is the door it comes through.
+            PassportServiceProvider::class,
             McpServiceProvider::class,
             BlocksServiceProvider::class,
         ];
@@ -57,6 +56,14 @@ abstract class TestCase extends Orchestra
     {
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
         $app['config']->set('app.url', 'https://example.test');
+
+        // `php artisan passport:keys` on a site. The `api` guard is built before it is asked
+        // anything, and building it reads the public key — so without these even a call with
+        // no token at all is a 500 rather than a 401.
+        [$private, $public] = self::keys();
+        $app['config']->set('passport.private_key', $private);
+        $app['config']->set('passport.public_key', $public);
+
         $app['config']->set('webx-localization.locales', [['code' => 'en', 'default' => true]]);
         $app['config']->set('webx-localization.cache.enabled', false);
     }
@@ -83,12 +90,27 @@ abstract class TestCase extends Orchestra
         return $user;
     }
 
+    /**
+     * One keypair for the whole run: generating an RSA key is the slowest thing in this file.
+     *
+     * @return array{string, string}
+     */
+    private static function keys(): array
+    {
+        static $keys = null;
+
+        if ($keys === null) {
+            // The library `passport:keys` itself uses, so these are the keys a site gets.
+            $key = RSA::createKey(2048);
+
+            $keys = [(string) $key, (string) $key->getPublicKey()];
+        }
+
+        return $keys;
+    }
+
     protected function defineDatabaseMigrations(): void
     {
-        // Sanctum only publishes its migration; an application runs it once. The tests are the
-        // application here, and an agent's token needs the table.
-        $this->loadMigrationsFrom(dirname((string) (new ReflectionClass(Sanctum::class))->getFileName(), 2).'/database/migrations');
-
         $this->artisan('migrate')->run();
 
         Schema::create('pages', function (Blueprint $table): void {

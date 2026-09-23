@@ -21,10 +21,10 @@ function upload(file: File) {
   })
 }
 
-/** Stands in for the media library that does not exist yet. */
+/** Stands in for a media library: the address to draw with, and the key that is kept. */
 async function pickImage() {
   log.value = ['pickImage()', ...log.value].slice(0, 4)
-  return 'https://picsum.photos/seed/webx/640/360'
+  return { url: 'https://picsum.photos/seed/webx/640/360', path: '2026/09/seed.jpg' }
 }
 </script>
 

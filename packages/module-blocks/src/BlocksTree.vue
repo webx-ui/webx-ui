@@ -55,10 +55,6 @@ function childrenIn(node: BlockNode, field: ScreenNode): BlockNode[] {
   return Array.isArray(value) ? (value as BlockNode[]) : []
 }
 
-function iconOf(node: BlockNode): string {
-  return typeOf(node)?.icon ?? 'grid'
-}
-
 /**
  * What a block offers, as the panel's own `···` rather than a row of icons.
  *
@@ -116,7 +112,6 @@ function actionsFor(node: BlockNode): RowAction[] {
           @keydown.enter.prevent="emit('select', item.key)"
           @keydown.space.prevent="emit('select', item.key)"
         >
-          <span class="wx-blocks-tree__icon"><wx-icon :name="iconOf(item)" /></span>
           <span class="wx-blocks-tree__name">{{ titleOf(item) }}</span>
           <span
             v-if="!typeOf(item)"
@@ -217,22 +212,6 @@ function actionsFor(node: BlockNode): RowAction[] {
   border-color: var(--wx-color-primary);
 }
 
-.wx-blocks-tree__icon {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 24px;
-  height: 24px;
-  border-radius: var(--wx-radius-sm);
-  background: var(--wx-bg-subtle);
-  color: var(--wx-text-muted);
-}
-
-.is-selected .wx-blocks-tree__icon {
-  background: var(--wx-bg-surface);
-  color: var(--wx-color-primary);
-}
-
 .wx-blocks-tree__name {
   flex: 1;
   min-width: 0;
@@ -247,8 +226,7 @@ function actionsFor(node: BlockNode): RowAction[] {
  * A switched-off block is dimmed, not struck out or greyed to illegibility: it is still the
  * row an editor clicks to edit it, and the eye beside it is what says why it looks different.
  */
-.wx-blocks-tree__row.is-hidden .wx-blocks-tree__name,
-.wx-blocks-tree__row.is-hidden .wx-blocks-tree__icon {
+.wx-blocks-tree__row.is-hidden .wx-blocks-tree__name {
   opacity: 0.55;
 }
 
@@ -273,6 +251,32 @@ function actionsFor(node: BlockNode): RowAction[] {
 .wx-blocks-tree__actions {
   display: flex;
   flex: none;
+}
+
+/*
+ * Small to look at, big to hit.
+ *
+ * A collapsed row of actions gives its menu 44 px on a coarse pointer, which is the size of a
+ * fingertip and the right size for the target. It is not the right size for the picture: in a
+ * row that is a name and one `···`, a 44 px button reads as a third of the row. So the button
+ * is drawn at 32 and the missing twelve are given back as an invisible skirt around it — the
+ * target stays a fingertip, the row stops looking like a button with a name beside it.
+ *
+ * The extra `.wx-actions__menu` in the selector is not decoration: the rule it overrides sets
+ * the same property on the same element at the same specificity, and without it the winner
+ * would be whichever stylesheet the bundler happened to put last.
+ */
+@media (pointer: coarse) {
+  .wx-blocks-tree__actions :deep(.wx-actions__menu .wx-action) {
+    --wx-action-size: 32px;
+    position: relative;
+  }
+
+  .wx-blocks-tree__actions :deep(.wx-actions__menu .wx-action)::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+  }
 }
 
 .wx-blocks-tree__kids {
