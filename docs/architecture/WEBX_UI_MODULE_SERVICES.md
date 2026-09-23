@@ -1,7 +1,7 @@
 # `webx-ui/module-services` — спецификация и план реализации
 
 Статус: спроектирован 23.09.2026; этап 1 (K1–K3) выпущен 23.09.2026; A сделан 23.09.2026 на ветке
-`feat/module-services`, итог — в конце §6 A. Пакеты — `webx-ui/module-services` (composer) и
+`feat/module-services`, B — там же; итоги — в конце §6 A и §6 B. Пакеты — `webx-ui/module-services` (composer) и
 `@webx-ui/module-services` (npm).
 
 Услуги: каталог услуг с плоскими категориями. Услуга устроена как страница: содержимое —
@@ -648,6 +648,29 @@ i18n; тесты php и vitest; changeset.
 Проверить живьём: scripts/link-panel.sh, раздел на webx-cms.local, в том числе на 375 px;
 перетаскивание с фильтром категории меняет порядок только в ней.
 ```
+
+**Итог B (23.09.2026)** — что C и D должны знать:
+
+- API §4.7 целиком: `routes/api.php` модуля, контроллеры `Http\Controllers\Service*`, панельная
+  часть — `Panel\{ServiceForm,ServiceWriter,ServiceList,Revision}`. Список — без пагинации,
+  `{ data, filters: { categories } }`; с `category` приходит в порядке категории. Порядок —
+  `CategoryRoutes::items(Service::class, 'services', 'services.manage')`, то есть
+  `POST /api/cms/services/reorder`. Корзина — `?trashed=1`. Модули панели: `services` и
+  `service-categories` в группе `services` (иконка `star`).
+- Общее поле адреса — **`wx-slug`** (`SlugField.vue` в `module-admin`), читает префикс и текущий
+  адрес из `provideRecordAddress()`. `wx-category-slug` теперь тот же компонент (`CategorySlug.vue`
+  удалён, `WxCategorySlug` — алиас). Блогу `wx-article-slug` оставлен как есть — переводить его
+  незачем, пока его не трогают.
+- `AdminNav` подсвечивает раздел с самым длинным совпавшим путём: `/services/categories` лежит
+  внутри `/services`, и первый по порядку меню подсвечивал «Услуги».
+- npm-пакет `@webx-ui/module-services` версии `0.0.0` — первая публикация (0.1.0) руками в D.
+  README у npm-пакета нет — его пишет C вместе с README composer-пакета.
+- Проверено на `webx-cms.local` (local-режим на этом worktree): список, фильтр, перетаскивание
+  мышью с категорией «Хирургия» поменяло только её порядок, редактор и настройки на 375 px.
+  **Сайт оставлен в local-режиме, ничего не закоммичено:** `scripts/packages.mjs` с
+  `module-services` в обоих списках (это регистрация D), `resources/js/admin.ts` с
+  `...services()` (`webx:panel --sync` существующий файл не трогает — CLAUDE.md §4),
+  `config/webx-services.php`, демо-услуги из тинкера (7 услуг, 3 категории).
 
 ### C — MCP, доки, плейграунд
 

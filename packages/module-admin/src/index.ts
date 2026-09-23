@@ -117,4 +117,12 @@ export { default as WxCategoriesPage } from './categories/CategoriesPage.vue'
 export { default as WxCategoryCreateDialog } from './categories/CategoryCreateDialog.vue'
 export { default as WxCategoryEditorPage } from './categories/CategoryEditorPage.vue'
 export { default as WxCategoriesField } from './categories/CategoriesField.vue'
-export { default as WxCategorySlug } from './categories/CategorySlug.vue'
+export { default as WxSlugField } from './SlugField.vue'
+/** The shared address field under the name it was released with. */
+export { default as WxCategorySlug } from './SlugField.vue'
+export {
+  provideRecordAddress,
+  recordAddressKey,
+  useRecordAddress,
+  type RecordAddress,
+} from './address'

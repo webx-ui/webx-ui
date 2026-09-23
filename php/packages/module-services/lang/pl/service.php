@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'trail' => 'Gdzie jest ta usługa',
+    'untitled' => 'Bez tytułu',
+    'save' => 'Zapisz',
+    'save-failed' => 'Usługa nie została zapisana.',
+    'publish-title' => 'Opublikować „:title”?',
+    'publish-text' => 'Od razu i dla wszystkich będzie dostępna pod :address.',
+    'publish-nowhere' => 'W tym języku nie ma jeszcze adresu, więc nic nie odpowie.',
+    'preview' => 'Podgląd',
+    'discard' => 'Odrzuć zmiany',
+    'discard-title' => 'Odrzucić to, co czeka?',
+    'discard-text' => 'Usługa wróci do tego, co pokazuje strona. To, co napisano od tamtej pory, nigdzie nie będzie widoczne.',
+    'discarded' => 'Usługa wróciła do opublikowanej wersji.',
+    'conflict-title' => 'Usługa zmieniła się podczas Twojej edycji',
+    'conflict-mine' => 'Zachowaj moją',
+    'conflict-theirs' => 'Weź nowszą',
+    'conflict-theirs-title' => 'Zrezygnować z tego, co napisałeś?',
+    'conflict-theirs-text' => 'Usługa zostanie wczytana ponownie w obecnej postaci, a Twoje wpisy przepadną.',
+    'leave' => 'Wyjdź',
+    'leave-title' => 'Wyjść bez zapisywania?',
+    'leave-text' => 'Nie udało się zapisać usługi, a to, co napisałeś, nie trafiło na serwer.',
+    'live-since' => 'Na stronie od :date',
+    'address-moving' => 'Adres się zmienia. Stary nadal działa i prowadzi do nowego.',
+    'history-empty' => 'Ta usługa nigdy nie była publikowana.',
+    'version' => '#:number',
+    'version-live' => 'Na stronie',
+    'source-panel' => 'Z panelu',
+    'source-mcp' => 'Przez agenta',
+    'source-import' => 'Zaimportowano',
+    'restore-title' => 'Przywrócić wersję :number?',
+    'restore-text' => 'Stanie się szkicem. Strona pokazuje opublikowaną wersję, dopóki jej nie opublikujesz.',
+    'restore-version' => 'Przywróć',
+    'restored-version' => 'Wersja :number jest teraz szkicem.',
+];
