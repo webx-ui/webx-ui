@@ -16,6 +16,7 @@ use WebxUi\Seo\Panel\SeoRules;
 use WebxUi\Seo\Panel\UrlMatcher;
 use WebxUi\Seo\Panel\UrlRuleSource;
 use WebxUi\Seo\Rendering\Seo;
+use WebxUi\Seo\Sitemap\Sitemap;
 
 /**
  * "Why does this page have the wrong title?"
@@ -32,6 +33,7 @@ final class TestUrlController
         private readonly SeoRules $compiled,
         private readonly UrlMatcher $matcher,
         private readonly Resolver $resolver,
+        private readonly Sitemap $sitemap,
     ) {}
 
     public function __invoke(Request $request): JsonResponse
@@ -58,6 +60,8 @@ final class TestUrlController
             'matched' => $matched === null ? null : new SeoUrlResource($matched),
             'chain' => $this->seo->chain($url, null, $locale),
             'seo' => $this->seo->for($url, null, $locale)->toArray(),
+            // The first question when a page is missing from a search engine (§17.6).
+            'sitemap' => $this->sitemap->verdict($url, $locale),
         ]);
     }
 

@@ -66,6 +66,11 @@ mkdir -p "$WORKDIR"
 $COMPOSER_BIN create-project laravel/laravel "$APP" --no-interaction --prefer-dist --quiet
 note "$($PHP_BIN "$APP/artisan" --version)"
 
+# Laravel ships a static robots.txt, and a web server — `artisan serve` included — hands it over
+# before the application is asked, so module-seo's route would never answer and every check of it
+# below would be checking the file. A site with module-seo has no such file; neither has this one.
+rm -f "$APP/public/robots.txt"
+
 step "Point it at the packages in this checkout"
 # Reusing the development root's repository definition keeps the pinned versions from drifting;
 # only the path has to change, because it is relative to the application.
@@ -214,12 +219,15 @@ cat > "$APP/app/Models/SmokePage.php" <<'PHP'
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use WebxUi\Admin\Versions\HasDraft;
 use WebxUi\Admin\Versions\HasVersions;
+use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 
-class SmokePage extends Model
+class SmokePage extends Model implements Visible
 {
     use HasDraft;
     use HasUrl;
@@ -228,6 +236,23 @@ class SmokePage extends Model
     protected $table = 'smoke_pages';
 
     protected $fillable = ['title', 'slug'];
+
+    // Visible is what puts a type into the sitemap at all, so without it the map has nothing
+    // of this type to leave out, and the draft check below would pass on an empty file.
+    public function isVisible(?string $locale = null): bool
+    {
+        return $this->isPublished();
+    }
+
+    public function scopeVisible(Builder $query, ?string $locale = null): Builder
+    {
+        return $query->whereNotNull($this->qualifyColumn($this->publishedAtColumn()));
+    }
+
+    public function visibleUpdatedAt(): ?CarbonInterface
+    {
+        return $this->published_at;
+    }
 }
 PHP
 
@@ -690,7 +715,10 @@ run_http_checks() {
     expect 200 "$(send_json PUT "$BASE/api/cms/settings" \
         '{"values":{"seo.robots-txt":"User-agent: *"}}')" \
         "[$phase] the SEO tab of the settings takes a value"
-    expect 200 "$(status "$BASE/robots.txt")" "[$phase] and /robots.txt serves it"
+    expect 200 "$(status "$BASE/robots.txt")" "[$phase] and /robots.txt answers"
+    curl -s "$BASE/robots.txt" | grep -q '^User-agent: \*' \
+        || fail "[$phase] /robots.txt is not the setting"
+    note "[$phase] /robots.txt serves the setting"
 
     # webx-ui/routing. None of this is visible to the tests: the address answers only because a
     # fallback route registered by a package reached the real router, survived `route:cache`
@@ -736,6 +764,24 @@ run_http_checks() {
     "$PHP_BIN" "$APP/artisan" webx:routes:check --no-interaction > /dev/null \
         || fail "[$phase] webx:routes:check found problems in the registry"
     note "[$phase] webx:routes:check is quiet"
+
+    # module-seo, the sitemap: two routes from a package that have to survive `route:cache`, and
+    # a verdict per address from the resolver — the page above is in, its draft sibling is not.
+    "$PHP_BIN" "$APP/artisan" webx:seo:sitemap --no-interaction > /dev/null \
+        || fail "[$phase] webx:seo:sitemap failed"
+    expect 200 "$(status "$BASE/sitemap.xml")" "[$phase] /sitemap.xml answers"
+
+    page_map="$(curl -s -c "$COOKIES" -b "$COOKIES" "$BASE/sitemap-smoke-page.xml")"
+    grep -q "/moved-page-$phase<" <<< "$page_map" \
+        || fail "[$phase] the published page is not in the sitemap"
+    if grep -q "/draft-$phase<" <<< "$page_map"; then
+        fail "[$phase] the draft page is in the sitemap"
+    fi
+    note "[$phase] the sitemap has the page and not the draft"
+
+    curl -s "$BASE/robots.txt" | grep -q '^Sitemap: ' \
+        || fail "[$phase] robots.txt does not name the sitemap"
+    note "[$phase] robots.txt names the sitemap"
 
     # module-blog, the two addresses that are routes rather than registry rows. Nothing in the
     # tests can show that they survive `route:cache`, because Testbench never caches routes —

@@ -33,7 +33,7 @@ class PageHandler implements RouteHandler
             throw new NotFoundHttpException;
         }
 
-        if (! $entity->isPublished() && PreviewGrant::of($request) === null) {
+        if (! $entity->isVisible() && PreviewGrant::of($request) === null) {
             throw new NotFoundHttpException;
         }
 

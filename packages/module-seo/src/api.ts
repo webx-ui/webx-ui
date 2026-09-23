@@ -6,6 +6,7 @@ import type {
   SeoRedirect,
   SeoRedirectInput,
   SeoRedirectQuery,
+  SeoSitemapStatus,
   SeoTestResult,
   SeoUrlInput,
   SeoUrlQuery,
@@ -30,6 +31,11 @@ export interface SeoApi {
 
   /** What an address ends up saying, and where every part of it came from. */
   test(url: string, locale?: string | null): Promise<SeoTestResult>
+
+  /** What is in the sitemap, when it was built, and what was kept out of it. */
+  sitemap(): Promise<SeoSitemapStatus>
+  /** Build it again now; answers with the new numbers. */
+  rebuildSitemap(): Promise<SeoSitemapStatus>
 }
 
 /** Everything under `/seo`, below the panel's API path. */
@@ -109,5 +115,10 @@ export function createSeoApi(admin: AdminContext): SeoApi {
       admin.http
         .post<{ data: SeoTestResult }>(`${base}/test-url`, { url, locale: locale ?? undefined })
         .then(data),
+
+    sitemap: () => admin.http.get<{ data: SeoSitemapStatus }>(`${base}/sitemap`).then(data),
+
+    rebuildSitemap: () =>
+      admin.http.post<{ data: SeoSitemapStatus }>(`${base}/sitemap`, {}).then(data),
   }
 }

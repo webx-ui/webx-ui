@@ -13,6 +13,9 @@
         <link rel="alternate" type="application/rss+xml" title="{{ trans('webx-blog::blog.rss') }}" href="{{ route('webx.blog.rss') }}">
     </x-slot:head>
 
+    {{-- From the same list as the BreadcrumbList in the <head>. --}}
+    <x-webx-seo::breadcrumbs :for="$rubric" />
+
     <header>
         <h1>{{ $rubric->title }}</h1>
         {{-- A document and not a line since the panel grew an editor for it: printed raw, because
