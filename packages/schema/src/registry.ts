@@ -51,7 +51,13 @@ export const coreTypes: TypeRegistry = {
   },
   'wx-card': { component: WxCard, kind: 'layout', labelProp: 'title' },
   'wx-row': { component: WxRow, kind: 'layout' },
-  'wx-col': { component: WxCol, kind: 'layout' },
+  'wx-col': {
+    component: WxCol,
+    kind: 'layout',
+    // Marked so the renderer can stack what a column holds (see `ScreenRenderer.vue`),
+    // without touching a `WxCol` that some field happens to use inside itself.
+    bind: (node) => ({ class: ['wx-screen__col', node.props?.class] }),
+  },
   'wx-divider': { component: WxDivider, kind: 'layout', labelProp: 'label' },
 
   'wx-input': { component: WxInput, kind: 'field' },

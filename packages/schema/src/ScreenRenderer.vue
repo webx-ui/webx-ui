@@ -110,6 +110,17 @@ defineExpose({
 </template>
 
 <style>
+/*
+ * A column is a stack of fields, like a card's body. The form's own gap reaches only its
+ * direct children, so two fields dropped into one `wx-col` stood flush: the label of the
+ * second read as the hint of the first. Same step as the form and the card.
+ */
+.wx-screen__col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-gap, var(--wx-space-16));
+}
+
 /* Global on purpose: the placeholder is created by a render function, outside any scope. */
 .wx-screen__unknown {
   padding: var(--wx-space-8) var(--wx-space-12);
