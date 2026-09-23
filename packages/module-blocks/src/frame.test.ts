@@ -58,6 +58,20 @@ describe('which block a point in the page belongs to', () => {
 
     expect(seen).toEqual(['c'])
   })
+
+  it('lets a click on the site around the blocks reach it, without letting it navigate', () => {
+    const doc = page()
+    const heard: string[] = []
+    doc.querySelector('header')!.addEventListener('click', () => heard.push('header'))
+    const binding = bindFrame(doc, { select: () => {} })
+
+    const event = new MouseEvent('click', { bubbles: true, cancelable: true })
+    doc.querySelector('header')!.dispatchEvent(event)
+
+    expect(heard).toEqual(['header'])
+    expect(event.defaultPrevented).toBe(false)
+    binding.release()
+  })
 })
 
 describe('the markers in the preview', () => {
@@ -170,5 +184,42 @@ describe('the stage a block type is drawn on', () => {
     const after = new MouseEvent('click', { bubbles: true, cancelable: true })
     link.dispatchEvent(after)
     expect(after.defaultPrevented).toBe(false)
+  })
+
+  it("lets a click reach the site's own handlers, so its popup can be closed", () => {
+    const doc = stage()
+    const close = doc.createElement('button')
+    const closeLink = doc.createElement('a')
+    closeLink.href = '#'
+    closeLink.textContent = '×'
+    doc.body.append(close, closeLink)
+    const heard: string[] = []
+    close.addEventListener('click', () => heard.push('button'))
+    closeLink.addEventListener('click', () => heard.push('link'))
+
+    const binding = freezeFrame(doc)
+    close.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true })
+    closeLink.firstChild!.dispatchEvent(click)
+
+    expect(heard).toEqual(['button', 'link'])
+    expect(click.defaultPrevented).toBe(true)
+    binding.release()
+  })
+
+  it('still swallows a submit', () => {
+    const doc = stage()
+    const form = doc.createElement('form')
+    doc.body.appendChild(form)
+    const binding = freezeFrame(doc)
+    const heard: string[] = []
+    form.addEventListener('submit', () => heard.push('submit'))
+
+    const submit = new Event('submit', { bubbles: true, cancelable: true })
+    form.dispatchEvent(submit)
+
+    expect(submit.defaultPrevented).toBe(true)
+    expect(heard).toEqual([])
+    binding.release()
   })
 })
