@@ -6,7 +6,10 @@
 history, flat categories that are pages of the site, both on one level under one prefix, an index
 route, two orders (the whole list and each category), breadcrumbs through the main category, a
 schema.org `Service` naming the site's `Organization` as provider, and fields of the project in
-`extra`. The panel's API and screens follow.
+`extra`. The panel's API: the whole list without pages, narrowed by category (in that category's
+order), state or words; the editor's record with a revision (409 on a stale one), draft, discard,
+publish, bin and history; the order of the list and of each category; two sections in a Services
+group.
 
 Alongside it: a refused address now names whoever holds it (`routing`); the site's `Organization`
 block carries an `@id` other blocks can point at (`module-seo`), which also patches its SEO card

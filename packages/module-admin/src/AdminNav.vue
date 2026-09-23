@@ -25,8 +25,15 @@ const router = useRouter()
 const route = useRoute()
 
 const current = computed<string>({
+  /*
+   * The longest path that contains this one, on a segment boundary: a section may live inside
+   * another's path (`/services/categories` under `/services`), and the first match in the order
+   * of the menu would light up the outer one.
+   */
   get: () => {
-    const match = admin.nav.value.find((entry) => route.path.startsWith(entry.path))
+    const match = admin.nav.value
+      .filter((entry) => route.path === entry.path || route.path.startsWith(`${entry.path}/`))
+      .sort((a, b) => b.path.length - a.path.length)[0]
 
     return match?.id ?? ''
   },

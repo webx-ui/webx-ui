@@ -10,6 +10,7 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategoryLinkSource;
 use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Links\LinkSources;
+use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Routing\Formatters\Prefixed;
@@ -25,6 +26,9 @@ use WebxUi\Services\Http\Controllers\IndexController;
 use WebxUi\Services\Links\ServiceLinkSource;
 use WebxUi\Services\Models\Service;
 use WebxUi\Services\Models\ServiceCategory;
+use WebxUi\Services\Panel\CategoriesModule;
+use WebxUi\Services\Panel\ServicesGroup;
+use WebxUi\Services\Panel\ServicesModule;
 
 /**
  * Two entities with addresses, both made of blocks, one route that is not an entity, and the
@@ -46,12 +50,14 @@ class ServicesServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-services');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-services');
+        $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->registerRouteTypes();
         $this->registerIndexRoute();
         $this->registerBlockEntities();
         $this->registerScreens();
         $this->registerLinkSources();
+        $this->registerPanel();
 
         $this->app->make(SitemapRoutes::class)->register(self::INDEX_ROUTE);
 
@@ -204,6 +210,35 @@ class ServicesServiceProvider extends ServiceProvider
             'folder',
             221,
         ));
+    }
+
+    /**
+     * Two sections in a group of their own (§4.6): the services, and their categories.
+     *
+     * The group is added to the panel's config at boot rather than shipped as a default, because a
+     * site that published `webx-admin.php` has its own copy of the list (CLAUDE.md §4).
+     */
+    private function registerPanel(): void
+    {
+        /** @var array<string, mixed> $groups */
+        $groups = (array) $this->config()->get('webx-admin.groups', []);
+
+        if (! array_key_exists(ServicesGroup::GROUP, $groups)) {
+            $this->config()->set('webx-admin.groups', [
+                ...$groups,
+                ServicesGroup::GROUP => [
+                    'title' => 'webx-services::module.group',
+                    'icon' => 'star',
+                    'order' => 400,
+                ],
+            ]);
+        }
+
+        $modules = $this->app->make(ModuleRegistry::class);
+
+        foreach ([ServicesModule::class, CategoriesModule::class] as $module) {
+            $modules->register($this->app->make($module));
+        }
     }
 
     private function prefix(): string
