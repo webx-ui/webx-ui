@@ -1,7 +1,7 @@
 # `webx-ui/module-services` — спецификация и план реализации
 
-Статус: спроектирован 23.09.2026; K1 (php-половина этапа 1) сделан 23.09.2026 на ветке
-`feat/shared-categories`, итог — в конце §6 K1. Пакеты — `webx-ui/module-services` (composer) и
+Статус: спроектирован 23.09.2026; этап 1 (K1–K3) выпущен 23.09.2026; A сделан 23.09.2026 на ветке
+`feat/module-services`, итог — в конце §6 A. Пакеты — `webx-ui/module-services` (composer) и
 `@webx-ui/module-services` (npm).
 
 Услуги: каталог услуг с плоскими категориями. Услуга устроена как страница: содержимое —
@@ -601,6 +601,35 @@ Setup\Catalogue; тесты §4.13 кроме экранных и MCP; changeset
 
 Не делать: API панели и npm (B).
 ```
+
+**Итог A (23.09.2026)** — что B и C должны знать:
+
+- Пакет — `php/packages/module-services`, namespace `WebxUi\Services`: `Models\{Service,ServiceCategory,HasCover}`,
+  `Handlers\{ServiceHandler,CategoryHandler}`, `Http\Controllers\IndexController`,
+  `Rendering\{Catalogue,Views}`, `Seo\Trail`, `Links\ServiceLinkSource`. Типы реестра `service` и
+  `service-category`, индекс — маршрут **`webx.services.index`** (с приставкой `webx.`, как у ленты
+  блога, а не `services.index` из §4.3: имя маршрута живёт в пространстве сайта).
+- **Экраны уже на php-половине:** `services.form` (Контент · Настройки · SEO · История; карточка
+  `project-fields`; поле категорий — `wx-categories` с `source: services/categories`, он уже в
+  `CategorySources`) и `services.category-form`; вкладку «Блоки» категории модуль кладёт своим
+  патчем (`resources/screens/category-blocks.json`), только если `webx-services.categories.blocks`.
+  Карточку SEO на оба кладёт `module-seo`. На npm этих типов ещё нет: **`wx-slug`** (серверный тип
+  уже в `module-admin` — `SlugType`; это и есть общее поле адреса записи, компонент в B) и
+  **`wx-service-history`** (как `wx-article-history`).
+- Права названы, но не объявлены: `services.view`, `services.manage`, `services.categories.manage`
+  — в `CategoryKind` категорий и в `ServiceLinkSource`. Модули панели (`ServicesModule`, категории)
+  и группа меню — в B, по образцу `BlogServiceProvider::registerPanel()`.
+- Статусы `Service::status()`: `draft · published · modified · unpublished`, «снята» — по истории.
+  Новая услуга встаёт в конец (`position = max + 1`), `position` не версионируется.
+- Попутно: `PathRejected::taken()` называет занявшего («already taken by "Dental implants"»);
+  у `Organization` из настроек SEO появился `@id` (`<app.url>/#organization`) и
+  `DefaultsSource::organizationId()`; `OneSpellingPerAddress` переехал из блога в
+  `localization` (`WebxUi\Localization\Http\Middleware`).
+- Тесты A — 30 штук в `module-services/tests`; тесты через API (409 на ревизии, 422 на слаге из
+  панели, поле проекта через `PUT`) и MCP остаются за B и C. `extra` проверен на модели и через
+  `CategoryForm` — тот же код, которым закончится API.
+- Не сделано из §4.11: `scripts/packages.mjs` в `webx-cms.local` (другой репозиторий — в D) и
+  плейграунд (C).
 
 ### B — панель
 

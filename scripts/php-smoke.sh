@@ -97,11 +97,11 @@ REPOSITORY="$(
     # this checkout, and the whole run would prove nothing about the change under test.
     $COMPOSER_BIN config repositories.packagist.org \
         '{"type":"composer","url":"https://repo.packagist.org","exclude":["webx-ui/*"]}'
-    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' webx-ui/module-pages:'*' webx-ui/module-inbox:'*' webx-ui/module-blog:'*' --no-interaction --no-progress --quiet
+    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' webx-ui/module-pages:'*' webx-ui/module-inbox:'*' webx-ui/module-blog:'*' webx-ui/module-services:'*' --no-interaction --no-progress --quiet
 )
 
 step "The packages came from the checkout, not from Packagist"
-for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages module-inbox module-blog module-media nested-set routing; do
+for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages module-inbox module-blog module-services module-media nested-set routing; do
     [ -L "$APP/vendor/webx-ui/$package" ] || [ -f "$APP/vendor/webx-ui/$package/.git" ] \
         || fail "vendor/webx-ui/$package is a copy, so a released version was installed instead of this checkout"
     note "webx-ui/$package is linked to the checkout"
@@ -125,6 +125,7 @@ step "Providers are found by discovery, not by hand"
         "webx-ui/module-pages" => "WebxUi\\Pages\\PagesServiceProvider",
         "webx-ui/module-inbox" => "WebxUi\\Inbox\\InboxServiceProvider",
         "webx-ui/module-blog" => "WebxUi\\Blog\\BlogServiceProvider",
+        "webx-ui/module-services" => "WebxUi\\Services\\ServicesServiceProvider",
     ];
     foreach ($expected as $package => $provider) {
         if (! in_array($provider, $manifest[$package]["providers"] ?? [], true)) {
@@ -793,6 +794,9 @@ run_http_checks() {
         | grep -qi '^Content-Type: application/rss' \
         || fail "[$phase] the RSS did not come back as a feed"
     note "[$phase] the RSS is served as a feed"
+
+    # module-services, the index: a route beside the registry for the same reason as the feed.
+    expect 200 "$(status "$BASE/services")" "[$phase] the services index answers"
 
     # The intake of module-inbox: a POST with no CSRF token at all, which is the whole point of
     # the hand-built middleware stack. A page cached whole carries a token minted when the cache

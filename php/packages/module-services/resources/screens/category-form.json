@@ -1,0 +1,97 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "services.category-form",
+  "model": "service-category",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "content",
+          "type": "wx-tab",
+          "label": "trans::webx-services::category.tab-content",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "title",
+                  "type": "wx-input",
+                  "name": "title",
+                  "label": "trans::webx-services::category.field-title",
+                  "localized": true,
+                  "props": { "maxlength": 255 }
+                },
+                {
+                  "id": "slug",
+                  "type": "wx-category-slug",
+                  "name": "slug",
+                  "label": "trans::webx-services::category.field-slug",
+                  "localized": true
+                },
+                {
+                  "id": "is-visible",
+                  "type": "wx-switch",
+                  "name": "is_visible",
+                  "label": "trans::webx-services::category.visible",
+                  "help": "trans::webx-services::category.visible-help"
+                },
+                {
+                  "id": "lead",
+                  "type": "wx-rich-text",
+                  "name": "lead",
+                  "label": "trans::webx-services::category.field-lead",
+                  "help": "trans::webx-services::category.lead-help",
+                  "localized": true
+                }
+              ]
+            },
+            {
+              "id": "project-fields",
+              "type": "wx-card",
+              "label": "trans::webx-admin::screens.project-fields",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "image",
+          "type": "wx-tab",
+          "label": "trans::webx-services::category.tab-cover",
+          "children": [
+            {
+              "id": "cover",
+              "type": "wx-media",
+              "name": "cover",
+              "label": "trans::webx-services::screen.cover",
+              "help": "trans::webx-services::category.cover-help",
+              "props": {
+                "accept": "image",
+                "captions": false,
+                "aspect": "16/9"
+              }
+            }
+          ]
+        },
+        {
+          "id": "seo",
+          "type": "wx-tab",
+          "label": "trans::webx-services::category.tab-seo",
+          "children": [
+            {
+              "id": "seo-placeholder",
+              "type": "wx-alert",
+              "label": "trans::webx-services::screen.seo-empty",
+              "props": {
+                "type": "info",
+                "variant": "soft"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
