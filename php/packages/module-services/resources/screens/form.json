@@ -1,0 +1,136 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "services.form",
+  "model": "service",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "content",
+          "type": "wx-tab",
+          "label": "trans::webx-services::screen.content",
+          "children": [
+            {
+              "id": "blocks",
+              "type": "wx-blocks",
+              "name": "blocks"
+            }
+          ]
+        },
+        {
+          "id": "settings",
+          "type": "wx-tab",
+          "label": "trans::webx-services::screen.settings",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "label": "trans::webx-services::screen.naming",
+              "children": [
+                {
+                  "id": "title",
+                  "type": "wx-input",
+                  "name": "title",
+                  "label": "trans::webx-services::screen.title",
+                  "localized": true,
+                  "props": { "maxlength": 255 }
+                },
+                {
+                  "id": "slug",
+                  "type": "wx-slug",
+                  "name": "slug",
+                  "label": "trans::webx-services::screen.slug",
+                  "help": "trans::webx-services::screen.slug-help",
+                  "localized": true
+                },
+                {
+                  "id": "lead",
+                  "type": "wx-textarea",
+                  "name": "lead",
+                  "label": "trans::webx-services::screen.lead",
+                  "help": "trans::webx-services::screen.lead-help",
+                  "localized": true,
+                  "props": {
+                    "rows": 3,
+                    "maxlength": 2000,
+                    "showCount": true
+                  }
+                }
+              ]
+            },
+            {
+              "id": "taxonomy",
+              "type": "wx-card",
+              "label": "trans::webx-services::screen.categories",
+              "children": [
+                {
+                  "id": "categories",
+                  "type": "wx-categories",
+                  "name": "categories",
+                  "label": "trans::webx-services::screen.categories",
+                  "help": "trans::webx-services::screen.categories-help",
+                  "props": {
+                    "source": "services/categories"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "presentation",
+              "type": "wx-card",
+              "label": "trans::webx-services::screen.presentation",
+              "children": [
+                {
+                  "id": "cover",
+                  "type": "wx-media",
+                  "name": "cover",
+                  "label": "trans::webx-services::screen.cover",
+                  "props": {
+                    "accept": "image",
+                    "captions": false,
+                    "aspect": "16/9"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "project-fields",
+              "type": "wx-card",
+              "label": "trans::webx-admin::screens.project-fields",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "seo",
+          "type": "wx-tab",
+          "label": "trans::webx-services::screen.seo",
+          "children": [
+            {
+              "id": "seo-placeholder",
+              "type": "wx-alert",
+              "label": "trans::webx-services::screen.seo-empty",
+              "props": {
+                "type": "info",
+                "variant": "soft"
+              }
+            }
+          ]
+        },
+        {
+          "id": "history",
+          "type": "wx-tab",
+          "label": "trans::webx-services::screen.history",
+          "children": [
+            {
+              "id": "versions",
+              "type": "wx-service-history"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
