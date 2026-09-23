@@ -56,9 +56,49 @@ describe('wx-repeater', () => {
     expect(inputs).toHaveLength(2)
     expect((inputs[1]!.element as HTMLInputElement).value).toBe('Lviv')
     expect(wrapper.findAll('.wx-repeater__title').map((one) => one.text())).toEqual([
-      'Kyiv',
-      'Lviv',
+      '#1 · Kyiv',
+      '#2 · Lviv',
     ])
+  })
+
+  it('starts folded unless the node says otherwise', () => {
+    const folded = mountScreen({ 'contacts.offices': [{ city: 'Kyiv' }] })
+    expect(folded.get('.wx-repeater__head').attributes('aria-expanded')).toBe('false')
+
+    const open = mount(WxScreenRenderer, {
+      props: {
+        root: [{ ...root[0]!, props: { ...root[0]!.props, collapsed: false } }],
+        modelValue: { 'contacts.offices': [{ city: 'Kyiv' }] },
+      },
+    })
+    expect(open.find('.wx-repeater__head').exists()).toBe(true)
+    expect(open.get('.wx-repeater__body').attributes('style') ?? '').not.toContain('display: none')
+  })
+
+  it("speaks the panel's words, and the node's own props win over them", () => {
+    const panel: Record<string, string> = {
+      'webx-admin::screens.repeater.add': 'Добавить',
+      'webx-admin::screens.repeater.remove': 'Удалить',
+    }
+
+    const wrapper = mount(WxScreenRenderer, {
+      props: {
+        root: [{ ...root[0]!, props: { itemLabel: 'city' } }],
+        modelValue: { 'contacts.offices': [{ city: 'Kyiv' }] },
+        translate: (key: string) => panel[key] ?? key,
+      },
+    })
+
+    expect(wrapper.get('.wx-repeater__add').text()).toContain('Добавить')
+    expect(wrapper.html()).toContain('Удалить')
+
+    // A dictionary without the key leaves the core's English in place, not the key itself.
+    expect(wrapper.html()).not.toContain('screens.repeater')
+
+    // `root` sets `addLabel` itself, and that is what shows.
+    expect(mountScreen({ 'contacts.offices': [] }).get('.wx-repeater__add').text()).toContain(
+      'Add an office',
+    )
   })
 
   it('writes a field of one item back into the screen model', async () => {
