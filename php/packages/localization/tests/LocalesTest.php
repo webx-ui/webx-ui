@@ -87,6 +87,9 @@ final class LocalesTest extends TestCase
 
         // A content language the interface has no words for is still not offered here.
         $this->locale('uk', ['is_default' => true]);
+        // PHPStan 2.2.15 remembers the first answer across the write above and calls this one
+        // settled; it is not — the table changed between the two.
+        // @phpstan-ignore method.alreadyNarrowedType
         $this->assertSame(['en', 'ru'], array_column($this->locales()->panel(), 'code'));
     }
 
