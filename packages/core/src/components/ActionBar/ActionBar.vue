@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { ActionBarProps } from './types'
 
 defineOptions({ name: 'WxActionBar' })
@@ -29,10 +29,56 @@ const classes = computed(() => [
     'wx-action-bar--bordered': props.bordered,
   },
 ])
+
+/*
+ * How much of the bottom of the window the bar takes while it sticks there, told to the screen
+ * it sits in as `--wx-action-bar-room`.
+ *
+ * Anything else in that screen that stands still against the window — the column of blocks
+ * beside the page preview — would otherwise run its foot under the bar, and its own scroll with
+ * it: the last field of a long form was out of reach behind the buttons. The bar's height is
+ * whatever its buttons and its wrapped state make it (59.6px measured, not the 56 its minimum
+ * says), so it is measured rather than assumed. It is written on the parent, the one element
+ * that is sure to be above both the bar and whatever reads it.
+ */
+const root = ref<HTMLElement | null>(null)
+let observer: ResizeObserver | null = null
+let host: HTMLElement | null = null
+
+function publish() {
+  if (!root.value || !host) return
+  const bottom = Number.parseFloat(getComputedStyle(root.value).bottom) || 0
+  host.style.setProperty(
+    '--wx-action-bar-room',
+    `${root.value.getBoundingClientRect().height + bottom}px`,
+  )
+}
+
+function release() {
+  observer?.disconnect()
+  observer = null
+  host?.style.removeProperty('--wx-action-bar-room')
+  host = null
+}
+
+function track() {
+  release()
+  if (!props.sticky || !root.value?.parentElement || typeof ResizeObserver === 'undefined') {
+    return
+  }
+  host = root.value.parentElement
+  observer = new ResizeObserver(publish)
+  observer.observe(root.value)
+  publish()
+}
+
+onMounted(track)
+watch(() => props.sticky, track, { flush: 'post' })
+onBeforeUnmount(release)
 </script>
 
 <template>
-  <div :class="classes">
+  <div ref="root" :class="classes">
     <div class="wx-action-bar__state">
       <slot name="state" />
     </div>
