@@ -68,9 +68,6 @@ return [
     // The editor.
     'trail' => 'Gdzie stoi ta strona',
     'untitled' => 'Bez tytułu',
-    'state-saved' => 'Zapisano',
-    'state-saving' => 'Zapisywanie…',
-    'state-unsaved' => 'Niezapisane',
     'save' => 'Zapisz',
     'save-failed' => 'Strona nie została zapisana.',
     'publish' => 'Opublikuj',

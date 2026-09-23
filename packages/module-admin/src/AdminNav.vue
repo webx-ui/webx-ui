@@ -11,6 +11,9 @@ import { useTranslate } from './i18n'
  *
  * Sections come first, then the groups the server declared — "System" for what keeps the
  * panel running — each as a branch that opens on its own when a section under it is current.
+ *
+ * A group names its own icon; the gear is what it falls back to, because that is the picture
+ * every group had before groups could carry one.
  */
 defineProps<{ collapsed?: boolean }>()
 
@@ -57,7 +60,7 @@ const current = computed<string>({
       :key="group.id"
       :value="`group:${group.id}`"
       :title="group.title"
-      icon="gear"
+      :icon="group.icon ?? 'gear'"
     >
       <wx-menu-item
         v-for="entry in group.entries"

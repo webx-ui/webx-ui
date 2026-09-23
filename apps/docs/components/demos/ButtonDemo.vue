@@ -40,6 +40,14 @@ function load() {
     </div>
 
     <div class="wx-demo__row">
+      <span class="wx-demo__label">Icons</span>
+      <wx-button type="primary" icon="plus">New</wx-button>
+      <wx-button variant="outline" icon="download">Export</wx-button>
+      <wx-button variant="outline" icon="trash" type="danger" size="sm">Delete</wx-button>
+      <wx-button icon="search" aria-label="Search" />
+    </div>
+
+    <div class="wx-demo__row">
       <span class="wx-demo__label">Events</span>
       <wx-button type="primary" @click="clicks++">Clicked {{ clicks }} times</wx-button>
     </div>

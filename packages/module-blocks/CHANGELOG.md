@@ -1,5 +1,219 @@
 # @webx-ui/module-blocks
 
+## 0.6.5
+
+### Patch Changes
+
+- Updated dependencies [8e0d587]
+- Updated dependencies [8e0d587]
+  - @webx-ui/module-admin@0.14.0
+  - @webx-ui/core@0.31.0
+  - @webx-ui/schema@0.3.8
+
+## 0.6.4
+
+### Patch Changes
+
+- Updated dependencies [f623fac]
+- Updated dependencies [cd95a2e]
+- Updated dependencies [b1aeb52]
+  - @webx-ui/module-admin@0.13.0
+  - @webx-ui/core@0.30.0
+  - @webx-ui/schema@0.3.7
+
+## 0.6.3
+
+### Patch Changes
+
+- 0a506df: Each tab of the block type editor gets what it needs beside it, and the others get the screen
+
+  The screen was two columns: six tabs in the left one, and in the right one the block, the form
+  of its sample and a card saying where the type stands. So the picture of the block was also
+  standing beside the settings and beside the history, at half their width, and the sample's form
+  was open on all six tabs — including the four where nobody is looking at values.
+
+  What stands beside the tabs is what the open one needs. **Template** and **Styles** — both draw
+  the block — have the block, sticky, so the picture stays while the file scrolls under it.
+  **Fields** has the form its schema builds. **Script** has three examples under the editor instead:
+  a handler, a value out of `values`, and a library through `webx.use()`. The rest have the width
+  of the screen. The icon of a type is picked from the set now (`WxIconPicker`) rather than typed
+  into a box that accepts anything and draws nothing. **Where the type stands** is a popover behind the
+  words "on 3 pages" in the subtitle, styled as the link it is: five page names took a quarter of
+  a column to say what the subtitle already says in three words.
+
+  Three more things the same look found.
+
+  **The action bar no longer repeats the state.** It carried the same three badges as the head —
+  draft, live, unsaved — and on a 1440×900 window both pairs are on screen at once, on a phone
+  all the more so. What state a type is in is a fact about the type, not about the last
+  keystroke, and the panel says the state of a record beside its name. The two buttons stay:
+  those did scroll away with the head.
+
+  **The stage opens at the width its column can draw.** It always opened on a desktop 1280, so
+  in the narrow column of a phone it drew the block at a third of size — a picture of a page
+  whose words are two pixels tall. It now starts at the widest device that fits at half size or
+  better, and from the first click on the switch the width is the editor's.
+
+  **The frame is the height of the block again.** It measured `documentElement.scrollHeight`,
+  which is never shorter than the frame's own window: once the frame had been given a height, it
+  was measuring itself, so a block that got shorter kept the height of the one before it with
+  white space under it. Measured on the body, as everything else that watches a frame here does — and measured again
+  when the tab holding it comes back, since a document nobody is showing has no height at all.
+
+  Plus one line that read wrong: `on :count pages` said "on 1 pages" exactly when a type had
+  just been put on its first page. There is a line for one now — `page.on-page`, and
+  `page.delete-used-one` beside it — in all ten languages.
+
+- Updated dependencies [0a506df]
+  - @webx-ui/core@0.29.0
+  - @webx-ui/module-admin@0.12.2
+  - @webx-ui/schema@0.3.6
+
+## 0.6.2
+
+### Patch Changes
+
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+  - @webx-ui/core@0.28.0
+  - @webx-ui/module-admin@0.12.1
+  - @webx-ui/schema@0.3.5
+
+## 0.6.1
+
+### Patch Changes
+
+- e98734c: The block constructor's own preview switches width by picture too
+
+  `BlockStage` — the preview beside the template in the Blocks section — still spelled out
+  "Desktop · Tablet · Phone" while the page preview had already moved to the three device icons.
+  Two previews in one panel, one of each kind, is the sort of difference an editor reads as
+  meaning something. The words stay as the accessible name, and the group is named "Width".
+
+## 0.6.0
+
+### Minor Changes
+
+- 537df98: The constructor gives the page back its room
+
+  Two columns now, in both states, and the tree and the open block's form take turns in the narrow
+  one. It used to be three — tree, form, and a 420 px preview — and a desktop page does not go in
+  420 px, so the preview was squeezed into a phone at one to one and every block was edited against
+  a picture of a phone. Measured on a 1474 px window: 260 + 626 + 420 became 455 + 867, which is a
+  1280 px page at 0.66 rather than a 390 px one.
+
+  The preview itself is now as tall as the page inside it, and the panel scrolls. There is no window
+  of ours over a page that has its own — that was two scrollbars for one document, and the inner one
+  could not be reached with the wheel, so a block taller than the window could not be seen whole at
+  all. The height comes from a `ResizeObserver` inside the frame, measured off the body.
+
+  Its bar carries the width switcher at all times — desktop, tablet, phone, as icons — and the two
+  buttons beside it are icons as well. The bar sticks to the top of the window while the page goes by
+  under it. Selecting a block brings it into view by as little as it takes, never centring it, and
+  leaves it alone when it is already there; the panel is what moves, and the page inside the frame
+  never does.
+
+  On a panel too narrow for two columns there is one, and it is the preview: the tree and the form
+  move into a sheet over the page, opened by a pencil on the preview's bar or by clicking a block in
+  the page itself — which opens it straight onto that block's form. The preview starts as a phone
+  there, or as a tablet where there is room for one. That replaces the old arrangement, where the
+  preview was the thing that folded away on a narrow screen and the editor was left with a list of
+  names.
+
+  What the tree carried while it is off the screen lives in the form's head: steps to the previous and
+  the next block through the flattened page, the trail of containers the open block sits in, and the
+  button that opens the preview full screen — that one matters below the width where the preview folds
+  away, which is exactly where the tree's own foot is not on screen.
+
+  Breaking, in the small way a `0.x` field can be: the `fill` prop is gone from `WxBlocks` and from
+  the preview. It meant "be a window tall and scroll each panel inside itself", which is the layout
+  this release replaces. A screen that passed it can simply stop. The tile with the block type's icon
+  is gone from the tree rows too — most types have no icon of their own, so it drew the same square on
+  every row and spent the width of a name on saying nothing.
+
+### Patch Changes
+
+- Updated dependencies [537df98]
+- Updated dependencies [537df98]
+  - @webx-ui/module-admin@0.12.0
+  - @webx-ui/core@0.27.0
+  - @webx-ui/schema@0.3.4
+
+## 0.5.3
+
+### Patch Changes
+
+- 48dfd9e: One head for every screen of the panel
+
+  Eight screens each answered "what goes at the top" on their own, and gave eight answers: the
+  heading at three sizes, the way out as an arrow on four of them and as a line of breadcrumbs on the
+  rest, the buttons folding into a `···` on two editors and wrapping onto a third line everywhere
+  else. Writing a new screen meant writing that line again and getting it slightly different again.
+
+  `WxScreenHead` is that line, once: the way out, the name with the state said beside it, the line
+  under it that says which record this is, and what can be done here. `WxListScreen` is built on it,
+  so a list and the editor a row opens are the same object rather than two similar ones — and it
+  takes `back` now, which is what the statuses screen used to draw above its own heading for want of
+  anywhere to put it.
+
+  **The actions are declared rather than drawn.** The same action has to be a button on a desktop and
+  a line of a menu on a phone, and one vnode cannot be mounted in two places — as markup it had to be
+  written twice, which is exactly what the page and article editors did. As `ScreenAction[]` it is
+  written once: `primary` is the one thing the screen exists for and the one that keeps a button when
+  the head runs out of room, `danger` is never a button at all, `menu` is in the `···` at every
+  width, and `loading`, `disabled` and `href` mean what they say. Below 720px — 480 on a list, which
+  carries one word and no trail — everything but the primary folds behind the `···` and that primary
+  takes the line under the name, full width.
+
+  The name’s line is the head: the way out at the start of it and the actions at the end, both
+  centred on it however many badges stand beside the name. The trail is the line above, and it
+  scrolls sideways with no scrollbar showing rather than wrapping — on a phone a path four levels
+  deep was two lines of the smallest type on the screen, standing between the reader and the name of
+  what they had opened.
+
+  Two things that were quietly wrong come out with it. Nineteen buttons across the panel passed
+  `icon="plus"` to `WxButton`, which has no such prop: the attribute landed on the `<button>` and
+  drew nothing, so the panel’s main actions had no icons at all. And the `···` said `More` in English
+  in every language, because the core carries English defaults and knows no dictionary — the panel
+  gives it the word now, in all ten.
+
+- Updated dependencies [a9383bb]
+- Updated dependencies [b6a09a6]
+- Updated dependencies [48dfd9e]
+  - @webx-ui/core@0.26.0
+  - @webx-ui/module-admin@0.11.0
+  - @webx-ui/schema@0.3.3
+
+## 0.5.2
+
+### Patch Changes
+
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [937f4e2]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+  - @webx-ui/core@0.25.0
+  - @webx-ui/module-admin@0.10.0
+  - @webx-ui/schema@0.3.2
+
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [f87e4ec]
+- Updated dependencies [f87e4ec]
+  - @webx-ui/core@0.24.0
+  - @webx-ui/module-admin@0.9.0
+  - @webx-ui/schema@0.3.1
+
 ## 0.5.0
 
 ### Minor Changes

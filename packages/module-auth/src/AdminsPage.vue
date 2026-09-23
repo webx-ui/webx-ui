@@ -1,19 +1,38 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef, type Component } from 'vue'
-import { useAdmin, useErrorText, useTranslate, WxListScreen } from '@webx-ui/module-admin'
-import { confirm, createModal, toast, WxButton } from '@webx-ui/core'
+import { useRoute, useRouter } from 'vue-router'
+import {
+  useAdmin,
+  useErrorText,
+  useTranslate,
+  WxListScreen,
+  type ScreenAction,
+} from '@webx-ui/module-admin'
+import { confirm, createModal, toast, type TabItem, type TabValue } from '@webx-ui/core'
 import AdminDialog from './AdminDialog.vue'
 import AdminList from './AdminList.vue'
+import CallList from './CallList.vue'
+import ConnectionList from './ConnectionList.vue'
 import { createAdminsApi } from './admins'
+import type { AdminsView } from './module'
 import { useAuthMessages } from './i18n'
 import type { Admin } from './types'
 
 /**
- * The administrators section: the list, and the form over it.
+ * The administrators section: the list, the form over it, the trail of what their agents did,
+ * and the agents themselves.
  *
- * A dialog rather than a second route. Editing somebody is half a dozen fields, and a screen
- * that takes over the page for that loses the list you were reading — which is where you
- * decide who to open next.
+ * A dialog rather than a second route for the form. Editing somebody is half a dozen fields,
+ * and a screen that takes over the page for that loses the list you were reading — which is
+ * where you decide who to open next.
+ *
+ * The calls and the connections are further views of the same section rather than sections of
+ * their own: "who did what" is a question about these people, whether a hand or a program was
+ * at the other end. A route each rather than panels of one, because each has its own paging
+ * and filters, and a view that quietly resets both when you come back to it is worse than a
+ * second address. The calls are behind `admins.audit`, the permission the sign-in trail is
+ * behind; everybody's connections are behind `admins.manage`, the one that is about other
+ * people's accounts.
  *
  * The heading and `Add` used to live inside the card, which made this the one section of the
  * panel with no line of its own at the top. They stand outside it now, where every other list
@@ -21,14 +40,20 @@ import type { Admin } from './types'
  */
 const props = withDefaults(
   defineProps<{
+    /** The section's own path, for the address of the second view. */
+    base?: string
+    /** Which view is open. */
+    current?: AdminsView
     avatarField?: Component
     resolveAvatar?: (key: string) => Promise<string | null>
   }>(),
-  { avatarField: undefined, resolveAvatar: undefined },
+  { base: '/admins', current: 'admins', avatarField: undefined, resolveAvatar: undefined },
 )
 
 const context = useAdmin()
 const api = createAdminsApi(context)
+const router = useRouter()
+const route = useRoute()
 useAuthMessages()
 
 const t = useTranslate('webx-auth')
@@ -41,12 +66,54 @@ const editing = ref<Admin | null>(null)
 const edit = createModal<Admin, { admin: Admin | null; avatarField?: Component }>(AdminDialog)
 
 const canManage = context.can('admins.manage')
+const canAudit = context.can('admins.audit')
 
 /** The section's name as the server translated it; the built-in English until it arrives. */
 const title = computed(
   () =>
     context.state.manifest?.modules.find((module) => module.id === 'admins')?.title ??
     t('admins.title'),
+)
+
+/*
+ * One view is no view: the strip is drawn only for somebody who can see a second one.
+ *
+ * The connections here are everybody's, which is `admins.manage` — the permission that is
+ * already about other people's accounts. Your own live on the connect page, where anybody
+ * signed in reaches them without a permission at all.
+ */
+const views = computed<TabItem[] | undefined>(() => {
+  const items: TabItem[] = [{ value: 'admins', label: title.value }]
+
+  if (canAudit) items.push({ value: 'calls', label: t('calls.title') })
+  if (canManage) items.push({ value: 'connections', label: t('connections.title') })
+
+  return items.length > 1 ? items : undefined
+})
+
+const where = computed<TabValue>({
+  get: () => props.current,
+  set: (next) => {
+    const path = next === 'admins' ? props.base : `${props.base}/${String(next)}`
+
+    if (path !== route.path) void router.push(path)
+  },
+})
+
+/* Short enough for a phone, where the name and the button share one line. `Add` belongs to
+   the people, not to the log. */
+const actions = computed<ScreenAction[]>(() =>
+  canManage && props.current === 'admins'
+    ? [
+        {
+          key: 'new',
+          label: t('admins.new-short'),
+          icon: 'plus',
+          primary: true,
+          run: () => void open(null),
+        },
+      ]
+    : [],
 )
 
 async function open(admin: Admin | null): Promise<void> {
@@ -81,15 +148,11 @@ async function remove(admin: Admin): Promise<void> {
 </script>
 
 <template>
-  <wx-list-screen :title="title">
-    <template v-if="canManage" #actions>
-      <!-- Short enough for a phone, where the heading and the button share one line. -->
-      <wx-button type="primary" icon="add" @click="open(null)">
-        {{ t('admins.new-short') }}
-      </wx-button>
-    </template>
-
+  <wx-list-screen v-model:view="where" :title="title" :views="views" :actions="actions">
+    <call-list v-if="current === 'calls'" />
+    <connection-list v-else-if="current === 'connections'" scope="all" />
     <admin-list
+      v-else
       ref="list"
       :removable="canManage"
       :resolve-avatar="props.resolveAvatar"

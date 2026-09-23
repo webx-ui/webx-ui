@@ -1,5 +1,182 @@
 # @webx-ui/module-seo
 
+## 0.4.3
+
+### Patch Changes
+
+- Updated dependencies [8e0d587]
+- Updated dependencies [8e0d587]
+  - @webx-ui/module-admin@0.14.0
+  - @webx-ui/core@0.31.0
+  - @webx-ui/schema@0.3.8
+
+## 0.4.2
+
+### Patch Changes
+
+- Updated dependencies [f623fac]
+- Updated dependencies [cd95a2e]
+- Updated dependencies [b1aeb52]
+  - @webx-ui/module-admin@0.13.0
+  - @webx-ui/core@0.30.0
+  - @webx-ui/schema@0.3.7
+
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [0a506df]
+  - @webx-ui/core@0.29.0
+  - @webx-ui/module-admin@0.12.2
+  - @webx-ui/schema@0.3.6
+
+## 0.4.0
+
+### Minor Changes
+
+- cca572f: The share image appears wherever the library is installed, and is as wide as the fields beside it
+
+  **It finds the picker itself.** `wx-seo` drew its share image only when a panel had passed
+  `seo({ mediaField: WxMediaField })`. A panel that installed the library had already said so
+  once, and the second saying is a thing to forget — silently: every other SEO field is there, and
+  the picture is present on the screen somebody remembered and missing on the one they did not.
+  The card now looks `wx-media` up in the panel's own registry, the way `module-blog`'s rubric
+  form already did. `mediaField` stays, for a caller that wants a different field than the
+  registered one; nothing is imported from the media package, so a panel without a library still
+  edits everything else and simply has no picture.
+
+  Injected rather than taken with `useAdmin()`, because the card is mounted by the docs and by its
+  own tests outside any panel, and there it has to draw the rest rather than throw.
+
+  **It stops where the other fields stop.** The picture is the one control in the card that is not
+  inside a `WxFormItem` — it draws its own label — so the cap a form item puts on its control never
+  reached it: the image ran the full width of the card while the title under it stopped at 640. It
+  now reads the same `--wx-field-max-width`, so a screen that widens its fields widens this too.
+
+  **And it shows what a share would look like.** Under the two fields, the same idea the first
+  tab has for search results: the picture in the 1.91:1 crop every network uses, the title and the
+  description with the fallbacks those fields promise — an empty share title takes the page’s
+  title. It costs no request: the address travels beside the key in the value, which is what
+  `seoFieldValues()` put it there for. An empty picture is not left blank but says the site fills
+  it in from the record itself, because a blank frame reads as “nothing will be shown” and that is
+  not what happens.
+
+### Patch Changes
+
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+  - @webx-ui/core@0.28.0
+  - @webx-ui/module-admin@0.12.1
+  - @webx-ui/schema@0.3.5
+
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [537df98]
+- Updated dependencies [537df98]
+  - @webx-ui/module-admin@0.12.0
+  - @webx-ui/core@0.27.0
+  - @webx-ui/schema@0.3.4
+
+## 0.3.1
+
+### Patch Changes
+
+- 48dfd9e: One head for every screen of the panel
+
+  Eight screens each answered "what goes at the top" on their own, and gave eight answers: the
+  heading at three sizes, the way out as an arrow on four of them and as a line of breadcrumbs on the
+  rest, the buttons folding into a `···` on two editors and wrapping onto a third line everywhere
+  else. Writing a new screen meant writing that line again and getting it slightly different again.
+
+  `WxScreenHead` is that line, once: the way out, the name with the state said beside it, the line
+  under it that says which record this is, and what can be done here. `WxListScreen` is built on it,
+  so a list and the editor a row opens are the same object rather than two similar ones — and it
+  takes `back` now, which is what the statuses screen used to draw above its own heading for want of
+  anywhere to put it.
+
+  **The actions are declared rather than drawn.** The same action has to be a button on a desktop and
+  a line of a menu on a phone, and one vnode cannot be mounted in two places — as markup it had to be
+  written twice, which is exactly what the page and article editors did. As `ScreenAction[]` it is
+  written once: `primary` is the one thing the screen exists for and the one that keeps a button when
+  the head runs out of room, `danger` is never a button at all, `menu` is in the `···` at every
+  width, and `loading`, `disabled` and `href` mean what they say. Below 720px — 480 on a list, which
+  carries one word and no trail — everything but the primary folds behind the `···` and that primary
+  takes the line under the name, full width.
+
+  The name’s line is the head: the way out at the start of it and the actions at the end, both
+  centred on it however many badges stand beside the name. The trail is the line above, and it
+  scrolls sideways with no scrollbar showing rather than wrapping — on a phone a path four levels
+  deep was two lines of the smallest type on the screen, standing between the reader and the name of
+  what they had opened.
+
+  Two things that were quietly wrong come out with it. Nineteen buttons across the panel passed
+  `icon="plus"` to `WxButton`, which has no such prop: the attribute landed on the `<button>` and
+  drew nothing, so the panel’s main actions had no icons at all. And the `···` said `More` in English
+  in every language, because the core carries English defaults and knows no dictionary — the panel
+  gives it the word now, in all ten.
+
+- Updated dependencies [a9383bb]
+- Updated dependencies [b6a09a6]
+- Updated dependencies [48dfd9e]
+  - @webx-ui/core@0.26.0
+  - @webx-ui/module-admin@0.11.0
+  - @webx-ui/schema@0.3.3
+
+## 0.3.0
+
+### Minor Changes
+
+- 852883d: The panel's lists take their filters behind the funnel and draw their narrow rows as entities.
+
+  `WxFilterChips` and `AppliedFilter` in `module-admin` give every section the same chip, and the
+  panel's own two words — the name of the funnel and "reset all" — live with it in all ten
+  languages. Articles, the SEO rules and the administrators put their dropdowns in `#filters` and
+  what they are set to in `#applied`; submissions, administrators and articles draw a card below
+  their breakpoint as `WxEntityCard` rather than as a stack of labelled lines, with the `···` in
+  the card's own top strip beside the checkbox.
+
+  `WxEntityCard` gained `titleLines`, because an article's headline is a sentence: one line of it
+  on a phone is half a thought, and the list it replaced already clamped at two.
+
+### Patch Changes
+
+- 852883d: `rowMenuWidth` says how wide a column holding a `···` has to be, and every list reads it. The menu
+  is a finger target — 44px under `(pointer: coarse)` — and the cell keeps 16 on either side of it,
+  so the 56 the sections declared was never enough: the button painted outside its column, which
+  nothing said out loud until cells began to clip what does not fit.
+
+  On the tags screen the selection bar keeps the one button it exists for and puts the other three
+  behind the same `···` a row has. The × that cleared the selection is gone: a button whose whole
+  job is to undo something harmless, standing beside a red "Delete", read as a way to close the bar.
+
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [937f4e2]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+  - @webx-ui/core@0.25.0
+  - @webx-ui/module-admin@0.10.0
+  - @webx-ui/schema@0.3.2
+
+## 0.2.6
+
+### Patch Changes
+
+- Updated dependencies [f87e4ec]
+- Updated dependencies [f87e4ec]
+  - @webx-ui/core@0.24.0
+  - @webx-ui/module-admin@0.9.0
+  - @webx-ui/schema@0.3.1
+
 ## 0.2.5
 
 ### Patch Changes

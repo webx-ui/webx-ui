@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'target-entity' => 'Bu site',
+    'target-url' => 'Bir adres',
+    'target-none' => 'Hiçbir yere',
+    'section' => 'Bölüm',
+    'search' => 'Bir ad yazmaya başlayın',
+    'searching' => 'Aranıyor…',
+    'empty' => 'Hiçbir şey bulunamadı',
+    'clear' => 'Bağlantıyı kaldır',
+    'unavailable' => 'Henüz sitede değil',
+    'missing' => 'Bu bağlantının gösterdiği şey artık yok',
+    'url-label' => 'Adres',
+    'url-placeholder' => '/account veya https://example.com',
+    'hash' => 'Çapa',
+    'hash-placeholder' => 'sayfadaki-bolum',
+    'url-routes' => 'Bu sitenin adresleri',
+    'new-tab' => 'Yeni sekmede aç',
+    'rel' => 'İlişki',
+    'rel-nofollow' => 'Bağlantı ağırlığı aktarma',
+    'rel-sponsored' => 'Ücretli yerleşim',
+    'rel-ugc' => 'Bir ziyaretçi tarafından yazıldı',
+    'shape' => 'Bu alan bir bağlantı alır.',
+    'target' => 'Bu alan böyle bir hedef türünü bilmiyor.',
+    'no-source' => 'Buradan ona bağlantı verilemez.',
+    'no-entity' => 'Bağlantının nereye gittiğini seçin.',
+    'url-length' => 'Bir adres en fazla :max karakter olabilir.',
+    'url-scheme' => 'Bir adres yol olmalı ya da http, https, mailto veya tel ile başlamalı.',
+    'hash-length' => 'Bir çapa en fazla :max karakter olabilir.',
+    'hash-shape' => 'Çapa, sayfadaki bir addır: boşluk içermez.',
+    'not-localized' => 'Bir bağlantı her dilde aynıdır, çevrilemez.',
+];

@@ -1,6 +1,7 @@
 import type { RouteRecordRaw } from 'vue-router'
-import type { IconName } from '@webx-ui/core'
+import type { ButtonVariant, IconName } from '@webx-ui/core'
 import type { TypeRegistry } from '@webx-ui/schema'
+import type { ThemePreference } from '@webx-ui/tokens'
 import type { LocaleDescriptor } from './i18n'
 
 /**
@@ -27,6 +28,23 @@ export interface Manifest {
   modules: ManifestModule[]
   /** Names of the screens the server can hand out — the trees themselves travel on request. */
   screens?: string[]
+  /**
+   * When the database was last dumped. Absent or `null` on a site that has switched the
+   * nightly backup off, and present with `at: null` on one that has it on and has never
+   * produced a file — which is the case the panel most needs to say out loud.
+   */
+  backup?: ManifestBackup | null
+}
+
+/**
+ * The nightly dump, as the server sees it: the newest file in the backup directory and how
+ * big it is. There is no record of it anywhere else on purpose — a task that failed is the
+ * file that is not there.
+ */
+export interface ManifestBackup {
+  /** ISO-8601, UTC. `null` when the directory is empty. */
+  at: string | null
+  bytes: number | null
 }
 
 /**
@@ -48,6 +66,8 @@ export interface BrandingImage {
 export interface ManifestGroup {
   id: string
   title: string
+  /** A name from the icon set; `null` or absent leaves the branch with the default picture. */
+  icon?: string | null
   order: number
 }
 
@@ -75,6 +95,12 @@ export interface AdminUser {
   permissions: string[]
   /** The panel language they chose, or null if they never have. */
   locale?: string | null
+  /**
+   * The theme they chose, or null for the machine's — which is a choice too, and one that
+   * has to travel with them. A server that has never heard of themes sends nothing at all,
+   * and then this browser's own choice stands.
+   */
+  theme?: ThemePreference | null
   /** The key their photograph is stored under — not an address; the panel resolves it. */
   avatar?: string | null
   [key: string]: unknown
@@ -113,6 +139,31 @@ export interface AdminModule {
    * registry every screen in the panel is drawn with.
    */
   types?: TypeRegistry
+  /**
+   * Opens a library and answers with the picture that was chosen, or `null` if nobody chose
+   * one.
+   *
+   * The seam exists because the panel's own fields need a picture — `wx-rich-text` has an
+   * image button — and the panel cannot depend on the module that has the files: it is the
+   * other way round. A module supplies this, the panel asks for it, and a panel without one
+   * simply does not offer the button.
+   */
+  pickImage?: () => Promise<PickedImage | null>
+}
+
+/**
+ * A picture out of a library: where it is right now, and the key it is filed under.
+ *
+ * Both, because they answer different questions. The address is what draws the picture in this
+ * browser this minute — it may be signed and about to expire, and it carries a version stamp
+ * that changes the moment somebody crops the image. The key is what goes into the record, so
+ * the address can be worked out again: a library that moves to another bucket, a site deployed
+ * against a different CDN and an image edited in place all change the address and none of them
+ * change the key.
+ */
+export interface PickedImage {
+  url: string
+  path?: string
 }
 
 export type AdminStatus = 'loading' | 'ready' | 'unauthenticated' | 'error'
@@ -130,6 +181,7 @@ export interface NavEntry {
 export interface NavGroup {
   id: string
   title: string
+  icon: string | null
   entries: NavEntry[]
 }
 
@@ -157,4 +209,46 @@ export interface RowAction {
   href?: string
   target?: string
   run?: () => void
+}
+
+/**
+ * One thing a screen offers, in its head.
+ *
+ * The same reason a row's menu is data: the head draws the action twice over its life — as a
+ * button while there is room for one, as a line of the `···` once there is not — and a vnode
+ * cannot be mounted in two places (CLAUDE.md §4). Declared once, `WxScreenHead` decides which
+ * it is at the width it happens to have.
+ */
+export interface ScreenAction extends RowAction {
+  /**
+   * The one action the screen exists for: filled, blue, with the word on it. It is the one
+   * that stays a button when everything else folds into the menu. One per screen (§18.3) —
+   * a screen with two of these has none.
+   */
+  primary?: boolean
+  /**
+   * Never a button: this one lives in the `···` at every width. A destructive action is there
+   * whether it says so or not — red beside the name of the record is not where it belongs.
+   */
+  menu?: boolean
+  /** Shows a spinner and blocks the button: saving, publishing. */
+  loading?: boolean
+  /** Weight of a button that is not the primary one. `outline` unless said otherwise. */
+  variant?: ButtonVariant
+}
+
+/**
+ * One filter that is on, said in the reader's words.
+ *
+ * A shut panel of filters says nothing about itself, and a list narrowed by something nobody
+ * can see is a list that looks wrong. Sections build these — only a section knows that
+ * `rubric=2` reads "Rubric: News" — and `WxFilterChips` draws them the same way everywhere.
+ */
+export interface AppliedFilter {
+  /** Unique within the strip. */
+  key: string
+  /** What it says on the chip: the field and its value. */
+  label: string
+  /** Takes this one filter off. */
+  clear: () => void
 }

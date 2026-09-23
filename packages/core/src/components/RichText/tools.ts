@@ -1,4 +1,4 @@
-import type { RichTextTool } from './types'
+import type { RichTextTableTool, RichTextTool } from './types'
 
 /**
  * Kept out of the component because `withDefaults` cannot reference a binding
@@ -63,7 +63,7 @@ export const TOOL_META: Record<Exclude<RichTextTool, 'divider'>, ToolMeta> = {
 }
 
 /** Shown as a second row while the caret sits inside a table. */
-export const TABLE_TOOLS = [
+export const TABLE_TOOLS: { key: RichTextTableTool; label: string; icon: string }[] = [
   { key: 'addRowAfter', label: 'Row below', icon: 'rowAfter' },
   { key: 'addRowBefore', label: 'Row above', icon: 'rowBefore' },
   { key: 'addColumnAfter', label: 'Column after', icon: 'columnAfter' },
@@ -72,6 +72,6 @@ export const TABLE_TOOLS = [
   { key: 'deleteColumn', label: 'Delete column', icon: 'deleteColumn' },
   { key: 'mergeOrSplit', label: 'Merge or split cells', icon: 'mergeCells' },
   { key: 'deleteTable', label: 'Delete table', icon: 'deleteTable' },
-] as const
+]
 
-export type TableToolKey = (typeof TABLE_TOOLS)[number]['key']
+export type TableToolKey = RichTextTableTool

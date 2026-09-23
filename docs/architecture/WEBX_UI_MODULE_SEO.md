@@ -183,7 +183,7 @@ interface SeoSource
 
 ## 6. Рендер
 
-- Blade-компонент `<x-webx-seo :for="$page" />` и директива `@webxSeo` / `@webxSeo($page)`.
+- Blade-компонент `<x-webx-seo::head :for="$page" />` и директива `@webxSeo` / `@webxSeo($page)`.
 - Печатает `<title>`, `meta description`, `meta keywords`, `meta robots`, `link rel=canonical`,
   `og:*`, блоки `application/ld+json`.
 - Конфиг `webx-seo.php`: шаблоны по умолчанию, мягкие лимиты длин (для счётчиков в панели и

@@ -1,5 +1,72 @@
 # @webx-ui/schema
 
+## 0.3.8
+
+### Patch Changes
+
+- Updated dependencies [8e0d587]
+  - @webx-ui/core@0.31.0
+
+## 0.3.7
+
+### Patch Changes
+
+- Updated dependencies [b1aeb52]
+  - @webx-ui/core@0.30.0
+
+## 0.3.6
+
+### Patch Changes
+
+- Updated dependencies [0a506df]
+  - @webx-ui/core@0.29.0
+
+## 0.3.5
+
+### Patch Changes
+
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+  - @webx-ui/core@0.28.0
+
+## 0.3.4
+
+### Patch Changes
+
+- Updated dependencies [537df98]
+  - @webx-ui/core@0.27.0
+
+## 0.3.3
+
+### Patch Changes
+
+- Updated dependencies [a9383bb]
+- Updated dependencies [b6a09a6]
+  - @webx-ui/core@0.26.0
+
+## 0.3.2
+
+### Patch Changes
+
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [937f4e2]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+  - @webx-ui/core@0.25.0
+
+## 0.3.1
+
+### Patch Changes
+
+- Updated dependencies [f87e4ec]
+- Updated dependencies [f87e4ec]
+  - @webx-ui/core@0.24.0
+
 ## 0.3.0
 
 ### Minor Changes

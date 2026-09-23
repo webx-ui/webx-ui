@@ -1,0 +1,37 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'bold' => 'Kalın',
+    'italic' => 'İtalik',
+    'strike' => 'Üstü çizili',
+    'code' => 'Satır içi kod',
+    'h2' => 'Başlık 2',
+    'h3' => 'Başlık 3',
+    'h4' => 'Başlık 4',
+    'bullet-list' => 'Madde işaretli liste',
+    'ordered-list' => 'Numaralı liste',
+    'blockquote' => 'Alıntı',
+    'hr' => 'Ayırıcı',
+    'link' => 'Bağlantı',
+    'table' => 'Tablo',
+    'image' => 'Görsel',
+    'youtube' => 'YouTube videosu',
+    'undo' => 'Geri al',
+    'redo' => 'Yinele',
+    'row-below' => 'Alta satır',
+    'row-above' => 'Üste satır',
+    'column-after' => 'Sağa sütun',
+    'column-before' => 'Sola sütun',
+    'delete-row' => 'Satırı sil',
+    'delete-column' => 'Sütunu sil',
+    'merge-cells' => 'Hücreleri birleştir veya böl',
+    'delete-table' => 'Tabloyu sil',
+    'toolbar' => 'Metin biçimlendirme',
+    'link-address' => 'Bağlantı adresi',
+    'youtube-address' => 'YouTube adresi',
+    'apply' => 'Uygula',
+    'cancel' => 'İptal',
+    'uploading' => 'Yükleniyor…',
+];

@@ -27,4 +27,6 @@ return [
     'json-ld-help' => 'Obiekt JSON-LD albo ich lista. To, co strona mówi o sobie, pochodzi z ustawień; tutaj jest miejsce na znaczniki konkretnej strony.',
     'json-ld-invalid' => 'To nie jest poprawny JSON.',
     'preview' => 'W wynikach wyszukiwania',
+    'share-preview' => 'Przy udostępnianiu',
+    'share-auto' => 'Wstawi je witryna — obrazek samego wpisu albo domyślny',
 ];

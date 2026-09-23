@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, useTemplateRef } from 'vue'
-import { useAdmin, useTranslate, WxListScreen } from '@webx-ui/module-admin'
-import { WxButton, WxCard, type TabItem, type TabValue } from '@webx-ui/core'
+import { useAdmin, useTranslate, WxListScreen, type ScreenAction } from '@webx-ui/module-admin'
+import { WxCard, type TabItem, type TabValue } from '@webx-ui/core'
 import MediaManager from './MediaManager.vue'
 import { useMediaMessages } from './i18n'
 import type { MediaKind } from './types'
@@ -44,16 +44,32 @@ const views = computed<TabItem[]>(() => [
     label: t(`manager.${one}`),
   })),
 ])
+
+/* What the section offers. Declared, because on a phone the head folds it into the ···. */
+const actions = computed<ScreenAction[]>(() =>
+  canUpload.value
+    ? [
+        {
+          key: 'upload',
+          label: t('manager.upload'),
+          icon: 'upload',
+          primary: true,
+          run: () => manager.value?.upload(),
+        },
+      ]
+    : [],
+)
 </script>
 
 <template>
-  <wx-list-screen v-model:view="kind" :title="title" :views="views" :card="false" fill>
-    <template v-if="canUpload" #actions>
-      <wx-button type="primary" icon="upload" @click="manager?.upload()">
-        {{ t('manager.upload') }}
-      </wx-button>
-    </template>
-
+  <wx-list-screen
+    v-model:view="kind"
+    :title="title"
+    :views="views"
+    :actions="actions"
+    :card="false"
+    fill
+  >
     <wx-card class="wx-media-page" padding="md">
       <media-manager ref="manager" :type="fileKind" in-page />
     </wx-card>

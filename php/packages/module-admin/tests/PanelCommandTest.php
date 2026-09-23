@@ -6,6 +6,7 @@ namespace WebxUi\Admin\Tests;
 
 use Illuminate\Filesystem\Filesystem;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Panel\PackageRegistry;
 
 final class PanelCommandTest extends TestCase
 {
@@ -19,6 +20,13 @@ final class PanelCommandTest extends TestCase
         parent::setUp();
 
         $this->files = new Filesystem;
+
+        // A fixed list of installed packages: what this half of the command does is the same
+        // whichever modules `vendor` happens to hold today.
+        $this->app->instance(
+            PackageRegistry::class,
+            new PackageRegistry($this->files, __DIR__.'/Fixtures/installed.json'),
+        );
     }
 
     protected function tearDown(): void

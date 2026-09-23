@@ -140,7 +140,8 @@ export const tokens = {
       "slow": "320ms"
     },
     "easing": {
-      "standard": "cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+      "standard": "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+      "emphasized": "cubic-bezier(0.34, 1.4, 0.64, 1)"
     }
   },
   "semantic": {
@@ -373,6 +374,7 @@ export const lightVars: Record<string, string> = {
   '--wx-duration-normal': "200ms",
   '--wx-duration-slow': "320ms",
   '--wx-easing-standard': "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+  '--wx-easing-emphasized': "cubic-bezier(0.34, 1.4, 0.64, 1)",
   '--wx-color-primary': "var(--wx-color-blue-base)",
   '--wx-color-primary-hover': "var(--wx-color-blue-hover)",
   '--wx-color-primary-active': "var(--wx-color-blue-active)",

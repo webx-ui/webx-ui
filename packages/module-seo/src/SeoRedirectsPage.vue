@@ -5,15 +5,16 @@ import {
   useErrorText,
   useTranslate,
   WxDate,
+  rowMenuWidth,
   WxRowMenu,
   type RowAction,
+  type ScreenAction,
 } from '@webx-ui/module-admin'
 import {
   confirm,
   createModal,
   toast,
   WxBadge,
-  WxButton,
   WxTable,
   WxText,
   type TableColumn,
@@ -65,7 +66,14 @@ const columns = computed<TableColumn<SeoRedirect>[]>(() => [
     hideOnCards: true,
   },
   { key: 'is_active', label: t('page.state'), align: 'center', hideBelow: 660 },
-  { key: 'actions', label: '', width: 56, align: 'right', hidden: !canManage, hideOnCards: true },
+  {
+    key: 'actions',
+    label: '',
+    width: rowMenuWidth,
+    align: 'right',
+    hidden: !canManage,
+    hideOnCards: true,
+  },
 ])
 
 /** One line, and the same menu every other list of the panel puts a record's actions in. */
@@ -127,16 +135,25 @@ async function remove(redirect: SeoRedirect): Promise<void> {
     toast.danger(message(error))
   }
 }
+
+/* What the section offers. Declared, because on a phone the head folds it into the ···. */
+const actions = computed<ScreenAction[]>(() =>
+  canManage
+    ? [
+        {
+          key: 'redirect',
+          label: t('page.new-redirect'),
+          icon: 'plus',
+          primary: true,
+          run: () => void open(null),
+        },
+      ]
+    : [],
+)
 </script>
 
 <template>
-  <seo-layout :base="props.base" current="redirects" @test="test({})">
-    <template v-if="canManage" #actions>
-      <wx-button type="primary" icon="add" @click="open(null)">
-        {{ t('page.new-redirect') }}
-      </wx-button>
-    </template>
-
+  <seo-layout :base="props.base" current="redirects" :actions="actions" @test="test({})">
     <wx-table
       :data="page"
       :columns="columns"

@@ -28,7 +28,7 @@ class SettingsServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-settings');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
-        $this->app->make(ModuleRegistry::class)->register(new SettingsModule);
+        $this->app->make(ModuleRegistry::class)->register($this->app->make(SettingsModule::class));
 
         // The reference screen. A project lays its own tabs over it from its provider, which
         // boots after this one — `Screens::extend('settings.index', ...)`.

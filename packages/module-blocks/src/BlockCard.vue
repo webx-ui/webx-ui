@@ -2,6 +2,7 @@
 import { useTranslate } from '@webx-ui/module-admin'
 import { WxBadge, WxText } from '@webx-ui/core'
 import BlockThumb from './BlockThumb.vue'
+import { usageWords } from './schema'
 import type { BlockType } from './types'
 
 /** One type in the list: its picture, its name, where it stands and which versions it has. */
@@ -20,11 +21,7 @@ const t = useTranslate('webx-blocks')
       <wx-text size="sm" tone="muted">
         <code>{{ block.slug }}</code>
         ·
-        {{
-          block.usage_count > 0
-            ? t('page.on-pages', { count: block.usage_count })
-            : t('page.not-used')
-        }}
+        {{ usageWords(block.usage_count, t) }}
       </wx-text>
       <div class="wx-block-card__chips">
         <wx-badge v-if="block.draft" type="warning" dot>

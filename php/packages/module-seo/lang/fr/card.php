@@ -27,4 +27,6 @@ return [
     'json-ld-help' => 'Un objet JSON-LD, ou une liste. Ce que le site dit de lui-même vient des réglages ; ceci est pour une page qui a besoin de son propre balisage.',
     'json-ld-invalid' => 'Ce n’est pas du JSON valide.',
     'preview' => 'Dans les résultats',
+    'share-preview' => 'Au partage',
+    'share-auto' => 'Le site la met — l’image de la fiche elle-même, ou celle par défaut',
 ];

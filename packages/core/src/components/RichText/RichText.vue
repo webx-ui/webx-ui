@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { EditorContent, useEditor } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import { TableKit } from '@tiptap/extension-table'
@@ -7,9 +7,19 @@ import Image from '@tiptap/extension-image'
 import Youtube from '@tiptap/extension-youtube'
 import FileHandler from '@tiptap/extension-file-handler'
 import { useFormField } from '../../composables/useFormField'
+import { useLocalized } from '../../composables/useLocalized'
+import LocalePicker from '../Locales/LocalePicker.vue'
 import WxRichTextToolbarButton from './ToolbarButton.vue'
 import { DEFAULT_ACCEPT, DEFAULT_TOOLS, TABLE_TOOLS, TOOL_META, type TableToolKey } from './tools'
-import type { RichTextEmits, RichTextProps, RichTextTool } from './types'
+import type {
+  RichTextEmits,
+  RichTextImage,
+  RichTextLabelKey,
+  RichTextLabels,
+  RichTextModelValue,
+  RichTextProps,
+  RichTextTool,
+} from './types'
 
 defineOptions({ name: 'WxRichText', inheritAttrs: false })
 
@@ -26,13 +36,73 @@ const props = withDefaults(defineProps<RichTextProps>(), {
   upload: undefined,
   pickImage: undefined,
   accept: () => DEFAULT_ACCEPT,
+  labels: undefined,
+  localized: false,
 })
+
+/**
+ * What the editor says when nobody told it otherwise. English is the floor rather than the
+ * source of truth: a panel running in ten languages hands its own words in, and a key it
+ * forgot stays readable instead of blank.
+ */
+const DEFAULT_LABELS: RichTextLabels = {
+  toolbar: 'Text formatting',
+  linkAddress: 'Link address',
+  youtubeAddress: 'YouTube URL',
+  apply: 'Apply',
+  cancel: 'Cancel',
+  uploading: 'Uploading…',
+}
+
+function label(key: RichTextLabelKey): string {
+  const given = props.labels?.[key] ?? DEFAULT_LABELS[key]
+
+  if (given !== undefined) return given
+  if (key in TOOL_META) return TOOL_META[key as Exclude<RichTextTool, 'divider'>].label
+
+  return TABLE_TOOLS.find((tool) => tool.key === key)?.label ?? key
+}
 
 const emit = defineEmits<RichTextEmits>()
 
-const model = defineModel<string>({ default: '' })
+/**
+ * The picture node, taught one attribute of its own.
+ *
+ * ProseMirror keeps only the attributes a node declares — anything else is dropped the first
+ * time the document is parsed, silently and in both directions — so the library key has to be
+ * a declared attribute rather than something written onto the tag.
+ */
+const LibraryImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      path: {
+        default: null,
+        parseHTML: (element: HTMLElement) => element.getAttribute('data-wx-path'),
+        renderHTML: (attributes: Record<string, unknown>) =>
+          attributes.path === null || attributes.path === undefined
+            ? {}
+            : { 'data-wx-path': String(attributes.path) },
+      },
+    }
+  },
+})
+
+const model = defineModel<RichTextModelValue>({ default: '' })
 
 const field = useFormField(props)
+
+const locales = useLocalized(props, model)
+
+/** The language on screen, or nothing at all when the field is plain. */
+const editing = computed(() => (locales.on.value ? locales.active.value : undefined))
+
+/*
+ * One editor, one language at a time. The other languages are not rendered anywhere — an
+ * editor is a document, not a line, and four of them stacked is four documents to scroll past
+ * to reach the next field. What the chip does is swap the document in this one.
+ */
+const currentValue = computed(() => locales.read(editing.value))
 const focused = ref(false)
 const uploading = ref(0)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -50,7 +120,7 @@ function readHtml(): string {
 }
 
 const editor = useEditor({
-  content: model.value ?? '',
+  content: currentValue.value,
   editable: editable.value,
   extensions: [
     StarterKit.configure({
@@ -61,7 +131,7 @@ const editor = useEditor({
       },
     }),
     TableKit.configure({ table: { resizable: true } }),
-    Image.configure({ HTMLAttributes: { class: 'wx-rich-text__image' } }),
+    LibraryImage.configure({ HTMLAttributes: { class: 'wx-rich-text__image' } }),
     Youtube.configure({ nocookie: true, width: 640, height: 360 }),
     FileHandler.configure({
       allowedMimeTypes: props.accept,
@@ -71,7 +141,7 @@ const editor = useEditor({
   ],
   onUpdate: () => {
     const html = readHtml()
-    model.value = html
+    locales.write(editing.value, html)
     emit('change', html)
   },
   onFocus: () => {
@@ -84,12 +154,16 @@ const editor = useEditor({
   },
 })
 
-/** Only replaces the document when the value really differs, or the caret jumps. */
-watch(model, (value) => {
+/**
+ * Only replaces the document when the value really differs, or the caret jumps. Watching the
+ * language being edited rather than the model: with a localized field those are different
+ * things, and switching the chip has to bring the other language's document in.
+ */
+watch(currentValue, (value) => {
   const instance = editor.value
   if (!instance) return
-  if ((value ?? '') === readHtml()) return
-  instance.commands.setContent(value ?? '', { emitUpdate: false })
+  if (value === readHtml()) return
+  instance.commands.setContent(value, { emitUpdate: false })
 })
 
 watch(editable, (value) => editor.value?.setEditable(value))
@@ -105,17 +179,27 @@ const classes = computed(() => [
     'is-focused': focused.value,
     'is-disabled': field.disabled.value,
     'is-readonly': props.readonly,
+    'is-localized': locales.on.value,
   },
 ])
 
-function insertImage(url: string, alt?: string, pos?: number) {
+/** The caret follows the language into the document it just swapped in. */
+function chooseLocale(code: string): void {
+  locales.active.value = code
+  void nextTick(() => editor.value?.commands.focus())
+}
+
+function insertImage(image: RichTextImage, pos?: number) {
   const instance = editor.value
   if (!instance) return
   const at = pos ?? instance.state.selection.anchor
   instance
     .chain()
     .focus()
-    .insertContentAt(at, { type: 'image', attrs: { src: url, alt } })
+    .insertContentAt(at, {
+      type: 'image',
+      attrs: { src: image.url, alt: image.alt, path: image.path ?? null },
+    })
     .run()
 }
 
@@ -128,8 +212,7 @@ async function uploadFiles(files: File[], pos?: number) {
   for (const file of files) {
     uploading.value += 1
     try {
-      const result = await props.upload(file)
-      insertImage(result.url, result.alt, pos)
+      insertImage(await props.upload(file), pos)
     } catch (error) {
       emit('uploadError', error, file)
     } finally {
@@ -140,8 +223,10 @@ async function uploadFiles(files: File[], pos?: number) {
 
 async function onImageButton() {
   if (props.pickImage) {
-    const url = await props.pickImage()
-    if (url) insertImage(url)
+    const chosen = await props.pickImage()
+
+    if (chosen) insertImage(typeof chosen === 'string' ? { url: chosen } : chosen)
+
     return
   }
   fileInput.value?.click()
@@ -274,36 +359,43 @@ defineExpose({
 
 <template>
   <div :class="classes">
-    <div class="wx-rich-text__toolbar" role="toolbar" :aria-label="ariaLabel ?? 'Text formatting'">
+    <div class="wx-rich-text__toolbar" role="toolbar" :aria-label="ariaLabel ?? label('toolbar')">
       <template v-for="(tool, index) in visibleTools" :key="`${tool}-${index}`">
         <span v-if="tool === 'divider'" class="wx-rich-text__divider" aria-hidden="true" />
         <wx-rich-text-toolbar-button
           v-else
           :icon="TOOL_META[tool].icon"
           :text="TOOL_META[tool].text"
-          :label="TOOL_META[tool].label"
+          :label="label(tool)"
           :active="isActive(tool)"
           :disabled="!editable"
           @click="run(tool)"
         />
       </template>
 
-      <span v-if="uploading > 0" class="wx-rich-text__uploading">Uploading…</span>
+      <span v-if="uploading > 0" class="wx-rich-text__uploading">{{ label('uploading') }}</span>
     </div>
+
+    <locale-picker
+      v-if="locales.on.value"
+      :locales="locales.list.value"
+      :active="locales.active.value"
+      @choose="chooseLocale"
+    />
 
     <div v-if="inTable && editable" class="wx-rich-text__toolbar wx-rich-text__toolbar--table">
       <wx-rich-text-toolbar-button
         v-for="tool in TABLE_TOOLS"
         :key="tool.key"
         :icon="tool.icon"
-        :label="tool.label"
+        :label="label(tool.key)"
         @click="runTableCommand(tool.key)"
       />
     </div>
 
     <form v-if="prompt" class="wx-rich-text__prompt" @submit.prevent="applyPrompt">
       <label class="wx-rich-text__prompt-label" :for="`${field.id.value}-prompt`">
-        {{ prompt.kind === 'link' ? 'Link address' : 'YouTube URL' }}
+        {{ label(prompt.kind === 'link' ? 'linkAddress' : 'youtubeAddress') }}
       </label>
       <input
         :id="`${field.id.value}-prompt`"
@@ -313,8 +405,8 @@ defineExpose({
         :placeholder="prompt.kind === 'link' ? 'https://example.com' : 'https://youtu.be/…'"
         @keydown.esc="prompt = null"
       />
-      <wx-rich-text-toolbar-button icon="check" label="Apply" @click="applyPrompt" />
-      <wx-rich-text-toolbar-button icon="close" label="Cancel" @click="prompt = null" />
+      <wx-rich-text-toolbar-button icon="check" :label="label('apply')" @click="applyPrompt" />
+      <wx-rich-text-toolbar-button icon="close" :label="label('cancel')" @click="prompt = null" />
     </form>
 
     <div class="wx-rich-text__body" :style="{ minHeight }">
@@ -340,6 +432,7 @@ defineExpose({
 
 <style scoped>
 .wx-rich-text {
+  position: relative;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -366,6 +459,21 @@ defineExpose({
 
 .wx-rich-text--warning {
   border-color: var(--wx-color-warning);
+}
+
+/*
+ * The chip sits in the top corner, over the end of the toolbar rather than over the text: a
+ * document is written from the top left and that corner has to stay clear. The toolbar keeps
+ * its distance so the last button is not underneath it.
+ */
+.wx-rich-text.is-localized {
+  --wx-locale-picker-height: 20px;
+  --wx-locale-picker-top: var(--wx-space-4);
+  --wx-locale-picker-shift: 0;
+}
+
+.wx-rich-text.is-localized .wx-rich-text__toolbar:first-child {
+  padding-right: var(--wx-space-40);
 }
 
 .wx-rich-text.is-disabled {

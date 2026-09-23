@@ -6,8 +6,10 @@ namespace WebxUi\Pages;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Pages\Links\PageLinkSource;
 use WebxUi\Pages\Models\Page;
 use WebxUi\Pages\Panel\PageForm;
 use WebxUi\Pages\Panel\PagesModule;
@@ -38,6 +40,7 @@ class PagesServiceProvider extends ServiceProvider
         $this->registerRouteType();
         $this->registerBlockEntity();
         $this->registerScreens();
+        $this->registerLinkSource();
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(PagesModule::class));
 
@@ -89,6 +92,15 @@ class PagesServiceProvider extends ServiceProvider
             PageForm::SCREEN,
             __DIR__.'/../resources/screens/form.json',
         );
+    }
+
+    /**
+     * A page is the ordinary thing to link to, so the picker in every link field offers them —
+     * the menu is only the first of those fields (§3 of the menu spec).
+     */
+    private function registerLinkSource(): void
+    {
+        $this->app->make(LinkSources::class)->register($this->app->make(PageLinkSource::class));
     }
 
     /**

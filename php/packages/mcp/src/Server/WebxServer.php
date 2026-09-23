@@ -46,6 +46,10 @@ final class WebxServer extends Server
         without doing it — use that before a change you are not sure about. Writing needs a token
         with the `<module>:write` scope; a refusal says which scope was missing.
 
+        You act as the administrator who connected you, with their permissions and nothing more:
+        the list of tools is already what they may use, so a tool that is not listed is not one
+        to ask for.
+
         Read a module's resources before writing through it: they carry the house rules and the
         catalogue of what already exists, so that you reuse rather than duplicate.
         MARKDOWN;

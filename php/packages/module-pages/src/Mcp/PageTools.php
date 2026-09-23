@@ -276,7 +276,7 @@ final class PageTools
      */
     private function bin(string $term): Collection
     {
-        $query = Page::onlyTrashed()->whereNull('trashed_with')->with('routes');
+        $query = Page::onlyTrashed()->whereNull('trashed_with')->with('routes')->withBranchCount();
 
         /** @var Collection<int, Page> $trashed */
         $trashed = $this->searching($query, $term)
@@ -292,7 +292,7 @@ final class PageTools
      */
     private function listing(array $arguments): Builder
     {
-        $query = Page::query()->with('routes')->withCount('children');
+        $query = Page::query()->with('routes')->withCount('children')->withBranchCount();
         $status = (string) ($arguments['status'] ?? '');
 
         return match ($status) {
@@ -566,9 +566,9 @@ final class PageTools
             'updated_at' => $page->updated_at?->toAtomString(),
             'edited_by' => $editors[$id] ?? null,
             'children' => (int) ($page->getAttribute('children_count') ?? 0),
-            // Arithmetic on the bounds rather than a query — that is what a nested set is for —
-            // and it is the size of what a delete would take.
-            'descendants' => intdiv($page->getRgt() - $page->getLft() - 1, 2),
+            // The size of what a delete would take, or of what a restore would bring back:
+            // pages already in the bin are not under a live page in any sense that counts.
+            'descendants' => $page->branchCount(),
             'can' => $page->capabilities(),
         ];
 

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { applyTheme, type Theme } from '@webx-ui/tokens'
+import AdminLayout from './layouts/AdminLayout.vue'
 import SidebarLayout from './layouts/SidebarLayout.vue'
 import TopbarLayout from './layouts/TopbarLayout.vue'
 import DashboardScreen from './screens/DashboardScreen.vue'
 import OrdersScreen from './screens/OrdersScreen.vue'
+import TableLabScreen from './screens/TableLabScreen.vue'
 import RecordsScreen from './screens/RecordsScreen.vue'
 import SettingsScreen from './screens/SettingsScreen.vue'
 import InboxScreen from './inbox/InboxScreen.vue'
@@ -16,7 +18,8 @@ import KitchenSink from './KitchenSink.vue'
  * rather than a demo box, which is the only way to find out whether the components
  * hold up next to each other.
  */
-type Page = 'topbar' | 'sidebar' | 'orders' | 'settings' | 'records' | 'inbox' | 'components'
+type Page =
+  'topbar' | 'sidebar' | 'orders' | 'lab' | 'settings' | 'records' | 'inbox' | 'components'
 
 const page = ref<Page>('topbar')
 const theme = ref<Theme>('light')
@@ -25,6 +28,7 @@ const pages: { value: Page; label: string }[] = [
   { value: 'topbar', label: 'Меню в шапці' },
   { value: 'sidebar', label: 'Меню збоку' },
   { value: 'orders', label: 'Таблиця' },
+  { value: 'lab', label: 'Таблиця з сервера' },
   { value: 'settings', label: 'Форма і таби' },
   { value: 'records', label: 'Список + деталі' },
 ]
@@ -54,6 +58,11 @@ function toggleTheme() {
     <sidebar-layout v-else-if="page === 'orders'">
       <orders-screen />
     </sidebar-layout>
+
+    <!-- The lab wears the panel's own shell: a floating sidebar, no bar across the top. -->
+    <admin-layout v-else-if="page === 'lab'">
+      <table-lab-screen />
+    </admin-layout>
 
     <sidebar-layout v-else-if="page === 'settings'">
       <settings-screen />
@@ -95,6 +104,12 @@ function toggleTheme() {
       >
         {{ item.label }}
       </wx-button>
+
+      <wx-divider direction="vertical" spacing="sm" />
+
+      <!-- The other half of the playground: the real panel, on a server that lives in the
+           Vite config. A link rather than a page, because it is a second application. -->
+      <wx-button size="sm" variant="text" href="/panel/inbox">Панель</wx-button>
 
       <wx-divider direction="vertical" spacing="sm" />
 

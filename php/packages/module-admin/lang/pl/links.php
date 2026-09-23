@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'target-entity' => 'Ta witryna',
+    'target-url' => 'Adres',
+    'target-none' => 'Nigdzie',
+    'section' => 'Sekcja',
+    'search' => 'Zacznij wpisywać nazwę',
+    'searching' => 'Szukanie…',
+    'empty' => 'Nic nie znaleziono',
+    'clear' => 'Usuń odnośnik',
+    'unavailable' => 'Jeszcze nie na stronie',
+    'missing' => 'To, do czego prowadził ten odnośnik, już nie istnieje',
+    'url-label' => 'Adres',
+    'url-placeholder' => '/account lub https://example.com',
+    'hash' => 'Kotwica',
+    'hash-placeholder' => 'sekcja-na-stronie',
+    'url-routes' => 'Adresy tej witryny',
+    'new-tab' => 'Otwieraj w nowej karcie',
+    'rel' => 'Relacja',
+    'rel-nofollow' => 'Nie przekazuj wagi odnośnika',
+    'rel-sponsored' => 'Płatne umieszczenie',
+    'rel-ugc' => 'Napisane przez odwiedzającego',
+    'shape' => 'To pole przyjmuje odnośnik.',
+    'target' => 'To pole nie zna takiego rodzaju celu.',
+    'no-source' => 'Tutaj nie można się do tego odwołać.',
+    'no-entity' => 'Wybierz, dokąd prowadzi odnośnik.',
+    'url-length' => 'Adres może mieć najwyżej :max znaków.',
+    'url-scheme' => 'Adres musi być ścieżką albo zaczynać się od http, https, mailto lub tel.',
+    'hash-length' => 'Kotwica może mieć najwyżej :max znaków.',
+    'hash-shape' => 'Kotwica to nazwa na stronie: bez spacji.',
+    'not-localized' => 'Odnośnik jest ten sam we wszystkich językach i nie podlega tłumaczeniu.',
+];

@@ -15,8 +15,7 @@
             {
               "id": "blocks",
               "type": "wx-blocks",
-              "name": "blocks",
-              "props": { "fill": true }
+              "name": "blocks"
             }
           ]
         },

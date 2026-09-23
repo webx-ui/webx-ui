@@ -35,6 +35,24 @@ final class UrlRuleSource implements SeoSource
         return $rule?->toSeoData($locale);
     }
 
+    /**
+     * Is there an active rule for this address at all?
+     *
+     * Asked by a module whose page is out of the index unless somebody asked for it — the tag
+     * pages of `webx-ui/module-blog` are the first (§12 of its spec). The fact that a rule
+     * matches is the answer, not what the rule says: a rule filling in a title and nothing else
+     * still means "this page is wanted", and a merge of fields could never see that, because a
+     * rule with an empty `robots` leaves the `noindex` of the source below it in place.
+     *
+     * Over the same compiled list {@see UrlMatcher} works on, and deliberately not over a
+     * matcher of the asker's own: two ideas of what `*` means against `**` drift apart on the
+     * first star, and they drift apart silently.
+     */
+    public function hasRuleFor(string $url): bool
+    {
+        return $this->matcher->match($url, $this->rules->urls()) !== null;
+    }
+
     /** The rule that won, as a record — what `test-url` shows and the middleware never needs. */
     public function matching(string $url): ?SeoUrl
     {

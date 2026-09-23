@@ -7,8 +7,9 @@ namespace WebxUi\Mcp\Tests\Fixtures;
 use Illuminate\Auth\GenericUser;
 
 /**
- * A user that came in with a token, the way Sanctum's `HasApiTokens` would present one: the
- * two methods `Scopes` asks for, and nothing of Sanctum itself.
+ * A user that came in with a key naming module scopes — the shape a token takes when it was
+ * issued for a machine rather than granted through the OAuth flow. Two methods, and nothing
+ * of whatever issued it.
  */
 final class TokenUser extends GenericUser
 {

@@ -153,6 +153,48 @@ describe('WxTable in tree mode', () => {
     expect(titles(wrapper)).toEqual(['Services', 'Delivery'])
   })
 
+  /*
+   * What a list does after a delete: it fetches the level again, and the level comes back as
+   * new rows. The branch is still open — `expanded` holds keys, and the key is the same — so
+   * nobody would ask for its children a second time, and it would stand open and empty for
+   * the rest of the session.
+   */
+  it('fetches an open branch again when the level it stands in is replaced', async () => {
+    const load = vi.fn().mockResolvedValue([{ id: 21, title: 'Delivery', has_children: false }])
+    const wrapper = table({
+      data: [{ id: 2, title: 'Services', has_children: true }],
+      tree: { lazy: true, load },
+    })
+
+    await rowFor(wrapper, 'Services').get('.wx-table__tree-toggle').trigger('click')
+    await new Promise((resolve) => setTimeout(resolve))
+
+    await wrapper.setProps({ data: [{ id: 2, title: 'Services', has_children: true }] })
+    await new Promise((resolve) => setTimeout(resolve))
+
+    expect(load).toHaveBeenCalledTimes(2)
+    expect(titles(wrapper)).toEqual(['Services', 'Delivery'])
+  })
+
+  it('asks once for a branch that opens and closes on the same rows', async () => {
+    const load = vi.fn().mockResolvedValue([{ id: 21, title: 'Delivery', has_children: false }])
+    const wrapper = table({
+      data: [{ id: 2, title: 'Services', has_children: true }],
+      tree: { lazy: true, load },
+    })
+
+    const toggle = () => rowFor(wrapper, 'Services').get('.wx-table__tree-toggle').trigger('click')
+
+    await toggle()
+    await new Promise((resolve) => setTimeout(resolve))
+    await toggle()
+    await toggle()
+    await new Promise((resolve) => setTimeout(resolve))
+
+    expect(load).toHaveBeenCalledTimes(1)
+    expect(titles(wrapper)).toEqual(['Services', 'Delivery'])
+  })
+
   /* ------------------------------------------------------ what a tree is not */
 
   it('draws no sort control, whatever the columns say', () => {

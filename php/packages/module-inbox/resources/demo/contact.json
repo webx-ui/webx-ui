@@ -1,0 +1,39 @@
+{
+  "slug": "contact",
+  "title": "Contact us",
+  "options": {
+    "thank-you.heading": "Thank you",
+    "thank-you.text": "Your message is with us. We answer by email, usually within a day.",
+    "design.submit-text": "Send",
+    "email_field": "email",
+    "antispam.honeypot": true,
+    "antispam.min_seconds": 3
+  },
+  "fields": [
+    {
+      "name": "name",
+      "type": "text",
+      "title": "Your name",
+      "is_required": true,
+      "is_fullsize": false,
+      "in_table": true
+    },
+    {
+      "name": "email",
+      "type": "email",
+      "title": "Email",
+      "placeholder": "you@example.com",
+      "is_required": true,
+      "is_fullsize": false,
+      "in_table": true
+    },
+    {
+      "name": "message",
+      "type": "textarea",
+      "title": "Message",
+      "help": "What it is about, and how we can help.",
+      "is_required": true,
+      "is_fullsize": true
+    }
+  ]
+}

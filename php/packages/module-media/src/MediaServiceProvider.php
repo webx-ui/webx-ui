@@ -7,6 +7,7 @@ namespace WebxUi\Media;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldType;
 use WebxUi\Admin\Screens\FieldTypes;
@@ -15,6 +16,7 @@ use WebxUi\Media\Screens\FilesFieldType;
 use WebxUi\Media\Screens\GalleryFieldType;
 use WebxUi\Media\Screens\MediaFieldType;
 use WebxUi\Media\Screens\MediaFiles;
+use WebxUi\Media\Storage\LibraryUrls;
 
 class MediaServiceProvider extends ServiceProvider
 {
@@ -37,6 +39,11 @@ class MediaServiceProvider extends ServiceProvider
         // One lookup behind all four field types: a page of blocks asks about the same library
         // once, and what it asked is thrown away at the end of the response.
         $this->app->singleton(MediaFiles::class);
+
+        // Where a library key lives, for whoever holds one inside a value of their own — the
+        // pictures in a `wx-rich-text` document above all. Bound here rather than asked for by
+        // name, because the panel may not have a file manager at all.
+        $this->app->bind(AssetUrls::class, LibraryUrls::class);
     }
 
     public function boot(): void
@@ -45,7 +52,7 @@ class MediaServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-media');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
-        $this->app->make(ModuleRegistry::class)->register(new MediaModule);
+        $this->app->make(ModuleRegistry::class)->register($this->app->make(MediaModule::class));
 
         // What a screen means by these names, on the server: the keys the fields store and the
         // addresses the site reads. The front end registers the same names for the components.

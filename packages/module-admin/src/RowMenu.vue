@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { WxActions, WxDropdownItem } from '@webx-ui/core'
+import { WxAction, WxActions, WxDropdownItem } from '@webx-ui/core'
 import type { ActionSize } from '@webx-ui/core'
+import { useTranslate } from './i18n'
 import type { RowAction } from './types'
 
 /**
@@ -18,6 +19,8 @@ import type { RowAction } from './types'
  * somebody may not do is left out, not shown greyed: a menu is a list of what is possible,
  * and a row of dead entries teaches nothing.
  */
+const t = useTranslate('webx-admin')
+
 const props = withDefaults(
   defineProps<{
     /** What may be done, in the order it should read. */
@@ -58,6 +61,12 @@ const divided = computed(() => {
     :aria-label="label"
     @click.stop
   >
+    <!-- The core carries English defaults and knows nothing of the panel's dictionary, so the
+         word on the tooltip is the panel's to give (CLAUDE.md §4). -->
+    <template #trigger>
+      <wx-action type="more" :size="size" :title="t('editor.more')" />
+    </template>
+
     <template #collapsed>
       <template v-for="action in ordered" :key="action.key">
         <hr v-if="action.key === divided" class="wx-dropdown__divider" />

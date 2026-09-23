@@ -108,29 +108,28 @@ trait HasUrl
         $canonical = $this->routeCanonical($locale);
         $path = $canonical instanceof Route ? $canonical->path : $this->routePath($locale);
 
-        return URL::to(UrlNormaliser::join($this->localePrefix($locale), $path));
+        return $this->urlOf($path, $locale);
+    }
+
+    /**
+     * The same address, out of a path the caller already has.
+     *
+     * For a list: a screen that has loaded the `routes` relation for a page of rows knows every
+     * path already, and `url()` would go back to the registry once per row to learn what
+     * it was handed. The language prefix is the only thing left to add, and it is the one part
+     * a caller must not work out for itself — a second reading of the strategy is a second
+     * reading that drifts.
+     */
+    public function urlOf(string $path, ?string $locale = null): string
+    {
+        $locale ??= $this->routeLocale();
+        $prefix = Container::getInstance()->make(SiteUrl::class)->prefix($locale);
+
+        return URL::to(UrlNormaliser::join($prefix, $path));
     }
 
     private function routeLocale(): string
     {
         return Container::getInstance()->make(Locales::class)->current();
-    }
-
-    /** Empty unless the site puts the language in the path, and unless this language needs it. */
-    private function localePrefix(string $locale): string
-    {
-        $config = Container::getInstance()->make('config');
-
-        if ((string) $config->get('webx-localization.strategy', 'prefix') !== 'prefix') {
-            return '';
-        }
-
-        $locales = Container::getInstance()->make(Locales::class);
-
-        if ($locale === $locales->defaultCode() && ! (bool) $config->get('webx-localization.prefix_default', false)) {
-            return '';
-        }
-
-        return $locale;
     }
 }

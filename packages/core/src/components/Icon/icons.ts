@@ -103,6 +103,20 @@ export const builtinIcons = {
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
   /* The sidebar toggle: a page with a column down its left. */
   sidebar: '<rect x="3" y="4.5" width="18" height="15" rx="2.5"/><path d="M9.5 4.5v15"/>',
+  /*
+   * The three screens, and they are told apart by their proportions rather than by any
+   * detail: at 1em a tablet and a phone are the same rounded rectangle, so the tablet is
+   * drawn wide enough that the difference survives the size — 13 against 8. The desktop
+   * gets its stand for the same reason.
+   */
+  monitor: '<rect x="3" y="4" width="18" height="12.5" rx="2.5"/><path d="M12 16.5v3.5M8.5 20h7"/>',
+  tablet: '<rect x="5.5" y="3" width="13" height="18" rx="2.5"/><path d="M10.7 17.6h2.6"/>',
+  smartphone: '<rect x="8" y="2.5" width="8" height="19" rx="2.2"/><path d="M10.9 18.7h2.2"/>',
+  /* Four corners, pointing out of the picture and back into it. */
+  maximize:
+    '<path d="M9 4H5.5A1.5 1.5 0 0 0 4 5.5V9"/><path d="M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9"/><path d="M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15"/><path d="M4 15v3.5A1.5 1.5 0 0 0 5.5 20H9"/>',
+  minimize:
+    '<path d="M4 9h3.5A1.5 1.5 0 0 0 9 7.5V4"/><path d="M20 9h-3.5A1.5 1.5 0 0 1 15 7.5V4"/><path d="M15 20v-3.5a1.5 1.5 0 0 1 1.5-1.5H20"/><path d="M9 20v-3.5A1.5 1.5 0 0 0 7.5 15H4"/>',
   'more-horizontal':
     '<circle cx="5.5" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
   'more-vertical':
@@ -120,6 +134,19 @@ export const builtinIcons = {
     '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>',
   home: '<path d="M4 10.5 12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15V14H9v6.5H5.5A1.5 1.5 0 0 1 4 19Z"/>',
   file: '<path d="M13.5 3.5H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9zm0 0V9H19"/>',
+  /*
+   * A page with prose on it — the same picture `file-txt` draws, under the name a section
+   * full of writing asks for. The two are deliberately one drawing: an article and a text
+   * file are the same thing to a reader glancing at a 16 px menu.
+   */
+  'file-text': TEXT,
+  /*
+   * A folded newspaper: the sheet, the one behind it curling out at the bottom left, a
+   * masthead and two lines of column. Drawn at this size because a paper without the fold
+   * is a document, and the fold is the only thing that tells the two apart.
+   */
+  newspaper:
+    '<path d="M5 20.5h13.5a2 2 0 0 0 2-2v-13a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v13a2 2 0 0 1-2 2Z"/><path d="M5 20.5a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2"/><path d="M9.8 6.8h8.2v3.6h-8.2z"/><path d="M9.8 13.6h8.2M9.8 16.6h5.2"/>',
   folder: FOLDER,
   /*
    * Moving something into a folder. The arrow points down into the folder rather than
@@ -136,6 +163,18 @@ export const builtinIcons = {
   phone:
     '<path d="M7 3.5 9.5 4l1.2 3.4-1.9 1.6a11 11 0 0 0 5.2 5.2l1.6-1.9 3.4 1.2.5 2.5a2 2 0 0 1-2 2.3A15.5 15.5 0 0 1 4.7 5.5a2 2 0 0 1 2.3-2Z"/>',
   bell: '<path d="M7 10a5 5 0 0 1 10 0c0 4 1.5 5.5 1.5 5.5h-13S7 14 7 10Z"/><path d="M10.2 18.5a2 2 0 0 0 3.6 0"/>',
+  /*
+   * A pin on a map: the teardrop and the hole in it. A set for a CMS without one is a set a
+   * contacts page cannot use, and the drop is the one shape everybody reads as "here".
+   */
+  'map-pin':
+    '<path d="M12 21s6.5-6 6.5-10.5a6.5 6.5 0 0 0-13 0C5.5 15 12 21 12 21Z"/><circle cx="12" cy="10.3" r="2.4"/>',
+  /*
+   * A megaphone, for the block every site has that asks for something. The horn points up
+   * and to the right — level, it reads as a traffic cone on its side.
+   */
+  megaphone:
+    '<path d="M4.5 10.2v3.6a1.6 1.6 0 0 0 1.6 1.6h2.2l8.4 4.1a1 1 0 0 0 1.4-.9V5.4a1 1 0 0 0-1.4-.9L8.3 8.6H6.1a1.6 1.6 0 0 0-1.6 1.6Z"/><path d="M8.3 15.4v2.8a2 2 0 0 0 2 2h.4a1 1 0 0 0 1-1.2l-.7-3.2"/>',
   cart: '<path d="M3 4.5h2.2l2.3 10.2a1.6 1.6 0 0 0 1.6 1.3h7.4a1.6 1.6 0 0 0 1.6-1.2L20 8H6"/><circle cx="10" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/>',
   tag: '<path d="M4 11.2V5.5A1.5 1.5 0 0 1 5.5 4h5.7a2 2 0 0 1 1.4.6l7 7a2 2 0 0 1 0 2.8l-5.2 5.2a2 2 0 0 1-2.8 0l-7-7a2 2 0 0 1-.6-1.4Z"/><circle cx="8.5" cy="8.5" r="1.4" fill="currentColor" stroke="none"/>',
   link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7L11.5 7"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7L12.5 17"/>',

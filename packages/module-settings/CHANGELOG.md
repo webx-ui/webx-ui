@@ -1,5 +1,162 @@
 # @webx-ui/module-settings
 
+## 0.3.10
+
+### Patch Changes
+
+- Updated dependencies [8e0d587]
+- Updated dependencies [8e0d587]
+  - @webx-ui/module-admin@0.14.0
+  - @webx-ui/core@0.31.0
+  - @webx-ui/schema@0.3.8
+
+## 0.3.9
+
+### Patch Changes
+
+- cd95a2e: A gzipped dump of the database every night, and one line in the panel saying so
+
+  Insurance, not a restore system. The file lands on the same disk as the database it came from,
+  so it survives a mistake and not a dead server, and there is no restore button anywhere — what
+  it is for is getting yesterday's version of one row, one table or one article back by hand. It
+  exists because backups are an extra on a good many hosts and absent on the rest, and having
+  something is better than having nothing.
+
+  - `webx:db:backup` writes `storage/app/private/backups/<database>-2026-09-21-0310.sql.gz`,
+    gzipped as the dump comes out, so no uncompressed copy of the database ever touches the disk.
+    `mysqldump` for MySQL and MariaDB, `pg_dump` for PostgreSQL, a copy of the file for SQLite.
+  - Rotation runs **after** a dump has succeeded and never touches the newest file. Clearing out
+    last week without having written tonight is the one thing a backup command must not do, and
+    it is exactly what happens if the two steps are written the other way round. A failure exits
+    non-zero, logs why, deletes its own half-written file and leaves everything else alone.
+  - Structure for every table, rows for the ones worth keeping: `cache`, `sessions`, `jobs` and
+    the rest of `skip_data` are dumped with `--no-data`, which on most sites is most of the file.
+    The tables that keep their rows are dumped structure-and-data together, so pulling one table
+    out of the finished file is a single contiguous range — the guide has the one-liner.
+  - The password never appears in an argument, where `ps` would show it to anybody with a shell:
+    MySQL gets a 0600 defaults file and PostgreSQL a 0600 `.pgpass`, both removed in a `finally`.
+    `--single-transaction --quick` so the nightly dump does not lock the site, `--no-tablespaces`
+    so it runs as a shared-hosting user, `utf8mb4` so the translated JSON columns survive.
+  - `module-admin` puts the task on the scheduler itself, at `webx-admin.backup.at`. What it
+    cannot do is run the scheduler: the site still needs a system cron on `schedule:run`, and the
+    line in the panel is what notices when there is not one.
+  - That line is at the foot of the settings screen, for whoever has `settings.view`: "Last
+    database snapshot: today at 03:10 · 4.2 MB", and the same line as a warning when the newest
+    file is more than two days old or there is none. Nothing is recorded in the database — the
+    line is the newest file in the directory, and a task that failed is the file that is not
+    there. `WxBackupNote`, fed from a new `backup` key in the manifest.
+
+- Updated dependencies [f623fac]
+- Updated dependencies [cd95a2e]
+- Updated dependencies [b1aeb52]
+  - @webx-ui/module-admin@0.13.0
+  - @webx-ui/core@0.30.0
+  - @webx-ui/schema@0.3.7
+
+## 0.3.8
+
+### Patch Changes
+
+- Updated dependencies [0a506df]
+  - @webx-ui/core@0.29.0
+  - @webx-ui/module-admin@0.12.2
+  - @webx-ui/schema@0.3.6
+
+## 0.3.7
+
+### Patch Changes
+
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+- Updated dependencies [cca572f]
+  - @webx-ui/core@0.28.0
+  - @webx-ui/module-admin@0.12.1
+  - @webx-ui/schema@0.3.5
+
+## 0.3.6
+
+### Patch Changes
+
+- Updated dependencies [537df98]
+- Updated dependencies [537df98]
+  - @webx-ui/module-admin@0.12.0
+  - @webx-ui/core@0.27.0
+  - @webx-ui/schema@0.3.4
+
+## 0.3.5
+
+### Patch Changes
+
+- 48dfd9e: One head for every screen of the panel
+
+  Eight screens each answered "what goes at the top" on their own, and gave eight answers: the
+  heading at three sizes, the way out as an arrow on four of them and as a line of breadcrumbs on the
+  rest, the buttons folding into a `···` on two editors and wrapping onto a third line everywhere
+  else. Writing a new screen meant writing that line again and getting it slightly different again.
+
+  `WxScreenHead` is that line, once: the way out, the name with the state said beside it, the line
+  under it that says which record this is, and what can be done here. `WxListScreen` is built on it,
+  so a list and the editor a row opens are the same object rather than two similar ones — and it
+  takes `back` now, which is what the statuses screen used to draw above its own heading for want of
+  anywhere to put it.
+
+  **The actions are declared rather than drawn.** The same action has to be a button on a desktop and
+  a line of a menu on a phone, and one vnode cannot be mounted in two places — as markup it had to be
+  written twice, which is exactly what the page and article editors did. As `ScreenAction[]` it is
+  written once: `primary` is the one thing the screen exists for and the one that keeps a button when
+  the head runs out of room, `danger` is never a button at all, `menu` is in the `···` at every
+  width, and `loading`, `disabled` and `href` mean what they say. Below 720px — 480 on a list, which
+  carries one word and no trail — everything but the primary folds behind the `···` and that primary
+  takes the line under the name, full width.
+
+  The name’s line is the head: the way out at the start of it and the actions at the end, both
+  centred on it however many badges stand beside the name. The trail is the line above, and it
+  scrolls sideways with no scrollbar showing rather than wrapping — on a phone a path four levels
+  deep was two lines of the smallest type on the screen, standing between the reader and the name of
+  what they had opened.
+
+  Two things that were quietly wrong come out with it. Nineteen buttons across the panel passed
+  `icon="plus"` to `WxButton`, which has no such prop: the attribute landed on the `<button>` and
+  drew nothing, so the panel’s main actions had no icons at all. And the `···` said `More` in English
+  in every language, because the core carries English defaults and knows no dictionary — the panel
+  gives it the word now, in all ten.
+
+- Updated dependencies [a9383bb]
+- Updated dependencies [b6a09a6]
+- Updated dependencies [48dfd9e]
+  - @webx-ui/core@0.26.0
+  - @webx-ui/module-admin@0.11.0
+  - @webx-ui/schema@0.3.3
+
+## 0.3.4
+
+### Patch Changes
+
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [937f4e2]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+- Updated dependencies [852883d]
+  - @webx-ui/core@0.25.0
+  - @webx-ui/module-admin@0.10.0
+  - @webx-ui/schema@0.3.2
+
+## 0.3.3
+
+### Patch Changes
+
+- Updated dependencies [f87e4ec]
+- Updated dependencies [f87e4ec]
+  - @webx-ui/core@0.24.0
+  - @webx-ui/module-admin@0.9.0
+  - @webx-ui/schema@0.3.1
+
 ## 0.3.2
 
 ### Patch Changes

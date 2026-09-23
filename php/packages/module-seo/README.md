@@ -37,7 +37,7 @@ With an entity to name — once there is a source that answers about one:
 ```blade
 @webxSeo($page)
 {{-- or --}}
-<x-webx-seo :for="$page" />
+<x-webx-seo::head :for="$page" />
 ```
 
 Both print `<title>`, the description, keywords and robots meta tags, the canonical link, the

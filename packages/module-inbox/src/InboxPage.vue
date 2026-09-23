@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   useAdmin,
@@ -8,6 +8,7 @@ import {
   WxListScreen,
   WxRowMenu,
   type RowAction,
+  type ScreenAction,
 } from '@webx-ui/module-admin'
 import {
   confirm,
@@ -15,10 +16,11 @@ import {
   localizedValue,
   toast,
   useLocales,
-  WxBadge,
+  WxAction,
   WxButton,
   WxCard,
   WxEmpty,
+  WxIcon,
   WxIndicator,
   WxListDetail,
   WxSkeleton,
@@ -40,8 +42,16 @@ import type { InboxForm } from './types'
  * to speak of; and the two questions somebody opens this section to ask — "what is new" and
  * "what does this form ask" — are one click apart instead of one screen apart.
  *
- * The right-hand side is the submissions, and it arrives with them. What is here is the
- * column: the forms, in the order somebody dragged them, with what is waiting in each.
+ * Which of the two is the screen and which is the chooser is the second decision. The forms
+ * are the chooser: they are the `filters` column of the pane, so on a phone they fold into a
+ * panel and the submissions are what the section opens on. The other way round — forms as the
+ * list, submissions as the record beside it — is what this was, and it cost the reader a
+ * screen: somebody who opens the section is asking what came in, and was shown a list of
+ * three form names instead, every time.
+ *
+ * One form is therefore always open (the first, unless the address names another), and what
+ * is here is the column: the forms, in the order somebody dragged them, with what is waiting
+ * in each.
  */
 const props = withDefaults(defineProps<{ base?: string }>(), { base: '/inbox' })
 
@@ -58,7 +68,19 @@ const message = useErrorText()
 
 const forms = ref<InboxForm[]>([])
 const loading = ref(true)
-const open = ref(false)
+
+/** The list of submissions, for the one action of its own that the section's head carries. */
+const pane = useTemplateRef<{ create: () => void }>('pane')
+
+/**
+ * Whether the forms still have a column, and whether their panel is up.
+ *
+ * Both live here rather than inside the pane because the way to the forms is in the head of
+ * the section, beside its other actions — a button that appears exactly when the column is
+ * gone. The pane says when that is.
+ */
+const columnInline = ref(true)
+const formsOpen = ref(false)
 
 const canManage = computed(() => context.can('inbox.manage'))
 
@@ -102,14 +124,26 @@ async function load(): Promise<void> {
 
 void load()
 
-/* A form chosen while the list was still loading is still chosen once it arrives. */
-watch(chosen, (form) => {
-  if (form !== null) open.value = true
+/**
+ * One form is always open, and the address always says which.
+ *
+ * The section is the submissions, so the first form stands in until somebody picks another —
+ * on a phone especially, where the alternative is opening the panel before seeing anything at
+ * all. It covers the address that names no form, the address that names one that has since
+ * been deleted, and the list arriving after the address did; `replace`, because none of the
+ * three is a place worth going back to.
+ */
+watch([forms, chosen], () => {
+  if (forms.value.length === 0 || chosen.value !== null) return
+
+  void router.replace({ query: { ...route.query, form: String(forms.value[0].id) } })
 })
 
-function choose(form: InboxForm): void {
+function choose(form: InboxForm, close: () => void): void {
   void router.replace({ query: { ...route.query, form: String(form.id) } })
-  open.value = true
+  /* Picked from the panel: the panel has done its job. It is a column on a wide screen, and
+     closing what is not open does nothing there. */
+  close()
 }
 
 function edit(form: InboxForm): void {
@@ -173,11 +207,11 @@ async function remove(form: InboxForm): Promise<void> {
     await api.removeForm(form.id)
     toast.success(t('panel.deleted'))
 
+    /* The address named the form that is gone; what stands in its place is decided above. */
     if (current.value === form.id) {
       const rest = { ...route.query }
       delete rest.form
       void router.replace({ query: rest })
-      open.value = false
     }
 
     await load()
@@ -201,118 +235,192 @@ async function reorder(): Promise<void> {
     await load()
   }
 }
+
+/**
+ * What the section offers. Declared, because on a phone the head folds it into the ···.
+ *
+ * The one it exists for is a submission, not a form: this is the inbox, and the section is
+ * opened dozens of times for what came in for every once that a form is added. A new form is
+ * the `+` over the list of forms — beside the thing it makes one more of — and what used to
+ * stand here as the primary button was that, which is why it was the biggest thing on the
+ * screen and almost never what anybody wanted.
+ */
+const actions = computed<ScreenAction[]>(() => {
+  const list: ScreenAction[] = []
+
+  if (canManage.value) {
+    list.push({
+      key: 'statuses',
+      label: t('panel.statuses'),
+      icon: 'tag',
+      run: () => void router.push(`${props.base}/statuses`),
+    })
+  }
+
+  /* The dialog belongs to the list: what is written has to land in it, in the filter that is
+     on, and be counted in its tabs. The head only asks for it. */
+  if (context.can('inbox.update') && chosen.value !== null) {
+    list.push({
+      key: 'new-submission',
+      label: t('panel.new-submission'),
+      icon: 'plus',
+      primary: true,
+      run: () => void pane.value?.create(),
+    })
+  }
+
+  return list
+})
 </script>
 
 <template>
-  <wx-list-screen :title="title" :card="false" fill>
-    <template #actions>
-      <wx-button
-        v-if="canManage"
-        variant="outline"
-        icon="tag"
-        @click="router.push(`${props.base}/statuses`)"
-      >
-        {{ t('panel.statuses') }}
-      </wx-button>
-      <wx-button v-if="canManage" type="primary" icon="plus" @click="add">
-        {{ t('panel.new-form') }}
+  <wx-list-screen :title="title" :actions="actions" :card="false">
+    <!--
+      Written here rather than declared as an action, because an action folds behind the ···
+      on a narrow head and this is only ever drawn on one: it is the way to the forms for a
+      reader whose column of them is gone. It stands where the other actions of the section
+      stand, beside the one that writes a submission.
+    -->
+    <template v-if="!columnInline" #actions>
+      <wx-button variant="outline" @click="formsOpen = true">
+        <template #icon><wx-icon name="list" /></template>
+        {{ t('panel.forms') }}
       </wx-button>
     </template>
 
     <wx-card class="wx-inbox" padding="none">
       <wx-list-detail
-        v-model:open="open"
+        v-model:filters-open="formsOpen"
         class="wx-inbox__panes"
-        :list-width="270"
+        :filters-width="270"
         :detail-min="420"
-        :detail-label="chosen ? name(chosen) : t('panel.forms')"
+        :filters-title="t('panel.forms')"
+        @filters-inline="columnInline = $event"
       >
-        <template #list>
+        <!--
+          The forms are what narrows the list, so they are the column that folds: on a phone
+          this is a panel raised from the head of the submissions, and the submissions are
+          the screen.
+        -->
+        <template #filters="{ inline, close }">
           <wx-skeleton v-if="loading" class="wx-inbox__loading" :rows="5" />
 
-          <wx-empty
-            v-else-if="forms.length === 0"
-            :title="t('panel.no-forms')"
-            :description="t('panel.no-forms-help')"
-          />
+          <template v-else>
+            <!--
+              In the panel the `+` would stand alone on a line of its own under the drawer's
+              own heading, which reads as a stray mark rather than as a control. There is
+              room for the word here, so it takes it.
+            -->
+            <wx-button
+              v-if="!inline && canManage"
+              class="wx-inbox__new-form"
+              variant="outline"
+              block
+              @click="add"
+            >
+              <template #icon><wx-icon name="plus" /></template>
+              {{ t('panel.new-form') }}
+            </wx-button>
 
-          <!--
-            A grip and not the whole row: the row is what opens a form, and a list whose rows
-            both open and drag is a list where one of the two happens by accident.
-          -->
-          <wx-sortable-list
-            v-else
-            v-model="forms"
-            class="wx-inbox__forms"
-            plain
-            size="sm"
-            item-key="id"
-            :item-label="name"
-            :disabled="!canManage"
-            :title="t('panel.forms')"
-            @move="reorder"
-          >
-            <template #default="{ item }">
-              <button
-                type="button"
-                class="wx-inbox-form"
-                :class="{ 'is-current': item.id === current }"
-                @click="choose(item)"
-              >
-                <span class="wx-inbox-form__name">
-                  <wx-text truncate weight="medium">{{ name(item) }}</wx-text>
-                  <wx-badge v-if="!item.is_enabled" type="default">{{ t('panel.off') }}</wx-badge>
+            <!--
+              A grip and not the whole row: the row is what opens a form, and a list whose
+              rows both open and drag is a list where one of the two happens by accident.
+            -->
+            <wx-sortable-list
+              v-model="forms"
+              class="wx-inbox__forms"
+              :class="{ 'is-panel': !inline }"
+              plain
+              size="sm"
+              item-key="id"
+              :item-label="name"
+              :disabled="!canManage"
+              :title="inline ? t('panel.forms') : undefined"
+              @move="reorder"
+            >
+              <!--
+                A new form is made where the forms are and not in the head of the section: it
+                is one more of these, and it is asked for once for every few dozen times
+                somebody opens the inbox to read what came in. An icon, because the word for
+                it is already written beside it.
+              -->
+              <template v-if="inline && canManage" #extra>
+                <wx-action icon="plus" size="sm" :title="t('panel.new-form')" @click="add" />
+              </template>
 
+              <template #default="{ item }">
+                <button
+                  type="button"
+                  class="wx-inbox-form"
+                  :class="{ 'is-current': item.id === current, 'is-off': !item.is_enabled }"
+                  @click="choose(item, close)"
+                >
                   <!--
-                    On the name's line, not under it. The list stacks what the slot hands it, so
-                    a count standing beside the form was a third line under the address — the
-                    row grew by a line to say a single digit. Unread first and in colour; the
-                    total behind it, quietly, because it is context rather than work.
+                    A switched-off form is said by the name itself — struck through and grey —
+                    rather than by a badge beside it. The badge was a second thing on a line
+                    270px wide that already holds a name, a count and the ···: it did not
+                    shrink, so it ran under the menu, and it said in a word what the type says
+                    at a glance.
                   -->
-                  <wx-indicator
-                    v-if="item.unread_count"
-                    class="wx-inbox-form__count"
-                    type="primary"
-                    :value="item.unread_count"
-                    :label="t('panel.unread')"
-                  />
-                  <wx-indicator
-                    v-else-if="item.submissions_count"
-                    class="wx-inbox-form__count"
-                    type="neutral"
-                    :value="item.submissions_count"
-                    :label="t('panel.submissions')"
-                  />
-                </span>
-                <wx-text size="sm" tone="muted" truncate>{{ item.slug }}</wx-text>
-              </button>
-            </template>
+                  <span class="wx-inbox-form__name">
+                    <wx-text truncate weight="medium" :tone="item.is_enabled ? 'default' : 'muted'">
+                      {{ name(item) }}
+                    </wx-text>
 
-            <template #actions="{ item }">
-              <wx-row-menu :actions="actionsFor(item)" :label="name(item)" />
-            </template>
-          </wx-sortable-list>
-        </template>
+                    <!--
+                      On the name's line, not under it. The list stacks what the slot hands it,
+                      so a count standing beside the form was a third line under the address —
+                      the row grew by a line to say a single digit. Unread first and in colour;
+                      the total behind it, quietly, because it is context rather than work.
+                    -->
+                    <wx-indicator
+                      v-if="item.unread_count"
+                      class="wx-inbox-form__count"
+                      type="primary"
+                      :value="item.unread_count"
+                      :label="t('panel.unread')"
+                    />
+                    <wx-indicator
+                      v-else-if="item.submissions_count"
+                      class="wx-inbox-form__count"
+                      type="neutral"
+                      :value="item.submissions_count"
+                      :label="t('panel.submissions')"
+                    />
+                  </span>
+                  <wx-text size="sm" tone="muted" truncate>{{ item.slug }}</wx-text>
+                </button>
+              </template>
 
-        <template #empty>
-          <wx-empty :description="t('panel.choose-form')" />
+              <template #actions="{ item }">
+                <wx-row-menu :actions="actionsFor(item)" :label="name(item)" />
+              </template>
+            </wx-sortable-list>
+          </template>
         </template>
 
         <!--
-          The submissions of the chosen form. The pane is the list's, head and all: what is
-          above the rows — which form this is, the way back on a phone, the way into what it
-          asks — belongs beside the tabs and not above the drawer.
+          The submissions of the chosen form, and the screen. The pane is the list's, head
+          and all: what is above the rows — which form this is, the way to another one where
+          there is no column for them — belongs beside the tabs.
+
+          Nothing chosen and nothing loading means the site has no forms yet, since a form
+          that exists is picked for the reader. The word about it goes here rather than in
+          the column, because here is what a phone shows.
         -->
-        <template #detail="{ inline, back }">
+        <template #list>
+          <wx-skeleton v-if="loading" class="wx-inbox__loading" :rows="6" />
+
           <submission-list
-            v-if="chosen"
+            v-else-if="chosen"
+            ref="pane"
             :key="chosen.id"
             :form="chosen"
             :base="props.base"
-            :inline="inline"
-            @back="back"
             @changed="load"
           />
+
+          <wx-empty v-else :title="t('panel.no-forms')" :description="t('panel.no-forms-help')" />
         </template>
       </wx-list-detail>
     </wx-card>
@@ -320,31 +428,27 @@ async function reorder(): Promise<void> {
 </template>
 
 <style>
-.wx-inbox {
-  height: 100%;
-  min-height: 0;
-}
-
 /*
- * The card is the screen: what scrolls is inside it, not the page behind it.
+ * What scrolls here is the page.
  *
- * And the card's corners are the screen's corners. The two panes inside are square and paint
+ * The section used to be as tall as the window, with the rows scrolling inside a box of their
+ * own: a second scroller inside the first, its bar running down the middle of the screen, and
+ * a wheel that meant one thing over the rows and another an inch to the left. Page after page
+ * of the panel scrolls as a page; this one now does too, and the card is as tall as what is
+ * in it.
+ *
+ * The card's corners are still the screen's corners. The two panes inside are square and paint
  * their own background right up to the edge, so without the clip they covered the rounding —
  * four white notches poking out of the card, most visible where the column divider and the
- * bottom rule of the list meet it.
+ * bottom rule of the list meet it. `clip` rather than `hidden`: `hidden` would make this a
+ * scroll container again, and everything sticky inside would pin itself to a box that never
+ * moves (CLAUDE.md §4).
  */
 .wx-inbox > .wx-card__body {
-  height: 100%;
-  min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: clip;
   border-radius: inherit;
-}
-
-.wx-inbox__panes {
-  flex: 1 1 auto;
-  min-height: 0;
 }
 
 .wx-inbox__loading {
@@ -353,6 +457,13 @@ async function reorder(): Promise<void> {
 
 .wx-inbox__forms {
   padding: var(--wx-space-8) var(--wx-space-12);
+}
+
+/* In the panel the sheet is the column, and it insets what it holds already: a second step
+   inside the first stands the same list further from the edge than it stands anywhere else
+   (CLAUDE.md §4). */
+.wx-inbox__forms.is-panel {
+  padding: 0;
 }
 
 /*
@@ -366,14 +477,19 @@ async function reorder(): Promise<void> {
 }
 
 /*
- * Air under the rule that carries the column's name.
+ * Air under the rule that carries the column's name, and the rows' own step beside it.
  *
  * The first row started exactly where the line ended, and the first row here is usually the
  * tinted one — so the chosen form read as hanging off the heading rather than as the first of
  * a list. Visible in the dark theme first, where the tint is a shape of its own.
+ *
+ * The step is the one the rows take inside their tint (above), so the name of the column
+ * begins where the names of the forms do and the `+` stands over the row of `···` rather
+ * than eight pixels to the right of them. Measured: 338 against 330.
  */
 .wx-inbox__forms.is-plain .wx-sortable-list__head {
   margin-block-end: var(--wx-space-6);
+  padding-inline: var(--wx-space-8);
 }
 
 .wx-inbox-form {
@@ -400,6 +516,17 @@ async function reorder(): Promise<void> {
   gap: var(--wx-space-6);
   min-width: 0;
   max-width: 100%;
+}
+
+/*
+ * Switched off: struck through and grey. On the name alone and not on the line it stands in,
+ * because what is off is the form — the count beside it is still true, and a decoration set
+ * on the row would run through that too and could not be taken off a child. The grey comes
+ * from the text's own `tone`, since `WxText` declares its colour on its own element and an
+ * inherited one would never reach it (CLAUDE.md §4).
+ */
+.wx-inbox-form.is-off .wx-inbox-form__name > .wx-text {
+  text-decoration: line-through;
 }
 
 /*

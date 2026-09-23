@@ -20,6 +20,7 @@ export const seoMessages: Record<string, Messages> = {
     rules: 'Rules',
     redirects: 'Redirects',
     test: 'Check an address',
+    'filter-kind': 'Kind',
 
     'new-rule': 'New rule',
     'new-redirect': 'New redirect',
@@ -116,5 +117,7 @@ export const seoMessages: Record<string, Messages> = {
     'json-ld-invalid': 'This is not valid JSON.',
 
     preview: 'In search results',
+    'share-preview': 'When shared',
+    'share-auto': 'The site fills this in — the record’s own picture, or the default one',
   },
 }

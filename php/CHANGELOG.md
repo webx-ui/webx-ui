@@ -1,5 +1,931 @@
 # @webx-ui/php
 
+## 0.30.0
+
+### Minor Changes
+
+- 8e0d587: A link is chosen rather than typed: the contract for what a panel can point at
+
+  The address registry answers "what is this entity's address". Nothing answered "what can I link to
+  at all" — a `RouteType` has a model, a formatter and a handler, and nowhere in it a title to show or
+  a way to search — so every field that wanted a link had to be told by hand. This is that second
+  question, and it lives in the frame rather than in any one section, because the menu is only the
+  first of the fields that will ask it.
+
+  On the server: `LinkSource`, `LinkCandidate` and the `LinkSources` register that content modules fill
+  on boot, the `Link` value every place keeps a link as, and four addresses under `/api/cms/links` —
+  the sections of the picker filtered by the reader's permissions, a search inside one, a resolve of
+  several types in one query per type, and the site's own named addresses for the field where a path
+  is typed. `module-pages` registers pages, `module-blog` registers articles, rubrics and tags.
+
+  `available` is deliberately apart from having an address: the registry holds one for a draft too, so
+  a picker that trusted it would offer a link to a page the site answers 404 for. A draft is offered,
+  drawn dimmed, and left out by whoever renders.
+
+  The anchor is a field of the link rather than part of the address. A typed address can carry one
+  inline; a chosen page has nowhere to write one, because its address is looked up rather than
+  written. So `hash` sits beside the target, is kept without its `#`, and is appended on every read —
+  and an address typed as `/about#team` is taken apart on the way in, so that a link cannot end
+  `#team#top`.
+
+  In the browser: `WxLinkPicker`, `wx-link` on described screens, and `createLinksApi`.
+
+  In `webx-ui/routing`: `SiteUrl`, with the language prefix that used to be private to `HasUrl` — a
+  hand-written `/account` needs the same prefix an entity's address gets, and a second reading of the
+  strategy is a second reading that drifts.
+
+- 8e0d587: The menus by their other doors: six tools for an agent, the catalogue to read first, and demo
+  content
+
+  `webx-ui/module-menu` now offers `menu_list_menus`, `menu_get_tree`, `menu_add_link`,
+  `menu_update_link`, `menu_move_link` and `menu_remove_link`, under `menu:read` and `menu:write`.
+  The names are longer than the module prefix needs and deliberately so: a real client shows a tool
+  by the part of its name after that prefix, and `menu_list` beside `menu_get` would stand in a
+  connector's settings as "List" and "Get" next to everybody else's.
+
+  They go through the doors the panel goes through. Where an item points is normalised by the same
+  `Link` a block field keeps and checked by the same rules the dialog is checked by — now
+  `Menu\Panel\ItemInput`, so there is one list rather than two that look alike — and what a position
+  among siblings means is `Menu\Tree\Placement`, which the drag and the tool now share. An item an
+  agent wrote is an item the panel would have accepted, and the cache is forgotten by the model
+  events either of them raises rather than by a line in a handler.
+
+  Every writing tool takes `dry_run: true`. Menus themselves are not made here at all: a declared
+  menu is a template asking for that spelling, and one of somebody's own is made for a template a
+  person is writing.
+
+  `menu://menus` is what an agent reads first — the menus with the looks each one offers, the kinds
+  of thing that can be linked to, and the house rules that are easy to get wrong silently: hang an
+  item on an entity rather than on a path, because an entity carries its address and a typed path
+  goes stale without saying so; write a path without its language prefix; leave the label out where
+  the entity's own name will do.
+
+  `webx:demo` now fills a header and a footer out of the pages it has just created — all three kinds
+  of target on one site, since the difference between them is the thing a screenshot cannot show.
+  The pages come out of the run's journal rather than out of a query, which is what `requires:
+['pages']` buys. The `menus` rows are deliberately not written down: the only ones this creates
+  are declared, a declared menu refuses to be deleted because a template names it, and an entry
+  `--remove` could not undo would be worse than an empty menu left behind.
+
+- 8e0d587: The **Menus** section: the menus of a site on the left, the tree of one of them on the right
+
+  `@webx-ui/module-menu` is the panel half of `webx-ui/module-menu`. One screen and no editor under
+  it — a menu is arranged in place and an item is a dialog over the tree it belongs to — with which
+  menu is open kept in the address, so that "the footer" is a link somebody can send.
+
+  Dragging changes both the order and the parent. Every level is its own list and they share a group,
+  so where a row ends up is where it is, rather than a guess about how far sideways it was dropped.
+  Each level reports its own new order and the screen works out which item moved; one drag is one
+  `move`, and a refusal puts the tree back rather than leaving the screen disagreeing with the
+  database.
+
+  An item points at one of three things and says which: an entity chosen from `WxLinkPicker` — the
+  same picker every link field in the panel opens — an address of your own, or nothing at all, which
+  is what a heading is. A draft target is drawn dimmed and marked **Not on the site** rather than
+  hidden, because a menu is built before the pages in it are published.
+
+  The cache is marked under every menu — "built today at 08:10", "not built", "off" — with a reset
+  beside it and one for every menu in the head of the section. It is not "rebuild": the records are
+  forgotten and the next visitor builds them again. It exists because the list of places a menu can
+  change from ends where bulk operations begin, and it is what somebody presses to test the guess
+  that they are looking at something stale, instead of finding out where artisan lives. The mark is
+  read again after the reset, since a button that leaves it saying "built today at 08:10" is a button
+  nobody believes twice.
+
+  On the server: nine addresses under `/api/cms/menus`, including both cache resets, a menu resource
+  carrying `cache: { enabled, built_at }` and an item resource carrying the resolved target, so the
+  screen never goes looking for a name.
+
+  In `@webx-ui/core`, `WxListDetail` now also says whether an open record still stands beside the
+  list (`detail-inline`), the way it already said it about the chooser's column. It is what lets a
+  screen open its first record where there is room for one without raising a panel over a list
+  nobody has touched on a phone — and it is only said once the pane has been measured, since an
+  unmeasured pane answers "inline" to every threshold.
+
+  In `@webx-ui/module-admin`, `LinkUrls` gains `candidates()` and `hrefWith()`: a screen that draws
+  forty links resolves them in one query per kind instead of forty.
+
+- 8e0d587: A new site can be built with menus, and the skeleton's header hands over to one
+
+  `webx:setup` offers the modules `Setup\Catalogue` knows by name, and a name it does not know is
+  a refusal rather than a `composer require` of whatever turns up — so a section missing from that
+  list is one a new site cannot install at all. `webx-ui/module-menu` joins it, and joins it among
+  the defaults: the header of a site is not an optional part of it.
+
+  The skeleton's own header was the example that module was written to end. It asks `menu('header')`
+  first now and keeps the page tree underneath it, for the day between creating a site and filling
+  its menu in: a header that is empty on the day a site is created reads as broken rather than as
+  waiting.
+
+- 8e0d587: `webx-ui/module-menu`: the menus of a site, and the helper that prints them
+
+  One tree per menu, scoped by `menu_id`, with items that point at an entity, at a path, or
+  deliberately nowhere — said out loud in a `target` column rather than guessed from which other
+  column happens to be empty. A group heading is a flag of its own beside it, because how to draw an
+  item and where it goes are two questions, and a heading with children and a page of its own is an
+  ordinary thing.
+
+  Which menus exist is configuration: `webx-menu.menus` names the ones the templates ask for, and the
+  row in `menus` appears the first time one is saved — no write on boot, no synchronise command. A
+  declared menu can be emptied but not deleted and not renamed, because a template refers to its
+  spelling; an administrator makes and removes their own.
+
+  Outwards it hands over data rather than markup:
+
+  ```blade
+  @foreach (menu('header') as $item)
+      <a href="{{ $item->url }}" @class(['is-active' => $item->isActive()])>{{ $item->label }}</a>
+  @endforeach
+  ```
+
+  A `MenuLink` carries the label, the address, the children, the flags and `attrs()`. There is a
+  `<x-webx-menu::menu>` too, and it is second on purpose: a component that has to be overridden is
+  worse than a collection somebody writes ten lines against, and `vendor:publish
+--tag=webx-menu-views` is how it stops being used.
+
+  One tree for every language, with the labels translated — an item points at an entity, and that
+  entity already has a row per language in the registry, so the same item resolves to the right
+  address in each. An item nobody has translated is left out of that language rather than printed
+  empty, and `locales` covers the case a second tree would have: something in the English footer that
+  is not in the Russian one.
+
+  Highlighting is worked out after the cache, on every request, and the front page is the exception it
+  has to be: its path is empty, which is a prefix of every address on the site.
+
+  The cache is per menu and per language, forgotten by name. Everything that changes what a menu looks
+  like forgets it, including the two things that are easy to miss: **moving** an item, which rewrites
+  bounds in bulk and never raises `updated`, and publishing an entity, which changes no address at all
+  and would otherwise keep a page out of the menu until something unrelated was edited. Beyond that a
+  TTL of an hour and a switch, because "my edit has not arrived" looks like a broken save rather than
+  like a cache.
+
+  Two or three queries per menu whatever its size: the items in one ordered walk, then one `resolve()`
+  per kind of entity in it.
+
+### Patch Changes
+
+- 1dd017c: Setup: the database server is a question now, but only when it needs to be
+
+  `webx:setup` asked for the database _name_ and took the address it would be created at without
+  ever asking: the `--db-*` options, then `.env`, then `127.0.0.1:3306` as `root`. On a machine
+  where the local MariaDB listens somewhere else — OSPanel gives each of its database modules a
+  loopback address of its own — that meant six answered questions and then a stop at the step
+  that had already rewritten `.env`, on a host nobody had been offered the chance to name.
+
+  The address is now reached for before anything about the database is asked. A machine that
+  answers is never asked about it and the run reads exactly as it did. A machine that does not is
+  told what refused it, and asked for the host, the port, the user and the password with what was
+  just tried as the defaults — an empty answer to the hidden password field keeps the one in
+  `.env` — and then it tries again. Three answers that still reach nothing end the run with the
+  message that names `--db-host`, `--db-port` and `--db-connection=sqlite`; so does the very first
+  failure on a run with nobody in front of it, so `--no-interaction` behaves exactly as before.
+
+## 0.29.1
+
+### Patch Changes
+
+- 0166176: Pages: the branch a page carries is counted without the bin
+
+  `descendants_count` on a page row, and `descendants` on the agent's summary of one, were
+  arithmetic on the nested-set bounds — and a trashed page keeps its bounds on purpose, so both
+  numbers went on counting pages that were already in the bin and going nowhere. The panel says
+  this number out loud before a delete and before a restore: the home page of a site with one
+  deleted page under it offered to take six pages off the site and would have taken five.
+
+  Both now answer the branch that actually moves — the live descendants of a live page, and for a
+  row in the bin the branch that went down with it, which is what a restore brings back. Counted
+  once per list by a subquery rather than once per row.
+
+- 6d3b09e: The backup command no longer names a path that Laravel has moved. `storage/app/backups` has
+  not been where the dumps go since Laravel 11 rooted the `local` disk at `storage/app/private`,
+  and the command's description, the `Backups` docblock and the published config all still said
+  it. The wording now points at `path` under the root of `disk`, which is what the code has
+  always read and what stays true the next time the root moves.
+
+## 0.29.0
+
+### Minor Changes
+
+- 240ea2e: `webx:boot` is what a container does between starting and serving — waiting for the database, migrating, keys, languages, block types, the first administrator, caches — worked out from the modules installed rather than written into a script; the skeleton ships the Dockerfile and the two compose stacks that call it
+
+## 0.28.0
+
+### Minor Changes
+
+- 483c692: Each Composer package names its npm half, and `webx:panel --sync` wires in what is installed
+- 3aa2f5d: Every module brings its own demo content, and `webx:demo --remove` takes all of it back out
+- b24f7d1: The public views of `module-pages` and `module-blog` stand in the site's layout, and the two Blade tags are namespaced: `<x-webx-inbox::form>` and `<x-webx-seo::head>`
+- 0396cc0: `webx:doctor` checks a site the way a deploy needs it checked: both halves, the bundle, npm ranges, migrations, storage, the layout seam, languages, caches and limiters
+- 9ef9a3d: A new site is one command: the `webx-ui/site` skeleton and `php artisan webx:setup`
+
+  `composer create-project webx-ui/site example.local` now leaves a Laravel application with the
+  panel on it, the modules that were asked for, a database that did not exist a minute ago, an
+  administrator and something to look at. The skeleton lives in `php/site` and mirrors to
+  `webx-ui/site` the way the packages mirror to theirs.
+
+  `webx:setup` asks the questions with defaults read off the directory, the `.env` and `git
+config`, writes the `.env` by replacing rather than appending, creates the database over PDO,
+  installs the chosen modules, wires the panel in through `webx:panel --sync`, migrates, seeds the
+  languages, creates the first administrator, builds the front end and seeds the demo content. It
+  is the same command on a site that has been running for months: run it again after installing a
+  module and it adds what is missing and changes nothing else.
+
+## 0.27.2
+
+### Patch Changes
+
+- 3926a30: Both connector vendors answer at two domains, and the list of return addresses now says so
+
+## 0.27.1
+
+### Patch Changes
+
+- d5b26d6: The dumping tool takes its extra flags from the environment, because only the machine knows it needs them
+- 1d3a8a6: The consent screen points at the tab that actually holds the connections
+
+## 0.27.0
+
+### Minor Changes
+
+- dce896c: Every call an agent makes is written down, and the panel shows who did what
+
+  An agent acts in an administrator's name, and until now nothing said afterwards what it had
+  done. Now every tool call lands in `mcp_calls`, the way every sign-in lands in
+  `cms_login_records`, and the administrators section shows the trail:
+
+  - **One row per call, whichever way it went.** `webx-ui/mcp` writes it in one place, around the
+    whole of the call — so a refusal at the door for a scope, a read-only connection or a missing
+    permission is a row with its reason, and so is what the handler threw. A handler that answers
+    `ok: false` is written down as refused too. Each row carries who the agent acted as, on which
+    connection, the tool, its arguments, whether it was a dry run, and how long it took. No secret
+    reaches it: the token and the headers are never looked at, and an argument named like one is
+    blanked. There is deliberately no link to what the call was about — tools are about
+    different things.
+  - **Kept by days.** `webx-mcp.calls.days` (90) is the retention; `webx:mcp:prune-calls` runs
+    nightly on the scheduler. `calls.enabled` switches the log off, `calls.arguments_length`
+    cuts long arguments.
+  - **A view next to the administrators.** `@webx-ui/module-auth` draws **Agent calls** as a
+    second view of the section, at `/admins/calls`, for whoever holds `admins.audit` — the
+    permission the sign-in trail is behind. It narrows by administrator, by tool and by outcome,
+    and the choices on offer are the ones that actually appear in the log. Arguments and the
+    refusal's words open under a row. `GET /api/cms/auth/mcp-calls` answers it.
+  - The playground panel now has the administrators section, so the view can be looked at on
+    `localhost:5174/panel/admins/calls`.
+
+- 5309e37: An address is all a person needs to connect their own agent, and a list is all they need to end it
+
+  The dance, the consent screen, the permissions and the log were done; what was missing was the
+  part a person actually looks at. Two screens and a guide.
+
+  - **Connect an agent** — a new section in the system group, behind no permission at all:
+    whoever got into the panel may connect an agent, and the agent cannot do anything they
+    cannot. It has the address of this panel for agents, large, with a button that copies it;
+    three steps for Claude and ChatGPT; a line for a terminal for Claude Code and two lines of
+    TOML for Codex; and one-click install links for Cursor and VS Code. The address carries no
+    secret — that is the whole point of the OAuth path — so it can be printed, read aloud, or
+    left on a page. The server prints it absolute, because it is pasted into a program on
+    another machine, and the name the server takes in the client's own list comes from its host,
+    so somebody with three sites connected can tell them apart. The section is registered only
+    where there is a door to connect to: Passport installed and `webx-mcp.path` not `false`.
+  - **Connections** — the agents that have been let in, with what each may do, when it was
+    connected and when it was last heard from. Everybody's, as a third view of the
+    administrators section, for whoever holds `admins.manage`; their own, at the foot of the
+    connect page, for anybody signed in. **Disconnect** revokes the refresh token as well as the
+    access token — without the second, a connection that the panel says has ended goes on
+    refreshing itself for the month it was given. The row is kept, greyed: the call log points
+    at it, and a line saying the connection ended on the 21st is worth more than a gap.
+  - `GET /api/cms/auth/connections` (`?all=1` for everybody's) and
+    `DELETE /api/cms/auth/connections/{id}` answer both, and `WebxUi\Mcp\Grants\Grants::revoke()`
+    is where a connection ends.
+  - A guide, `apps/docs/guide/agents.md`: how to connect, what an agent may do and why that is
+    exactly what you may do, why not to connect a super administrator, and the two things —
+    nightly dumps and the list of return addresses — to have in place before switching it on.
+  - The playground panel has both screens, on `localhost:5174/panel/connect` and
+    `localhost:5174/panel/admins/connections`.
+
+- 87a538c: The consent screen is the panel's own, and "read only" is a box on it
+
+  When an agent asks to be let in, the person now sees a page of the panel rather than the plain
+  one: the site's logo, who is asking and where the answer will be sent, and what the agent will be
+  able to do — in the words of the panel's modules ("Pages — view and edit", "Files — view"), not in
+  scopes. Under it, the warning that the agent acts in their name and that they are responsible for
+  what it does. In the panel's language, all ten.
+
+  - **Read only.** One box instead of a matrix of scopes: tick it and the agent may look and may
+    not change anything, whatever the person's own permissions say. A read-only connection is not
+    shown the tools that write, and is refused if it calls one it remembers from before.
+  - **The consent is written down.** No "I understand" box — the fact of pressing Allow goes into
+    `mcp_grants` in `webx-ui/mcp`: who, which client, the address the code went to, whether they
+    said read only, which version of the text they were shown, and when. The same row is updated
+    when the same person lets the same client in again. `last_used_at` is kept to the minute, so
+    a list of connections can say when each was last seen.
+  - **A guest is sent to the panel to sign in and brought back.** Passport sends a stranger to a
+    route named `login`, which no site with this panel has; now they are sent to the panel's own
+    sign-in screen with the consent page as `next`, and `@webx-ui/module-auth` follows a whole
+    address on the same site as a page rather than as a route. "Sign in as somebody else" on the
+    consent screen ends the session and goes the same way. The sign-in path is
+    `webx-auth.login_path`, `login` under the panel's path.
+  - The consent screen posts to `{oauth prefix}/consent` rather than to Passport's approve route;
+    `scripts/php-smoke.sh` walks the dance both ways, read-only and not, in a real application.
+
+- f623fac: A person connects their own agent with an address and three clicks
+
+  The MCP server used to open only for a token printed from the console, which is fine for whoever
+  can already run artisan on the server and no use at all for a designer or a client. Now the
+  address alone is enough — `https://example.com/api/cms/mcp`, nothing secret in it — and the
+  client finds its own way from there: it reads the 401, discovers the authorization server,
+  registers itself, sends the person to the panel to sign in and agree, and leaves with a token of
+  theirs. The agent acts as that administrator, so authorship, roles and `is_active` already mean
+  what they should.
+
+  - **Passport replaces Sanctum.** Two `HasApiTokens` traits cannot share a model, and Passport is
+    the one that can register a client it has never met. `webx-ui/module-auth` carries it, because
+    `CmsUser` is what an agent acts as and Passport's user provider accepts only a model that
+    implements its `OAuthenticatable`. A site switches it on once, with
+    `vendor:publish --tag=passport-migrations`, `migrate` and `passport:keys`; without the keys the
+    guard cannot be built and a call with no token answers 500 instead of 401.
+  - **The `api` guard** — Passport's driver over the panel's own people — is registered for you
+    unless the application has defined one under that name, and `webx.mcp-auth` asks it.
+  - **Two doors that ship open are closed.** `config('mcp.redirect_domains')` is `['*']` by default,
+    which lets anybody register a client called "Site panel" that takes the code to their own
+    server; the list is now Claude, ChatGPT and localhost, and the consent page always shows the
+    address a person is about to be sent back to, not only the name the client chose for itself.
+    Client registration is rate limited, because nobody has signed in when it happens.
+  - **A token granted this way carries one scope for the whole server**, `mcp:use`, because that is
+    the only one a client is ever offered. Read module scope by module scope it would be refused
+    everything, so it passes the scope gate whole; what limits it is the administrator's own
+    permissions. A key that names module scopes is still read scope by scope.
+  - **The panel fetches its CSRF cookie from its own route**, `{api_path}/auth/csrf-cookie`, rather
+    than Sanctum's — which left with the package. `createHttp` defaults to it.
+  - `webx:mcp:token` is gone with Sanctum. Keys for machines, which have no browser to send anybody
+    to, come back later as their own thing.
+
+- f5b4d44: An agent can do what the administrator who connected it can do, and is shown exactly that
+
+  Until now the MCP door checked the token's scope and the terms of the connection, and never the
+  administrator's own permissions — and a token granted through consent carries one scope for the
+  whole server, so an editor's agent could do anything any module offered. Now every tool is behind
+  a panel permission, checked in the same place as the scope, before any handler runs:
+
+  - **A permission per tool, derived the way the scope is.** A tool that writes needs
+    `<module>.manage`; one that reads needs `<module>.view` — or `<module>.manage`, because the
+    panel's own routes let an editor at the list without a separate `view`. A module whose
+    permissions are not named after it says so on the tool: `Tool::read(..., permission: …)`, one
+    name or several that mean "any of these". `webx-ui/module-blog` (`blog.articles.*` and
+    `blog.taxonomy.manage` for three module ids), `webx-ui/module-inbox` (`inbox.update` for
+    moving a submission along, `inbox.manage` for the forms) and `webx-ui/module-media`
+    (`media.upload` for `upload_from_url`) say so; the sign-in audit tools of
+    `webx-ui/module-auth` are behind `admins.audit`.
+  - **`tools/list` is what the caller may use.** A narrower role sees a shorter list, and a tool
+    that is not listed is not there to call by name either. On the stdio server there is nobody to
+    ask, so everything is listed. A call that gets past the list — a client remembering a tool
+    from before a role was taken away — is refused with the permission it lacks.
+  - `webx:mcp-tools` shows the permission next to the scope.
+
+- cd95a2e: A gzipped dump of the database every night, and one line in the panel saying so
+
+  Insurance, not a restore system. The file lands on the same disk as the database it came from,
+  so it survives a mistake and not a dead server, and there is no restore button anywhere — what
+  it is for is getting yesterday's version of one row, one table or one article back by hand. It
+  exists because backups are an extra on a good many hosts and absent on the rest, and having
+  something is better than having nothing.
+
+  - `webx:db:backup` writes `storage/app/private/backups/<database>-2026-09-21-0310.sql.gz`,
+    gzipped as the dump comes out, so no uncompressed copy of the database ever touches the disk.
+    `mysqldump` for MySQL and MariaDB, `pg_dump` for PostgreSQL, a copy of the file for SQLite.
+  - Rotation runs **after** a dump has succeeded and never touches the newest file. Clearing out
+    last week without having written tonight is the one thing a backup command must not do, and
+    it is exactly what happens if the two steps are written the other way round. A failure exits
+    non-zero, logs why, deletes its own half-written file and leaves everything else alone.
+  - Structure for every table, rows for the ones worth keeping: `cache`, `sessions`, `jobs` and
+    the rest of `skip_data` are dumped with `--no-data`, which on most sites is most of the file.
+    The tables that keep their rows are dumped structure-and-data together, so pulling one table
+    out of the finished file is a single contiguous range — the guide has the one-liner.
+  - The password never appears in an argument, where `ps` would show it to anybody with a shell:
+    MySQL gets a 0600 defaults file and PostgreSQL a 0600 `.pgpass`, both removed in a `finally`.
+    `--single-transaction --quick` so the nightly dump does not lock the site, `--no-tablespaces`
+    so it runs as a shared-hosting user, `utf8mb4` so the translated JSON columns survive.
+  - `module-admin` puts the task on the scheduler itself, at `webx-admin.backup.at`. What it
+    cannot do is run the scheduler: the site still needs a system cron on `schedule:run`, and the
+    line in the panel is what notices when there is not one.
+  - That line is at the foot of the settings screen, for whoever has `settings.view`: "Last
+    database snapshot: today at 03:10 · 4.2 MB", and the same line as a warning when the newest
+    file is more than two days old or there is none. Nothing is recorded in the database — the
+    line is the newest file in the directory, and a task that failed is the file that is not
+    there. `WxBackupNote`, fed from a new `backup` key in the manifest.
+
+- b1aeb52: Light, dark or the machine's — chosen in the account menu, stored against the person
+
+  The tokens have carried both themes since the beginning, and nothing in the panel ever wrote
+  `data-theme`: the only way to see the dark one was to set the whole machine to it. Now there is a
+  control, and the choice belongs to the person rather than to the browser — somebody who works
+  dark at night on a laptop finds the panel dark in the morning at a desk.
+
+  Three states rather than two. A toggle can say light and dark; it cannot say _I have not
+  decided_, which is the state almost everybody is in, because their machine has already decided
+  for them. `system` is a real answer and the one the switch starts on, and it goes on following
+  the machine afterwards — the panel darkens at sunset along with everything else on the desk.
+
+  - `WxThemeSwitch` — the control, in the core: three cells, a thumb that slides between them and a
+    picture that arrives rather than appears. It is a radio group, the arrow keys move within it,
+    and both animations stop under `prefers-reduced-motion`. Like everything in the core it ships
+    English and knows nothing about a dictionary, so its three words are props.
+  - `applyTheme()` now takes `system`, which removes the attribute rather than writing a third
+    value — the stylesheet already follows `prefers-color-scheme` for anything not pinned to light.
+    `systemTheme()` and `watchSystemTheme()` are there for whatever has to _know_ rather than be
+    painted. New `--wx-easing-emphasized`, a curve with a little overshoot in it.
+  - The theme contract now works both ways round. The tokens have always had a `data-theme="dark"`
+    block and never a light one, so a light island inside a dark page — a preview, a printed
+    sheet — inherited the dark values and quietly stayed dark, while the guide claimed a page could
+    mix the two. There is a `[data-theme='light']` block now, and it can.
+  - `createAdmin()` builds the theme before it mounts, so the sign-in screen is already the colour
+    this browser was left in, and `useTheme()` hands it to anybody who asks. The administrator's own
+    record replaces the browser's guess the moment the session says who they are.
+  - `PUT /api/cms/auth/theme` and a `theme` column on `cms_users`, beside the language and for the
+    same reasons. `null` means follow the machine — a choice, and one that has to travel between
+    machines like any other.
+  - The Blade shell paints before its bundle runs: three lines that read the browser's copy, so a
+    dark panel never starts white.
+
+## 0.26.1
+
+### Patch Changes
+
+- 0a506df: A block that stands on one page is refused in words that fit one page
+
+  `page.delete-used` has `:count` in it, and Russian — like English — gets that wrong at exactly
+  one, which is when a type is most likely to be looked at: it has just been put somewhere for
+  the first time. The dictionary gains `page.delete-used-one` and `page.on-page` in all ten
+  languages, and the controller picks the line rather than the number.
+
+  The same file gains the words the editor screen grew this round — the captions of the three script
+  examples and the three of the icon picker — and loses `page.sample-help` and `page.usage-empty`,
+  whose places on the screen are gone.
+
+## 0.26.0
+
+### Minor Changes
+
+- cca572f: The address of an article is one row, not two
+
+  The settings tab used to hold a field labelled "Address" and, directly under it, a row also
+  labelled "Address" printing the whole thing. A full row of the form, and a second label, spent
+  on one constant segment — `/blog/` — which taught the reader to skim both. The spec had asked
+  for the other thing all along: "the address, with the prefix pasted on the left".
+
+  So the prefix moves inside the control. `wx-article-slug` replaces the pair of `wx-input` and
+  `wx-article-address`: a localized text field whose `#prefix` is the prefix of the blog, set in
+  the same monospace face the address is read in, with the language chip still on the right. The
+  whole address is now read and written in one place, and the card is a row shorter.
+
+  What is kept is the part that is not a duplicate: the line that says an article on the site is
+  about to answer at a different address and that the old one will keep working. It appears only
+  when there is something to lose, and it still appears before the save rather than in a toast
+  after it.
+
+  Gone with the row: `WxArticleAddress` and the node type `wx-article-address`, and the words
+  `article.address` and `article.no-address` on both halves. A project that patched the `address`
+  node of `blog.article-form` has no node to patch any more — the id is not in the screen.
+
+  The server registers `wx-article-slug` as the text type `wx-input` already was, so what a save
+  is checked against does not change.
+
+- cca572f: An article can be taken off the site from its editor, and its tags stand on one line
+
+  **Off the site, from the publication card.** Taking an article off the site was a line in the
+  `···` of a row of the list and nowhere else — so an editor looking at the article, on the tab
+  where its day and its author are decided, had to go back to the list to pull it. Now
+  `wx-article-unpublish` sits under the date, where the rest of the publication is settled. It is
+  offered only while there is something to take off — a draft was never there, and one already
+  off has nowhere further to go; the way back is "Publish", which stays in the bar. It asks
+  first, because this is the one thing on that tab visitors see happen, and the question names
+  what survives: the draft, the history and the rubrics all stay, and publishing puts the article
+  back exactly where it was. A scheduled article gets its own sentence — it never went out, and
+  the day it was set for will pass without it.
+
+  **Tags.** A chip carried a `WxAction` in its slot, and an icon button of the panel is thirty
+  pixels tall inside a badge whose words are fifteen: the chip grew to fit the button, the word
+  sat three pixels below the cross it stood beside, and the air to the left of the word was half
+  the air to its right. `WxBadge` has had `closable` all along, sized to the words — measured, the
+  chip is 22.6 px instead of 37.6 and the drift is zero.
+
+  **Rubrics.** The "main" badge stood against the name of the first rubric with nothing between
+  them, because the cell a row's content goes into is a block and the `gap` meant for it was
+  never applied — and neither was the clipping on the name, which had been written for a flex
+  parent that was not there. The slot now makes a line of its own contents: eight pixels between
+  the name and the badge, and a rubric with a long name is cut with an ellipsis rather than
+  pushing the badge to the far end of the row.
+
+- cca572f: The inbox opens on the submissions, and the forms are the chooser
+
+  Somebody opens "Inbox" to see what has come in. What the section showed them was a column of
+  three form names, and on a phone that column was the whole screen: the submissions were a
+  record opened beside it, so they lived in the drawer and the reader had to pick a form before
+  seeing anything at all.
+
+  The two swap places. The forms are the `filters` column of `WxListDetail` — the thing that
+  narrows the list — and the submissions are the list. Nothing moves on a wide screen: the
+  forms are still 270px down the left. On a narrow one it is the forms that fold, into a panel
+  raised by a **Forms** button in the head of the submissions, and the list is the screen. One
+  form is always open — the first, unless the address names another — which also covers an
+  address naming a form that has since been deleted.
+
+  `WxListDetail` grew the case that makes this possible: with no `detail` slot, the list is the
+  main pane rather than a fixed column with an empty pane beside it, and the only threshold left
+  is the chooser's, `filtersWidth + detailMin`. It is the shape for a list whose records open on
+  a route of their own — which is what a submission does, and what a file in a library does.
+
+  Gone from the head of the submissions: **Settings**. It is an action on the form, and the
+  form's own `···` in the list of forms already offers it beside Duplicate and Delete — a second
+  door on the same strip, one word away from the list it was not about. `panel.choose-form` goes
+  with it on both halves: there is no longer a moment with no form chosen.
+
+  The button in the head is now **New submission**. The section is opened to read what came in
+  dozens of times for every once a form is added, and what stood there in blue was the form: a
+  new form is the `+` over the list of forms, beside the things it makes one more of, and in the
+  drawer — where an icon alone under the drawer's heading reads as a stray mark — it is a button
+  with the word on it. The dialog stays with the list of submissions and is exposed to the head,
+  because what is written has to land in that list, in the filter that is on, and be counted in
+  its tabs. On a narrow screen **Forms** joins it up there, so the two ways out of the list stand
+  together instead of one being in the head of the section and the other in the head of the pane.
+  `panel.new-submission` reads "New submission" rather than "Add by hand" on all ten dictionaries;
+  the dialog it opens still says which case it is for.
+
+  `WxListDetail` says `filters-inline` whenever the chooser's column appears or folds, and once at
+  the start. The `list` slot has always been handed that as a slot prop, but a head that stands
+  outside the pane — above the card, where a screen's actions live — cannot read one.
+
+  One inset, kept by the pane. The name of the form, the tabs, the search box and the rows now
+  all begin on the same line down the left: the table added a step of its own inside the pane's,
+  which is exactly what `flush` says it should not, and on a phone that put the head at 17 and
+  the list at 33 — two panels stacked rather than one screen. The change is a rule removed from
+  this screen, so no other list in the panel moves.
+
+  What scrolls is now the page. The section used to be as tall as the window with the rows
+  scrolling inside a box of their own: a bar down the middle of the screen, and a wheel that
+  meant one thing over the rows and another an inch to the left. Every other list in the panel
+  scrolls as a page, and this one does too — the card is as tall as what is in it.
+
+  A switched-off form is said by its name, struck through and grey, instead of by a badge
+  beside it. The badge did not shrink, so in a 270px column already holding a name, a count and
+  a `···` it ran under the menu — measured at 396px against a row ending at 346 — and it said in
+  a word what the type says at a glance. The strike is on the name only: the count beside it is
+  still true.
+
+  Fixed on the way: between 640 and about 672 pixels the pane and the table measured the same
+  threshold a step apart — the pane's own padding stood between them — and the table drew cards
+  out of the full set of columns, five lines of "Label: value" for one enquiry. The pane decides
+  now and the table is told, so a tablet holds fourteen rows where it held three cards.
+
+- cca572f: Rubrics are one list and a dialog over it
+
+  The section used to be a list beside a form, and the form took two thirds of a screen whose
+  whole job is the drag: the order of this list is the order of the menu on the site. Now the list
+  is the screen — grip, name, address, the number of articles, and a `···` with `Edit`, `Show its
+articles` and `Delete` — and a rubric is edited in a dialog with three tabs: `Content` (the
+  name, the address, the switch and the introduction), `Image` and `SEO`. One `Save` for all
+  three, and a `422` opens the tab the failing field is on.
+
+  The introduction is a rich text document now (`wx-rich-text`) rather than a line of plain text:
+  cleaned by its own field type on the way in, printed with its library pictures resolved on the
+  way out. Nothing migrates — the column is the same one, and a line of text is a document with no
+  markup in it.
+
+  Two things this fixes on the way: the SEO card used to open at zero width inside the old form,
+  and the footer of that form broke apart onto three rows on a one-pixel overflow.
+
+## 0.25.1
+
+### Patch Changes
+
+- 0aea1bb: Fewer words in the article editor's bar
+
+  `webx-blog::article.save` is "Save" rather than "Save draft" in all ten languages: the button
+  beside it is the publication, so there is nothing left to tell apart. The three lines the bar
+  used to build its sentence from — `live-never`, `live-edited`, `live-off` — go with the sentence;
+  what is left of it is the day, and the day is said by `live-since` and `live-scheduled` under the
+  article's name.
+
+- e98734c: One word for the block preview's width switcher
+
+  `webx-blocks::page.width` in all ten languages: the name of the group of three device icons that
+  replaced the three words in the Blocks section's preview. The icons carry the old lines as their
+  own accessible names, so nothing else moves.
+
+## 0.25.0
+
+### Minor Changes
+
+- 537df98: Page and article screens stop asking the constructor to fill the screen
+
+  `"props": { "fill": true }` is gone from the `wx-blocks` node of `pages.form` and
+  `blog.article-form`. It told the field to be exactly one window tall and scroll each of its panels
+  inside itself; the field does not do that any more, because its preview is now as tall as the page
+  it shows and the panel scrolls it. Nothing replaces the prop — the screens simply stop passing it.
+
+  `webx-blocks` also gains three lines in all ten languages: the name of the width switcher, and the
+  steps to the previous and the next block, which the form's head carries now that the tree is not on
+  screen beside it.
+
+  `webx-admin` gains two — "Saving…" and "Saved" — which are what a screen reader hears from the mark
+  that replaced the word in the editors' bars. The lines those bars used to print (`state-saving`,
+  `state-saved`, `state-unsaved` under `webx-pages` and `webx-blog`) go, because nothing prints them.
+
+## 0.24.1
+
+### Patch Changes
+
+- 48dfd9e: One head for every screen of the panel
+
+  Eight screens each answered "what goes at the top" on their own, and gave eight answers: the
+  heading at three sizes, the way out as an arrow on four of them and as a line of breadcrumbs on the
+  rest, the buttons folding into a `···` on two editors and wrapping onto a third line everywhere
+  else. Writing a new screen meant writing that line again and getting it slightly different again.
+
+  `WxScreenHead` is that line, once: the way out, the name with the state said beside it, the line
+  under it that says which record this is, and what can be done here. `WxListScreen` is built on it,
+  so a list and the editor a row opens are the same object rather than two similar ones — and it
+  takes `back` now, which is what the statuses screen used to draw above its own heading for want of
+  anywhere to put it.
+
+  **The actions are declared rather than drawn.** The same action has to be a button on a desktop and
+  a line of a menu on a phone, and one vnode cannot be mounted in two places — as markup it had to be
+  written twice, which is exactly what the page and article editors did. As `ScreenAction[]` it is
+  written once: `primary` is the one thing the screen exists for and the one that keeps a button when
+  the head runs out of room, `danger` is never a button at all, `menu` is in the `···` at every
+  width, and `loading`, `disabled` and `href` mean what they say. Below 720px — 480 on a list, which
+  carries one word and no trail — everything but the primary folds behind the `···` and that primary
+  takes the line under the name, full width.
+
+  The name’s line is the head: the way out at the start of it and the actions at the end, both
+  centred on it however many badges stand beside the name. The trail is the line above, and it
+  scrolls sideways with no scrollbar showing rather than wrapping — on a phone a path four levels
+  deep was two lines of the smallest type on the screen, standing between the reader and the name of
+  what they had opened.
+
+  Two things that were quietly wrong come out with it. Nineteen buttons across the panel passed
+  `icon="plus"` to `WxButton`, which has no such prop: the attribute landed on the `<button>` and
+  drew nothing, so the panel’s main actions had no icons at all. And the `···` said `More` in English
+  in every language, because the core carries English defaults and knows no dictionary — the panel
+  gives it the word now, in all ten.
+
+## 0.24.0
+
+### Minor Changes
+
+- 937f4e2: The blog gets a picture of its own, and so can every other navigation group
+
+  Two separate things made the sidebar say the wrong thing about the blog.
+
+  **A group could not carry an icon at all.** `AdminNav` drew `icon="gear"` on every branch, so
+  "Blog" and "System" looked like the same kind of thing — one is what the site is about, the other
+  is what keeps the panel running. A group now names its own picture: `'icon' => 'newspaper'` beside
+  the title in `webx-admin.groups`, through the manifest, into `NavGroup`. The key is optional and
+  falls back to the gear, so a site that published `webx-admin.php` before this — or a group written
+  by a module that has not been updated — looks exactly as it looked.
+
+  **`ArticlesModule` named `file-text`, which was not an icon.** The set has `file-txt`, `file-md`
+  and the rest of the file family, but nothing under that name, so `resolveIcon` came back empty and
+  `WxIcon` rendered no `<svg>` at all: no warning, no placeholder, just a menu line whose label had
+  slid left into the room the picture was meant to occupy. Both halves type-check a name neither of
+  them can check, so the seam is now tested — every `icon()` and every `'icon' =>` in the PHP
+  packages is looked up in the set.
+
+  New in `@webx-ui/core`: `file-text`, the page with three lines of prose that the file family
+  already drew, under the name a section full of writing asks for; and `newspaper`, a folded sheet
+  with the one behind it curling out at the bottom left — the fold is the only thing that tells a
+  paper from a document at 16 px.
+
+- 852883d: The panel's lists take their filters behind the funnel and draw their narrow rows as entities.
+
+  `WxFilterChips` and `AppliedFilter` in `module-admin` give every section the same chip, and the
+  panel's own two words — the name of the funnel and "reset all" — live with it in all ten
+  languages. Articles, the SEO rules and the administrators put their dropdowns in `#filters` and
+  what they are set to in `#applied`; submissions, administrators and articles draw a card below
+  their breakpoint as `WxEntityCard` rather than as a stack of labelled lines, with the `···` in
+  the card's own top strip beside the checkbox.
+
+  `WxEntityCard` gained `titleLines`, because an article's headline is a sentence: one line of it
+  on a phone is half a thought, and the list it replaced already clamped at two.
+
+### Patch Changes
+
+- 852883d: Tags: the order is on the headings, and renaming is a form.
+
+  The two buttons over the list are gone — the name and the count sort from their own headings, in
+  either direction, and the address carries the order so a link lands on the list somebody meant.
+  The server takes a leading minus for it and keeps the bare names it had: alphabetical, and most
+  used first.
+
+  Renaming opens a dialog with one field. In the cell it was a name that turned into an `<input>`,
+  which reads as a name — nothing said it could be typed in — and it saved itself on `blur`, an
+  event that does not bubble, so the listener on the field's wrapper heard nothing and clicking away
+  lost what had been typed.
+
+  `WxActionBar` wraps its buttons. They were `flex: 0 0 auto` and stayed on one line whatever the
+  width: measured on a 375px screen, five of them were 815px inside a bar 359 wide, and they took
+  the whole page sideways with them.
+
+## 0.23.0
+
+### Minor Changes
+
+- f87e4ec: The article editor: tabs, blocks, autosave, the day it goes out
+
+  `blog.article-form` is a described screen, like the page editor and for the same reason: the SEO
+  card arrives as a patch from `module-seo` rather than being named in the blog's own description,
+  and a project adds a tab the same way. Four tabs — the block constructor, the settings, SEO and
+  the history — with a head above them that never moves and an action bar below.
+
+  The settings are §10 of the spec: the address printed whole under the field that edits its last
+  segment, the lead with a counter, the rubrics as a list that is dragged into order because the
+  first one is the main one, a tag box that makes the tag it cannot find, the author, the cover,
+  the pin, and the articles pinned under this one by hand. Five of them are node types the blog
+  registers on both halves, so a rubric that is not a rubric is refused where every screen is
+  checked rather than wherever somebody remembered.
+
+  **The day is the part that is not a page editor.** The date in the settings tab is what
+  "publish" publishes under, and the bar says which day that is before it is pressed: ahead, the
+  article waits and answers 404 until its morning; behind, it moves down the feed. For an article
+  that has never been on the site the day waits in the draft, because `published_at` is what "on
+  the site" means and there is no column for a date that has not happened yet. For one that is
+  already dated, moving the date writes the column at once — every listing orders by it.
+
+  `WxActionBar` wraps. Its state box may shrink to nothing, and the words in it went on being
+  painted where the box no longer was — straight across the buttons. Measured on a 375px screen:
+  the box 0px wide and 105 tall, "Saved · goes out on 25 September at 17:06" over the top of "Save
+  draft". Past the width of a short sentence the buttons now take a line of their own, still
+  against the end of the bar.
+
+  Saving is autosave, checked against the revision the form read and refused with a 409 when
+  somebody wrote in between; the answer carries the article as it now is, so the panel asks which
+  version the site gets instead of keeping one of the two silently. `PUT` now takes the screen's
+  `values`, the history has its own two routes, `POST .../discard` throws away what is waiting,
+  and `GET|POST /blog/tags` is the half of the tags API the article form needs — the screen that
+  rakes them over comes with session D.
+
+- f87e4ec: `Blog`: the section, the panel API and the list of articles
+
+  The blog arrives in the navigation as three entries under one heading — Articles, Rubrics,
+  Tags — because the panel draws one entry per module and a blog wants three. Rubrics and tags are
+  declared on the server and stay out of the menu until their screens are written: an entry with
+  no screen has nowhere to send anybody, so it is silently skipped.
+
+  The API is a paginator rather than a level of a tree, which is the whole difference from
+  `Pages`: `GET /api/cms/blog/articles` with a search term, a rubric, a tag, an author and a
+  state, plus create, save, publish, unpublish, delete and restore. Every filter is a subquery and
+  none of them is a join — an article is in several rubrics and carries several tags, and joining
+  the pivot turns a page of twenty into seventeen articles with three of them drawn twice.
+
+  Five states, and the pair worth keeping apart is the last two: an article that was never
+  published and one that was taken off the site this morning both have no publication date, and
+  only the history tells them apart. Publishing takes an optional date, so "on the site next
+  Tuesday" is that date and not a scheduler.
+
+  What is saved goes to two places, and the split is deliberate. The title, the address, the lead
+  and the cover go into the draft — the site keeps showing what was published. The rubrics, the
+  tags, the related articles and the pin do not, and cannot: a pivot row is not a column, and
+  there is no such thing as half a row. A translated field travels as its whole language map, so
+  saving from a Russian panel that is showing an English fallback no longer copies the English
+  title into the Russian slot.
+
+  `@webx-ui/module-blog` is the front end: the list with its filters, its views as tabs, the bin,
+  and a row menu. Below 640 pixels the row becomes a card with the cover on the left and the title,
+  one rubric, the state, the date and the author beside it — ten articles on a phone screen rather
+  than two.
+
+- f87e4ec: The blog through an agent's doors, and the guide
+
+  Nine tools, one resource and one prompt, all of them the same doors the panel uses: `articles_list`
+  is the panel's own query, so the five states of an article are one answer and not two;
+  `articles_update` goes through the described screen, so a tab `module-seo` put on the editor is a
+  field an agent can write; `articles_publish` takes `at`, because in this module the date _is_ the
+  publication and there is nowhere else for it to live.
+
+  `rubrics_list` only looks, and `tags_create` does not exist — both on purpose. Deciding the site
+  has a ninth section is a decision about its navigation, and inventing a tag while writing one
+  sentence is exactly how a blog ends up holding "belts", "belt" and "drive belts". What an agent
+  gets instead is `tags_merge`, sorted by use so the duplicates stand next to the word they
+  duplicate: the irreversible half of the job nobody gets round to, with a dry run that reports how
+  many articles would come out carrying the surviving word — counted once, because an article that
+  carried both tags is one article.
+
+  `blog://feed` is the last thirty articles as a reader sees them rather than a second editor's
+  view. Half of what it is for is finding out that this was published in March; the other half is
+  picking up how the blog writes before writing for it. The prompt `write_article` puts the loop in
+  front of the agent, and spends two of its lines on the step a first attempt gets wrong twice: the
+  body is `blocks_edit_content` and not `articles_update`, and writing `published_at` while filling
+  in the settings puts a half-written article on the site without anything named "publish" being
+  called.
+
+  `apps/docs/guide/blog.md` is both halves on one page, and the package README now says what an
+  agent may do.
+
+- f87e4ec: Blog: the screens for rubrics and tags
+
+  **Rubrics** are a menu, so they are edited as one: `WxListDetail` with the list on the left,
+  dragged into the order the site has them in, and the form for the one that is open on the right.
+  No paginator and no search — a site has eight rubrics, and a menu you have to search is a menu
+  that is already wrong. The form looks up `wx-media` and `wx-seo` in the panel's own type
+  registry rather than importing either, so a panel without the file manager or without SEO gets a
+  shorter form instead of one that will not mount. The SEO card starts folded behind a sentence
+  saying where the title of the page comes from without it.
+
+  Deleting a rubric that still holds articles is refused with the number in the message, and the
+  button stays on screen and out of reach with the reason beside it: a button that disappears does
+  not answer "why can I not delete this".
+
+  **Tags** are entered from the article form by the hundred, so the screen is built for raking them
+  over. Renaming happens in the row — Enter saves, Escape puts back — and the address does not move
+  with the word, because a tag spelled three ways before lunch would otherwise leave three aliases
+  behind a decision nobody made. Selecting rows raises a bar that opens, closes or deletes the pile
+  at once, and merges it: the articles move over, the pivot deduplicates, and a checkbox decides
+  whether the addresses that existed go on answering as redirects. The merge is irreversible and
+  the dialog says so.
+
+  The column **Indexing** has three states, not two — `indexed`, `indexed — SEO rule`, `noindex` —
+  and the filter beside it counts by the same rule the rendered page follows, through
+  `UrlRuleSource::hasRuleFor()`. Anything less leaves the editor who wrote the rule looking at a row
+  that says `noindex` about a page that is in the index.
+
+  Server side: `GET/POST/PUT/DELETE /api/cms/blog/rubrics` with `rubrics/reorder`, and
+  `GET/POST/PUT/DELETE /api/cms/blog/tags` with `tags/merge` and `tags/mass`. The tags endpoint is
+  one answer to "which tags are there": the dropdown on the article form asks for its first page.
+  `HasUrl` gains `urlOf()`, so a screen that has already loaded the `routes` relation for a page of
+  rows does not go back to the registry once per row to learn what it was handed.
+
+- f87e4ec: `webx-ui/module-blog`: the package, the addresses and the public half
+
+  Articles, rubrics and tags. Almost none of it is written here — the address is `routing`, the
+  content is `module-blocks`, the draft and the history are `module-admin`, the covers are
+  `module-media`, what a page says about itself is `module-seo` — and what the package adds is the
+  three things that make an article an article rather than a page: a date, several rubrics, and
+  tags.
+
+  Three types in the registry under one prefix (`webx-blog.prefix`, `blog` by default), all
+  `OnConflict::Fail` in one flat namespace: a rubric called "Repairs" and an article slugged
+  `repairs` are one address, and the second of them is an error under the field rather than a
+  quiet `repairs-2`. The rubric is deliberately not part of an article's address — an article has
+  three of them, "which one" has no answer, and any answer would be a hidden main rubric that
+  moved the article when somebody reordered the checkboxes.
+
+  Publication is one column and no scheduler. `published_at` in the future means the article is
+  waiting, in the past means it sits where that date puts it in the feed, and which of the two it
+  is gets decided where the article is read. Worth remembering: to the frame underneath, a
+  scheduled article is already published, so a general count of live records elsewhere in the
+  panel counts it.
+
+  A rubric has `is_visible` instead of a draft, and refuses to be deleted while it holds articles,
+  naming how many — its articles are not its property, and a soft-deleted rubric with live
+  articles in it is a hole in the navigation nobody notices. Tags merge into one, and the
+  addresses that existed can be kept as rows in `seo_redirects`: an alias of `routing` is keyed to
+  the entity and dies with it.
+
+  A tag page is out of the index by default, and a rule in `seo_urls` for its address opens it
+  completely. That cannot be a merge of fields — a rule filling in a title and leaving `robots`
+  empty would leave the module's `noindex` standing underneath it, and the editor who wrote the
+  rule would never find out — so `Panel\UrlRuleSource` in `module-seo` gains `hasRuleFor()`, over
+  the same compiled list `UrlMatcher` works on, and the blog asks that instead of matching masks
+  of its own.
+
+  The public half ships as five bare views, a feed at `{prefix}` with `?page=`, an RSS, and worked
+  out "read next": pinned first, then most tags in common, then the main rubric.
+
+- f87e4ec: `wx-rich-text`: the editor as a field of a screen
+
+  A node type on both halves. On the server it is checked against `props.maxlength`, stored
+  through an allowlist — a `<script>`, an `onclick` or a `javascript:` address does not survive —
+  and an emptied editor is stored as `null` rather than as `<p></p>`. `localized` needs nothing of
+  its own: the language map is picked apart one layer up, so a translated article is the same type
+  run once per language.
+
+  Pictures come from the file manager. `AdminModule` gains `pickImage`, which `module-media`
+  supplies and the panel hands to every editor on every screen; a panel without a file manager
+  draws no image button, because the editor does not offer what it cannot do.
+
+  What a document keeps for a picture is the library's **key**, as `data-wx-path`, and the address
+  is worked out again on every read through `WebxUi\Admin\Contracts\AssetUrls`. The same rule
+  `wx-media` has always followed, one layer in: the address differs between deployments of one
+  site, a private bucket's address expires, and an image edited in place changes the version stamp
+  without changing the key.
+
+  `WxRichText` itself gains `localized` — one editor with a language chip, as `WxInput` and
+  `WxTextarea` have — and `labels`, so the panel can put its own words on the toolbar.
+
+  `HasDraft::publish()` takes an optional `?CarbonInterface $at`: the date an entity is published
+  under is not always now, and it cannot travel through the draft.
+
+### Patch Changes
+
+- 5d24fd2: The blog's five public views are plain, not broken
+
+  Two things an unstyled page still owes the reader. Without `max-width: 100%` a 1200px cover
+  pushed a phone's page out to 1248px and took every line of text off the screen with it — three
+  rules in a partial the four page views include, the same three `module-pages` shows in its own
+  example. And nothing derives a title from an entity, so an article whose SEO card was never
+  filled had no `<title>` at all: each view now falls back to what it is about when the card and
+  the defaults are silent, which is what the demo site had already written by hand for pages.
+
 ## 0.22.1
 
 ### Patch Changes

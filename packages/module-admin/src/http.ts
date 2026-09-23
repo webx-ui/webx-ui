@@ -9,7 +9,10 @@
 export interface HttpOptions {
   /** Prefixed to every relative path, e.g. `/api/cms`. */
   baseUrl?: string
-  /** Where to fetch the CSRF cookie from before an unsafe request. */
+  /**
+   * Where to fetch the CSRF cookie from before an unsafe request. The default is the panel's
+   * own route; a panel served under another `api_path` passes its own, as `createAdmin` does.
+   */
   csrfUrl?: string
   /** Called whenever the server answers 401, however deep in the app the call was. */
   onUnauthenticated?: () => void
@@ -71,7 +74,9 @@ const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
 export function createHttp(options: HttpOptions = {}): Http {
   const baseUrl = (options.baseUrl ?? '').replace(/\/$/, '')
-  const csrfUrl = options.csrfUrl ?? '/sanctum/csrf-cookie'
+  // The panel's own, since `webx-ui/module-auth` dropped Sanctum: a route in the `web` group
+  // that does nothing but let the framework set the cookie.
+  const csrfUrl = options.csrfUrl ?? '/api/cms/auth/csrf-cookie'
   const doFetch = options.fetch ?? globalThis.fetch.bind(globalThis)
   const onUnauthenticated = options.onUnauthenticated
   const standingHeaders = options.headers

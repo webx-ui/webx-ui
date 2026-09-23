@@ -81,19 +81,12 @@ final class ScreenValues
                 continue;
             }
 
-            // A type that was not registered keeps the value as it came; one that was is asked,
-            // and its answer is taken whole. Never `?? $value`: null is an answer — an emptied
-            // colour, a date cleared, a document with nothing left in it — and a fallback would
-            // put back the very value the type refused.
-            if ($type === null) {
-                $stored[$name] = $value;
-
-                continue;
-            }
-
+            // `$type === null` rather than `?? $value`: a type is entitled to store null — an
+            // emptied editor keeps nothing — and coalescing would hand the raw value back as
+            // though no type had been registered at all.
             $stored[$name] = $localized && is_array($value)
-                ? array_map(static fn (mixed $one): mixed => $type->store($one, $node), $value)
-                : $type->store($value, $node);
+                ? array_map(static fn (mixed $one): mixed => $type === null ? $one : $type->store($one, $node), $value)
+                : ($type === null ? $value : $type->store($value, $node));
         }
 
         if ($errors !== []) {
@@ -117,7 +110,7 @@ final class ScreenValues
             $stored = $this->pick($stored, $locale);
         }
 
-        return $type?->resolve($stored, $node, $locale) ?? $stored;
+        return $type === null ? $stored : $type->resolve($stored, $node, $locale);
     }
 
     /**

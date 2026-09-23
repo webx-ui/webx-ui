@@ -115,6 +115,44 @@ default, `:search-debounce="0"` to report immediately. So `v-model:search` is th
 and `@state-change` is the moment to call the backend, which is the difference between one request
 and one request per letter. `@search` fires alongside it if the term alone is what you want.
 
+## Filters behind a funnel
+
+Three dropdowns standing open in the header are three controls of chrome above the first row, and
+on a phone that is half the screen before any data. `#filters` puts them behind one button: the
+table draws a funnel beside the search, and the slot is the panel it opens.
+
+```vue
+<wx-table :data="page" :columns="columns" searchable :filters-count="applied.length">
+  <template #filters>
+    <wx-form-item label="Rubric">
+      <wx-select v-model="rubric" :options="rubrics" clearable @change="reload" />
+    </wx-form-item>
+    <wx-form-item label="Author">
+      <wx-select v-model="author" :options="authors" clearable @change="reload" />
+    </wx-form-item>
+  </template>
+
+  <template #applied>
+    <wx-badge v-for="chip in applied" :key="chip.key" size="sm" round closable @close="chip.clear()">
+      {{ chip.label }}
+    </wx-badge>
+  </template>
+</wx-table>
+```
+
+A shut panel says nothing about itself, and a list narrowed by something the reader cannot see is a
+list that looks wrong. Two things answer that. `filtersCount` puts the number on the funnel, and
+`#applied` says what the filters are set to — chips the reader can take off one at a time.
+
+The chips stand in the header row itself, in the space between the title and the search, because
+that space is already there and a strip of its own costs a line above every filtered list. They wrap
+into it rather than pushing the search field off the row.
+
+The chips are the caller's, because only the caller knows that `rubric=2` reads "Rubric: News" and
+what taking it off means. The table gives the place, the spacing and one promise: while the strip
+holds no elements it is not drawn at all, so a list with no filters on looks exactly as it did
+before.
+
 ## Remembering where the user was
 
 `persist` names a key and the table writes the page, the size, the sort and the search term under
@@ -393,17 +431,19 @@ without a formatter. A path that goes nowhere renders as empty rather than as `u
 
 ## Slots
 
-| Slot            | Props                             | What it replaces               |
-| --------------- | --------------------------------- | ------------------------------ |
-| `cell-<key>`    | `row`, `value`, `index`, `column` | The contents of that cell      |
-| `header-<key>`  | `column`                          | The heading text               |
-| `summary-<key>` | `row`, `value`                    | One figure in the summary      |
-| `expanded`      | `row`, `index`                    | What an opened row shows       |
-| `title`         | —                                 | The heading in the header bar  |
-| `actions`       | —                                 | Buttons beside the search      |
-| `empty`         | —                                 | The "nothing to show" line     |
-| `loading`       | —                                 | The overlay's spinner and text |
-| `footer`        | —                                 | A row across the whole table   |
+| Slot            | Props                             | What it replaces                  |
+| --------------- | --------------------------------- | --------------------------------- |
+| `cell-<key>`    | `row`, `value`, `index`, `column` | The contents of that cell         |
+| `header-<key>`  | `column`                          | The heading text                  |
+| `summary-<key>` | `row`, `value`                    | One figure in the summary         |
+| `expanded`      | `row`, `index`                    | What an opened row shows          |
+| `title`         | —                                 | The heading in the header bar     |
+| `actions`       | —                                 | Buttons beside the search         |
+| `filters`       | —                                 | Fields inside the funnel panel    |
+| `applied`       | —                                 | Chips for the filters that are on |
+| `empty`         | —                                 | The "nothing to show" line        |
+| `loading`       | —                                 | The overlay's spinner and text    |
+| `footer`        | —                                 | A row across the whole table      |
 
 ```vue
 <template #cell-status="{ value }">
@@ -425,6 +465,9 @@ key of `actions` and fill it from `#cell-actions`.
 | `searchable`        | `boolean`                             | `false`             | Adds the search field                             |
 | `searchPlaceholder` | `string`                              | `'Search'`          | Placeholder for it                                |
 | `searchDebounce`    | `number`                              | `300`               | Wait before `search` fires, in ms                 |
+| `filtersCount`      | `number`                              | `0`                 | Count shown on the funnel; `0` leaves it bare     |
+| `filtersLabel`      | `string`                              | `'Filters'`         | Its name, and the heading of the panel            |
+| `filtersWidth`      | `number                               | string`             | `300`                                             | Width of that panel |
 | `loading`           | `boolean`                             | `false`             | Dims the table and marks it busy                  |
 | `emptyText`         | `string`                              | `'Nothing to show'` | Shown when there are no rows                      |
 | `stripe`            | `boolean`                             | `false`             | Alternating row background                        |
@@ -461,10 +504,14 @@ A table on its own keeps margins around its head and its rows. Inside a card the
 keeps them, so `flush` takes the table's away and the rows reach the card's edges — which is what
 a row should do.
 
-Two things stay. The head is not a row: what stands in it is a search box with a border of its own,
-and that box lines up with the cells rather than with the card's edge. And in card mode the column
-of cards keeps a step above and below it, because a column has to start and end somewhere; sideways
-it is flush like everything else, so the cards stand exactly where the filter above them stands.
+The head goes with them. The search field ends where the row of headings under it ends, so the
+distance from the card to everything inside it is the one number the card already keeps; under the
+head is the panel's own step, because the head and the rows are two things in a card and everything
+else in one is spaced by that.
+
+One thing stays: in card mode the column of cards keeps a step above and below it, because a column
+has to start and end somewhere. Sideways it is flush like everything else, so the cards stand
+exactly where the filter above them stands.
 
 ## The table scrolls its own rows
 

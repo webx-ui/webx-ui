@@ -16,6 +16,13 @@ import ButtonDemo from '../components/demos/ButtonDemo.vue'
   <wx-button type="danger" variant="outline" size="sm">Delete</wx-button>
   <wx-button :loading="saving" block>Publish</wx-button>
   <wx-button href="/docs" target="_blank">Documentation</wx-button>
+
+  <!-- A leading icon by name, or by slot when it is not a WxIcon. -->
+  <wx-button type="primary" icon="plus">New page</wx-button>
+  <wx-button>
+    <template #icon><img src="/logo.svg" alt="" /></template>
+    Sign in
+  </wx-button>
 </template>
 ```
 
@@ -24,6 +31,7 @@ import ButtonDemo from '../components/demos/ButtonDemo.vue'
 | Prop         | Type                                                           | Default     | Description                              |
 | ------------ | -------------------------------------------------------------- | ----------- | ---------------------------------------- |
 | `type`       | `'default' \| 'primary' \| 'success' \| 'warning' \| 'danger'` | `'default'` | Semantic colour                          |
+| `icon`       | `IconName`                                                     | —           | Leading icon; the `icon` slot wins       |
 | `variant`    | `'solid' \| 'outline' \| 'text'`                               | `'solid'`   | Visual weight                            |
 | `size`       | `'sm' \| 'md' \| 'lg'`                                         | `'md'`      | Control height and font size             |
 | `disabled`   | `boolean`                                                      | `false`     | Blocks interaction                       |
@@ -44,10 +52,10 @@ Unknown attributes (`id`, `data-*`, `aria-*`, …) fall through to the root elem
 
 ## Slots
 
-| Slot      | Description                                    |
-| --------- | ---------------------------------------------- |
-| `default` | Button label                                   |
-| `icon`    | Leading icon; hidden while `loading` is `true` |
+| Slot      | Description                                                     |
+| --------- | --------------------------------------------------------------- |
+| `default` | Button label                                                    |
+| `icon`    | Leading icon; wins over the `icon` prop, hidden while `loading` |
 
 ## Accessibility
 

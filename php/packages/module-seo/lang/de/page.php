@@ -58,4 +58,6 @@ return [
     'gone' => 'Führt ins Leere',
     'occupied' => 'Unter :path antwortet eine Seite der Website. Eine Weiterleitung greift vorher — unter dieser Adresse ist die Seite dann nicht mehr erreichbar.',
     'occupied-alias' => 'Diese Adresse führt bereits auf :target — die Spur eines Umzugs. Eine hier geschriebene Weiterleitung greift vorher.',
+
+    'filter-kind' => 'Art',
 ];

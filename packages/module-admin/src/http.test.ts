@@ -61,7 +61,7 @@ describe('createHttp', () => {
 
   it('fetches the CSRF cookie before an unsafe request and sends the token', async () => {
     const fetch = vi.fn().mockImplementation((url: string) => {
-      if (url === '/sanctum/csrf-cookie') {
+      if (url === '/api/cms/auth/csrf-cookie') {
         document.cookie = 'XSRF-TOKEN=a%20token; path=/'
 
         return Promise.resolve(new Response(null, { status: 204 }))
@@ -73,7 +73,7 @@ describe('createHttp', () => {
     const http = createHttp({ baseUrl: '/api', fetch })
     await http.post('login', { email: 'a@b.test' })
 
-    expect(fetch.mock.calls[0]?.[0]).toBe('/sanctum/csrf-cookie')
+    expect(fetch.mock.calls[0]?.[0]).toBe('/api/cms/auth/csrf-cookie')
 
     const headers = fetch.mock.calls[1]?.[1]?.headers as Record<string, string>
     // Decoded: Laravel writes it URL-encoded and expects it back as it was written.
@@ -95,7 +95,7 @@ describe('createHttp', () => {
     let attempts = 0
 
     const fetch = vi.fn().mockImplementation((url: string) => {
-      if (url === '/sanctum/csrf-cookie') {
+      if (url === '/api/cms/auth/csrf-cookie') {
         document.cookie = `XSRF-TOKEN=token-${attempts}; path=/`
 
         return Promise.resolve(new Response(null, { status: 204 }))
@@ -121,7 +121,7 @@ describe('createHttp', () => {
       .fn()
       .mockImplementation((url: string) =>
         Promise.resolve(
-          url === '/sanctum/csrf-cookie'
+          url === '/api/cms/auth/csrf-cookie'
             ? new Response(null, { status: 204 })
             : respond({ message: 'CSRF token mismatch.' }, { status: 419 }),
         ),
@@ -135,7 +135,7 @@ describe('createHttp', () => {
   it('turns a 422 into the errors a form can show', async () => {
     const fetch = vi.fn().mockImplementation((url: string) =>
       Promise.resolve(
-        url === '/sanctum/csrf-cookie'
+        url === '/api/cms/auth/csrf-cookie'
           ? new Response(null, { status: 204 })
           : respond(
               {
@@ -161,7 +161,7 @@ describe('createHttp', () => {
   it('reads how long to wait out of a throttled answer', async () => {
     const fetch = vi.fn().mockImplementation((url: string) =>
       Promise.resolve(
-        url === '/sanctum/csrf-cookie'
+        url === '/api/cms/auth/csrf-cookie'
           ? new Response(null, { status: 204 })
           : new Response(JSON.stringify({ message: 'Too many attempts.' }), {
               status: 429,

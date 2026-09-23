@@ -62,6 +62,11 @@ them; `accordion` keeps one open at a time:
 Left alone, the branch holding the active entry opens itself — a sidebar rendered against a nested
 route should show where you are without being told. `:auto-expand="false"` turns that off.
 
+A branch that is shut says it anyway: its icon takes the accent colour while the page you are on
+is inside it. The colour goes on the icon rather than on the whole row, because the branch is
+where you are and the entry inside it is what you are looking at — and on an icon rail, where
+there is no label at all, it is the only mark a branch can wear.
+
 ## Collapsed sidebar
 
 `collapsed` hides the labels and leaves an icon rail. Branches there have nowhere to open, so they

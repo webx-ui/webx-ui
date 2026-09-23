@@ -58,4 +58,6 @@ return [
     'gone' => 'No lleva a ninguna parte',
     'occupied' => 'En :path responde una página del sitio. La redirección se prueba antes, así que la página dejará de abrirse en esa dirección.',
     'occupied-alias' => 'Esta dirección ya lleva a :target — el rastro de una mudanza. Una redirección escrita aquí se prueba antes.',
+
+    'filter-kind' => 'Tipo',
 ];

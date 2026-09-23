@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use WebxUi\Admin\Http\Controllers\LinkController;
 use WebxUi\Admin\Http\Controllers\LocaleController;
 use WebxUi\Admin\Http\Controllers\ManifestController;
 use WebxUi\Admin\Http\Controllers\NoteController;
@@ -15,6 +16,15 @@ Route::prefix((string) config('webx-admin.api_path'))
     ->name('webx.api.')
     ->group(function (): void {
         Route::get('manifest', ManifestController::class)->name('manifest');
+
+        // What the panel can be asked to link to (§3 of the menu spec). One picker for every
+        // field that chooses a link, so the sections and the permissions behind them are
+        // described once.
+        Route::get('links/sources', [LinkController::class, 'sources'])->name('links.sources');
+        Route::get('links/search', [LinkController::class, 'search'])->name('links.search');
+        Route::post('links/resolve', [LinkController::class, 'resolve'])->name('links.resolve');
+        Route::get('links/routes', [LinkController::class, 'routes'])->name('links.routes');
+
         Route::get('screens/{name}', ScreenController::class)
             ->where('name', '[a-z0-9-]+\.[a-z0-9-]+')
             ->name('screens');

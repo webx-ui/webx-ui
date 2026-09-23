@@ -16,6 +16,13 @@ export {
   type LocalizedValue,
   type LocalizedFieldProps,
 } from './composables/useLocalized'
+export {
+  provideDateLocale,
+  useDateLocale,
+  dateLocaleKey,
+  type DateLocaleSource,
+} from './composables/useDateLocale'
+export type { DateFnsLocale } from './internal/dateLocale'
 export { useElementWidth } from './composables/useElementWidth'
 export { useHoverPointer } from './composables/useHoverPointer'
 export {

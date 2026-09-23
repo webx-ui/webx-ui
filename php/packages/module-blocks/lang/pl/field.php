@@ -30,10 +30,14 @@ return [
     'pick-nothing-allowed' => 'Do „:parent” nie można nic włożyć.',
     'limit-reached' => 'Na tej stronie jest już :count, to limit dla tego bloku',
 
+    'previous' => 'Poprzedni blok',
+    'next' => 'Następny blok',
+
     'preview' => 'Podgląd',
     'open-site' => 'Otwórz na stronie',
     'fullscreen' => 'Pełny ekran',
     'close' => 'Zamknij',
+    'width' => 'Szerokość',
     'width-desktop' => 'Desktop',
     'width-tablet' => 'Tablet',
     'width-phone' => 'Telefon',
