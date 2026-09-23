@@ -59,7 +59,7 @@
         "webx": {
             "module": "admin",
             "npm": {
-                "@webx-ui/core": "^0.32.0",
+                "@webx-ui/core": "^0.32.1",
                 "@webx-ui/module-admin": "^0.14.1",
                 "@webx-ui/tokens": "^0.4.0",
                 "vue": "^3.5.0",

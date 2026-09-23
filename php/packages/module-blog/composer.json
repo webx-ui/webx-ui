@@ -62,7 +62,7 @@
         "webx": {
             "module": "blog",
             "npm": {
-                "@webx-ui/module-blog": "^0.4.4"
+                "@webx-ui/module-blog": "^0.4.5"
             },
             "panel": {
                 "import": "import { blog } from '@webx-ui/module-blog'",
