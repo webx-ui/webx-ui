@@ -29,6 +29,7 @@ use WebxUi\Blocks\Panel\Usage;
 use WebxUi\Blocks\Preview\Preview;
 use WebxUi\Blocks\Rendering\Bundles;
 use WebxUi\Blocks\Rendering\Renderer;
+use WebxUi\Blocks\Schema;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
 
@@ -807,7 +808,7 @@ final class BlockTools
 
     private function isLayout(string $type): bool
     {
-        return in_array($type, ['wx-card', 'wx-tabs', 'wx-tab', 'wx-row', 'wx-col', 'wx-divider', 'wx-text', 'wx-alert'], true);
+        return Schema::isLayout($type);
     }
 
     /**

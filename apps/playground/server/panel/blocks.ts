@@ -314,6 +314,55 @@ const FAQ_STYLES = `.b-faq {
 }
 `
 
+const PUBLICATIONS_TEMPLATE = `<section class="b-publications" data-wx-block="publications">
+    <div class="b-publications__inner">
+        <h2 class="b-publications__title">{{ $title }}</h2>
+
+        @foreach ($items as $item)
+            <article class="b-publications__item">
+                <p class="b-publications__date">{{ $item['shown_date'] }}</p>
+                <h3 class="b-publications__name">{{ $item['title'] }}</h3>
+                <p class="b-publications__text">{{ $item['text'] }}</p>
+                <a class="b-publications__link" href="{{ $item['url'] }}">{{ $item['link_label'] }}</a>
+            </article>
+        @endforeach
+    </div>
+</section>
+`
+
+const PUBLICATIONS_STYLES = `.b-publications__inner {
+    max-width: 48rem;
+    margin: 0 auto;
+    padding: 3rem 1.25rem;
+}
+
+.b-publications__title {
+    margin: 0 0 1.5rem;
+    font-size: 1.75rem;
+}
+
+.b-publications__item {
+    padding: 1.25rem 0;
+    border-bottom: 1px solid #e3e7ef;
+}
+
+.b-publications__date {
+    margin: 0 0 0.25rem;
+    font-size: 0.875rem;
+    color: #7d8494;
+}
+
+.b-publications__name {
+    margin: 0 0 0.5rem;
+    font-size: 1.125rem;
+}
+
+.b-publications__text {
+    margin: 0 0 0.5rem;
+    color: #55617a;
+}
+`
+
 const FORM_TEMPLATE = `<section class="b-form" data-wx-block="form">
     <div class="b-form__inner">
         <h2 class="b-form__title">{{ $title }}</h2>
@@ -609,6 +658,119 @@ export const blockTypes: BlockType[] = [
             title: 'Поддержка по договору',
             text: 'Реагируем за четыре часа в рабочее время и держим сайт обновлённым.',
           },
+        ],
+      },
+    },
+  },
+  {
+    id: 9,
+    slug: 'publications',
+    title: 'Публикации',
+    description: 'Статьи о нас в прессе: список, где у каждой записи свои поля.',
+    icon: 'newspaper',
+    group: 'content',
+    sort: 35,
+    allow: null,
+    allowed_in: null,
+    max_per_entity: null,
+    is_enabled: true,
+    draft: null,
+    published: version(1, '2026-09-23T08:00:00+00:00', null),
+    usage_count: 0,
+    thumbnail: null,
+    created_at: '2026-09-23T08:00:00+00:00',
+    updated_at: '2026-09-23T08:00:00+00:00',
+    content: {
+      /* The list of records a block like this is made of: every item has its own fields, a
+         picture and a file among them, and folds to its title — `#1 · …` — until opened. */
+      schema: [
+        { id: 'title', type: 'wx-input', label: 'Заголовок', localized: true },
+        {
+          id: 'items',
+          type: 'wx-repeater',
+          label: 'Публикации',
+          props: { itemLabel: 'title', addLabel: 'Добавить публикацию' },
+          children: [
+            { id: 'title', type: 'wx-input', label: 'Название', localized: true },
+            { id: 'text', type: 'wx-textarea', label: 'Краткое описание', localized: true },
+            /* Columns inside an item: a row of `wx-col`, two to a line from 640px of the row's
+               own width, three from 768px, one under another below that. */
+            {
+              id: 'dates',
+              type: 'wx-row',
+              props: { gutter: 12 },
+              children: [
+                {
+                  id: 'dates-published',
+                  type: 'wx-col',
+                  props: { sm: 12, md: 8 },
+                  children: [{ id: 'date', type: 'wx-date-picker', label: 'Дата публикации' }],
+                },
+                {
+                  id: 'dates-shown',
+                  type: 'wx-col',
+                  props: { sm: 12, md: 8 },
+                  children: [
+                    { id: 'shown_date', type: 'wx-input', label: 'Дата на сайте', localized: true },
+                  ],
+                },
+                {
+                  id: 'dates-link',
+                  type: 'wx-col',
+                  props: { sm: 12, md: 8 },
+                  children: [
+                    { id: 'link_label', type: 'wx-input', label: 'Текст ссылки', localized: true },
+                  ],
+                },
+              ],
+            },
+            {
+              id: 'sources',
+              type: 'wx-row',
+              props: { gutter: 12 },
+              children: [
+                {
+                  id: 'sources-url',
+                  type: 'wx-col',
+                  props: { sm: 12 },
+                  children: [{ id: 'url', type: 'wx-input', label: 'Адрес статьи' }],
+                },
+                {
+                  id: 'sources-pdf',
+                  type: 'wx-col',
+                  props: { sm: 12 },
+                  children: [{ id: 'pdf', type: 'wx-file', label: 'PDF-документ' }],
+                },
+              ],
+            },
+            { id: 'cover', type: 'wx-media', label: 'Обложка' },
+          ],
+        },
+      ],
+      template: PUBLICATIONS_TEMPLATE,
+      styles: PUBLICATIONS_STYLES,
+      script: null,
+      sample: {
+        title: { ru: 'О нас пишут', en: 'In the press' },
+        items: [
+          publication(
+            'Грибной кофе: как модный напиток помогает мозгу, даёт энергию и снимает воспаление',
+            'Mushroom coffee: how this trending drink can improve our brain health',
+            'Нутрициолог объясняет, что грибы добавляют к утренней чашке и почему это не только мода.',
+            '2023-06-01',
+          ),
+          publication(
+            '«Повара творят чудеса»: куда ходит обедать нутрициолог',
+            '‘The chefs create magic’: where a nutritional therapist goes to eat',
+            'Пять мест, где еда вкусная и при этом не спорит с тем, что советуют клиентам.',
+            '2023-04-12',
+          ),
+          publication(
+            'Что такое холин? Малоизвестное вещество, которое может играть большую роль',
+            'What is choline? Little-known nutrient may play a big role',
+            'Зачем он нужен, где его искать в тарелке и кому стоит обратить на него внимание.',
+            '2023-02-20',
+          ),
         ],
       },
     },
@@ -1177,4 +1339,20 @@ function escape(value: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
+}
+
+/** One item of the publications sample — long titles on purpose, to show where they are cut. */
+function publication(ru: string, en: string, text: string, date: string): Record<string, unknown> {
+  const month = new Date(date).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })
+
+  return {
+    title: { ru, en },
+    text: { ru: text, en: '' },
+    date,
+    shown_date: { ru: month, en: '' },
+    link_label: { ru: 'Читать статью', en: 'Read article' },
+    url: 'https://example.com/press',
+    cover: null,
+    pdf: null,
+  }
 }

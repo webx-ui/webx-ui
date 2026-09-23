@@ -62,7 +62,11 @@ the array — but it is a mutation, and it is the one form that will not survive
 ## What a row is called
 
 `itemLabel` is a key of the item or a function of it, and it names the row twice: in the header
-above its fields, and to a screen reader holding the grip. Without one a row is numbered.
+above its fields, and to a screen reader holding the grip. A key is shown after the position —
+`#2 · Lviv` — because a folded list of similar titles is read by number as often as by name, and
+a long one is cut with an ellipsis rather than wrapped. A key that holds a translated field
+(`{ en: …, ru: … }`) shows the language being edited, else whichever is filled in. A function
+answers for the whole header. Without either a row is its number, `#2`.
 
 A header appears when there is something to put in it — an `itemLabel`, or `collapsible`. Two
 fields and no title need neither, and the demo's second repeater draws no headers at all.
@@ -103,6 +107,7 @@ model: the node's children are the fields of one row, and a `name` inside it is 
 | `newItem`     | `() => T`                                    | `() => ({})`         |
 | `addLabel`    | `string`                                     | `'Add'`              |
 | `removeLabel` | `string`                                     | `'Remove'`           |
+| `dragLabel`   | `string`                                     | `'Reorder'`          |
 | `collapsible` | `boolean`                                    | `false`              |
 | `collapsed`   | `boolean`                                    | `false`              |
 | `min`         | `number`                                     | `0`                  |

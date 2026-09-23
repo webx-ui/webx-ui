@@ -72,6 +72,32 @@ final class ValuesTest extends TestCase
     }
 
     #[Test]
+    public function a_field_in_columns_inside_a_repeater_is_resolved_too(): void
+    {
+        // Columns are layout, and they have ids: named by the bridge like any node, a row
+        // would stop the repeater's walk as if it were a field, and the fields in it would be
+        // nobody's.
+        $this->publish('gallery', '@foreach($items ?? [] as $item)<img src="{{ $item["image"]["url"] ?? "" }}">@endforeach', [], [
+            'schema' => [[
+                'id' => 'items',
+                'type' => 'wx-repeater',
+                'children' => [[
+                    'id' => 'columns',
+                    'type' => 'wx-row',
+                    'children' => [
+                        ['id' => 'left', 'type' => 'wx-col', 'props' => ['md' => 12], 'children' => [['id' => 'image', 'type' => 'wx-picture']]],
+                        ['id' => 'right', 'type' => 'wx-col', 'props' => ['md' => 12], 'children' => [['id' => 'caption', 'type' => 'wx-input']]],
+                    ],
+                ]],
+            ]],
+        ]);
+
+        $html = $this->render([$this->node('gallery', ['items' => [['image' => ['path' => 'one.jpg'], 'caption' => 'x']]])]);
+
+        $this->assertSame('<img src="https://files.example.test/one.jpg">', $html);
+    }
+
+    #[Test]
     public function a_field_inside_a_card_is_resolved_too(): void
     {
         // Layout is walked through: a card holds the block's own fields, not an item's.
