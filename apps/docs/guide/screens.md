@@ -345,6 +345,16 @@ draws the rows, and everything the node puts in `props` (`title`, `itemLabel`, `
 }
 ```
 
+On a screen the rows start **folded** — `collapsed` is on unless the node sets it to `false`:
+a list of records opened all at once is a form a kilometre long, and each header already says
+which record it is (`#1 · …`, from `itemLabel`). A row added now opens anyway. The words the
+core only has in English — add, remove, reorder, the empty text — come from the panel's
+dictionary (`webx-admin::screens.repeater.*`); a node's own `addLabel` and the rest win over it.
+
+Fields of an item can stand in columns: a `wx-row` of `wx-col` among the children, as anywhere
+else on a screen. A column's `sm`/`md` count the width of the row, not of the window, so a
+repeater in a narrow column stacks them and a wide one lays them side by side.
+
 A condition inside a row is read against that row: `{ "when": "hq", "is": true }` on a child asks
 about the item being edited, not about the screen. A type of your own can draw its children the
 same way — `nested: true` on the entry, and the component is handed `node` and `context` on top of

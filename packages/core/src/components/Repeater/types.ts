@@ -15,13 +15,17 @@ export interface RepeaterProps<T extends object = Record<string, unknown>> {
   title?: string
   /**
    * What a row is called in its header and to a screen reader: a key of the item, or a
-   * function. Falls back to the position.
+   * function. A key is shown after the position (`#2 · …`), in the language being edited when
+   * it holds a translated field; a function answers for the whole header. Falls back to the
+   * position.
    */
   itemLabel?: string | ((item: T, index: number) => string)
   /** Builds what `Add` appends. Defaults to an empty object. */
   newItem?: () => T
   addLabel?: string
   removeLabel?: string
+  /** What the grip is called to a screen reader. */
+  dragLabel?: string
   /** Rows fold to their header, so a long form stays readable. */
   collapsible?: boolean
   /** Rows that were already there start folded. Implies `collapsible`. */

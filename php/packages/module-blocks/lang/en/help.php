@@ -68,7 +68,8 @@ return [
         - `wx-gallery`, `wx-files` — several of them, in the order they were dragged into.
           Reach for these rather than a repeater wrapped around a `wx-media`.
         - `wx-repeater` — a list of records. Its `children` are the fields of one record.
-          `props`: `itemLabel`, `min`, `max`.
+          `props`: `itemLabel` (the field that names a row in its header), `min`, `max`,
+          `addLabel`; rows start folded, `collapsed: false` opens them.
         - `wx-blocks` — other blocks inside this one, which is what makes the type a
           container. `props`: `allow` (a list of type slugs), `max`. The template prints it
           with `@blocks('id')`.
