@@ -734,12 +734,15 @@ const formRoot = computed(() =>
  *
  * The cap is the window less the air above and below; the containing block of a sticky grid
  * item is its grid area, which is the whole row, so a short column still stays with a tall one.
+ *
+ * The screen's action bar sticks to the same window and is drawn over this column, so the
+ * room it announces comes off the cap as well, and the gap above it is the one at the top.
  */
 .wx-blocks-host:not(.is-compact) .wx-blocks__side {
   min-width: 0;
   position: sticky;
   top: var(--wx-space-12);
-  max-height: calc(100dvh - var(--wx-space-24));
+  max-height: calc(100dvh - var(--wx-space-24) - var(--wx-action-bar-room, 0px));
   overflow: auto;
 }
 
