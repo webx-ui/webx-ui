@@ -2,15 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useTranslate } from '@webx-ui/module-admin'
 import { useElementWidth, WxSegmented, WxSkeleton } from '@webx-ui/core'
-import {
-  blockElement,
-  fillStage,
-  freezeFrame,
-  mountScript,
-  STAGE_KEY,
-  stageDocument,
-  type FrameBinding,
-} from './frame'
+import { fillStage, freezeFrame, mountScript, stageDocument, type FrameBinding } from './frame'
 
 /**
  * The block as it will stand on the site, at a chosen width: a desktop scaled down to fit the
@@ -152,21 +144,6 @@ function fill(doc: Document): void {
   fillStage(doc, { html: props.html, styles: props.styles })
 }
 
-/**
- * Bring the block into view: on a page of the site it stands under the header, and at a
- * desktop width scaled into a column the header alone can be most of what shows. Done when the
- * page arrives and not on every keystroke — that would take the scroll from the editor.
- */
-function reveal(doc: Document): void {
-  const element = blockElement(doc, STAGE_KEY)
-  const ground = box.value
-
-  if (!element || !ground) return
-
-  const top = element.getBoundingClientRect().top + (doc.defaultView?.scrollY ?? 0)
-  ground.scrollTop = Math.max(0, top * scale.value - 24)
-}
-
 function onLoad(): void {
   release()
 
@@ -190,11 +167,6 @@ function onLoad(): void {
     observer = new Observer(() => measure())
     observer.observe(doc.body)
   }
-
-  if (props.stage) {
-    // The height has to be set before there is anything to scroll to.
-    requestAnimationFrame(() => reveal(doc))
-  }
 }
 
 watch(
@@ -213,17 +185,7 @@ watch(boxWidth, (now, before) => {
   if (now > 0 && before === 0) setTimeout(measure, 50)
 })
 
-/* Another device moves the block down the page — a phone's header is taller — so the block is
-   brought back into view as well. */
-watch(width, () =>
-  setTimeout(() => {
-    measure()
-
-    const doc = frame.value?.contentDocument
-
-    if (props.stage && doc) requestAnimationFrame(() => reveal(doc))
-  }, 50),
-)
+watch(width, () => setTimeout(measure, 50))
 
 onBeforeUnmount(release)
 
@@ -287,11 +249,14 @@ const clipStyle = computed(() => ({
   border-block-end: 1px solid var(--wx-border-muted);
 }
 
+/*
+ * As tall as the page inside, and the panel scrolls — the rule the page preview has (`is-grown`
+ * in BlocksPreview). A window of ours over a page is two scrollbars for one document, and the
+ * inner one cut the site's footer off under a cap nobody could see past.
+ */
 .wx-block-stage__ground {
   padding: var(--wx-space-12);
   background: var(--wx-bg-subtle);
-  overflow: auto;
-  max-height: 62vh;
 }
 
 .wx-block-stage__clip {
