@@ -35,6 +35,20 @@ final class PanelTest extends TestCase
         $this->assertSame(['content', 'layout', 'media'], $module['meta']['groups']);
         $this->assertTrue($module['meta']['editing']);
         $this->assertSame(['swiper'], $module['meta']['provides']);
+        $this->assertNull($module['meta']['stage']);
+    }
+
+    #[Test]
+    public function the_stage_is_named_to_the_thumbnails_once_the_site_has_a_layout(): void
+    {
+        $this->app['config']->set('webx-blocks.layout', 'layout');
+
+        $response = $this->actingAs($this->editor(), 'cms')->getJson('/api/cms/manifest')->assertOk();
+
+        $module = $this->firstWhere($response->json('data.modules'), 'id', 'blocks');
+
+        $this->assertNotNull($module);
+        $this->assertSame('/_preview/block-stage', $module['meta']['stage']);
     }
 
     #[Test]
