@@ -304,6 +304,10 @@ route runs through `preview.middleware` and needs an editor's session with `bloc
 Each file of a type is written with the other files at hand, and the editor offers what they
 already say as you type:
 
+<!-- v-pre: the mustaches below are Blade, and Vue would try to read them. -->
+
+::: v-pre
+
 - **Template** — the schema's fields straight after `{{` or `{!!` (the echo is written whole,
   closing braces included), and after any `$`, together with `@foreach` variables, `$block` and
   `$entity`; the keys of a picked file (`$image['url']`) and of a repeater's item; the classes the
@@ -313,6 +317,8 @@ already say as you type:
   uses, the ones nothing styles yet first.
 - **Fields** — the keys a node does not have yet, each with its value (`"label": ""`,
   `"props": {}`), and for `type` every type the panel has registered, the modules' included.
+
+:::
 
 ## Styles and scripts on the site
 
