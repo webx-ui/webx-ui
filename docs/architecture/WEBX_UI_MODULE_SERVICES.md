@@ -501,6 +501,33 @@ RubricDialog и ArticleRubrics; порядок записей в списке п
 добавляет рубрике поле, оно сохраняется.
 ```
 
+### K3 — выпуск этапа 1
+
+```
+Сессия K3 из §6 WEBX_UI_MODULE_SERVICES.md: выпуск общих категорий и блога на них.
+
+Прочитать: §§3.8,6 спеки; CLAUDE.md §5 — релиз, одобрение CI релизного PR, ручной php-split;
+CLAUDE.md §4 про копии и симлинки в webx-cms.local и про тест соседнего пакета, который видит
+module-admin из dist; «Минорный релиз module-blocks на сайте» в CLAUDE.md §5 — тот же случай для
+module-admin и module-blog; память webx-cms-local-demo-site и webx-cms-homelab-deploy.
+
+Сделать: погасить dev-серверы; pnpm --filter @webx-ui/module-admin build до тестов соседей; гейт
+целиком (npm и php/ на PHP 8.4); scripts/php-smoke.sh против MariaDB — новая миграция блога и
+макросы категорий на настоящей СУБД; PR, мерж, релизный PR, проверка версий в npm и тега php.
+
+Демо: webx-cms.local — scripts/link-panel.sh, composer update "webx-ui/*", php artisan migrate,
+npx vite build; хомлаб — registry, composer update "webx-ui/*", подъём диапазонов
+@webx-ui/module-admin и @webx-ui/module-blog в package.json, npm ls @webx-ui/module-admin —
+ровно одна версия, остальное deduped; коммит и пуш в Gitea. На webx-cms.local оставить патч
+сайта с полем у рубрики — это демо полей проекта до появления услуг.
+
+Проверить живьём на обоих: рубрики демо на месте, у статей прежний порядок рубрик и прежняя
+главная в крошках; рубрика открывается страницей, SEO и изображение сохраняются; поле из патча
+сохраняется и печатается на странице рубрики; страница рубрики и список рубрик на телефоне.
+
+Не делать: module-services — это сессия A.
+```
+
 ### A — пакет и публичная часть
 
 ```
@@ -552,11 +579,39 @@ apps/docs/guide/services.md (включая патч с полем проект�
 
 ### D — выпуск
 
-Обычный порядок (CLAUDE.md §5): гейт, PR, релизный PR; первая публикация
-`@webx-ui/module-services` вручную из `changeset-release/main` с проверкой диапазонов в тарболе;
-зеркало `webx-ui/module-services` на GitHub и Packagist; php-тег и split; оба демо, включая
-`scripts/packages.mjs` в `webx-cms.local` и патч с полем «Цена от»; проверка на настоящем
-телефоне.
+```
+Сессия D из §6 WEBX_UI_MODULE_SERVICES.md: выпуск module-services и оба демо.
+
+Прочитать: §§4.11,4.12,6 спеки; CLAUDE.md §5 целиком — особенно «Первую версию нового
+npm-пакета публикует человек» и «Ручная публикация замораживает диапазоны»; docs/architecture/
+WEBX_UI_PHP_RELEASE.md — новое зеркало и Packagist; память webx-cms-local-demo-site и
+webx-cms-homelab-deploy.
+
+До релиза (руками пользователя, сессия только напоминает и проверяет): репозиторий-зеркало
+webx-ui/module-services на GitHub.
+
+Сделать: погасить dev-серверы; гейт целиком (npm и php/ на PHP 8.4); scripts/php-smoke.sh против
+MariaDB; PR, мерж; дождаться, пока Release-воркфлоу обновит релизный PR, одобрить его прогон;
+снять changeset-release/main в отдельный worktree (не в symlink-node_modules — CLAUDE.md §4),
+pnpm install, собрать dist, pnpm pack @webx-ui/module-services и проверить диапазоны
+@webx-ui/* в package/package.json тарбола. Первую публикацию делает пользователь из своего
+терминала с 2FA (pnpm --filter @webx-ui/module-services publish --access public --no-git-checks),
+затем Trusted Publishing на npmjs.com (webx-ui / webx-ui / release.yml); после этого мерж
+релизного PR. Проверить npm view @webx-ui/module-services version и тег php-v<версия>; подать
+webx-ui/module-services на Packagist.
+
+Демо: webx-cms.local — webx-ui/module-services и @webx-ui/module-services в scripts/packages.mjs,
+scripts/link-panel.sh, composer require, webx:panel --sync, migrate; демо-услуги — не
+webx:demo --force (он сеет второй набор всех модулей, а выбора модуля у команды нет): если демо
+сайта засеяно этой командой, то webx:demo --remove и webx:demo заново, иначе наполнить через
+MCP services_*; патч сайта с полем «Цена от» (§3.4), npx vite build; хомлаб —
+то же в режиме registry, npm ls @webx-ui/module-admin — одна версия, коммит и пуш в Gitea.
+
+Проверить живьём на обоих: /services, страница категории и услуги; услуга в двух категориях
+стоит в каждой на своём месте; крошки через главную категорию; «Цена от» из патча в форме и на
+странице; услуги в /sitemap.xml, черновик — нет; Service в JSON-LD ссылается на Organization;
+список с перетаскиванием и редактор на настоящем телефоне. Rich Results Test на странице услуги.
+```
 
 ## 7. Отложено
 

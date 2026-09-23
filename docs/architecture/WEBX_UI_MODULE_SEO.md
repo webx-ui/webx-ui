@@ -637,6 +637,29 @@ BreadcrumbList совпадает с видимыми крошками.
 
 #### S3 — выпуск
 
-Обычный порядок (§15, CLAUDE.md §5): гейт, PR, релизный PR, php-тег, оба демо. На хомлабе —
-отправить карту в Search Console и прогнать страницу статьи через Rich Results Test: это
-единственная проверка разметки чужим валидатором, а не нашим тестом.
+```
+Сессия S3 из §17.8 WEBX_UI_MODULE_SEO.md: выпуск сопровождения сущностей и оба демо.
+
+Прочитать: §§15,17 спеки; CLAUDE.md §5 — релиз, ruleset на main, одобрение CI релизного PR,
+ручной php-split, если npm-джоба упала; docs/architecture/WEBX_UI_PHP_RELEASE.md; память
+webx-cms-local-demo-site и webx-cms-homelab-deploy — как устроены оба демо.
+
+Сделать: погасить dev-серверы и прогнать гейт целиком (pnpm build && pnpm typecheck && pnpm lint
+&& npx prettier --check . && pnpm test && pnpm docs:build; из php/ — composer lint && composer
+analyse && composer test на PHP 8.4); scripts/php-smoke.sh; PR, дождаться зелёного чека и свежести
+ветки, мерж; релизный PR «chore: version packages» — одобрить прогон, мерж; проверить
+npm view @webx-ui/module-seo version и тег php-v<версия>, при пропущенном split —
+gh workflow run php-split.yml --ref main -f tag=v<версия>.
+
+Демо: webx-cms.local — scripts/link-panel.sh, composer update "webx-ui/*", npx vite build в сайте,
+webx:seo:sitemap; хомлаб — режим registry в scripts/packages.mjs, composer update "webx-ui/*",
+коммит и пуш в Gitea (ночной прогон релиз не привезёт).
+
+Проверить живьём на обоих: /sitemap.xml — индекс и файлы по типам, черновика и тега без правила
+нет; строка Sitemap: в /robots.txt; исходник статьи — canonical, alternate на все языки,
+BreadcrumbList совпадает с видимыми крошками, BlogPosting; карточка «Карта сайта» в разделе SEO,
+в том числе на настоящем телефоне. На хомлабе — отправить карту в Search Console и прогнать
+статью через Rich Results Test: это единственная проверка разметки чужим валидатором.
+
+Не делать: ничего из WEBX_UI_MODULE_SERVICES.md — этап 1 начинается отдельной сессией K1.
+```
