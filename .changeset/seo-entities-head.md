@@ -21,3 +21,6 @@ hreflang, breadcrumbs and schema.org for entities, and the sitemap in the panel.
 - `webx-ui/module-blog`: `Article` (feed → main rubric → article, a `BlogPosting`), `Rubric` and
   `Tag` (feed → it) implement the contracts; a rubric page pushes an `ItemList` of its articles.
   The fallback views print the crumbs; the article's rubric link above the title is now its trail.
+- `webx-ui/site`: the skeleton no longer ships Laravel's static `public/robots.txt`. The web
+  server hands that file over before the application is asked, so on a site made from the
+  skeleton the `seo.robots-txt` setting and the `Sitemap:` line never reached a visitor.
