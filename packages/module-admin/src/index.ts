@@ -1,3 +1,9 @@
+// The screen renderer's own styles — a column's stack, the placeholder of an unknown type —
+// ride with the panel's: every site imports this package's stylesheet and none imports the
+// schema's, so a rule kept only there reached the playground (which reads the sources) and no
+// site at all.
+import '@webx-ui/schema/style.css'
+
 export { createAdmin, type Admin, type AdminPlugin, type CreateAdminOptions } from './createAdmin'
 export {
   createAdminContext,
