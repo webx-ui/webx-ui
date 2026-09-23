@@ -33,13 +33,19 @@ import {
   WxText,
   WxTextarea,
 } from '@webx-ui/core'
-import { WxScreenRenderer, type ScreenModel } from '@webx-ui/schema'
+import { coreTypes, WxScreenRenderer, type ScreenModel } from '@webx-ui/schema'
 import { createBlocksApi } from './api'
 import BlockChecks from './BlockChecks.vue'
 import BlockHistory from './BlockHistory.vue'
 import BlockStage from './BlockStage.vue'
 import { clone } from './content'
 import { useBlocksMessages } from './i18n'
+import {
+  completions,
+  schemaCompletions,
+  stylesCompletions,
+  templateCompletions,
+} from './completions'
 import { lintBlock } from './lint'
 import { formSchema, groupLabel, usageWords } from './schema'
 import type { BlockContent, BlocksMeta, BlockType, BlockUsage, PublishRefusal } from './types'
@@ -129,6 +135,20 @@ const current = computed(() => JSON.stringify({ settings, content }))
 const dirty = computed(() => snapshot.value !== '' && current.value !== snapshot.value)
 
 const lints = computed(() => lintBlock(settings.slug, content, t))
+
+/* Built once: the sources read the other files of the type when asked, not when made. */
+const assist = {
+  template: [
+    completions(
+      templateCompletions({ schema: () => content.schema, styles: () => content.styles }),
+    ),
+  ],
+  styles: [
+    completions(stylesCompletions({ slug: () => settings.slug, template: () => content.template })),
+  ],
+  // The renderer's own types under the panel's, the same merge the sample form is drawn with.
+  schema: [completions(schemaCompletions({ types: () => ({ ...coreTypes, ...context.types }) }))],
+}
 
 const groupOptions = computed(() => {
   const ids = [...meta.value.groups]
@@ -575,6 +595,7 @@ const actions = computed<ScreenAction[]>(() =>
                 ref="templateEditor"
                 v-model="content.template"
                 language="php"
+                :extensions="assist.template"
                 :readonly="!canManage"
                 min-height="340px"
                 max-height="70vh"
@@ -606,6 +627,7 @@ const actions = computed<ScreenAction[]>(() =>
               <wx-code-editor
                 v-model="content.styles"
                 language="css"
+                :extensions="assist.styles"
                 :readonly="!canManage"
                 min-height="340px"
                 max-height="70vh"
@@ -665,6 +687,7 @@ const actions = computed<ScreenAction[]>(() =>
                 <wx-code-editor
                   :model-value="schemaText"
                   language="json"
+                  :extensions="assist.schema"
                   lint
                   :readonly="!canManage"
                   min-height="340px"

@@ -468,7 +468,8 @@ defineExpose({
 
 /* Tooltips and the search panel are portalled inside the editor, so they inherit tokens. */
 .wx-code-editor :deep(.cm-tooltip) {
-  background: var(--wx-bg-overlay);
+  /* The surface a popover stands on; `--wx-bg-overlay` is the dimming behind a dialog. */
+  background: var(--wx-bg-surface);
   border: 1px solid var(--wx-border-default);
   border-radius: var(--wx-radius-sm);
   box-shadow: var(--wx-shadow-md);
@@ -479,6 +480,42 @@ defineExpose({
 
 .wx-code-editor :deep(.cm-tooltip-lint) {
   padding: var(--wx-space-4) 0;
+}
+
+/* The list an `autocompletion()` passed through `extensions` opens. */
+.wx-code-editor :deep(.cm-tooltip-autocomplete > ul) {
+  max-height: 16em;
+  padding: var(--wx-space-4) 0;
+  font-family: var(--wx-font-family-mono);
+}
+
+.wx-code-editor :deep(.cm-tooltip-autocomplete > ul > li) {
+  display: flex;
+  gap: var(--wx-space-12);
+  align-items: baseline;
+  padding: var(--wx-space-2) var(--wx-space-8);
+}
+
+.wx-code-editor :deep(.cm-tooltip-autocomplete > ul > li[aria-selected]) {
+  background: var(--wx-color-primary-soft);
+  color: var(--wx-text-default);
+}
+
+.wx-code-editor :deep(.cm-completionMatchedText) {
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.wx-code-editor :deep(.cm-completionDetail) {
+  margin-left: auto;
+  font-style: normal;
+  font-family: var(--wx-font-family-sans);
+  color: var(--wx-text-muted);
+}
+
+.wx-code-editor :deep(.cm-completionInfo) {
+  padding: var(--wx-space-6) var(--wx-space-8);
+  max-width: 320px;
 }
 
 .wx-code-editor :deep(.cm-diagnostic) {

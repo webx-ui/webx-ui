@@ -463,6 +463,15 @@ importers:
 
   packages/module-blocks:
     dependencies:
+      '@codemirror/autocomplete':
+        specifier: ^6.20.3
+        version: 6.20.3
+      '@codemirror/state':
+        specifier: ^6.7.4
+        version: 6.7.4
+      '@codemirror/view':
+        specifier: ^6.43.11
+        version: 6.43.11
       '@webx-ui/core':
         specifier: workspace:^
         version: link:../core
