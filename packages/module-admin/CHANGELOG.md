@@ -1,5 +1,13 @@
 # @webx-ui/admin
 
+## 0.14.2
+
+### Patch Changes
+
+- Updated dependencies [b965650]
+- Updated dependencies [7bdeb63]
+  - @webx-ui/schema@0.5.0
+
 ## 0.14.1
 
 ### Patch Changes
