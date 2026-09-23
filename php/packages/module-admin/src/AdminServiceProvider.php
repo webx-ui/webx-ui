@@ -123,6 +123,9 @@ class AdminServiceProvider extends ServiceProvider
             // The address part of a category (`categoryLinks()` modules): drawn with the module's
             // prefix in front of it by the panel, checked for its shape here.
             $types->register('wx-category-slug', new SlugType);
+            // The same for a record of a module with a flat prefix (a service): one field for
+            // every module after the blog, rather than a `wx-<module>-slug` in each.
+            $types->register('wx-slug', new SlugType);
             // The categories a record is in. Which table is the node's `source`, registered by
             // the module that owns it — the same string the panel asks for the list at.
             $types->register('wx-categories', new CategoriesType($app->make(CategorySources::class)));

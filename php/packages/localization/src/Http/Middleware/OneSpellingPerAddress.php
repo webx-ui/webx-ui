@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace WebxUi\Blog\Http\Middleware;
+namespace WebxUi\Localization\Http\Middleware;
 
 use Closure;
 use Illuminate\Contracts\Config\Repository as Config;
@@ -14,19 +14,22 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Localization\Locales;
 
 /**
- * The language prefix in front of the feed, held to the same rule as every other address.
+ * The language prefix in front of a module's own route, held to the same rule as every other
+ * address.
  *
- * The feed and the RSS are ordinary routes, not registry rows, so the resolver never sees them —
- * and a route declared as `{webxLocale}/blog` matches `anything/blog`. Two things follow, and
- * both are what the resolver does for everybody else (§8.2):
+ * A module's list page — the feed of the blog, the index of the services — is an ordinary route,
+ * not a registry row, so the resolver never sees it; and a route declared as `{webxLocale}/blog`
+ * matches `anything/blog`. Two things follow, and both are what the resolver does for everybody
+ * else (§8.2 of the routing spec):
  *
- * - a first segment that is not one of this site's languages is a 404, not the English feed
+ * - a first segment that is not one of this site's languages is a 404, not the English page
  *   under an address nobody chose;
  * - the default language's prefix, on a site that does not use one, is a 301 to the address
  *   without it, rather than a second spelling of the same page sitting in the index.
  *
  * It only stands in front of the prefixed copy of each route: without a prefix there is nothing
- * to check.
+ * to check. It lives here rather than in the blog, which had it first, because the second module
+ * with a list page needed exactly the same thing.
  */
 class OneSpellingPerAddress
 {

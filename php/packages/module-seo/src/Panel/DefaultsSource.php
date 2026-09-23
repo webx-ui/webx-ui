@@ -83,6 +83,7 @@ final class DefaultsSource implements SeoSource
         $organisation = ['@context' => 'https://schema.org', '@type' => 'Organization', 'name' => $name];
 
         if ($home !== '') {
+            $organisation['@id'] = self::organizationIdOf($home);
             $organisation['url'] = $home;
         }
 
@@ -105,6 +106,40 @@ final class DefaultsSource implements SeoSource
         }
 
         return $blocks;
+    }
+
+    /**
+     * What another block points at when it means this site's organisation — a `Service` naming
+     * its `provider`, say — or null when there is no Organization block to point at.
+     *
+     * A reference rather than a copy of the fields: two copies of the name and the logo are two
+     * things to keep in step, and a validator reads `{"@id": …}` as the block printed beside it.
+     * Null when the block is not printed (no name, no address of the site), because a reference
+     * to nothing is a warning in every validator.
+     */
+    public function organizationId(?string $locale = null): ?string
+    {
+        if (! $this->container->bound(Settings::class)) {
+            return null;
+        }
+
+        $home = (string) $this->config->get('app.url', '');
+
+        if ($home === '') {
+            return null;
+        }
+
+        /** @var Settings $settings */
+        $settings = $this->container->make(Settings::class);
+        $name = $this->text($settings->get('seo.org-name', null, $locale))
+            ?? $this->text($settings->get('general.project-name', null, $locale));
+
+        return $name === null ? null : self::organizationIdOf($home);
+    }
+
+    private static function organizationIdOf(string $home): string
+    {
+        return rtrim($home, '/').'/#organization';
     }
 
     /**
