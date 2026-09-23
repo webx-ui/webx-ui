@@ -6,6 +6,8 @@ return [
     'unknown' => 'Экрана с именем :name нет.',
     'row' => 'Строка :number: :message',
     'row-shape' => 'Эта строка не набор полей.',
+    // The card a module's screen keeps for the fields a project patches in (`project-fields`).
+    'project-fields' => 'Дополнительно',
     // The words of a list of records on a described screen; the core has English only.
     'repeater' => [
         'add' => 'Добавить',

@@ -148,6 +148,12 @@
                   "help": "trans::webx-blog::screen.related-help"
                 }
               ]
+            },
+            {
+              "id": "project-fields",
+              "type": "wx-card",
+              "label": "trans::webx-admin::screens.project-fields",
+              "children": []
             }
           ]
         },

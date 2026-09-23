@@ -373,6 +373,15 @@ icon="plus">` когда-то компилировался, проходил typ
   цепочке предков такой элемент виден как узел без классов; `document.querySelector('.wx-list-screen')`
   отвечает `null`. Тестами не ловится — jsdom ведёт себя так же и утверждения про содержимое
   проходят.
+- **Общий код над моделью «какой-то категории» Larastan и Eloquent видят хуже, чем кажется.**
+  Три грабли из `WebxUi\Admin\Categories`, все молчаливые. Скоуп на `Builder<Model&Category>`
+  Larastan не находит (`withItemCount()` — «undefined method»): у интерфейса нет `scope*`, —
+  вызывать `->scopes(['withItemCount', 'matching' => [$term]])`, это настоящий метод.
+  `method_exists($query, 'withTrashed')` — всегда `false`: это макрос `SoftDeletingScope`, и
+  восстановление из корзины отвечало 404; нужен `withoutGlobalScope(SoftDeletingScope::class)`.
+  И `$this` финального класса PHPStan не считает тем `$this`, что обещает абстрактный метод
+  трейта: два одинаковых `BelongsToMany<covariant Model, $this>` — «should be compatible».
+  Фикстура `Section` поэтому не `final`.
 - **Тест соседнего пакета видит `module-admin` из `dist`, а не из исходников.** Алиасы в
   `vitest.config.ts` есть только у `@webx-ui/tokens`, поэтому новый компонент, добавленный в
   `module-admin`, приезжает в тесты `module-pages`/`module-blog`/`module-inbox` не раньше, чем
