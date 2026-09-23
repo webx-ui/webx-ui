@@ -12,6 +12,8 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use WebxUi\Admin\Backups\Backups;
+use WebxUi\Admin\Categories\CategoriesType;
+use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Console\BackupCommand;
 use WebxUi\Admin\Console\BootCommand;
 use WebxUi\Admin\Console\DemoCommand;
@@ -76,6 +78,9 @@ class AdminServiceProvider extends ServiceProvider
         // the two above: content modules register into it from their own providers.
         $this->app->singleton(LinkSources::class);
 
+        // Which model's categories a `wx-categories` field is about, by the path they answer at.
+        $this->app->singleton(CategorySources::class);
+
         // The language prefix, when there is an address registry to ask. Behind `class_exists`
         // because the frame does not require `webx-ui/routing` — a panel of settings and
         // administrators has no addresses at all — and a path is then handed on as written.
@@ -118,6 +123,9 @@ class AdminServiceProvider extends ServiceProvider
             // The address part of a category (`categoryLinks()` modules): drawn with the module's
             // prefix in front of it by the panel, checked for its shape here.
             $types->register('wx-category-slug', new SlugType);
+            // The categories a record is in. Which table is the node's `source`, registered by
+            // the module that owns it — the same string the panel asks for the list at.
+            $types->register('wx-categories', new CategoriesType($app->make(CategorySources::class)));
             $types->register('wx-cascader', new CascaderType);
             $types->register('wx-tree-select', new TreeSelectType);
             $types->register('wx-transfer', new OptionListType('items'));

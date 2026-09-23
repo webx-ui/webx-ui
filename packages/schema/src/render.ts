@@ -1,7 +1,7 @@
-import { defineComponent, h, type PropType, type VNode } from 'vue'
+import { defineComponent, h, type InjectionKey, type PropType, type Ref, type VNode } from 'vue'
 import { WxFormItem } from '@webx-ui/core'
 import { isVisible } from './visible'
-import type { ScreenModel, ScreenNode, Translate, TypeRegistry } from './types'
+import type { ScreenModel, ScreenNode, Translate, TypeRegistry, ValidationErrors } from './types'
 
 export const TRANS_MARKER = 'trans::'
 
@@ -12,6 +12,19 @@ export interface RenderContext {
   update: (name: string, value: unknown) => void
   translate: Translate
   can: (permission: string) => boolean
+}
+
+/**
+ * The refusal of the last save, for the nodes that have to act on it rather than only draw it:
+ * the tabs, which open the one the failing field is on. Fields draw theirs through `WxForm`.
+ */
+export const screenErrorsKey: InjectionKey<Ref<ValidationErrors | undefined>> =
+  Symbol('wx-screen-errors')
+
+/** Whether a node would draw anything at all for this administrator and these values. */
+function shown(node: ScreenNode, context: RenderContext): boolean {
+  if (node.can && !context.can(node.can)) return false
+  return isVisible(node, context.model)
 }
 
 /** Without a dictionary the key itself shows — honest, and easy to spot in a screenshot. */
@@ -66,11 +79,25 @@ function childSlots(
 }
 
 export function renderNode(node: ScreenNode, context: RenderContext): VNode | null {
-  if (node.can && !context.can(node.can)) return null
-  if (!isVisible(node, context.model)) return null
+  if (!shown(node, context)) return null
 
   const entry = context.types[node.type]
   if (!entry) return renderUnknown(node)
+
+  /*
+   * A container with nothing in it is not drawn. A screen declares the card the fields of a
+   * project go into (`project-fields`) so that a patch knows where to stand, and on every site
+   * that patches nothing it was an empty card with a heading — a promise of fields that are not
+   * there. Only a container that has children to lose: one described without any is a component
+   * that draws itself.
+   */
+  if (
+    entry.kind === 'layout' &&
+    node.children !== undefined &&
+    !node.children.some((child) => shown(child, context))
+  ) {
+    return null
+  }
 
   const { translate } = context
   const props: Record<string, unknown> = {
