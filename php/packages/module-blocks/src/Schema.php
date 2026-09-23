@@ -17,6 +17,14 @@ use WebxUi\Admin\Screens\Tree;
  */
 final class Schema
 {
+    /** The types that arrange fields or explain them, and hold no value of their own. */
+    public const LAYOUT = ['wx-card', 'wx-tabs', 'wx-tab', 'wx-row', 'wx-col', 'wx-divider', 'wx-text', 'wx-alert'];
+
+    public static function isLayout(string $type): bool
+    {
+        return in_array($type, self::LAYOUT, true);
+    }
+
     /**
      * The nodes a block's own values are keyed by, by id.
      *
@@ -76,7 +84,9 @@ final class Schema
         $normalized = [];
 
         foreach ($nodes as $node) {
-            if (! isset($node['name']) && isset($node['id'])) {
+            // Layout keeps its id and gets no name: a named node is a field to the walk, and a
+            // row of columns inside a repeater would otherwise hide every field in it.
+            if (! isset($node['name']) && isset($node['id']) && ! self::isLayout((string) ($node['type'] ?? ''))) {
                 $node['name'] = $node['id'];
             }
 

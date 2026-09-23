@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
+import { ref } from 'vue'
+import { localesKey } from '../../composables/useLocalized'
 import WxRepeater from './Repeater.vue'
 
 interface Office {
@@ -104,13 +106,30 @@ describe('WxRepeater', () => {
   })
 
   it('names a row by a key of the item, and by its position without one', () => {
-    expect(repeater({ itemLabel: 'city' }).get('.wx-repeater__title').text()).toBe('Kyiv')
+    expect(repeater({ itemLabel: 'city' }).get('.wx-repeater__title').text()).toBe('#1 · Kyiv')
     expect(
       repeater({ itemLabel: () => 'Office' })
         .get('.wx-repeater__title')
         .text(),
     ).toBe('Office')
-    expect(repeater({ collapsible: true }).get('.wx-repeater__title').text()).toBe('1')
+    expect(repeater({ collapsible: true }).get('.wx-repeater__title').text()).toBe('#1')
+  })
+
+  it('names a row by a translated field in the language being edited, else any filled in', () => {
+    const wrapper = mount(WxRepeater, {
+      props: {
+        itemLabel: 'title',
+        modelValue: [{ title: { en: 'Coffee', ru: 'Кофе' } }, { title: { en: '', ru: 'Чай' } }],
+      },
+      global: {
+        provide: { [localesKey as symbol]: { list: ref([]), active: ref('en') } },
+      },
+    })
+
+    expect(wrapper.findAll('.wx-repeater__title').map((one) => one.text())).toEqual([
+      '#1 · Coffee',
+      '#2 · Чай',
+    ])
   })
 
   it('folds a row and unfolds it again', async () => {
@@ -145,7 +164,7 @@ describe('WxRepeater', () => {
     await removeButton(wrapper, 0).trigger('click')
 
     const head = wrapper.findAll('.wx-repeater__head')[0]!
-    expect(head.text()).toBe('Lviv')
+    expect(head.text()).toBe('#1 · Lviv')
     expect(head.attributes('aria-expanded')).toBe('false')
   })
 
