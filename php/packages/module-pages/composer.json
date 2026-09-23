@@ -62,7 +62,7 @@
         "webx": {
             "module": "pages",
             "npm": {
-                "@webx-ui/module-pages": "^0.3.13"
+                "@webx-ui/module-pages": "^0.3.14"
             },
             "panel": {
                 "import": "import { pages } from '@webx-ui/module-pages'",
