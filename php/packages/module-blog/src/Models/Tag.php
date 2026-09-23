@@ -9,9 +9,12 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
+use WebxUi\Blog\Seo\Trail;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
+use WebxUi\Seo\Contracts\Crumb;
+use WebxUi\Seo\Contracts\HasBreadcrumbs;
 
 /**
  * A tag: one word about an article, made from the article form and sorted out later (§2.8).
@@ -31,7 +34,7 @@ use WebxUi\Routing\HasUrl;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Tag extends Model implements Visible
+class Tag extends Model implements HasBreadcrumbs, Visible
 {
     use HasTranslations;
     use HasUrl;
@@ -78,6 +81,16 @@ class Tag extends Model implements Visible
     public function isVisible(?string $locale = null): bool
     {
         return true;
+    }
+
+    /**
+     * Feed → the tag (§17.5 of the SEO spec).
+     *
+     * @return list<Crumb>
+     */
+    public function breadcrumbs(string $locale): array
+    {
+        return Trail::of($locale, new Crumb((string) $this->getTranslation('title', $locale), $this->url($locale)));
     }
 
     /**

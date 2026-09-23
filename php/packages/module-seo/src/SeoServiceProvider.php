@@ -24,6 +24,8 @@ use WebxUi\Seo\Panel\SeoModule;
 use WebxUi\Seo\Panel\SeoRules;
 use WebxUi\Seo\Panel\UrlMatcher;
 use WebxUi\Seo\Panel\UrlRuleSource;
+use WebxUi\Seo\Rendering\Alternates;
+use WebxUi\Seo\Rendering\Breadcrumbs;
 use WebxUi\Seo\Rendering\EntitySource;
 use WebxUi\Seo\Rendering\Seo;
 use WebxUi\Seo\Rendering\SeoSources;
@@ -51,6 +53,8 @@ class SeoServiceProvider extends ServiceProvider
         $this->app->singleton(SeoRules::class);
         $this->app->singleton(UrlMatcher::class);
         $this->app->singleton(Seo::class);
+        $this->app->singleton(Alternates::class);
+        $this->app->singleton(Breadcrumbs::class);
         $this->app->singleton(Sitemap::class);
         $this->app->singleton(SitemapRoutes::class);
     }

@@ -18,6 +18,8 @@ use WebxUi\NestedSet\HasNestedSet;
 use WebxUi\Pages\Exceptions\PagesException;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
+use WebxUi\Seo\Contracts\Crumb;
+use WebxUi\Seo\Contracts\HasBreadcrumbs;
 use WebxUi\Seo\HasSeo;
 
 /**
@@ -46,7 +48,7 @@ use WebxUi\Seo\HasSeo;
  * @property int $depth
  * @property int|null $parent_id
  */
-class Page extends Model implements Visible
+class Page extends Model implements HasBreadcrumbs, Visible
 {
     use HasBlocks;
     use HasDraft;
@@ -187,6 +189,35 @@ class Page extends Model implements Visible
     public function scopeVisible(Builder $query, ?string $locale = null): Builder
     {
         return $query->whereNotNull($this->qualifyColumn($this->publishedAtColumn()));
+    }
+
+    /**
+     * The pages above this one in the tree, then this one — the home left out, because
+     * `module-seo` puts the site's home in front of every trail itself (§17.5 of the SEO spec).
+     *
+     * An ancestor that is not on the site drops out rather than becoming a link to a 404: a
+     * published page under a draft is reachable, its draft parent is not. The home page has no
+     * trail at all.
+     *
+     * @return list<Crumb>
+     */
+    public function breadcrumbs(string $locale): array
+    {
+        if ($this->isRoot() || $this->isDetached()) {
+            return [];
+        }
+
+        $crumbs = [];
+
+        foreach ($this->pathFromRoot() as $node) {
+            if ($node->isRoot() || (! $node->is($this) && ! $node->isVisible($locale))) {
+                continue;
+            }
+
+            $crumbs[] = new Crumb((string) $node->getTranslation('title', $locale), $node->url($locale));
+        }
+
+        return $crumbs;
     }
 
     /**

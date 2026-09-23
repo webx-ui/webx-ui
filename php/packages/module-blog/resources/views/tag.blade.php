@@ -16,6 +16,9 @@
         @endif
     </x-slot:head>
 
+    {{-- From the same list as the BreadcrumbList in the <head>. --}}
+    <x-webx-seo::breadcrumbs :for="$tag" />
+
     <header>
         <h1>{{ $tag->title }}</h1>
     </header>

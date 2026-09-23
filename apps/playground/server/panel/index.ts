@@ -1586,6 +1586,74 @@ function checkMenuKey(key: string, current: string | null): void {
   }
 }
 
+/*
+ * The SEO section, as far as the screens need it to be drawn: no rules, no redirects, no moves,
+ * and a sitemap counted from what the fixtures have published. The map's own verdicts — noindex,
+ * a canonical elsewhere — live on the server and are tested there; here the card only has to
+ * have numbers to show.
+ */
+const emptyPage = {
+  data: [],
+  meta: { current_page: 1, last_page: 1, per_page: 20, total: 0, from: null, to: null },
+}
+let sitemapBuiltAt = new Date().toISOString()
+
+function sitemapStatus(): unknown {
+  const now = Date.now()
+  const page = [...pages.values()].filter((record) => record.row.published_at !== null).length
+  const article = articles.filter(
+    (record) =>
+      record.deleted_at === null &&
+      record.published_at !== null &&
+      Date.parse(record.published_at) <= now,
+  ).length
+
+  return {
+    data: {
+      enabled: true,
+      url: 'http://localhost:5174/sitemap.xml',
+      built_at: sitemapBuiltAt,
+      files: { page, article, rubric: rubrics.length, routes: 1 },
+      total: page + article + rubrics.length + 1,
+      excluded: { noindex: tags.length, canonical: 0 },
+    },
+  }
+}
+
+on('GET', '/seo/urls', () => emptyPage)
+on('GET', '/seo/redirects', () => emptyPage)
+on('GET', '/seo/aliases', () => emptyPage)
+on('GET', '/seo/sitemap', () => sitemapStatus())
+on('POST', '/seo/sitemap', () => {
+  sitemapBuiltAt = new Date().toISOString()
+
+  return sitemapStatus()
+})
+on('POST', '/seo/test-url', ({ body }) => {
+  const url = String((body as { url?: unknown }).url ?? '/')
+
+  return {
+    data: {
+      url,
+      redirect: null,
+      route: null,
+      matched: null,
+      chain: [],
+      seo: {
+        title: null,
+        h1: null,
+        description: null,
+        keywords: null,
+        canonical: url,
+        robots: null,
+        og: {},
+        json_ld: [],
+      },
+      sitemap: { included: false, reason: 'unknown' },
+    },
+  }
+})
+
 on('GET', '/menus', () => ({ data: listMenus().map(menuRow) }))
 
 /*
