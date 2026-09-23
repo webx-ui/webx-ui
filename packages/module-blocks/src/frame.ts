@@ -172,10 +172,13 @@ export interface FrameBinding {
 /**
  * Make the preview a picture of the page rather than the page itself.
  *
- * Every pointer event is taken at the document, in the capture phase, and goes no further:
- * stopped there it never reaches a link, a form or a block's own script, so nothing in the
- * preview navigates, submits or opens anything. What a click does instead is choose the block
- * it landed in, which is the one thing the editor wants from it.
+ * A click inside a block is taken at the document, in the capture phase, and goes no further:
+ * stopped there it never reaches a link, a form or the block's own script. What it does
+ * instead is choose the block it landed in, which is the one thing the editor wants from it.
+ *
+ * A click on the site around the blocks goes on to the site, only never anywhere else (see
+ * `inert`): the layout may open a newsletter popup or a cookie bar over the page, and one whose
+ * close button never hears its click covers the preview for good.
  *
  * Bound per document: an iframe that reloads gets a new one, and the old binding is released
  * with it.
@@ -189,8 +192,12 @@ export function bindFrame(
   let hovered: string | null = null
 
   function onClick(event: MouseEvent): void {
-    swallow(event)
-    handlers.select(keyAt(event.target as Node | null))
+    const key = keyAt(event.target as Node | null)
+
+    if (key === null) inert(event)
+    else swallow(event)
+
+    handlers.select(key)
   }
 
   function onMove(event: MouseEvent): void {
@@ -208,7 +215,7 @@ export function bindFrame(
   }
 
   doc.addEventListener('click', onClick, true)
-  doc.addEventListener('auxclick', swallow, true)
+  doc.addEventListener('auxclick', inert, true)
   doc.addEventListener('submit', swallow, true)
   doc.addEventListener('dragstart', swallow, true)
   doc.addEventListener('mousemove', onMove, true)
@@ -219,7 +226,7 @@ export function bindFrame(
   return {
     release() {
       doc.removeEventListener('click', onClick, true)
-      doc.removeEventListener('auxclick', swallow, true)
+      doc.removeEventListener('auxclick', inert, true)
       doc.removeEventListener('submit', swallow, true)
       doc.removeEventListener('dragstart', swallow, true)
       doc.removeEventListener('mousemove', onMove, true)
@@ -234,18 +241,40 @@ function swallow(event: Event): void {
 }
 
 /**
+ * A click that may reach the page's own handlers but not leave it: a link loses its default
+ * and nothing else changes. Not `stopPropagation` — that is what kept the close button of the
+ * site's popup deaf, and the popup over the stage for good.
+ */
+function inert(event: Event): void {
+  const target = event.target as Node | null
+  // By node type, not `instanceof`: the frame's document has an `Element` of its own.
+  const element =
+    target?.nodeType === Node.ELEMENT_NODE ? (target as Element) : (target?.parentElement ?? null)
+
+  if (element?.closest('a[href], area[href]')) event.preventDefault()
+}
+
+/**
  * The same picture without the choosing: nothing in the page navigates, submits or is dragged
  * away. What the block editor's stage needs — the site's header is full of links, and one
  * click on them would leave the frame on another page of the site with the block gone.
+ *
+ * Clicks themselves still reach the page (see `inert`): the block's own script runs as it will
+ * on the site, and the site's popups close.
  */
 export function freezeFrame(doc: Document): FrameBinding {
-  const events = ['click', 'auxclick', 'submit', 'dragstart']
+  const listeners: [string, (event: Event) => void][] = [
+    ['click', inert],
+    ['auxclick', inert],
+    ['submit', swallow],
+    ['dragstart', swallow],
+  ]
 
-  for (const name of events) doc.addEventListener(name, swallow, true)
+  for (const [name, listener] of listeners) doc.addEventListener(name, listener, true)
 
   return {
     release() {
-      for (const name of events) doc.removeEventListener(name, swallow, true)
+      for (const [name, listener] of listeners) doc.removeEventListener(name, listener, true)
     },
   }
 }

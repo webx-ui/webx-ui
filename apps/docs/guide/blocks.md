@@ -288,7 +288,7 @@ pair of markers for the content and an empty `<style>` in the head. The panel lo
 then, on every change of the template, the styles or the sample, swaps the block in between the
 markers and its styles into the `<style>`, so the header and footer do not redraw under the
 editor's typing. A new script is the one change that reloads the page: a script registered in a
-page cannot be taken back. Links and forms of the site are inert there.
+page cannot be taken back. Links and forms of the site are inert there; its own buttons are not, so a newsletter popup or a cookie bar the layout opens can be closed.
 
 ```php
 // config/webx-blocks.php
