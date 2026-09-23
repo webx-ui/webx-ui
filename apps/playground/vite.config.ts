@@ -81,6 +81,7 @@ export default defineConfig({
       pkg('module-menu'),
       pkg('module-pages'),
       pkg('module-seo'),
+      pkg('module-services'),
     ],
   },
   // Two pages: the component playground, and the panel with the module screens in it.

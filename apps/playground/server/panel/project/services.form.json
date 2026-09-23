@@ -1,0 +1,14 @@
+[
+  {
+    "op": "add",
+    "target": "project-fields",
+    "node": {
+      "id": "price-from",
+      "type": "wx-input-number",
+      "name": "price-from",
+      "label": "Price from",
+      "help": "A project's own field: the server keeps it in services.extra, and publishes it with the text.",
+      "props": { "min": 0, "step": 100 }
+    }
+  }
+]

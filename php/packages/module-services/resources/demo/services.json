@@ -1,0 +1,90 @@
+{
+  "categories": [
+    {
+      "slug": "websites",
+      "title": "Websites",
+      "lead": "<p>Sites built from blocks, so the people who write them never wait for a release.</p>",
+      "services": ["landing-page", "company-website", "online-catalogue", "site-maintenance"]
+    },
+    {
+      "slug": "design",
+      "title": "Design",
+      "lead": "<p>How a site looks, and the rules that keep it looking that way.</p>",
+      "services": ["brand-identity", "design-system"]
+    },
+    {
+      "slug": "support",
+      "title": "Support",
+      "lead": "<p>What happens after launch.</p>",
+      "services": ["site-maintenance", "seo-audit", "content-editing"]
+    }
+  ],
+  "services": [
+    {
+      "slug": "landing-page",
+      "title": "Landing page",
+      "lead": "One page, one offer, one button — ready in a week.",
+      "cover": 0
+    },
+    {
+      "slug": "company-website",
+      "title": "Company website",
+      "lead": "Pages, a blog and a catalogue of services, all edited in one panel.",
+      "cover": 1
+    },
+    {
+      "slug": "online-catalogue",
+      "title": "Online catalogue",
+      "lead": "Every product or service on its own page, grouped the way customers look for them.",
+      "cover": 0
+    },
+    {
+      "slug": "site-maintenance",
+      "title": "Site maintenance",
+      "lead": "Updates, backups and small fixes, every month. Filed under two categories, and in a different place in each.",
+      "cover": 1
+    },
+    {
+      "slug": "brand-identity",
+      "title": "Brand identity",
+      "lead": "A logo, a palette and a typeface, with a page on how to use them.",
+      "cover": 0
+    },
+    {
+      "slug": "design-system",
+      "title": "Design system",
+      "lead": "Components and tokens a team builds every screen from.",
+      "cover": 1
+    },
+    {
+      "slug": "seo-audit",
+      "title": "SEO audit",
+      "lead": "What stands between the site and the first page of results, and the order to fix it in.",
+      "cover": 0
+    },
+    {
+      "slug": "content-editing",
+      "title": "Content editing",
+      "lead": "Texts for the pages the site already has, written for the people who read them.",
+      "cover": 1
+    }
+  ],
+  "blocks": [
+    {
+      "key": "intro",
+      "type": "text",
+      "values": {
+        "heading": "What is included",
+        "body": "This service was seeded by php artisan webx:demo, and it is an ordinary service: edit it, reorder it, publish it, delete it.\nIts content is blocks — the same block types the pages of the site are made of."
+      }
+    },
+    {
+      "key": "order",
+      "type": "text",
+      "values": {
+        "heading": "Two orders",
+        "body": "The list of services has an order of its own, and every category has another. Drag a service in the panel with a category chosen and only that category changes."
+      }
+    }
+  ]
+}

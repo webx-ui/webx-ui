@@ -20,6 +20,7 @@
     "@webx-ui/module-menu": "workspace:*",
     "@webx-ui/module-pages": "workspace:*",
     "@webx-ui/module-seo": "workspace:*",
+    "@webx-ui/module-services": "workspace:*",
     "@webx-ui/schema": "workspace:*",
     "@webx-ui/tokens": "workspace:*",
     "vue": "^3.5.24",

@@ -7,6 +7,7 @@ import { media } from '@webx-ui/module-media'
 import { menu } from '@webx-ui/module-menu'
 import { pages } from '@webx-ui/module-pages'
 import { seo } from '@webx-ui/module-seo'
+import { services } from '@webx-ui/module-services'
 /* The opt-in typeface; the tokens themselves come in with the core stylesheet. */
 import '@webx-ui/tokens/fonts.css'
 import UserMenu from './UserMenu.vue'
@@ -41,7 +42,18 @@ const admin = createAdmin({
   apiPath: '/api/cms',
   // The administrators section without the sign-in plugin: the session above stands in for
   // it, and what is looked at here is the list and the trail of what agents did.
-  modules: [inbox(), pages(), ...blog(), menu(), media(), blocks(), seo(), admins(), connect()],
+  modules: [
+    inbox(),
+    pages(),
+    ...blog(),
+    ...services(),
+    menu(),
+    media(),
+    blocks(),
+    seo(),
+    admins(),
+    connect(),
+  ],
   plugins: [session],
   userMenu: UserMenu,
 })
