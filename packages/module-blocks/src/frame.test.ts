@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   bindFrame,
   blockElement,
+  fillStage,
   findRange,
+  freezeFrame,
   highlightBlock,
   keyAt,
   replaceBlock,
@@ -112,5 +114,61 @@ describe('the markers in the preview', () => {
 
     expect(scripted).toContain('<base href="https://site.test/">')
     expect(scripted).toContain('<script src="/blocks/runtime.js?v=1"></script>')
+  })
+})
+
+describe('the stage a block type is drawn on', () => {
+  function stage(): Document {
+    const doc = document.implementation.createHTMLDocument('site')
+    doc.head.innerHTML = '<style id="wx-stage-styles"></style>'
+    doc.body.innerHTML =
+      '<header>Site</header><main><!--wx:sample--><!--/wx:sample--></main><footer>End</footer>'
+
+    return doc
+  }
+
+  it('puts the block between the header and the footer, and swaps it on the next change', () => {
+    const doc = stage()
+
+    expect(
+      fillStage(doc, {
+        html: '<!--wx:sample--><p>One</p><!--/wx:sample-->',
+        styles: 'p{color:red}',
+      }),
+    ).toBe(true)
+    expect(doc.querySelector('main')?.textContent).toBe('One')
+    expect(doc.getElementById('wx-stage-styles')?.textContent).toBe('p{color:red}')
+
+    expect(
+      fillStage(doc, { html: '<!--wx:sample--><p>Two</p><!--/wx:sample-->', styles: '' }),
+    ).toBe(true)
+    expect(doc.querySelector('main')?.innerHTML).toBe('<!--wx:sample--><p>Two</p><!--/wx:sample-->')
+    expect(doc.querySelector('header')?.textContent).toBe('Site')
+  })
+
+  it('keeps a place for the next change when the markup came without its markers', () => {
+    const doc = stage()
+
+    fillStage(doc, { html: '<p>Bare</p>', styles: '' })
+
+    expect(fillStage(doc, { html: '<p>Again</p>', styles: '' })).toBe(true)
+    expect(doc.querySelector('main')?.textContent).toBe('Again')
+  })
+
+  it('stops the links of the site, and lets go of them when released', () => {
+    const doc = stage()
+    const link = doc.createElement('a')
+    link.href = '/elsewhere'
+    doc.body.appendChild(link)
+
+    const binding = freezeFrame(doc)
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true })
+    link.dispatchEvent(click)
+    expect(click.defaultPrevented).toBe(true)
+
+    binding.release()
+    const after = new MouseEvent('click', { bubbles: true, cancelable: true })
+    link.dispatchEvent(after)
+    expect(after.defaultPrevented).toBe(false)
   })
 })

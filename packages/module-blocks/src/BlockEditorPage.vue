@@ -121,6 +121,7 @@ const stage = reactive({
   styles: '',
   script: null as string | null,
   runtime: null as string | null,
+  stage: null as string | null,
   loading: false,
 })
 
@@ -249,6 +250,7 @@ async function render(): Promise<void> {
     stage.styles = drawn.styles
     stage.script = drawn.script
     stage.runtime = drawn.runtime
+    stage.stage = drawn.stage ?? null
   } catch (error) {
     if (ticket === pending) {
       toast.danger(message(error))
@@ -829,6 +831,7 @@ const actions = computed<ScreenAction[]>(() =>
           :styles="stage.styles"
           :script="stage.script"
           :runtime="stage.runtime"
+          :stage="stage.stage"
           :loading="stage.loading"
         />
       </div>
