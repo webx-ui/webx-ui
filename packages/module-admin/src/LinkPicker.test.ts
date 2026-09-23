@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
-import { flushPromises, mount } from '@vue/test-utils'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { defineComponent, h, ref } from 'vue'
 import { WxAutocomplete, WxCheckbox, WxInput, WxSegmented, WxSelect } from '@webx-ui/core'
 import { adminKey, type AdminContext } from './admin'
@@ -7,6 +7,14 @@ import { createI18n, i18nKey } from './i18n'
 import { adminMessages } from './messages'
 import LinkPicker from './LinkPicker.vue'
 import { emptyLink, type LinkCandidate, type LinkValue } from './links'
+
+/*
+ * Every picker is unmounted after its test. `WxAutocomplete` debounces its `search` by 300 ms, and
+ * a saved link arms that timer the moment its title is written into the field: a picker left
+ * mounted runs a real search a third of a second later — by then usually in the next test, and
+ * after the last one, against an environment that is already gone.
+ */
+enableAutoUnmount(afterEach)
 
 const SOURCES = [
   { type: 'page', title: 'Pages', icon: 'file' },
