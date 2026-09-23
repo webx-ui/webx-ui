@@ -11,8 +11,10 @@ use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Categories\CategoryException;
 use WebxUi\Admin\Categories\CategoryRoutes;
+use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Categories\Ordering;
 use WebxUi\Admin\Facades\Screens;
+use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Tests\Fixtures\Categories\EnsurePermission;
 use WebxUi\Admin\Tests\Fixtures\Categories\Entry;
 use WebxUi\Admin\Tests\Fixtures\Categories\Section;
@@ -300,6 +302,36 @@ final class CategoriesTest extends TestCase
             ->assertJsonPath('data.values.is_visible', false);
 
         $this->assertSame('kept', $faq->refresh()->extra('old-field'));
+    }
+
+    #[Test]
+    public function wx_categories_checks_the_ids_against_the_model_its_source_names(): void
+    {
+        $this->app->make(CategorySources::class)->register('things/sections', Section::class);
+
+        $faq = $this->section('FAQ');
+        $billing = $this->section('Billing');
+        $billing->delete();
+
+        $type = $this->app->make(FieldTypes::class)->get('wx-categories');
+        $this->assertNotNull($type);
+
+        $check = function (array $node, mixed $value) use ($type): array {
+            return validator(['rubrics' => $value], ['rubrics' => $type->rules($node)])->errors()->all();
+        };
+
+        $node = ['id' => 'x', 'type' => 'wx-categories', 'name' => 'rubrics', 'props' => ['source' => '/things/sections/']];
+
+        // One in the bin still counts: its records are still filed under it.
+        $this->assertSame([], $check($node, [$faq->getKey(), $billing->getKey()]));
+        $this->assertSame([], $check($node, []));
+        $this->assertNotSame([], $check($node, [$faq->getKey(), 9001]));
+
+        // A source nobody registered refuses rather than letting ids through unchecked.
+        $this->assertNotSame([], $check(['props' => ['source' => 'nowhere']] + $node, [$faq->getKey()]));
+
+        // The order is the value; repeats and junk are dropped.
+        $this->assertSame([3, 1], $type->store([3, '1', 3, 'x', null], $node));
     }
 
     private function section(string $title): Section

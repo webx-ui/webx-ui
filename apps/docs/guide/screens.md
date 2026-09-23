@@ -158,7 +158,7 @@ The core types, generated from the registry (a test fails when this table is sta
 
 | Type                   | Kind    | Component           | `label` goes to |
 | ---------------------- | ------- | ------------------- | --------------- |
-| `wx-tabs`              | layout  | `WxTabs`            | —               |
+| `wx-tabs`              | layout  | `WxScreenTabs`      | —               |
 | `wx-tab`               | layout  | `WxTab`             | prop `label`    |
 | `wx-card`              | layout  | `WxCard`            | prop `title`    |
 | `wx-row`               | layout  | `WxRow`             | —               |
@@ -418,6 +418,13 @@ extra props: a tab, for instance, takes its `value` from the node's id.
 A `field` is wrapped in a `WxFormItem`, which stops its control at the width a field is read at.
 An entry whose control is not a field in that sense — an editor, a table, a list of blocks — says
 `wide: true`, and the form item lets it take the whole width.
+
+Two things the renderer does without being asked. A container — a card, a tab, a column — whose
+children are all hidden, or that was described with `children: []`, is not drawn: a screen can
+keep an empty card for a project's fields (`project-fields`) and nobody sees a heading over
+nothing. And when the page hands it `errors`, a refusal named by language (`slug.en`) is shown
+under the field (`slug`), and the tabs open the first one holding a failing field unless the tab
+on screen has one of its own.
 
 ## Conditional visibility
 

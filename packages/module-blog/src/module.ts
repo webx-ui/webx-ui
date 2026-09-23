@@ -1,14 +1,12 @@
-import type { AdminModule } from '@webx-ui/module-admin'
+import { categoryRoutes, type AdminModule, type CategoriesOptions } from '@webx-ui/module-admin'
 import ArticleAuthor from './ArticleAuthor.vue'
 import ArticleEditorPage from './ArticleEditorPage.vue'
 import ArticleHistory from './ArticleHistory.vue'
 import ArticleRelated from './ArticleRelated.vue'
-import ArticleRubrics from './ArticleRubrics.vue'
 import ArticleSlug from './ArticleSlug.vue'
 import ArticleTags from './ArticleTags.vue'
 import ArticleUnpublish from './ArticleUnpublish.vue'
 import ArticlesPage from './ArticlesPage.vue'
-import RubricsPage from './RubricsPage.vue'
 import TagsPage from './TagsPage.vue'
 
 export interface BlogOptions {
@@ -27,6 +25,44 @@ export interface BlogOptions {
  * manifest — and so does one whose front end is missing. That is what makes it safe to return
  * all three from one call: a panel that installed only part of the blog gets only that part.
  */
+/**
+ * The rubrics as the panel's shared categories see them: where they answer, what they are edited
+ * on and what the blog calls them. Exported so that a panel mounting the screens somewhere of its
+ * own does not have to repeat the words.
+ *
+ * Every word that names the thing is the blog's — "rubric", "articles" — and the rest ("Edit",
+ * "Cancel", "Leave without saving?") is the panel's, said the same way in every module.
+ */
+export function rubricsOptions(path = '/blog'): CategoriesOptions {
+  return {
+    api: 'blog/rubrics',
+    path: `${path}/rubrics`,
+    name: 'webx.blog.rubrics',
+    module: 'rubrics',
+    screen: 'blog.category-form',
+    manage: 'blog.taxonomy.manage',
+    count: 'articles_count',
+    items: (id) => ({ path: `${path}/articles`, query: { rubric: String(id) } }),
+    words: {
+      new: 'webx-blog::rubric.new',
+      empty: 'webx-blog::rubric.empty',
+      'empty-help': 'webx-blog::rubric.empty-help',
+      order: 'webx-blog::rubric.order',
+      hidden: 'webx-blog::rubric.hidden',
+      'no-address': 'webx-blog::rubric.no-address',
+      count: 'webx-blog::rubric.articles',
+      'show-items': 'webx-blog::rubric.show-articles',
+      'delete-blocked': 'webx-blog::rubric.delete-blocked',
+      'delete-text': 'webx-blog::rubric.delete-text',
+      deleted: 'webx-blog::rubric.deleted',
+      saved: 'webx-blog::rubric.saved',
+      'field-title': 'webx-blog::rubric.field-title',
+      'field-slug': 'webx-blog::rubric.field-slug',
+      'address-moving': 'webx-blog::rubric.address-moving',
+    },
+  }
+}
+
 export function blog(options: BlogOptions = {}): AdminModule[] {
   const path = options.path ?? '/blog'
 
@@ -54,7 +90,7 @@ export function blog(options: BlogOptions = {}): AdminModule[] {
        * The parts of `blog.article-form` that only this module can draw.
        *
        * The editor is a described screen so that a module can add a tab to it with a patch, and
-       * the price of that is that everything on it has to be a node type. Five of these are
+       * the price of that is that everything on it has to be a node type. Four of these are
        * fields — the value is ids, and the control over them is a list that can be dragged or a
        * box that makes a tag — and two only draw. Each reads the article from the editor above
        * it rather than from the description, because a screen is a description and not a
@@ -67,7 +103,6 @@ export function blog(options: BlogOptions = {}): AdminModule[] {
       types: {
         'wx-article-slug': { component: ArticleSlug, kind: 'field' },
         'wx-article-author': { component: ArticleAuthor, kind: 'field' },
-        'wx-article-rubrics': { component: ArticleRubrics, kind: 'field' },
         'wx-article-tags': { component: ArticleTags, kind: 'field' },
         'wx-article-related': { component: ArticleRelated, kind: 'field' },
         'wx-article-unpublish': { component: ArticleUnpublish, kind: 'display' },
@@ -77,14 +112,9 @@ export function blog(options: BlogOptions = {}): AdminModule[] {
     {
       id: 'rubrics',
       path: `${path}/rubrics`,
-      routes: [
-        {
-          path: `${path}/rubrics`,
-          name: 'webx.blog.rubrics',
-          component: RubricsPage,
-          props: { base: path },
-        },
-      ],
+      // The list and the page of one rubric are the panel's shared category screens (§3.6 of
+      // the services spec); what is the blog's is the description they are handed.
+      routes: categoryRoutes(rubricsOptions(path)),
     },
     {
       id: 'tags',

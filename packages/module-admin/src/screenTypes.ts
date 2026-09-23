@@ -1,4 +1,6 @@
 import type { TypeRegistry } from '@webx-ui/schema'
+import CategoriesField from './categories/CategoriesField.vue'
+import CategorySlug from './categories/CategorySlug.vue'
 import LinkField from './LinkField.vue'
 import ListScreen from './ListScreen.vue'
 import RichTextField from './RichTextField.vue'
@@ -22,6 +24,10 @@ import RichTextField from './RichTextField.vue'
  * `wx-link` is here for the same reason twice over: what it can point at is whatever the installed
  * content modules registered, and the only thing that knows what those are is the panel's own
  * backend.
+ *
+ * `wx-categories` and `wx-category-slug` are the fields every module with categories shares
+ * (`categories/`): the one files a record under categories, the other edits a category's
+ * address with the module's prefix in front of it.
  */
 export const adminTypes: TypeRegistry = {
   'wx-list': { component: ListScreen, kind: 'layout', labelProp: 'title' },
@@ -31,4 +37,6 @@ export const adminTypes: TypeRegistry = {
   // Wide as well: a row of the picker is a segmented switch, a section and a search box, and half
   // a form's width leaves the search box too narrow to read a page title in.
   'wx-link': { component: LinkField, kind: 'field', wide: true },
+  'wx-categories': { component: CategoriesField, kind: 'field' },
+  'wx-category-slug': { component: CategorySlug, kind: 'field' },
 }

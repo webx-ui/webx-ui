@@ -1,5 +1,6 @@
 import type { LocalizedValue, Paginated } from '@webx-ui/core'
 import type { ScreenModel } from '@webx-ui/schema'
+import type { CategoryRow } from '@webx-ui/module-admin'
 
 /**
  * Never published · waiting for its day · on the site · on the site with edits waiting · taken
@@ -190,33 +191,14 @@ export interface ArticleConflict {
  * name is worked out beside them. A rubric named in one language and not in another is still a
  * row somebody has to be able to click.
  */
-export interface RubricRow {
-  id: number
-  /** What to show: the title of this language, its address, or its number — in that order. */
-  name: string
-  title: LocalizedValue
-  slug: LocalizedValue
-  lead: LocalizedValue
-  /** `null` — this rubric names no address in the language the panel is open in (§9). */
-  path: string | null
-  url: string | null
-  cover: ArticleCover | null
-  is_visible: boolean
-  position: number
+/**
+ * One rubric as its list draws it: the panel's shared category row, with the number of articles
+ * under the blog's own word. Everything else about a rubric — the introduction, the picture, SEO,
+ * the fields of the project — is the values of `blog.category-form`.
+ */
+export type RubricRow = CategoryRow & {
   /** Why the delete button is out of reach, and what its explanation says (§6). */
   articles_count: number
-  /** What the rubric says about its own page, over whatever the SEO rules say (§12). */
-  seo: Record<string, unknown>
-}
-
-/** What a rubric's form sends. Only the fields that travelled are touched. */
-export interface RubricInput {
-  title?: LocalizedValue | string
-  slug?: LocalizedValue | string
-  lead?: LocalizedValue | string
-  cover?: { path: string } | null
-  is_visible?: boolean
-  seo?: Record<string, unknown> | null
 }
 
 /**
@@ -294,7 +276,3 @@ export interface TagMerged {
  * whole address as it is typed, and `remont` on its own says nothing about whether the blog
  * lives at the root of the site or under `/blog/`.
  */
-export interface RubricsPayload {
-  data: RubricRow[]
-  prefix: string
-}

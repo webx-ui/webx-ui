@@ -527,6 +527,36 @@ RubricDialog и ArticleRubrics; порядок записей в списке п
 добавляет рубрике поле, оно сохраняется.
 ```
 
+**Итог K2 (23.09.2026)** — что K3 и сессия B должны знать:
+
+- Общее — `packages/module-admin/src/categories/`: `categoryRoutes(options)` монтирует список
+  (`WxCategoriesPage`) и страницу (`WxCategoryEditorPage`, одна «Сохранить», Ctrl+S, вопрос при
+  уходе с несохранённым), `WxCategoryCreateDialog` — только название, дальше страница. Всё, что
+  модуль говорит о категориях, — объект `CategoriesOptions` (у блога `rubricsOptions()`); слова —
+  ключи `webx-admin::categories.*` по умолчанию («категория», «записи»), модуль подменяет те, что
+  называют его вещи. Гайд — `apps/docs/guide/categories.md`.
+- **Как `wx-categories` узнаёт свою таблицу:** узел несёт `props.source` — путь API категорий
+  (`blog/rubrics`). Панель спрашивает по нему список, сервер — `CategorySources` (синглтон в
+  `module-admin`), куда модуль из своего провайдера кладёт `source → модель` и ключ отказа.
+  Не из файла маршрутов: при `route:cache` он не выполняется. `wx-article-rubrics` и `IdsType`
+  для рубрик удалены; слова поля — пропсы узла (`mainText`, `addText`…), `main: false` снимает
+  метку «главная».
+- **Рендерер схем** теперь не рисует контейнер, у которого нечего показать (карточка
+  `project-fields` без патча не видна), сводит ошибку `slug.en` к полю `slug` (раньше под
+  переводимым полем на любом описанном экране не было ничего) и открывает вкладку с ошибкой сам —
+  `wx-tabs` рисуется `WxScreenTabs`. Это общее для всех экранов, статьи тоже.
+- Порядок записей (решение 5) — `useItemOrder(path, state)`: режим `all`/`category`/`locked`,
+  подсказка и `move(ids)` на `CategoryRoutes::items()`. Блог его не зовёт; первым потребителем
+  будет список услуг (сессия B).
+- Плейграунд: `/panel/blog/rubrics/1` — страница рубрики с патчем «проекта»
+  (`apps/playground/server/panel/project/blog.category-form.json`, поле `menu-badge`); мок
+  складывает неизвестные поля в `extra`.
+- **`webx-cms.local` оставлен в local-режиме на этом worktree** (`MONOREPO=…` `packages.mjs
+local`, composer — симлинки в worktree, npm — симлинки), миграция K1 прогнана, патч сайта лежит
+  в `resources/screens/blog.category-form.json` и подключён в `AppServiceProvider`. Сохранение
+  поля проверено через `CategoryForm` в тинкере; в панели глазами — нет: пароль демо-админа
+  сменился, вход за человеком. Ничего из этого не закоммичено в репозиторий сайта.
+
 ### K3 — выпуск этапа 1
 
 ```

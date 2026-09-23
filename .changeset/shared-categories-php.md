@@ -14,7 +14,7 @@ Shared categories and fields of the project, with the blog's rubrics moved onto 
   API from its own route file (list, create, show with the values of the screen, update by
   `values`, delete, restore, reorder), `CategoryRoutes::items()` the reorder of its records;
   `CategoryLinkSource` and `CategoryTools` (list, create, update, delete, reorder) do the same for
-  the link picker and for agents. New field type `wx-category-slug`.
+  the link picker and for agents. New field types `wx-category-slug` and `wx-categories` — the second checks the chosen ids against the model its `source` names, which a module registers in `CategorySources`.
 - `webx-ui/module-admin`: fields of the project. `ScreenRecord` sorts what a described screen
   saved into the record's own fields, fields stored elsewhere and the rest — which now goes into
   `extra` instead of being dropped, merged rather than replaced, language by language for a
@@ -27,4 +27,4 @@ Shared categories and fields of the project, with the blog's rubrics moved onto 
   `module-seo`). Agents get `rubrics_create`, `rubrics_update`, `rubrics_delete` and
   `rubrics_reorder` behind `rubrics:write`. A field a project patches onto an article or a rubric
   is saved in `extra` — through the draft for an article. A new migration adds `extra` to both
-  tables and `item_position` to `article_rubric`, filled by date.
+  tables and `item_position` to `article_rubric`, filled by date. The rubrics of an article are the shared `wx-categories`; `wx-article-rubrics` is gone.

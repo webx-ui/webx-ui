@@ -24,12 +24,19 @@ function keysOf(group: string): string[] {
  * browser never asks for one by key.
  */
 describe('the English here matches the English the server ships', () => {
-  it.each(['shell', 'nav', 'dates', 'backup', 'errors', 'notes', 'rich-text', 'links'])(
-    '%s',
-    (group) => {
-      const ours = Object.keys(adminMessages[group] ?? {}).sort()
+  it.each([
+    'shell',
+    'nav',
+    'dates',
+    'backup',
+    'errors',
+    'notes',
+    'rich-text',
+    'links',
+    'categories',
+  ])('%s', (group) => {
+    const ours = Object.keys(adminMessages[group] ?? {}).sort()
 
-      expect(ours).toEqual(keysOf(group))
-    },
-  )
+    expect(ours).toEqual(keysOf(group))
+  })
 })

@@ -9,6 +9,7 @@ use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategoryLinkSource;
+use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
@@ -266,7 +267,10 @@ class BlogServiceProvider extends ServiceProvider
         // is configuration, which a description has no way to carry.
         $types->register('wx-article-slug', new StringType(2000));
 
-        $types->register('wx-article-rubrics', new IdsType($connection, 'rubrics', 'webx-blog::errors.unknown-rubric'));
+        // The rubrics of an article are the panel's shared `wx-categories`; this is where its
+        // `source` — the path the rubrics answer at — is told which table the ids live in.
+        $this->app->make(CategorySources::class)->register('blog/rubrics', Rubric::class, 'webx-blog::errors.unknown-rubric');
+
         $types->register('wx-article-tags', new IdsType($connection, 'tags', 'webx-blog::errors.unknown-tag'));
         $types->register('wx-article-related', new IdsType($connection, 'articles', 'webx-blog::errors.unknown-article'));
         $types->register('wx-article-author', new AuthorType);

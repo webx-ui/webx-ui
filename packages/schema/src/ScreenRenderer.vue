@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, markRaw, toRaw, watch } from 'vue'
+import { computed, markRaw, provide, toRaw, watch } from 'vue'
 import { WxForm } from '@webx-ui/core'
 import { applyPatch } from './patch'
 import { coreTypes } from './registry'
-import { keyAsIs, WxScreenNodes, type RenderContext } from './render'
+import { keyAsIs, screenErrorsKey, WxScreenNodes, type RenderContext } from './render'
 import type {
   Patch,
   PatchError,
@@ -57,6 +57,39 @@ const model = defineModel<ScreenModel>({ default: () => ({}) })
 
 const applied = computed(() => applyPatch(props.root, props.patch))
 
+/** Every field name on the screen, however deep — a repeater is one field, not its items. */
+function names(nodes: ScreenNode[]): string[] {
+  return nodes.flatMap((node) =>
+    node.name === undefined ? names(node.children ?? []) : [node.name],
+  )
+}
+
+/**
+ * The refusal, under the names the fields answer to.
+ *
+ * Laravel names the language that failed — `slug.en` — and `WxFormItem` looks its error up by
+ * the field's own name, so a refused translated field showed nothing at all: the save failed and
+ * every field looked fine. A key is matched against the field names rather than cut at its first
+ * dot, because a name may carry a dot of its own (`general.project-name`, CLAUDE.md §4).
+ */
+const fieldErrors = computed<ValidationErrors | undefined>(() => {
+  if (props.errors === undefined) return undefined
+
+  const fields = names(applied.value.root)
+  const out: ValidationErrors = { ...props.errors }
+
+  for (const [key, messages] of Object.entries(props.errors)) {
+    const field = fields.find((name) => key.startsWith(`${name}.`))
+
+    if (field !== undefined && out[field] === undefined) out[field] = messages
+  }
+
+  return out
+})
+
+// For the nodes that act on a refusal rather than only draw it — the tabs (`ScreenTabs.vue`).
+provide(screenErrorsKey, fieldErrors)
+
 watch(
   () => applied.value.errors,
   (errors) => {
@@ -99,7 +132,7 @@ defineExpose({
 <template>
   <wx-form
     class="wx-screen"
-    :errors="errors"
+    :errors="fieldErrors"
     :disabled="disabled"
     :label-position="labelPosition"
     :label-width="labelWidth"
