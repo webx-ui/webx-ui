@@ -1,5 +1,68 @@
 # @webx-ui/php
 
+## 0.31.0
+
+### Minor Changes
+
+- fde8622: The block editor draws a block on a page of the site, not on the browser's defaults.
+
+  `webx-ui/module-blocks` gets `webx-blocks.layout` — the component the editor's stage stands in, the
+  same `<x-layout>` the pages use — and `/_preview/block-stage`, which prints that layout with an
+  empty place for the block. `webx:panel --sync` sets the key and `webx:doctor` warns while it is
+  empty, as they do for pages and the blog; empty prints `webx-blocks::standalone`, a bare document.
+  `render` names the stage in its answer.
+
+  `@webx-ui/module-blocks`: `BlockStage` loads the stage once and swaps the block and its styles in
+  on every change, so the header and footer do not redraw under typing; a new script reloads the
+  page. The site's links are inert there, and the stage scrolls to the block. A server without the
+  stage still gets the bare document. `frame.ts` gains `freezeFrame`, `fillStage` and `mountScript`.
+
+  `@webx-ui/module-menu`: a long address under a menu item ends in `…` instead of running out of
+  the card.
+
+### Patch Changes
+
+- 114a949: `webx-ui/module-blocks`: what a block keeps is what its field type keeps.
+
+  A described screen has always written through its types — `ScreenValues::validate()` looks a node's
+  type up, checks the value against `rules()` and casts it with `store()` — and a block's values are
+  screen nodes too, but nothing on the way in ever asked them. `Rendering\Values` had done the mirror
+  of it on the read side since the module shipped; `ContentValues` is the missing half, and both write
+  paths now go through it: the editor's save (`PageForm`, by way of `HasBlocks::storeBlocks()`) and the
+  agent's `blocks_set_content` / `blocks_edit_content`. A type that lowercases a colour, casts a number
+  out of the string a form sent, or runs pasted markup through an allowlist does that work in a block
+  from now on, and not on screens only.
+
+  What passed through untouched still does, and for the same reasons: a value whose key the block's
+  schema does not name, a value of a type nobody registered, and a nested tree of blocks, which is
+  walked as blocks rather than handed to a field type. The node itself is merged rather than rebuilt,
+  so `key`, `hidden` and whatever structural key comes next survive a save. The schema walk both
+  directions share is now one class, `Blocks\Schema`.
+
+- a0556f1: A list of records reads as a list: folded rows named `#1 · …`.
+
+  `@webx-ui/core`: `WxRepeater` names a row by its position and then its `itemLabel` — `#2 · Lviv`,
+  `#2` without one — and cuts a long header with an ellipsis. A key that holds a translated field
+  shows the language being edited, else whichever is filled in; before, such a map made the header
+  fall back to a bare number. `dragLabel` joins `addLabel` and `removeLabel`, so the grip's name can
+  be translated too.
+
+  `@webx-ui/schema`: `wx-repeater` on a screen starts folded unless the node sets
+  `collapsed: false`, and takes its words — add, remove, reorder, the empty text — from the panel's
+  dictionary; a node's own `addLabel` and the rest still win.
+
+  `webx-ui/module-admin`: `screens.repeater.*` in all ten languages. `webx-ui/module-blocks`: the
+  guide for agents names the repeater's props.
+
+  A row lines its grip, header and actions up on one centre, and its fields run under the actions —
+  and, in a repeater narrower than 560px, under the grip as well, so a phone gives the fields the
+  whole width.
+
+  `webx-ui/module-blocks`: `wx-row` and `wx-col` inside a `wx-repeater` of a block's schema no longer
+  hide the fields in them. The bridge that names a block's nodes by their `id` named the layout too,
+  and a named node is a field to the walk — so an image in a column was never resolved on the site.
+  Layout keeps its id and gets no name; `Schema::LAYOUT` is the one list of those types.
+
 ## 0.30.0
 
 ### Minor Changes
