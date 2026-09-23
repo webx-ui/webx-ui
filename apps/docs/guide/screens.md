@@ -226,6 +226,17 @@ for it. The address is worked out on read rather than stored, and the same holds
 entity's screen it is the tab that builds the content out of blocks, and inside a block's own
 schema it makes the type a container — see [Blocks](/guide/blocks).
 
+Which half of a value is stored and which is worked out is the type's to decide, and it decides
+both directions: on the server the type says what a read hands over and what a save keeps. A save
+puts every value through the type its node names — a colour lowercased, a number that stops being
+the string a form sent, pasted markup through an allowlist — and takes the answer whole, `null`
+included. A block's fields are these same nodes, so the same holds inside the constructor: the
+tree arrives as one value, `module-blocks` walks it and every field of every block goes through
+the step its own schema names, whether the save came from the editor or from an agent's tool. Two
+things are kept exactly as they came, in both directions: a value whose key the schema does not
+name — a field dropped after the page was written — and a value of a type nobody registered, the
+nested tree of blocks above all, which is the renderer's to print rather than any field's to keep.
+
 `wx-repeater` is the one type with a nested model: its value is a list of records, and its
 children are the fields of one of them, so a `name` inside it is a key of the item rather than a
 key of the screen. `WxScreenRepeater` is a thin wrapper — [`WxRepeater`](/components/repeater)

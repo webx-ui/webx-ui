@@ -25,6 +25,7 @@ use WebxUi\Blocks\Rendering\Renderer;
  *     $page->blocks;          // the tree, as an array
  *     $page->renderBlocks();  // the HTML
  *     $page->blockTypes();    // ['hero', 'section', 'text']
+ *     $page->storeBlocks($sent);  // what a save keeps: values cast by their field types
  *
  * @mixin Model
  */
@@ -60,6 +61,24 @@ trait HasBlocks
     public function renderBlocks(): HtmlString
     {
         return Container::getInstance()->make(Renderer::class)->render($this->blocksTree(), $this);
+    }
+
+    /**
+     * A tree on its way in, every value cast by the field type its block's schema names — what
+     * a save writes rather than what the editor sent ({@see ContentValues}).
+     *
+     * It is here rather than in a mutator because a tree does not reach this entity through
+     * its own column: the panel saves a draft, which is one JSON payload with the blocks
+     * inside it, and no cast of this model ever sees them. The module that owns the screen
+     * calls this with the value of its `wx-blocks` field; the agent's tools do the same step
+     * on their way through `BlockTools`.
+     *
+     * @param  iterable<array-key, mixed>|null  $tree
+     * @return list<mixed>
+     */
+    public function storeBlocks(?iterable $tree): array
+    {
+        return Container::getInstance()->make(ContentValues::class)->store($tree);
     }
 
     /**
