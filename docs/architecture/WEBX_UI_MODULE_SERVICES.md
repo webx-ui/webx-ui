@@ -584,6 +584,13 @@ npx vite build; хомлаб — registry, composer update "webx-ui/*", подъ
 Не делать: module-services — это сессия A.
 ```
 
+**Итог K3 (23.09.2026)** — этап 1 выпущен: PR #258, релиз #259. npm — `@webx-ui/module-admin@0.15.0`,
+`@webx-ui/module-blog@0.5.0`, `@webx-ui/schema@0.6.0`; composer-половина — `v0.34.0` (зеркала
+ставились ручным `php-split`: релизная джоба покраснела на гонке пуша тегов, CLAUDE.md §5).
+`webx-cms.local` закоммичен в registry-состоянии вместе с патчем сайта: поле `menu-badge` у
+рубрики (`resources/screens/blog.category-form.json`) и своя вьюха `resources/views/blog/rubric.blade.php`,
+которая печатает его через `$rubric->extra('menu-badge')`, — тот же коммит уехал на хомлаб.
+
 ### A — пакет и публичная часть
 
 ```
