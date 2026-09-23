@@ -1,6 +1,7 @@
 # `webx-ui/module-services` — спецификация и план реализации
 
-Статус: спроектирован 23.09.2026, не начат. Пакеты — `webx-ui/module-services` (composer) и
+Статус: спроектирован 23.09.2026; K1 (php-половина этапа 1) сделан 23.09.2026 на ветке
+`feat/shared-categories`, итог — в конце §6 K1. Пакеты — `webx-ui/module-services` (composer) и
 `@webx-ui/module-services` (npm).
 
 Услуги: каталог услуг с плоскими категориями. Услуга устроена как страница: содержимое —
@@ -173,7 +174,7 @@ $locale = null)` — значение, разрешённое типом пол�
 [
   {
     "op": "add",
-    "parent": "project-fields",
+    "target": "project-fields",
     "node": {
       "id": "price-from",
       "type": "wx-input",
@@ -478,6 +479,31 @@ MCP через общий код, ArticleForm через ScreenRecord; тест�
 
 Не делать: npm (K2). Имена API и таблиц блога не менять.
 ```
+
+**Итог K1 (23.09.2026)** — что K2 должен знать, потому что в промпте выше этого нет:
+
+- Код — `WebxUi\Admin\Categories\*` (`Category` — контракт, `IsCategory`, `CategoryKind`,
+  `HasCategories`, `Ordering`, `CategoryForm`, `CategoryRoutes`, `CategoryLinkSource`,
+  `Mcp\CategoryTools`, `Http\CategoryController`/`CategoryResource`) и
+  `WebxUi\Admin\Screens\{ScreenRecord,ScreenSplit,HasExtra}`. Всё, что модуль говорит о своих
+  категориях (экран, права, префикс, слова `rubric`/`rubrics`/`articles`), — в
+  `Rubric::categoryKind()`.
+- **Экран `blog.category-form` уже есть на php-половине** (`module-blog/resources/screens/category-form.json`):
+  вкладки «Контент» (`title`, `slug` типа `wx-category-slug`, `is_visible`, `lead` — `wx-rich-text`,
+  карточка `project-fields`) · «Изображение» (`cover`, `wx-media`) · «SEO» (заглушка, её заменяет
+  патч `module-seo`). На npm нужен компонент `wx-category-slug` (адрес с префиксом, как у
+  `wx-article-slug`); серверного типа `wx-categories` ещё нет — поле рубрик статьи пока
+  `wx-article-rubrics` (`IdsType`), и K2 решает, как `wx-categories` узнаёт свою таблицу.
+- **Карточка `project-fields` пустая по умолчанию — и на `blog.article-form` тоже.** Рендерер пустые
+  контейнеры не прячет, так что до K2 в настройках статьи видна пустая карточка «Дополнительно».
+  K2 должен научить рендерер не рисовать контейнер без детей (или прятать именно эту карточку).
+- API: `GET blog/rubrics` — `{ data, prefix }`, строка несёт `articles_count` (ключ — слово модуля);
+  `POST` — `{ title, slug? }`, строкой или картой; `GET` и `PUT blog/rubrics/{id}` отвечают
+  `{ category, values, prefix }`, `PUT` принимает `{ values }` — поля экрана, 422 под именем поля;
+  новые `POST blog/rubrics/{id}/restore`. `RubricDialog` на старом `PUT` с плоскими полями
+  сломан до K2.
+- Патч добавляет в карточку операцией `add` с **`target`**, а не `parent`: пример в §3.4 исправлен.
+- MCP: `rubrics_*` теперь пять, и у модуля появился `rubrics:write`.
 
 ### K2 — страницы категорий (npm)
 
