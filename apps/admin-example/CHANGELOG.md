@@ -1,5 +1,11 @@
 # @webx-ui/admin-example
 
+## 0.0.29
+
+### Patch Changes
+
+- @webx-ui/module-admin@0.14.2
+
 ## 0.0.28
 
 ### Patch Changes
