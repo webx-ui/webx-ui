@@ -6,8 +6,9 @@ namespace WebxUi\Blocks\Rendering;
 
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenValues;
-use WebxUi\Admin\Screens\Tree;
 use WebxUi\Blocks\BlockType;
+use WebxUi\Blocks\ContentValues;
+use WebxUi\Blocks\Schema;
 use WebxUi\Localization\Locales;
 
 /**
@@ -23,6 +24,9 @@ use WebxUi\Localization\Locales;
  * name — a field removed after the page was written — and a value of a type nobody registered,
  * `wx-blocks` above all. The nested tree is a list of blocks, and the renderer, not a field
  * type, is what prints it.
+ *
+ * The other direction is {@see ContentValues}: the same walk over the same schema, asking the
+ * type what to keep rather than what to hand over.
  */
 final readonly class Values
 {
@@ -41,7 +45,7 @@ final readonly class Values
             return [];
         }
 
-        $fields = $this->fields(self::named($type->schema));
+        $fields = Schema::fields($type->schema, $this->types);
         $resolved = [];
 
         foreach ($values as $name => $value) {
@@ -80,70 +84,5 @@ final readonly class Values
         }
 
         return null;
-    }
-
-    /**
-     * The nodes a block's own values are keyed by, by id.
-     *
-     * The walk goes through layout — a schema puts fields in cards and tabs — and stops at a
-     * field, because what is under a field belongs to its value and not to the block:
-     * `wx-repeater` holds `city` in every one of its items, and the block holds no `city` at
-     * all. {@see Tree::fields()} draws the same line with `name`; here the line is "the type is
-     * one the server knows", since a block's schema names its fields `id`. The nodes arrive
-     * normalized by {@see self::named()}.
-     *
-     * @param  list<array<string, mixed>>  $nodes
-     * @return array<string, array<string, mixed>>
-     */
-    private function fields(array $nodes): array
-    {
-        $fields = [];
-
-        foreach ($nodes as $node) {
-            $id = $node['id'] ?? null;
-
-            if (is_string($id) && $id !== '' && ! isset($fields[$id])) {
-                $fields[$id] = $node;
-            }
-
-            if ($this->types->has((string) ($node['type'] ?? ''))) {
-                continue;
-            }
-
-            foreach ($this->fields(Tree::children($node)) as $childId => $child) {
-                $fields[$childId] ??= $child;
-            }
-        }
-
-        return $fields;
-    }
-
-    /**
-     * A block's schema names its fields `id`; a screen names them `name`, and so does everything
-     * that walks one — `wx-repeater` finds the fields of an item with {@see Tree::fields()},
-     * which stops at a node without a name. The copy the panel draws is normalized the same way
-     * on the client (`formSchema`), and for the same reason; what is stored, exported and shown
-     * to an agent stays as its author wrote it.
-     *
-     * @param  list<array<string, mixed>>  $nodes
-     * @return list<array<string, mixed>>
-     */
-    private static function named(array $nodes): array
-    {
-        $normalized = [];
-
-        foreach ($nodes as $node) {
-            if (! isset($node['name']) && isset($node['id'])) {
-                $node['name'] = $node['id'];
-            }
-
-            if (isset($node['children']) && is_array($node['children'])) {
-                $node['children'] = self::named(array_values($node['children']));
-            }
-
-            $normalized[] = $node;
-        }
-
-        return $normalized;
     }
 }

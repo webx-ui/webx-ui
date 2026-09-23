@@ -188,6 +188,12 @@ a library that moves to another disk rewrites no page. A value whose type nobody
 server — `wx-blocks`, a field of the project's own — arrives as it is stored. `$block->values`
 holds the same map, which is what a template hands its script in `data-wx-values`.
 
+The way in is the same walk. What a save keeps is what the field type makes of what was sent —
+the editor's save and `blocks_edit_content` alike — so a type that cleans what it is given cleans
+it here too, rather than on screens only. The same two things pass through untouched: a value
+whose key the schema no longer names, and a value of a type nobody registered. A nested tree is
+walked as blocks, not handed to a field type: the blocks inside it are kept by their own schemas.
+
 **A gallery is `wx-gallery`, not a repeater of pictures.** `wx-gallery` and `wx-files` hold a list
 of those same values, in an order somebody dragged them into, and the editor picks ten of them in
 one trip to the library rather than ten times over. `wx-repeater` is still the answer for a list
