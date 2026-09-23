@@ -1,5 +1,15 @@
 # @webx-ui/module-blocks
 
+## 0.8.1
+
+### Patch Changes
+
+- 6c45f08: The block editor's stage and the page preview let a click reach the site's own handlers again, keeping only navigation and submits inert: a newsletter popup or a cookie bar the layout opens over the preview can now be closed.
+- Updated dependencies [b965650]
+- Updated dependencies [7bdeb63]
+  - @webx-ui/schema@0.5.0
+  - @webx-ui/module-admin@0.14.2
+
 ## 0.8.0
 
 ### Minor Changes
