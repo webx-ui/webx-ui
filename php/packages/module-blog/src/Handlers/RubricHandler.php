@@ -28,7 +28,7 @@ class RubricHandler implements RouteHandler
 
     public function handle(Request $request, object $entity, string $tail): Response
     {
-        if (! $entity instanceof Rubric || ! $entity->is_visible) {
+        if (! $entity instanceof Rubric || ! $entity->isVisible()) {
             throw new NotFoundHttpException;
         }
 

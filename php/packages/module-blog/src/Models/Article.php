@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Blog\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +16,7 @@ use WebxUi\Admin\Versions\HasVersions;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blocks\HasBlocks;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Seo\HasSeo;
 
@@ -45,7 +47,7 @@ use WebxUi\Seo\HasSeo;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Article extends Model
+class Article extends Model implements Visible
 {
     use HasBlocks;
     use HasCover;
@@ -119,6 +121,48 @@ class Article extends Model
         return $query
             ->whereNotNull($this->publishedAtColumn())
             ->where($this->publishedAtColumn(), '<=', Carbon::now());
+    }
+
+    /**
+     * On the site now and not in the bin — the handler and the sitemap ask this and nothing else
+     * (§17.1 of the SEO spec), so that "not yet" is a 404 and a missing line in the map at the
+     * same minute.
+     */
+    public function isVisible(?string $locale = null): bool
+    {
+        return $this->isPublished() && ! $this->trashed();
+    }
+
+    /**
+     * @param  Builder<covariant Model>  $query
+     * @return Builder<covariant Model>
+     */
+    public function scopeVisible(Builder $query, ?string $locale = null): Builder
+    {
+        $column = $this->qualifyColumn($this->publishedAtColumn());
+
+        return $query->whereNotNull($column)->where($column, '<=', Carbon::now());
+    }
+
+    /**
+     * The later of the date it is published under and its last publication.
+     *
+     * The date alone is not enough: it is the date a reader is shown, and republishing an
+     * article with a corrected paragraph keeps it — a backdated date is the whole point of it.
+     * The history knows when the text last reached the site. One query per article, which the
+     * sitemap pays once per build rather than per visit.
+     */
+    public function visibleUpdatedAt(): ?CarbonInterface
+    {
+        $at = $this->published_at;
+        $last = $this->versions()->published()->max('created_at');
+        $republished = is_string($last) ? Carbon::parse($last) : null;
+
+        if ($at === null || $republished === null) {
+            return $at ?? $republished;
+        }
+
+        return $republished->greaterThan($at) ? $republished : $at;
     }
 
     /**

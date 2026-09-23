@@ -124,6 +124,48 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Canonical
+    |---------------------------------------------------------------------------
+    |
+    | A page nobody wrote a canonical for names itself, so that `?utm_source=`
+    | and every other tracking tail collapse into the one address. What survives
+    | of the query is listed here: pagination is a page of its own, the rest is
+    | noise. A canonical written in a card or a rule always wins.
+    |
+    */
+
+    'canonical' => [
+        'self' => true,
+        'query' => ['page'],
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Sitemap
+    |---------------------------------------------------------------------------
+    |
+    | `/sitemap.xml` and a file per type of the address registry. What goes in is
+    | what the <head> of the page would leave open to the index — no rules of the
+    | map's own. A site with a sitemap of its own turns this off and keeps it.
+    |
+    | Built on the first request and kept until anything it depends on is saved;
+    | the TTL is for what changes without a save, like an article whose date has
+    | come. `php artisan webx:seo:sitemap` builds it ahead of the first crawler.
+    |
+    */
+
+    'sitemap' => [
+        'enabled' => env('WEBX_SEO_SITEMAP', true),
+        'per_file' => 45000,
+        'cache' => [
+            'enabled' => true,
+            'ttl' => (int) env('WEBX_SEO_SITEMAP_TTL', 86400),
+            'key' => 'webx.seo.sitemap',
+        ],
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
     | Cache
     |---------------------------------------------------------------------------
     |

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Blog\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -12,6 +13,7 @@ use Illuminate\Support\Carbon;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Blog\Exceptions\BlogException;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Seo\HasSeo;
 
@@ -39,7 +41,7 @@ use WebxUi\Seo\HasSeo;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Rubric extends Model
+class Rubric extends Model implements Visible
 {
     use HasCover;
     use HasSeo;
@@ -98,14 +100,26 @@ class Rubric extends Model
     }
 
     /**
-     * The ones a reader can reach, in the order the panel dragged them into.
+     * The ones a reader can reach.
      *
-     * @param  Builder<static>  $query
-     * @return Builder<static>
+     * @param  Builder<covariant Model>  $query
+     * @return Builder<covariant Model>
      */
-    public function scopeVisible(Builder $query): Builder
+    public function scopeVisible(Builder $query, ?string $locale = null): Builder
     {
-        return $query->where('is_visible', true);
+        return $query->where($this->qualifyColumn('is_visible'), true);
+    }
+
+    /** Shown, and not in the bin — the handler's 404 and the sitemap's line (§17.1 of the SEO spec). */
+    public function isVisible(?string $locale = null): bool
+    {
+        return $this->is_visible && ! $this->trashed();
+    }
+
+    /** A rubric has no publication of its own: its page changes when the rubric is saved. */
+    public function visibleUpdatedAt(): ?CarbonInterface
+    {
+        return $this->updated_at;
     }
 
     /**

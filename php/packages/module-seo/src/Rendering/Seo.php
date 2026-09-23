@@ -128,6 +128,7 @@ final class Seo
             title: $this->clamp($title, 'title'),
             description: $this->clamp($data->description, 'description'),
             keywords: $this->clamp($data->keywords, 'keywords'),
+            canonical: $data->canonical ?? $this->selfCanonical($url),
         );
 
         $og = $data->og;
@@ -144,6 +145,35 @@ final class Seo
         }
 
         return $data->with(og: $og);
+    }
+
+    /**
+     * The page names itself when nobody named anything else (§17.1, decision 5).
+     *
+     * Without it every `?utm_source=` a newsletter appends is a separate page to a search
+     * engine, with the same text as the real one. The query is kept only where it makes a
+     * different page — `?page=2` of a feed is not page one — and that list is the config's, so
+     * a catalogue whose filters are pages of their own can say so.
+     */
+    private function selfCanonical(string $url): ?string
+    {
+        if (! (bool) $this->config->get('webx-seo.canonical.self', true)) {
+            return null;
+        }
+
+        [$path, $query] = array_pad(explode('?', $url, 2), 2, '');
+
+        /** @var list<string> $keep */
+        $keep = (array) $this->config->get('webx-seo.canonical.query', ['page']);
+        $kept = [];
+
+        foreach ($query === '' ? [] : explode('&', $query) as $pair) {
+            if (in_array(urldecode(explode('=', $pair, 2)[0]), $keep, true)) {
+                $kept[] = $pair;
+            }
+        }
+
+        return url($path).($kept === [] ? '' : '?'.implode('&', $kept));
     }
 
     /**
