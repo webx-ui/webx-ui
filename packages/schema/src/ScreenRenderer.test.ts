@@ -34,6 +34,33 @@ function mountScreen(props: Record<string, unknown> = {}) {
 }
 
 describe('WxScreenRenderer', () => {
+  it('marks a column so the fields in it stack with the form step, keeping its own class', () => {
+    const wrapper = mountScreen({
+      root: [
+        {
+          id: 'row',
+          type: 'wx-row',
+          children: [
+            {
+              id: 'col',
+              type: 'wx-col',
+              props: { md: 12, class: 'mine' },
+              children: [
+                { id: 'a', type: 'wx-input', name: 'a', label: 'A' },
+                { id: 'b', type: 'wx-input', name: 'b', label: 'B' },
+              ],
+            },
+          ],
+        },
+      ],
+    })
+
+    const col = wrapper.get('.wx-col')
+    expect(col.classes()).toEqual(expect.arrayContaining(['wx-screen__col', 'mine']))
+    expect(col.findAll('.wx-form-item')).toHaveLength(2)
+    wrapper.unmount()
+  })
+
   it('draws layout, fields and display nodes from the registry', () => {
     const wrapper = mountScreen({ modelValue: { name: 'Acme' } })
 
