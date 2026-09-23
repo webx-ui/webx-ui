@@ -370,6 +370,87 @@ export function stageDocument(input: StageInput): string {
   )
 }
 
+/** Where a thumbnail's block goes in a {@link siteShell}. */
+export const SHELL_PLACE = '<!--wx-thumb-->'
+
+/**
+ * The stage page with the page taken out: what a thumbnail needs of the site to look like it.
+ *
+ * Kept from the head: the stylesheets, the `<style>` elements and the font preloads — the
+ * look. Kept from the body: only the chain of elements the block's place sits in, each one
+ * empty but for the next, so a rule like `.site-main > section` still finds its parent. The
+ * header, the footer, the popups and every script are left behind: a card in a list is a
+ * picture, and a site's script in forty of them is forty newsletter popups.
+ *
+ * Null when the page has no place for a block — then there is nothing to put the block in.
+ */
+export function siteShell(html: string, url: string): string | null {
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  const opener = findMarker(doc, `wx:${STAGE_KEY}`)
+
+  if (opener === null) return null
+
+  const absolute = (value: string | null): string | null =>
+    value === null ? null : new URL(value, new URL(url, location.href)).href
+
+  const head: string[] = []
+
+  for (const element of Array.from(doc.head.children)) {
+    const tag = element.tagName.toLowerCase()
+    const rel = (element.getAttribute('rel') ?? '').toLowerCase().split(/\s+/)
+
+    if (tag === 'style' && element.id !== STAGE_STYLES) {
+      head.push(element.outerHTML)
+    } else if (
+      tag === 'link' &&
+      (rel.includes('stylesheet') ||
+        (rel.includes('preload') && element.getAttribute('as') === 'font'))
+    ) {
+      const copy = element.cloneNode(false) as Element
+      copy.setAttribute('href', absolute(element.getAttribute('href')) ?? '')
+      head.push(copy.outerHTML)
+    }
+  }
+
+  let inner = SHELL_PLACE
+  let parent = opener.parentElement
+
+  while (parent !== null && parent !== doc.body && parent !== doc.documentElement) {
+    const copy = parent.cloneNode(false) as Element
+    copy.innerHTML = inner
+    inner = copy.outerHTML
+    parent = parent.parentElement
+  }
+
+  const attributes = (element: Element): string =>
+    Array.from(element.attributes)
+      .map((attribute) => ` ${attribute.name}="${escapeAttribute(attribute.value)}"`)
+      .join('')
+
+  return (
+    `<!doctype html><html${attributes(doc.documentElement)}><head><meta charset="utf-8">` +
+    `<meta name="viewport" content="width=device-width,initial-scale=1">${head.join('')}</head>` +
+    `<body${attributes(doc.body)}>${inner}</body></html>`
+  )
+}
+
+/** A thumbnail's document: the block in the site's shell, its own styles last. */
+export function thumbDocument(shell: string, input: { html: string; styles: string }): string {
+  return shell
+    .replace('</head>', () => `<style>${input.styles}</style></head>`)
+    .replace(SHELL_PLACE, () => input.html)
+}
+
+function findMarker(doc: Document, text: string): Comment | null {
+  const walker = doc.createTreeWalker(doc.body ?? doc.documentElement, NodeFilter.SHOW_COMMENT)
+
+  for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+    if ((node as Comment).data.trim() === text) return node as Comment
+  }
+
+  return null
+}
+
 function escapeAttribute(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
 }

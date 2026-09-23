@@ -220,7 +220,7 @@ on('GET', '/manifest', ({ locale }) => ({
         permissions: ['blocks.view', 'blocks.manage'],
         /* Nothing: this demo has no bundle of its own, so a block asking for a library
            through `webx.use()` would wait forever. The editor says so in as many words. */
-        meta: { groups: blockGroups, editing: true, provides: [] },
+        meta: { groups: blockGroups, editing: true, provides: [], stage: '/_preview/block-stage' },
       },
       {
         id: 'articles',
