@@ -246,6 +246,9 @@ importers:
       '@webx-ui/module-media':
         specifier: workspace:*
         version: link:../../packages/module-media
+      '@webx-ui/module-menu':
+        specifier: workspace:*
+        version: link:../../packages/module-menu
       '@webx-ui/module-pages':
         specifier: workspace:*
         version: link:../../packages/module-pages
