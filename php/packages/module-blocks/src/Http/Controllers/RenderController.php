@@ -69,7 +69,7 @@ final class RenderController
         $html = $renderer->draw(
             $type,
             is_array($values) ? $values : $type->sample,
-            is_string($key) && $key !== '' ? $key : 'sample',
+            is_string($key) && $key !== '' ? $key : StageController::KEY,
             $unsaved,
         );
 
@@ -79,6 +79,8 @@ final class RenderController
             'script' => Bundles::wrapScript($type),
             'runtime' => $bundles->runtimeUrl(),
             'version' => $type->version,
+            // The page to draw it on: the site's layout, loaded once by the editor's stage.
+            'stage' => route('webx.blocks.stage', absolute: false),
         ]);
     }
 

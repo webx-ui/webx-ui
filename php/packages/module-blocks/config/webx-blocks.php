@@ -144,4 +144,22 @@ return [
         'middleware' => ['web', 'webx.locale'],
     ],
 
+    /*
+    |---------------------------------------------------------------------------
+    | The layout the editor's stage stands in
+    |---------------------------------------------------------------------------
+    |
+    | The name of a Blade component: `'layout'` for the `<x-layout>` a site keeps
+    | in `resources/views/components/layout.blade.php` — the same one its pages
+    | stand in. The block editor draws the block inside it, header, footer and
+    | the site's styles included, so that what an editor sees is the block on
+    | the site rather than the block against the browser's default styles.
+    | Empty prints the package's own `webx-blocks::standalone`, a bare document.
+    |
+    | The deal is the one every module has: a `head` slot and the default slot.
+    |
+    */
+
+    'layout' => env('WEBX_BLOCKS_LAYOUT'),
+
 ];

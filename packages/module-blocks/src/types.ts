@@ -100,6 +100,11 @@ export interface RenderResult {
   /** Where the runtime is served. */
   runtime: string
   version: number
+  /**
+   * The page of the site the block is drawn on — its layout with an empty place in it — or
+   * nothing from a server older than the stage, which draws the block on a bare document.
+   */
+  stage?: string | null
 }
 
 export interface RenderInput {
