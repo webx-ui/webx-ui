@@ -445,7 +445,14 @@ interface FieldType
 Встроенные: `wx-input` (string), `wx-textarea` (string), `wx-input-number` (numeric),
 `wx-switch`/`wx-checkbox` (bool), `wx-select`/`wx-radio-group` (значение из `props.options`),
 `wx-date-picker` (date), `wx-color-picker` (hex), `wx-media` (ключ библиотеки; `resolve` → адрес),
-`wx-repeater` (массив, рекурсивно по детям). `localized` — не тип, а модификатор: правила
+`wx-repeater` (массив, рекурсивно по детям). С 23.09.2026 к ним добавились остальные поля
+ядра: `wx-segmented` (как select), `wx-checkbox-group`/`wx-transfer` (список значений из
+`props.options`/`props.items`), `wx-cascader` (путь значений; последнее при `emitPath: false`),
+`wx-tree-select` (ключ из `props.nodes`, список при `multiple`), `wx-slider` (число, пара при
+`range`), `wx-rate`, `wx-time-picker` (`HH:mm`), `wx-date-time-picker` (ISO 8601 со смещением, в
+поясе приложения), `wx-date-range-picker` (`[start, end]`), `wx-tags-input` (список строк),
+`wx-autocomplete`/`wx-icon-picker`/`wx-code-editor` (string); `wx-heading` — display, значения
+нет. Полная таблица — в `apps/docs/guide/screens.md`. `localized` — не тип, а модификатор: правила
 применяются к каждому языку, `resolve` отдаёт текущий язык с фолбэком на язык по умолчанию.
 
 Неизвестный серверу тип (`map` проекта) хранится как есть, без правил, `resolve` возвращает

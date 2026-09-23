@@ -156,28 +156,67 @@ The core types, generated from the registry (a test fails when this table is sta
 
 <!-- types:start -->
 
-| Type              | Kind    | Component          | `label` goes to |
-| ----------------- | ------- | ------------------ | --------------- |
-| `wx-tabs`         | layout  | `WxTabs`           | —               |
-| `wx-tab`          | layout  | `WxTab`            | prop `label`    |
-| `wx-card`         | layout  | `WxCard`           | prop `title`    |
-| `wx-row`          | layout  | `WxRow`            | —               |
-| `wx-col`          | layout  | `WxCol`            | —               |
-| `wx-divider`      | layout  | `WxDivider`        | prop `label`    |
-| `wx-input`        | field   | `WxInput`          | form item       |
-| `wx-textarea`     | field   | `WxTextarea`       | form item       |
-| `wx-input-number` | field   | `WxInputNumber`    | form item       |
-| `wx-select`       | field   | `WxSelect`         | form item       |
-| `wx-switch`       | field   | `WxSwitch`         | form item       |
-| `wx-checkbox`     | field   | `WxCheckbox`       | form item       |
-| `wx-radio-group`  | field   | `WxRadioGroup`     | form item       |
-| `wx-date-picker`  | field   | `WxDatePicker`     | form item       |
-| `wx-color-picker` | field   | `WxColorPicker`    | form item       |
-| `wx-repeater`     | field   | `WxScreenRepeater` | form item       |
-| `wx-text`         | display | `WxText`           | default slot    |
-| `wx-alert`        | display | `WxAlert`          | prop `title`    |
+| Type                   | Kind    | Component           | `label` goes to |
+| ---------------------- | ------- | ------------------- | --------------- |
+| `wx-tabs`              | layout  | `WxTabs`            | —               |
+| `wx-tab`               | layout  | `WxTab`             | prop `label`    |
+| `wx-card`              | layout  | `WxCard`            | prop `title`    |
+| `wx-row`               | layout  | `WxRow`             | —               |
+| `wx-col`               | layout  | `WxCol`             | —               |
+| `wx-divider`           | layout  | `WxDivider`         | prop `label`    |
+| `wx-input`             | field   | `WxInput`           | form item       |
+| `wx-textarea`          | field   | `WxTextarea`        | form item       |
+| `wx-input-number`      | field   | `WxInputNumber`     | form item       |
+| `wx-select`            | field   | `WxSelect`          | form item       |
+| `wx-switch`            | field   | `WxSwitch`          | form item       |
+| `wx-checkbox`          | field   | `WxCheckbox`        | form item       |
+| `wx-radio-group`       | field   | `WxRadioGroup`      | form item       |
+| `wx-date-picker`       | field   | `WxDatePicker`      | form item       |
+| `wx-color-picker`      | field   | `WxColorPicker`     | form item       |
+| `wx-checkbox-group`    | field   | `WxCheckboxGroup`   | form item       |
+| `wx-segmented`         | field   | `WxSegmented`       | form item       |
+| `wx-slider`            | field   | `WxSlider`          | form item       |
+| `wx-rate`              | field   | `WxRate`            | form item       |
+| `wx-time-picker`       | field   | `WxTimePicker`      | form item       |
+| `wx-date-time-picker`  | field   | `WxDateTimePicker`  | form item       |
+| `wx-date-range-picker` | field   | `WxDateRangePicker` | form item       |
+| `wx-tags-input`        | field   | `WxTagsInput`       | form item       |
+| `wx-autocomplete`      | field   | `WxAutocomplete`    | form item       |
+| `wx-icon-picker`       | field   | `WxIconPicker`      | form item       |
+| `wx-cascader`          | field   | `WxCascader`        | form item       |
+| `wx-tree-select`       | field   | `WxTreeSelect`      | form item       |
+| `wx-transfer`          | field   | `WxTransfer`        | form item       |
+| `wx-code-editor`       | field   | `WxCodeEditor`      | form item       |
+| `wx-repeater`          | field   | `WxScreenRepeater`  | form item       |
+| `wx-heading`           | display | `WxHeading`         | default slot    |
+| `wx-text`              | display | `WxText`            | default slot    |
+| `wx-alert`             | display | `WxAlert`           | prop `title`    |
 
 <!-- types:end -->
+
+What a choice, a number or a date keeps, as `module-admin` checks and stores it on the server. A
+list emptied to `[]` and a date cleared to `''` are kept as `null`:
+
+| Type                                          | Value                                                                       |
+| --------------------------------------------- | --------------------------------------------------------------------------- |
+| `wx-select`, `wx-radio-group`, `wx-segmented` | one of `props.options`                                                      |
+| `wx-checkbox-group`                           | a list of `props.options` values; `props.min` / `max` count them            |
+| `wx-transfer`                                 | a list of `props.items` values                                              |
+| `wx-cascader`                                 | the path of values from the root; the last one alone with `emitPath: false` |
+| `wx-tree-select`                              | a key from `props.nodes`; a list of keys with `multiple`                    |
+| `wx-slider`                                   | a number, 0–100 unless `props` say; `[from, to]` with `range`               |
+| `wx-rate`                                     | a number from 0 to `props.max` (5), halves with `allowHalf`                 |
+| `wx-date-picker`                              | `YYYY-MM-DD`                                                                |
+| `wx-date-range-picker`                        | `[start, end]`                                                              |
+| `wx-time-picker`                              | `HH:mm`, or `HH:mm:ss` with `seconds`                                       |
+| `wx-date-time-picker`                         | ISO 8601 with the offset, moved into the application's timezone             |
+| `wx-tags-input`                               | a list of strings; only `props.suggestions` with `allowCreate: false`       |
+| `wx-autocomplete`, `wx-icon-picker`           | a string                                                                    |
+| `wx-code-editor`                              | a string                                                                    |
+
+`wx-date-time-picker` always writes the offset: the registry binds its `valueFormat`, because a
+wall clock without a zone is read by the server in its timezone and by the browser in the
+reader's, and the same value shows two different hours.
 
 The panel's own frame comes with `module-admin` and is in every screen it draws:
 

@@ -144,4 +144,56 @@ describe('WxScreenRenderer', () => {
 
     expect(wrapper.findAll('[role="tab"]').map((tab) => tab.text())).toEqual(['One', 'Two'])
   })
+
+  it('draws every form control of the core with the value it holds', () => {
+    const options = [
+      { label: 'Left', value: 'left' },
+      { label: 'Right', value: 'right' },
+    ]
+    const fields: ScreenNode[] = [
+      { id: 'a', type: 'wx-checkbox-group', name: 'a', label: 'Group', props: { options } },
+      { id: 'b', type: 'wx-segmented', name: 'b', label: 'Segmented', props: { options } },
+      { id: 'c', type: 'wx-slider', name: 'c', label: 'Slider' },
+      { id: 'd', type: 'wx-rate', name: 'd', label: 'Rate' },
+      { id: 'e', type: 'wx-time-picker', name: 'e', label: 'Time' },
+      { id: 'f', type: 'wx-date-time-picker', name: 'f', label: 'Moment' },
+      { id: 'g', type: 'wx-date-range-picker', name: 'g', label: 'Range' },
+      { id: 'h', type: 'wx-tags-input', name: 'h', label: 'Tags' },
+      { id: 'i', type: 'wx-autocomplete', name: 'i', label: 'City' },
+      { id: 'j', type: 'wx-icon-picker', name: 'j', label: 'Icon' },
+      { id: 'k', type: 'wx-code-editor', name: 'k', label: 'Code' },
+      { id: 'l', type: 'wx-cascader', name: 'l', label: 'Section', props: { options } },
+      {
+        id: 'm',
+        type: 'wx-tree-select',
+        name: 'm',
+        label: 'Part',
+        props: { nodes: [{ id: 1, label: 'Engine' }] },
+      },
+      {
+        id: 'n',
+        type: 'wx-transfer',
+        name: 'n',
+        label: 'Team',
+        props: { items: [{ value: 'ann', label: 'Ann' }] },
+      },
+    ]
+    const wrapper = mountScreen({
+      root: [{ id: 'head', type: 'wx-heading', label: 'Event' }, ...fields],
+      modelValue: { a: ['left'], b: 'right', c: 40, d: 3, h: ['jazz'], i: 'Lviv', n: ['ann'] },
+    })
+
+    expect(wrapper.find('.wx-screen__unknown').exists()).toBe(false)
+    expect(wrapper.get('.wx-heading').text()).toBe('Event')
+    for (const field of fields) expect(wrapper.text()).toContain(field.label as string)
+    expect(wrapper.findAllComponents({ name: 'WxFormItem' })).toHaveLength(fields.length)
+
+    expect(wrapper.findComponent({ name: 'WxCheckboxGroup' }).props('modelValue')).toEqual(['left'])
+    expect(wrapper.findComponent({ name: 'WxSlider' }).props('modelValue')).toBe(40)
+    expect(wrapper.findComponent({ name: 'WxTagsInput' }).text()).toContain('jazz')
+    // The server keeps a moment with its offset, so the picker must write one.
+    expect(wrapper.findComponent({ name: 'WxDateTimePicker' }).props('valueFormat')).toBe(
+      "yyyy-MM-dd'T'HH:mm:ssXXX",
+    )
+  })
 })

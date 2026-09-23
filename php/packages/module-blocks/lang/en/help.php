@@ -53,9 +53,27 @@ return [
           `props`: `placeholder`, `minHeight`, `tools`.
         - `wx-input-number` — a number. `props`: `min`, `max`, `step`.
         - `wx-switch`, `wx-checkbox` — a boolean.
-        - `wx-select`, `wx-radio-group` — one of `props.options`, written as
+        - `wx-select`, `wx-radio-group`, `wx-segmented` — one of `props.options`, written as
           `[{ "value": "left", "label": "Left" }]`.
-        - `wx-date-picker` — a date, stored as `YYYY-MM-DD`.
+        - `wx-checkbox-group` — several of `props.options`, as a list of their values.
+          `props`: `min`, `max`.
+        - `wx-transfer` — several of `props.items`, moved from one list into the other; the
+          same list of values.
+        - `wx-cascader` — a place in a tree of `props.options` with `children`, stored as the
+          path of values from the root (`["content", "news"]`), or the last value alone with
+          `emitPath: false`.
+        - `wx-tree-select` — the key of a node of `props.nodes`; a list of keys with
+          `multiple`.
+        - `wx-slider` — a number between `props.min` and `props.max`; a pair `[from, to]`
+          with `range`. `wx-rate` — stars, from 0 to `props.max`.
+        - `wx-date-picker` — a date, stored as `YYYY-MM-DD`. `wx-date-range-picker` — two of
+          them, `[start, end]`. `wx-time-picker` — a time, `HH:mm`.
+          `wx-date-time-picker` — a moment, stored as ISO 8601 with its offset.
+        - `wx-tags-input` — a list of short strings. `props`: `suggestions`, `allowCreate`,
+          `max`.
+        - `wx-autocomplete` — one line of text with `props.options` offered while typing.
+        - `wx-icon-picker` — the name of an icon. `wx-code-editor` — source text, with
+          `props.language`.
         - `wx-color-picker` — a colour, stored as a CSS colour.
         - `wx-link` — somewhere to go, chosen rather than typed: a page of this site, an
           address, or nowhere. What is kept is the entity, never its address — the template
@@ -76,8 +94,8 @@ return [
 
         Layout nodes hold other nodes and no value of their own: `wx-card` (`props.title`),
         `wx-tabs` with `wx-tab` children (`props.label`), `wx-row` with `wx-col` children
-        (`props.span`, out of 24), `wx-divider`. `wx-text` and `wx-alert` say something to the
-        editor and store nothing.
+        (`props.span`, out of 24), `wx-divider`. `wx-heading`, `wx-text` and `wx-alert` say
+        something to the editor and store nothing.
 
         ## Fields in more than one language
 

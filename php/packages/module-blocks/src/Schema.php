@@ -18,7 +18,7 @@ use WebxUi\Admin\Screens\Tree;
 final class Schema
 {
     /** The types that arrange fields or explain them, and hold no value of their own. */
-    public const LAYOUT = ['wx-card', 'wx-tabs', 'wx-tab', 'wx-row', 'wx-col', 'wx-divider', 'wx-text', 'wx-alert'];
+    public const LAYOUT = ['wx-card', 'wx-tabs', 'wx-tab', 'wx-row', 'wx-col', 'wx-divider', 'wx-heading', 'wx-text', 'wx-alert'];
 
     public static function isLayout(string $type): bool
     {
