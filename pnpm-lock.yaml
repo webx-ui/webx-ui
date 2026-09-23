@@ -255,6 +255,9 @@ importers:
       '@webx-ui/module-seo':
         specifier: workspace:*
         version: link:../../packages/module-seo
+      '@webx-ui/module-services':
+        specifier: workspace:*
+        version: link:../../packages/module-services
       '@webx-ui/schema':
         specifier: workspace:*
         version: link:../../packages/schema

@@ -25,6 +25,7 @@ const NAMESPACES: Record<string, string> = {
   'module-menu': 'webx-menu',
   'module-pages': 'webx-pages',
   'module-seo': 'webx-seo',
+  'module-services': 'webx-services',
   'module-settings': 'webx-settings',
 }
 
@@ -128,6 +129,24 @@ function readArray(source: string, from: number): [Messages, number] {
 
     if (char === ']') {
       return [messages, index + 1]
+    }
+
+    // A comment is skipped whole: an apostrophe in one ("a module's screen") would otherwise
+    // open a string and shift every key after it onto the wrong value.
+    if (char === '/' && source[index + 1] === '/') {
+      const end = source.indexOf('\n', index)
+
+      index = end < 0 ? source.length : end + 1
+
+      continue
+    }
+
+    if (char === '/' && source[index + 1] === '*') {
+      const end = source.indexOf('*/', index + 2)
+
+      index = end < 0 ? source.length : end + 2
+
+      continue
     }
 
     if (char === "'" || char === '"') {
