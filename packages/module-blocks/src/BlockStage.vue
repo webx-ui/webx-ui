@@ -1,13 +1,25 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useTranslate } from '@webx-ui/module-admin'
 import { useElementWidth, WxSegmented, WxSkeleton } from '@webx-ui/core'
-import { stageDocument } from './frame'
+import {
+  blockElement,
+  fillStage,
+  freezeFrame,
+  mountScript,
+  STAGE_KEY,
+  stageDocument,
+  type FrameBinding,
+} from './frame'
 
 /**
- * The block on its own, at a chosen width: a desktop scaled down to fit the column, a tablet
- * or a phone at one to one. The document is the block, its styles, its script and the
- * runtime, and nothing of the panel — an iframe, so the block's CSS stays the block's.
+ * The block as it will stand on the site, at a chosen width: a desktop scaled down to fit the
+ * column, a tablet or a phone at one to one.
+ *
+ * With `stage` the frame is a page of the site — its layout, header, footer and styles, with
+ * an empty place for the block — loaded once; every change after that swaps the block and its
+ * styles in place, so the site around it does not redraw under the editor's typing. Without
+ * it (a server older than the stage) the frame is the block on a bare document, as before.
  */
 const props = withDefaults(
   defineProps<{
@@ -15,9 +27,11 @@ const props = withDefaults(
     styles: string
     script?: string | null
     runtime?: string | null
+    /** The address of the stage page; null draws the block on a bare document. */
+    stage?: string | null
     loading?: boolean
   }>(),
-  { script: null, runtime: null, loading: false },
+  { script: null, runtime: null, stage: null, loading: false },
 )
 
 const t = useTranslate('webx-blocks')
@@ -68,17 +82,34 @@ const scale = computed(() => {
 })
 
 const srcdoc = computed(() =>
-  stageDocument({
-    html: props.html,
-    styles: props.styles,
-    script: props.script,
-    runtime: props.runtime,
-    base: typeof location === 'undefined' ? null : location.origin + '/',
-  }),
+  props.stage
+    ? undefined
+    : stageDocument({
+        html: props.html,
+        styles: props.styles,
+        script: props.script,
+        runtime: props.runtime,
+        base: typeof location === 'undefined' ? null : location.origin + '/',
+      }),
 )
 
 /**
- * The frame is as tall as the block: a stage that scrolls inside itself hides half of it.
+ * A new page for every new script, and only then: a script registered in a page cannot be
+ * unregistered, so the old one would keep running beside the new one. Everything else is
+ * swapped into the page that is already there.
+ */
+const generation = ref(0)
+let loadedScript: string | null = null
+
+watch(
+  () => props.script,
+  (script) => {
+    if (props.stage && script !== loadedScript) generation.value += 1
+  },
+)
+
+/**
+ * The frame is as tall as the page in it: a stage that scrolls inside itself hides half of it.
  *
  * Measured on the body, never on `documentElement` — that one is never shorter than the
  * frame's own window, so once the frame has been given a height it measures itself and a
@@ -89,16 +120,91 @@ function measure(): void {
 
   if (!body) return
 
-  contentHeight.value = Math.max(120, body.scrollHeight)
+  /* Where the body ends, margin included, and rounded up: a site's layout is fractional and
+     may keep a margin on `body`, and a height a pixel short of either gives the frame a
+     scrollbar of its own. */
+  const view = body.ownerDocument.defaultView
+  const margin = view ? parseFloat(view.getComputedStyle(body).marginBottom) || 0 : 0
+  const bottom = body.getBoundingClientRect().bottom + margin + (view?.scrollY ?? 0)
+
+  contentHeight.value = Math.max(120, Math.ceil(Math.max(body.scrollHeight, bottom)))
+}
+
+let binding: FrameBinding | null = null
+let observer: ResizeObserver | null = null
+
+function release(): void {
+  binding?.release()
+  binding = null
+  observer?.disconnect()
+  observer = null
+}
+
+/** Put the current block on the page — its script once per page, the rest every time. */
+function fill(doc: Document): void {
+  if (!props.stage) return
+
+  if (props.script && loadedScript !== props.script) {
+    loadedScript = props.script
+    mountScript(doc, props.script)
+  }
+
+  fillStage(doc, { html: props.html, styles: props.styles })
+}
+
+/**
+ * Bring the block into view: on a page of the site it stands under the header, and at a
+ * desktop width scaled into a column the header alone can be most of what shows. Done when the
+ * page arrives and not on every keystroke — that would take the scroll from the editor.
+ */
+function reveal(doc: Document): void {
+  const element = blockElement(doc, STAGE_KEY)
+  const ground = box.value
+
+  if (!element || !ground) return
+
+  const top = element.getBoundingClientRect().top + (doc.defaultView?.scrollY ?? 0)
+  ground.scrollTop = Math.max(0, top * scale.value - 24)
 }
 
 function onLoad(): void {
+  release()
+
+  const doc = frame.value?.contentDocument
+
+  if (!doc?.body) return
+
+  if (props.stage) {
+    loadedScript = null
+    binding = freezeFrame(doc)
+    fill(doc)
+  }
+
   measure()
-  // Fonts and images arrive after `load` of the document itself.
-  setTimeout(measure, 300)
+
+  /* The observer of the frame's own window: one made out here does not see into another
+     document. It follows fonts, images and a block that grows as its script runs. */
+  const Observer = (doc.defaultView as (Window & typeof globalThis) | null)?.ResizeObserver
+
+  if (Observer) {
+    observer = new Observer(() => measure())
+    observer.observe(doc.body)
+  }
+
+  if (props.stage) {
+    // The height has to be set before there is anything to scroll to.
+    requestAnimationFrame(() => reveal(doc))
+  }
 }
 
-watch(width, () => setTimeout(measure, 50))
+watch(
+  () => [props.html, props.styles] as const,
+  () => {
+    const doc = frame.value?.contentDocument
+
+    if (props.stage && doc?.body && binding !== null) fill(doc)
+  },
+)
 
 /* A stage that lives in a tab is measured while that tab is hidden, and a hidden document
    has no height: every redraw made behind another tab would leave the frame at its floor.
@@ -106,6 +212,20 @@ watch(width, () => setTimeout(measure, 50))
 watch(boxWidth, (now, before) => {
   if (now > 0 && before === 0) setTimeout(measure, 50)
 })
+
+/* Another device moves the block down the page — a phone's header is taller — so the block is
+   brought back into view as well. */
+watch(width, () =>
+  setTimeout(() => {
+    measure()
+
+    const doc = frame.value?.contentDocument
+
+    if (props.stage && doc) requestAnimationFrame(() => reveal(doc))
+  }, 50),
+)
+
+onBeforeUnmount(release)
 
 const frameStyle = computed(() => ({
   width: `${width.value}px`,
@@ -135,7 +255,9 @@ const clipStyle = computed(() => ({
       <div v-else class="wx-block-stage__clip" :style="clipStyle">
         <iframe
           ref="frame"
+          :key="generation"
           class="wx-block-stage__frame"
+          :src="stage ?? undefined"
           :srcdoc="srcdoc"
           :style="frameStyle"
           sandbox="allow-same-origin allow-scripts"
