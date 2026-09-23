@@ -34,11 +34,23 @@ final class NumberType implements FieldType
      */
     public function store(mixed $value, array $node): mixed
     {
-        if ($value === null || $value === '') {
+        return self::cast($value);
+    }
+
+    /**
+     * A number as a number: `'5'` becomes `5`, `'2.5'` becomes `2.5`. What is not a number at all
+     * becomes null rather than the zero a cast would make of it — a block's values are kept
+     * without rules, and a zero nobody typed reads as a value somebody chose.
+     */
+    public static function cast(mixed $value): int|float|null
+    {
+        if (! is_numeric($value)) {
             return null;
         }
 
-        return is_string($value) && str_contains($value, '.') || is_float($value) ? (float) $value : (int) $value;
+        return is_string($value) && (str_contains($value, '.') || stripos($value, 'e') !== false) || is_float($value)
+            ? (float) $value
+            : (int) $value;
     }
 
     /**

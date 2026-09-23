@@ -32,14 +32,23 @@ use WebxUi\Admin\Notes\NoteTypes;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\BooleanType;
+use WebxUi\Admin\Screens\Types\CascaderType;
 use WebxUi\Admin\Screens\Types\ColorType;
+use WebxUi\Admin\Screens\Types\DateRangeType;
 use WebxUi\Admin\Screens\Types\DateType;
+use WebxUi\Admin\Screens\Types\InstantType;
 use WebxUi\Admin\Screens\Types\LinkType;
 use WebxUi\Admin\Screens\Types\NumberType;
+use WebxUi\Admin\Screens\Types\OptionListType;
 use WebxUi\Admin\Screens\Types\OptionType;
+use WebxUi\Admin\Screens\Types\RateType;
 use WebxUi\Admin\Screens\Types\RepeaterType;
 use WebxUi\Admin\Screens\Types\RichTextType;
+use WebxUi\Admin\Screens\Types\SliderType;
 use WebxUi\Admin\Screens\Types\StringType;
+use WebxUi\Admin\Screens\Types\TagsType;
+use WebxUi\Admin\Screens\Types\TimeType;
+use WebxUi\Admin\Screens\Types\TreeSelectType;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\SiteUrl;
 
@@ -90,6 +99,23 @@ class AdminServiceProvider extends ServiceProvider
             $types->register('wx-radio-group', new OptionType);
             $types->register('wx-date-picker', new DateType);
             $types->register('wx-color-picker', new ColorType);
+            $types->register('wx-checkbox-group', new OptionListType);
+            $types->register('wx-segmented', new OptionType);
+            $types->register('wx-slider', new SliderType);
+            $types->register('wx-rate', new RateType);
+            $types->register('wx-time-picker', new TimeType);
+            $types->register('wx-date-time-picker', new InstantType);
+            $types->register('wx-date-range-picker', new DateRangeType);
+            $types->register('wx-tags-input', new TagsType);
+            // Free text with suggestions beside it: the suggestions are help, not a list to pick from.
+            $types->register('wx-autocomplete', new StringType(2000));
+            // A name from the icon set. The set is the page's, and a project can add to it, so the
+            // server does not know which names exist and checks only that it is a short string.
+            $types->register('wx-icon-picker', new StringType(255));
+            $types->register('wx-code-editor', new StringType);
+            $types->register('wx-cascader', new CascaderType);
+            $types->register('wx-tree-select', new TreeSelectType);
+            $types->register('wx-transfer', new OptionListType('items'));
             // The library is a module's, not the panel's — a site with no file manager has
             // nothing to ask where a picture lives, and the type then leaves addresses alone.
             $types->register('wx-rich-text', new RichTextType(
