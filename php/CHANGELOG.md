@@ -1,5 +1,49 @@
 # @webx-ui/php
 
+## 0.33.0
+
+### Minor Changes
+
+- e7bc9ba: hreflang, breadcrumbs and schema.org for entities, and the sitemap in the panel.
+
+  - `webx-ui/module-seo`: the `<head>` of a page now prints `<link rel="alternate" hreflang>` for
+    every language the entity is visible and open to the index in, plus `x-default` (only with the
+    language in the path), a `BreadcrumbList`, the entity's own schema.org blocks and a
+    `twitter:card`. Each line of the sitemap carries the same `hreflang` set. New contracts
+    `HasBreadcrumbs` (with `Crumb`) and `HasStructuredData`; `Seo::push()` for JSON-LD that belongs
+    to the response rather than the entity. The trail starts at the site's home, named by the new
+    `seo.home-crumb` setting (per language, "Home" from the dictionary until written).
+    `<x-webx-seo::breadcrumbs :for="$entity" />` prints the visible crumbs from the same list.
+    `webx-seo.print` gains `hreflang`, `breadcrumbs`, `structured_data` and `twitter`.
+    `GET`/`POST /api/cms/seo/sitemap` and the MCP tool `seo_sitemap_status` report the files, the
+    counts, when the map was built and how many visible addresses were left out and why;
+    `test-url` says whether an address is in the map and why not.
+  - `webx-ui/module-pages`: `Page` implements `HasBreadcrumbs` — the pages above it, an unpublished
+    one left out. The fallback view prints the crumbs.
+  - `webx-ui/module-blog`: `Article` (feed → main rubric → article, a `BlogPosting`), `Rubric` and
+    `Tag` (feed → it) implement the contracts; a rubric page pushes an `ItemList` of its articles.
+    The fallback views print the crumbs; the article's rubric link above the title is now its trail.
+  - `webx-ui/site`: the skeleton no longer ships Laravel's static `public/robots.txt`. The web
+    server hands that file over before the application is asked, so on a site made from the
+    skeleton the `seo.robots-txt` setting and the `Sitemap:` line never reached a visitor.
+
+- e7bc9ba: The sitemap, and a canonical on every page.
+
+  - `webx-ui/routing`: the `Visible` contract — `isVisible()`, `scopeVisible()` and
+    `visibleUpdatedAt()` — so that a handler and the sitemap ask an entity the same question.
+  - `webx-ui/module-seo`: `/sitemap.xml` as an index with a file per registry type
+    (`/sitemap-{type}.xml`, numbered past `webx-seo.sitemap.per_file`), built from canonical rows
+    of every type whose model is `Visible` and filtered by the same resolver that prints the
+    `<head>`: `noindex` or a canonical pointing elsewhere keeps an address out. Named routes with no
+    entity join through `SitemapRoutes::register()`. Built on the first request and cached under a
+    generation that moves on every save of a registry row, a card, a rule, a visible entity or an
+    `seo.*` setting, with a day's TTL for what changes without a save; `webx:seo:sitemap` builds it
+    ahead. `robots.txt` gains a `Sitemap:` line unless one is written. A page with no canonical of
+    its own now names itself, keeping only `?page=` of the query (`webx-seo.canonical`).
+  - `webx-ui/module-pages`, `webx-ui/module-blog`: `Page`, `Article`, `Rubric` and `Tag` implement
+    `Visible` and their handlers answer 404 by it; the blog feed is in the sitemap.
+    `Rubric::scopeVisible()` takes an optional locale now.
+
 ## 0.32.1
 
 ### Patch Changes

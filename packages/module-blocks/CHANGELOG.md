@@ -1,5 +1,17 @@
 # @webx-ui/module-blocks
 
+## 0.8.3
+
+### Patch Changes
+
+- 2071b2d: `WxActionBar` tells the screen it sits in how much of the window it takes while it sticks, as
+  `--wx-action-bar-room` on its parent, and the column of blocks in the page editor stops that far
+  short of the bottom: its foot and the last field of a long block form were under the buttons.
+- Updated dependencies [2071b2d]
+  - @webx-ui/core@0.33.0
+  - @webx-ui/module-admin@0.14.4
+  - @webx-ui/schema@0.5.1
+
 ## 0.8.2
 
 ### Patch Changes
