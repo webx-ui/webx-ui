@@ -60,7 +60,7 @@
             "module": "admin",
             "npm": {
                 "@webx-ui/core": "^0.32.1",
-                "@webx-ui/module-admin": "^0.14.2",
+                "@webx-ui/module-admin": "^0.14.3",
                 "@webx-ui/tokens": "^0.4.0",
                 "vue": "^3.5.0",
                 "vue-router": "^4.5.0"
