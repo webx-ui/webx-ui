@@ -30,7 +30,7 @@ class TagHandler implements RouteHandler
 
     public function handle(Request $request, object $entity, string $tail): Response
     {
-        if (! $entity instanceof Tag) {
+        if (! $entity instanceof Tag || ! $entity->isVisible()) {
             throw new NotFoundHttpException;
         }
 

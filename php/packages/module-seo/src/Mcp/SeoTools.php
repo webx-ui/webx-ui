@@ -11,6 +11,7 @@ use WebxUi\Seo\Models\SeoUrl;
 use WebxUi\Seo\Panel\UrlMatcher;
 use WebxUi\Seo\Panel\UrlRuleSource;
 use WebxUi\Seo\Rendering\Seo;
+use WebxUi\Seo\Sitemap\Sitemap;
 
 /**
  * What an agent can do with SEO.
@@ -83,7 +84,7 @@ final class SeoTools
 
             Tool::read(
                 'test_url',
-                'What an address ends up saying about itself, and where every part of it came from: the redirect that catches it, the rule that matched, and each source in turn.',
+                'What an address ends up saying about itself, and where every part of it came from: the redirect that catches it, the rule that matched, each source in turn, and whether it is in the sitemap and why not.',
                 static fn (array $arguments): array => self::test($arguments),
                 [
                     'properties' => [
@@ -92,6 +93,14 @@ final class SeoTools
                     ],
                     'required' => ['url'],
                 ],
+                scope: 'seo:read',
+            ),
+
+            Tool::read(
+                'sitemap_status',
+                'The sitemap as a crawler gets it: its address, how many addresses are in each file, when it was built, and how many visible addresses were left out because their page says noindex or names another canonical. It rebuilds itself on every save; use test_url to ask about one address.',
+                static fn (array $arguments): array => app(Sitemap::class)->status(),
+                [],
                 scope: 'seo:read',
             ),
 
@@ -230,6 +239,7 @@ final class SeoTools
             'matched' => $matched === null ? null : self::summarise($matched),
             'chain' => $seo->chain($url, null, $locale),
             'seo' => $seo->for($url, null, $locale)->toArray(),
+            'sitemap' => app(Sitemap::class)->verdict($url, $locale),
         ];
     }
 

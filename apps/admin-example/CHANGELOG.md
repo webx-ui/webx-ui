@@ -1,5 +1,56 @@
 # @webx-ui/admin-example
 
+## 0.0.35
+
+### Patch Changes
+
+- Updated dependencies [c7b0084]
+- Updated dependencies [c7b0084]
+- Updated dependencies [c7b0084]
+  - @webx-ui/module-admin@0.17.0
+  - @webx-ui/core@0.33.2
+  - @webx-ui/module-auth@0.8.6
+
+## 0.0.34
+
+### Patch Changes
+
+- Updated dependencies [b7caa68]
+  - @webx-ui/core@0.33.1
+  - @webx-ui/module-admin@0.16.1
+
+## 0.0.33
+
+### Patch Changes
+
+- Updated dependencies [298c894]
+  - @webx-ui/module-admin@0.16.0
+  - @webx-ui/module-auth@0.8.5
+
+## 0.0.32
+
+### Patch Changes
+
+- Updated dependencies [42d427e]
+  - @webx-ui/module-admin@0.15.0
+  - @webx-ui/module-auth@0.8.4
+
+## 0.0.31
+
+### Patch Changes
+
+- Updated dependencies [2071b2d]
+  - @webx-ui/core@0.33.0
+  - @webx-ui/module-admin@0.14.4
+  - @webx-ui/module-auth@0.8.3
+
+## 0.0.30
+
+### Patch Changes
+
+- Updated dependencies [5288978]
+  - @webx-ui/module-admin@0.14.3
+
 ## 0.0.29
 
 ### Patch Changes

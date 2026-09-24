@@ -1,5 +1,47 @@
 # @webx-ui/module-seo
 
+## 0.5.3
+
+### Patch Changes
+
+- Updated dependencies [c7b0084]
+- Updated dependencies [c7b0084]
+- Updated dependencies [c7b0084]
+  - @webx-ui/module-admin@0.17.0
+  - @webx-ui/core@0.33.2
+
+## 0.5.2
+
+### Patch Changes
+
+- Updated dependencies [298c894]
+  - @webx-ui/module-admin@0.16.0
+
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [42d427e]
+  - @webx-ui/module-admin@0.15.0
+  - @webx-ui/schema@0.6.0
+
+## 0.5.0
+
+### Minor Changes
+
+- e7bc9ba: The sitemap in the SEO section: a card above the rules with its address, the number of
+  addresses in each file, when it was built, how many visible pages were left out and why, and a
+  **Rebuild** button for those who may manage SEO. **Check an address** now says whether the
+  address is in the sitemap, and if not, why. `createSeoApi()` gains `sitemap()` and
+  `rebuildSitemap()`; `SeoTestResult` gains `sitemap`.
+
+### Patch Changes
+
+- Updated dependencies [2071b2d]
+  - @webx-ui/core@0.33.0
+  - @webx-ui/module-admin@0.14.4
+  - @webx-ui/schema@0.5.1
+
 ## 0.4.5
 
 ### Patch Changes

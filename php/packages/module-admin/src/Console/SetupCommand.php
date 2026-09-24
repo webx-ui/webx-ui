@@ -111,6 +111,7 @@ final class SetupCommand extends Command
             $this->installModules();
             $this->wireThePanel($files);
             $this->migrate();
+            $this->installOfferedBlocks();
             $this->createAdministrator();
             $this->build();
             $this->seedDemo($files);
@@ -543,6 +544,27 @@ final class SetupCommand extends Command
         if ($this->catalogue->has('laravel/passport') && ! file_exists($this->laravel->storagePath('oauth-private.key'))) {
             $this->artisan(['passport:keys', '--quiet'], 'passport:keys', fatal: false);
         }
+    }
+
+    /**
+     * The block types the chosen modules bring along (§3.4 of the FAQ spec): a FAQ is put on a
+     * page as a block, and a FAQ whose block the site has to build first is half a module.
+     *
+     * For the chosen modules only, and never over a type the site already has — the command
+     * behind this leaves an existing slug alone, so a second run of setup changes nothing. Not
+     * fatal: a site without its FAQ block is a site to finish in the panel, not one to abandon.
+     */
+    private function installOfferedBlocks(): void
+    {
+        if (! $this->catalogue->has('webx-ui/module-blocks') || $this->modules === []) {
+            return;
+        }
+
+        $this->artisan(
+            ['webx:blocks:offered', '--install', ...array_map(static fn (string $id): string => '--module='.$id, $this->modules)],
+            'webx:blocks:offered --install',
+            fatal: false,
+        );
     }
 
     private function missingPassportMigrations(): bool

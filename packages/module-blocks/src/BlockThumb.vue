@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useElementWidth, WxIcon } from '@webx-ui/core'
-import { stageDocument } from './frame'
+import { stageDocument, thumbDocument } from './frame'
+import { useSiteShell } from './shell'
 import type { BlockThumbnail } from './types'
 
 /**
@@ -10,6 +11,10 @@ import type { BlockThumbnail } from './types'
  * An iframe rather than inline markup because a block's styles are a block's business — a
  * stray `h2 { }` in one type would otherwise restyle the whole list of cards — and because
  * the thumbnail is a picture of the site, not a part of the panel.
+ *
+ * Drawn in the site's own clothes when the site has a stage: its stylesheets and fonts, and
+ * the wrappers the block sits in on a page, without the header, the footer or any script
+ * (see `siteShell`). Bare until that arrives, and bare where there is none.
  */
 const props = withDefaults(
   defineProps<{
@@ -27,11 +32,15 @@ const boxWidth = useElementWidth(box)
 
 const scale = computed(() => (boxWidth.value > 0 ? boxWidth.value / props.width : 0.2))
 
-const srcdoc = computed(() =>
-  props.thumbnail
-    ? stageDocument({ html: props.thumbnail.html, styles: props.thumbnail.styles })
-    : '',
-)
+const shell = useSiteShell()
+
+const srcdoc = computed(() => {
+  if (!props.thumbnail) return ''
+
+  const input = { html: props.thumbnail.html, styles: props.thumbnail.styles }
+
+  return shell.value ? thumbDocument(shell.value, input) : stageDocument(input)
+})
 
 const frameStyle = computed(() => ({
   width: `${props.width}px`,

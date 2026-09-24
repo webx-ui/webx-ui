@@ -1,5 +1,86 @@
 # @webx-ui/module-blog
 
+## 0.5.3
+
+### Patch Changes
+
+- Updated dependencies [c7b0084]
+- Updated dependencies [c7b0084]
+- Updated dependencies [c7b0084]
+- Updated dependencies [c7b0084]
+  - @webx-ui/module-admin@0.17.0
+  - @webx-ui/module-blocks@0.8.6
+  - @webx-ui/core@0.33.2
+
+## 0.5.2
+
+### Patch Changes
+
+- b7caa68: A round of panel fixes.
+
+  - `useModal` finds its host when the modal was opened inside `app.runWithContext()` — which is where vue-router runs every guard. "Leave without saving?" from `onBeforeRouteLeave` answered nothing: its buttons were the stand-in's, the dialog stayed open and the navigation hung.
+  - The shared category screens are a component per module, so going from the blog's rubrics to the services' categories mounts the list anew instead of keeping the rubrics on a page titled "Categories".
+  - The panel's toasts stack at the bottom centre instead of the bottom-right corner, where they covered the action bar's buttons.
+  - A category's cover is a card under its name rather than a tab of its own; the cover of an article and of a service sits right under the name too.
+  - A number field on a described screen stops at 240px instead of stretching to the width of a title.
+  - A new icon, `briefcase`, and the services section wears it instead of `star`.
+
+- Updated dependencies [b7caa68]
+  - @webx-ui/core@0.33.1
+  - @webx-ui/schema@0.6.1
+  - @webx-ui/module-admin@0.16.1
+
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [298c894]
+  - @webx-ui/module-admin@0.16.0
+  - @webx-ui/module-blocks@0.8.5
+
+## 0.5.0
+
+### Minor Changes
+
+- 42d427e: The screens of categories are shared, and a rubric is edited on a page of its own.
+
+  - `@webx-ui/module-admin`: `categoryRoutes(options)` mounts a module's list of categories
+    (`WxCategoriesPage`) and the page of one (`WxCategoryEditorPage`: the module's screen, one Save,
+    a refused field opens its tab), with `WxCategoryCreateDialog` for a new one. The words default to
+    the panel's own ("category") under `webx-admin::categories.*`, and a module hands its own keys in
+    for the ones that name its things. New node types `wx-categories` — the categories a record is
+    in, dragged into order, the first marked as the main one, chosen from the path in `source` — and
+    `wx-category-slug`, the address with the module's prefix in front. `useItemOrder()` and
+    `reorderItems()` say which order a drag in a module's list writes: the whole list, one category's,
+    or none while a search or another filter is on. `createCategoriesApi()` talks to
+    `CategoryRoutes` on the server.
+  - `@webx-ui/module-blog`: rubrics are the shared category screens with the blog's words; a rubric
+    opens at `/blog/rubrics/{id}` and a field a site patches onto `blog.category-form` is saved.
+    `WxRubricsPage`, `WxRubricDialog`, `WxArticleRubrics`, `RubricInput`, `RubricsPayload` and the
+    rubric methods of `createBlogApi()` are gone; `RubricRow` is the shared `CategoryRow` with
+    `articles_count`, and `rubricsOptions()` is the description the screens are mounted with.
+  - `@webx-ui/schema`: a container none of whose children are drawn — or one described with
+    `children: []` — is not drawn either, so an empty `project-fields` card no longer shows. A
+    refusal named by language (`slug.en`) is shown under its field, and `wx-tabs` (now
+    `WxScreenTabs`) opens the tab a refused field is on.
+
+### Patch Changes
+
+- Updated dependencies [42d427e]
+  - @webx-ui/module-admin@0.15.0
+  - @webx-ui/schema@0.6.0
+  - @webx-ui/module-blocks@0.8.4
+
+## 0.4.7
+
+### Patch Changes
+
+- Updated dependencies [2071b2d]
+  - @webx-ui/core@0.33.0
+  - @webx-ui/module-blocks@0.8.3
+  - @webx-ui/module-admin@0.14.4
+  - @webx-ui/schema@0.5.1
+
 ## 0.4.6
 
 ### Patch Changes

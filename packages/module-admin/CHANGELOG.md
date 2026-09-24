@@ -1,5 +1,104 @@
 # @webx-ui/admin
 
+## 0.17.0
+
+### Minor Changes
+
+- c7b0084: The panel half of `wx-collection`: the field a block uses to show another section's records.
+  It asks `GET /api/cms/collections` which sections this administrator may place, lists the chosen
+  section's categories (none chosen — all of them), and keeps a limit, a filter switch and — when
+  the section can mark its records up — a markup switch that shows what the rule gives until the
+  editor sets it, with a way back to the rule. The value is only the choice
+  (`{ categories, limit, filter, markup }`), never the records. Exported as `WxCollectionField`,
+  with `collectionSources()`, `normaliseCollection()` and `defaultMarkup()`; the words are under
+  `webx-admin::collections.*`.
+
+### Patch Changes
+
+- c7b0084: The shared list of categories no longer prints "No address in this language" under every row
+  when the module's categories have no addresses at all (`prefix: null`), as the FAQ's don't.
+- Updated dependencies [c7b0084]
+  - @webx-ui/core@0.33.2
+
+## 0.16.1
+
+### Patch Changes
+
+- b7caa68: A round of panel fixes.
+
+  - `useModal` finds its host when the modal was opened inside `app.runWithContext()` — which is where vue-router runs every guard. "Leave without saving?" from `onBeforeRouteLeave` answered nothing: its buttons were the stand-in's, the dialog stayed open and the navigation hung.
+  - The shared category screens are a component per module, so going from the blog's rubrics to the services' categories mounts the list anew instead of keeping the rubrics on a page titled "Categories".
+  - The panel's toasts stack at the bottom centre instead of the bottom-right corner, where they covered the action bar's buttons.
+  - A category's cover is a card under its name rather than a tab of its own; the cover of an article and of a service sits right under the name too.
+  - A number field on a described screen stops at 240px instead of stretching to the width of a title.
+  - A new icon, `briefcase`, and the services section wears it instead of `star`.
+
+- Updated dependencies [b7caa68]
+  - @webx-ui/core@0.33.1
+  - @webx-ui/schema@0.6.1
+
+## 0.16.0
+
+### Minor Changes
+
+- 298c894: `@webx-ui/module-services`: the Services section of the panel. The list is the whole catalogue
+  with no pages, dragged into order — the order of the site without a filter, the order of one
+  category with that category chosen, and no grips while a search or a state narrows it. The editor
+  is the `services.form` screen (content, settings with the project's fields, SEO, history) with an
+  autosaved draft, a revision against overwriting, publish, discard and restore. The categories are
+  the panel's shared category screens.
+
+  `@webx-ui/module-admin`: `wx-slug` — the address field of any record, with the module's prefix in
+  front and a warning before a live address moves; the editor hosting the screen hands it the prefix
+  with `provideRecordAddress()`. `wx-category-slug` is the same field now (`WxCategorySlug` stays as
+  an alias of `WxSlugField`). The navigation lights up the section with the longest matching path, so
+  a section inside another's (`/services/categories`) is the one highlighted.
+
+## 0.15.0
+
+### Minor Changes
+
+- 42d427e: The screens of categories are shared, and a rubric is edited on a page of its own.
+
+  - `@webx-ui/module-admin`: `categoryRoutes(options)` mounts a module's list of categories
+    (`WxCategoriesPage`) and the page of one (`WxCategoryEditorPage`: the module's screen, one Save,
+    a refused field opens its tab), with `WxCategoryCreateDialog` for a new one. The words default to
+    the panel's own ("category") under `webx-admin::categories.*`, and a module hands its own keys in
+    for the ones that name its things. New node types `wx-categories` — the categories a record is
+    in, dragged into order, the first marked as the main one, chosen from the path in `source` — and
+    `wx-category-slug`, the address with the module's prefix in front. `useItemOrder()` and
+    `reorderItems()` say which order a drag in a module's list writes: the whole list, one category's,
+    or none while a search or another filter is on. `createCategoriesApi()` talks to
+    `CategoryRoutes` on the server.
+  - `@webx-ui/module-blog`: rubrics are the shared category screens with the blog's words; a rubric
+    opens at `/blog/rubrics/{id}` and a field a site patches onto `blog.category-form` is saved.
+    `WxRubricsPage`, `WxRubricDialog`, `WxArticleRubrics`, `RubricInput`, `RubricsPayload` and the
+    rubric methods of `createBlogApi()` are gone; `RubricRow` is the shared `CategoryRow` with
+    `articles_count`, and `rubricsOptions()` is the description the screens are mounted with.
+  - `@webx-ui/schema`: a container none of whose children are drawn — or one described with
+    `children: []` — is not drawn either, so an empty `project-fields` card no longer shows. A
+    refusal named by language (`slug.en`) is shown under its field, and `wx-tabs` (now
+    `WxScreenTabs`) opens the tab a refused field is on.
+
+### Patch Changes
+
+- Updated dependencies [42d427e]
+  - @webx-ui/schema@0.6.0
+
+## 0.14.4
+
+### Patch Changes
+
+- Updated dependencies [2071b2d]
+  - @webx-ui/core@0.33.0
+  - @webx-ui/schema@0.5.1
+
+## 0.14.3
+
+### Patch Changes
+
+- 5288978: The panel's stylesheet carries the screen renderer's: a `wx-col` stacking its fields and the placeholder of an unknown type now reach a site, which imports `@webx-ui/module-admin/style.css` and never imported `@webx-ui/schema/style.css`.
+
 ## 0.14.2
 
 ### Patch Changes

@@ -81,9 +81,22 @@ With an entity to name:
 ```
 
 Both print `<title>`, the description, keywords and robots meta tags, the canonical link, the
-Open Graph properties and every JSON-LD block. Which of those are printed at all is
-`config/webx-seo.php`, so a site that writes its own canonical links turns that one off rather
-than working around it.
+Open Graph properties and every JSON-LD block. Around that, for the page being served:
+
+- **A canonical on every page.** Nobody wrote one — the page names itself, with the query cut to
+  what makes a different page (`?page=2` stays, `?utm_source=` goes). A written one always wins.
+- **`hreflang`** — the same page in the site's other languages, and `x-default` on the default
+  one. Only where the language is in the path (`strategy: prefix`): with `header` every language
+  shares one address and there is nothing to point at.
+- **The trail** as a `BreadcrumbList`, when the entity has one, and the entity's own schema.org
+  blocks — see [Contracts for module authors](#contracts-for-module-authors).
+- **`twitter:card`** — `summary_large_image` when there is an `og:image`, `summary` otherwise.
+  Everything else Twitter reads from Open Graph.
+
+Without `:for` the head takes the entity the address registry found for the request. Which of
+these are printed at all is `webx-seo.print` in `config/webx-seo.php` (`hreflang`, `breadcrumbs`,
+`structured_data`, `twitter` beside the old ones), so a site that writes its own canonical links
+turns that one off rather than working around it.
 
 Everything goes through Blade's escaping, and JSON-LD through `json_encode` with `JSON_HEX_TAG`:
 a title with a quote in it cannot end an attribute, and a `</script>` inside a string cannot close
@@ -170,6 +183,7 @@ patch against them:
 | `seo-card`       | `wx-card`     |                      |                                 |
 | `default-og`     | `wx-media`    | `seo.default-og`     | the fallback share image        |
 | `title-template` | `wx-input`    | `seo.title-template` | `{title} — {site}`              |
+| `home-crumb`     | `wx-input`    | `seo.home-crumb`     | the first crumb, per language   |
 | `robots-txt`     | `wx-textarea` | `seo.robots-txt`     | what `/robots.txt` answers      |
 | `org-name`       | `wx-input`    | `seo.org-name`       | Organization, per language      |
 | `org-logo`       | `wx-media`    | `seo.org-logo`       | Organization                    |
@@ -258,19 +272,151 @@ Three levels, on purpose:
 
 - **About the site** — `Organization`, `WebSite` — comes from the settings fields above, and the
   JSON-LD is assembled from them.
-- **About an entity** — `Article`, `Product`, `BreadcrumbList` — is generated from the entity by
-  whoever owns it. Typed in by hand it drifts away from the page within a month and starts lying
-  to search engines.
+- **About an entity** — `BlogPosting`, `Product`, `BreadcrumbList` — is generated from the entity
+  by whoever owns it, through `HasStructuredData` and `HasBreadcrumbs`. Typed in by hand it drifts
+  away from the page within a month and starts lying to search engines.
 - **One-off exceptions** — the JSON-LD field on a rule or on the card.
 
 There is no schema.org builder in the panel and there will not be one: the vocabulary has hundreds
 of types and filling them in by hand is how markup starts lying.
 
+## The sitemap
+
+`/sitemap.xml` is an index with a file per type of the address registry — `/sitemap-page.xml`,
+`/sitemap-article.xml` — and `/sitemap-routes.xml` for named routes a module asked for. A type
+past 45 000 addresses is cut into `sitemap-{type}-1.xml`, `-2`, and so on.
+
+It has **no rules of its own**. An address is in it when the registry has a canonical row for it,
+the entity says it is on the site (`Visible`), and the `<head>` of that page would print neither
+`noindex` nor a canonical pointing elsewhere — asked of the same resolver that prints the head. So
+a rule with `noindex` on `/catalog/**` takes every one of those out of the map too, and nobody has
+to tell the map. On a multilingual site each line carries the same `hreflang` set as the page.
+
+- Built on the first request and kept until something it depends on is saved: a registry row, a
+  card, a rule, a visible entity, an `seo.*` setting. The TTL (a day) is for what changes without
+  a save — an article dated for tomorrow.
+- `php artisan webx:seo:sitemap` builds it ahead of the first crawler: put it in the deploy.
+- `/robots.txt` gets a `Sitemap:` line by itself if the setting does not have one.
+- `WEBX_SEO_SITEMAP=false` turns the whole thing off for a site with a map of its own.
+
+A route that is not an entity — a feed, an index page — is added from the module's provider:
+
+```php
+app(SitemapRoutes::class)->register('blog.feed');
+```
+
+In the panel, the card **Sitemap** above the rules shows the address, the number of addresses in
+each file, when it was built, and how many visible pages were **left out** and why — `noindex` or
+another canonical. That last line is the first thing to read when a page is missing from a search
+engine.
+
+## Contracts for module authors
+
+A content module gets all of the above by implementing interfaces on its model; nothing is
+registered. Each one asks one question.
+
+| Contract                                 | Package   | The question                                  |
+| ---------------------------------------- | --------- | --------------------------------------------- |
+| `WebxUi\Routing\Contracts\Visible`       | `routing` | is it on the site — for the handler and a map |
+| `WebxUi\Seo\Contracts\HasBreadcrumbs`    | `seo`     | where does it stand                           |
+| `WebxUi\Seo\Contracts\HasStructuredData` | `seo`     | what is it, in schema.org                     |
+
+```php
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
+use WebxUi\Routing\Contracts\Visible;
+use WebxUi\Routing\HasUrl;
+use WebxUi\Seo\Contracts\Crumb;
+use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasStructuredData;
+use WebxUi\Seo\HasSeo;
+
+class Service extends Model implements HasBreadcrumbs, HasStructuredData, Visible
+{
+    use HasSeo, HasTranslations, HasUrl;
+
+    // The handler answers 404 by this, and the sitemap leaves the row out by the same answer.
+    public function isVisible(?string $locale = null): bool
+    {
+        return $this->published_at !== null && ! $this->trashed();
+    }
+
+    public function scopeVisible(Builder $query, ?string $locale = null): Builder
+    {
+        return $query->whereNotNull($this->qualifyColumn('published_at'));
+    }
+
+    public function visibleUpdatedAt(): ?CarbonInterface
+    {
+        return $this->published_at;
+    }
+
+    // The home is added in front by module-seo; the entity is the last step.
+    public function breadcrumbs(string $locale): array
+    {
+        return [
+            new Crumb($this->category->getTranslation('title', $locale), $this->category->url($locale)),
+            new Crumb($this->getTranslation('title', $locale), $this->url($locale)),
+        ];
+    }
+
+    public function structuredData(string $locale): array
+    {
+        return [[
+            '@context' => 'https://schema.org',
+            '@type' => 'Service',
+            'name' => $this->getTranslation('title', $locale),
+            'url' => $this->url($locale),
+        ]];
+    }
+}
+```
+
+**One trail, printed twice.** The `BreadcrumbList` in the head and the crumbs a reader sees come
+from the same list, so the view prints them with the component rather than working them out again:
+
+```blade
+<x-webx-seo::breadcrumbs :for="$service" />
+```
+
+It renders a `<nav aria-label>` with a list, the last step as text with `aria-current="page"`, and
+nothing at all when the entity has no trail (the home page). Publish `webx-seo-views` to restyle
+it. The first step is the site's home, named by the `seo.home-crumb` setting in the language of the
+page — "Home" from the dictionary until somebody writes one. A step with a null address is printed
+as text and keeps its place in the list.
+
+Whether the package views of a module print the crumbs at all is that module's switch:
+`webx-pages.breadcrumbs`, `webx-blog.breadcrumbs`, `webx-services.breadcrumbs` (or
+`WEBX_PAGES_BREADCRUMBS=false` and the like), on by default. It is per module because the usual
+answer is "in the blog and nowhere else". It only hides the visible trail — the `BreadcrumbList` in
+the head stays, and is switched by `webx-seo.print.breadcrumbs`. A site that keeps its own view
+decides in its markup and never reads the switch.
+
+**What depends on the response, not the entity** — the articles on page two of a category — is the
+handler's to say. Push it before rendering the view; it lives until the end of the request:
+
+```php
+app(Seo::class)->push([
+    '@context' => 'https://schema.org',
+    '@type' => 'ItemList',
+    'itemListElement' => $items->values()->map(fn ($item, $i) => [
+        '@type' => 'ListItem',
+        'position' => $items->firstItem() + $i,
+        'url' => $item->url(),
+    ])->all(),
+]);
+```
+
+What ships: `Page` (ancestors in the tree), `Article` (feed → main rubric → article, and a
+`BlogPosting`), `Rubric` and `Tag` (feed → it), and the `ItemList` on a rubric page.
+
 ## Why is this page saying that?
 
 The most common question the section gets, and it takes one call to answer. **Check an address**,
 at the top of the section, reports the redirect that catches it, the rule that matched, what each
-source contributed and what the page ends up with.
+source contributed, what the page ends up with — and whether it is in the sitemap, and if not,
+why: not published, `noindex`, another canonical, an old address, or not a page of the site at
+all.
 
 ```ts
 import { createSeoApi } from '@webx-ui/module-seo'
@@ -281,7 +427,9 @@ const answer = await api.test('/catalog/shoes?page=2')
 
 Or, from an agent: `seo_test_url`, beside `seo_urls_list`, `seo_urls_get`, `seo_urls_set`,
 `seo_redirects_list`, `seo_redirects_set` and `seo_import_redirects` — which turns the list of old
-and new addresses that comes out of every site migration into rows in one call.
+and new addresses that comes out of every site migration into rows in one call — and
+`seo_sitemap_status`, the numbers of the card. There is no tool to rebuild the map: it rebuilds
+itself.
 
 ## Talking to it directly
 
@@ -293,5 +441,7 @@ and new addresses that comes out of every site migration into rows in one call.
 | `GET /api/cms/seo/redirects` …        | the same for redirects                                      |
 | `GET /api/cms/seo/aliases`            | the addresses renames left behind; read only                |
 | `POST /api/cms/seo/test-url`          | what an address ends up saying, and where each part is from |
+| `GET /api/cms/seo/sitemap`            | the sitemap: files, counts, when built, what was left out   |
+| `POST /api/cms/seo/sitemap`           | build it again now (`seo.manage`)                           |
 
 Lists arrive as Laravel's own paginator, which the table in the core reads as it comes.

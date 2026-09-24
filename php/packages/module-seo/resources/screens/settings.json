@@ -29,6 +29,14 @@
               "props": { "placeholder": "{title} — {site}" }
             },
             {
+              "id": "home-crumb",
+              "type": "wx-input",
+              "name": "seo.home-crumb",
+              "label": "trans::webx-seo::screen.home-crumb",
+              "help": "trans::webx-seo::screen.home-crumb-help",
+              "localized": true
+            },
+            {
               "id": "robots-txt",
               "type": "wx-textarea",
               "name": "seo.robots-txt",

@@ -1,5 +1,59 @@
 # @webx-ui/module-blocks
 
+## 0.8.7
+
+### Patch Changes
+
+- 4253940: The block form and the block tree scroll inside their card. The head with the done button and
+  the arrows stays put, and the card keeps its rounded corners instead of scrolling away with the
+  fields.
+
+## 0.8.6
+
+### Patch Changes
+
+- c7b0084: The template editor of a block type completes `wx-collection` fields: `items`, `groups` and
+  `filter` after `$questions[`, and the keys every record and group has inside
+  `@foreach ($questions['items'] as $item)`.
+- Updated dependencies [c7b0084]
+- Updated dependencies [c7b0084]
+- Updated dependencies [c7b0084]
+  - @webx-ui/module-admin@0.17.0
+  - @webx-ui/core@0.33.2
+
+## 0.8.5
+
+### Patch Changes
+
+- Updated dependencies [298c894]
+  - @webx-ui/module-admin@0.16.0
+
+## 0.8.4
+
+### Patch Changes
+
+- Updated dependencies [42d427e]
+  - @webx-ui/module-admin@0.15.0
+  - @webx-ui/schema@0.6.0
+
+## 0.8.3
+
+### Patch Changes
+
+- 2071b2d: `WxActionBar` tells the screen it sits in how much of the window it takes while it sticks, as
+  `--wx-action-bar-room` on its parent, and the column of blocks in the page editor stops that far
+  short of the bottom: its foot and the last field of a long block form were under the buttons.
+- Updated dependencies [2071b2d]
+  - @webx-ui/core@0.33.0
+  - @webx-ui/module-admin@0.14.4
+  - @webx-ui/schema@0.5.1
+
+## 0.8.2
+
+### Patch Changes
+
+- 35d229c: Block thumbnails are drawn in the site's own clothes: the panel loads the stage page once, keeps its stylesheets, fonts and the wrappers around the block's place, and drops the header, the footer and every script. The manifest names the stage (`meta.stage`) once `webx-blocks.layout` is set; without it the thumbnails stay bare.
+
 ## 0.8.1
 
 ### Patch Changes

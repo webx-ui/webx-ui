@@ -24,7 +24,6 @@ import {
   WxSlider,
   WxSwitch,
   WxTab,
-  WxTabs,
   WxTagsInput,
   WxText,
   WxTextarea,
@@ -33,7 +32,15 @@ import {
   WxTreeSelect,
 } from '@webx-ui/core'
 import ScreenRepeater from './ScreenRepeater.vue'
-import type { NodeKind, TypeEntry, TypeRegistry } from './types'
+import ScreenTabs from './ScreenTabs.vue'
+import type { NodeKind, ScreenNode, TypeEntry, TypeRegistry } from './types'
+
+/** Every field name under a node, however deep — what a tab has to open for. */
+function fieldNames(node: ScreenNode): string[] {
+  return (node.children ?? []).flatMap((child) =>
+    child.name === undefined ? fieldNames(child) : [child.name],
+  )
+}
 
 /**
  * The types every panel has: the core's layout, form and display components under
@@ -41,7 +48,14 @@ import type { NodeKind, TypeEntry, TypeRegistry } from './types'
  * from `module-media`, `map` from whoever has a map.
  */
 export const coreTypes: TypeRegistry = {
-  'wx-tabs': { component: WxTabs, kind: 'layout' },
+  'wx-tabs': {
+    component: ScreenTabs,
+    kind: 'layout',
+    // Which fields each tab holds, so a refused save can open the tab it was refused on.
+    bind: (node) => ({
+      fields: Object.fromEntries((node.children ?? []).map((tab) => [tab.id, fieldNames(tab)])),
+    }),
+  },
   'wx-tab': {
     component: WxTab,
     kind: 'layout',

@@ -66,4 +66,22 @@ return [
     'occupied-alias' => 'This address already leads to :target — what a move left behind. A redirect written here is tried first.',
 
     'filter-kind' => 'Kind',
+
+    'sitemap' => 'Sitemap',
+    'sitemap-built' => 'Built',
+    'sitemap-total' => 'Addresses: :count',
+    'sitemap-excluded' => 'Left out — noindex: :noindex, another canonical: :canonical',
+    'sitemap-empty' => 'Nothing is in it: no address is published and open to the index.',
+    'sitemap-off' => 'The sitemap is turned off on this site.',
+    'sitemap-rebuild' => 'Rebuild',
+    'sitemap-rebuilt' => 'The sitemap has been rebuilt.',
+    'test-sitemap' => 'Sitemap',
+    'test-sitemap-in' => 'In the sitemap.',
+    'test-sitemap-out' => 'Not in the sitemap: :reason.',
+    'sitemap-reason-disabled' => 'the sitemap is turned off',
+    'sitemap-reason-unknown' => 'the site has no page of its own here',
+    'sitemap-reason-alias' => 'this is an old address that redirects',
+    'sitemap-reason-hidden' => 'the page is not published',
+    'sitemap-reason-noindex' => 'the page says noindex',
+    'sitemap-reason-canonical' => 'the page names another address as canonical',
 ];
