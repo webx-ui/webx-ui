@@ -35,7 +35,9 @@
                   "name": "title",
                   "label": "trans::webx-services::screen.title",
                   "localized": true,
-                  "props": { "maxlength": 255 }
+                  "props": {
+                    "maxlength": 255
+                  }
                 },
                 {
                   "id": "slug",
@@ -61,23 +63,6 @@
               ]
             },
             {
-              "id": "taxonomy",
-              "type": "wx-card",
-              "label": "trans::webx-services::screen.categories",
-              "children": [
-                {
-                  "id": "categories",
-                  "type": "wx-categories",
-                  "name": "categories",
-                  "label": "trans::webx-services::screen.categories",
-                  "help": "trans::webx-services::screen.categories-help",
-                  "props": {
-                    "source": "services/categories"
-                  }
-                }
-              ]
-            },
-            {
               "id": "presentation",
               "type": "wx-card",
               "label": "trans::webx-services::screen.presentation",
@@ -91,6 +76,23 @@
                     "accept": "image",
                     "captions": false,
                     "aspect": "16/9"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "taxonomy",
+              "type": "wx-card",
+              "label": "trans::webx-services::screen.categories",
+              "children": [
+                {
+                  "id": "categories",
+                  "type": "wx-categories",
+                  "name": "categories",
+                  "label": "trans::webx-services::screen.categories",
+                  "help": "trans::webx-services::screen.categories-help",
+                  "props": {
+                    "source": "services/categories"
                   }
                 }
               ]

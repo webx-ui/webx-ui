@@ -9,9 +9,11 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategoryLinkSource;
 use WebxUi\Admin\Categories\CategorySources;
+use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Blocks\BlockOffers;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Routing\Formatters\Prefixed;
 use WebxUi\Routing\Formatters\Slug;
@@ -20,6 +22,7 @@ use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
 use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Sitemap\SitemapRoutes;
+use WebxUi\Services\Collections\ServicesSource;
 use WebxUi\Services\Handlers\CategoryHandler;
 use WebxUi\Services\Handlers\ServiceHandler;
 use WebxUi\Services\Http\Controllers\IndexController;
@@ -57,6 +60,7 @@ class ServicesServiceProvider extends ServiceProvider
         $this->registerBlockEntities();
         $this->registerScreens();
         $this->registerLinkSources();
+        $this->registerCollection();
         $this->registerPanel();
 
         $this->app->make(SitemapRoutes::class)->register(self::INDEX_ROUTE);
@@ -118,7 +122,8 @@ class ServicesServiceProvider extends ServiceProvider
     /**
      * The index: an ordinary route, so it wins before the registry's fallback and `Reserved`
      * closes the address to pages of its own accord. With no prefix it is not registered at all —
-     * `/` is the site's, and a list of services there is a page the site writes.
+     * `/` is the site's, and a list of services there is a page the site writes. Switched off, it
+     * is not registered either, and for the same reason: the address is then free for a page.
      *
      * Twice where the language is in the path; the prefixed copy would match `anything/services`
      * without {@see OneSpellingPerAddress} in front of it.
@@ -127,7 +132,7 @@ class ServicesServiceProvider extends ServiceProvider
     {
         $prefix = $this->prefix();
 
-        if ($prefix === '') {
+        if ($prefix === '' || ! (bool) $this->config()->get('webx-services.index', true)) {
             return;
         }
 
@@ -213,6 +218,17 @@ class ServicesServiceProvider extends ServiceProvider
     }
 
     /**
+     * What a block may show, and the block that shows it: the same pair the FAQ brings. The type
+     * is offered, not installed — `webx:blocks:offered --install` puts it on the site once.
+     */
+    private function registerCollection(): void
+    {
+        $this->app->make(CollectionSources::class)->register($this->app->make(ServicesSource::class));
+
+        $this->app->make(BlockOffers::class)->offer('services', __DIR__.'/../resources/blocks');
+    }
+
+    /**
      * Two sections in a group of their own (§4.6): the services, and their categories.
      *
      * The group is added to the panel's config at boot rather than shipped as a default, because a
@@ -228,7 +244,7 @@ class ServicesServiceProvider extends ServiceProvider
                 ...$groups,
                 ServicesGroup::GROUP => [
                     'title' => 'webx-services::module.group',
-                    'icon' => 'star',
+                    'icon' => 'briefcase',
                     'order' => 400,
                 ],
             ]);

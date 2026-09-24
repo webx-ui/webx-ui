@@ -133,6 +133,35 @@ final class EntityHeadTest extends TestCase
     }
 
     #[Test]
+    public function a_block_put_under_a_key_is_printed_once_however_often_it_was_put(): void
+    {
+        $entity = $this->entity(['ru' => 'О нас'], ['ru' => 'about']);
+
+        Route::get('/put/{times}', static function (string $times) use ($entity): string {
+            $seo = app(Seo::class);
+            $seo->push(['@context' => 'https://schema.org', '@type' => 'ItemList', 'name' => 'On this page']);
+
+            for ($i = 1; $i <= (int) $times; $i++) {
+                $seo->put('faq', ['@context' => 'https://schema.org', '@type' => 'FAQPage', 'mainEntity' => range(1, $i)]);
+            }
+
+            return (string) $seo->head($entity, '/about', 'ru');
+        });
+
+        $head = (string) $this->get('/put/2')->getContent();
+
+        $this->assertSame(['BreadcrumbList', 'Thing', 'ItemList', 'FAQPage'], array_values(array_diff($this->types($head), ['Organization', 'WebSite'])));
+        $this->assertStringContainsString('"mainEntity":[1,2]', $head);
+        $this->assertNotContains('FAQPage', $this->types((string) $this->get('/put/0')->getContent()));
+
+        $seo = app(Seo::class);
+        $seo->put('faq', ['@type' => 'FAQPage']);
+        $seo->put('faq', []);
+
+        $this->assertSame([], $seo->putBlocks());
+    }
+
+    #[Test]
     public function every_new_part_of_the_head_can_be_turned_off(): void
     {
         $entity = $this->entity(['ru' => 'О нас', 'uk' => 'Про нас'], ['ru' => 'about', 'uk' => 'pro-nas']);

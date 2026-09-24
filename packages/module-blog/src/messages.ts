@@ -155,7 +155,6 @@ export const blogMessages: Record<string, Messages> = {
     edit: 'Edit',
 
     'tab-content': 'Content',
-    'tab-cover': 'Image',
     'tab-seo': 'SEO',
 
     'field-title': 'Name',

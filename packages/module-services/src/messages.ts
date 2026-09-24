@@ -98,7 +98,6 @@ export const servicesMessages: Record<string, Messages> = {
   category: {
     'tab-content': 'Content',
     'tab-blocks': 'Blocks',
-    'tab-cover': 'Image',
     'tab-seo': 'SEO',
     'field-title': 'Title',
     'field-slug': 'Address',

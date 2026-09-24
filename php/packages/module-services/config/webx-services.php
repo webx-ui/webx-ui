@@ -29,6 +29,25 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | The index page
+    |---------------------------------------------------------------------------
+    |
+    | On, the package answers the prefix itself with the list of categories and
+    | their services. Off, the route is not registered and the address is free:
+    | a page with the slug `services` takes it, and is built of blocks like any
+    | other — the usual reason to switch this off. Categories and services keep
+    | their addresses under the prefix either way.
+    |
+    | The trail follows: its first step is then whatever the address registry
+    | holds at the prefix, named the way that entity names itself, and no step
+    | at all while nothing (or only a draft) is there.
+    |
+    */
+
+    'index' => (bool) env('WEBX_SERVICES_INDEX', true),
+
+    /*
+    |---------------------------------------------------------------------------
     | Categories
     |---------------------------------------------------------------------------
     |
@@ -81,6 +100,24 @@ return [
     */
 
     'layout' => env('WEBX_SERVICES_LAYOUT'),
+
+    /*
+    |---------------------------------------------------------------------------
+    | The trail above the content
+    |---------------------------------------------------------------------------
+    |
+    | Whether the package's views print the crumbs a reader sees on a service and a category.
+    | Many sites want them in the blog and nowhere else, so this is a switch per
+    | module rather than one for the whole site.
+    |
+    | Only the visible trail: the BreadcrumbList in the <head> is `module-seo`'s
+    | (`webx-seo.print.breadcrumbs`) and stays, because it helps a search engine
+    | whether or not the page shows it. A site with its own `views` above
+    | decides in its own markup and never reads this.
+    |
+    */
+
+    'breadcrumbs' => (bool) env('WEBX_SERVICES_BREADCRUMBS', true),
 
     /*
     |---------------------------------------------------------------------------

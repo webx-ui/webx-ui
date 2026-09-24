@@ -486,18 +486,20 @@ const formRoot = computed(() =>
             <span class="wx-blocks__panel-title">{{ t('field.blocks') }}</span>
             <wx-text size="sm" tone="muted">{{ tree.length }}</wx-text>
           </div>
-          <blocks-tree
-            :nodes="tree"
-            :catalog="catalog"
-            :selected="selectedKey"
-            :disabled="disabled"
-            @select="select"
-            @add="add"
-            @remove="remove"
-            @duplicate="duplicate"
-            @visibility="visibility"
-            @reorder="reorder"
-          />
+          <div class="wx-blocks__list">
+            <blocks-tree
+              :nodes="tree"
+              :catalog="catalog"
+              :selected="selectedKey"
+              :disabled="disabled"
+              @select="select"
+              @add="add"
+              @remove="remove"
+              @duplicate="duplicate"
+              @visibility="visibility"
+              @reorder="reorder"
+            />
+          </div>
           <!--
           One row, not two stacked full-width buttons: they are not two steps of the same
           thing, and a column of blocks that ends in a column of buttons reads as two more
@@ -737,13 +739,43 @@ const formRoot = computed(() =>
  *
  * The screen's action bar sticks to the same window and is drawn over this column, so the
  * room it announces comes off the cap as well, and the gap above it is the one at the top.
+ *
+ * What scrolls is the body of the card, not the column around it. The column used to be the
+ * scroller, and the card inside it — border, radius and head — scrolled away with the fields:
+ * the head with the done button went off the top, and the fields ran square past the corners
+ * the card was supposed to have. So the column only caps, the card shrinks to the cap and clips
+ * to its own radius, and its head and foot stay while the middle scrolls.
  */
 .wx-blocks-host:not(.is-compact) .wx-blocks__side {
   min-width: 0;
   position: sticky;
   top: var(--wx-space-12);
   max-height: calc(100dvh - var(--wx-space-24) - var(--wx-action-bar-room, 0px));
+  display: flex;
+  flex-direction: column;
+}
+
+.wx-blocks-host:not(.is-compact) .wx-blocks__tree,
+.wx-blocks-host:not(.is-compact) .wx-blocks__fields {
+  min-height: 0;
+  overflow: clip;
+}
+
+.wx-blocks__panel-head {
+  flex: none;
+}
+
+/* The breathing room keeps the rows' focus rings inside the scroller, which would clip them. */
+.wx-blocks-host:not(.is-compact) .wx-blocks__list,
+.wx-blocks-host:not(.is-compact) .wx-blocks__form {
+  min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.wx-blocks-host:not(.is-compact) .wx-blocks__list {
+  padding: var(--wx-space-2);
+  margin: calc(-1 * var(--wx-space-2));
 }
 
 .wx-blocks__preview {

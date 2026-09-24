@@ -53,6 +53,25 @@ final class PreviewTest extends TestCase
     }
 
     #[Test]
+    public function the_token_is_the_way_past_the_password_over_a_site_in_testing(): void
+    {
+        // The editor signed in to the panel and never typed the site's pair.
+        $this->app['config']->set('webx-admin.gate.enabled', true);
+        $this->app['config']->set('webx-admin.gate.users', 'client:secret');
+
+        $page = RoutedPage::query()->create(['slug' => 'about', 'title' => 'About']);
+        $url = Preview::url($page);
+
+        $this->get($url)->assertOk();
+        $this->get('/blocks/runtime.js')->assertOk();
+
+        // Without a token, or with somebody's guess, the preview is the site like any other page.
+        $this->get('/_preview/page/'.$page->getKey())->assertStatus(401);
+        $this->get('/_preview/page/'.$page->getKey().'?token=nonsense')->assertStatus(401);
+        $this->get('/about')->assertStatus(401);
+    }
+
+    #[Test]
     public function a_token_opens_one_page_for_a_while(): void
     {
         $one = RoutedPage::query()->create(['slug' => 'one', 'title' => 'One']);

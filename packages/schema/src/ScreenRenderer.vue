@@ -154,6 +154,15 @@ defineExpose({
   gap: var(--wx-gap, var(--wx-space-16));
 }
 
+/*
+ * A number is a few digits, and a field as wide as a title put its − and + a whole line apart,
+ * with the digits alone in the middle. The core's own number keeps `width: 100%` — a filter row
+ * or a table cell decides its width — so the cap is the screen's.
+ */
+.wx-screen .wx-input-number {
+  max-width: 240px;
+}
+
 /* Global on purpose: the placeholder is created by a render function, outside any scope. */
 .wx-screen__unknown {
   padding: var(--wx-space-8) var(--wx-space-12);
