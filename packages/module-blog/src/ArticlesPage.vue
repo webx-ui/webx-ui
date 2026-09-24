@@ -681,8 +681,8 @@ const actions = computed<ScreenAction[]>(() =>
 }
 
 .wx-articles__cover.is-empty {
-  border: 1px dashed var(--wx-border-color);
-  background: var(--wx-bg-base);
+  border: 1px dashed var(--wx-border-default);
+  background: var(--wx-bg-surface);
 }
 
 .wx-articles__cover img {
