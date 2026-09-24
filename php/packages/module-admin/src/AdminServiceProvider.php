@@ -6,14 +6,17 @@ namespace WebxUi\Admin;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
+use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Foundation\Http\Kernel;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use WebxUi\Admin\Backups\Backups;
 use WebxUi\Admin\Categories\CategoriesType;
 use WebxUi\Admin\Categories\CategorySources;
+use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Console\BackupCommand;
 use WebxUi\Admin\Console\BootCommand;
 use WebxUi\Admin\Console\DemoCommand;
@@ -27,6 +30,8 @@ use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Contracts\SiteUrls;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Gate\CloseSite;
+use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Admin\Links\RoutingSiteUrls;
@@ -36,6 +41,7 @@ use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\BooleanType;
 use WebxUi\Admin\Screens\Types\CascaderType;
+use WebxUi\Admin\Screens\Types\CollectionType;
 use WebxUi\Admin\Screens\Types\ColorType;
 use WebxUi\Admin\Screens\Types\DateRangeType;
 use WebxUi\Admin\Screens\Types\DateType;
@@ -80,6 +86,14 @@ class AdminServiceProvider extends ServiceProvider
 
         // Which model's categories a `wx-categories` field is about, by the path they answer at.
         $this->app->singleton(CategorySources::class);
+
+        // The records modules offer to show as blocks (§3 of the FAQ spec), by the key a
+        // `wx-collection` field names them with. Filled from providers, like the two above.
+        $this->app->singleton(CollectionSources::class);
+
+        // What the password over a site in testing lets through. A singleton because the
+        // packages that answer where the panel's browser has to reach add their own from boot.
+        $this->app->singleton(Openings::class);
 
         // The language prefix, when there is an address registry to ask. Behind `class_exists`
         // because the frame does not require `webx-ui/routing` — a panel of settings and
@@ -129,6 +143,13 @@ class AdminServiceProvider extends ServiceProvider
             // The categories a record is in. Which table is the node's `source`, registered by
             // the module that owns it — the same string the panel asks for the list at.
             $types->register('wx-categories', new CategoriesType($app->make(CategorySources::class)));
+            // Which records of a module a block shows. Kept as the choice, read on the site as
+            // the records themselves — by the module that has them.
+            $types->register('wx-collection', new CollectionType(
+                $app->make(CollectionSources::class),
+                $app->make(CategorySources::class),
+                $app->make(Locales::class),
+            ));
             $types->register('wx-cascader', new CascaderType);
             $types->register('wx-tree-select', new TreeSelectType);
             $types->register('wx-transfer', new OptionListType('items'));
@@ -194,6 +215,7 @@ class AdminServiceProvider extends ServiceProvider
         $this->registerDraftMacro();
         $this->registerCategoryMacros();
         $this->registerBackupSchedule();
+        $this->registerGate();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -252,6 +274,25 @@ class AdminServiceProvider extends ServiceProvider
                 // Two web servers behind one database would otherwise dump it twice a night.
                 ->onOneServer()
                 ->withoutOverlapping();
+        });
+    }
+
+    /**
+     * The password over a site in testing, as global middleware: an address with no route never
+     * reaches a group, and a gate that lets every 404 through is not a gate (see `CloseSite`).
+     *
+     * Pushed whether or not it is switched on — it reads the switch per request and steps aside
+     * when it is off — so that turning it on is an `.env` line and a `config:cache`, not a deploy.
+     * On `booted`, because resolving the HTTP kernel copies its groups over the router's.
+     */
+    private function registerGate(): void
+    {
+        $this->app->booted(function (): void {
+            $kernel = $this->app->make(HttpKernel::class);
+
+            if ($kernel instanceof Kernel) {
+                $kernel->pushMiddleware(CloseSite::class);
+            }
         });
     }
 

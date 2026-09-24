@@ -60,16 +60,53 @@ describe('WxListDetail', () => {
     await nextTick()
     expect(wrapper.find('.wx-list-detail__filters').exists()).toBe(true)
 
-    emit?.(1039)
+    // Once standing, a layout gives 24 px before it folds (the settle band, below).
+    emit?.(1015)
     await nextTick()
     expect(wrapper.find('.wx-list-detail__filters').exists()).toBe(false)
     expect(wrapper.find('.wx-list-detail__detail').exists()).toBe(true)
 
     // 380 + 420 is what is left for two.
-    emit?.(799)
+    emit?.(775)
     await nextTick()
     expect(wrapper.find('.wx-list-detail__detail').exists()).toBe(false)
     expect(wrapper.find('.wx-list-detail__list--alone').exists()).toBe(true)
+  })
+
+  it('takes the first measurement at its word', async () => {
+    const wrapper = mountPane()
+
+    emit?.(1039)
+    await nextTick()
+
+    expect(wrapper.find('.wx-list-detail__filters').exists()).toBe(false)
+    expect(wrapper.find('.wx-list-detail__detail').exists()).toBe(true)
+  })
+
+  /*
+   * The loop on /panel/menus (CLAUDE.md §6): a record beside the list makes the page taller, the
+   * scrollbar takes its width, and the pane that was just wide enough is not any more.
+   */
+  it('does not fold for a scrollbar, and needs the full width to unfold', async () => {
+    const wrapper = mountPane()
+
+    emit?.(805)
+    await nextTick()
+    emit?.(788)
+    await nextTick()
+    expect(wrapper.find('.wx-list-detail__detail').exists()).toBe(true)
+
+    emit?.(770)
+    await nextTick()
+    expect(wrapper.find('.wx-list-detail__detail').exists()).toBe(false)
+
+    emit?.(790)
+    await nextTick()
+    expect(wrapper.find('.wx-list-detail__detail').exists()).toBe(false)
+
+    emit?.(800)
+    await nextTick()
+    expect(wrapper.find('.wx-list-detail__detail').exists()).toBe(true)
   })
 
   it('moves with the widths, not with numbers of its own', async () => {
@@ -159,7 +196,7 @@ describe('WxListDetail', () => {
     await nextTick()
     expect(wrapper.find('.wx-list-detail__filters').exists()).toBe(true)
 
-    emit?.(659)
+    emit?.(635)
     await nextTick()
     expect(wrapper.find('.wx-list-detail__filters').exists()).toBe(false)
     // What folded is the chooser; the records stayed on screen.

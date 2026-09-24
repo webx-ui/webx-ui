@@ -127,6 +127,21 @@ by default, because a rewritten view may not print them.
 php artisan vendor:publish --tag=webx-services-views
 ```
 
+## In a block
+
+`services()` gives a block template the services as cards — never what a reader may not see:
+
+```blade
+@foreach (services()->in('implants')->except($service)->take(6) as $card)
+    <a href="{{ $card['url'] }}">{{ $card['title'] }}</a>
+@endforeach
+```
+
+`in()`, `only()`, `except()`, `take()`, `locale()`, `categories()`. A card is `id`, `anchor`,
+`categories`, `title`, `url`, `lead`, `cover` and the project's `fields`. The same cards come out of
+the `services` source of a `wx-collection` field, and the module offers a block of them:
+`php artisan webx:blocks:offered --install --module=services`.
+
 ## License
 
 MIT

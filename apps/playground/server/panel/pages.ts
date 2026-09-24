@@ -341,6 +341,30 @@ add({
   trashed_with: old.row.id,
 })
 
+/*
+ * The general FAQ page of decision 6: not a page of the module — the module has none — but an
+ * ordinary page with the block over every category, with the filter. Last, so that the ids of
+ * the pages above it (which the menus point at) stay what they were.
+ */
+add(
+  {
+    title: 'Вопросы и ответы',
+    slug: 'faq',
+    parent: home.row.id,
+    status: 'published',
+    updated_at: '2026-09-24T09:30:00+00:00',
+  },
+  {
+    blocks: [
+      block('faq-list', {
+        title: { ru: 'Частые вопросы', en: 'Frequently asked questions' },
+        questions: { categories: [], limit: null, filter: true, markup: null },
+      }),
+    ],
+  },
+  [publication(1, '2026-09-24T09:30:00+00:00', null)],
+)
+
 function publication(number: number, createdAt: string, comment: string | null): PageVersion {
   return {
     number,

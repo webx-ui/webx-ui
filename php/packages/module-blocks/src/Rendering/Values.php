@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Blocks\Rendering;
 
 use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Screens\ResolvesMissing;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Blocks\BlockType;
 use WebxUi\Blocks\ContentValues;
@@ -41,12 +42,19 @@ final readonly class Values
      */
     public function resolve(BlockType $type, array $values): array
     {
-        if ($values === []) {
-            return [];
-        }
-
         $fields = Schema::fields($type->schema, $this->types);
         $resolved = [];
+
+        // A field nobody wrote is null in the template — except where the type says what an
+        // absent value means ({@see ResolvesMissing}): a collection block never touched is the
+        // whole collection, not an empty list.
+        foreach ($fields as $name => $node) {
+            $field = $this->types->get((string) ($node['type'] ?? ''));
+
+            if ($field instanceof ResolvesMissing && ! array_key_exists($name, $values)) {
+                $resolved[$name] = $field->resolve(null, $node);
+            }
+        }
 
         foreach ($values as $name => $value) {
             $node = $fields[(string) $name] ?? null;
