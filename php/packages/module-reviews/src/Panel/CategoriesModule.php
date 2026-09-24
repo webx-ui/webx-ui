@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace WebxUi\Reviews\Panel;
 
+use WebxUi\Admin\Categories\CategoryForm;
+use WebxUi\Admin\Categories\Mcp\CategoryTools;
+use WebxUi\Mcp\Contracts\ProvidesMcpTools;
+use WebxUi\Mcp\ProvidesMcpDefaults;
+use WebxUi\Mcp\Tool;
 use WebxUi\Reviews\Models\ReviewCategory;
 
 /**
@@ -13,10 +18,18 @@ use WebxUi\Reviews\Models\ReviewCategory;
  * Its own permission, for the reason every module's categories have one: the buttons of every
  * filter of reviews on the site are a different job from writing a review down.
  *
- * The id is `review-categories`, so the tools an agent gets for them are `review_categories_*`.
+ * To an agent, the tools every module's categories have (§3.7 of the services spec): the id is
+ * `review-categories`, so they are `review_categories_list`, and behind `review-categories:write`
+ * create, update, delete and reorder — without a slug, since these categories have no address.
+ * Filing a review into a category is `reviews_update`, and its place inside one is
+ * `reviews_reorder`.
  */
-final class CategoriesModule extends ReviewsGroup
+final class CategoriesModule extends ReviewsGroup implements ProvidesMcpTools
 {
+    use ProvidesMcpDefaults;
+
+    public function __construct(private readonly CategoryForm $form) {}
+
     public function id(): string
     {
         return 'review-categories';
@@ -43,5 +56,13 @@ final class CategoriesModule extends ReviewsGroup
     public function permissions(): array
     {
         return [ReviewCategory::MANAGE];
+    }
+
+    /**
+     * @return list<Tool>
+     */
+    public function mcpTools(): array
+    {
+        return (new CategoryTools(ReviewCategory::class, $this->form))->all();
     }
 }

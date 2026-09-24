@@ -1,0 +1,127 @@
+{
+  "categories": [
+    {
+      "key": "websites",
+      "title": { "en": "Websites", "ru": "Сайты" },
+      "reviews": ["anna", "mark", "olga", "david", "irina"]
+    },
+    {
+      "key": "design",
+      "title": { "en": "Design", "ru": "Дизайн" },
+      "reviews": ["sofia", "olga", "pavel"]
+    }
+  ],
+  "reviews": [
+    {
+      "key": "anna",
+      "name": { "en": "Anna Petrova", "ru": "Анна Петрова" },
+      "job_title": { "en": "Owner, Petrova Dental", "ru": "Владелец, «Петрова Дентал»" },
+      "text": {
+        "en": "The new site went live in five weeks, and the first bookings came through it the same week.\n\nWhat I liked most: every page is mine to edit, and nobody has to be asked.",
+        "ru": "Новый сайт запустили за пять недель, и первые записи пришли через него в ту же неделю.\n\nБольше всего понравилось, что каждую страницу я правлю сама и никого не надо просить."
+      },
+      "rating": 5,
+      "reviewed_on": "2026-08-14",
+      "profile_url": "https://example.com/petrova-dental"
+    },
+    {
+      "key": "mark",
+      "name": { "en": "Mark Levin", "ru": "Марк Левин" },
+      "job_title": {
+        "en": "Marketing lead, Northwind",
+        "ru": "Руководитель маркетинга, Northwind"
+      },
+      "text": {
+        "en": "Clear estimates, no surprises on the invoice, and a launch on the day we agreed.",
+        "ru": "Понятная смета, никаких сюрпризов в счёте и запуск в тот день, о котором договорились."
+      },
+      "rating": 5,
+      "reviewed_on": "2026-07-02"
+    },
+    {
+      "key": "olga",
+      "name": { "en": "Olga Smirnova", "ru": "Ольга Смирнова" },
+      "job_title": { "en": "Founder, Linen & Co", "ru": "Основатель, Linen & Co" },
+      "text": {
+        "en": "They made the brand and then the site, so the two finally look like one company. This review is filed under both categories.",
+        "ru": "Сделали и фирменный стиль, и сайт — наконец-то они выглядят как одна компания. Этот отзыв стоит в обеих категориях."
+      },
+      "rating": 4,
+      "reviewed_on": "2026-06-20"
+    },
+    {
+      "key": "sofia",
+      "name": { "en": "Sofia Kim" },
+      "job_title": { "en": "Art director", "ru": "Арт-директор" },
+      "text": {
+        "en": "A design system we actually use: forty components, and the developers stopped asking which grey is the right one.",
+        "ru": "Дизайн-система, которой мы правда пользуемся: сорок компонентов, и разработчики перестали спрашивать, какой серый правильный."
+      },
+      "rating": 5,
+      "reviewed_on": "2026-05-11"
+    },
+    {
+      "key": "david",
+      "name": { "en": "David Cohen", "ru": "Давид Коэн" },
+      "job_title": { "en": "CTO, Parcelly", "ru": "Технический директор, Parcelly" },
+      "text": {
+        "en": "The catalogue handles eleven thousand products and still opens instantly on a phone. This review is written in English only, so a reader of the Russian site does not see it.",
+        "ru": ""
+      },
+      "rating": 4,
+      "reviewed_on": "2026-04-03"
+    },
+    {
+      "key": "irina",
+      "name": { "en": "Irina Volkova", "ru": "Ирина Волкова" },
+      "job_title": { "en": "Head of a law firm", "ru": "Управляющий партнёр юридической фирмы" },
+      "text": {
+        "en": "We asked for a simple site and got exactly that. This review has no rating, so the site shows it without stars.",
+        "ru": "Просили простой сайт — ровно его и получили. У этого отзыва нет оценки, и сайт показывает его без звёзд."
+      }
+    },
+    {
+      "key": "pavel",
+      "name": { "en": "Pavel Orlov", "ru": "Павел Орлов" },
+      "job_title": { "en": "Product manager", "ru": "Продакт-менеджер" },
+      "text": {
+        "en": "Good work, though the first round of the logo took two weeks longer than planned.",
+        "ru": "Хорошая работа, хотя первый вариант логотипа занял на две недели больше, чем планировали."
+      },
+      "rating": 3,
+      "reviewed_on": "2026-03-18"
+    },
+    {
+      "key": "draft",
+      "name": { "en": "Elena Frost", "ru": "Елена Мороз" },
+      "text": {
+        "en": "This review is not published yet: the panel shows it, the site does not.",
+        "ru": "Этот отзыв ещё не опубликован: панель его показывает, сайт — нет."
+      },
+      "rating": 5,
+      "published": false
+    }
+  ],
+  "page": {
+    "slug": "reviews",
+    "title": { "en": "Reviews", "ru": "Отзывы" },
+    "seo": {
+      "title": { "en": "What our clients say", "ru": "Отзывы клиентов" },
+      "description": {
+        "en": "Clinics, shops and law firms on how their websites and brands were made.",
+        "ru": "Клиники, магазины и юристы о том, как делались их сайты и фирменный стиль."
+      }
+    },
+    "block": {
+      "title": { "en": "What our clients say", "ru": "Что говорят клиенты" },
+      "all_label": { "en": "All", "ru": "Все" }
+    }
+  },
+  "service": {
+    "slug": "company-website",
+    "category": "websites",
+    "block": {
+      "title": { "en": "Clients about their websites", "ru": "Клиенты о своих сайтах" }
+    }
+  }
+}
