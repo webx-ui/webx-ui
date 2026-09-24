@@ -4,7 +4,7 @@ import type {
   BlockType,
   BlockVersionMeta,
 } from '../../../../packages/module-blocks/src/types'
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { blade } from './blade'
 import { RECIPES_BLOCK } from './recipes-site'
@@ -984,7 +984,12 @@ export const blockTypes: BlockType[] = [
     thumbnail: null,
     created_at: '2026-09-24T12:00:00+00:00',
     updated_at: '2026-09-24T12:00:00+00:00',
-    /* `content` is the file `module-recipes` offers, or the playground's stand-in: see `offered()`. */
+    /*
+     * `content` is the playground's stand-in (`recipes-site.ts`), not the file `module-recipes`
+     * offers: that template includes the catalog partial the index and the category page share
+     * (§5.8), and this playground's little Blade has neither `@include` nor a paginator.
+     */
+    content: RECIPES_BLOCK,
   },
   {
     id: 8,
@@ -1211,7 +1216,6 @@ export function clone<T>(value: T): T {
 }
 
 offered('reviews', 'php/packages/module-reviews/resources/blocks/reviews.json')
-offered('recipes', 'php/packages/module-recipes/resources/blocks/recipes.json', RECIPES_BLOCK)
 
 /**
  * A type whose content is the file a module offers (`BlockOffers`), read off disk on every use
@@ -1219,7 +1223,7 @@ offered('recipes', 'php/packages/module-recipes/resources/blocks/recipes.json', 
  * a second template to keep in step — and Vite watches what it imports, which a `.json` of the
  * composer package is not. Saving in the constructor keeps what was saved, as a site would.
  */
-function offered(slug: string, path: string, fallback?: BlockContent): void {
+function offered(slug: string, path: string): void {
   const type = blockTypes.find((item) => item.slug === slug)
 
   if (type === undefined) return
@@ -1232,13 +1236,9 @@ function offered(slug: string, path: string, fallback?: BlockContent): void {
     get: (): BlockContent => {
       if (saved !== undefined) return saved
 
-      // A module whose composer half is on another branch yet: the playground's own stand-in.
-      const file = fileURLToPath(new URL(`../../../../${path}`, import.meta.url))
-
-      // A module whose composer half is on another branch yet: the playground's own stand-in.
-      if (fallback !== undefined && !existsSync(file)) return fallback
-
-      const offer = JSON.parse(readFileSync(file, 'utf8')) as BlockContent
+      const offer = JSON.parse(
+        readFileSync(fileURLToPath(new URL(`../../../../${path}`, import.meta.url)), 'utf8'),
+      ) as BlockContent
 
       return {
         schema: offer.schema,

@@ -818,10 +818,14 @@ wx-relations; apps/playground/server/panel/services* — образец мока
   `module-seo/…/recipes.form.json`, иначе патч услуг (он заменяет тот же `seo-placeholder`). После
   слияния копии удалить и `Source[]` в `screens.ts` свести к строкам — и проверить, что у RC3 те
   же имена полей.
-- Тип блока `recipes` читается из `php/packages/module-recipes/resources/blocks/recipes.json`, а без
-  него — из заглушки `RECIPES_BLOCK` в `recipes-site.ts`. **Маленький Blade плейграунда не умеет
-  `@include` и пагинатор** — если шаблон RC3 опирается на `partials/catalog`, предпросмотр блока
-  сломается: тогда оставить заглушку (убрать путь из `offered()`), а не чинить Blade.
+- Тип блока `recipes` в плейграунде — **всегда заглушка** `RECIPES_BLOCK` из `recipes-site.ts`, а
+  не `resources/blocks/recipes.json`: шаблон RC3 — это `@include('webx-recipes::partials.catalog',
+…)`, общий фрагмент индекса, категории и блока (§5.8), а маленький Blade плейграунда не умеет ни
+  `@include`, ни пагинатор. Заглушка повторяет то, что RC3 назвал: схема `title`, `recipes`,
+  `mode`, `per_page`, `columns` и его `sample`; внутри корня `.b-recipes[data-wx-block]` — разметка
+  фрагмента (`.wx-recipes` > `__filter` с `__chip` и `aria-current`, `__grid` > `__card` >
+  `__link` с `__cover` и `__name`, `__time`, `nav` > `__pages`, `__more` в витрине). Линты
+  конструктора на ней чистые. Поменяется фрагмент у RC3 — поправить заглушку, а не Blade.
 - `relations` у источника `faq` в моке убран (итог RC2 просил это сделать, когда появится
   настоящий источник рецептов); поле «Recipes» на `services.form` (патч проекта из RC2) оставлено.
 - Мелочь, найденная глазами: пустой список у поля «Rich in» говорит общим словом поля категорий

@@ -10,9 +10,11 @@ import type { recipePage } from './recipes'
  * method, nutrition, services, similar recipes. The block is a template like any other and goes
  * through `renderTemplate()`, the one path the constructor and the page preview share.
  *
- * Both stand in for the composer package's files until the two halves are on one branch: the
- * block's template in `resources/blocks/recipes.json` is written there, beside the Blade views,
- * and may lean on partials this playground's little Blade cannot include.
+ * Both stand in for the composer package's files, and stay stand-ins: the block the module offers
+ * (`resources/blocks/recipes.json`) is one `@include` of the catalog partial the index and the
+ * category page share, and this playground's little Blade has neither `@include` nor a paginator.
+ * So the block below inlines that partial's markup — `.wx-recipes` and its parts, as the composer
+ * package prints them — inside the block's own root, which is what the constructor's lints want.
  */
 
 const esc = (value: string): string =>
@@ -96,7 +98,7 @@ export function drawRecipePage(page: Page): string {
   </article>`
 }
 
-/* The page and the cards of the block share the card, so they share its rules too. */
+/* The cards of the page (similar recipes). The block has its own rules, under its own root. */
 const CARD_STYLES = `
   .r-grid { display: grid; grid-template-columns: repeat(var(--r-columns, 3), minmax(0, 1fr)); gap: 20px; }
   .r-card { display: flex; flex-direction: column; gap: 6px; color: inherit; text-decoration: none; }
@@ -104,7 +106,6 @@ const CARD_STYLES = `
   .r-card__cover img { width: 100%; height: 100%; min-width: 0; object-fit: cover; display: block; }
   .r-card small { color: #6b7280; }
   .r-chip { display: inline-block; padding: 2px 10px; border-radius: 999px; background: #eef4ec; color: #2d6a3e; font-size: 14px; text-decoration: none; }
-  .r-chip.is-active { background: #2d6a3e; color: #fff; }
   @media (max-width: 720px) { .r-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 460px) { .r-grid { grid-template-columns: minmax(0, 1fr); } }
 `
@@ -133,58 +134,160 @@ export const RECIPE_PAGE_STYLES = `${CARD_STYLES}
  * `ResolvesMissing`), so every condition below reads "catalog" and falls through to the showcase.
  * The catalog pages by `$per_page` with its own loop arithmetic: this little Blade has no
  * paginator, and the page the preview draws is always the first.
+ *
+ * Inside the root is the markup of `partials/catalog.blade.php` as RC3 wrote it: `.wx-recipes`
+ * with its filter, grid, pages and the showcase's link to every recipe.
  */
-const BLOCK_TEMPLATE = `<section class="b-recipes site-wrap" style="--r-columns: {{ $columns ?: 3 }}">
+const BLOCK_TEMPLATE = `<section class="b-recipes" data-wx-block="recipes">
     @if ($title)
         <h2 class="b-recipes__title">{{ $title }}</h2>
     @endif
-    @if ($mode === 'catalog' && $recipes['groups'])
-        <nav class="b-recipes__filter">
-            <a class="r-chip is-active" href="?">Все</a>
-            @foreach ($recipes['groups'] as $group)
-                <a class="r-chip" href="?nutrient={{ $group['id'] }}">{{ $group['title'] }}</a>
-            @endforeach
-        </nav>
-    @endif
-    <div class="r-grid">
-        @foreach ($recipes['items'] as $recipe)
-            @if ($mode !== 'catalog' || $loop->iteration <= ($per_page ?: 24))
-                <a class="r-card" href="{{ $recipe['url'] }}">
-                    <span class="r-card__cover">
-                        @if ($recipe['cover'])
-                            <img src="{{ $recipe['cover']['url'] }}" alt="" loading="lazy">
-                        @endif
-                    </span>
-                    <strong>{{ $recipe['title'] }}</strong>
-                    @if ($recipe['time'])
-                        <small>{{ $recipe['time'] }}</small>
-                    @endif
-                </a>
-            @endif
-        @endforeach
-    </div>
-    @if ($mode === 'catalog')
-        <nav class="b-recipes__pages">
+    <div class="wx-recipes" style="--wx-recipes-columns: {{ $columns ?: 3 }}">
+        @if ($mode === 'catalog' && $recipes['groups'])
+            <ul class="wx-recipes__filter">
+                <li><a class="wx-recipes__chip" href="?" aria-current="true">Все</a></li>
+                @foreach ($recipes['groups'] as $group)
+                    <li><a class="wx-recipes__chip" href="?nutrient={{ $group['id'] }}">{{ $group['title'] }}</a></li>
+                @endforeach
+            </ul>
+        @endif
+        <ul class="wx-recipes__grid">
             @foreach ($recipes['items'] as $recipe)
-                @if (intval($loop->index / ($per_page ?: 24)) * ($per_page ?: 24) === $loop->index)
-                    <a class="b-recipes__page {{ $loop->first ? 'is-current' : '' }}" href="?page={{ intval($loop->index / ($per_page ?: 24)) + 1 }}">{{ intval($loop->index / ($per_page ?: 24)) + 1 }}</a>
+                @if ($mode !== 'catalog' || $loop->iteration <= ($per_page ?: 24))
+                    <li class="wx-recipes__card">
+                        <a class="wx-recipes__link" href="{{ $recipe['url'] }}">
+                            @if ($recipe['cover'])
+                                <img class="wx-recipes__cover" src="{{ $recipe['cover']['url'] }}" alt="" loading="lazy">
+                            @endif
+                            <span class="wx-recipes__name">{{ $recipe['title'] }}</span>
+                        </a>
+                        @if ($recipe['time'])
+                            <span class="wx-recipes__time">{{ $recipe['time'] }}</span>
+                        @endif
+                    </li>
                 @endif
             @endforeach
-        </nav>
-    @else
-        <p class="b-recipes__more"><a href="/recipes">{{ $all_label ?: 'Все рецепты' }} →</a></p>
-    @endif
+        </ul>
+        @if ($mode === 'catalog')
+            <nav>
+                <ul class="wx-recipes__pages">
+                    @foreach ($recipes['items'] as $recipe)
+                        @if (intval($loop->index / ($per_page ?: 24)) * ($per_page ?: 24) === $loop->index)
+                            <li><a href="?page={{ intval($loop->index / ($per_page ?: 24)) + 1 }}" {{ $loop->first ? 'aria-current=page' : '' }}>{{ intval($loop->index / ($per_page ?: 24)) + 1 }}</a></li>
+                        @endif
+                    @endforeach
+                </ul>
+            </nav>
+        @else
+            <p><a class="wx-recipes__more" href="/recipes">Все рецепты →</a></p>
+        @endif
+    </div>
 </section>`
 
-const BLOCK_STYLES = `${CARD_STYLES}
-  .b-recipes { padding-block: 32px; }
-  .b-recipes__filter { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
-  .b-recipes__pages { display: flex; gap: 6px; margin-top: 24px; }
-  .b-recipes__page { min-width: 36px; padding: 6px 10px; border: 1px solid #e6e8ee; border-radius: 8px; text-align: center; text-decoration: none; color: inherit; }
-  .b-recipes__page.is-current { background: #1f2430; border-color: #1f2430; color: #fff; }
-  .b-recipes__more { margin-top: 20px; }
+const BLOCK_STYLES = `.b-recipes {
+    container-type: inline-size;
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 32px 24px;
+}
+
+.b-recipes .wx-recipes__filter,
+.b-recipes .wx-recipes__grid,
+.b-recipes .wx-recipes__pages {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.b-recipes .wx-recipes__filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.b-recipes .wx-recipes__chip {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: #eef4ec;
+    color: #2d6a3e;
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.b-recipes .wx-recipes__chip[aria-current] {
+    background: #2d6a3e;
+    color: #fff;
+}
+
+.b-recipes .wx-recipes__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+}
+
+.b-recipes .wx-recipes__link {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: inherit;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.b-recipes .wx-recipes__cover {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 10px;
+    background: #eef0f4;
+}
+
+.b-recipes .wx-recipes__time {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.b-recipes .wx-recipes__pages {
+    display: flex;
+    gap: 6px;
+    margin-top: 24px;
+}
+
+.b-recipes .wx-recipes__pages a {
+    display: inline-block;
+    min-width: 36px;
+    padding: 6px 10px;
+    border: 1px solid #e6e8ee;
+    border-radius: 8px;
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+}
+
+.b-recipes .wx-recipes__pages a[aria-current] {
+    background: #1f2430;
+    border-color: #1f2430;
+    color: #fff;
+}
+
+@container (min-width: 30rem) {
+    .b-recipes .wx-recipes__grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@container (min-width: 46rem) {
+    .b-recipes .wx-recipes__grid {
+        grid-template-columns: repeat(var(--wx-recipes-columns, 3), minmax(0, 1fr));
+    }
+}
 `
 
+/* The ids, the modes and the sample of the block the composer package offers. */
 export const RECIPES_BLOCK: BlockContent = {
   schema: [
     { id: 'title', type: 'wx-input', label: 'Heading', localized: true },
@@ -209,14 +312,6 @@ export const RECIPES_BLOCK: BlockContent = {
       visible: { when: 'mode', is: 'catalog' },
     },
     {
-      id: 'all_label',
-      type: 'wx-input',
-      label: 'The link to every recipe',
-      help: 'Empty is “All recipes”.',
-      localized: true,
-      visible: { when: 'mode', not: 'catalog' },
-    },
-    {
       id: 'columns',
       type: 'wx-input-number',
       label: 'Columns',
@@ -227,5 +322,10 @@ export const RECIPES_BLOCK: BlockContent = {
   template: BLOCK_TEMPLATE,
   styles: BLOCK_STYLES,
   script: null,
-  sample: { title: { ru: 'Рецепты', en: 'Recipes' }, recipes: { limit: 3 } },
+  sample: {
+    title: 'Recipes',
+    recipes: { categories: [], limit: 3, filter: false, markup: null, related: null },
+    mode: 'showcase',
+    columns: 3,
+  },
 }
