@@ -203,6 +203,10 @@ php/
   отвечает «pathspec did not match» на первом же файле. Перед переключением копировать в
   скретчпад `composer.json`, `composer.lock`, `package.json`, `package-lock.json` и
   `database/database.sqlite` (база там sqlite), потом положить назад и `composer install`.
+  **Новый пакет в local-режиме одним `composer require` не ставится:** он тянет свежие диапазоны
+  соседей (`^0.39`), а частичное обновление держит их на версиях из lock'а — «fixed to v0.37.0 …
+  by a partial update». Два шага: `require "webx-ui/<пакет>:*" --no-update`, потом
+  `update "webx-ui/*"`.
 - **В worktree `node_modules` — симлинк на основной чекаут, и `pnpm` это не переживает.** Любой
   `pnpm <скрипт>` оттуда либо отказывается («Refusing to use task run state directory … because
   it is a symbolic link»), либо — если решит, что сменился пакетный менеджер, — идёт по симлинку
