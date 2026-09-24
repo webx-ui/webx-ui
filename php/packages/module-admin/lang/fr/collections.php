@@ -12,6 +12,8 @@ return [
     'unknown-category' => 'L’une des catégories choisies n’existe plus.',
     'limit' => 'Combien en afficher : un nombre entier de 1 à :max, ou vide pour tout.',
     'flag' => 'Cet interrupteur n’accepte que oui ou non.',
+    'unknown-relation' => 'Les éléments de cette section ne peuvent pas être filtrés ainsi.',
+    'unknown-related' => 'L’un des éléments liés choisis n’existe plus.',
 
     'field-source' => 'Affiche des entrées de « :source ».',
     'field-unavailable' => 'Impossible de choisir ici des entrées de « :source » : la section n’est pas installée, ou vous n’y avez pas accès.',

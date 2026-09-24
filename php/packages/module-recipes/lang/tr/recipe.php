@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'trail' => 'Bu tarifin yeri',
+    'untitled' => 'Başlıksız',
+    'save' => 'Kaydet',
+    'save-failed' => 'Tarif kaydedilmedi.',
+    'publish-title' => '“:title” yayınlansın mı?',
+    'publish-text' => 'Bu andan itibaren herkes için :address adresinde yanıt verir; kategorileri, hizmetleri ve benzer tarifleri şu an seçildiği gibi.',
+    'publish-nowhere' => 'Bu dilde henüz adresi yok, bu yüzden hiçbir şey yanıt vermez.',
+    'preview' => 'Önizleme',
+    'discard' => 'Değişiklikleri at',
+    'discard-title' => 'Bekleyenler atılsın mı?',
+    'discard-text' => 'Tarif, sitenin gösterdiği hâline döner. O zamandan beri yazılanlar hiçbir yerde listelenmez.',
+    'discarded' => 'Tarif yayınlanan hâline döndü.',
+    'conflict-title' => 'Siz düzenlerken tarif değişti',
+    'conflict-mine' => 'Benimkini tut',
+    'conflict-theirs' => 'Yeni sürümü al',
+    'conflict-theirs-title' => 'Yazdıklarınızdan vazgeçilsin mi?',
+    'conflict-theirs-text' => 'Tarif şimdiki hâliyle yeniden okunur ve yazdıklarınız kaybolur.',
+    'leave' => 'Çık',
+    'leave-title' => 'Kaydetmeden çıkılsın mı?',
+    'leave-text' => 'Tarif kaydedilemedi ve yazdıklarınız sunucuda değil.',
+    'live-since' => ':date tarihinden beri yayında',
+    'address-moving' => 'Adres değişiyor. Eskisi çalışmaya devam eder ve yenisine yönlendirir.',
+    'history-empty' => 'Bu tarif hiç yayınlanmadı.',
+    'version' => '#:number',
+    'version-live' => 'Yayında',
+    'source-panel' => 'Panelden',
+    'source-mcp' => 'Bir ajan tarafından',
+    'source-import' => 'İçe aktarıldı',
+    'restore-title' => ':number sürümü geri yüklensin mi?',
+    'restore-text' => 'Taslak olur. Siz yayınlayana kadar site yayınlanan hâli gösterir.',
+    'restore-version' => 'Geri yükle',
+    'restored-version' => ':number sürümü artık taslak.',
+];

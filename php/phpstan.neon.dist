@@ -27,7 +27,9 @@ parameters:
         - packages/module-pages/src
         - packages/module-pages/tests
         - packages/module-reviews/src
+        - packages/module-recipes/src
         - packages/module-reviews/tests
+        - packages/module-recipes/tests
         - packages/module-seo/src
         - packages/module-seo/tests
         - packages/module-services/src

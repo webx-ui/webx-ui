@@ -86,9 +86,21 @@ export {
   collectionSources,
   defaultMarkup,
   normaliseCollection,
+  type CollectionRelated,
+  type CollectionRelationTarget,
   type CollectionSourceInfo,
   type CollectionValue,
 } from './collections/api'
+export {
+  createRelationsApi,
+  normaliseRelations,
+  provideRelationOwner,
+  relationOwnerKey,
+  useRelationOwner,
+  type RelationCandidate,
+  type RelationOwner,
+  type RelationsApi,
+} from './relations/api'
 export type {
   AdminModule,
   AdminStatus,
@@ -126,6 +138,7 @@ export { default as WxCategoryCreateDialog } from './categories/CategoryCreateDi
 export { default as WxCategoryEditorPage } from './categories/CategoryEditorPage.vue'
 export { default as WxCategoriesField } from './categories/CategoriesField.vue'
 export { default as WxCollectionField } from './collections/CollectionField.vue'
+export { default as WxRelationsField } from './relations/RelationsField.vue'
 export { default as WxSlugField } from './SlugField.vue'
 /** The shared address field under the name it was released with. */
 export { default as WxCategorySlug } from './SlugField.vue'

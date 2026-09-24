@@ -1,0 +1,17 @@
+[
+  {
+    "op": "replace",
+    "target": "seo-placeholder",
+    "node": {
+      "id": "seo-card",
+      "type": "wx-card",
+      "children": [
+        {
+          "id": "seo-fields",
+          "type": "wx-seo",
+          "name": "seo"
+        }
+      ]
+    }
+  }
+]

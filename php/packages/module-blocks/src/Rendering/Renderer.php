@@ -237,7 +237,7 @@ final class Renderer
             key: $key,
             type: $type->slug,
             version: $type->version,
-            values: $this->values->resolve($type, $values),
+            values: $this->values->resolve($type, $values, $entity),
             entity: $entity,
             depth: $depth,
         );

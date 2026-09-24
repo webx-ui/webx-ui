@@ -12,6 +12,8 @@ return [
     'unknown-category' => 'Seçilen kategorilerden biri artık yok.',
     'limit' => 'Kaç tane gösterileceği: 1 ile :max arasında bir tam sayı ya da hepsi için boş.',
     'flag' => 'Bu anahtar yalnızca evet ya da hayır alır.',
+    'unknown-relation' => 'Bu bölümün kayıtları buna göre süzülemez.',
+    'unknown-related' => 'Seçilen ilişkili kayıtlardan biri artık yok.',
 
     'field-source' => '“:source” bölümünden kayıtları gösterir.',
     'field-unavailable' => '“:source” kayıtları burada seçilemez: bölüm kurulu değil ya da ona erişiminiz yok.',

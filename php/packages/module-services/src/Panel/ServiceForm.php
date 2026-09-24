@@ -126,6 +126,15 @@ final class ServiceForm
                 continue;
             }
 
+            // Every value inside the tree through its field type, as an agent's edit already goes
+            // (CLAUDE.md §4 «Правило "значения идут через тип поля"»): `wx-blocks` is a type the
+            // server does not register, so the screen alone lets the tree through untouched.
+            if ($field === 'blocks') {
+                $columns['blocks'] = $service->storeBlocks(is_iterable($stored['blocks']) ? $stored['blocks'] : []);
+
+                continue;
+            }
+
             $columns[$field] = $stored[$field];
         }
 

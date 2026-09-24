@@ -143,6 +143,9 @@ function service(seed: Seed): ServiceRecord {
     ],
     cover: { path: COVERS[seed.cover] },
     categories: [],
+    // The first service opens with recipes already chosen, one of them unpublished — so the
+    // playground's relations field shows names asked by id and the mark on a hidden one at once.
+    recipes: services.length === 0 ? [2, 4] : [],
     seo: {},
   }
 

@@ -163,7 +163,7 @@ final class EditorTest extends TestCase
             ->assertOk();
 
         $this->assertSame(
-            ['categories' => [], 'limit' => 3, 'filter' => true, 'markup' => null],
+            ['categories' => [], 'limit' => 3, 'filter' => true, 'markup' => null, 'related' => null],
             $page->refresh()->draftValues()['blocks'][0]['values']['list'],
         );
     }

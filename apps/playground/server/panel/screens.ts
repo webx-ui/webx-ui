@@ -57,6 +57,22 @@ const SCREENS: Record<string, { base: string; patches: string[] }> = {
     base: 'php/packages/module-services/resources/screens/category-form.json',
     patches: ['php/packages/module-seo/resources/screens/services.category-form.json'],
   },
+  'recipes.form': {
+    base: 'php/packages/module-recipes/resources/screens/form.json',
+    // The author's note is the project's field, as omnivitality has one: into `extra`.
+    patches: [
+      'php/packages/module-seo/resources/screens/recipes.form.json',
+      'apps/playground/server/panel/project/recipes.form.json',
+    ],
+  },
+  'recipes.category-form': {
+    base: 'php/packages/module-recipes/resources/screens/category-form.json',
+    patches: ['php/packages/module-seo/resources/screens/recipes.category-form.json'],
+  },
+  'recipes.nutrient-form': {
+    base: 'php/packages/module-recipes/resources/screens/nutrient-form.json',
+    patches: [],
+  },
 }
 
 const root = (path: string): string =>
