@@ -43,4 +43,22 @@ return [
 
     'layout' => env('WEBX_PAGES_LAYOUT'),
 
+    /*
+    |---------------------------------------------------------------------------
+    | The trail above the content
+    |---------------------------------------------------------------------------
+    |
+    | Whether the package's views print the crumbs a reader sees on a page.
+    | Many sites want them in the blog and nowhere else, so this is a switch per
+    | module rather than one for the whole site.
+    |
+    | Only the visible trail: the BreadcrumbList in the <head> is `module-seo`'s
+    | (`webx-seo.print.breadcrumbs`) and stays, because it helps a search engine
+    | whether or not the page shows it. A site with its own `view` above
+    | decides in its own markup and never reads this.
+    |
+    */
+
+    'breadcrumbs' => (bool) env('WEBX_PAGES_BREADCRUMBS', true),
+
 ];

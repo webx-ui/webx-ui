@@ -18,7 +18,9 @@
     <article>
         <header>
             {{-- Index, main category, the service: the same list as the BreadcrumbList in the <head>. --}}
-            <x-webx-seo::breadcrumbs :for="$service" />
+            @if (config('webx-services.breadcrumbs', true))
+                <x-webx-seo::breadcrumbs :for="$service" />
+            @endif
             <h1>{{ $service->title }}</h1>
         </header>
 
