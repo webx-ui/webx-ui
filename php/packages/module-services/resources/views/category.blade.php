@@ -17,7 +17,9 @@
     </x-slot:head>
 
     {{-- From the same list as the BreadcrumbList in the <head>. --}}
-    <x-webx-seo::breadcrumbs :for="$category" />
+    @if (config('webx-services.breadcrumbs', true))
+        <x-webx-seo::breadcrumbs :for="$category" />
+    @endif
 
     <header>
         <h1>{{ $category->title }}</h1>

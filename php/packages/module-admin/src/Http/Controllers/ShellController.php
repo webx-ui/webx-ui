@@ -26,6 +26,7 @@ final class ShellController
 
         return $this->views->make('webx-admin::shell', [
             'title' => (string) $this->config->get('webx-admin.title'),
+            'iconBase' => '/'.trim((string) $this->config->get('webx-admin.path'), '/').'/',
             'manifestUrl' => '/'.ltrim((string) $this->config->get('webx-admin.api_path'), '/').'/manifest',
             // Told apart here rather than in the template: a Blade file is a bad place to ask
             // what a file name means.

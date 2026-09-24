@@ -118,7 +118,8 @@ class ServicesServiceProvider extends ServiceProvider
     /**
      * The index: an ordinary route, so it wins before the registry's fallback and `Reserved`
      * closes the address to pages of its own accord. With no prefix it is not registered at all —
-     * `/` is the site's, and a list of services there is a page the site writes.
+     * `/` is the site's, and a list of services there is a page the site writes. Switched off, it
+     * is not registered either, and for the same reason: the address is then free for a page.
      *
      * Twice where the language is in the path; the prefixed copy would match `anything/services`
      * without {@see OneSpellingPerAddress} in front of it.
@@ -127,7 +128,7 @@ class ServicesServiceProvider extends ServiceProvider
     {
         $prefix = $this->prefix();
 
-        if ($prefix === '') {
+        if ($prefix === '' || ! (bool) $this->config()->get('webx-services.index', true)) {
             return;
         }
 

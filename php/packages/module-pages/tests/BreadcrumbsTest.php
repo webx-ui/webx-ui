@@ -40,6 +40,19 @@ final class BreadcrumbsTest extends TestCase
     }
 
     #[Test]
+    public function a_site_can_switch_the_visible_trail_off_and_keep_the_breadcrumb_list(): void
+    {
+        config()->set('webx-pages.breadcrumbs', false);
+        $this->home()->publish();
+        $this->page('about');
+
+        $page = (string) $this->get('/about')->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('webx-breadcrumbs', $page);
+        $this->assertSame(['Home', 'About'], $this->names($page));
+    }
+
+    #[Test]
     public function the_home_page_has_no_trail(): void
     {
         $this->home()->publish();

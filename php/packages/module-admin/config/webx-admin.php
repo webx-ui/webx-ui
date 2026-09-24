@@ -18,6 +18,21 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Panel icons
+    |---------------------------------------------------------------------------
+    |
+    | The tab icon, the home-screen icon and the web manifest are served under
+    | `path` from the package — the WebX mark. A directory here replaces them
+    | file by file (`favicon.ico`, `favicon-96x96.png`, `apple-touch-icon.png`,
+    | `web-app-manifest-192x192.png`, `web-app-manifest-512x512.png`); a file it
+    | lacks stays the package's. The manifest is written from `title`.
+    |
+    */
+
+    'icons' => env('WEBX_ADMIN_ICONS'),
+
+    /*
+    |---------------------------------------------------------------------------
     | Paths
     |---------------------------------------------------------------------------
     |
