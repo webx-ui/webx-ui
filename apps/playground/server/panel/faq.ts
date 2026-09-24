@@ -163,6 +163,12 @@ export function collectionSources(locale: string): unknown[] {
       markup: true,
     },
     {
+      key: 'reviews',
+      title: locale === 'ru' ? 'Отзывы' : 'Reviews',
+      categories: 'reviews/categories',
+      markup: false,
+    },
+    {
       key: 'services',
       title: locale === 'ru' ? 'Услуги' : 'Services',
       categories: 'services/categories',
