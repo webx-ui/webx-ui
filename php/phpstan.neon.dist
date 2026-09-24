@@ -26,6 +26,8 @@ parameters:
         - packages/module-menu/tests
         - packages/module-pages/src
         - packages/module-pages/tests
+        - packages/module-reviews/src
+        - packages/module-reviews/tests
         - packages/module-seo/src
         - packages/module-seo/tests
         - packages/module-services/src

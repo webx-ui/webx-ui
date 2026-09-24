@@ -76,6 +76,11 @@ final class Catalogue
             'label' => 'FAQ — questions and answers, shown on any page as a block',
             'default' => false,
         ],
+        'reviews' => [
+            'package' => 'webx-ui/module-reviews',
+            'label' => 'Reviews — what clients say, shown on any page as a block',
+            'default' => false,
+        ],
         'menu' => [
             'package' => 'webx-ui/module-menu',
             'label' => 'Menus — the header and the footer, and what each entry points at',
