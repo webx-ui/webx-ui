@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-faq",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "FAQ for the WebX UI admin panel: questions and answers with flat categories, ordered by hand, shown on the site by a block.",
   "license": "MIT",
   "type": "module",

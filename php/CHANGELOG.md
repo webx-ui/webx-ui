@@ -1,5 +1,27 @@
 # @webx-ui/php
 
+## 0.41.0
+
+### Minor Changes
+
+- da138e0: `webx-ui/module-recipes`, new: recipes as a section of the panel. A recipe is a page of fixed structure — a gallery whose first photo is the cover, ingredients and method as translated documents, nutrition as five translated lines, time and servings — printed by the module's view in parts a site can publish and rewrite one at a time. Flat categories with pages of their own and a "rich in" list (iron, fibre) without, both filed in the draft and published with the text, like the related services and the similar recipes (`webx_relations`). Addresses `{prefix}/{category}` and `{prefix}/{recipe}` on one level under a prefix that is never empty; the index at the prefix can be switched off, and a page of `module-pages` takes the address and the first step of the trail. The catalogue is one fragment for the index, a category page and the offered block "Recipes" (a showcase, or the whole catalogue with pages and a nutrient filter, which is `noindex`). Similar recipes are the ones chosen by hand, or picked by shared categories, services and nutrients in one query. SEO card, sitemap, trail and schema.org `Recipe` with ingredients and steps read out of the lists. `recipes()` for templates, `recipes` as a `wx-collection` source related to services, `recipe` as a relation target.
+
+  `webx-ui/module-seo`: the SEO card on the recipe and recipe category forms.
+
+  `webx-ui/module-admin`: `webx:setup` offers recipes, and `webx:doctor` checks whose `recipes()` a template calls.
+
+- da138e0: `webx-ui/module-recipes`: recipes for an agent — `recipes_list`, `recipes_get`, `recipes_create`, `recipes_update`, `recipes_publish`, `recipes_unpublish`, `recipes_delete`, `recipes_reorder` through the panel's own doors, the shared category tools as `recipe_categories_*` and `recipe_nutrients_*`, and `recipes://catalog` to read first. A recipe, a service and a similar recipe are named by id or by address, a category by slug, a nutrient by title; creating is the row and its values in one transaction; the tools that write say that the ingredients and the method are HTML lists, because the `Recipe` markup reads `<li>`. Demo content: three categories, five nutrients, six recipes, links to the demo services when they are there, and a page `/recipes-showcase` with both views of the block when blocks and pages are.
+
+  `@webx-ui/module-admin`: "The record of the page it stands on" in the relation filter of `wx-collection` (`related.current`), and a chosen record in the bin marked "In the bin" rather than only "Not on the site".
+
+  `@webx-ui/module-blocks`: the block template's autocomplete knows the card of the `recipes` source.
+
+- da138e0: `webx-ui/module-admin`: relations between records of different modules, or of one — a recipe to its services, a recipe to the recipes like it. One table, `webx_relations`, with no foreign keys, so a module pointed at may be installed later or removed and put back; a module registers what can be pointed at in `RelationTargets`, and a record that points uses `HasRelations` (`related()`, `Relations::load()` for a list, `Relations::owners()` and `relatedTo()` from the other end). Deleting for good takes the rows along on both ends, the bin does not. The `wx-relations` field edits one relation, goes into the draft of a drafted record and takes effect on publishing, and leaves the screen when its target is not installed — the value stays. `GET /api/cms/relations/{target}` finds candidates and names the chosen behind the target's permission. `wx-collection` gets a relation filter (`related`), including "related to the record whose page the block is on", and `CollectionSource` a `relations()` method. `HasCategories` writes and filters a second kind of category by name. `webx:doctor` counts relations pointing at a module that is not installed.
+
+  `webx-ui/module-services`: services can be pointed at (`service`), and the editor's save now puts block values through their field types, as an agent's edit already did.
+
+  `webx-ui/module-blocks`: the renderer hands the entity whose page it prints to a field type that reads differently on it (`ResolvesForEntity`).
+
 ## 0.40.1
 
 ### Patch Changes
