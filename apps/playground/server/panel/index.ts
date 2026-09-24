@@ -213,7 +213,7 @@ on('GET', '/manifest', ({ locale }) => ({
       {
         id: 'services',
         title: line(locale, 'webx-services', 'module.group'),
-        icon: 'star',
+        icon: 'briefcase',
         order: 400,
       },
       { id: 'system', title: line(locale, 'webx-admin', 'nav.system'), icon: 'gear', order: 900 },
