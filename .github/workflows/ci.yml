@@ -4,47 +4,121 @@ on:
   push:
     branches: [main]
   pull_request:
+  # The merge queue builds main plus the PR and needs the required check to report on it.
+  merge_group:
 
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# The steps used to run one after another in a single job (6.5 minutes). Only typecheck, the
+# tests and the docs need the packages built — the docs and the module tests resolve their
+# neighbours from `dist` — so lint and format start at once, and every job builds for itself:
+# shipping `dist` between jobs as an artifact costs about what building it does.
+#
+# The version PR is the exception. It changes versions, changelogs and the PHP constraints on
+# top of a main that already passed this workflow — and the merge queue keeps main green by
+# construction — so it only has to prove that it still installs and builds.
+
 jobs:
-  verify:
-    name: Lint, typecheck, test, build
+  lint:
+    name: Lint and format
+    if: github.head_ref != 'changeset-release/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-
       - uses: pnpm/action-setup@v4
-
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build packages
-        run: pnpm build
+      - run: pnpm install --frozen-lockfile
 
       - name: Check generated tokens are up to date
         run: |
+          pnpm --filter @webx-ui/tokens generate
           git diff --exit-code -- packages/tokens/src/generated \
             || (echo "::error::packages/tokens/src/generated is stale — run 'pnpm --filter @webx-ui/tokens generate' and commit the result" && exit 1)
 
-      - name: Lint
-        run: pnpm lint
+      - run: pnpm lint
+      - run: pnpm format:check
 
-      - name: Format check
-        run: pnpm format:check
+  typecheck:
+    name: Typecheck
+    if: github.head_ref != 'changeset-release/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm typecheck
 
-      - name: Typecheck
-        run: pnpm typecheck
+  test:
+    name: Test ${{ matrix.shard }}/3
+    if: github.head_ref != 'changeset-release/main'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm test --shard=${{ matrix.shard }}/3
 
-      - name: Test
-        run: pnpm test
+  docs:
+    name: Build docs
+    if: github.head_ref != 'changeset-release/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm docs:build
 
-      - name: Build docs
-        run: pnpm docs:build
+  release-pr:
+    name: Version PR installs and builds
+    if: github.head_ref == 'changeset-release/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      # The ranges `workspace:^` turns into are what a version PR can break.
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+  # The ruleset requires a check by this name, so it stays the one name the rest report into.
+  # `always()` is the point: without it a failed job makes this one skipped, and GitHub counts
+  # a skipped required check as passed. Skipped jobs are fine — that is the version PR's path.
+  verify:
+    name: Lint, typecheck, test, build
+    needs: [lint, typecheck, test, docs, release-pr]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every job passed or was meant to be skipped
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+            echo "::error::A job above failed or was cancelled."
+            exit 1
+          fi
