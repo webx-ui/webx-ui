@@ -113,7 +113,7 @@ final class ProjectFieldsTest extends TestCase
     {
         $ids = array_column(Tree::children(Screens::tree(ServiceCategory::SCREEN)[0]), 'id');
 
-        $this->assertSame(['content', 'blocks-tab', 'image', 'seo'], $ids);
+        $this->assertSame(['content', 'blocks-tab', 'seo'], $ids);
     }
 
     /**

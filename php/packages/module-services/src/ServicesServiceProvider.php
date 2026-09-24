@@ -228,7 +228,7 @@ class ServicesServiceProvider extends ServiceProvider
                 ...$groups,
                 ServicesGroup::GROUP => [
                     'title' => 'webx-services::module.group',
-                    'icon' => 'star',
+                    'icon' => 'briefcase',
                     'order' => 400,
                 ],
             ]);

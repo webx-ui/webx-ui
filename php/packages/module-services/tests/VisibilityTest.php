@@ -110,7 +110,7 @@ final class VisibilityTest extends TestCase
     {
         $tabs = array_column(Tree::children(Screens::tree(ServiceCategory::SCREEN)[0]), 'id');
 
-        $this->assertSame(['content', 'image', 'seo'], $tabs);
+        $this->assertSame(['content', 'seo'], $tabs);
     }
 
     #[Test]

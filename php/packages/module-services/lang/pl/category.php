@@ -5,7 +5,6 @@ declare(strict_types=1);
 return [
     'tab-content' => 'Treść',
     'tab-blocks' => 'Bloki',
-    'tab-cover' => 'Obraz',
     'tab-seo' => 'SEO',
     'field-title' => 'Tytuł',
     'field-slug' => 'Adres',
