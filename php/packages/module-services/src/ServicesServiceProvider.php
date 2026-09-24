@@ -9,9 +9,11 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategoryLinkSource;
 use WebxUi\Admin\Categories\CategorySources;
+use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Blocks\BlockOffers;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Routing\Formatters\Prefixed;
 use WebxUi\Routing\Formatters\Slug;
@@ -20,6 +22,7 @@ use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
 use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Sitemap\SitemapRoutes;
+use WebxUi\Services\Collections\ServicesSource;
 use WebxUi\Services\Handlers\CategoryHandler;
 use WebxUi\Services\Handlers\ServiceHandler;
 use WebxUi\Services\Http\Controllers\IndexController;
@@ -57,6 +60,7 @@ class ServicesServiceProvider extends ServiceProvider
         $this->registerBlockEntities();
         $this->registerScreens();
         $this->registerLinkSources();
+        $this->registerCollection();
         $this->registerPanel();
 
         $this->app->make(SitemapRoutes::class)->register(self::INDEX_ROUTE);
@@ -211,6 +215,17 @@ class ServicesServiceProvider extends ServiceProvider
             'folder',
             221,
         ));
+    }
+
+    /**
+     * What a block may show, and the block that shows it: the same pair the FAQ brings. The type
+     * is offered, not installed — `webx:blocks:offered --install` puts it on the site once.
+     */
+    private function registerCollection(): void
+    {
+        $this->app->make(CollectionSources::class)->register($this->app->make(ServicesSource::class));
+
+        $this->app->make(BlockOffers::class)->offer('services', __DIR__.'/../resources/blocks');
     }
 
     /**

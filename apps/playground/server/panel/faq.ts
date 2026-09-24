@@ -162,6 +162,12 @@ export function collectionSources(locale: string): unknown[] {
       categories: 'faq/categories',
       markup: true,
     },
+    {
+      key: 'services',
+      title: locale === 'ru' ? 'Услуги' : 'Services',
+      categories: 'services/categories',
+      markup: false,
+    },
   ]
 }
 
