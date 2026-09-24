@@ -20,6 +20,7 @@ const NAMESPACES: Record<string, string> = {
   'module-auth': 'webx-auth',
   'module-blocks': 'webx-blocks',
   'module-blog': 'webx-blog',
+  'module-faq': 'webx-faq',
   'module-inbox': 'webx-inbox',
   'module-media': 'webx-media',
   'module-menu': 'webx-menu',
