@@ -1,0 +1,84 @@
+{
+    "name": "webx-ui/module-reviews",
+    "description": "Reviews for the WebX UI admin panel: a photo, a name, a rating and a text, in flat categories with two orders, shown on any page as a block — one, a grid, a slider or a marquee — and in templates through reviews().",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "webx-ui",
+        "laravel",
+        "admin",
+        "cms",
+        "reviews",
+        "testimonials"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-reviews"
+    },
+    "require": {
+        "php": "^8.3",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/routing": "^13.0",
+        "illuminate/support": "^13.0",
+        "webx-ui/localization": "^0.39.0",
+        "webx-ui/mcp": "^0.39.0",
+        "webx-ui/module-admin": "^0.39.0",
+        "webx-ui/module-blocks": "^0.39.0",
+        "webx-ui/module-media": "^0.39.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/module-pages": "^0.39.0",
+        "webx-ui/module-services": "^0.39.0"
+    },
+    "suggest": {
+        "webx-ui/module-pages": "A page with a reviews block is the site's page of reviews.",
+        "webx-ui/module-services": "The demo puts a slider of reviews into one of its services."
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Reviews\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Reviews\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Reviews\\ReviewsServiceProvider"
+            ]
+        },
+        "webx": {
+            "module": "reviews",
+            "npm": {
+                "@webx-ui/module-reviews": "^0.1.0"
+            },
+            "panel": {
+                "import": "import { reviews } from '@webx-ui/module-reviews'",
+                "style": "@webx-ui/module-reviews/style.css",
+                "register": "...reviews()"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -1,0 +1,36 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "reviews.category-form",
+  "model": "review-category",
+  "root": [
+    {
+      "id": "naming",
+      "type": "wx-card",
+      "children": [
+        {
+          "id": "title",
+          "type": "wx-input",
+          "name": "title",
+          "label": "trans::webx-reviews::category.field-title",
+          "localized": true,
+          "props": {
+            "maxlength": 255
+          }
+        },
+        {
+          "id": "is-visible",
+          "type": "wx-switch",
+          "name": "is_visible",
+          "label": "trans::webx-reviews::category.visible",
+          "help": "trans::webx-reviews::category.visible-help"
+        }
+      ]
+    },
+    {
+      "id": "project-fields",
+      "type": "wx-card",
+      "label": "trans::webx-admin::screens.project-fields",
+      "children": []
+    }
+  ]
+}
