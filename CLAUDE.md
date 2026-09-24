@@ -1333,6 +1333,10 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
     сайт), `BlockOffers` и `webx:blocks:offered --install` в `module-blocks` (модуль приносит
     тип блока документом), `Seo::put()` в `module-seo`. Спецификация —
     `docs/architecture/WEBX_UI_MODULE_FAQ.md`, гайд — `apps/docs/guide/faq.md`.
+11. **Многосайтовость** — v3: одна установка, много доменов, одна панель, у каждого домена свой
+    дизайн. Спроектирована 24.09.2026, не начиналась: `docs/architecture/WEBX_UI_MULTISITE.md`.
+    Главное решение — сайт выставляется явно, а не только хостом, поэтому сцена и превью рисуются
+    на домене панели в теме сайта и остаются same-origin.
 
 Хвосты, про которые стоит помнить:
 
