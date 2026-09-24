@@ -1,6 +1,6 @@
 # `webx-ui/module-recipes` — спецификация и план реализации
 
-Статус: спроектирован 24.09.2026, код не начат. Пакеты — `webx-ui/module-recipes` (composer) и
+Статус: спроектирован 24.09.2026, промпты сессий RC1–RC6 — в §6; код не начат. Пакеты — `webx-ui/module-recipes` (composer) и
 `@webx-ui/module-recipes` (npm).
 
 Рецепты — записи с галереей, ингредиентами, способом приготовления, пищевой ценностью, временем и
@@ -483,10 +483,229 @@ id в `recipes_update` (`services`, `related`); услугу можно назв
 | **RC5** | `feat/module-recipes`                                 | слияние RC2 и RC4, MCP, демо, гайд, README, doctor                 |
 | **RC6** | `feat/module-recipes`                                 | выпуск, оба демо                                                   |
 
-RC1 ∥ RC2 (API поля — §3.7), затем RC3 ∥ RC4 (API — §5.10). Промпты пишет сессия, которая
-начинает этап, по образцу §6 `WEBX_UI_MODULE_REVIEWS.md`: самодостаточные, с «Прочитать»,
-«Сделать», «Не делать». В конце каждой — «Итог RCn» сюда и строка в память
+RC1 ∥ RC2 (API поля — §3.7), затем RC3 ∥ RC4 (API — §5.10). Промпты ниже самодостаточны. В конце
+каждой сессии — «Итог RCn» сюда (что следующей надо знать сверх промпта) и строка в память
 `custom-modules-workflow`.
+
+Общее для всех: gh не в PATH — `"C:\Program Files\GitHub CLI\gh.exe"`; пушить в `claude`, не в
+`origin`; php-гейт — `composer lint && composer analyse && composer test` из `php/` на
+`C:\Work\OSPanel\modules\PHP-8.4\php.exe` (в свежем worktree сначала прогреть манифест Testbench
+последовательно — CLAUDE.md §4 «И то же самое на пустом `vendor`»); npm — точечно
+`npx vitest run <файлы> --pool=forks --poolOptions.forks.singleFork` **из корня worktree**,
+`npx vue-tsc -p tsconfig.json --noEmit` в пакете, eslint и prettier на своих файлах. `pnpm` в
+worktree с симлинком на `node_modules` не запускать (CLAUDE.md §4).
+
+### RC1 — связи, php (`module-admin`)
+
+```
+Сессия RC1 из §6 docs/architecture/WEBX_UI_MODULE_RECIPES.md: общий механизм связей в
+module-admin, php-половина. Идёт параллельно с RC2.
+
+Начало: git fetch claude; git worktree add ../webx-ui-module-recipes -b feat/module-recipes
+claude/main (если PR #284 со спекой ещё не смержен — от claude/docs/plan-recipes). В php/ этого
+worktree: composer install, прогреть манифест Testbench (CLAUDE.md §4). PR не открывать.
+
+Прочитать: §§2,3 спеки целиком; php/packages/module-admin/src/{Categories/*,Collections/*,
+Links/LinkSources.php,Screens/ScreenRecord.php,Screens/Types/*} — образцы реестра, типа поля и
+раскладки значений; docs/architecture/WEBX_UI_MODULE_SERVICES.md §3 и итоги K1, K2 — как
+выносили категории; итог F1 в docs/architecture/WEBX_UI_MODULE_FAQ.md (ResolvesMissing, Selection);
+php/packages/module-services/src/ServicesServiceProvider.php.
+
+Сделать в php/packages/module-admin: миграция webx_relations §3.2; Relations\RelationTarget,
+RelationTargets (синглтон, регистрация из провайдера), HasRelations §3.4 с предзагрузкой
+Relations::load() и обратным Relations::owners(); forceDeleted с обеих сторон §3.3;
+Screens\Types\RelationsType (wx-relations) §3.5 — узел снимается с экрана, если цели нет в
+реестре, значение при этом не трогается; ScreenRecord раскладывает wx-relations в связи, у HasDraft
+— в черновик (как categories у услуги); маршрут GET /api/cms/relations/{target} §3.7 с правами
+цели; Selection + CollectionSource::relations() §3.6 (фильтр related, нормализация, источник без
+связей его не видит); HasCategories со второй связью §3.8 (имя связи параметром, по умолчанию —
+categoryRelation()); строка в webx:doctor про связи на снятые модули; слова webx-admin::relations.*
+на десять языков. В php/packages/module-services — регистрация цели service (+ слово в lang).
+Тесты на фикстурах двух моделей: всё из §3.9 php-стороны, включая forceDeleted с обеих сторон,
+мягкое удаление не трогает строки, снятый модуль-цель, черновик применяет связи публикацией,
+wx-collection с related через настоящий путь записи обеих дверей. Changeset на @webx-ui/php
+(minor).
+
+Выяснить и записать в итог: знает ли рендер блока сущность, на странице которой стоит
+(module-blocks, контекст рендера — Stage, Renderer, то, что передаёт module-pages/module-services).
+Знает — сделать related.current в Selection (§3.6); не знает — не делать и дописать в §7.
+
+Не делать: npm (RC2), module-recipes (RC3). Если форма ответа §3.7 или значение поля всё-таки
+должны отличаться — поправить спеку тем же коммитом и сказать об этом в итоге крупно: RC2 пишет мок
+по ней. В конце — «Итог RC1», коммит, пуш в claude.
+```
+
+### RC2 — связи, npm (`module-admin`)
+
+```
+Сессия RC2 из §6 docs/architecture/WEBX_UI_MODULE_RECIPES.md: поле wx-relations и фильтр по связи
+в wx-collection, npm-половина module-admin. Идёт параллельно с RC1, php не трогает.
+
+Начало: git fetch claude; git worktree add ../webx-ui-relations-panel -b feat/relations-panel
+<та же база, что у RC1: claude/main или claude/docs/plan-recipes>; pnpm install --frozen-lockfile
+в этом worktree (каталог обычный — node_modules будет свой, CLAUDE.md §4); собрать dist у tokens,
+core, schema. PR не открывать.
+
+Прочитать: §§3.5–3.7,3.9 спеки; packages/module-admin/src/collections/* (WxCollectionField — итог
+F2 спеки FAQ) и поле wx-categories — образцы; apps/playground/server/panel/ (faq.ts, services) —
+как устроены фикстуры; CLAUDE.md §4 про перетаскивание в панели браузера (клавиатурой на ручке),
+про фрагмент в корне компонента и :deep(), про 375 px.
+
+Сделать в packages/module-admin: WxRelationsField (тип wx-relations): выбранные строками с
+перетаскиванием (WxSortableList) и удалением, «Добавить» — поиск через GET
+/api/cms/relations/{target}?q=, названия выбранных через ?ids[]=, пометка невидимой цели, без прав
+(403) — только список; регистрация типа в реестре полей; в WxCollectionField — выбор «только
+связанные с» для источника, у которого relations() не пуст (форма значения — как в Selection
+§3.6). Слова — английский пол в messages.ts под ключами webx-admin::relations.* (RC1 заводит их в
+lang; сверить имена по спеке, расхождение — в итог). Плейграунд: мок /api/cms/relations/service и
+/relations/recipe по §3.7, поле на экране услуги или отдельной фикстуре — чтобы было где нажать.
+vitest на поле и на новый выбор в WxCollectionField; changeset на @webx-ui/module-admin (minor).
+Гайд: раздел «Связи» в apps/docs/guide/collections.md или свой relations.md со ссылкой в сайдбаре.
+
+Проверить в браузере на плейграунде (фоновый npx vite --port 5186 в apps/playground, preview_start
+с url): выбрать, переставить клавиатурой на ручке, убрать, пометка невидимой, 375 px и тёмная
+тема. В конце — «Итог RC2» в §6 спеки на своей ветке, коммит, пуш в claude.
+```
+
+### RC3 — `module-recipes`, php
+
+```
+Сессия RC3 из §6 docs/architecture/WEBX_UI_MODULE_RECIPES.md: composer-пакет webx-ui/module-recipes.
+Идёт параллельно с RC4.
+
+Worktree ../webx-ui-module-recipes, ветка feat/module-recipes. Первым делом: git fetch claude;
+git merge claude/feat/relations-panel (конфликт возможен только в спеке — итоги RC1 и RC2 оба
+нужны, и в lang/* module-admin — объединить ключи); сразу пуш — RC4 ответвляется от этого
+состояния. Worktree ../webx-ui-relations-panel после этого удалить (git worktree remove), ветку
+оставить до выпуска. PR не открывать.
+
+Прочитать: §§2,4,5 спеки и итоги RC1, RC2; php/packages/module-services целиком — образец почти во
+всём (адреса, черновик, версии, SEO, крошки, разметка, Cards/ServiceQuery/helpers, Views, Panel);
+php/packages/module-faq/src/Collections/* и resources/blocks — предложенный блок;
+php/packages/module-seo — HasStructuredData, SitemapRoutes, Seo::push(); CLAUDE.md §4 про
+«Главная не получает адрес, пока у сайта есть свой маршрут» (Reserved) и про wx-rich-text
+(data-wx-path, store()).
+
+Сделать: php/packages/module-recipes — composer.json с extra.webx и autoload files, провайдер,
+конфиг (prefix обязателен, index, per-page, similar, views), миграции §4, модели §5.1 (две связи
+категорий, HasRelations), адреса и индекс §5.3 (index = false — маршрута нет), публичная часть и
+вьюхи §§5.4–5.5 (части — @include, фрагмент каталога общий для индекса, категории и блока),
+похожие §5.6 (один запрос с очками в SQL), SEO и разметка Recipe §5.7 (ингредиенты и шаги из <li>,
+иначе абзацы), крошки через то, что стоит по пути {prefix}; RecipeQuery, Cards, recipes(),
+RecipesSource с relations() = ['service'], тип блока §5.8 с mode showcase|catalog в BlockOffers за
+class_exists; API §5.10 (формы ответов — ровно как там: по ним параллельно пишется панель, одна
+транзакция на сохранение); экраны recipes.form, recipes.category-form, recipes.nutrient-form с
+карточкой project-fields; права и модули панели §5.9; цель связей recipe (для похожих); все слова
+webx-recipes::* на десять языков — и серверные, и нужные панели; строка recipes() в webx:doctor;
+README, LICENSE; регистрации §5.13 кроме плейграунда, сайта и smoke; тесты §5.14 кроме MCP;
+changeset на @webx-ui/php.
+
+Не делать: npm (RC4), MCP и демо (RC5). Если форма ответа API всё-таки должна отличаться от §5.10
+— поправить §5.10 тем же коммитом и сказать об этом в итоге крупно. В конце — «Итог RC3», коммит,
+пуш в claude.
+```
+
+### RC4 — `module-recipes`, npm
+
+```
+Сессия RC4 из §6 docs/architecture/WEBX_UI_MODULE_RECIPES.md: npm-пакет @webx-ui/module-recipes.
+Идёт параллельно с RC3, php не трогает.
+
+Начало: git fetch claude; git worktree add ../webx-ui-recipes-panel -b feat/recipes-panel
+claude/feat/module-recipes (после того, как RC3 влил RC2 и запушил — иначе wx-relations в
+module-admin нет); pnpm install --frozen-lockfile; собрать dist у tokens, core, schema,
+module-admin (тесты соседних пакетов видят module-admin из dist — CLAUDE.md §4). PR не открывать.
+
+Прочитать: §§2,5.8–5.10 спеки и итоги RC1, RC2; packages/module-services целиком — образец (список
+без пагинации, редактор с вкладками, автосейв, ревизия, история, предпросмотр); итог RC2 —
+wx-relations; apps/playground/server/panel/services* — образец мока; CLAUDE.md §4 про context.can()
+булево или computed, про вкладки в тестах (mousedown), про фильтры таблицы, про WxDate.
+
+Сделать: packages/module-recipes (версия 0.0.0) — модуль панели §5.9: список (перетаскивание
+только без фильтров, подсказка почему), редактор с вкладками Recipe · Settings · SEO · History,
+категории и источники через categoryRoutes; i18n с английским полом и тестом паритета (ключи
+заводит RC3 в php/packages/module-recipes/lang; чего не хватило — дописать туда же и сказать в
+итоге); плейграунд: apps/playground/server/panel/recipes.ts по формам §5.10, модуль в main.ts,
+тип блока recipes (оба mode) и страница с ним в фикстурах, предпросмотр страницы рецепта (свой
+рендерер плейграунда — CLAUDE.md §4 про renderTemplate); vitest; changeset (minor).
+
+Проверить в браузере на плейграунде (фоновый npx vite --port 5186, preview_start с url): создать
+рецепт, заполнить все вкладки, галерея из трёх картинок и смена обложки перетаскиванием, услуги и
+похожие через wx-relations, перетаскивание в списке без фильтра и подсказка с фильтром, блок в
+обоих видах в предпросмотре, 375 px и тёмная тема. В конце — «Итог RC4» в §6 спеки на своей
+ветке, коммит, пуш в claude.
+```
+
+### RC5 — слияние, MCP, демо, доки
+
+```
+Сессия RC5 из §6 docs/architecture/WEBX_UI_MODULE_RECIPES.md: MCP, демо, гайд.
+
+Worktree ../webx-ui-module-recipes, ветка feat/module-recipes. Первым делом: git fetch claude;
+git merge claude/feat/recipes-panel (конфликты — спека и lang/*: объединить); worktree
+../webx-ui-recipes-panel удалить, ветку оставить до выпуска.
+
+Прочитать: §§5.11,5.12 спеки и итоги RC1–RC4; php/packages/module-services/src/{Mcp,Demo}/* и
+php/packages/module-reviews/src/{Mcp,Demo}/* с resources/demo; apps/docs/guide/services.md и
+reviews.md; CLAUDE.md §4 про mcp:start (только трубой), про возврат webx-cms.local после
+local-режима из копий и про новый пакет в local-режиме (require --no-update, потом update).
+
+Сделать: RecipesTools и recipes://catalog §5.11 (создание в транзакции; в описании инструментов —
+ингредиенты и способ HTML-списком), связи services и related в recipes_update (услуга — id или
+адресом); RecipesDemo §5.12 с динамическим requires(); apps/docs/guide/recipes.md — адреса и
+приставка, выключенный индекс и страница с блоком-каталогом на его месте, два вида блока и общий
+фрагмент каталога, что публиковать ради своей вёрстки, похожие рецепты, разметка Recipe и как её
+проверить, связи с услугами, патч с полем проекта (комментарий автора), два каталога на одной
+странице делят ?page=; раздел про связи в гайде module-admin, если RC2 его не сделал; ссылки в
+сайдбаре; README npm-пакета, разделы MCP и демо в README composer-пакета; recipes в автокомплите
+шаблона блоков (ключи карточки); тесты MCP и демо; changeset. Гейт php-половины и vitest/vue-tsc
+npm.
+
+Проверить живьём: инструменты через cat … | php artisan mcp:start webx на webx-cms.local в
+local-режиме на этом worktree (до переключения — копии composer.json, composer.lock, package.json,
+package-lock.json, database/database.sqlite в скретчпад; после — назад и composer install);
+страница рецепта, индекс и категория curl'ом — разметка Recipe в ответе. Ничего на сайте не
+коммитить — это RC6. В конце — «Итог RC5», коммит, пуш в claude.
+```
+
+### RC6 — выпуск
+
+```
+Сессия RC6 из §6 docs/architecture/WEBX_UI_MODULE_RECIPES.md: выпуск module-recipes и связей,
+оба демо.
+
+Прочитать: итоги RC1–RC5; CLAUDE.md §5 целиком — особенно «gh pr merge в очередь не ставит»
+(ставит graphql-мутация enqueuePullRequest), «Первую версию нового npm-пакета публикует человек»,
+«Ручная публикация замораживает диапазоны», «Тег php-пакетов ставится до публикации», «Composer
+после релиза может минут десять не видеть новую версию»; итог R4 в
+docs/architecture/WEBX_UI_MODULE_REVIEWS.md — тот же выпуск; память webx-cms-local-demo-site,
+webx-cms-homelab-deploy, release-speed.
+
+До релиза (руками пользователя, сессия напоминает и проверяет): репозиторий-зеркало
+webx-ui/module-recipes на GitHub.
+
+Сделать: погасить dev-серверы; полный гейт npm и php/ (PHP 8.4); module-recipes в
+scripts/php-smoke.sh рядом с module-reviews и smoke против MariaDB (миграции webx_relations и
+recipes на настоящей СУБД — длины дефолтов, CLAUDE.md §4); PR, зелёный CI, в очередь мутацией;
+релизный PR — снять changeset-release/main в отдельный worktree, pnpm install, dist, pnpm pack
+@webx-ui/module-recipes и проверить диапазоны @webx-ui/* в тарболе; первая публикация —
+пользователь из своего терминала с 2FA, затем Trusted Publishing (webx-ui / webx-ui / release.yml);
+мерж релизного PR; npm view всех поднятых пакетов и тег php-v<версия>; webx-ui/module-recipes на
+Packagist (пользователь). Удалить ветки feat/relations-panel и feat/recipes-panel.
+
+Демо: webx-cms.local — module-recipes в scripts/packages.mjs, link-panel.sh, composer require в два
+шага, импорт и ...recipes() в resources/js/admin.ts руками, migrate,
+webx:blocks:offered --install --module=recipes, cache:clear, демо §5.12 тинкером со своим
+журналом, npx vite build; хомлаб — то же в registry, npm ls @webx-ui/module-admin — одна версия,
+коммит и пуш в Gitea. omnivitality-v2.local — только если пользователь скажет (там он ведёт шаги
+сам). Строку реестра в WEBX_UI_COMPOSER_PACKAGES.md (из «Запланированы» в «Модули») и CLAUDE.md
+§§2,6 — отдельным docs-PR.
+
+Проверить живьём на обоих: индекс с пагинацией и фильтром по источнику; выключенный индекс и
+страница module-pages по пути /{prefix} с блоком-каталогом, она же в крошках рецепта; страница
+рецепта со всеми частями, похожие руками и подбором, услуги; витрина в демо-услуге с фильтром по
+этой услуге; Recipe на validator.schema.org и в Rich Results Test; телефон — пользователь.
+```
 
 ## 7. Отложено
 
