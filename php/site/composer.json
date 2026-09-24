@@ -19,8 +19,8 @@
         "php": "^8.3",
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
-        "webx-ui/module-admin": "^0.37.0",
-        "webx-ui/module-auth": "^0.37.0"
+        "webx-ui/module-admin": "^0.38.0",
+        "webx-ui/module-auth": "^0.38.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
