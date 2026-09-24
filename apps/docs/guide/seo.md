@@ -385,6 +385,13 @@ it. The first step is the site's home, named by the `seo.home-crumb` setting in 
 page — "Home" from the dictionary until somebody writes one. A step with a null address is printed
 as text and keeps its place in the list.
 
+Whether the package views of a module print the crumbs at all is that module's switch:
+`webx-pages.breadcrumbs`, `webx-blog.breadcrumbs`, `webx-services.breadcrumbs` (or
+`WEBX_PAGES_BREADCRUMBS=false` and the like), on by default. It is per module because the usual
+answer is "in the blog and nowhere else". It only hides the visible trail — the `BreadcrumbList` in
+the head stays, and is switched by `webx-seo.print.breadcrumbs`. A site that keeps its own view
+decides in its markup and never reads the switch.
+
 **What depends on the response, not the entity** — the articles on page two of a category — is the
 handler's to say. Push it before rendering the view; it lives until the end of the request:
 

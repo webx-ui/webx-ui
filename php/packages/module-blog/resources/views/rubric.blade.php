@@ -14,7 +14,9 @@
     </x-slot:head>
 
     {{-- From the same list as the BreadcrumbList in the <head>. --}}
-    <x-webx-seo::breadcrumbs :for="$rubric" />
+    @if (config('webx-blog.breadcrumbs', true))
+        <x-webx-seo::breadcrumbs :for="$rubric" />
+    @endif
 
     <header>
         <h1>{{ $rubric->title }}</h1>
