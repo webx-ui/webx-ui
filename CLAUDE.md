@@ -53,7 +53,7 @@ Laravel. Библиотека публикуется в npm, админки — 
 ## 2. Состояние
 
 Актуально на 24.09.2026: `@webx-ui/core@0.33.2`, `@webx-ui/tokens@0.4.0`, `@webx-ui/schema@0.6.1`
-опубликованы в npm, composer-половина — одной версией `v0.37.0` на Packagist, сайт документации
+опубликованы в npm, composer-половина — одной версией `v0.40.0` на Packagist, сайт документации
 живёт на https://webx-ui.github.io/webx-ui/. Версии тут устаревают первыми — считать их
 подсказкой, а не фактом: точный ответ даёт `npm view @webx-ui/core version` и
 `composer show webx-ui/module-admin`.
@@ -646,6 +646,15 @@ icon="plus">` когда-то компилировался, проходил typ
 - **PHP-часть проверяется настоящим PHP.** Локально есть модули OSPanel
   (`C:\Work\OSPanel\modules\PHP-8.3\php.exe` и `PHP-8.4`); composer в PATH нет, phar кладётся в
   скретчпад. Гейт php-половины — `composer lint && composer analyse && composer test` из `php/`.
+- **Локальный smoke против MariaDB запускается так, и никак иначе.** MariaDB OSPanel слушает
+  `127.0.1.14:3306` под `root` без пароля; базу `webx_smoke` создать заранее, `webx_smoke_site`
+  скрипт делает сам. `COMPOSER_BIN` — строкой `"<php.exe> <путь>/composer.phar"`: скрипт
+  вытаскивает из неё `composer.phar` и передаёт `webx:setup --composer`, а обёртка-скрипт вместо
+  этого даёт «Could not open input file: \composer.phar» на второй половине. И **перед запуском
+  проверить порты 8123/8124**: `artisan serve` упавшего прогона другой сессии остаётся жить, и
+  сайт второй половины отвечает из _его_ скретчпада — «the home page is not a document» с
+  `require(…/3bcd28a0…/helpers.php)` чужого, уже удалённого каталога. Смотреть
+  `Get-NetTCPConnection -LocalPort 8123,8124` и гасить `php.exe` с `-S 127.0.0.1:812x`.
 - **Проверять нижнюю версию матрицы, а не только свою.** Тулинг живёт быстрее пакета: PHPUnit 13
   требует PHP 8.4.1, и на 8.3 не ставился вовсе, хотя пакет заявляет `^8.3`. Локально это видно
   сразу, если прогнать гейт интерпретатором нижней версии. **Но сам dev-корень `php/` с тех пор
@@ -1198,8 +1207,14 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
   нужен зелёный чек `Lint, typecheck, test, build` **и** ветка должна быть свежей относительно
   `main`. Отстала — влить `main` в ветку, дождаться CI заново, потом мержить. **С очередью мержа**
   (правило `merge_queue` в ruleset, `docs/architecture/WEBX_UI_RELEASE_SPEED.md` §2.4) этого шага
-  нет: `gh pr merge <N> --squash` ставит PR в очередь, GitHub сам собирает `main` + PR, гоняет CI и
-  мержит. Чек `Lint, typecheck, test, build` теперь — агрегатор параллельных джобов `ci.yml`:
+  нет: PR ставится в очередь, GitHub сам собирает `main` + PR, гоняет CI и мержит. **Только
+  `gh pr merge` в очередь не ставит** — ни с `--squash`, ни без флага (проверено 24.09.2026 на
+  #279 и #280, gh 2.100): он отвечает «The merge strategy for main is set by the merge queue» и
+  пытается включить auto-merge, которого у репозитория нет, — «Auto merge is not allowed for this
+  repository», PR остаётся `OPEN` и `CLEAN`, то есть выглядит готовым к мержу, которого никто не
+  делает. В очередь ставит мутация:
+  `gh api graphql -f query='mutation{enqueuePullRequest(input:{pullRequestId:"<id>"}){mergeQueueEntry{state position}}}'`,
+  где `<id>` — `gh pr view <N> --json id -q .id`; ответ `QUEUED`, мерж через ~3 минуты. Чек `Lint, typecheck, test, build` теперь — агрегатор параллельных джобов `ci.yml`:
   упавший смотреть в них, а не в нём.
 - **После `gh pr merge` локальный `main` остаётся старым.** `gh` синхронизирует его через
   remote по умолчанию, то есть `origin`, куда доступа нет: в конце вывода будет
@@ -1277,7 +1292,17 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
   **Pull requests: write** (или его не приняли в установке организации); временно лечится
   `gh api -X POST repos/webx-ui/webx-ui/actions/runs/<id>/approve`, id — из
   `gh run list --branch changeset-release/main`. На релизном PR CI облегчённый (установка и
-  сборка): остальное в нём — `main`, который уже прошёл CI.
+  сборка): остальное в нём — `main`, который уже прошёл CI. **Проверено на первом релизе после
+  этого** (v0.40.0, #280, 24.09.2026): PR открыт от `app/webx-ui-split`, прогоны встали в
+  `queued` сами, без approve, тяжёлые джобы — `skipping`, и весь путь от мержа PR с changeset'ами
+  до зелёного релизного PR — около пяти минут.
+- **Composer после релиза может минут десять не видеть новую версию, хотя Packagist её уже
+  отдаёт.** `curl` и `php -r 'file_get_contents(...)'` на `repo.packagist.org/p2/webx-ui/<пакет>.json`
+  показывают `v0.40.0`, а `composer update` отвечает «found … v0.39.0 but it does not match the
+  constraint»: его запрос попадает на узел CDN, где ещё старая копия (`Cache-Control: max-age=900`),
+  и `composer clear-cache` тут не помогает — дело не в локальном кеше. Лечится повтором: удалить
+  `%LOCALAPPDATA%\Composer\repo\https---repo.packagist.org\provider-webx-ui~*` и повторять раз в
+  минуту; 24.09.2026 прошло на четвёртой попытке.
 - **Показать ветку на хомлабе без релиза — канал `next`.** `gh workflow run release.yml --ref
 <ветка>` публикует снапшот пакетов с changeset'ами (и их зависимых) под dist-tag `next`
   (`0.33.3-next-<время>`, `latest` не трогается, тегов нет) и зеркалирует php-пакеты веткой
@@ -1352,6 +1377,11 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
     сайт), `BlockOffers` и `webx:blocks:offered --install` в `module-blocks` (модуль приносит
     тип блока документом), `Seo::put()` в `module-seo`. Спецификация —
     `docs/architecture/WEBX_UI_MODULE_FAQ.md`, гайд — `apps/docs/guide/faq.md`.
+    **`module-reviews` выпущен 24.09.2026** (v0.40.0, npm 0.1.0) и стоит на обоих демо и на
+    `omnivitality-v2.local`: отзывы с фото или инициалами, оценкой и плоскими категориями, без
+    своей страницы и без разметки `Review`, на сайте — тем же контрактом «вставить блоком», в
+    четырёх видах (один, сетка, слайдер, бегущая строка). Спецификация —
+    `docs/architecture/WEBX_UI_MODULE_REVIEWS.md`, гайд — `apps/docs/guide/reviews.md`.
 11. **Многосайтовость** — v3: одна установка, много доменов, одна панель, у каждого домена свой
     дизайн. Спроектирована 24.09.2026, не начиналась: `docs/architecture/WEBX_UI_MULTISITE.md`.
     Главное решение — сайт выставляется явно, а не только хостом, поэтому сцена и превью рисуются
