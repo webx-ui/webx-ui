@@ -1,0 +1,284 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "recipes.form",
+  "model": "recipe",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "recipe",
+          "type": "wx-tab",
+          "label": "trans::webx-recipes::screen.recipe",
+          "children": [
+            {
+              "id": "photos",
+              "type": "wx-card",
+              "label": "trans::webx-recipes::screen.photos",
+              "children": [
+                {
+                  "id": "gallery",
+                  "type": "wx-gallery",
+                  "name": "gallery",
+                  "label": "trans::webx-recipes::screen.gallery",
+                  "help": "trans::webx-recipes::screen.gallery-help",
+                  "props": {
+                    "accept": "image"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "cooking",
+              "type": "wx-card",
+              "label": "trans::webx-recipes::screen.cooking",
+              "children": [
+                {
+                  "id": "ingredients",
+                  "type": "wx-rich-text",
+                  "name": "ingredients",
+                  "label": "trans::webx-recipes::screen.ingredients",
+                  "help": "trans::webx-recipes::screen.ingredients-help",
+                  "localized": true
+                },
+                {
+                  "id": "method",
+                  "type": "wx-rich-text",
+                  "name": "method",
+                  "label": "trans::webx-recipes::screen.method",
+                  "help": "trans::webx-recipes::screen.method-help",
+                  "localized": true
+                }
+              ]
+            },
+            {
+              "id": "nutrition",
+              "type": "wx-card",
+              "label": "trans::webx-recipes::screen.nutrition",
+              "help": "trans::webx-recipes::screen.nutrition-help",
+              "children": [
+                {
+                  "id": "nutrition-calories",
+                  "type": "wx-input",
+                  "name": "nutrition.calories",
+                  "label": "trans::webx-recipes::screen.calories",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 60,
+                    "placeholder": "trans::webx-recipes::screen.calories-placeholder"
+                  }
+                },
+                {
+                  "id": "nutrition-protein",
+                  "type": "wx-input",
+                  "name": "nutrition.protein",
+                  "label": "trans::webx-recipes::screen.protein",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 60,
+                    "placeholder": "trans::webx-recipes::screen.grams-placeholder"
+                  }
+                },
+                {
+                  "id": "nutrition-fat",
+                  "type": "wx-input",
+                  "name": "nutrition.fat",
+                  "label": "trans::webx-recipes::screen.fat",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 60,
+                    "placeholder": "trans::webx-recipes::screen.grams-placeholder"
+                  }
+                },
+                {
+                  "id": "nutrition-carbohydrates",
+                  "type": "wx-input",
+                  "name": "nutrition.carbohydrates",
+                  "label": "trans::webx-recipes::screen.carbohydrates",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 60,
+                    "placeholder": "trans::webx-recipes::screen.grams-placeholder"
+                  }
+                },
+                {
+                  "id": "nutrition-fiber",
+                  "type": "wx-input",
+                  "name": "nutrition.fiber",
+                  "label": "trans::webx-recipes::screen.fiber",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 60,
+                    "placeholder": "trans::webx-recipes::screen.grams-placeholder"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "settings",
+          "type": "wx-tab",
+          "label": "trans::webx-recipes::screen.settings",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "label": "trans::webx-recipes::screen.naming",
+              "children": [
+                {
+                  "id": "title",
+                  "type": "wx-input",
+                  "name": "title",
+                  "label": "trans::webx-recipes::screen.title",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 255
+                  }
+                },
+                {
+                  "id": "slug",
+                  "type": "wx-slug",
+                  "name": "slug",
+                  "label": "trans::webx-recipes::screen.slug",
+                  "help": "trans::webx-recipes::screen.slug-help",
+                  "localized": true
+                },
+                {
+                  "id": "lead",
+                  "type": "wx-textarea",
+                  "name": "lead",
+                  "label": "trans::webx-recipes::screen.lead",
+                  "help": "trans::webx-recipes::screen.lead-help",
+                  "localized": true,
+                  "props": {
+                    "rows": 3,
+                    "maxlength": 2000,
+                    "showCount": true
+                  }
+                }
+              ]
+            },
+            {
+              "id": "details",
+              "type": "wx-card",
+              "label": "trans::webx-recipes::screen.details",
+              "children": [
+                {
+                  "id": "total-minutes",
+                  "type": "wx-input-number",
+                  "name": "total_minutes",
+                  "label": "trans::webx-recipes::screen.total-minutes",
+                  "help": "trans::webx-recipes::screen.total-minutes-help",
+                  "props": {
+                    "min": 1,
+                    "max": 10000
+                  }
+                },
+                {
+                  "id": "servings",
+                  "type": "wx-input-number",
+                  "name": "servings",
+                  "label": "trans::webx-recipes::screen.servings",
+                  "props": {
+                    "min": 1,
+                    "max": 100
+                  }
+                }
+              ]
+            },
+            {
+              "id": "taxonomy",
+              "type": "wx-card",
+              "label": "trans::webx-recipes::screen.taxonomy",
+              "children": [
+                {
+                  "id": "categories",
+                  "type": "wx-categories",
+                  "name": "categories",
+                  "label": "trans::webx-recipes::screen.categories",
+                  "help": "trans::webx-recipes::screen.categories-help",
+                  "props": {
+                    "source": "recipes/categories"
+                  }
+                },
+                {
+                  "id": "nutrients",
+                  "type": "wx-categories",
+                  "name": "nutrients",
+                  "label": "trans::webx-recipes::screen.nutrients",
+                  "help": "trans::webx-recipes::screen.nutrients-help",
+                  "props": {
+                    "source": "recipes/nutrients",
+                    "main": false
+                  }
+                }
+              ]
+            },
+            {
+              "id": "relations",
+              "type": "wx-card",
+              "label": "trans::webx-recipes::screen.relations",
+              "children": [
+                {
+                  "id": "services",
+                  "type": "wx-relations",
+                  "name": "services",
+                  "label": "trans::webx-recipes::screen.services",
+                  "help": "trans::webx-recipes::screen.services-help",
+                  "props": {
+                    "target": "service"
+                  }
+                },
+                {
+                  "id": "related",
+                  "type": "wx-relations",
+                  "name": "related",
+                  "label": "trans::webx-recipes::screen.related",
+                  "help": "trans::webx-recipes::screen.related-help",
+                  "props": {
+                    "target": "recipe"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "project-fields",
+              "type": "wx-card",
+              "label": "trans::webx-admin::screens.project-fields",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "seo",
+          "type": "wx-tab",
+          "label": "trans::webx-recipes::screen.seo",
+          "children": [
+            {
+              "id": "seo-placeholder",
+              "type": "wx-alert",
+              "label": "trans::webx-recipes::screen.seo-empty",
+              "props": {
+                "type": "info",
+                "variant": "soft"
+              }
+            }
+          ]
+        },
+        {
+          "id": "history",
+          "type": "wx-tab",
+          "label": "trans::webx-recipes::screen.history",
+          "children": [
+            {
+              "id": "versions",
+              "type": "wx-recipe-history"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

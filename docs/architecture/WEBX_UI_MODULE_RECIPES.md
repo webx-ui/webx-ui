@@ -1,6 +1,6 @@
 # `webx-ui/module-recipes` — спецификация и план реализации
 
-Статус: спроектирован 24.09.2026, промпты сессий RC1–RC6 — в §6; RC1 (связи, php) сделан. Пакеты — `webx-ui/module-recipes` (composer) и
+Статус: спроектирован 24.09.2026, промпты сессий RC1–RC6 — в §6; RC1 (связи, php), RC2 (связи, npm) и RC3 (`module-recipes`, php) сделаны. Пакеты — `webx-ui/module-recipes` (composer) и
 `@webx-ui/module-recipes` (npm).
 
 Рецепты — записи с галереей, ингредиентами, способом приготовления, пищевой ценностью, временем и
@@ -435,27 +435,42 @@ recipe_nutrient_recipe    categoryLinks('recipe', 'recipe_nutrients')
 Формы зафиксированы заранее, чтобы RC3 и RC4 шли параллельно:
 
 ```
-GET    /api/cms/recipes            ?category=&nutrient=&service=&status=&search=&trashed=1
-  → { data: [{ id, title, slug, url, cover: { thumb } | null, minutes, status, position,
-               categories: [{ id, title }], updated_at, deleted_at }],
+GET    /api/cms/recipes            ?category=&nutrient=&service=&status=&q=&trashed=1   (search= — синоним q)
+  → { data: [{ id, title, slug, path, url, cover: { thumb } | null, minutes, status, position,
+               categories: [{ id, title }], published_at, updated_at, deleted_at, revision }],
       filters: { categories: [{id,title}], nutrients: [{id,title}], services: [{id,title}] | null } }
-POST   /api/cms/recipes            { title, slug? }                   → 201 { data: { recipe, values } }
-GET    /api/cms/recipes/{id}       → { data: { recipe, values, revision, preview_url } }
-PUT    /api/cms/recipes/{id}       { values, revision }                409 на устаревшей, 422 под полем
-POST   /api/cms/recipes/{id}/discard | publish | unpublish | restore
+POST   /api/cms/recipes            { title, slug? }        → 201 { data: { recipe, values, revision, prefix, preview_url } }
+GET    /api/cms/recipes/{id}       → { data: { recipe, values, revision, prefix, preview_url } }
+PUT    /api/cms/recipes/{id}       { values, revision }    → то же; 409 на устаревшей, 422 под полем
+POST   /api/cms/recipes/{id}/discard                        → то же (форма целиком)
+POST   /api/cms/recipes/{id}/publish | unpublish | restore  → { data: recipe }
 DELETE /api/cms/recipes/{id}
 GET    /api/cms/recipes/{id}/versions
-POST   /api/cms/recipes/{id}/versions/{number}/restore
-POST   /api/cms/recipes/reorder    { ids }                            без category (решение 4)
+POST   /api/cms/recipes/{id}/versions/{number}/restore      → форма целиком
+POST   /api/cms/recipes/reorder    { ids }                  без category (решение 4)
        /api/cms/recipes/categories/*, /api/cms/recipes/nutrients/*    общие маршруты категорий
        /api/cms/relations/{target}                                    §3.7
 ```
 
-`status` — `draft | live | live-changed | unpublished`, как у услуг. `recipe` в ответе формы —
-`{ id, title, url, status, deleted_at }`; `values` — всё с экрана: переводимые картами языков,
-`gallery` (список значений `wx-media`), `nutrition` картой ключей, `categories`, `nutrients`,
-`services`, `related` (id по порядку), поля проекта. Сохранение — одна транзакция (урок
-`services_create`: отказ не оставляет голую строку).
+**Поправлено в RC3 (панель RC4 пишется уже по этому):**
+
+- `status` — `draft | published | modified | unpublished`, **ровно как у услуг и блога**, а не
+  `live | live-changed`: «как у услуг» было замыслом, слова — опиской, и npm-код услуг читает
+  именно эти.
+- `recipe` в ответе формы — та же строка, что в списке (`RecipeResource`); `preview_url` — `null`
+  без `module-blocks` (превью рисует он). В ответе формы есть `prefix`, как у услуг: из него
+  `wx-slug` собирает адрес.
+- Пищевая ценность на экране — **пять полей с буквальными именами** `nutrition.calories`,
+  `nutrition.protein`, `nutrition.fat`, `nutrition.carbohydrates`, `nutrition.fiber`
+  (`wx-input`, `localized`), и в `values` они едут под этими же ключами, картой языков каждое, а
+  не вложенной картой `nutrition`: так их отдаёт и принимает `ScreenRecord` без своего узла.
+- Галерея — тип `wx-gallery` из `module-media` (список картинок), а не `wx-media` со списком.
+
+`values` — всё с экрана: переводимые картами языков, `gallery` (список `{ path, alt?, title? }`),
+`nutrition.*`, `total_minutes`, `servings`, `categories`, `nutrients`, `services` (нет цели
+`service` — нет и ключа), `related` (id по порядку), `seo`, поля проекта. Категории, источники,
+услуги и похожие ждут в черновике и применяются публикацией. Сохранение — одна транзакция (урок
+`services_create`: отказ не оставляет голую строку), создание — тоже.
 
 ### 5.11. MCP
 
@@ -744,6 +759,52 @@ changeset на @webx-ui/php.
 — поправить §5.10 тем же коммитом и сказать об этом в итоге крупно. В конце — «Итог RC3», коммит,
 пуш в claude.
 ```
+
+#### Итог RC3 (24.09.2026)
+
+Сделано на `feat/module-recipes`: пакет `php/packages/module-recipes` целиком по §§4–5 без MCP и
+демо, карточка SEO на `recipes.form` и `recipes.category-form` патчами из `module-seo`, строка
+`recipes()` в `webx:doctor` (`Doctor\Checks\Helpers`), модуль в `Setup\Catalogue`, регистрации в
+`php/` (composer, phpunit, phpstan), changeset на `@webx-ui/php`. Гейт php по пакету зелёный
+(pint, phpstan по всему `php/`, 43 теста пакета); соседние `module-admin`, `module-seo`, `module-services` зелёные.
+
+**§5.10 поправлен — крупно:** статусы `draft | published | modified | unpublished` (как у услуг,
+а не `live`/`live-changed`); в ответе формы есть `prefix`; строка списка несёт ещё `path`,
+`published_at`, `revision`; пищевая ценность — пять полей с буквальными именами
+`nutrition.<ключ>`, так же и в `values`; галерея — `wx-gallery`. RC4 знал это до начала работы
+(договорились сообщениями) — его панель и мок написаны уже по новой форме.
+
+Что следующим сессиям надо знать сверх промпта:
+
+- **Черновик.** Категории и источники ждут в черновике под `category_ids`/`nutrient_ids`,
+  публикация отдаёт их мутаторам `setCategoryIdsAttribute()`/`setNutrientIdsAttribute()`, а
+  `saved` пишет в связующие таблицы — тот же приём, что у связей (`HasRelations`). Вернули как
+  было — ключ из черновика уходит. Превью-копия читает их из `shownCategories()`/
+  `shownNutrients()`, поэтому вьюхи и крошки берут категории оттуда, а не из связи.
+- **Один порядок.** `Recipe::scopeOrderedIn()` перекрывает общий: с категорией только фильтрует,
+  сортирует всегда по `position` — поэтому `Selection::apply()` и общий код порядка категорий
+  рецептам его не навязывают. `reorder` — свой контроллер без `category`.
+- **Каталог.** `Rendering\Catalog` — готовые ссылки фильтра и страниц, фрагмент
+  `partials/catalog` — только разметка. Индекс и категория считают страницу по лёгким заготовкам
+  и строят карточки только для неё (`CatalogPage`), блок режет уже разрешённые карточки
+  `wx-collection` (`Catalog::block()`; шаблон блока — `@include` фрагмента, в плейграунде RC4
+  рисует его своей заменой). `noindex` у `?nutrient=` — `Seo\FilteredCatalogSource` (приоритет 45),
+  канонический без фильтра `module-seo` строит сам; вне диапазона страниц — 404 у индекса и
+  категории, у блока — пусто.
+- **Похожие** — `Rendering\Similar`: очки одним запросом (`count(*)`-подзапросы по связующим
+  таблицам и `webx_relations`, выражение повторено в `where`, без `HAVING`); ручные при любом
+  числе не добиваются; выбраны, но все в корзине — подбор.
+- **Без `module-blocks`:** блока нет (`BlockOffers` за `class_exists`), `preview_url` — `null`,
+  обработчик не спрашивает `PreviewGrant`. **Без `module-services`:** узел `services` снимается
+  общим механизмом RC1, `filters.services` — `null`, услуги на странице не печатаются.
+- **Пустая приставка** — исключение в `boot()` провайдера (`RecipesServiceProvider::prefix()`),
+  до регистрации чего-либо; отдельной проверки в `webx:doctor` нет — при такой приставке команда
+  не загрузится вовсе, и исключение говорит, что делать.
+- **Слова.** `lang/*/{panel,recipe,category,nutrient,module}.php` — английские RC4 байт в байт
+  (при слиянии — одинаковое добавление); серверные — `screen`, `site`, `errors`, `relations`.
+  Все группы на десяти языках, тест паритета — `tests/TranslationsTest.php`.
+- **RC5:** `RecipesModule` пока без `ProvidesMcpTools`/`ProvidesDemo`; `extra.webx.npm` уже
+  `^0.1.0`. Иконки: группа `heart`, рецепты `file-text`, категории `folder`, источники `tag`.
 
 ### RC4 — `module-recipes`, npm
 

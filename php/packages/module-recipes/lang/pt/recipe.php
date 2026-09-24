@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'trail' => 'Onde esta receita está',
+    'untitled' => 'Sem título',
+    'save' => 'Salvar',
+    'save-failed' => 'A receita não foi salva.',
+    'publish-title' => 'Publicar “:title”?',
+    'publish-text' => 'Responde em :address a partir de agora, para todos, com as categorias, os serviços e as receitas semelhantes escolhidos neste momento.',
+    'publish-nowhere' => 'Ainda não tem endereço neste idioma, então nada responderá.',
+    'preview' => 'Pré-visualizar',
+    'discard' => 'Descartar alterações',
+    'discard-title' => 'Descartar o que está pendente?',
+    'discard-text' => 'A receita volta ao que o site mostra. O que foi escrito desde então não aparece em lugar nenhum.',
+    'discarded' => 'A receita voltou à versão publicada.',
+    'conflict-title' => 'A receita mudou enquanto você editava',
+    'conflict-mine' => 'Manter a minha',
+    'conflict-theirs' => 'Usar a mais recente',
+    'conflict-theirs-title' => 'Abrir mão do que escreveu?',
+    'conflict-theirs-text' => 'A receita é lida de novo como está agora, e o que você digitou se perde.',
+    'leave' => 'Sair',
+    'leave-title' => 'Sair sem salvar?',
+    'leave-text' => 'Não foi possível salvar a receita, e o que você escreveu não está no servidor.',
+    'live-since' => 'No site desde :date',
+    'address-moving' => 'O endereço está mudando. O antigo continua funcionando e leva ao novo.',
+    'history-empty' => 'Esta receita nunca foi publicada.',
+    'version' => '#:number',
+    'version-live' => 'No site',
+    'source-panel' => 'Pelo painel',
+    'source-mcp' => 'Por um agente',
+    'source-import' => 'Importado',
+    'restore-title' => 'Restaurar a versão :number?',
+    'restore-text' => 'Ela vira o rascunho. O site mostra o que está publicado até você publicá-la.',
+    'restore-version' => 'Restaurar',
+    'restored-version' => 'A versão :number agora é o rascunho.',
+];

@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'trail' => 'Où se trouve cette recette',
+    'untitled' => 'Sans titre',
+    'save' => 'Enregistrer',
+    'save-failed' => 'La recette n’a pas été enregistrée.',
+    'publish-title' => 'Mettre « :title » en ligne ?',
+    'publish-text' => 'Elle répond à :address dès maintenant, pour tout le monde — avec ses catégories, ses services et ses recettes similaires tels qu’ils sont choisis maintenant.',
+    'publish-nowhere' => 'Elle n’a pas encore d’adresse dans cette langue, rien ne répondra donc.',
+    'preview' => 'Aperçu',
+    'discard' => 'Annuler les modifications',
+    'discard-title' => 'Abandonner ce qui attend ?',
+    'discard-text' => 'La recette revient à ce que montre le site. Ce qui a été écrit depuis n’apparaît plus nulle part.',
+    'discarded' => 'La recette est revenue à la version publiée.',
+    'conflict-title' => 'La recette a changé pendant votre modification',
+    'conflict-mine' => 'Garder la mienne',
+    'conflict-theirs' => 'Prendre la plus récente',
+    'conflict-theirs-title' => 'Abandonner ce que vous avez écrit ?',
+    'conflict-theirs-text' => 'La recette est relue telle qu’elle est maintenant, et votre saisie est perdue.',
+    'leave' => 'Quitter',
+    'leave-title' => 'Quitter sans enregistrer ?',
+    'leave-text' => 'La recette n’a pas pu être enregistrée, et votre saisie n’est pas sur le serveur.',
+    'live-since' => 'En ligne depuis le :date',
+    'address-moving' => 'L’adresse change. L’ancienne continue de fonctionner et mène à la nouvelle.',
+    'history-empty' => 'Cette recette n’a jamais été publiée.',
+    'version' => '#:number',
+    'version-live' => 'En ligne',
+    'source-panel' => 'Depuis le panneau',
+    'source-mcp' => 'Par un agent',
+    'source-import' => 'Importé',
+    'restore-title' => 'Restaurer la version :number ?',
+    'restore-text' => 'Elle devient le brouillon. Le site montre la version publiée jusqu’à ce que vous la publiiez.',
+    'restore-version' => 'Restaurer',
+    'restored-version' => 'La version :number est maintenant le brouillon.',
+];

@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'trail' => 'Gdzie jest ten przepis',
+    'untitled' => 'Bez tytułu',
+    'save' => 'Zapisz',
+    'save-failed' => 'Przepis nie został zapisany.',
+    'publish-title' => 'Opublikować „:title”?',
+    'publish-text' => 'Od razu i dla wszystkich będzie dostępny pod :address — z kategoriami, usługami i podobnymi przepisami w takiej postaci, w jakiej są wybrane teraz.',
+    'publish-nowhere' => 'W tym języku nie ma jeszcze adresu, więc nic nie odpowie.',
+    'preview' => 'Podgląd',
+    'discard' => 'Odrzuć zmiany',
+    'discard-title' => 'Odrzucić to, co czeka?',
+    'discard-text' => 'Przepis wróci do tego, co pokazuje strona. To, co napisano od tamtej pory, nigdzie nie będzie widoczne.',
+    'discarded' => 'Przepis wrócił do opublikowanej wersji.',
+    'conflict-title' => 'Przepis zmienił się podczas Twojej edycji',
+    'conflict-mine' => 'Zachowaj mój',
+    'conflict-theirs' => 'Weź nowszy',
+    'conflict-theirs-title' => 'Zrezygnować z tego, co napisałeś?',
+    'conflict-theirs-text' => 'Przepis zostanie wczytany ponownie w obecnej postaci, a Twoje wpisy przepadną.',
+    'leave' => 'Wyjdź',
+    'leave-title' => 'Wyjść bez zapisywania?',
+    'leave-text' => 'Nie udało się zapisać przepisu, a to, co napisałeś, nie trafiło na serwer.',
+    'live-since' => 'Na stronie od :date',
+    'address-moving' => 'Adres się zmienia. Stary nadal działa i prowadzi do nowego.',
+    'history-empty' => 'Ten przepis nigdy nie był publikowany.',
+    'version' => '#:number',
+    'version-live' => 'Na stronie',
+    'source-panel' => 'Z panelu',
+    'source-mcp' => 'Przez agenta',
+    'source-import' => 'Zaimportowano',
+    'restore-title' => 'Przywrócić wersję :number?',
+    'restore-text' => 'Stanie się szkicem. Strona pokazuje opublikowaną wersję, dopóki jej nie opublikujesz.',
+    'restore-version' => 'Przywróć',
+    'restored-version' => 'Wersja :number jest teraz szkicem.',
+];
