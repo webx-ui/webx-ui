@@ -65,6 +65,27 @@ const COLLECTION_PARTS: Record<string, string[]> = {
   groups: ['id', 'title', 'items'],
 }
 
+/**
+ * What a record of the sources the modules of this repository bring holds beyond the three every
+ * source gives — the card each one's `Cards` builds. A source a site registers itself offers the
+ * three only.
+ */
+const SOURCE_ITEMS: Record<string, string[]> = {
+  faq: ['question', 'answer'],
+  services: ['title', 'url', 'lead', 'cover', 'fields'],
+  reviews: [
+    'name',
+    'initials',
+    'job_title',
+    'text',
+    'rating',
+    'date',
+    'profile',
+    'photo',
+    'fields',
+  ],
+}
+
 export function templateCompletions({ schema, styles }: TemplateSources): CompletionSource {
   return (context) => {
     const before = context.state.sliceDoc(Math.max(0, context.pos - 200), context.pos)
@@ -233,7 +254,8 @@ function keysOf(variable: string, schema: ScreenNode[], template: string): [stri
 
   if (source.type === 'wx-collection') {
     const origin = typeof source.props?.source === 'string' ? source.props.source : source.type
-    return (COLLECTION_PARTS[part ?? ''] ?? []).map((key) => [key, origin])
+    const own = part === 'items' ? (SOURCE_ITEMS[origin] ?? []) : []
+    return [...(COLLECTION_PARTS[part ?? ''] ?? []), ...own].map((key) => [key, origin])
   }
 
   if (LIST_TYPES.includes(source.type)) return ITEM_KEYS.map((key) => [key, source.type])

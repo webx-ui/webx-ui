@@ -7,6 +7,7 @@ import { inbox } from '@webx-ui/module-inbox'
 import { media } from '@webx-ui/module-media'
 import { menu } from '@webx-ui/module-menu'
 import { pages } from '@webx-ui/module-pages'
+import { reviews } from '@webx-ui/module-reviews'
 import { seo } from '@webx-ui/module-seo'
 import { services } from '@webx-ui/module-services'
 /* The opt-in typeface; the tokens themselves come in with the core stylesheet. */
@@ -49,6 +50,7 @@ const admin = createAdmin({
     ...blog(),
     ...services(),
     ...faq(),
+    ...reviews(),
     menu(),
     media(),
     blocks(),

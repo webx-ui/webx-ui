@@ -365,6 +365,51 @@ add(
   [publication(1, '2026-09-24T09:30:00+00:00', null)],
 )
 
+/*
+ * The reviews page of §4.9, with every layout of the block on it at once, so that one preview
+ * shows all four: the whole section as a grid with its filter, one category as a slider, the
+ * running line, and a single review. After the FAQ page, for the same reason it is last.
+ */
+add(
+  {
+    title: 'Отзывы',
+    slug: 'reviews',
+    parent: home.row.id,
+    status: 'published',
+    updated_at: '2026-09-24T12:30:00+00:00',
+  },
+  {
+    blocks: [
+      block('reviews', {
+        title: { ru: 'Что говорят клиенты', en: 'What our clients say' },
+        reviews: { categories: [], limit: null, filter: true, markup: null },
+        layout: 'grid',
+        columns: 3,
+        all_label: { ru: 'Все', en: 'All' },
+      }),
+      block('reviews', {
+        title: { ru: 'Об имплантации', en: 'About implants' },
+        reviews: { categories: [2], limit: null, filter: false, markup: null },
+        layout: 'slider',
+        columns: 2,
+        autoplay: true,
+      }),
+      block('reviews', {
+        title: { ru: '', en: '' },
+        reviews: { categories: [], limit: 6, filter: false, markup: null },
+        layout: 'marquee',
+        speed: 30,
+      }),
+      block('reviews', {
+        title: { ru: '', en: '' },
+        reviews: { categories: [3], limit: 1, filter: false, markup: null },
+        layout: 'single',
+      }),
+    ],
+  },
+  [publication(1, '2026-09-24T12:30:00+00:00', null)],
+)
+
 function publication(number: number, createdAt: string, comment: string | null): PageVersion {
   return {
     number,

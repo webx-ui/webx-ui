@@ -53,8 +53,8 @@ final class DoctorTest extends TestCase
     {
         $found = $this->app->make(Helpers::class)->run();
 
-        $this->assertSame(['menu()', 'services()'], array_map(static fn (Diagnosis $diagnosis): string => $diagnosis->subject, $found));
-        $this->assertSame([Diagnosis::OK, Diagnosis::OK], array_map(static fn (Diagnosis $diagnosis): string => $diagnosis->state, $found));
+        $this->assertSame(['menu()', 'reviews()', 'services()'], array_map(static fn (Diagnosis $diagnosis): string => $diagnosis->subject, $found));
+        $this->assertSame([Diagnosis::OK, Diagnosis::OK, Diagnosis::OK], array_map(static fn (Diagnosis $diagnosis): string => $diagnosis->state, $found));
     }
 
     #[Test]
