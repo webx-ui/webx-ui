@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use WebxUi\Admin\Http\Controllers\CollectionController;
+use WebxUi\Admin\Http\Controllers\IconController;
 use WebxUi\Admin\Http\Controllers\LinkController;
 use WebxUi\Admin\Http\Controllers\LocaleController;
 use WebxUi\Admin\Http\Controllers\ManifestController;
@@ -24,6 +26,10 @@ Route::prefix((string) config('webx-admin.api_path'))
         Route::get('links/search', [LinkController::class, 'search'])->name('links.search');
         Route::post('links/resolve', [LinkController::class, 'resolve'])->name('links.resolve');
         Route::get('links/routes', [LinkController::class, 'routes'])->name('links.routes');
+
+        // What a `wx-collection` field can show (§3.3 of the FAQ spec): the sources this
+        // administrator may place on a page.
+        Route::get('collections', CollectionController::class)->name('collections');
 
         Route::get('screens/{name}', ScreenController::class)
             ->where('name', '[a-z0-9-]+\.[a-z0-9-]+')
@@ -53,6 +59,17 @@ Route::prefix((string) config('webx-admin.api_path'))
         Route::get('translations/{locale}', TranslationController::class)
             ->where('locale', '[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]{2,8})?')
             ->name('translations');
+    });
+
+// The icons before the shell, whose pattern matches every address under the prefix. No
+// middleware: a file needs neither a session nor a language.
+Route::prefix((string) config('webx-admin.path'))
+    ->name('webx.icons.')
+    ->group(function (): void {
+        Route::get('site.webmanifest', [IconController::class, 'manifest'])->name('manifest');
+        Route::get('{file}', IconController::class)
+            ->whereIn('file', array_keys(IconController::FILES))
+            ->name('file');
     });
 
 Route::prefix((string) config('webx-admin.path'))

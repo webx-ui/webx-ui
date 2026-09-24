@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'trail' => 'Dove si trova questo servizio',
+    'untitled' => 'Senza titolo',
+    'save' => 'Salva',
+    'save-failed' => 'Il servizio non è stato salvato.',
+    'publish-title' => 'Pubblicare «:title»?',
+    'publish-text' => 'Risponde a :address da subito, per tutti.',
+    'publish-nowhere' => 'Non ha ancora un indirizzo in questa lingua, quindi non risponderà nulla.',
+    'preview' => 'Anteprima',
+    'discard' => 'Scarta le modifiche',
+    'discard-title' => 'Scartare ciò che è in attesa?',
+    'discard-text' => 'Il servizio torna a ciò che mostra il sito. Quanto scritto da allora non compare da nessuna parte.',
+    'discarded' => 'Il servizio è tornato alla versione pubblicata.',
+    'conflict-title' => 'Il servizio è cambiato mentre lo modificavi',
+    'conflict-mine' => 'Tieni la mia',
+    'conflict-theirs' => 'Prendi la più recente',
+    'conflict-theirs-title' => 'Rinunciare a ciò che hai scritto?',
+    'conflict-theirs-text' => 'Il servizio viene riletto com’è ora, e ciò che hai digitato va perso.',
+    'leave' => 'Esci',
+    'leave-title' => 'Uscire senza salvare?',
+    'leave-text' => 'Non è stato possibile salvare il servizio, e ciò che hai scritto non è sul server.',
+    'live-since' => 'Online dal :date',
+    'address-moving' => 'L’indirizzo cambia. Quello vecchio continua a funzionare e porta al nuovo.',
+    'history-empty' => 'Questo servizio non è mai stato pubblicato.',
+    'version' => '#:number',
+    'version-live' => 'Sul sito',
+    'source-panel' => 'Dal pannello',
+    'source-mcp' => 'Da un agente',
+    'source-import' => 'Importato',
+    'restore-title' => 'Ripristinare la versione :number?',
+    'restore-text' => 'Diventa la bozza. Il sito mostra quanto pubblicato finché non la pubblichi.',
+    'restore-version' => 'Ripristina',
+    'restored-version' => 'La versione :number è ora la bozza.',
+];

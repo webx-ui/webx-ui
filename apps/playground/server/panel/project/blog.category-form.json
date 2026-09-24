@@ -1,0 +1,14 @@
+[
+  {
+    "op": "add",
+    "target": "project-fields",
+    "node": {
+      "id": "menu-badge",
+      "type": "wx-input",
+      "name": "menu-badge",
+      "label": "Badge in the menu",
+      "help": "A project's own field: the server keeps it in rubrics.extra.",
+      "props": { "maxlength": 24 }
+    }
+  }
+]

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Blog\Panel;
 
 use Illuminate\Validation\ValidationException;
-use WebxUi\Admin\Screens\ScreenValues;
+use WebxUi\Admin\Screens\ScreenRecord;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blocks\Facades\Preview;
 use WebxUi\Blog\Http\Resources\ArticleResource;
@@ -42,11 +42,19 @@ final class ArticleForm
      */
     private const OWN = ['title', 'slug', 'lead', 'blocks', 'cover', 'author_id', 'pinned', 'published_at'];
 
+    /**
+     * The fields that are this screen's but not the article's text: stored beside the article
+     * rather than in the draft (see {@see ArticleWriter}) or by the module that put them here.
+     *
+     * @var list<string>
+     */
+    private const TAKEN = ['rubrics', 'tags', 'related', Fields::SCREEN];
+
     /** As many administrators as an author dropdown is worth reading. */
     private const AUTHORS = 200;
 
     public function __construct(
-        private readonly ScreenValues $values,
+        private readonly ScreenRecord $record,
         private readonly ArticleWriter $writer,
         private readonly MediaFiles $files,
         private readonly Locales $locales,
@@ -110,6 +118,9 @@ final class ArticleForm
         }
 
         return [
+            // The project's fields first, so that none of them can stand in for one of the
+            // article's own. From the draft like the text: they are saved the way the text is.
+            ...($shown->extraRaw() ?? []),
             'title' => $shown->getTranslations('title'),
             'slug' => $shown->getTranslations('slug'),
             'lead' => $shown->getTranslations('lead'),
@@ -137,9 +148,18 @@ final class ArticleForm
      */
     public function save(Article $article, array $input, ?callable $can = null, ?int $authorId = null): Article
     {
-        $stored = $this->values->validate(self::SCREEN, $input, $can);
+        $split = $this->record->split(self::SCREEN, $input, self::OWN, self::TAKEN, $can);
+        $stored = [...$split->own, ...$split->taken];
 
         $columns = [];
+
+        // A field a project patched onto the screen goes into `extra`, and into the draft with
+        // the text around it: a price on the settings tab is published with the article, not
+        // before it. Laid over what the editor is looking at, so a tab nobody opened keeps its
+        // fields.
+        if ($split->extra !== []) {
+            $columns['extra'] = $this->record->merge(self::SCREEN, $this->currentExtra($article), $split->extra);
+        }
 
         foreach (self::OWN as $field) {
             if (! array_key_exists($field, $stored)) {
@@ -176,6 +196,23 @@ final class ArticleForm
         }
 
         return $article;
+    }
+
+    /**
+     * The project's fields as the editor last left them: the draft's when it has them, the
+     * site's otherwise — a draft saved before the article had any is a draft without the key.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function currentExtra(Article $article): ?array
+    {
+        $draft = $article->draftValues();
+
+        if (array_key_exists('extra', $draft)) {
+            return is_array($draft['extra']) ? $draft['extra'] : null;
+        }
+
+        return $article->extraRaw();
     }
 
     /**

@@ -60,4 +60,22 @@ return [
     'occupied-alias' => 'Ten adres prowadzi już do :target — ślad po przeniesieniu. Przekierowanie napisane tutaj zadziała wcześniej.',
 
     'filter-kind' => 'Rodzaj',
+
+    'sitemap' => 'Mapa strony',
+    'sitemap-built' => 'Zbudowana',
+    'sitemap-total' => 'Adresów: :count',
+    'sitemap-excluded' => 'Pominięte — noindex: :noindex, inny canonical: :canonical',
+    'sitemap-empty' => 'Jest pusta: żaden adres nie jest opublikowany i otwarty dla indeksu.',
+    'sitemap-off' => 'Mapa strony jest na tej witrynie wyłączona.',
+    'sitemap-rebuild' => 'Zbuduj ponownie',
+    'sitemap-rebuilt' => 'Mapa strony została zbudowana ponownie.',
+    'test-sitemap' => 'Mapa strony',
+    'test-sitemap-in' => 'W mapie strony.',
+    'test-sitemap-out' => 'Nie ma w mapie strony: :reason.',
+    'sitemap-reason-disabled' => 'mapa strony jest wyłączona',
+    'sitemap-reason-unknown' => 'witryna nie ma tu własnej strony',
+    'sitemap-reason-alias' => 'to stary adres, który przekierowuje',
+    'sitemap-reason-hidden' => 'strona nie jest opublikowana',
+    'sitemap-reason-noindex' => 'strona ma noindex',
+    'sitemap-reason-canonical' => 'strona wskazuje inny adres jako kanoniczny',
 ];

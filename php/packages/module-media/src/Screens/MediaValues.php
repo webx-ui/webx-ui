@@ -172,7 +172,12 @@ final class MediaValues
             return null;
         }
 
-        return $this->captions($stored, $locale) + $this->details($this->files->find($stored['path']));
+        // Only what `store()` keeps. A value saved without it — a block's sample is written as the
+        // panel sent it — still carries the `url` of the moment it was picked, and on the left
+        // of `+` that stale address would win over the one worked out now.
+        $kept = array_intersect_key($stored, array_flip(['path', 'alt', 'title']));
+
+        return $this->captions($kept, $locale) + $this->details($this->files->find($stored['path']));
     }
 
     /**

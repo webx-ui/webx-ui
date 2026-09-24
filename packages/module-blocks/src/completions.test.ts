@@ -22,6 +22,7 @@ const schema: ScreenNode[] = [
   { id: 'image', type: 'wx-media' },
   { id: 'items', type: 'wx-repeater', children: [{ id: 'title', type: 'wx-input' }] },
   { id: 'content', type: 'wx-blocks' },
+  { id: 'questions', type: 'wx-collection', props: { source: 'faq' } },
 ]
 
 /** `|` marks the caret. */
@@ -78,6 +79,7 @@ describe('the template', () => {
       '$heading',
       '$image',
       '$items',
+      '$questions',
     ])
   })
 
@@ -101,6 +103,20 @@ describe('the template', () => {
     expect(pick(source, '{{ $image[|] }}', 'url')).toBe("{{ $image['url']| }}")
     expect(pick(source, "{{ $image['|'] }}", 'alt')).toBe("{{ $image['alt']| }}")
     expect(ask(source, '{{ $eyebrow[|')).toBeNull()
+  })
+
+  it('knows what a collection hands over, and what its items and groups hold', () => {
+    expect(labels(ask(source, "{{ $questions['|"))).toEqual(['items', 'groups', 'filter'])
+    expect(labels(ask(source, "@foreach ($questions['items'] as $item) {{ $item['|"))).toEqual([
+      'id',
+      'anchor',
+      'categories',
+    ])
+    expect(labels(ask(source, '@foreach ($questions["groups"] as $group) {{ $group[|'))).toEqual([
+      'id',
+      'title',
+      'items',
+    ])
   })
 
   it('offers the classes the styles declare, nested ones resolved', () => {

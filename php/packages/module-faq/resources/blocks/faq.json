@@ -1,0 +1,48 @@
+{
+  "slug": "faq",
+  "title": "FAQ",
+  "description": "Questions and answers from the FAQ section: all of them with a filter, or the categories you pick.",
+  "icon": null,
+  "group": "content",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "title",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "questions",
+      "type": "wx-collection",
+      "label": "Questions",
+      "props": {
+        "source": "faq"
+      }
+    },
+    {
+      "id": "all_label",
+      "type": "wx-input",
+      "label": "The filter button that shows every question",
+      "help": "Printed only when the filter is on. Empty is “All”.",
+      "localized": true
+    }
+  ],
+  "template": "<section class=\"b-faq\" data-wx-block=\"faq\">\n    @if ($title)\n        <h2 class=\"b-faq__title\">{{ $title }}</h2>\n    @endif\n    @if ($questions['filter'] && $questions['groups'])\n        <div class=\"b-faq__filter\" role=\"group\" hidden>\n            <button type=\"button\" class=\"b-faq__chip is-active\" data-faq-group=\"\" aria-pressed=\"true\">{{ $all_label ?: 'All' }}</button>\n            @foreach ($questions['groups'] as $group)\n                <button type=\"button\" class=\"b-faq__chip\" data-faq-group=\"{{ $group['id'] }}\" aria-pressed=\"false\">{{ $group['title'] }}</button>\n            @endforeach\n        </div>\n    @endif\n    <div class=\"b-faq__list\">\n        @foreach ($questions['items'] as $item)\n            <details class=\"b-faq__item\" id=\"{{ $item['anchor'] }}\" data-faq-categories=\"{{ implode(' ', $item['categories']) }}\">\n                <summary class=\"b-faq__question\">{{ $item['question'] }}</summary>\n                <div class=\"b-faq__answer\">{!! $item['answer'] !!}</div>\n            </details>\n        @endforeach\n    </div>\n</section>\n",
+  "styles": ".b-faq {\n    container-type: inline-size;\n}\n\n.b-faq__title {\n    margin: 0 0 1em;\n}\n\n.b-faq__filter {\n    display: flex;\n    flex-wrap: wrap;\n    gap: 0.5em;\n    margin: 0 0 1.25em;\n}\n\n/* A flex box outranks the browser's own [hidden] rule. */\n.b-faq__filter[hidden],\n.b-faq__item[hidden] {\n    display: none;\n}\n\n.b-faq__chip {\n    font: inherit;\n    color: inherit;\n    background: none;\n    border: 1px solid currentColor;\n    border-radius: 999px;\n    padding: 0.35em 0.9em;\n    cursor: pointer;\n    opacity: 0.65;\n}\n\n.b-faq__chip.is-active {\n    opacity: 1;\n    font-weight: 600;\n}\n\n.b-faq__item {\n    border-top: 1px solid color-mix(in srgb, currentColor 20%, transparent);\n}\n\n.b-faq__item:last-child {\n    border-bottom: 1px solid color-mix(in srgb, currentColor 20%, transparent);\n}\n\n.b-faq__question {\n    cursor: pointer;\n    padding: 1em 0;\n    font-weight: 600;\n}\n\n.b-faq__answer {\n    padding: 0 0 1em;\n}\n\n.b-faq__answer > :first-child {\n    margin-top: 0;\n}\n\n.b-faq__answer > :last-child {\n    margin-bottom: 0;\n}\n\n.b-faq__answer img {\n    max-width: 100%;\n    height: auto;\n}\n",
+  "script": "const items = Array.from(el.querySelectorAll('.b-faq__item'))\nconst chips = Array.from(el.querySelectorAll('.b-faq__chip'))\nconst filter = el.querySelector('.b-faq__filter')\n\n// The filter is printed hidden: without this script its buttons would do nothing.\nif (filter) filter.hidden = false\n\nconst show = (group) => {\n  for (const chip of chips) {\n    const on = (chip.dataset.faqGroup || '') === group\n    chip.classList.toggle('is-active', on)\n    chip.setAttribute('aria-pressed', on ? 'true' : 'false')\n  }\n  for (const item of items) {\n    const groups = (item.dataset.faqCategories || '').split(' ')\n    item.hidden = group !== '' && !groups.includes(group)\n  }\n}\n\nfor (const chip of chips) {\n  chip.addEventListener('click', () => show(chip.dataset.faqGroup || ''))\n}\n\n// A link to #anchor opens its question, even when a filter had hidden it.\nconst open = () => {\n  const id = decodeURIComponent(location.hash.slice(1))\n  const item = id === '' ? undefined : items.find((candidate) => candidate.id === id)\n  if (!item) return\n  if (item.hidden) show('')\n  item.open = true\n  item.scrollIntoView({ block: 'start' })\n}\n\nopen()\nwindow.addEventListener('hashchange', open)\n",
+  "sample": {
+    "title": "Frequently asked questions",
+    "questions": {
+      "categories": [],
+      "limit": null,
+      "filter": true,
+      "markup": false
+    },
+    "all_label": "All"
+  }
+}

@@ -60,6 +60,24 @@
               ]
             },
             {
+              "id": "presentation",
+              "type": "wx-card",
+              "label": "trans::webx-blog::screen.presentation",
+              "children": [
+                {
+                  "id": "cover",
+                  "type": "wx-media",
+                  "name": "cover",
+                  "label": "trans::webx-blog::screen.cover",
+                  "props": {
+                    "accept": "image",
+                    "captions": false,
+                    "aspect": "16/9"
+                  }
+                }
+              ]
+            },
+            {
               "id": "publication",
               "type": "wx-card",
               "label": "trans::webx-blog::screen.publication",
@@ -103,10 +121,18 @@
               "children": [
                 {
                   "id": "rubrics",
-                  "type": "wx-article-rubrics",
+                  "type": "wx-categories",
                   "name": "rubrics",
                   "label": "trans::webx-blog::screen.rubrics",
-                  "help": "trans::webx-blog::screen.rubrics-help"
+                  "help": "trans::webx-blog::screen.rubrics-help",
+                  "props": {
+                    "source": "blog/rubrics",
+                    "mainText": "trans::webx-blog::article.rubric-main",
+                    "addText": "trans::webx-blog::article.rubric-add",
+                    "removeText": "trans::webx-blog::article.rubric-remove",
+                    "emptyText": "trans::webx-blog::article.rubrics-empty",
+                    "noneLeftText": "trans::webx-blog::article.rubric-none-left"
+                  }
                 },
                 {
                   "id": "tags",
@@ -114,24 +140,6 @@
                   "name": "tags",
                   "label": "trans::webx-blog::screen.tags",
                   "help": "trans::webx-blog::screen.tags-help"
-                }
-              ]
-            },
-            {
-              "id": "presentation",
-              "type": "wx-card",
-              "label": "trans::webx-blog::screen.presentation",
-              "children": [
-                {
-                  "id": "cover",
-                  "type": "wx-media",
-                  "name": "cover",
-                  "label": "trans::webx-blog::screen.cover",
-                  "props": {
-                    "accept": "image",
-                    "captions": false,
-                    "aspect": "16/9"
-                  }
                 }
               ]
             },
@@ -148,6 +156,12 @@
                   "help": "trans::webx-blog::screen.related-help"
                 }
               ]
+            },
+            {
+              "id": "project-fields",
+              "type": "wx-card",
+              "label": "trans::webx-admin::screens.project-fields",
+              "children": []
             }
           ]
         },

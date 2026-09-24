@@ -8,14 +8,17 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Blocks\Console\BundlesCommand;
 use WebxUi\Blocks\Console\ClearCommand;
 use WebxUi\Blocks\Console\ExportCommand;
 use WebxUi\Blocks\Console\ImportCommand;
+use WebxUi\Blocks\Console\OfferedCommand;
 use WebxUi\Blocks\Http\Middleware\EnsureEditing;
 use WebxUi\Blocks\Panel\BlocksModule;
 use WebxUi\Blocks\Panel\Publisher;
@@ -44,6 +47,9 @@ class BlocksServiceProvider extends ServiceProvider
         $this->app->singleton(Preview::class);
         $this->app->singleton(Usage::class);
         $this->app->singleton(Publisher::class);
+
+        // What modules offer as block types (§3.4 of the FAQ spec). Filled from their providers.
+        $this->app->singleton(BlockOffers::class);
 
         $this->app->singleton(PreviewToken::class, static function (Application $app): PreviewToken {
             $key = (string) $app->make('config')->get('app.key', '');
@@ -86,6 +92,8 @@ class BlocksServiceProvider extends ServiceProvider
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(BlocksModule::class));
 
+        $this->registerGateOpenings();
+
         // What a response printed is what its bundle is glued from, and no more than that: in a
         // process that serves many requests the list would otherwise grow across them.
         $this->app->make(Dispatcher::class)->listen(RequestHandled::class, function (): void {
@@ -96,7 +104,7 @@ class BlocksServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->commands([BundlesCommand::class, ClearCommand::class, ExportCommand::class, ImportCommand::class]);
+        $this->commands([BundlesCommand::class, ClearCommand::class, ExportCommand::class, ImportCommand::class, OfferedCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-blocks.php' => config_path('webx-blocks.php'),
@@ -105,6 +113,41 @@ class BlocksServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../lang' => lang_path('vendor/webx-blocks'),
         ], 'webx-blocks-lang');
+    }
+
+    /**
+     * Past the password over a site in testing: what the panel's preview frame loads.
+     *
+     * The editor signed in to the panel and never typed the site's pair, so a closed preview is
+     * an empty frame. A draft under its token is let through because the token is the permission
+     * — without a valid one it stays behind the password, as a stranger's guess should. The
+     * block editor's stage checks the panel's session itself, and the bundles are what every
+     * preview pulls in: stylesheets and scripts the published site hands out anyway.
+     */
+    private function registerGateOpenings(): void
+    {
+        $config = $this->app->make('config');
+        $openings = $this->app->make(Openings::class);
+
+        $openings->allow(function (Request $request) use ($config, $openings): bool {
+            $preview = trim((string) $config->get('webx-blocks.preview.path', '_preview'), '/');
+
+            if ($openings->under($request, $preview.'/block-stage')) {
+                return true;
+            }
+
+            $token = $request->query('token');
+
+            return $preview !== ''
+                && is_string($token)
+                && preg_match('#^'.preg_quote($preview, '#').'/([a-z0-9-]+)/([0-9]+)$#', trim($request->path(), '/'), $match) === 1
+                && $this->app->make(PreviewToken::class)->verify($token, $match[1], $match[2]) !== null;
+        });
+
+        $openings->allow(static fn (Request $request): bool => $openings->under(
+            $request,
+            $config->get('webx-blocks.bundles.path', 'blocks'),
+        ));
     }
 
     /**

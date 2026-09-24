@@ -66,6 +66,11 @@ mkdir -p "$WORKDIR"
 $COMPOSER_BIN create-project laravel/laravel "$APP" --no-interaction --prefer-dist --quiet
 note "$($PHP_BIN "$APP/artisan" --version)"
 
+# Laravel ships a static robots.txt, and a web server — `artisan serve` included — hands it over
+# before the application is asked, so module-seo's route would never answer and every check of it
+# below would be checking the file. A site with module-seo has no such file; neither has this one.
+rm -f "$APP/public/robots.txt"
+
 step "Point it at the packages in this checkout"
 # Reusing the development root's repository definition keeps the pinned versions from drifting;
 # only the path has to change, because it is relative to the application.
@@ -92,11 +97,11 @@ REPOSITORY="$(
     # this checkout, and the whole run would prove nothing about the change under test.
     $COMPOSER_BIN config repositories.packagist.org \
         '{"type":"composer","url":"https://repo.packagist.org","exclude":["webx-ui/*"]}'
-    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' webx-ui/module-pages:'*' webx-ui/module-inbox:'*' webx-ui/module-blog:'*' --no-interaction --no-progress --quiet
+    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' webx-ui/module-pages:'*' webx-ui/module-inbox:'*' webx-ui/module-blog:'*' webx-ui/module-services:'*' webx-ui/module-faq:'*' --no-interaction --no-progress --quiet
 )
 
 step "The packages came from the checkout, not from Packagist"
-for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages module-inbox module-blog module-media nested-set routing; do
+for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages module-inbox module-blog module-services module-faq module-media nested-set routing; do
     [ -L "$APP/vendor/webx-ui/$package" ] || [ -f "$APP/vendor/webx-ui/$package/.git" ] \
         || fail "vendor/webx-ui/$package is a copy, so a released version was installed instead of this checkout"
     note "webx-ui/$package is linked to the checkout"
@@ -120,6 +125,8 @@ step "Providers are found by discovery, not by hand"
         "webx-ui/module-pages" => "WebxUi\\Pages\\PagesServiceProvider",
         "webx-ui/module-inbox" => "WebxUi\\Inbox\\InboxServiceProvider",
         "webx-ui/module-blog" => "WebxUi\\Blog\\BlogServiceProvider",
+        "webx-ui/module-services" => "WebxUi\\Services\\ServicesServiceProvider",
+        "webx-ui/module-faq" => "WebxUi\\Faq\\FaqServiceProvider",
     ];
     foreach ($expected as $package => $provider) {
         if (! in_array($provider, $manifest[$package]["providers"] ?? [], true)) {
@@ -185,6 +192,15 @@ note "$(grep -E '^DB_CONNECTION=|^DB_DATABASE=' "$APP/.env" | tr '\n' ' ')"
 "$PHP_BIN" "$APP/artisan" migrate --force --no-interaction
 note 'migrations ran'
 
+step "Install the block types modules offer"
+# module-faq ships its block type as a document, not as a migration: the site takes it with this
+# command. Run it twice, because the second run must find nothing left to install.
+"$PHP_BIN" "$APP/artisan" webx:blocks:offered --install --no-interaction > "$WORKDIR/offered.log" \
+    || { cat "$WORKDIR/offered.log" >&2; fail 'webx:blocks:offered --install failed'; }
+"$PHP_BIN" "$APP/artisan" webx:blocks:offered --install --no-interaction > "$WORKDIR/offered-again.log" \
+    || { cat "$WORKDIR/offered-again.log" >&2; fail 'a second webx:blocks:offered --install failed'; }
+note 'the offered block types are installed, and installing them again is harmless'
+
 step "Seed the languages"
 "$PHP_BIN" "$APP/artisan" webx:locales:seed --no-interaction | grep -qi 'english' \
     || fail 'webx:locales:seed did not create the configured languages'
@@ -214,12 +230,15 @@ cat > "$APP/app/Models/SmokePage.php" <<'PHP'
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use WebxUi\Admin\Versions\HasDraft;
 use WebxUi\Admin\Versions\HasVersions;
+use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 
-class SmokePage extends Model
+class SmokePage extends Model implements Visible
 {
     use HasDraft;
     use HasUrl;
@@ -228,6 +247,23 @@ class SmokePage extends Model
     protected $table = 'smoke_pages';
 
     protected $fillable = ['title', 'slug'];
+
+    // Visible is what puts a type into the sitemap at all, so without it the map has nothing
+    // of this type to leave out, and the draft check below would pass on an empty file.
+    public function isVisible(?string $locale = null): bool
+    {
+        return $this->isPublished();
+    }
+
+    public function scopeVisible(Builder $query, ?string $locale = null): Builder
+    {
+        return $query->whereNotNull($this->qualifyColumn($this->publishedAtColumn()));
+    }
+
+    public function visibleUpdatedAt(): ?CarbonInterface
+    {
+        return $this->published_at;
+    }
 }
 PHP
 
@@ -690,7 +726,10 @@ run_http_checks() {
     expect 200 "$(send_json PUT "$BASE/api/cms/settings" \
         '{"values":{"seo.robots-txt":"User-agent: *"}}')" \
         "[$phase] the SEO tab of the settings takes a value"
-    expect 200 "$(status "$BASE/robots.txt")" "[$phase] and /robots.txt serves it"
+    expect 200 "$(status "$BASE/robots.txt")" "[$phase] and /robots.txt answers"
+    curl -s "$BASE/robots.txt" | grep -q '^User-agent: \*' \
+        || fail "[$phase] /robots.txt is not the setting"
+    note "[$phase] /robots.txt serves the setting"
 
     # webx-ui/routing. None of this is visible to the tests: the address answers only because a
     # fallback route registered by a package reached the real router, survived `route:cache`
@@ -737,6 +776,24 @@ run_http_checks() {
         || fail "[$phase] webx:routes:check found problems in the registry"
     note "[$phase] webx:routes:check is quiet"
 
+    # module-seo, the sitemap: two routes from a package that have to survive `route:cache`, and
+    # a verdict per address from the resolver — the page above is in, its draft sibling is not.
+    "$PHP_BIN" "$APP/artisan" webx:seo:sitemap --no-interaction > /dev/null \
+        || fail "[$phase] webx:seo:sitemap failed"
+    expect 200 "$(status "$BASE/sitemap.xml")" "[$phase] /sitemap.xml answers"
+
+    page_map="$(curl -s -c "$COOKIES" -b "$COOKIES" "$BASE/sitemap-smoke-page.xml")"
+    grep -q "/moved-page-$phase<" <<< "$page_map" \
+        || fail "[$phase] the published page is not in the sitemap"
+    if grep -q "/draft-$phase<" <<< "$page_map"; then
+        fail "[$phase] the draft page is in the sitemap"
+    fi
+    note "[$phase] the sitemap has the page and not the draft"
+
+    curl -s "$BASE/robots.txt" | grep -q '^Sitemap: ' \
+        || fail "[$phase] robots.txt does not name the sitemap"
+    note "[$phase] robots.txt names the sitemap"
+
     # module-blog, the two addresses that are routes rather than registry rows. Nothing in the
     # tests can show that they survive `route:cache`, because Testbench never caches routes —
     # and a feed that only answers before a deploy is the shape this would go wrong in.
@@ -747,6 +804,9 @@ run_http_checks() {
         | grep -qi '^Content-Type: application/rss' \
         || fail "[$phase] the RSS did not come back as a feed"
     note "[$phase] the RSS is served as a feed"
+
+    # module-services, the index: a route beside the registry for the same reason as the feed.
+    expect 200 "$(status "$BASE/services")" "[$phase] the services index answers"
 
     # The intake of module-inbox: a POST with no CSRF token at all, which is the whole point of
     # the hand-built middleware stack. A page cached whole carries a token minted when the cache
@@ -895,6 +955,41 @@ step "Check the panel again"
 # config during register(). If that does not survive being cached, the panel is open in
 # production and nowhere else.
 run_http_checks 'cached'
+
+step "Close the site with a password"
+# Global middleware, switched on from `.env` through a cached config — both halves of which
+# Testbench never has. What is checked is the split: the site behind the pair, and everything
+# the panel, the preview and a connecting agent need in front of it.
+cleanup
+SERVER_PID=""
+set_env WEBX_SITE_GATE true
+set_env WEBX_SITE_GATE_USERS 'client:smoke-secret'
+"$PHP_BIN" "$APP/artisan" config:cache --quiet
+serve
+
+: > "$COOKIES"
+expect 401 "$(status "$BASE/")" '[closed] the home page asks for the password'
+expect 200 "$(status -u client:smoke-secret "$BASE/")" '[closed] and opens to the pair'
+expect 401 "$(status -u client:wrong "$BASE/")" '[closed] but not to a wrong one'
+expect 401 "$(status "$BASE/no-such-page-closed")" '[closed] an address with no route asks too'
+expect 404 "$(status -u client:smoke-secret "$BASE/no-such-page-closed")" '[closed] and is a 404 behind it'
+
+expect 200 "$(status "$BASE/cms")" '[closed] the panel does not'
+expect 200 "$(status "$BASE/api/cms/locales")" '[closed] nor does its JSON'
+expect 200 "$(sign_in_attempt "$ADMIN_PASSWORD")" '[closed] an administrator signs in without the pair'
+expect 200 "$(status "$BASE/.well-known/oauth-authorization-server")" '[closed] an agent finds the authorization server'
+oauth_status="$(status "$BASE/oauth/authorize")"
+[ "$oauth_status" != "401" ] || fail '[closed] the OAuth endpoints ask for the site password'
+note "[closed] and reaches the OAuth endpoints -> $oauth_status"
+
+"$PHP_BIN" "$APP/artisan" smoke:page "draft-closed" --draft --no-interaction > /dev/null
+PREVIEW_URL="$("$PHP_BIN" "$APP/artisan" smoke:page "draft-closed" --preview --no-interaction | tail -n 1)"
+expect 200 "$(status "$PREVIEW_URL")" '[closed] the preview opens under its token'
+expect 401 "$(status "${PREVIEW_URL%%\?*}")" '[closed] and without one asks for the password'
+expect 200 "$(status "$BASE/blocks/runtime.js")" '[closed] the block runtime the preview loads is open'
+
+set_env WEBX_SITE_GATE false
+"$PHP_BIN" "$APP/artisan" config:clear --quiet
 
 printf '\n\033[32m== The panel installs, migrates, signs in and stays closed to strangers.\033[0m\n'
 

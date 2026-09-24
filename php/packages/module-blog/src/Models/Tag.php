@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace WebxUi\Blog\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
+use WebxUi\Blog\Seo\Trail;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
+use WebxUi\Seo\Contracts\Crumb;
+use WebxUi\Seo\Contracts\HasBreadcrumbs;
 
 /**
  * A tag: one word about an article, made from the article form and sorted out later (§2.8).
@@ -29,7 +34,7 @@ use WebxUi\Routing\HasUrl;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Tag extends Model
+class Tag extends Model implements HasBreadcrumbs, Visible
 {
     use HasTranslations;
     use HasUrl;
@@ -65,6 +70,41 @@ class Tag extends Model
     public function hasUrlIn(string $locale): bool
     {
         return $this->hasTranslation('slug', $locale);
+    }
+
+    /**
+     * Always. Whether a tag belongs in the index is `noindex`, and that is the SEO resolver's
+     * answer rather than this one's: a tag page answers to everybody, and the sitemap leaves out
+     * the ones the resolver marks — which is what lets a rule for its address put a flagged tag
+     * back in without a line about tags in the sitemap's code.
+     */
+    public function isVisible(?string $locale = null): bool
+    {
+        return true;
+    }
+
+    /**
+     * Feed → the tag (§17.5 of the SEO spec).
+     *
+     * @return list<Crumb>
+     */
+    public function breadcrumbs(string $locale): array
+    {
+        return Trail::of($locale, new Crumb((string) $this->getTranslation('title', $locale), $this->url($locale)));
+    }
+
+    /**
+     * @param  Builder<covariant Model>  $query
+     * @return Builder<covariant Model>
+     */
+    public function scopeVisible(Builder $query, ?string $locale = null): Builder
+    {
+        return $query;
+    }
+
+    public function visibleUpdatedAt(): ?CarbonInterface
+    {
+        return $this->updated_at;
     }
 
     /**

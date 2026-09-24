@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Seo;
 
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Foundation\Http\Kernel;
 use Illuminate\Routing\Router;
@@ -12,16 +13,26 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Routing\Contracts\Visible;
+use WebxUi\Routing\Models\Route as RouteRow;
+use WebxUi\Seo\Console\SitemapCommand;
 use WebxUi\Seo\Http\Middleware\RedirectRequests;
+use WebxUi\Seo\Models\SeoMeta;
+use WebxUi\Seo\Models\SeoUrl;
 use WebxUi\Seo\Panel\DefaultsSource;
 use WebxUi\Seo\Panel\SeoModule;
 use WebxUi\Seo\Panel\SeoRules;
 use WebxUi\Seo\Panel\UrlMatcher;
 use WebxUi\Seo\Panel\UrlRuleSource;
+use WebxUi\Seo\Rendering\Alternates;
+use WebxUi\Seo\Rendering\Breadcrumbs;
 use WebxUi\Seo\Rendering\EntitySource;
 use WebxUi\Seo\Rendering\Seo;
 use WebxUi\Seo\Rendering\SeoSources;
 use WebxUi\Seo\Screens\SeoFieldType;
+use WebxUi\Seo\Sitemap\Sitemap;
+use WebxUi\Seo\Sitemap\SitemapRoutes;
+use WebxUi\Settings\Events\SettingsSaved;
 use WebxUi\Settings\Settings;
 
 /**
@@ -42,6 +53,10 @@ class SeoServiceProvider extends ServiceProvider
         $this->app->singleton(SeoRules::class);
         $this->app->singleton(UrlMatcher::class);
         $this->app->singleton(Seo::class);
+        $this->app->singleton(Alternates::class);
+        $this->app->singleton(Breadcrumbs::class);
+        $this->app->singleton(Sitemap::class);
+        $this->app->singleton(SitemapRoutes::class);
     }
 
     public function boot(): void
@@ -56,6 +71,7 @@ class SeoServiceProvider extends ServiceProvider
         $this->registerRendering();
         $this->registerRedirects();
         $this->registerFieldType();
+        $this->registerSitemap();
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(SeoModule::class));
 
@@ -73,10 +89,15 @@ class SeoServiceProvider extends ServiceProvider
         // simply never applied.
         $screens->extend('pages.form', __DIR__.'/../resources/screens/pages.form.json');
         $screens->extend('blog.article-form', __DIR__.'/../resources/screens/blog.article-form.json');
+        $screens->extend('blog.category-form', __DIR__.'/../resources/screens/blog.category-form.json');
+        $screens->extend('services.form', __DIR__.'/../resources/screens/services.form.json');
+        $screens->extend('services.category-form', __DIR__.'/../resources/screens/services.category-form.json');
 
         if (! $this->app->runningInConsole()) {
             return;
         }
+
+        $this->commands([SitemapCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-seo.php' => config_path('webx-seo.php'),
@@ -115,6 +136,42 @@ class SeoServiceProvider extends ServiceProvider
     private function registerFieldType(): void
     {
         $this->app->make(FieldTypes::class)->register('wx-seo', $this->app->make(SeoFieldType::class));
+    }
+
+    /**
+     * The built sitemap is thrown away by whatever could change it (§17.3): a row of the address
+     * registry, a card, a rule, an entity that can be visible, a setting of this module.
+     *
+     * One wildcard listener rather than an observer per model, because most of those models are
+     * not this module's — a visible entity is whatever a content module declared, and asking
+     * each module to remember to tell the sitemap is how the one that forgets gets a stale map.
+     * The check is an `instanceof`; the price of the wildcard is that on every save.
+     */
+    private function registerSitemap(): void
+    {
+        /** @var Dispatcher $events */
+        $events = $this->app->make('events');
+
+        $events->listen(
+            ['eloquent.saved: *', 'eloquent.deleted: *', 'eloquent.restored: *', 'eloquent.moved: *'],
+            function (string $event, array $payload): void {
+                $model = $payload[0] ?? null;
+
+                if ($model instanceof RouteRow || $model instanceof SeoMeta || $model instanceof SeoUrl || $model instanceof Visible) {
+                    $this->app->make(Sitemap::class)->refresh();
+                }
+            },
+        );
+
+        $events->listen(SettingsSaved::class, function (SettingsSaved $saved): void {
+            foreach ($saved->keys as $key) {
+                if (str_starts_with($key, 'seo.')) {
+                    $this->app->make(Sitemap::class)->refresh();
+
+                    return;
+                }
+            }
+        });
     }
 
     /**

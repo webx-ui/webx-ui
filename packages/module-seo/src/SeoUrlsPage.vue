@@ -23,6 +23,7 @@ import {
   type TableColumn,
   type TableState,
 } from '@webx-ui/core'
+import SeoSitemapCard from './SeoSitemapCard.vue'
 import SeoUrlDialog from './SeoUrlDialog.vue'
 import TestUrlDialog from './TestUrlDialog.vue'
 import SeoLayout from './SeoLayout.vue'
@@ -189,6 +190,10 @@ const actions = computed<ScreenAction[]>(() =>
 
 <template>
   <seo-layout :base="props.base" current="rules" :actions="actions" @test="test({})">
+    <!-- Above the rules because it answers the question the rules are usually opened for:
+         why a page is not in the index. -->
+    <seo-sitemap-card />
+
     <wx-table
       :data="page"
       :columns="columns"

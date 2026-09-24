@@ -14,11 +14,13 @@
             <directory>packages/module-auth/tests</directory>
             <directory>packages/module-blocks/tests</directory>
             <directory>packages/module-blog/tests</directory>
+            <directory>packages/module-faq/tests</directory>
             <directory>packages/module-inbox/tests</directory>
             <directory>packages/module-media/tests</directory>
             <directory>packages/module-menu/tests</directory>
             <directory>packages/module-pages/tests</directory>
             <directory>packages/module-seo/tests</directory>
+            <directory>packages/module-services/tests</directory>
             <directory>packages/module-settings/tests</directory>
             <directory>packages/nested-set/tests</directory>
             <directory>packages/routing/tests</directory>
@@ -32,11 +34,13 @@
             <directory>packages/module-auth/src</directory>
             <directory>packages/module-blocks/src</directory>
             <directory>packages/module-blog/src</directory>
+            <directory>packages/module-faq/src</directory>
             <directory>packages/module-inbox/src</directory>
             <directory>packages/module-media/src</directory>
             <directory>packages/module-menu/src</directory>
             <directory>packages/module-pages/src</directory>
             <directory>packages/module-seo/src</directory>
+            <directory>packages/module-services/src</directory>
             <directory>packages/module-settings/src</directory>
             <directory>packages/nested-set/src</directory>
             <directory>packages/routing/src</directory>
