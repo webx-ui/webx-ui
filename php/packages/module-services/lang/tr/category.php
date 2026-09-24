@@ -5,7 +5,6 @@ declare(strict_types=1);
 return [
     'tab-content' => 'İçerik',
     'tab-blocks' => 'Bloklar',
-    'tab-cover' => 'Görsel',
     'tab-seo' => 'SEO',
     'field-title' => 'Başlık',
     'field-slug' => 'Adres',

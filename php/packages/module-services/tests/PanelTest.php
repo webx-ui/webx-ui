@@ -37,7 +37,7 @@ final class PanelTest extends TestCase
         // A group nobody declared drops its entries to the top level, and one without an icon
         // falls back to the gear of the System group.
         $icons = array_column((array) $response->json('data.groups'), 'icon', 'id');
-        $this->assertSame('star', $icons['services'] ?? null);
+        $this->assertSame('briefcase', $icons['services'] ?? null);
     }
 
     #[Test]
