@@ -82,7 +82,8 @@ The captions belong to the entity, not to the file: one picture used by two arti
 drawn, which is why moving the library to another disk — or putting a CDN in front of it — changes
 nothing that was written before. A field given nothing but a key looks the file up to draw it.
 
-Pass `:captions="false"` for a decorative picture, `height` to size the frame, and `accept` to
+Pass `:captions="false"` for a decorative picture, `height` to size the frame, `width` to cap how wide it gets (an avatar at the full width
+of a form is a poster), and `accept` to
 pick something other than an image.
 
 ## Several of them

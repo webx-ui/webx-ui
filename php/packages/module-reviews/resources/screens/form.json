@@ -16,7 +16,8 @@
           "help": "trans::webx-reviews::screen.photo-help",
           "props": {
             "accept": "image",
-            "aspect": "1/1"
+            "aspect": "1/1",
+            "width": 160
           }
         },
         {
