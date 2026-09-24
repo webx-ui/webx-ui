@@ -27,12 +27,22 @@ final class Seo
     /** Where `push()` keeps its blocks on the request. */
     public const PUSHED = 'webx.seo.pushed';
 
+    /** Where `put()` keeps its blocks on the request. */
+    public const PUT = 'webx.seo.put';
+
     /**
      * Blocks pushed outside a request — a console command rendering a page.
      *
      * @var list<array<string, mixed>>
      */
     private array $pushed = [];
+
+    /**
+     * Blocks put outside a request, by key.
+     *
+     * @var array<string, array<string, mixed>>
+     */
+    private array $put = [];
 
     public function __construct(
         private readonly SeoSources $sources,
@@ -169,6 +179,57 @@ final class Seo
     }
 
     /**
+     * One block under a key, replacing whatever was put under it before in this request.
+     *
+     * For what several parts of one page add to together. Two FAQ blocks on a page are two
+     * callers, and `push()` from each would print two `FAQPage` — with the question they share
+     * twice. Here each caller keeps what it has gathered so far and puts the whole block again;
+     * the last one is the one printed. An empty block takes the key away.
+     *
+     * Kept on the request for the same reason as `push()`: it must die with it.
+     *
+     * @param  array<string, mixed>  $block
+     */
+    public function put(string $key, array $block): void
+    {
+        $request = $this->request();
+        $put = $this->putBlocks();
+
+        if ($block === []) {
+            unset($put[$key]);
+        } else {
+            $put[$key] = $block;
+        }
+
+        if ($request === null) {
+            $this->put = $put;
+
+            return;
+        }
+
+        $request->attributes->set(self::PUT, $put);
+    }
+
+    /**
+     * What has been put so far in this request, by key, in the order the keys first came.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    public function putBlocks(): array
+    {
+        $request = $this->request();
+
+        if ($request === null) {
+            return $this->put;
+        }
+
+        /** @var array<string, array<string, mixed>> $put */
+        $put = (array) $request->attributes->get(self::PUT, []);
+
+        return $put;
+    }
+
+    /**
      * Why the index is closed to this page, or null when it is open.
      *
      * `noindex` in the robots line, or a canonical naming another address — the page itself asks
@@ -261,7 +322,7 @@ final class Seo
                 array_push($blocks, ...$subject->structuredData($locale));
             }
 
-            array_push($blocks, ...$this->pushed());
+            array_push($blocks, ...$this->pushed(), ...array_values($this->putBlocks()));
         }
 
         return array_values(array_filter($blocks, static fn (array $block): bool => $block !== []));

@@ -18,6 +18,7 @@ use WebxUi\Blocks\Console\BundlesCommand;
 use WebxUi\Blocks\Console\ClearCommand;
 use WebxUi\Blocks\Console\ExportCommand;
 use WebxUi\Blocks\Console\ImportCommand;
+use WebxUi\Blocks\Console\OfferedCommand;
 use WebxUi\Blocks\Http\Middleware\EnsureEditing;
 use WebxUi\Blocks\Panel\BlocksModule;
 use WebxUi\Blocks\Panel\Publisher;
@@ -46,6 +47,9 @@ class BlocksServiceProvider extends ServiceProvider
         $this->app->singleton(Preview::class);
         $this->app->singleton(Usage::class);
         $this->app->singleton(Publisher::class);
+
+        // What modules offer as block types (§3.4 of the FAQ spec). Filled from their providers.
+        $this->app->singleton(BlockOffers::class);
 
         $this->app->singleton(PreviewToken::class, static function (Application $app): PreviewToken {
             $key = (string) $app->make('config')->get('app.key', '');
@@ -100,7 +104,7 @@ class BlocksServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->commands([BundlesCommand::class, ClearCommand::class, ExportCommand::class, ImportCommand::class]);
+        $this->commands([BundlesCommand::class, ClearCommand::class, ExportCommand::class, ImportCommand::class, OfferedCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-blocks.php' => config_path('webx-blocks.php'),
