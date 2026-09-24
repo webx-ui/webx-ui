@@ -1,0 +1,15 @@
+[
+  {
+    "op": "add",
+    "target": "project-fields",
+    "node": {
+      "id": "author-note",
+      "type": "wx-textarea",
+      "name": "author-note",
+      "label": "Author's note",
+      "help": "A project's own field: the server keeps it in recipes.extra, and the site's published view prints it beside the method.",
+      "localized": true,
+      "props": { "rows": 3, "maxlength": 1000 }
+    }
+  }
+]

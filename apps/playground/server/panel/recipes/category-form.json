@@ -1,0 +1,99 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "recipes.category-form",
+  "model": "recipe-category",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "content",
+          "type": "wx-tab",
+          "label": "Content",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "title",
+                  "type": "wx-input",
+                  "name": "title",
+                  "label": "Title",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 255
+                  }
+                },
+                {
+                  "id": "slug",
+                  "type": "wx-category-slug",
+                  "name": "slug",
+                  "label": "Address",
+                  "localized": true
+                },
+                {
+                  "id": "is-visible",
+                  "type": "wx-switch",
+                  "name": "is_visible",
+                  "label": "Shown on the site",
+                  "help": "Hidden, its page answers 404; its recipes go on answering at their own addresses."
+                },
+                {
+                  "id": "lead",
+                  "type": "wx-rich-text",
+                  "name": "lead",
+                  "label": "Introduction",
+                  "help": "Above the recipes on the category page.",
+                  "localized": true
+                }
+              ]
+            },
+            {
+              "id": "presentation",
+              "type": "wx-card",
+              "label": "Presentation",
+              "children": [
+                {
+                  "id": "cover",
+                  "type": "wx-media",
+                  "name": "cover",
+                  "label": "Cover",
+                  "help": "On the category card, and in social networks when the SEO card has no picture.",
+                  "props": {
+                    "accept": "image",
+                    "captions": false,
+                    "aspect": "16/9"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "project-fields",
+              "type": "wx-card",
+              "label": "trans::webx-admin::screens.project-fields",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "seo",
+          "type": "wx-tab",
+          "label": "SEO",
+          "children": [
+            {
+              "id": "seo-placeholder",
+              "type": "wx-alert",
+              "label": "Install module-seo to edit the title and description for search engines.",
+              "props": {
+                "type": "info",
+                "variant": "soft"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
