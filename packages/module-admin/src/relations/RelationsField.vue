@@ -205,6 +205,8 @@ const placeholder = computed(() =>
 function mark(row: Row): string | null {
   if (row.candidate === null) return missing.value.has(row.id) ? t('relations.field-missing') : null
 
+  if (row.candidate.trashed === true) return t('relations.field-trashed')
+
   return row.candidate.visible ? null : t('relations.field-hidden')
 }
 </script>

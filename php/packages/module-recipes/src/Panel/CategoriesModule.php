@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace WebxUi\Recipes\Panel;
 
+use WebxUi\Admin\Categories\CategoryForm;
+use WebxUi\Admin\Categories\Mcp\CategoryTools;
+use WebxUi\Mcp\Contracts\ProvidesMcpTools;
+use WebxUi\Mcp\ProvidesMcpDefaults;
+use WebxUi\Mcp\Tool;
 use WebxUi\Recipes\Models\RecipeCategory;
 
 /**
@@ -12,9 +17,16 @@ use WebxUi\Recipes\Models\RecipeCategory;
  *
  * Its own permission, because renaming a section of the site is a different job from writing a
  * recipe in it. The same permission writes what recipes are rich in: one job, one person.
+ *
+ * To an agent, the tools every module's categories have: `recipe_categories_list`, and create,
+ * update, delete and reorder. Filing a recipe into a category is still `recipes_update`.
  */
-final class CategoriesModule extends RecipesGroup
+final class CategoriesModule extends RecipesGroup implements ProvidesMcpTools
 {
+    use ProvidesMcpDefaults;
+
+    public function __construct(private readonly CategoryForm $form) {}
+
     public function id(): string
     {
         return 'recipe-categories';
@@ -41,5 +53,13 @@ final class CategoriesModule extends RecipesGroup
     public function permissions(): array
     {
         return [RecipeCategory::MANAGE];
+    }
+
+    /**
+     * @return list<Tool>
+     */
+    public function mcpTools(): array
+    {
+        return (new CategoryTools(RecipeCategory::class, $this->form))->all();
     }
 }

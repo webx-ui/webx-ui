@@ -32,6 +32,11 @@ export interface CollectionRelationTarget {
 export interface CollectionRelated {
   type: string
   ids: number[]
+  /**
+   * "Related to the record of the page the block stands on" — written only when on, and then
+   * `ids` is always empty: the record is the page's, not a choice.
+   */
+  current?: true
 }
 
 /** What a `wx-collection` field keeps: the choice, never the records. */
@@ -112,7 +117,16 @@ function ids(value: unknown): number[] {
 function related(value: unknown): CollectionRelated | null {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
 
-  const { type, ids: chosen } = value as { type?: unknown; ids?: unknown }
+  const {
+    type,
+    ids: chosen,
+    current,
+  } = value as { type?: unknown; ids?: unknown; current?: unknown }
+
+  if (current === true && typeof type === 'string' && type !== '') {
+    return { type, ids: [], current: true }
+  }
+
   const picked = ids(chosen)
 
   return typeof type === 'string' && type !== '' && picked.length > 0 ? { type, ids: picked } : null

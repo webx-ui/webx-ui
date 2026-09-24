@@ -147,6 +147,17 @@ function relate(ids: number[] | null): void {
   write({ related: type && ids && ids.length > 0 ? { type, ids } : null })
 }
 
+/**
+ * "The record of the page it stands on": on the page of a service, the recipes of that service —
+ * one block in a service's layout instead of one per service. The choice of records gives way to
+ * it, because there is nothing left to choose.
+ */
+function relateToCurrent(on: boolean): void {
+  const type = relatedTarget.value?.key
+
+  write({ related: on && type ? { type, ids: [], current: true } : null })
+}
+
 const markup = computed(() => value.value.markup ?? defaultMarkup(value.value))
 
 function mark(on: unknown): void {
@@ -213,8 +224,19 @@ const markupHint = computed(() =>
           teleport
           @update:model-value="relateTo"
         />
+        <template v-if="relatedTarget">
+          <wx-switch
+            :model-value="value.related?.current === true"
+            :label="t('relations.collection-related-current')"
+            :disabled="props.disabled"
+            @update:model-value="relateToCurrent($event === true)"
+          />
+          <p class="wx-collection-field__hint">
+            {{ t('relations.collection-related-current-hint', { target: relatedTarget.title }) }}
+          </p>
+        </template>
         <relations-field
-          v-if="relatedTarget"
+          v-if="relatedTarget && value.related?.current !== true"
           :model-value="value.related?.ids ?? []"
           :target="relatedTarget.key"
           :sortable="false"

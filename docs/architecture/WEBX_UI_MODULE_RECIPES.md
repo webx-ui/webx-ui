@@ -1,6 +1,6 @@
 # `webx-ui/module-recipes` — спецификация и план реализации
 
-Статус: спроектирован 24.09.2026, промпты сессий RC1–RC6 — в §6; RC1 (связи, php), RC2 (связи, npm) и RC3 (`module-recipes`, php) сделаны. Пакеты — `webx-ui/module-recipes` (composer) и
+Статус: спроектирован 24.09.2026, промпты сессий RC1–RC6 — в §6; RC1–RC5 сделаны, остался выпуск (RC6). Пакеты — `webx-ui/module-recipes` (composer) и
 `@webx-ui/module-recipes` (npm).
 
 Рецепты — записи с галереей, ингредиентами, способом приготовления, пищевой ценностью, временем и
@@ -925,6 +925,48 @@ package-lock.json, database/database.sqlite в скретчпад; после �
 страница рецепта, индекс и категория curl'ом — разметка Recipe в ответе. Ничего на сайте не
 коммитить — это RC6. В конце — «Итог RC5», коммит, пуш в claude.
 ```
+
+#### Итог RC5 (24.09.2026)
+
+Сделано на `feat/module-recipes`: влит `feat/recipes-panel` (конфликтов не было — английские
+`lang/en/*` у RC3 и RC4 совпали байт в байт); worktree `../webx-ui-recipes-panel` снят с учёта git, но
+каталог `apps/playground` в нём держит живой процесс — dev-сервер RC4 на **5186** (порт занят до
+сих пор); погасить его и удалить каталог в RC6 — **сначала `find … -type l -delete`**, там симлинки.
+`RecipeTools` + `recipes://catalog` (`src/Mcp/`), `RecipesDemo` + `resources/demo/recipes.json`,
+категорийные инструменты на `CategoriesModule`/`NutrientsModule`, гайд `apps/docs/guide/recipes.md`
+(в сайдбаре после Reviews), разделы MCP и демо в README composer-пакета (README npm-пакета RC4 уже
+написал), ключи карточки `recipes` в автокомплите шаблона блоков, changeset `recipes-mcp-demo.md`.
+Гейт php-половины зелёный целиком (pint, phpstan, 1624 теста на 8.4), vitest по `module-admin`,
+`module-recipes`, `module-blocks` — 317 зелёных, vue-tsc по трём пакетам чистый.
+
+Что RC6 надо знать:
+
+- **Worktree теперь с собственным `node_modules`** (`pnpm install --frozen-lockfile`, каталог
+  обычный, не симлинк): pnpm здесь запускать можно, dist у tokens, core, schema, module-admin
+  собран. Плейграунд vue-tsc без dist остальных модулей не проходит — это не ошибка, полный
+  `pnpm build` в RC6 его закроет.
+- **MCP.** Рецепт, услуга в `services` и похожий в `related` — id или адрес; категория в `values` —
+  id или слаг, источник — id или название (как у отзывов). Строка в переводимом поле — язык по
+  умолчанию. Пищевая ценность — пять буквальных имён или один объект `nutrition`. `blocks` в values
+  — отказ словами. Похожий «сам на себя» — отказ. Создание и сохранение — в транзакции
+  (`$recipe->getConnection()->transaction`).
+- **Демо** — `requires()`: `media` всегда, `services` если стоит, `blocks`+`pages` только парой.
+  Услуги связывает только с услугами **из журнала демо**: на `webx-cms.local` услуги не демо, и
+  `webx:demo --module=recipes` связей не делает — это правильно, и там их добавлял агент.
+- **Проверено живьём** на `webx-cms.local` (local-режим на этот worktree, затем назад из копий, сайт
+  как был — в local-режиме на основной чекаут): `cat … | php artisan mcp:start webx` — 18
+  инструментов, каталог, связь услуг адресом и `recipes_list service=…` после публикации, создание
+  со слагом категории, отказы; curl — `Recipe` полный (ингредиенты и шаги из `<li>`, `nutrition`,
+  `author` по `@id`), `ItemList` на индексе и категории, `?nutrient=` — `noindex, follow` и
+  canonical без фильтра, `/recipes-showcase` с обоими видами и `?page=2`, английский-только рецепт —
+  404 по-русски.
+- **Сверх промпта из хвостов RC1/RC2:** в `module-admin` — переключатель «The record of the page it
+  stands on» (`related.current`) в `WxCollectionField` (проверен в браузере на `/panel/pages/19`),
+  пометка «In the bin» по `trashed` в `WxRelationsField`, три ключа в `messages.ts` и группа
+  `relations` в тесте паритета. Паритет `collections` был красным после RC1 (`unknown-relation`,
+  `unknown-related` не было в `messages.ts`) — добавлены.
+- Копии экранов плейграунда (`apps/playground/server/panel/recipes/*.json`) удалены, `screens.ts`
+  читает файлы RC3 и патч SEO рецептов напрямую — имена полей совпали.
 
 ### RC6 — выпуск
 

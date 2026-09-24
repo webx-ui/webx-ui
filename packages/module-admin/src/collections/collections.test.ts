@@ -103,6 +103,11 @@ describe('the value of wx-collection', () => {
     expect(normaliseCollection({ related: { type: 'service', ids: [] } }).related).toBeNull()
     expect(normaliseCollection({ related: { ids: [7] } }).related).toBeNull()
     expect(normaliseCollection({ related: [7] }).related).toBeNull()
+    // "The record of the page" is written only when on, and never with ids beside it.
+    expect(
+      normaliseCollection({ related: { type: 'service', ids: [7], current: true } }).related,
+    ).toEqual({ type: 'service', ids: [], current: true })
+    expect(normaliseCollection({ related: { ids: [], current: true } }).related).toBeNull()
   })
 
   it('reads the targets of a source whether they come named or as bare keys', async () => {
@@ -265,6 +270,29 @@ describe('WxCollectionField', () => {
     expect(last()).toMatchObject({ related: { type: 'service', ids: [7, 8] } })
 
     related.vm.$emit('update:modelValue', [])
+    expect(last()).toMatchObject({ related: null })
+  })
+
+  it('narrows to the record of the page it stands on, in place of a choice', async () => {
+    const { wrapper, last } = field('recipes')
+    await flushPromises()
+
+    const current = () =>
+      wrapper
+        .findAllComponents({ name: 'WxSwitch' })
+        .find((one) => one.props('label') === 'The record of the page it stands on')!
+
+    expect(current().props('modelValue')).toBe(false)
+    expect(wrapper.text()).toContain('On the page of a record of “Services”')
+
+    current().vm.$emit('update:modelValue', true)
+    expect(last()).toMatchObject({ related: { type: 'service', ids: [], current: true } })
+
+    await wrapper.setProps({ modelValue: last()! })
+    expect(current().props('modelValue')).toBe(true)
+    expect(wrapper.findComponent({ name: 'WxRelationsField' }).exists()).toBe(false)
+
+    current().vm.$emit('update:modelValue', false)
     expect(last()).toMatchObject({ related: null })
   })
 

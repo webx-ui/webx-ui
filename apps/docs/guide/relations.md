@@ -50,10 +50,10 @@ to drag by (or to move with the keyboard: space, arrows, space), and a button to
 Under the list, a search box adds more; it asks the server as the editor types and never offers
 what is already chosen.
 
-A chosen record the site does not show — a draft, one in the bin — stays in the list with the
-mark **"Not on the site"**: removing it silently would change the record nobody touched, and the
-site skips it anyway. One the server no longer knows at all is drawn by number, marked
-**"Not found"**.
+A chosen record the site does not show — a draft, one taken off — stays in the list with the mark
+**"Not on the site"**, and one in the bin with **"In the bin"**: removing it silently would change
+the record nobody touched, and the site skips it anyway. One the server no longer knows at all is
+drawn by number, marked **"Not found"**.
 
 An administrator who may not see the target's records (its permission, `403`) gets the list of what
 is chosen and nothing else: no search, no removing, no dragging.
@@ -80,13 +80,21 @@ GET /api/cms/relations/{target}?ids[]=7&ids[]=3 → names of what the form opene
 ```json
 {
   "data": [
-    { "id": 7, "title": "Landing page", "subtitle": "Websites", "thumb": "…", "visible": true }
+    {
+      "id": 7,
+      "title": "Landing page",
+      "subtitle": "Websites",
+      "thumb": "…",
+      "visible": true,
+      "trashed": false
+    }
   ]
 }
 ```
 
-Everything is already in the panel's language. A name arrives with the search as well, so a record
-picked from the box is never asked about again.
+The search never offers what is in the bin; the names of what is chosen include it, with
+`trashed: true`. Everything is already in the panel's language. A name arrives with the search as
+well, so a record picked from the box is never asked about again.
 
 ## In a block: "only related to"
 
@@ -109,3 +117,15 @@ more than one, and the records of it:
 Nothing chosen is written as `related: null`. A narrowed list is a part of the collection, so the
 default markup is off for it, as for a chosen category. A source without relations shows no such
 choice at all.
+
+**The record of the page it stands on.** One block in the layout of every service page, instead of
+one block per service: the switch **"The record of the page it stands on"** writes
+
+```json
+{ "related": { "type": "service", "ids": [], "current": true } }
+```
+
+and on the page of a service the block shows what is related to that service. On a page of any
+other kind it shows nothing, and in the block constructor — whose sample stands on no page — it
+shows everything, so there is something to design against. `current` is written only when it is
+on, and `ids` beside it is always empty.

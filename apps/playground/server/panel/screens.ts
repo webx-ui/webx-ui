@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { applyPatch } from '../../../../packages/schema/src/patch'
 import type { Patch, ScreenNode } from '../../../../packages/schema/src/types'
@@ -14,11 +14,8 @@ import type { Patch, ScreenNode } from '../../../../packages/schema/src/types'
  * ships.
  */
 
-/** A path, or several of which the first that exists is read. */
-type Source = string | string[]
-
 /** Each screen: whose description it is, and who writes over it. */
-const SCREENS: Record<string, { base: Source; patches: Source[] }> = {
+const SCREENS: Record<string, { base: string; patches: string[] }> = {
   'pages.form': {
     base: 'php/packages/module-pages/resources/screens/form.json',
     patches: ['php/packages/module-seo/resources/screens/pages.form.json'],
@@ -60,43 +57,20 @@ const SCREENS: Record<string, { base: Source; patches: Source[] }> = {
     base: 'php/packages/module-services/resources/screens/category-form.json',
     patches: ['php/packages/module-seo/resources/screens/services.category-form.json'],
   },
-  /*
-   * The recipes' screens are the composer package's, written in a session running beside the one
-   * that wrote the panel. Until both halves are on one branch the playground reads its own copies
-   * under `recipes/`, and the SEO card comes from the services' patch, which replaces a node of the
-   * same id. The first path that exists wins, so the copies stop mattering the moment the real
-   * files arrive — and are to be deleted then (RC5).
-   */
   'recipes.form': {
-    base: [
-      'php/packages/module-recipes/resources/screens/form.json',
-      'apps/playground/server/panel/recipes/form.json',
-    ],
+    base: 'php/packages/module-recipes/resources/screens/form.json',
+    // The author's note is the project's field, as omnivitality has one: into `extra`.
     patches: [
-      [
-        'php/packages/module-seo/resources/screens/recipes.form.json',
-        'php/packages/module-seo/resources/screens/services.form.json',
-      ],
+      'php/packages/module-seo/resources/screens/recipes.form.json',
       'apps/playground/server/panel/project/recipes.form.json',
     ],
   },
   'recipes.category-form': {
-    base: [
-      'php/packages/module-recipes/resources/screens/category-form.json',
-      'apps/playground/server/panel/recipes/category-form.json',
-    ],
-    patches: [
-      [
-        'php/packages/module-seo/resources/screens/recipes.category-form.json',
-        'php/packages/module-seo/resources/screens/services.category-form.json',
-      ],
-    ],
+    base: 'php/packages/module-recipes/resources/screens/category-form.json',
+    patches: ['php/packages/module-seo/resources/screens/recipes.category-form.json'],
   },
   'recipes.nutrient-form': {
-    base: [
-      'php/packages/module-recipes/resources/screens/nutrient-form.json',
-      'apps/playground/server/panel/recipes/nutrient-form.json',
-    ],
+    base: 'php/packages/module-recipes/resources/screens/nutrient-form.json',
     patches: [],
   },
 }
@@ -123,9 +97,6 @@ export function screen(name: string): ScreenNode[] | null {
 /** The names the manifest reports — a screen the panel asks for and does not get is an error. */
 export const screenNames = Object.keys(SCREENS)
 
-function json<T>(source: Source): T {
-  const paths = typeof source === 'string' ? [source] : source
-  const path = paths.find((one) => existsSync(root(one))) ?? paths[0]!
-
+function json<T>(path: string): T {
   return JSON.parse(readFileSync(root(path), 'utf8')) as T
 }

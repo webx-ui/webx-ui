@@ -6,8 +6,12 @@ namespace WebxUi\Recipes\Tests;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Relations\Relations;
+use WebxUi\Recipes\Demo\RecipesDemo;
+use WebxUi\Recipes\Models\Recipe;
 use WebxUi\Services\ServicesServiceProvider;
 
 /**
@@ -74,5 +78,20 @@ final class WithoutServicesTest extends TestCase
         $this->actingAs($this->editor(), 'cms')->getJson($this->api())->assertOk()->assertJsonPath('filters.services', null);
 
         $this->get('/recipes/porridge')->assertOk();
+    }
+
+    #[Test]
+    public function the_demo_does_not_wait_for_services_and_links_none(): void
+    {
+        Storage::fake('public');
+
+        $this->assertSame(['media', 'blocks', 'pages'], $this->app->make(RecipesDemo::class)->requires());
+
+        $this->artisan('webx:demo')->assertSuccessful();
+        @unlink($this->app->make(DemoLedger::class)->path());
+
+        $this->assertSame(6, Recipe::query()->count());
+        $this->assertSame(0, DB::table(Relations::TABLE)->where('role', 'services')->count());
+        $this->assertSame(1, DB::table(Relations::TABLE)->where('role', 'related')->count());
     }
 }

@@ -125,6 +125,39 @@ show "the recipes of this service". The offered type "Recipes" has two views: a 
 limit of the field, a link to all recipes) and a catalogue (pages, the nutrient filter). Two
 catalogues on one page share `?page=` and `?nutrient=`.
 
+## For an agent: MCP
+
+With the panel's MCP server on, the three sections are tools behind `recipes:read` / `recipes:write`
+and the categories' scopes:
+
+| Tool                  | What it does                                                             |
+| --------------------- | ------------------------------------------------------------------------ |
+| `recipes_list`        | Every recipe, or a category, a nutrient, a service, a state — or the bin |
+| `recipes_get`         | One recipe in full: the values, the revision, a preview link             |
+| `recipes_create`      | A new recipe as a draft, the row and its values in one transaction       |
+| `recipes_update`      | The values into the draft, guarded by the revision                       |
+| `recipes_publish`     | The draft onto the site · `recipes_unpublish` takes it off               |
+| `recipes_delete`      | To the bin, and its address is released                                  |
+| `recipes_reorder`     | The one order there is                                                   |
+| `recipe_categories_*` | `list`, `create`, `update`, `delete`, `reorder`                          |
+| `recipe_nutrients_*`  | the same for "rich in"                                                   |
+
+A recipe is named by its id or its address, a service in `services` and a similar recipe in
+`related` the same way. The nutrition is `nutrition.calories` … `nutrition.fiber`, or one object
+`nutrition`. The tools that write say that the ingredients and the method are HTML lists — one
+`<li>` per ingredient and per step — because the `Recipe` markup reads them. Read
+`recipes://catalog` first: the categories with their recipes, drafts included, the recipes in no
+category, and the "rich in" list.
+
+## Demo content
+
+`php artisan webx:demo` seeds three categories, five nutrients and six recipes (English and
+Russian, as far as the site has them): one in two categories, one a draft, one in English only,
+one with similar recipes chosen by hand, two without nutrition, three without a gallery. With
+`module-services` two recipes are linked to the demo services; with `module-blocks` and
+`module-pages` a page `/recipes-showcase` carries both views of the block. `--remove` takes it back
+out; a site that already has recipes is left alone.
+
 ## License
 
 MIT

@@ -14,6 +14,8 @@ export interface RelationCandidate {
   thumb: string | null
   /** Whether the site shows it. A hidden one stays chosen and says so: the site skips it. */
   visible: boolean
+  /** In the bin — a kind of hidden that says where to look. Only names of the chosen carry it. */
+  trashed?: boolean
 }
 
 export interface RelationsApi {

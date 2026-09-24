@@ -13,6 +13,7 @@ const SERVICES: RelationCandidate[] = [
   { id: 1, title: 'Landing page', subtitle: 'Websites', thumb: null, visible: true },
   { id: 2, title: 'Company website', subtitle: null, thumb: '/c.svg', visible: true },
   { id: 3, title: 'Online catalogue', subtitle: null, thumb: null, visible: false },
+  { id: 5, title: 'Old tariff', subtitle: null, thumb: null, visible: false, trashed: true },
   { id: 4, title: 'Site maintenance', subtitle: null, thumb: null, visible: true },
 ]
 
@@ -31,7 +32,10 @@ function panel(refuse = false) {
 
     const q = String(options?.query?.q ?? '').toLowerCase()
 
-    return Promise.resolve({ data: SERVICES.filter((one) => one.title.toLowerCase().includes(q)) })
+    // The search never offers the bin, as the server does not (§3.7).
+    return Promise.resolve({
+      data: SERVICES.filter((one) => one.trashed !== true && one.title.toLowerCase().includes(q)),
+    })
   })
 
   const admin = { apiPath: '/api/cms', http: { get }, i18n } as unknown as AdminContext
@@ -97,6 +101,15 @@ describe('WxRelationsField', () => {
     expect(rows[0]!.text()).toContain('Not on the site')
     expect(rows[1]!.text()).toContain('#9')
     expect(rows[1]!.text()).toContain('Not found')
+  })
+
+  it('says where a chosen one in the bin is, rather than only that it is hidden', async () => {
+    const { wrapper } = field([5])
+    await flushPromises()
+
+    const row = wrapper.find('.wx-sortable-list__row')
+    expect(row.text()).toContain('In the bin')
+    expect(row.text()).not.toContain('Not on the site')
   })
 
   it('adds what is picked from the search, and offers neither what is chosen nor itself', async () => {
