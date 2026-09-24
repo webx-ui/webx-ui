@@ -10,6 +10,7 @@ use Laravel\Mcp\Server\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blog\Models\Article;
+use WebxUi\Blog\Models\Rubric;
 use WebxUi\Blog\Models\Tag;
 use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\Prompt;
@@ -34,7 +35,7 @@ final class McpTest extends TestCase
         );
 
         $this->assertSame(
-            ['rubrics_list'],
+            ['rubrics_list', 'rubrics_create', 'rubrics_update', 'rubrics_delete', 'rubrics_reorder'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('rubrics')),
         );
 
@@ -43,12 +44,12 @@ final class McpTest extends TestCase
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('tags')),
         );
 
-        foreach (['articles:read', 'articles:write', 'rubrics:read', 'tags:read', 'tags:write'] as $scope) {
+        // Rubrics are written too since they became the shared categories (§3.7 of the services
+        // spec) — behind their own scope, so a key that may file articles still cannot add a
+        // section to the site.
+        foreach (['articles:read', 'articles:write', 'rubrics:read', 'rubrics:write', 'tags:read', 'tags:write'] as $scope) {
             $this->assertContains($scope, $registry->scopes());
         }
-
-        // Rubrics are navigation: there is nothing here that makes a ninth section of the site.
-        $this->assertNotContains('rubrics:write', $registry->scopes());
 
         $this->assertContains(
             'blog://feed',
@@ -414,7 +415,7 @@ final class McpTest extends TestCase
     }
 
     #[Test]
-    public function the_rubrics_are_read_and_never_written(): void
+    public function the_rubrics_are_listed_made_changed_and_removed(): void
     {
         $repairs = $this->rubric('repairs');
         $this->rubric('hidden-one', visible: false);
@@ -442,6 +443,25 @@ final class McpTest extends TestCase
             ->assertStructuredContent(function (AssertableJson $json): void {
                 $this->assertSame(1, $json->etc()->toArray()['count']);
             });
+
+        // Through the door the panel uses, so the address is made out of the title the same way.
+        $made = $this->content($this->agent('rubrics_create', ['title' => 'Spare parts'])->assertOk());
+        $parts = Rubric::query()->findOrFail($made['rubric']['id']);
+
+        $this->assertSame('spare-parts', $parts->getTranslation('slug', 'en'));
+
+        $changed = $this->content($this->agent('rubrics_update', [
+            'rubric' => 'spare-parts',
+            'values' => ['is_visible' => false],
+        ])->assertOk());
+
+        $this->assertFalse($changed['values']['is_visible']);
+
+        // A full one refuses, with the number, and an empty one goes.
+        $this->agent('rubrics_delete', ['rubric' => $repairs->getKey()])->assertHasErrors(['1 articles']);
+        $this->agent('rubrics_delete', ['rubric' => $parts->getKey()])->assertOk();
+
+        $this->assertNull(Rubric::query()->find($parts->getKey()));
     }
 
     #[Test]

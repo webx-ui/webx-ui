@@ -72,4 +72,16 @@ describe('createSeoApi', () => {
       locale: undefined,
     })
   })
+
+  it('reads the sitemap and rebuilds it at the same address', async () => {
+    const status = { enabled: true, url: '/sitemap.xml', built_at: null, files: {}, total: 0 }
+    const get = vi.fn().mockResolvedValue({ data: status })
+    const post = vi.fn().mockResolvedValue({ data: { ...status, total: 3 } })
+    const api = createSeoApi(context({ get, post }))
+
+    await expect(api.sitemap()).resolves.toEqual(status)
+    await expect(api.rebuildSitemap()).resolves.toMatchObject({ total: 3 })
+    expect(get).toHaveBeenCalledWith('/api/cms/seo/sitemap')
+    expect(post).toHaveBeenCalledWith('/api/cms/seo/sitemap', {})
+  })
 })

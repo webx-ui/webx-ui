@@ -6,8 +6,10 @@ namespace WebxUi\Blog\Tests;
 
 use Illuminate\Support\Carbon;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Facades\Screens;
 use WebxUi\Blog\Models\Article;
 use WebxUi\Blog\Models\Tag;
+use WebxUi\Blog\Panel\ArticleForm;
 use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Models\MediaFile;
 
@@ -130,6 +132,67 @@ final class EditorTest extends TestCase
             ->putJson($this->api($article->getKey()), ['values' => ['rubrics' => [9001]]])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['rubrics']);
+    }
+
+    /**
+     * A field a project patched onto the article's screen used to be drawn, filled in and
+     * dropped. Now it lands in `extra` — through the draft, like the text around it, so it is on
+     * the site when the article is published and not before (§3.4 of the services spec).
+     */
+    #[Test]
+    public function a_field_of_the_project_goes_through_the_draft_like_the_text(): void
+    {
+        Screens::extend(ArticleForm::SCREEN, [[
+            'op' => 'add',
+            'target' => 'project-fields',
+            'node' => ['id' => 'reading-time', 'type' => 'wx-input-number', 'name' => 'reading-time', 'label' => 'Minutes to read'],
+        ]]);
+
+        $article = $this->article('signs-of-wear');
+
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson($this->api($article->getKey()), ['values' => ['reading-time' => 7]])
+            ->assertOk()
+            ->assertJsonPath('data.values.reading-time', 7);
+
+        $article->refresh();
+
+        $this->assertNull($article->extra('reading-time'));
+        $this->assertSame(['reading-time' => 7], $article->draftValues()['extra'] ?? null);
+
+        // A save of another field keeps it.
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson($this->api($article->getKey()), ['values' => ['title' => ['en' => 'Signs of wear, again']]])
+            ->assertOk()
+            ->assertJsonPath('data.values.reading-time', 7);
+
+        $article->refresh()->publish();
+
+        $this->assertSame(7, $article->refresh()->extra('reading-time'));
+    }
+
+    /**
+     * The blog never lets anybody drag articles inside a rubric, but every link has a place there
+     * — and a new one takes it by date, so a rubric lists newest first without anybody asking.
+     */
+    #[Test]
+    public function an_article_filed_into_a_rubric_takes_its_place_there_by_date(): void
+    {
+        $rubric = $this->rubric('repairs');
+        $old = $this->article('old-one', at: Carbon::now()->subDays(10));
+        $new = $this->article('new-one', at: Carbon::now()->subDay());
+        $middle = $this->article('middle-one', at: Carbon::now()->subDays(5));
+
+        foreach ([$old, $new, $middle] as $article) {
+            $this->actingAs($this->editor(), 'cms')
+                ->putJson($this->api($article->getKey()), ['values' => ['rubrics' => [$rubric->getKey()]]])
+                ->assertOk();
+        }
+
+        $this->assertSame(
+            [$new->getKey(), $middle->getKey(), $old->getKey()],
+            Article::query()->orderedIn($rubric->getKey())->pluck('id')->all(),
+        );
     }
 
     #[Test]

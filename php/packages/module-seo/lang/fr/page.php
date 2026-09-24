@@ -60,4 +60,22 @@ return [
     'occupied-alias' => 'Cette adresse mène déjà à :target — la trace d’un déménagement. Une redirection écrite ici passe avant.',
 
     'filter-kind' => 'Type',
+
+    'sitemap' => 'Plan du site',
+    'sitemap-built' => 'Construit',
+    'sitemap-total' => 'Adresses : :count',
+    'sitemap-excluded' => 'Laissées de côté — noindex : :noindex, autre canonique : :canonical',
+    'sitemap-empty' => 'Il est vide : aucune adresse n’est publiée et ouverte à l’index.',
+    'sitemap-off' => 'Le plan du site est désactivé sur ce site.',
+    'sitemap-rebuild' => 'Reconstruire',
+    'sitemap-rebuilt' => 'Le plan du site a été reconstruit.',
+    'test-sitemap' => 'Plan du site',
+    'test-sitemap-in' => 'Dans le plan du site.',
+    'test-sitemap-out' => 'Absente du plan du site : :reason.',
+    'sitemap-reason-disabled' => 'le plan du site est désactivé',
+    'sitemap-reason-unknown' => 'le site n’a pas de page à lui ici',
+    'sitemap-reason-alias' => 'c’est une ancienne adresse qui redirige',
+    'sitemap-reason-hidden' => 'la page n’est pas publiée',
+    'sitemap-reason-noindex' => 'la page dit noindex',
+    'sitemap-reason-canonical' => 'la page désigne une autre adresse comme canonique',
 ];

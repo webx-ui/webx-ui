@@ -9,12 +9,14 @@ use Illuminate\Contracts\Container\Container;
 use Throwable;
 use WebxUi\Admin\Doctor\Check;
 use WebxUi\Admin\Doctor\Checks\Halves;
+use WebxUi\Admin\Doctor\Checks\Helpers;
 use WebxUi\Admin\Doctor\Checks\Languages;
 use WebxUi\Admin\Doctor\Checks\Layouts;
 use WebxUi\Admin\Doctor\Checks\Migrations;
 use WebxUi\Admin\Doctor\Checks\NpmRanges;
 use WebxUi\Admin\Doctor\Checks\PanelOpens;
 use WebxUi\Admin\Doctor\Checks\PassportKeys;
+use WebxUi\Admin\Doctor\Checks\SiteGate;
 use WebxUi\Admin\Doctor\Checks\Storage;
 use WebxUi\Admin\Doctor\Diagnosis;
 
@@ -51,9 +53,11 @@ final class DoctorCommand extends Command
         Migrations::class,
         Storage::class,
         Layouts::class,
+        Helpers::class,
         Languages::class,
         PanelOpens::class,
         PassportKeys::class,
+        SiteGate::class,
     ];
 
     public function handle(Container $container): int

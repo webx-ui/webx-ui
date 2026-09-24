@@ -1,0 +1,759 @@
+# `webx-ui/module-services` — спецификация и план реализации
+
+Статус: спроектирован 23.09.2026; этап 1 (K1–K3) выпущен 23.09.2026; A сделан 23.09.2026 на ветке
+`feat/module-services`, B — там же; итоги — в конце §6 A и §6 B. Пакеты — `webx-ui/module-services` (composer) и
+`@webx-ui/module-services` (npm).
+
+Услуги: каталог услуг с плоскими категориями. Услуга устроена как страница: содержимое —
+блоки конструктора, свой адрес, полное SEO. Категория — тоже страница сайта со своим адресом, SEO
+и полями. Проект добавляет свои поля и услуге, и категории, не трогая модуль.
+
+Это первый модуль из списка, который пользователь назвал 23.09.2026 как повторяющийся в его
+практике: Services, Solutions, Faq, Team, Reviews, Events, Vacancies, Banners, Tariffs. Почти все
+они — «запись с плоскими категориями и полями проекта». Поэтому спека делится на этапы, и
+общее в ней выносится из того, что уже работает, а не придумывается заранее:
+
+| Этап  | Что                                                                              | Где описано                                          |
+| ----- | -------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| **0** | SEO сущностей: карта сайта, hreflang, крошки, schema.org, собственный canonical  | [`WEBX_UI_MODULE_SEO.md` §17](WEBX_UI_MODULE_SEO.md) |
+| **1** | Общие категории, вынесенные из рубрик блога; поля проекта (`extra`); блог на них | §3 здесь                                             |
+| **2** | `module-services` на готовом фундаменте                                          | §4 здесь                                             |
+
+## 1. Границы
+
+**Внутри этапа 1:** общий код категорий в `module-admin` на обеих половинах — схема, модель,
+связь «многие ко многим» с двумя порядками, API, экраны списка и редактора категории, поле выбора
+категорий в форме записи, MCP; механизм полей проекта (`extra`) для любой сущности на экране;
+перевод рубрик блога на всё это.
+
+**Внутри этапа 2:** услуги и их категории, адреса, публичные страницы (индекс, категория, услуга),
+черновик, публикация и история услуги, SEO по §17 спеки SEO, экраны панели, API, MCP, демо.
+
+**Снаружи:** вложенные категории; черновик и история у категории; связанные услуги; вставка на
+страницу услуги FAQ, отзывов и специалистов (это общий контракт «вставить блоком», у него будет
+своя спека вместе с `module-faq`); цены как часть модуля (это поле проекта); поля проекта в
+колонках и фильтрах списка панели.
+
+## 2. Принятые решения (не переоткрывать)
+
+Все приняты в обсуждении 23.09.2026.
+
+1. **Модули рождаются в монорепе под `webx-ui/*`.** Инкубатора в сайте нет: девять из десяти
+   «клиентских» модулей уходят в реестр, а вынос потом означал бы дописывать плейграунд, CI,
+   доки и регистрации к модулю, который уже работает у клиента. Всё клиентское остаётся в сайте:
+   патчи экранов, конфиг, словарь, опубликованные вьюхи. **Если клиенту нужно то, что не
+   выражается патчем или конфигом, модулю не хватает точки расширения**, и чинится модуль.
+2. **Никакого универсального конструктора типов.** Каждый модуль — настоящий пакет со своими
+   таблицами, моделями, правами, инструментами и вьюхами. Общее — набор кирпичей, как
+   `nested-set`, `routing`, `HasSeo`, `HasDraft`. Кирпичи выносятся из работающего модуля (блога),
+   когда их просит второй потребитель, а не пишутся впрок.
+3. **Код категорий общий, данные — нет.** У каждого модуля своя таблица категорий
+   (`service_categories`, `faq_categories`) и своя связь. Одна таблица на всех значила бы
+   половину пустых колонок (у категории услуг есть адрес и SEO, у категории FAQ — только
+   название), чужие строки при удалении модуля, общие права и смешанные id. Кандидат
+   `webx-ui/taxonomy` из реестра пакетов вычёркивается.
+4. **Категории плоские, связь «многие ко многим».** Услуга может быть в нескольких категориях.
+   **Первая категория в списке записи — главная**: она идёт в крошки. Отдельного переключателя
+   нет — как у рубрик блога (решение 6 его спеки).
+5. **Два порядка.** Общий порядок записей — колонка `position` у записи. Порядок внутри
+   категории — `item_position` в связи. Редактор перетаскивает в том списке, который видит: без
+   фильтра двигает общий порядок, с фильтром по категории — порядок этой категории. Запись,
+   добавленная в категорию, встаёт туда **по общему порядку**, поэтому пока внутри категории
+   никто ничего не двигал, её порядок совпадает с общим. Модуль, которому порядок внутри
+   категории не нужен (блог — у него порядок по дате), его просто не показывает.
+6. **Адреса плоские:** `/services`, `/services/{категория}`, `/services/{услуга}` — на одном
+   уровне. Столкновение слага категории и услуги ловит реестр при сохранении (`Fail`), слаги
+   редактор подбирает сам. Плоский адрес заодно снимает вопрос «какой из трёх адресов канон» у
+   услуги в трёх категориях.
+7. **Категория редактируется страницей, а не диалогом.** У категории услуг своя страница на
+   сайте, SEO и поля проекта, а со временем, возможно, и блоки — это сущность, и правится она как
+   сущность. Рубрики блога переходят на ту же страницу (`RubricDialog` уходит).
+8. **Поля проекта — патч экрана плюс колонка `extra` (json).** Всё, что пришло с экрана и не
+   является колонкой, связью или чужим полем (SEO), сохраняется в `extra`. Значения проходят через
+   тип поля, как везде. Механизм общий для любой сущности на экране — это та самая колонка
+   `extra`, принятая в `WEBX_UI_SCREENS.md` для администраторов, но так и не сделанная.
+9. **SEO полное с первого дня** — этап 0, до услуг.
+10. **Блог можно переделывать свободно.** Он стоит только на двух демо, клиентов на нём нет.
+    Таблицы и данные демо при этом сохраняются: изменения схемы — новыми миграциями, а не правкой
+    выпущенных.
+
+## 3. Этап 1 — общие категории и поля проекта
+
+### 3.1. Что выносится из блога
+
+Про статьи в коде рубрик — только имена таблиц и слова интерфейса. Выносится почти всё:
+
+| Сейчас в `module-blog`                      | Становится в `module-admin`                                      |
+| ------------------------------------------- | ---------------------------------------------------------------- |
+| `Models/Rubric.php`                         | `Categories\IsCategory` (трейт модели категории)                 |
+| связь `rubrics()` у `Article`               | `Categories\HasCategories` (трейт записи)                        |
+| `RubricController`, `RubricRequest`         | `Categories\Http\CategoryController` (параметризуется)           |
+| `RubricResource`                            | `Categories\Http\CategoryResource`                               |
+| `Links/RubricLinkSource.php`                | `Categories\CategoryLinkSource` (только для категорий с адресом) |
+| `Mcp/RubricTools.php`                       | `Categories\Mcp\CategoryTools`                                   |
+| миграция `article_rubric`                   | макрос `Blueprint::categoryLinks()`                              |
+| `RubricsPage.vue`                           | `CategoriesPage` в `@webx-ui/module-admin`                       |
+| `RubricDialog.vue`                          | `CategoryEditorPage` (страница, экран) + `CategoryCreateDialog`  |
+| `ArticleRubrics.vue` (`wx-article-rubrics`) | тип поля `wx-categories`                                         |
+
+**Почему `module-admin`, а не свой пакет.** От него зависит каждый модуль, а ядру категорий не
+нужны ни `routing`, ни `module-seo`: адрес, SEO и блоки модуль добавляет своей модели сам, теми же
+трейтами, что и записи. Отдельный пакет `webx-ui/categories` был бы библиотекой, которая без панели
+ничего не делает, — по правилу именования это не библиотека.
+
+Блог остаётся модулем со словом «рубрика», адресами API `blog/rubrics` и таблицей `rubrics`:
+меняется только то, откуда берётся код.
+
+### 3.2. Схема
+
+Макросы в `module-admin`, по образцу `draft()` и `nestedSet()`:
+
+```
+$table->category();          -- у таблицы категорий
+  title       json nullable      -- переводимый
+  slug        json nullable      -- переводимый (не нужен модулю без адресов — тогда пустой)
+  position    int default 0      -- порядок категорий: меню сайта, фильтры панели
+  is_visible  bool default true
+  extra       json nullable      -- поля проекта
+  softDeletes
+  timestamps
+
+$table->categoryLinks('service', 'service_categories');   -- таблица связи
+  service_id     FK cascade
+  category_id    FK cascade
+  position       int default 0   -- порядок категорий у записи; первая — главная
+  item_position  int default 0   -- место записи внутри категории (решение 5)
+  unique (service_id, category_id), index (category_id, item_position)
+```
+
+Всё сверх этого (обложка, вступление, `blocks()`) модуль добавляет своей миграцией рядом с
+макросом, как блог сейчас добавляет `lead` и `cover_id`.
+
+Блог получает одну новую миграцию (`2026_01_03_*`): `rubrics.extra` и
+`article_rubric.item_position`, заполненный по дате статьи. Выпущенные миграции не правятся:
+демо уже их прогнали.
+
+### 3.3. Модели
+
+- **`IsCategory`** — переводимые `title` и `slug`, `scopeVisible()`, `scopeOrdered()`, число
+  записей подзапросом (а не запросом на строку), отказ удаления при записях внутри (422 с
+  числом — как у рубрик сейчас).
+- **`HasCategories`** на записи — связь (имя метода задаёт модель, у блога остаётся
+  `rubrics()`), `mainCategory()`, `scopeInCategory($id)`, `syncCategories(list $ids)` с
+  сохранением `item_position` у тех, кто уже был, и вставкой новых по общему порядку
+  (решение 5), `scopeOrderedIn(?int $category)`.
+- **Порядок** — `Categories\Ordering::move(array $ids, ?int $category)`: без категории пишет
+  `position` записей, с категорией — `item_position` связи. Один код на панель и на MCP.
+
+### 3.4. Поля проекта (`extra`)
+
+Сейчас форма сущности сохраняет поля из списка (`ArticleForm::OWN`), карточку SEO отдельно, а
+всё остальное **молча отбрасывает**: поле из патча проекта рисуется, заполняется и не
+сохраняется. Это закрывается общим механизмом.
+
+- **`HasExtra`** (трейт, `module-admin`): каст колонки `extra`, `extra(string $name, ?string
+$locale = null)` — значение, разрешённое типом поля на чтении сайта (`FieldType::resolve()`,
+  с языком для `localized`-узлов, с `MediaValues` для файлов — как делает `ScreenValues::resolve()`
+  у настроек), `extraRaw()` — как лежит.
+- **`Screens\ScreenRecord`** — раскладка того, что вернул `ScreenValues::validate()`: свои
+  колонки (список модели), связи (их забирает форма модуля), поля других модулей (SEO — своим
+  ключом, как сейчас), **остальное — в `extra`**. Слияние, а не замена: ключ, который не
+  приехал, остаётся (правило «сохранение одной вкладки не стирает то, что не открывали» — то же,
+  что у карточки SEO).
+- **Черновик.** У сущности с `HasDraft` `extra` идёт в черновик вместе со своими колонками и
+  применяется публикацией; у категории (черновика нет) — пишется сразу.
+- **Поле убрали из патча** — значение остаётся в `extra` и никому не мешает. Чистить его —
+  дело проекта; модуль не знает, что поле было.
+- **Где патч рисует поле по умолчанию** — каждый экран модуля объявляет узел-карточку под поля
+  проекта с публичным `id` (`services.form` → `project-fields`), чтобы патч не искал, куда
+  встать. Патч может встать и в любое другое место.
+
+Пример патча сайта — поле «Цена от» в карточке настроек услуги:
+
+```json
+[
+  {
+    "op": "add",
+    "target": "project-fields",
+    "node": {
+      "id": "price-from",
+      "type": "wx-input",
+      "name": "price-from",
+      "label": "Price from",
+      "props": { "type": "number" }
+    }
+  }
+]
+```
+
+В Blade — `{{ $service->extra('price-from') }}`.
+
+### 3.5. API категорий
+
+Регистрируется модулем одной строкой из своих маршрутов, с моделью и префиксом:
+
+```
+GET    /api/cms/{module}/categories              список: q, visible; число записей у каждой
+POST   /api/cms/{module}/categories              { title, slug? }
+GET    /api/cms/{module}/categories/{id}         запись целиком: values экрана, адрес, prefix
+PUT    /api/cms/{module}/categories/{id}         { values }
+DELETE /api/cms/{module}/categories/{id}         422, пока внутри есть записи
+POST   /api/cms/{module}/categories/{id}/restore
+POST   /api/cms/{module}/categories/reorder      { ids: [] }
+
+POST   /api/cms/{module}/{items}/reorder         { ids: [], category?: id }   -- решение 5
+```
+
+У блога `{module}/categories` — это `blog/rubrics`: путь задаёт модуль.
+
+### 3.6. Панель
+
+- **Список категорий** — то, что сейчас у рубрик: `WxSortableList` во всю ширину (ручка,
+  название, адрес, число записей, значок скрытой, `···`), порядок перетаскиванием.
+- **Создание** — `CategoryCreateDialog`: название и адрес, потом открывается страница. Как
+  `ArticleCreateDialog`.
+- **Редактор** — страница `/{module}/categories/{id}`, экран `{module}.category-form`. Вкладки
+  задаёт экран модуля; блог: **Контент** (название, адрес, видимость, вступление) ·
+  **Изображение** · **SEO**. Одна кнопка «Сохранить», 422 переключает на вкладку с полем — это
+  поведение `RubricDialog` переезжает как есть.
+- **Поле `wx-categories`** в форме записи: список выбранных с перетаскиванием и меткой
+  «главная» у первой (метку модуль выключает, если главной у него нет), выбор из категорий
+  модуля с поиском. Замена `wx-article-rubrics`.
+- **Порядок записей в списке модуля** — решение 5: перетаскивание работает без фильтра (общий
+  порядок) и с фильтром по одной категории (её порядок). При поиске или других фильтрах ручки
+  скрыты, а подсказка говорит почему.
+
+### 3.7. MCP
+
+`CategoryTools` отдаёт модулю набор с его приставкой: `{prefix}_list`, `{prefix}_create`,
+`{prefix}_update`, `{prefix}_delete`, `{prefix}_reorder`. У блога приставка `rubrics` (сейчас там
+только `rubrics_list` — остальные добавятся сами), у услуг — `services_categories`. Имена после
+приставки различимы, так что в клиенте claude.ai они не превращаются в ряд одинаковых «List»
+(CLAUDE.md §4).
+
+### 3.8. Готово, когда
+
+- блог работает на общих категориях, его тесты зелёные (тесты диалога рубрик заменены тестами
+  страницы);
+- рубрика правится страницей; патч сайта добавляет рубрике поле, и оно сохраняется и
+  печатается на странице рубрики;
+- поле из патча статьи тоже сохраняется (`extra` у статьи) — та же дыра, закрытая тем же кодом;
+- на плейграунде `/panel/blog/rubrics` открывается страница рубрики.
+
+## 4. Этап 2 — `module-services`
+
+### 4.1. Пакеты
+
+Composer `webx-ui/module-services` (namespace `WebxUi\Services\`), npm `@webx-ui/module-services`,
+id модуля `services`. Зависимости как у блога минус `module-auth`: `module-admin`,
+`module-blocks`, `module-media`, `module-seo`, `routing`, `localization`, `mcp`.
+
+### 4.2. Схема
+
+```
+services
+  id
+  title       json nullable      -- переводимый
+  slug        json nullable      -- переводимый
+  lead        json nullable      -- анонс без разметки, переводимый: карточки в списках, description
+  cover_id    bigint nullable    -- FK media_files, nullOnDelete
+  position    int default 0      -- общий порядок (решение 5)
+  extra       json nullable      -- поля проекта
+  blocks()                       -- module-blocks
+  draft()                        -- module-admin
+  softDeletes
+  timestamps
+
+service_categories
+  category()                     -- module-admin
+  lead        json nullable      -- вступление, HTML (wx-rich-text), переводимый
+  cover_id    bigint nullable
+  blocks()                       -- содержимое страницы категории, если сайт его рисует
+
+service_category
+  categoryLinks('service', 'service_categories')
+```
+
+Миграции со ссылками на чужие таблицы (`media_files`) — на `2026_01_02_*` (CLAUDE.md §4).
+
+**Блоки у категории — да, черновика у неё — нет.** Страница категории услуг на сайтах бывает
+лендингом, и поле блоков в схеме дешевле, чем миграция потом. Черновик и история категории — в
+§5: у рубрик их нет, и заводить их только ради услуг рано. Пока правка категории действует
+сразу, а вкладку «Контент» с блоками модуль показывает только если сайт включил её в конфиге
+(`webx-services.categories.blocks`, по умолчанию выключено) — иначе редактор наполнит то, что
+вьюха не печатает.
+
+### 4.3. Адреса
+
+| Тип                | Форматтер                        | Пример                             |
+| ------------------ | -------------------------------- | ---------------------------------- |
+| `service`          | `Prefixed($prefix, Slug::class)` | `services/implantaciya-pod-klyuch` |
+| `service-category` | `Prefixed($prefix, Slug::class)` | `services/implantaciya`            |
+
+Оба с `OnConflict::Fail` (решение 6). Приставка — `webx-services.prefix`, по умолчанию
+`services`. Индекс — маршрут модуля `{prefix}` с именем `services.index`, зарегистрированный в
+`SitemapRoutes` (§17.3 спеки SEO). При пустой приставке маршрут индекса не регистрируется,
+список выводит сайт на своей странице — как лента блога.
+
+Смена приставки — `webx:routes:rebuild --type=service --type=service-category`, старые адреса
+остаются алиасами с 301.
+
+### 4.4. Публичная часть
+
+- **Индекс** `{prefix}` — видимые категории по порядку, в каждой её услуги по `item_position`;
+  услуги без категории — отдельной группой в конце. Без пагинации.
+- **Категория** — вступление, блоки (если включены), услуги категории по `item_position`.
+- **Услуга** — блоки.
+
+Вьюхи — из конфига с фолбэком на вьюхи пакета, публикуются в `resources/views/vendor/webx-services`.
+Макет — тот же шов, что у публичных вьюх других модулей (`WEBX_UI_NEW_SITE.md`).
+
+Видимость (`Visible`, §17.2 спеки SEO): услуга — опубликована и не в корзине; категория —
+`is_visible` и не в корзине. Услуга в скрытой категории видна по своему адресу, как статья в
+скрытой рубрике: она не собственность категории.
+
+### 4.5. SEO
+
+- `HasSeo` у услуги и у категории, карточка `wx-seo` патчем от `module-seo`, как у страниц.
+- Крошки (`HasBreadcrumbs`): услуга — индекс (если есть приставка) → главная категория → услуга;
+  категория — индекс → категория. Главная сайта добавляется сама.
+- schema.org (`HasStructuredData`): у услуги — `Service` с `name`, `description` (анонс), `url`,
+  `image` (обложка) и `provider` ссылкой на `Organization` из настроек SEO (`@id`, а не копия
+  полей). У категории и индекса — `ItemList` услуг через `Seo::push()` в обработчике.
+- Карта сайта, hreflang и canonical приходят сами из этапа 0 — модуль только реализует
+  `Visible`.
+
+### 4.6. Панель
+
+Группа меню «Services»: **Services · Categories**.
+
+**Список услуг** — без пагинации: услуг на сайте десятки, а перетаскивание по страницам не
+работает. Строка: обложка, название со слагом подписью, категории чипами (первая — главная),
+статус, `WxRowMenu`. Фильтры: категория (одна — для порядка внутри неё), статус, поиск. Порядок —
+решение 5. На телефоне — карточки.
+
+Статусы: черновик · живая · живая с правками · снята. Запланированной нет: у услуги нет даты
+публикации.
+
+**Редактор услуги** — экран `services.form`, вкладки **Контент · Настройки · SEO · История**:
+
+- **Контент** — конструктор блоков, автосейв в черновик, предпросмотр по токену.
+- **Настройки** — заголовок и адрес (с приставкой слева), категории (`wx-categories`), анонс со
+  счётчиком, обложка; ниже — карточка `project-fields` под поля проекта (§3.4).
+- **SEO** — карточка `wx-seo`.
+- **История** — версии `HasVersions`.
+
+Панель действий: состояние, «Отменить правки», «Сохранить черновик», «Опубликовать». Правки
+защищены ревизией (409), как у страниц и статей.
+
+**Категории** — экраны этапа 1, экран `services.category-form`: **Контент** (название, адрес,
+видимость, вступление, поля проекта) · **Блоки** (если включены) · **Изображение** · **SEO**.
+
+Поле адреса статьи (`wx-article-slug`) и страницы нужно и услугам — если у него нет общей версии
+в `module-admin`, она появляется в сессии A, а не копией в третий модуль.
+
+### 4.7. API панели
+
+```
+GET    /api/cms/services                 список: q, category, status
+POST   /api/cms/services                 { title, slug? }
+GET    /api/cms/services/{id}            values экрана, ревизия, предпросмотр
+PUT    /api/cms/services/{id}            { values, revision } — 409 на устаревшей
+POST   /api/cms/services/{id}/discard
+POST   /api/cms/services/{id}/publish
+POST   /api/cms/services/{id}/unpublish
+DELETE /api/cms/services/{id}
+POST   /api/cms/services/{id}/restore
+GET    /api/cms/services/{id}/versions
+POST   /api/cms/services/{id}/versions/{number}/restore
+POST   /api/cms/services/reorder         { ids, category? } — из этапа 1
+
+/api/cms/services/categories/*           — из этапа 1
+```
+
+### 4.8. MCP
+
+- `services_list`, `services_get`, `services_create`, `services_update`, `services_publish`,
+  `services_unpublish`, `services_delete`, `services_reorder`;
+- `services_categories_*` — из этапа 1;
+- ресурс `services://catalog` — категории с услугами и адресами: агент читает его первым, чтобы
+  не завести дубль;
+- содержимое блоками правит `blocks_edit_content`, своего инструмента нет.
+
+Поля проекта агент видит в `services_get` и пишет в `services_update` под их именами — через тот
+же `ScreenRecord`, что и панель, то есть с той же валидацией.
+
+### 4.9. Права
+
+`services.view`, `services.manage`, `services.categories.manage`.
+
+### 4.10. Языки
+
+Переводимые: `title`, `slug`, `lead` услуги; `title`, `slug`, `lead` категории. Услуга без слага в
+языке не имеет в нём адреса. Слова интерфейса — английские в коде, `lang/*` на те же десять
+языков, что у соседей.
+
+### 4.11. Регистрации, которые молчат (CLAUDE.md §4)
+
+- `extra.webx` (`module`, `npm`, `panel`) в `composer.json`;
+- `Setup\Catalogue` в `module-admin`;
+- `apps/playground/src/panel/main.ts` и фикстуры в `apps/playground/server/panel/` — `/panel/services`;
+- `scripts/packages.mjs` в `webx-cms.local`;
+- `php/`: `require`, `autoload-dev`, `phpunit.xml.dist`, `phpstan.neon.dist`;
+- проверка иконок `packages/module-admin/src/icons.test.ts` ловит несуществующее имя сама.
+
+### 4.12. Демо
+
+`webx:demo` для модуля (`resources/demo/services`): три категории, восемь услуг с обложками и
+блоками, одна услуга в двух категориях с разным местом в каждой. На `webx-cms.local` — патч сайта
+с полем «Цена от», чтобы поля проекта были видны на демо, а не только в тестах.
+
+### 4.13. Тесты
+
+- адреса: услуга и категория на одном уровне; столкновение слагов — 422 на слаге с именем того,
+  кто занял; смена слага оставляет алиас с 301;
+- порядок: перетаскивание без фильтра пишет `position`, с фильтром — `item_position` только этой
+  категории; новая услуга в категории встаёт по общему порядку; индекс и страница категории
+  выводят каждый своим порядком;
+- главная категория в крошках — первая в списке; смена порядка меняет крошки и `BreadcrumbList`;
+- поля проекта: поле из патча сохраняется в черновик и применяется публикацией; сохранение одной
+  вкладки не стирает `extra`; значение `localized` отдаётся на языке страницы; `wx-media` в
+  `extra` печатается адресом, а не ключом;
+- видимость: черновик — 404 и нет в карте; услуга в скрытой категории — 200; удаление категории с
+  услугами — 422;
+- `Service` в JSON-LD ссылается на `Organization` через `@id`;
+- ревизия: устаревший `PUT` — 409;
+- MCP: поля проекта через `services_update` проходят ту же валидацию, что из панели;
+- экранные тесты — вкладки через `mousedown`, фильтр списка — через открытие воронки;
+- `scripts/php-smoke.sh` против MariaDB: миграции (в том числе порядок `2026_01_02_*`), панель
+  после `config:cache`.
+
+## 5. Что это закладывает для следующих модулей
+
+Ядро не должно предполагать то, что есть только у услуг. Проверка на двух ближайших:
+
+- **Solutions** — те же услуги, категории редко. Значит, модуль без категорий не тянет ядро
+  категорий вовсе: ни таблиц, ни пункта меню, ни поля. Если потребуется выключатель, это
+  конфиг модуля (`categories.enabled`), а не ветка в ядре.
+- **Faq** — категории без адреса, без SEO и без блоков: `slug` у них пустой, `CategoryLinkSource`
+  не регистрируется. Порядок внутри категории нужен и виден. Своей страницы у вопроса нет,
+  главной категории тоже — поле `wx-categories` без метки «главная». Общая страница FAQ с
+  фильтром и блок «FAQ этих категорий» — это контракт «вставить блоком», у него будет своя спека.
+- **Events, Vacancies, Tariffs** — категории без блоков в записи; у записи свои колонки (даты,
+  вилка), поля проекта через тот же `extra`.
+- **Team, Reviews** — категории и поля; вставка блоком — тот же контракт, что у FAQ.
+
+## 6. Пошаговый план
+
+Этап 0 (`WEBX_UI_MODULE_SEO.md` §17.8, сессии S1–S3) идёт первым и выпускается отдельно.
+
+| Сессия | Что                                                                         | Ветка                    |
+| ------ | --------------------------------------------------------------------------- | ------------------------ |
+| **K1** | php: ядро категорий, `extra` и `ScreenRecord` в `module-admin`; блог на них | `feat/shared-categories` |
+| **K2** | npm: страницы категорий, `wx-categories`; рубрика страницей; плейграунд     | та же                    |
+| **K3** | выпуск этапа 1, оба демо                                                    | —                        |
+| **A**  | `module-services`: пакет, схема, модели, адреса, публичная часть, SEO       | `feat/module-services`   |
+| **B**  | API панели, список, редактор услуги, категории                              | та же                    |
+| **C**  | MCP, гайд, плейграунд, демо-фикстуры                                        | та же                    |
+| **D**  | выпуск, оба демо, наполнение                                                | —                        |
+
+Промпты ниже самодостаточны.
+
+### K1 — ядро категорий и поля проекта (php)
+
+```
+Сессия K1 из §6 WEBX_UI_MODULE_SERVICES.md: общие категории и extra в module-admin, блог на них.
+
+Прочитать: §§2,3 спеки; php/packages/module-blog/src/{Models/Rubric.php,Models/Article.php,
+Http/Controllers/RubricController.php,Http/Requests/RubricRequest.php,Http/Resources/RubricResource.php,
+Links/RubricLinkSource.php,Mcp/RubricTools.php,Panel/ArticleForm.php,Panel/ArticleWriter.php} и
+миграции; php/packages/module-admin/src/{Screens/ScreenValues.php,Versions/HasDraft.php} — как
+устроены draft() и значения экранов; WEBX_UI_SCREENS.md — где принята колонка extra.
+
+Сделать: в module-admin — макросы category() и categoryLinks(), IsCategory, HasCategories,
+Ordering, CategoryController/Resource с регистрацией маршрутов модулем, CategoryLinkSource,
+CategoryTools; HasExtra и ScreenRecord (§3.4) с черновиком; в module-blog — новая миграция
+(rubrics.extra, article_rubric.item_position), Rubric и Article на общих трейтах, контроллеры и
+MCP через общий код, ArticleForm через ScreenRecord; тесты — общие в module-admin (на фикстурной
+модели), блог — прежние зелёные плюс поле проекта у рубрики и у статьи; changeset на @webx-ui/php.
+
+Не делать: npm (K2). Имена API и таблиц блога не менять.
+```
+
+**Итог K1 (23.09.2026)** — что K2 должен знать, потому что в промпте выше этого нет:
+
+- Код — `WebxUi\Admin\Categories\*` (`Category` — контракт, `IsCategory`, `CategoryKind`,
+  `HasCategories`, `Ordering`, `CategoryForm`, `CategoryRoutes`, `CategoryLinkSource`,
+  `Mcp\CategoryTools`, `Http\CategoryController`/`CategoryResource`) и
+  `WebxUi\Admin\Screens\{ScreenRecord,ScreenSplit,HasExtra}`. Всё, что модуль говорит о своих
+  категориях (экран, права, префикс, слова `rubric`/`rubrics`/`articles`), — в
+  `Rubric::categoryKind()`.
+- **Экран `blog.category-form` уже есть на php-половине** (`module-blog/resources/screens/category-form.json`):
+  вкладки «Контент» (`title`, `slug` типа `wx-category-slug`, `is_visible`, `lead` — `wx-rich-text`,
+  карточка `project-fields`) · «Изображение» (`cover`, `wx-media`) · «SEO» (заглушка, её заменяет
+  патч `module-seo`). На npm нужен компонент `wx-category-slug` (адрес с префиксом, как у
+  `wx-article-slug`); серверного типа `wx-categories` ещё нет — поле рубрик статьи пока
+  `wx-article-rubrics` (`IdsType`), и K2 решает, как `wx-categories` узнаёт свою таблицу.
+- **Карточка `project-fields` пустая по умолчанию — и на `blog.article-form` тоже.** Рендерер пустые
+  контейнеры не прячет, так что до K2 в настройках статьи видна пустая карточка «Дополнительно».
+  K2 должен научить рендерер не рисовать контейнер без детей (или прятать именно эту карточку).
+- API: `GET blog/rubrics` — `{ data, prefix }`, строка несёт `articles_count` (ключ — слово модуля);
+  `POST` — `{ title, slug? }`, строкой или картой; `GET` и `PUT blog/rubrics/{id}` отвечают
+  `{ category, values, prefix }`, `PUT` принимает `{ values }` — поля экрана, 422 под именем поля;
+  новые `POST blog/rubrics/{id}/restore`. `RubricDialog` на старом `PUT` с плоскими полями
+  сломан до K2.
+- Патч добавляет в карточку операцией `add` с **`target`**, а не `parent`: пример в §3.4 исправлен.
+- MCP: `rubrics_*` теперь пять, и у модуля появился `rubrics:write`.
+
+### K2 — страницы категорий (npm)
+
+```
+Сессия K2 из §6 WEBX_UI_MODULE_SERVICES.md: экраны категорий в @webx-ui/module-admin, рубрика
+страницей.
+
+Прочитать: §§3.5–3.8 спеки; packages/module-blog/src/{RubricsPage.vue,RubricDialog.vue,
+ArticleRubrics.vue,ArticleCreateDialog.vue,ArticleEditorPage.vue,module.ts,api.ts}; как блог
+регистрирует типы полей; итог K1.
+
+Сделать: CategoriesPage, CategoryCreateDialog, CategoryEditorPage (хост экрана, вкладки, 422 на
+вкладку с полем) и тип поля wx-categories в module-admin, параметризованные модулем (api, слова,
+метка «главная»); экран blog.category-form и переход блога на общие страницы, удаление
+RubricDialog и ArticleRubrics; порядок записей в списке по решению 5 — общий компонент/хелпер,
+блог его не показывает; плейграунд /panel/blog/rubrics; страница доков про категории для авторов
+модулей; тесты vitest (вкладки — mousedown); changeset на @webx-ui/module-admin и
+@webx-ui/module-blog.
+
+Проверить живьём: рубрика открывается страницей на плейграунде и на webx-cms.local; патч сайта
+добавляет рубрике поле, оно сохраняется.
+```
+
+**Итог K2 (23.09.2026)** — что K3 и сессия B должны знать:
+
+- Общее — `packages/module-admin/src/categories/`: `categoryRoutes(options)` монтирует список
+  (`WxCategoriesPage`) и страницу (`WxCategoryEditorPage`, одна «Сохранить», Ctrl+S, вопрос при
+  уходе с несохранённым), `WxCategoryCreateDialog` — только название, дальше страница. Всё, что
+  модуль говорит о категориях, — объект `CategoriesOptions` (у блога `rubricsOptions()`); слова —
+  ключи `webx-admin::categories.*` по умолчанию («категория», «записи»), модуль подменяет те, что
+  называют его вещи. Гайд — `apps/docs/guide/categories.md`.
+- **Как `wx-categories` узнаёт свою таблицу:** узел несёт `props.source` — путь API категорий
+  (`blog/rubrics`). Панель спрашивает по нему список, сервер — `CategorySources` (синглтон в
+  `module-admin`), куда модуль из своего провайдера кладёт `source → модель` и ключ отказа.
+  Не из файла маршрутов: при `route:cache` он не выполняется. `wx-article-rubrics` и `IdsType`
+  для рубрик удалены; слова поля — пропсы узла (`mainText`, `addText`…), `main: false` снимает
+  метку «главная».
+- **Рендерер схем** теперь не рисует контейнер, у которого нечего показать (карточка
+  `project-fields` без патча не видна), сводит ошибку `slug.en` к полю `slug` (раньше под
+  переводимым полем на любом описанном экране не было ничего) и открывает вкладку с ошибкой сам —
+  `wx-tabs` рисуется `WxScreenTabs`. Это общее для всех экранов, статьи тоже.
+- Порядок записей (решение 5) — `useItemOrder(path, state)`: режим `all`/`category`/`locked`,
+  подсказка и `move(ids)` на `CategoryRoutes::items()`. Блог его не зовёт; первым потребителем
+  будет список услуг (сессия B).
+- Плейграунд: `/panel/blog/rubrics/1` — страница рубрики с патчем «проекта»
+  (`apps/playground/server/panel/project/blog.category-form.json`, поле `menu-badge`); мок
+  складывает неизвестные поля в `extra`.
+- **`webx-cms.local` оставлен в local-режиме на этом worktree** (`MONOREPO=…` `packages.mjs
+local`, composer — симлинки в worktree, npm — симлинки), миграция K1 прогнана, патч сайта лежит
+  в `resources/screens/blog.category-form.json` и подключён в `AppServiceProvider`. Сохранение
+  поля проверено через `CategoryForm` в тинкере; в панели глазами — нет: пароль демо-админа
+  сменился, вход за человеком. Ничего из этого не закоммичено в репозиторий сайта.
+
+### K3 — выпуск этапа 1
+
+```
+Сессия K3 из §6 WEBX_UI_MODULE_SERVICES.md: выпуск общих категорий и блога на них.
+
+Прочитать: §§3.8,6 спеки; CLAUDE.md §5 — релиз, одобрение CI релизного PR, ручной php-split;
+CLAUDE.md §4 про копии и симлинки в webx-cms.local и про тест соседнего пакета, который видит
+module-admin из dist; «Минорный релиз module-blocks на сайте» в CLAUDE.md §5 — тот же случай для
+module-admin и module-blog; память webx-cms-local-demo-site и webx-cms-homelab-deploy.
+
+Сделать: погасить dev-серверы; pnpm --filter @webx-ui/module-admin build до тестов соседей; гейт
+целиком (npm и php/ на PHP 8.4); scripts/php-smoke.sh против MariaDB — новая миграция блога и
+макросы категорий на настоящей СУБД; PR, мерж, релизный PR, проверка версий в npm и тега php.
+
+Демо: webx-cms.local — scripts/link-panel.sh, composer update "webx-ui/*", php artisan migrate,
+npx vite build; хомлаб — registry, composer update "webx-ui/*", подъём диапазонов
+@webx-ui/module-admin и @webx-ui/module-blog в package.json, npm ls @webx-ui/module-admin —
+ровно одна версия, остальное deduped; коммит и пуш в Gitea. На webx-cms.local оставить патч
+сайта с полем у рубрики — это демо полей проекта до появления услуг.
+
+Проверить живьём на обоих: рубрики демо на месте, у статей прежний порядок рубрик и прежняя
+главная в крошках; рубрика открывается страницей, SEO и изображение сохраняются; поле из патча
+сохраняется и печатается на странице рубрики; страница рубрики и список рубрик на телефоне.
+
+Не делать: module-services — это сессия A.
+```
+
+### A — пакет и публичная часть
+
+```
+Сессия A из §6 WEBX_UI_MODULE_SERVICES.md: composer-пакет webx-ui/module-services.
+
+Прочитать: §§2,4 спеки; WEBX_UI_MODULE_SEO.md §17 (итог этапа 0); php/packages/module-blog —
+образец во всём (провайдер, конфиг, типы в RouteTypes, обработчики, вьюхи, HasDraft/HasVersions,
+HasSeo, SitemapRoutes); итог K1 — категории и extra.
+
+Сделать: php/packages/module-services — composer.json с extra.webx, провайдер, конфиг (prefix,
+вьюхи, categories.blocks), миграции §4.2, модели Service и ServiceCategory, адреса §4.3,
+обработчики и вьюхи индекса, категории и услуги §4.4, Visible, HasBreadcrumbs,
+HasStructuredData (§4.5), lang/* на десять языков, README, LICENSE; четыре регистрации в php/;
+Setup\Catalogue; тесты §4.13 кроме экранных и MCP; changeset на @webx-ui/php.
+
+Не делать: API панели и npm (B).
+```
+
+**Итог A (23.09.2026)** — что B и C должны знать:
+
+- Пакет — `php/packages/module-services`, namespace `WebxUi\Services`: `Models\{Service,ServiceCategory,HasCover}`,
+  `Handlers\{ServiceHandler,CategoryHandler}`, `Http\Controllers\IndexController`,
+  `Rendering\{Catalogue,Views}`, `Seo\Trail`, `Links\ServiceLinkSource`. Типы реестра `service` и
+  `service-category`, индекс — маршрут **`webx.services.index`** (с приставкой `webx.`, как у ленты
+  блога, а не `services.index` из §4.3: имя маршрута живёт в пространстве сайта).
+- **Экраны уже на php-половине:** `services.form` (Контент · Настройки · SEO · История; карточка
+  `project-fields`; поле категорий — `wx-categories` с `source: services/categories`, он уже в
+  `CategorySources`) и `services.category-form`; вкладку «Блоки» категории модуль кладёт своим
+  патчем (`resources/screens/category-blocks.json`), только если `webx-services.categories.blocks`.
+  Карточку SEO на оба кладёт `module-seo`. На npm этих типов ещё нет: **`wx-slug`** (серверный тип
+  уже в `module-admin` — `SlugType`; это и есть общее поле адреса записи, компонент в B) и
+  **`wx-service-history`** (как `wx-article-history`).
+- Права названы, но не объявлены: `services.view`, `services.manage`, `services.categories.manage`
+  — в `CategoryKind` категорий и в `ServiceLinkSource`. Модули панели (`ServicesModule`, категории)
+  и группа меню — в B, по образцу `BlogServiceProvider::registerPanel()`.
+- Статусы `Service::status()`: `draft · published · modified · unpublished`, «снята» — по истории.
+  Новая услуга встаёт в конец (`position = max + 1`), `position` не версионируется.
+- Попутно: `PathRejected::taken()` называет занявшего («already taken by "Dental implants"»);
+  у `Organization` из настроек SEO появился `@id` (`<app.url>/#organization`) и
+  `DefaultsSource::organizationId()`; `OneSpellingPerAddress` переехал из блога в
+  `localization` (`WebxUi\Localization\Http\Middleware`).
+- Тесты A — 30 штук в `module-services/tests`; тесты через API (409 на ревизии, 422 на слаге из
+  панели, поле проекта через `PUT`) и MCP остаются за B и C. `extra` проверен на модели и через
+  `CategoryForm` — тот же код, которым закончится API.
+- Не сделано из §4.11: `scripts/packages.mjs` в `webx-cms.local` (другой репозиторий — в D) и
+  плейграунд (C).
+
+### B — панель
+
+```
+Сессия B из §6 WEBX_UI_MODULE_SERVICES.md: раздел Services.
+
+Прочитать: §§4.6,4.7 спеки; packages/module-blog/src/{ArticlesPage.vue,ArticleEditorPage.vue,
+module.ts,api.ts} и php/packages/module-blog/{routes/api.php,src/Http/**,src/Panel/*} — образец;
+итог K2 — категории и wx-categories.
+
+Сделать: маршруты и контроллеры §4.7, ServicesModule с меню; npm-пакет @webx-ui/module-services:
+список без пагинации с порядком по решению 5, редактор услуги (экран services.form с карточкой
+project-fields), категории на общих экранах; общее поле адреса в module-admin, если его ещё нет;
+i18n; тесты php и vitest; changeset.
+
+Проверить живьём: scripts/link-panel.sh, раздел на webx-cms.local, в том числе на 375 px;
+перетаскивание с фильтром категории меняет порядок только в ней.
+```
+
+**Итог B (23.09.2026)** — что C и D должны знать:
+
+- API §4.7 целиком: `routes/api.php` модуля, контроллеры `Http\Controllers\Service*`, панельная
+  часть — `Panel\{ServiceForm,ServiceWriter,ServiceList,Revision}`. Список — без пагинации,
+  `{ data, filters: { categories } }`; с `category` приходит в порядке категории. Порядок —
+  `CategoryRoutes::items(Service::class, 'services', 'services.manage')`, то есть
+  `POST /api/cms/services/reorder`. Корзина — `?trashed=1`. Модули панели: `services` и
+  `service-categories` в группе `services` (иконка `star`).
+- Общее поле адреса — **`wx-slug`** (`SlugField.vue` в `module-admin`), читает префикс и текущий
+  адрес из `provideRecordAddress()`. `wx-category-slug` теперь тот же компонент (`CategorySlug.vue`
+  удалён, `WxCategorySlug` — алиас). Блогу `wx-article-slug` оставлен как есть — переводить его
+  незачем, пока его не трогают.
+- `AdminNav` подсвечивает раздел с самым длинным совпавшим путём: `/services/categories` лежит
+  внутри `/services`, и первый по порядку меню подсвечивал «Услуги».
+- npm-пакет `@webx-ui/module-services` версии `0.0.0` — первая публикация (0.1.0) руками в D.
+  README у npm-пакета нет — его пишет C вместе с README composer-пакета.
+- Проверено на `webx-cms.local` (local-режим на этом worktree): список, фильтр, перетаскивание
+  мышью с категорией «Хирургия» поменяло только её порядок, редактор и настройки на 375 px.
+  **Сайт оставлен в local-режиме, ничего не закоммичено:** `scripts/packages.mjs` с
+  `module-services` в обоих списках (это регистрация D), `resources/js/admin.ts` с
+  `...services()` (`webx:panel --sync` существующий файл не трогает — CLAUDE.md §4),
+  `config/webx-services.php`, демо-услуги из тинкера (7 услуг, 3 категории).
+
+### C — MCP, доки, плейграунд
+
+```
+Сессия C из §6 WEBX_UI_MODULE_SERVICES.md: MCP, гайд, плейграунд, демо-фикстуры.
+
+Прочитать: §§4.8,4.11,4.12 спеки; php/packages/module-blog/src/Mcp/* и Demo/*;
+apps/docs/guide/blog.md; apps/playground/server/panel/ — как устроены фикстуры блога.
+
+Сделать: инструменты и ресурс §4.8; демо §4.12; /panel/services в плейграунде с фикстурами;
+apps/docs/guide/services.md (включая патч с полем проекта и порядок в категориях) и ссылку в
+сайдбаре; README пакета; changeset.
+```
+
+**Итог C (23.09.2026)** — что D должен знать:
+
+- MCP — `Mcp\ServiceTools` (восемь `services_*`) и `Mcp\ServicesResources` (`services://catalog`:
+  все категории, скрытые тоже, с услугами в порядке категории, черновики с состоянием, в конце —
+  услуги без категории). Висят на `ServicesModule`; категориям — общий `CategoryTools` на
+  `CategoriesModule`. **Имена категорий — `service_categories_*`, а не `services_categories_*`
+  из §4.8:** префикс берётся из id модуля (`service-categories`), менять id ради имени не стали.
+  `services_update` передаёт в `ServiceForm::save()` проверку прав администратора, как панель.
+  `services_reorder` с `category` отказывает услуге, которой в категории нет. Проверено живьём
+  через `cat … | artisan mcp:start webx` на `webx-cms.local`.
+- Демо — `Demo\ServicesDemo` + `resources/demo/services.json`: три категории, восемь услуг с
+  обложками (две картинки библиотеки по очереди) и двумя блоками `text`; `site-maintenance` —
+  последняя в Websites и первая в Support. `requires: ['blocks', 'media']`; каталог, в котором уже
+  что-то есть, не трогает. **Патч сайта «Цена от» на `webx-cms.local` — в D**, в пакете его нет.
+- Плейграунд — `/panel/services` на фикстурах `server/panel/services.ts`, патч проекта
+  `server/panel/project/services.form.json` с «Price from». Попутно починен разбор словаря в
+  `server/panel/lang.ts`: апостроф в php-комментарии («a module's screen») открывал строку, и все
+  ключи после него съезжали — `webx-admin::screens.project-fields` показывался сырым ключом и у
+  рубрик блога. Перетаскивание в плейграунде проверено через API, мышью — нет (мышью проверено в B
+  на сайте).
+- Гайд `apps/docs/guide/services.md`, ссылка в сайдбаре после «Categories»; README npm-пакета;
+  changeset `module-services-mcp.md` на `@webx-ui/php`. php-гейт зелёный (pint, phpstan, 1395
+  тестов); полный npm-гейт не гонялся — его гонит D.
+- Мимоходом замечено: `guide/blog.md` («There is no `rubrics_create`») устарел с этапа 1 —
+  рубрики теперь пишутся инструментами.
+
+### D — выпуск
+
+```
+Сессия D из §6 WEBX_UI_MODULE_SERVICES.md: выпуск module-services и оба демо.
+
+Прочитать: §§4.11,4.12,6 спеки; CLAUDE.md §5 целиком — особенно «Первую версию нового
+npm-пакета публикует человек» и «Ручная публикация замораживает диапазоны»; docs/architecture/
+WEBX_UI_PHP_RELEASE.md — новое зеркало и Packagist; память webx-cms-local-demo-site и
+webx-cms-homelab-deploy.
+
+До релиза (руками пользователя, сессия только напоминает и проверяет): репозиторий-зеркало
+webx-ui/module-services на GitHub.
+
+Сделать: погасить dev-серверы; гейт целиком (npm и php/ на PHP 8.4); scripts/php-smoke.sh против
+MariaDB; PR, мерж; дождаться, пока Release-воркфлоу обновит релизный PR, одобрить его прогон;
+снять changeset-release/main в отдельный worktree (не в symlink-node_modules — CLAUDE.md §4),
+pnpm install, собрать dist, pnpm pack @webx-ui/module-services и проверить диапазоны
+@webx-ui/* в package/package.json тарбола. Первую публикацию делает пользователь из своего
+терминала с 2FA (pnpm --filter @webx-ui/module-services publish --access public --no-git-checks),
+затем Trusted Publishing на npmjs.com (webx-ui / webx-ui / release.yml); после этого мерж
+релизного PR. Проверить npm view @webx-ui/module-services version и тег php-v<версия>; подать
+webx-ui/module-services на Packagist.
+
+Демо: webx-cms.local — webx-ui/module-services и @webx-ui/module-services в scripts/packages.mjs,
+scripts/link-panel.sh, composer require, webx:panel --sync, migrate; демо-услуги — не
+webx:demo --force (он сеет второй набор всех модулей, а выбора модуля у команды нет): если демо
+сайта засеяно этой командой, то webx:demo --remove и webx:demo заново, иначе наполнить через
+MCP services_*; патч сайта с полем «Цена от» (§3.4), npx vite build; хомлаб —
+то же в режиме registry, npm ls @webx-ui/module-admin — одна версия, коммит и пуш в Gitea.
+
+Проверить живьём на обоих: /services, страница категории и услуги; услуга в двух категориях
+стоит в каждой на своём месте; крошки через главную категорию; «Цена от» из патча в форме и на
+странице; услуги в /sitemap.xml, черновик — нет; Service в JSON-LD ссылается на Organization;
+список с перетаскиванием и редактор на настоящем телефоне. Rich Results Test на странице услуги.
+```
+
+## 7. Отложено
+
+- Черновик и история категории — когда блоки категории начнут править так же часто, как услуги.
+- Вложенные категории — `nested-set` и `TreePath` лежат рядом, если понадобятся.
+- Связанные услуги и вставка FAQ, отзывов и специалистов на страницу услуги — контракт «вставить
+  блоком», своя спека вместе с `module-faq`.
+- Поля проекта в колонках и фильтрах списка панели — нужен патч экрана списка, а списки сейчас
+  компоненты, а не экраны (решение 16 спеки блога).
+- `extra` у администраторов (`WEBX_UI_SCREENS.md`) — механизм тот же, но `admins.form` остаётся
+  шаблоном по решению 14.09.2026.

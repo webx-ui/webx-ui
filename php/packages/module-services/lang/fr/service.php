@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'trail' => 'Où se trouve ce service',
+    'untitled' => 'Sans titre',
+    'save' => 'Enregistrer',
+    'save-failed' => 'Le service n’a pas été enregistré.',
+    'publish-title' => 'Mettre « :title » en ligne ?',
+    'publish-text' => 'Il répond à :address dès maintenant, pour tout le monde.',
+    'publish-nowhere' => 'Il n’a pas encore d’adresse dans cette langue, rien ne répondra donc.',
+    'preview' => 'Aperçu',
+    'discard' => 'Annuler les modifications',
+    'discard-title' => 'Abandonner ce qui attend ?',
+    'discard-text' => 'Le service revient à ce que montre le site. Ce qui a été écrit depuis n’apparaît plus nulle part.',
+    'discarded' => 'Le service est revenu à la version publiée.',
+    'conflict-title' => 'Le service a changé pendant votre modification',
+    'conflict-mine' => 'Garder la mienne',
+    'conflict-theirs' => 'Prendre la plus récente',
+    'conflict-theirs-title' => 'Abandonner ce que vous avez écrit ?',
+    'conflict-theirs-text' => 'Le service est relu tel qu’il est maintenant, et votre saisie est perdue.',
+    'leave' => 'Quitter',
+    'leave-title' => 'Quitter sans enregistrer ?',
+    'leave-text' => 'Le service n’a pas pu être enregistré, et votre saisie n’est pas sur le serveur.',
+    'live-since' => 'En ligne depuis le :date',
+    'address-moving' => 'L’adresse change. L’ancienne continue de fonctionner et mène à la nouvelle.',
+    'history-empty' => 'Ce service n’a jamais été publié.',
+    'version' => '#:number',
+    'version-live' => 'En ligne',
+    'source-panel' => 'Depuis le panneau',
+    'source-mcp' => 'Par un agent',
+    'source-import' => 'Importé',
+    'restore-title' => 'Restaurer la version :number ?',
+    'restore-text' => 'Elle devient le brouillon. Le site montre la version publiée jusqu’à ce que vous la publiiez.',
+    'restore-version' => 'Restaurer',
+    'restored-version' => 'La version :number est maintenant le brouillon.',
+];

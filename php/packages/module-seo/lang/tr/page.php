@@ -60,4 +60,22 @@ return [
     'occupied-alias' => 'Bu adres zaten :target adresine gidiyor — bir taşınmanın izi. Burada yazılan bir yönlendirme önce denenir.',
 
     'filter-kind' => 'Tür',
+
+    'sitemap' => 'Site haritası',
+    'sitemap-built' => 'Oluşturuldu',
+    'sitemap-total' => 'Adres: :count',
+    'sitemap-excluded' => 'Dışarıda — noindex: :noindex, başka canonical: :canonical',
+    'sitemap-empty' => 'Boş: hiçbir adres yayımlanmış ve dizine açık değil.',
+    'sitemap-off' => 'Site haritası bu sitede kapalı.',
+    'sitemap-rebuild' => 'Yeniden oluştur',
+    'sitemap-rebuilt' => 'Site haritası yeniden oluşturuldu.',
+    'test-sitemap' => 'Site haritası',
+    'test-sitemap-in' => 'Site haritasında.',
+    'test-sitemap-out' => 'Site haritasında değil: :reason.',
+    'sitemap-reason-disabled' => 'site haritası kapalı',
+    'sitemap-reason-unknown' => 'sitenin burada kendine ait bir sayfası yok',
+    'sitemap-reason-alias' => 'bu, yönlendiren eski bir adres',
+    'sitemap-reason-hidden' => 'sayfa yayımlanmamış',
+    'sitemap-reason-noindex' => 'sayfa noindex diyor',
+    'sitemap-reason-canonical' => 'sayfa başka bir adresi canonical olarak gösteriyor',
 ];

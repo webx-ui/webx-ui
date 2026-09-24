@@ -37,6 +37,25 @@ final class FieldTypeTest extends TestCase
     }
 
     #[Test]
+    public function an_address_saved_with_the_value_is_worked_out_again(): void
+    {
+        // A block's sample is written as the panel sent it, `url` and all — here the address of
+        // the day the site still answered on plain http.
+        $file = $this->file();
+
+        $resolved = $this->field()->resolve([
+            'path' => $file->path,
+            'url' => 'http://old.test/storage/'.$file->path.'?v=stale',
+            'thumb' => 'http://old.test/thumb.jpg',
+        ], ['type' => 'wx-media']);
+
+        $this->assertIsArray($resolved);
+        $this->assertIsString($resolved['url']);
+        $this->assertStringNotContainsString('old.test', $resolved['url']);
+        $this->assertStringNotContainsString('old.test', (string) $resolved['thumb']);
+    }
+
+    #[Test]
     public function the_site_reads_everything_it_would_need_a_library_for(): void
     {
         // A template has nothing to reach the library with: what is not handed over here — the

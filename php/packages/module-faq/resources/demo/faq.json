@@ -1,0 +1,130 @@
+{
+  "categories": [
+    {
+      "key": "payment",
+      "title": { "en": "Payment", "ru": "Оплата" },
+      "questions": ["how-to-pay", "prepayment", "invoice-for-company", "refund"]
+    },
+    {
+      "key": "process",
+      "title": { "en": "Working together", "ru": "Как мы работаем" },
+      "questions": ["how-long", "what-to-prepare", "prepayment", "who-writes-texts"]
+    },
+    {
+      "key": "support",
+      "title": { "en": "After launch", "ru": "После запуска" },
+      "questions": ["edit-myself", "hosting", "urgent-fix"]
+    }
+  ],
+  "questions": [
+    {
+      "key": "how-to-pay",
+      "question": { "en": "How can I pay?", "ru": "Как можно оплатить?" },
+      "answer": {
+        "en": "<p>By bank card on the invoice page, or by bank transfer. Both are in the same invoice — choose whichever suits you.</p>",
+        "ru": "<p>Картой на странице счёта или банковским переводом. Оба способа — в одном счёте, выбирайте удобный.</p>"
+      }
+    },
+    {
+      "key": "prepayment",
+      "question": { "en": "Do you work with prepayment?", "ru": "Нужна ли предоплата?" },
+      "answer": {
+        "en": "<p>Half before we start and half on launch. This question is filed under two categories, and stands in a different place in each.</p>",
+        "ru": "<p>Половина до начала работ, половина при запуске. Этот вопрос стоит в двух категориях, и в каждой — на своём месте.</p>"
+      }
+    },
+    {
+      "key": "invoice-for-company",
+      "question": {
+        "en": "Can you invoice a company?",
+        "ru": "Можно ли выставить счёт на компанию?"
+      },
+      "answer": {
+        "en": "<p>Yes. Send us the company's details and we issue the invoice and the closing documents in its name.</p>",
+        "ru": "<p>Да. Пришлите реквизиты, и мы выставим счёт и закрывающие документы на компанию.</p>"
+      }
+    },
+    {
+      "key": "refund",
+      "question": { "en": "What if I change my mind?", "ru": "Что, если я передумаю?" },
+      "answer": {
+        "en": "<ul><li>Before the work starts — the whole prepayment comes back.</li><li>Later — you pay for the stages that are done, and keep what was made in them.</li></ul>",
+        "ru": "<ul><li>До начала работ — вернём всю предоплату.</li><li>Позже — оплачиваете сделанные этапы и забираете то, что в них сделано.</li></ul>"
+      }
+    },
+    {
+      "key": "how-long",
+      "question": { "en": "How long does a site take?", "ru": "Сколько времени занимает сайт?" },
+      "answer": {
+        "en": "<p>A landing page — about a week. A company website — four to six weeks, most of which is waiting for texts and pictures.</p>",
+        "ru": "<p>Лендинг — около недели. Сайт компании — от четырёх до шести недель, и большая часть из них — ожидание текстов и фотографий.</p>"
+      }
+    },
+    {
+      "key": "what-to-prepare",
+      "question": {
+        "en": "What should I prepare before we start?",
+        "ru": "Что подготовить до начала работ?"
+      },
+      "answer": {
+        "en": "<p>A list of the pages you want, a few sites you like and why, and your logo if you have one. Everything else we ask for as we go.</p>",
+        "ru": "<p>Список нужных страниц, пару сайтов, которые нравятся, и чем, — и логотип, если он есть. Остальное спросим по ходу.</p>"
+      }
+    },
+    {
+      "key": "who-writes-texts",
+      "question": { "en": "Who writes the texts?", "ru": "Кто пишет тексты?" },
+      "answer": {
+        "en": "<p>You, or our editor — it is a separate service. This question is not published yet: the panel shows it, the site does not.</p>",
+        "ru": "<p>Вы или наш редактор — это отдельная услуга. Этот вопрос ещё не опубликован: панель его показывает, сайт — нет.</p>"
+      },
+      "published": false
+    },
+    {
+      "key": "edit-myself",
+      "question": { "en": "Can I edit the site myself?", "ru": "Смогу ли я сам править сайт?" },
+      "answer": {
+        "en": "<p>Yes: every page, article and question is edited in the panel, and nothing waits for a developer.</p>",
+        "ru": "<p>Да: страницы, статьи и эти вопросы правятся в панели, и ничего не ждёт разработчика.</p>"
+      }
+    },
+    {
+      "key": "hosting",
+      "question": { "en": "Do you host the site?", "ru": "Размещаете ли вы сайт?" },
+      "answer": {
+        "en": "<p>If you want us to. The site is yours either way, and moving it to another host is a morning's work.</p>",
+        "ru": "<p>Если захотите. Сайт в любом случае ваш, и переезд на другой хостинг — дело одного утра.</p>"
+      }
+    },
+    {
+      "key": "urgent-fix",
+      "question": { "en": "How fast do you fix something urgent?", "ru": "" },
+      "answer": {
+        "en": "<p>Within a working day on a support plan. This question has no translation, so a reader of the second language does not see it at all.</p>",
+        "ru": ""
+      }
+    }
+  ],
+  "page": {
+    "slug": "faq",
+    "title": { "en": "FAQ", "ru": "Вопросы и ответы" },
+    "seo": {
+      "title": { "en": "Frequently asked questions", "ru": "Частые вопросы" },
+      "description": {
+        "en": "Payment, timing and what happens after launch — the questions people ask before ordering a site.",
+        "ru": "Оплата, сроки и что бывает после запуска — вопросы, которые задают до заказа сайта."
+      }
+    },
+    "block": {
+      "title": { "en": "Frequently asked questions", "ru": "Частые вопросы" },
+      "all_label": { "en": "All", "ru": "Все" }
+    }
+  },
+  "service": {
+    "slug": "company-website",
+    "category": "payment",
+    "block": {
+      "title": { "en": "Questions about payment", "ru": "Вопросы об оплате" }
+    }
+  }
+}

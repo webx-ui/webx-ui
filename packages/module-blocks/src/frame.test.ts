@@ -9,7 +9,9 @@ import {
   keyAt,
   replaceBlock,
   SELECTED_CLASS,
+  siteShell,
   stageDocument,
+  thumbDocument,
 } from './frame'
 
 function page(): Document {
@@ -221,5 +223,48 @@ describe('the stage a block type is drawn on', () => {
     expect(submit.defaultPrevented).toBe(true)
     expect(heard).toEqual([])
     binding.release()
+  })
+})
+
+describe('the site around a thumbnail', () => {
+  const stagePage =
+    '<!doctype html><html lang="en" class="theme"><head>' +
+    '<link rel="stylesheet" href="/build/app.css"><link rel="preload" as="font" href="/f.woff2">' +
+    '<link rel="icon" href="/favicon.ico"><style>:root{--green:#3a6}</style>' +
+    '<script src="/blocks-runtime.js"></script><style id="wx-stage-styles"></style>' +
+    '<script type="module" src="/build/app.js"></script></head>' +
+    '<body class="site"><header>Menu</header><main class="site-main"><div class="wrap">' +
+    '<!--wx:sample--><!--/wx:sample--></div></main><footer>Footer</footer>' +
+    '<div class="popup">Join the list</div><script>open()</script></body></html>'
+
+  it('keeps the look and the wrappers, and leaves the page and its scripts behind', () => {
+    const shell = siteShell(stagePage, '/_preview/block-stage')!
+    const doc = thumbDocument(shell, {
+      html: '<section class="b-hero">Hi</section>',
+      styles: '.b-hero{}',
+    })
+
+    expect(doc).toContain(`href="${location.origin}/build/app.css"`)
+    expect(doc).toContain('as="font"')
+    expect(doc).toContain('<style>:root{--green:#3a6}</style>')
+    expect(doc).toContain('<style>.b-hero{}</style></head>')
+    expect(doc).toContain('<html lang="en" class="theme">')
+    expect(doc).toContain(
+      '<body class="site"><main class="site-main"><div class="wrap"><section class="b-hero">Hi</section></div></main></body>',
+    )
+    for (const gone of [
+      '<script',
+      'favicon',
+      'Menu',
+      'Footer',
+      'Join the list',
+      'wx-stage-styles',
+    ]) {
+      expect(doc).not.toContain(gone)
+    }
+  })
+
+  it('gives up on a page without a place for the block', () => {
+    expect(siteShell('<html><body><p>No slot</p></body></html>', '/stage')).toBeNull()
   })
 })

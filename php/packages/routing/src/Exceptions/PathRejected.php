@@ -22,9 +22,11 @@ class PathRejected extends ValidationException
 
     public string $attribute = 'slug';
 
-    public static function taken(string $path, string $attribute = 'slug'): self
+    public static function taken(string $path, string $attribute = 'slug', ?string $by = null): self
     {
-        return self::make($attribute, $path, sprintf('The address "/%s" is already taken.', $path));
+        return self::make($attribute, $path, $by === null
+            ? sprintf('The address "/%s" is already taken.', $path)
+            : sprintf('The address "/%s" is already taken by "%s".', $path, $by));
     }
 
     /**
