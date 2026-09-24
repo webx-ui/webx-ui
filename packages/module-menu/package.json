@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-menu",
-  "version": "0.1.3",
+  "version": "0.1.5",
   "description": "Menus for the WebX UI admin panel: named menus, a tree of items, and what each one points at.",
   "license": "MIT",
   "type": "module",

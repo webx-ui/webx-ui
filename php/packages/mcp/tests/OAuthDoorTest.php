@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace WebxUi\Mcp\Tests;
 
 use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 use Laravel\Passport\Passport;
 use Laravel\Passport\PassportServiceProvider;
 use phpseclib4\Crypt\RSA;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionClass;
+use WebxUi\Admin\Gate\Openings;
 use WebxUi\Mcp\Tests\Fixtures\SeoModule;
 
 /**
@@ -96,6 +98,37 @@ final class OAuthDoorTest extends TestCase
             ->assertJsonPath('registration_endpoint', url('/oauth/register'))
             ->assertJsonPath('authorization_endpoint', route('passport.authorizations.authorize'))
             ->assertJsonPath('code_challenge_methods_supported.0', 'S256');
+    }
+
+    #[Test]
+    public function the_password_over_a_site_in_testing_leaves_the_whole_way_in_open(): void
+    {
+        // An agent cannot answer a Basic dialog: closed, the connector fails without naming why.
+        $this->app['config']->set('webx-admin.gate.enabled', true);
+        $this->app['config']->set('webx-admin.gate.users', 'client:secret');
+        $this->register(new SeoModule);
+
+        $this->get('/somewhere-on-the-site')->assertStatus(401);
+
+        $this->postJson('/api/cms/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list', 'params' => []])
+            ->assertUnauthorized()
+            ->assertHeaderMissing('X-Robots-Tag');
+        $this->getJson('/.well-known/oauth-authorization-server')->assertOk();
+        $this->postJson('/oauth/register', [
+            'client_name' => 'Claude',
+            'redirect_uris' => ['https://claude.ai/api/mcp/auth_callback'],
+        ])->assertCreated();
+
+        // A server moved off the panel's API is let through where it went, and nowhere near it.
+        $this->app['config']->set('webx-mcp.path', 'agents/mcp');
+        $openings = $this->app->make(Openings::class);
+
+        $this->assertTrue($openings->open(Request::create('/agents/mcp')));
+        $this->assertFalse($openings->open(Request::create('/agents')));
+
+        // And an OAuth that is switched off opens nothing.
+        $this->app['config']->set('webx-mcp.oauth.enabled', false);
+        $this->assertFalse($openings->open(Request::create('/oauth/register')));
     }
 
     #[Test]

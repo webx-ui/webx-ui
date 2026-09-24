@@ -173,6 +173,27 @@ final class DemoLedger
     }
 
     /**
+     * The modules that have something in the journal, in the order they first wrote — what
+     * `webx:demo --module` asks before seeding one of them a second time.
+     *
+     * @return list<string>
+     */
+    public function modules(): array
+    {
+        $modules = [];
+
+        foreach ($this->entries as $entry) {
+            $module = $entry['module'] ?? null;
+
+            if (is_string($module) && $module !== '' && ! in_array($module, $modules, true)) {
+                $modules[] = $module;
+            }
+        }
+
+        return $modules;
+    }
+
+    /**
      * What another module created in this run — how a demo hangs an article on a picture
      * without guessing at a name, and the reason `requires()` is an order and not only a
      * condition.

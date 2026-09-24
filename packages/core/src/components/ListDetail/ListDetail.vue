@@ -75,6 +75,36 @@ function toPx(value: number | string) {
   return typeof value === 'number' ? value : Number.parseFloat(value) || 0
 }
 
+/**
+ * How far under its threshold a layout that already stands keeps standing.
+ *
+ * The widest thing that comes and goes with the layout itself is the page's scrollbar: a record
+ * opened beside the list makes the page taller, the scrollbar takes its 15-17 px, and a pane
+ * measured just over the line fell under it — the record went into the drawer, the page was short
+ * again, the bar left, and the record came back. For ever, with the drawer closing the record on
+ * each way out. A band wider than any scrollbar is what stops it; crossing into the wider layout
+ * still needs the full width, so nothing is ever drawn into room it does not have.
+ */
+const SETTLE = 24
+
+/** Whether a layout that needs `need()` pixels stands, with {@link SETTLE} of give once it does. */
+function settled(need: () => number) {
+  const inline = ref(true)
+
+  watch(
+    [width, need],
+    ([now, threshold], previous) => {
+      // Unmeasured is columns (see below); the first measurement is taken at its word.
+      if (now === 0) inline.value = true
+      else if (!previous?.[0] || !inline.value) inline.value = now >= threshold
+      else inline.value = now >= threshold - SETTLE
+    },
+    { immediate: true, flush: 'sync' },
+  )
+
+  return inline
+}
+
 /*
  * Both thresholds are the widths the caller gave, added up — not numbers of their
  * own. A wider list or a roomier detail moves them by itself, which is the only way
@@ -85,16 +115,11 @@ function toPx(value: number | string) {
  * without, the records are the main pane and the chooser folds when they would go under
  * that same floor.
  */
-const filtersInline = computed(
-  () =>
-    width.value === 0 ||
-    width.value >=
-      toPx(props.filtersWidth) + (hasDetail.value ? toPx(props.listWidth) : 0) + props.detailMin,
+const filtersInline = settled(
+  () => toPx(props.filtersWidth) + (hasDetail.value ? toPx(props.listWidth) : 0) + props.detailMin,
 )
 
-const detailInline = computed(
-  () => width.value === 0 || width.value >= toPx(props.listWidth) + props.detailMin,
-)
+const detailInline = settled(() => toPx(props.listWidth) + props.detailMin)
 
 /** The list is the screen: nothing stands beside it, so it takes what is left. */
 const listAlone = computed(() => !hasDetail.value || !detailInline.value)

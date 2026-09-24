@@ -54,6 +54,17 @@ const ITEM_KEYS = [...MEDIA_KEYS, 'thumb', 'name', 'extension', 'mime', 'size', 
 const MEDIA_TYPES = ['wx-media']
 const LIST_TYPES = ['wx-gallery', 'wx-files']
 
+/**
+ * `wx-collection`, as the renderer hands it over: the records and the filter's groups. What else
+ * a record holds is its source's business (`question`, `answer` for the FAQ); every source gives
+ * these three.
+ */
+const COLLECTION_KEYS = ['items', 'groups', 'filter']
+const COLLECTION_PARTS: Record<string, string[]> = {
+  items: ['id', 'anchor', 'categories'],
+  groups: ['id', 'title', 'items'],
+}
+
 export function templateCompletions({ schema, styles }: TemplateSources): CompletionSource {
   return (context) => {
     const before = context.state.sliceDoc(Math.max(0, context.pos - 200), context.pos)
@@ -213,10 +224,17 @@ function arrayKeys(
 function keysOf(variable: string, schema: ScreenNode[], template: string): [string, string][] {
   const field = fields(schema).find((node) => node.id === variable)
   if (field && MEDIA_TYPES.includes(field.type)) return MEDIA_KEYS.map((key) => [key, field.type])
+  if (field?.type === 'wx-collection') return COLLECTION_KEYS.map((key) => [key, field.type])
 
   const list = loopVariables(template).get(variable)
-  const source = list ? fields(schema).find((node) => node.id === list) : undefined
+  const [name, part] = list?.split('.') ?? []
+  const source = name ? fields(schema).find((node) => node.id === name) : undefined
   if (!source) return []
+
+  if (source.type === 'wx-collection') {
+    const origin = typeof source.props?.source === 'string' ? source.props.source : source.type
+    return (COLLECTION_PARTS[part ?? ''] ?? []).map((key) => [key, origin])
+  }
 
   if (LIST_TYPES.includes(source.type)) return ITEM_KEYS.map((key) => [key, source.type])
 
@@ -227,12 +245,17 @@ function keysOf(variable: string, schema: ScreenNode[], template: string): [stri
   return []
 }
 
-/** `@foreach ($items as $item)` → item ⇒ items, and the key variable ⇒ nothing. */
+/**
+ * `@foreach ($items as $item)` → item ⇒ items, and the key variable ⇒ nothing;
+ * `@foreach ($questions['items'] as $q)` → q ⇒ questions.items.
+ */
 function loopVariables(template: string): Map<string, string> {
   const found = new Map<string, string>()
 
-  for (const match of template.matchAll(/\$(\w+)\s+as\s+\$(\w+)(?:\s*=>\s*\$(\w+))?/g)) {
-    found.set(match[3] ?? match[2]!, match[1]!)
+  for (const match of template.matchAll(
+    /\$(\w+)(?:\[\s*['"](\w+)['"]\s*\])?\s+as\s+\$(\w+)(?:\s*=>\s*\$(\w+))?/g,
+  )) {
+    found.set(match[4] ?? match[3]!, match[2] ? `${match[1]}.${match[2]}` : match[1]!)
   }
 
   return found

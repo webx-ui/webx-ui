@@ -22,7 +22,9 @@
                   "name": "title",
                   "label": "trans::webx-blog::rubric.field-title",
                   "localized": true,
-                  "props": { "maxlength": 255 }
+                  "props": {
+                    "maxlength": 255
+                  }
                 },
                 {
                   "id": "slug",
@@ -49,29 +51,29 @@
               ]
             },
             {
+              "id": "presentation",
+              "type": "wx-card",
+              "label": "trans::webx-blog::screen.presentation",
+              "children": [
+                {
+                  "id": "cover",
+                  "type": "wx-media",
+                  "name": "cover",
+                  "label": "trans::webx-blog::screen.cover",
+                  "help": "trans::webx-blog::rubric.cover-help",
+                  "props": {
+                    "accept": "image",
+                    "captions": false,
+                    "aspect": "16/9"
+                  }
+                }
+              ]
+            },
+            {
               "id": "project-fields",
               "type": "wx-card",
               "label": "trans::webx-admin::screens.project-fields",
               "children": []
-            }
-          ]
-        },
-        {
-          "id": "image",
-          "type": "wx-tab",
-          "label": "trans::webx-blog::rubric.tab-cover",
-          "children": [
-            {
-              "id": "cover",
-              "type": "wx-media",
-              "name": "cover",
-              "label": "trans::webx-blog::screen.cover",
-              "help": "trans::webx-blog::rubric.cover-help",
-              "props": {
-                "accept": "image",
-                "captions": false,
-                "aspect": "16/9"
-              }
             }
           ]
         },

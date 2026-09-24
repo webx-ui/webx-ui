@@ -1,9 +1,10 @@
 import type { TypeRegistry } from '@webx-ui/schema'
 import CategoriesField from './categories/CategoriesField.vue'
-import CategorySlug from './categories/CategorySlug.vue'
+import CollectionField from './collections/CollectionField.vue'
 import LinkField from './LinkField.vue'
 import ListScreen from './ListScreen.vue'
 import RichTextField from './RichTextField.vue'
+import SlugField from './SlugField.vue'
 
 /**
  * Node types the panel itself brings, under every module's and every project's.
@@ -25,9 +26,13 @@ import RichTextField from './RichTextField.vue'
  * content modules registered, and the only thing that knows what those are is the panel's own
  * backend.
  *
- * `wx-categories` and `wx-category-slug` are the fields every module with categories shares
- * (`categories/`): the one files a record under categories, the other edits a category's
- * address with the module's prefix in front of it.
+ * `wx-categories` files a record under a module's categories (`categories/`). `wx-slug` is the
+ * address of any record with the module's prefix in front of it — a service, a category; the
+ * editor hosting the screen hands it the prefix (`provideRecordAddress`). `wx-category-slug` is
+ * the same field under the name the category screens were first described with.
+ *
+ * `wx-collection` is a block's window onto another section — the FAQ's questions, a team — and
+ * keeps which part of it to show, never the records (`collections/`).
  */
 export const adminTypes: TypeRegistry = {
   'wx-list': { component: ListScreen, kind: 'layout', labelProp: 'title' },
@@ -38,5 +43,8 @@ export const adminTypes: TypeRegistry = {
   // a form's width leaves the search box too narrow to read a page title in.
   'wx-link': { component: LinkField, kind: 'field', wide: true },
   'wx-categories': { component: CategoriesField, kind: 'field' },
-  'wx-category-slug': { component: CategorySlug, kind: 'field' },
+  // Wide: four controls in a column, and half a line leaves the category chips one to a row.
+  'wx-collection': { component: CollectionField, kind: 'field', wide: true },
+  'wx-slug': { component: SlugField, kind: 'field' },
+  'wx-category-slug': { component: SlugField, kind: 'field' },
 }
