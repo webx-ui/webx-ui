@@ -11,6 +11,7 @@ import {
 import { useAdmin } from '../admin'
 import { createCategoriesApi } from '../categories/api'
 import { useTranslate } from '../i18n'
+import RelationsField from '../relations/RelationsField.vue'
 import {
   COLLECTION_MAX_LIMIT,
   collectionSources,
@@ -112,6 +113,40 @@ function limit(picked: number | null | undefined): void {
   write({ limit: picked ?? null })
 }
 
+/*
+ * "Only related to": which target, then which of its records. The target is chosen here rather
+ * than fixed by the schema because a source can be related to more than one (recipes to services
+ * and to other recipes), and with only one there is nothing to choose and the box is not drawn.
+ * The target a choice was started in is kept while nothing of it is chosen yet — the value has no
+ * way to say "a target and no records", and a box that jumped back would undo the click.
+ */
+const relatedType = ref<string | null>(null)
+
+const relationOptions = computed<SelectOption[]>(() =>
+  (info.value?.relations ?? []).map((one) => ({ label: one.title, value: one.key })),
+)
+
+const relatedTarget = computed(() => {
+  const targets = info.value?.relations ?? []
+
+  if (targets.length === 1) return targets[0]!
+
+  const key = value.value.related?.type ?? relatedType.value
+
+  return targets.find((one) => one.key === key) ?? null
+})
+
+function relateTo(picked: SelectModelValue): void {
+  relatedType.value = typeof picked === 'string' ? picked : null
+  write({ related: null })
+}
+
+function relate(ids: number[] | null): void {
+  const type = relatedTarget.value?.key
+
+  write({ related: type && ids && ids.length > 0 ? { type, ids } : null })
+}
+
 const markup = computed(() => value.value.markup ?? defaultMarkup(value.value))
 
 function mark(on: unknown): void {
@@ -156,6 +191,36 @@ const markupHint = computed(() =>
           clearable
           teleport
           @update:model-value="pick"
+        />
+      </div>
+
+      <div v-if="info.relations.length > 0" class="wx-collection-field__row">
+        <span class="wx-collection-field__label">
+          {{
+            info.relations.length === 1
+              ? t('relations.collection-related-to', { target: info.relations[0]!.title })
+              : t('relations.collection-related')
+          }}
+        </span>
+        <wx-select
+          v-if="info.relations.length > 1"
+          :model-value="relatedTarget?.key ?? null"
+          :options="relationOptions"
+          :placeholder="t('relations.collection-related-type')"
+          :aria-label="t('relations.collection-related-type')"
+          :disabled="props.disabled"
+          clearable
+          teleport
+          @update:model-value="relateTo"
+        />
+        <relations-field
+          v-if="relatedTarget"
+          :model-value="value.related?.ids ?? []"
+          :target="relatedTarget.key"
+          :sortable="false"
+          :empty-text="t('relations.collection-related-any')"
+          :disabled="props.disabled"
+          @update:model-value="relate"
         />
       </div>
 
@@ -228,7 +293,7 @@ const markupHint = computed(() =>
 
 .wx-collection-field__label {
   font-size: var(--wx-font-size-sm);
-  color: var(--wx-text-secondary);
+  color: var(--wx-text-muted);
 }
 
 /* A number of up to three digits: the whole line would promise room for a sentence. */
@@ -251,6 +316,6 @@ const markupHint = computed(() =>
 .wx-collection-field__hint {
   margin: 0;
   font-size: var(--wx-font-size-sm);
-  color: var(--wx-text-secondary);
+  color: var(--wx-text-muted);
 }
 </style>

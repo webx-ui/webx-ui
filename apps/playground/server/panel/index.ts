@@ -130,6 +130,7 @@ import {
 } from './menus'
 import { adminRows, endConnection, listCalls, listConnections, roles as adminRoles } from './agents'
 import { dictionary, panelLocales } from './lang'
+import { relationCandidates } from './relations'
 import { screen, screenNames } from './screens'
 import {
   PREFIX as SERVICES_PREFIX,
@@ -1601,6 +1602,17 @@ useCollectionResolver((source, value) => {
 })
 
 on('GET', '/collections', ({ locale }) => ({ data: collectionSources(locale) }))
+
+/* -------------------------------------------------------------------------- relations ----- */
+
+/* What a `wx-relations` field picks from and names its choice by (`relations.ts`, §3.7). */
+on('GET', '/relations/([\\w-]+)', ({ params, query, locale }) => {
+  const found = relationCandidates(params[0], query, locale)
+
+  if (found === null) throw new HttpFailure(404, `Nothing can be related to "${params[0]}".`)
+
+  return { data: found }
+})
 
 /* -------------------------------------------------------------------------------- faq ----- */
 

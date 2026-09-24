@@ -38,6 +38,7 @@ export default defineConfig({
             { text: 'Blog', link: '/guide/blog' },
             { text: 'Categories', link: '/guide/categories' },
             { text: 'Collections', link: '/guide/collections' },
+            { text: 'Relations', link: '/guide/relations' },
             { text: 'Services', link: '/guide/services' },
             { text: 'FAQ', link: '/guide/faq' },
             { text: 'Reviews', link: '/guide/reviews' },
