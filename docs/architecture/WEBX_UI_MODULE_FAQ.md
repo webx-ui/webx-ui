@@ -1,7 +1,8 @@
 # `webx-ui/module-faq` и контракт «вставить блоком» — спецификация и план реализации
 
-Статус: спроектирован 24.09.2026, код не начат. Пакеты — `webx-ui/module-faq` (composer) и
-`@webx-ui/module-faq` (npm); контракт — в `module-admin` и `module-blocks` на обеих половинах.
+Статус: спроектирован 24.09.2026; F1 (контракт, php) сделана 24.09.2026. Пакеты —
+`webx-ui/module-faq` (composer) и `@webx-ui/module-faq` (npm); контракт — в `module-admin` и
+`module-blocks` на обеих половинах.
 
 FAQ — вопросы и ответы с плоскими категориями. Своей страницы у вопроса нет, у модуля нет ни
 одного публичного маршрута: вопросы попадают на сайт **блоком**, поставленным на любую страницу, —
@@ -117,8 +118,9 @@ interface CollectionSource
     public function title(): string;            // переведённое, для подписи поля
     public function categories(): ?string;      // путь API категорий (как props.source у wx-categories), null — без категорий
     public function supportsMarkup(): bool;
+    public function permission(): ?string;      // кто может ставить (для /api/cms/collections), null — все
 
-    public function items(Selection $selection, string $locale): Collection; // элементы §3.1, уже по порядку
+    public function items(Selection $selection, string $locale): array; // list элементов §3.1, уже по порядку
 }
 ```
 
@@ -362,6 +364,56 @@ head(); тесты на фикстурном источнике — в том ч
 
 Не делать: npm (F2), module-faq (F3). В конце — «Итог F1» в §6 спеки, коммит, пуш в claude.
 ```
+
+#### Итог F1 — сделано 24.09.2026
+
+Всё из промпта на ветке; гейт php-половины зелёный (pint, phpstan, 1418 тестов на PHP 8.4).
+Что следующим сессиям надо знать сверх §3:
+
+- **`items()` возвращает `list<array<string, mixed>>`, а не `Collection`.** У `Collection` шаблон
+  `TValue` инвариантный, и любая реализация, которая строит элементы литералом, у PHPStan не
+  сходится с `Collection<int, array<string, mixed>>`; массив ковариантен. У Eloquent-источника
+  это `->map(...)->values()->all()`.
+- **В контракте появился `permission(): ?string`** — без него `/api/cms/collections` нечем
+  фильтровать по правам (§3.3). Правило то же, что у `LinkSources::allowed()`; у FAQ это
+  `faq.view`.
+- **`Selection::apply(Builder)`** — общий кусок для источников на `HasCategories`: фильтр по
+  нескольким категориям подзапросом (без повторов), порядок `orderedIn` по одной категории или
+  общий, лимит. Видимость (`published`, перевод на язык, корзина) — на источнике, до `apply()`.
+- **Группы фильтра считает `CollectionType`, а не источник.** Модель категорий берётся из
+  `CategorySources` по пути `categories()` источника — FAQ регистрирует там `faq/categories` и
+  так и так (ради `wx-categories`). Группа — видимая категория (`visible`, `ordered`), в которой
+  есть хоть одна показанная запись; **это правило и для выбранных категорий**: кнопка фильтра,
+  которая опустошает список, не нужна никому. Элемент без `categories` в группы не попадает.
+- **Новый маркер `Screens\ResolvesMissing`.** Блок хранит только то, что редактор задал, и поле,
+  которого нет в значениях, в шаблоне — `null`. Для `wx-collection` это неверно: блок, поставленный
+  и не тронутый, — «все записи», а шаблон FAQ на пустом `sample` падал бы на публикации
+  (`$list['items']` у `null`). `Rendering\Values` теперь резолвит отсутствующее поле только у
+  типов с этим маркером; всем прочим отсутствующее по-прежнему `null` — существующие шаблоны
+  печатают то же, что печатали.
+- **Правила на содержимом блоков не запускаются ни на одной двери** — `ContentValues` только
+  `store()`. Поэтому `store()` — единственное, что стоит между запросом и строкой: нормализует,
+  режет `markup` у источника без разметки и `categories` у источника без категорий. Id
+  несуществующей категории он оставляет (запросом не проверяет): на чтении она просто ничего не
+  находит. `rules()` работают там, где `wx-collection` стоит на описанном экране.
+- **Язык:** `Rendering\Values` зовёт `resolve()` без языка, поэтому тип берёт
+  `Locales::current()` — источник получает язык всегда.
+- **`BlockOffers`**: `offer('faq', __DIR__.'/../resources/blocks')` из `boot()` провайдера;
+  ключ — id модуля в панели, тот же, что в `Setup\Catalogue`, потому что `webx:setup` зовёт
+  `webx:blocks:offered --install --module=<id>` для выбранных модулей (новый шаг после
+  `migrate`, не фатальный, только если стоит `module-blocks`). Документ проверяется правилами
+  `BlockInput`, как импорт; версия пишется с `source: import` и комментарием `Offered by faq`;
+  тип, который не рисуется на своём `sample`, остаётся черновиком, а команда выходит с кодом 1.
+  `module-faq` требует `module-blocks`? — решать в F3; если нет, регистрация за
+  `class_exists(BlockOffers::class)`.
+- **`Seo::put($key, $block)`**: пустой блок снимает ключ; печатается после `push()`; вне
+  запроса живёт на экземпляре, как `push()`. `putBlocks()` — прочитать накопленное.
+- **Слова:** `webx-admin::collections.{unknown-source,unknown-category,limit,flag}` на все десять
+  языков — это отказы сервера; ключи поля F2 дописывает в тот же файл.
+- **`/api/cms/collections`** отвечает `{ data: [{ key, title, categories, markup }] }`.
+- Worktree: `php/vendor` поставлен (`composer.phar` — в скретчпаде сессии). Манифест Testbench
+  прогрет последовательным `phpunit --filter …`; `vendor/bin/testbench package:discover` не
+  годится — он создаёт `.env` (CLAUDE.md §4).
 
 ### F2 — контракт, npm
 
