@@ -1,5 +1,12 @@
 # @webx-ui/php
 
+## 0.40.1
+
+### Patch Changes
+
+- 0c8a311: The media field takes a `width` that caps how wide its frame gets, and the review form uses it:
+  the author's photo is a 160 px square instead of a frame the full width of the form.
+
 ## 0.40.0
 
 ### Minor Changes
