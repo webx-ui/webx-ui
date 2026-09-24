@@ -40,6 +40,11 @@ const SCREENS: Record<string, { base: string; patches: string[] }> = {
     base: 'php/packages/module-faq/resources/screens/category-form.json',
     patches: [],
   },
+  'reviews.form': { base: 'php/packages/module-reviews/resources/screens/form.json', patches: [] },
+  'reviews.category-form': {
+    base: 'php/packages/module-reviews/resources/screens/category-form.json',
+    patches: [],
+  },
   'services.form': {
     base: 'php/packages/module-services/resources/screens/form.json',
     // A project's price beside the SEO card, as a site would patch it on: into `extra`.

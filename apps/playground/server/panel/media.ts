@@ -79,6 +79,7 @@ folder(1, null, 'Медиатека')
 folder(2, 1, 'Блог')
 folder(3, 1, 'Страницы')
 folder(4, 1, 'Документы')
+folder(5, 1, 'Отзывы')
 
 /**
  * @param name What the library calls it — and what the generated picture says on its face.
@@ -188,6 +189,9 @@ image(2, 'blog/2026/07/team.svg', 'Команда студии', 1600, 900, '202
 image(3, 'pages/hero-home.svg', 'Обложка главной', 2000, 1000, '2026-06-02T09:00:00+00:00')
 image(3, 'pages/office.svg', 'Офис на Подоле', 1600, 1067, '2026-06-02T09:05:00+00:00')
 image(3, 'pages/services.svg', 'Услуги', 1600, 900, '2026-06-04T12:00:00+00:00')
+/* Portraits for two of the reviews; the rest have none, and the site draws their initials. */
+image(5, 'reviews/anna-petrova.svg', 'Анна Петрова', 400, 400, '2026-09-12T10:00:00+00:00')
+image(5, 'reviews/ihor-melnyk.svg', 'Игорь Мельник', 400, 400, '2026-08-30T10:00:00+00:00')
 
 recount()
 

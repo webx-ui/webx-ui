@@ -4,6 +4,9 @@ import type {
   BlockType,
   BlockVersionMeta,
 } from '../../../../packages/module-blocks/src/types'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { blade } from './blade'
 
 /**
  * The block types the playground's site is built from, and a renderer small enough to live in
@@ -15,7 +18,7 @@ import type {
  * lints would leave a yellow warning under every screen being polished here, which is the one
  * thing a playground must not do.
  *
- * What draws them understands interpolation, `@if`, `@foreach` and `@blocks` and nothing else:
+ * What draws them understands the little of Blade those templates are written in (`blade.ts`):
  * the point is a preview with the right shape and the right amount of text in it, not a second
  * implementation of Blade.
  */
@@ -943,6 +946,26 @@ export const blockTypes: BlockType[] = [
     },
   },
   {
+    id: 11,
+    slug: 'reviews',
+    title: 'Отзывы',
+    description: 'Отзывы из раздела — сеткой, слайдером, бегущей строкой или один.',
+    icon: 'star',
+    group: 'content',
+    sort: 36,
+    allow: null,
+    allowed_in: null,
+    max_per_entity: null,
+    is_enabled: true,
+    draft: null,
+    published: version(1, '2026-09-24T12:00:00+00:00', 'Offered by reviews'),
+    usage_count: 0,
+    thumbnail: null,
+    created_at: '2026-09-24T12:00:00+00:00',
+    updated_at: '2026-09-24T12:00:00+00:00',
+    /* `content` is the file `module-reviews` offers, read off disk: see `offered()` below. */
+  },
+  {
     id: 8,
     slug: 'map',
     title: 'Карта',
@@ -1166,6 +1189,45 @@ export function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
 }
 
+offered('reviews', 'php/packages/module-reviews/resources/blocks/reviews.json')
+
+/**
+ * A type whose content is the file a module offers (`BlockOffers`), read off disk on every use
+ * rather than copied here: the playground is where that template is looked at, so a copy would be
+ * a second template to keep in step — and Vite watches what it imports, which a `.json` of the
+ * composer package is not. Saving in the constructor keeps what was saved, as a site would.
+ */
+function offered(slug: string, path: string): void {
+  const type = blockTypes.find((item) => item.slug === slug)
+
+  if (type === undefined) return
+
+  let saved: BlockContent | undefined
+
+  Object.defineProperty(type, 'content', {
+    enumerable: true,
+    configurable: true,
+    get: (): BlockContent => {
+      if (saved !== undefined) return saved
+
+      const offer = JSON.parse(
+        readFileSync(fileURLToPath(new URL(`../../../../${path}`, import.meta.url)), 'utf8'),
+      ) as BlockContent
+
+      return {
+        schema: offer.schema,
+        template: offer.template,
+        styles: offer.styles,
+        script: offer.script,
+        sample: offer.sample,
+      }
+    },
+    set: (value: BlockContent) => {
+      saved = value
+    },
+  })
+}
+
 for (const type of blockTypes) {
   switch (type.slug) {
     case 'hero':
@@ -1262,12 +1324,12 @@ for (const type of blockTypes) {
 /**
  * Why a template cannot go on the site — the fixture's stand-in for Blade failing to compile.
  *
- * It knows the five directives this renderer knows and refuses anything else, with the line
+ * It knows the directives this renderer knows and refuses anything else, with the line
  * it stands on: that is the shape of a real refusal (§15), and the only thing the panel needs
  * from it is a sentence and a number.
  */
 export function templateFailure(template: string): { reason: string; line: number } | null {
-  const known = ['if', 'endif', 'foreach', 'endforeach', 'blocks']
+  const known = ['if', 'elseif', 'else', 'endif', 'foreach', 'endforeach', 'blocks']
   const lines = template.split('\n')
 
   for (let index = 0; index < lines.length; index++) {
@@ -1362,8 +1424,8 @@ export function draw(
 /**
  * A block drawn: the template with its values in it.
  *
- * Deliberately naive — see the note at the top of the file. Unknown directives are left alone
- * rather than stripped, which is what makes a broken template look broken in the preview.
+ * Deliberately small — see `blade.ts`. Unknown directives are left alone rather than stripped,
+ * which is what makes a broken template look broken in the preview.
  */
 export function renderTemplate(
   template: string,
@@ -1396,88 +1458,12 @@ export function renderTemplate(
     Object.entries(values).map(([key, value]) => [key, isLink(value) ? resolveLink(value) : value]),
   )
 
-  html = html.replace(
-    /@foreach\s*\(\$([\w-]+)(?:\['([\w-]+)'\])? as \$(\w+)\)([\s\S]*?)@endforeach/g,
-    (_match, key: string, inner: string | undefined, alias: string, body: string) => {
-      const items = read(values, key, inner)
-
-      if (!Array.isArray(items)) {
-        return ''
-      }
-
-      return items.map((item) => interpolate(body, item as Record<string, unknown>, alias)).join('')
-    },
-  )
-
-  html = html.replace(
-    /@if\s*\(([^)]+)\)([\s\S]*?)@endif/g,
-    (_match, condition: string, body: string) => {
-      /* `$title`, or one key of a value that is a record: `$questions['filter']`. */
-      const found = [...condition.matchAll(/\$([\w-]+)(?:\['([\w-]+)'\])?/g)].map((match) =>
-        read(values, match[1]!, match[2]),
-      )
-
-      return found.every((value) => !isEmpty(value)) ? body : ''
-    },
-  )
-
-  /* `@blocks('children')` prints the blocks held in one field — the drawn ones arrive here. */
-  html = html.replace(/@blocks\s*\('([\w-]+)'\)/g, (_match, key: string) => children[key] ?? '')
-
   /* The one Blade component of the site, drawn as what it draws. A tag nobody knows is a tag
      the browser leaves out, and the block that embeds a form would preview as its heading and
      nothing else — which reads as a broken block rather than a form. */
   html = html.replace(/<x-webx-inbox::form[^>]*\/>/g, FORM_MARKUP)
 
-  html = html.replace(/\{!! \$([\w-]+) !!\}/g, (_match, key: string) => text(values[key]))
-
-  /* One key of a field whose value is a record: a picture's `url`, a link's. Blade does this
-     without being asked, and a field type that stores a shape rather than a string is now the
-     ordinary case — `wx-media`, `wx-gallery`, `wx-link`. */
-  html = html.replace(/\{\{ \$([\w-]+)\['([\w-]+)'\] \}\}/g, (_match, key: string, inner: string) =>
-    escape(text(record(values[key])?.[inner])),
-  )
-
-  html = html.replace(/\{\{ \$([\w-]+) \}\}/g, (_match, key: string) => escape(text(values[key])))
-
-  return html
-}
-
-/** The body of a `@foreach`, where the loop variable is a name rather than a field. */
-function interpolate(body: string, item: Record<string, unknown>, alias: string): string {
-  const pattern = new RegExp(`\\{\\{ \\$${alias}\\['([\\w-]+)'\\] \\}\\}`, 'g')
-  /* Unescaped, for a key that holds HTML — an answer of the FAQ is rich text. */
-  const raw = new RegExp(`\\{!! \\$${alias}\\['([\\w-]+)'\\] !!\\}`, 'g')
-
-  return body
-    .replace(raw, (_match, key: string) => text(item?.[key]))
-    .replace(pattern, (_match, key: string) => escape(text(item?.[key])))
-}
-
-/** A field, or one key of a field whose value is a record. */
-function read(values: Record<string, unknown>, key: string, inner?: string): unknown {
-  return inner === undefined ? values[key] : record(values[key])?.[inner]
-}
-
-/**
- * What a value reads as on the site.
- *
- * A localized value is a map of languages, and the site draws one of them — `ru` here, since
- * that is what the fixtures are written in and the preview is a page of the site rather than
- * of the panel.
- */
-function text(value: unknown): string {
-  if (value === null || value === undefined) {
-    return ''
-  }
-
-  if (typeof value === 'object' && !Array.isArray(value)) {
-    const map = value as Record<string, unknown>
-
-    return text(map.ru ?? map.en ?? Object.values(map)[0])
-  }
-
-  return String(value)
+  return blade(html, values, children)
 }
 
 const TARGETS = ['entity', 'url', 'none']
@@ -1494,21 +1480,6 @@ function record(value: unknown): Record<string, unknown> | null {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null
-}
-
-function isEmpty(value: unknown): boolean {
-  /* Blade's truthiness where it differs from "prints as nothing": a flag, an empty list. */
-  if (value === false || (Array.isArray(value) && value.length === 0)) return true
-
-  return text(value).trim() === ''
-}
-
-function escape(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
 }
 
 /** One item of the publications sample — long titles on purpose, to show where they are cut. */
