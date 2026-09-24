@@ -181,6 +181,22 @@ and `/` answers 404 until you publish it.
 The layout is files, not rows, so none of this touches it. After `--remove` the site is working
 and empty.
 
+### One module at a time
+
+A module installed after the first seed does not need the whole site emptied and seeded again:
+
+```bash
+php artisan webx:demo --module=services             # seed only this one
+php artisan webx:demo --remove --module=services    # take only its part back out
+```
+
+`--module` repeats (`--module=blog --module=media`). The journal knows which module wrote each
+entry, so a module it already holds is refused unless you add `--force`, and the rest of the
+journal is left alone either way. A requirement whose demo is not in the journal yet is seeded
+first, and the output says so: the blog's articles hang on the library's pictures. Removing a
+module that another seeded module still requires is refused with the command that removes them
+together.
+
 ## `webx:doctor`
 
 The last step of the installation and the last step of a deploy, and the same command both
