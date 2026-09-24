@@ -245,6 +245,10 @@ common is that none of them announce themselves:
   `route:cache`.
 - **Agent access.** With `webx-ui/mcp` installed: Passport's keys and tables. Without the keys
   the guard cannot be built, so a call with no token answers 500 where it should answer 401.
+- **The site password.** [The gate](#a-password-over-the-site-while-it-is-tested) switched on
+  with nobody allowed in, or switched on in `.env` under a published config that has no `gate`
+  block, so it closes nothing. While it is on, the report says so on every run, so a site is
+  not left closed by accident after it opens.
 
 A failure exits non-zero, which is what puts it in a deploy:
 
@@ -330,6 +334,55 @@ disconnects every agent that was connected, with nothing anywhere saying why.
 again. So the entrypoint creates the directories under `storage` on every boot: a release that
 starts writing somewhere new finds nothing there on a site that has been running since before
 it, and what fails is whatever first tried to write.
+
+## A password over the site while it is tested
+
+A site usually spends a month on its real domain before it opens, seen by the client and the
+people building it and by nobody else. Two lines in `.env` close it with HTTP Basic:
+
+```ini
+WEBX_SITE_GATE=true
+WEBX_SITE_GATE_USERS="client:a-long-secret,tester:another-one"
+```
+
+Then `php artisan config:cache`, if the site caches its config. Nothing has to be deployed:
+the gate is always installed and reads the switch on every request.
+
+Everything the site answers asks for a pair, including addresses that do not exist. A gate that
+let 404s through would tell a stranger which addresses do. What stays open is what the panel and
+the people working in it need:
+
+- the panel and its JSON (`/cms`, `/api/cms`), which have a sign-in of their own;
+- the MCP server and its OAuth endpoints (`/oauth/*`), because an agent cannot answer a password
+  dialog;
+- a block preview carrying a valid token, the block editor's stage and the block bundles, so the
+  preview frame works for an editor who never typed the site's pair;
+- `/.well-known/*`, so the certificate keeps renewing.
+
+To open anything else, list masks in `config/webx-admin.php`. They are matched with `Str::is`
+against the path without its leading slash:
+
+```php
+'gate' => [
+    'enabled' => env('WEBX_SITE_GATE', false),
+    'users' => env('WEBX_SITE_GATE_USERS', ''),
+    'except' => ['promo', 'promo/*'],
+],
+```
+
+A few things to know about the gate:
+
+- **The pairs live in the environment and nowhere else.** A switch in the panel could be flipped
+  by the same person it locks out. A password may contain a colon but not a comma, which
+  separates the pairs.
+- **Switched on with no pairs, it lets nobody in.** `webx:doctor` fails on that.
+- **Files the web server serves itself are not behind it.** `/storage` and `/build` never reach
+  PHP, so a direct link to an uploaded file still works. Closing those as well is a rule on the
+  proxy, and that rule then has to repeat the openings above.
+- **A config published before the gate has no `gate` block**, and `WEBX_SITE_GATE` then closes
+  nothing. `webx:doctor` fails on that as well; copy the block from the package's config.
+
+When the site opens, remove the two lines or set `WEBX_SITE_GATE=false`.
 
 ## Where to go next
 

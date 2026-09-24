@@ -48,6 +48,34 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | A password over the site while it is being tested
+    |---------------------------------------------------------------------------
+    |
+    | HTTP Basic in front of every address of the site except the panel, its
+    | JSON, the MCP server with its OAuth dance, a block preview under its token
+    | and `/.well-known`. Switched on and given no pairs, it lets nobody in.
+    |
+    |     WEBX_SITE_GATE=true
+    |     WEBX_SITE_GATE_USERS="client:secret,tester:other-secret"
+    |
+    | The pairs come from the environment and nowhere else; a password may have
+    | a colon in it but not a comma. `except` takes masks for `Str::is` against
+    | the path without its leading slash — `['promo', 'promo/*']` opens one page
+    | and everything under it.
+    |
+    | Files the web server serves itself (`/storage`, `/build`) never reach PHP
+    | and stay reachable by a direct link.
+    |
+    */
+
+    'gate' => [
+        'enabled' => env('WEBX_SITE_GATE', false),
+        'users' => env('WEBX_SITE_GATE_USERS', ''),
+        'except' => [],
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
     | Links
     |---------------------------------------------------------------------------
     |

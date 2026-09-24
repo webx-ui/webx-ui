@@ -6,9 +6,11 @@ namespace WebxUi\Admin;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
+use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Foundation\Http\Kernel;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use WebxUi\Admin\Backups\Backups;
@@ -27,6 +29,8 @@ use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Contracts\SiteUrls;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Gate\CloseSite;
+use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Admin\Links\RoutingSiteUrls;
@@ -80,6 +84,10 @@ class AdminServiceProvider extends ServiceProvider
 
         // Which model's categories a `wx-categories` field is about, by the path they answer at.
         $this->app->singleton(CategorySources::class);
+
+        // What the password over a site in testing lets through. A singleton because the
+        // packages that answer where the panel's browser has to reach add their own from boot.
+        $this->app->singleton(Openings::class);
 
         // The language prefix, when there is an address registry to ask. Behind `class_exists`
         // because the frame does not require `webx-ui/routing` — a panel of settings and
@@ -194,6 +202,7 @@ class AdminServiceProvider extends ServiceProvider
         $this->registerDraftMacro();
         $this->registerCategoryMacros();
         $this->registerBackupSchedule();
+        $this->registerGate();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -252,6 +261,25 @@ class AdminServiceProvider extends ServiceProvider
                 // Two web servers behind one database would otherwise dump it twice a night.
                 ->onOneServer()
                 ->withoutOverlapping();
+        });
+    }
+
+    /**
+     * The password over a site in testing, as global middleware: an address with no route never
+     * reaches a group, and a gate that lets every 404 through is not a gate (see `CloseSite`).
+     *
+     * Pushed whether or not it is switched on — it reads the switch per request and steps aside
+     * when it is off — so that turning it on is an `.env` line and a `config:cache`, not a deploy.
+     * On `booted`, because resolving the HTTP kernel copies its groups over the router's.
+     */
+    private function registerGate(): void
+    {
+        $this->app->booted(function (): void {
+            $kernel = $this->app->make(HttpKernel::class);
+
+            if ($kernel instanceof Kernel) {
+                $kernel->pushMiddleware(CloseSite::class);
+            }
         });
     }
 
