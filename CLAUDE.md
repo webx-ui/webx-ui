@@ -1192,7 +1192,11 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
 - `main` закрыт **ruleset'ом** (не branch protection, поэтому `.../branches/main/protection`
   отвечает 404 — смотреть `gh api repos/webx-ui/webx-ui/rules/branches/main`). Апрув не нужен, но
   нужен зелёный чек `Lint, typecheck, test, build` **и** ветка должна быть свежей относительно
-  `main`. Отстала — влить `main` в ветку, дождаться CI заново, потом мержить.
+  `main`. Отстала — влить `main` в ветку, дождаться CI заново, потом мержить. **С очередью мержа**
+  (правило `merge_queue` в ruleset, `docs/architecture/WEBX_UI_RELEASE_SPEED.md` §2.4) этого шага
+  нет: `gh pr merge <N> --squash` ставит PR в очередь, GitHub сам собирает `main` + PR, гоняет CI и
+  мержит. Чек `Lint, typecheck, test, build` теперь — агрегатор параллельных джобов `ci.yml`:
+  упавший смотреть в них, а не в нём.
 - **После `gh pr merge` локальный `main` остаётся старым.** `gh` синхронизирует его через
   remote по умолчанию, то есть `origin`, куда доступа нет: в конце вывода будет
   «Could not read from remote repository» и «not possible to fast-forward», хотя PR на GitHub
@@ -1262,11 +1266,22 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
   они не смотрят в чекаут), а каретка на нулевой мажорной версии пинует минор — `^0.18.0` до
   0.19.0 не доедет никогда. То есть релиз доходит до хомлаба ровно тем коммитом, который поднял
   диапазоны, и ждать ночи бессмысленно.
-- **CI на релизном PR ждёт ручного подтверждения.** Прогон на ветке `changeset-release/main`
-  встаёт в `action_required`, `gh pr checks` при этом отвечает «no checks reported», а сам PR —
-  `BLOCKED`. Выглядит как сломанный бот. Лечится
-  `gh api -X POST repos/webx-ui/webx-ui/actions/runs/<id>/approve`; id брать из
-  `gh run list --branch changeset-release/main`.
+- **Релизный PR открывает GitHub App организации, а не `GITHUB_TOKEN`** — поэтому его CI стартует
+  сам. Раньше ветку `changeset-release/main` пушил `GITHUB_TOKEN`, а такой пуш не запускает
+  воркфлоу: прогон вставал в `action_required`, `gh pr checks` отвечал «no checks reported», PR —
+  `BLOCKED`, и выглядело это как сломанный бот. Если снова так — значит, у App нет права
+  **Pull requests: write** (или его не приняли в установке организации); временно лечится
+  `gh api -X POST repos/webx-ui/webx-ui/actions/runs/<id>/approve`, id — из
+  `gh run list --branch changeset-release/main`. На релизном PR CI облегчённый (установка и
+  сборка): остальное в нём — `main`, который уже прошёл CI.
+- **Показать ветку на хомлабе без релиза — канал `next`.** `gh workflow run release.yml --ref
+<ветка>` публикует снапшот пакетов с changeset'ами (и их зависимых) под dist-tag `next`
+  (`0.33.3-next-<время>`, `latest` не трогается, тегов нет) и зеркалирует php-пакеты веткой
+  `next` (`dev-next` на Packagist). На сайте — `node scripts/packages.mjs next`, `composer update
+"webx-ui/*"`, сборка, пуш; после настоящего релиза — `registry`. Без changeset'а на ветке
+  публиковать нечего, а **новый пакет так не выйдет** — Trusted Publishing не создаёт имя, первая
+  версия по-прежнему руками. Гейта у канала нет (`-f verify=true` добавляет typecheck и тесты).
+  Подробности — `docs/architecture/WEBX_UI_RELEASE_SPEED.md`.
 - **Начинать с `gh pr list`:** работа могла остаться в открытом PR, а не в `main`. Ветка с
   незакрытым PR — это незаконченный разговор, а не мусор.
 - Детали для людей — в `CONTRIBUTING.md`.
