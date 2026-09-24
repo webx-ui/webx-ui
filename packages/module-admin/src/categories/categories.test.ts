@@ -159,6 +159,15 @@ describe('the list of categories', () => {
     expect(wrapper.text()).toContain('No address in this language')
   })
 
+  it('says nothing about addresses where the categories have none', async () => {
+    // The FAQ's: a category there is a button of a filter, and `prefix: null` is how it says so.
+    const get = vi.fn().mockResolvedValue({ data: [row({ id: 1, path: null })], prefix: null })
+    const { mount: open } = panel(CategoriesPage, { get })
+    const wrapper = await open()
+
+    expect(wrapper.text()).not.toContain('No address in this language')
+  })
+
   it('says the number under the module’s own key', async () => {
     const get = vi.fn().mockResolvedValue({ data: [row({ id: 1, articles_count: 4 })], prefix: '' })
     const { mount: open } = panel(CategoriesPage, { get })

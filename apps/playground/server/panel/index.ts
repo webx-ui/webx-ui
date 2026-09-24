@@ -20,9 +20,27 @@ import {
   draw as drawContent,
   renderTemplate,
   templateFailure,
+  useCollectionResolver,
   useLinkResolver,
   type BlockVersionRecord,
 } from './blocks'
+import {
+  collectionSources,
+  createCategory as createFaqCategory,
+  faqCategories,
+  faqCategoryDetail,
+  faqCategoryRow,
+  findCategory as findFaqCategory,
+  findQuestion as findFaqQuestion,
+  listQuestions as listFaqQuestions,
+  questionDetail as faqQuestionDetail,
+  questionRow as faqQuestionRow,
+  reorderCategories as reorderFaqCategories,
+  reorderQuestions as reorderFaqQuestions,
+  resolveFaq,
+  writeCategory as writeFaqCategory,
+  writeQuestion as writeFaqQuestion,
+} from './faq'
 import {
   admins,
   countForms,
@@ -216,6 +234,12 @@ on('GET', '/manifest', ({ locale }) => ({
         icon: 'briefcase',
         order: 400,
       },
+      {
+        id: 'faq',
+        title: line(locale, 'webx-faq', 'module.group'),
+        icon: 'question',
+        order: 500,
+      },
       { id: 'system', title: line(locale, 'webx-admin', 'nav.system'), icon: 'gear', order: 900 },
     ],
     modules: [
@@ -291,6 +315,24 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 410,
         group: 'services',
         permissions: ['services.categories.manage'],
+        meta: {},
+      },
+      {
+        id: 'faq',
+        title: line(locale, 'webx-faq', 'module.questions'),
+        icon: 'list',
+        order: 500,
+        group: 'faq',
+        permissions: ['faq.view', 'faq.manage'],
+        meta: {},
+      },
+      {
+        id: 'faq-categories',
+        title: line(locale, 'webx-faq', 'module.categories'),
+        icon: 'folder',
+        order: 510,
+        group: 'faq',
+        permissions: ['faq.categories.manage'],
         meta: {},
       },
       {
@@ -1503,6 +1545,136 @@ on('GET', '/links/routes', () => ({
     { name: 'webx.services.index', path: `/${SERVICES_PREFIX}` },
   ],
 }))
+
+/* ------------------------------------------------------------------------ collections ----- */
+
+/*
+ * The sections a block can show records from (`wx-collection`), and the one there is here: the
+ * FAQ (`faq.ts`). The preview reads a block's choice the way the site does — in the language of
+ * the page, which is Russian here, as everywhere else the preview draws.
+ */
+useCollectionResolver((source, value) =>
+  source === 'faq' ? resolveFaq(value, 'ru') : { items: [], groups: [], filter: false },
+)
+
+on('GET', '/collections', ({ locale }) => ({ data: collectionSources(locale) }))
+
+/* -------------------------------------------------------------------------------- faq ----- */
+
+/*
+ * The questions (§4.6 of the FAQ spec): the whole list at once, no pages — the list is where
+ * they are put in order. `POST` takes the values of the form, so a new question is written
+ * before it exists and made on its first save.
+ */
+on('GET', '/faq/questions', ({ query, locale }) =>
+  listFaqQuestions(Object.fromEntries(query), locale),
+)
+
+on('POST', '/faq/questions', ({ body, locale }) => {
+  const written = writeFaqQuestion(null, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: faqQuestionDetail(written.record, locale) }
+})
+
+/* Before `{id}` for the reader; the pattern tells them apart anyway — a word, not a number. */
+on('POST', '/faq/questions/reorder', ({ body }) => {
+  const ids = Array.isArray(body.ids) ? (body.ids as number[]).map(Number) : []
+
+  reorderFaqQuestions(ids, typeof body.category === 'number' ? body.category : null)
+
+  return { data: null }
+})
+
+on('GET', '/faq/questions/(\\d+)', ({ params, locale }) => ({
+  data: faqQuestionDetail(faqQuestion(params[0]), locale),
+}))
+
+on('PUT', '/faq/questions/(\\d+)', ({ params, body, locale }) => {
+  const record = faqQuestion(params[0])
+  const written = writeFaqQuestion(record, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: faqQuestionDetail(record, locale) }
+})
+
+on('DELETE', '/faq/questions/(\\d+)', ({ params }) => {
+  faqQuestion(params[0]).deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+on('POST', '/faq/questions/(\\d+)/restore', ({ params, locale }) => {
+  const record = findFaqQuestion(Number(params[0]))
+
+  if (record === null || record.deleted_at === null) throw new HttpFailure(404, 'Not found.')
+
+  record.deleted_at = null
+
+  return { data: faqQuestionRow(record, locale) }
+})
+
+/* The FAQ's categories, through the shared category API: no address, so no prefix. */
+on('GET', '/faq/categories', ({ locale }) => ({
+  data: faqCategories
+    .filter((category) => category.deleted_at === null)
+    .map((category) => faqCategoryRow(category, locale)),
+  prefix: null,
+}))
+
+on('POST', '/faq/categories', ({ body, locale }) => ({
+  data: faqCategoryRow(createFaqCategory(body.title), locale),
+}))
+
+on('POST', '/faq/categories/reorder', ({ body }) => {
+  reorderFaqCategories(Array.isArray(body.ids) ? (body.ids as number[]).map(Number) : [])
+
+  return { data: null }
+})
+
+on('GET', '/faq/categories/(\\d+)', ({ params, locale }) => ({
+  data: faqCategoryDetail(faqCategory(params[0]), locale),
+}))
+
+on('PUT', '/faq/categories/(\\d+)', ({ params, body, locale }) => {
+  const record = faqCategory(params[0])
+  const errors = writeFaqCategory(record, (body.values ?? {}) as Record<string, unknown>)
+
+  if (errors !== null) throw new HttpFailure(422, 'Invalid', undefined, errors)
+
+  return { data: faqCategoryDetail(record, locale) }
+})
+
+on('DELETE', '/faq/categories/(\\d+)', ({ params, locale }) => {
+  const record = faqCategory(params[0])
+  const count = Number(faqCategoryRow(record, locale).questions_count)
+
+  // The panel keeps the button out of reach while a category holds anything.
+  if (count > 0) throw new HttpFailure(422, `В категории ещё ${count} вопросов.`)
+
+  record.deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+function faqQuestion(id: string) {
+  const record = findFaqQuestion(Number(id))
+
+  // The bin is not reachable by id, as with route-model binding on the server.
+  if (record === null || record.deleted_at !== null) throw new HttpFailure(404, 'No such question.')
+
+  return record
+}
+
+function faqCategory(id: string) {
+  const record = findFaqCategory(Number(id))
+
+  if (record === null) throw new HttpFailure(404, 'No such category.')
+
+  return record
+}
 
 /* ------------------------------------------------------------------------------ menus ----- */
 
@@ -3533,7 +3705,7 @@ function draw(node: Block): string {
     }
   }
 
-  const html = renderTemplate(type.content.template, node.values, children)
+  const html = renderTemplate(type.content.template, node.values, children, type.content.schema)
 
   /* The pair of markers is what the panel replaces a block between after a field changes. */
   return `<!--wx:${node.key}-->\n${html}\n<!--/wx:${node.key}-->`
