@@ -946,6 +946,41 @@ step "Check the panel again"
 # production and nowhere else.
 run_http_checks 'cached'
 
+step "Close the site with a password"
+# Global middleware, switched on from `.env` through a cached config — both halves of which
+# Testbench never has. What is checked is the split: the site behind the pair, and everything
+# the panel, the preview and a connecting agent need in front of it.
+cleanup
+SERVER_PID=""
+set_env WEBX_SITE_GATE true
+set_env WEBX_SITE_GATE_USERS 'client:smoke-secret'
+"$PHP_BIN" "$APP/artisan" config:cache --quiet
+serve
+
+: > "$COOKIES"
+expect 401 "$(status "$BASE/")" '[closed] the home page asks for the password'
+expect 200 "$(status -u client:smoke-secret "$BASE/")" '[closed] and opens to the pair'
+expect 401 "$(status -u client:wrong "$BASE/")" '[closed] but not to a wrong one'
+expect 401 "$(status "$BASE/no-such-page-closed")" '[closed] an address with no route asks too'
+expect 404 "$(status -u client:smoke-secret "$BASE/no-such-page-closed")" '[closed] and is a 404 behind it'
+
+expect 200 "$(status "$BASE/cms")" '[closed] the panel does not'
+expect 200 "$(status "$BASE/api/cms/locales")" '[closed] nor does its JSON'
+expect 200 "$(sign_in_attempt "$ADMIN_PASSWORD")" '[closed] an administrator signs in without the pair'
+expect 200 "$(status "$BASE/.well-known/oauth-authorization-server")" '[closed] an agent finds the authorization server'
+oauth_status="$(status "$BASE/oauth/authorize")"
+[ "$oauth_status" != "401" ] || fail '[closed] the OAuth endpoints ask for the site password'
+note "[closed] and reaches the OAuth endpoints -> $oauth_status"
+
+"$PHP_BIN" "$APP/artisan" smoke:page "draft-closed" --draft --no-interaction > /dev/null
+PREVIEW_URL="$("$PHP_BIN" "$APP/artisan" smoke:page "draft-closed" --preview --no-interaction | tail -n 1)"
+expect 200 "$(status "$PREVIEW_URL")" '[closed] the preview opens under its token'
+expect 401 "$(status "${PREVIEW_URL%%\?*}")" '[closed] and without one asks for the password'
+expect 200 "$(status "$BASE/blocks/runtime.js")" '[closed] the block runtime the preview loads is open'
+
+set_env WEBX_SITE_GATE false
+"$PHP_BIN" "$APP/artisan" config:clear --quiet
+
 printf '\n\033[32m== The panel installs, migrates, signs in and stays closed to strangers.\033[0m\n'
 
 # --------------------------------------------------------------------------------------------
