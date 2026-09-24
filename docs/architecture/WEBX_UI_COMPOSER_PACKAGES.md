@@ -454,6 +454,31 @@ MCP: `inbox_forms_list`, `inbox_form_get`, `inbox_form_save`, `inbox_list`, `inb
 
 Права: `inbox.view`, `inbox.update`, `inbox.manage`.
 
+### `webx-ui/module-faq` — вопросы и ответы
+
+Статус: выпущен 24.09.2026 в v0.37.0 — [спецификация](WEBX_UI_MODULE_FAQ.md), гайд —
+`apps/docs/guide/faq.md`.
+
+Вопросы с переводимыми вопросом и ответом, плоские категории без адреса, порядок руками — общий и
+внутри категории. Своей страницы у модуля нет: общая страница FAQ — это страница с блоком.
+
+- **Первый потребитель контракта «вставить блоком»** (`CollectionSource`, тип поля
+  `wx-collection` в `module-admin`): страница хранит только выбор — категории, лимит, фильтр,
+  разметку, — а вопросы читаются на рендере.
+- **Тип блока приезжает документом** (`resources/blocks/faq.json` через `BlockOffers`), а не
+  миграцией: сайт берёт его `webx:blocks:offered --install`, и тип с тем же слагом не трогается.
+- Вопрос виден на языке, только если на нём есть и вопрос, и ответ.
+- Разметка `FAQPage` — одна на страницу (`Seo::put()`), по умолчанию только там, где категории
+  не выбраны; вся выключается `WEBX_FAQ_MARKUP`. `module-seo` и `module-pages` — `suggest`.
+- Якорь вопроса — из текста вопроса, ссылка `#якорь` открывает его на странице.
+
+npm-пара: `@webx-ui/module-faq` — раздел «FAQ»: вопросы в `WxListDetail`, категории общим экраном.
+
+MCP: `faq_list`, `faq_get`, `faq_create`, `faq_update`, `faq_delete`, `faq_reorder`, категории —
+общими `CategoryTools`, ресурс `faq://catalog`.
+
+Права: `faq.view`, `faq.manage`.
+
 ---
 
 ## Упомянуты ранее, детализировать позже
@@ -484,7 +509,8 @@ MCP: `inbox_forms_list`, `inbox_form_get`, `inbox_form_save`, `inbox_list`, `inb
    [`WEBX_UI_MODULE_SERVICES.md`](WEBX_UI_MODULE_SERVICES.md), перед ним — этап 0 SEO
    ([`WEBX_UI_MODULE_SEO.md`](WEBX_UI_MODULE_SEO.md) §17) и общие категории.
 2. `webx-ui/module-solutions` — как услуги, категории редко.
-3. `webx-ui/module-faq` — вопросы с категориями, общая страница с фильтром, вставка блоком.
+3. ~~`webx-ui/module-faq` — вопросы с категориями, общая страница с фильтром, вставка блоком.~~
+   Выпущен 24.09.2026 — выше, в «Модулях».
 4. `webx-ui/module-team` — люди: фото, имя, должность, текст, соцсети; категории.
 5. `webx-ui/module-reviews` — отзывы: категории, поля проекта.
 6. `webx-ui/module-events` — события: категории, поля, без блоков.
