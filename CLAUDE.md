@@ -654,7 +654,11 @@ icon="plus">` когда-то компилировался, проходил typ
   скретчпад. Гейт php-половины — `composer lint && composer analyse && composer test` из `php/`.
 - **Локальный smoke против MariaDB запускается так, и никак иначе.** MariaDB OSPanel слушает
   `127.0.1.14:3306` под `root` без пароля; базу `webx_smoke` создать заранее, `webx_smoke_site`
-  скрипт делает сам. `COMPOSER_BIN` — строкой `"<php.exe> <путь>/composer.phar"`: скрипт
+  скрипт делает сам. **Обе — пустыми:** скрипт создаёт базу, только если её нет, и не чистит её,
+  а прошлый прогон оставляет в обеих таблицы. Миграции своих пакетов при этом проходят (их нет в
+  `migrations`), а падает свежеопубликованная миграция Passport — «table oauth_auth_codes already
+  exists», сначала в первой половине, потом во второй. Перед прогоном — `DROP DATABASE` обеих и
+  `CREATE DATABASE webx_smoke`. `COMPOSER_BIN` — строкой `"<php.exe> <путь>/composer.phar"`: скрипт
   вытаскивает из неё `composer.phar` и передаёт `webx:setup --composer`, а обёртка-скрипт вместо
   этого даёт «Could not open input file: \composer.phar» на второй половине. И **перед запуском
   проверить порты 8123/8124**: `artisan serve` упавшего прогона другой сессии остаётся жить, и
