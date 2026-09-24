@@ -29,6 +29,25 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | The index page
+    |---------------------------------------------------------------------------
+    |
+    | On, the package answers the prefix itself with the list of categories and
+    | their services. Off, the route is not registered and the address is free:
+    | a page with the slug `services` takes it, and is built of blocks like any
+    | other — the usual reason to switch this off. Categories and services keep
+    | their addresses under the prefix either way.
+    |
+    | The trail follows: its first step is then whatever the address registry
+    | holds at the prefix, named the way that entity names itself, and no step
+    | at all while nothing (or only a draft) is there.
+    |
+    */
+
+    'index' => (bool) env('WEBX_SERVICES_INDEX', true),
+
+    /*
+    |---------------------------------------------------------------------------
     | Categories
     |---------------------------------------------------------------------------
     |
