@@ -68,6 +68,11 @@ final class ServiceCategory extends Model implements Category
 The record uses `HasCategories` and names its relation (`categoryRelation()`); the first category
 in the list is its main one.
 
+`prefix: null` is a kind with no addresses at all — the [FAQ's](/guide/faq), whose categories
+only pick and filter questions. The list then has no address line under each row, and the agent's
+tools (`CategoryTools`) neither take a slug nor answer with one: a category is named by its id or
+its title.
+
 The API is one line in the module's route group, and the field is one line in its provider:
 
 ```php

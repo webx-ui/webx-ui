@@ -1,5 +1,122 @@
 # @webx-ui/php
 
+## 0.38.0
+
+### Minor Changes
+
+- f246a1d: Pages, blog and services each get a `breadcrumbs` switch (`WEBX_PAGES_BREADCRUMBS`, `WEBX_BLOG_BREADCRUMBS`, `WEBX_SERVICES_BREADCRUMBS`, on by default): off, the package views stop printing the visible trail, while the `BreadcrumbList` in the head stays. Services also get `index` (`WEBX_SERVICES_INDEX`, on by default): off, the package no longer answers its prefix, so a page of blocks can take `/services`, and the services' breadcrumbs start with whatever stands there.
+- f246a1d: The panel has its own tab icon, home-screen icon and web manifest, served by `module-admin` under the panel's prefix; `WEBX_ADMIN_ICONS` replaces them file by file.
+- 421fab0: `services()` gives a block template the services as cards (`in()`, `only()`, `except()`, `take()`, `locale()`, `categories()`), never showing what a reader may not see; the same cards come from a new `services` source for `wx-collection` fields, and the module offers a Services block of them. `webx:doctor` says whether `menu()` and `services()` are the packages' own.
+
+### Patch Changes
+
+- 1771153: A media value saved together with its address — a block's sample is — no longer hands the template that old address: `resolve()` keeps only the key and the captions and works the address out again, so a site moved to https stops asking for its pictures over http.
+
+## 0.37.0
+
+### Minor Changes
+
+- c7b0084: A block can show another section's records. A module registers a `CollectionSource` in
+  `WebxUi\Admin\Collections\CollectionSources`, and a block schema names it in a field of the new
+  type `wx-collection` (`"props": { "source": "faq" }`). The page keeps only the choice: which
+  categories, a limit, whether to draw a filter, and whether to print schema.org markup (`null`
+  means on when no category is chosen). The site reads the records: `items`, `groups` for the filter
+  and `filter`. One chosen category shows its own order; none or several show the order of the whole
+  list, each record once. A source that is gone reads as an empty list, so the page stays up.
+  `GET /api/cms/collections` lists the sources this administrator may place.
+
+  A module can also offer block types: `BlockOffers` in `webx-ui/module-blocks` holds the documents
+  the module ships in `resources/blocks`, and `webx:blocks:offered --install` puts the missing ones on
+  the site and publishes them. A type with the same slug is never touched. `webx:setup` runs this for
+  the modules it installs.
+
+  `Seo::put($key, $block)` in `webx-ui/module-seo` keeps one JSON-LD block per key for the request.
+  The last one put wins, and `@webxSeo` prints it after the pushed ones. Two FAQ blocks on one page
+  now give one `FAQPage`, not two.
+
+- c7b0084: The FAQ for agents and for a new site. `faq_list`, `faq_get`, `faq_create`, `faq_update`,
+  `faq_delete` and `faq_reorder` go through the same list, form and order code as the panel; a
+  question is named by its id or its anchor, and every row says the languages a reader sees it in.
+  `faq_create` writes the question, its categories and the project's fields in one transaction, so a
+  refusal leaves nothing behind, and a category that does not exist is refused rather than dropped.
+  `faq://catalog` lists every category with its questions in its own order, unpublished ones marked,
+  and the questions in no category at the end. The categories get the shared `faq_categories_*`
+  tools, which for categories without addresses (`prefix: null`) no longer take or answer with a
+  slug and find a category by its title. Every module's `*_categories_create` now answers with the
+  category as stored: a new visible category was reported as hidden.
+
+  `webx:demo` seeds three categories and ten questions, installs the offered FAQ block type when the
+  site lacks it, puts a page `/faq` with every category and the filter on a site with
+  `module-pages`, and adds "Questions about payment" to a demo service on a site with
+  `module-services`.
+
+  The agent's catalogue of field types now describes `wx-collection`.
+
+- c7b0084: New package `webx-ui/module-faq`: questions and answers with flat categories. A question has no
+  page of its own; it reaches the site in the FAQ block the module offers
+  (`webx:blocks:offered --install --module=faq`), on any page. The block shows every category with a
+  filter, or the categories the editor picks, as an accordion that works without JavaScript, and
+  opens the question a `#anchor` link points at. A question is shown in a language only when both
+  the question and the answer are written in it. The anchor is made once from the question and never
+  changes. One `FAQPage` per page through `module-seo`, on by default only when the block shows all
+  categories. In the panel: `faq.form` and `faq.category-form`, two orders, the bin, and fields of
+  the project in `extra`. `webx:setup` offers the module.
+
+## 0.36.0
+
+### Minor Changes
+
+- 928828b: A password over a site while it is being tested. `WEBX_SITE_GATE=true` and
+  `WEBX_SITE_GATE_USERS="client:secret"` put HTTP Basic in front of every address the site answers,
+  including addresses that do not exist. Global middleware in `webx-ui/module-admin` does this; a
+  member of the `web` group would let every 404 through. The panel and its JSON stay open. So do
+  `/.well-known`, the MCP server and its OAuth endpoints (`webx-ui/mcp`), and a block preview under
+  a valid token, the block editor's stage and the block bundles (`webx-ui/module-blocks`). A site
+  opens more with `webx-admin.gate.except`, and a package opens its own through `Gate\Openings`.
+  Switched on with no pairs, the gate lets nobody in, and `webx:doctor` fails on that. It also
+  fails when `WEBX_SITE_GATE` is set under a published config that has no `gate` block and so
+  closes nothing.
+
+## 0.35.1
+
+### Patch Changes
+
+- b7caa68: A round of panel fixes.
+
+  - `useModal` finds its host when the modal was opened inside `app.runWithContext()` — which is where vue-router runs every guard. "Leave without saving?" from `onBeforeRouteLeave` answered nothing: its buttons were the stand-in's, the dialog stayed open and the navigation hung.
+  - The shared category screens are a component per module, so going from the blog's rubrics to the services' categories mounts the list anew instead of keeping the rubrics on a page titled "Categories".
+  - The panel's toasts stack at the bottom centre instead of the bottom-right corner, where they covered the action bar's buttons.
+  - A category's cover is a card under its name rather than a tab of its own; the cover of an article and of a service sits right under the name too.
+  - A number field on a described screen stops at 240px instead of stretching to the width of a title.
+  - A new icon, `briefcase`, and the services section wears it instead of `star`.
+
+## 0.35.0
+
+### Minor Changes
+
+- 298c894: `webx-ui/module-services` for an agent: `services_list`, `services_get`, `services_create`,
+  `services_update`, `services_publish`, `services_unpublish`, `services_delete` and
+  `services_reorder` go through the same list, screen and order code as the panel — a field a
+  project patched onto `services.form` is written and refused by an agent exactly as by an editor,
+  and a reorder with `category` moves only that category. The categories get the shared
+  `service_categories_*` tools, and `services://catalog` gives an agent every category with its
+  services in its order, drafts included, before it writes. `webx:demo` seeds three categories and
+  eight services with covers and blocks, one of them in two categories at a different place in each.
+- 298c894: `webx-ui/module-services`: a catalogue of services — services made of blocks with a draft and a
+  history, flat categories that are pages of the site, both on one level under one prefix, an index
+  route, two orders (the whole list and each category), breadcrumbs through the main category, a
+  schema.org `Service` naming the site's `Organization` as provider, and fields of the project in
+  `extra`. The panel's API: the whole list without pages, narrowed by category (in that category's
+  order), state or words; the editor's record with a revision (409 on a stale one), draft, discard,
+  publish, bin and history; the order of the list and of each category; two sections in a Services
+  group.
+
+  Alongside it: a refused address now names whoever holds it (`routing`); the site's `Organization`
+  block carries an `@id` other blocks can point at (`module-seo`), which also patches its SEO card
+  onto the two new screens; `wx-slug` is a shared slug field type in `module-admin`, and `services`
+  is in the catalogue `webx:setup` offers; `OneSpellingPerAddress` moves from the blog to
+  `localization`, since the second module with a list page needs it too.
+
 ## 0.34.0
 
 ### Minor Changes

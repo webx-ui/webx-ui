@@ -14,7 +14,6 @@ return [
     'edit' => 'Düzenle',
 
     'tab-content' => 'İçerik',
-    'tab-cover' => 'Görsel',
     'tab-seo' => 'SEO',
 
     'field-title' => 'Ad',

@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-pages",
-  "version": "0.3.17",
+  "version": "0.3.19",
   "description": "Pages for the WebX UI admin panel: the tree of a site's pages, their addresses, and the section that edits them.",
   "license": "MIT",
   "type": "module",
