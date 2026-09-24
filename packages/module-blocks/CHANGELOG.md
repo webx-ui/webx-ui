@@ -1,5 +1,11 @@
 # @webx-ui/module-blocks
 
+## 0.8.8
+
+### Patch Changes
+
+- 8e61847: The template editor of a block type knows what an item of the `faq`, `services` and `reviews` collections holds: `$review['` offers `name`, `initials`, `job_title`, `text`, `rating` and the rest of the card, not only `id`, `anchor` and `categories`.
+
 ## 0.8.7
 
 ### Patch Changes
