@@ -1,0 +1,68 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "faq.form",
+  "model": "faq-question",
+  "root": [
+    {
+      "id": "content",
+      "type": "wx-card",
+      "children": [
+        {
+          "id": "question",
+          "type": "wx-input",
+          "name": "question",
+          "label": "trans::webx-faq::screen.question",
+          "localized": true,
+          "props": {
+            "maxlength": 500
+          }
+        },
+        {
+          "id": "answer",
+          "type": "wx-rich-text",
+          "name": "answer",
+          "label": "trans::webx-faq::screen.answer",
+          "help": "trans::webx-faq::screen.answer-help",
+          "localized": true
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "type": "wx-card",
+      "label": "trans::webx-faq::screen.settings",
+      "children": [
+        {
+          "id": "published",
+          "type": "wx-switch",
+          "name": "published",
+          "label": "trans::webx-faq::screen.published",
+          "help": "trans::webx-faq::screen.published-help"
+        },
+        {
+          "id": "categories",
+          "type": "wx-categories",
+          "name": "categories",
+          "label": "trans::webx-faq::screen.categories",
+          "help": "trans::webx-faq::screen.categories-help",
+          "props": {
+            "source": "faq/categories",
+            "main": false
+          }
+        },
+        {
+          "id": "anchor",
+          "type": "wx-faq-anchor",
+          "label": "trans::webx-faq::screen.anchor",
+          "help": "trans::webx-faq::screen.anchor-help"
+        }
+      ]
+    },
+    {
+      "id": "project-fields",
+      "type": "wx-card",
+      "label": "trans::webx-admin::screens.project-fields",
+      "children": []
+    }
+  ]
+}
