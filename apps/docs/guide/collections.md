@@ -38,6 +38,10 @@ engines ask not to mark the same question up on several pages, and a block with 
 payment" usually stands on every service. The editor can switch it either way — it is their page —
 and the field says what the rule would give and offers the way back to it.
 
+A source whose records point at another section's can also be narrowed to the ones related to a
+chosen record — "the recipes of this service". That choice is a fifth key, `related`, described
+on the [Relations](./relations#in-a-block-only-related-to) page.
+
 ## The source
 
 A module describes its records once, in `WebxUi\Admin\Collections\CollectionSource`:

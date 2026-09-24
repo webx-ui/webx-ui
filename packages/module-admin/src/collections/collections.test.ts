@@ -8,8 +8,30 @@ import { collectionSources, defaultMarkup, normaliseCollection, type CollectionV
 import CollectionField from './CollectionField.vue'
 
 const SOURCES = [
-  { key: 'faq', title: 'FAQ', categories: 'faq/categories', markup: true },
-  { key: 'team', title: 'Team', categories: null, markup: false },
+  { key: 'faq', title: 'FAQ', categories: 'faq/categories', markup: true, relations: [] },
+  { key: 'team', title: 'Team', categories: null, markup: false, relations: [] },
+  {
+    key: 'recipes',
+    title: 'Recipes',
+    categories: null,
+    markup: false,
+    relations: [{ key: 'service', title: 'Services' }],
+  },
+  {
+    key: 'articles',
+    title: 'Articles',
+    categories: null,
+    markup: false,
+    relations: [
+      { key: 'service', title: 'Services' },
+      { key: 'recipe', title: 'Recipes' },
+    ],
+  },
+]
+
+const SERVICES = [
+  { id: 7, title: 'Landing page', subtitle: null, thumb: null, visible: true },
+  { id: 8, title: 'Company website', subtitle: null, thumb: null, visible: true },
 ]
 
 function panel() {
@@ -20,13 +42,15 @@ function panel() {
     Promise.resolve(
       url.endsWith('/collections')
         ? { data: SOURCES }
-        : {
-            data: [
-              { id: 3, name: 'Payment' },
-              { id: 5, name: 'Delivery' },
-            ],
-            prefix: null,
-          },
+        : url.includes('/relations/')
+          ? { data: SERVICES.filter((one) => !url.includes('ids[]') || url.includes(`=${one.id}`)) }
+          : {
+              data: [
+                { id: 3, name: 'Payment' },
+                { id: 5, name: 'Delivery' },
+              ],
+              prefix: null,
+            },
     ),
   )
 
@@ -53,6 +77,7 @@ describe('the value of wx-collection', () => {
   it('comes to the four keys the server writes, whatever arrived', () => {
     expect(normaliseCollection(null)).toEqual({
       categories: [],
+      related: null,
       limit: null,
       filter: false,
       markup: null,
@@ -65,15 +90,41 @@ describe('the value of wx-collection', () => {
         filter: 1,
         markup: false,
       }),
-    ).toEqual({ categories: [3, 5], limit: 100, filter: false, markup: false })
+    ).toEqual({ categories: [3, 5], related: null, limit: 100, filter: false, markup: false })
 
     expect(normaliseCollection({ limit: 0 }).limit).toBeNull()
     expect(normaliseCollection({ limit: 2.5 }).limit).toBeNull()
   })
 
+  it('keeps a relation filter only with a target and something chosen of it', () => {
+    expect(
+      normaliseCollection({ related: { type: 'service', ids: [9, '7', 9, 0] } }).related,
+    ).toEqual({ type: 'service', ids: [7, 9] })
+    expect(normaliseCollection({ related: { type: 'service', ids: [] } }).related).toBeNull()
+    expect(normaliseCollection({ related: { ids: [7] } }).related).toBeNull()
+    expect(normaliseCollection({ related: [7] }).related).toBeNull()
+  })
+
+  it('reads the targets of a source whether they come named or as bare keys', async () => {
+    const { admin, get } = panel()
+    get.mockResolvedValueOnce({
+      data: [
+        { key: 'old', title: 'Old', categories: null, markup: false },
+        { ...SOURCES[2], relations: ['service'] },
+      ],
+    } as never)
+
+    const [old, recipes] = await collectionSources(admin)
+    expect(old!.relations).toEqual([])
+    expect(recipes!.relations).toEqual([{ key: 'service', title: 'service' }])
+  })
+
   it('marks the whole collection up by default, and a part of it not', () => {
     expect(defaultMarkup(normaliseCollection({}))).toBe(true)
     expect(defaultMarkup(normaliseCollection({ categories: [3] }))).toBe(false)
+    expect(defaultMarkup(normaliseCollection({ related: { type: 'service', ids: [7] } }))).toBe(
+      false,
+    )
   })
 
   it('asks for the sources once per panel, and again after a failure', async () => {
@@ -120,7 +171,13 @@ describe('WxCollectionField', () => {
     await flushPromises()
 
     wrapper.findComponent({ name: 'WxSelect' }).vm.$emit('update:modelValue', [5, 3])
-    expect(last()).toEqual({ categories: [3, 5], limit: null, filter: false, markup: null })
+    expect(last()).toEqual({
+      categories: [3, 5],
+      related: null,
+      limit: null,
+      filter: false,
+      markup: null,
+    })
 
     wrapper.findComponent({ name: 'WxInputNumber' }).vm.$emit('update:modelValue', 6)
     expect(last()).toMatchObject({ limit: 6 })
@@ -182,5 +239,51 @@ describe('WxCollectionField', () => {
 
     expect(wrapper.text()).toContain('Records from “reviews” cannot be chosen here')
     expect(wrapper.findComponent({ name: 'WxInputNumber' }).exists()).toBe(false)
+  })
+
+  it('offers no relation filter to a source without relations', async () => {
+    const { wrapper } = field('faq')
+    await flushPromises()
+
+    expect(wrapper.findComponent({ name: 'WxRelationsField' }).exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Only related to')
+  })
+
+  it('narrows to the records related to what is chosen, with one target and no box for it', async () => {
+    const { wrapper, get, last } = field('recipes', { related: { type: 'service', ids: [8] } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Only related to “Services”')
+    expect(wrapper.findComponent({ name: 'WxSelect' }).exists()).toBe(false)
+    expect(get).toHaveBeenCalledWith('/api/cms/relations/service?ids[]=8')
+
+    const related = wrapper.findComponent({ name: 'WxRelationsField' })
+    expect(related.props()).toMatchObject({ target: 'service', sortable: false })
+    expect(wrapper.find('.wx-relations-field__title').text()).toBe('Company website')
+
+    related.vm.$emit('update:modelValue', [8, 7])
+    expect(last()).toMatchObject({ related: { type: 'service', ids: [7, 8] } })
+
+    related.vm.$emit('update:modelValue', [])
+    expect(last()).toMatchObject({ related: null })
+  })
+
+  it('asks which target first when there are several, and starts afresh on another', async () => {
+    const { wrapper, last } = field('articles', { related: { type: 'service', ids: [7] } })
+    await flushPromises()
+
+    const target = wrapper.findComponent({ name: 'WxSelect' })
+    expect(target.props('modelValue')).toBe('service')
+    expect(target.props('options')).toEqual([
+      { label: 'Services', value: 'service' },
+      { label: 'Recipes', value: 'recipe' },
+    ])
+
+    target.vm.$emit('update:modelValue', 'recipe')
+    expect(last()).toMatchObject({ related: null })
+
+    await wrapper.setProps({ modelValue: last()! })
+    // The target stays chosen while nothing of it is: the value cannot say so, the field can.
+    expect(wrapper.findComponent({ name: 'WxRelationsField' }).props('target')).toBe('recipe')
   })
 })

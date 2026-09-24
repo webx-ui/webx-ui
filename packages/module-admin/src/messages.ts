@@ -247,4 +247,23 @@ export const adminMessages: Record<string, Messages> = {
       'By default it is off: search engines ask not to mark the same records up on several pages, and a chosen category usually stands on several.',
     'field-markup-reset': 'Back to the default',
   },
+  // The records of another section a record points at (`wx-relations`), and the same choice as a
+  // block's filter ("only related to" in `wx-collection`). Kept apart from `collections` because
+  // the field is a field of its own, on any screen.
+  relations: {
+    'field-add': 'Add…',
+    'field-searching': 'Searching…',
+    'field-nothing': 'Nothing found.',
+    'field-empty': 'Nothing chosen yet.',
+    'field-remove': 'Remove',
+    'field-drag': 'Drag to change the order',
+    'field-hidden': 'Not on the site',
+    'field-missing': 'Not found',
+    'field-full': 'No more than :max can be chosen.',
+    'field-forbidden': 'You cannot see these records, so the choice cannot be changed here.',
+    'collection-related': 'Only related to',
+    'collection-related-to': 'Only related to “:target”',
+    'collection-related-type': 'Which section',
+    'collection-related-any': 'Not narrowed: every record, related or not.',
+  },
 }

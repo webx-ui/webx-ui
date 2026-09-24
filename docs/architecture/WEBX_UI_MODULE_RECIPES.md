@@ -657,6 +657,56 @@ vitest на поле и на новый выбор в WxCollectionField; changes
 тема. В конце — «Итог RC2» в §6 спеки на своей ветке, коммит, пуш в claude.
 ```
 
+#### Итог RC2 (24.09.2026)
+
+Сделано на `feat/relations-panel`: `WxRelationsField` (`packages/module-admin/src/relations/`),
+тип `wx-relations` в `adminTypes` (`wide: true`), выбор «только связанные с» в
+`WxCollectionField`, мок `/api/cms/relations/{service,recipe}` (`apps/playground/server/panel/relations.ts`),
+поле «Recipes» на `services.form` патчем проекта плейграунда, гайд `apps/docs/guide/relations.md`
+(в сайдбаре после Collections), changeset minor на `@webx-ui/module-admin`. Проверено в браузере
+на `/panel/services/1` и в блоке FAQ на `/panel/pages/17`: выбор, перестановка клавиатурой на ручке,
+удаление, сохранение (`values.recipes` → `[3, 4]`), пометка невидимой, 375 px, тёмная тема.
+
+**Что RC1/RC3/RC5 должны знать — всё это форма, которую написала панель, и сервер обязан ей
+совпасть:**
+
+- **`GET /api/cms/collections` отдаёт `relations` объектами, а не строками:**
+  `relations: [{ key: 'service', title: 'Услуги' }]` — `title` на языке панели, как у самого
+  источника (берётся из `label` цели в `RelationTargets`). Без названия панели нечем подписать
+  «Только связанные с “Услуги”». `CollectionSource::relations(): list<string>` остаётся как в §3.6 —
+  название дописывает контроллер. Панель на всякий случай понимает и голые строки (подпись = ключ),
+  и отсутствие ключа (`[]`) — то есть старый сервер не ломает поле.
+- **Значение `wx-collection` — пять ключей:** `related: { type, ids } | null`; `ids` сортируются
+  и чистятся, как `categories`; `type` без `ids` пишется как `null` — у «не сужено» одно написание.
+  `Selection::normalise()` должен делать ровно это.
+- **Разметка по умолчанию выключена и при `related`:** `defaultMarkup()` — «нет категорий **и**
+  нет `related`». Сузить по связи — это та же «часть коллекции», что и категория. `Selection` на
+  сервере должен считать дефолт так же, иначе переключатель покажет не то, что напечатает сайт.
+- **`related.current` не сделан** — ждёт ответа RC1 (знает ли рендер блока свою сущность).
+- **403 = только список:** ни поиска, ни удаления, ни перетаскивания; строки — `#id`, потому что
+  `ids[]` отвечает тем же 403. Если RC1 решит отдавать названия выбранного и без прав — поле
+  покажет их без правки, но удалять всё равно не даст.
+- **«Себя не предлагать» — на стороне панели:** `provideRelationOwner({ type, id })` из
+  `module-admin`; экран рецепта (RC4) обязан его вызвать, иначе «Похожие рецепты» предложат сам
+  рецепт. Сервер `id` владельца не знает, и знать ему незачем.
+- **Пометка одна — «Not on the site»**, а не «снята»/«в корзине» из §3.5: в ответе §3.7 есть
+  только `visible`. Хотим различать — нужен `state` в ответе, пока не стал.
+- **Поиск в моке не отдаёт корзину**, а `ids[]` отдаёт (с `visible: false`) — так и серверу.
+- **Слова — `webx-admin::relations.*`**, группа `relations` (в `messages.ts`): `field-add`,
+  `field-searching`, `field-nothing`, `field-empty`, `field-remove`, `field-drag`, `field-hidden`,
+  `field-missing`, `field-full` (`:max`), `field-forbidden`, `collection-related`,
+  `collection-related-to` (`:target`), `collection-related-type`, `collection-related-any`.
+  Слова фильтра в `wx-collection` положены сюда же, а не в `collections.*`: тест паритета
+  `messages.test.ts` сверяет `collections` с `lang/en/collections.php`, а php здесь не трогали.
+  **RC5:** слить с тем, что RC1 завёл в `lang/*/relations.php`, и добавить `'relations'` в список
+  групп теста паритета. Отказы сервера (`unknown-target` и т. п.) — ключи RC1, панель их не
+  знает и не должна.
+- Мок называет цели связей у источника `faq` (`relations: [service]`) — заранее, чтобы фильтру
+  было где стоять; предпросмотр `related` игнорирует. Когда появится настоящий источник рецептов —
+  убрать у `faq`.
+- Попутно: `WxCollectionField` рисовал приглушённый текст несуществующим `--wx-text-secondary`;
+  заменено на `--wx-text-muted`.
+
 ### RC3 — `module-recipes`, php
 
 ```
