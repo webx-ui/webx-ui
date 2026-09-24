@@ -508,11 +508,12 @@ MCP: `faq_list`, `faq_get`, `faq_create`, `faq_update`, `faq_delete`, `faq_reord
 1. `webx-ui/module-services` — услуги: категории, блоки, свой адрес. Спека —
    [`WEBX_UI_MODULE_SERVICES.md`](WEBX_UI_MODULE_SERVICES.md), перед ним — этап 0 SEO
    ([`WEBX_UI_MODULE_SEO.md`](WEBX_UI_MODULE_SEO.md) §17) и общие категории.
-2. `webx-ui/module-solutions` — как услуги, категории редко.
-3. ~~`webx-ui/module-faq` — вопросы с категориями, общая страница с фильтром, вставка блоком.~~
+2. `webx-ui/module-reviews` — отзывы: категории, поля проекта, блок с видами отображения. Спека —
+   [`WEBX_UI_MODULE_REVIEWS.md`](WEBX_UI_MODULE_REVIEWS.md); поднят вперёд 24.09.2026 — нужен сейчас.
+3. `webx-ui/module-solutions` — как услуги, категории редко.
+4. ~~`webx-ui/module-faq` — вопросы с категориями, общая страница с фильтром, вставка блоком.~~
    Выпущен 24.09.2026 — выше, в «Модулях».
-4. `webx-ui/module-team` — люди: фото, имя, должность, текст, соцсети; категории.
-5. `webx-ui/module-reviews` — отзывы: категории, поля проекта.
+5. `webx-ui/module-team` — люди: фото, имя, должность, текст, соцсети; категории.
 6. `webx-ui/module-events` — события: категории, поля, без блоков.
 7. `webx-ui/module-vacancies` — как события.
 8. `webx-ui/module-banners` — баннеры без расписания; слайдер или картинка, вставка блоком.
