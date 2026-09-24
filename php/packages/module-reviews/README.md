@@ -181,6 +181,43 @@ Under `webx-admin.api_path` (`api/cms` by default):
 | `POST`   | `reviews/reorder`      | `{ ids, category? }`                             |
 |          | `reviews/categories/*` | the shared category routes, no addresses         |
 
+## For an agent: MCP
+
+With `webx-ui/mcp` on, both sections are tools too:
+
+| Tool                     | What it does                                                           |
+| ------------------------ | ---------------------------------------------------------------------- |
+| `reviews_list`           | every review, or a category in its order, or words — or the bin        |
+| `reviews_get`            | one review in full: every language, the photo, the project's fields    |
+| `reviews_create`         | a review at the end of the list; unpublished unless asked              |
+| `reviews_update`         | the values — on the site at once, a review has no draft                |
+| `reviews_delete`         | into the bin                                                           |
+| `reviews_reorder`        | the whole list's order, or one category's with `category`              |
+| `review_categories_list` | the categories in their order, with how many reviews each holds        |
+| `review_categories_*`    | `create`, `update`, `delete`, `reorder` — behind the categories' right |
+
+A review is named by its id, a category by its id or its title in any language. A plain string in
+`name`, `job_title` or `text` is the default language; `{ "en": "…", "ru": "…" }` is every language
+at once. The photo is a library key (`media/ab/cd/anna.jpg`, as `media_list_files` gives it), and a
+key the library does not have is refused rather than left to draw the initials. Everything goes
+through the panel's form: the stars, the profile link and the project's fields are refused where
+the panel would refuse them, and `reviews_create` is one transaction — a refusal leaves no review.
+Every tool that changes something takes `dry_run: true`.
+
+Before writing, an agent reads **`reviews://catalog`**: every category in its order, hidden ones
+too, with its reviews in that category's order, and the reviews in no category at the end — each
+with `visible_in` (where a reader sees it) and `written_in` (where its text is).
+
+## Demo content
+
+`php artisan webx:demo` seeds two categories and eight reviews in English and Russian, as far as the
+site has them: one review in both categories, one unpublished, one with its text in English only,
+one with a name in English only, one without stars, one with a link to a profile, and no photos —
+the initials stand in. The offered block type is installed if the site has not taken it yet; then,
+with `webx-ui/module-pages`, a page `/reviews` with every review in a grid and the filter, and with
+`webx-ui/module-services`, a slider of one category at the end of a demo service. Reviews that
+already exist leave the demo alone; `--remove` takes it back out.
+
 ## Translations
 
 Ten languages ship: `en`, `ru` and `uk` are read by a native speaker; `de`, `pl`, `fr`, `es`, `it`,

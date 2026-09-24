@@ -111,11 +111,35 @@ describe('the template', () => {
       'id',
       'anchor',
       'categories',
+      'question',
+      'answer',
     ])
     expect(labels(ask(source, '@foreach ($questions["groups"] as $group) {{ $group[|'))).toEqual([
       'id',
       'title',
       'items',
+    ])
+  })
+
+  it('knows the card of the reviews source', () => {
+    const reviews = templateCompletions({
+      schema: () => [{ id: 'reviews', type: 'wx-collection', props: { source: 'reviews' } }],
+      styles: () => '',
+    })
+
+    expect(labels(ask(reviews, "@foreach ($reviews['items'] as $review) {{ $review['|"))).toEqual([
+      'id',
+      'anchor',
+      'categories',
+      'name',
+      'initials',
+      'job_title',
+      'text',
+      'rating',
+      'date',
+      'profile',
+      'photo',
+      'fields',
     ])
   })
 

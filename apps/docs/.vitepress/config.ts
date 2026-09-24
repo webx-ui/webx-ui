@@ -40,6 +40,7 @@ export default defineConfig({
             { text: 'Collections', link: '/guide/collections' },
             { text: 'Services', link: '/guide/services' },
             { text: 'FAQ', link: '/guide/faq' },
+            { text: 'Reviews', link: '/guide/reviews' },
             { text: 'Inbox', link: '/guide/inbox' },
             { text: 'Menus', link: '/guide/menu' },
             { text: 'Settings', link: '/guide/settings' },
