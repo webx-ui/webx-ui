@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-reviews",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Reviews for the WebX UI admin panel: photo, name, job title, rating and text, in flat categories, ordered by hand, shown on the site by a block.",
   "license": "MIT",
   "type": "module",

@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-services",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Services for the WebX UI admin panel: a catalogue of services made of blocks, flat categories with pages of their own, ordered by hand.",
   "license": "MIT",
   "type": "module",
