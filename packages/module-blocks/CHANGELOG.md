@@ -1,5 +1,18 @@
 # @webx-ui/module-blocks
 
+## 0.8.6
+
+### Patch Changes
+
+- c7b0084: The template editor of a block type completes `wx-collection` fields: `items`, `groups` and
+  `filter` after `$questions[`, and the keys every record and group has inside
+  `@foreach ($questions['items'] as $item)`.
+- Updated dependencies [c7b0084]
+- Updated dependencies [c7b0084]
+- Updated dependencies [c7b0084]
+  - @webx-ui/module-admin@0.17.0
+  - @webx-ui/core@0.33.2
+
 ## 0.8.5
 
 ### Patch Changes
