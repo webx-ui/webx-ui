@@ -16,6 +16,7 @@ import {
   type LocalizedValue,
 } from '@webx-ui/core'
 import type { ScreenModel } from '@webx-ui/schema'
+import { provideRecordAddress } from '../address'
 import { useAdmin } from '../admin'
 import { useErrorText } from '../errors'
 import SaveState from '../SaveState.vue'
@@ -90,6 +91,14 @@ const title = computed(() => {
 })
 
 provideCategoryEditor({ category, values, prefix, moving: () => w('address-moving') })
+
+/* The address field is the panel's shared one (`wx-slug`), and this is what it prints. */
+provideRecordAddress({
+  values,
+  prefix,
+  path: computed(() => category.value?.path),
+  moving: () => w('address-moving'),
+})
 
 function take(detail: { category: CategoryRow; values: ScreenModel; prefix: string | null }): void {
   category.value = detail.category

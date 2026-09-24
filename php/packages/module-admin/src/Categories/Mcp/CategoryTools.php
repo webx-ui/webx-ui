@@ -49,17 +49,28 @@ final readonly class CategoryTools
         $one = $kind->noun;
         $many = $kind->plural;
         $items = $kind->items;
+        // A kind without a prefix has no addresses at all (the FAQ's), and an agent promised a
+        // slug would write one, see it vanish and try again.
+        $addressed = $kind->prefix !== null;
         $category = [
             'type' => ['integer', 'string'],
-            'description' => "A {$one}: its id, or its slug in any language.",
+            'description' => $addressed
+                ? "A {$one}: its id, or its slug in any language."
+                : "A {$one}: its id, or its title in any language.",
         ];
+        $slug = $addressed
+            ? ['slug' => ['type' => ['string', 'object'], 'description' => 'The address part, the same shape as the title. Made out of the title when omitted.']]
+            : [];
 
         return [
             Tool::read(
                 'list',
-                "The {$many} in the order they stand in on the site: what each is called in every language, the "
-                ."address it answers at, whether it is visible, and how many {$items} are in it. The first {$one} "
-                .'of an item is its main one — the one in the breadcrumbs — so the order they are given in matters. '
+                "The {$many} in the order they stand in on the site: what each is called in every language, "
+                .($addressed ? 'the address it answers at, ' : '')
+                ."whether it is visible, and how many {$items} are in it. "
+                .($addressed
+                    ? "The first {$one} of an item is its main one — the one in the breadcrumbs — so the order they are given in matters. "
+                    : "A {$one} has no address of its own: it is a way to pick and filter {$items}. ")
                 ."Read this before filing anything, and reuse a {$one} rather than making a near-duplicate.",
                 fn (array $arguments): array => $this->list($arguments),
                 ['properties' => [
@@ -71,21 +82,24 @@ final readonly class CategoryTools
 
             Tool::mutating(
                 'create',
-                "Make a new {$one} at the end of the list. The address is made out of the title unless a slug is "
-                .'given; an address another page already answers at is refused, not quietly changed. It is '
-                ."visible at once — a {$one} is navigation and has no draft — so make one only when a person "
-                .'asked for it.',
+                "Make a new {$one} at the end of the list. "
+                .($addressed
+                    ? 'The address is made out of the title unless a slug is given; an address another page already answers at is refused, not quietly changed. '
+                    : '')
+                ."It is visible at once — a {$one} has no draft — so make one only when a person asked for it.",
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->create($arguments)),
                 ['properties' => [
                     'title' => ['type' => ['string', 'object'], 'description' => 'The name: a string in the default language, or an object of language → text.'],
-                    'slug' => ['type' => ['string', 'object'], 'description' => 'The address part, the same shape as the title. Made out of the title when omitted.'],
+                    ...$slug,
                 ], 'required' => ['title']],
                 permission: $kind->manage,
             ),
 
             Tool::mutating(
                 'update',
-                "Change the values of a {$one} — the fields of its editor in the panel: title, slug, visibility, and "
+                "Change the values of a {$one} — the fields of its editor in the panel: title, "
+                .($addressed ? 'slug, ' : '')
+                .'visibility, and '
                 .'whatever else the screen of this site has. Only the fields you send change; the answer carries '
                 .'every value the editor now holds. It takes effect on the site at once.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
@@ -161,7 +175,9 @@ final readonly class CategoryTools
 
         $category = $this->form->create($this->model, $arguments['title'] ?? null, $arguments['slug'] ?? null);
 
-        return $this->describe($category);
+        // Read back: a column the insert left to its default (`is_visible`) is not on the
+        // model yet, and the answer would call a visible category hidden.
+        return $this->describe($category->refresh());
     }
 
     /**
@@ -252,7 +268,7 @@ final readonly class CategoryTools
 
         $count = $category->getAttribute($this->kind()->countKey());
 
-        return [
+        $row = [
             'id' => (int) $category->getKey(),
             'title' => $category->categoryValue('title'),
             'slug' => $category->categoryValue('slug'),
@@ -263,6 +279,14 @@ final readonly class CategoryTools
             'position' => (int) $category->getAttribute('position'),
             $this->kind()->countKey() => $count === null ? $category->itemCount() : (int) $count,
         ];
+
+        if ($this->kind()->prefix === null) {
+            // Always empty for such a kind, and an empty `paths` reads as "missing in every
+            // language" — something to fix — rather than as "has none by design".
+            unset($row['slug'], $row['paths']);
+        }
+
+        return $row;
     }
 
     /**
@@ -287,7 +311,7 @@ final readonly class CategoryTools
 
         $found = match (true) {
             is_int($key), is_string($key) && ctype_digit($key) => $query->find((int) $key),
-            is_string($key) && $key !== '' => $query->whereTranslationLikeAny('slug', $key)->first(),
+            is_string($key) && $key !== '' => $query->whereTranslationLikeAny($this->kind()->prefix === null ? 'title' : 'slug', $key)->first(),
             default => null,
         };
 

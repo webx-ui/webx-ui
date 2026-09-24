@@ -22,7 +22,9 @@
     <article>
         <header>
             {{-- Feed, main rubric, the article: the same list as the BreadcrumbList in the <head>. --}}
-            <x-webx-seo::breadcrumbs :for="$article" />
+            @if (config('webx-blog.breadcrumbs', true))
+                <x-webx-seo::breadcrumbs :for="$article" />
+            @endif
             <h1>{{ $article->title }}</h1>
             @if ($article->published_at)
                 <time datetime="{{ $article->published_at->toIso8601String() }}">{{ $article->published_at->locale(app()->getLocale())->isoFormat('LL') }}</time>

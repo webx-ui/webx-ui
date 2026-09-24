@@ -203,4 +203,14 @@ describe('confirm', () => {
     document.querySelectorAll<HTMLElement>('.wx-dialog__foot button')[0].click()
     expect(await no).toBe(false)
   })
+
+  // vue-router runs its guards inside `runWithContext`, where `inject` reads the app's provides.
+  it('answers when it is opened from inside app.runWithContext, as a route guard is', async () => {
+    const app = createApp({ render: () => null })
+    const leave = app.runWithContext(() => confirm('Leave without saving?'))
+    await nextTick()
+
+    document.querySelectorAll<HTMLElement>('.wx-dialog__foot button')[1].click()
+    expect(await leave).toBe(true)
+  })
 })

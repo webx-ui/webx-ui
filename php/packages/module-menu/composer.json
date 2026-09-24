@@ -30,11 +30,11 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "illuminate/view": "^13.0",
-        "webx-ui/localization": "^0.34.0",
-        "webx-ui/mcp": "^0.34.0",
-        "webx-ui/module-admin": "^0.34.0",
-        "webx-ui/nested-set": "^0.34.0",
-        "webx-ui/routing": "^0.34.0"
+        "webx-ui/localization": "^0.38.0",
+        "webx-ui/mcp": "^0.38.0",
+        "webx-ui/module-admin": "^0.38.0",
+        "webx-ui/nested-set": "^0.38.0",
+        "webx-ui/routing": "^0.38.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
@@ -62,7 +62,7 @@
         "webx": {
             "module": "menu",
             "npm": {
-                "@webx-ui/module-menu": "^0.1.3"
+                "@webx-ui/module-menu": "^0.1.5"
             },
             "panel": {
                 "import": "import { menu } from '@webx-ui/module-menu'",

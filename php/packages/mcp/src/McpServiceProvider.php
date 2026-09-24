@@ -18,6 +18,7 @@ use Laravel\Mcp\Server\McpServiceProvider as LaravelMcpServiceProvider;
 use Laravel\Mcp\Server\Registrar;
 use Laravel\Passport\Contracts\AuthorizationViewResponse;
 use Laravel\Passport\Passport;
+use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Mcp\Console\ListToolsCommand;
 use WebxUi\Mcp\Console\PruneCallsCommand;
@@ -60,6 +61,7 @@ class McpServiceProvider extends ServiceProvider
         $this->registerOAuthRoutes($router);
         $this->registerServers();
         $this->registerPruneSchedule();
+        $this->registerGateOpenings();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -151,6 +153,27 @@ class McpServiceProvider extends ServiceProvider
         // Also done by `oauthRoutes()`, and needed even when the routes come from the cache:
         // an authorization request is refused for a scope Passport has not been told about.
         Registrar::ensureMcpScope();
+    }
+
+    /**
+     * Past the password over a site in testing: the server and the OAuth dance in front of it.
+     *
+     * An agent cannot answer a Basic dialog, and a client registering itself has no pair to
+     * send — closed, the connector fails with an error that names neither the site nor the
+     * gate. The server under the panel's API is let through with the panel; one moved to a
+     * path of its own is let through here. Discovery lives under `/.well-known`, which the
+     * frame opens itself. Read per request, like everything the gate asks.
+     */
+    private function registerGateOpenings(): void
+    {
+        $config = $this->app->make('config');
+        $openings = $this->app->make(Openings::class);
+
+        $openings->allow(static fn (Request $request): bool => $openings->under($request, $config->get('webx-mcp.path')));
+
+        $openings->allow(static fn (Request $request): bool => class_exists(Passport::class)
+            && $config->get('webx-mcp.oauth.enabled') !== false
+            && $openings->under($request, $config->get('webx-mcp.oauth.prefix', 'oauth')));
     }
 
     /**

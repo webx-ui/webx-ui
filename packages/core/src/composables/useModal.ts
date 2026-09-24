@@ -240,12 +240,27 @@ export function createModal<T = unknown, P extends object = Record<string, never
 }
 
 /**
+ * The handle straight from the tree, for when `inject` looks elsewhere.
+ *
+ * While `app.runWithContext()` is running, `inject` reads the app's provides instead of the
+ * parent's — and vue-router runs every navigation guard inside it. A modal opened from a guard
+ * (`confirm` in `onBeforeRouteLeave`, "leave without saving?") is mounted synchronously right
+ * there, so its component never saw the host's handle: it got the harmless stand-in below, and
+ * its buttons answered nothing. The dialog stayed open and the navigation hung for ever.
+ */
+function fromHost(): ModalHandle | undefined {
+  const parent = getCurrentInstance()?.parent as { provides?: Record<symbol, unknown> } | null
+
+  return parent?.provides?.[modalKey as symbol] as ModalHandle | undefined
+}
+
+/**
  * The handle of the modal a component is being shown in. Outside one it answers all the
  * same, with `isModal: false` and calls that do nothing — so a component can be written
  * once and used both ways.
  */
 export function useModal<T = unknown>(): ModalHandle<T> {
-  const handle = inject(modalKey, undefined)
+  const handle = inject(modalKey, undefined) ?? fromHost()
   if (handle) return handle as ModalHandle<T>
 
   return {

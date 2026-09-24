@@ -18,6 +18,21 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Panel icons
+    |---------------------------------------------------------------------------
+    |
+    | The tab icon, the home-screen icon and the web manifest are served under
+    | `path` from the package — the WebX mark. A directory here replaces them
+    | file by file (`favicon.ico`, `favicon-96x96.png`, `apple-touch-icon.png`,
+    | `web-app-manifest-192x192.png`, `web-app-manifest-512x512.png`); a file it
+    | lacks stays the package's. The manifest is written from `title`.
+    |
+    */
+
+    'icons' => env('WEBX_ADMIN_ICONS'),
+
+    /*
+    |---------------------------------------------------------------------------
     | Paths
     |---------------------------------------------------------------------------
     |
@@ -45,6 +60,34 @@ return [
     'middleware' => ['web'],
 
     'api_middleware' => ['api', 'webx.panel-locale'],
+
+    /*
+    |---------------------------------------------------------------------------
+    | A password over the site while it is being tested
+    |---------------------------------------------------------------------------
+    |
+    | HTTP Basic in front of every address of the site except the panel, its
+    | JSON, the MCP server with its OAuth dance, a block preview under its token
+    | and `/.well-known`. Switched on and given no pairs, it lets nobody in.
+    |
+    |     WEBX_SITE_GATE=true
+    |     WEBX_SITE_GATE_USERS="client:secret,tester:other-secret"
+    |
+    | The pairs come from the environment and nowhere else; a password may have
+    | a colon in it but not a comma. `except` takes masks for `Str::is` against
+    | the path without its leading slash — `['promo', 'promo/*']` opens one page
+    | and everything under it.
+    |
+    | Files the web server serves itself (`/storage`, `/build`) never reach PHP
+    | and stay reachable by a direct link.
+    |
+    */
+
+    'gate' => [
+        'enabled' => env('WEBX_SITE_GATE', false),
+        'users' => env('WEBX_SITE_GATE_USERS', ''),
+        'except' => [],
+    ],
 
     /*
     |---------------------------------------------------------------------------

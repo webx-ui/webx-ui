@@ -159,6 +159,15 @@ describe('the list of categories', () => {
     expect(wrapper.text()).toContain('No address in this language')
   })
 
+  it('says nothing about addresses where the categories have none', async () => {
+    // The FAQ's: a category there is a button of a filter, and `prefix: null` is how it says so.
+    const get = vi.fn().mockResolvedValue({ data: [row({ id: 1, path: null })], prefix: null })
+    const { mount: open } = panel(CategoriesPage, { get })
+    const wrapper = await open()
+
+    expect(wrapper.text()).not.toContain('No address in this language')
+  })
+
   it('says the number under the module’s own key', async () => {
     const get = vi.fn().mockResolvedValue({ data: [row({ id: 1, articles_count: 4 })], prefix: '' })
     const { mount: open } = panel(CategoriesPage, { get })
@@ -192,7 +201,7 @@ describe('the page of one category', () => {
 
     expect(get).toHaveBeenCalledWith('/api/cms/blog/rubrics/7')
     expect(admin.loadScreen).toHaveBeenCalledWith('blog.category-form')
-    expect(wrapper.find('.wx-category-slug__prefix').text()).toBe('/blog/')
+    expect(wrapper.find('.wx-slug__prefix').text()).toBe('/blog/')
     expect(wrapper.find('.wx-screen-head').text()).toContain('Repairs')
   })
 
@@ -210,7 +219,7 @@ describe('the page of one category', () => {
     const { mount: open } = panel(CategoryEditorPage, { get, put }, '/blog/rubrics/7')
     const wrapper = await open()
 
-    await wrapper.get('.wx-category-slug input').setValue('fixes')
+    await wrapper.get('.wx-slug input').setValue('fixes')
     await wrapper.get('.wx-action-bar button').trigger('click')
     await flushPromises()
 
@@ -228,7 +237,7 @@ describe('the page of one category', () => {
     const { mount: open } = panel(CategoryEditorPage, { get, put }, '/blog/rubrics/7')
     const wrapper = await open()
 
-    await wrapper.get('.wx-category-slug input').setValue('fixes')
+    await wrapper.get('.wx-slug input').setValue('fixes')
     await wrapper.get('.wx-action-bar button').trigger('click')
     await flushPromises()
 
