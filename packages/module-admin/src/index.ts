@@ -81,6 +81,14 @@ export {
   type ItemOrderMode,
   type ItemOrderState,
 } from './categories'
+export {
+  COLLECTION_MAX_LIMIT,
+  collectionSources,
+  defaultMarkup,
+  normaliseCollection,
+  type CollectionSourceInfo,
+  type CollectionValue,
+} from './collections/api'
 export type {
   AdminModule,
   AdminStatus,
@@ -117,6 +125,7 @@ export { default as WxCategoriesPage } from './categories/CategoriesPage.vue'
 export { default as WxCategoryCreateDialog } from './categories/CategoryCreateDialog.vue'
 export { default as WxCategoryEditorPage } from './categories/CategoryEditorPage.vue'
 export { default as WxCategoriesField } from './categories/CategoriesField.vue'
+export { default as WxCollectionField } from './collections/CollectionField.vue'
 export { default as WxSlugField } from './SlugField.vue'
 /** The shared address field under the name it was released with. */
 export { default as WxCategorySlug } from './SlugField.vue'

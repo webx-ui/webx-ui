@@ -1,0 +1,82 @@
+{
+    "name": "webx-ui/module-faq",
+    "description": "Questions and answers for the WebX UI admin panel: flat categories, two orders, anchors that never move, and a FAQ block any page can show with FAQPage markup.",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "webx-ui",
+        "laravel",
+        "admin",
+        "cms",
+        "faq"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-faq"
+    },
+    "require": {
+        "php": "^8.3",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/routing": "^13.0",
+        "illuminate/support": "^13.0",
+        "webx-ui/localization": "^0.36.0",
+        "webx-ui/mcp": "^0.36.0",
+        "webx-ui/module-admin": "^0.36.0",
+        "webx-ui/module-blocks": "^0.36.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/module-media": "^0.36.0",
+        "webx-ui/module-pages": "^0.36.0",
+        "webx-ui/module-seo": "^0.36.0",
+        "webx-ui/module-services": "^0.36.0"
+    },
+    "suggest": {
+        "webx-ui/module-seo": "Prints FAQPage markup for the questions a FAQ block shows.",
+        "webx-ui/module-pages": "A page with a FAQ block is the site's FAQ page.",
+        "webx-ui/module-services": "The demo puts a FAQ block with the payment questions into one of its services."
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Faq\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Faq\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Faq\\FaqServiceProvider"
+            ]
+        },
+        "webx": {
+            "module": "faq",
+            "npm": {
+                "@webx-ui/module-faq": "^0.1.0"
+            },
+            "panel": {
+                "import": "import { faq } from '@webx-ui/module-faq'",
+                "style": "@webx-ui/module-faq/style.css",
+                "register": "...faq()"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

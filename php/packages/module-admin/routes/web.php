@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use WebxUi\Admin\Http\Controllers\CollectionController;
 use WebxUi\Admin\Http\Controllers\LinkController;
 use WebxUi\Admin\Http\Controllers\LocaleController;
 use WebxUi\Admin\Http\Controllers\ManifestController;
@@ -24,6 +25,10 @@ Route::prefix((string) config('webx-admin.api_path'))
         Route::get('links/search', [LinkController::class, 'search'])->name('links.search');
         Route::post('links/resolve', [LinkController::class, 'resolve'])->name('links.resolve');
         Route::get('links/routes', [LinkController::class, 'routes'])->name('links.routes');
+
+        // What a `wx-collection` field can show (§3.3 of the FAQ spec): the sources this
+        // administrator may place on a page.
+        Route::get('collections', CollectionController::class)->name('collections');
 
         Route::get('screens/{name}', ScreenController::class)
             ->where('name', '[a-z0-9-]+\.[a-z0-9-]+')

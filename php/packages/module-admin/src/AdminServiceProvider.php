@@ -16,6 +16,7 @@ use Illuminate\Support\Str;
 use WebxUi\Admin\Backups\Backups;
 use WebxUi\Admin\Categories\CategoriesType;
 use WebxUi\Admin\Categories\CategorySources;
+use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Console\BackupCommand;
 use WebxUi\Admin\Console\BootCommand;
 use WebxUi\Admin\Console\DemoCommand;
@@ -40,6 +41,7 @@ use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\BooleanType;
 use WebxUi\Admin\Screens\Types\CascaderType;
+use WebxUi\Admin\Screens\Types\CollectionType;
 use WebxUi\Admin\Screens\Types\ColorType;
 use WebxUi\Admin\Screens\Types\DateRangeType;
 use WebxUi\Admin\Screens\Types\DateType;
@@ -84,6 +86,10 @@ class AdminServiceProvider extends ServiceProvider
 
         // Which model's categories a `wx-categories` field is about, by the path they answer at.
         $this->app->singleton(CategorySources::class);
+
+        // The records modules offer to show as blocks (§3 of the FAQ spec), by the key a
+        // `wx-collection` field names them with. Filled from providers, like the two above.
+        $this->app->singleton(CollectionSources::class);
 
         // What the password over a site in testing lets through. A singleton because the
         // packages that answer where the panel's browser has to reach add their own from boot.
@@ -137,6 +143,13 @@ class AdminServiceProvider extends ServiceProvider
             // The categories a record is in. Which table is the node's `source`, registered by
             // the module that owns it — the same string the panel asks for the list at.
             $types->register('wx-categories', new CategoriesType($app->make(CategorySources::class)));
+            // Which records of a module a block shows. Kept as the choice, read on the site as
+            // the records themselves — by the module that has them.
+            $types->register('wx-collection', new CollectionType(
+                $app->make(CollectionSources::class),
+                $app->make(CategorySources::class),
+                $app->make(Locales::class),
+            ));
             $types->register('wx-cascader', new CascaderType);
             $types->register('wx-tree-select', new TreeSelectType);
             $types->register('wx-transfer', new OptionListType('items'));
