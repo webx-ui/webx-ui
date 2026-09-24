@@ -1,5 +1,25 @@
 # @webx-ui/admin
 
+## 0.17.0
+
+### Minor Changes
+
+- c7b0084: The panel half of `wx-collection`: the field a block uses to show another section's records.
+  It asks `GET /api/cms/collections` which sections this administrator may place, lists the chosen
+  section's categories (none chosen — all of them), and keeps a limit, a filter switch and — when
+  the section can mark its records up — a markup switch that shows what the rule gives until the
+  editor sets it, with a way back to the rule. The value is only the choice
+  (`{ categories, limit, filter, markup }`), never the records. Exported as `WxCollectionField`,
+  with `collectionSources()`, `normaliseCollection()` and `defaultMarkup()`; the words are under
+  `webx-admin::collections.*`.
+
+### Patch Changes
+
+- c7b0084: The shared list of categories no longer prints "No address in this language" under every row
+  when the module's categories have no addresses at all (`prefix: null`), as the FAQ's don't.
+- Updated dependencies [c7b0084]
+  - @webx-ui/core@0.33.2
+
 ## 0.16.1
 
 ### Patch Changes
