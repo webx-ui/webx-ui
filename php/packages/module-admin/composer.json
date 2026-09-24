@@ -34,7 +34,7 @@
         "illuminate/support": "^13.0",
         "laravel/prompts": "^0.3.11",
         "symfony/process": "^7.4 || ^8.0",
-        "webx-ui/localization": "^0.35.1"
+        "webx-ui/localization": "^0.36.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
