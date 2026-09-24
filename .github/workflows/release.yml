@@ -3,6 +3,14 @@ name: Release
 on:
   push:
     branches: [main]
+  # The `next` channel: a snapshot of any branch for the demo sites, without a release.
+  workflow_dispatch:
+    inputs:
+      verify:
+        description: 'Run typecheck and the tests before publishing'
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: release-${{ github.ref }}
@@ -17,13 +25,29 @@ permissions:
 jobs:
   release:
     name: Version or publish
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
       php_version: ${{ steps.php_tag.outputs.version }}
     steps:
+      # The organisation's App rather than GITHUB_TOKEN: a branch pushed with GITHUB_TOKEN starts
+      # no workflows, so the version PR's CI used to wait in `action_required` for somebody to
+      # approve it by hand. Checkout keeps the token, so every push below is the App's.
+      - name: Mint a token for the version PR
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.PHP_SPLIT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.PHP_SPLIT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: webx-ui
+          permission-contents: write
+          permission-pull-requests: write
+
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
       - uses: pnpm/action-setup@v4
 
@@ -36,8 +60,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build packages
-        run: pnpm build
+      # No build here: opening the version PR needs none, and `pnpm release` builds before it
+      # publishes — building twice cost a minute on every run.
 
       # Composer has no registry to publish to: a version exists once the tag exists. The npm
       # packages get their tags from changesets, the PHP ones share a single version carried by
@@ -79,15 +103,68 @@ jobs:
           commit: 'chore: version packages'
           title: 'chore: version packages'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           NPM_CONFIG_PROVENANCE: true
+
+  # A snapshot of the dispatched branch under the npm dist-tag `next`, and the PHP packages as
+  # the branch `next` of every mirror (`dev-next` on Packagist). No version PR, no git tags,
+  # `latest` untouched. It lives in this file because npm Trusted Publishing is bound to the
+  # workflow's file name — a second file would need a second trusted publisher on every package.
+  # Only packages with a changeset on the branch (and those depending on them) move; a package
+  # that has never been published cannot go this way — Trusted Publishing does not create names.
+  next:
+    name: Publish a snapshot to next
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck and test
+        if: inputs.verify
+        run: pnpm build && pnpm typecheck && pnpm test
+
+      # `useCalculatedVersion` in .changeset/config.json names the snapshot 0.33.3-next-<time>
+      # rather than 0.0.0-next-<time>, which the neighbours' `^0.33.0` would not accept. Nothing
+      # of this is committed. sync-php-version is not run: Composer cannot parse a
+      # prerelease constraint like that, so the PHP constraints stay as they are on the branch.
+      - name: Version as a snapshot
+        run: pnpm changeset version --snapshot next
+
+      - name: Publish under next
+        run: pnpm build && pnpm changeset publish --tag next --no-git-tag
+        env:
+          NPM_CONFIG_PROVENANCE: true
+
+      - name: What was published
+        run: |
+          for manifest in packages/*/package.json; do
+            node -e "const p=require('./$manifest'); if (!p.private && p.version.includes('-next-')) console.log(p.name + '@' + p.version)"
+          done
+
+  next-php:
+    name: Publish PHP packages to next
+    if: github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/php-split.yml
+    with:
+      branch: next
+    secrets: inherit
 
   # Mirrors every PHP package into its own repository and tags it there as v<version>, which
   # is the form Composer and Packagist understand.
   php-split:
     name: Publish PHP packages
     needs: release
-    if: needs.release.outputs.php_version != ''
+    if: github.event_name == 'push' && needs.release.outputs.php_version != ''
     uses: ./.github/workflows/php-split.yml
     with:
       tag: v${{ needs.release.outputs.php_version }}
