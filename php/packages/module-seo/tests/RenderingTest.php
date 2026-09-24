@@ -64,6 +64,45 @@ final class RenderingTest extends TestCase
     }
 
     #[Test]
+    public function a_page_nobody_wrote_a_canonical_for_names_itself(): void
+    {
+        $head = (string) app(Seo::class)->head(null, '/about', 'ru');
+
+        $this->assertStringContainsString('<link rel="canonical" href="http://localhost/about">', $head);
+        // And Open Graph follows it rather than repeating the address as it arrived.
+        $this->assertStringContainsString('<meta property="og:url" content="http://localhost/about">', $head);
+    }
+
+    #[Test]
+    public function the_self_canonical_keeps_the_page_and_drops_the_tracking(): void
+    {
+        $seo = app(Seo::class);
+
+        $this->assertSame('http://localhost/blog?page=2', $seo->for('/blog?utm_source=mail&page=2&utm_medium=x', null, 'ru')->canonical);
+        $this->assertSame('http://localhost/about', $seo->for('/about?utm_source=mail', null, 'ru')->canonical);
+    }
+
+    #[Test]
+    public function a_canonical_somebody_wrote_beats_the_self_one(): void
+    {
+        SeoUrl::query()->create([
+            'match_type' => 'exact',
+            'pattern' => '/copy',
+            'canonical' => 'https://example.test/original',
+        ]);
+
+        $this->assertSame('https://example.test/original', app(Seo::class)->for('/copy', null, 'ru')->canonical);
+    }
+
+    #[Test]
+    public function the_self_canonical_can_be_turned_off(): void
+    {
+        config()->set('webx-seo.canonical.self', false);
+
+        $this->assertStringNotContainsString('rel="canonical"', (string) app(Seo::class)->head(null, '/about', 'ru'));
+    }
+
+    #[Test]
     public function the_directive_prints_the_same_block(): void
     {
         SeoUrl::query()->create(['match_type' => 'exact', 'pattern' => '/about', 'title' => ['ru' => 'О нас']]);

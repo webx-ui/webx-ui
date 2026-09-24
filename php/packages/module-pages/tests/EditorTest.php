@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace WebxUi\Pages\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Pages\Models\Page;
 use WebxUi\Pages\Tests\Fixtures\ProseType;
+use WebxUi\Pages\Tests\Fixtures\TipSource;
 
 /**
  * The editor: the described screen, the values it opens with, the save that goes into the
@@ -129,6 +131,41 @@ final class EditorTest extends TestCase
         $this->assertSame('<p>Hello</p>', $node['values']['body']['en']);
         $this->assertTrue($node['hidden'], 'the node keeps every key it came with');
         $this->assertSame('k1', $node['key']);
+    }
+
+    #[Test]
+    public function a_save_keeps_a_collection_block_as_the_choice_the_source_can_act_on(): void
+    {
+        // The door that matters for `wx-collection` (§3.3 of the FAQ spec): the editor's save,
+        // through the endpoint. A source without categories or markup keeps neither, whatever
+        // the request said, and a string that is a number is kept as one.
+        $this->app->make(CollectionSources::class)->register(new TipSource);
+
+        $block = Block::query()->create(['slug' => 'tips', 'title' => 'Tips']);
+        $block->saveVersion([
+            'template' => '<ul data-wx-block="tips">@foreach ($list[\'items\'] as $tip)<li>{{ $tip[\'text\'] }}</li>@endforeach</ul>',
+            'schema' => [['id' => 'list', 'type' => 'wx-collection', 'props' => ['source' => 'tips']]],
+        ]);
+        $block->publish();
+
+        $page = $this->page('about');
+
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson($this->api($page->getKey()), [
+                'values' => [
+                    'blocks' => [[
+                        'key' => 'k1',
+                        'type' => 'tips',
+                        'values' => ['list' => ['categories' => [4, 2], 'limit' => '3', 'filter' => true, 'markup' => true]],
+                    ]],
+                ],
+            ])
+            ->assertOk();
+
+        $this->assertSame(
+            ['categories' => [], 'limit' => 3, 'filter' => true, 'markup' => null],
+            $page->refresh()->draftValues()['blocks'][0]['values']['list'],
+        );
     }
 
     #[Test]

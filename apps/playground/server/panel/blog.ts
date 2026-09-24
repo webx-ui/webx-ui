@@ -57,7 +57,19 @@ export interface ArticleRecord {
 }
 
 export const articles: ArticleRecord[] = []
-export const rubrics: RubricRow[] = []
+/**
+ * A rubric as the fake server keeps it: the row its list draws, and what the page of one edits —
+ * the introduction, the picture, SEO and whatever a project patched onto `blog.category-form`,
+ * which the real server keeps in `rubrics.extra` (§3.4 of the services spec).
+ */
+export interface RubricRecord extends RubricRow {
+  lead: LocalizedValue
+  cover: ArticleCover | null
+  seo: Record<string, unknown>
+  extra: Record<string, unknown>
+}
+
+export const rubrics: RubricRecord[] = []
 export const tags: TagRow[] = []
 
 let nextArticleId = 1
@@ -66,9 +78,9 @@ let nextTagId = 1
 
 /* ---------------------------------------------------------------------------- rubrics ----- */
 
-function rubric(title: [string, string], slug: string, lead: [string, string]): RubricRow {
+function rubric(title: [string, string], slug: string, lead: [string, string]): RubricRecord {
   const id = nextRubricId++
-  const row: RubricRow = {
+  const row: RubricRecord = {
     id,
     name: title[0],
     title: { ru: title[0], en: title[1] },
@@ -80,7 +92,9 @@ function rubric(title: [string, string], slug: string, lead: [string, string]): 
     is_visible: true,
     position: id,
     articles_count: 0,
+    deleted_at: null,
     seo: {},
+    extra: {},
   }
 
   rubrics.push(row)
@@ -593,8 +607,8 @@ export function find(id: number): ArticleRecord | null {
   return articles.find((record) => record.id === id) ?? null
 }
 
-export function rubricBySlug(slug: string): RubricRow {
-  const row = rubrics.find((one) => one.slug.ru === slug)
+export function rubricBySlug(slug: string): RubricRecord {
+  const row = rubrics.find((one) => one.slug?.ru === slug)
 
   if (row === undefined) {
     throw new Error(`No rubric ${slug} in the fixture.`)

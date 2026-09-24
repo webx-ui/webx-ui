@@ -21,8 +21,9 @@
 
     <article>
         <header>
-            @if ($rubric)
-                <nav><a href="{{ $rubric->url() }}">{{ $rubric->title }}</a></nav>
+            {{-- Feed, main rubric, the article: the same list as the BreadcrumbList in the <head>. --}}
+            @if (config('webx-blog.breadcrumbs', true))
+                <x-webx-seo::breadcrumbs :for="$article" />
             @endif
             <h1>{{ $article->title }}</h1>
             @if ($article->published_at)

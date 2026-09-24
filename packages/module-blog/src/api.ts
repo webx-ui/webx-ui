@@ -8,9 +8,6 @@ import type {
   ArticleVersion,
   ArticlesPage,
   BlogTag,
-  RubricInput,
-  RubricRow,
-  RubricsPayload,
   TagInput,
   TagMassAction,
   TagMerged,
@@ -50,19 +47,6 @@ export interface BlogApi {
   remove(id: number): Promise<void>
   restore(id: number): Promise<ArticleRow>
 
-  /** Every rubric there is, in the order the menu of the site has them (§6). */
-  rubrics(): Promise<RubricsPayload>
-  createRubric(input: RubricInput): Promise<RubricRow>
-  saveRubric(id: number, input: RubricInput): Promise<RubricRow>
-  /**
-   * Into the bin — refused with a 422 naming the number of articles while it still holds any
-   * (§6). The panel keeps the button out of reach, so reaching this is somebody else's save
-   * landing between the list and the click.
-   */
-  removeRubric(id: number): Promise<void>
-  /** The whole order, as it is on screen. */
-  sortRubrics(ids: number[]): Promise<void>
-
   /** A page of tags with the counts the pills wear (§10). */
   tagsPage(query?: TagQuery): Promise<TagsPage>
   /** A rename, or the switch on the index. Only what travels is touched. */
@@ -74,10 +58,12 @@ export interface BlogApi {
   mergeTags(ids: number[], keep: number, redirect: boolean): Promise<TagMerged>
 }
 
-/** Everything under `/blog`, below the panel's API path. */
+/**
+ * Everything under `/blog`, below the panel's API path — except the rubrics, which are the
+ * panel's shared categories and are asked for with `createCategoriesApi(admin, 'blog/rubrics')`.
+ */
 export function createBlogApi(admin: AdminContext): BlogApi {
   const base = `${admin.apiPath}/blog/articles`
-  const rubricsBase = `${admin.apiPath}/blog/rubrics`
   const tagsBase = `${admin.apiPath}/blog/tags`
   const data = <T>(body: { data: T }): T => body.data
 
@@ -132,14 +118,6 @@ export function createBlogApi(admin: AdminContext): BlogApi {
       admin.http.post<{ data: ArticleRow }>(`${base}/${id}/unpublish`, {}).then(data),
     remove: (id) => admin.http.delete<void>(`${base}/${id}`).then(() => undefined),
     restore: (id) => admin.http.post<{ data: ArticleRow }>(`${base}/${id}/restore`, {}).then(data),
-
-    rubrics: () => admin.http.get<RubricsPayload>(rubricsBase),
-    createRubric: (input) => admin.http.post<{ data: RubricRow }>(rubricsBase, input).then(data),
-    saveRubric: (id, input) =>
-      admin.http.put<{ data: RubricRow }>(`${rubricsBase}/${id}`, input).then(data),
-    removeRubric: (id) => admin.http.delete<void>(`${rubricsBase}/${id}`).then(() => undefined),
-    sortRubrics: (ids) =>
-      admin.http.post<void>(`${rubricsBase}/reorder`, { ids }).then(() => undefined),
 
     tagsPage: (query = {}) => {
       const search = new URLSearchParams()

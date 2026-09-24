@@ -4,18 +4,26 @@ declare(strict_types=1);
 
 namespace WebxUi\Blog\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use WebxUi\Admin\Categories\HasCategories;
+use WebxUi\Admin\Screens\HasExtra;
 use WebxUi\Admin\Versions\HasDraft;
 use WebxUi\Admin\Versions\HasVersions;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Blocks\HasBlocks;
+use WebxUi\Blog\Seo\Trail;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
+use WebxUi\Seo\Contracts\Crumb;
+use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasStructuredData;
 use WebxUi\Seo\HasSeo;
 
 /**
@@ -40,16 +48,19 @@ use WebxUi\Seo\HasSeo;
  * @property bool $pinned
  * @property list<array<string, mixed>>|null $blocks
  * @property array<string, mixed>|null $draft
+ * @property array<string, mixed>|null $extra
  * @property Carbon|null $published_at
  * @property Carbon|null $deleted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Article extends Model
+class Article extends Model implements HasBreadcrumbs, HasStructuredData, Visible
 {
     use HasBlocks;
+    use HasCategories;
     use HasCover;
     use HasDraft;
+    use HasExtra;
     use HasSeo;
     use HasTranslations;
     use HasUrl;
@@ -119,6 +130,117 @@ class Article extends Model
         return $query
             ->whereNotNull($this->publishedAtColumn())
             ->where($this->publishedAtColumn(), '<=', Carbon::now());
+    }
+
+    /**
+     * On the site now and not in the bin — the handler and the sitemap ask this and nothing else
+     * (§17.1 of the SEO spec), so that "not yet" is a 404 and a missing line in the map at the
+     * same minute.
+     */
+    public function isVisible(?string $locale = null): bool
+    {
+        return $this->isPublished() && ! $this->trashed();
+    }
+
+    /**
+     * @param  Builder<covariant Model>  $query
+     * @return Builder<covariant Model>
+     */
+    public function scopeVisible(Builder $query, ?string $locale = null): Builder
+    {
+        $column = $this->qualifyColumn($this->publishedAtColumn());
+
+        return $query->whereNotNull($column)->where($column, '<=', Carbon::now());
+    }
+
+    /**
+     * The later of the date it is published under and its last publication.
+     *
+     * The date alone is not enough: it is the date a reader is shown, and republishing an
+     * article with a corrected paragraph keeps it — a backdated date is the whole point of it.
+     * The history knows when the text last reached the site. One query per article, which the
+     * sitemap pays once per build rather than per visit.
+     */
+    public function visibleUpdatedAt(): ?CarbonInterface
+    {
+        $at = $this->published_at;
+        $last = $this->versions()->published()->max('created_at');
+        $republished = is_string($last) ? Carbon::parse($last) : null;
+
+        if ($at === null || $republished === null) {
+            return $at ?? $republished;
+        }
+
+        return $republished->greaterThan($at) ? $republished : $at;
+    }
+
+    /**
+     * Feed → main rubric → the article (§17.5 of the SEO spec).
+     *
+     * The rubric is {@see mainRubric()} — the same one the page names above the title — and it
+     * drops out of the trail when it is hidden or has no address in this language: a step that
+     * leads to a 404 is worse than one step fewer.
+     *
+     * @return list<Crumb>
+     */
+    public function breadcrumbs(string $locale): array
+    {
+        $rubric = $this->mainRubric();
+        $rubricCrumb = $rubric !== null && $rubric->isVisible($locale) && $rubric->hasUrlIn($locale)
+            ? new Crumb((string) $rubric->getTranslation('title', $locale), $rubric->url($locale))
+            : null;
+
+        return Trail::of($locale, $rubricCrumb, new Crumb((string) $this->getTranslation('title', $locale), $this->url($locale)));
+    }
+
+    /**
+     * A `BlogPosting`: what it is called, when it came out and last changed, who wrote it, its
+     * cover. Only what the article actually has — an empty `image` is a warning in every
+     * validator, a missing one is not.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function structuredData(string $locale): array
+    {
+        $url = $this->url($locale);
+        $posting = [
+            '@context' => 'https://schema.org',
+            '@type' => 'BlogPosting',
+            'headline' => (string) $this->getTranslation('title', $locale),
+            'url' => $url,
+            'mainEntityOfPage' => $url,
+        ];
+
+        $lead = $this->getTranslation('lead', $locale);
+        $description = is_string($lead) ? trim(html_entity_decode(strip_tags($lead), ENT_QUOTES | ENT_HTML5, 'UTF-8')) : '';
+
+        if ($description !== '') {
+            $posting['description'] = $description;
+        }
+
+        if ($this->published_at !== null) {
+            $posting['datePublished'] = $this->published_at->toAtomString();
+        }
+
+        $modified = $this->visibleUpdatedAt();
+
+        if ($modified !== null) {
+            $posting['dateModified'] = $modified->toAtomString();
+        }
+
+        $cover = $this->coverUrl();
+
+        if ($cover !== null) {
+            $posting['image'] = $cover;
+        }
+
+        $author = $this->author;
+
+        if ($author instanceof CmsUser) {
+            $posting['author'] = ['@type' => 'Person', 'name' => $author->name];
+        }
+
+        return [$posting];
     }
 
     /**
@@ -196,10 +318,32 @@ class Article extends Model
      */
     public function rubrics(): BelongsToMany
     {
-        return $this->belongsToMany(Rubric::class, 'article_rubric')
-            ->withPivot('position')
-            ->orderBy('article_rubric.position')
-            ->orderBy('rubrics.id');
+        /** @var BelongsToMany<Rubric, $this> $relation */
+        $relation = $this->belongsToCategories(Rubric::class, 'article_rubric');
+
+        return $relation;
+    }
+
+    public function categoryRelation(): string
+    {
+        return 'rubrics';
+    }
+
+    /**
+     * Newest first: the order a rubric page lists its articles in. An article filed into a rubric
+     * takes its place there by this order — the blog never lets anybody drag them.
+     *
+     * @return array<string, 'asc'|'desc'>
+     */
+    public function categoryItemOrder(): array
+    {
+        return [$this->publishedAtColumn() => 'desc', $this->getKeyName() => 'desc'];
+    }
+
+    /** The fields a project patches onto the editor live in `extra`, and go through the draft. */
+    public function extraScreen(): string
+    {
+        return 'blog.article-form';
     }
 
     /**
@@ -232,7 +376,7 @@ class Article extends Model
     public function mainRubric(): ?Rubric
     {
         /** @var Rubric|null $rubric */
-        $rubric = $this->rubrics->first();
+        $rubric = $this->mainCategory();
 
         return $rubric;
     }

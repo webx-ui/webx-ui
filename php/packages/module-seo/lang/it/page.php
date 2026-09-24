@@ -60,4 +60,22 @@ return [
     'occupied-alias' => 'Questo indirizzo porta già a :target — la traccia di uno spostamento. Un redirect scritto qui viene provato prima.',
 
     'filter-kind' => 'Tipo',
+
+    'sitemap' => 'Mappa del sito',
+    'sitemap-built' => 'Generata',
+    'sitemap-total' => 'Indirizzi: :count',
+    'sitemap-excluded' => 'Escluse — noindex: :noindex, altro canonical: :canonical',
+    'sitemap-empty' => 'È vuota: nessun indirizzo è pubblicato e aperto all’indice.',
+    'sitemap-off' => 'La mappa del sito è disattivata su questo sito.',
+    'sitemap-rebuild' => 'Rigenera',
+    'sitemap-rebuilt' => 'La mappa del sito è stata rigenerata.',
+    'test-sitemap' => 'Mappa del sito',
+    'test-sitemap-in' => 'Nella mappa del sito.',
+    'test-sitemap-out' => 'Non è nella mappa del sito: :reason.',
+    'sitemap-reason-disabled' => 'la mappa del sito è disattivata',
+    'sitemap-reason-unknown' => 'il sito non ha qui una pagina propria',
+    'sitemap-reason-alias' => 'è un vecchio indirizzo che reindirizza',
+    'sitemap-reason-hidden' => 'la pagina non è pubblicata',
+    'sitemap-reason-noindex' => 'la pagina dice noindex',
+    'sitemap-reason-canonical' => 'la pagina indica un altro indirizzo come canonico',
 ];

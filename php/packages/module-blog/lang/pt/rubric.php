@@ -14,7 +14,6 @@ return [
     'edit' => 'Editar',
 
     'tab-content' => 'Conteúdo',
-    'tab-cover' => 'Imagem',
     'tab-seo' => 'SEO',
 
     'field-title' => 'Nome',

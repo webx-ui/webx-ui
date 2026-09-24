@@ -1,0 +1,25 @@
+{
+  "screen": "things.section-form",
+  "root": [
+    {
+      "id": "main",
+      "type": "wx-card",
+      "children": [
+        { "id": "title", "type": "wx-input", "name": "title", "label": "Title", "localized": true },
+        {
+          "id": "slug",
+          "type": "wx-category-slug",
+          "name": "slug",
+          "label": "Slug",
+          "localized": true
+        },
+        { "id": "is-visible", "type": "wx-switch", "name": "is_visible", "label": "Visible" }
+      ]
+    },
+    {
+      "id": "project-fields",
+      "type": "wx-card",
+      "children": []
+    }
+  ]
+}

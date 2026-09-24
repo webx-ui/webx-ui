@@ -6,11 +6,17 @@ namespace WebxUi\Admin;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
+use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Foundation\Http\Kernel;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use WebxUi\Admin\Backups\Backups;
+use WebxUi\Admin\Categories\CategoriesType;
+use WebxUi\Admin\Categories\CategorySources;
+use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Console\BackupCommand;
 use WebxUi\Admin\Console\BootCommand;
 use WebxUi\Admin\Console\DemoCommand;
@@ -24,6 +30,8 @@ use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Contracts\SiteUrls;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Gate\CloseSite;
+use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Admin\Links\RoutingSiteUrls;
@@ -33,6 +41,7 @@ use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\BooleanType;
 use WebxUi\Admin\Screens\Types\CascaderType;
+use WebxUi\Admin\Screens\Types\CollectionType;
 use WebxUi\Admin\Screens\Types\ColorType;
 use WebxUi\Admin\Screens\Types\DateRangeType;
 use WebxUi\Admin\Screens\Types\DateType;
@@ -45,6 +54,7 @@ use WebxUi\Admin\Screens\Types\RateType;
 use WebxUi\Admin\Screens\Types\RepeaterType;
 use WebxUi\Admin\Screens\Types\RichTextType;
 use WebxUi\Admin\Screens\Types\SliderType;
+use WebxUi\Admin\Screens\Types\SlugType;
 use WebxUi\Admin\Screens\Types\StringType;
 use WebxUi\Admin\Screens\Types\TagsType;
 use WebxUi\Admin\Screens\Types\TimeType;
@@ -73,6 +83,17 @@ class AdminServiceProvider extends ServiceProvider
         // What this panel can link to (§3 of the menu spec). A singleton for the same reason as
         // the two above: content modules register into it from their own providers.
         $this->app->singleton(LinkSources::class);
+
+        // Which model's categories a `wx-categories` field is about, by the path they answer at.
+        $this->app->singleton(CategorySources::class);
+
+        // The records modules offer to show as blocks (§3 of the FAQ spec), by the key a
+        // `wx-collection` field names them with. Filled from providers, like the two above.
+        $this->app->singleton(CollectionSources::class);
+
+        // What the password over a site in testing lets through. A singleton because the
+        // packages that answer where the panel's browser has to reach add their own from boot.
+        $this->app->singleton(Openings::class);
 
         // The language prefix, when there is an address registry to ask. Behind `class_exists`
         // because the frame does not require `webx-ui/routing` — a panel of settings and
@@ -113,6 +134,22 @@ class AdminServiceProvider extends ServiceProvider
             // server does not know which names exist and checks only that it is a short string.
             $types->register('wx-icon-picker', new StringType(255));
             $types->register('wx-code-editor', new StringType);
+            // The address part of a category (`categoryLinks()` modules): drawn with the module's
+            // prefix in front of it by the panel, checked for its shape here.
+            $types->register('wx-category-slug', new SlugType);
+            // The same for a record of a module with a flat prefix (a service): one field for
+            // every module after the blog, rather than a `wx-<module>-slug` in each.
+            $types->register('wx-slug', new SlugType);
+            // The categories a record is in. Which table is the node's `source`, registered by
+            // the module that owns it — the same string the panel asks for the list at.
+            $types->register('wx-categories', new CategoriesType($app->make(CategorySources::class)));
+            // Which records of a module a block shows. Kept as the choice, read on the site as
+            // the records themselves — by the module that has them.
+            $types->register('wx-collection', new CollectionType(
+                $app->make(CollectionSources::class),
+                $app->make(CategorySources::class),
+                $app->make(Locales::class),
+            ));
             $types->register('wx-cascader', new CascaderType);
             $types->register('wx-tree-select', new TreeSelectType);
             $types->register('wx-transfer', new OptionListType('items'));
@@ -176,7 +213,9 @@ class AdminServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         $this->registerDraftMacro();
+        $this->registerCategoryMacros();
         $this->registerBackupSchedule();
+        $this->registerGate();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -239,6 +278,25 @@ class AdminServiceProvider extends ServiceProvider
     }
 
     /**
+     * The password over a site in testing, as global middleware: an address with no route never
+     * reaches a group, and a gate that lets every 404 through is not a gate (see `CloseSite`).
+     *
+     * Pushed whether or not it is switched on — it reads the switch per request and steps aside
+     * when it is off — so that turning it on is an `.env` line and a `config:cache`, not a deploy.
+     * On `booted`, because resolving the HTTP kernel copies its groups over the router's.
+     */
+    private function registerGate(): void
+    {
+        $this->app->booted(function (): void {
+            $kernel = $this->app->make(HttpKernel::class);
+
+            if ($kernel instanceof Kernel) {
+                $kernel->pushMiddleware(CloseSite::class);
+            }
+        });
+    }
+
+    /**
      * `$table->draft()` — the two columns `HasDraft` reads: the draft itself and when the
      * entity was last published — so a migration says what it adds rather than how.
      */
@@ -256,6 +314,47 @@ class AdminServiceProvider extends ServiceProvider
             Blueprint::macro('dropDraft', function (string $column = 'draft', string $publishedAt = 'published_at'): void {
                 /** @var Blueprint $this */
                 $this->dropColumn([$column, $publishedAt]);
+            });
+        }
+    }
+
+    /**
+     * `$table->category()` and `$table->categoryLinks()` — the columns every module's categories
+     * have, and the link table with both orders in it (§3.2 of the services spec). A module adds
+     * what only its categories have (a cover, an introduction) beside the macro.
+     */
+    private function registerCategoryMacros(): void
+    {
+        if (! Blueprint::hasMacro('category')) {
+            Blueprint::macro('category', function (): void {
+                /** @var Blueprint $this */
+                // Translatable. A category without addresses leaves the slug empty.
+                $this->json('title')->nullable();
+                $this->json('slug')->nullable();
+                $this->integer('position')->default(0);
+                $this->boolean('is_visible')->default(true);
+                // The fields a project patched onto the category's screen (`HasExtra`).
+                $this->json('extra')->nullable();
+                $this->softDeletes();
+                $this->timestamps();
+
+                $this->index('position');
+            });
+        }
+
+        if (! Blueprint::hasMacro('categoryLinks')) {
+            Blueprint::macro('categoryLinks', function (string $item, string $categories, ?string $items = null): void {
+                /** @var Blueprint $this */
+                $this->foreignId($item.'_id')->constrained($items ?? Str::plural($item))->cascadeOnDelete();
+                $this->foreignId('category_id')->constrained($categories)->cascadeOnDelete();
+
+                // The order of the categories on the item; the first one is the main one.
+                $this->integer('position')->default(0);
+                // The place of the item inside the category, for a list dragged with a filter on.
+                $this->integer('item_position')->default(0);
+
+                $this->unique([$item.'_id', 'category_id']);
+                $this->index(['category_id', 'item_position']);
             });
         }
     }

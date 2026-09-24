@@ -6,7 +6,7 @@ namespace WebxUi\Blog\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use Throwable;
-use WebxUi\Blog\Exceptions\BlogException;
+use WebxUi\Admin\Categories\CategoryException;
 use WebxUi\Blog\Models\Rubric;
 
 /**
@@ -21,7 +21,7 @@ final class RubricTest extends TestCase
         $rubric = $this->rubric('repairs');
         $this->article('changing-a-belt')->rubrics()->attach($rubric);
 
-        $this->expectException(BlogException::class);
+        $this->expectException(CategoryException::class);
         // The number is in the message because the editor's next move depends on it: one
         // article gets moved, forty means the rubric was the right idea after all.
         $this->expectExceptionMessageMatches('/\b1\b/');

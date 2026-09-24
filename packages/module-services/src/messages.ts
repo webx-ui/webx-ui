@@ -1,0 +1,126 @@
+import type { Messages } from '@webx-ui/module-admin'
+
+/**
+ * The English this package speaks on its own, before the server's dictionary arrives, or without
+ * one. The server ships the same lines in ten languages under `webx-services::` and overrides
+ * these; `messages.test.ts` keeps the two sets of keys equal.
+ */
+export const servicesMessages: Record<string, Messages> = {
+  module: {
+    group: 'Services',
+    services: 'Services',
+    categories: 'Categories',
+  },
+  panel: {
+    new: 'New service',
+    'new-title': 'New service',
+    'field-title': 'Title',
+    create: 'Create',
+    cancel: 'Cancel',
+    search: 'Search by title or address',
+    empty: 'No services yet.',
+    'empty-help': 'A service is a page of the site made of blocks, filed under categories.',
+    'empty-search': 'Nothing matches that.',
+    'empty-bin': 'The bin is empty.',
+
+    'status-draft': 'Draft',
+    'status-published': 'Live',
+    'status-modified': 'Live',
+    'status-unpublished': 'Off the site',
+    edits: 'edits',
+    'no-address': 'No address in this language',
+    'no-category': 'In no category',
+    'main-category': 'The main category: it goes in the breadcrumbs',
+
+    'view-all': 'All',
+    'view-published': 'Live',
+    'view-draft': 'Drafts',
+    'view-unpublished': 'Off the site',
+    bin: 'Bin',
+
+    'filter-category': 'Category',
+    'any-category': 'Any category',
+
+    open: 'Open',
+    'open-on-site': 'Open on the site',
+    'copy-address': 'Copy the address',
+    'address-copied': 'The address is on the clipboard.',
+    publish: 'Publish',
+    unpublish: 'Take off the site',
+    delete: 'Delete',
+    restore: 'Restore',
+    'delete-title': 'Delete “:title”?',
+    'delete-text': 'It goes to the bin and comes off the site, and its address is free again.',
+    deleted: 'The service is in the bin.',
+    restored: 'The service is back.',
+    published: 'The service is on the site.',
+    'unpublished-done': 'The service is off the site.',
+    'reorder-failed': 'The new order was not saved.',
+  },
+  service: {
+    trail: 'Where this service sits',
+    untitled: 'Untitled',
+    save: 'Save',
+    'save-failed': 'The service was not saved.',
+    'publish-title': 'Put “:title” on the site?',
+    'publish-text': 'It answers at :address from the moment you do, for everyone.',
+    'publish-nowhere': 'It has no address in this language yet, so nothing will answer.',
+    preview: 'Preview',
+    discard: 'Discard changes',
+    'discard-title': 'Discard what is waiting?',
+    'discard-text':
+      'The service goes back to what the site is showing. What was written since is not listed anywhere.',
+    discarded: 'The service is back to what is published.',
+    'conflict-title': 'The service changed while you were editing',
+    'conflict-mine': 'Keep mine',
+    'conflict-theirs': 'Take the newer version',
+    'conflict-theirs-title': 'Give up what you wrote?',
+    'conflict-theirs-text':
+      'The service is read again as it now is, and what you have typed since goes.',
+    leave: 'Leave',
+    'leave-title': 'Leave without saving?',
+    'leave-text': 'The service could not be saved, and what you wrote is not on the server.',
+    'live-since': 'On the site since :date',
+    'address-moving':
+      'The address is changing. The old one keeps working and leads to the new one.',
+    'history-empty': 'This service has never been published.',
+    version: '#:number',
+    'version-live': 'On the site',
+    'source-panel': 'From the panel',
+    'source-mcp': 'By an agent',
+    'source-import': 'Imported',
+    'restore-title': 'Restore version :number?',
+    'restore-text':
+      'It becomes the draft. The site keeps showing what is published until you publish this.',
+    'restore-version': 'Restore',
+    'restored-version': 'Version :number is now the draft.',
+  },
+  category: {
+    'tab-content': 'Content',
+    'tab-blocks': 'Blocks',
+    'tab-seo': 'SEO',
+    'field-title': 'Title',
+    'field-slug': 'Address',
+    'field-lead': 'Introduction',
+    'lead-help': 'Above the list of services on the category page.',
+    visible: 'Shown on the site',
+    'visible-help':
+      'Hidden, its page answers 404 and it drops out of the index; its services go on answering at their own addresses.',
+    'cover-help':
+      'On the category card, and in social networks when the SEO card has no picture of its own.',
+    new: 'New category',
+    empty: 'No categories yet.',
+    'empty-help': 'A category is a section of the catalogue with a page of its own.',
+    order: 'Drag to change the order of the catalogue on the site.',
+    hidden: 'Hidden from the site',
+    'no-address': 'No address in this language',
+    services: 'Services: :count',
+    'show-services': 'Show its services',
+    'delete-blocked': 'This category still holds services. Move them first.',
+    'delete-text': 'It goes to the bin and its page comes off the site. Its services stay.',
+    deleted: 'The category is in the bin.',
+    saved: 'The category is saved.',
+    'address-moving':
+      'The address is changing. The old one keeps working and leads to the new one.',
+  },
+}

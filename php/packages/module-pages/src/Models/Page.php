@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Pages\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +16,10 @@ use WebxUi\Blocks\HasBlocks;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\NestedSet\HasNestedSet;
 use WebxUi\Pages\Exceptions\PagesException;
+use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
+use WebxUi\Seo\Contracts\Crumb;
+use WebxUi\Seo\Contracts\HasBreadcrumbs;
 use WebxUi\Seo\HasSeo;
 
 /**
@@ -44,7 +48,7 @@ use WebxUi\Seo\HasSeo;
  * @property int $depth
  * @property int|null $parent_id
  */
-class Page extends Model
+class Page extends Model implements HasBreadcrumbs, Visible
 {
     use HasBlocks;
     use HasDraft;
@@ -165,6 +169,65 @@ class Page extends Model
         }
 
         return $this->hasDraft() ? self::STATUS_MODIFIED : self::STATUS_PUBLISHED;
+    }
+
+    /**
+     * Published and not in the bin — what the handler answers 404 by and the sitemap leaves out
+     * by, one answer for both (§17.1 of the SEO spec).
+     */
+    public function isVisible(?string $locale = null): bool
+    {
+        return $this->isPublished() && ! $this->trashed();
+    }
+
+    /**
+     * The bin is the global scope's business already; this adds the rest.
+     *
+     * @param  Builder<covariant Model>  $query
+     * @return Builder<covariant Model>
+     */
+    public function scopeVisible(Builder $query, ?string $locale = null): Builder
+    {
+        return $query->whereNotNull($this->qualifyColumn($this->publishedAtColumn()));
+    }
+
+    /**
+     * The pages above this one in the tree, then this one — the home left out, because
+     * `module-seo` puts the site's home in front of every trail itself (§17.5 of the SEO spec).
+     *
+     * An ancestor that is not on the site drops out rather than becoming a link to a 404: a
+     * published page under a draft is reachable, its draft parent is not. The home page has no
+     * trail at all.
+     *
+     * @return list<Crumb>
+     */
+    public function breadcrumbs(string $locale): array
+    {
+        if ($this->isRoot() || $this->isDetached()) {
+            return [];
+        }
+
+        $crumbs = [];
+
+        foreach ($this->pathFromRoot() as $node) {
+            if ($node->isRoot() || (! $node->is($this) && ! $node->isVisible($locale))) {
+                continue;
+            }
+
+            $crumbs[] = new Crumb((string) $node->getTranslation('title', $locale), $node->url($locale));
+        }
+
+        return $crumbs;
+    }
+
+    /**
+     * The last publication, because every publication stamps the date anew: a page has no date
+     * of its own that a reader is shown, so the stamp is exactly "when the site last changed".
+     * A draft saved since does not count — nobody outside the panel can see it.
+     */
+    public function visibleUpdatedAt(): ?CarbonInterface
+    {
+        return $this->published_at;
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Blog\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Facades\Screens;
 use WebxUi\Blog\Models\Rubric;
 use WebxUi\Blog\Models\Tag;
 use WebxUi\Seo\Models\SeoRedirect;
@@ -72,14 +73,14 @@ final class TaxonomyPanelTest extends TestCase
         $rubric = $this->rubric('repairs');
 
         $response = $this->actingAs($this->editor(['blog.taxonomy.manage']), 'cms')
-            ->putJson('/api/cms/blog/rubrics/'.$rubric->getKey(), [
+            ->putJson('/api/cms/blog/rubrics/'.$rubric->getKey(), ['values' => [
                 'title' => ['en' => 'Repairs'],
                 'slug' => ['en' => 'repairs'],
                 'lead' => ['en' => '<p>What <em>we</em> fix.</p><script>alert(1)</script>'],
-            ])
+            ]])
             ->assertOk();
 
-        $this->assertSame('<p>What <em>we</em> fix.</p>', $response->json('data.lead.en'));
+        $this->assertSame('<p>What <em>we</em> fix.</p>', $response->json('data.values.lead.en'));
 
         $this->get('/blog/repairs')
             ->assertOk()
@@ -95,14 +96,92 @@ final class TaxonomyPanelTest extends TestCase
         $rubric->setTranslation('lead', 'en', '<p>Something.</p>')->save();
 
         $this->actingAs($this->editor(['blog.taxonomy.manage']), 'cms')
-            ->putJson('/api/cms/blog/rubrics/'.$rubric->getKey(), [
-                'title' => ['en' => 'Repairs'],
-                'slug' => ['en' => 'repairs'],
-                'lead' => ['en' => '<p></p>'],
-            ])
+            ->putJson('/api/cms/blog/rubrics/'.$rubric->getKey(), ['values' => ['lead' => ['en' => '<p></p>']]])
             ->assertOk();
 
         $this->assertSame('', $rubric->refresh()->leadHtml('en'));
+    }
+
+    /**
+     * The editor opens a rubric as a page of its own (§3.6 of the services spec): the record, the
+     * values of `blog.category-form` and the prefix the address is printed after.
+     */
+    #[Test]
+    public function a_rubric_opens_with_the_values_of_its_screen(): void
+    {
+        $rubric = $this->rubric('repairs');
+
+        $this->actingAs($this->editor(['blog.taxonomy.manage']), 'cms')
+            ->getJson('/api/cms/blog/rubrics/'.$rubric->getKey())
+            ->assertOk()
+            ->assertJsonPath('data.category.id', $rubric->getKey())
+            ->assertJsonPath('data.category.path', 'blog/repairs')
+            ->assertJsonPath('data.values.title.en', 'Repairs')
+            ->assertJsonPath('data.values.slug.en', 'repairs')
+            ->assertJsonPath('data.values.is_visible', true)
+            ->assertJsonPath('data.values.cover', null)
+            ->assertJsonPath('data.prefix', 'blog');
+    }
+
+    /** The SEO card is `module-seo`'s patch on the rubric's screen, and saved into its own table. */
+    #[Test]
+    public function the_seo_card_of_a_rubric_is_saved_through_its_screen(): void
+    {
+        $rubric = $this->rubric('repairs');
+
+        $this->actingAs($this->editor(['blog.taxonomy.manage']), 'cms')
+            ->putJson('/api/cms/blog/rubrics/'.$rubric->getKey(), ['values' => [
+                'seo' => ['title' => ['en' => 'Repairs we do']],
+            ]])
+            ->assertOk()
+            ->assertJsonPath('data.values.seo.title.en', 'Repairs we do');
+
+        $this->assertSame('Repairs we do', $rubric->refresh()->seoValue()['title']['en'] ?? null);
+    }
+
+    /**
+     * A field a project patched onto the rubric's screen is kept (§3.4): it lands in `extra`,
+     * comes back with the values, survives a save that did not send it, and reads on the site
+     * through its type.
+     */
+    #[Test]
+    public function a_field_of_the_project_is_kept_on_the_rubric(): void
+    {
+        Screens::extend(Rubric::SCREEN, [[
+            'op' => 'add',
+            'target' => 'project-fields',
+            'node' => ['id' => 'motto', 'type' => 'wx-input', 'name' => 'motto', 'label' => 'Motto', 'localized' => true],
+        ]]);
+
+        $rubric = $this->rubric('repairs');
+        $editor = $this->editor(['blog.taxonomy.manage']);
+
+        $this->actingAs($editor, 'cms')
+            ->putJson('/api/cms/blog/rubrics/'.$rubric->getKey(), ['values' => ['motto' => ['en' => 'We fix it']]])
+            ->assertOk()
+            ->assertJsonPath('data.values.motto.en', 'We fix it');
+
+        $this->actingAs($editor, 'cms')
+            ->putJson('/api/cms/blog/rubrics/'.$rubric->getKey(), ['values' => ['title' => ['en' => 'Repair shop']]])
+            ->assertOk()
+            ->assertJsonPath('data.values.motto.en', 'We fix it');
+
+        $rubric->refresh();
+
+        $this->assertSame(['motto' => ['en' => 'We fix it']], $rubric->extraRaw());
+        $this->assertSame('We fix it', $rubric->extra('motto', 'en'));
+        $this->assertSame('Repair shop', $rubric->getTranslation('title', 'en'));
+    }
+
+    #[Test]
+    public function a_slug_of_the_wrong_shape_is_refused_under_its_field(): void
+    {
+        $rubric = $this->rubric('repairs');
+
+        $this->actingAs($this->editor(['blog.taxonomy.manage']), 'cms')
+            ->putJson('/api/cms/blog/rubrics/'.$rubric->getKey(), ['values' => ['slug' => ['en' => 'two words']]])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['slug']);
     }
 
     #[Test]

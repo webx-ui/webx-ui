@@ -11,5 +11,11 @@
         @webxBlocks
     </x-slot:head>
 
+    {{-- The pages above this one, from the same list as the BreadcrumbList in the <head>.
+         Nothing on the home page. --}}
+    @if (config('webx-pages.breadcrumbs', true))
+        <x-webx-seo::breadcrumbs :for="$page" />
+    @endif
+
     {!! $content !!}
 </x-dynamic-component>

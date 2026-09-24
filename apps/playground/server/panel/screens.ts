@@ -26,6 +26,32 @@ const SCREENS: Record<string, { base: string; patches: string[] }> = {
     // the blog leaves a placeholder there, and `module-seo` replaces it when it is installed.
     patches: ['php/packages/module-seo/resources/screens/blog.article-form.json'],
   },
+  'blog.category-form': {
+    base: 'php/packages/module-blog/resources/screens/category-form.json',
+    // The second patch is the project's, as a site would write it: one field of its own in the
+    // card the screen keeps for that (`project-fields`). Saved into `extra` by the server.
+    patches: [
+      'php/packages/module-seo/resources/screens/blog.category-form.json',
+      'apps/playground/server/panel/project/blog.category-form.json',
+    ],
+  },
+  'faq.form': { base: 'php/packages/module-faq/resources/screens/form.json', patches: [] },
+  'faq.category-form': {
+    base: 'php/packages/module-faq/resources/screens/category-form.json',
+    patches: [],
+  },
+  'services.form': {
+    base: 'php/packages/module-services/resources/screens/form.json',
+    // A project's price beside the SEO card, as a site would patch it on: into `extra`.
+    patches: [
+      'php/packages/module-seo/resources/screens/services.form.json',
+      'apps/playground/server/panel/project/services.form.json',
+    ],
+  },
+  'services.category-form': {
+    base: 'php/packages/module-services/resources/screens/category-form.json',
+    patches: ['php/packages/module-seo/resources/screens/services.category-form.json'],
+  },
 }
 
 const root = (path: string): string =>
