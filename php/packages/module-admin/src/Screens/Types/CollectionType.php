@@ -6,11 +6,14 @@ namespace WebxUi\Admin\Screens\Types;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use WebxUi\Admin\Categories\Category;
 use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Collections\CollectionSource;
 use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Collections\Selection;
+use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Admin\Screens\ResolvesForEntity;
 use WebxUi\Admin\Screens\ResolvesMissing;
 use WebxUi\Localization\Locales;
 
@@ -26,12 +29,13 @@ use WebxUi\Localization\Locales;
  * are picked apart only there (`MediaValues`). A source that is gone — the module removed — reads
  * as nothing rather than as an exception: the block prints empty and the page stays up.
  */
-final class CollectionType implements ResolvesMissing
+final class CollectionType implements ResolvesForEntity, ResolvesMissing
 {
     public function __construct(
         private readonly CollectionSources $sources,
         private readonly CategorySources $categories,
         private readonly Locales $locales,
+        private readonly RelationTargets $targets,
     ) {}
 
     /**
@@ -68,6 +72,8 @@ final class CollectionType implements ResolvesMissing
                 }
             }
 
+            $this->checkRelated($source, $value['related'] ?? null, $fail);
+
             $ids = $value['categories'] ?? [];
 
             if (! is_array($ids)) {
@@ -95,8 +101,47 @@ final class CollectionType implements ResolvesMissing
     }
 
     /**
+     * The relation filter: a kind of record this source is related to, installed, and records of
+     * it that exist — the bin included, as with categories.
+     */
+    private function checkRelated(CollectionSource $source, mixed $related, Closure $fail): void
+    {
+        if ($related === null) {
+            return;
+        }
+
+        $type = is_array($related) ? ($related['type'] ?? null) : null;
+        $target = is_string($type) && in_array($type, $source->relations(), true) ? $this->targets->find($type) : null;
+
+        if ($target === null) {
+            $fail((string) __('webx-admin::collections.unknown-relation'));
+
+            return;
+        }
+
+        /** @var array<string, mixed> $related */
+        if (($related['current'] ?? null) !== null && ! is_bool($related['current'])) {
+            $fail((string) __('webx-admin::collections.flag'));
+
+            return;
+        }
+
+        $wanted = Selection::normalise(['related' => [...$related, 'current' => false]])['related']['ids'] ?? [];
+
+        if ($wanted === [] || ($related['current'] ?? false) === true) {
+            return;
+        }
+
+        $found = $target->query()->withoutGlobalScope(SoftDeletingScope::class)->whereKey($wanted)->count();
+
+        if ($found !== count($wanted)) {
+            $fail((string) __('webx-admin::collections.unknown-related'));
+        }
+    }
+
+    /**
      * @param  array<string, mixed>  $node
-     * @return array{categories: list<int>, limit: int|null, filter: bool, markup: bool|null}|null
+     * @return array{categories: list<int>, limit: int|null, filter: bool, markup: bool|null, related: array{type: string, ids: list<int>, current?: true}|null}|null
      */
     public function store(mixed $value, array $node): ?array
     {
@@ -115,6 +160,18 @@ final class CollectionType implements ResolvesMissing
      */
     public function resolve(mixed $stored, array $node, ?string $locale = null): array
     {
+        return $this->resolveFor($stored, $node, null, $locale);
+    }
+
+    /**
+     * The same reading on a page: "related to this page" becomes related to the entity the page
+     * is of — or to nothing, when the block stands on a page of another kind.
+     *
+     * @param  array<string, mixed>  $node
+     * @return array{items: list<array<string, mixed>>, groups: list<array{id: int, title: string, items: list<int|string>}>, filter: bool}
+     */
+    public function resolveFor(mixed $stored, array $node, ?object $entity, ?string $locale = null): array
+    {
         $source = $this->source($node);
 
         if ($source === null) {
@@ -122,7 +179,11 @@ final class CollectionType implements ResolvesMissing
         }
 
         $locale ??= $this->locales->current();
-        $selection = Selection::of($stored, $source);
+        $selection = Selection::of($stored, $source)->forEntity(
+            $entity !== null,
+            $entity === null ? null : $this->targets->keyOf($entity),
+            $entity instanceof Model && is_numeric($entity->getKey()) ? (int) $entity->getKey() : null,
+        );
 
         $items = $source->items($selection, $locale);
 

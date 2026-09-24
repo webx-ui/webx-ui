@@ -12,6 +12,8 @@ return [
     'unknown-category' => 'One of the chosen categories no longer exists.',
     'limit' => 'How many to show: a whole number from 1 to :max, or empty for all.',
     'flag' => 'This switch takes yes or no.',
+    'unknown-relation' => 'Records of this section cannot be filtered by that.',
+    'unknown-related' => 'One of the chosen related records no longer exists.',
 
     'field-source' => 'Shows records from “:source”.',
     'field-unavailable' => 'Records from “:source” cannot be chosen here: the section is not installed, or you have no access to it.',

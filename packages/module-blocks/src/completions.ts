@@ -84,6 +84,17 @@ const SOURCE_ITEMS: Record<string, string[]> = {
     'photo',
     'fields',
   ],
+  recipes: [
+    'title',
+    'url',
+    'lead',
+    'cover',
+    'gallery',
+    'minutes',
+    'servings',
+    'nutrients',
+    'fields',
+  ],
 }
 
 export function templateCompletions({ schema, styles }: TemplateSources): CompletionSource {

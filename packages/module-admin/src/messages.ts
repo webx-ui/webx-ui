@@ -232,6 +232,8 @@ export const adminMessages: Record<string, Messages> = {
     'unknown-category': 'One of the chosen categories no longer exists.',
     limit: 'How many to show: a whole number from 1 to :max, or empty for all.',
     flag: 'This switch takes yes or no.',
+    'unknown-relation': 'Records of this section cannot be filtered by that.',
+    'unknown-related': 'One of the chosen related records no longer exists.',
     'field-source': 'Shows records from “:source”.',
     'field-unavailable':
       'Records from “:source” cannot be chosen here: the section is not installed, or you have no access to it.',
@@ -246,5 +248,28 @@ export const adminMessages: Record<string, Messages> = {
     'field-markup-auto-off':
       'By default it is off: search engines ask not to mark the same records up on several pages, and a chosen category usually stands on several.',
     'field-markup-reset': 'Back to the default',
+  },
+  // The records of another section a record points at (`wx-relations`), and the same choice as a
+  // block's filter ("only related to" in `wx-collection`). Kept apart from `collections` because
+  // the field is a field of its own, on any screen.
+  relations: {
+    'field-add': 'Add…',
+    'field-searching': 'Searching…',
+    'field-nothing': 'Nothing found.',
+    'field-empty': 'Nothing chosen yet.',
+    'field-remove': 'Remove',
+    'field-drag': 'Drag to change the order',
+    'field-hidden': 'Not on the site',
+    'field-trashed': 'In the bin',
+    'field-missing': 'Not found',
+    'field-full': 'No more than :max can be chosen.',
+    'field-forbidden': 'You cannot see these records, so the choice cannot be changed here.',
+    'collection-related': 'Only related to',
+    'collection-related-to': 'Only related to “:target”',
+    'collection-related-type': 'Which section',
+    'collection-related-any': 'Not narrowed: every record, related or not.',
+    'collection-related-current': 'The record of the page it stands on',
+    'collection-related-current-hint':
+      'On the page of a record of “:target” the block shows what is related to it; on any other page it shows nothing.',
   },
 }

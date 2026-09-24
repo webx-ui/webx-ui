@@ -34,6 +34,14 @@ final class ServicesSource implements CollectionSource
         return 'services/categories';
     }
 
+    /**
+     * @return list<string>
+     */
+    public function relations(): array
+    {
+        return [];
+    }
+
     public function supportsMarkup(): bool
     {
         return false;

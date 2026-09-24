@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'trail' => 'Wo dieses Rezept steht',
+    'untitled' => 'Ohne Titel',
+    'save' => 'Speichern',
+    'save-failed' => 'Das Rezept wurde nicht gespeichert.',
+    'publish-title' => '„:title“ veröffentlichen?',
+    'publish-text' => 'Es ist ab sofort für alle unter :address erreichbar — mit seinen Kategorien, Leistungen und ähnlichen Rezepten, wie sie jetzt ausgewählt sind.',
+    'publish-nowhere' => 'In dieser Sprache hat es noch keine Adresse, also antwortet nichts.',
+    'preview' => 'Vorschau',
+    'discard' => 'Änderungen verwerfen',
+    'discard-title' => 'Wartende Änderungen verwerfen?',
+    'discard-text' => 'Das Rezept kehrt zu dem zurück, was die Website zeigt. Das seither Geschriebene ist nirgends mehr aufgeführt.',
+    'discarded' => 'Das Rezept entspricht wieder der veröffentlichten Fassung.',
+    'conflict-title' => 'Das Rezept wurde während Ihrer Bearbeitung geändert',
+    'conflict-mine' => 'Meine behalten',
+    'conflict-theirs' => 'Neuere Fassung nehmen',
+    'conflict-theirs-title' => 'Ihre Eingaben aufgeben?',
+    'conflict-theirs-text' => 'Das Rezept wird neu geladen, wie es jetzt ist, und Ihre Eingaben gehen verloren.',
+    'leave' => 'Verlassen',
+    'leave-title' => 'Ohne Speichern verlassen?',
+    'leave-text' => 'Das Rezept konnte nicht gespeichert werden, und Ihre Eingaben sind nicht auf dem Server.',
+    'live-since' => 'Online seit :date',
+    'address-moving' => 'Die Adresse ändert sich. Die alte funktioniert weiter und leitet auf die neue.',
+    'history-empty' => 'Dieses Rezept wurde noch nie veröffentlicht.',
+    'version' => '#:number',
+    'version-live' => 'Online',
+    'source-panel' => 'Aus dem Panel',
+    'source-mcp' => 'Von einem Agenten',
+    'source-import' => 'Importiert',
+    'restore-title' => 'Version :number wiederherstellen?',
+    'restore-text' => 'Sie wird zum Entwurf. Die Website zeigt das Veröffentlichte, bis Sie sie veröffentlichen.',
+    'restore-version' => 'Wiederherstellen',
+    'restored-version' => 'Version :number ist jetzt der Entwurf.',
+];

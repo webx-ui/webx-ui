@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Screens;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
+use WebxUi\Admin\Relations\HasRelations;
+use WebxUi\Admin\Screens\Types\RelationsType;
 
 /**
  * What a saved screen is made of, sorted by where each part goes.
@@ -17,6 +20,10 @@ use Illuminate\Validation\ValidationException;
  *
  *     $split = $record->split('blog.article-form', $input, own: ['title', 'slug'], taken: ['rubrics', 'seo']);
  *     $article->extra = $record->merge('blog.article-form', $article->extraRaw(), $split->extra);
+ *
+ * One kind of field is sorted by its type rather than by those lists: `wx-relations` goes into
+ * `relations`, and {@see saveRelations()} writes it the way the record takes relations — into its
+ * draft when it has one (§3.4 of the recipes spec).
  *
  * @phpstan-type Node array<string, mixed>
  */
@@ -41,11 +48,59 @@ final class ScreenRecord
     {
         $stored = $this->values->validate($screen, $input, $can);
 
+        // A relation field is sorted by its type, not by the lists: a form that does not know it
+        // (a project's patch, a module that came later) must not see it land in `extra`.
+        $relations = [];
+
+        foreach ($this->relationFields($screen) as $name => $target) {
+            if (array_key_exists($name, $stored)) {
+                /** @var list<int> $ids */
+                $ids = is_array($stored[$name]) ? $stored[$name] : [];
+                $relations[$name] = ['target' => $target, 'ids' => $ids];
+                unset($stored[$name]);
+            }
+        }
+
         return new ScreenSplit(
             array_intersect_key($stored, array_flip($own)),
             array_intersect_key($stored, array_flip($taken)),
             array_diff_key($stored, array_flip([...$own, ...$taken])),
+            $relations,
         );
+    }
+
+    /**
+     * Write the relation fields of a split: into the draft of a record that has one, straight into
+     * the rows otherwise ({@see HasRelations::saveRelations()}). Nothing sent, nothing written.
+     */
+    public function saveRelations(Model $record, ScreenSplit $split): void
+    {
+        if ($split->relations === [] || ! method_exists($record, 'saveRelations')) {
+            return;
+        }
+
+        $record->saveRelations($split->relations);
+    }
+
+    /**
+     * What the relation fields of a screen open with: the ids as the editor last left them. A
+     * field the screen does not draw — its module is not here — is not in the answer.
+     *
+     * @return array<string, list<int>>
+     */
+    public function relationValues(string $screen, Model $record): array
+    {
+        if (! method_exists($record, 'draftedRelatedIds')) {
+            return [];
+        }
+
+        $values = [];
+
+        foreach (array_keys($this->relationFields($screen)) as $name) {
+            $values[$name] = $record->draftedRelatedIds($name);
+        }
+
+        return $values;
     }
 
     /**
@@ -97,6 +152,28 @@ final class ScreenRecord
         }
 
         return null;
+    }
+
+    /**
+     * The `wx-relations` fields the screen draws, name → target.
+     *
+     * @return array<string, string>
+     */
+    private function relationFields(string $screen): array
+    {
+        if (! $this->screens->has($screen)) {
+            return [];
+        }
+
+        $fields = [];
+
+        foreach ($this->screens->fields($screen) as $node) {
+            if (($node['type'] ?? null) === 'wx-relations') {
+                $fields[(string) $node['name']] = RelationsType::target($node);
+            }
+        }
+
+        return $fields;
     }
 
     /**

@@ -81,6 +81,11 @@ final class Catalogue
             'label' => 'Reviews — what clients say, shown on any page as a block',
             'default' => false,
         ],
+        'recipes' => [
+            'package' => 'webx-ui/module-recipes',
+            'label' => 'Recipes — recipes with categories, nutrition and schema.org markup, each a page of the site',
+            'default' => false,
+        ],
         'menu' => [
             'package' => 'webx-ui/module-menu',
             'label' => 'Menus — the header and the footer, and what each entry points at',

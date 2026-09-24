@@ -121,6 +121,28 @@ describe('the template', () => {
     ])
   })
 
+  it('knows the card of the recipes source', () => {
+    const recipes = templateCompletions({
+      schema: () => [{ id: 'recipes', type: 'wx-collection', props: { source: 'recipes' } }],
+      styles: () => '',
+    })
+
+    expect(labels(ask(recipes, "@foreach ($recipes['items'] as $recipe) {{ $recipe['|"))).toEqual([
+      'id',
+      'anchor',
+      'categories',
+      'title',
+      'url',
+      'lead',
+      'cover',
+      'gallery',
+      'minutes',
+      'servings',
+      'nutrients',
+      'fields',
+    ])
+  })
+
   it('knows the card of the reviews source', () => {
     const reviews = templateCompletions({
       schema: () => [{ id: 'reviews', type: 'wx-collection', props: { source: 'reviews' } }],

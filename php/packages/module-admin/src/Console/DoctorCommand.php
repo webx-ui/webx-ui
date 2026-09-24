@@ -16,6 +16,7 @@ use WebxUi\Admin\Doctor\Checks\Migrations;
 use WebxUi\Admin\Doctor\Checks\NpmRanges;
 use WebxUi\Admin\Doctor\Checks\PanelOpens;
 use WebxUi\Admin\Doctor\Checks\PassportKeys;
+use WebxUi\Admin\Doctor\Checks\Relations;
 use WebxUi\Admin\Doctor\Checks\SiteGate;
 use WebxUi\Admin\Doctor\Checks\Storage;
 use WebxUi\Admin\Doctor\Diagnosis;
@@ -54,6 +55,7 @@ final class DoctorCommand extends Command
         Storage::class,
         Layouts::class,
         Helpers::class,
+        Relations::class,
         Languages::class,
         PanelOpens::class,
         PassportKeys::class,

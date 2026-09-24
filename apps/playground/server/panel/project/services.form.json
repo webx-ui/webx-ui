@@ -10,5 +10,17 @@
       "help": "A project's own field: the server keeps it in services.extra, and publishes it with the text.",
       "props": { "min": 0, "step": 100 }
     }
+  },
+  {
+    "op": "add",
+    "target": "taxonomy",
+    "node": {
+      "id": "recipes",
+      "type": "wx-relations",
+      "name": "recipes",
+      "label": "Recipes",
+      "help": "A relation (wx-relations), here until the recipes module brings its own screen: the recipes this service is for, in the order the page shows them.",
+      "props": { "target": "recipe", "max": 4 }
+    }
   }
 ]

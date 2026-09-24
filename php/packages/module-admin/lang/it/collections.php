@@ -12,6 +12,8 @@ return [
     'unknown-category' => 'Una delle categorie scelte non esiste più.',
     'limit' => 'Quanti mostrarne: un numero intero da 1 a :max, oppure vuoto per tutti.',
     'flag' => 'Questo interruttore accetta solo sì o no.',
+    'unknown-relation' => 'I contenuti di questa sezione non si possono filtrare così.',
+    'unknown-related' => 'Uno dei contenuti collegati scelti non esiste più.',
 
     'field-source' => 'Mostra voci da «:source».',
     'field-unavailable' => 'Qui non si possono scegliere voci da «:source»: la sezione non è installata o non hai accesso.',

@@ -174,6 +174,14 @@ export function collectionSources(locale: string): unknown[] {
       categories: 'services/categories',
       markup: false,
     },
+    {
+      key: 'recipes',
+      title: locale === 'ru' ? 'Рецепты' : 'Recipes',
+      categories: 'recipes/categories',
+      markup: false,
+      // "Only related to" on a recipes block: the recipes of one service (§3.6).
+      relations: [{ key: 'service', title: locale === 'ru' ? 'Услуги' : 'Services' }],
+    },
   ]
 }
 

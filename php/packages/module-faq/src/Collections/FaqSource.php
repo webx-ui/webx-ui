@@ -53,6 +53,14 @@ final class FaqSource implements CollectionSource
         return 'faq/categories';
     }
 
+    /**
+     * @return list<string>
+     */
+    public function relations(): array
+    {
+        return [];
+    }
+
     public function supportsMarkup(): bool
     {
         return class_exists(Seo::class) && (bool) config('webx-faq.markup', true);

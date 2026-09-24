@@ -1,0 +1,85 @@
+{
+  "slug": "recipes",
+  "title": "Recipes",
+  "description": "Recipes from the recipes section: a showcase of a few with a link to all of them, or the whole catalogue with pages and a filter by what they are rich in.",
+  "icon": null,
+  "group": "content",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "title",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "recipes",
+      "type": "wx-collection",
+      "label": "Recipes",
+      "props": {
+        "source": "recipes"
+      }
+    },
+    {
+      "id": "mode",
+      "type": "wx-segmented",
+      "label": "View",
+      "help": "A showcase is the recipes above and a link to all of them. A catalogue is all of them, a page at a time, with a filter by what they are rich in.",
+      "props": {
+        "options": [
+          {
+            "value": "showcase",
+            "label": "Showcase"
+          },
+          {
+            "value": "catalog",
+            "label": "Catalogue"
+          }
+        ]
+      }
+    },
+    {
+      "id": "per_page",
+      "type": "wx-input-number",
+      "label": "Recipes on a page",
+      "help": "Empty is what the index has (24 unless the site changed it).",
+      "props": {
+        "min": 1,
+        "max": 100
+      },
+      "visible": {
+        "when": "mode",
+        "is": "catalog"
+      }
+    },
+    {
+      "id": "columns",
+      "type": "wx-input-number",
+      "label": "Columns",
+      "help": "Empty is 3. A narrow page gets fewer by itself.",
+      "props": {
+        "min": 1,
+        "max": 6
+      }
+    }
+  ],
+  "template": "<section class=\"b-recipes\" data-wx-block=\"recipes\">\n    @if ($title)\n        <h2 class=\"b-recipes__title\">{{ $title }}</h2>\n    @endif\n    {{-- The catalogue fragment of the module: the same markup as its index and category pages. --}}\n    @include('webx-recipes::partials.catalog', ['catalog' => WebxUi\\Recipes\\Rendering\\Catalog::block($recipes, $mode, $per_page, $columns)])\n</section>\n",
+  "styles": ".b-recipes__title {\n    margin: 0 0 1em;\n}\n",
+  "script": "",
+  "sample": {
+    "title": "Recipes",
+    "recipes": {
+      "categories": [],
+      "limit": 3,
+      "filter": false,
+      "markup": null,
+      "related": null
+    },
+    "mode": "showcase",
+    "columns": 3
+  }
+}

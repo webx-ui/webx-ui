@@ -60,7 +60,7 @@ final class DoorsTest extends TestCase
             ->assertOk();
 
         $this->assertSame(
-            ['categories' => [$billing->id, $delivery->id], 'limit' => 5, 'filter' => true, 'markup' => true],
+            ['categories' => [$billing->id, $delivery->id], 'limit' => 5, 'filter' => true, 'markup' => true, 'related' => null],
             $this->page->refresh()->draft['blocks'][0]['values']['questions'],
         );
     }
@@ -82,7 +82,7 @@ final class DoorsTest extends TestCase
         ], $this->editor(['pages.view', 'pages.manage', 'blocks.manage']))->assertOk();
 
         $this->assertSame(
-            ['categories' => [$billing->id], 'limit' => 100, 'filter' => false, 'markup' => null],
+            ['categories' => [$billing->id], 'limit' => 100, 'filter' => false, 'markup' => null, 'related' => null],
             $this->page->refresh()->draft['blocks'][0]['values']['questions'],
         );
     }

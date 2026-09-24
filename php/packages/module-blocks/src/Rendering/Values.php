@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Blocks\Rendering;
 
 use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Screens\ResolvesForEntity;
 use WebxUi\Admin\Screens\ResolvesMissing;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Blocks\BlockType;
@@ -38,9 +39,11 @@ final readonly class Values
 
     /**
      * @param  array<string, mixed>  $values
+     * @param  object|null  $entity  The record whose page is being printed, for a type that reads
+     *                               differently on it ({@see ResolvesForEntity}); null on a sample.
      * @return array<string, mixed>
      */
-    public function resolve(BlockType $type, array $values): array
+    public function resolve(BlockType $type, array $values, ?object $entity = null): array
     {
         $fields = Schema::fields($type->schema, $this->types);
         $resolved = [];
@@ -52,7 +55,9 @@ final readonly class Values
             $field = $this->types->get((string) ($node['type'] ?? ''));
 
             if ($field instanceof ResolvesMissing && ! array_key_exists($name, $values)) {
-                $resolved[$name] = $field->resolve(null, $node);
+                $resolved[$name] = $field instanceof ResolvesForEntity
+                    ? $field->resolveFor(null, $node, $entity)
+                    : $field->resolve(null, $node);
             }
         }
 
@@ -69,7 +74,11 @@ final readonly class Values
 
             $field = $node === null ? null : $this->types->get((string) ($node['type'] ?? ''));
 
-            $resolved[$name] = $field === null || $node === null ? $value : $field->resolve($value, $node);
+            $resolved[$name] = match (true) {
+                $field === null || $node === null => $value,
+                $field instanceof ResolvesForEntity => $field->resolveFor($value, $node, $entity),
+                default => $field->resolve($value, $node),
+            };
         }
 
         return $resolved;

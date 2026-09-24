@@ -20,6 +20,7 @@
             <directory>packages/module-menu/tests</directory>
             <directory>packages/module-pages/tests</directory>
             <directory>packages/module-reviews/tests</directory>
+            <directory>packages/module-recipes/tests</directory>
             <directory>packages/module-seo/tests</directory>
             <directory>packages/module-services/tests</directory>
             <directory>packages/module-settings/tests</directory>
@@ -41,6 +42,7 @@
             <directory>packages/module-menu/src</directory>
             <directory>packages/module-pages/src</directory>
             <directory>packages/module-reviews/src</directory>
+            <directory>packages/module-recipes/src</directory>
             <directory>packages/module-seo/src</directory>
             <directory>packages/module-services/src</directory>
             <directory>packages/module-settings/src</directory>

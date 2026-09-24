@@ -33,6 +33,14 @@ final class EntrySource implements CollectionSource
         return 'things/sections';
     }
 
+    /**
+     * @return list<string>
+     */
+    public function relations(): array
+    {
+        return [];
+    }
+
     public function supportsMarkup(): bool
     {
         return $this->markup;

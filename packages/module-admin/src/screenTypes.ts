@@ -2,6 +2,7 @@ import type { TypeRegistry } from '@webx-ui/schema'
 import CategoriesField from './categories/CategoriesField.vue'
 import CollectionField from './collections/CollectionField.vue'
 import LinkField from './LinkField.vue'
+import RelationsField from './relations/RelationsField.vue'
 import ListScreen from './ListScreen.vue'
 import RichTextField from './RichTextField.vue'
 import SlugField from './SlugField.vue'
@@ -33,6 +34,9 @@ import SlugField from './SlugField.vue'
  *
  * `wx-collection` is a block's window onto another section — the FAQ's questions, a team — and
  * keeps which part of it to show, never the records (`collections/`).
+ *
+ * `wx-relations` is a record pointing at records of another section — the services of a recipe,
+ * its similar recipes — by id, in order (`relations/`).
  */
 export const adminTypes: TypeRegistry = {
   'wx-list': { component: ListScreen, kind: 'layout', labelProp: 'title' },
@@ -45,6 +49,9 @@ export const adminTypes: TypeRegistry = {
   'wx-categories': { component: CategoriesField, kind: 'field' },
   // Wide: four controls in a column, and half a line leaves the category chips one to a row.
   'wx-collection': { component: CollectionField, kind: 'field', wide: true },
+  // Wide: a row carries a picture, a name with a line under it and a mark, and the search box
+  // under the list reads titles.
+  'wx-relations': { component: RelationsField, kind: 'field', wide: true },
   'wx-slug': { component: SlugField, kind: 'field' },
   'wx-category-slug': { component: SlugField, kind: 'field' },
 }

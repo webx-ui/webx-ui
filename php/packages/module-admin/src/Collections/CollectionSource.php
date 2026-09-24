@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Collections;
 
+use WebxUi\Admin\Relations\RelationTargets;
+
 /**
  * Records a module lets a page show as a block: the questions of a FAQ, the people of a team.
  *
@@ -29,6 +31,15 @@ interface CollectionSource
      * `wx-categories` field would say (`faq/categories`) — or null for a source without them.
      */
     public function categories(): ?string;
+
+    /**
+     * The kinds of record ({@see RelationTargets} keys) this source's records can be related to,
+     * so a block can show only those related to one of them — "the recipes of this service"
+     * (§3.6 of the recipes spec). Empty — no such filter, as `categories()` null is no categories.
+     *
+     * @return list<string>
+     */
+    public function relations(): array;
 
     /** Whether the source prints schema.org markup for what it shows, so the field offers the switch. */
     public function supportsMarkup(): bool;

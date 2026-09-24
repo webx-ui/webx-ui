@@ -12,6 +12,8 @@ return [
     'unknown-category' => 'Eine der gewählten Kategorien gibt es nicht mehr.',
     'limit' => 'Wie viele angezeigt werden: eine ganze Zahl von 1 bis :max oder leer für alle.',
     'flag' => 'Dieser Schalter nimmt nur Ja oder Nein.',
+    'unknown-relation' => 'Einträge dieses Bereichs lassen sich danach nicht filtern.',
+    'unknown-related' => 'Einen der gewählten verknüpften Einträge gibt es nicht mehr.',
 
     'field-source' => 'Zeigt Einträge aus „:source“.',
     'field-unavailable' => 'Einträge aus „:source“ lassen sich hier nicht auswählen: Der Bereich ist nicht installiert, oder Sie haben keinen Zugriff darauf.',

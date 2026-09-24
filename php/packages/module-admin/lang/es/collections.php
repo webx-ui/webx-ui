@@ -12,6 +12,8 @@ return [
     'unknown-category' => 'Una de las categorías elegidas ya no existe.',
     'limit' => 'Cuántos mostrar: un número entero de 1 a :max, o vacío para todos.',
     'flag' => 'Este interruptor solo admite sí o no.',
+    'unknown-relation' => 'Los registros de esta sección no se pueden filtrar por eso.',
+    'unknown-related' => 'Uno de los registros relacionados elegidos ya no existe.',
 
     'field-source' => 'Muestra entradas de «:source».',
     'field-unavailable' => 'Aquí no se pueden elegir entradas de «:source»: la sección no está instalada o no tiene acceso a ella.',

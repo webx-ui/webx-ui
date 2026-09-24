@@ -65,7 +65,7 @@ final class DoorsTest extends TestCase
         $values = $this->page->refresh()->draft['blocks'][0]['values'];
 
         $this->assertSame(
-            ['categories' => [$clinic->id, $implants->id], 'limit' => 6, 'filter' => true, 'markup' => null],
+            ['categories' => [$clinic->id, $implants->id], 'limit' => 6, 'filter' => true, 'markup' => null, 'related' => null],
             $values['reviews'],
         );
         $this->assertSame('slider', $values['layout']);
@@ -91,7 +91,7 @@ final class DoorsTest extends TestCase
         $values = $this->page->refresh()->draft['blocks'][0]['values'];
 
         $this->assertSame(
-            ['categories' => [$clinic->id], 'limit' => 100, 'filter' => false, 'markup' => null],
+            ['categories' => [$clinic->id], 'limit' => 100, 'filter' => false, 'markup' => null, 'related' => null],
             $values['reviews'],
         );
         $this->assertSame('marquee', $values['layout']);

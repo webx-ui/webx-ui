@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'trail' => 'Dove si trova questa ricetta',
+    'untitled' => 'Senza titolo',
+    'save' => 'Salva',
+    'save-failed' => 'La ricetta non è stata salvata.',
+    'publish-title' => 'Pubblicare «:title»?',
+    'publish-text' => 'Risponde a :address da subito, per tutti — con le sue categorie, i servizi e le ricette simili come sono scelti ora.',
+    'publish-nowhere' => 'Non ha ancora un indirizzo in questa lingua, quindi non risponderà nulla.',
+    'preview' => 'Anteprima',
+    'discard' => 'Scarta le modifiche',
+    'discard-title' => 'Scartare ciò che è in attesa?',
+    'discard-text' => 'La ricetta torna a ciò che mostra il sito. Quanto scritto da allora non compare da nessuna parte.',
+    'discarded' => 'La ricetta è tornata alla versione pubblicata.',
+    'conflict-title' => 'La ricetta è cambiata mentre la modificavi',
+    'conflict-mine' => 'Tieni la mia',
+    'conflict-theirs' => 'Prendi la più recente',
+    'conflict-theirs-title' => 'Rinunciare a ciò che hai scritto?',
+    'conflict-theirs-text' => 'La ricetta viene riletta com’è ora, e ciò che hai digitato va perso.',
+    'leave' => 'Esci',
+    'leave-title' => 'Uscire senza salvare?',
+    'leave-text' => 'Non è stato possibile salvare la ricetta, e ciò che hai scritto non è sul server.',
+    'live-since' => 'Online dal :date',
+    'address-moving' => 'L’indirizzo cambia. Quello vecchio continua a funzionare e porta al nuovo.',
+    'history-empty' => 'Questa ricetta non è mai stata pubblicata.',
+    'version' => '#:number',
+    'version-live' => 'Sul sito',
+    'source-panel' => 'Dal pannello',
+    'source-mcp' => 'Da un agente',
+    'source-import' => 'Importato',
+    'restore-title' => 'Ripristinare la versione :number?',
+    'restore-text' => 'Diventa la bozza. Il sito mostra quanto pubblicato finché non la pubblichi.',
+    'restore-version' => 'Ripristina',
+    'restored-version' => 'La versione :number è ora la bozza.',
+];

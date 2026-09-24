@@ -7,6 +7,7 @@ import type {
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { blade } from './blade'
+import { RECIPES_BLOCK } from './recipes-site'
 
 /**
  * The block types the playground's site is built from, and a renderer small enough to live in
@@ -964,6 +965,31 @@ export const blockTypes: BlockType[] = [
     created_at: '2026-09-24T12:00:00+00:00',
     updated_at: '2026-09-24T12:00:00+00:00',
     /* `content` is the file `module-reviews` offers, read off disk: see `offered()` below. */
+  },
+  {
+    id: 12,
+    slug: 'recipes',
+    title: 'Рецепты',
+    description: 'Рецепты из раздела: витрина из нескольких или каталог с фильтром и страницами.',
+    icon: 'heart',
+    group: 'content',
+    sort: 37,
+    allow: null,
+    allowed_in: null,
+    max_per_entity: null,
+    is_enabled: true,
+    draft: null,
+    published: version(1, '2026-09-24T12:00:00+00:00', 'Offered by recipes'),
+    usage_count: 1,
+    thumbnail: null,
+    created_at: '2026-09-24T12:00:00+00:00',
+    updated_at: '2026-09-24T12:00:00+00:00',
+    /*
+     * `content` is the playground's stand-in (`recipes-site.ts`), not the file `module-recipes`
+     * offers: that template includes the catalog partial the index and the category page share
+     * (§5.8), and this playground's little Blade has neither `@include` nor a paginator.
+     */
+    content: RECIPES_BLOCK,
   },
   {
     id: 8,

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Screens;
 
+use Illuminate\Container\Container;
+
 /**
  * Every screen the panel can draw, by name, with the patches other packages and the project
  * have laid over it.
@@ -91,8 +93,9 @@ final class ScreenRegistry
     }
 
     /**
-     * The tree with every registered patch applied — the whole screen, nothing cut out and
-     * nothing translated. What the write side validates against.
+     * The tree with every registered patch applied — the whole screen, nothing translated and
+     * nothing cut out but the fields this site has nothing for ({@see Withdraws}). What the write
+     * side validates against.
      *
      * @return list<Node>
      */
@@ -112,7 +115,9 @@ final class ScreenRegistry
             $this->built[$name] = $root;
         }
 
-        return $this->built[$name];
+        // Not cached with the patches: what a node has to edit is registered by other modules'
+        // providers, and a tree built before the last of them booted must not keep the answer.
+        return $this->withdraw($this->built[$name]);
     }
 
     /**
@@ -143,6 +148,41 @@ final class ScreenRegistry
     public function fields(string $name): array
     {
         return Tree::fields($this->tree($name));
+    }
+
+    /**
+     * @param  list<Node>  $nodes
+     * @return list<Node>
+     */
+    private function withdraw(array $nodes): array
+    {
+        // Asked for on use, never injected: building the field types builds their dependencies
+        // (the library's addresses, the link sources), and a registry made early in boot would
+        // fix them before the site — or a test — has put its own in place.
+        $container = Container::getInstance();
+
+        if (! $container->bound(FieldTypes::class)) {
+            return $nodes;
+        }
+
+        $types = $container->make(FieldTypes::class);
+        $kept = [];
+
+        foreach ($nodes as $node) {
+            $type = $types->get((string) ($node['type'] ?? ''));
+
+            if ($type instanceof Withdraws && $type->withdrawn($node)) {
+                continue;
+            }
+
+            if (isset($node['children']) && is_array($node['children'])) {
+                $node['children'] = $this->withdraw(Tree::children($node));
+            }
+
+            $kept[] = $node;
+        }
+
+        return $kept;
     }
 
     /**

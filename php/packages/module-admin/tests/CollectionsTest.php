@@ -74,12 +74,12 @@ final class CollectionsTest extends TestCase
     public function what_is_kept_is_the_choice_cleaned(): void
     {
         $this->assertSame(
-            ['categories' => [3, 5], 'limit' => 100, 'filter' => true, 'markup' => false],
+            ['categories' => [3, 5], 'limit' => 100, 'filter' => true, 'markup' => false, 'related' => null],
             $this->type()->store(['categories' => ['5', 3, 5, 'x'], 'limit' => 500, 'filter' => true, 'markup' => false, 'source' => 'reviews'], $this->node),
         );
 
         $this->assertSame(
-            ['categories' => [], 'limit' => null, 'filter' => false, 'markup' => null],
+            ['categories' => [], 'limit' => null, 'filter' => false, 'markup' => null, 'related' => null],
             $this->type()->store(['limit' => 0, 'markup' => 'yes'], $this->node),
         );
 
@@ -90,7 +90,7 @@ final class CollectionsTest extends TestCase
         $this->app->make(CollectionSources::class)->register(new EntrySource(markup: false));
 
         $this->assertSame(
-            ['categories' => [], 'limit' => null, 'filter' => false, 'markup' => null],
+            ['categories' => [], 'limit' => null, 'filter' => false, 'markup' => null, 'related' => null],
             $this->type()->store(['markup' => true], $this->node),
         );
     }
@@ -191,7 +191,7 @@ final class CollectionsTest extends TestCase
         $this->actingAs(new Editor(['things.view']))
             ->getJson('/api/cms/collections')
             ->assertOk()
-            ->assertExactJson(['data' => [['key' => 'entries', 'title' => 'Entries', 'categories' => 'things/sections', 'markup' => true]]]);
+            ->assertExactJson(['data' => [['key' => 'entries', 'title' => 'Entries', 'categories' => 'things/sections', 'markup' => true, 'relations' => []]]]);
 
         $this->actingAs(new Editor(['pages.view']))
             ->getJson('/api/cms/collections')

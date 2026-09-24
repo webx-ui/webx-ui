@@ -80,6 +80,7 @@ folder(2, 1, 'Блог')
 folder(3, 1, 'Страницы')
 folder(4, 1, 'Документы')
 folder(5, 1, 'Отзывы')
+folder(6, 1, 'Рецепты')
 
 /**
  * @param name What the library calls it — and what the generated picture says on its face.
@@ -192,6 +193,19 @@ image(3, 'pages/services.svg', 'Услуги', 1600, 900, '2026-06-04T12:00:00+0
 /* Portraits for two of the reviews; the rest have none, and the site draws their initials. */
 image(5, 'reviews/anna-petrova.svg', 'Анна Петрова', 400, 400, '2026-09-12T10:00:00+00:00')
 image(5, 'reviews/ihor-melnyk.svg', 'Игорь Мельник', 400, 400, '2026-08-30T10:00:00+00:00')
+/* Enough for a recipe with a gallery of three and a few with one — and some left to pick from. */
+for (const [path, name] of [
+  ['recipes/porridge.svg', 'Овсянка с ягодами'],
+  ['recipes/porridge-berries.svg', 'Ягоды для овсянки'],
+  ['recipes/porridge-bowl.svg', 'Овсянка в миске'],
+  ['recipes/lentil-soup.svg', 'Чечевичный суп'],
+  ['recipes/quinoa-salad.svg', 'Салат с киноа'],
+  ['recipes/baked-fish.svg', 'Запечённая рыба'],
+  ['recipes/smoothie.svg', 'Смузи со шпинатом'],
+  ['recipes/table.svg', 'Накрытый стол'],
+]) {
+  image(6, path, name, 1600, 1200, '2026-09-20T09:00:00+00:00')
+}
 
 recount()
 

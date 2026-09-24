@@ -97,11 +97,11 @@ REPOSITORY="$(
     # this checkout, and the whole run would prove nothing about the change under test.
     $COMPOSER_BIN config repositories.packagist.org \
         '{"type":"composer","url":"https://repo.packagist.org","exclude":["webx-ui/*"]}'
-    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' webx-ui/module-pages:'*' webx-ui/module-inbox:'*' webx-ui/module-blog:'*' webx-ui/module-services:'*' webx-ui/module-faq:'*' webx-ui/module-reviews:'*' --no-interaction --no-progress --quiet
+    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' webx-ui/module-pages:'*' webx-ui/module-inbox:'*' webx-ui/module-blog:'*' webx-ui/module-services:'*' webx-ui/module-faq:'*' webx-ui/module-reviews:'*' webx-ui/module-recipes:'*' --no-interaction --no-progress --quiet
 )
 
 step "The packages came from the checkout, not from Packagist"
-for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages module-inbox module-blog module-services module-faq module-reviews module-media nested-set routing; do
+for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages module-inbox module-blog module-services module-faq module-reviews module-recipes module-media nested-set routing; do
     [ -L "$APP/vendor/webx-ui/$package" ] || [ -f "$APP/vendor/webx-ui/$package/.git" ] \
         || fail "vendor/webx-ui/$package is a copy, so a released version was installed instead of this checkout"
     note "webx-ui/$package is linked to the checkout"
@@ -128,6 +128,7 @@ step "Providers are found by discovery, not by hand"
         "webx-ui/module-services" => "WebxUi\\Services\\ServicesServiceProvider",
         "webx-ui/module-faq" => "WebxUi\\Faq\\FaqServiceProvider",
         "webx-ui/module-reviews" => "WebxUi\\Reviews\\ReviewsServiceProvider",
+        "webx-ui/module-recipes" => "WebxUi\\Recipes\\RecipesServiceProvider",
     ];
     foreach ($expected as $package => $provider) {
         if (! in_array($provider, $manifest[$package]["providers"] ?? [], true)) {
@@ -194,9 +195,9 @@ note "$(grep -E '^DB_CONNECTION=|^DB_DATABASE=' "$APP/.env" | tr '\n' ' ')"
 note 'migrations ran'
 
 step "Install the block types modules offer"
-# module-faq and module-reviews ship their block types as documents, not as migrations: the site
-# takes them with this command. Run it twice, because the second run must find nothing left to
-# install.
+# module-faq, module-reviews and module-recipes ship their block types as documents, not as
+# migrations: the site takes them with this command. Run it twice, because the second run must
+# find nothing left to install.
 "$PHP_BIN" "$APP/artisan" webx:blocks:offered --install --no-interaction > "$WORKDIR/offered.log" \
     || { cat "$WORKDIR/offered.log" >&2; fail 'webx:blocks:offered --install failed'; }
 "$PHP_BIN" "$APP/artisan" webx:blocks:offered --install --no-interaction > "$WORKDIR/offered-again.log" \
