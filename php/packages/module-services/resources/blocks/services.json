@@ -1,0 +1,48 @@
+{
+  "slug": "services",
+  "title": "Services",
+  "description": "Cards of the services section: all of them with a filter, or the categories you pick.",
+  "icon": null,
+  "group": "content",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "title",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "services",
+      "type": "wx-collection",
+      "label": "Services",
+      "props": {
+        "source": "services"
+      }
+    },
+    {
+      "id": "all_label",
+      "type": "wx-input",
+      "label": "The filter button that shows every service",
+      "help": "Printed only when the filter is on. Empty is “All”.",
+      "localized": true
+    }
+  ],
+  "template": "<section class=\"b-services\" data-wx-block=\"services\">\n    @if ($title)\n        <h2 class=\"b-services__title\">{{ $title }}</h2>\n    @endif\n    @if ($services['filter'] && $services['groups'])\n        <div class=\"b-services__filter\" role=\"group\" hidden>\n            <button type=\"button\" class=\"b-services__chip is-active\" data-services-group=\"\" aria-pressed=\"true\">{{ $all_label ?: 'All' }}</button>\n            @foreach ($services['groups'] as $group)\n                <button type=\"button\" class=\"b-services__chip\" data-services-group=\"{{ $group['id'] }}\" aria-pressed=\"false\">{{ $group['title'] }}</button>\n            @endforeach\n        </div>\n    @endif\n    <ul class=\"b-services__grid\">\n        @foreach ($services['items'] as $service)\n            <li class=\"b-services__card\" data-services-categories=\"{{ implode(' ', $service['categories']) }}\">\n                <a class=\"b-services__link\" href=\"{{ $service['url'] }}\">\n                    @if ($service['cover'] && $service['cover']['url'])\n                        <img class=\"b-services__cover\" src=\"{{ $service['cover']['url'] }}\" alt=\"\" width=\"{{ $service['cover']['width'] }}\" height=\"{{ $service['cover']['height'] }}\" loading=\"lazy\">\n                    @endif\n                    <span class=\"b-services__name\">{{ $service['title'] }}</span>\n                </a>\n                @if ($service['lead'] !== '')\n                    <p class=\"b-services__lead\">{{ $service['lead'] }}</p>\n                @endif\n            </li>\n        @endforeach\n    </ul>\n</section>\n",
+  "styles": ".b-services {\n    container-type: inline-size;\n}\n\n.b-services__title {\n    margin: 0 0 1em;\n}\n\n.b-services__filter {\n    display: flex;\n    flex-wrap: wrap;\n    gap: 0.5em;\n    margin: 0 0 1.25em;\n}\n\n/* A flex box outranks the browser's own [hidden] rule. */\n.b-services__filter[hidden],\n.b-services__card[hidden] {\n    display: none;\n}\n\n.b-services__chip {\n    font: inherit;\n    color: inherit;\n    background: none;\n    border: 1px solid currentColor;\n    border-radius: 999px;\n    padding: 0.35em 0.9em;\n    cursor: pointer;\n    opacity: 0.65;\n}\n\n.b-services__chip.is-active {\n    opacity: 1;\n    font-weight: 600;\n}\n\n.b-services__grid {\n    display: grid;\n    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));\n    gap: 1.5em;\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n.b-services__link {\n    display: flex;\n    flex-direction: column;\n    gap: 0.75em;\n    color: inherit;\n    text-decoration: none;\n}\n\n.b-services__cover {\n    width: 100%;\n    height: auto;\n    aspect-ratio: 4 / 3;\n    object-fit: cover;\n    border-radius: 0.5em;\n}\n\n.b-services__name {\n    font-weight: 600;\n    font-size: 1.125em;\n}\n\n.b-services__link:hover .b-services__name {\n    text-decoration: underline;\n}\n\n.b-services__lead {\n    margin: 0.5em 0 0;\n    opacity: 0.8;\n}\n",
+  "script": "const cards = Array.from(el.querySelectorAll('.b-services__card'))\nconst chips = Array.from(el.querySelectorAll('.b-services__chip'))\nconst filter = el.querySelector('.b-services__filter')\n\n// The filter is printed hidden: without this script its buttons would do nothing.\nif (filter) filter.hidden = false\n\nfor (const chip of chips) {\n  chip.addEventListener('click', () => {\n    const group = chip.dataset.servicesGroup || ''\n    for (const other of chips) {\n      const on = other === chip\n      other.classList.toggle('is-active', on)\n      other.setAttribute('aria-pressed', on ? 'true' : 'false')\n    }\n    for (const card of cards) {\n      const groups = (card.dataset.servicesCategories || '').split(' ')\n      card.hidden = group !== '' && !groups.includes(group)\n    }\n  })\n}\n",
+  "sample": {
+    "title": "Our services",
+    "services": {
+      "categories": [],
+      "limit": null,
+      "filter": true,
+      "markup": false
+    },
+    "all_label": "All"
+  }
+}
