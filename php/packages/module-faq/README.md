@@ -127,6 +127,26 @@ Under `webx-admin.api_path` (`api/cms` by default):
 | `POST`   | `faq/questions/reorder`      | `{ ids, category? }`                     |
 |          | `faq/categories/*`           | the shared category routes, no addresses |
 
+## MCP
+
+With `webx-ui/mcp` serving the panel to agents, the questions are six tools behind `faq:read` and
+`faq:write` — `faq_list`, `faq_get`, `faq_create`, `faq_update`, `faq_delete`, `faq_reorder` — and
+the categories are the shared `faq_categories_*`. They go through the same list, form and order code
+as the panel: a project's field is refused where the panel would refuse it, and `faq_create` writes
+the question, its categories and those fields in one transaction. A question is named by its id or
+its anchor, a category by its id or its title.
+
+`faq://catalog` is what an agent reads first: every category with its questions in its own order,
+unpublished ones marked, the languages each is seen in, and the questions in no category at the end.
+
+## Demo
+
+`php artisan webx:demo` seeds three categories and ten questions in English and Russian, as far as
+the site has them: one question in two categories, one unpublished, one without a translation. It
+installs the FAQ block type if the site lacks it, makes a page `/faq` with every category and the
+filter when `module-pages` is there, and puts «Questions about payment» into a demo service when
+`module-services` is. `--remove` takes it all back.
+
 ## Translations
 
 Ten languages ship: `en`, `ru` and `uk` are read by a native speaker; `de`, `pl`, `fr`, `es`, `it`,

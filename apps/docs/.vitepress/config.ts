@@ -39,6 +39,7 @@ export default defineConfig({
             { text: 'Categories', link: '/guide/categories' },
             { text: 'Collections', link: '/guide/collections' },
             { text: 'Services', link: '/guide/services' },
+            { text: 'FAQ', link: '/guide/faq' },
             { text: 'Inbox', link: '/guide/inbox' },
             { text: 'Menus', link: '/guide/menu' },
             { text: 'Settings', link: '/guide/settings' },

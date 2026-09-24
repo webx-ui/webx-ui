@@ -198,6 +198,11 @@ php/
   Поэтому манифест, в котором прописан этот чекаут, нельзя собрать нигде больше: сайт
   `webx-cms.local` переключается между монорепой и реестром скриптом (`scripts/packages.mjs` у
   него, `scripts/link-panel.sh` здесь), а не живёт в одном состоянии. У npm то же самое с `file:`.
+  **Вернуть сайт после local-режима из git нельзя:** `composer.lock` там не отслеживается, а
+  `packages.mjs local --no-install` всё равно переписывает `package.json` — `git checkout`
+  отвечает «pathspec did not match» на первом же файле. Перед переключением копировать в
+  скретчпад `composer.json`, `composer.lock`, `package.json`, `package-lock.json` и
+  `database/database.sqlite` (база там sqlite), потом положить назад и `composer install`.
 - **В worktree `node_modules` — симлинк на основной чекаут, и `pnpm` это не переживает.** Любой
   `pnpm <скрипт>` оттуда либо отказывается («Refusing to use task run state directory … because
   it is a symbolic link»), либо — если решит, что сменился пакетный менеджер, — идёт по симлинку
