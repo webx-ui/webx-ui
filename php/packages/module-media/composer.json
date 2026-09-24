@@ -31,16 +31,16 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "intervention/image": "^3.11",
-        "webx-ui/module-admin": "^0.39.0",
-        "webx-ui/localization": "^0.39.0",
-        "webx-ui/mcp": "^0.39.0",
-        "webx-ui/module-auth": "^0.39.0",
-        "webx-ui/nested-set": "^0.39.0"
+        "webx-ui/module-admin": "^0.40.0",
+        "webx-ui/localization": "^0.40.0",
+        "webx-ui/mcp": "^0.40.0",
+        "webx-ui/module-auth": "^0.40.0",
+        "webx-ui/nested-set": "^0.40.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/module-blocks": "^0.39.0"
+        "webx-ui/module-blocks": "^0.40.0"
     },
     "autoload": {
         "psr-4": {
