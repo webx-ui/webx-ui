@@ -1,5 +1,17 @@
 # @webx-ui/php
 
+## 0.38.0
+
+### Minor Changes
+
+- f246a1d: Pages, blog and services each get a `breadcrumbs` switch (`WEBX_PAGES_BREADCRUMBS`, `WEBX_BLOG_BREADCRUMBS`, `WEBX_SERVICES_BREADCRUMBS`, on by default): off, the package views stop printing the visible trail, while the `BreadcrumbList` in the head stays. Services also get `index` (`WEBX_SERVICES_INDEX`, on by default): off, the package no longer answers its prefix, so a page of blocks can take `/services`, and the services' breadcrumbs start with whatever stands there.
+- f246a1d: The panel has its own tab icon, home-screen icon and web manifest, served by `module-admin` under the panel's prefix; `WEBX_ADMIN_ICONS` replaces them file by file.
+- 421fab0: `services()` gives a block template the services as cards (`in()`, `only()`, `except()`, `take()`, `locale()`, `categories()`), never showing what a reader may not see; the same cards come from a new `services` source for `wx-collection` fields, and the module offers a Services block of them. `webx:doctor` says whether `menu()` and `services()` are the packages' own.
+
+### Patch Changes
+
+- 1771153: A media value saved together with its address — a block's sample is — no longer hands the template that old address: `resolve()` keeps only the key and the captions and works the address out again, so a site moved to https stops asking for its pictures over http.
+
 ## 0.37.0
 
 ### Minor Changes
