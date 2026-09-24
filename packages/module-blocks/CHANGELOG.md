@@ -1,5 +1,13 @@
 # @webx-ui/module-blocks
 
+## 0.8.7
+
+### Patch Changes
+
+- 4253940: The block form and the block tree scroll inside their card. The head with the done button and
+  the arrows stays put, and the card keeps its rounded corners instead of scrolling away with the
+  fields.
+
 ## 0.8.6
 
 ### Patch Changes
