@@ -6,6 +6,12 @@
         <meta name="robots" content="noindex, nofollow">
         <title>{{ $title }}</title>
 
+        {{-- The panel's own, under its prefix: the site's `/favicon.ico` is the site's. --}}
+        <link rel="icon" type="image/png" sizes="96x96" href="{{ $iconBase }}favicon-96x96.png">
+        <link rel="shortcut icon" href="{{ $iconBase }}favicon.ico">
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ $iconBase }}apple-touch-icon.png">
+        <link rel="manifest" href="{{ $iconBase }}site.webmanifest">
+
         {{-- The panel reads this before it draws anything. --}}
         <meta name="webx-manifest" content="{{ $manifestUrl }}">
 

@@ -61,6 +61,12 @@ writes. Changing the prefix later:
 php artisan webx:routes:rebuild --type=service --type=service-category
 ```
 
+`webx-services.index` off (`WEBX_SERVICES_INDEX=false`) keeps the prefix but drops the index
+route, so the address is free for a page with the slug `services`, built of blocks like any other.
+Categories and services stay under the prefix. The first step of their breadcrumbs is then
+whatever the registry holds at the prefix, named the way it names itself — and no step while
+nothing, or only a draft, is there.
+
 The old addresses stay behind as aliases that answer with a 301.
 
 ## Order in categories
@@ -311,7 +317,9 @@ takes all of it back out. A catalogue that already has anything in it is left al
 | Key                 | Default    | What it is                                           |
 | ------------------- | ---------- | ---------------------------------------------------- |
 | `prefix`            | `services` | The first segment of every address; empty — the root |
+| `index`             | `true`     | The package answers the prefix with its own index    |
 | `categories.blocks` | `false`    | A Blocks tab on the category page                    |
+| `breadcrumbs`       | `true`     | The package views print the visible trail            |
 | `views.*`           |            | The views each page is printed with                  |
 | `layout`            |            | The Blade component those views stand in             |
 | `middleware`        |            | What the index route runs through                    |
