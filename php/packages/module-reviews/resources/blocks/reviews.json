@@ -1,0 +1,112 @@
+{
+  "slug": "reviews",
+  "title": "Reviews",
+  "description": "Reviews from the reviews section: one, a grid, a slider or a marquee — all of them with a filter, or the categories you pick.",
+  "icon": null,
+  "group": "content",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "title",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "reviews",
+      "type": "wx-collection",
+      "label": "Reviews",
+      "props": {
+        "source": "reviews"
+      }
+    },
+    {
+      "id": "layout",
+      "type": "wx-segmented",
+      "label": "Layout",
+      "props": {
+        "options": [
+          {
+            "value": "single",
+            "label": "One"
+          },
+          {
+            "value": "grid",
+            "label": "Grid"
+          },
+          {
+            "value": "slider",
+            "label": "Slider"
+          },
+          {
+            "value": "marquee",
+            "label": "Marquee"
+          }
+        ]
+      }
+    },
+    {
+      "id": "columns",
+      "type": "wx-input-number",
+      "label": "Columns",
+      "props": {
+        "min": 1,
+        "max": 6
+      },
+      "visible": {
+        "when": "layout",
+        "in": ["grid", "slider"]
+      }
+    },
+    {
+      "id": "autoplay",
+      "type": "wx-switch",
+      "label": "Autoplay",
+      "visible": {
+        "when": "layout",
+        "is": "slider"
+      }
+    },
+    {
+      "id": "speed",
+      "type": "wx-slider",
+      "label": "Speed",
+      "props": {
+        "min": 10,
+        "max": 120
+      },
+      "visible": {
+        "when": "layout",
+        "is": "marquee"
+      }
+    },
+    {
+      "id": "all_label",
+      "type": "wx-input",
+      "label": "The filter button that shows every review",
+      "help": "Printed only when the filter is on. Empty is “All”.",
+      "localized": true
+    }
+  ],
+  "template": "<section class=\"b-reviews\" data-wx-block=\"reviews\" data-reviews-layout=\"{{ $layout ?: 'grid' }}\" data-reviews-autoplay=\"{{ $autoplay ? 'on' : 'off' }}\" data-reviews-speed=\"{{ $speed ?: 40 }}\" style=\"--reviews-columns: {{ $columns ?: 3 }}\">\n    @if ($title)\n        <h2 class=\"b-reviews__title\">{{ $title }}</h2>\n    @endif\n    @if ($reviews['filter'] && $reviews['groups'] && $layout !== 'single')\n        <div class=\"b-reviews__filter\" role=\"group\" hidden>\n            <button type=\"button\" class=\"b-reviews__chip is-active\" data-reviews-group=\"\" aria-pressed=\"true\">{{ $all_label ?: 'All' }}</button>\n            @foreach ($reviews['groups'] as $group)\n                <button type=\"button\" class=\"b-reviews__chip\" data-reviews-group=\"{{ $group['id'] }}\" aria-pressed=\"false\">{{ $group['title'] }}</button>\n            @endforeach\n        </div>\n    @endif\n    <div class=\"b-reviews__viewport\">\n        <ul class=\"b-reviews__track\">\n            @foreach ($reviews['items'] as $review)\n                @if ($layout !== 'single' || $loop->first)\n                    <li class=\"b-reviews__item\" id=\"{{ $review['anchor'] }}\" data-reviews-categories=\"{{ implode(' ', $review['categories']) }}\">\n                        <figure class=\"b-reviews__card\">\n                            @if ($review['photo'])\n                                <img class=\"b-reviews__photo\" src=\"{{ $review['photo']['url'] }}\" alt=\"\" width=\"{{ $review['photo']['width'] }}\" height=\"{{ $review['photo']['height'] }}\" loading=\"lazy\">\n                            @else\n                                <span class=\"b-reviews__initials\" aria-hidden=\"true\">{{ $review['initials'] }}</span>\n                            @endif\n                            @if ($review['rating'])\n                                <span class=\"b-reviews__stars\" style=\"--rating: {{ $review['rating'] }}\" role=\"img\" aria-label=\"{{ $review['rating'] }} / 5\"></span>\n                            @endif\n                            <blockquote class=\"b-reviews__text\">{!! nl2br(e($review['text'])) !!}</blockquote>\n                            <figcaption class=\"b-reviews__caption\">\n                                @if ($review['profile'])\n                                    <a class=\"b-reviews__name\" href=\"{{ $review['profile'] }}\" rel=\"nofollow noopener\" target=\"_blank\">{{ $review['name'] }}</a>\n                                @else\n                                    <span class=\"b-reviews__name\">{{ $review['name'] }}</span>\n                                @endif\n                                @if ($review['job_title'] !== '')\n                                    <span class=\"b-reviews__job\">{{ $review['job_title'] }}</span>\n                                @endif\n                                @if ($review['date'])\n                                    <time class=\"b-reviews__date\" datetime=\"{{ $review['date'] }}\">{{ $review['date'] }}</time>\n                                @endif\n                            </figcaption>\n                        </figure>\n                    </li>\n                @endif\n            @endforeach\n        </ul>\n    </div>\n    @if ($layout === 'slider')\n        <div class=\"b-reviews__nav\" hidden>\n            <button type=\"button\" class=\"b-reviews__arrow\" data-reviews-step=\"-1\" aria-label=\"Previous\">&#8249;</button>\n            <button type=\"button\" class=\"b-reviews__arrow\" data-reviews-step=\"1\" aria-label=\"Next\">&#8250;</button>\n        </div>\n    @endif\n</section>\n",
+  "styles": ".b-reviews {\n    container-type: inline-size;\n    --reviews-gap: 1.5em;\n}\n\n.b-reviews__title {\n    margin: 0 0 1em;\n}\n\n.b-reviews__filter {\n    display: flex;\n    flex-wrap: wrap;\n    gap: 0.5em;\n    margin: 0 0 1.25em;\n}\n\n/* A flex or grid box outranks the browser's own [hidden] rule. */\n.b-reviews__filter[hidden],\n.b-reviews__nav[hidden],\n.b-reviews__item[hidden] {\n    display: none;\n}\n\n.b-reviews__chip {\n    font: inherit;\n    color: inherit;\n    background: none;\n    border: 1px solid currentColor;\n    border-radius: 999px;\n    padding: 0.35em 0.9em;\n    cursor: pointer;\n    opacity: 0.65;\n}\n\n.b-reviews__chip.is-active {\n    opacity: 1;\n    font-weight: 600;\n}\n\n/* The grid, and what every other layout starts from. Up to `--reviews-columns` across, fewer\n   when a column would be narrower than 16em. */\n.b-reviews__track {\n    display: grid;\n    grid-template-columns: repeat(\n        auto-fill,\n        minmax(min(100%, max(16em, (100% - (var(--reviews-columns, 3) - 1) * var(--reviews-gap)) / var(--reviews-columns, 3))), 1fr)\n    );\n    gap: var(--reviews-gap);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n.b-reviews__item {\n    min-width: 0;\n}\n\n.b-reviews__card {\n    display: flex;\n    flex-direction: column;\n    gap: 0.75em;\n    box-sizing: border-box;\n    height: 100%;\n    margin: 0;\n    padding: 1.5em;\n    border: 1px solid color-mix(in srgb, currentColor 15%, transparent);\n    border-radius: 0.75em;\n}\n\n.b-reviews__photo,\n.b-reviews__initials {\n    flex: none;\n    width: 3.5em;\n    height: 3.5em;\n    border-radius: 50%;\n}\n\n.b-reviews__photo {\n    object-fit: cover;\n}\n\n.b-reviews__initials {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    font-weight: 600;\n    background: color-mix(in srgb, currentColor 10%, transparent);\n}\n\n/* Five stars, filled as far as the rating goes. */\n.b-reviews__stars {\n    position: relative;\n    display: inline-block;\n    width: max-content;\n    line-height: 1;\n    letter-spacing: 0.15em;\n    font-size: 1.1em;\n}\n\n.b-reviews__stars::before {\n    content: '★★★★★';\n    opacity: 0.2;\n}\n\n.b-reviews__stars::after {\n    content: '★★★★★';\n    position: absolute;\n    top: 0;\n    left: 0;\n    width: calc(var(--rating, 0) / 5 * 100%);\n    overflow: hidden;\n    white-space: nowrap;\n}\n\n.b-reviews__text {\n    flex: 1;\n    margin: 0;\n}\n\n.b-reviews__caption {\n    display: flex;\n    flex-direction: column;\n    gap: 0.15em;\n}\n\n.b-reviews__name {\n    font-weight: 600;\n    color: inherit;\n}\n\n.b-reviews__job,\n.b-reviews__date {\n    font-size: 0.9em;\n    opacity: 0.7;\n}\n\n/* One: a single review, large. */\n.b-reviews[data-reviews-layout='single'] .b-reviews__track {\n    display: block;\n    max-width: 48em;\n    margin-inline: auto;\n}\n\n.b-reviews[data-reviews-layout='single'] .b-reviews__card {\n    align-items: center;\n    text-align: center;\n    border: 0;\n    font-size: 1.125em;\n}\n\n/* A slider and a marquee are a ribbon that scrolls sideways — without the script, too. */\n.b-reviews[data-reviews-layout='slider'] .b-reviews__viewport,\n.b-reviews[data-reviews-layout='marquee'] .b-reviews__viewport {\n    overflow-x: auto;\n    scrollbar-width: thin;\n}\n\n.b-reviews[data-reviews-layout='slider'] .b-reviews__track,\n.b-reviews[data-reviews-layout='marquee'] .b-reviews__track {\n    display: flex;\n}\n\n.b-reviews[data-reviews-layout='slider'] .b-reviews__viewport {\n    scroll-snap-type: x mandatory;\n}\n\n.b-reviews[data-reviews-layout='slider'] .b-reviews__item {\n    flex: 0 0 calc((100% - (var(--reviews-columns, 3) - 1) * var(--reviews-gap)) / var(--reviews-columns, 3));\n    scroll-snap-align: start;\n}\n\n@container (max-width: 40em) {\n    .b-reviews[data-reviews-layout='slider'] .b-reviews__item {\n        flex-basis: 85%;\n    }\n}\n\n.b-reviews__nav {\n    display: flex;\n    justify-content: flex-end;\n    gap: 0.5em;\n    margin-top: 1em;\n}\n\n.b-reviews__arrow {\n    width: 2.5em;\n    height: 2.5em;\n    font: inherit;\n    color: inherit;\n    background: none;\n    border: 1px solid currentColor;\n    border-radius: 50%;\n    cursor: pointer;\n}\n\n.b-reviews__arrow:disabled {\n    opacity: 0.35;\n    cursor: default;\n}\n\n.b-reviews[data-reviews-layout='marquee'] .b-reviews__track {\n    width: max-content;\n}\n\n.b-reviews[data-reviews-layout='marquee'] .b-reviews__item {\n    flex: 0 0 20em;\n}\n\n/* The script doubles the ribbon and runs it by half its length, so the end meets the start. */\n.b-reviews.is-running .b-reviews__viewport {\n    overflow: hidden;\n}\n\n.b-reviews.is-running .b-reviews__track {\n    animation: b-reviews-marquee var(--reviews-duration, 40s) linear infinite;\n}\n\n.b-reviews.is-running .b-reviews__track:hover,\n.b-reviews.is-running .b-reviews__track:focus-within {\n    animation-play-state: paused;\n}\n\n@keyframes b-reviews-marquee {\n    to {\n        transform: translateX(calc(-50% - var(--reviews-gap) / 2));\n    }\n}\n\n@media (prefers-reduced-motion: reduce) {\n    .b-reviews.is-running .b-reviews__track {\n        animation: none;\n    }\n\n    .b-reviews.is-running .b-reviews__viewport {\n        overflow-x: auto;\n    }\n}\n",
+  "script": "const layout = el.dataset.reviewsLayout || 'grid'\nconst viewport = el.querySelector('.b-reviews__viewport')\nconst track = el.querySelector('.b-reviews__track')\nconst chips = Array.from(el.querySelectorAll('.b-reviews__chip'))\nconst filter = el.querySelector('.b-reviews__filter')\nconst still = window.matchMedia('(prefers-reduced-motion: reduce)')\nconst items = () => Array.from(el.querySelectorAll('.b-reviews__item'))\n\n// The filter is printed hidden: without this script its buttons would do nothing.\nif (filter) filter.hidden = false\n\nfor (const chip of chips) {\n  chip.addEventListener('click', () => {\n    const group = chip.dataset.reviewsGroup || ''\n    for (const other of chips) {\n      const on = other === chip\n      other.classList.toggle('is-active', on)\n      other.setAttribute('aria-pressed', on ? 'true' : 'false')\n    }\n    for (const item of items()) {\n      const groups = (item.dataset.reviewsCategories || '').split(' ')\n      item.hidden = group !== '' && !groups.includes(group)\n    }\n    if (viewport) viewport.scrollLeft = 0\n  })\n}\n\nif (layout === 'slider' && viewport && track) {\n  const nav = el.querySelector('.b-reviews__nav')\n  const arrows = nav ? Array.from(nav.querySelectorAll('.b-reviews__arrow')) : []\n  if (nav) nav.hidden = false\n\n  // One review further, measured rather than assumed: the number across changes with the width.\n  const step = () => {\n    const first = items().find((item) => !item.hidden)\n    const gap = parseFloat(getComputedStyle(track).columnGap) || 0\n    return first ? first.getBoundingClientRect().width + gap : viewport.clientWidth\n  }\n  const atEnd = () => viewport.scrollLeft + viewport.clientWidth >= viewport.scrollWidth - 2\n  const go = (direction) => {\n    const behavior = still.matches ? 'auto' : 'smooth'\n    if (direction > 0 && atEnd()) viewport.scrollTo({ left: 0, behavior })\n    else viewport.scrollBy({ left: direction * step(), behavior })\n  }\n  const update = () => {\n    for (const arrow of arrows) {\n      if (Number(arrow.dataset.reviewsStep) < 0) arrow.disabled = viewport.scrollLeft <= 1\n    }\n  }\n\n  for (const arrow of arrows) {\n    arrow.addEventListener('click', () => go(Number(arrow.dataset.reviewsStep) || 1))\n  }\n  viewport.addEventListener('scroll', update, { passive: true })\n  update()\n\n  if (el.dataset.reviewsAutoplay === 'on' && !still.matches) {\n    let paused = false\n    el.addEventListener('mouseenter', () => (paused = true))\n    el.addEventListener('mouseleave', () => (paused = false))\n    el.addEventListener('focusin', () => (paused = true))\n    el.addEventListener('focusout', () => (paused = false))\n    setInterval(() => {\n      if (!paused && !document.hidden) go(1)\n    }, 5000)\n  }\n}\n\nif (layout === 'marquee' && viewport && track && !still.matches) {\n  // A second copy of the ribbon for the eye only: the reader of a screen hears each review once.\n  for (const item of items()) {\n    const copy = item.cloneNode(true)\n    copy.removeAttribute('id')\n    copy.setAttribute('aria-hidden', 'true')\n    for (const link of copy.querySelectorAll('a')) link.tabIndex = -1\n    track.appendChild(copy)\n  }\n\n  const speed = Math.min(120, Math.max(10, Number(el.dataset.reviewsSpeed) || 40))\n  const time = () => el.style.setProperty('--reviews-duration', `${track.scrollWidth / 2 / speed}s`)\n\n  time()\n  el.classList.add('is-running')\n  if (typeof ResizeObserver === 'function') new ResizeObserver(time).observe(track)\n}\n",
+  "sample": {
+    "title": "What our clients say",
+    "reviews": {
+      "categories": [],
+      "limit": null,
+      "filter": false,
+      "markup": false
+    },
+    "layout": "grid",
+    "columns": 3,
+    "autoplay": false,
+    "speed": 40,
+    "all_label": "All"
+  }
+}

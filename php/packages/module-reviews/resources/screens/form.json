@@ -1,0 +1,132 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "reviews.form",
+  "model": "review",
+  "root": [
+    {
+      "id": "author",
+      "type": "wx-card",
+      "label": "trans::webx-reviews::screen.author",
+      "children": [
+        {
+          "id": "photo",
+          "type": "wx-media",
+          "name": "photo",
+          "label": "trans::webx-reviews::screen.photo",
+          "help": "trans::webx-reviews::screen.photo-help",
+          "props": {
+            "accept": "image",
+            "aspect": "1/1"
+          }
+        },
+        {
+          "id": "name",
+          "type": "wx-input",
+          "name": "name",
+          "label": "trans::webx-reviews::screen.name",
+          "help": "trans::webx-reviews::screen.name-help",
+          "localized": true,
+          "props": {
+            "maxlength": 255
+          }
+        },
+        {
+          "id": "job-title",
+          "type": "wx-input",
+          "name": "job_title",
+          "label": "trans::webx-reviews::screen.job-title",
+          "help": "trans::webx-reviews::screen.job-title-help",
+          "localized": true,
+          "props": {
+            "maxlength": 255
+          }
+        },
+        {
+          "id": "profile-url",
+          "type": "wx-input",
+          "name": "profile_url",
+          "label": "trans::webx-reviews::screen.profile-url",
+          "help": "trans::webx-reviews::screen.profile-url-help",
+          "props": {
+            "maxlength": 2048,
+            "placeholder": "https://"
+          }
+        }
+      ]
+    },
+    {
+      "id": "content",
+      "type": "wx-card",
+      "label": "trans::webx-reviews::screen.review",
+      "children": [
+        {
+          "id": "text",
+          "type": "wx-textarea",
+          "name": "text",
+          "label": "trans::webx-reviews::screen.text",
+          "help": "trans::webx-reviews::screen.text-help",
+          "localized": true,
+          "props": {
+            "rows": 6,
+            "maxlength": 5000
+          }
+        },
+        {
+          "id": "rating",
+          "type": "wx-rate",
+          "name": "rating",
+          "label": "trans::webx-reviews::screen.rating",
+          "help": "trans::webx-reviews::screen.rating-help",
+          "props": {
+            "max": 5,
+            "clearable": true
+          }
+        },
+        {
+          "id": "reviewed-on",
+          "type": "wx-date-picker",
+          "name": "reviewed_on",
+          "label": "trans::webx-reviews::screen.reviewed-on",
+          "help": "trans::webx-reviews::screen.reviewed-on-help",
+          "props": {
+            "type": "date",
+            "clearable": true,
+            "teleport": true,
+            "valueFormat": "yyyy-MM-dd"
+          }
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "type": "wx-card",
+      "label": "trans::webx-reviews::screen.settings",
+      "children": [
+        {
+          "id": "published",
+          "type": "wx-switch",
+          "name": "published",
+          "label": "trans::webx-reviews::screen.published",
+          "help": "trans::webx-reviews::screen.published-help"
+        },
+        {
+          "id": "categories",
+          "type": "wx-categories",
+          "name": "categories",
+          "label": "trans::webx-reviews::screen.categories",
+          "help": "trans::webx-reviews::screen.categories-help",
+          "props": {
+            "source": "reviews/categories",
+            "main": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "project-fields",
+      "type": "wx-card",
+      "label": "trans::webx-admin::screens.project-fields",
+      "children": []
+    }
+  ]
+}

@@ -42,6 +42,22 @@ import {
   writeQuestion as writeFaqQuestion,
 } from './faq'
 import {
+  createCategory as createReviewCategory,
+  findCategory as findReviewCategory,
+  findReview,
+  listReviews,
+  reorderCategories as reorderReviewCategories,
+  reorderReviews,
+  resolveReviews,
+  reviewCategories,
+  reviewCategoryDetail,
+  reviewCategoryRow,
+  reviewDetail,
+  reviewRow,
+  writeCategory as writeReviewCategory,
+  writeReview,
+} from './reviews'
+import {
   admins,
   countForms,
   eventsFor,
@@ -240,6 +256,12 @@ on('GET', '/manifest', ({ locale }) => ({
         icon: 'question',
         order: 500,
       },
+      {
+        id: 'reviews',
+        title: line(locale, 'webx-reviews', 'module.group'),
+        icon: 'star',
+        order: 600,
+      },
       { id: 'system', title: line(locale, 'webx-admin', 'nav.system'), icon: 'gear', order: 900 },
     ],
     modules: [
@@ -333,6 +355,24 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 510,
         group: 'faq',
         permissions: ['faq.categories.manage'],
+        meta: {},
+      },
+      {
+        id: 'reviews',
+        title: line(locale, 'webx-reviews', 'module.reviews'),
+        icon: 'list',
+        order: 600,
+        group: 'reviews',
+        permissions: ['reviews.view', 'reviews.manage'],
+        meta: {},
+      },
+      {
+        id: 'review-categories',
+        title: line(locale, 'webx-reviews', 'module.categories'),
+        icon: 'folder',
+        order: 610,
+        group: 'reviews',
+        permissions: ['reviews.categories.manage'],
         meta: {},
       },
       {
@@ -1549,13 +1589,16 @@ on('GET', '/links/routes', () => ({
 /* ------------------------------------------------------------------------ collections ----- */
 
 /*
- * The sections a block can show records from (`wx-collection`), and the one there is here: the
- * FAQ (`faq.ts`). The preview reads a block's choice the way the site does — in the language of
+ * The sections a block can show records from (`wx-collection`), and the two there are here: the
+ * FAQ (`faq.ts`) and the reviews (`reviews.ts`). The preview reads a block's choice the way the site does — in the language of
  * the page, which is Russian here, as everywhere else the preview draws.
  */
-useCollectionResolver((source, value) =>
-  source === 'faq' ? resolveFaq(value, 'ru') : { items: [], groups: [], filter: false },
-)
+useCollectionResolver((source, value) => {
+  if (source === 'faq') return resolveFaq(value, 'ru')
+  if (source === 'reviews') return resolveReviews(value, 'ru')
+
+  return { items: [], groups: [], filter: false }
+})
 
 on('GET', '/collections', ({ locale }) => ({ data: collectionSources(locale) }))
 
@@ -1670,6 +1713,120 @@ function faqQuestion(id: string) {
 
 function faqCategory(id: string) {
   const record = findFaqCategory(Number(id))
+
+  if (record === null) throw new HttpFailure(404, 'No such category.')
+
+  return record
+}
+
+/* ---------------------------------------------------------------------------- reviews ----- */
+
+/*
+ * The reviews (§4.7 of the reviews spec): the list whole, no pages, and a new review written
+ * before it exists — the same shape as the questions of the FAQ, under `/reviews` itself rather
+ * than a word below it, with the categories beside the records.
+ */
+on('GET', '/reviews', ({ query, locale }) => listReviews(Object.fromEntries(query), locale))
+
+on('POST', '/reviews', ({ body, locale }) => {
+  const written = writeReview(null, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: reviewDetail(written.record, locale) }
+})
+
+on('POST', '/reviews/reorder', ({ body }) => {
+  const ids = Array.isArray(body.ids) ? (body.ids as number[]).map(Number) : []
+
+  reorderReviews(ids, typeof body.category === 'number' ? body.category : null)
+
+  return { data: null }
+})
+
+on('GET', '/reviews/(\\d+)', ({ params, locale }) => ({
+  data: reviewDetail(reviewRecord(params[0]), locale),
+}))
+
+on('PUT', '/reviews/(\\d+)', ({ params, body, locale }) => {
+  const record = reviewRecord(params[0])
+  const written = writeReview(record, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: reviewDetail(record, locale) }
+})
+
+on('DELETE', '/reviews/(\\d+)', ({ params }) => {
+  reviewRecord(params[0]).deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+on('POST', '/reviews/(\\d+)/restore', ({ params, locale }) => {
+  const record = findReview(Number(params[0]))
+
+  if (record === null || record.deleted_at === null) throw new HttpFailure(404, 'Not found.')
+
+  record.deleted_at = null
+
+  return { data: reviewRow(record, locale) }
+})
+
+/* The categories of the reviews, through the shared category API: no address, so no prefix. */
+on('GET', '/reviews/categories', ({ locale }) => ({
+  data: reviewCategories
+    .filter((category) => category.deleted_at === null)
+    .map((category) => reviewCategoryRow(category, locale)),
+  prefix: null,
+}))
+
+on('POST', '/reviews/categories', ({ body, locale }) => ({
+  data: reviewCategoryRow(createReviewCategory(body.title), locale),
+}))
+
+on('POST', '/reviews/categories/reorder', ({ body }) => {
+  reorderReviewCategories(Array.isArray(body.ids) ? (body.ids as number[]).map(Number) : [])
+
+  return { data: null }
+})
+
+on('GET', '/reviews/categories/(\\d+)', ({ params, locale }) => ({
+  data: reviewCategoryDetail(reviewCategory(params[0]), locale),
+}))
+
+on('PUT', '/reviews/categories/(\\d+)', ({ params, body, locale }) => {
+  const record = reviewCategory(params[0])
+  const errors = writeReviewCategory(record, (body.values ?? {}) as Record<string, unknown>)
+
+  if (errors !== null) throw new HttpFailure(422, 'Invalid', undefined, errors)
+
+  return { data: reviewCategoryDetail(record, locale) }
+})
+
+on('DELETE', '/reviews/categories/(\\d+)', ({ params, locale }) => {
+  const record = reviewCategory(params[0])
+  const count = Number(reviewCategoryRow(record, locale).reviews_count)
+
+  // The panel keeps the button out of reach while a category holds anything.
+  if (count > 0) throw new HttpFailure(422, `В категории ещё ${count} отзывов.`)
+
+  record.deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+function reviewRecord(id: string) {
+  const record = findReview(Number(id))
+
+  // The bin is not reachable by id, as with route-model binding on the server.
+  if (record === null || record.deleted_at !== null) throw new HttpFailure(404, 'No such review.')
+
+  return record
+}
+
+function reviewCategory(id: string) {
+  const record = findReviewCategory(Number(id))
 
   if (record === null) throw new HttpFailure(404, 'No such category.')
 
