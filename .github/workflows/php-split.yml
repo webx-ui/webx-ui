@@ -17,6 +17,11 @@ on:
         required: false
         type: string
         default: ''
+      branch:
+        description: 'Branch of the mirrors to push to: main, or next for the snapshot channel'
+        required: false
+        type: string
+        default: 'main'
   workflow_dispatch:
     inputs:
       tag:
@@ -24,6 +29,11 @@ on:
         required: false
         type: string
         default: ''
+      branch:
+        description: 'Branch of the mirrors to push to: main, or next for the snapshot channel'
+        required: false
+        type: string
+        default: 'main'
 
 concurrency:
   group: php-split-${{ github.ref }}
@@ -122,6 +132,9 @@ jobs:
           repository_name: ${{ matrix.package.repository }}
           user_name: webx-ui-bot
           user_email: bot@webx-ui.dev
+          # `next` is the snapshot channel (release.yml): Packagist reads it as `dev-next`. A mirror
+          # without the branch gets it created from its main.
+          branch: ${{ inputs.branch || 'main' }}
 
       # The action's own `tag` input pushes from a directory whose remote carries no
       # credentials as soon as the package itself has not changed — "could not read Password"
@@ -129,7 +142,8 @@ jobs:
       # the ref over the API is both immune to that and easier to read: the tag lands on the
       # mirror's main, which the step above has just made current.
       - name: Tag the mirror
-        if: inputs.tag != ''
+        # A tag is a release, and a release is main's; the snapshot channel never tags.
+        if: inputs.tag != '' && (inputs.branch || 'main') == 'main'
         env:
           GH_TOKEN: ${{ steps.mirror-token.outputs.token }}
           REPOSITORY: webx-ui/${{ matrix.package.repository }}

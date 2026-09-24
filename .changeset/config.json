@@ -8,5 +8,6 @@
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
   "ignore": ["@webx-ui/docs", "@webx-ui/playground"],
-  "privatePackages": { "version": true, "tag": false }
+  "privatePackages": { "version": true, "tag": false },
+  "snapshot": { "useCalculatedVersion": true }
 }
