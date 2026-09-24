@@ -20,9 +20,11 @@ import {
   draw as drawContent,
   renderTemplate,
   templateFailure,
+  useCollectionResolver,
   useLinkResolver,
   type BlockVersionRecord,
 } from './blocks'
+import { collectionSources, faqCategories, faqCategoryRow, resolveFaq } from './collections'
 import {
   admins,
   countForms,
@@ -1502,6 +1504,26 @@ on('GET', '/links/routes', () => ({
     { name: 'webx.blog.rss', path: '/blog/rss' },
     { name: 'webx.services.index', path: `/${SERVICES_PREFIX}` },
   ],
+}))
+
+/* ------------------------------------------------------------------------ collections ----- */
+
+/*
+ * The sections a block can show records from (`wx-collection`), and the one there is here: a
+ * stand-in for the FAQ until the module brings fixtures of its own (`collections.ts`). The
+ * preview reads a block's choice the way the site does — in the language of the page, which is
+ * Russian here, as everywhere else the preview draws.
+ */
+useCollectionResolver((source, value) =>
+  source === 'faq' ? resolveFaq(value, 'ru') : { items: [], groups: [], filter: false },
+)
+
+on('GET', '/collections', ({ locale }) => ({ data: collectionSources(locale) }))
+
+/* The FAQ's categories, through the shared category API: no address, so no prefix. */
+on('GET', '/faq/categories', ({ locale }) => ({
+  data: faqCategories.map((category) => faqCategoryRow(category, locale)),
+  prefix: null,
 }))
 
 /* ------------------------------------------------------------------------------ menus ----- */
@@ -3533,7 +3555,7 @@ function draw(node: Block): string {
     }
   }
 
-  const html = renderTemplate(type.content.template, node.values, children)
+  const html = renderTemplate(type.content.template, node.values, children, type.content.schema)
 
   /* The pair of markers is what the panel replaces a block between after a field changes. */
   return `<!--wx:${node.key}-->\n${html}\n<!--/wx:${node.key}-->`

@@ -217,7 +217,10 @@ php/
   `WxCodeEditor` (CodeMirror), тяжёлые — и с седьмым пакетом в монорепе это стало срываться в
   `Fatal process out of memory: Zone` на ровном месте. Выглядит как сломанная сборка, но падает
   каждый раз в разном месте и со второго раза проходит. Перед гейтом стоит погасить dev-серверы;
-  отдельный тест — `npx vitest run <файл> --pool=forks --poolOptions.forks.singleFork`.
+  отдельный тест — `npx vitest run <файл> --pool=forks --poolOptions.forks.singleFork`, **из корня
+  репозитория**: `vitest.config.ts` один, в корне, и из каталога пакета vitest его не находит —
+  jsdom не поднимается, и падает всё подряд, включая давно зелёные тесты, с «document is not
+  defined», что читается как сломанная ветка.
 - **Гейт перед пушем** — ровно то, что делает CI:
   ```
   pnpm build && pnpm typecheck && pnpm lint && npx prettier --check . && pnpm test && pnpm docs:build
