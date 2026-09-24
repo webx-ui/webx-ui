@@ -1,0 +1,252 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "recipes.form",
+  "model": "recipe",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "recipe",
+          "type": "wx-tab",
+          "label": "Recipe",
+          "children": [
+            {
+              "id": "photos",
+              "type": "wx-card",
+              "label": "Photos",
+              "children": [
+                {
+                  "id": "gallery",
+                  "type": "wx-gallery",
+                  "name": "gallery",
+                  "label": "Gallery",
+                  "help": "The first picture is the cover: on the cards, in the showcase and in social networks. Drag another one first to change it.",
+                  "props": { "accept": "image" }
+                }
+              ]
+            },
+            {
+              "id": "cooking",
+              "type": "wx-card",
+              "label": "Cooking",
+              "children": [
+                {
+                  "id": "ingredients",
+                  "type": "wx-rich-text",
+                  "name": "ingredients",
+                  "label": "Ingredients",
+                  "help": "As a list, one ingredient per item: search engines read the items of the list.",
+                  "localized": true
+                },
+                {
+                  "id": "method",
+                  "type": "wx-rich-text",
+                  "name": "method",
+                  "label": "Method",
+                  "help": "As a numbered list, one step per item.",
+                  "localized": true
+                }
+              ]
+            },
+            {
+              "id": "nutrition",
+              "type": "wx-card",
+              "label": "Nutrition, per serving",
+              "children": [
+                {
+                  "id": "nutrition-calories",
+                  "type": "wx-input",
+                  "name": "nutrition.calories",
+                  "label": "Calories",
+                  "localized": true,
+                  "props": { "placeholder": "320 kcal", "maxlength": 60 }
+                },
+                {
+                  "id": "nutrition-protein",
+                  "type": "wx-input",
+                  "name": "nutrition.protein",
+                  "label": "Protein",
+                  "localized": true,
+                  "props": { "placeholder": "12 g", "maxlength": 60 }
+                },
+                {
+                  "id": "nutrition-fat",
+                  "type": "wx-input",
+                  "name": "nutrition.fat",
+                  "label": "Fat",
+                  "localized": true,
+                  "props": { "placeholder": "8 g", "maxlength": 60 }
+                },
+                {
+                  "id": "nutrition-carbohydrates",
+                  "type": "wx-input",
+                  "name": "nutrition.carbohydrates",
+                  "label": "Carbohydrates",
+                  "localized": true,
+                  "props": { "placeholder": "45 g", "maxlength": 60 }
+                },
+                {
+                  "id": "nutrition-fiber",
+                  "type": "wx-input",
+                  "name": "nutrition.fiber",
+                  "label": "Fibre",
+                  "localized": true,
+                  "props": { "placeholder": "6 g", "maxlength": 60 }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "settings",
+          "type": "wx-tab",
+          "label": "Settings",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "label": "Name and address",
+              "children": [
+                {
+                  "id": "title",
+                  "type": "wx-input",
+                  "name": "title",
+                  "label": "Title",
+                  "localized": true,
+                  "props": { "maxlength": 255 }
+                },
+                {
+                  "id": "slug",
+                  "type": "wx-slug",
+                  "name": "slug",
+                  "label": "Address",
+                  "localized": true
+                },
+                {
+                  "id": "lead",
+                  "type": "wx-textarea",
+                  "name": "lead",
+                  "label": "Lead",
+                  "help": "A sentence or two without formatting: under the title, on the cards and in the description.",
+                  "localized": true,
+                  "props": { "rows": 3, "maxlength": 500, "showCount": true }
+                }
+              ]
+            },
+            {
+              "id": "facts",
+              "type": "wx-card",
+              "label": "Time and servings",
+              "children": [
+                {
+                  "id": "facts-row",
+                  "type": "wx-row",
+                  "children": [
+                    {
+                      "id": "facts-time",
+                      "type": "wx-col",
+                      "children": [
+                        {
+                          "id": "total-minutes",
+                          "type": "wx-input-number",
+                          "name": "total_minutes",
+                          "label": "Total time, minutes",
+                          "props": { "min": 0, "max": 10000 }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "facts-servings",
+                      "type": "wx-col",
+                      "children": [
+                        {
+                          "id": "servings",
+                          "type": "wx-input-number",
+                          "name": "servings",
+                          "label": "Servings",
+                          "props": { "min": 1, "max": 255 }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "taxonomy",
+              "type": "wx-card",
+              "label": "Categories",
+              "children": [
+                {
+                  "id": "categories",
+                  "type": "wx-categories",
+                  "name": "categories",
+                  "label": "Categories",
+                  "help": "The first is the main one: it goes in the breadcrumbs.",
+                  "props": { "source": "recipes/categories" }
+                },
+                {
+                  "id": "nutrients",
+                  "type": "wx-categories",
+                  "name": "nutrients",
+                  "label": "Rich in",
+                  "props": { "source": "recipes/nutrients", "main": false }
+                }
+              ]
+            },
+            {
+              "id": "relations",
+              "type": "wx-card",
+              "label": "Related",
+              "children": [
+                {
+                  "id": "services",
+                  "type": "wx-relations",
+                  "name": "services",
+                  "label": "Services",
+                  "help": "The services this recipe is for, in the order the page shows them.",
+                  "props": { "target": "service" }
+                },
+                {
+                  "id": "related",
+                  "type": "wx-relations",
+                  "name": "related",
+                  "label": "Similar recipes",
+                  "help": "Empty — the site picks them by shared categories, services and nutrients.",
+                  "props": { "target": "recipe" }
+                }
+              ]
+            },
+            {
+              "id": "project-fields",
+              "type": "wx-card",
+              "label": "trans::webx-admin::screens.project-fields",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "seo",
+          "type": "wx-tab",
+          "label": "SEO",
+          "children": [
+            {
+              "id": "seo-placeholder",
+              "type": "wx-alert",
+              "label": "Install module-seo to edit the title and description for search engines.",
+              "props": { "type": "info", "variant": "soft" }
+            }
+          ]
+        },
+        {
+          "id": "history",
+          "type": "wx-tab",
+          "label": "History",
+          "children": [{ "id": "versions", "type": "wx-recipe-history" }]
+        }
+      ]
+    }
+  ]
+}

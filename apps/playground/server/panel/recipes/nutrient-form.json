@@ -1,0 +1,36 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "recipes.nutrient-form",
+  "model": "recipe-nutrient",
+  "root": [
+    {
+      "id": "naming",
+      "type": "wx-card",
+      "children": [
+        {
+          "id": "title",
+          "type": "wx-input",
+          "name": "title",
+          "label": "Title",
+          "localized": true,
+          "props": {
+            "maxlength": 255
+          }
+        },
+        {
+          "id": "is-visible",
+          "type": "wx-switch",
+          "name": "is_visible",
+          "label": "Shown on the site",
+          "help": "Hidden, it is neither a chip on the recipe nor a button of the filter."
+        }
+      ]
+    },
+    {
+      "id": "project-fields",
+      "type": "wx-card",
+      "label": "trans::webx-admin::screens.project-fields",
+      "children": []
+    }
+  ]
+}

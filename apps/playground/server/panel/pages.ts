@@ -410,6 +410,38 @@ add(
   [publication(1, '2026-09-24T12:30:00+00:00', null)],
 )
 
+/*
+ * The showcase page of §5.12: both modes of the recipes block on one page — three recipes as a
+ * showcase over the catalog of everything, two to a page so that the pages are there to see.
+ * Last, for the same reason as the two above.
+ */
+add(
+  {
+    title: 'Рецепты — витрина',
+    slug: 'recipes-showcase',
+    parent: home.row.id,
+    status: 'published',
+    updated_at: '2026-09-24T18:00:00+00:00',
+  },
+  {
+    blocks: [
+      block('recipes', {
+        title: { ru: 'Попробуйте', en: 'Try these' },
+        recipes: { categories: [], limit: 3, filter: false, markup: null, related: null },
+        mode: 'showcase',
+      }),
+      block('recipes', {
+        title: { ru: 'Все рецепты', en: 'Every recipe' },
+        recipes: { categories: [], limit: null, filter: true, markup: null, related: null },
+        mode: 'catalog',
+        per_page: 2,
+        columns: 2,
+      }),
+    ],
+  },
+  [publication(1, '2026-09-24T18:00:00+00:00', null)],
+)
+
 function publication(number: number, createdAt: string, comment: string | null): PageVersion {
   return {
     number,

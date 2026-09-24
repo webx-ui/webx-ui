@@ -130,6 +130,32 @@ import {
 } from './menus'
 import { adminRows, endConnection, listCalls, listConnections, roles as adminRoles } from './agents'
 import { dictionary, panelLocales } from './lang'
+import {
+  createRecipe,
+  createTerm as createRecipeTerm,
+  discard as discardRecipe,
+  find as findRecipe,
+  findTerm as findRecipeTerm,
+  listRecipes,
+  publish as publishRecipe,
+  recipeDetail,
+  recipePage,
+  reorderRecipes,
+  reorderTerms as reorderRecipeTerms,
+  resolveRecipes,
+  restoreVersion as restoreRecipeVersion,
+  revision as recipeRevision,
+  row as recipeRow,
+  termDetail as recipeTermDetail,
+  termRow as recipeTermRow,
+  terms as recipeTerms,
+  writeRecipe,
+  writeTerm as writeRecipeTerm,
+  PREFIX as RECIPES_PREFIX,
+  type RecipeRecord,
+  type TermKind as RecipeTermKind,
+} from './recipes'
+import { drawRecipePage, RECIPE_PAGE_STYLES } from './recipes-site'
 import { relationCandidates } from './relations'
 import { screen, screenNames } from './screens'
 import {
@@ -263,6 +289,12 @@ on('GET', '/manifest', ({ locale }) => ({
         icon: 'star',
         order: 600,
       },
+      {
+        id: 'recipes',
+        title: line(locale, 'webx-recipes', 'module.group'),
+        icon: 'heart',
+        order: 700,
+      },
       { id: 'system', title: line(locale, 'webx-admin', 'nav.system'), icon: 'gear', order: 900 },
     ],
     modules: [
@@ -374,6 +406,33 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 610,
         group: 'reviews',
         permissions: ['reviews.categories.manage'],
+        meta: {},
+      },
+      {
+        id: 'recipes',
+        title: line(locale, 'webx-recipes', 'module.recipes'),
+        icon: 'file-text',
+        order: 700,
+        group: 'recipes',
+        permissions: ['recipes.view', 'recipes.manage'],
+        meta: {},
+      },
+      {
+        id: 'recipe-categories',
+        title: line(locale, 'webx-recipes', 'module.categories'),
+        icon: 'folder',
+        order: 710,
+        group: 'recipes',
+        permissions: ['recipes.categories.manage'],
+        meta: {},
+      },
+      {
+        id: 'recipe-nutrients',
+        title: line(locale, 'webx-recipes', 'module.nutrients'),
+        icon: 'tag',
+        order: 720,
+        group: 'recipes',
+        permissions: ['recipes.categories.manage'],
         meta: {},
       },
       {
@@ -1584,6 +1643,7 @@ on('GET', '/links/routes', () => ({
     { name: 'webx.blog.feed', path: '/blog' },
     { name: 'webx.blog.rss', path: '/blog/rss' },
     { name: 'webx.services.index', path: `/${SERVICES_PREFIX}` },
+    { name: 'webx.recipes.index', path: `/${RECIPES_PREFIX}` },
   ],
 }))
 
@@ -1597,6 +1657,7 @@ on('GET', '/links/routes', () => ({
 useCollectionResolver((source, value) => {
   if (source === 'faq') return resolveFaq(value, 'ru')
   if (source === 'reviews') return resolveReviews(value, 'ru')
+  if (source === 'recipes') return resolveRecipes(value, 'ru')
 
   return { items: [], groups: [], filter: false }
 })
@@ -3115,6 +3176,188 @@ function serviceCategoryDetail(row: ServiceCategoryRecord, locale: string) {
   }
 }
 
+/* ----------------------------------------------------------------------------- recipes ----- */
+
+/*
+ * The recipes (§5.10 of the recipes spec): the whole list at once and in its one order — no
+ * category has an order of its own (decision 4), so every filter just narrows.
+ */
+on('GET', '/recipes', ({ query, locale }) => listRecipes(query, locale))
+
+on('POST', '/recipes', ({ body, locale }) => {
+  const title = String(body.title ?? 'Новый рецепт')
+  const slug = typeof body.slug === 'string' && body.slug !== '' ? body.slug : slugify(title)
+  const record = createRecipe(title, slug)
+
+  return {
+    data: { recipe: recipeRow(record, locale), values: recipeDetail(record, locale).values },
+  }
+})
+
+/* No `category` here, ever: the one order is the only one there is. */
+on('POST', '/recipes/reorder', ({ body }) => {
+  reorderRecipes(Array.isArray(body.ids) ? (body.ids as unknown[]).map(Number) : [])
+
+  return { data: null }
+})
+
+on('GET', '/recipes/(\\d+)', ({ params, locale }) => ({
+  data: recipeDetail(recipe(params[0]), locale),
+}))
+
+on('PUT', '/recipes/(\\d+)', ({ params, body, locale }) => {
+  const record = recipe(params[0])
+  const sent = { ...((body.values ?? {}) as Record<string, unknown>) }
+
+  if (typeof body.revision === 'string' && body.revision !== recipeRevision(record)) {
+    throw new HttpFailure(
+      409,
+      'Кто-то сохранил этот рецепт, пока вы его редактировали.',
+      recipeDetail(record, locale),
+    )
+  }
+
+  if (sent.title !== undefined && Object.values(asMap(sent.title, '')).every((one) => !one)) {
+    throw new HttpFailure(422, 'Invalid', undefined, {
+      title: ['Название нужно хотя бы на одном языке.'],
+    })
+  }
+
+  if (sent.seo !== undefined) sent.seo = storedSeo(sent.seo)
+
+  writeRecipe(record, sent)
+
+  return { data: recipeDetail(record, locale) }
+})
+
+on('DELETE', '/recipes/(\\d+)', ({ params }) => {
+  recipe(params[0]).deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+on('POST', '/recipes/(\\d+)/restore', ({ params, locale }) => {
+  const record = recipe(params[0])
+
+  record.deleted_at = null
+
+  return { data: recipeRow(record, locale) }
+})
+
+on('POST', '/recipes/(\\d+)/discard', ({ params, locale }) => {
+  const record = recipe(params[0])
+
+  discardRecipe(record)
+
+  return { data: recipeDetail(record, locale) }
+})
+
+on('POST', '/recipes/(\\d+)/publish', ({ params, locale }) => {
+  const record = recipe(params[0])
+
+  publishRecipe(record)
+
+  return { data: recipeRow(record, locale) }
+})
+
+on('POST', '/recipes/(\\d+)/unpublish', ({ params, locale }) => {
+  const record = recipe(params[0])
+
+  record.status = 'unpublished'
+  record.published_at = null
+  record.updated_at = new Date().toISOString()
+
+  return { data: recipeRow(record, locale) }
+})
+
+on('GET', '/recipes/(\\d+)/versions', ({ params }) => ({ data: recipe(params[0]).versions }))
+
+on('POST', '/recipes/(\\d+)/versions/(\\d+)/restore', ({ params, locale }) => {
+  const record = recipe(params[0])
+
+  if (!restoreRecipeVersion(record, Number(params[1]))) {
+    throw new HttpFailure(404, 'No such version.')
+  }
+
+  return { data: recipeDetail(record, locale) }
+})
+
+/*
+ * The categories and the nutrients: the panel's shared category API twice, under two paths —
+ * a category has an address, a nutrient does not.
+ */
+for (const kind of ['categories', 'nutrients'] as const) {
+  const path = `/recipes/${kind}`
+
+  on('GET', path, ({ locale }) => ({
+    data: recipeTerms(kind)
+      .filter((one) => one.deleted_at === null)
+      .map((one) => recipeTermRow(kind, one, locale)),
+    prefix: kind === 'categories' ? RECIPES_PREFIX : null,
+  }))
+
+  on('POST', path, ({ body, locale }) => {
+    const title = localized(body.title) || 'Новая категория'
+    const slug = localized(body.slug) || slugify(title)
+
+    return {
+      data: recipeTermRow(kind, createRecipeTerm(kind, asMap(body.title, title), slug), locale),
+    }
+  })
+
+  on('POST', `${path}/reorder`, ({ body }) => {
+    reorderRecipeTerms(kind, Array.isArray(body.ids) ? (body.ids as unknown[]).map(Number) : [])
+
+    return { data: null }
+  })
+
+  on('GET', `${path}/(\\d+)`, ({ params, locale }) => ({
+    data: recipeTermDetail(kind, recipeTerm(kind, params[0]), locale),
+  }))
+
+  on('PUT', `${path}/(\\d+)`, ({ params, body, locale }) => {
+    const record = recipeTerm(kind, params[0])
+    const errors = writeRecipeTerm(
+      kind,
+      record,
+      (body.values ?? {}) as Record<string, unknown>,
+      locale,
+    )
+
+    if (errors !== null) throw new HttpFailure(422, 'Invalid', undefined, errors)
+
+    return { data: recipeTermDetail(kind, record, locale) }
+  })
+
+  on('DELETE', `${path}/(\\d+)`, ({ params, locale }) => {
+    const record = recipeTerm(kind, params[0])
+    const count = recipeTermRow(kind, record, locale).recipes_count
+
+    // The panel keeps the button out of reach while anything is filed here.
+    if (count > 0) throw new HttpFailure(422, `Рецептов здесь ещё: ${count}.`)
+
+    record.deleted_at = new Date().toISOString()
+
+    return { data: null }
+  })
+}
+
+function recipe(id: string): RecipeRecord {
+  const record = findRecipe(Number(id))
+
+  if (record === null) throw new HttpFailure(404, 'No such recipe.')
+
+  return record
+}
+
+function recipeTerm(kind: RecipeTermKind, id: string) {
+  const record = findRecipeTerm(kind, Number(id))
+
+  if (record === null) throw new HttpFailure(404, 'No such category.')
+
+  return record
+}
+
 /* ------------------------------------------------------------------------------- media ----- */
 
 on('GET', '/media/directories', () => ({ data: directories }))
@@ -3729,6 +3972,26 @@ function previewService(id: number): string {
   )
 }
 
+/**
+ * The draft of a recipe, drawn as its page (§5.5) — no blocks: the module's view is the page, so
+ * the playground draws it in code (`recipes-site.ts`) inside the same layout as everything else.
+ */
+function previewRecipe(id: number): string {
+  const record = findRecipe(id)
+
+  if (record === null) {
+    return missingPreview('No such recipe.')
+  }
+
+  const page = recipePage(record, 'ru')
+
+  return siteLayout(
+    page.title || `#${record.id}`,
+    `<style>${RECIPE_PAGE_STYLES}</style>`,
+    drawRecipePage(page),
+  )
+}
+
 function missingPreview(message: string): string {
   return `<!doctype html><title>404</title><p>${message}</p>`
 }
@@ -3933,7 +4196,7 @@ export function panelServer(): Plugin {
           return
         }
 
-        const preview = url.pathname.match(/^\/preview\/(page|article|service)\/(\d+)$/)
+        const preview = url.pathname.match(/^\/preview\/(page|article|service|recipe)\/(\d+)$/)
 
         if (preview !== null) {
           const id = Number(preview[2])
@@ -3944,7 +4207,9 @@ export function panelServer(): Plugin {
               ? previewPage(id)
               : preview[1] === 'service'
                 ? previewService(id)
-                : previewArticle(id),
+                : preview[1] === 'recipe'
+                  ? previewRecipe(id)
+                  : previewArticle(id),
           )
 
           return

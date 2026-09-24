@@ -4,9 +4,10 @@ import type {
   BlockType,
   BlockVersionMeta,
 } from '../../../../packages/module-blocks/src/types'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { blade } from './blade'
+import { RECIPES_BLOCK } from './recipes-site'
 
 /**
  * The block types the playground's site is built from, and a renderer small enough to live in
@@ -966,6 +967,26 @@ export const blockTypes: BlockType[] = [
     /* `content` is the file `module-reviews` offers, read off disk: see `offered()` below. */
   },
   {
+    id: 12,
+    slug: 'recipes',
+    title: 'Рецепты',
+    description: 'Рецепты из раздела: витрина из нескольких или каталог с фильтром и страницами.',
+    icon: 'heart',
+    group: 'content',
+    sort: 37,
+    allow: null,
+    allowed_in: null,
+    max_per_entity: null,
+    is_enabled: true,
+    draft: null,
+    published: version(1, '2026-09-24T12:00:00+00:00', 'Offered by recipes'),
+    usage_count: 1,
+    thumbnail: null,
+    created_at: '2026-09-24T12:00:00+00:00',
+    updated_at: '2026-09-24T12:00:00+00:00',
+    /* `content` is the file `module-recipes` offers, or the playground's stand-in: see `offered()`. */
+  },
+  {
     id: 8,
     slug: 'map',
     title: 'Карта',
@@ -1190,6 +1211,7 @@ export function clone<T>(value: T): T {
 }
 
 offered('reviews', 'php/packages/module-reviews/resources/blocks/reviews.json')
+offered('recipes', 'php/packages/module-recipes/resources/blocks/recipes.json', RECIPES_BLOCK)
 
 /**
  * A type whose content is the file a module offers (`BlockOffers`), read off disk on every use
@@ -1197,7 +1219,7 @@ offered('reviews', 'php/packages/module-reviews/resources/blocks/reviews.json')
  * a second template to keep in step — and Vite watches what it imports, which a `.json` of the
  * composer package is not. Saving in the constructor keeps what was saved, as a site would.
  */
-function offered(slug: string, path: string): void {
+function offered(slug: string, path: string, fallback?: BlockContent): void {
   const type = blockTypes.find((item) => item.slug === slug)
 
   if (type === undefined) return
@@ -1210,9 +1232,13 @@ function offered(slug: string, path: string): void {
     get: (): BlockContent => {
       if (saved !== undefined) return saved
 
-      const offer = JSON.parse(
-        readFileSync(fileURLToPath(new URL(`../../../../${path}`, import.meta.url)), 'utf8'),
-      ) as BlockContent
+      // A module whose composer half is on another branch yet: the playground's own stand-in.
+      const file = fileURLToPath(new URL(`../../../../${path}`, import.meta.url))
+
+      // A module whose composer half is on another branch yet: the playground's own stand-in.
+      if (fallback !== undefined && !existsSync(file)) return fallback
+
+      const offer = JSON.parse(readFileSync(file, 'utf8')) as BlockContent
 
       return {
         schema: offer.schema,

@@ -161,9 +161,6 @@ export function collectionSources(locale: string): unknown[] {
       title: locale === 'ru' ? 'Вопросы и ответы' : 'FAQ',
       categories: 'faq/categories',
       markup: true,
-      // Ahead of the FAQ itself (a question → services is a planned relation, §3.1 of the recipes
-      // spec): here so that "only related to" has a block to be chosen on. The preview ignores it.
-      relations: [{ key: 'service', title: locale === 'ru' ? 'Услуги' : 'Services' }],
     },
     {
       key: 'reviews',
@@ -176,6 +173,14 @@ export function collectionSources(locale: string): unknown[] {
       title: locale === 'ru' ? 'Услуги' : 'Services',
       categories: 'services/categories',
       markup: false,
+    },
+    {
+      key: 'recipes',
+      title: locale === 'ru' ? 'Рецепты' : 'Recipes',
+      categories: 'recipes/categories',
+      markup: false,
+      // "Only related to" on a recipes block: the recipes of one service (§3.6).
+      relations: [{ key: 'service', title: locale === 'ru' ? 'Услуги' : 'Services' }],
     },
   ]
 }

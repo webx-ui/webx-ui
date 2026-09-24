@@ -776,6 +776,59 @@ wx-relations; apps/playground/server/panel/services* — образец мока
 ветке, коммит, пуш в claude.
 ```
 
+#### Итог RC4 (24.09.2026)
+
+Сделано на `feat/recipes-panel`: пакет `packages/module-recipes` (0.0.0, changeset minor) —
+`recipes()` отдаёт три модуля (`recipes`, `recipe-categories`, `recipe-nutrients`), список,
+редактор `recipes.form` с узлом `wx-recipe-history`, диалог создания, категории и источники через
+`categoryRoutes` (`recipeCategoriesOptions()`, `recipeNutrientsOptions()`); 22 теста, включая
+паритет слов. Плейграунд: мок `/api/cms/recipes*` (`apps/playground/server/panel/recipes.ts`),
+цель связей `recipe` на настоящей фикстуре, источник коллекции `recipes` с `relations: [service]`,
+тип блока `recipes` в обоих видах, страница «Рецепты — витрина» (`/panel/pages/19`), предпросмотр
+`/preview/recipe/{id}`, папка «Рецепты» в медиатеке, поле проекта «Author's note». Проверено в
+браузере: создание, галерея из трёх и смена обложки перестановкой, ингредиенты списком, пищевая
+ценность, время и порции, категории и источники, услуга и похожий рецепт (себя пикер не предлагает,
+неопубликованный — с пометкой), SEO, публикация и история, перетаскивание списка клавиатурой без
+фильтра и подсказка с фильтром, блок-витрина с фильтром по услуге и каталог с пагинацией в
+предпросмотре, 375 px (горизонтального скролла нет ни на одной вкладке), светлая и тёмная тема.
+
+**С RC3 согласовано по ходу (сообщениями), панель написана под это:**
+
+- Статусы — как у услуг: `draft | published | modified | unpublished` (RC3 правит §5.10).
+- Форма — `{ recipe, values, revision, prefix, preview_url }`; `recipe` — строка списка плюс
+  `path`, `published_at`, `revision`. Строка списка несёт и `path`, и `published_at`. `POST` —
+  `{ data: { recipe, values } }`, панель берёт `recipe`.
+- Поиск — `q=` (сервер понимает и `search=`). Фильтры — `category`, `nutrient`, `service`,
+  `status`, `trashed=1`; `filters.services: null` без `module-services` — фильтра услуги нет.
+- Галерея — тип `wx-gallery` (у `module-media` это и есть «список `wx-media`»), имя `gallery`.
+  Пищевая ценность — пять полей с **буквальными** именами `nutrition.calories` … `nutrition.fiber`,
+  в `values` лежат под этими ключами, не картой. Вкладки `recipe · settings · seo · history`,
+  карточка `project-fields` на `settings`. Счётчик у обоих видов категорий — `recipes_count`.
+- Слова `panel`, `recipe`, `category`, `nutrient` и `module` — английский пол в
+  `php/packages/module-recipes/lang/en/*.php` сгенерирован из `messages.ts` на этой ветке; RC3
+  берёт эти файлы байт в байт и переводит на остальные девять языков, поэтому при слиянии en —
+  одинаковое добавление. Группы `screen`, `errors`, `relations`, `site` — RC3. Иконки в
+  манифесте: группа `heart`, рецепты `file-text`, категории `folder`, источники `tag`.
+
+**RC5 при слиянии:**
+
+- Плейграунд читает экраны `recipes.form`, `recipes.category-form`, `recipes.nutrient-form` из
+  `php/packages/module-recipes/resources/screens/` и падает на копии в
+  `apps/playground/server/panel/recipes/*.json`, пока файлов RC3 нет; SEO — патч
+  `module-seo/…/recipes.form.json`, иначе патч услуг (он заменяет тот же `seo-placeholder`). После
+  слияния копии удалить и `Source[]` в `screens.ts` свести к строкам — и проверить, что у RC3 те
+  же имена полей.
+- Тип блока `recipes` читается из `php/packages/module-recipes/resources/blocks/recipes.json`, а без
+  него — из заглушки `RECIPES_BLOCK` в `recipes-site.ts`. **Маленький Blade плейграунда не умеет
+  `@include` и пагинатор** — если шаблон RC3 опирается на `partials/catalog`, предпросмотр блока
+  сломается: тогда оставить заглушку (убрать путь из `offered()`), а не чинить Blade.
+- `relations` у источника `faq` в моке убран (итог RC2 просил это сделать, когда появится
+  настоящий источник рецептов); поле «Recipes» на `services.form` (патч проекта из RC2) оставлено.
+- Мелочь, найденная глазами: пустой список у поля «Rich in» говорит общим словом поля категорий
+  «In no category yet» — у `wx-categories` нет пропа для своего слова.
+- В панели браузера скриншот после клика часто на шаг отстаёт от DOM (папка медиатеки «показывала»
+  файлы предыдущей) — сначала `javascript_tool`/`get_page_text`, потом верить картинке.
+
 ### RC5 — слияние, MCP, демо, доки
 
 ```
