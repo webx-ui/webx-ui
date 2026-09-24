@@ -447,15 +447,18 @@ local-режиме на этом worktree (MONOREPO=… packages.mjs local); д�
 Прочитать: итоги R1–R3; CLAUDE.md §5 целиком — «Первую версию нового npm-пакета публикует
 человек», «Ручная публикация замораживает диапазоны», «CI на релизном PR ждёт ручного
 подтверждения», «Тег php-пакетов ставится до публикации»; docs/architecture/WEBX_UI_PHP_RELEASE.md;
-итог F6 в docs/architecture/WEBX_UI_MODULE_FAQ.md — тот же выпуск 24.09.2026; память
-webx-cms-local-demo-site и webx-cms-homelab-deploy.
+итог F6 в docs/architecture/WEBX_UI_MODULE_FAQ.md — тот же выпуск 24.09.2026;
+docs/architecture/WEBX_UI_RELEASE_SPEED.md — релиз с 24.09.2026 идёт иначе; память
+webx-cms-local-demo-site, webx-cms-homelab-deploy и release-speed.
 
 До релиза (руками пользователя, сессия напоминает и проверяет): репозиторий-зеркало
 webx-ui/module-reviews на GitHub.
 
-Сделать: погасить dev-серверы; влить свежий main; полный гейт npm и php/ (PHP 8.4);
-module-reviews в scripts/php-smoke.sh рядом с module-faq и smoke против MariaDB; PR, зелёный CI,
-мерж; одобрить прогон релизного PR; снять changeset-release/main в отдельный worktree, pnpm
+Сделать: погасить dev-серверы; полный гейт npm и php/ (PHP 8.4); module-reviews в
+scripts/php-smoke.sh рядом с module-faq и smoke против MariaDB; PR, зелёный CI, gh pr merge — PR
+встаёт в очередь мержа, main вливать руками не нужно (впервые: проверить, ставит ли в очередь
+команда с --squash, и записать в CLAUDE.md §5); релизный PR открывает App — проверить, что его CI
+стартовал сам, без approve (первый раз после WEBX_UI_RELEASE_SPEED.md, записать итог); снять changeset-release/main в отдельный worktree, pnpm
 install, dist, pnpm pack @webx-ui/module-reviews и проверить диапазоны @webx-ui/* в тарболе;
 первая публикация — пользователь из своего терминала с 2FA, затем Trusted Publishing (webx-ui /
 webx-ui / release.yml); мерж релизного PR; npm view всех поднятых пакетов и тег php-v<версия>;
