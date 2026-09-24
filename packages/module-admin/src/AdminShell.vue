@@ -70,7 +70,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <wx-toaster />
+  <wx-toaster placement="bottom-center" />
 
   <div v-if="admin.state.status === 'unauthenticated'" class="wx-root wx-admin-plain">
     <router-view />

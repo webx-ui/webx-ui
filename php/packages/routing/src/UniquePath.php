@@ -86,7 +86,30 @@ class UniquePath
             return PathRejected::reserved($path, $attribute);
         }
 
-        return $this->taken($path, $locale, $entity) ? PathRejected::taken($path, $attribute) : null;
+        $owner = $this->owner($path, $locale, $entity);
+
+        return $owner === null ? null : PathRejected::taken($path, $attribute, $this->nameOf($owner, $locale));
+    }
+
+    /**
+     * What the refusal calls the one standing on the address, so the editor knows which of their
+     * own records to rename — a category and a service share one level (§4.3 of the services
+     * spec), and "taken" alone sends them looking. Its title in this language, or nothing when it
+     * has none to give.
+     */
+    private function nameOf(Route $owner, string $locale): ?string
+    {
+        $entity = $owner->entity;
+
+        if (! $entity instanceof Model) {
+            return null;
+        }
+
+        $title = method_exists($entity, 'getTranslation')
+            ? $entity->getTranslation('title', $locale)
+            : $entity->getAttribute('title');
+
+        return is_string($title) && trim($title) !== '' ? trim($title) : null;
     }
 
     /**
@@ -98,6 +121,12 @@ class UniquePath
      */
     public function taken(string $path, string $locale, Model $entity): bool
     {
+        return $this->owner($path, $locale, $entity) !== null;
+    }
+
+    /** The canonical row of another entity on this address, if there is one. */
+    private function owner(string $path, string $locale, Model $entity): ?Route
+    {
         return Route::query()
             ->where('locale', $locale)
             ->where('path', $path)
@@ -107,7 +136,7 @@ class UniquePath
                     ->where('entity_type', '!=', $entity->getMorphClass())
                     ->orWhere('entity_id', '!=', $entity->getKey());
             })
-            ->exists();
+            ->first();
     }
 
     /**

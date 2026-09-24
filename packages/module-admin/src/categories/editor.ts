@@ -4,7 +4,7 @@ import type { CategoryRow } from './types'
 
 /**
  * What the category editor knows and the nodes of its screen do not — the same seam the article
- * editor has. `wx-category-slug` prints the whole address, and the prefix of the module is
+ * editor has. `wx-category-slug` (`wx-slug`) prints the whole address, and the prefix of the module is
  * configuration the editor was handed with the record, not something a description can carry.
  */
 export interface CategoryEditorContext {

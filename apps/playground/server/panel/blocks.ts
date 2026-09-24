@@ -314,6 +314,89 @@ const FAQ_STYLES = `.b-faq {
 }
 `
 
+/*
+ * The same accordion, but the questions come from a section (`wx-collection`) instead of being
+ * typed into the block. The filter is a row of the group names — the preview has no script, and
+ * what matters here is that the groups arrive; the module's own type (F4) makes them buttons.
+ */
+const FAQ_LIST_TEMPLATE = `<section class="b-faq-list" data-wx-block="faq-list">
+    <div class="b-faq-list__inner">
+        @if ($title)
+            <h2 class="b-faq-list__title">{{ $title }}</h2>
+        @endif
+
+        @if ($questions['filter'])
+            <p class="b-faq-list__groups">
+                @foreach ($questions['groups'] as $group)
+                    <span class="b-faq-list__group">{{ $group['title'] }}</span>
+                @endforeach
+            </p>
+        @endif
+
+        @foreach ($questions['items'] as $item)
+            <details class="b-faq-list__item" id="{{ $item['anchor'] }}">
+                <summary class="b-faq-list__question">{{ $item['question'] }}</summary>
+                <div class="b-faq-list__answer">{!! $item['answer'] !!}</div>
+            </details>
+        @endforeach
+    </div>
+</section>
+`
+
+const FAQ_LIST_STYLES = `.b-faq-list {
+    container-type: inline-size;
+}
+
+.b-faq-list__inner {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: 3rem 1.25rem;
+}
+
+.b-faq-list__title {
+    margin: 0 0 1.5rem;
+    font-size: 1.75rem;
+    color: #1c2434;
+}
+
+.b-faq-list__groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0 0 1rem;
+}
+
+.b-faq-list__group {
+    padding: 0.375rem 0.875rem;
+    border-radius: 999px;
+    background: #eef1f7;
+    color: #10224b;
+    font-size: 0.875rem;
+}
+
+.b-faq-list__item {
+    padding: 1rem 0;
+    border-bottom: 1px solid #e3e7ef;
+}
+
+.b-faq-list__question {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: #10224b;
+    cursor: pointer;
+}
+
+.b-faq-list__answer {
+    margin: 0.75rem 0 0;
+    line-height: 1.6;
+    color: #55617a;
+}
+
+.b-faq-list__answer p {
+    margin: 0;
+}
+`
+
 const PUBLICATIONS_TEMPLATE = `<section class="b-publications" data-wx-block="publications">
     <div class="b-publications__inner">
         <h2 class="b-publications__title">{{ $title }}</h2>
@@ -825,6 +908,41 @@ export const blockTypes: BlockType[] = [
     },
   },
   {
+    id: 10,
+    slug: 'faq-list',
+    title: 'Вопросы из раздела',
+    description: 'Вопросы и ответы из раздела FAQ — по категориям, с фильтром.',
+    icon: 'question',
+    group: 'content',
+    sort: 35,
+    allow: null,
+    allowed_in: null,
+    max_per_entity: null,
+    is_enabled: true,
+    draft: null,
+    published: version(1, '2026-09-24T09:00:00+00:00', 'Offered by faq'),
+    usage_count: 0,
+    thumbnail: null,
+    created_at: '2026-09-24T09:00:00+00:00',
+    updated_at: '2026-09-24T09:00:00+00:00',
+    content: {
+      schema: [
+        { id: 'title', type: 'wx-input', label: 'Заголовок', localized: true },
+        {
+          id: 'questions',
+          type: 'wx-collection',
+          label: 'Вопросы',
+          props: { source: 'faq' },
+        },
+      ],
+      template: FAQ_LIST_TEMPLATE,
+      styles: FAQ_LIST_STYLES,
+      script: null,
+      /* No `questions`: an untouched collection is the whole of it. */
+      sample: { title: 'Частые вопросы' },
+    },
+  },
+  {
     id: 8,
     slug: 'map',
     title: 'Карта',
@@ -1180,6 +1298,31 @@ export function useLinkResolver(resolver: typeof resolveLink): void {
   resolveLink = resolver
 }
 
+/**
+ * How a `wx-collection` value becomes the records it names. Set by the mock's router, like the
+ * link resolver: which sections exist is the fixtures' business, not the renderer's. A section
+ * nobody answers for is an empty list, as on a site whose module was removed.
+ */
+let resolveCollection: (source: string, value: unknown) => Record<string, unknown> = () => ({
+  items: [],
+  groups: [],
+  filter: false,
+})
+
+export function useCollectionResolver(resolver: typeof resolveCollection): void {
+  resolveCollection = resolver
+}
+
+/** The `wx-collection` fields of a schema, through layout nodes but not into a repeater's item. */
+function collectionNodes(schema: BlockContent['schema']): BlockContent['schema'] {
+  return schema.flatMap((node) => {
+    if (node.type === 'wx-collection') return [node]
+    if (node.type === 'wx-repeater' || node.children === undefined) return []
+
+    return collectionNodes(node.children)
+  })
+}
+
 export function draw(
   content: BlockContent,
   values: Record<string, unknown>,
@@ -1211,7 +1354,7 @@ export function draw(
   }
 
   return {
-    html: renderTemplate(content.template ?? '', values, nested),
+    html: renderTemplate(content.template ?? '', values, nested, content.schema),
     styles: styles.filter((sheet) => sheet !== '').join('\n'),
   }
 }
@@ -1226,8 +1369,20 @@ export function renderTemplate(
   template: string,
   values: Record<string, unknown>,
   children: Record<string, string> = {},
+  schema: BlockContent['schema'] = [],
 ): string {
   let html = template
+
+  /*
+   * What a block shows from another section, read now — `CollectionType::resolve()`. Unlike a
+   * link this one needs the schema: the section is written there and not in the value, and a
+   * field nobody touched is absent from the values yet means "all of them" (`ResolvesMissing`).
+   */
+  values = { ...values }
+
+  for (const node of collectionNodes(schema)) {
+    values[node.id] = resolveCollection(String(node.props?.source ?? ''), values[node.id])
+  }
 
   /*
    * A link, with its address worked out — which is what `LinkType::resolve()` does on the server:
@@ -1242,9 +1397,9 @@ export function renderTemplate(
   )
 
   html = html.replace(
-    /@foreach\s*\(\$([\w-]+) as \$(\w+)\)([\s\S]*?)@endforeach/g,
-    (_match, key: string, alias: string, body: string) => {
-      const items = values[key]
+    /@foreach\s*\(\$([\w-]+)(?:\['([\w-]+)'\])? as \$(\w+)\)([\s\S]*?)@endforeach/g,
+    (_match, key: string, inner: string | undefined, alias: string, body: string) => {
+      const items = read(values, key, inner)
 
       if (!Array.isArray(items)) {
         return ''
@@ -1257,9 +1412,12 @@ export function renderTemplate(
   html = html.replace(
     /@if\s*\(([^)]+)\)([\s\S]*?)@endif/g,
     (_match, condition: string, body: string) => {
-      const names = [...condition.matchAll(/\$([\w-]+)/g)].map((match) => match[1])
+      /* `$title`, or one key of a value that is a record: `$questions['filter']`. */
+      const found = [...condition.matchAll(/\$([\w-]+)(?:\['([\w-]+)'\])?/g)].map((match) =>
+        read(values, match[1]!, match[2]),
+      )
 
-      return names.every((name) => !isEmpty(values[name])) ? body : ''
+      return found.every((value) => !isEmpty(value)) ? body : ''
     },
   )
 
@@ -1288,8 +1446,17 @@ export function renderTemplate(
 /** The body of a `@foreach`, where the loop variable is a name rather than a field. */
 function interpolate(body: string, item: Record<string, unknown>, alias: string): string {
   const pattern = new RegExp(`\\{\\{ \\$${alias}\\['([\\w-]+)'\\] \\}\\}`, 'g')
+  /* Unescaped, for a key that holds HTML — an answer of the FAQ is rich text. */
+  const raw = new RegExp(`\\{!! \\$${alias}\\['([\\w-]+)'\\] !!\\}`, 'g')
 
-  return body.replace(pattern, (_match, key: string) => escape(text(item?.[key])))
+  return body
+    .replace(raw, (_match, key: string) => text(item?.[key]))
+    .replace(pattern, (_match, key: string) => escape(text(item?.[key])))
+}
+
+/** A field, or one key of a field whose value is a record. */
+function read(values: Record<string, unknown>, key: string, inner?: string): unknown {
+  return inner === undefined ? values[key] : record(values[key])?.[inner]
 }
 
 /**
@@ -1330,6 +1497,9 @@ function record(value: unknown): Record<string, unknown> | null {
 }
 
 function isEmpty(value: unknown): boolean {
+  /* Blade's truthiness where it differs from "prints as nothing": a flag, an empty list. */
+  if (value === false || (Array.isArray(value) && value.length === 0)) return true
+
   return text(value).trim() === ''
 }
 

@@ -47,6 +47,12 @@ const message = useErrorText()
 
 const rows = ref<CategoryRow[]>([])
 const loading = ref(true)
+/*
+ * Whether this module's categories have addresses at all. The FAQ's do not (a category there is
+ * a button of a filter), and a line reading "no address in this language" under every one of
+ * them would be a warning about nothing.
+ */
+const addressed = ref(true)
 
 const canManage = computed(() => context.can(props.options.manage))
 
@@ -73,7 +79,10 @@ async function load(): Promise<void> {
   loading.value = true
 
   try {
-    rows.value = (await api.list()).data
+    const answer = await api.list()
+
+    rows.value = answer.data
+    addressed.value = answer.prefix !== null
   } catch (error) {
     toast.danger(message(error))
   } finally {
@@ -206,7 +215,7 @@ async function reorder(): Promise<void> {
                 <wx-icon name="eye-off" size="sm" />
               </wx-tooltip>
             </span>
-            <wx-text size="sm" tone="muted" truncate>
+            <wx-text v-if="addressed" size="sm" tone="muted" truncate>
               {{ item.path === null ? w('no-address') : `/${item.path}` }}
             </wx-text>
           </router-link>

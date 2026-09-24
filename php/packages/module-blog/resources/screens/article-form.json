@@ -60,6 +60,24 @@
               ]
             },
             {
+              "id": "presentation",
+              "type": "wx-card",
+              "label": "trans::webx-blog::screen.presentation",
+              "children": [
+                {
+                  "id": "cover",
+                  "type": "wx-media",
+                  "name": "cover",
+                  "label": "trans::webx-blog::screen.cover",
+                  "props": {
+                    "accept": "image",
+                    "captions": false,
+                    "aspect": "16/9"
+                  }
+                }
+              ]
+            },
+            {
               "id": "publication",
               "type": "wx-card",
               "label": "trans::webx-blog::screen.publication",
@@ -122,24 +140,6 @@
                   "name": "tags",
                   "label": "trans::webx-blog::screen.tags",
                   "help": "trans::webx-blog::screen.tags-help"
-                }
-              ]
-            },
-            {
-              "id": "presentation",
-              "type": "wx-card",
-              "label": "trans::webx-blog::screen.presentation",
-              "children": [
-                {
-                  "id": "cover",
-                  "type": "wx-media",
-                  "name": "cover",
-                  "label": "trans::webx-blog::screen.cover",
-                  "props": {
-                    "accept": "image",
-                    "captions": false,
-                    "aspect": "16/9"
-                  }
                 }
               ]
             },

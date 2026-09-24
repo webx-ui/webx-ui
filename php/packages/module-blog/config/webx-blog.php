@@ -120,6 +120,24 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | The trail above the content
+    |---------------------------------------------------------------------------
+    |
+    | Whether the package's views print the crumbs a reader sees on an article, a rubric and a tag.
+    | Many sites want them in the blog and nowhere else, so this is a switch per
+    | module rather than one for the whole site.
+    |
+    | Only the visible trail: the BreadcrumbList in the <head> is `module-seo`'s
+    | (`webx-seo.print.breadcrumbs`) and stays, because it helps a search engine
+    | whether or not the page shows it. A site with its own `views` above
+    | decides in its own markup and never reads this.
+    |
+    */
+
+    'breadcrumbs' => (bool) env('WEBX_BLOG_BREADCRUMBS', true),
+
+    /*
+    |---------------------------------------------------------------------------
     | What the feed and the RSS route run through
     |---------------------------------------------------------------------------
     |

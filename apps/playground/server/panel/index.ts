@@ -20,9 +20,27 @@ import {
   draw as drawContent,
   renderTemplate,
   templateFailure,
+  useCollectionResolver,
   useLinkResolver,
   type BlockVersionRecord,
 } from './blocks'
+import {
+  collectionSources,
+  createCategory as createFaqCategory,
+  faqCategories,
+  faqCategoryDetail,
+  faqCategoryRow,
+  findCategory as findFaqCategory,
+  findQuestion as findFaqQuestion,
+  listQuestions as listFaqQuestions,
+  questionDetail as faqQuestionDetail,
+  questionRow as faqQuestionRow,
+  reorderCategories as reorderFaqCategories,
+  reorderQuestions as reorderFaqQuestions,
+  resolveFaq,
+  writeCategory as writeFaqCategory,
+  writeQuestion as writeFaqQuestion,
+} from './faq'
 import {
   admins,
   countForms,
@@ -97,6 +115,25 @@ import {
 import { adminRows, endConnection, listCalls, listConnections, roles as adminRoles } from './agents'
 import { dictionary, panelLocales } from './lang'
 import { screen, screenNames } from './screens'
+import {
+  PREFIX as SERVICES_PREFIX,
+  categoryIds as serviceCategoryIds,
+  categoryRow as serviceCategoryRow,
+  clone as serviceClone,
+  draftedFields as serviceDraftedFields,
+  file as fileService,
+  find as findService,
+  findCategory as findServiceCategory,
+  recount as recountServices,
+  restate as restateService,
+  revision as serviceRevision,
+  row as serviceRow,
+  serviceCategories,
+  services,
+  text as serviceText,
+  type ServiceCategoryRecord,
+  type ServiceRecord,
+} from './services'
 
 /**
  * The panel's backend, in memory.
@@ -191,6 +228,18 @@ on('GET', '/manifest', ({ locale }) => ({
         icon: 'newspaper',
         order: 300,
       },
+      {
+        id: 'services',
+        title: line(locale, 'webx-services', 'module.group'),
+        icon: 'briefcase',
+        order: 400,
+      },
+      {
+        id: 'faq',
+        title: line(locale, 'webx-faq', 'module.group'),
+        icon: 'question',
+        order: 500,
+      },
       { id: 'system', title: line(locale, 'webx-admin', 'nav.system'), icon: 'gear', order: 900 },
     ],
     modules: [
@@ -248,6 +297,42 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 320,
         group: 'blog',
         permissions: ['blog.taxonomy.manage'],
+        meta: {},
+      },
+      {
+        id: 'services',
+        title: line(locale, 'webx-services', 'module.services'),
+        icon: 'list',
+        order: 400,
+        group: 'services',
+        permissions: ['services.view', 'services.manage'],
+        meta: {},
+      },
+      {
+        id: 'service-categories',
+        title: line(locale, 'webx-services', 'module.categories'),
+        icon: 'folder',
+        order: 410,
+        group: 'services',
+        permissions: ['services.categories.manage'],
+        meta: {},
+      },
+      {
+        id: 'faq',
+        title: line(locale, 'webx-faq', 'module.questions'),
+        icon: 'list',
+        order: 500,
+        group: 'faq',
+        permissions: ['faq.view', 'faq.manage'],
+        meta: {},
+      },
+      {
+        id: 'faq-categories',
+        title: line(locale, 'webx-faq', 'module.categories'),
+        icon: 'folder',
+        order: 510,
+        group: 'faq',
+        permissions: ['faq.categories.manage'],
         meta: {},
       },
       {
@@ -1290,7 +1375,7 @@ on('DELETE', '/notes/(\\d+)', ({ params }) => {
 /**
  * What the panel can be asked to link to.
  *
- * The four sections are the ones the PHP sources register, answered out of the same fixtures the
+ * The sections are the ones the PHP sources register, answered out of the same fixtures the
  * sections themselves are drawn from — so a link picker here offers the pages and rubrics that are
  * on the screen next to it. `available` is the part worth keeping honest: a draft page has an
  * address and is not on the site, and it is offered marked rather than hidden.
@@ -1308,6 +1393,12 @@ const LINK_SOURCES = [
   { type: 'article', title: { en: 'Articles', ru: 'Статьи' }, icon: 'file-text' },
   { type: 'rubric', title: { en: 'Rubrics', ru: 'Рубрики' }, icon: 'folder' },
   { type: 'tag', title: { en: 'Tags', ru: 'Теги' }, icon: 'tag' },
+  { type: 'service', title: { en: 'Services', ru: 'Услуги' }, icon: 'grid' },
+  {
+    type: 'service-category',
+    title: { en: 'Service categories', ru: 'Категории услуг' },
+    icon: 'folder',
+  },
 ] as const
 
 function linkRows(type: string, locale: string): LinkRow[] {
@@ -1346,6 +1437,29 @@ function linkRows(type: string, locale: string): LinkRow[] {
     return rubrics.map((row) => ({
       id: row.id,
       title: row.name,
+      url: row.url,
+      available: row.is_visible && row.url !== null,
+      hint: null,
+    }))
+  }
+
+  if (type === 'service') {
+    return services
+      .filter((record) => record.deleted_at === null)
+      .map((record) => serviceRow(record, locale))
+      .map((row) => ({
+        id: row.id,
+        title: row.title,
+        url: row.url,
+        available: row.status === 'published' || row.status === 'modified',
+        hint: row.categories.map((one) => one.title).join(', ') || null,
+      }))
+  }
+
+  if (type === 'service-category') {
+    return serviceCategories.map((row) => ({
+      id: row.id,
+      title: serviceText(row.title, locale) || row.name,
       url: row.url,
       available: row.is_visible && row.url !== null,
       hint: null,
@@ -1428,8 +1542,139 @@ on('GET', '/links/routes', () => ({
   data: [
     { name: 'webx.blog.feed', path: '/blog' },
     { name: 'webx.blog.rss', path: '/blog/rss' },
+    { name: 'webx.services.index', path: `/${SERVICES_PREFIX}` },
   ],
 }))
+
+/* ------------------------------------------------------------------------ collections ----- */
+
+/*
+ * The sections a block can show records from (`wx-collection`), and the one there is here: the
+ * FAQ (`faq.ts`). The preview reads a block's choice the way the site does — in the language of
+ * the page, which is Russian here, as everywhere else the preview draws.
+ */
+useCollectionResolver((source, value) =>
+  source === 'faq' ? resolveFaq(value, 'ru') : { items: [], groups: [], filter: false },
+)
+
+on('GET', '/collections', ({ locale }) => ({ data: collectionSources(locale) }))
+
+/* -------------------------------------------------------------------------------- faq ----- */
+
+/*
+ * The questions (§4.6 of the FAQ spec): the whole list at once, no pages — the list is where
+ * they are put in order. `POST` takes the values of the form, so a new question is written
+ * before it exists and made on its first save.
+ */
+on('GET', '/faq/questions', ({ query, locale }) =>
+  listFaqQuestions(Object.fromEntries(query), locale),
+)
+
+on('POST', '/faq/questions', ({ body, locale }) => {
+  const written = writeFaqQuestion(null, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: faqQuestionDetail(written.record, locale) }
+})
+
+/* Before `{id}` for the reader; the pattern tells them apart anyway — a word, not a number. */
+on('POST', '/faq/questions/reorder', ({ body }) => {
+  const ids = Array.isArray(body.ids) ? (body.ids as number[]).map(Number) : []
+
+  reorderFaqQuestions(ids, typeof body.category === 'number' ? body.category : null)
+
+  return { data: null }
+})
+
+on('GET', '/faq/questions/(\\d+)', ({ params, locale }) => ({
+  data: faqQuestionDetail(faqQuestion(params[0]), locale),
+}))
+
+on('PUT', '/faq/questions/(\\d+)', ({ params, body, locale }) => {
+  const record = faqQuestion(params[0])
+  const written = writeFaqQuestion(record, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: faqQuestionDetail(record, locale) }
+})
+
+on('DELETE', '/faq/questions/(\\d+)', ({ params }) => {
+  faqQuestion(params[0]).deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+on('POST', '/faq/questions/(\\d+)/restore', ({ params, locale }) => {
+  const record = findFaqQuestion(Number(params[0]))
+
+  if (record === null || record.deleted_at === null) throw new HttpFailure(404, 'Not found.')
+
+  record.deleted_at = null
+
+  return { data: faqQuestionRow(record, locale) }
+})
+
+/* The FAQ's categories, through the shared category API: no address, so no prefix. */
+on('GET', '/faq/categories', ({ locale }) => ({
+  data: faqCategories
+    .filter((category) => category.deleted_at === null)
+    .map((category) => faqCategoryRow(category, locale)),
+  prefix: null,
+}))
+
+on('POST', '/faq/categories', ({ body, locale }) => ({
+  data: faqCategoryRow(createFaqCategory(body.title), locale),
+}))
+
+on('POST', '/faq/categories/reorder', ({ body }) => {
+  reorderFaqCategories(Array.isArray(body.ids) ? (body.ids as number[]).map(Number) : [])
+
+  return { data: null }
+})
+
+on('GET', '/faq/categories/(\\d+)', ({ params, locale }) => ({
+  data: faqCategoryDetail(faqCategory(params[0]), locale),
+}))
+
+on('PUT', '/faq/categories/(\\d+)', ({ params, body, locale }) => {
+  const record = faqCategory(params[0])
+  const errors = writeFaqCategory(record, (body.values ?? {}) as Record<string, unknown>)
+
+  if (errors !== null) throw new HttpFailure(422, 'Invalid', undefined, errors)
+
+  return { data: faqCategoryDetail(record, locale) }
+})
+
+on('DELETE', '/faq/categories/(\\d+)', ({ params, locale }) => {
+  const record = faqCategory(params[0])
+  const count = Number(faqCategoryRow(record, locale).questions_count)
+
+  // The panel keeps the button out of reach while a category holds anything.
+  if (count > 0) throw new HttpFailure(422, `В категории ещё ${count} вопросов.`)
+
+  record.deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+function faqQuestion(id: string) {
+  const record = findFaqQuestion(Number(id))
+
+  // The bin is not reachable by id, as with route-model binding on the server.
+  if (record === null || record.deleted_at !== null) throw new HttpFailure(404, 'No such question.')
+
+  return record
+}
+
+function faqCategory(id: string) {
+  const record = findFaqCategory(Number(id))
+
+  if (record === null) throw new HttpFailure(404, 'No such category.')
+
+  return record
+}
 
 /* ------------------------------------------------------------------------------ menus ----- */
 
@@ -2300,6 +2545,407 @@ on('DELETE', '/blog/tags/(\\d+)', ({ params }) => {
   return { data: null }
 })
 
+/* ---------------------------------------------------------------------------- services ----- */
+
+/*
+ * The catalogue (§4.6): the whole list at once and no pages — the list is where services are put
+ * in order, and a drag cannot cross a page boundary. Narrowed to a category it comes in that
+ * category's own order; otherwise in the order of the whole list. The other filters narrow
+ * without reordering.
+ */
+on('GET', '/services', ({ query, locale }) => {
+  const trashed = query.get('trashed') === '1'
+  const search = (query.get('q') ?? '').trim().toLowerCase()
+  const status = query.get('status') ?? ''
+  const within = number(query.get('category'))
+
+  let found = services.filter((record) => (record.deleted_at === null) !== trashed)
+
+  if (trashed) {
+    found.sort((one, two) => Date.parse(two.deleted_at ?? '') - Date.parse(one.deleted_at ?? ''))
+  } else {
+    if (search !== '') {
+      // In any language the site has: the list draws the title a service has, and one written
+      // only in English is on a Russian panel's screen.
+      found = found.filter((record) =>
+        [record.values.title, record.values.slug].some((value) =>
+          Object.values(asMap(value, '')).some((one) => one.toLowerCase().includes(search)),
+        ),
+      )
+    }
+
+    if (status !== '') found = found.filter((record) => record.status === status)
+
+    const inside = within === null ? null : findServiceCategory(within)
+
+    if (within !== null) {
+      const items = inside?.items ?? []
+
+      found = found
+        .filter((record) => items.includes(record.id))
+        .sort((one, two) => items.indexOf(one.id) - items.indexOf(two.id))
+    } else {
+      found.sort((one, two) => one.position - two.position)
+    }
+  }
+
+  return {
+    data: found.map((record) => serviceRow(record, locale)),
+    filters: {
+      categories: serviceCategories.map((row) => ({
+        id: row.id,
+        title: serviceText(row.title, locale) || row.name,
+      })),
+    },
+  }
+})
+
+on('POST', '/services', ({ body, locale }) => {
+  const title = String(body.title ?? 'Новая услуга')
+  const slug = typeof body.slug === 'string' && body.slug !== '' ? body.slug : slugify(title)
+
+  const record: ServiceRecord = {
+    id: Math.max(0, ...services.map((one) => one.id)) + 1,
+    values: {
+      title: { ru: title, en: title },
+      slug: { ru: slug, en: slug },
+      lead: { ru: '', en: '' },
+      blocks: [],
+      cover: null,
+      categories: [],
+      seo: {},
+    },
+    live: null,
+    status: 'draft',
+    // A new one goes to the end of the list — where the next person to reorder will see it.
+    position: Math.max(0, ...services.map((one) => one.position)) + 1,
+    published_at: null,
+    updated_at: new Date().toISOString(),
+    deleted_at: null,
+    versions: [],
+    snapshots: {},
+  }
+
+  services.push(record)
+
+  return { data: serviceRow(record, locale) }
+})
+
+/*
+ * The order of the list, as it is dragged: without a category the whole list, with one the
+ * order inside it and nothing else (`CategoryRoutes::items()`). What the screen did not send
+ * keeps its place after what it did.
+ */
+on('POST', '/services/reorder', ({ body }) => {
+  const ids = Array.isArray(body.ids) ? (body.ids as unknown[]).map(Number) : []
+  const within =
+    body.category === undefined || body.category === null ? null : Number(body.category)
+
+  if (within !== null) {
+    const row = serviceCategory(String(within))
+
+    row.items = [
+      ...ids.filter((id) => row.items.includes(id)),
+      ...row.items.filter((id) => !ids.includes(id)),
+    ]
+
+    return { data: null }
+  }
+
+  const rest = services
+    .filter((record) => !ids.includes(record.id))
+    .sort((one, two) => one.position - two.position)
+  const sequence = [...ids.flatMap((id) => findService(id) ?? []), ...rest]
+
+  sequence.forEach((record, index) => {
+    record.position = index + 1
+  })
+
+  return { data: null }
+})
+
+on('GET', '/services/(\\d+)', ({ params, locale }) => ({
+  data: serviceDetail(service(params[0]), locale),
+}))
+
+on('PUT', '/services/(\\d+)', ({ params, body, locale }) => {
+  const record = service(params[0])
+  const sent = { ...((body.values ?? {}) as Record<string, unknown>) }
+
+  if (typeof body.revision === 'string' && body.revision !== serviceRevision(record)) {
+    throw new HttpFailure(
+      409,
+      'Кто-то сохранил эту услугу, пока вы её редактировали.',
+      serviceDetail(record, locale),
+    )
+  }
+
+  const categories = sent.categories
+  delete sent.categories
+
+  /* Only what travelled: saving one tab must not empty another. */
+  record.values = { ...record.values, ...sent }
+
+  // The key alone, as a described screen stores it: an address beside it would expire.
+  const picked = record.values.cover as { path?: unknown } | null
+
+  record.values.cover = typeof picked?.path === 'string' ? { path: picked.path } : null
+  record.values.seo = storedSeo(record.values.seo)
+
+  if (Array.isArray(categories)) {
+    fileService(record, categories.map(Number))
+  }
+
+  record.updated_at = new Date().toISOString()
+  restateService(record)
+
+  return { data: serviceDetail(record, locale) }
+})
+
+on('DELETE', '/services/(\\d+)', ({ params }) => {
+  const record = service(params[0])
+
+  record.deleted_at = new Date().toISOString()
+  recountServices()
+
+  return { data: null }
+})
+
+on('POST', '/services/(\\d+)/restore', ({ params, locale }) => {
+  const record = service(params[0])
+
+  record.deleted_at = null
+  recountServices()
+
+  return { data: serviceRow(record, locale) }
+})
+
+/* Throw away what is waiting and keep what the site is showing. */
+on('POST', '/services/(\\d+)/discard', ({ params, locale }) => {
+  const record = service(params[0])
+
+  if (record.live !== null) {
+    for (const field of serviceDraftedFields({ ...record.values, ...record.live })) {
+      record.values[field] = serviceClone(record.live[field] ?? null)
+    }
+  }
+
+  record.updated_at = new Date().toISOString()
+  restateService(record)
+
+  return { data: serviceDetail(record, locale) }
+})
+
+on('POST', '/services/(\\d+)/publish', ({ params, locale }) => {
+  const record = service(params[0])
+  const now = new Date().toISOString()
+  const number = (record.versions[0]?.number ?? 0) + 1
+
+  record.published_at = now
+  record.status = 'published'
+  record.live = serviceClone(record.values)
+  record.updated_at = now
+  record.snapshots[number] = serviceClone(record.values)
+  record.versions.unshift({
+    number,
+    created_at: now,
+    author: 'Анна Ковальчук',
+    source: 'panel',
+    comment: null,
+    is_pinned: false,
+  })
+
+  return { data: serviceRow(record, locale) }
+})
+
+on('POST', '/services/(\\d+)/unpublish', ({ params, locale }) => {
+  const record = service(params[0])
+
+  // Not "draft": it was on the site this morning, and only its history tells the two apart.
+  record.status = 'unpublished'
+  record.published_at = null
+  record.updated_at = new Date().toISOString()
+
+  return { data: serviceRow(record, locale) }
+})
+
+on('GET', '/services/(\\d+)/versions', ({ params }) => ({ data: service(params[0]).versions }))
+
+on('POST', '/services/(\\d+)/versions/(\\d+)/restore', ({ params, locale }) => {
+  const record = service(params[0])
+  const snapshot = record.snapshots[Number(params[1])]
+
+  if (snapshot === undefined) {
+    throw new HttpFailure(404, 'No such version.')
+  }
+
+  /* An old publication becomes the draft; putting it on the site is a separate step. */
+  for (const field of serviceDraftedFields(snapshot)) {
+    record.values[field] = serviceClone(snapshot[field])
+  }
+
+  record.updated_at = new Date().toISOString()
+  restateService(record)
+
+  return { data: serviceDetail(record, locale) }
+})
+
+/*
+ * The categories: the panel's shared category API (`CategoryRoutes::register()`), the same
+ * answers the blog's rubrics give under their own path.
+ */
+on('GET', '/services/categories', ({ locale }) => ({
+  data: serviceCategories.map((row) => serviceCategoryRow(row, locale)),
+  prefix: SERVICES_PREFIX,
+}))
+
+on('POST', '/services/categories', ({ body, locale }) => {
+  const title = localized(body.title) || 'Новая категория'
+  const slug = localized(body.slug) || slugify(title)
+  const row: ServiceCategoryRecord = {
+    id: Math.max(0, ...serviceCategories.map((one) => one.id)) + 1,
+    name: title,
+    title: asMap(body.title, title),
+    slug: asMap(body.slug, slug),
+    lead: {},
+    path: `${SERVICES_PREFIX}/${slug}`,
+    url: `https://webx-demo.test/${SERVICES_PREFIX}/${slug}`,
+    cover: null,
+    is_visible: true,
+    position: serviceCategories.length + 1,
+    services_count: 0,
+    deleted_at: null,
+    seo: {},
+    extra: {},
+    items: [],
+  }
+
+  serviceCategories.push(row)
+
+  return { data: serviceCategoryRow(row, locale) }
+})
+
+on('POST', '/services/categories/reorder', ({ body }) => {
+  const ids = Array.isArray(body.ids) ? (body.ids as number[]) : []
+
+  order(serviceCategories, ids)
+
+  return { data: null }
+})
+
+on('GET', '/services/categories/(\\d+)', ({ params, locale }) => ({
+  data: serviceCategoryDetail(serviceCategory(params[0]), locale),
+}))
+
+/* The values of `services.category-form`: own fields into columns, the rest into `extra`. */
+on('PUT', '/services/categories/(\\d+)', ({ params, body, locale }) => {
+  const row = serviceCategory(params[0])
+  const values = (body.values ?? {}) as Record<string, unknown>
+  const errors: Record<string, string[]> = {}
+
+  if (values.title !== undefined && Object.values(asMap(values.title, '')).every((one) => !one)) {
+    errors.title = ['Название нужно хотя бы на одном языке.']
+  }
+
+  for (const [code, slug] of Object.entries(
+    values.slug === undefined ? {} : asMap(values.slug, ''),
+  )) {
+    if (slug !== '' && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      errors[`slug.${code}`] = ['Буквы, цифры и одиночные дефисы между ними.']
+    }
+  }
+
+  if (Object.keys(errors).length > 0) throw new HttpFailure(422, 'Invalid', undefined, errors)
+
+  for (const [name, value] of Object.entries(values)) {
+    if (name === 'title') row.title = asMap(value, '')
+    else if (name === 'slug') row.slug = asMap(value, '')
+    else if (name === 'lead') row.lead = asMap(value, '')
+    else if (name === 'is_visible') row.is_visible = value === true
+    else if (name === 'seo') row.seo = (value ?? {}) as Record<string, unknown>
+    else if (name === 'cover') {
+      const path = (value as { path?: string } | null)?.path
+      const file = typeof path === 'string' ? mediaByPath(path) : null
+
+      row.cover =
+        file === null ? null : { id: file.id, path: file.path, url: file.url, thumb: file.thumb }
+    } else row.extra[name] = value
+  }
+
+  const slug = serviceText(row.slug, locale) || serviceText(row.slug, 'ru')
+
+  row.name = serviceText(row.title, locale) || row.name
+  row.path = `${SERVICES_PREFIX}/${slug}`
+  row.url = `https://webx-demo.test/${row.path}`
+
+  return { data: serviceCategoryDetail(row, locale) }
+})
+
+on('DELETE', '/services/categories/(\\d+)', ({ params }) => {
+  const row = serviceCategory(params[0])
+
+  // The panel keeps the button out of reach while a category holds anything.
+  if (row.services_count > 0) {
+    throw new HttpFailure(422, `В категории ещё ${row.services_count} услуг.`)
+  }
+
+  serviceCategories.splice(serviceCategories.indexOf(row), 1)
+
+  for (const record of services) {
+    record.values.categories = serviceCategoryIds(record).filter((id) => id !== row.id)
+  }
+
+  return { data: null }
+})
+
+function service(id: string): ServiceRecord {
+  const record = findService(Number(id))
+
+  if (record === null) {
+    throw new HttpFailure(404, 'No such service.')
+  }
+
+  return record
+}
+
+function serviceCategory(id: string): ServiceCategoryRecord {
+  const row = findServiceCategory(Number(id))
+
+  if (row === null) {
+    throw new HttpFailure(404, 'No such category.')
+  }
+
+  return row
+}
+
+/** One service as its editor opens it (`ServiceForm::describe()`). */
+function serviceDetail(record: ServiceRecord, locale: string): Record<string, unknown> {
+  return {
+    service: serviceRow(record, locale),
+    values: withSeoImage(serviceClone(record.values)),
+    revision: serviceRevision(record),
+    prefix: SERVICES_PREFIX,
+    preview_url: `/preview/service/${record.id}`,
+  }
+}
+
+/** One category as its page opens it: the row, the values of the screen and the prefix. */
+function serviceCategoryDetail(row: ServiceCategoryRecord, locale: string) {
+  return {
+    category: serviceCategoryRow(row, locale),
+    values: {
+      ...row.extra,
+      title: row.title,
+      slug: row.slug,
+      is_visible: row.is_visible,
+      lead: row.lead,
+      cover: row.cover === null ? null : { path: row.cover.path, url: row.cover.url },
+      seo: row.seo,
+    },
+    prefix: SERVICES_PREFIX,
+  }
+}
+
 /* ------------------------------------------------------------------------------- media ----- */
 
 on('GET', '/media/directories', () => ({ data: directories }))
@@ -2900,6 +3546,20 @@ function previewArticle(id: number): string {
   )
 }
 
+/** The draft of a service, on the same page every other preview is drawn on. */
+function previewService(id: number): string {
+  const record = findService(id)
+
+  if (record === null) {
+    return missingPreview('No such service.')
+  }
+
+  return document(
+    serviceText(record.values.title, 'ru') || `#${record.id}`,
+    (record.values.blocks ?? []) as Block[],
+  )
+}
+
 function missingPreview(message: string): string {
   return `<!doctype html><title>404</title><p>${message}</p>`
 }
@@ -3045,7 +3705,7 @@ function draw(node: Block): string {
     }
   }
 
-  const html = renderTemplate(type.content.template, node.values, children)
+  const html = renderTemplate(type.content.template, node.values, children, type.content.schema)
 
   /* The pair of markers is what the panel replaces a block between after a field changes. */
   return `<!--wx:${node.key}-->\n${html}\n<!--/wx:${node.key}-->`
@@ -3104,13 +3764,19 @@ export function panelServer(): Plugin {
           return
         }
 
-        const preview = url.pathname.match(/^\/preview\/(page|article)\/(\d+)$/)
+        const preview = url.pathname.match(/^\/preview\/(page|article|service)\/(\d+)$/)
 
         if (preview !== null) {
           const id = Number(preview[2])
 
           response.setHeader('Content-Type', 'text/html; charset=utf-8')
-          response.end(preview[1] === 'page' ? previewPage(id) : previewArticle(id))
+          response.end(
+            preview[1] === 'page'
+              ? previewPage(id)
+              : preview[1] === 'service'
+                ? previewService(id)
+                : previewArticle(id),
+          )
 
           return
         }

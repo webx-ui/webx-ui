@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'trail' => 'Wo diese Leistung steht',
+    'untitled' => 'Ohne Titel',
+    'save' => 'Speichern',
+    'save-failed' => 'Die Leistung wurde nicht gespeichert.',
+    'publish-title' => '„:title“ veröffentlichen?',
+    'publish-text' => 'Sie ist ab sofort für alle unter :address erreichbar.',
+    'publish-nowhere' => 'In dieser Sprache hat sie noch keine Adresse, also antwortet nichts.',
+    'preview' => 'Vorschau',
+    'discard' => 'Änderungen verwerfen',
+    'discard-title' => 'Wartende Änderungen verwerfen?',
+    'discard-text' => 'Die Leistung kehrt zu dem zurück, was die Website zeigt. Das seither Geschriebene ist nirgends mehr aufgeführt.',
+    'discarded' => 'Die Leistung entspricht wieder der veröffentlichten Fassung.',
+    'conflict-title' => 'Die Leistung wurde während Ihrer Bearbeitung geändert',
+    'conflict-mine' => 'Meine behalten',
+    'conflict-theirs' => 'Neuere Fassung nehmen',
+    'conflict-theirs-title' => 'Ihre Eingaben aufgeben?',
+    'conflict-theirs-text' => 'Die Leistung wird neu geladen, wie sie jetzt ist, und Ihre Eingaben gehen verloren.',
+    'leave' => 'Verlassen',
+    'leave-title' => 'Ohne Speichern verlassen?',
+    'leave-text' => 'Die Leistung konnte nicht gespeichert werden, und Ihre Eingaben sind nicht auf dem Server.',
+    'live-since' => 'Online seit :date',
+    'address-moving' => 'Die Adresse ändert sich. Die alte funktioniert weiter und leitet auf die neue.',
+    'history-empty' => 'Diese Leistung wurde noch nie veröffentlicht.',
+    'version' => '#:number',
+    'version-live' => 'Online',
+    'source-panel' => 'Aus dem Panel',
+    'source-mcp' => 'Von einem Agenten',
+    'source-import' => 'Importiert',
+    'restore-title' => 'Version :number wiederherstellen?',
+    'restore-text' => 'Sie wird zum Entwurf. Die Website zeigt das Veröffentlichte, bis Sie sie veröffentlichen.',
+    'restore-version' => 'Wiederherstellen',
+    'restored-version' => 'Version :number ist jetzt der Entwurf.',
+];
