@@ -26,6 +26,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  *         return $this->belongsToCategories(Rubric::class, 'article_rubric');
  *     }
  *
+ * A record filed under two kinds of category — a recipe under its categories and under what it is
+ * rich in — declares both the same way and names the second where it writes or filters by it:
+ * `syncCategories($ids, 'nutrients')`, `inCategory($id, 'nutrients')`. The default relation stays
+ * the one with the main category and the breadcrumbs.
+ *
  * @mixin Model
  */
 trait HasCategories
@@ -46,12 +51,16 @@ trait HasCategories
     }
 
     /**
+     * One of the record's category relations — the default one ({@see categoryRelation()}) unless
+     * another is named: a recipe is filed under categories and under what it is rich in (§3.8 of
+     * the recipes spec), and both are written by the same code.
+     *
      * @return BelongsToMany<Model, $this>
      */
-    public function categoryLinks(): BelongsToMany
+    public function categoryLinks(?string $name = null): BelongsToMany
     {
         /** @var BelongsToMany<Model, $this> $relation */
-        $relation = $this->{$this->categoryRelation()}();
+        $relation = $this->{$name ?? $this->categoryRelation()}();
 
         return $relation;
     }
@@ -72,10 +81,11 @@ trait HasCategories
      * what keeps an untouched category in the same order as everything else.
      *
      * @param  list<int>  $ids
+     * @param  string|null  $name  Another category relation of the record than the default one.
      */
-    public function syncCategories(array $ids): void
+    public function syncCategories(array $ids, ?string $name = null): void
     {
-        $relation = $this->categoryLinks();
+        $relation = $this->categoryLinks($name);
         $ids = array_values(array_unique(array_map(intval(...), $ids)));
 
         $this->getConnection()->transaction(function () use ($relation, $ids): void {
@@ -109,9 +119,9 @@ trait HasCategories
      * @param  Builder<covariant Model>  $query
      * @return Builder<covariant Model>
      */
-    public function scopeInCategory(Builder $query, int $category): Builder
+    public function scopeInCategory(Builder $query, int $category, ?string $name = null): Builder
     {
-        $relation = $this->categoryLinks();
+        $relation = $this->categoryLinks($name);
 
         return $query->whereIn(
             $this->qualifyColumn($this->getKeyName()),

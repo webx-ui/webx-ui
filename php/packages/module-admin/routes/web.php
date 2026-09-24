@@ -9,6 +9,7 @@ use WebxUi\Admin\Http\Controllers\LinkController;
 use WebxUi\Admin\Http\Controllers\LocaleController;
 use WebxUi\Admin\Http\Controllers\ManifestController;
 use WebxUi\Admin\Http\Controllers\NoteController;
+use WebxUi\Admin\Http\Controllers\RelationController;
 use WebxUi\Admin\Http\Controllers\ScreenController;
 use WebxUi\Admin\Http\Controllers\ShellController;
 use WebxUi\Admin\Http\Controllers\TranslationController;
@@ -30,6 +31,12 @@ Route::prefix((string) config('webx-admin.api_path'))
         // What a `wx-collection` field can show (§3.3 of the FAQ spec): the sources this
         // administrator may place on a page.
         Route::get('collections', CollectionController::class)->name('collections');
+
+        // What a `wx-relations` field can choose (§3.7 of the recipes spec), behind the target's
+        // own permission.
+        Route::get('relations/{target}', RelationController::class)
+            ->where('target', '[a-z0-9-]+')
+            ->name('relations');
 
         Route::get('screens/{name}', ScreenController::class)
             ->where('name', '[a-z0-9-]+\.[a-z0-9-]+')

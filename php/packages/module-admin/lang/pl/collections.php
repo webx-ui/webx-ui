@@ -12,6 +12,8 @@ return [
     'unknown-category' => 'Jednej z wybranych kategorii już nie ma.',
     'limit' => 'Ile pokazać: liczba całkowita od 1 do :max albo puste — wszystkie.',
     'flag' => 'Ten przełącznik przyjmuje tylko tak lub nie.',
+    'unknown-relation' => 'Wpisów tej sekcji nie da się filtrować według tego.',
+    'unknown-related' => 'Jednego z wybranych powiązanych wpisów już nie ma.',
 
     'field-source' => 'Pokazuje wpisy z „:source”.',
     'field-unavailable' => 'Wpisów z „:source” nie można tu wybrać: sekcja nie jest zainstalowana albo nie masz do niej dostępu.',

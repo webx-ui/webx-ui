@@ -12,6 +12,7 @@ use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
@@ -32,6 +33,7 @@ use WebxUi\Services\Models\ServiceCategory;
 use WebxUi\Services\Panel\CategoriesModule;
 use WebxUi\Services\Panel\ServicesGroup;
 use WebxUi\Services\Panel\ServicesModule;
+use WebxUi\Services\Relations\ServiceTarget;
 
 /**
  * Two entities with addresses, both made of blocks, one route that is not an entity, and the
@@ -61,6 +63,7 @@ class ServicesServiceProvider extends ServiceProvider
         $this->registerScreens();
         $this->registerLinkSources();
         $this->registerCollection();
+        $this->app->make(RelationTargets::class)->register(new ServiceTarget);
         $this->registerPanel();
 
         $this->app->make(SitemapRoutes::class)->register(self::INDEX_ROUTE);

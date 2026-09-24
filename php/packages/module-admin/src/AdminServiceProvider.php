@@ -37,6 +37,7 @@ use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Admin\Links\RoutingSiteUrls;
 use WebxUi\Admin\Manifest\ManifestBuilder;
 use WebxUi\Admin\Notes\NoteTypes;
+use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\BooleanType;
@@ -51,6 +52,7 @@ use WebxUi\Admin\Screens\Types\NumberType;
 use WebxUi\Admin\Screens\Types\OptionListType;
 use WebxUi\Admin\Screens\Types\OptionType;
 use WebxUi\Admin\Screens\Types\RateType;
+use WebxUi\Admin\Screens\Types\RelationsType;
 use WebxUi\Admin\Screens\Types\RepeaterType;
 use WebxUi\Admin\Screens\Types\RichTextType;
 use WebxUi\Admin\Screens\Types\SliderType;
@@ -90,6 +92,10 @@ class AdminServiceProvider extends ServiceProvider
         // The records modules offer to show as blocks (§3 of the FAQ spec), by the key a
         // `wx-collection` field names them with. Filled from providers, like the two above.
         $this->app->singleton(CollectionSources::class);
+
+        // What records can be related to (§3.3 of the recipes spec), by the key the rows name
+        // them with. Filled from providers, like the three above.
+        $this->app->singleton(RelationTargets::class);
 
         // What the password over a site in testing lets through. A singleton because the
         // packages that answer where the panel's browser has to reach add their own from boot.
@@ -149,7 +155,12 @@ class AdminServiceProvider extends ServiceProvider
                 $app->make(CollectionSources::class),
                 $app->make(CategorySources::class),
                 $app->make(Locales::class),
+                $app->make(RelationTargets::class),
             ));
+            // Records of another module this one points at; a target nobody registered takes the
+            // field off the screen.
+            $types->register('wx-relations', new RelationsType($app->make(RelationTargets::class)));
+
             $types->register('wx-cascader', new CascaderType);
             $types->register('wx-tree-select', new TreeSelectType);
             $types->register('wx-transfer', new OptionListType('items'));

@@ -58,7 +58,7 @@ final class CollectionTest extends TestCase
         ], $this->editor())->assertOk();
 
         $this->assertSame(
-            ['categories' => [], 'limit' => 2, 'filter' => true, 'markup' => false],
+            ['categories' => [], 'limit' => 2, 'filter' => true, 'markup' => false, 'related' => null],
             $page->refresh()->draft['blocks'][0]['values']['list'],
         );
     }

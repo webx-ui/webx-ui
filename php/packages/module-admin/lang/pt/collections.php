@@ -12,6 +12,8 @@ return [
     'unknown-category' => 'Uma das categorias escolhidas já não existe.',
     'limit' => 'Quantos mostrar: um número inteiro de 1 a :max, ou vazio para todos.',
     'flag' => 'Este interruptor só aceita sim ou não.',
+    'unknown-relation' => 'Os registos desta secção não podem ser filtrados por isso.',
+    'unknown-related' => 'Um dos registos relacionados escolhidos já não existe.',
 
     'field-source' => 'Mostra registos de «:source».',
     'field-unavailable' => 'Não é possível escolher aqui registos de «:source»: a secção não está instalada ou não tem acesso a ela.',

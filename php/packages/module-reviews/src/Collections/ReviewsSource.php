@@ -35,6 +35,14 @@ final class ReviewsSource implements CollectionSource
         return 'reviews/categories';
     }
 
+    /**
+     * @return list<string>
+     */
+    public function relations(): array
+    {
+        return [];
+    }
+
     public function supportsMarkup(): bool
     {
         return false;

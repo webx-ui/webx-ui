@@ -30,6 +30,14 @@ final class QuoteSource implements CollectionSource
         return null;
     }
 
+    /**
+     * @return list<string>
+     */
+    public function relations(): array
+    {
+        return [];
+    }
+
     public function supportsMarkup(): bool
     {
         return true;
