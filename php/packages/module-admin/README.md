@@ -117,6 +117,11 @@ shadow the fields around it.
 without that section gets `WEBX_ADMIN_TITLE` and two nulls. There is one brand, so it is a
 binding and not a registry: a second source would only raise the question of which logo wins.
 
+The tab icon is the panel's own and is served under its prefix — `/cms/favicon.ico`,
+`/cms/apple-touch-icon.png`, `/cms/site.webmanifest` — so it never competes with the site's
+`/favicon.ico` and arrives with `composer update`. `WEBX_ADMIN_ICONS` points at a directory with
+the same file names to replace it file by file.
+
 ## Responses
 
 Laravel already has the two shapes that matter, and the WebX UI front end is built against them:
