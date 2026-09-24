@@ -43,6 +43,11 @@ const props = withDefaults(
     aspect?: MediaAspect | null
     /** Height of the frame when there is no aspect — a number in pixels, or any CSS length. */
     height?: number | string
+    /**
+     * Widest the frame gets — a number in pixels, or any CSS length. Full width by default;
+     * an avatar at the full width of a form is a poster, and with an aspect the height follows.
+     */
+    width?: number | string | null
     disabled?: boolean
   }>(),
   {
@@ -51,6 +56,7 @@ const props = withDefaults(
     captions: true,
     aspect: '16/9',
     height: 220,
+    width: null,
     disabled: false,
   },
 )
@@ -99,11 +105,14 @@ const preview = computed(() => {
   return current.url ?? resolved.value[current.path] ?? null
 })
 
-const frameStyle = computed(() =>
-  props.aspect
+const length = (size: number | string): string => (typeof size === 'number' ? `${size}px` : size)
+
+const frameStyle = computed(() => ({
+  ...(props.aspect
     ? { aspectRatio: RATIOS[props.aspect] ?? props.aspect }
-    : { height: typeof props.height === 'number' ? `${props.height}px` : props.height },
-)
+    : { height: length(props.height) }),
+  ...(props.width == null ? {} : { width: '100%', maxWidth: length(props.width) }),
+}))
 
 /**
  * `alt` and `title` are edited through the field, so they have to be readable as a record even
