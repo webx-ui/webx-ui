@@ -7,6 +7,7 @@ namespace WebxUi\Admin\Tests;
 use Illuminate\Filesystem\Filesystem;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Doctor\Checks\Halves;
+use WebxUi\Admin\Doctor\Checks\Helpers;
 use WebxUi\Admin\Doctor\Checks\Languages;
 use WebxUi\Admin\Doctor\Checks\Layouts;
 use WebxUi\Admin\Doctor\Checks\NpmRanges;
@@ -46,6 +47,15 @@ final class DoctorTest extends TestCase
     }
 
     // -- npm ranges --------------------------------------------------------------------------
+
+    #[Test]
+    public function it_knows_the_template_helpers_are_the_packages_own(): void
+    {
+        $found = $this->app->make(Helpers::class)->run();
+
+        $this->assertSame(['menu()', 'services()'], array_map(static fn (Diagnosis $diagnosis): string => $diagnosis->subject, $found));
+        $this->assertSame([Diagnosis::OK, Diagnosis::OK], array_map(static fn (Diagnosis $diagnosis): string => $diagnosis->state, $found));
+    }
 
     #[Test]
     public function it_reads_the_floor_out_of_a_range(): void

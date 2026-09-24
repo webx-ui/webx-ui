@@ -223,6 +223,57 @@ themselves; the breadcrumbs are index → main category → service. A service d
 schema.org `Service` whose `provider` points at the site's `Organization` by `@id`; the index and a
 category page push an `ItemList`.
 
+## Services in a block
+
+Two ways, and they give the same card, so a block can move from one to the other without its
+markup changing.
+
+**`services()` in the template** — for the variants you design yourself. It returns a query that
+never shows what a reader may not see: unpublished, in the bin, or without a slug in the language
+of the page.
+
+```blade
+@foreach (services()->in($category)->take($limit ?: 6) as $service)
+    <a href="{{ $service['url'] }}">
+        @if ($service['cover'])
+            <img src="{{ $service['cover']['url'] }}" alt="" width="{{ $service['cover']['width'] }}" height="{{ $service['cover']['height'] }}">
+        @endif
+        <h3>{{ $service['title'] }}</h3>
+        <p>{{ $service['lead'] }}</p>
+        {{ $service['fields']['price-from'] ?? '' }}
+    </a>
+@endforeach
+```
+
+| Step                 | What it does                                                                 |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `in($categories)`    | An id, a slug, a category or a list; one category lists in its own order     |
+| `in(null)`, `in([])` | No filter — what an editor's untouched field sends means "every service"     |
+| `only([12, 7])`      | These and no others, in this order                                           |
+| `except($service)`   | "Other services" on a service page                                           |
+| `take(6)`            | At most six; null or zero — all                                              |
+| `locale('uk')`       | The language of the cards; by default the one being rendered                 |
+| `categories()`       | The catalogue: visible categories, each with its `services`; empty ones drop |
+| `get()`, `first()`   | A list of cards, or one; the query itself can be looped over and counted     |
+
+A card is `id`, `anchor` (the slug), `categories` (ids), `title`, `url`, `lead` (plain text),
+`cover` (what a `wx-media` field hands over: `url`, `thumb`, `width`, `height`, …, or null) and
+`fields` — the project's own fields by name. The editor's knobs are fields in the block's schema,
+passed to the query: a `wx-categories` field for `in()`, a number for `take()`. The whole list costs
+the same few queries at any length.
+
+The helper is declared only if the site has no `services()` of its own; `php artisan webx:doctor`
+says whose it is.
+
+**The `services` collection** — for a block that needs only categories, a limit and a filter.
+`{ "type": "wx-collection", "props": { "source": "services" } }` in the schema, and the template
+reads `$services['items']`, `$services['groups']` and `$services['filter']`, as the FAQ block does.
+The module offers a ready block of cards with a category filter:
+
+```bash
+php artisan webx:blocks:offered --install --module=services
+```
+
 ## For an agent: MCP
 
 With the panel's MCP server on (see [AI agents](/guide/agents)), both sections are tools too:
