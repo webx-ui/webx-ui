@@ -17,6 +17,21 @@ use WebxUi\Blog\Models\Rubric;
 final class BreadcrumbsTest extends TestCase
 {
     #[Test]
+    public function a_site_can_switch_the_visible_trail_off_and_keep_the_breadcrumb_list(): void
+    {
+        config()->set('webx-blog.breadcrumbs', false);
+        $article = $this->article('belts');
+        $article->rubrics()->attach([$this->rubric('parts')->id => ['position' => 0]]);
+
+        foreach (['/blog/belts', '/blog/parts'] as $url) {
+            $page = (string) $this->get($url)->assertOk()->getContent();
+
+            $this->assertStringNotContainsString('webx-breadcrumbs', $page);
+            $this->assertContains('Parts', $this->names($page));
+        }
+    }
+
+    #[Test]
     public function an_article_page_prints_one_trail_twice(): void
     {
         $article = $this->article('belts');

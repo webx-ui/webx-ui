@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use WebxUi\Admin\Http\Controllers\CollectionController;
+use WebxUi\Admin\Http\Controllers\IconController;
 use WebxUi\Admin\Http\Controllers\LinkController;
 use WebxUi\Admin\Http\Controllers\LocaleController;
 use WebxUi\Admin\Http\Controllers\ManifestController;
@@ -58,6 +59,17 @@ Route::prefix((string) config('webx-admin.api_path'))
         Route::get('translations/{locale}', TranslationController::class)
             ->where('locale', '[A-Za-z]{2,3}(?:[-_][A-Za-z0-9]{2,8})?')
             ->name('translations');
+    });
+
+// The icons before the shell, whose pattern matches every address under the prefix. No
+// middleware: a file needs neither a session nor a language.
+Route::prefix((string) config('webx-admin.path'))
+    ->name('webx.icons.')
+    ->group(function (): void {
+        Route::get('site.webmanifest', [IconController::class, 'manifest'])->name('manifest');
+        Route::get('{file}', IconController::class)
+            ->whereIn('file', array_keys(IconController::FILES))
+            ->name('file');
     });
 
 Route::prefix((string) config('webx-admin.path'))

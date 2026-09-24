@@ -15,6 +15,21 @@ use WebxUi\Settings\Settings;
 final class BreadcrumbsTest extends TestCase
 {
     #[Test]
+    public function a_site_can_switch_the_visible_trail_off_and_keep_the_breadcrumb_list(): void
+    {
+        config()->set('webx-services.breadcrumbs', false);
+        $implants = $this->category('implants');
+        $this->service('crowns')->syncCategories([$implants->getKey()]);
+
+        foreach (['/services/crowns', '/services/implants'] as $url) {
+            $page = (string) $this->get($url)->assertOk()->getContent();
+
+            $this->assertStringNotContainsString('webx-breadcrumbs', $page);
+            $this->assertContains('Implants', $this->names($page));
+        }
+    }
+
+    #[Test]
     public function the_main_category_is_the_first_one_and_moving_it_moves_both_trails(): void
     {
         $implants = $this->category('implants');
