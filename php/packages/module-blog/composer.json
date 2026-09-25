@@ -30,14 +30,14 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "illuminate/view": "^13.0",
-        "webx-ui/localization": "^0.41.0",
-        "webx-ui/mcp": "^0.41.0",
-        "webx-ui/module-admin": "^0.41.0",
-        "webx-ui/module-auth": "^0.41.0",
-        "webx-ui/module-blocks": "^0.41.0",
-        "webx-ui/module-media": "^0.41.0",
-        "webx-ui/module-seo": "^0.41.0",
-        "webx-ui/routing": "^0.41.0"
+        "webx-ui/localization": "^0.42.0",
+        "webx-ui/mcp": "^0.42.0",
+        "webx-ui/module-admin": "^0.42.0",
+        "webx-ui/module-auth": "^0.42.0",
+        "webx-ui/module-blocks": "^0.42.0",
+        "webx-ui/module-media": "^0.42.0",
+        "webx-ui/module-seo": "^0.42.0",
+        "webx-ui/routing": "^0.42.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
@@ -62,7 +62,7 @@
         "webx": {
             "module": "blog",
             "npm": {
-                "@webx-ui/module-blog": "^0.5.5"
+                "@webx-ui/module-blog": "^0.5.6"
             },
             "panel": {
                 "import": "import { blog } from '@webx-ui/module-blog'",
