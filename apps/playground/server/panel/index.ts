@@ -813,6 +813,17 @@ on('GET', '/blocks/catalog', () => ({
     .map((type) => ({ ...type, thumbnail: thumbnailOf(type) })),
 }))
 
+/* The ids take the places they held, in the new order; the rest of the list does not move. */
+on('POST', '/blocks/reorder', ({ body }) => {
+  const ids = (body.ids as number[]).map(Number)
+  const next = ids.map((id) => blockTypes.find((type) => type.id === id)!)
+  const slots = blockTypes.flatMap((type, index) => (ids.includes(type.id) ? [index] : []))
+
+  slots.forEach((slot, index) => (blockTypes[slot] = next[index]!))
+
+  return { data: { ids } }
+})
+
 on('POST', '/blocks', ({ body }) => {
   const now = new Date().toISOString()
   const type: BlockType = {

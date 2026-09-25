@@ -47,8 +47,9 @@ export const blocksMessages: Record<string, Messages> = {
     root: 'The page itself',
     'max-per-entity': 'Per page',
     'max-per-entity-help': 'How many instances a page may hold. Empty — no limit.',
-    sort: 'Order',
-    'sort-help': 'The order in the CSS cascade and in the list.',
+    sort: 'Style order',
+    'sort-help':
+      "The order of the styles on the page: a later block's rules win over an earlier one's. Dragging the cards does not change it.",
     enabled: 'Offered to editors',
     'enabled-help':
       'Switched off, the block stays on the pages where it already is but cannot be added.',
@@ -128,6 +129,11 @@ export const blocksMessages: Record<string, Messages> = {
     'remove-text': 'The :count blocks inside it go with it.',
     'remove-alone': 'It leaves this page. The draft keeps what it was.',
     duplicate: 'Duplicate',
+    move: 'Move to…',
+    'move-title': 'Move ":title" to',
+    'move-page': 'The page itself',
+    'move-none': 'There is nowhere else this block may stand.',
+    'move-full': 'full',
     hide: 'Hide from the site',
     show: 'Show on the site',
     'hidden-note': 'Hidden: it is not drawn on the site, nor is anything inside it',

@@ -37,8 +37,8 @@ return [
     'root' => 'The page itself',
     'max-per-entity' => 'Per page',
     'max-per-entity-help' => 'How many instances a page may hold. Empty — no limit.',
-    'sort' => 'Order',
-    'sort-help' => 'The order in the CSS cascade and in the list.',
+    'sort' => 'Style order',
+    'sort-help' => 'The order of the styles on the page: a later block\'s rules win over an earlier one\'s. Dragging the cards does not change it.',
     'enabled' => 'Offered to editors',
     'enabled-help' => 'Switched off, the block stays on the pages where it already is but cannot be added.',
 

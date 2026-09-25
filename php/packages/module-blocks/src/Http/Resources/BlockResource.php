@@ -67,6 +67,7 @@ final class BlockResource extends JsonResource
             'icon' => $block->icon,
             'group' => $block->group,
             'sort' => $block->sort,
+            'position' => $block->position,
             'allow' => $block->allow,
             'allowed_in' => $block->allowed_in,
             'max_per_entity' => $block->max_per_entity,

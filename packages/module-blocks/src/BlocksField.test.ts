@@ -88,7 +88,7 @@ function field(value: BlockNode[] = tree()) {
  *
  * The menu's panel is teleported, so it is found in the document and clicked for real rather
  * than through the wrapper. Outside a panel the words are keys, so the lines are found by
- * place: what the row offers is add after, switch off, duplicate, remove — and remove is destructive, so
+ * place: what the row offers is add after, switch off, duplicate, move, remove — and remove is destructive, so
  * `WxRowMenu` keeps it last whatever order it was written in.
  */
 async function choose(wrapper: ReturnType<typeof field>, row: number, item: number): Promise<void> {
@@ -196,7 +196,7 @@ describe('WxBlocks', () => {
   it('asks before removing a block that holds others', async () => {
     const wrapper = field()
 
-    await choose(wrapper, 1, 3)
+    await choose(wrapper, 1, 4)
 
     // Nothing has gone yet: what leaves with a container is not on screen, so it is asked
     // about. The count in the question is a translated line, so it reads as a key here.
@@ -212,7 +212,7 @@ describe('WxBlocks', () => {
   it('asks before removing a block that holds nothing either', async () => {
     const wrapper = field()
 
-    await choose(wrapper, 0, 3)
+    await choose(wrapper, 0, 4)
 
     // A block of its own used to go without a question. It is still one thing leaving a page
     // by one click, and the row it left from says its type rather than its words — so what
@@ -298,6 +298,26 @@ describe('WxBlocks', () => {
     expect(kids.length).toBe(3)
     expect(kids[0]!.key).toBe('c')
     expect(kids[2]!.key).toBe('d')
+  })
+
+  /* The same block, keys and all, in its new place — not a copy with the original removed. */
+  it('moves a block into a container and back out to the page', async () => {
+    const wrapper = field()
+
+    await choose(wrapper, 0, 3)
+    document.querySelector<HTMLElement>('.wx-block-move__place')!.click()
+    await flushPromises()
+
+    const inside = emitted(wrapper)!
+    expect(inside.map((node) => node.key)).toEqual(['b'])
+    expect((inside[0]!.values.content as BlockNode[]).map((node) => node.key)).toEqual(['c', 'a'])
+
+    await wrapper.setProps({ modelValue: inside })
+    await choose(wrapper, 1, 3)
+    document.querySelector<HTMLElement>('.wx-block-move__place')!.click()
+    await flushPromises()
+
+    expect(emitted(wrapper)!.map((node) => node.key)).toEqual(['b', 'c'])
   })
 
   it('leaves editing on Escape', async () => {

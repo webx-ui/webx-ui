@@ -37,8 +37,8 @@ return [
     'root' => 'A própria página',
     'max-per-entity' => 'Por página',
     'max-per-entity-help' => 'Quantas instâncias uma página pode ter. Vazio: sem limite.',
-    'sort' => 'Ordem',
-    'sort-help' => 'A ordem na cascata CSS e na lista.',
+    'sort' => 'Ordem dos estilos',
+    'sort-help' => 'A ordem dos estilos na página: as regras de um bloco posterior prevalecem. Arrastar os cartões não a altera.',
     'enabled' => 'Oferecido aos editores',
     'enabled-help' => 'Desativado, o bloco fica nas páginas onde já está, mas não pode ser adicionado.',
 

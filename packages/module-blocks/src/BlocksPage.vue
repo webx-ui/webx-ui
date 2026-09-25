@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { VueDraggable } from 'vue-draggable-plus'
 import {
   useAdmin,
   useErrorText,
@@ -192,6 +193,36 @@ const componentsLabel = computed(() =>
 
 const nothing = computed(() => types.value.length === 0 && pending.value.length === 0)
 
+/**
+ * The cards are dragged into the order editors see them in, here and in the picker. That is
+ * `position`, not `sort`, which is the order of the styles on the page.
+ *
+ * Not while searching — a filtered run of cards cannot be put in order — and not the components,
+ * which nobody picks from a list. A finger holds a card for a moment before it lifts, so that
+ * the same finger can still scroll the section.
+ */
+const canDrag = computed(
+  () => canManage.value && view.value !== COMPONENTS && search.value.trim() === '',
+)
+
+/*
+ * The group takes the places it held, in its new order — the rule the server keeps — so the
+ * cards are right at once, and a refusal only has to fetch the list again.
+ */
+async function reorder(list: BlockType[]): Promise<void> {
+  const ids = list.map((block) => block.id)
+  const next = [...list]
+
+  types.value = types.value.map((type) => (ids.includes(type.id) ? next.shift()! : type))
+
+  try {
+    await api.reorder(ids)
+  } catch (error) {
+    toast.danger(message(error))
+    await load()
+  }
+}
+
 async function load(): Promise<void> {
   loading.value = true
 
@@ -309,9 +340,20 @@ const actions = computed<ScreenAction[]>(() =>
     <template v-else>
       <section v-for="group in groups" :key="group.id" class="wx-blocks-page__group">
         <div v-if="group.label" class="wx-blocks-page__group-title">{{ group.label }}</div>
-        <div class="wx-blocks-page__cards">
+        <!-- The fallback rather than the browser's own drag: Firefox does not drag a button. -->
+        <vue-draggable
+          :model-value="group.blocks"
+          class="wx-blocks-page__cards"
+          :disabled="!canDrag"
+          :animation="160"
+          :delay="200"
+          :delay-on-touch-only="true"
+          :force-fallback="true"
+          ghost-class="is-ghost"
+          @update:model-value="reorder($event as BlockType[])"
+        >
           <block-card v-for="block in group.blocks" :key="block.id" :block="block" @open="open" />
-        </div>
+        </vue-draggable>
       </section>
 
       <section
@@ -387,6 +429,11 @@ const actions = computed<ScreenAction[]>(() =>
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--wx-text-muted);
+}
+
+/* The place a dragged card will land: its outline, not a second copy of the picture. */
+.wx-blocks-page__cards :deep(.is-ghost) {
+  opacity: 0.35;
 }
 
 .wx-blocks-page__cards {

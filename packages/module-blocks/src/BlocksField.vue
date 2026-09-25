@@ -29,6 +29,7 @@ import {
   type TypeRegistry,
 } from '@webx-ui/schema'
 import { createBlocksApi, type BlocksApi } from './api'
+import BlockMoveDialog from './BlockMoveDialog.vue'
 import BlockPicker from './BlockPicker.vue'
 import BlocksPreview from './BlocksPreview.vue'
 import BlocksTree from './BlocksTree.vue'
@@ -46,6 +47,7 @@ import {
 } from './content'
 import { useBlocksMessages } from './i18n'
 import { blocksOwnerKey, blocksPreviewKey, blocksRootKey } from './preview'
+import { destinations, type Destination } from './move'
 import { formSchema } from './schema'
 import type { BlockNode, BlockType } from './types'
 
@@ -357,6 +359,37 @@ function duplicate(key: string): void {
   selectedKey.value = copy.key
 }
 
+const chooseDestination = createModal<
+  Destination,
+  { title: string; destinations: Destination[]; topLabel: string }
+>(BlockMoveDialog)
+
+/**
+ * Into another container, or out to the top level, at the end of that list.
+ *
+ * The block goes whole, children and keys included: it is the same block in a new place, not
+ * a copy, so the preview's markers and anything pointing at its key still find it.
+ */
+async function move(key: string): Promise<void> {
+  const found = locate(tree.value, key)
+  if (!found) return
+
+  const place = await chooseDestination({
+    title: titleOf(found.node),
+    destinations: destinations(tree.value, key, catalog.value, {
+      owner: owner?.value ?? null,
+      allow: props.allow,
+      max: props.max,
+    }),
+    topLabel: owner?.value?.title ?? t('field.move-page'),
+  })
+
+  if (!place) return
+
+  const without = removeNode(tree.value, key)
+  set(insertNode(without, place.parentKey, place.field, Number.MAX_SAFE_INTEGER, found.node))
+}
+
 /*
  * No question asked, unlike removing a container: this is one click, it is visible in the row
  * the moment it happens, and the same click puts it back.
@@ -500,6 +533,7 @@ const formRoot = computed(() =>
               @add="add"
               @remove="remove"
               @duplicate="duplicate"
+              @move="move"
               @visibility="visibility"
               @reorder="reorder"
             />
