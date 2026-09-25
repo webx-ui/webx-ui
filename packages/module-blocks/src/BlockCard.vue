@@ -28,11 +28,13 @@ const t = useTranslate('webx-blocks')
 <template>
   <button type="button" class="wx-block-card" @click="emit('open', block)">
     <!-- A component is a piece that stands inside a column — a card, a badge — so it is drawn
-         at a column's width: at a desktop's it is a speck in the corner of the picture. -->
+         at a column's width: at a desktop's it is a speck in the corner of the picture. And it
+         is a whole thing rather than a band of a page, so it is shown whole, in a taller box. -->
     <block-thumb
       :thumbnail="block.thumbnail"
-      :height="120"
+      :height="kindOf(block) === 'component' ? 180 : 120"
       :width="kindOf(block) === 'component' ? 360 : undefined"
+      :fit="kindOf(block) === 'component'"
     />
     <div class="wx-block-card__body">
       <div class="wx-block-card__title">{{ block.title }}</div>
