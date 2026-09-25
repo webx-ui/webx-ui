@@ -6,6 +6,7 @@ return [
     'blocks' => 'Bloklar',
     'add' => 'Blok ekle',
     'add-inside' => 'İçine ekle',
+    'add-after' => 'Sonrasına ekle',
     'done' => 'Bitti',
     'remove' => 'Kaldır',
     'remove-title' => '":title" kaldırılsın mı?',
