@@ -605,6 +605,11 @@ MCP через `cat | mcp:start webx` — `declared` с `customised`, `blocks_cr
   предупреждает; для компонента это значит «скрипт не запустится») — решить в BC4 вместе с
   omnivitality. Описания полей формы `recipes.card` — английские: это справка для вёрстки и
   агента, как имена ключей.
+- **В worktree `node_modules` (корень, `packages/*`, `apps/*`) и `packages/*/dist` (кроме
+  `module-blocks`) — junction'ы на основной чекаут**, чтобы гонять vitest, vue-tsc и сборку
+  без pnpm. В git их нет; снимать как ссылки (`cmd /c rmdir <путь>`), не `rm -rf` — иначе уйдёт
+  содержимое основного чекаута. `vite build` в пакете с junction'ом на `dist` пишет в основной
+  чекаут.
 
 ### BC4 — выпуск
 
