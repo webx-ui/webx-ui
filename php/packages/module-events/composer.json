@@ -1,0 +1,87 @@
+{
+    "name": "webx-ui/module-events",
+    "description": "Events for the WebX UI admin panel: workshops, meetings and webinars with a date, a place, a price and a link to book, each a page of fixed structure, flat categories with pages of their own, related services, an .ics file and schema.org Event.",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "webx-ui",
+        "laravel",
+        "admin",
+        "cms",
+        "events"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-events"
+    },
+    "require": {
+        "php": "^8.3",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/routing": "^13.0",
+        "illuminate/support": "^13.0",
+        "illuminate/view": "^13.0",
+        "webx-ui/localization": "^0.42.3",
+        "webx-ui/mcp": "^0.42.3",
+        "webx-ui/module-admin": "^0.42.3",
+        "webx-ui/module-media": "^0.42.3",
+        "webx-ui/module-seo": "^0.42.3",
+        "webx-ui/routing": "^0.42.3"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/module-blocks": "^0.42.3",
+        "webx-ui/module-pages": "^0.42.3",
+        "webx-ui/module-services": "^0.42.3"
+    },
+    "suggest": {
+        "webx-ui/module-blocks": "The preview of a draft.",
+        "webx-ui/module-services": "The Services field on an event, and the services printed on its page.",
+        "webx-ui/module-pages": "A page at the prefix, made of blocks, in place of the index."
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Events\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Events\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Events\\EventsServiceProvider"
+            ]
+        },
+        "webx": {
+            "module": "events",
+            "npm": {
+                "@webx-ui/module-events": "^0.1.0"
+            },
+            "panel": {
+                "import": "import { events } from '@webx-ui/module-events'",
+                "style": "@webx-ui/module-events/style.css",
+                "register": "...events()"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

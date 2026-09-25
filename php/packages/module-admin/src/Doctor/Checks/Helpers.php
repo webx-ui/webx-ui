@@ -21,6 +21,7 @@ final class Helpers implements Check
 {
     /** Function → the package that declares it in its `src/helpers.php`. */
     private const HELPERS = [
+        'events' => 'webx-ui/module-events',
         'menu' => 'webx-ui/module-menu',
         'recipes' => 'webx-ui/module-recipes',
         'reviews' => 'webx-ui/module-reviews',
