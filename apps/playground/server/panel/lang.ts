@@ -1,7 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { eventsMessages } from '../../../../packages/module-events/src/messages'
-import { INTERIM_SCREEN_WORDS } from './events'
 
 /**
  * The panel's dictionary, read out of the PHP packages.
@@ -92,13 +90,6 @@ export function dictionary(locale: string): Record<string, Record<string, Messag
         ...lines,
       }
     }
-  }
-
-  // Until the php half of the events lands here, the manifest and the screens take their words
-  // from the npm package and the fixture
-  // (EV3 removes this with the screen copies). Only when there is no file to read at all.
-  if (namespaces['webx-events'] === undefined) {
-    namespaces['webx-events'] = { ...eventsMessages, screen: INTERIM_SCREEN_WORDS }
   }
 
   return namespaces
