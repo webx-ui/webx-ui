@@ -45,7 +45,10 @@ interface Option {
 /** Allowed here at all: the parent's say-so and the type's own, both. */
 function allowedHere(type: BlockType): boolean {
   if (props.parent === null) {
-    return type.allowed_in === null || type.allowed_in.includes('root')
+    /* A page's own field may narrow the page, and used to be ignored here. */
+    const fieldAllows = props.allow === null || props.allow.includes(type.slug)
+
+    return fieldAllows && (type.allowed_in === null || type.allowed_in.includes('root'))
   }
 
   const parentAllows = props.allow
