@@ -26,7 +26,7 @@
         "illuminate/contracts": "^13.0",
         "illuminate/support": "^13.0",
         "laravel/mcp": "^1.0",
-        "webx-ui/module-admin": "^0.42.0"
+        "webx-ui/module-admin": "^0.42.1"
     },
     "require-dev": {
         "laravel/passport": "^13.8",
