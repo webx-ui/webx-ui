@@ -29,19 +29,19 @@
         "illuminate/routing": "^13.0",
         "illuminate/support": "^13.0",
         "illuminate/view": "^13.0",
-        "webx-ui/localization": "^0.42.3",
-        "webx-ui/mcp": "^0.42.3",
-        "webx-ui/module-admin": "^0.42.3",
-        "webx-ui/module-media": "^0.42.3",
-        "webx-ui/module-seo": "^0.42.3",
-        "webx-ui/routing": "^0.42.3"
+        "webx-ui/localization": "^0.43.0",
+        "webx-ui/mcp": "^0.43.0",
+        "webx-ui/module-admin": "^0.43.0",
+        "webx-ui/module-media": "^0.43.0",
+        "webx-ui/module-seo": "^0.43.0",
+        "webx-ui/routing": "^0.43.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/module-blocks": "^0.42.3",
-        "webx-ui/module-pages": "^0.42.3",
-        "webx-ui/module-services": "^0.42.3"
+        "webx-ui/module-blocks": "^0.43.0",
+        "webx-ui/module-pages": "^0.43.0",
+        "webx-ui/module-services": "^0.43.0"
     },
     "suggest": {
         "webx-ui/module-blocks": "The preview of a draft.",
