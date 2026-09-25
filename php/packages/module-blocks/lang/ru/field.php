@@ -6,6 +6,7 @@ return [
     'blocks' => 'Блоки',
     'add' => 'Добавить блок',
     'add-inside' => 'Добавить внутрь',
+    'add-after' => 'Добавить после',
     'done' => 'Готово',
     'remove' => 'Убрать',
     'remove-title' => 'Убрать «:title»?',
