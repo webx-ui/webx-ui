@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-blog",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "description": "Blog for the WebX UI admin panel: articles made of blocks, rubrics and tags, scheduled publication.",
   "license": "MIT",
   "type": "module",

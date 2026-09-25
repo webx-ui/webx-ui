@@ -1,5 +1,12 @@
 # @webx-ui/php
 
+## 0.42.3
+
+### Patch Changes
+
+- 264c23a: The cards of the Blocks section are dragged into order, and the picker offers the types in it. The order is a new `position`, apart from `sort`, which stays the order of the styles on the page (now labelled so). A migration numbers the existing types in the order they had.
+- 264c23a: A block's `···` menu offers "Move to…": the block goes whole into another container or out to the page, and only to places whose rules let it stand there.
+
 ## 0.42.2
 
 ### Patch Changes
