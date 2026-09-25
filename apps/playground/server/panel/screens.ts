@@ -69,6 +69,19 @@ const SCREENS: Record<string, { base: string; patches: string[] }> = {
     base: 'php/packages/module-recipes/resources/screens/category-form.json',
     patches: ['php/packages/module-seo/resources/screens/recipes.category-form.json'],
   },
+  /*
+   * Copies of the php half's screens, kept here while that half is written on its own branch
+   * (EV1 ∥ EV2). EV3 points these at `php/packages/module-events/resources/screens` and at the
+   * SEO patches `module-seo` ships, and deletes `server/panel/events/`.
+   */
+  'events.form': {
+    base: 'apps/playground/server/panel/events/form.json',
+    patches: ['apps/playground/server/panel/events/seo.events.form.json'],
+  },
+  'events.category-form': {
+    base: 'apps/playground/server/panel/events/category-form.json',
+    patches: ['apps/playground/server/panel/events/seo.events.category-form.json'],
+  },
   'recipes.nutrient-form': {
     base: 'php/packages/module-recipes/resources/screens/nutrient-form.json',
     patches: [],
