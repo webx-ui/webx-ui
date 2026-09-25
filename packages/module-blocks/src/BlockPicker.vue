@@ -4,6 +4,7 @@ import { useTranslate } from '@webx-ui/module-admin'
 import { useModal, WxButton, WxDialog, WxEmpty, WxInput, WxText } from '@webx-ui/core'
 import BlockThumb from './BlockThumb.vue'
 import { countType } from './content'
+import { allows } from './move'
 import { useBlocksMessages } from './i18n'
 import { groupLabel, kindOf } from './schema'
 import type { BlockNode, BlockType } from './types'
@@ -42,21 +43,9 @@ interface Option {
   reason: string | null
 }
 
-/** Allowed here at all: the parent's say-so and the type's own, both. */
+/** Allowed here at all: the same rule "Move to" goes by. */
 function allowedHere(type: BlockType): boolean {
-  if (props.parent === null) {
-    /* A page's own field may narrow the page, and used to be ignored here. */
-    const fieldAllows = props.allow === null || props.allow.includes(type.slug)
-
-    return fieldAllows && (type.allowed_in === null || type.allowed_in.includes('root'))
-  }
-
-  const parentAllows = props.allow
-    ? props.allow.includes(type.slug)
-    : props.parent.allow?.includes(type.slug) === true
-  const typeAllows = type.allowed_in === null || type.allowed_in.includes(props.parent.slug)
-
-  return parentAllows && typeAllows
+  return allows(type, props.parent, props.allow)
 }
 
 /*

@@ -8,8 +8,8 @@ import type { BlockNode, BlockType } from './types'
 /**
  * One level of the tree, and itself again for every container. Rows reorder among their
  * siblings by drag; a container shows its fields' lists underneath, each with its own
- * "add inside". Moving a block between containers is not a drag — a duplicate and a remove
- * do it, and a drag across allow-rules would need a judge at every drop.
+ * "add inside". Moving a block between containers is not a drag but "Move to" in its menu:
+ * a drag across allow-rules would need a judge at every drop, and a finger in a sheet has none.
  */
 const props = withDefaults(
   defineProps<{
@@ -42,6 +42,7 @@ const emit = defineEmits<{
   add: [parentKey: string | null, field: string | null, node: ScreenNode | null, index?: number]
   remove: [key: string]
   duplicate: [key: string]
+  move: [key: string]
   visibility: [key: string, hidden: boolean]
   reorder: [parentKey: string | null, field: string | null, list: BlockNode[]]
 }>()
@@ -105,6 +106,12 @@ function actionsFor(node: BlockNode, index: number): RowAction[] {
       icon: 'copy',
       label: t('field.duplicate'),
       run: () => emit('duplicate', node.key),
+    },
+    {
+      key: 'move',
+      icon: 'arrow-right',
+      label: t('field.move'),
+      run: () => emit('move', node.key),
     },
     {
       key: 'remove',
@@ -193,6 +200,7 @@ function actionsFor(node: BlockNode, index: number): RowAction[] {
             @add="(p, f, n, i) => emit('add', p, f, n, i)"
             @remove="emit('remove', $event)"
             @duplicate="emit('duplicate', $event)"
+            @move="emit('move', $event)"
             @visibility="(key, hidden) => emit('visibility', key, hidden)"
             @reorder="(p, f, list) => emit('reorder', p, f, list)"
           />

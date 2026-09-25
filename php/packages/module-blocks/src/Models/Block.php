@@ -37,6 +37,7 @@ use WebxUi\Blocks\Rendering\Renderer;
  * @property string|null $icon
  * @property string $group
  * @property int $sort
+ * @property int $position
  * @property list<string>|null $allow
  * @property list<string>|null $allowed_in
  * @property int|null $max_per_entity
@@ -80,6 +81,7 @@ class Block extends Model
     {
         return [
             'sort' => 'integer',
+            'position' => 'integer',
             'allow' => 'array',
             'allowed_in' => 'array',
             'max_per_entity' => 'integer',
@@ -97,6 +99,14 @@ class Block extends Model
         $forget = static function (): void {
             Container::getInstance()->make(BlockTypes::class)->forget();
         };
+
+        // A new type joins the end of the list: first would push every card an editor already
+        // arranged one place down, and the order is theirs, not the order of creation.
+        static::creating(static function (Block $block): void {
+            if ((int) $block->getAttribute('position') === 0) {
+                $block->setAttribute('position', (int) static::query()->max('position') + 1);
+            }
+        });
 
         static::saved($forget);
         static::deleted($forget);

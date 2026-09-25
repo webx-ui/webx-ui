@@ -120,7 +120,7 @@ final class BlockResources
     {
         $types = [];
 
-        foreach (Block::query()->with(['draftVersion', 'publishedVersion'])->orderBy('sort')->orderBy('slug')->get() as $block) {
+        foreach (Block::query()->with(['draftVersion', 'publishedVersion'])->orderBy('position')->orderBy('slug')->get() as $block) {
             $version = $block->currentVersion();
             $content = $version?->content();
 
