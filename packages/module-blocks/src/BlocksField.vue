@@ -45,7 +45,7 @@ import {
   walk,
 } from './content'
 import { useBlocksMessages } from './i18n'
-import { blocksPreviewKey, blocksRootKey } from './preview'
+import { blocksOwnerKey, blocksPreviewKey, blocksRootKey } from './preview'
 import { formSchema } from './schema'
 import type { BlockNode, BlockType } from './types'
 
@@ -99,6 +99,8 @@ const props = withDefaults(
 const model = defineModel<BlockNode[]>({ default: () => [] })
 
 const nested = inject(blocksRootKey, false)
+/* Inside the block editor's sample form, the top level is that block rather than a page. */
+const owner = inject(blocksOwnerKey, null)
 provide(blocksRootKey, true)
 
 useBlocksMessages()
@@ -271,7 +273,7 @@ async function add(
   const parent = parentKey ? locate(tree.value, parentKey) : null
   const parentType = parent
     ? (catalog.value.find((type) => type.slug === parent.node.type) ?? null)
-    : null
+    : (owner?.value ?? null)
   const allow =
     parentKey === null ? props.allow : ((slot?.props?.allow as string[] | undefined) ?? null)
   const max = parentKey === null ? props.max : ((slot?.props?.max as number | undefined) ?? null)
