@@ -112,6 +112,17 @@
                     "maxlength": 60,
                     "placeholder": "trans::webx-recipes::screen.grams-placeholder"
                   }
+                },
+                {
+                  "id": "nutrients",
+                  "type": "wx-categories",
+                  "name": "nutrients",
+                  "label": "trans::webx-recipes::screen.nutrients",
+                  "help": "trans::webx-recipes::screen.nutrients-help",
+                  "props": {
+                    "source": "recipes/nutrients",
+                    "main": false
+                  }
                 }
               ]
             }
@@ -201,17 +212,6 @@
                   "help": "trans::webx-recipes::screen.categories-help",
                   "props": {
                     "source": "recipes/categories"
-                  }
-                },
-                {
-                  "id": "nutrients",
-                  "type": "wx-categories",
-                  "name": "nutrients",
-                  "label": "trans::webx-recipes::screen.nutrients",
-                  "help": "trans::webx-recipes::screen.nutrients-help",
-                  "props": {
-                    "source": "recipes/nutrients",
-                    "main": false
                   }
                 }
               ]
