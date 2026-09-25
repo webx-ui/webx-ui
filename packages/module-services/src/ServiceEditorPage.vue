@@ -168,8 +168,37 @@ function onFocusOut(): void {
   void save()
 }
 
+/* The save on its way, and what it carries. */
+let flight: { carried: string; done: Promise<void> } | undefined
+
+/**
+ * A save asked for while another is on its way waits for it instead of being dropped: leaving and
+ * publishing read `dirty` right after, and a save that was skipped reads as one that failed.
+ */
 async function save(): Promise<void> {
-  if (!service.value || saving.value || !canManage.value) return
+  while (flight) {
+    const { carried, done } = flight
+
+    await done
+
+    // That request wrote what it carried; go again only for what was typed while it was out.
+    if (!dirty.value || conflict.value || current.value === carried) return
+  }
+
+  const carried = current.value
+  const done = write()
+
+  flight = { carried, done }
+
+  try {
+    await done
+  } finally {
+    if (flight?.done === done) flight = undefined
+  }
+}
+
+async function write(): Promise<void> {
+  if (!service.value || !canManage.value) return
 
   clearTimeout(timer)
 
