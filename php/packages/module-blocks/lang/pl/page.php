@@ -37,8 +37,8 @@ return [
     'root' => 'Sama strona',
     'max-per-entity' => 'Na stronę',
     'max-per-entity-help' => 'Ile wystąpień może mieć strona. Puste — bez limitu.',
-    'sort' => 'Kolejność',
-    'sort-help' => 'Kolejność w kaskadzie CSS i na liście.',
+    'sort' => 'Kolejność stylów',
+    'sort-help' => 'Kolejność stylów na stronie: reguły późniejszego bloku wygrywają. Przeciąganie kart jej nie zmienia.',
     'enabled' => 'Proponowany redaktorom',
     'enabled-help' => 'Wyłączony blok zostaje na stronach, gdzie już stoi, ale nie można go dodać.',
 
