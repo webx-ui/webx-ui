@@ -157,6 +157,50 @@ export const blocksMessages: Record<string, Messages> = {
     'width-tablet': 'Tablet',
     'width-phone': 'Phone',
   },
+  components: {
+    kind: 'Kind',
+    'kind-block': 'Block',
+    'kind-block-help':
+      'Editors put it on pages: it is offered in "Add a block", and its fields are their form.',
+    'kind-component': 'Component',
+    'kind-component-help':
+      'Called from other templates with <x-webx-block>: its fields are what the caller hands it.',
+    'kind-help': 'A block becomes a component only while it stands on no page.',
+    blocks: 'Blocks',
+    components: 'Components',
+    'not-called': 'not called yet',
+    'in-block': 'in one block',
+    'in-blocks': 'in :count blocks',
+    module: 'module :module',
+    standard: 'Standard view · module :module',
+    'standard-help':
+      'The module draws its own view here. Customising makes a draft of it to edit; the site keeps the standard view until you publish.',
+    customise: 'Customise',
+    customised:
+      'A draft of the standard view is ready. The site shows the old one until you publish.',
+    'customise-failed': 'The component cannot be customised.',
+    'tab-inputs': 'Input data',
+    'inputs-help':
+      'What the caller hands the component: any field, wx-data for a structure passed from code, wx-slot for a piece of markup.',
+    call: 'How to call it',
+    'call-help': 'From any block template, a module view or the layout of the site.',
+    copy: 'Copy',
+    copied: 'Copied.',
+    'site-views':
+      'Calls from the views of the site are not seen here. Give them a fallback, or do not delete what code calls.',
+    shape: 'What $:name holds',
+    'shape-free': '$:name is any JSON the caller passes.',
+    callers: 'Blocks that call it',
+    'called-by': 'block ":title"',
+    'module-views': 'views of the module :module',
+    'publish-text': 'The version takes effect in every block that calls it: :count.',
+    'delete-called': 'Blocks call it, so it cannot be deleted: :titles.',
+    'delete-declared': 'Reset to standard',
+    'delete-declared-title': 'Reset ":title" to the standard view?',
+    'delete-declared-text':
+      'The type and every version of it go, and the module draws its own view again.',
+    'data-invalid': 'Not valid JSON: :error',
+  },
   groups: {
     content: 'Content',
     layout: 'Layout',

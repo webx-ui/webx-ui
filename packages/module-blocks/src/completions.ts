@@ -35,6 +35,22 @@ export function completions(source: CompletionSource): Extension {
 export interface TemplateSources {
   schema: () => ScreenNode[]
   styles: () => string
+  /** The types a tag can call, components among them: what `type="` offers. */
+  types?: () => TagTarget[]
+  /**
+   * The schema of a type, for the attributes and slots of a tag that calls it. May answer later:
+   * the list of types comes without content, and the one schema is asked for when it is needed.
+   */
+  schemaOf?: (slug: string) => ScreenNode[] | null | Promise<ScreenNode[] | null>
+}
+
+/** A type as a tag names it. */
+export interface TagTarget {
+  slug: string
+  title: string
+  kind: 'block' | 'component'
+  /** The module's view, for a declared place: the tag that calls it should carry it. */
+  fallback?: string | null
 }
 
 /** What the renderer hands a template besides its fields (see `lint.ts`, `GIVEN`). */
@@ -97,9 +113,18 @@ const SOURCE_ITEMS: Record<string, string[]> = {
   ],
 }
 
-export function templateCompletions({ schema, styles }: TemplateSources): CompletionSource {
+export function templateCompletions({
+  schema,
+  styles,
+  types = () => [],
+  schemaOf = () => null,
+}: TemplateSources): CompletionSource {
   return (context) => {
     const before = context.state.sliceDoc(Math.max(0, context.pos - 200), context.pos)
+
+    // The value of `type` first: inside its quotes nothing else applies.
+    const called = /<x-webx-block\b[^<>]*?\btype\s*=\s*(["'])([\w-]*)$/.exec(before)
+    if (called) return tagTypes(context, called[1]!, called[2]!, types())
 
     const member = /\$block->(\w*)$/.exec(before)
     if (member) return blockMembers(context, member[1]!)
@@ -121,6 +146,16 @@ export function templateCompletions({ schema, styles }: TemplateSources): Comple
     const echo = /(\{\{|\{!!)(\s*)(\w*)$/.exec(before)
     if (echo) return echoed(context, echo[1]!, echo[2]!, echo[3]!, schema())
 
+    const tag = openTag(before)
+    if (tag !== null) return tagAttributes(context, tag, types(), schemaOf)
+
+    const element = /<(x-[\w:-]*)$/.exec(before)
+    if (element) {
+      const text = context.state.sliceDoc(0, context.pos - element[0].length)
+
+      return tagElements(context, element[1]!, enclosingType(text), schemaOf)
+    }
+
     const attribute = /\bclass\s*=\s*"([^"]*)$/.exec(before)
     if (attribute) return classNames(context, attribute[1]!, styles())
 
@@ -135,6 +170,222 @@ export function templateCompletions({ schema, styles }: TemplateSources): Comple
 
     return null
   }
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* <x-webx-block>                                                                            */
+/* ---------------------------------------------------------------------------------------- */
+
+/**
+ * `type="` of the tag: every type there is, the components first — calling one is what the tag
+ * is for, calling a block (a CTA with its values written in) is the rarer case (§2, decision 2).
+ */
+function tagTypes(
+  context: CompletionContext,
+  quote: string,
+  word: string,
+  targets: TagTarget[],
+): CompletionResult | null {
+  if (targets.length === 0) return null
+
+  return {
+    from: context.pos - word.length,
+    options: targets.map((target, index) => ({
+      label: target.slug,
+      detail: target.kind,
+      info: target.title,
+      type: 'type',
+      boost: (target.kind === 'component' ? 50 : 0) - index / 100,
+      apply: (view, completion, from, to) => {
+        const rest = /^[\w-]*/.exec(view.state.sliceDoc(to, to + 64))![0]
+        const end = to + rest.length
+        const closed = view.state.sliceDoc(end, end + 1) === quote
+        const insert = `${target.slug}${closed ? '' : quote}`
+
+        view.dispatch({
+          changes: { from, to: end, insert },
+          // Past the closing quote: the attributes come next.
+          selection: { anchor: from + insert.length + (closed ? 1 : 0) },
+          annotations: pickedCompletion.of(completion),
+          userEvent: 'input.complete',
+        })
+      },
+    })),
+    validFor: /^[\w-]*$/,
+  }
+}
+
+interface OpenTag {
+  /** The attributes written so far. */
+  attributes: string
+  /** The type, once it is written among them. */
+  type: string | null
+  /** `:` typed before the name. */
+  bound: boolean
+  word: string
+}
+
+/** The caret stands between the attributes of an `<x-webx-block` that is still open. */
+export function openTag(before: string): OpenTag | null {
+  const start = before.lastIndexOf('<x-webx-block')
+  if (start === -1) return null
+
+  const inside = before.slice(start + '<x-webx-block'.length)
+  if (inside.includes('>') || !/^\s/.test(inside)) return null
+
+  // An odd number of quotes: the caret is inside a value, and names do not go there.
+  const odd = (quote: string): boolean => (inside.split(quote).length - 1) % 2 === 1
+  if (odd('"') || odd("'")) return null
+
+  const name = /\s(:?)([\w-]*)$/.exec(inside)
+  if (!name) return null
+
+  const type = /\btype\s*=\s*["']([\w-]+)["']/.exec(inside)
+
+  return { attributes: inside, type: type?.[1] ?? null, bound: name[1] === ':', word: name[2]! }
+}
+
+/** Attribute names: the type's inputs by its schema, `:` for a structure, then the reserved two. */
+function tagAttributes(
+  context: CompletionContext,
+  tag: OpenTag,
+  targets: TagTarget[],
+  schemaOf: NonNullable<TemplateSources['schemaOf']>,
+): CompletionResult | null | Promise<CompletionResult | null> {
+  const present = new Set([...tag.attributes.matchAll(/:?([\w-]+)\s*=/g)].map((match) => match[1]!))
+  const from = context.pos - tag.word.length - (tag.bound ? 1 : 0)
+
+  const reserved = (): Completion[] => {
+    const options: Completion[] = []
+
+    if (!present.has('type')) options.push(attribute('type', false, 'reserved', null, 60))
+
+    if (!present.has('fallback') && tag.type !== null) {
+      const declared = targets.find((target) => target.slug === tag.type)?.fallback ?? null
+
+      options.push(attribute('fallback', false, 'reserved', declared, -10, declared))
+    }
+
+    return options
+  }
+
+  const answer = (nodes: ScreenNode[] | null): CompletionResult | null => {
+    const inputs = fields(nodes ?? [])
+      .filter((node) => node.type !== 'wx-slot' && node.type !== 'wx-blocks')
+      .filter((node) => !present.has(node.id))
+      .map((node, index) =>
+        attribute(node.id, node.type === 'wx-data' || tag.bound, node.type, node.label, 40 - index),
+      )
+    const options = [...inputs, ...reserved()]
+
+    // A space after the tag's name is not yet a request: the list opens on a letter or a colon.
+    if (options.length === 0 || (!context.explicit && tag.word === '' && !tag.bound)) return null
+
+    return { from, options, validFor: /^:?[\w-]*$/ }
+  }
+
+  if (tag.type === null) return answer(null)
+
+  const nodes = schemaOf(tag.type)
+
+  return nodes instanceof Promise ? nodes.then(answer, () => answer(null)) : answer(nodes)
+}
+
+/** `name=""` or `:name="$"`, with the caret before the closing quote. */
+function attribute(
+  name: string,
+  bound: boolean,
+  detail: string,
+  info: string | null | undefined,
+  boost: number,
+  value: string | null = null,
+): Completion {
+  const label = `${bound ? ':' : ''}${name}`
+
+  return {
+    label,
+    detail,
+    info: info ?? undefined,
+    type: 'property',
+    boost,
+    apply: (view, completion, from, to) => {
+      const insert = `${label}="${value ?? (bound ? '$' : '')}"`
+
+      view.dispatch({
+        changes: { from, to, insert },
+        selection: { anchor: from + insert.length - 1 },
+        annotations: pickedCompletion.of(completion),
+        userEvent: 'input.complete',
+      })
+    },
+  }
+}
+
+/**
+ * After `<x-`: the tag itself, and inside a tag's body the named slots its type declares, each
+ * written open and closed with the caret between.
+ */
+function tagElements(
+  context: CompletionContext,
+  word: string,
+  type: string | null,
+  schemaOf: NonNullable<TemplateSources['schemaOf']>,
+): CompletionResult | Promise<CompletionResult> {
+  const from = context.pos - word.length
+
+  const answer = (nodes: ScreenNode[] | null): CompletionResult => {
+    const options: Completion[] = [
+      snippetCompletion('x-webx-block type="${type}" />', {
+        label: 'x-webx-block',
+        detail: 'call a block',
+        type: 'keyword',
+      }),
+    ]
+
+    for (const node of fields(nodes ?? []).filter((field) => field.type === 'wx-slot')) {
+      options.push({
+        label: `x-slot:${node.id}`,
+        detail: 'slot',
+        info: node.label,
+        type: 'keyword',
+        boost: 20,
+        apply: (view, completion, start, end) => {
+          const open = `x-slot:${node.id}>`
+
+          view.dispatch({
+            changes: { from: start, to: end, insert: `${open}</x-slot:${node.id}>` },
+            selection: { anchor: start + open.length },
+            annotations: pickedCompletion.of(completion),
+            userEvent: 'input.complete',
+          })
+        },
+      })
+    }
+
+    return { from, options, validFor: /^x-[\w:-]*$/ }
+  }
+
+  if (type === null) return answer(null)
+
+  const nodes = schemaOf(type)
+
+  return nodes instanceof Promise ? nodes.then(answer, () => answer(null)) : answer(nodes)
+}
+
+/** The type of the `<x-webx-block>` whose body the end of the text stands in, if any. */
+export function enclosingType(text: string): string | null {
+  const stack: (string | null)[] = []
+
+  for (const match of text.matchAll(
+    /<x-webx-block\b((?:[^>"']|"[^"]*"|'[^']*')*?)(\/?)>|<\/x-webx-block\s*>/g,
+  )) {
+    if (match[0].startsWith('</')) stack.pop()
+    else if (match[2] !== '/') {
+      stack.push(/\btype\s*=\s*["']([\w-]+)["']/.exec(match[1] ?? '')?.[1] ?? null)
+    }
+  }
+
+  return stack.at(-1) ?? null
 }
 
 /** Every field a template may print: the schema's, in its order, then what is always there. */
@@ -154,6 +405,10 @@ function variables(schema: ScreenNode[], template: string): Completion[] {
   for (const [name, info] of GIVEN) {
     options.push({ label: `$${name}`, detail: 'given', info, type: 'variable', boost: -10 })
   }
+
+  // Any type can be called with the tag, and the tag's body arrives as this, empty when there
+  // was none: the one given a component is written around.
+  options.push({ label: '$slot', detail: 'given', info: 'what the calling tag held', boost: -15 })
 
   options.push({ label: '$loop', detail: 'given', info: 'inside @foreach', boost: -20 })
 
