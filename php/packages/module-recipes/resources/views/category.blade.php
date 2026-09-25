@@ -1,16 +1,11 @@
+{{-- The content first, for the same reason as on the index: `@webxPartAssets` prints the
+     bundle of what was rendered, and the head slot is worked out before the body. --}}
 @php($seo = app(WebxUi\Seo\Rendering\Seo::class))
 @php($meta = $seo->for($seo->currentUrl(), $category))
 @php($lead = $category->leadHtml())
 @php($picture = $category->picture())
 
-<x-dynamic-component :component="config('webx-recipes.layout') ?: 'webx-recipes::standalone'">
-    <x-slot:head>
-        @webxSeo($category)
-        @if ($meta->title === null)
-            <title>{{ $category->title }}</title>
-        @endif
-    </x-slot:head>
-
+@php(ob_start())
     @if (config('webx-recipes.breadcrumbs', true))
         <x-webx-seo::breadcrumbs :for="$category" />
     @endif
@@ -28,4 +23,16 @@
     </header>
 
     @include('webx-recipes::partials.catalog', ['catalog' => $catalog])
+@php($body = ob_get_clean())
+
+<x-dynamic-component :component="config('webx-recipes.layout') ?: 'webx-recipes::standalone'">
+    <x-slot:head>
+        @webxSeo($category)
+        @if ($meta->title === null)
+            <title>{{ $category->title }}</title>
+        @endif
+        @webxPartAssets
+    </x-slot:head>
+
+    {!! $body !!}
 </x-dynamic-component>

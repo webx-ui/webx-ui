@@ -6,6 +6,7 @@ namespace WebxUi\Admin\Support;
 
 use Illuminate\Container\Container;
 use Illuminate\Contracts\View\Factory as Views;
+use WebxUi\Blocks\Rendering\Bundles;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\Tags\BlockTag;
 
@@ -32,5 +33,20 @@ final class Parts
         }
 
         return Container::getInstance()->make(Views::class)->make($fallback, $data)->render();
+    }
+
+    /**
+     * What `@webxPartAssets` prints: the styles and script of everything rendered so far — a
+     * customised part brings its own — and nothing on a site without blocks. The page's head,
+     * printed after its body, like `@webxBlocks`, which a module that may run without blocks
+     * cannot write.
+     */
+    public static function assets(): string
+    {
+        if (class_exists(Bundles::class)) {
+            return Container::getInstance()->make(Bundles::class)->tags()->toHtml();
+        }
+
+        return '';
     }
 }
