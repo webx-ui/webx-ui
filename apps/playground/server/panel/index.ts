@@ -17,8 +17,14 @@ import {
   blockTypes,
   blockVersions,
   clone as blockClone,
+  blockShapes,
+  callersOf,
+  callsOf,
+  declaredComponents,
   draw as drawContent,
+  fallbackSource,
   renderTemplate,
+  tagCaller,
   templateFailure,
   useCollectionResolver,
   useLinkResolver,
@@ -725,7 +731,67 @@ on('POST', '/pages/(\\d+)/versions/(\\d+)/restore', ({ params }) => {
 
 /* ----------------------------------------------------------------------------- blocks ----- */
 
-on('GET', '/blocks', () => ({ data: blockTypes.map(withoutContent) }))
+/* The places modules declared ride beside the list, not in it (§3.10 of the components spec). */
+on('GET', '/blocks', () => ({
+  data: blockTypes.map((type) => withCalls(withoutContent(type))),
+  declared: declaredComponents.map((place) => ({
+    slug: place.slug,
+    module: place.module,
+    title: place.title,
+    description: place.description,
+    fallback: place.fallback,
+    customised: blockTypes.some((type) => type.slug === place.slug),
+  })),
+}))
+
+/**
+ * What a type says about calls (§3.10): its kind, the slugs its template calls and the types
+ * whose published version calls it. Worked out on every answer rather than stored, so a template
+ * edited in the constructor shows in the section straight away.
+ */
+function withCalls<T extends BlockType>(type: T): T {
+  const source = blockTypes.find((item) => item.id === type.id)
+
+  return {
+    ...type,
+    kind: type.kind ?? 'block',
+    uses: callsOf(source?.content?.template ?? ''),
+    used_by: callersOf(type.slug),
+  }
+}
+
+/** The declaration of the slug and the shapes its schema names — only the one type's answer. */
+function withDeclaration(type: BlockType): BlockType {
+  const place = declaredComponents.find((item) => item.slug === type.slug)
+  const shape: NonNullable<BlockType['shape']> = {}
+
+  for (const node of wxData(type.content?.schema ?? [])) {
+    const name = typeof node.props?.shape === 'string' ? node.props.shape : null
+    const found = name === null ? undefined : blockShapes[name]
+
+    if (name !== null && found !== undefined) shape[name] = { fields: found.fields }
+  }
+
+  return {
+    ...withCalls(type),
+    declared:
+      place === undefined
+        ? null
+        : {
+            slug: place.slug,
+            module: place.module,
+            title: place.title,
+            description: place.description,
+            fallback: place.fallback,
+            customised: true,
+          },
+    shape,
+  }
+}
+
+function wxData(schema: NonNullable<BlockType['content']>['schema']): typeof schema {
+  return schema.flatMap((node) => (node.type === 'wx-data' ? [node] : wxData(node.children ?? [])))
+}
 
 /* What the panel would get from a server that keeps one: the type drawn on its own sample,
    ready for the card's iframe. Without it the section is eight grey rectangles. */
@@ -743,7 +809,7 @@ function thumbnailOf(type: BlockType): BlockType['thumbnail'] {
    because the picker offers types by their picture the same way the section lists them. */
 on('GET', '/blocks/catalog', () => ({
   data: blockTypes
-    .filter((type) => type.is_enabled && type.published !== null)
+    .filter((type) => type.kind !== 'component' && type.is_enabled && type.published !== null)
     .map((type) => ({ ...type, thumbnail: thumbnailOf(type) })),
 }))
 
@@ -751,6 +817,7 @@ on('POST', '/blocks', ({ body }) => {
   const now = new Date().toISOString()
   const type: BlockType = {
     id: Math.max(...blockTypes.map((item) => item.id)) + 1,
+    kind: body.kind === 'component' ? 'component' : 'block',
     slug: String(body.slug ?? 'block'),
     title: String(body.title ?? 'Новый блок'),
     description: (body.description as string | null) ?? null,
@@ -785,10 +852,82 @@ on('POST', '/blocks', ({ body }) => {
 
   blockTypes.push(type)
 
-  return { data: counted(type) }
+  return { data: withDeclaration(counted(type)) }
 })
 
-on('GET', '/blocks/(\\d+)', ({ params }) => ({ data: counted(blockType(params[0])) }))
+/**
+ * "Customise" (§4.2): a component of the declared slug, its schema from the declaration, and a
+ * draft whose template is the module's view as the playground has it on disk — not published,
+ * so the site keeps the module's view until somebody does.
+ */
+on('POST', '/blocks/components/([\\w-]+)/customise', ({ params }) => {
+  const place = declaredComponents.find((item) => item.slug === params[0])
+
+  if (place === undefined) throw new HttpFailure(404, 'No such declared component.')
+
+  const taken = blockTypes.find((item) => item.slug === place.slug)
+
+  if (taken !== undefined) {
+    throw new HttpFailure(409, 'The site already has this type.', undefined, undefined, {
+      id: taken.id,
+    })
+  }
+
+  const now = new Date().toISOString()
+  const sample: Record<string, unknown> = {}
+
+  for (const node of wxData(place.schema)) {
+    const shape = typeof node.props?.shape === 'string' ? blockShapes[node.props.shape] : undefined
+
+    sample[node.id] = shape?.sample() ?? {}
+  }
+
+  const draft = {
+    number: 1,
+    source: 'panel' as const,
+    comment: `From ${place.fallback}`,
+    author_id: 1,
+    author: 'Анна Ковальчук',
+    created_at: now,
+  }
+
+  const type: BlockType = {
+    id: Math.max(...blockTypes.map((item) => item.id)) + 1,
+    kind: 'component',
+    slug: place.slug,
+    title: place.title,
+    description: place.description,
+    icon: null,
+    group: 'content',
+    sort: blockTypes.length * 10 + 10,
+    allow: null,
+    allowed_in: null,
+    max_per_entity: null,
+    is_enabled: true,
+    draft,
+    published: null,
+    usage_count: 0,
+    thumbnail: null,
+    created_at: now,
+    updated_at: now,
+    content: {
+      schema: blockClone(place.schema),
+      template: fallbackSource(place.fallback) ?? '',
+      styles: '',
+      script: null,
+      sample,
+    },
+  }
+
+  blockTypes.push(type)
+  history(type).push({ ...draft, content: blockClone(contentOf(type)) })
+
+  return { data: withDeclaration(counted(type)) }
+})
+
+on('GET', '/blocks/(\\d+)', ({ params }) => ({
+  data: withDeclaration(counted(blockType(params[0]))),
+}))
 
 /** The editor asks how many entities stand on the type; the answer is taken, not stored. */
 function counted(type: BlockType): BlockType {
@@ -800,6 +939,14 @@ function counted(type: BlockType): BlockType {
 on('PUT', '/blocks/(\\d+)', ({ params, body }) => {
   const type = blockType(params[0])
   const content = body.content as Partial<NonNullable<BlockType['content']>> | undefined
+
+  /* §3.1: a block on pages cannot turn into a component — nobody could add it, and the pages
+     would keep one that nothing offers. The other way is always fine. */
+  if (body.kind === 'component' && type.kind !== 'component' && usageOf(type.slug).length > 0) {
+    throw new HttpFailure(422, 'The block stands on pages.', undefined, {
+      kind: ['The block stands on pages, so it cannot become a component.'],
+    })
+  }
 
   Object.assign(type, omit(body, ['content', 'comment']))
 
@@ -829,11 +976,24 @@ on('PUT', '/blocks/(\\d+)', ({ params, body }) => {
     Object.assign(record, { ...type.draft, content: blockClone(contentOf(type)) })
   }
 
-  return { data: counted(type) }
+  return { data: withDeclaration(counted(type)) }
 })
 
 on('DELETE', '/blocks/(\\d+)', ({ params }) => {
   const type = blockType(params[0])
+  const callers = callersOf(type.slug)
+
+  /* A declared place's own module is not a caller: it has its fallback, and deleting is how the
+     site goes back to it. The blocks calling it would draw nothing. */
+  if (callers.length > 0) {
+    throw new HttpFailure(
+      422,
+      'Other blocks call this type.',
+      undefined,
+      { used_by: callers.map((one) => `Called by "${one.title}" (${one.slug})`) },
+      { used_by: callers },
+    )
+  }
 
   if (type.usage_count > 0) {
     throw new HttpFailure(422, 'This type is still standing on pages.', undefined, {
@@ -866,7 +1026,7 @@ on('POST', '/blocks/(\\d+)/publish', ({ params }) => {
   type.draft = null
   type.updated_at = new Date().toISOString()
 
-  return { data: counted(type) }
+  return { data: withDeclaration(counted(type)) }
 })
 
 on('POST', '/blocks/(\\d+)/render', ({ params, body }) => {
@@ -876,7 +1036,7 @@ on('POST', '/blocks/(\\d+)/render', ({ params, body }) => {
     ...((body.content ?? {}) as Record<string, unknown>),
   } as NonNullable<BlockType['content']>
   const values = (body.values ?? content.sample ?? {}) as Record<string, unknown>
-  const drawn = drawContent(content, values)
+  const drawn = drawContent(content, values, 0, [type.slug])
   const key = typeof body.key === 'string' && body.key !== '' ? body.key : 'sample'
 
   return {
@@ -973,7 +1133,7 @@ on('POST', '/blocks/(\\d+)/versions/(\\d+)/restore', ({ params }) => {
 
   history(type).push({ ...type.draft, content: blockClone(type.content) })
 
-  return { data: counted(type) }
+  return { data: withDeclaration(counted(type)) }
 })
 
 /** The content a type is holding — an empty one for a type that somehow has none. */
@@ -4004,12 +4164,15 @@ function document(title: string, nodes: Block[]): string {
     .map((type) => type.content?.styles ?? '')
     .join('\n')
 
+  /* And the ones the blocks' templates call with a tag, which no tree names. */
+  const called: string[] = []
+
   const html = nodes
     .filter((node) => node.hidden !== true)
-    .map((node) => draw(node))
+    .map((node) => draw(node, called))
     .join('\n')
 
-  return siteLayout(title, `<style>${styles}</style>`, html)
+  return siteLayout(title, `<style>${[styles, ...called].join('\n')}</style>`, html)
 }
 
 /**
@@ -4118,7 +4281,7 @@ function blockStage(): string {
   )
 }
 
-function draw(node: Block): string {
+function draw(node: Block, called: string[] = []): string {
   const type = blockTypes.find((item) => item.slug === node.type)
 
   if (type?.content === undefined) {
@@ -4132,12 +4295,18 @@ function draw(node: Block): string {
     if (Array.isArray(value) && value.every((item) => isBlock(item))) {
       children[key] = (value as Block[])
         .filter((child) => child.hidden !== true)
-        .map((child) => draw(child))
+        .map((child) => draw(child, called))
         .join('\n')
     }
   }
 
-  const html = renderTemplate(type.content.template, node.values, children, type.content.schema)
+  const html = renderTemplate(
+    type.content.template,
+    node.values,
+    children,
+    type.content.schema,
+    tagCaller(0, [type.slug], called),
+  )
 
   /* The pair of markers is what the panel replaces a block between after a field changes. */
   return `<!--wx:${node.key}-->\n${html}\n<!--/wx:${node.key}-->`

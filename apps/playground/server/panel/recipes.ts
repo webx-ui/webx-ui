@@ -696,6 +696,35 @@ export function card(record: RecipeRecord, locale: string, draft = false) {
 }
 
 /**
+ * The card a component is tried on (`BlockShapes` sample of `recipes.card`): the first visible
+ * recipe, with the two keys §5.1 of the components spec adds beside `categories` — the chosen
+ * categories and services with their addresses, in the order they were chosen.
+ */
+export function sampleCard(locale = 'ru'): Record<string, unknown> {
+  const record = recipes.find(visible)
+
+  if (record === undefined) return {}
+
+  const page = recipePage(record, locale)
+
+  return {
+    ...card(record, locale),
+    category_links: ids(record.values.categories).flatMap((id) => {
+      const found = findTerm('categories', id)
+
+      return found && found.deleted_at === null
+        ? [{ id, title: text(found.title, locale), url: `/${found.path}` }]
+        : []
+    }),
+    service_links: page.services.map((one, index) => ({
+      id: ids(record.values.services)[index] ?? index,
+      title: one.title,
+      url: one.url,
+    })),
+  }
+}
+
+/**
  * A `wx-collection` value of the `recipes` source, read the way `RecipesSource` reads it: the
  * visible recipes of the chosen categories (none — all), related to the chosen services (§3.6),
  * in the one order, up to the limit. `groups` are the nutrients the catalog filters by.
@@ -862,7 +891,7 @@ function named(kind: TermKind, list: number[], locale: string): RecipeTermRef[] 
 }
 
 /** `45 мин`, `1 ч 15 мин` — the way the Russian page of the preview prints the time. */
-function minutesText(value: unknown): string {
+export function minutesText(value: unknown): string {
   if (typeof value !== 'number' || value <= 0) return ''
 
   const hours = Math.floor(value / 60)
