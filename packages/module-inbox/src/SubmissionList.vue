@@ -271,14 +271,13 @@ function onState(state: TableState): void {
 }
 
 /* The form changes under the pane — the left column is a list, not a navigation — so the list
-   has to notice rather than go on showing the previous form's submissions. */
-watch(
-  () => [props.form.id, view.value, query.value.assignee] as const,
-  () => {
-    selected.value = []
-    void load()
-  },
-)
+   has to notice rather than go on showing the previous form's submissions. One source per value,
+   not a getter returning an array: that array is new on every change of the address, so a page
+   turn would clear the selection and ask a second time, racing the request `onState` sent. */
+watch([() => props.form.id, view, () => query.value.assignee], () => {
+  selected.value = []
+  void load()
+})
 
 void load()
 void statusList()

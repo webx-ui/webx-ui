@@ -154,4 +154,22 @@ describe('WxArticlesPage', () => {
     expect(router.currentRoute.value.query.rubric).toBe('3')
     expect(get).toHaveBeenCalledWith('/api/cms/blog/articles?rubric=3')
   })
+
+  it("turns a page with one request, not the table's and a second one racing it", async () => {
+    const { wrapper, get, router } = panel([article({ id: 2 })])
+
+    await flushPromises()
+    get.mockClear()
+
+    wrapper
+      .getComponent({ name: 'WxTable' })
+      .vm.$emit('state-change', { page: 2, perPage: 15, sort: null, search: '' })
+    await flushPromises()
+
+    expect(router.currentRoute.value.query.page).toBe('2')
+    // The address moving is not a new list: the watcher over the filters stays quiet, or a
+    // second answer without `per_page` could land after the first and win.
+    expect(get).toHaveBeenCalledTimes(1)
+    expect(get).toHaveBeenCalledWith('/api/cms/blog/articles?page=2&per_page=15')
+  })
 })
