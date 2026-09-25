@@ -81,6 +81,7 @@ folder(3, 1, 'Страницы')
 folder(4, 1, 'Документы')
 folder(5, 1, 'Отзывы')
 folder(6, 1, 'Рецепты')
+folder(7, 1, 'События')
 
 /**
  * @param name What the library calls it — and what the generated picture says on its face.
@@ -205,6 +206,16 @@ for (const [path, name] of [
   ['recipes/table.svg', 'Накрытый стол'],
 ]) {
   image(6, path, name, 1600, 1200, '2026-09-20T09:00:00+00:00')
+}
+/* The events' galleries: a class, a breakfast and the photo report of one that is over. */
+for (const [path, name] of [
+  ['events/cooking-class.svg', 'Мастер-класс на кухне'],
+  ['events/breakfast.svg', 'Завтрак-встреча'],
+  ['events/report-1.svg', 'Фотоотчёт: стол'],
+  ['events/report-2.svg', 'Фотоотчёт: гости'],
+  ['events/webinar.svg', 'Вебинар'],
+]) {
+  image(7, path, name, 1600, 1200, '2026-09-24T09:00:00+00:00')
 }
 
 recount()

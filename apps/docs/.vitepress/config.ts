@@ -43,6 +43,7 @@ export default defineConfig({
             { text: 'FAQ', link: '/guide/faq' },
             { text: 'Reviews', link: '/guide/reviews' },
             { text: 'Recipes', link: '/guide/recipes' },
+            { text: 'Events', link: '/guide/events' },
             { text: 'Inbox', link: '/guide/inbox' },
             { text: 'Menus', link: '/guide/menu' },
             { text: 'Settings', link: '/guide/settings' },
