@@ -166,7 +166,12 @@ watch(currentValue, (value) => {
   instance.commands.setContent(value, { emitUpdate: false })
 })
 
-watch(editable, (value) => editor.value?.setEditable(value))
+/*
+ * Tiptap's `setEditable` emits an update by default, and an update writes the document back in
+ * Tiptap's own spelling (`<li>x</li>` becomes `<li><p>x</p></li>`). A form locked while it
+ * publishes would then come back changed without a keystroke — and autosave the change.
+ */
+watch(editable, (value) => editor.value?.setEditable(value, false))
 
 const isEmpty = computed(() => editor.value?.isEmpty ?? true)
 const inTable = computed(() => editor.value?.isActive('table') ?? false)
