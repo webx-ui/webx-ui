@@ -7,6 +7,7 @@ namespace WebxUi\Blocks\Panel;
 use Closure;
 use Illuminate\Validation\Rule;
 use WebxUi\Admin\Screens\ScreenValidator;
+use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
 
 /**
@@ -33,6 +34,7 @@ final class BlockInput
 
         return [
             'slug' => [$creating ? 'required' : 'sometimes', ...$slug, Rule::unique('blocks', 'slug')->ignore($ignoreId)],
+            'kind' => ['sometimes', 'string', Rule::in(Block::KINDS)],
             'title' => [$creating ? 'required' : 'sometimes', 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:255'],
             'icon' => ['nullable', 'string', 'max:64'],
@@ -74,6 +76,7 @@ final class BlockInput
             'slug.regex' => (string) __('webx-blocks::validation.slug'),
             'slug.unique' => (string) __('webx-blocks::validation.slug-taken'),
             'group.in' => (string) __('webx-blocks::validation.group'),
+            'kind.in' => (string) __('webx-blocks::calls.kind'),
             'allow.*.regex' => (string) __('webx-blocks::validation.slug'),
             'allowed_in.*.regex' => (string) __('webx-blocks::validation.slug'),
         ];
@@ -95,6 +98,10 @@ final class BlockInput
                 $value = is_string($value) ? trim($value) : null;
                 $values[$text] = $value === '' ? null : $value;
             }
+        }
+
+        if (is_string($input['kind'] ?? null) && in_array($input['kind'], Block::KINDS, true)) {
+            $values['kind'] = $input['kind'];
         }
 
         if (array_key_exists('sort', $input)) {
@@ -144,6 +151,26 @@ final class BlockInput
         }
 
         return $kept;
+    }
+
+    /**
+     * Why a type may not become what it is asked to become, or null when it may (§3.1 of the
+     * components spec). A block that stands in content cannot turn into a component: the
+     * picker would stop offering it while the pages kept it, and its form would be its input
+     * rather than what an editor fills in. The other way is always fine — a block can be
+     * called by a tag anyway.
+     *
+     * @param  array<string, int>  $usage  Slug → number of pages, {@see Usage::counts()}.
+     */
+    public static function kindRefusal(Block $block, ?string $kind, array $usage): ?string
+    {
+        if ($kind !== Block::KIND_COMPONENT || $block->kind === Block::KIND_COMPONENT || ! $block->exists) {
+            return null;
+        }
+
+        $count = $usage[$block->slug] ?? 0;
+
+        return $count > 0 ? (string) __('webx-blocks::calls.kind-in-use', ['count' => $count]) : null;
     }
 
     public static function comment(mixed $comment): ?string

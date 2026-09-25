@@ -40,6 +40,7 @@ final readonly class BlockType
         public string $styles,
         public ?string $script,
         public array $sample,
+        public string $kind = 'block',
     ) {}
 
     public static function fromModels(Block $block, BlockVersion $version): self
@@ -62,6 +63,7 @@ final readonly class BlockType
             styles: $version->styles ?? '',
             script: $version->script,
             sample: $version->sample ?? [],
+            kind: $block->kind,
         );
     }
 
@@ -88,6 +90,8 @@ final readonly class BlockType
             styles: (string) ($row['styles'] ?? ''),
             script: isset($row['script']) ? (string) $row['script'] : null,
             sample: is_array($row['sample'] ?? null) ? $row['sample'] : [],
+            // A row cached before kinds existed is a block: that is all there was.
+            kind: is_string($row['kind'] ?? null) ? $row['kind'] : 'block',
         );
     }
 
@@ -114,7 +118,13 @@ final readonly class BlockType
             'styles' => $this->styles,
             'script' => $this->script,
             'sample' => $this->sample,
+            'kind' => $this->kind,
         ];
+    }
+
+    public function isComponent(): bool
+    {
+        return $this->kind === 'component';
     }
 
     public function isContainer(): bool

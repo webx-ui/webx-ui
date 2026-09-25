@@ -28,9 +28,14 @@ final class PublishController
         } catch (PublishFailed $failed) {
             return new JsonResponse([
                 'message' => (string) __('webx-blocks::page.publish-failed'),
-                'errors' => ['template' => [$failed->failure->reason]],
+                'errors' => ['template' => [$failed->describe()]],
                 'line' => $failed->failure->templateLine,
                 'entity' => $failed->entity,
+                // A type that calls this one and broke with this draft in it (§3.6 of the
+                // components spec); `line` is then this type's line when it failed in here.
+                'parent' => $failed->parent,
+                'declared' => $failed->declared,
+                'cycle' => $failed->cycle,
             ], 422);
         } catch (BlocksException) {
             return ApiResponse::message((string) __('webx-blocks::page.no-draft'), 409);
