@@ -37,8 +37,8 @@ return [
     'root' => 'Sayfanın kendisi',
     'max-per-entity' => 'Sayfa başına',
     'max-per-entity-help' => 'Bir sayfada kaç örnek olabilir. Boş: sınırsız.',
-    'sort' => 'Sıra',
-    'sort-help' => 'CSS kaskadındaki ve listedeki sıra.',
+    'sort' => 'Stil sırası',
+    'sort-help' => 'Sayfadaki stillerin sırası: sonraki bloğun kuralları kazanır. Kartları sürüklemek bunu değiştirmez.',
     'enabled' => 'Editörlere sunulur',
     'enabled-help' => 'Kapalıyken blok bulunduğu sayfalarda kalır ama eklenemez.',
 

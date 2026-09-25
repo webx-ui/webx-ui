@@ -53,10 +53,12 @@
     "@codemirror/view": "^6.43.11",
     "@webx-ui/core": "workspace:^",
     "@webx-ui/module-admin": "workspace:^",
-    "@webx-ui/schema": "workspace:^"
+    "@webx-ui/schema": "workspace:^",
+    "vue-draggable-plus": "^0.6.1"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
+    "@types/sortablejs": "^1.15.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "typescript": "^5.9.3",
     "vite": "^7.1.14",

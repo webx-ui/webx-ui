@@ -209,7 +209,7 @@ final class BlockTools
      */
     private function list(array $arguments): array
     {
-        $query = Block::query()->with(['draftVersion', 'publishedVersion'])->orderBy('sort')->orderBy('slug');
+        $query = Block::query()->with(['draftVersion', 'publishedVersion'])->orderBy('position')->orderBy('slug');
         $group = $arguments['group'] ?? null;
 
         if (is_string($group) && $group !== '') {

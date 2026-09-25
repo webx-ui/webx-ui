@@ -39,7 +39,7 @@ final class BlockController
     {
         $blocks = Block::query()
             ->with(['draftVersion', 'publishedVersion'])
-            ->orderBy('sort')
+            ->orderBy('position')
             ->orderBy('slug')
             ->get();
 
@@ -66,7 +66,7 @@ final class BlockController
             // A component is called by templates, never put in content: nothing to pick.
             ->where('kind', Block::KIND_BLOCK)
             ->with(['draftVersion', 'publishedVersion'])
-            ->orderBy('sort')
+            ->orderBy('position')
             ->orderBy('slug')
             ->get();
 
