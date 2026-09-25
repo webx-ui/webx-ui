@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use WebxUi\Blocks\Http\Controllers\BlockController;
 use WebxUi\Blocks\Http\Controllers\BlockVersionController;
+use WebxUi\Blocks\Http\Controllers\ComponentController;
 use WebxUi\Blocks\Http\Controllers\PublishController;
 use WebxUi\Blocks\Http\Controllers\RenderController;
 use WebxUi\Blocks\Http\Controllers\UsageController;
@@ -36,6 +37,9 @@ Route::prefix((string) config('webx-admin.api_path').'/blocks')
             Route::put('{block}', [BlockController::class, 'update'])->whereNumber('block')->name('update');
             Route::delete('{block}', [BlockController::class, 'destroy'])->whereNumber('block')->name('destroy');
             Route::post('{block}/publish', PublishController::class)->whereNumber('block')->name('publish');
+            // A component of a slug a module declared, started from the module's view (§4.2 of
+            // the components spec). A draft: the site keeps the view until it is published.
+            Route::post('components/{slug}/customise', [ComponentController::class, 'customise'])->where('slug', '[a-z][a-z0-9-]*')->name('components.customise');
             Route::post('{block}/versions/{number}/restore', [BlockVersionController::class, 'restore'])->whereNumber('block')->whereNumber('number')->name('versions.restore');
         });
     });

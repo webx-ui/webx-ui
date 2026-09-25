@@ -7,6 +7,7 @@ namespace WebxUi\Blocks\Rendering;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Support\HtmlString;
 use Psr\Log\LoggerInterface;
@@ -15,6 +16,7 @@ use WebxUi\Blocks\BlockType;
 use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Content;
 use WebxUi\Blocks\Exceptions\BlockNotPublishable;
+use WebxUi\Blocks\Exceptions\BlocksException;
 
 /**
  * An entity's content — a tree of `{ key, type, values }` nodes — printed as HTML.
@@ -33,6 +35,33 @@ final class Renderer
 
     /** @var array<string, BlockType> slug → the type, at the version, this response has printed */
     private array $used = [];
+
+    /**
+     * The templates being evaluated right now, outermost first, each with how many times it has
+     * called each type so far. A tag reads the top to know where it was called from — the entity,
+     * the depth, the key — without anybody passing `$block` to it, and the whole of it to know
+     * whether it is calling itself.
+     *
+     * @var list<array{context: BlockContext, calls: array<string, int>}>
+     */
+    private array $stack = [];
+
+    /** @var array<string, int> the same count for tags called from outside any block: a site's view */
+    private array $rootCalls = [];
+
+    /**
+     * Types to take instead of their published versions: the draft of a child, while its
+     * parents are checked against it before it is published (§3.6 of the components spec).
+     *
+     * @var array<string, BlockType>
+     */
+    private array $substitutes = [];
+
+    /**
+     * A check is running: a called component that fails fails the check rather than leaving a
+     * gap — the gap is what the check is there to prevent.
+     */
+    private bool $strict = false;
 
     public function __construct(
         private readonly BlockTypes $types,
@@ -82,11 +111,16 @@ final class Renderer
      * This is the gate before publishing: a template that does not compile or throws on its
      * own sample stays a draft, and the panel runs it on every page's values as well.
      *
+     * A component the template calls is rendered too, and its failure is the check's failure,
+     * reported with the component's own line. `$substitutes` are types to call instead of their
+     * published versions — the draft of a child, while each of its parents is checked on it.
+     *
      * @param  array<string, mixed>|null  $values  The sample when null.
+     * @param  array<string, BlockType>  $substitutes  Slug → the type to call in its place.
      *
      * @throws BlockNotPublishable
      */
-    public function check(BlockType $type, ?array $values = null): void
+    public function check(BlockType $type, ?array $values = null, array $substitutes = []): void
     {
         $context = new BlockContext(
             key: 'sample',
@@ -99,11 +133,105 @@ final class Renderer
 
         $path = $this->compiler->path($type);
 
+        $wasStrict = $this->strict;
+        $wasSubstitutes = $this->substitutes;
+        $this->strict = true;
+        $this->substitutes = $substitutes;
+
         try {
             $this->evaluate($path, $type, $context);
+        } catch (BlockNotPublishable $failure) {
+            // A component this template calls, failing in its own template: its line is the
+            // one worth showing, and it already carries it.
+            throw $failure;
         } catch (Throwable $failure) {
             throw BlockNotPublishable::because($type, $failure, $this->line($failure, $path, $type));
+        } finally {
+            $this->strict = $wasStrict;
+            $this->substitutes = $wasSubstitutes;
         }
+    }
+
+    /**
+     * What `<x-webx-block type="…">` prints: a type called from a template — another block's, a
+     * module's view, the site's layout.
+     *
+     * Where it was called from is the top of the stack: the entity is that template's, the depth
+     * one deeper, the key the parent's key and the call's place in it. The type is looked up the
+     * way content looks it up — the published version, the draft under a preview token — so a
+     * draft of a component shows in the preview of any page that calls it and nowhere else.
+     *
+     * No type, or none published, prints `$fallback` with the same values and slots; without
+     * one it is a gap on the site and a notice in the preview, like an unknown type in content.
+     * A failure is caught here, as a block's is: one card that throws leaves a hole in the grid,
+     * not an empty page. No markers around it: the panel swaps nodes of content, and a call is
+     * part of its parent's template — it goes when the parent is swapped.
+     *
+     * @param  array<string, mixed>  $values
+     * @param  array<string, Htmlable>  $slots  `slot` and the named ones, rendered by the caller.
+     */
+    public function tag(string $slug, array $values = [], array $slots = [], ?string $fallback = null): HtmlString
+    {
+        $parent = $this->top();
+        $depth = $parent === null ? 0 : $parent->depth + 1;
+        $key = $this->callKey($slug);
+        $chain = array_map(static fn (array $frame): string => $frame['context']->type, $this->stack);
+
+        if (in_array($slug, $chain, true)) {
+            $through = array_slice($chain, (int) array_search($slug, $chain, true) + 1);
+            $message = $through === []
+                ? sprintf('"%s" calls itself; the call is left out.', $slug)
+                : sprintf('"%s" calls itself through "%s"; the call is left out.', $slug, implode('" → "', $through));
+
+            return new HtmlString($this->refuse($key, $slug, $message));
+        }
+
+        if ($depth >= $this->maxDepth()) {
+            return new HtmlString($this->refuse(
+                $key,
+                $slug,
+                sprintf('Blocks nest deeper than the limit of %d levels; the call to "%s" is left out.', $this->maxDepth(), $slug),
+            ));
+        }
+
+        $type = $this->substitutes[$slug] ?? ($this->preview ? $this->types->draft($slug) : $this->types->find($slug));
+
+        if (! $type instanceof BlockType) {
+            if ($fallback !== null) {
+                return new HtmlString($this->views->make($fallback, [...$values, ...$this->slotData($slots)])->render());
+            }
+
+            return new HtmlString($this->problem($key, $slug, "There is no published block type \"{$slug}\"; the call is left out."));
+        }
+
+        $this->used[$type->slug] = $type;
+
+        $entity = $parent?->entity;
+
+        $context = new BlockContext(
+            key: $key,
+            type: $type->slug,
+            version: $type->version,
+            values: $this->values->resolve($type, $values, $entity),
+            entity: $entity,
+            depth: $depth,
+        );
+
+        $path = $this->compiler->path($type);
+
+        try {
+            $html = $this->evaluate($path, $type, $context, $slots);
+        } catch (Throwable $failure) {
+            if ($this->strict) {
+                throw $failure instanceof BlockNotPublishable
+                    ? $failure
+                    : BlockNotPublishable::because($type, $failure, $this->line($failure, $path, $type));
+            }
+
+            $html = $this->failed($context, $failure, $this->line($failure, $path, $type));
+        }
+
+        return new HtmlString($html);
     }
 
     /**
@@ -184,6 +312,10 @@ final class Renderer
     {
         $this->used = [];
         $this->preview = false;
+        $this->stack = [];
+        $this->rootCalls = [];
+        $this->substitutes = [];
+        $this->strict = false;
     }
 
     /**
@@ -267,13 +399,26 @@ final class Renderer
      * all — last, so a field called `app` cannot take the application's place. A value whose
      * name is not a valid variable name is simply not extracted, and is read as
      * `$block->value('project-name')`.
+     *
+     * Slots come after the values: `$slot` always exists — empty when the tag closed itself, and
+     * in every template that was never called at all — and a named one the caller passed takes
+     * the place of the empty one its `wx-slot` field resolved to.
+     *
+     * The context is on the stack for exactly as long as its template runs, so a tag inside it
+     * knows its parent and one after it does not.
+     *
+     * @param  array<string, Htmlable>  $slots
      */
-    private function evaluate(string $path, BlockType $type, BlockContext $context): string
+    private function evaluate(string $path, BlockType $type, BlockContext $context, array $slots = []): string
     {
         $data = array_fill_keys($type->fields(), null);
 
         foreach ($context->values as $name => $value) {
             $data[$name] = $value;
+        }
+
+        foreach ($this->slotData($slots) as $name => $slot) {
+            $data[$name] = $slot;
         }
 
         $data['block'] = $context;
@@ -283,7 +428,59 @@ final class Renderer
             $data[$name] = $value;
         }
 
-        return $this->views->getEngineResolver()->resolve('php')->get($path, $data);
+        $this->stack[] = ['context' => $context, 'calls' => []];
+
+        try {
+            return $this->views->getEngineResolver()->resolve('php')->get($path, $data);
+        } finally {
+            array_pop($this->stack);
+        }
+    }
+
+    /**
+     * @param  array<string, Htmlable>  $slots
+     * @return array<string, Htmlable>
+     */
+    private function slotData(array $slots): array
+    {
+        return ['slot' => new HtmlString(''), ...$slots];
+    }
+
+    private function top(): ?BlockContext
+    {
+        return $this->stack === [] ? null : $this->stack[array_key_last($this->stack)]['context'];
+    }
+
+    /**
+     * The key of a call: the parent's key, then the type and which call of it this is —
+     * `k1/recipe-card-3`. Counted per template being evaluated, so the same card in the same
+     * place has the same key on every render.
+     */
+    private function callKey(string $slug): string
+    {
+        if ($this->stack === []) {
+            $number = $this->rootCalls[$slug] = ($this->rootCalls[$slug] ?? 0) + 1;
+
+            return "{$slug}-{$number}";
+        }
+
+        $top = array_key_last($this->stack);
+        $number = $this->stack[$top]['calls'][$slug] = ($this->stack[$top]['calls'][$slug] ?? 0) + 1;
+
+        return $this->stack[$top]['context']->key."/{$slug}-{$number}";
+    }
+
+    /**
+     * A call that cannot be made at all — a cycle, too deep. In a check that is the check's
+     * failure; anywhere else it is a problem like any other.
+     */
+    private function refuse(string $key, string $slug, string $message): string
+    {
+        if ($this->strict) {
+            throw new BlocksException($message);
+        }
+
+        return $this->problem($key, $slug, $message);
     }
 
     /**

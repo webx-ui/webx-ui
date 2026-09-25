@@ -11,6 +11,7 @@ use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Foundation\Http\Kernel;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use WebxUi\Admin\Backups\Backups;
@@ -61,6 +62,7 @@ use WebxUi\Admin\Screens\Types\StringType;
 use WebxUi\Admin\Screens\Types\TagsType;
 use WebxUi\Admin\Screens\Types\TimeType;
 use WebxUi\Admin\Screens\Types\TreeSelectType;
+use WebxUi\Admin\Support\Parts;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\SiteUrl;
 
@@ -225,6 +227,7 @@ class AdminServiceProvider extends ServiceProvider
 
         $this->registerDraftMacro();
         $this->registerCategoryMacros();
+        $this->registerPartDirective();
         $this->registerBackupSchedule();
         $this->registerGate();
 
@@ -304,6 +307,20 @@ class AdminServiceProvider extends ServiceProvider
             if ($kernel instanceof Kernel) {
                 $kernel->pushMiddleware(CloseSite::class);
             }
+        });
+    }
+
+    /**
+     * `@webxPart('recipe-card', ['card' => $card], 'webx-recipes::partials.card')` — a module's
+     * call of a component it declared, that falls back to the module's partial ({@see Parts}).
+     * Registered here because every module has this package and not every site has blocks.
+     */
+    private function registerPartDirective(): void
+    {
+        Blade::directive('webxPart', static function (string $expression): string {
+            // The class name from `::class` rather than typed out: the compiled string has to
+            // carry the namespace separators intact.
+            return sprintf('<?php echo \%s::render(%s); ?>', Parts::class, $expression);
         });
     }
 

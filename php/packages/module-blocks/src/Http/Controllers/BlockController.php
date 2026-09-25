@@ -7,12 +7,16 @@ namespace WebxUi\Blocks\Http\Controllers;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Blocks\BlockComponents;
 use WebxUi\Blocks\Http\Requests\BlockRequest;
 use WebxUi\Blocks\Http\Resources\BlockResource;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Panel\Authors;
+use WebxUi\Blocks\Panel\BlockInput;
+use WebxUi\Blocks\Panel\Graph;
 use WebxUi\Blocks\Panel\Usage;
 
 /**
@@ -26,7 +30,12 @@ use WebxUi\Blocks\Panel\Usage;
  */
 final class BlockController
 {
-    public function index(Usage $usage): JsonResponse
+    /**
+     * Every type, and beside them the places modules declared (§3.10 of the components spec) —
+     * the ones nobody customised yet are cards of their own on the screen, or nobody would know
+     * they can be.
+     */
+    public function index(Usage $usage, BlockComponents $components): JsonResponse
     {
         $blocks = Block::query()
             ->with(['draftVersion', 'publishedVersion'])
@@ -34,7 +43,15 @@ final class BlockController
             ->orderBy('slug')
             ->get();
 
-        return ApiResponse::data($this->many($blocks, $usage->counts(), withContent: false));
+        $slugs = $blocks->pluck('slug')->all();
+
+        return new JsonResponse([
+            'data' => $this->many($blocks, $usage->counts(), withContent: false),
+            'declared' => array_map(
+                static fn (array $declared): array => BlockResource::declaration($declared, in_array($declared['slug'], $slugs, true)),
+                $components->all(),
+            ),
+        ]);
     }
 
     /**
@@ -46,6 +63,8 @@ final class BlockController
     {
         $blocks = Block::query()
             ->published()
+            // A component is called by templates, never put in content: nothing to pick.
+            ->where('kind', Block::KIND_BLOCK)
             ->with(['draftVersion', 'publishedVersion'])
             ->orderBy('sort')
             ->orderBy('slug')
@@ -72,7 +91,14 @@ final class BlockController
 
     public function update(BlockRequest $request, Block $block, Usage $usage): JsonResponse
     {
-        $block->fill($request->values())->save();
+        $values = $request->values();
+        $refusal = BlockInput::kindRefusal($block, $values['kind'] ?? null, $usage->counts());
+
+        if ($refusal !== null) {
+            throw ValidationException::withMessages(['kind' => $refusal]);
+        }
+
+        $block->fill($values)->save();
 
         $content = $request->content();
 
@@ -87,8 +113,24 @@ final class BlockController
      * A type nobody uses may go; one that stands on a page may not — the page would print a
      * gap, and the editor who opens it would find a block whose form is gone.
      */
-    public function destroy(Block $block, Usage $usage): JsonResponse
+    public function destroy(Block $block, Usage $usage, Graph $graph): JsonResponse
     {
+        // A type that other types call may not go either (§3.6 of the components spec): their
+        // templates would print a gap where it stood. A module's declared place is not a parent
+        // — it has its fallback, and deleting is exactly how it goes back to it.
+        $parents = $graph->usedBy($block->slug);
+
+        if ($parents !== []) {
+            return new JsonResponse([
+                'message' => (string) __('webx-blocks::calls.delete-used-by'),
+                'errors' => ['used_by' => array_map(
+                    static fn (array $parent): string => (string) __('webx-blocks::calls.delete-used-by-one', ['title' => $parent['title'], 'slug' => $parent['slug']]),
+                    $parents,
+                )],
+                'used_by' => $parents,
+            ], 422);
+        }
+
         $count = $usage->counts()[$block->slug] ?? 0;
 
         if ($count > 0) {
@@ -130,8 +172,10 @@ final class BlockController
 
         $authors = Authors::names($ids);
 
+        $parents = (new Graph)->parents();
+
         return $blocks
-            ->map(static fn (Block $block): BlockResource => new BlockResource($block, $usage, $authors, $withContent))
+            ->map(static fn (Block $block): BlockResource => new BlockResource($block, $usage, $authors, $withContent, $parents))
             ->values()
             ->all();
     }
