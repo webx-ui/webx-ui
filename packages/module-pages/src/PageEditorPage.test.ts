@@ -87,7 +87,7 @@ async function panel(first = detail('r1')) {
 
   await flushPromises()
 
-  return { wrapper, get, put, post }
+  return { wrapper, get, put, post, router }
 }
 
 /** Type into the one field the screen has, the way a person would. */
@@ -191,5 +191,27 @@ describe('WxPageEditorPage', () => {
     const { wrapper } = await panel()
 
     expect(wrapper.find('a[href*="_preview"]').exists()).toBe(true)
+  })
+
+  it('leaves without asking when the save is already on its way', async () => {
+    const { wrapper, put, router } = await panel()
+
+    let answer: (value: unknown) => void = () => {}
+    put.mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)))
+
+    await type(wrapper, 'About us')
+    await wrapper.find('.wx-page-editor').trigger('focusout')
+    expect(put).toHaveBeenCalledTimes(1)
+
+    // Leaving while that request is out used to skip the save, read `dirty` and ask.
+    const leaving = router.push('/pages')
+    await flushPromises()
+
+    answer({ data: detail('r2', 'About us') })
+    await leaving
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/pages')
+    expect(put).toHaveBeenCalledTimes(1)
   })
 })
