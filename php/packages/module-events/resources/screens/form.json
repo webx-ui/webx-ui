@@ -1,0 +1,419 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "events.form",
+  "model": "event",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "event",
+          "type": "wx-tab",
+          "label": "trans::webx-events::screen.event",
+          "children": [
+            {
+              "id": "when",
+              "type": "wx-card",
+              "label": "trans::webx-events::screen.when",
+              "children": [
+                {
+                  "id": "all-day",
+                  "type": "wx-switch",
+                  "name": "all_day",
+                  "label": "trans::webx-events::screen.all-day",
+                  "help": "trans::webx-events::screen.all-day-help"
+                },
+                {
+                  "id": "dates",
+                  "type": "wx-row",
+                  "children": [
+                    {
+                      "id": "dates-start",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 24,
+                        "md": 12
+                      },
+                      "children": [
+                        {
+                          "id": "starts-at",
+                          "type": "wx-date-picker",
+                          "name": "starts_at",
+                          "label": "trans::webx-events::screen.starts-at",
+                          "visible": {
+                            "when": "all_day",
+                            "not": true
+                          },
+                          "props": {
+                            "type": "datetime",
+                            "clearable": true,
+                            "teleport": true,
+                            "valueFormat": "yyyy-MM-dd'T'HH:mm:ssXXX"
+                          }
+                        },
+                        {
+                          "id": "starts-on",
+                          "type": "wx-date-picker",
+                          "name": "starts_at",
+                          "label": "trans::webx-events::screen.starts-on",
+                          "visible": {
+                            "when": "all_day",
+                            "is": true
+                          },
+                          "props": {
+                            "type": "date",
+                            "clearable": true,
+                            "teleport": true,
+                            "valueFormat": "yyyy-MM-dd'T'HH:mm:ssXXX"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "dates-end",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 24,
+                        "md": 12
+                      },
+                      "children": [
+                        {
+                          "id": "ends-at",
+                          "type": "wx-date-picker",
+                          "name": "ends_at",
+                          "label": "trans::webx-events::screen.ends-at",
+                          "help": "trans::webx-events::screen.ends-at-help",
+                          "visible": {
+                            "when": "all_day",
+                            "not": true
+                          },
+                          "props": {
+                            "type": "datetime",
+                            "clearable": true,
+                            "teleport": true,
+                            "valueFormat": "yyyy-MM-dd'T'HH:mm:ssXXX"
+                          }
+                        },
+                        {
+                          "id": "ends-on",
+                          "type": "wx-date-picker",
+                          "name": "ends_at",
+                          "label": "trans::webx-events::screen.ends-on",
+                          "help": "trans::webx-events::screen.ends-on-help",
+                          "visible": {
+                            "when": "all_day",
+                            "is": true
+                          },
+                          "props": {
+                            "type": "date",
+                            "clearable": true,
+                            "teleport": true,
+                            "valueFormat": "yyyy-MM-dd'T'HH:mm:ssXXX"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "date-note",
+                  "type": "wx-input",
+                  "name": "date_note",
+                  "label": "trans::webx-events::screen.date-note",
+                  "help": "trans::webx-events::screen.date-note-help",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 255,
+                    "placeholder": "trans::webx-events::screen.date-note-placeholder"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "where",
+              "type": "wx-card",
+              "label": "trans::webx-events::screen.where",
+              "children": [
+                {
+                  "id": "attendance",
+                  "type": "wx-segmented",
+                  "name": "attendance",
+                  "label": "trans::webx-events::screen.attendance",
+                  "props": {
+                    "options": [
+                      {
+                        "value": "offline",
+                        "label": "trans::webx-events::screen.attendance-offline"
+                      },
+                      {
+                        "value": "online",
+                        "label": "trans::webx-events::screen.attendance-online"
+                      },
+                      {
+                        "value": "mixed",
+                        "label": "trans::webx-events::screen.attendance-mixed"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "venue",
+                  "type": "wx-input",
+                  "name": "venue",
+                  "label": "trans::webx-events::screen.venue",
+                  "localized": true,
+                  "visible": {
+                    "when": "attendance",
+                    "not": "online"
+                  },
+                  "props": {
+                    "maxlength": 255
+                  }
+                },
+                {
+                  "id": "address",
+                  "type": "wx-input",
+                  "name": "address",
+                  "label": "trans::webx-events::screen.address",
+                  "localized": true,
+                  "visible": {
+                    "when": "attendance",
+                    "not": "online"
+                  },
+                  "props": {
+                    "maxlength": 255
+                  }
+                },
+                {
+                  "id": "map-url",
+                  "type": "wx-input",
+                  "name": "map_url",
+                  "label": "trans::webx-events::screen.map-url",
+                  "visible": {
+                    "when": "attendance",
+                    "not": "online"
+                  },
+                  "props": {
+                    "maxlength": 2048,
+                    "placeholder": "https://"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "booking",
+              "type": "wx-card",
+              "label": "trans::webx-events::screen.booking",
+              "children": [
+                {
+                  "id": "price",
+                  "type": "wx-input",
+                  "name": "price",
+                  "label": "trans::webx-events::screen.price",
+                  "help": "trans::webx-events::screen.price-help",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 255
+                  }
+                },
+                {
+                  "id": "price-amount",
+                  "type": "wx-input-number",
+                  "name": "price_amount",
+                  "label": "trans::webx-events::screen.price-amount",
+                  "help": "trans::webx-events::screen.price-amount-help",
+                  "props": {
+                    "min": 0,
+                    "max": 99999999
+                  }
+                },
+                {
+                  "id": "booking-url",
+                  "type": "wx-input",
+                  "name": "booking_url",
+                  "label": "trans::webx-events::screen.booking-url",
+                  "help": "trans::webx-events::screen.booking-url-help",
+                  "props": {
+                    "maxlength": 2048,
+                    "placeholder": "https://"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "photos",
+              "type": "wx-card",
+              "label": "trans::webx-events::screen.photos",
+              "children": [
+                {
+                  "id": "gallery",
+                  "type": "wx-gallery",
+                  "name": "gallery",
+                  "label": "trans::webx-events::screen.gallery",
+                  "help": "trans::webx-events::screen.gallery-help",
+                  "props": {
+                    "accept": "image"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "about",
+              "type": "wx-card",
+              "label": "trans::webx-events::screen.about",
+              "children": [
+                {
+                  "id": "description",
+                  "type": "wx-rich-text",
+                  "name": "description",
+                  "label": "trans::webx-events::screen.description",
+                  "localized": true
+                },
+                {
+                  "id": "highlights",
+                  "type": "wx-repeater",
+                  "name": "highlights",
+                  "label": "trans::webx-events::screen.highlights",
+                  "help": "trans::webx-events::screen.highlights-help",
+                  "props": {
+                    "itemLabel": "title",
+                    "max": 12
+                  },
+                  "children": [
+                    {
+                      "id": "highlight-title",
+                      "type": "wx-input",
+                      "name": "title",
+                      "label": "trans::webx-events::screen.highlight-title",
+                      "localized": true,
+                      "props": {
+                        "maxlength": 255
+                      }
+                    },
+                    {
+                      "id": "highlight-text",
+                      "type": "wx-textarea",
+                      "name": "text",
+                      "label": "trans::webx-events::screen.highlight-text",
+                      "localized": true,
+                      "props": {
+                        "rows": 3,
+                        "maxlength": 2000
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "settings",
+          "type": "wx-tab",
+          "label": "trans::webx-events::screen.settings",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "label": "trans::webx-events::screen.naming",
+              "children": [
+                {
+                  "id": "title",
+                  "type": "wx-input",
+                  "name": "title",
+                  "label": "trans::webx-events::screen.title",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 255
+                  }
+                },
+                {
+                  "id": "slug",
+                  "type": "wx-slug",
+                  "name": "slug",
+                  "label": "trans::webx-events::screen.slug",
+                  "help": "trans::webx-events::screen.slug-help",
+                  "localized": true
+                },
+                {
+                  "id": "lead",
+                  "type": "wx-textarea",
+                  "name": "lead",
+                  "label": "trans::webx-events::screen.lead",
+                  "help": "trans::webx-events::screen.lead-help",
+                  "localized": true,
+                  "props": {
+                    "rows": 3,
+                    "maxlength": 2000,
+                    "showCount": true
+                  }
+                }
+              ]
+            },
+            {
+              "id": "taxonomy",
+              "type": "wx-card",
+              "label": "trans::webx-events::screen.taxonomy",
+              "children": [
+                {
+                  "id": "categories",
+                  "type": "wx-categories",
+                  "name": "categories",
+                  "label": "trans::webx-events::screen.categories",
+                  "help": "trans::webx-events::screen.categories-help",
+                  "props": {
+                    "source": "events/categories"
+                  }
+                },
+                {
+                  "id": "services",
+                  "type": "wx-relations",
+                  "name": "services",
+                  "label": "trans::webx-events::screen.services",
+                  "help": "trans::webx-events::screen.services-help",
+                  "props": {
+                    "target": "service"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "project-fields",
+              "type": "wx-card",
+              "label": "trans::webx-admin::screens.project-fields",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "seo",
+          "type": "wx-tab",
+          "label": "trans::webx-events::screen.seo",
+          "children": [
+            {
+              "id": "seo-placeholder",
+              "type": "wx-alert",
+              "label": "trans::webx-events::screen.seo-empty",
+              "props": {
+                "type": "info",
+                "variant": "soft"
+              }
+            }
+          ]
+        },
+        {
+          "id": "history",
+          "type": "wx-tab",
+          "label": "trans::webx-events::screen.history",
+          "children": [
+            {
+              "id": "versions",
+              "type": "wx-event-history"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

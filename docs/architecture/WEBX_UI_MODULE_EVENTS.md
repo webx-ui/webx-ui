@@ -287,7 +287,11 @@ POST   /api/cms/events/{id}/versions/{number}/restore       → форма це�
        /api/cms/relations/{target}                           как у рецептов
 ```
 
-- `status` — `draft | published | modified | unpublished`, как у услуг и рецептов.
+- `status` — `draft | published | modified | unpublished`, как у услуг и рецептов. Фильтр
+  `?status=published` — всё, что на сайте, с правками и без (просьба EV2); `modified` — только с
+  правками. `when` по умолчанию — `upcoming`; корзина — `trashed=1`, `when` при ней не действует.
+  Страница — `page`, размер — `per_page` (5–100, по умолчанию 20); `links` — `first`, `last`,
+  `prev`, `next`, `meta` — `current_page`, `from`, `last_page`, `path`, `per_page`, `to`, `total`.
 - `event` в ответе формы — та же строка, что в списке (`EventResource`); `preview_url` — `null`
   без `module-blocks`; `prefix` — для `wx-slug`.
 - `starts_at`/`ends_at` в строке и в `values` — `toAtomString()` или `null`; принимаются с
@@ -419,6 +423,49 @@ README, LICENSE; регистрации §4.13 кроме плейграунда
 отличаться от §4.10 — поправить §4.10 тем же коммитом и сказать об этом в итоге крупно. В конце
 — «Итог EV1», коммит, пуш в claude.
 ```
+
+#### Итог EV1 (25.09.2026)
+
+**`localized` внутри `wx-repeater` правки не потребовал** — ни в `module-admin`, ни (по итогу EV2)
+в `WxScreenRepeater`: `RepeaterType` проверяет и хранит локализованного ребёнка по языкам, и
+`highlights` едут `{ru,en}` на ключе туда и обратно (`PanelTest`, `PageTest`). **§4.10 не
+менялся по форме**, только дописан пункт про `status`/`when`/пагинацию (ниже по тексту): фильтр
+`status=published` — «всё на сайте», с правками и без, как просил EV2.
+
+- **`php/packages/module-events`** по §§3–4 без MCP и демо: миграции (`2026_01_01_*`,
+  `attendance string(8)`), `Event` и `EventCategory`, скоупы `upcoming`/`past`/`byDate`,
+  `isPast()`, адреса `event`/`event-category` под приставкой, индекс (выключаемый) и
+  `{prefix}/{slug}.ics` (`webx.events.ics`, остаётся и без индекса; путь ищется в реестре,
+  алиасы тоже), вьюхи частями и общий `partials/list`, `Rendering\When`, `EventMarkup`,
+  `EventQuery`/`Cards`/`events()`, `EventPage`, API §4.10 с `duplicate`, экраны, права, группа
+  «Events» (`calendar`), цель связей `event`, `LinkSource` событий и категорий.
+- **Экран `events.form` — раскладка EV2 как есть** (два пикера на одно `name`: `starts-at`/
+  `starts-on`, `ends-at`/`ends-on`, переключаются `visible` по `all_day`). `ScreenValues` такое
+  принимает: оба узла одного типа, значение одно и то же. Место прячется при `online`.
+- **Слова**: `module`, `panel`, `event`, `category` — ключ в ключ с `messages.ts` EV2 (английский —
+  его же строки), плюс `screen`, `site`, `errors`, `relations`; десять языков, тест паритета.
+- **Пояса.** Моменты пишутся мутатором модели (`Support\Moment`) в пояс приложения — любой дверью.
+  **Событие на дни** хранится целыми днями: начало — полночь первого дня, конец — `23:59:59`
+  последнего (`settleDays()` на `saving`), поэтому «прошло» — одно выражение и для него. Дни
+  берутся **в смещении, с которым пришло значение**, а не в поясе приложения: полночь 12 октября
+  в +03:00 — это ещё 11 октября в UTC (`Moment::day()`, тест в `PanelTest`). Тесты с поясом
+  `Asia/Hong_Kong` ставят и `date_default_timezone_set` — Eloquent читает колонку в поясе PHP, а
+  Testbench выставляет его до `defineEnvironment()`.
+- **Для EV3 — крупно: дата-пикер «только дата» и пояс.** Сервер отдаёт день события на дни как
+  `2026-10-12T00:00:00+08:00` (пояс приложения). Пикер `type: date` в браузере западнее
+  приложения покажет **11 октября**, если читает момент, а не дату строки. Проверить на
+  плейграунде с реальным сервером; лечится на npm-стороне (брать дату из строки как есть).
+- Проверки 422 под полем: `ends_at` раньше `starts_at` или без него; `map_url`/`booking_url` —
+  только `http(s)://`. Дублирование — одна транзакция, слаг `-2`, `-3` без обрезки хвостовых
+  цифр (`class-2` → `class-2-2`), категории и услуги сразу строками (копия не на сайте), SEO
+  копируется, истории нет.
+- Регистрации: `php/composer.json` (require, карта версий, autoload-dev), `phpunit.xml.dist`,
+  `phpstan.neon.dist`, `Setup\Catalogue`, `Doctor\Checks\Helpers` (+`DoctorTest`), патчи SEO на
+  `events.form`/`events.category-form` в `module-seo`, `extra.webx` (npm `^0.1.0`). Changeset
+  minor на `@webx-ui/php`. Не сделано (EV3/EV4): MCP, демо, гайд, плейграунд, smoke, сайт.
+- Гейт на PHP 8.4: pint, phpstan (после сброса кеша и манифеста Testbench), phpunit — 1712 тестов
+  зелёные (из них 52 — `module-events`). `composer lint/test` из скретчпада не запускаются
+  (скрипты зовут `php` по имени) — бинарники вызывались напрямую.
 
 ### EV2 — `module-events`, npm
 
