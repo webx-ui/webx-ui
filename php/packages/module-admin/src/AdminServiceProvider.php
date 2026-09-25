@@ -314,6 +314,7 @@ class AdminServiceProvider extends ServiceProvider
      * `@webxPart('recipe-card', ['card' => $card], 'webx-recipes::partials.card')` — a module's
      * call of a component it declared, that falls back to the module's partial ({@see Parts}).
      * Registered here because every module has this package and not every site has blocks.
+     * `@webxPartAssets` is its head: the styles and script those parts brought.
      */
     private function registerPartDirective(): void
     {
@@ -321,6 +322,10 @@ class AdminServiceProvider extends ServiceProvider
             // The class name from `::class` rather than typed out: the compiled string has to
             // carry the namespace separators intact.
             return sprintf('<?php echo \%s::render(%s); ?>', Parts::class, $expression);
+        });
+
+        Blade::directive('webxPartAssets', static function (): string {
+            return sprintf('<?php echo \%s::assets(); ?>', Parts::class);
         });
     }
 

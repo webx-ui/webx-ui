@@ -400,6 +400,11 @@ the module's real one. The partial keeps printing until the component is publish
 standard** — deleting the component — brings it back. The module's styles are not copied: they keep
 applying to the same classes.
 
+A customised part brings its own styles and script, so the module's page prints
+`@webxPartAssets` in its head — `@webxBlocks` when the blocks module is installed, nothing when it
+is not — and renders its body before the layout: the bundle is made of what was rendered, and a
+head slot is worked out before the body.
+
 ## Styles and scripts on the site
 
 The types on a page are known from its tree, so the page gets one stylesheet and one script, named

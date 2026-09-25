@@ -140,6 +140,43 @@ final class CardTest extends TestCase
         $this->assertStringContainsString('class="wx-recipes__name"', $index);
     }
 
+    #[Test]
+    public function the_styles_of_a_customised_card_reach_the_head_of_every_recipe_page(): void
+    {
+        $soups = $this->category('soups');
+
+        foreach (['borscht', 'shchi'] as $slug) {
+            $this->recipe($slug)->syncCategories([$soups->id]);
+        }
+
+        $editor = $this->editor(['blocks.view', 'blocks.manage']);
+
+        // The standard card has no styles of its own: nothing to link.
+        $this->assertStringNotContainsString('rel="stylesheet"', $this->headOf('/recipes'));
+
+        $id = (int) $this->actingAs($editor, 'cms')
+            ->postJson('/api/cms/blocks/components/recipe-card/customise')
+            ->json('data.id');
+
+        Block::query()->findOrFail($id)->saveVersion([
+            'template' => '<li class="site-card" data-wx-block="recipe-card">{{ $card[\'title\'] }}</li>',
+            'styles' => '.site-card { color: tomato; }',
+        ]);
+        $this->actingAs($editor, 'cms')->postJson("/api/cms/blocks/{$id}/publish")->assertOk();
+
+        // The head is printed before the body is rendered unless the view renders the body first.
+        foreach (['/recipes', '/recipes/soups', '/recipes/borscht'] as $url) {
+            $this->assertMatchesRegularExpression('#<link rel="stylesheet" href="[^"]+/[a-f0-9]{16}\.css">#', $this->headOf($url), $url);
+        }
+    }
+
+    private function headOf(string $url): string
+    {
+        $html = (string) $this->get($url)->assertOk()->getContent();
+
+        return substr($html, 0, (int) strpos($html, '</head>'));
+    }
+
     /**
      * @param  list<Recipe>  $recipes
      * @return list<array<string, mixed>>
