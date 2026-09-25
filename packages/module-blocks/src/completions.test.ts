@@ -242,3 +242,90 @@ describe('the fields', () => {
     expect(labels(ask(source, '[{ | }]', true))).toContain('id')
   })
 })
+
+describe('the tag that calls a type', () => {
+  const callee: ScreenNode[] = [
+    { id: 'tone', type: 'wx-segmented', label: 'Tone' },
+    { id: 'card', type: 'wx-data', label: 'Recipe', props: { shape: 'recipes.card' } },
+    { id: 'aside', type: 'wx-slot', label: 'Aside' },
+  ]
+
+  const source = templateCompletions({
+    schema: () => [{ id: 'recipe', type: 'wx-input' }],
+    styles: () => '',
+    types: () => [
+      { slug: 'hero', title: 'Cover', kind: 'block' },
+      { slug: 'badge', title: 'Badge', kind: 'component' },
+      {
+        slug: 'recipe-card',
+        title: 'Recipe card',
+        kind: 'component',
+        fallback: 'webx-recipes::partials.card',
+      },
+    ],
+    schemaOf: (slug) => (slug === 'badge' ? callee : null),
+  })
+
+  it('offers every type for type="…", the components first', () => {
+    const result = ask(source, '<x-webx-block type="|"')!
+    const ordered = [...result.options].sort((a, b) => (b.boost ?? 0) - (a.boost ?? 0))
+
+    expect(ordered.map((option) => option.label)).toEqual(['badge', 'recipe-card', 'hero'])
+    expect(pick(source, '<x-webx-block type="ba|"', 'badge')).toBe('<x-webx-block type="badge"|')
+    expect(pick(source, '<x-webx-block type="ba|" />', 'badge')).toBe(
+      '<x-webx-block type="badge"| />',
+    )
+  })
+
+  it("offers the called type's inputs as attributes, a structure bound with a colon", () => {
+    const found = labels(ask(source, '<x-webx-block type="badge" t|'))
+
+    expect(found).toEqual(['tone', ':card', 'fallback'])
+    expect(pick(source, '<x-webx-block type="badge" t|', 'tone')).toBe(
+      '<x-webx-block type="badge" tone="|"',
+    )
+    expect(pick(source, '<x-webx-block type="badge" :|', ':card')).toBe(
+      '<x-webx-block type="badge" :card="$|"',
+    )
+  })
+
+  it('leaves out what is written already, and waits for a letter after a space', () => {
+    expect(labels(ask(source, '<x-webx-block type="badge" tone="x" c|'))).toEqual([
+      ':card',
+      'fallback',
+    ])
+    expect(ask(source, '<x-webx-block type="badge" |')).toBeNull()
+    expect(ask(source, '<x-webx-block type="badge" tone="a |')).toBeNull()
+  })
+
+  it("fills the fallback of a declared place with the module's view", () => {
+    expect(pick(source, '<x-webx-block type="recipe-card" f|', 'fallback')).toBe(
+      '<x-webx-block type="recipe-card" fallback="webx-recipes::partials.card|"',
+    )
+  })
+
+  it('waits for a schema that comes later', async () => {
+    const later = templateCompletions({
+      schema: () => [],
+      styles: () => '',
+      schemaOf: () => Promise.resolve(callee),
+    })
+    const result = (await ask(later, '<x-webx-block type="badge" to|')) as CompletionResult
+
+    expect(labels(result)).toEqual(['tone', ':card', 'fallback'])
+  })
+
+  it("offers the called type's slots inside its body, open and closed", () => {
+    const text = '<x-webx-block type="badge" tone="accent">\n    <x-|\n</x-webx-block>'
+
+    expect(labels(ask(source, text))).toEqual(['x-webx-block', 'x-slot:aside'])
+    expect(pick(source, text, 'x-slot:aside')).toBe(
+      '<x-webx-block type="badge" tone="accent">\n    <x-slot:aside>|</x-slot:aside>\n</x-webx-block>',
+    )
+    expect(labels(ask(source, '<x-webx-block type="badge" />\n<x-|'))).toEqual(['x-webx-block'])
+  })
+
+  it('offers $slot among the variables', () => {
+    expect(labels(ask(source, '{{ $|'))).toContain('$slot')
+  })
+})

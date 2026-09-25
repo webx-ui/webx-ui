@@ -5,7 +5,7 @@ import { useModal, WxButton, WxDialog, WxEmpty, WxInput, WxText } from '@webx-ui
 import BlockThumb from './BlockThumb.vue'
 import { countType } from './content'
 import { useBlocksMessages } from './i18n'
-import { groupLabel } from './schema'
+import { groupLabel, kindOf } from './schema'
 import type { BlockNode, BlockType } from './types'
 
 /**
@@ -56,9 +56,20 @@ function allowedHere(type: BlockType): boolean {
   return parentAllows && typeAllows
 }
 
+/*
+ * A component is never put on a page by hand: it is called from a template, and its schema is
+ * what the caller passes, not a form an editor could fill. The server's catalogue leaves them
+ * out already (§3.10); this is for a catalogue that came from somewhere else.
+ */
 const options = computed<Option[]>(() =>
   props.catalog
-    .filter((type) => type.is_enabled && type.published !== null && allowedHere(type))
+    .filter(
+      (type) =>
+        kindOf(type) !== 'component' &&
+        type.is_enabled &&
+        type.published !== null &&
+        allowedHere(type),
+    )
     .map((type) => {
       const count = countType(props.tree, type.slug)
       const exhausted = type.max_per_entity !== null && count >= type.max_per_entity

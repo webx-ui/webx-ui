@@ -2,6 +2,7 @@
  * The little of Blade a block template in the playground is written in.
  *
  * `@if`/`@elseif`/`@else`, `@foreach` (with `$key => $value` and `$loop->first`), `@blocks('field')`,
+ * `<x-webx-block>` with its slots (`<x-slot:name>`), which the caller draws — see `TagCall`,
  * `{{ }}`, `{!! !!}` and `{{-- --}}`, with PHP-ish expressions inside: variables and their keys,
  * literals and arrays, `! && || ?? ?: ? :`, comparisons, `.` and arithmetic, and a short list of
  * functions a template of a block actually calls (`nl2br(e(…))`, `mb_substr` for initials,
@@ -15,37 +16,87 @@
 
 type Scope = Record<string, unknown>
 
+/**
+ * Markup that is already HTML — a slot — and prints as it is inside `{{ }}`, the way Blade
+ * leaves an `HtmlString` alone.
+ */
+export class Html {
+  constructor(readonly html: string) {}
+
+  toString(): string {
+    return this.html
+  }
+}
+
+/**
+ * How a `<x-webx-block>` is drawn: by whoever knows the types — the fixture's `draw()` — with the
+ * attributes the tag passed (`type` and `fallback` taken out) and its slots, `slot` among them.
+ */
+export type TagCall = (
+  type: string,
+  values: Scope,
+  slots: Record<string, Html>,
+  fallback: string | null,
+) => string
+
+interface Attribute {
+  name: string
+  /** `:name="…"`: the value is an expression. */
+  bound: boolean
+  value: string
+}
+
 type Node =
   | { kind: 'text'; text: string }
   | { kind: 'echo'; expression: string; raw: boolean; source: string }
   | { kind: 'if'; branches: { test: string | null; body: Node[] }[] }
   | { kind: 'foreach'; list: string; key: string | null; alias: string; body: Node[] }
   | { kind: 'blocks'; argument: string }
+  | { kind: 'tag'; attributes: Attribute[]; body: Node[]; slots: { name: string; body: Node[] }[] }
+  | { kind: 'slot'; name: string; body: Node[] }
+
+interface Context {
+  children: Record<string, string>
+  call: TagCall | null
+}
 
 /**
  * A template drawn with its values. `children` are the drawn blocks of each `wx-blocks` field,
- * which `@blocks('field')` prints.
+ * which `@blocks('field')` prints; `call` draws a `<x-webx-block>`, and without one a tag
+ * draws nothing.
  */
-export function blade(template: string, values: Scope, children: Record<string, string>): string {
-  return render(parse(template.replace(/\{\{--[\s\S]*?--\}\}/g, '')), values, children)
+export function blade(
+  template: string,
+  values: Scope,
+  children: Record<string, string>,
+  call: TagCall | null = null,
+): string {
+  return render(parse(template.replace(/\{\{--[\s\S]*?--\}\}/g, '')), values, { children, call })
 }
 
 /* ---------------------------------------------------------------------------- parsing ----- */
 
-const TOKEN = /\{\{|\{!!|@(elseif|else|endif|endforeach|foreach|if|blocks)\b/g
+const TOKEN =
+  /\{\{|\{!!|@(elseif|else|endif|endforeach|foreach|if|blocks)\b|<x-webx-block\b|<\/x-webx-block\s*>|<x-slot(?=[:\s])|<\/x-slot(?::[\w-]+)?\s*>/g
+
+type Open =
+  | Extract<Node, { kind: 'if' }>
+  | Extract<Node, { kind: 'foreach' }>
+  | Extract<Node, { kind: 'tag' }>
+  | Extract<Node, { kind: 'slot' }>
 
 function parse(template: string): Node[] {
   const root: Node[] = []
   /* What is open: the innermost is where text goes. */
-  const stack: (Extract<Node, { kind: 'if' }> | Extract<Node, { kind: 'foreach' }>)[] = []
+  const stack: Open[] = []
 
   const into = (): Node[] => {
     const top = stack[stack.length - 1]
 
     if (top === undefined) return root
-    if (top.kind === 'foreach') return top.body
+    if (top.kind === 'if') return top.branches[top.branches.length - 1]!.body
 
-    return top.branches[top.branches.length - 1]!.body
+    return top.body
   }
 
   const text = (value: string): void => {
@@ -80,6 +131,11 @@ function parse(template: string): Node[] {
         source: template.slice(found.index, end + close.length),
       })
       at = end + close.length
+      continue
+    }
+
+    if (found[0].startsWith('<')) {
+      at = markup(template, found, stack, into, text)
       continue
     }
 
@@ -165,6 +221,96 @@ function parse(template: string): Node[] {
   return root
 }
 
+/**
+ * One of the four pieces of component markup: `<x-webx-block …>` (self-closing or not), its
+ * closing tag, `<x-slot:name>` (or `<x-slot name="…">`) and its closing tag. Anything that does
+ * not fit where it stands stays text. Returns where parsing goes on.
+ */
+function markup(
+  template: string,
+  found: RegExpExecArray,
+  stack: Open[],
+  into: () => Node[],
+  text: (value: string) => void,
+): number {
+  const token = found[0]
+  const after = found.index + token.length
+  const top = stack[stack.length - 1]
+
+  if (token.startsWith('</')) {
+    const wanted = token.startsWith('</x-slot') ? 'slot' : 'tag'
+
+    if (top?.kind === wanted) stack.pop()
+    else text(token)
+
+    return after
+  }
+
+  const end = tagEnd(template, after)
+
+  if (end === -1) {
+    text(token)
+
+    return after
+  }
+
+  const inside = template.slice(after, end)
+  const closed = inside.trimEnd().endsWith('/')
+  const attributes = attributesOf(closed ? inside.trimEnd().slice(0, -1) : inside)
+
+  if (token === '<x-webx-block') {
+    const node: Extract<Node, { kind: 'tag' }> = { kind: 'tag', attributes, body: [], slots: [] }
+
+    into().push(node)
+    if (!closed) stack.push(node)
+
+    return end + 1
+  }
+
+  // A slot: `<x-slot:aside>` names itself after the colon, `<x-slot name="aside">` by attribute.
+  const name = /^:([\w-]+)/.exec(inside)?.[1] ?? attributes.find((a) => a.name === 'name')?.value
+
+  if (top?.kind !== 'tag' || name === undefined) {
+    text(template.slice(found.index, end + 1))
+
+    return end + 1
+  }
+
+  const slot: Extract<Node, { kind: 'slot' }> = { kind: 'slot', name, body: [] }
+
+  top.slots.push({ name, body: slot.body })
+  if (!closed) stack.push(slot)
+
+  return end + 1
+}
+
+/** Where the opening tag that starts at `from` closes (its `>`), minding quotes. */
+function tagEnd(source: string, from: number): number {
+  let quote: string | null = null
+
+  for (let index = from; index < source.length; index++) {
+    const char = source[index]!
+
+    if (quote !== null) {
+      if (char === quote) quote = null
+    } else if (char === '"' || char === "'") {
+      quote = char
+    } else if (char === '>') {
+      return index
+    }
+  }
+
+  return -1
+}
+
+function attributesOf(source: string): Attribute[] {
+  return [...source.matchAll(/(:?)([\w-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)].map((match) => ({
+    name: match[2]!,
+    bound: match[1] === ':',
+    value: match[3] ?? match[4] ?? '',
+  }))
+}
+
 /** Where the parenthesis opened at `open` closes, minding quotes; -1 when it never does. */
 function balanced(source: string, open: number): number {
   let depth = 0
@@ -189,7 +335,7 @@ function balanced(source: string, open: number): number {
 
 /* -------------------------------------------------------------------------- rendering ----- */
 
-function render(nodes: Node[], scope: Scope, children: Record<string, string>): string {
+function render(nodes: Node[], scope: Scope, context: Context): string {
   let out = ''
 
   for (const node of nodes) {
@@ -199,9 +345,10 @@ function render(nodes: Node[], scope: Scope, children: Record<string, string>): 
         break
       case 'echo':
         try {
-          const value = show(evaluate(node.expression, scope))
+          const evaluated = evaluate(node.expression, scope)
+          const value = show(evaluated)
 
-          out += node.raw ? value : escape(value)
+          out += node.raw || evaluated instanceof Html ? value : escape(value)
         } catch {
           out += node.source
         }
@@ -211,7 +358,7 @@ function render(nodes: Node[], scope: Scope, children: Record<string, string>): 
           (candidate) => candidate.test === null || truthy(attempt(candidate.test, scope)),
         )
 
-        if (branch !== undefined) out += render(branch.body, scope, children)
+        if (branch !== undefined) out += render(branch.body, scope, context)
         break
       }
       case 'foreach': {
@@ -239,18 +386,55 @@ function render(nodes: Node[], scope: Scope, children: Record<string, string>): 
               ...(node.key === null ? {} : { [node.key]: key }),
               loop,
             },
-            children,
+            context,
           )
         })
         break
       }
       case 'blocks':
-        out += children[show(attempt(node.argument, scope))] ?? ''
+        out += context.children[show(attempt(node.argument, scope))] ?? ''
+        break
+      case 'tag':
+        out += tag(node, scope, context)
+        break
+      case 'slot':
+        // Only ever inside a tag, which draws it; standing alone it is nothing.
         break
     }
   }
 
   return out
+}
+
+/**
+ * A `<x-webx-block>`: its attributes read in the caller's scope — `:name` as an expression, the
+ * rest as text that may hold `{{ }}` — its body as the default slot, and the drawing left to
+ * `context.call`. `type` and `fallback` are the tag's own and are not passed on (§3.2).
+ */
+function tag(node: Extract<Node, { kind: 'tag' }>, scope: Scope, context: Context): string {
+  if (context.call === null) return ''
+
+  const values: Scope = {}
+  let type = ''
+  let fallback: string | null = null
+
+  for (const attribute of node.attributes) {
+    const value = attribute.bound
+      ? attempt(attribute.value, scope)
+      : render(parse(attribute.value), scope, context)
+
+    if (attribute.name === 'type') type = show(value)
+    else if (attribute.name === 'fallback') fallback = show(value) || null
+    else values[attribute.name] = value
+  }
+
+  const slots: Record<string, Html> = { slot: new Html(render(node.body, scope, context).trim()) }
+
+  for (const slot of node.slots) {
+    slots[slot.name] = new Html(render(slot.body, scope, context).trim())
+  }
+
+  return context.call(type, values, slots, fallback)
 }
 
 /** A condition or a list nobody could read counts as nothing, the way an unset one would. */
@@ -329,7 +513,8 @@ function lex(source: string): Token[] {
       continue
     }
 
-    const name = /^[A-Za-z_]\w*/.exec(rest)
+    // A static call reads as one name: `WebxUi\Recipes\Rendering\Duration::format`.
+    const name = /^[A-Za-z_][\w\\]*(?:::\w+)?/.exec(rest)
 
     if (name !== null) {
       tokens.push({ type: 'name', value: name[0] })
@@ -565,6 +750,15 @@ export function evaluate(expression: string, scope: Scope): unknown {
   return value
 }
 
+/**
+ * A function a view of some module calls — a static helper of the composer package, drawn here by
+ * the fixture that has the data for it. Registered rather than written below: this file knows no
+ * module.
+ */
+export function defineFunction(name: string, call: (...args: unknown[]) => unknown): void {
+  FUNCTIONS[name] = call
+}
+
 /** The functions a block template in this playground may call — the ones its templates do. */
 const FUNCTIONS: Record<string, (...args: unknown[]) => unknown> = {
   e: (value) => escape(show(value)),
@@ -644,6 +838,7 @@ function member(value: unknown, key: unknown): unknown {
 /** PHP's truthiness, arrays included: an empty one is false, and so is `'0'`. */
 function truthy(value: unknown): boolean {
   if (value === null || value === undefined || value === false) return false
+  if (value instanceof Html) return value.html !== ''
   if (value === 0 || value === '' || value === '0') return false
   if (Array.isArray(value)) return value.length > 0
   if (typeof value === 'object') return Object.keys(value).length > 0
@@ -668,6 +863,7 @@ function loose(a: unknown, b: unknown): boolean {
 export function show(value: unknown): string {
   if (value === null || value === undefined || value === false) return ''
   if (value === true) return '1'
+  if (value instanceof Html) return value.html
 
   if (typeof value === 'object' && !Array.isArray(value)) {
     const map = value as Record<string, unknown>
