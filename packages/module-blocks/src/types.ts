@@ -40,6 +40,43 @@ export interface Lint {
   message: string
 }
 
+/**
+ * Where a type is seen (§3.1 of the components spec). A `block` is offered in "Add a block" and
+ * its schema is the editor's form; a `component` is only ever called with `<x-webx-block>` from
+ * another template, and its schema describes what the caller hands it. Either can be called.
+ */
+export type BlockKind = 'block' | 'component'
+
+/** A type whose published version calls this one: the "in 2 blocks" of a component. */
+export interface BlockParent {
+  id: number
+  slug: string
+  title: string
+}
+
+/**
+ * A place a module declared for a component (`BlockComponents::declare`): the module draws its
+ * own view there until the site customises it into a type of its own.
+ */
+export interface DeclaredComponent {
+  slug: string
+  /** The module's id, `recipes`; its name in the panel is the manifest's title for it. */
+  module: string
+  title: string
+  description: string | null
+  /** The view drawn while nothing is published under the slug. */
+  fallback: string
+  /** Whether the site has a type of that slug already. */
+  customised: boolean
+}
+
+/** One key of a data shape (`BlockShapes`): what the help under the template names. */
+export interface ShapeField {
+  name: string
+  type: string
+  description: string | null
+}
+
 /** A block type as the section shows it. */
 export interface BlockType {
   id: number
@@ -58,6 +95,19 @@ export interface BlockType {
   draft: BlockVersionMeta | null
   published: BlockVersionMeta | null
   usage_count: number
+  /*
+   * The five below come from a server that knows components. One older than that sends none of
+   * them, and every type reads as a block nobody calls — which is what it is there.
+   */
+  kind?: BlockKind
+  /** Slugs the template of the current version calls, sorted. */
+  uses?: string[]
+  /** Types whose published version calls this one. */
+  used_by?: BlockParent[]
+  /** The module's declaration of this slug, when there is one. Only in `GET /blocks/{id}`. */
+  declared?: DeclaredComponent | null
+  /** The data shapes the schema's `wx-data` nodes name, by name. Only in `GET /blocks/{id}`. */
+  shape?: Record<string, { fields: ShapeField[] }>
   thumbnail: BlockThumbnail | null
   created_at: string | null
   updated_at: string | null
@@ -68,6 +118,7 @@ export interface BlockType {
 
 /** What a save sends: only what changed. */
 export interface BlockInput {
+  kind?: BlockKind
   slug?: string
   title?: string
   description?: string | null
@@ -80,6 +131,12 @@ export interface BlockInput {
   is_enabled?: boolean
   content?: Partial<BlockContent>
   comment?: string | null
+}
+
+/** The section's list: the types, and the places modules declared for components. */
+export interface BlockList {
+  blocks: BlockType[]
+  declared: DeclaredComponent[]
 }
 
 /** An entity a type stands on. */
@@ -120,6 +177,12 @@ export interface PublishRefusal {
   errors: Record<string, string[]>
   line: number | null
   entity: { model: string; id: number | string; title: string | null } | null
+  /** The calling type the draft broke, when it was a parent that failed (§3.6). */
+  parent?: BlockParent | null
+  /** The module whose declared place failed on its own sample. */
+  declared?: string | null
+  /** The loop publishing would close, as slugs, the first repeated at the end. */
+  cycle?: string[] | null
 }
 
 /** What the server-side module says about itself in the manifest. */

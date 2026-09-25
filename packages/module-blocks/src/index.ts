@@ -25,7 +25,7 @@ export {
 } from './content'
 export { lintBlock, undeclared } from './lint'
 export { findRange, highlightBlock, replaceBlock, stageDocument } from './frame'
-export { formSchema } from './schema'
+export { callTag, formSchema, kindOf } from './schema'
 export { default as WxBlocks } from './BlocksField.vue'
 export { default as WxBlocksPage } from './BlocksPage.vue'
 export { default as WxBlockEditorPage } from './BlockEditorPage.vue'
@@ -35,7 +35,10 @@ export { default as WxBlockStage } from './BlockStage.vue'
 export type {
   BlockContent,
   BlockInput,
+  BlockKind,
+  BlockList,
   BlockNode,
+  BlockParent,
   BlockSource,
   BlocksMeta,
   BlockThumbnail,
@@ -43,8 +46,10 @@ export type {
   BlockUsage,
   BlockVersion,
   BlockVersionMeta,
+  DeclaredComponent,
   Lint,
   PublishRefusal,
   RenderInput,
   RenderResult,
+  ShapeField,
 } from './types'
