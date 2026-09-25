@@ -238,7 +238,21 @@ async function load(): Promise<void> {
   }
 }
 
+/*
+ * When a card was last let go of. A real mouse follows the release with a click on the card it
+ * started on — the fallback drag moves a copy, the card itself never left — and that click
+ * opened the type the editor had only meant to move. Sortable's own guard does not catch it
+ * here. A synthetic drag sends no click, which is why only a real hand ever saw this.
+ */
+let droppedAt = 0
+
+function dropped(): void {
+  droppedAt = Date.now()
+}
+
 function open(block: BlockType | { id: number }): void {
+  if (Date.now() - droppedAt < 400) return
+
   void router.push(`${props.base}/${block.id}`)
 }
 
@@ -350,6 +364,7 @@ const actions = computed<ScreenAction[]>(() =>
           :delay-on-touch-only="true"
           :force-fallback="true"
           ghost-class="is-ghost"
+          @end="dropped"
           @update:model-value="reorder($event as BlockType[])"
         >
           <block-card v-for="block in group.blocks" :key="block.id" :block="block" @open="open" />
