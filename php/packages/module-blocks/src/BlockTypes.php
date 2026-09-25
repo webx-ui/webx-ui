@@ -29,13 +29,18 @@ final class BlockTypes
     ) {}
 
     /**
-     * What an editor may add: enabled, published, in `sort` then `slug` order.
+     * What an editor may add: enabled, published, in `sort` then `slug` order. A component is
+     * none of that — it is called by a template, never put in content — so it is left out here
+     * and found by {@see find()} like any other type.
      *
      * @return list<BlockType>
      */
     public function all(): array
     {
-        return array_values(array_filter($this->load(), static fn (BlockType $type): bool => $type->enabled));
+        return array_values(array_filter(
+            $this->load(),
+            static fn (BlockType $type): bool => $type->enabled && ! $type->isComponent(),
+        ));
     }
 
     /**

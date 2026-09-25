@@ -11,8 +11,12 @@ import type { Lint } from './types'
 
 type Translate = (key: string, params?: Record<string, string | number>) => string
 
-/** Variables Blade or the renderer hand a template on their own. */
-const GIVEN = ['block', 'entity', 'loop', '__env', 'errors', 'app']
+/**
+ * Variables Blade or the renderer hand a template on their own. `$slot` among them: any type can
+ * be called with `<x-webx-block>`, and the default slot is there whether or not the tag had a
+ * body — empty when it did not (§3.3 of the components spec).
+ */
+const GIVEN = ['block', 'entity', 'loop', 'slot', '__env', 'errors', 'app']
 
 export function lintBlock(
   slug: string,

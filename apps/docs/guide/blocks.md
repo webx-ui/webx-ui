@@ -327,6 +327,79 @@ already say as you type:
 
 :::
 
+## Components
+
+A block stands in a page's content, where an editor put it. Some markup repeats **inside other
+templates** instead — a recipe card in a catalogue, in «similar recipes», on a hand-made page — and
+a site wants to change it in one place, from the panel. That is a component: a block type called
+by tag from any template.
+
+<!-- v-pre: the mustaches below are Blade. -->
+
+::: v-pre
+
+```blade
+<x-webx-block type="recipe-card" :card="$card" />
+<x-webx-block type="recipe-card" :card="$card" fallback="webx-recipes::partials.card" />
+<x-webx-block type="section" :title="$title">
+    <p>The body, printed as {{ $slot }}.</p>
+    <x-slot:aside>…</x-slot:aside>
+</x-webx-block>
+```
+
+:::
+
+The same tag works in a block's template, in a module's view and in the site's layout. Everything
+else is the block machinery: Blade, CSS and a script in the database, versions, a draft, the stage,
+the checks before publishing, export and MCP.
+
+- **Kind.** A type is a `block` (editors add it to pages) or a `component` (the picker leaves it
+  out). Any type can be called by tag — a call-to-action block with fixed values on a hand-made
+  page is fine — the kind only says where the type is offered. A type that stands on pages cannot
+  become a component until it is taken off them.
+- **Input.** A component's schema is what the tag passes. Any field works as an attribute
+  (`tone="dark"`, `:image="$picture"` — values are resolved the way stored ones are), and two
+  nodes exist for components: `wx-data`, a value passed from code (`:card="$card"`) whose
+  `props.shape` names a form a module registered, and `wx-slot`, a named slot. `$slot` needs no
+  node. `type` and `fallback` are reserved; `cta-label` is read as `$block->value('cta-label')`.
+- **Which version.** The tag prints the published version of the type, and the draft on a preview
+  or on the stage — so a change to a component shows on any page's preview before it reaches the
+  site.
+- **`fallback`** is a view printed when the type does not exist or was never published, with the
+  same values and slots. Without it, a missing component is a gap on the site, a log line and a
+  plate on the preview.
+- **Who calls whom.** Every version records the types its template calls by a literal `type`. A
+  type's editor shows the blocks that call it, and publishing it first draws every one of them —
+  on its sample and on the pages it stands on — with the new version in place. It is refused,
+  naming the block and the page, if one breaks; a circle of calls is refused as well. A type
+  other types call cannot be deleted. `:type="$x"` works but is not tracked, and the editor warns.
+- **Calls from view files are not seen by any of this.** A module's views are covered by the
+  module's declaration (below); a site's own view that calls a component should give it a
+  `fallback`, or keep the component.
+
+### A place a module declares
+
+A module that prints a card declares the place in code, with its own partial as the fallback:
+
+```php
+$this->app->make(BlockComponents::class)->declare(
+    slug: 'recipe-card',
+    module: 'recipes',
+    fallback: 'webx-recipes::partials.card',
+    title: 'Recipe card',
+    schema: [['type' => 'wx-data', 'id' => 'card', 'label' => 'Recipe', 'props' => ['shape' => 'recipes.card']]],
+);
+```
+
+and calls it with `@webxPart('recipe-card', ['card' => $card], 'webx-recipes::partials.card')` —
+the tag when the blocks module is installed, the partial when it is not. Nothing is written to the
+tables: the section shows the place as a card «Standard view · module Recipes» with a
+**Customise** button. Customising makes a component of that slug whose draft is the fallback view as
+the site has it (a copy the site published into `resources/views/vendor/` wins) and whose sample is
+the module's real one. The partial keeps printing until the component is published; **Reset to
+standard** — deleting the component — brings it back. The module's styles are not copied: they keep
+applying to the same classes.
+
 ## Styles and scripts on the site
 
 The types on a page are known from its tree, so the page gets one stylesheet and one script, named
@@ -397,6 +470,12 @@ way tinker is.
 | `blocks_set_content`  | Replace the entity's draft with a tree of nodes; keys are kept or made                   |
 | `blocks_edit_content` | Change one block at a time: `set`, `add`, `move`, `remove`, `hide`, `show`, by key       |
 | `blocks_preview_url`  | A signed link to the entity's draft as the page it will be                               |
+
+For components, `blocks_list` and `blocks_get` add the kind, the types a template calls (`uses`)
+and the ones that call it (`used_by`), the fields of each data shape, and `declared` — the places
+modules call a component from, customised or not. `blocks_create` with a declared slug and no
+template is **Customise**; a refused publication names the block and the page it would break. There
+is no tool that deletes a type.
 
 `render` and `preview_url` are what close the loop: without them an agent writes a template it
 never sees, and the site gets the markup it imagined. Every tool that changes something accepts

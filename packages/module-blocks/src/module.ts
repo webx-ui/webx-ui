@@ -1,4 +1,6 @@
 import type { AdminModule } from '@webx-ui/module-admin'
+import { WxTextarea } from '@webx-ui/core'
+import BlockDataField from './BlockDataField.vue'
 import BlockEditorPage from './BlockEditorPage.vue'
 import BlocksField from './BlocksField.vue'
 import BlocksPage from './BlocksPage.vue'
@@ -40,6 +42,15 @@ export function blocks(options: BlocksOptions = {}): AdminModule {
         nested: true,
         wide: true,
         bind: () => ({ blocksPath: path }),
+      },
+      // The two inputs only a component's schema has (§3.3): a structure passed from code,
+      // edited in the sample form as the JSON it is, and a piece of markup the caller puts
+      // between the tags, as HTML. Neither is a field an editor fills on a page.
+      'wx-data': { component: BlockDataField, kind: 'field', wide: true },
+      'wx-slot': {
+        component: WxTextarea,
+        kind: 'field',
+        bind: () => ({ rows: 3, placeholder: '<p>…</p>' }),
       },
     },
   }

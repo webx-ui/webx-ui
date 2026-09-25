@@ -14,11 +14,14 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Blocks\Console\BundlesCommand;
 use WebxUi\Blocks\Console\ClearCommand;
 use WebxUi\Blocks\Console\ExportCommand;
 use WebxUi\Blocks\Console\ImportCommand;
 use WebxUi\Blocks\Console\OfferedCommand;
+use WebxUi\Blocks\Fields\DataType;
+use WebxUi\Blocks\Fields\SlotType;
 use WebxUi\Blocks\Http\Middleware\EnsureEditing;
 use WebxUi\Blocks\Panel\BlocksModule;
 use WebxUi\Blocks\Panel\Publisher;
@@ -28,6 +31,7 @@ use WebxUi\Blocks\Preview\PreviewToken;
 use WebxUi\Blocks\Rendering\Bundles;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\Rendering\TemplateCompiler;
+use WebxUi\Blocks\Tags\BlockTag;
 
 /**
  * Two halves of one package. `Rendering\` is what a public page uses: the registry of types,
@@ -50,6 +54,11 @@ class BlocksServiceProvider extends ServiceProvider
 
         // What modules offer as block types (§3.4 of the FAQ spec). Filled from their providers.
         $this->app->singleton(BlockOffers::class);
+
+        // What modules hand to components and where they call them from (§3.7 of the
+        // components spec). Filled from their providers, like the offers above.
+        $this->app->singleton(BlockShapes::class);
+        $this->app->singleton(BlockComponents::class);
 
         $this->app->singleton(PreviewToken::class, static function (Application $app): PreviewToken {
             $key = (string) $app->make('config')->get('app.key', '');
@@ -85,6 +94,11 @@ class BlocksServiceProvider extends ServiceProvider
 
         $this->registerMacro();
         $this->registerDirectives();
+        $this->registerFieldTypes();
+
+        // `<x-webx-block type="…">`: a type called from any template, the ones in the tables
+        // included — they are compiled by the same Blade that compiles the site's views.
+        Blade::component('webx-block', BlockTag::class);
 
         /** @var Router $router */
         $router = $this->app->make('router');
@@ -148,6 +162,18 @@ class BlocksServiceProvider extends ServiceProvider
             $request,
             $config->get('webx-blocks.bundles.path', 'blocks'),
         ));
+    }
+
+    /**
+     * A component's two kinds of input the panel does not type in: data handed over by code, and
+     * a slot of markup. Both known to the server so that a walk over a schema stops at them.
+     */
+    private function registerFieldTypes(): void
+    {
+        $types = $this->app->make(FieldTypes::class);
+
+        $types->register('wx-data', new DataType);
+        $types->register('wx-slot', new SlotType);
     }
 
     /**

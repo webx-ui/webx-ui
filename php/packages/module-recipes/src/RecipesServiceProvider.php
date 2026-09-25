@@ -30,6 +30,7 @@ use WebxUi\Recipes\Panel\NutrientsModule;
 use WebxUi\Recipes\Panel\RecipesGroup;
 use WebxUi\Recipes\Panel\RecipesModule;
 use WebxUi\Recipes\Relations\RecipeTarget;
+use WebxUi\Recipes\Rendering\RecipeCard;
 use WebxUi\Recipes\Seo\FilteredCatalogSource;
 use WebxUi\Routing\Formatters\Prefixed;
 use WebxUi\Routing\Formatters\Slug;
@@ -210,7 +211,8 @@ class RecipesServiceProvider extends ServiceProvider
 
     /**
      * What a block may show, and — when `module-blocks` is here — the block that shows it. The
-     * type is offered, not installed: `webx:blocks:offered --install` puts it on the site once.
+     * type is offered, not installed: `webx:blocks:offered --install` puts it on the site once. The
+     * card is declared as a component (§5 of the components spec).
      */
     private function registerCollection(): void
     {
@@ -219,6 +221,9 @@ class RecipesServiceProvider extends ServiceProvider
         if (class_exists(BlockOffers::class)) {
             $this->app->make(BlockOffers::class)->offer(RecipesModule::ID, __DIR__.'/../resources/blocks');
         }
+
+        // The card is a place a site can redraw in the panel; the partial prints until it does.
+        RecipeCard::declare(RecipesModule::ID);
     }
 
     /**

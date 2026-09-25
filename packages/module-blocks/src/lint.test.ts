@@ -55,3 +55,11 @@ describe('the checks under the editor', () => {
     ).toEqual(['x'])
   })
 })
+
+describe('what a called type is handed', () => {
+  it('knows $slot without a schema field: every type can be called with a body', () => {
+    expect(
+      undeclared('<span>{{ $slot }} {{ $aside }}</span>', [{ id: 'aside', type: 'wx-slot' }]),
+    ).toEqual([])
+  })
+})
