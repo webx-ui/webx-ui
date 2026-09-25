@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 use WebxUi\Admin\Versions\EntityVersion;
+use WebxUi\Blocks\BlockComponents;
+use WebxUi\Blocks\BlockShapes;
 use WebxUi\Blocks\BlockType;
 use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Content;
@@ -19,9 +21,12 @@ use WebxUi\Blocks\ContentEdit;
 use WebxUi\Blocks\ContentValues;
 use WebxUi\Blocks\Exceptions\BlockNotPublishable;
 use WebxUi\Blocks\Exceptions\BlocksException;
+use WebxUi\Blocks\Http\Resources\BlockResource;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Panel\BlockInput;
+use WebxUi\Blocks\Panel\Customiser;
+use WebxUi\Blocks\Panel\Graph;
 use WebxUi\Blocks\Panel\Lints;
 use WebxUi\Blocks\Panel\Publisher;
 use WebxUi\Blocks\Panel\PublishFailed;
@@ -65,8 +70,10 @@ final class BlockTools
         return [
             Tool::read(
                 'list',
-                'The block types of this site: what each is called, where it may go, which fields it has, '
-                .'whether it is published and on how many pages it stands. Read blocks://guidelines before writing one.',
+                'The block types of this site: what each is called, whether it is a block editors add or a component '
+                .'templates call by tag, which fields it has, whether it is published, on how many pages it stands and '
+                .'which types call it (used_by). declared lists the places modules call a component from, and whether '
+                .'the site has customised each. Read blocks://guidelines before writing one.',
                 fn (array $arguments): array => $this->list($arguments),
                 ['properties' => [
                     'group' => ['type' => 'string', 'description' => 'Only the types of this group.'],
@@ -76,7 +83,9 @@ final class BlockTools
             Tool::read(
                 'get',
                 'One block type in full: its settings, and the schema, template, styles, script and sample of '
-                .'the version being edited — or of a given version number — with the warnings on that content.',
+                .'the version being edited — or of a given version number — with the warnings on that content, '
+                .'the types its template calls (uses), the ones that call it (used_by) and the fields of every '
+                .'data shape its input names (shape).',
                 fn (array $arguments): array => $this->get($arguments),
                 ['properties' => [
                     'slug' => $slug,
@@ -87,9 +96,11 @@ final class BlockTools
             Tool::mutating(
                 'create',
                 'Make a new block type as a draft: settings plus the schema, template, styles, script and sample '
-                .'of its first version. Nothing is published; render it, then a person publishes.',
+                .'of its first version. kind "component" makes one templates call by tag instead of one editors add. '
+                .'A slug from blocks_list declared, sent without a template, customises that place: the draft starts '
+                .'from what the site prints there now. Nothing is published; render it, then a person publishes.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->create($arguments, $user),
-                ['properties' => $this->typeProperties(), 'required' => ['slug', 'title']],
+                ['properties' => $this->typeProperties(), 'required' => ['slug']],
             ),
 
             Tool::mutating(
@@ -103,7 +114,8 @@ final class BlockTools
             Tool::mutating(
                 'publish',
                 'Publish the draft of a block type, so the site prints it. Refused with the line when the template '
-                .'fails on the sample or on any page the block already stands on; with dry_run the checks run and nothing moves.',
+                .'fails on the sample or on any page the block already stands on — and, for a type other types call, '
+                .'when it breaks one of them, naming the type and the page. With dry_run the checks run and nothing moves.',
                 fn (array $arguments): array => $this->publish($arguments),
                 ['properties' => ['slug' => $slug], 'required' => ['slug']],
             ),
@@ -111,7 +123,8 @@ final class BlockTools
             Tool::read(
                 'render',
                 'Draw a block type on values — its sample when none are sent — and return the HTML with the styles '
-                .'and the wrapped script, or the line the template failed on. The way to see what you wrote.',
+                .'and the wrapped script, or the line the template failed on. For a component the values are its '
+                .'input: what the tag passes. The way to see what you wrote.',
                 fn (array $arguments): array => $this->render($arguments),
                 ['properties' => [
                     'slug' => $slug,
@@ -204,13 +217,23 @@ final class BlockTools
         }
 
         $counts = $this->usage()->counts();
+        $parents = $this->container->make(Graph::class)->parents();
         $blocks = [];
+        $slugs = [];
 
         foreach ($query->get() as $block) {
-            $blocks[] = $this->summary($block, $counts);
+            $blocks[] = $this->summary($block, $counts, $parents);
+            $slugs[$block->slug] = true;
         }
 
-        return ['blocks' => $blocks, 'count' => count($blocks)];
+        // The places modules call a component from. Until one is customised the module's own
+        // partial prints there; blocks_create with that slug starts a component from it.
+        $declared = array_map(
+            static fn (array $place): array => BlockResource::declaration($place, isset($slugs[$place['slug']])),
+            $this->container->make(BlockComponents::class)->all(),
+        );
+
+        return ['blocks' => $blocks, 'count' => count($blocks), 'declared' => $declared];
     }
 
     /**
@@ -227,8 +250,13 @@ final class BlockTools
         }
 
         $content = $version->content();
+        $declared = $this->container->make(BlockComponents::class)->get($block->slug);
 
-        return $this->summary($block, $this->usage()->counts()) + [
+        return $this->summary($block, $this->usage()->counts(), $this->container->make(Graph::class)->parents()) + [
+            'uses' => $version->calls(),
+            // What `$card['…']` holds, for every `wx-data` input that names a shape.
+            'shape' => (object) $this->container->make(BlockShapes::class)->describe($content['schema']),
+            'declared' => $declared === null ? null : BlockResource::declaration($declared, true),
             'version' => [
                 'number' => $version->number,
                 'source' => $version->source,
@@ -247,6 +275,25 @@ final class BlockTools
     private function create(array $arguments, ?Authenticatable $user): array
     {
         $this->ensureEditing();
+
+        $customiser = $this->container->make(Customiser::class);
+        $declaredSlug = is_string($arguments['slug'] ?? null) ? $arguments['slug'] : '';
+
+        // A declared place without a template of the agent's own is "Customise": the component
+        // starts from what the site prints there now, with the module's input and sample.
+        if ($customiser->declared($declaredSlug) && ! is_string($arguments['template'] ?? null)) {
+            if (Block::query()->where('slug', $declaredSlug)->exists()) {
+                throw new ToolFailure("[{$declaredSlug}] is customised already: change it with blocks_update.");
+            }
+
+            if ($this->dryRun($arguments)) {
+                return ['dry_run' => true, 'would_customise' => $declaredSlug];
+            }
+
+            $customiser->customise($declaredSlug, BlockVersion::SOURCE_MCP, $this->authorId($user));
+
+            return $this->get(['slug' => $declaredSlug]) + ['customised' => true];
+        }
 
         $input = $this->validate($arguments, BlockInput::rowRules(true) + BlockInput::contentRules());
         $values = BlockInput::values($input);
@@ -279,6 +326,12 @@ final class BlockTools
         $input = $this->validate($arguments, BlockInput::rowRules(false, $block->id) + BlockInput::contentRules());
         $values = BlockInput::values($input);
         $content = BlockInput::content($input);
+
+        $refusal = BlockInput::kindRefusal($block, $values['kind'] ?? null, $this->usage()->counts());
+
+        if ($refusal !== null) {
+            throw new ToolFailure('Not accepted — kind: '.$refusal);
+        }
 
         $changes = [];
 
@@ -336,6 +389,14 @@ final class BlockTools
 
             $version = $publisher->publish($block);
         } catch (PublishFailed $failed) {
+            // A component that breaks another type, the module's declared place or a cycle: the
+            // sentence names the parent and the page, which is what the agent has to go and look at.
+            if ($failed->parent !== null || $failed->declared !== null || $failed->cycle !== null) {
+                $line = $failed->failure->templateLine !== null ? " (template line {$failed->failure->templateLine})" : '';
+
+                throw new ToolFailure('Not published: '.$failed->describe().$line);
+            }
+
             $where = $failed->entity === null
                 ? 'on the sample'
                 : sprintf('on %s #%s%s', class_basename($failed->entity['model']), $failed->entity['id'], $failed->entity['title'] !== null ? " ({$failed->entity['title']})" : '');
@@ -751,14 +812,16 @@ final class BlockTools
 
     /**
      * @param  array<string, int>  $counts
+     * @param  array<string, list<array{id: int, slug: string, title: string}>>  $parents
      * @return array<string, mixed>
      */
-    private function summary(Block $block, array $counts): array
+    private function summary(Block $block, array $counts, array $parents): array
     {
         $current = $block->currentVersion();
 
         return [
             'slug' => $block->slug,
+            'kind' => $block->kind,
             'title' => $block->title,
             'description' => $block->description,
             'icon' => $block->icon,
@@ -772,6 +835,8 @@ final class BlockTools
             'published' => $block->publishedVersion?->number,
             'fields' => $this->fields($current->schema ?? []),
             'usage' => $counts[$block->slug] ?? 0,
+            // The published types whose template calls this one: what a change to it can break.
+            'used_by' => $parents[$block->slug] ?? [],
         ];
     }
 
@@ -948,7 +1013,8 @@ final class BlockTools
 
         return [
             'slug' => ['type' => 'string', 'description' => 'kebab-case, unique; also the CSS prefix .b-{slug}.'],
-            'title' => ['type' => 'string', 'description' => 'What editors see in the picker.'],
+            'kind' => ['type' => 'string', 'enum' => Block::KINDS, 'description' => 'block (default): editors add it to pages. component: templates call it with <x-webx-block type="{slug}">, and the picker leaves it out.'],
+            'title' => ['type' => 'string', 'description' => 'What editors see in the picker. Required unless customising a declared place.'],
             'description' => ['type' => ['string', 'null'], 'description' => 'One line under the title in the picker.'],
             'icon' => ['type' => ['string', 'null']],
             'group' => ['type' => 'string', 'enum' => is_array($groups) ? array_values($groups) : [], 'description' => 'The section of the picker.'],

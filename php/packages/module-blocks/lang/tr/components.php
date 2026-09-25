@@ -33,6 +33,7 @@ return [
     'called-by' => '«:title» bloğu',
     'module-views' => ':module modülünün görünümleri',
     'publish-text' => 'Sürüm, onu çağıran her blokta geçerli olur: :count.',
+    'publish-declared' => 'Site, :module modülünün onu bastığı her yerde ve onu çağıran her blokta bu sürüme geçer: :count.',
     'delete-called' => 'Onu bloklar çağırıyor, bu yüzden silinemez: :titles.',
     'delete-declared' => 'Standarda döndür',
     'delete-declared-title' => '«:title» standart görünüme döndürülsün mü?',

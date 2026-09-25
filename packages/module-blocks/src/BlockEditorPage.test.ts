@@ -167,6 +167,8 @@ describe('WxBlockEditorPage for a component', () => {
     expect(labels).not.toContain('Group')
     expect(labels).not.toContain('May hold')
     expect(labels).not.toContain('Per page')
+    // It is never in the picker, so there is nothing to offer or withhold.
+    expect(labels).not.toContain('Offered to editors')
 
     const danger = wrapper.get('.wx-block-editor__danger')
 

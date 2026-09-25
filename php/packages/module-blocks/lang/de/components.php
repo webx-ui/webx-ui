@@ -33,6 +33,7 @@ return [
     'called-by' => 'Block „:title“',
     'module-views' => 'Ansichten des Moduls :module',
     'publish-text' => 'Die Version gilt in jedem Block, der sie aufruft: :count.',
+    'publish-declared' => 'Die Website zeigt diese Version überall, wo das Modul :module sie druckt, und in jedem Block, der sie aufruft: :count.',
     'delete-called' => 'Blöcke rufen sie auf, daher kann sie nicht gelöscht werden: :titles.',
     'delete-declared' => 'Auf Standard zurücksetzen',
     'delete-declared-title' => '„:title“ auf die Standardansicht zurücksetzen?',

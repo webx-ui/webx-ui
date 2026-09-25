@@ -194,6 +194,8 @@ export const blocksMessages: Record<string, Messages> = {
     'called-by': 'block ":title"',
     'module-views': 'views of the module :module',
     'publish-text': 'The version takes effect in every block that calls it: :count.',
+    'publish-declared':
+      'The site switches to this version wherever the module :module prints it, and in every block that calls it: :count.',
     'delete-called': 'Blocks call it, so it cannot be deleted: :titles.',
     'delete-declared': 'Reset to standard',
     'delete-declared-title': 'Reset ":title" to the standard view?',

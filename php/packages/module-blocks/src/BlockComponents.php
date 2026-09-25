@@ -43,6 +43,16 @@ final class BlockComponents
         ];
     }
 
+    /**
+     * A declaration's title or description in the language of the request. A module declares at
+     * boot, before any request has a language, so it gives a translation key — and the words are
+     * looked up here, when somebody reads them. Plain text comes back as it is.
+     */
+    public static function words(?string $text): ?string
+    {
+        return $text === null ? null : (string) __($text);
+    }
+
     public function has(string $slug): bool
     {
         return isset($this->declared[$slug]);

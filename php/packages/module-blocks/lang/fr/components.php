@@ -33,6 +33,7 @@ return [
     'called-by' => 'bloc « :title »',
     'module-views' => 'vues du module :module',
     'publish-text' => 'La version s’applique dans chaque bloc qui l’appelle : :count.',
+    'publish-declared' => 'Le site passe à cette version partout où le module :module l’affiche, et dans chaque bloc qui l’appelle : :count.',
     'delete-called' => 'Des blocs l’appellent, il ne peut donc pas être supprimé : :titles.',
     'delete-declared' => 'Revenir au standard',
     'delete-declared-title' => 'Ramener « :title » à la vue standard ?',

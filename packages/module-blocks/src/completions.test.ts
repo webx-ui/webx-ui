@@ -138,6 +138,8 @@ describe('the template', () => {
       'gallery',
       'minutes',
       'servings',
+      'category_links',
+      'service_links',
       'nutrients',
       'fields',
     ])

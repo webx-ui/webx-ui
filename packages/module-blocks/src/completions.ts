@@ -108,6 +108,8 @@ const SOURCE_ITEMS: Record<string, string[]> = {
     'gallery',
     'minutes',
     'servings',
+    'category_links',
+    'service_links',
     'nutrients',
     'fields',
   ],

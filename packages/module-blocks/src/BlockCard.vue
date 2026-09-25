@@ -53,7 +53,11 @@ const t = useTranslate('webx-blocks')
           {{ t('page.live', { number: block.published.number }) }}
         </wx-badge>
         <wx-badge v-else type="default">{{ t('page.never-published') }}</wx-badge>
-        <wx-badge v-if="!block.is_enabled" type="default" variant="outline">
+        <wx-badge
+          v-if="!block.is_enabled && kindOf(block) !== 'component'"
+          type="default"
+          variant="outline"
+        >
           {{ t('page.hidden') }}
         </wx-badge>
       </div>

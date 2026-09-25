@@ -213,6 +213,16 @@ php/
   соседей (`^0.39`), а частичное обновление держит их на версиях из lock'а — «fixed to v0.37.0 …
   by a partial update». Два шага: `require "webx-ui/<пакет>:*" --no-update`, потом
   `update "webx-ui/*"`.
+- **Перевести слинкованный сайт на другой чекаут (worktree) — это не `composer update`.**
+  `MONOREPO=<worktree> node scripts/packages.mjs local` переписывает манифесты, `composer update
+"webx-ui/*"` честно пишет новый путь в `composer.lock` — а симлинки в `vendor/webx-ui` остаются
+  на прежний чекаут: версия та же, и composer считает пакет установленным. Выглядит как «правка
+  не доехала». Снять сами ссылки (`find vendor/webx-ui -maxdepth 1 -type l -delete` — только
+  ссылки, не `rm -rf`, см. выше) и `composer install`; с `node_modules/@webx-ui` так же и
+  `npm install`. **И обратно — минуту ждать:** PHP OSPanel держит realpath-кеш, и после возврата
+  на основной чекаут сайт ещё около минуты грузит классы по пути worktree — 500 «Class … not
+  found» с путём `webx-ui-<ветка>/…` в логе. Не чинить: подождать и проверить по содержимому
+  страницы — есть ли на ней то, что должно быть, — а не по одному коду ответа.
 - **В worktree `node_modules` — симлинк на основной чекаут, и `pnpm` это не переживает.** Любой
   `pnpm <скрипт>` оттуда либо отказывается («Refusing to use task run state directory … because
   it is a symbolic link»), либо — если решит, что сменился пакетный менеджер, — идёт по симлинку

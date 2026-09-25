@@ -33,6 +33,7 @@ return [
     'called-by' => 'blok „:title”',
     'module-views' => 'widoki modułu :module',
     'publish-text' => 'Wersja zacznie działać w każdym bloku, który go wywołuje: :count.',
+    'publish-declared' => 'Strona przełączy się na tę wersję wszędzie, gdzie drukuje ją moduł :module, i w każdym bloku, który ją wywołuje: :count.',
     'delete-called' => 'Wywołują go bloki, więc nie można go usunąć: :titles.',
     'delete-declared' => 'Przywróć standard',
     'delete-declared-title' => 'Przywrócić „:title” do widoku standardowego?',

@@ -33,6 +33,7 @@ return [
     'called-by' => 'bloque «:title»',
     'module-views' => 'vistas del módulo :module',
     'publish-text' => 'La versión se aplica en todos los bloques que lo llaman: :count.',
+    'publish-declared' => 'El sitio pasa a esta versión allí donde el módulo :module la muestra, y en cada bloque que la llama: :count.',
     'delete-called' => 'Lo llaman bloques, así que no se puede eliminar: :titles.',
     'delete-declared' => 'Volver al estándar',
     'delete-declared-title' => '¿Devolver «:title» a la vista estándar?',
