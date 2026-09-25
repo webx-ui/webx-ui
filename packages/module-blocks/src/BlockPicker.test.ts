@@ -61,4 +61,35 @@ describe('WxBlockPicker', () => {
 
     expect(offered).toEqual(['hero', 'text'])
   })
+
+  function offered(props: Record<string, unknown>): Promise<(string | null)[]> {
+    mount(BlockPicker, {
+      attachTo: document.body,
+      props: { catalog: [], ...props },
+      global: { stubs: { BlockThumb: true, RouterLink: true } },
+    })
+
+    return flushPromises().then(() =>
+      [...document.body.querySelectorAll('.wx-block-picker__title')].map((t) => t.textContent),
+    )
+  }
+
+  it('narrows the top level to what the field allows', async () => {
+    expect(
+      await offered({ catalog: [type('hero'), type('rich-text')], allow: ['rich-text'] }),
+    ).toEqual(['rich-text'])
+  })
+
+  /* The block editor's sample form: its top level is the block, not a page, so a type that
+     may stand only inside that block is offered there, and nothing the field leaves out is. */
+  it('treats the owning block as the parent of a sample constructor', async () => {
+    const owner = type('text-block', { allow: ['rich-text'] })
+
+    expect(
+      await offered({
+        catalog: [type('hero'), type('rich-text', { allowed_in: ['text-block'] }), owner],
+        parent: owner,
+      }),
+    ).toEqual(['rich-text'])
+  })
 })
