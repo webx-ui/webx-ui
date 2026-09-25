@@ -265,6 +265,19 @@ describe('WxRichText', () => {
     expect(wrapper.classes()).toContain('is-disabled')
   })
 
+  it('does not write the model when it is locked and unlocked', async () => {
+    // Tiptap reads `<li>text</li>` as `<li><p>text</p></li>`; stored HTML written elsewhere
+    // (seeders, an agent, an import) comes back different the moment anything is emitted.
+    const wrapper = await mountEditor({ modelValue: '<ul><li>One</li></ul>' })
+
+    await wrapper.setProps({ disabled: true })
+    await wrapper.setProps({ disabled: false })
+
+    expect(editorOf(wrapper).isEditable).toBe(true)
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+    expect(wrapper.emitted('change')).toBeUndefined()
+  })
+
   it('is not editable when readonly', async () => {
     const wrapper = await mountEditor({ readonly: true })
 
