@@ -187,4 +187,25 @@ describe('WxInboxSubmissionList', () => {
     // Reading is still reading: the export is behind `inbox.view` like the list itself.
     expect(wrapper.text()).toContain('Export')
   })
+
+  it("turns a page with one request, not the table's and a second one racing it", async () => {
+    const { wrapper, get, router } = panel([row(1, { name: 'Ada' })])
+
+    await flushPromises()
+    get.mockClear()
+
+    wrapper
+      .getComponent({ name: 'WxTable' })
+      .vm.$emit('state-change', { page: 2, perPage: 15, sort: null, search: '' })
+    await flushPromises()
+
+    expect(router.currentRoute.value.query.page).toBe('2')
+    // The address moving is not a new list: the watcher over the tab and the assignee stays
+    // quiet, or a second answer without `per_page` could land after the first and win.
+    const lists = get.mock.calls.filter(([path]) => String(path).endsWith('/submissions'))
+    expect(lists).toHaveLength(1)
+    expect(lists[0]?.[1]).toEqual(
+      expect.objectContaining({ query: expect.objectContaining({ page: 2, per_page: 15 }) }),
+    )
+  })
 })
