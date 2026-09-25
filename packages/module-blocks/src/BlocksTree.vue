@@ -17,16 +17,29 @@ const props = withDefaults(
     catalog: BlockType[]
     parentKey?: string | null
     field?: string | null
+    /** The field this level is, for its allow-list and limit; none at the top. */
+    fieldNode?: ScreenNode | null
+    /** How many blocks this level takes; a nested level reads it off its slot. */
+    max?: number | null
     selected?: string | null
     disabled?: boolean
     depth?: number
   }>(),
-  { parentKey: null, field: null, selected: null, disabled: false, depth: 0 },
+  {
+    parentKey: null,
+    field: null,
+    fieldNode: null,
+    max: null,
+    selected: null,
+    disabled: false,
+    depth: 0,
+  },
 )
 
 const emit = defineEmits<{
   select: [key: string]
-  add: [parentKey: string | null, field: string | null, node: ScreenNode | null]
+  /** `index` is where the block goes; without it, at the end of the list. */
+  add: [parentKey: string | null, field: string | null, node: ScreenNode | null, index?: number]
   remove: [key: string]
   duplicate: [key: string]
   visibility: [key: string, hidden: boolean]
@@ -63,8 +76,24 @@ function childrenIn(node: BlockNode, field: ScreenNode): BlockNode[] {
  * the icons took the name's place and the row read as a dash. The menu also has room for the
  * word, which an icon only says to whoever has already learned it (§20).
  */
-function actionsFor(node: BlockNode): RowAction[] {
+function actionsFor(node: BlockNode, index: number): RowAction[] {
+  const limit = props.fieldNode
+    ? ((props.fieldNode.props?.max as number | undefined) ?? null)
+    : props.max
+
   return [
+    /*
+     * The button under the list only appends, so a block meant for the middle of a long page
+     * was a trip to the bottom and a drag all the way back up. This one puts it where the
+     * editor already is. Not "add before": after the row above is the same place.
+     */
+    {
+      key: 'add-after',
+      icon: 'plus',
+      label: t('field.add-after'),
+      disabled: limit !== null && props.nodes.length >= limit,
+      run: () => emit('add', props.parentKey, props.field, props.fieldNode, index + 1),
+    },
     {
       key: 'visibility',
       icon: node.hidden === true ? 'eye' : 'eye-off',
@@ -101,7 +130,7 @@ function actionsFor(node: BlockNode): RowAction[] {
     :class="{ 'is-nested': depth > 0 }"
     @update:model-value="emit('reorder', parentKey, field, $event as BlockNode[])"
   >
-    <template #default="{ item }">
+    <template #default="{ item, index }">
       <div class="wx-blocks-tree__node">
         <div
           class="wx-blocks-tree__row"
@@ -146,7 +175,7 @@ function actionsFor(node: BlockNode): RowAction[] {
             <wx-icon name="eye-off" />
           </span>
           <span v-if="!disabled" class="wx-blocks-tree__actions">
-            <wx-row-menu :actions="actionsFor(item)" :label="titleOf(item)" />
+            <wx-row-menu :actions="actionsFor(item, index)" :label="titleOf(item)" />
           </span>
         </div>
 
@@ -156,11 +185,12 @@ function actionsFor(node: BlockNode): RowAction[] {
             :catalog="catalog"
             :parent-key="item.key"
             :field="slot.id"
+            :field-node="slot"
             :selected="selected"
             :disabled="disabled"
             :depth="depth + 1"
             @select="emit('select', $event)"
-            @add="(p, f, n) => emit('add', p, f, n)"
+            @add="(p, f, n, i) => emit('add', p, f, n, i)"
             @remove="emit('remove', $event)"
             @duplicate="emit('duplicate', $event)"
             @visibility="(key, hidden) => emit('visibility', key, hidden)"

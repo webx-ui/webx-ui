@@ -88,7 +88,7 @@ function field(value: BlockNode[] = tree()) {
  *
  * The menu's panel is teleported, so it is found in the document and clicked for real rather
  * than through the wrapper. Outside a panel the words are keys, so the lines are found by
- * place: what the row offers is switch off, duplicate, remove — and remove is destructive, so
+ * place: what the row offers is add after, switch off, duplicate, remove — and remove is destructive, so
  * `WxRowMenu` keeps it last whatever order it was written in.
  */
 async function choose(wrapper: ReturnType<typeof field>, row: number, item: number): Promise<void> {
@@ -196,7 +196,7 @@ describe('WxBlocks', () => {
   it('asks before removing a block that holds others', async () => {
     const wrapper = field()
 
-    await choose(wrapper, 1, 2)
+    await choose(wrapper, 1, 3)
 
     // Nothing has gone yet: what leaves with a container is not on screen, so it is asked
     // about. The count in the question is a translated line, so it reads as a key here.
@@ -212,7 +212,7 @@ describe('WxBlocks', () => {
   it('asks before removing a block that holds nothing either', async () => {
     const wrapper = field()
 
-    await choose(wrapper, 0, 2)
+    await choose(wrapper, 0, 3)
 
     // A block of its own used to go without a question. It is still one thing leaving a page
     // by one click, and the row it left from says its type rather than its words — so what
@@ -229,8 +229,8 @@ describe('WxBlocks', () => {
   it('switches a block off without touching what is in it', async () => {
     const wrapper = field()
 
-    // Switching off stands first in the menu, before duplicate and remove.
-    await choose(wrapper, 1, 0)
+    // Switching off stands second in the menu, after adding and before duplicate and remove.
+    await choose(wrapper, 1, 1)
 
     const off = emitted(wrapper)!
 
@@ -247,7 +247,7 @@ describe('WxBlocks', () => {
 
     expect(wrapper.findAll('.wx-blocks-tree__row')[1]!.classes()).toContain('is-hidden')
 
-    await choose(wrapper, 1, 0)
+    await choose(wrapper, 1, 1)
 
     // Back on the key is gone rather than false: the content is again what it was before
     // anybody hid it, which is what the revision guarding a save compares.
@@ -257,13 +257,47 @@ describe('WxBlocks', () => {
   it('duplicates a block with fresh keys, right after the original', async () => {
     const wrapper = field()
 
-    await choose(wrapper, 1, 1)
+    await choose(wrapper, 1, 2)
 
     const next = emitted(wrapper)!
     expect(next.length).toBe(3)
     expect(next[2]!.type).toBe('section')
     expect(next[2]!.key).not.toBe('b')
     expect((next[2]!.values.content as BlockNode[])[0]!.values.title).toBe('Inner')
+  })
+
+  /*
+   * The button under the list only appends; the row's own `···` puts the new block right
+   * under it, at the top level and inside a container alike.
+   */
+  it('adds a block right after the one whose menu was used', async () => {
+    const wrapper = field()
+
+    await choose(wrapper, 0, 0)
+    document.querySelector<HTMLElement>('.wx-block-picker__card')!.click()
+    await flushPromises()
+
+    const top = emitted(wrapper)!
+    expect(top.map((node) => node.key).slice(0, 1)).toEqual(['a'])
+    expect(top[1]!.type).toBe('hero')
+    expect(top[1]!.key).not.toBe('a')
+    expect(top[2]!.key).toBe('b')
+  })
+
+  it('adds after a nested block inside the same container', async () => {
+    const inner = tree()
+    ;(inner[1]!.values.content as BlockNode[]).push({ key: 'd', type: 'hero', values: {} })
+
+    const wrapper = field(inner)
+
+    await choose(wrapper, 2, 0)
+    document.querySelector<HTMLElement>('.wx-block-picker__card')!.click()
+    await flushPromises()
+
+    const kids = emitted(wrapper)![1]!.values.content as BlockNode[]
+    expect(kids.length).toBe(3)
+    expect(kids[0]!.key).toBe('c')
+    expect(kids[2]!.key).toBe('d')
   })
 
   it('leaves editing on Escape', async () => {

@@ -266,6 +266,7 @@ async function add(
   parentKey: string | null,
   field: string | null,
   slot: ScreenNode | null,
+  index?: number,
 ): Promise<void> {
   const parent = parentKey ? locate(tree.value, parentKey) : null
   const parentType = parent
@@ -295,7 +296,7 @@ async function add(
   if (!type) return
 
   const node = makeNode(type.slug, structuredSample(type))
-  set(insertNode(tree.value, parentKey, field, list.length, node))
+  set(insertNode(tree.value, parentKey, field, index ?? list.length, node))
   selectedKey.value = node.key
 }
 
@@ -490,6 +491,7 @@ const formRoot = computed(() =>
             <blocks-tree
               :nodes="tree"
               :catalog="catalog"
+              :max="max"
               :selected="selectedKey"
               :disabled="disabled"
               @select="select"
