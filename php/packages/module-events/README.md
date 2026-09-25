@@ -127,6 +127,39 @@ A card: `id`, `url`, `title`, `lead`, `cover`, `gallery`, `starts_at`, `ends_at`
 `all_day`, `when` (the date in words), `past`, `attendance`, `venue`, `price`, `booking_url`,
 `ics_url`, `categories` (ids), `category_links`, `fields`.
 
+## For an agent: MCP
+
+With the panel's MCP server on, the two sections are tools behind `events:read` / `events:write`
+and the categories' scopes:
+
+| Tool                 | What it does                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------ |
+| `events_list`        | The events to come (by default), the past ones or all, a page at a time — or the bin |
+| `events_get`         | One event in full: the values, the revision, a preview link                          |
+| `events_create`      | A new event as a draft, the row and its values in one transaction                    |
+| `events_update`      | The values into the draft, guarded by the revision, in one transaction               |
+| `events_duplicate`   | The panel's "Duplicate": a draft copy with the next free `-2`, `-3` address          |
+| `events_publish`     | The draft onto the site · `events_unpublish` takes it off                            |
+| `events_delete`      | To the bin, and its address is released                                              |
+| `event_categories_*` | `list`, `create`, `update`, `delete`, `reorder`                                      |
+
+An event is named by its id or its address, a service in `services` the same way, a category by
+its id or its slug. **Dates are ISO 8601**; one without an offset is read in the site's timezone,
+and the tools that write name that zone in their description, so an agent does not guess. An event
+of days takes the first and the last day (`"2026-10-12"`, `"2026-10-14"`). Read `events://catalog`
+first: every category with its events to come — drafts included, `when` as the site prints it —
+and a count of the past ones, the events in no category, the timezone and the currency.
+
+## Demo content
+
+`php artisan webx:demo` seeds three categories — breakfast meetups, cooking classes, private
+events — and six events (English and Russian, as far as the site has them), each showing one rule:
+one next week with its hours and a price as a number, one of three whole days in two categories,
+one online and free, one with no date and "Every Saturday, 9:00" instead, one a month ago with
+photos — its report — and one draft. **The dates are counted from the moment of seeding**, so the
+demo does not drift into the past. With `module-services` two events are linked to the demo
+services. `--remove` takes it back out; a site that already has events is left alone.
+
 ## License
 
 MIT

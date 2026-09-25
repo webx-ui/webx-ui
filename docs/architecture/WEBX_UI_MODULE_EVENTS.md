@@ -1,6 +1,6 @@
 # `webx-ui/module-events` — спецификация и план реализации
 
-Статус: спроектирован 25.09.2026, промпты сессий EV1–EV4 — в §6, ни одна не начата. Пакеты —
+Статус: спроектирован 25.09.2026, промпты сессий EV1–EV4 — в §6; EV1–EV3 сделаны, EV4 (выпуск) — впереди. Пакеты —
 `webx-ui/module-events` (composer) и `@webx-ui/module-events` (npm).
 
 События — мастер-классы, встречи, вебинары: запись с датой и временем, местом, ценой и внешней
@@ -589,6 +589,58 @@ package.json, package-lock.json, database/database.sqlite в скретчпад;
 install); индекс, категория, событие и .ics curl'ом — разметка Event в ответе. Ничего на сайте не
 коммитить — это EV4. В конце — «Итог EV3», коммит, пуш в claude.
 ```
+
+#### Итог EV3 (25.09.2026)
+
+`claude/feat/events-panel` влит без конфликтов (спека слилась сама, `lang/*` у EV2 не было);
+worktree `../webx-ui-events-panel` удалён (dev-сервер уже не жил), ветка оставлена до выпуска. В
+этом worktree теперь **свой** `node_modules` (`pnpm install --frozen-lockfile`), pnpm здесь
+безопасен; `dist` у tokens/core/schema/module-admin собран.
+
+- **MCP** (`Mcp\EventTools`, `Mcp\EventsResources`): восемь `events_*` через `EventList`,
+  `EventForm` и `Duplicate`; создание и сохранение — одна транзакция, копия — своя транзакция
+  `Duplicate`. `events_list` — `when` (`upcoming` по умолчанию), страницы по 50 (`page`, `pages`,
+  `total`), корзина. Даты — ISO 8601, строка без смещения — в поясе приложения, **имя пояса
+  подставляется в описание** инструментов (`Moment::zone()`); событие на дни принимает `"2026-10-12"`.
+  Строка в переводимом поле и внутри карточек `highlights` — язык по умолчанию. `event_categories_*`
+  — общий `CategoryTools`. `events://catalog`: категории с будущими (`when`, `written_in`, статус),
+  `past_count` у каждой и у «без категории», пояс и валюта.
+- **Демо** (`Demo\EventsDemo`, `resources/demo/events.json`) — ровно §4.12, даты от момента
+  посева (`in_days`/`at`), `requires()` — `media` и `services`, если стоит.
+- **Даты «на день» — было неверно, исправлено на npm-стороне.** Сервер отдаёт полночь и `23:59:59`
+  в поясе приложения; пикер читает момент, и западнее приложения первый день съезжал на день
+  раньше, а **восточнее — последний на день позже** (`23:59:59Z` в +13 — уже следующий день).
+  `packages/module-events/src/days.ts`: при загрузке формы (`take()`) у `all_day` те же дата и
+  часы переносятся на часы читателя (`…T00:00:00-04:00`), сервер режет день в пришедшем смещении
+  (`Moment::day()`) — туда и обратно тот же день. Тест `days.test.ts` меняет `TZ` (New York,
+  Auckland). Подсказка «точные моменты» в списке у `all_day` больше не рисуется. Мок плейграунда
+  теперь хранит дни как сервер (полночь/`23:59:59` в +08:00, день из пришедшего смещения). В
+  браузере (Europe/Kiev — западнее мока) «Fermentation intensive» — 15–17 октября и в поле, и в
+  ответе сервера после сохранения.
+- **Плейграунд**: `screens.ts` смотрит на `php/packages/module-events/resources/screens/*` и
+  патчи `module-seo` (копии EV2 были байт в байт те же), `server/panel/events/`,
+  `INTERIM_SCREEN_WORDS` и запасная ветка `lang.ts` удалены, `skipIf` в `messages.test.ts` снят —
+  паритет зелёный. Вкладка History работает (тип `wx-event-history` регистрирует `module.ts`
+  пакета; серверу регистрировать нечего — как у рецептов).
+- **Доки**: `apps/docs/guide/events.md` (всё из промпта плюс панель, API, конфиг) и ссылка в
+  сайдбаре; README npm-пакета; разделы MCP и демо в README composer-пакета. Changeset
+  `module-events-mcp-demo.md` (minor на `@webx-ui/php` и `@webx-ui/module-events`).
+- **Гейт**: php — pint, phpstan (холодный кеш) чисто, phpunit 1730 зелёных (`module-events` — 70,
+  из них 12 MCP, 5 демо, +1 без услуг). npm — vitest `module-events` 21, `vue-tsc` пакета, eslint и
+  prettier на своих файлах чисто. `docs:build` не гонялся — это EV4.
+- **Живьём на `webx-cms.local`** (local-режим на этот worktree, сайт после этого возвращён из
+  копий и `composer install`, ссылки снова на `webx-ui.local`): миграции, `webx:demo
+--module=events`; `/events`, категория, событие, прошедшее — 200, черновик — 404; `.ics` —
+  `VEVENT` с переносом по 75 октетов и `\,`; у события без даты `.ics` — 404; разметка `Event`
+  в ответе. `cat mcp.jsonl | php artisan mcp:start webx`: `events_list`, `events_list when=past`,
+  `events://catalog`, `events_create` (`18:00+03:00` → `15:00+00:00`, категория слагом),
+  `events_duplicate` (`spring-cooking-class-2`), `event_categories_list` — все ответили.
+
+**Для EV4:** в `scripts/packages.mjs` сайта `module-events` ещё нет (локальный прогон ставил его
+руками: `require --no-update` + `update "webx-ui/*"`); на `webx-cms.local` демо-услуги уже
+засеяны раньше, поэтому `webx:demo --module=events` связей с услугами не ставит — ставить
+тинкером по журналу услуг, как у рецептов. `WEBX_EVENTS_CURRENCY` на демо не задан — без него в
+`offers` нет цены (так и задумано), для проверки Rich Results стоит задать `HKD`.
 
 ### EV4 — выпуск
 

@@ -418,10 +418,11 @@ function address(event: EventRow): string {
 /**
  * The exact moments behind the printed line, in the reader's own zone — the line is the site's
  * (§4.6), in the site's zone and with `date_note` over it, and the tip is where "when exactly" is
- * answered.
+ * answered. Not for an event of days: its line is the dates already, and the moments behind it —
+ * midnight and the last second in the site's zone — would name other days in the reader's.
  */
 function exact(event: EventRow): string {
-  if (event.starts_at === null) return ''
+  if (event.starts_at === null || event.all_day) return ''
 
   const start = dates.exact(event.starts_at)
 

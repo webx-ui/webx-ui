@@ -99,12 +99,12 @@ function moment(value: unknown): string | null | undefined {
 }
 
 /** Midnight-based day arithmetic in the server's zone, for the seeds. */
-function daysFromNow(days: number, hour: number, minute = 0): string {
+function daysFromNow(days: number, hour: number, minute = 0, second = 0): string {
   const now = new Date()
   const local = new Date(now.getTime() + OFFSET_MINUTES * 60_000)
 
   local.setUTCDate(local.getUTCDate() + days)
-  local.setUTCHours(hour, minute, 0, 0)
+  local.setUTCHours(hour, minute, second, 0)
 
   return atom(new Date(local.getTime() - OFFSET_MINUTES * 60_000))
 }
@@ -334,7 +334,8 @@ event({
   slug: 'fermentation-intensive',
   lead: ['Три дня квашения, заквасок и терпения.', 'Three days of pickles, starters and patience.'],
   starts_at: daysFromNow(20, 0),
-  ends_at: daysFromNow(22, 0),
+  // Whole days, as the server keeps them: midnight of the first, the last second of the last.
+  ends_at: daysFromNow(22, 23, 59, 59),
   all_day: true,
   ...STUDIO,
   price: ['HK$2 400 за три дня', 'HK$2,400 for three days'],
@@ -670,6 +671,20 @@ export function writeEvent(
 
     if (read === undefined) errors[name] = ['This is not a date.']
     else values[name] = read
+  }
+
+  // An event of days is whole days, and the days are the ones in the offset the editor sent —
+  // not in the server's zone (`EventWriter`, `Moment::day()`): midnight of the first, the last
+  // second of the last.
+  if (after('all_day') === true) {
+    for (const [name, clock] of [
+      ['starts_at', 'T00:00:00+08:00'],
+      ['ends_at', 'T23:59:59+08:00'],
+    ] as const) {
+      if (typeof sent[name] === 'string' && errors[name] === undefined && values[name] !== null) {
+        values[name] = String(sent[name]).slice(0, 10) + clock
+      }
+    }
   }
 
   const starts = time(after('starts_at'))
@@ -1069,74 +1084,4 @@ export function text(value: unknown, locale: string): string {
 
 export function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
-}
-
-/**
- * The words of the two screen copies above, while the php half's `lang` is not on this branch —
- * `lang.ts` falls back on these for `webx-events::screen.*` only when there is no file to read.
- * EV3 takes both the copies and these away.
- */
-export const INTERIM_SCREEN_WORDS: Record<string, string> = {
-  event: 'Event',
-  when: 'When',
-  'all-day': 'All day',
-  'all-day-help': 'For an event of a day or several: the site prints the dates without the time.',
-  'starts-at': 'Starts',
-  'starts-on': 'First day',
-  'ends-at': 'Ends',
-  'ends-at-help': 'Optional. Without it the event is over the moment it starts.',
-  'ends-on': 'Last day',
-  'ends-on-help': 'Optional. The same day as the first, or leave it empty, for one day.',
-  'date-note': 'Date in words',
-  'date-note-help':
-    'Printed instead of the date: “every Saturday”, “dates to be announced”. Sorting, “over” and the calendar still go by the date.',
-  'date-note-placeholder': 'Every Saturday, 9:00',
-  where: 'Where',
-  attendance: 'Format',
-  'attendance-offline': 'In person',
-  'attendance-online': 'Online',
-  'attendance-mixed': 'Both',
-  venue: 'Venue',
-  address: 'Address',
-  'map-url': 'Link to the map',
-  booking: 'Booking',
-  price: 'Price',
-  'price-help': 'As the page prints it: “HK$480 per person”, “On request”.',
-  'price-amount': 'Price as a number',
-  'price-amount-help':
-    'Only for search engines, in the currency the site is set to. Zero means free. Empty — no price in the markup.',
-  'booking-url': 'Booking link',
-  'booking-url-help': 'Where “Book” leads. No link, or the event is over — no button.',
-  photos: 'Photos',
-  gallery: 'Gallery',
-  'gallery-help': 'The first picture is the cover. For an event that is over, this is the report.',
-  about: 'About',
-  description: 'Description',
-  highlights: 'What to expect',
-  'highlights-help': 'A heading and a line or two each. The same cards in every language.',
-  'highlight-title': 'Heading',
-  'highlight-text': 'Text',
-  settings: 'Settings',
-  naming: 'Name and address',
-  title: 'Title',
-  slug: 'Address',
-  'slug-help': 'The address of the event page. Changing it keeps the old one working.',
-  lead: 'Lead',
-  'lead-help': 'One or two sentences for the cards and the search engines. No formatting.',
-  taxonomy: 'Filing',
-  categories: 'Categories',
-  'categories-help': 'The first one is the main one: it goes in the breadcrumbs.',
-  services: 'Services',
-  'services-help': 'The services this event belongs to. Shown on its page.',
-  seo: 'SEO',
-  'seo-empty': 'Install the SEO module to edit the title and description for search engines.',
-  history: 'History',
-  content: 'Content',
-  visible: 'Shown on the site',
-  'category-visible-help': 'A hidden category has no page. Its events stay on the site.',
-  'category-lead': 'Introduction',
-  'category-lead-help': 'Printed above the events of the category.',
-  presentation: 'Presentation',
-  cover: 'Cover',
-  'category-cover-help': 'The picture of the category page and its card.',
 }

@@ -8,6 +8,10 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Relations\Relations;
+use WebxUi\Events\Demo\EventsDemo;
+use WebxUi\Mcp\Registry\ToolRegistry;
+use WebxUi\Mcp\Server\RegistryTool;
+use WebxUi\Mcp\Server\WebxServer;
 use WebxUi\Services\ServicesServiceProvider;
 
 /**
@@ -77,5 +81,18 @@ final class WithoutServicesTest extends TestCase
 
         // A copy of it does not fail either, and does not carry what nobody can see.
         $this->actingAs($this->editor(), 'cms')->postJson($this->api($event->id.'/duplicate'))->assertCreated();
+    }
+
+    #[Test]
+    public function the_demo_asks_for_the_library_alone_and_an_agent_is_told_why_it_cannot_link(): void
+    {
+        $this->assertSame(['media'], $this->app->make(EventsDemo::class)->requires());
+
+        $event = $this->event('class', '2030-10-12 10:00:00');
+        $tool = new RegistryTool($this->app->make(ToolRegistry::class)->tool('events_update'));
+
+        WebxServer::actingAs($this->editor(), 'cms')
+            ->tool($tool, ['event' => $event->id, 'values' => ['services' => [1]]])
+            ->assertHasErrors(['no services module']);
     }
 }

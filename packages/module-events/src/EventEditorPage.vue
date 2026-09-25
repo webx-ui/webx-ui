@@ -31,6 +31,7 @@ import {
 } from '@webx-ui/core'
 import type { ScreenModel } from '@webx-ui/schema'
 import { createEventsApi } from './api'
+import { withDaysAsWritten } from './days'
 import { provideEventEditor } from './editor'
 import { useEventsMessages } from './i18n'
 import type { EventConflict, EventDetail, EventRow } from './types'
@@ -139,12 +140,15 @@ provideRecordAddress({
 provideEventEditor({ event, canManage: canManage.value, reload: () => load(true) })
 
 function take(detail: EventDetail): void {
+  // An event of days is its calendar dates, not two moments in the site's zone: see `days.ts`.
+  const taken = withDaysAsWritten(detail.values)
+
   event.value = detail.event
-  values.value = detail.values
+  values.value = taken
   revision.value = detail.revision
   prefix.value = detail.prefix
   previewUrl.value = detail.preview_url
-  snapshot.value = JSON.stringify(detail.values)
+  snapshot.value = JSON.stringify(taken)
   conflict.value = null
 }
 
