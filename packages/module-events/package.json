@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-events",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Events for the WebX UI admin panel: master classes, meetings and webinars with a date, a place, a price and a booking link, flat categories with pages of their own, and the services they belong to.",
   "license": "MIT",
   "type": "module",
