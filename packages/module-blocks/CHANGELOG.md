@@ -1,5 +1,11 @@
 # @webx-ui/module-blocks
 
+## 0.10.1
+
+### Patch Changes
+
+- 0e1ce8f: Letting go of a dragged block card no longer opens that block: the click a real mouse sends after the drop is ignored.
+
 ## 0.10.0
 
 ### Minor Changes
