@@ -15,6 +15,7 @@
     "@webx-ui/module-auth": "workspace:*",
     "@webx-ui/module-blocks": "workspace:*",
     "@webx-ui/module-blog": "workspace:*",
+    "@webx-ui/module-events": "workspace:*",
     "@webx-ui/module-faq": "workspace:*",
     "@webx-ui/module-inbox": "workspace:*",
     "@webx-ui/module-media": "workspace:*",
