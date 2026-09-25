@@ -365,11 +365,17 @@ final class PageTools
         $page = new Page;
         $page->setTranslations('title', $title);
         $page->setTranslations('slug', $slug);
-        $page->appendTo($parent);
 
-        if ($values !== []) {
-            $this->write($page, $values, $user);
-        }
+        // One transaction for the node and its values: a value the screen refuses must not leave
+        // a bare page in the tree with its address already taken — the routing observer writes
+        // the address on `created`, inside this same transaction, so it goes with the node.
+        $page->getConnection()->transaction(function () use ($page, $parent, $values, $user): void {
+            $page->appendTo($parent);
+
+            if ($values !== []) {
+                $this->write($page, $values, $user);
+            }
+        });
 
         return $this->get(['page' => $page->refresh()->getKey()], $user);
     }
