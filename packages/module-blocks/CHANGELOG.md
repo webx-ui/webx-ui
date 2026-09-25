@@ -1,5 +1,11 @@
 # @webx-ui/module-blocks
 
+## 0.9.3
+
+### Patch Changes
+
+- 3893f13: A block's `···` menu offers "Add after": the new block goes right under that one, at the top level and inside a container alike, instead of at the end of the list.
+
 ## 0.9.2
 
 ### Patch Changes
