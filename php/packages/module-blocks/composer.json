@@ -62,7 +62,7 @@
         "webx": {
             "module": "blocks",
             "npm": {
-                "@webx-ui/module-blocks": "^0.10.0"
+                "@webx-ui/module-blocks": "^0.10.1"
             },
             "panel": {
                 "import": "import { blocks } from '@webx-ui/module-blocks'",
