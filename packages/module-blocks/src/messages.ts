@@ -121,6 +121,7 @@ export const blocksMessages: Record<string, Messages> = {
     blocks: 'Blocks',
     add: 'Add a block',
     'add-inside': 'Add inside',
+    'add-after': 'Add after',
     done: 'Done',
     remove: 'Remove',
     'remove-title': 'Remove ":title"?',
