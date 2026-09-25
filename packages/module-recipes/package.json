@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-recipes",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Recipes for the WebX UI admin panel: a gallery, ingredients, method and nutrition, flat categories with pages of their own, and the nutrients a recipe is rich in.",
   "license": "MIT",
   "type": "module",
