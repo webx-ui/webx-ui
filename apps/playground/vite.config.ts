@@ -76,6 +76,7 @@ export default defineConfig({
       pkg('module-auth'),
       pkg('module-blocks'),
       pkg('module-blog'),
+      pkg('module-events'),
       pkg('module-faq'),
       pkg('module-inbox'),
       pkg('module-media'),

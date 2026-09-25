@@ -454,6 +454,65 @@ WxScreenRepeater здесь.
 на своей ветке, коммит, пуш в claude.
 ```
 
+#### Итог EV2 (25.09.2026)
+
+Ветка `feat/events-panel` (worktree `../webx-ui-events-panel`, от `claude/feat/module-events` на
+`ee70bcf8` — итога EV1 к концу сессии на ветке ещё не было, поэтому формы — ровно по §4.10).
+
+- **`packages/module-events`** (0.0.0, changeset minor): `events()` — два модуля панели
+  (`events`, `event-categories`), категории — `categoryRoutes(eventCategoriesOptions())`, счётчик
+  `events_count`, ссылка «показать события» ведёт в `?category=<id>&view=all`. Список —
+  `WxTable` по образцу статей блога (пагинатор как есть, карточки ниже 640 px). **«Когда» —
+  вкладками**: Upcoming (по умолчанию) · Past · All · Bin; состояние, категория и услуга — за
+  воронкой. Прошедшие в All — приглушённая строка (`rowClass` → `is-past`). Колонка «When» —
+  строка `when` сервера, в подсказке — точные моменты в поясе читателя; без даты и без
+  `date_note` — «No date». Редактор — как у рецептов (автосейв, ревизия, 409, 422 под полем,
+  предпросмотр, история), под названием — `when` сервера, у прошедшего — бейдж «Over».
+  «Duplicate» — в меню строки и в `WxActionBar` редактора (сначала сохраняет, потом открывает
+  копию); на узком экране кнопка иконочная, иначе состояние бара уезжает на свою строку.
+- **API-клиент шлёт `when` всегда** (`?when=upcoming` и т. д.), корзина — `when=all&trashed=1`,
+  страница — `page`/`per_page` (таблица шлёт `per_page=15`). Фильтр `status=published` мок
+  понимает как «обе зелёные» (published + modified) — серверу стоит так же.
+- **`localized` внутри `wx-repeater` работает без правки** `WxScreenRepeater`: чип языка в строке,
+  значение `{ru,en}` на ключе туда и обратно — проверено тестом и в браузере.
+- **`all_day` прячет время двумя узлами на одно имя**: `starts-at`/`ends-at` (`type: datetime`,
+  `visible: {when: all_day, not: true}`) и `starts-on`/`ends-on` (`type: date`, `visible: {when:
+all_day, is: true}`), оба с `valueFormat: "yyyy-MM-dd'T'HH:mm:ssXXX"`. Одинаковые `name` схема
+  допускает (запрещены только одинаковые `id`); время при переключении не теряется. Место
+  (`venue`, `address`, `map_url`) — `visible: {when: attendance, not: online}`.
+- **Плейграунд**: `apps/playground/server/panel/events.ts` — «сервер» в поясе Asia/Hong_Kong
+  (+08:00), даты фикстуры от текущего момента, 29 событий (6 показательных + 22 прошедших
+  завтрака на две страницы Past + одно в корзине), `when` по §4.6, 422 на `ends_at`, дублирование
+  со слагом `-2`, предпросмотр `/preview/event/<id>` по §4.5. Картинки — папка «События» в
+  `media.ts`. Модуль в `main.ts`, алиас в `vite.config.ts`, зависимость в `package.json` и lock.
+- **Копии экранов** — `apps/playground/server/panel/events/{form,category-form}.json` и SEO-патчи
+  `seo.events.*.json`, подключены в `screens.ts`. Слова `webx-events::*` до прихода php-половины
+  отдаёт `lang.ts` из `messages.ts` пакета и `INTERIM_SCREEN_WORDS` в `events.ts` — только когда
+  файлов `php/packages/module-events/lang` нет.
+- Тесты: 14 (`EventsPage`, `EventEditorPage`), `messages.test.ts` (паритет) — `describe.skipIf`,
+  пока на ветке нет `php/packages/module-events/lang/en`. `vue-tsc`, eslint, prettier, `vite
+build` пакета — чисто.
+- В браузере (5187): список, вкладки, пагинация Past и All, приглушённые прошедшие; создание;
+  даты настоящим пикером при поясе браузера Europe/Kiev — 14:00 в поле = `19:00+08:00` на
+  сервере, после перезагрузки те же 14:00; 422 под «Ends»; `all_day` меняет оба пикера на даты и
+  обратно без потери времени; Online прячет место; «Чего ожидать» на RU и EN в одной строке;
+  дублирование из редактора (черновик, `-2`, категории и услуги на месте); Settings, SEO,
+  History, предпросмотр прошедшего (пометка, без кнопки); 375 px светлая и тёмная — без
+  горизонтальной прокрутки.
+
+**EV1 должен завести в `php/packages/module-events/lang/*`** группы `module`, `panel`, `event`,
+`category` — ключ в ключ с `packages/module-events/src/messages.ts` (английский оттуда же), и
+группу `screen` для своих экранов; если EV1 берёт мою раскладку `events.form`, ключи `screen.*` и
+английский — в `INTERIM_SCREEN_WORDS`. Права, которые проверяет панель: `events.manage`,
+`events.categories.manage`; манифест: группа `events` (иконка `calendar`), модули `events` и
+`event-categories`.
+
+**EV3:** экраны в `screens.ts` перевести на `php/packages/module-events/resources/screens/*` и
+SEO-патчи `module-seo`, удалить `server/panel/events/`, `INTERIM_SCREEN_WORDS` и запасную ветку
+в `lang.ts`, снять `skipIf` в `messages.test.ts`. Попутно найдено: у списка статей блога
+(`ArticlesPage.vue`) `watch(() => [..] as const)` срабатывает на каждую смену адреса и
+перечитывает страницу второй раз без `per_page` — у событий исправлено источниками по одному.
+
 ### EV3 — слияние, MCP, демо, доки
 
 ```

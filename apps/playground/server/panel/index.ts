@@ -162,6 +162,30 @@ import {
   type TermKind as RecipeTermKind,
 } from './recipes'
 import { drawRecipePage, RECIPE_PAGE_STYLES } from './recipes-site'
+import {
+  createEvent,
+  createTerm as createEventTerm,
+  discard as discardEvent,
+  drawEventPage,
+  duplicateEvent,
+  EVENT_PAGE_STYLES,
+  eventDetail,
+  find as findEvent,
+  findTerm as findEventTerm,
+  listEvents,
+  publish as publishEvent,
+  reorderTerms as reorderEventTerms,
+  restoreVersion as restoreEventVersion,
+  revision as eventRevision,
+  row as eventRow,
+  termDetail as eventTermDetail,
+  termRow as eventTermRow,
+  eventCategories,
+  writeEvent,
+  writeTerm as writeEventTerm,
+  PREFIX as EVENTS_PREFIX,
+  type EventRecord,
+} from './events'
 import { relationCandidates } from './relations'
 import { screen, screenNames } from './screens'
 import {
@@ -301,6 +325,12 @@ on('GET', '/manifest', ({ locale }) => ({
         icon: 'heart',
         order: 700,
       },
+      {
+        id: 'events',
+        title: line(locale, 'webx-events', 'module.group'),
+        icon: 'calendar',
+        order: 750,
+      },
       { id: 'system', title: line(locale, 'webx-admin', 'nav.system'), icon: 'gear', order: 900 },
     ],
     modules: [
@@ -439,6 +469,24 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 720,
         group: 'recipes',
         permissions: ['recipes.categories.manage'],
+        meta: {},
+      },
+      {
+        id: 'events',
+        title: line(locale, 'webx-events', 'module.events'),
+        icon: 'calendar',
+        order: 750,
+        group: 'events',
+        permissions: ['events.view', 'events.manage'],
+        meta: {},
+      },
+      {
+        id: 'event-categories',
+        title: line(locale, 'webx-events', 'module.categories'),
+        icon: 'folder',
+        order: 760,
+        group: 'events',
+        permissions: ['events.categories.manage'],
         meta: {},
       },
       {
@@ -3529,6 +3577,170 @@ function recipeTerm(kind: RecipeTermKind, id: string) {
   return record
 }
 
+/* ------------------------------------------------------------------------------ events ----- */
+
+/*
+ * The events (§4.10 of the events spec): a page of them, the upcoming ones by default, and every
+ * moment answered in the server's zone with its offset (`events.ts`).
+ */
+on('GET', '/events', ({ query, locale }) => listEvents(query, locale))
+
+on('POST', '/events', ({ body, locale }) => {
+  const title = String(body.title ?? 'Новое событие')
+  const slug = typeof body.slug === 'string' && body.slug !== '' ? body.slug : slugify(title)
+
+  return { data: eventDetail(createEvent(title, slug), locale) }
+})
+
+on('GET', '/events/(\\d+)', ({ params, locale }) => ({
+  data: eventDetail(eventRecord(params[0]), locale),
+}))
+
+on('PUT', '/events/(\\d+)', ({ params, body, locale }) => {
+  const record = eventRecord(params[0])
+  const sent = { ...((body.values ?? {}) as Record<string, unknown>) }
+
+  if (typeof body.revision === 'string' && body.revision !== eventRevision(record)) {
+    throw new HttpFailure(
+      409,
+      'Кто-то сохранил это событие, пока вы его редактировали.',
+      eventDetail(record, locale),
+    )
+  }
+
+  if (sent.title !== undefined && Object.values(asMap(sent.title, '')).every((one) => !one)) {
+    throw new HttpFailure(422, 'Invalid', undefined, {
+      title: ['Название нужно хотя бы на одном языке.'],
+    })
+  }
+
+  if (sent.seo !== undefined) sent.seo = storedSeo(sent.seo)
+
+  const errors = writeEvent(record, sent)
+
+  if (errors !== null) throw new HttpFailure(422, 'Invalid', undefined, errors)
+
+  return { data: eventDetail(record, locale) }
+})
+
+on('DELETE', '/events/(\\d+)', ({ params }) => {
+  eventRecord(params[0]).deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+on('POST', '/events/(\\d+)/restore', ({ params, locale }) => {
+  const record = eventRecord(params[0])
+
+  record.deleted_at = null
+
+  return { data: eventRow(record, locale) }
+})
+
+on('POST', '/events/(\\d+)/discard', ({ params, locale }) => {
+  const record = eventRecord(params[0])
+
+  discardEvent(record)
+
+  return { data: eventDetail(record, locale) }
+})
+
+/* Decision 9: the copy's form, so the panel can open it at once. */
+on('POST', '/events/(\\d+)/duplicate', ({ params, locale }) => ({
+  data: eventDetail(duplicateEvent(eventRecord(params[0])), locale),
+}))
+
+on('POST', '/events/(\\d+)/publish', ({ params, locale }) => {
+  const record = eventRecord(params[0])
+
+  publishEvent(record)
+
+  return { data: eventRow(record, locale) }
+})
+
+on('POST', '/events/(\\d+)/unpublish', ({ params, locale }) => {
+  const record = eventRecord(params[0])
+
+  record.status = 'unpublished'
+  record.published_at = null
+  record.updated_at = new Date().toISOString()
+
+  return { data: eventRow(record, locale) }
+})
+
+on('GET', '/events/(\\d+)/versions', ({ params }) => ({ data: eventRecord(params[0]).versions }))
+
+on('POST', '/events/(\\d+)/versions/(\\d+)/restore', ({ params, locale }) => {
+  const record = eventRecord(params[0])
+
+  if (!restoreEventVersion(record, Number(params[1]))) {
+    throw new HttpFailure(404, 'No such version.')
+  }
+
+  return { data: eventDetail(record, locale) }
+})
+
+/* The categories: the panel's shared category API, as the recipes have it. */
+on('GET', '/events/categories', ({ locale }) => ({
+  data: eventCategories
+    .filter((one) => one.deleted_at === null)
+    .map((one) => eventTermRow(one, locale)),
+  prefix: EVENTS_PREFIX,
+}))
+
+on('POST', '/events/categories', ({ body, locale }) => {
+  const title = localized(body.title) || 'Новая категория'
+  const slug = localized(body.slug) || slugify(title)
+
+  return { data: eventTermRow(createEventTerm(asMap(body.title, title), slug), locale) }
+})
+
+on('POST', '/events/categories/reorder', ({ body }) => {
+  reorderEventTerms(Array.isArray(body.ids) ? (body.ids as unknown[]).map(Number) : [])
+
+  return { data: null }
+})
+
+on('GET', '/events/categories/(\\d+)', ({ params, locale }) => ({
+  data: eventTermDetail(eventTerm(params[0]), locale),
+}))
+
+on('PUT', '/events/categories/(\\d+)', ({ params, body, locale }) => {
+  const record = eventTerm(params[0])
+  const errors = writeEventTerm(record, (body.values ?? {}) as Record<string, unknown>, locale)
+
+  if (errors !== null) throw new HttpFailure(422, 'Invalid', undefined, errors)
+
+  return { data: eventTermDetail(record, locale) }
+})
+
+on('DELETE', '/events/categories/(\\d+)', ({ params, locale }) => {
+  const record = eventTerm(params[0])
+  const count = eventTermRow(record, locale).events_count
+
+  if (count > 0) throw new HttpFailure(422, `Событий здесь ещё: ${count}.`)
+
+  record.deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+function eventRecord(id: string): EventRecord {
+  const record = findEvent(Number(id))
+
+  if (record === null) throw new HttpFailure(404, 'No such event.')
+
+  return record
+}
+
+function eventTerm(id: string) {
+  const record = findEventTerm(Number(id))
+
+  if (record === null) throw new HttpFailure(404, 'No such category.')
+
+  return record
+}
+
 /* ------------------------------------------------------------------------------- media ----- */
 
 on('GET', '/media/directories', () => ({ data: directories }))
@@ -4163,6 +4375,21 @@ function previewRecipe(id: number): string {
   )
 }
 
+/** The draft of an event, drawn as its page (§4.5) — no blocks, like a recipe. */
+function previewEvent(id: number): string {
+  const record = findEvent(id)
+
+  if (record === null) {
+    return missingPreview('No such event.')
+  }
+
+  return siteLayout(
+    `#${record.id}`,
+    `<style>${EVENT_PAGE_STYLES}</style>`,
+    drawEventPage(record, 'ru'),
+  )
+}
+
 function missingPreview(message: string): string {
   return `<!doctype html><title>404</title><p>${message}</p>`
 }
@@ -4376,7 +4603,9 @@ export function panelServer(): Plugin {
           return
         }
 
-        const preview = url.pathname.match(/^\/preview\/(page|article|service|recipe)\/(\d+)$/)
+        const preview = url.pathname.match(
+          /^\/preview\/(page|article|service|recipe|event)\/(\d+)$/,
+        )
 
         if (preview !== null) {
           const id = Number(preview[2])
@@ -4389,7 +4618,9 @@ export function panelServer(): Plugin {
                 ? previewService(id)
                 : preview[1] === 'recipe'
                   ? previewRecipe(id)
-                  : previewArticle(id),
+                  : preview[1] === 'event'
+                    ? previewEvent(id)
+                    : previewArticle(id),
           )
 
           return
