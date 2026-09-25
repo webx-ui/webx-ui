@@ -131,6 +131,8 @@ and prints them with `@webxPart('recipe-card', ['card' => $card], 'webx-recipes:
 (`module-admin`), which is the partial when this package is not installed. `POST
 /blocks/components/{slug}/customise` — **Customise** in the panel, `blocks_create` for an agent —
 starts a component from the fallback view as the site has it; deleting it brings the partial back.
+The module's page prints `@webxPartAssets` in its head, after rendering its body — the bundle of
+what the customised parts brought, or nothing without this package.
 Calls from a site's own views are not tracked: give them a `fallback`.
 
 ## What happens when a block fails
