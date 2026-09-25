@@ -8,7 +8,6 @@ use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use WebxUi\Localization\Locales;
 use WebxUi\Recipes\Models\Recipe;
-use WebxUi\Recipes\Models\RecipeCategory;
 use WebxUi\Recipes\Models\RecipeNutrient;
 use WebxUi\Services\Rendering\ServiceQuery;
 
@@ -20,7 +19,7 @@ use WebxUi\Services\Rendering\ServiceQuery;
  *     $pictures      the gallery, resolved; the first is the cover
  *     $title, $lead
  *     $minutes, $servings
- *     $categories    [{ title, url }] — visible, with an address in this language
+ *     $categories    [{ id, title, url }] — visible, with an address in this language
  *     $nutrients     [{ id, title }] — visible
  *     $ingredients, $method   HTML as stored (the field type cleaned it on the way in)
  *     $nutrition     [key => text] — only what is written in this language
@@ -41,14 +40,6 @@ final class RecipePage
     {
         $locale = $this->locales->current();
 
-        $categories = [];
-
-        foreach ($recipe->shownCategories() as $category) {
-            if ($category instanceof RecipeCategory && $category->isVisible($locale) && $category->hasUrlIn($locale)) {
-                $categories[] = ['title' => $category->displayName($locale), 'url' => $category->url($locale)];
-            }
-        }
-
         $nutrients = [];
 
         foreach ($recipe->shownNutrients() as $nutrient) {
@@ -64,7 +55,7 @@ final class RecipePage
             'lead' => (string) $recipe->getTranslation('lead', $locale),
             'minutes' => $recipe->total_minutes,
             'servings' => $recipe->servings,
-            'categories' => $categories,
+            'categories' => $this->cards->categoryLinks($recipe, $locale),
             'nutrients' => $nutrients,
             'ingredients' => $recipe->html('ingredients', $locale),
             'method' => $recipe->html('method', $locale),

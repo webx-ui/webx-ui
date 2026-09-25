@@ -24,6 +24,7 @@ use Illuminate\Support\Carbon;
  * @property string $styles
  * @property string|null $script
  * @property array<string, mixed> $sample
+ * @property list<string>|null $uses
  * @property int|null $author_id
  * @property string $source
  * @property string|null $comment
@@ -45,7 +46,7 @@ class BlockVersion extends Model
     protected $table = 'block_versions';
 
     protected $fillable = [
-        'block_id', 'number', 'schema', 'template', 'styles', 'script', 'sample',
+        'block_id', 'number', 'schema', 'template', 'styles', 'script', 'sample', 'uses',
         'author_id', 'source', 'comment',
     ];
 
@@ -58,6 +59,7 @@ class BlockVersion extends Model
             'number' => 'integer',
             'schema' => 'array',
             'sample' => 'array',
+            'uses' => 'array',
             'author_id' => 'integer',
         ];
     }
@@ -66,6 +68,17 @@ class BlockVersion extends Model
     public function block(): BelongsTo
     {
         return $this->belongsTo(Block::class, 'block_id');
+    }
+
+    /**
+     * The types this version's template calls by tag. A row the migration has not reached reads
+     * as calling none.
+     *
+     * @return list<string>
+     */
+    public function calls(): array
+    {
+        return array_values(array_filter($this->uses ?? [], 'is_string'));
     }
 
     /**

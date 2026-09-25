@@ -79,6 +79,38 @@ Fill every field with a believable value in the site's language — it is the th
 picks the block by, the values the publish check runs on, and the clearest documentation of the
 data shape. For a container, `sample` may include nested blocks.
 
+## Components
+
+A type with `kind: "component"` is not added to pages by editors: templates call it by tag, the
+way a partial is included. Make one for a piece of markup that repeats **inside** other
+templates — a card in a list, a badge, a price line — so that changing it once changes it
+everywhere.
+
+```blade
+<x-webx-block type="recipe-card" :card="$card" />
+<x-webx-block type="section" :title="$title">
+    …body, printed as {{ $slot }}…
+    <x-slot:aside>…</x-slot:aside>
+</x-webx-block>
+```
+
+- The schema is the component's input. A `wx-data` node is a value the caller passes from code
+  (`:card="$card"`); its `props.shape` names a form a module registered, and `blocks_get` lists
+  its keys under `shape`. A `wx-slot` node is a named slot. Any other field works too, as an
+  attribute: `tone="dark"`.
+- `type` must be a literal. `:type="$x"` works, but nothing then knows who calls what, and the
+  checks below cannot protect the caller.
+- A change to a component reaches every type that calls it. Before you change one, read its
+  `used_by`; publishing is refused when the new version breaks one of them on its sample or on
+  a page it stands on, and the refusal names which.
+- Modules declare places they call a component from (`declared` in `blocks_list`), such as
+  `recipe-card`. Until the site customises one, the module's own view prints there.
+  `blocks_create` with that slug and no template starts the component from that view, with the
+  module's input and a real sample; publishing it switches the site over. There is no tool to
+  delete a type: going back to the module's look is a person's decision in the panel.
+- Calls from the site's own view files are invisible to all of this. A component such a view
+  calls should be given a `fallback` there.
+
 ## The loop
 
 1. Create the type as a draft with `blocks_create`.

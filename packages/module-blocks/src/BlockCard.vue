@@ -2,11 +2,23 @@
 import { useTranslate } from '@webx-ui/module-admin'
 import { WxBadge, WxText } from '@webx-ui/core'
 import BlockThumb from './BlockThumb.vue'
-import { usageWords } from './schema'
+import { callerWords, kindOf, usageWords } from './schema'
 import type { BlockType } from './types'
 
-/** One type in the list: its picture, its name, where it stands and which versions it has. */
-defineProps<{ block: BlockType }>()
+/**
+ * One type in the list: its picture, its name, where it stands and which versions it has.
+ *
+ * A component stands on no page — it stands in other blocks — so its line counts those instead,
+ * and one a module declared says which module's view it replaced.
+ */
+withDefaults(
+  defineProps<{
+    block: BlockType
+    /** The name of the module that declared this slug, when one did. */
+    module?: string | null
+  }>(),
+  { module: null },
+)
 
 const emit = defineEmits<{ open: [block: BlockType] }>()
 
@@ -15,13 +27,23 @@ const t = useTranslate('webx-blocks')
 
 <template>
   <button type="button" class="wx-block-card" @click="emit('open', block)">
-    <block-thumb :thumbnail="block.thumbnail" :height="120" />
+    <!-- A component is a piece that stands inside a column — a card, a badge — so it is drawn
+         at a column's width: at a desktop's it is a speck in the corner of the picture. -->
+    <block-thumb
+      :thumbnail="block.thumbnail"
+      :height="120"
+      :width="kindOf(block) === 'component' ? 360 : undefined"
+    />
     <div class="wx-block-card__body">
       <div class="wx-block-card__title">{{ block.title }}</div>
       <wx-text size="sm" tone="muted">
         <code>{{ block.slug }}</code>
         ·
-        {{ usageWords(block.usage_count, t) }}
+        <template v-if="kindOf(block) === 'component'">
+          {{ callerWords(block.used_by?.length ?? 0, t) }}
+          <template v-if="module">· {{ t('components.module', { module }) }}</template>
+        </template>
+        <template v-else>{{ usageWords(block.usage_count, t) }}</template>
       </wx-text>
       <div class="wx-block-card__chips">
         <wx-badge v-if="block.draft" type="warning" dot>
@@ -31,7 +53,11 @@ const t = useTranslate('webx-blocks')
           {{ t('page.live', { number: block.published.number }) }}
         </wx-badge>
         <wx-badge v-else type="default">{{ t('page.never-published') }}</wx-badge>
-        <wx-badge v-if="!block.is_enabled" type="default" variant="outline">
+        <wx-badge
+          v-if="!block.is_enabled && kindOf(block) !== 'component'"
+          type="default"
+          variant="outline"
+        >
           {{ t('page.hidden') }}
         </wx-badge>
       </div>

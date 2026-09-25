@@ -11,8 +11,12 @@ use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Panel\BlockInput;
+use WebxUi\Blocks\Panel\CallCycle;
+use WebxUi\Blocks\Panel\Graph;
 use WebxUi\Blocks\Panel\Publisher;
 use WebxUi\Blocks\Panel\PublishFailed;
+use WebxUi\Blocks\Panel\Usage;
+use WebxUi\Blocks\Rendering\Calls;
 
 /**
  * Block types back from their files (§17).
@@ -23,6 +27,9 @@ use WebxUi\Blocks\Panel\PublishFailed;
  * files twice writes nothing. `--publish` runs the publish checks on what was written and
  * publishes what passes; a type that fails is reported and left as a draft, and the command
  * says so with its exit code.
+ *
+ * The files are written in the order of the call graph — what is called before what calls it —
+ * so that publishing a parent checks it against children that are already there.
  */
 final class ImportCommand extends Command
 {
@@ -34,7 +41,7 @@ final class ImportCommand extends Command
 
     protected $description = 'Read block types from their JSON files, writing a version where the content differs';
 
-    public function handle(Filesystem $files, ValidatorFactory $validator, Publisher $publisher): int
+    public function handle(Filesystem $files, ValidatorFactory $validator, Publisher $publisher, Usage $usage): int
     {
         $path = $this->option('path');
         $path = is_string($path) && $path !== '' ? rtrim($path, '/\\') : resource_path('blocks');
@@ -63,6 +70,9 @@ final class ImportCommand extends Command
         sort($paths);
         $failed = false;
 
+        /** @var array<string, array{name: string, document: array<string, mixed>}> $read */
+        $read = [];
+
         foreach ($paths as $file) {
             $name = basename($file);
 
@@ -84,6 +94,30 @@ final class ImportCommand extends Command
 
             $slug = is_string($document['slug'] ?? null) ? $document['slug'] : basename($name, '.json');
             $document['slug'] = $slug;
+            // A file from before kinds existed holds a block: that is all there was.
+            $document['kind'] ??= Block::KIND_BLOCK;
+
+            $read[$slug] = ['name' => $name, 'document' => $document];
+        }
+
+        // What is called before what calls it (§3.12 of the components spec): a parent is
+        // checked against its children when it is published, and a child still in the file is
+        // not a child yet. A circle among the files is refused before anything is written.
+        try {
+            $order = Graph::order(array_map(
+                static fn (array $one): array => Calls::of(is_string($one['document']['template'] ?? null) ? $one['document']['template'] : ''),
+                $read,
+            ));
+        } catch (CallCycle $cycle) {
+            $this->components->error('Nothing imported: '.$cycle->getMessage());
+
+            return self::FAILURE;
+        }
+
+        $counts = $usage->counts();
+
+        foreach ($order as $slug) {
+            ['name' => $name, 'document' => $document] = $read[$slug];
 
             $block = Block::query()->where('slug', $slug)->with(['draftVersion', 'publishedVersion'])->first();
 
@@ -102,6 +136,15 @@ final class ImportCommand extends Command
 
             $values = BlockInput::values($document);
             $content = BlockInput::content($document);
+
+            $refusal = $block === null ? null : BlockInput::kindRefusal($block, $values['kind'] ?? null, $counts);
+
+            if ($refusal !== null) {
+                $this->components->error("{$name}: {$refusal}");
+                $failed = true;
+
+                continue;
+            }
 
             $creating = $block === null;
             $block ??= new Block;
@@ -138,7 +181,7 @@ final class ImportCommand extends Command
                     $detail .= " · published v{$published->number}";
                 } catch (PublishFailed $refused) {
                     $line = $refused->failure->templateLine !== null ? " (template line {$refused->failure->templateLine})" : '';
-                    $this->components->error("{$slug}: not published — {$refused->failure->reason}{$line}");
+                    $this->components->error("{$slug}: not published — {$refused->describe()}{$line}");
                     $failed = true;
                 } catch (BlocksException $refused) {
                     $this->components->error("{$slug}: not published — {$refused->getMessage()}");

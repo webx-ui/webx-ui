@@ -22,14 +22,19 @@ import {
 import { createBlocksApi } from './api'
 import BlockCard from './BlockCard.vue'
 import BlockCreateDialog from './BlockCreateDialog.vue'
+import BlockDeclaredCard from './BlockDeclaredCard.vue'
 import { useBlocksMessages } from './i18n'
-import { groupLabel } from './schema'
-import type { BlocksMeta, BlockType } from './types'
+import { groupLabel, kindOf } from './schema'
+import type { BlocksMeta, BlockType, DeclaredComponent } from './types'
 
 /**
  * The section: every type as a card with a live thumbnail, grouped the way the picker groups
  * them. Cards rather than a table because a block is recognised by its picture — "Section"
  * says nothing about whether it is a full-width band or a container with columns.
+ *
+ * Two kinds, two groups (§3.9 of the components spec): the blocks editors put on pages, then
+ * the components templates call. The places modules declared and the site has not customised
+ * stand among the components — a place nobody sees is a possibility nobody learns about.
  */
 const props = withDefaults(defineProps<{ base?: string }>(), { base: '/blocks' })
 
@@ -42,11 +47,17 @@ const t = useTranslate('webx-blocks')
 /* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
 const message = useErrorText()
 
-const blocks = ref<BlockType[]>([])
+const types = ref<BlockType[]>([])
+const declared = ref<DeclaredComponent[]>([])
 const loading = ref(true)
 const search = ref('')
 /** Which group is being looked at; `''` is all of them, grouped. */
 const view = ref<TabValue>('')
+/** The slug being customised, while the request is out. */
+const customising = ref<string | null>(null)
+
+/** The view of the components. Not a word a site could name a group of its own. */
+const COMPONENTS = '@components'
 
 const create = createModal<BlockType, Record<string, never>>(BlockCreateDialog)
 
@@ -68,20 +79,55 @@ const title = computed(
     t('module.title'),
 )
 
-const shown = computed(() => {
+const blocks = computed(() => types.value.filter((type) => kindOf(type) === 'block'))
+const components = computed(() => types.value.filter((type) => kindOf(type) === 'component'))
+
+/** The places still drawn by their module: a customised one is already a card of its own. */
+const pending = computed(() => declared.value.filter((place) => !place.customised))
+
+const hasComponents = computed(() => components.value.length > 0 || pending.value.length > 0)
+
+/** A module's name as the navigation says it; its id, capitalised, for one the panel lacks. */
+function moduleName(id: string): string {
+  return (
+    context.state.manifest?.modules.find((module) => module.id === id)?.title ??
+    id.charAt(0).toUpperCase() + id.slice(1)
+  )
+}
+
+/** Which module declared a slug, by name: the card of a customised place says whose it was. */
+function declaredBy(slug: string): string | null {
+  const place = declared.value.find((item) => item.slug === slug)
+
+  return place ? moduleName(place.module) : null
+}
+
+function matches(fields: (string | null)[]): boolean {
   const needle = search.value.trim().toLowerCase()
+
+  return needle === '' || fields.some((field) => (field ?? '').toLowerCase().includes(needle))
+}
+
+const shown = computed(() => {
+  if (view.value === COMPONENTS) return []
+
   const inView =
     view.value === '' ? blocks.value : blocks.value.filter((block) => block.group === view.value)
 
-  if (needle === '') return inView
-
-  return inView.filter(
-    (block) =>
-      block.title.toLowerCase().includes(needle) ||
-      block.slug.includes(needle) ||
-      (block.description ?? '').toLowerCase().includes(needle),
-  )
+  return inView.filter((block) => matches([block.title, block.slug, block.description]))
 })
+
+const shownComponents = computed(() =>
+  view.value === '' || view.value === COMPONENTS
+    ? components.value.filter((type) => matches([type.title, type.slug, type.description]))
+    : [],
+)
+
+const shownPending = computed(() =>
+  view.value === '' || view.value === COMPONENTS
+    ? pending.value.filter((place) => matches([place.title, place.slug, place.description]))
+    : [],
+)
 
 /** The groups in the site's order, then any a type named that the config does not. */
 const order = computed(() => {
@@ -96,19 +142,22 @@ const order = computed(() => {
 
 /**
  * The groups as the views of the list (§10), with everything at once first — which is how a
- * section of ten types is read, and what a search wants. Below two groups there is nothing to
- * choose between, and the strip would be a control that says one thing.
+ * section of ten types is read, and what a search wants — and the components last, as one view:
+ * they have no groups, nobody picks them from a list. With a single group and no components
+ * there is nothing to choose between, and the strip would be a control that says one thing.
  */
-const views = computed<TabItem[]>(() =>
-  order.value.length < 2
-    ? []
-    : [
-        { value: '', label: t('page.all-groups') },
-        ...order.value.map((id) => ({ value: id, label: groupLabel(id, t) })),
-      ],
-)
+const views = computed<TabItem[]>(() => {
+  const groupViews = order.value.map((id) => ({ value: id, label: groupLabel(id, t) }))
+  const componentView = hasComponents.value
+    ? [{ value: COMPONENTS, label: t('components.components') }]
+    : []
 
-/** What the grid draws: sections with headings, or one flat run of cards. */
+  return groupViews.length + componentView.length < 2
+    ? []
+    : [{ value: '', label: t('page.all-groups') }, ...groupViews, ...componentView]
+})
+
+/** What the grid draws for the blocks: sections with headings, or one flat run of cards. */
 const groups = computed(() => {
   const sections = order.value
     .map((id) => ({
@@ -126,14 +175,31 @@ const groups = computed(() => {
     search.value.trim() !== '' ||
     sections.length < 2
 
-  return flat ? [{ id: '', label: '', blocks: shown.value }] : sections
+  if (!flat) return sections
+  if (shown.value.length === 0) return []
+
+  // Flat, but beside the components: the run of blocks still needs the one word that says
+  // which of the two kinds it is.
+  const both = view.value === '' && shownComponents.value.length + shownPending.value.length > 0
+
+  return [{ id: '', label: both ? t('components.blocks') : '', blocks: shown.value }]
 })
+
+/** The components' heading, unless their own tab already names them or they are all there is. */
+const componentsLabel = computed(() =>
+  view.value === COMPONENTS || shown.value.length === 0 ? '' : t('components.components'),
+)
+
+const nothing = computed(() => types.value.length === 0 && pending.value.length === 0)
 
 async function load(): Promise<void> {
   loading.value = true
 
   try {
-    blocks.value = await api.list()
+    const list = await api.index()
+
+    types.value = list.blocks
+    declared.value = list.declared
   } catch (error) {
     toast.danger(message(error))
   } finally {
@@ -141,7 +207,7 @@ async function load(): Promise<void> {
   }
 }
 
-function open(block: BlockType): void {
+function open(block: BlockType | { id: number }): void {
   void router.push(`${props.base}/${block.id}`)
 }
 
@@ -149,6 +215,36 @@ async function add(): Promise<void> {
   const block = await create({})
 
   if (block) open(block)
+}
+
+/**
+ * The declared place made the site's own: a draft of the module's view, not published — the site
+ * keeps drawing the module's view until someone does (§4.2). So the editor opens on the draft
+ * and the toast says the site has not changed yet, because that is the question on everyone's
+ * mind after pressing a button called "Customise".
+ */
+async function customise(place: DeclaredComponent): Promise<void> {
+  customising.value = place.slug
+
+  try {
+    const type = await api.customise(place.slug)
+
+    toast.success(t('components.customised'))
+    open(type)
+  } catch (error) {
+    // Already customised elsewhere (another tab, an agent): the answer names the type to open.
+    const body = (error as { status?: number; body?: { id?: number } }).body
+
+    if ((error as { status?: number }).status === 409 && typeof body?.id === 'number') {
+      open({ id: body.id })
+
+      return
+    }
+
+    toast.danger(message(error, t('components.customise-failed')))
+  } finally {
+    customising.value = null
+  }
 }
 
 onMounted(load)
@@ -178,7 +274,7 @@ const actions = computed<ScreenAction[]>(() =>
 
     <!-- Inside the card and along its top, where every other list of the panel keeps its
          search: on `Pages` it is the table's own row, and this grid has no table to put it in. -->
-    <div v-if="loading || blocks.length > 0" class="wx-blocks-page__toolbar">
+    <div v-if="loading || !nothing" class="wx-blocks-page__toolbar">
       <wx-input
         v-model="search"
         class="wx-blocks-page__search"
@@ -204,7 +300,7 @@ const actions = computed<ScreenAction[]>(() =>
     </wx-skeleton>
 
     <wx-empty
-      v-else-if="blocks.length === 0"
+      v-else-if="nothing"
       icon="grid"
       :title="t('page.empty')"
       :description="t('page.empty-help')"
@@ -215,6 +311,33 @@ const actions = computed<ScreenAction[]>(() =>
         <div v-if="group.label" class="wx-blocks-page__group-title">{{ group.label }}</div>
         <div class="wx-blocks-page__cards">
           <block-card v-for="block in group.blocks" :key="block.id" :block="block" @open="open" />
+        </div>
+      </section>
+
+      <section
+        v-if="shownComponents.length > 0 || shownPending.length > 0"
+        class="wx-blocks-page__group"
+      >
+        <div v-if="componentsLabel" class="wx-blocks-page__group-title">
+          {{ componentsLabel }}
+        </div>
+        <div class="wx-blocks-page__cards">
+          <block-card
+            v-for="type in shownComponents"
+            :key="type.id"
+            :block="type"
+            :module="declaredBy(type.slug)"
+            @open="open"
+          />
+          <block-declared-card
+            v-for="place in shownPending"
+            :key="place.slug"
+            :declared="place"
+            :module="moduleName(place.module)"
+            :can-manage="canManage"
+            :busy="customising === place.slug"
+            @customise="customise"
+          />
         </div>
       </section>
     </template>

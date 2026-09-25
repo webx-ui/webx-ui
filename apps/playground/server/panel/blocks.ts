@@ -6,7 +6,8 @@ import type {
 } from '../../../../packages/module-blocks/src/types'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { blade } from './blade'
+import { blade, defineFunction, Html, escape, type TagCall } from './blade'
+import { minutesText, sampleCard } from './recipes'
 import { RECIPES_BLOCK } from './recipes-site'
 
 /**
@@ -540,7 +541,285 @@ const MAP_STYLES = `.b-map {
 `
 
 /** The types, in the order the section lists them — which is `group`, then `sort`. */
+/*
+ * The components (§3 of the components spec): `badge`, one the site made itself, and the block
+ * `recipe-teaser` that calls it and the recipe card — the card a declared place of the recipes
+ * module that the site has not customised, so it is drawn by the module's own view.
+ */
+const BADGE_TEMPLATE = `<span class="b-badge b-badge--{{ $tone }}" data-wx-block="badge">
+    @if ($mark)
+        <span class="b-badge__icon">{{ $mark }}</span>
+    @endif
+    {{ $text }}
+</span>
+`
+
+const BADGE_STYLES = `.b-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.b-badge--accent {
+    color: #fff;
+    background: #2d6a3e;
+}
+
+.b-badge--muted {
+    color: #4b5263;
+    background: #eef0f4;
+}
+`
+
+const TEASER_TEMPLATE = `<section class="b-recipe-teaser" data-wx-block="recipe-teaser">
+    <div class="b-recipe-teaser__head">
+        <h2 class="b-recipe-teaser__title">{{ $title }}</h2>
+        @if ($badge)
+            <x-webx-block type="badge" tone="accent" :text="$badge">
+                <x-slot:mark>★</x-slot:mark>
+            </x-webx-block>
+        @endif
+    </div>
+    <ul class="b-recipe-teaser__grid">
+        @foreach ($recipes['items'] as $card)
+            <x-webx-block type="recipe-card" :card="$card" fallback="webx-recipes::partials.card" />
+        @endforeach
+    </ul>
+</section>
+`
+
+/* The module's card is styled by whoever lays the cards out — its own rules live in the module's
+   catalogue stylesheet, which a block does not get. */
+const TEASER_STYLES = `.b-recipe-teaser {
+    container-type: inline-size;
+    padding-block: 40px;
+}
+
+.b-recipe-teaser__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-block-end: 20px;
+}
+
+.b-recipe-teaser__title {
+    margin: 0;
+}
+
+.b-recipe-teaser__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.b-recipe-teaser .wx-recipes__link {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.b-recipe-teaser .wx-recipes__cover {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.b-recipe-teaser .wx-recipes__name {
+    font-weight: 600;
+}
+
+.b-recipe-teaser .wx-recipes__time {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+@container (max-width: 640px) {
+    .b-recipe-teaser__grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+`
+
+/*
+ * `WebxUi\Recipes\Rendering\Duration::format` — what the module's card calls for its time: the
+ * fixture's own words for minutes, the same the recipes' cards carry as `time`.
+ */
+defineFunction('WebxUi\\Recipes\\Rendering\\Duration::format', (minutes) => minutesText(minutes))
+
+/**
+ * The places modules declared for components (`BlockComponents::declare`), with the schema
+ * "Customise" gives the type it makes. `customised` is not stored: it is whether a type of the
+ * slug exists.
+ */
+export const declaredComponents = [
+  {
+    slug: 'recipe-card',
+    module: 'recipes',
+    title: 'Recipe card',
+    description: 'One recipe in a list: the catalogue, a category, similar recipes.',
+    fallback: 'webx-recipes::partials.card',
+    schema: [
+      { type: 'wx-data', id: 'card', label: 'Recipe', props: { shape: 'recipes.card' } },
+    ] as BlockContent['schema'],
+  },
+]
+
+/** The data shapes of `wx-data` (`BlockShapes::register`): the keys, and a sample to try on. */
+export const blockShapes: Record<
+  string,
+  { fields: { name: string; type: string; description: string | null }[]; sample: () => unknown }
+> = {
+  'recipes.card': {
+    fields: [
+      { name: 'id', type: 'int', description: 'The recipe.' },
+      { name: 'url', type: 'string', description: 'Its page, in the language of the page drawn.' },
+      { name: 'title', type: 'string', description: 'The name.' },
+      { name: 'lead', type: 'string', description: 'The line under the name.' },
+      {
+        name: 'cover',
+        type: 'image|null',
+        description: 'The first picture: url, alt, width, height.',
+      },
+      { name: 'gallery', type: 'list<image>', description: 'Every picture, the cover first.' },
+      { name: 'minutes', type: 'int|null', description: 'The whole time, in minutes.' },
+      { name: 'servings', type: 'int|null', description: 'How many it feeds.' },
+      { name: 'categories', type: 'list<int>', description: 'The ids of its categories.' },
+      {
+        name: 'category_links',
+        type: 'list<{id, title, url}>',
+        description: 'Its visible categories with addresses; the first is the main one.',
+      },
+      {
+        name: 'service_links',
+        type: 'list<{id, title, url}>',
+        description: 'Its visible services with addresses; [] without the services module.',
+      },
+      { name: 'nutrients', type: 'list<{id, title}>', description: 'What it is marked with.' },
+    ],
+    sample: () => sampleCard(),
+  },
+}
+
+/** The slugs a template calls with a literal `type` (`Rendering\Calls::of`), sorted, once each. */
+export function callsOf(template: string): string[] {
+  const found = new Set<string>()
+
+  for (const match of template.matchAll(/<x-webx-block\b[^>]*?\stype\s*=\s*(["'])([\w-]+)\1/g)) {
+    found.add(match[2]!)
+  }
+
+  return [...found].sort()
+}
+
+/** The types whose published version calls the slug — here, whose content does. */
+export function callersOf(slug: string): { id: number; slug: string; title: string }[] {
+  return blockTypes
+    .filter(
+      (type) =>
+        type.slug !== slug &&
+        type.published !== null &&
+        callsOf(type.content?.template ?? '').includes(slug),
+    )
+    .map((type) => ({ id: type.id, slug: type.slug, title: type.title }))
+}
+
 export const blockTypes: BlockType[] = [
+  {
+    id: 13,
+    slug: 'badge',
+    kind: 'component',
+    title: 'Плашка',
+    description: 'Короткая метка с цветом: «Новинка», «Хит». Вызывается из других шаблонов.',
+    icon: 'tag',
+    group: 'content',
+    sort: 200,
+    allow: null,
+    allowed_in: null,
+    max_per_entity: null,
+    is_enabled: true,
+    draft: null,
+    published: version(2, '2026-09-24T15:20:00+00:00', 'Значок слотом'),
+    usage_count: 0,
+    thumbnail: null,
+    created_at: '2026-09-24T14:00:00+00:00',
+    updated_at: '2026-09-24T15:20:00+00:00',
+    content: {
+      schema: [
+        {
+          id: 'tone',
+          type: 'wx-segmented',
+          label: 'Тон',
+          props: {
+            options: [
+              { value: 'accent', label: 'Акцент' },
+              { value: 'muted', label: 'Спокойный' },
+            ],
+          },
+        },
+        { id: 'text', type: 'wx-input', label: 'Текст' },
+        { id: 'mark', type: 'wx-slot', label: 'Значок' },
+      ],
+      template: BADGE_TEMPLATE,
+      styles: BADGE_STYLES,
+      script: null,
+      sample: { tone: 'accent', text: 'Новинка', mark: '★' },
+    },
+  },
+  {
+    id: 14,
+    slug: 'recipe-teaser',
+    title: 'Рецепты с плашкой',
+    description: 'Заголовок с плашкой и три карточки рецептов — карточки рисует компонент.',
+    icon: 'star',
+    group: 'content',
+    sort: 210,
+    allow: null,
+    allowed_in: null,
+    max_per_entity: null,
+    is_enabled: true,
+    draft: null,
+    published: version(1, '2026-09-24T16:00:00+00:00', null),
+    usage_count: 0,
+    thumbnail: null,
+    created_at: '2026-09-24T16:00:00+00:00',
+    updated_at: '2026-09-24T16:00:00+00:00',
+    content: {
+      schema: [
+        { id: 'title', type: 'wx-input', label: 'Заголовок', localized: true },
+        { id: 'badge', type: 'wx-input', label: 'Плашка', help: 'Пусто — без плашки.' },
+        {
+          id: 'recipes',
+          type: 'wx-collection',
+          label: 'Рецепты',
+          props: { source: 'recipes' },
+        },
+      ],
+      template: TEASER_TEMPLATE,
+      styles: TEASER_STYLES,
+      script: null,
+      sample: {
+        title: 'Готовим на этой неделе',
+        badge: 'Новинка',
+        recipes: { categories: [], limit: 3, filter: false, markup: null, related: null },
+      },
+    },
+  },
   {
     id: 1,
     slug: 'hero',
@@ -1411,10 +1690,78 @@ function collectionNodes(schema: BlockContent['schema']): BlockContent['schema']
   })
 }
 
+/**
+ * The views a tag may fall back on (`fallback="…"`), by name, as files of the composer packages —
+ * read on every call, like an offered block, so the playground draws what the module ships.
+ */
+const FALLBACK_VIEWS: Record<string, string> = {
+  'webx-recipes::partials.card':
+    'php/packages/module-recipes/resources/views/partials/card.blade.php',
+}
+
+/** A module view's source, or null for a name the playground does not know. */
+export function fallbackSource(name: string): string | null {
+  const path = FALLBACK_VIEWS[name]
+
+  if (path === undefined) return null
+
+  return readFileSync(fileURLToPath(new URL(`../../../../${path}`, import.meta.url)), 'utf8')
+}
+
+/** What a preview says where a called block cannot be drawn: the plate a real preview shows. */
+function problem(message: string): string {
+  return `<div style="padding:10px 12px;border:1px dashed #d92d20;border-radius:8px;color:#b42318;background:#fef3f2;font:13px/1.4 system-ui,sans-serif">${escape(message)}</div>`
+}
+
+/**
+ * How a `<x-webx-block>` is drawn inside a block (§3.4 of the components spec): the type by its
+ * slug — the content it holds now, since the playground's pictures are all previews and a
+ * preview draws the draft — else the `fallback` view, else a plate. Its styles go into
+ * `styles`, the caller's list: a called card drawn without its CSS is a bare list.
+ *
+ * `stack` is who is drawing, outermost first, for the loop a template can make of itself.
+ */
+export function tagCaller(depth: number, stack: string[], styles: string[]): TagCall {
+  return (slug, values, slots, fallback) => {
+    if (stack.includes(slug)) {
+      return problem(`"${slug}" calls itself through "${stack.at(-1) ?? slug}"`)
+    }
+
+    if (depth >= 5) return problem(`Blocks nest deeper than 5 at "${slug}"`)
+
+    const type = blockTypes.find((item) => item.slug === slug)
+
+    if (type?.content !== undefined) {
+      const inside = draw(type.content, { ...values, ...slots }, depth + 1, [...stack, slug])
+
+      styles.push(inside.styles)
+
+      return inside.html
+    }
+
+    if (fallback !== null) {
+      const source = fallbackSource(fallback)
+
+      if (source === null) return problem(`View [${fallback}] not found.`)
+
+      return renderTemplate(
+        source,
+        { ...values, ...slots },
+        {},
+        [],
+        tagCaller(depth + 1, [...stack, slug], styles),
+      )
+    }
+
+    return problem(`Unknown block type "${slug}"`)
+  }
+}
+
 export function draw(
   content: BlockContent,
   values: Record<string, unknown>,
   depth = 0,
+  stack: string[] = [],
 ): { html: string; styles: string } {
   const styles = [content.styles ?? '']
   const nested: Record<string, string> = {}
@@ -1441,10 +1788,16 @@ export function draw(
     nested[node.id] = drawn.join('\n')
   }
 
-  return {
-    html: renderTemplate(content.template ?? '', values, nested, content.schema),
-    styles: styles.filter((sheet) => sheet !== '').join('\n'),
-  }
+  // Drawn first: the blocks the template calls add their styles to the list while it draws.
+  const html = renderTemplate(
+    content.template ?? '',
+    values,
+    nested,
+    content.schema,
+    tagCaller(depth, stack, styles),
+  )
+
+  return { html, styles: styles.filter((sheet) => sheet !== '').join('\n') }
 }
 
 /**
@@ -1458,8 +1811,11 @@ export function renderTemplate(
   values: Record<string, unknown>,
   children: Record<string, string> = {},
   schema: BlockContent['schema'] = [],
+  call: TagCall | null = null,
 ): string {
   let html = template
+
+  values = withSlots(values, schema)
 
   /*
    * What a block shows from another section, read now — `CollectionType::resolve()`. Unlike a
@@ -1489,7 +1845,38 @@ export function renderTemplate(
      nothing else — which reads as a broken block rather than a form. */
   html = html.replace(/<x-webx-inbox::form[^>]*\/>/g, FORM_MARKUP)
 
-  return blade(html, values, children)
+  return blade(html, values, children, call)
+}
+
+/**
+ * The slots as a template reads them (§3.3): `$slot` always, and every declared `wx-slot` —
+ * markup rather than text, and empty rather than missing when nobody passed one. A sample from
+ * the editor holds a slot as a string of HTML; a tag hands it over already as markup.
+ */
+function withSlots(
+  values: Record<string, unknown>,
+  schema: BlockContent['schema'],
+): Record<string, unknown> {
+  const slotted = { ...values }
+  const names = ['slot', ...slotNodes(schema).map((node) => node.id)]
+
+  for (const name of names) {
+    const value = slotted[name]
+
+    if (!(value instanceof Html)) slotted[name] = new Html(typeof value === 'string' ? value : '')
+  }
+
+  return slotted
+}
+
+function slotNodes(schema: BlockContent['schema']): BlockContent['schema'] {
+  return schema.flatMap((node) =>
+    node.type === 'wx-slot'
+      ? [node]
+      : node.type === 'wx-repeater'
+        ? []
+        : slotNodes(node.children ?? []),
+  )
 }
 
 const TARGETS = ['entity', 'url', 'none']

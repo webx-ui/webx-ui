@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace WebxUi\Blocks\Panel;
 
+use Throwable;
+use WebxUi\Blocks\Models\Block;
+use WebxUi\Blocks\Rendering\Calls;
+
 /**
  * What is said on saving and never refused (§15): selectors outside the block's prefix,
  * bare element selectors, a media query where a container query belongs, no `data-wx-block`
@@ -25,6 +29,8 @@ final class Lints
         if (! preg_match('/data-wx-block\s*=/', $template)) {
             $lints[] = self::lint('template', 'no-marker', null);
         }
+
+        $lints = [...$lints, ...self::calls($template)];
 
         $stray = [];
         $bare = [];
@@ -52,6 +58,48 @@ final class Lints
 
         if (preg_match('/@media\b/', self::withoutComments($styles), $match, PREG_OFFSET_CAPTURE)) {
             $lints[] = self::lint('styles', 'media-query', self::lineAt($styles, (int) $match[0][1]));
+        }
+
+        return $lints;
+    }
+
+    /**
+     * The tags the template calls other types with (§3.8 of the components spec): a type that
+     * does not exist — a typo prints nothing on the site, only a line in the log — and a type
+     * that is not a literal, which the graph cannot follow, so publishing what it calls will not
+     * check this one. Calling a plain block is not worth a word: that is allowed.
+     *
+     * @return list<array{file: string, code: string, line: int|null, message: string}>
+     */
+    private static function calls(string $template): array
+    {
+        $lints = [];
+        $dynamic = Calls::dynamic($template);
+
+        if ($dynamic !== []) {
+            $lints[] = self::lint('template', 'dynamic-call', $dynamic[0], [], 'calls');
+        }
+
+        $calls = Calls::withLines($template);
+
+        if ($calls === []) {
+            return $lints;
+        }
+
+        try {
+            $known = Block::query()->pluck('slug')->all();
+        } catch (Throwable) {
+            // No tables to ask: nothing to say about names.
+            return $lints;
+        }
+
+        $reported = [];
+
+        foreach ($calls as [$slug, $line]) {
+            if (! in_array($slug, $known, true) && ! isset($reported[$slug])) {
+                $reported[$slug] = true;
+                $lints[] = self::lint('template', 'unknown-call', $line, ['type' => $slug], 'calls');
+            }
         }
 
         return $lints;
@@ -120,16 +168,19 @@ final class Lints
     }
 
     /**
+     * The words of the call lints live in `calls`, beside the rest of what the server says about
+     * components; `checks` is the group the panel keeps a copy of for its own live lints.
+     *
      * @param  array<string, string>  $params
      * @return array{file: string, code: string, line: int|null, message: string}
      */
-    private static function lint(string $file, string $code, ?int $line, array $params = []): array
+    private static function lint(string $file, string $code, ?int $line, array $params = [], string $group = 'checks'): array
     {
         return [
             'file' => $file,
             'code' => $code,
             'line' => $line,
-            'message' => (string) __('webx-blocks::checks.'.$code, $params),
+            'message' => (string) __("webx-blocks::{$group}.{$code}", $params),
         ];
     }
 }

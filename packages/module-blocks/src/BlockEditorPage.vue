@@ -45,10 +45,26 @@ import {
   schemaCompletions,
   stylesCompletions,
   templateCompletions,
+  type TagTarget,
 } from './completions'
 import { lintBlock } from './lint'
-import { formSchema, groupLabel, usageWords } from './schema'
-import type { BlockContent, BlocksMeta, BlockType, BlockUsage, PublishRefusal } from './types'
+import {
+  callerWords,
+  callTag,
+  formSchema,
+  groupLabel,
+  kindOf,
+  schemaFields,
+  usageWords,
+} from './schema'
+import type {
+  BlockContent,
+  BlockKind,
+  BlocksMeta,
+  BlockType,
+  BlockUsage,
+  PublishRefusal,
+} from './types'
 
 /**
  * The editor of one type: six tabs across the screen — the four files, the settings and the
@@ -59,6 +75,11 @@ import type { BlockContent, BlocksMeta, BlockType, BlockUsage, PublishRefusal } 
  *
  * The loop is closed all the same: edit the schema and the form rebuilds, edit the values and
  * the stage redraws, edit the template or the styles and so does it.
+ *
+ * A component is edited on the same screen (§3.9 of the components spec). What differs is what
+ * its schema means — the input a caller hands it, not a form — so the settings lose what only a
+ * block on a page needs, "Fields" become "Input data", and under the template stands the tag that
+ * calls it. Where it is used is the blocks that call it rather than pages.
  */
 const props = withDefaults(defineProps<{ base?: string }>(), { base: '/blocks' })
 
@@ -94,6 +115,7 @@ const meta = computed<BlocksMeta>(() => {
 const canManage = computed(() => context.can('blocks.manage') && meta.value.editing)
 
 const settings = reactive({
+  kind: 'block' as BlockKind,
   slug: '',
   title: '',
   description: '' as string | null,
@@ -136,11 +158,74 @@ const dirty = computed(() => snapshot.value !== '' && current.value !== snapshot
 
 const lints = computed(() => lintBlock(settings.slug, content, t))
 
+/**
+ * What a tag in this template can call: every type, and every place a module declared and the
+ * site has not customised — a tag with a `fallback` calls those too. Read once per editor.
+ */
+const targets = ref<TagTarget[]>([])
+const typeIds = new Map<string, number>()
+const schemas = new Map<string, Promise<BlockContent['schema'] | null>>()
+
+async function loadTargets(): Promise<void> {
+  try {
+    const list = await api.index()
+
+    typeIds.clear()
+    for (const type of list.blocks) typeIds.set(type.slug, type.id)
+
+    targets.value = [
+      ...list.blocks.map((type) => ({
+        slug: type.slug,
+        title: type.title,
+        kind: kindOf(type),
+        fallback: list.declared.find((place) => place.slug === type.slug)?.fallback ?? null,
+      })),
+      ...list.declared
+        .filter((place) => !place.customised)
+        .map((place) => ({
+          slug: place.slug,
+          title: place.title,
+          kind: 'component' as const,
+          fallback: place.fallback,
+        })),
+    ]
+  } catch {
+    // Only the suggestions go without it; the editor has nothing else to do with the list.
+  }
+}
+
+/** A called type's schema, asked for once and kept: its own for the type being edited. */
+function schemaOf(
+  slug: string,
+): BlockContent['schema'] | null | Promise<BlockContent['schema'] | null> {
+  if (slug === settings.slug) return content.schema
+
+  const id = typeIds.get(slug)
+  if (id === undefined) return null
+
+  let found = schemas.get(slug)
+
+  if (found === undefined) {
+    found = api.get(id).then(
+      (type) => type.content?.schema ?? null,
+      () => null,
+    )
+    schemas.set(slug, found)
+  }
+
+  return found
+}
+
 /* Built once: the sources read the other files of the type when asked, not when made. */
 const assist = {
   template: [
     completions(
-      templateCompletions({ schema: () => content.schema, styles: () => content.styles }),
+      templateCompletions({
+        schema: () => content.schema,
+        styles: () => content.styles,
+        types: () => targets.value,
+        schemaOf,
+      }),
     ),
   ],
   styles: [
@@ -181,6 +266,7 @@ function take(loaded: BlockType): void {
   block.value = loaded
 
   Object.assign(settings, {
+    kind: kindOf(loaded),
     slug: loaded.slug,
     title: loaded.title,
     description: loaded.description,
@@ -213,6 +299,7 @@ async function load(): Promise<void> {
   try {
     take(await api.get(id.value))
     usage.value = await api.usage(id.value)
+    void loadTargets()
   } catch (error) {
     toast.danger(message(error))
   } finally {
@@ -364,7 +451,16 @@ async function publish(): Promise<void> {
 
   const agreed = await confirm({
     title: t('page.publish-title', { number: block.value.draft.number }),
-    message: t('page.publish-text', { count: block.value.usage_count }),
+    // A component stands on no page itself; what a new version reaches is the blocks calling it.
+    // A declared place is also printed by the module's views, which the count does not see.
+    message: declaredModule.value
+      ? t('components.publish-declared', {
+          module: declaredModule.value,
+          count: callers.value.length,
+        })
+      : isComponent.value
+        ? t('components.publish-text', { count: callers.value.length })
+        : t('page.publish-text', { count: block.value.usage_count }),
     confirmText: t('page.publish'),
     cancelText: t('page.cancel'),
   })
@@ -395,10 +491,16 @@ async function publish(): Promise<void> {
 async function remove(): Promise<void> {
   if (!block.value) return
 
+  // Deleting a customised place is how it goes back to the module's view (§2, decision 5), and
+  // the dialog says so: "cannot be undone" alone would read as losing the recipe card for good.
+  const reset = block.value.declared != null
+
   const agreed = await confirm({
-    title: t('page.delete-title', { title: block.value.title }),
-    message: t('page.delete-text'),
-    confirmText: t('page.delete'),
+    title: reset
+      ? t('components.delete-declared-title', { title: block.value.title })
+      : t('page.delete-title', { title: block.value.title }),
+    message: reset ? t('components.delete-declared-text') : t('page.delete-text'),
+    confirmText: reset ? t('components.delete-declared') : t('page.delete'),
     cancelText: t('page.cancel'),
     tone: 'danger',
   })
@@ -457,6 +559,82 @@ const examples = computed(() => [
 
 const shownUsage = computed(() => usage.value.slice(0, 5))
 
+const isComponent = computed(() => settings.kind === 'component')
+
+/** The blocks whose published version calls this type. */
+const callers = computed(() => block.value?.used_by ?? [])
+
+/** The module whose views call this slug, by its name in the panel. */
+const declaredModule = computed(() => {
+  const id = block.value?.declared?.module
+
+  if (!id) return null
+
+  return (
+    context.state.manifest?.modules.find((module) => module.id === id)?.title ??
+    id.charAt(0).toUpperCase() + id.slice(1)
+  )
+})
+
+/** The words of the subtitle: pages for a block, calling blocks for a component. */
+const whereWords = computed(() =>
+  isComponent.value
+    ? callerWords(callers.value.length, t)
+    : usageWords(block.value?.usage_count ?? 0, t),
+)
+
+/** Anything behind those words: pages, calling blocks, or a module's views. */
+const hasWhere = computed(
+  () =>
+    (block.value?.usage_count ?? 0) > 0 ||
+    callers.value.length > 0 ||
+    declaredModule.value !== null,
+)
+
+/** Why the type cannot be deleted, when it cannot. Pages first: they are what editors see. */
+const deleteBlocked = computed<string | null>(() => {
+  const count = block.value?.usage_count ?? 0
+
+  if (count > 0) return count === 1 ? t('page.delete-used-one') : t('page.delete-used', { count })
+
+  if (callers.value.length > 0) {
+    return t('components.delete-called', {
+      titles: callers.value.map((parent) => `"${parent.title}"`).join(', '),
+    })
+  }
+
+  return null
+})
+
+/** The tag that calls this type, with its inputs — the help under a component's template. */
+const call = computed(() =>
+  callTag(settings.slug, content.schema, content.sample, block.value?.declared?.fallback ?? null),
+)
+
+/** Each `wx-data` input and what its shape holds, as far as the server described it. */
+const dataInputs = computed(() =>
+  schemaFields(content.schema)
+    .filter((node) => node.type === 'wx-data')
+    .map((node) => {
+      const shape = typeof node.props?.shape === 'string' ? node.props.shape : null
+
+      return {
+        id: node.id,
+        shape,
+        fields: shape ? (block.value?.shape?.[shape]?.fields ?? []) : [],
+      }
+    }),
+)
+
+async function copyCall(): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(call.value)
+    toast.success(t('components.copied'))
+  } catch {
+    // No clipboard (an insecure origin, a denied permission): the tag is on the screen to select.
+  }
+}
+
 function errorOf(field: string): string | undefined {
   return errors.value[field]?.[0]
 }
@@ -477,6 +655,11 @@ onBeforeUnmount(() => {
 
 watch(id, () => void load())
 /* The two things this editor is for. The bar along the bottom repeats them (§3.3). */
+const kindOptions = computed(() => [
+  { value: 'block', label: t('components.kind-block') },
+  { value: 'component', label: t('components.kind-component') },
+])
+
 const actions = computed<ScreenAction[]>(() =>
   canManage.value
     ? [
@@ -541,20 +724,29 @@ const actions = computed<ScreenAction[]>(() =>
         -->
         <template #subtitle>
           <code>{{ settings.slug }}</code>
-          · {{ groupLabel(settings.group, t) }} ·
-          <wx-popover
-            v-if="block.usage_count > 0"
-            :title="t('page.usage')"
-            :width="260"
-            align="start"
-          >
+          ·
+          {{ isComponent ? t('components.kind-component') : groupLabel(settings.group, t) }}
+          ·
+          <wx-popover v-if="hasWhere" :title="t('page.usage')" :width="260" align="start">
             <template #trigger>
               <button type="button" class="wx-block-editor__uses">
-                {{ usageWords(block.usage_count, t) }}
+                {{ whereWords }}
               </button>
             </template>
 
             <div class="wx-block-editor__usage">
+              <!-- The blocks calling it first on a component: those are what a change reaches. -->
+              <router-link
+                v-for="parent in callers"
+                :key="`type:${parent.id}`"
+                :to="`${base}/${parent.id}`"
+                class="wx-block-editor__use"
+              >
+                {{ t('components.called-by', { title: parent.title }) }}
+              </router-link>
+              <div v-if="declaredModule" class="wx-block-editor__use">
+                {{ t('components.module-views', { module: declaredModule }) }}
+              </div>
               <div
                 v-for="entity in shownUsage"
                 :key="`${entity.model}:${entity.id}`"
@@ -570,7 +762,7 @@ const actions = computed<ScreenAction[]>(() =>
               </wx-text>
             </div>
           </wx-popover>
-          <template v-else>{{ usageWords(block.usage_count, t) }}</template>
+          <template v-else>{{ whereWords }}</template>
         </template>
       </wx-screen-head>
 
@@ -620,6 +812,43 @@ const actions = computed<ScreenAction[]>(() =>
                 :error="refusalError"
               />
             </div>
+
+            <!--
+              How this component is called, ready to copy: the tag with every input it takes, and
+              for a structure passed from code, what the structure holds. A component is only
+              ever used this way, so the one thing a person needs next is written out here.
+            -->
+            <wx-card v-if="isComponent" class="wx-block-editor__call" :title="t('components.call')">
+              <wx-text size="sm" tone="muted">{{ t('components.call-help') }}</wx-text>
+              <div class="wx-block-editor__call-tag">
+                <pre><code>{{ call }}</code></pre>
+                <wx-button size="sm" variant="outline" @click="copyCall">
+                  {{ t('components.copy') }}
+                </wx-button>
+              </div>
+
+              <div v-for="input in dataInputs" :key="input.id" class="wx-block-editor__shape">
+                <wx-text size="sm" tone="muted">
+                  {{
+                    input.fields.length
+                      ? t('components.shape', { name: input.id })
+                      : t('components.shape-free', { name: input.id })
+                  }}
+                  <code v-if="input.shape">{{ input.shape }}</code>
+                </wx-text>
+                <dl v-if="input.fields.length" class="wx-block-editor__shape-fields">
+                  <template v-for="field in input.fields" :key="field.name">
+                    <dt>
+                      <code>{{ field.name }}</code>
+                      <span class="wx-block-editor__shape-type">{{ field.type }}</span>
+                    </dt>
+                    <dd>{{ field.description }}</dd>
+                  </template>
+                </dl>
+              </div>
+
+              <wx-text size="sm" tone="muted">{{ t('components.site-views') }}</wx-text>
+            </wx-card>
           </wx-tab>
 
           <wx-tab value="styles" :label="t('page.tab-styles')">
@@ -681,7 +910,10 @@ const actions = computed<ScreenAction[]>(() =>
           — including the four where nobody is looking at values. Here it is the other half of
           the tab it belongs to, and editing a field shows what it becomes.
         -->
-          <wx-tab value="fields" :label="t('page.tab-fields')">
+          <wx-tab
+            value="fields"
+            :label="isComponent ? t('components.tab-inputs') : t('page.tab-fields')"
+          >
             <div class="wx-block-editor__split">
               <div class="wx-block-editor__pane">
                 <wx-code-editor
@@ -699,7 +931,9 @@ const actions = computed<ScreenAction[]>(() =>
                   <wx-text v-else-if="errorOf('content.schema')" size="sm" tone="danger">{{
                     errorOf('content.schema')
                   }}</wx-text>
-                  <wx-text v-else size="sm" tone="muted">{{ t('page.fields-help') }}</wx-text>
+                  <wx-text v-else size="sm" tone="muted">{{
+                    isComponent ? t('components.inputs-help') : t('page.fields-help')
+                  }}</wx-text>
 
                   <!-- The whole of what a schema is, in the one place somebody writing one is
                        looking. The same page an agent is handed over MCP, from the same
@@ -727,6 +961,14 @@ const actions = computed<ScreenAction[]>(() =>
             <wx-card class="wx-block-editor__sheet">
               <div class="wx-block-editor__settings">
                 <wx-form-item
+                  :label="t('components.kind')"
+                  :help="t('components.kind-help')"
+                  :error="errorOf('kind')"
+                  :disabled="!canManage"
+                >
+                  <wx-select v-model="settings.kind" :options="kindOptions" />
+                </wx-form-item>
+                <wx-form-item
                   :label="t('page.identifier')"
                   :help="t('page.identifier-help')"
                   :error="errorOf('slug')"
@@ -734,7 +976,10 @@ const actions = computed<ScreenAction[]>(() =>
                 >
                   <wx-input v-model="settings.slug" />
                 </wx-form-item>
+                <!-- What only a block on a page needs: where it is picked from, what it may
+                     hold and stand in, how many a page takes. A component is never picked. -->
                 <wx-form-item
+                  v-if="!isComponent"
                   :label="t('page.group')"
                   :help="t('page.group-help')"
                   :error="errorOf('group')"
@@ -781,6 +1026,7 @@ const actions = computed<ScreenAction[]>(() =>
                   <wx-input-number v-model="settings.sort" />
                 </wx-form-item>
                 <wx-form-item
+                  v-if="!isComponent"
                   :label="t('page.allow')"
                   :help="t('page.allow-help')"
                   :error="errorOf('allow')"
@@ -789,6 +1035,7 @@ const actions = computed<ScreenAction[]>(() =>
                   <wx-tags-input v-model="settings.allow" allow-create />
                 </wx-form-item>
                 <wx-form-item
+                  v-if="!isComponent"
                   :label="t('page.allowed-in')"
                   :help="t('page.allowed-in-help')"
                   :error="errorOf('allowed_in')"
@@ -801,6 +1048,7 @@ const actions = computed<ScreenAction[]>(() =>
                   />
                 </wx-form-item>
                 <wx-form-item
+                  v-if="!isComponent"
                   :label="t('page.max-per-entity')"
                   :help="t('page.max-per-entity-help')"
                   :error="errorOf('max_per_entity')"
@@ -813,6 +1061,7 @@ const actions = computed<ScreenAction[]>(() =>
                   />
                 </wx-form-item>
                 <wx-form-item
+                  v-if="!isComponent"
                   :label="t('page.enabled')"
                   :help="t('page.enabled-help')"
                   :disabled="!canManage"
@@ -823,18 +1072,12 @@ const actions = computed<ScreenAction[]>(() =>
                   <wx-button
                     type="danger"
                     variant="outline"
-                    :disabled="block.usage_count > 0"
+                    :disabled="deleteBlocked !== null"
                     @click="remove"
                   >
-                    {{ t('page.delete') }}
+                    {{ block.declared ? t('components.delete-declared') : t('page.delete') }}
                   </wx-button>
-                  <wx-text v-if="block.usage_count > 0" size="sm" tone="muted">
-                    {{
-                      block.usage_count === 1
-                        ? t('page.delete-used-one')
-                        : t('page.delete-used', { count: block.usage_count })
-                    }}
-                  </wx-text>
+                  <wx-text v-if="deleteBlocked" size="sm" tone="muted">{{ deleteBlocked }}</wx-text>
                 </div>
               </div>
             </wx-card>
@@ -920,6 +1163,82 @@ const actions = computed<ScreenAction[]>(() =>
   .wx-block-editor__columns,
   .wx-block-editor__split {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The tag to copy: code on the subtle ground, the button beside it — below it on a phone. */
+.wx-block-editor__call {
+  min-width: 0;
+}
+
+.wx-block-editor__call :deep(.wx-card__body) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-10);
+}
+
+.wx-block-editor__call-tag {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--wx-space-8);
+}
+
+.wx-block-editor__call-tag pre {
+  flex: 1 1 240px;
+  min-width: 0;
+  margin: 0;
+  padding: var(--wx-space-10) var(--wx-space-12);
+  border-radius: var(--wx-radius-sm);
+  background: var(--wx-bg-subtle);
+  overflow-x: auto;
+}
+
+.wx-block-editor__call-tag code {
+  line-height: 1.6;
+  color: var(--wx-text-default);
+  white-space: pre;
+}
+
+.wx-block-editor__shape {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-6);
+}
+
+/* Name and type on one line, what it is under them: a glossary, read top to bottom. */
+.wx-block-editor__shape-fields {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: var(--wx-space-4) var(--wx-space-12);
+  margin: 0;
+  font-size: var(--wx-font-size-sm);
+}
+
+.wx-block-editor__shape-fields dt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wx-space-6);
+}
+
+.wx-block-editor__shape-fields dd {
+  margin: 0;
+  color: var(--wx-text-muted);
+}
+
+.wx-block-editor__shape-type {
+  font-size: var(--wx-font-size-xs);
+  color: var(--wx-text-muted);
+}
+
+@container (max-width: 520px) {
+  .wx-block-editor__shape-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wx-block-editor__shape-fields dd {
+    margin-block-end: var(--wx-space-6);
   }
 }
 
@@ -1063,6 +1382,16 @@ const actions = computed<ScreenAction[]>(() =>
   display: flex;
   align-items: center;
   gap: var(--wx-space-8);
+}
+
+a.wx-block-editor__use {
+  color: var(--wx-text-link);
+  text-decoration: none;
+}
+
+a.wx-block-editor__use:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 
 code {

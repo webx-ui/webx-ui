@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
 use WebxUi\Blocks\BlockType;
 use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Exceptions\BlocksException;
+use WebxUi\Blocks\Rendering\Calls;
 use WebxUi\Blocks\Rendering\Renderer;
 
 /**
@@ -30,6 +31,7 @@ use WebxUi\Blocks\Rendering\Renderer;
  *
  * @property int $id
  * @property string $slug
+ * @property string $kind
  * @property string $title
  * @property string|null $description
  * @property string|null $icon
@@ -48,15 +50,24 @@ use WebxUi\Blocks\Rendering\Renderer;
  */
 class Block extends Model
 {
+    /** Stands in content and is offered by the picker. */
+    public const KIND_BLOCK = 'block';
+
+    /** Only ever called by a tag from another template: not in the picker, its schema is its input. */
+    public const KIND_COMPONENT = 'component';
+
+    public const KINDS = [self::KIND_BLOCK, self::KIND_COMPONENT];
+
     protected $table = 'blocks';
 
     protected $fillable = [
-        'slug', 'title', 'description', 'icon', 'group', 'sort',
+        'slug', 'kind', 'title', 'description', 'icon', 'group', 'sort',
         'allow', 'allowed_in', 'max_per_entity', 'is_enabled',
     ];
 
     /** @var array<string, mixed> */
     protected $attributes = [
+        'kind' => self::KIND_BLOCK,
         'group' => 'content',
         'sort' => 0,
         'is_enabled' => true,
@@ -125,6 +136,11 @@ class Block extends Model
         return $query->whereNotNull('published_version_id');
     }
 
+    public function isComponent(): bool
+    {
+        return $this->kind === self::KIND_COMPONENT;
+    }
+
     /** The version the editor is working on: the draft, or the published one when there is no draft. */
     public function currentVersion(): ?BlockVersion
     {
@@ -155,6 +171,10 @@ class Block extends Model
         ];
 
         $content = array_intersect_key($content, array_flip(BlockVersion::CONTENT)) + $base;
+
+        // The edges of the call graph, read from the template being written: what publishing a
+        // type it calls checks this one against (§3.5 of the components spec).
+        $content['uses'] = Calls::of((string) $content['template']);
 
         $number = (int) $this->versions()->max('number') + 1;
 

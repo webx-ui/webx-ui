@@ -17,7 +17,7 @@ use WebxUi\Blocks\Models\BlockVersion;
 final class Exchange
 {
     /** The keys that identify and constrain a type, in file order. */
-    public const ROW = ['slug', 'title', 'description', 'icon', 'group', 'sort', 'allow', 'allowed_in', 'max_per_entity', 'is_enabled'];
+    public const ROW = ['slug', 'kind', 'title', 'description', 'icon', 'group', 'sort', 'allow', 'allowed_in', 'max_per_entity', 'is_enabled'];
 
     /**
      * @return array<string, mixed>

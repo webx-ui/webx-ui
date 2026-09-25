@@ -19,7 +19,11 @@
             .wx-recipes__link { display: flex; flex-direction: column; gap: 0.6em; color: inherit; text-decoration: none; }
             .wx-recipes__cover { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 0.5em; }
             .wx-recipes__name { font-weight: 600; }
-            .wx-recipes__time { opacity: 0.7; font-size: 0.9em; }
+            .wx-recipes__card { display: flex; flex-direction: column; gap: 0.4em; }
+            .wx-recipes__services { font-size: 0.9em; }
+            .wx-recipes__services a, .wx-recipes__category { color: inherit; }
+            .wx-recipes__meta { display: flex; flex-wrap: wrap; gap: 0.5em; opacity: 0.7; font-size: 0.9em; }
+            .wx-recipes__meta > * + *::before { content: "·"; margin-inline-end: 0.5em; }
             .wx-recipes__pages a[aria-current] { font-weight: 600; text-decoration: none; }
         </style>
     @endpush
@@ -40,7 +44,7 @@
     @else
         <ul class="wx-recipes__grid">
             @foreach ($catalog->items as $card)
-                @include('webx-recipes::partials.card', ['card' => $card])
+                @webxPart('recipe-card', ['card' => $card], 'webx-recipes::partials.card')
             @endforeach
         </ul>
     @endif
