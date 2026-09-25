@@ -132,7 +132,7 @@ async function panel(first = detail('r1')) {
 
   await flushPromises()
 
-  return { wrapper, get, put, post }
+  return { wrapper, get, put, post, router }
 }
 
 afterEach(() => {
@@ -237,5 +237,27 @@ describe('WxServiceEditorPage', () => {
 
     expect(post).toHaveBeenCalledWith('/api/cms/services/7/publish', {})
     expect(get.mock.calls.filter(([url]) => url === '/api/cms/services/7')).toHaveLength(2)
+  })
+
+  it('leaves without asking when the save is already on its way', async () => {
+    const { wrapper, put, router } = await panel()
+
+    let answer: (value: unknown) => void = () => {}
+    put.mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)))
+
+    await wrapper.find('input').setValue('Dental implants')
+    await wrapper.find('.wx-service-editor').trigger('focusout')
+    expect(put).toHaveBeenCalledTimes(1)
+
+    // Leaving while that request is out used to skip the save, read `dirty` and ask.
+    const leaving = router.push('/services')
+    await flushPromises()
+
+    answer({ data: detail('r2', { title: 'Dental implants' }) })
+    await leaving
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/services')
+    expect(put).toHaveBeenCalledTimes(1)
   })
 })
