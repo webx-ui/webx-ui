@@ -11,7 +11,9 @@ import { useBlocksMessages } from './i18n'
  *
  * The text is kept as typed and the value changes only on JSON that parses: half a bracket is
  * what the text looks like on every keystroke on the way to the next valid one, and a sample
- * that became `null` in the middle of typing would redraw the stage empty each time.
+ * that became `null` in the middle of typing would redraw the stage empty each time. An empty
+ * editor is the one exception: that is `null` on purpose — the call that passes nothing, which
+ * a component has to survive, and which publishing checks when the sample says so.
  */
 const props = withDefaults(
   defineProps<{
@@ -32,14 +34,19 @@ const text = ref(format(props.modelValue))
 const error = ref<string | null>(null)
 
 function format(value: unknown): string {
-  return JSON.stringify(value ?? {}, null, 2)
+  return value === null || value === undefined ? '' : JSON.stringify(value, null, 2)
+}
+
+/** What the text stands for: nothing written is `null`, anything else has to parse. */
+function parse(source: string): unknown {
+  return source.trim() === '' ? null : (JSON.parse(source) as unknown)
 }
 
 function onText(next: string): void {
   text.value = next
 
   try {
-    const parsed: unknown = JSON.parse(next)
+    const parsed = parse(next)
 
     error.value = null
     emit('update:modelValue', parsed)
@@ -56,7 +63,7 @@ watch(
     let same = false
 
     try {
-      same = JSON.stringify(JSON.parse(text.value)) === JSON.stringify(value ?? {})
+      same = JSON.stringify(parse(text.value)) === JSON.stringify(value ?? null)
     } catch {
       same = false
     }
@@ -75,7 +82,7 @@ watch(
     <wx-code-editor
       :model-value="text"
       language="json"
-      lint
+      :lint="text.trim() !== ''"
       :readonly="disabled"
       min-height="120px"
       max-height="320px"

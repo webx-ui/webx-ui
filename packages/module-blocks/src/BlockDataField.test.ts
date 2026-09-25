@@ -57,6 +57,32 @@ describe('wx-data in the sample form', () => {
     expect(wrapper.text()).toContain('Not valid JSON')
   })
 
+  /* The call that passes nothing is a case a component has to survive, and the sample is where
+     that is tried: an empty editor is `null`, not an error. */
+  it('takes an empty editor for null, and shows null as an empty editor', async () => {
+    const wrapper = field({ title: 'Porridge' })
+
+    await wrapper.get('textarea').setValue('  ')
+
+    expect(wrapper.emitted('update:modelValue')).toEqual([[null]])
+    expect(wrapper.text()).toBe('')
+
+    await wrapper.setProps({ modelValue: null })
+
+    expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toBe('  ')
+    expect((field(null).get('textarea').element as HTMLTextAreaElement).value).toBe('')
+  })
+
+  it('keeps a typed null rather than turning it into an empty object', async () => {
+    const wrapper = field({ title: 'Porridge' })
+
+    await wrapper.get('textarea').setValue('null')
+    await wrapper.setProps({ modelValue: null })
+
+    expect(wrapper.emitted('update:modelValue')).toEqual([[null]])
+    expect((wrapper.get('textarea').element as HTMLTextAreaElement).value).toBe('null')
+  })
+
   it('takes a new value from outside, and not the echo of what was typed', async () => {
     const wrapper = field({ a: 1 })
 
