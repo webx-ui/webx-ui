@@ -10,6 +10,7 @@ use WebxUi\Mcp\McpResource;
 use WebxUi\Recipes\Models\Recipe;
 use WebxUi\Recipes\Models\RecipeCategory;
 use WebxUi\Recipes\Models\RecipeNutrient;
+use WebxUi\Recipes\Rendering\RecipeCard;
 
 /**
  * What an agent reads before it writes a recipe (§5.11): the whole catalogue in one message.
@@ -78,6 +79,8 @@ final class RecipesResources
                 'title' => $nutrient->displayName($locale),
                 'visible' => (bool) $nutrient->is_visible,
             ])->values()->all(),
+            // What a recipe card holds — `$card` in the `recipe-card` component and in a block's items.
+            'card' => ['component' => RecipeCard::SLUG, 'shape' => RecipeCard::SHAPE, 'fields' => RecipeCard::fields()],
         ];
     }
 

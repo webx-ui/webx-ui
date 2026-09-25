@@ -452,9 +452,15 @@ async function publish(): Promise<void> {
   const agreed = await confirm({
     title: t('page.publish-title', { number: block.value.draft.number }),
     // A component stands on no page itself; what a new version reaches is the blocks calling it.
-    message: isComponent.value
-      ? t('components.publish-text', { count: callers.value.length })
-      : t('page.publish-text', { count: block.value.usage_count }),
+    // A declared place is also printed by the module's views, which the count does not see.
+    message: declaredModule.value
+      ? t('components.publish-declared', {
+          module: declaredModule.value,
+          count: callers.value.length,
+        })
+      : isComponent.value
+        ? t('components.publish-text', { count: callers.value.length })
+        : t('page.publish-text', { count: block.value.usage_count }),
     confirmText: t('page.publish'),
     cancelText: t('page.cancel'),
   })
@@ -1055,6 +1061,7 @@ const actions = computed<ScreenAction[]>(() =>
                   />
                 </wx-form-item>
                 <wx-form-item
+                  v-if="!isComponent"
                   :label="t('page.enabled')"
                   :help="t('page.enabled-help')"
                   :disabled="!canManage"

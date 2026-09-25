@@ -111,6 +111,40 @@ A filtered page (`?nutrient=3`) is `noindex`, with a canonical without the filte
 its own canonical. A page past the last one answers 404 on the index and a category, and draws an
 empty block elsewhere.
 
+## The card
+
+One card is printed wherever a list of recipes is — the catalogue in all three places and similar
+recipes: the cover and the title as one link, the related services under it, and the main
+category next to the time. It is a [component](/guide/blocks#components) the module declares,
+`recipe-card`, so a site redraws it **from the panel** rather than in code:
+
+1. **Blocks → Components** shows «Recipe card · Standard view · module Recipes». **Customise** makes
+   a component whose draft is the standard card — or the site's copy of it, when
+   `partials/card.blade.php` was published — with the first published recipe as its sample.
+2. Change the template and the styles on the stage. Nothing on the site changes yet.
+3. **Publish**: every grid of recipes prints the new card.
+4. **Reset to standard** deletes the component, and the module's card is back.
+
+An agent does the same through `blocks_create` with the slug `recipe-card`; `recipes://catalog`
+lists the keys of a card under `card`. What `$card` holds — the same array `recipes()` gives a
+template:
+
+| Key                    | What it is                                                                        |
+| ---------------------- | --------------------------------------------------------------------------------- |
+| `id`, `anchor`         | the id, and the slug in this language                                             |
+| `categories`           | ids — what the block's filter compares; print `category_links`                    |
+| `title`, `url`, `lead` | in the language of the page; `lead` is plain text                                 |
+| `cover`, `gallery`     | pictures as `wx-media` gives them (`url`, `thumb`, `width`, `height`, `alt`)      |
+| `minutes`, `servings`  | numbers, or null; `Duration::format($card['minutes'])` writes the time out        |
+| `category_links`       | `[{ id, title, url }]` — visible, with an address; the first is the main one      |
+| `service_links`        | `[{ id, title, url }]` — visible related services; `[]` without `module-services` |
+| `nutrients`            | `[{ id, title }]` — visible                                                       |
+| `fields`               | the project's own fields, by name                                                 |
+
+The services of a whole list come in one query, not one per card. The card's styles stay in
+`partials/catalog.blade.php`: a customised card that keeps the classes keeps the look, and one with
+classes of its own brings its styles in the component.
+
 ## A recipe's page
 
 `recipe.blade.php` is one view of parts, each its own `@include`, in this order:
@@ -136,7 +170,8 @@ copies every view into `resources/views/vendor/webx-recipes`. **Keep only what y
 delete the rest**: a part that is not there falls through to the package's, and gets its fixes with
 every update. To change how the facts look, keep `recipe/facts.blade.php`; to change the order of
 the parts, keep `recipe.blade.php`; to change every grid of recipes on the site, keep
-`partials/catalog.blade.php` (and `partials/card.blade.php` for the card alone).
+`partials/catalog.blade.php`. The card alone is better changed in the panel ([The card](#the-card)):
+a published `partials/card.blade.php` still works, and becomes the starting point of **Customise**.
 
 A part is markup over plain data — no part asks the database for itself. What each is handed:
 
@@ -146,7 +181,7 @@ A part is markup over plain data — no part asks the database for itself. What 
 | `$pictures`               | the gallery, resolved; the first is the cover                                                  |
 | `$title`, `$lead`         | in the language of the page                                                                    |
 | `$minutes`, `$servings`   | numbers, or null                                                                               |
-| `$categories`             | `[{ title, url }]` — visible, with an address in this language                                 |
+| `$categories`             | `[{ id, title, url }]` — visible, with an address in this language                             |
 | `$nutrients`              | `[{ id, title }]` — visible                                                                    |
 | `$ingredients`, `$method` | HTML as stored — the field type cleaned it on the way in                                       |
 | `$nutrition`              | `[key => text]` — `calories`, `protein`, `fat`, `carbohydrates`, `fiber`, only what is written |

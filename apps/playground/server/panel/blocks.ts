@@ -547,8 +547,8 @@ const MAP_STYLES = `.b-map {
  * module that the site has not customised, so it is drawn by the module's own view.
  */
 const BADGE_TEMPLATE = `<span class="b-badge b-badge--{{ $tone }}" data-wx-block="badge">
-    @if ($icon)
-        <span class="b-badge__icon">{{ $icon }}</span>
+    @if ($mark)
+        <span class="b-badge__icon">{{ $mark }}</span>
     @endif
     {{ $text }}
 </span>
@@ -582,7 +582,7 @@ const TEASER_TEMPLATE = `<section class="b-recipe-teaser" data-wx-block="recipe-
         <h2 class="b-recipe-teaser__title">{{ $title }}</h2>
         @if ($badge)
             <x-webx-block type="badge" tone="accent" :text="$badge">
-                <x-slot:icon>★</x-slot:icon>
+                <x-slot:mark>★</x-slot:mark>
             </x-webx-block>
         @endif
     </div>
@@ -773,12 +773,12 @@ export const blockTypes: BlockType[] = [
           },
         },
         { id: 'text', type: 'wx-input', label: 'Текст' },
-        { id: 'icon', type: 'wx-slot', label: 'Значок' },
+        { id: 'mark', type: 'wx-slot', label: 'Значок' },
       ],
       template: BADGE_TEMPLATE,
       styles: BADGE_STYLES,
       script: null,
-      sample: { tone: 'accent', text: 'Новинка', icon: '★' },
+      sample: { tone: 'accent', text: 'Новинка', mark: '★' },
     },
   },
   {

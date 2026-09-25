@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace WebxUi\Recipes\Rendering;
 
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+use WebxUi\Admin\Relations\Relations;
 use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Media\Screens\MediaValues;
 use WebxUi\Recipes\Models\Recipe;
@@ -14,21 +17,30 @@ use WebxUi\Routing\Models\Route;
 /**
  * A recipe as a template reads it — plain data, not the model (§5.8).
  *
- *     id, anchor, categories   what every element of a `wx-collection` carries
+ *     id, anchor, categories   what every element of a `wx-collection` carries; `categories`
+ *                              are ids, which is what the block's filter compares
  *     title, url, lead         in the language asked for; `lead` is plain text
  *     cover, gallery           what `wx-media` hands over: url, thumb, width, height…; cover is
  *                              the first picture of the gallery, or null
  *     minutes, servings        numbers or null
+ *     category_links           [{ id, title, url }] — the visible categories with an address in
+ *                              this language, in the order chosen: the first is the main one
+ *     service_links            [{ id, title, url }] — the visible related services, in the order
+ *                              chosen; [] without `module-services`
  *     nutrients                [{ id, title }] — only the ones shown on the site
  *     fields                   the project's own fields (a patch on `recipes.form`), by name
  *
  * Not the model, because a model in a template is the draft one call away and a query per card
- * nobody sees: every card here is built from what was loaded with the list.
+ * nobody sees: every card here is built from what was loaded with the list — the services too,
+ * in one query for the whole list rather than one per card.
  */
 final class Cards
 {
     /** What a list of recipes is loaded with, so that no card goes back to the database. */
-    public const RELATIONS = ['routes', 'categories', 'nutrients'];
+    public const RELATIONS = ['routes', 'categories.routes', 'nutrients'];
+
+    /** The role the recipe form keeps its services under (`wx-relations` named `services`). */
+    private const SERVICES = 'services';
 
     public function __construct(
         private readonly MediaFiles $files,
@@ -53,8 +65,28 @@ final class Cards
 
         // Every picture of the list in one query of the library rather than one per card.
         $this->files->load($paths);
+        $this->loadServices($recipes);
 
         return array_map(fn (Recipe $recipe): array => $this->recipe($recipe, $locale), $recipes);
+    }
+
+    /**
+     * The categories a recipe shows, as links — the card's `category_links` and the recipe page's
+     * `$categories` alike, so the two never disagree about which category is the main one.
+     *
+     * @return list<array{id: int, title: string, url: string}>
+     */
+    public function categoryLinks(Recipe $recipe, string $locale): array
+    {
+        $links = [];
+
+        foreach ($recipe->shownCategories() as $category) {
+            if ($category instanceof RecipeCategory && $category->isVisible($locale) && $category->hasUrlIn($locale)) {
+                $links[] = ['id' => (int) $category->getKey(), 'title' => $category->displayName($locale), 'url' => $this->url($category, $locale)];
+            }
+        }
+
+        return $links;
     }
 
     /** @return array<string, mixed> */
@@ -79,6 +111,8 @@ final class Cards
             'gallery' => $gallery,
             'minutes' => $recipe->total_minutes,
             'servings' => $recipe->servings,
+            'category_links' => $this->categoryLinks($recipe, $locale),
+            'service_links' => $this->serviceLinks($recipe, $locale),
             'nutrients' => $recipe->nutrients
                 ->filter(static fn (RecipeNutrient $nutrient): bool => $nutrient->is_visible)
                 ->map(static fn (RecipeNutrient $nutrient): array => [
@@ -91,14 +125,84 @@ final class Cards
         ];
     }
 
-    /** From the loaded registry rows: `url()` would ask the registry again for every card. */
-    private function url(Recipe $recipe, string $locale): string
+    /**
+     * The services of every recipe of the list: the relation rows in one query, the services in
+     * one more, their addresses in a third. Nothing without `module-services` — no module answers
+     * for `service` then, and the rows wait for it.
+     *
+     * @param  list<Recipe>  $recipes
+     */
+    private function loadServices(array $recipes): void
     {
-        $row = $recipe->routes->first(
+        if ($recipes === []) {
+            return;
+        }
+
+        Relations::load($recipes, self::SERVICES);
+
+        $services = [];
+
+        foreach ($recipes as $recipe) {
+            foreach ($recipe->related(self::SERVICES) as $service) {
+                $services[spl_object_id($service)] = $service;
+            }
+        }
+
+        $services = array_values(array_filter($services, static fn (Model $service): bool => method_exists($service, 'routes')));
+
+        if ($services !== []) {
+            (new Collection($services))->loadMissing('routes');
+        }
+    }
+
+    /** @return list<array{id: int, title: string, url: string}> */
+    private function serviceLinks(Recipe $recipe, string $locale): array
+    {
+        $links = [];
+
+        foreach ($recipe->related(self::SERVICES, visible: true, locale: $locale) as $service) {
+            if (method_exists($service, 'hasUrlIn') && ! $service->hasUrlIn($locale)) {
+                continue;
+            }
+
+            $links[] = ['id' => (int) $service->getKey(), 'title' => $this->title($service, $locale), 'url' => $this->url($service, $locale)];
+        }
+
+        return $links;
+    }
+
+    /**
+     * From the loaded registry rows when the list loaded them: `url()` would ask the registry again
+     * for every card. A model loaded without them — a draft's pending category — asks.
+     */
+    private function url(Model $entity, string $locale): string
+    {
+        if (! method_exists($entity, 'url') || ! method_exists($entity, 'urlOf')) {
+            return '';
+        }
+
+        if (! $entity->relationLoaded('routes')) {
+            return (string) $entity->url($locale);
+        }
+
+        /** @var \Illuminate\Support\Collection<int, Route> $routes */
+        $routes = $entity->getRelation('routes');
+        $row = $routes->first(
             static fn (Route $route): bool => $route->locale === $locale && $route->kind === Route::CANONICAL,
         );
 
-        return $row instanceof Route ? $recipe->urlOf($row->path, $locale) : $recipe->url($locale);
+        return $row instanceof Route ? (string) $entity->urlOf($row->path, $locale) : (string) $entity->url($locale);
+    }
+
+    private function title(Model $entity, string $locale): string
+    {
+        if (method_exists($entity, 'displayName')) {
+            return (string) $entity->displayName($locale);
+        }
+
+        $value = method_exists($entity, 'getTranslation') ? $entity->getTranslation('title', $locale) : $entity->getAttribute('title');
+
+        return is_string($value) && trim($value) !== '' ? $value : '#'.$entity->getKey();
     }
 
     private function text(Recipe $recipe, string $attribute, string $locale): string

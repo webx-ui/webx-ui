@@ -110,8 +110,8 @@ final class BlockResource extends JsonResource
         return [
             'slug' => $declared['slug'],
             'module' => $declared['module'],
-            'title' => $declared['title'],
-            'description' => $declared['description'],
+            'title' => (string) BlockComponents::words($declared['title']),
+            'description' => BlockComponents::words($declared['description']),
             'fallback' => $declared['fallback'],
             'customised' => $customised,
         ];

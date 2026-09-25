@@ -101,6 +101,38 @@ Inside the template:
 Put `data-wx-block="{slug}"` on the root element: the script runtime and the panel find the
 block by it.
 
+## Components
+
+A type can also be called by tag from any template — another block's, a module's view, the site's
+layout:
+
+```blade
+<x-webx-block type="recipe-card" :card="$card" fallback="webx-recipes::partials.card" />
+```
+
+`kind = component` keeps a type out of the picker; its schema is the tag's input, with two nodes
+of its own: `wx-data` (a value passed from code, `props.shape` naming a form registered in
+`BlockShapes`) and `wx-slot` (a named slot; `$slot` is always there). The tag prints the published
+version, the draft on a preview; `fallback` is a view printed while the type is missing or
+unpublished. Every version records the literal types its template calls (`uses`), and publishing a
+type first draws every published type that calls it, on its sample and its pages; a type others
+call cannot be deleted, and circles are refused.
+
+A module declares the places it calls from, with its own partial as the fallback:
+
+```php
+$this->app->make(BlockComponents::class)->declare(
+    slug: 'recipe-card', module: 'recipes', fallback: 'webx-recipes::partials.card',
+    title: 'Recipe card', schema: [['type' => 'wx-data', 'id' => 'card', 'props' => ['shape' => 'recipes.card']]],
+);
+```
+
+and prints them with `@webxPart('recipe-card', ['card' => $card], 'webx-recipes::partials.card')`
+(`module-admin`), which is the partial when this package is not installed. `POST
+/blocks/components/{slug}/customise` — **Customise** in the panel, `blocks_create` for an agent —
+starts a component from the fallback view as the site has it; deleting it brings the partial back.
+Calls from a site's own views are not tracked: give them a `fallback`.
+
 ## What happens when a block fails
 
 Every block renders inside its own try/catch. On the live site a failure goes to the exception
@@ -218,7 +250,9 @@ for an agent: `blocks_list`, `blocks_get`, `blocks_create`, `blocks_update`, `bl
 `blocks_render`, `blocks_get_content`, `blocks_set_content`, `blocks_edit_content` (`set`, `add`,
 `move`, `remove`, `hide`, `show`, by key), `blocks_preview_url`. The same doors
 the panel uses, with `mcp` as the source in the history; every tool that changes something takes
-`dry_run: true`. Scopes `blocks:read` and `blocks:write` are the abilities of the token
+`dry_run: true`. For components the list and the type add `kind`, `uses`, `used_by`, the data
+shapes and the declared places; `blocks_create` on a declared slug without a template customises
+it. Scopes `blocks:read` and `blocks:write` are the abilities of the token
 `php artisan webx:mcp:token` issues. Before writing, an agent reads `blocks://guidelines`,
 `blocks://catalog`, `blocks://fields` and `blocks://site`; the prompt `design_block` packages the
 loop of create, render, fix, report.
