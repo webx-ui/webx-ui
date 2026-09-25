@@ -198,6 +198,27 @@ describe('WxBlocksPage with components', () => {
     ])
   })
 
+  /* A real mouse clicks the card it let go of; moving a card is not opening it. */
+  it('stays on the list after a card is dropped, and a click after that opens as before', async () => {
+    const { wrapper, router } = panel([type('hero', { id: 1 }), type('text', { id: 2 })], [])
+
+    await flushPromises()
+
+    wrapper.findComponent(VueDraggable).vm.$emit('end')
+    await wrapper.findAll('.wx-block-card')[0]!.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).not.toBe('/blocks/1')
+
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(Date.now() + 1000)
+    await wrapper.findAll('.wx-block-card')[0]!.trigger('click')
+    vi.useRealTimers()
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/blocks/1')
+  })
+
   it('does not drag while searching', async () => {
     const { wrapper } = panel([type('hero', { id: 1 }), type('text', { id: 2 })], [])
 
