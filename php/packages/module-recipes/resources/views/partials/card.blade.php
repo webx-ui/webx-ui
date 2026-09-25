@@ -7,7 +7,7 @@
     The category and the services are links of their own, so they sit outside the card's link —
     a link inside a link is not a link at all.
 --}}
-<li class="wx-recipes__card">
+<li class="wx-recipes__card" data-wx-block="recipe-card">
     <a class="wx-recipes__link" href="{{ $card['url'] }}">
         @if ($card['cover'] && $card['cover']['url'])
             <img class="wx-recipes__cover" src="{{ $card['cover']['url'] }}" alt="{{ $card['cover']['alt'] ?? '' }}"
