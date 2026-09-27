@@ -46,8 +46,12 @@ const props = withDefaults(
      * The way out of the screen. A route draws a link; `true` draws the same arrow and emits
      * `back` instead, which is what a pane inside `WxListDetail` needs — on a phone the drawer
      * carries no close of its own and the pane has to bring one (CLAUDE.md §4).
+     *
+     * `string` and `object` are spelled out beside `RouteLocationRaw` for the compiler: it
+     * cannot resolve the router's type, drops it and leaves `Boolean` alone as the runtime
+     * type, so every editor passing its list's path warned "Expected Boolean, got String".
      */
-    back?: RouteLocationRaw | boolean
+    back?: RouteLocationRaw | string | object | boolean
     /** What the arrow's tooltip says. The panel's own word for it when not given. */
     backLabel?: string
     /** `2` for a screen, `3` for a pane standing inside one. */
