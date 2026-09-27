@@ -28,6 +28,8 @@ parameters:
         - packages/module-menu/tests
         - packages/module-pages/src
         - packages/module-pages/tests
+        - packages/module-press/src
+        - packages/module-press/tests
         - packages/module-reviews/src
         - packages/module-recipes/src
         - packages/module-reviews/tests

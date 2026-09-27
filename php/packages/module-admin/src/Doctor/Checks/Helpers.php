@@ -23,6 +23,7 @@ final class Helpers implements Check
     private const HELPERS = [
         'events' => 'webx-ui/module-events',
         'menu' => 'webx-ui/module-menu',
+        'press' => 'webx-ui/module-press',
         'recipes' => 'webx-ui/module-recipes',
         'reviews' => 'webx-ui/module-reviews',
         'services' => 'webx-ui/module-services',

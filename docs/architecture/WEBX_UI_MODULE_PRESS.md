@@ -86,7 +86,8 @@ FAQ и отзывов (`BlockOffers`). Нового общего контрак�
     адресов, нет её — звено пропускается (как у рецептов).
 13. **«Показывать в полосе логотипов» — флаг `featured` у издания.** Блок логотипов выбирает
     «все» или «только отмеченные». Выбор отдельных изданий руками в блоке — нет (§7).
-14. **Разметка — `ItemList` материалов на странице издания** (`Seo::push()`), у каждого —
+14. **Разметка — `ItemList` материалов на странице издания** (`HasStructuredData` у издания —
+    итог P1), у каждого —
     `Article` с `headline`, `url`, `datePublished` (только при точности `day`) и `publisher` —
     `Organization` издания (`name`, `url`, `logo`). Rich results от этого не ждём и Rich Results
     Test не проверяем: смысл — связать сайт с изданиями для поиска и агентов. «about Person Katia»
@@ -211,7 +212,8 @@ press_articles
 - **Articles** — `wx-repeater` с именем `articles`; поля строки: `id` (невидимое, см. ниже),
   `title` и `excerpt` (`localized`), `kind` (`wx-select`, варианты из конфига — сервер кладёт
   их в `props.options` при отдаче экрана), `published_on` (`wx-date-picker`, только дата),
-  `date_precision` (`wx-segmented`), `url`, `file` (`wx-file`, `accept: application/pdf`),
+  `date_precision` (`wx-segmented`), `url`, `file` (`wx-file`, `accept: document` — поле библиотеки знает виды, а не mime; «только PDF»
+  проверяет `OutletForm`, итог P1),
   `is_hidden` («Не показывать»). Заголовок свёрнутой карточки — «#N · заголовок на языке панели».
 - **SEO** — карточка `wx-seo` патчем от `module-seo`.
 
@@ -527,6 +529,58 @@ WEBX_UI_COMPOSER_PACKAGES.md и CLAUDE.md §§2,6 — отдельным docs-PR
 по-английски не виден на /ru, издание без русских материалов на /ru — 404 и нет в sitemap;
 ItemList в <head> проходит validator.schema.org; полоса логотипов. Телефон — пользователь.
 ```
+
+### Итог P1 (27.09.2026)
+
+Composer-пакет `php/packages/module-press` написан целиком, кроме MCP и демо; гейт php-половины
+зелёный (pint, phpstan, phpunit — 56 тестов пакета плюс весь прогон).
+
+- **§4.6: `wx-hidden` не нужен, npm-половина типа P2 не нужна.** `id` строки переживает
+  `ScreenValues` в обе стороны, если его узел — `wx-input-number` с `visible: false`:
+  `RepeaterType::store()` держит ключи, названные детьми, а число — ровно то, что берёт этот тип
+  (`wx-input` не годится: его правила хотят строку и отвечают 422 на целое). На клиенте
+  `WxRepeater` пишет поле копией строки (`{ ...item, ...patch }`), так что ключ `id` едет с
+  сервера и обратно, ничего не рисуя. Тест — `FormTest::the_id_of_a_row_survives_the_screen_both_ways`.
+- **API §4.10 — ровно как написано, отличий нет.** `restore` отвечает `{ data: <строка списка> }`,
+  как у отзывов. Строки формы — со всеми ключами §4.10; ошибки строк — `articles.<n>.<поле>`, у
+  переводимого — `articles.<n>.title.<язык>`, чужой `id` — `articles` («Row N is an article of
+  another outlet»). Клиентский `WxScreenRenderer` сводит всё это к полю `articles`; показать
+  ошибку под полем строки — дело `WxScreenRepeater` (P2).
+- **`accept` у `wx-file` — вид (`document`), а не mime.** `MediaValues::accept()` знает только
+  виды библиотеки, и `application/pdf` молча не проверялся бы вовсе. PDF проверяет
+  `OutletForm` (`articles.<n>.file`); файл, которого в библиотеке больше нет, пропускается, как
+  везде у `wx-file`.
+- **`kind` в `props.options` кладёт провайдер при регистрации экрана** (`Panel\OutletScreen`), а
+  не при каждой отдаче: экран — массив, собранный на boot из json и конфига. Этим же путём
+  при `pages = false` из экрана уходит `slug`. Слова вариантов — `trans::webx-press::kinds.*`.
+- **Виды в предложенных блоках** — новый третий аргумент `BlockOffers::offer($module, $path,
+$shape)` в `module-blocks`: замыкание над документом при чтении, с тестом в `OffersTest`. Поле
+  `kinds` получает варианты из конфига, подписи — английские слова `webx-press::kinds.*`.
+- **Разметка — через `HasStructuredData` издания, не `Seo::push()`.** Список о сущности, а не о
+  странице, и так он печатается везде, где стоит `@webxSeo($outlet)`, — в том числе в
+  переписанной вьюхе сайта. Решение 14 поправлено.
+- **Слаг языка, у которого есть материалы, а своего слага нет, берётся с другого языка**
+  (`Outlet::fillSlugs()`: язык по умолчанию → любой → `Str::slug` названия). Иначе русский
+  материал, добавленный агентом или тинкером, не давал изданию русской страницы: форма
+  заполняет пустое, а у двери мимо формы заполнять некому. Работает в `syncAddresses()`, то есть
+  на любой двери.
+- **Адрес издания** — `hasUrlIn()`: слаг на языке **и** видимый на нём материал (без
+  `published`, как у черновика страницы). Материал при создании, удалении и смене `title`,
+  `is_hidden`, `outlet_id` пересчитывает строку реестра издания; форма собирает это в один
+  проход (`Outlet::holdingAddresses()`). При `pages = false` события реестра у издания не
+  зовутся вовсе (`bootHasUrl()` переопределён и спрашивает `RouteTypes`).
+- **`When`**: день — `LL` языка («August 12, 2023», «12. August 2023»), у `ru`/`be` без хвоста
+  « г.»; месяц — `MMMM YYYY`, Carbon сам даёт именительный («август 2023», «серпень 2023»).
+- Слова §5 — на десять языков: `module`, `list`, `screen`, `kinds`, `errors`, `site`. Для панели
+  заведены `screen.article-label` («#:number · :title») и `screen.article-untitled`, для списка —
+  `list.visible-in`, `list.search`, `list.delete-confirm` и прочее; недостающее P2 дописывает сам.
+- Регистрации: `php/composer.json` (require, versions, autoload-dev), `phpunit.xml.dist`,
+  `phpstan.neon.dist`, `Setup\Catalogue`, `Doctor\Checks\Helpers` (`press()`), `extra.webx` в
+  composer.json пакета (`@webx-ui/module-press` `^0.1.0`, `...press()`), патч SEO-вкладки в
+  `module-seo`. Плейграунд, сайт и smoke — не здесь (P2, P4).
+- Хвост для P3: MCP-инструменты пишут материалы через `Article` напрямую — адреса издания
+  пересчитываются сами (наблюдатель), но несколько записей подряд стоит завернуть в
+  `Outlet::holdingAddresses()`.
 
 ## 7. Отложено
 
