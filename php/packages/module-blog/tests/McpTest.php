@@ -17,6 +17,7 @@ use WebxUi\Mcp\Prompt;
 use WebxUi\Mcp\Registry\ToolRegistry;
 use WebxUi\Mcp\Server\RegistryTool;
 use WebxUi\Mcp\Server\WebxServer;
+use WebxUi\Routing\Models\Route;
 use WebxUi\Seo\Models\SeoRedirect;
 
 /**
@@ -246,6 +247,21 @@ final class McpTest extends TestCase
         // And the flat namespace is what makes that true of a rubric's address too (§4).
         $this->agent('articles_create', ['title' => 'Repairs again', 'slug' => 'repairs'])
             ->assertHasErrors(['Not accepted']);
+    }
+
+    #[Test]
+    public function a_refused_value_leaves_no_article_and_no_address_behind(): void
+    {
+        // A translated field given as a bare string: the screen refuses it after the row is in.
+        $this->agent('articles_create', ['title' => 'How to choose a belt', 'values' => ['lead' => 'Three things.']], $this->editor())
+            ->assertHasErrors(['lead']);
+
+        $this->assertSame(0, Article::query()->withTrashed()->count());
+        $this->assertSame(0, Route::query()->where('entity_type', (new Article)->getMorphClass())->count());
+
+        // And the address is still free for the call that gets it right.
+        $this->agent('articles_create', ['title' => 'How to choose a belt', 'values' => ['lead' => ['en' => 'Three things.']]], $this->editor())
+            ->assertOk();
     }
 
     #[Test]
