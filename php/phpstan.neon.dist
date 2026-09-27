@@ -40,6 +40,8 @@ parameters:
         - packages/module-services/tests
         - packages/module-settings/src
         - packages/module-settings/tests
+        - packages/module-team/src
+        - packages/module-team/tests
         - packages/nested-set/src
         - packages/nested-set/tests
         - packages/routing/src

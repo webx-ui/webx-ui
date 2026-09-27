@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'new' => 'Nuova persona',
+    'untitled' => 'Senza nome',
+    'search' => 'Cerca nel team',
+    'empty' => 'Nel team non c’è ancora nessuno.',
+    'empty-help' => 'Una persona arriva sul sito con un blocco Team, in qualsiasi pagina.',
+    'empty-search' => 'Nessun risultato.',
+    'empty-bin' => 'Il cestino è vuoto.',
+    'all' => 'Tutti',
+    'trashed' => 'Cestino',
+    'not-published' => 'Non pubblicato',
+    'no-job-title' => 'Nessun ruolo',
+    'order' => 'Trascina per cambiare l’ordine sul sito.',
+    'choose' => 'Scegli una persona',
+    'choose-help' => 'Oppure aggiungine una nuova: la prima riga dell’elenco.',
+    'save' => 'Salva',
+    'saved' => 'Salvato.',
+    'save-failed' => 'Non salvato.',
+    'cancel' => 'Annulla',
+    'delete' => 'Elimina',
+    'delete-title' => 'Eliminare «:name» dal team?',
+    'delete-text' => 'La persona finisce nel cestino e sparisce da tutti i blocchi del sito. Ripristinata, torna al suo posto.',
+    'deleted' => 'Spostato nel cestino.',
+    'restore' => 'Ripristina',
+    'restored' => 'Ripristinato.',
+    'reorder-failed' => 'Il nuovo ordine non è stato salvato.',
+    'leave-title' => 'Uscire senza salvare?',
+    'leave-text' => 'Ciò che hai scritto su questa persona non è sul server.',
+    'leave' => 'Esci',
+    'back' => 'Torna all’elenco',
+];

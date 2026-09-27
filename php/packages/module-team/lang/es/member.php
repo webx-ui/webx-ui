@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'new' => 'Nueva persona',
+    'untitled' => 'Sin nombre',
+    'search' => 'Buscar en el equipo',
+    'empty' => 'Todavía no hay nadie en el equipo.',
+    'empty-help' => 'Una persona aparece en el sitio en un bloque Equipo, en cualquier página.',
+    'empty-search' => 'No hay resultados.',
+    'empty-bin' => 'La papelera está vacía.',
+    'all' => 'Todos',
+    'trashed' => 'Papelera',
+    'not-published' => 'No publicado',
+    'no-job-title' => 'Sin cargo',
+    'order' => 'Arrastra para cambiar el orden en el sitio.',
+    'choose' => 'Elige a una persona',
+    'choose-help' => 'O añade una nueva: la primera línea de la lista.',
+    'save' => 'Guardar',
+    'saved' => 'Guardado.',
+    'save-failed' => 'No se ha guardado.',
+    'cancel' => 'Cancelar',
+    'delete' => 'Eliminar',
+    'delete-title' => '¿Eliminar a «:name» del equipo?',
+    'delete-text' => 'La persona va a la papelera y desaparece de todos los bloques del sitio. Al restaurarla, vuelve a su lugar.',
+    'deleted' => 'Movido a la papelera.',
+    'restore' => 'Restaurar',
+    'restored' => 'Restaurado.',
+    'reorder-failed' => 'El nuevo orden no se ha guardado.',
+    'leave-title' => '¿Salir sin guardar?',
+    'leave-text' => 'Lo que escribiste sobre esta persona no está en el servidor.',
+    'leave' => 'Salir',
+    'back' => 'Volver a la lista',
+];

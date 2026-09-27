@@ -1,0 +1,136 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "team.form",
+  "model": "team-member",
+  "root": [
+    {
+      "id": "person",
+      "type": "wx-card",
+      "label": "trans::webx-team::screen.person",
+      "children": [
+        {
+          "id": "photo",
+          "type": "wx-media",
+          "name": "photo",
+          "label": "trans::webx-team::screen.photo",
+          "help": "trans::webx-team::screen.photo-help",
+          "props": {
+            "accept": "image",
+            "aspect": "1/1",
+            "width": 160
+          }
+        },
+        {
+          "id": "name",
+          "type": "wx-input",
+          "name": "name",
+          "label": "trans::webx-team::screen.name",
+          "help": "trans::webx-team::screen.name-help",
+          "localized": true,
+          "props": {
+            "maxlength": 255
+          }
+        },
+        {
+          "id": "job-title",
+          "type": "wx-input",
+          "name": "job_title",
+          "label": "trans::webx-team::screen.job-title",
+          "help": "trans::webx-team::screen.job-title-help",
+          "localized": true,
+          "props": {
+            "maxlength": 255
+          }
+        },
+        {
+          "id": "text",
+          "type": "wx-textarea",
+          "name": "text",
+          "label": "trans::webx-team::screen.text",
+          "help": "trans::webx-team::screen.text-help",
+          "localized": true,
+          "props": {
+            "rows": 6,
+            "maxlength": 5000
+          }
+        }
+      ]
+    },
+    {
+      "id": "links",
+      "type": "wx-card",
+      "label": "trans::webx-team::screen.links",
+      "children": [
+        {
+          "id": "socials",
+          "type": "wx-repeater",
+          "name": "socials",
+          "label": "trans::webx-team::screen.socials",
+          "help": "trans::webx-team::screen.socials-help",
+          "props": {
+            "max": 20,
+            "sortable": true,
+            "addLabel": "trans::webx-team::screen.add-social"
+          },
+          "children": [
+            {
+              "id": "social-row",
+              "type": "wx-row",
+              "children": [
+                {
+                  "id": "social-network",
+                  "type": "wx-select",
+                  "name": "network",
+                  "label": "trans::webx-team::screen.network",
+                  "props": {
+                    "placeholder": "trans::webx-team::screen.network-placeholder"
+                  }
+                },
+                {
+                  "id": "social-url",
+                  "type": "wx-input",
+                  "name": "url",
+                  "label": "trans::webx-team::screen.url",
+                  "props": {
+                    "maxlength": 2048,
+                    "placeholder": "https://"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "services",
+          "type": "wx-relations",
+          "name": "services",
+          "label": "trans::webx-team::screen.services",
+          "help": "trans::webx-team::screen.services-help",
+          "props": {
+            "target": "service"
+          }
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "type": "wx-card",
+      "label": "trans::webx-team::screen.settings",
+      "children": [
+        {
+          "id": "published",
+          "type": "wx-switch",
+          "name": "published",
+          "label": "trans::webx-team::screen.published",
+          "help": "trans::webx-team::screen.published-help"
+        }
+      ]
+    },
+    {
+      "id": "project-fields",
+      "type": "wx-card",
+      "label": "trans::webx-admin::screens.project-fields",
+      "children": []
+    }
+  ]
+}

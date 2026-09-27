@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'new' => 'New person',
+    'untitled' => 'Untitled',
+    'search' => 'Search the team',
+    'empty' => 'Nobody on the team yet.',
+    'empty-help' => 'A person reaches the site in a team block, on any page.',
+    'empty-search' => 'Nothing matches that.',
+    'empty-bin' => 'The bin is empty.',
+    'all' => 'All',
+    'trashed' => 'Bin',
+    'not-published' => 'Not published',
+    'no-job-title' => 'No job title',
+    'order' => 'Drag to change the order on the site.',
+    'choose' => 'Choose a person',
+    'choose-help' => 'Or add a new one: the first line of the list.',
+    'save' => 'Save',
+    'saved' => 'Saved.',
+    'save-failed' => 'Not saved.',
+    'cancel' => 'Cancel',
+    'delete' => 'Delete',
+    'delete-title' => 'Delete “:name” from the team?',
+    'delete-text' => 'They go to the bin and leave every block on the site. Restored, they come back to their place.',
+    'deleted' => 'Moved to the bin.',
+    'restore' => 'Restore',
+    'restored' => 'Restored.',
+    'reorder-failed' => 'The new order was not saved.',
+    'leave-title' => 'Leave without saving?',
+    'leave-text' => 'What you wrote about this person is not on the server.',
+    'leave' => 'Leave',
+    'back' => 'Back to the list',
+];
