@@ -80,7 +80,9 @@ line of config. Names are brands and are not translated. A network taken out of 
 of every card on the site and stays in the database: put it back, and the links come back.
 
 A row of the form with neither a network nor an address is dropped on save; a row with only one of
-the two, or an address that is not `http(s)://`, is refused under that row's field.
+the two, an address that is not `http(s)://` or a network that is not on the list is refused under
+that row's field. A link the person already has to a network taken off the list is kept as it is:
+the form sends it back the way it opened it, and a save is not refused over it.
 
 ## Two roads into a template
 
@@ -141,7 +143,7 @@ function of that name; `php artisan webx:doctor` says whose it is.
 
 The type is a document in `resources/blocks/team.json`, the same format as `webx:blocks:export`:
 a heading, the `team` collection, a `layout`, `columns` for a grid and a slider, `autoplay` for a
-slider, and whether to show the text.
+slider, and `hide_text` — off, the untouched state, shows the text.
 
 - **Grid** — up to `columns` across (4 when not set), fewer when the block is narrow.
   **Slider** — the same card in a ribbon that snaps, with arrows and, if asked, autoplay.

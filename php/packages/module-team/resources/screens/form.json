@@ -41,7 +41,14 @@
           "props": {
             "maxlength": 255
           }
-        },
+        }
+      ]
+    },
+    {
+      "id": "about",
+      "type": "wx-card",
+      "label": "trans::webx-team::screen.about",
+      "children": [
         {
           "id": "text",
           "type": "wx-textarea",
@@ -70,7 +77,8 @@
           "props": {
             "max": 20,
             "sortable": true,
-            "addLabel": "trans::webx-team::screen.add-social"
+            "addLabel": "trans::webx-team::screen.socials-add",
+            "emptyText": "trans::webx-team::screen.socials-empty"
           },
           "children": [
             {

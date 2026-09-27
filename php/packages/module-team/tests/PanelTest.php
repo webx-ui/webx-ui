@@ -210,10 +210,11 @@ final class PanelTest extends TestCase
     public function a_social_link_is_refused_under_its_row(): void
     {
         $cases = [
-            'not a web address' => [['network' => 'instagram', 'url' => 'javascript:alert(1)'], 'socials.0.url'],
-            'no scheme' => [['network' => 'instagram', 'url' => 'instagram.com/anna'], 'socials.0.url'],
-            'no address' => [['network' => 'instagram', 'url' => ''], 'socials.0.url'],
-            'no network' => [['network' => '', 'url' => 'https://example.com'], 'socials.0.network'],
+            'not a web address' => [['network' => 'instagram', 'url' => 'javascript:alert(1)'], 'socials.1.url'],
+            'no scheme' => [['network' => 'instagram', 'url' => 'instagram.com/anna'], 'socials.1.url'],
+            'no address' => [['network' => 'instagram', 'url' => ''], 'socials.1.url'],
+            'no network' => [['network' => '', 'url' => 'https://example.com'], 'socials.1.network'],
+            'a network the site does not have' => [['network' => 'myspace', 'url' => 'https://myspace.com/anna'], 'socials.1.network'],
         ];
 
         foreach ($cases as $case => [$row, $key]) {
@@ -221,16 +222,40 @@ final class PanelTest extends TestCase
                 'values' => ['name' => ['en' => 'Anna'], 'socials' => [['network' => '', 'url' => ''], $row]],
             ])->assertUnprocessable()->json('errors');
 
-            // The empty row before it is dropped, so the refused row is the first one.
+            // Numbered as the editor sees the rows: the empty one before it counts.
             $this->assertSame([$key], array_keys((array) $errors), $case);
         }
 
-        // A network the config does not have is refused by the screen: the select's options.
-        $this->actingAs($this->editor(), 'cms')->postJson($this->api(), [
-            'values' => ['name' => ['en' => 'Anna'], 'socials' => [['network' => 'myspace', 'url' => 'https://myspace.com/anna']]],
-        ])->assertUnprocessable()->assertJsonValidationErrors(['socials']);
-
         $this->assertSame(0, Member::query()->withTrashed()->count());
+    }
+
+    #[Test]
+    public function a_link_to_a_network_the_config_dropped_survives_a_save_of_the_form_it_came_back_in(): void
+    {
+        $member = $this->member('Anna', attributes: ['socials' => [
+            ['network' => 'x', 'url' => 'https://x.com/anna'],
+            ['network' => 'myspace', 'url' => 'https://myspace.com/anna'],
+            ['network' => 'tiktok', 'url' => 'https://tiktok.com/@anna'],
+        ]]);
+
+        // The form opens with every stored link and sends them all back, with one changed.
+        $sent = [
+            ['network' => 'x', 'url' => 'https://x.com/anna.p'],
+            ['network' => 'myspace', 'url' => 'https://myspace.com/anna'],
+            ['network' => 'tiktok', 'url' => 'https://tiktok.com/@anna'],
+        ];
+
+        $this->actingAs($this->editor(), 'cms')->putJson($this->api($member->id), ['values' => ['socials' => $sent]])
+            ->assertOk()
+            ->assertJsonPath('data.values.socials', $sent);
+
+        $this->assertSame(['x', 'tiktok'], array_column(team()->first()['socials'] ?? [], 'network'), 'still hidden on the site');
+
+        // A dropped network is kept, not offered: a new link to it is refused like any other.
+        $this->actingAs($this->editor(), 'cms')->putJson($this->api($member->id), ['values' => ['socials' => [
+            ...$sent,
+            ['network' => 'myspace', 'url' => 'https://myspace.com/someone-else'],
+        ]]])->assertUnprocessable()->assertJsonValidationErrors(['socials.3.network']);
     }
 
     #[Test]

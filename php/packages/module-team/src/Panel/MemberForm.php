@@ -9,6 +9,7 @@ use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Screens\ScreenRecord;
 use WebxUi\Localization\Locales;
 use WebxUi\Team\Models\Member;
+use WebxUi\Team\Networks;
 
 /**
  * The editor's screen on the server side: what its fields hold, and what a save writes (§5.7).
@@ -37,6 +38,7 @@ final class MemberForm
         private readonly ScreenRecord $record,
         private readonly Locales $locales,
         private readonly ConnectionInterface $db,
+        private readonly Networks $networks,
     ) {}
 
     /**
@@ -91,15 +93,21 @@ final class MemberForm
      */
     public function save(Member $member, array $input, ?callable $can = null): Member
     {
+        $kept = [];
+
         if (array_key_exists('socials', $input)) {
-            $input['socials'] = $this->socials($input['socials']);
+            [$input['socials'], $kept] = $this->socials($input['socials'], $member);
         }
 
         $split = $this->record->split(Member::SCREEN, $input, self::OWN, [], $can);
 
-        return $this->db->transaction(function () use ($member, $split): Member {
+        return $this->db->transaction(function () use ($member, $split, $kept): Member {
             foreach ($split->own as $field => $value) {
-                $this->write($member, $field, $value);
+                if ($field === 'socials') {
+                    $member->socials = $this->storedSocials($value, $kept);
+                } else {
+                    $this->write($member, $field, $value);
+                }
             }
 
             $this->checkName($member);
@@ -125,33 +133,45 @@ final class MemberForm
             case 'photo':
                 $member->photo = is_array($value) ? $value : null;
                 break;
-            case 'socials':
-                $member->socials = $this->storedSocials($value);
-                break;
             default:
                 $this->translate($member, $field, $value);
         }
     }
 
     /**
-     * The links as the repeater sent them, tidied before the screen checks them (§5.4): a row with
-     * neither a network nor an address is an empty row, not a mistake, and is dropped; a row with
-     * one of the two, or an address a browser would not open as a page, is a 422 under the field
-     * of that row. Whether the network is one the site has is the screen's own check — the options
-     * of the select come from the config (`TeamServiceProvider::registerScreens()`).
+     * The links as the repeater sent them, tidied before the screen checks them (§5.4).
+     *
+     * - A row with neither a network nor an address is an empty row, not a mistake: dropped.
+     * - A row with one of the two, an address a browser would not open as a page, or a network
+     *   the site does not have is a 422 under the field of that row — numbered as the editor sees
+     *   the rows, empty ones included, so the panel puts it under the right one.
+     * - A link the person already has, to a network the config no longer lists, is kept as it is
+     *   and never shown to the screen's check: the site hides it, the database keeps it
+     *   (§5.2), and a form that sends back what it opened with must not be refused for it.
+     *
+     * The screen checks the network too — the options of its select are the config
+     * (`TeamServiceProvider::registerScreens()`) — which is what an agent's door relies on.
+     *
+     * Answers the rows for the screen, and the kept links by their place in the stored list.
+     *
+     * @return array{0: mixed, 1: array<int, array{network: string, url: string}>}
      *
      * @throws ValidationException
      */
-    private function socials(mixed $value): mixed
+    private function socials(mixed $value, Member $member): array
     {
         if (! is_array($value)) {
-            return $value;
+            return [$value, []];
         }
 
+        $networks = $this->networks->all();
+        $stored = array_map(static fn (array $link): string => $link['network']."\n".$link['url'], $member->socialLinks());
+
         $rows = [];
+        $kept = [];
         $errors = [];
 
-        foreach (array_values($value) as $row) {
+        foreach (array_values($value) as $index => $row) {
             if (! is_array($row)) {
                 $rows[] = $row;
 
@@ -165,10 +185,18 @@ final class MemberForm
                 continue;
             }
 
-            $at = 'socials.'.count($rows);
+            if ($network !== '' && ! array_key_exists($network, $networks) && in_array($network."\n".$url, $stored, true)) {
+                $kept[count($rows) + count($kept)] = ['network' => $network, 'url' => $url];
+
+                continue;
+            }
+
+            $at = "socials.{$index}";
 
             if ($network === '') {
                 $errors["{$at}.network"] = [(string) __('webx-team::errors.network-missing')];
+            } elseif (! array_key_exists($network, $networks)) {
+                $errors["{$at}.network"] = [(string) __('webx-team::errors.network-unknown', ['networks' => implode(', ', $networks)])];
             }
 
             if ($url === '') {
@@ -184,21 +212,33 @@ final class MemberForm
             throw ValidationException::withMessages($errors);
         }
 
-        return $rows;
+        return [$rows, $kept];
     }
 
     /**
+     * What the screen let through, with the kept links put back where they stood.
+     *
+     * @param  array<int, array{network: string, url: string}>  $kept
      * @return list<array{network: string, url: string}>|null
      */
-    private function storedSocials(mixed $value): ?array
+    private function storedSocials(mixed $value, array $kept): ?array
     {
-        $links = [];
+        $checked = [];
 
         foreach (is_array($value) ? $value : [] as $row) {
             if (is_array($row) && is_string($row['network'] ?? null) && is_string($row['url'] ?? null)) {
-                $links[] = ['network' => $row['network'], 'url' => $row['url']];
+                $checked[] = ['network' => $row['network'], 'url' => $row['url']];
             }
         }
+
+        $links = [];
+        $total = count($checked) + count($kept);
+
+        for ($place = 0; $place < $total; $place++) {
+            $links[] = $kept[$place] ?? array_shift($checked);
+        }
+
+        $links = array_values(array_filter($links));
 
         return $links === [] ? null : $links;
     }

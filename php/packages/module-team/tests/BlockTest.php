@@ -27,7 +27,7 @@ final class BlockTest extends TestCase
         $this->assertSame('Team', $block->title);
         $this->assertSame('Offered by team', $block->publishedVersion?->comment);
         $this->assertSame(
-            ['title', 'team', 'layout', 'columns', 'autoplay', 'show_text'],
+            ['title', 'team', 'layout', 'columns', 'autoplay', 'hide_text'],
             array_column((array) $block->publishedVersion->schema, 'id'),
         );
         $this->assertSame('wx-collection', $block->publishedVersion?->schema[1]['type'] ?? null);
@@ -102,10 +102,10 @@ final class BlockTest extends TestCase
         $this->assertStringContainsString('data-team-layout="grid"', $html);
         $this->assertStringContainsString('style="--team-columns: 4"', $html);
         $this->assertStringContainsString('data-team-autoplay="off"', $html);
-        $this->assertStringContainsString('Anna works here.', $html, 'an untouched switch shows the text, and an untouched collection is everybody');
+        $this->assertStringContainsString('Anna works here.', $html, 'an untouched switch — off — shows the text, and an untouched collection is everybody');
         $this->assertStringNotContainsString('b-team__nav', $html, 'the arrows are the slider\'s');
 
-        $this->assertStringNotContainsString('Anna works here.', $this->render([$this->node(['show_text' => false])]));
+        $this->assertStringNotContainsString('Anna works here.', $this->render([$this->node(['hide_text' => true])]));
     }
 
     #[Test]
