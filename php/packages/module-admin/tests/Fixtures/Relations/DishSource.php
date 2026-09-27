@@ -52,8 +52,7 @@ final class DishSource implements CollectionSource
     {
         $this->asked = $selection;
 
-        return $selection->apply(Dish::query())
-            ->get()
+        return (new DishQuery)->selected($selection)->locale($locale)->models()
             ->map(static fn (Dish $dish): array => [
                 'id' => $dish->id,
                 'anchor' => 'dish-'.$dish->id,

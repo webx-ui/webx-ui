@@ -4,15 +4,11 @@ declare(strict_types=1);
 
 namespace WebxUi\Press\Rendering;
 
-use ArrayIterator;
-use Countable;
 use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use IteratorAggregate;
-use Traversable;
-use WebxUi\Localization\Locales;
+use WebxUi\Admin\Collections\RecordQuery;
 use WebxUi\Press\Models\Article;
 use WebxUi\Press\Models\Outlet;
 use WebxUi\Routing\Models\Route;
@@ -27,54 +23,42 @@ use WebxUi\Routing\Models\Route;
  *     press()->articles()->kind(['authored']) // the articles of this kind
  *     press()->only([3, 7])                   // these, in this order
  *
- * The same steps and the same meaning as `reviews()` and `events()`. Every step returns a new
- * query. What a reader may see is not a step (decision 7): an outlet published, out of the bin and
- * with an article seen in the language being read; an article not set aside, titled in that
- * language, in such an outlet. The shape of a card is {@see Cards}.
+ * The steps shared with `reviews()` and `events()` and their rules are {@see RecordQuery}'s. What
+ * a reader may see is not a step (decision 7): an outlet published, out of the bin and with an
+ * article seen in the language being read; an article not set aside, titled in that language, in
+ * such an outlet. The shape of a card is {@see Cards}.
  *
- * `featured()` is about outlets — the strip of logos — and narrows a feed of articles to theirs.
- * `kind()` of an outlet is "ran an article of this kind"; the outlet stays in its own order.
- * `only()` and `except()` name outlets or articles, whichever the query lists.
+ * Two kinds of record behind one helper, which is why the kind is a step of this query rather than
+ * a second class: `press()->featured()->articles()` has to carry everything said before it, and a
+ * step does that by being a copy. `featured()` is about outlets — the strip of logos — and narrows
+ * a feed of articles to theirs. `kind()` of an outlet is "ran an article of this kind"; the outlet
+ * stays in its own order. `only()` and `except()` name outlets or articles, whichever the query
+ * lists.
  *
- * @implements IteratorAggregate<int, array<string, mixed>>
+ * @extends RecordQuery<Outlet|Article>
  */
-final class PressQuery implements Countable, IteratorAggregate
+final class PressQuery extends RecordQuery
 {
     private const OUTLETS = 'outlets';
 
     private const ARTICLES = 'articles';
 
-    /**
-     * @param  list<string>|null  $kinds  Null — no filter; an empty list — a filter nothing passes.
-     * @param  list<int>|null  $only
-     * @param  list<int>  $except
-     */
-    public function __construct(
-        private readonly string $listing = self::OUTLETS,
-        private readonly bool $featured = false,
-        private readonly ?array $kinds = null,
-        private readonly ?array $only = null,
-        private readonly array $except = [],
-        private readonly ?int $limit = null,
-        private readonly ?string $locale = null,
-    ) {}
-
     /** The outlets, in their own order — what `press()` lists by default. */
     public function outlets(): self
     {
-        return $this->with(listing: self::OUTLETS);
+        return $this->withStep('listing', self::OUTLETS);
     }
 
     /** The articles of every outlet, by date: the latest first, the ones without a date last. */
     public function articles(): self
     {
-        return $this->with(listing: self::ARTICLES);
+        return $this->withStep('listing', self::ARTICLES);
     }
 
     /** Only the outlets marked for the strip of logos (decision 13) — or the articles of theirs. */
     public function featured(bool $featured = true): self
     {
-        return $this->with(featured: $featured);
+        return $this->withStep('featured', $featured);
     }
 
     /**
@@ -94,102 +78,21 @@ final class PressQuery implements Countable, IteratorAggregate
             }
         }
 
-        return $this->with(kinds: $given === [] ? null : array_values(array_unique($given)), kindsGiven: true);
+        return $this->withStep('kinds', $given === [] ? null : array_values(array_unique($given)));
     }
 
-    /**
-     * These and no others, in the order given — the order is the point of choosing.
-     *
-     * @param  int|string|Outlet|Article|iterable<int|string|Outlet|Article>  $ids
-     */
-    public function only(int|string|Outlet|Article|iterable $ids): self
+    /** @return Builder<Outlet>|Builder<Article> */
+    protected function newQuery(string $locale): Builder
     {
-        return $this->with(only: $this->ids($ids));
-    }
+        $canonical = static fn (Relation $routes) => $routes->where('locale', $locale)->where('kind', Route::CANONICAL);
 
-    /** @param  int|string|Outlet|Article|iterable<int|string|Outlet|Article>|null  $ids */
-    public function except(int|string|Outlet|Article|iterable|null $ids): self
-    {
-        return $this->with(except: [...$this->except, ...($ids === null ? [] : $this->ids($ids))]);
-    }
-
-    /** At most this many, counted after what may not be seen is left out; null or zero — all. */
-    public function take(int|string|null $limit): self
-    {
-        $limit = is_string($limit) && ctype_digit($limit) ? (int) $limit : $limit;
-
-        return $this->with(limit: is_int($limit) && $limit > 0 ? $limit : null, limitGiven: true);
-    }
-
-    /** The language the cards are written in; by default, the one being rendered. */
-    public function locale(?string $locale): self
-    {
-        return $this->with(locale: $locale, localeGiven: true);
-    }
-
-    /** @return list<array<string, mixed>> */
-    public function get(): array
-    {
-        return $this->listing === self::ARTICLES ? $this->articleCards() : $this->outletCards();
-    }
-
-    /** @return array<string, mixed>|null */
-    public function first(): ?array
-    {
-        return $this->take(1)->get()[0] ?? null;
-    }
-
-    public function isEmpty(): bool
-    {
-        return $this->get() === [];
-    }
-
-    public function count(): int
-    {
-        return count($this->get());
-    }
-
-    /** @return Traversable<int, array<string, mixed>> */
-    public function getIterator(): Traversable
-    {
-        return new ArrayIterator($this->get());
-    }
-
-    /** @return list<array<string, mixed>> */
-    private function outletCards(): array
-    {
-        $locale = $this->resolvedLocale();
-
-        $query = Outlet::query()
-            ->visibleIn($locale)
-            ->with([
-                'articles',
-                'routes' => static fn (Relation $routes) => $routes->where('locale', $locale)->where('kind', Route::CANONICAL),
-            ])
-            ->ordered();
-
-        if ($this->featured) {
-            $query->where('featured', true);
+        if (! $this->listsArticles()) {
+            return Outlet::query()->visibleIn($locale)->with(['articles', 'routes' => $canonical]);
         }
 
-        $this->narrow($query, 'press_outlets.id');
+        $featured = $this->featuredOnly();
 
-        /** @var EloquentCollection<int, Outlet> $outlets */
-        $outlets = $query->get();
-
-        $outlets = $outlets->filter(fn (Outlet $outlet): bool => $outlet->isVisible($locale) && $this->ranKind($outlet, $locale));
-        $outlets = $this->arranged($outlets);
-
-        return $this->cards()->outlets($outlets, $locale);
-    }
-
-    /** @return list<array<string, mixed>> */
-    private function articleCards(): array
-    {
-        $locale = $this->resolvedLocale();
-        $featured = $this->featured;
-
-        $query = Article::query()
+        return Article::query()
             ->visibleIn($locale)
             ->whereIn('outlet_id', static function ($outlets) use ($featured): void {
                 // Published and out of the bin — the soft-delete column by hand, since this is a
@@ -200,132 +103,82 @@ final class PressQuery implements Countable, IteratorAggregate
                     $outlets->where('featured', true);
                 }
             })
-            ->with(['outlet.routes' => static fn (Relation $routes) => $routes->where('locale', $locale)->where('kind', Route::CANONICAL)])
-            ->byDate();
-
-        if ($this->kinds !== null) {
-            $query->whereIn('kind', $this->kinds);
-        }
-
-        $this->narrow($query, 'press_articles.id');
-
-        /** @var EloquentCollection<int, Article> $articles */
-        $articles = $query->get();
-
-        $articles = $articles->filter(static fn (Article $article): bool => $article->visibleIn($locale));
-        $articles = $this->arranged($articles);
-
-        return $this->cards()->articles($articles, $locale);
+            ->with(['outlet.routes' => $canonical]);
     }
 
-    /**
-     * @template TModel of \Illuminate\Database\Eloquent\Model
-     *
-     * @param  Builder<TModel>  $query
-     */
-    private function narrow(Builder $query, string $key): void
+    protected function narrow(Builder $query, string $locale): void
     {
-        if ($this->only !== null) {
-            $query->whereIn($key, $this->only === [] ? [0] : $this->only);
+        if ($this->listsArticles()) {
+            if ($this->kinds() !== null) {
+                $query->whereIn($query->getModel()->qualifyColumn('kind'), $this->kinds());
+            }
+
+            return;
         }
 
-        if ($this->except !== []) {
-            $query->whereNotIn($key, $this->except);
+        if ($this->featuredOnly()) {
+            $query->where($query->getModel()->qualifyColumn('featured'), true);
         }
     }
 
-    /**
-     * In the order `only()` gave, then cut to the limit — after the filters that are questions of
-     * words, so that `take(6)` is six a reader sees.
-     *
-     * @template TModel of Outlet|Article
-     *
-     * @param  EloquentCollection<int, TModel>  $models
-     * @return list<TModel>
-     */
-    private function arranged(EloquentCollection $models): array
+    protected function order(Builder $query, ?int $category): void
     {
-        if ($this->only !== null) {
-            $order = array_flip($this->only);
-            $models = $models->sortBy(static fn (Outlet|Article $model): int => $order[(int) $model->getKey()] ?? PHP_INT_MAX);
+        // Through `scopes()`: PHPStan finds neither scope on a builder of the union.
+        $query->scopes($query->getModel() instanceof Article ? 'byDate' : 'ordered');
+    }
+
+    protected function shownIn(Model $record, string $locale): bool
+    {
+        if ($record instanceof Article) {
+            return $record->visibleIn($locale);
         }
 
-        if ($this->limit !== null) {
-            $models = $models->take($this->limit);
+        return $record instanceof Outlet && $record->isVisible($locale) && $this->ranKind($record, $locale);
+    }
+
+    /**
+     * @param  list<Outlet|Article>  $records
+     * @return list<array<string, mixed>>
+     */
+    protected function cards(array $records, string $locale): array
+    {
+        $cards = Container::getInstance()->make(Cards::class);
+
+        if ($this->listsArticles()) {
+            return $cards->articles(array_values(array_filter($records, static fn (Model $record): bool => $record instanceof Article)), $locale);
         }
 
-        return $models->values()->all();
+        return $cards->outlets(array_values(array_filter($records, static fn (Model $record): bool => $record instanceof Outlet)), $locale);
     }
 
     /** Whether an outlet ran an article of the kinds asked for, seen in this language. */
     private function ranKind(Outlet $outlet, string $locale): bool
     {
-        if ($this->kinds === null) {
+        $kinds = $this->kinds();
+
+        if ($kinds === null) {
             return true;
         }
 
         return $outlet->articles->contains(
-            fn (Article $article): bool => $article->visibleIn($locale) && in_array($article->kindKey(), $this->kinds, true),
+            static fn (Article $article): bool => $article->visibleIn($locale) && in_array($article->kindKey(), $kinds, true),
         );
     }
 
-    /**
-     * @param  int|string|Outlet|Article|iterable<int|string|Outlet|Article>  $given
-     * @return list<int>
-     */
-    private function ids(int|string|Outlet|Article|iterable $given): array
+    private function listsArticles(): bool
     {
-        $ids = [];
-
-        foreach (is_iterable($given) ? $given : [$given] as $one) {
-            if ($one instanceof Outlet || $one instanceof Article) {
-                $ids[] = (int) $one->getKey();
-            } elseif (is_int($one) || (is_string($one) && ctype_digit($one))) {
-                $ids[] = (int) $one;
-            }
-        }
-
-        return array_values(array_unique($ids));
+        return $this->step('listing', self::OUTLETS) === self::ARTICLES;
     }
 
-    /**
-     * A copy with some steps changed. `kinds`, `limit` and `locale` may be set to null on purpose,
-     * which is why each has a flag saying it was given.
-     *
-     * @param  list<string>|null  $kinds
-     * @param  list<int>|null  $only
-     * @param  list<int>|null  $except
-     */
-    private function with(
-        ?string $listing = null,
-        ?bool $featured = null,
-        ?array $kinds = null,
-        bool $kindsGiven = false,
-        ?array $only = null,
-        ?array $except = null,
-        ?int $limit = null,
-        bool $limitGiven = false,
-        ?string $locale = null,
-        bool $localeGiven = false,
-    ): self {
-        return new self(
-            $listing ?? $this->listing,
-            $featured ?? $this->featured,
-            $kindsGiven ? $kinds : $this->kinds,
-            $only ?? $this->only,
-            $except ?? $this->except,
-            $limitGiven ? $limit : $this->limit,
-            $localeGiven ? $locale : $this->locale,
-        );
+    private function featuredOnly(): bool
+    {
+        return $this->step('featured', false) === true;
     }
 
-    private function resolvedLocale(): string
+    /** @return list<string>|null Null — no filter. */
+    private function kinds(): ?array
     {
-        return $this->locale ?? Container::getInstance()->make(Locales::class)->current();
-    }
-
-    private function cards(): Cards
-    {
-        return Container::getInstance()->make(Cards::class);
+        /** @var list<string>|null */
+        return $this->step('kinds');
     }
 }

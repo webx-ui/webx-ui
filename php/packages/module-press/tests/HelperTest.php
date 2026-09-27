@@ -78,6 +78,27 @@ final class HelperTest extends TestCase
     }
 
     #[Test]
+    public function the_steps_carry_over_from_outlets_to_articles(): void
+    {
+        $this->outlet('Vogue', [
+            $this->row('V1', ['published_on' => '2024-01-01']),
+            $this->row('V2', ['published_on' => '2023-01-01']),
+        ], values: ['featured' => true]);
+        $this->outlet('Tatler', [$this->row('T1', ['published_on' => '2025-01-01'])]);
+
+        $feed = press()->featured()->articles();
+        $ids = $feed->models()->modelKeys();
+
+        $this->assertSame(['V1', 'V2'], array_column($feed->get(), 'title'), 'featured narrows the feed to the outlets of the strip');
+        $this->assertSame(['V2', 'V1'], array_column($feed->only(array_reverse($ids))->get(), 'title'));
+        $this->assertSame(['V2'], array_column($feed->except($ids[0])->get(), 'title'));
+        $this->assertCount(2, $feed);
+        $this->assertFalse($feed->isEmpty());
+        $this->assertTrue($feed->locale('ru')->isEmpty());
+        $this->assertSame(['Vogue', 'Tatler'], array_column($feed->outlets()->featured(false)->get(), 'title'), 'back to outlets, the other steps kept');
+    }
+
+    #[Test]
     public function the_cards_carry_what_the_table_says(): void
     {
         $logo = $this->file('media/ab/cd/tatler.png', 'image/png');

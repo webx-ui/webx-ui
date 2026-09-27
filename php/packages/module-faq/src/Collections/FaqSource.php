@@ -7,16 +7,12 @@ namespace WebxUi\Faq\Collections;
 use Illuminate\Http\Request;
 use WebxUi\Admin\Collections\CollectionSource;
 use WebxUi\Admin\Collections\Selection;
-use WebxUi\Faq\Models\Question;
 use WebxUi\Seo\Rendering\Seo;
 
 /**
  * The questions a FAQ block shows (§4.3 of the FAQ spec).
  *
- * An element is `id`, `anchor`, `categories`, the `question` as a string and the `answer` as
- * HTML with its pictures pointed at where they live now. Who is shown is decision 9: published,
- * out of the bin, and written in the page's language — question and answer both, no other
- * language standing in.
+ * What an element is and who is shown is {@see FaqQuery}; what is left here is the markup.
  *
  * The markup is one `FAQPage` per page however many blocks ask for it (§3.5): the questions of
  * the request are gathered here by id, and the whole block is put again under one key every time,
@@ -76,29 +72,7 @@ final class FaqSource implements CollectionSource
      */
     public function items(Selection $selection, string $locale): array
     {
-        // Without the limit in SQL: whether a question is written in a language is a question of
-        // what the words are, not of whether a key is there, and the limit counts what is shown.
-        $unlimited = new Selection($selection->categories, null, $selection->filter, $selection->markup);
-
-        $questions = $unlimited->apply(Question::query()->where('published', true)->with('categories'))
-            ->get()
-            ->filter(static fn (Question $question): bool => $question->visibleIn($locale))
-            ->values();
-
-        if ($selection->limit !== null) {
-            $questions = $questions->take($selection->limit);
-        }
-
-        $items = $questions
-            ->map(static fn (Question $question): array => [
-                'id' => (int) $question->getKey(),
-                'anchor' => (string) $question->anchor,
-                'categories' => $question->categoryIds(),
-                'question' => $question->questionText($locale),
-                'answer' => $question->answerHtml($locale),
-            ])
-            ->values()
-            ->all();
+        $items = (new FaqQuery)->selected($selection)->locale($locale)->get();
 
         if ($selection->markup && $this->supportsMarkup()) {
             $this->markUp($items);

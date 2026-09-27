@@ -57,10 +57,6 @@ final class ServicesSource implements CollectionSource
      */
     public function items(Selection $selection, string $locale): array
     {
-        return (new ServiceQuery)
-            ->in($selection->categories)
-            ->take($selection->limit)
-            ->locale($locale)
-            ->get();
+        return (new ServiceQuery)->selected($selection)->locale($locale)->get();
     }
 }
