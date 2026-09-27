@@ -709,6 +709,36 @@ $shape)` в `module-blocks`: замыкание над документом пр
   копий (симлинки сняты, `composer install`), `git status` чист, главная 200.
 - Для P4: на сайте в `resources/js/admin.ts` — `press()`, без спреда.
 
+### Итог P4 (27.09.2026)
+
+Выпущено в v0.44.0 (#319, релизный #318): `webx-ui/module-press` на Packagist (зеркало и
+отправка — пользователь), `@webx-ui/module-press@0.1.0` на npm (первая версия — руками из тарбола
+`changeset-release/main`, диапазоны `^0.34.0` / `^0.18.1` / `^0.6.2` проверены до публикации,
+затем Trusted Publishing). Релиз поднял `core` минором (`rowErrors` у `WxRepeater`), значит и всем
+модулям по патчу; расхождений между релизной веткой и npm нет. `php-split` прошёл, `v0.44.0` в
+`webx-ui/module-press` есть. Ветка `feat/press-panel` удалена.
+
+- **Гейт и smoke:** npm-гейт целиком, `php/` на 8.4 (1802 теста), `scripts/php-smoke.sh` против
+  MariaDB OSPanel — `module-press` найден discovery, миграции прошли на mysql.
+- **Packagist после релиза** снова отдавал composer'у v0.43.0 при уже видимом v0.44.0 — CDN,
+  CLAUDE.md §5; прошло со второй попытки после удаления `provider-webx-ui~*`.
+- **Демо на обоих сайтах — тинкером со своим журналом** (`storage/app/press-demo-journal.json`,
+  `PressDemo::seed()`): четыре издания, логотипы и PDF в папке «Пресса», страница `/press`.
+  `webx-cms.local` закоммичен в registry-состоянии (Gitea `c07bd46`), каркас панели в
+  `node_modules` одной копией (0.18.1); на хомлабе блоки и демо — через `docker exec` от
+  `www-data`.
+- **`client-site.test`** поднят до v0.44.0 и получил `module-press` без содержимого:
+  `webx:panel --sync` вписал `press()` сам — у этого сайта в `admin.ts` размеченные области.
+- **Проверено curl'ом на обоих:** `/press` — полоса и каталог четырьмя группами; страница издания —
+  материалы в своём порядке, PDF отдаётся `application/pdf`, «14 марта 2025» и «март 2025»;
+  материал только по-английски на русской странице не виден и виден на `/en`; неопубликованное
+  издание и издание без материалов на языке (`/uk/…`) — 404 и нет в sitemap. validator.schema.org
+  по адресу хомлаба — `ItemList`, `BreadcrumbList`, `Organization`, `WebSite`, 0 ошибок и 0
+  предупреждений. Телефон — за пользователем.
+- **Хвост:** `Rendering\PressQuery` написан до `RecordQuery` (T1, `feat/module-team`, в `main`
+  ещё нет) и на него не переведён. Перевести, когда T1 смержится: у press выборка по изданиям с
+  видимостью через материалы, так что это не механическая замена.
+
 ## 7. Отложено
 
 - Импорт со старого клиента (`media_sources`, `publications` JSON) на `client-site.test` —
