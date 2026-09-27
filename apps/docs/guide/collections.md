@@ -60,18 +60,8 @@ final class QuestionSource implements CollectionSource
 
     public function items(Selection $selection, string $locale): array
     {
-        $query = Question::query()
-            ->where('published', true)
-            ->whereNotNull("question->{$locale}") // not in this language — not shown: the source decides
-            ->with('categories');
-
-        $items = $selection->apply($query)->get()->map(fn (Question $question): array => [
-            'id' => $question->id,
-            'anchor' => $question->anchor,
-            'categories' => $question->categories->modelKeys(),
-            'question' => $question->getTranslation('question', $locale),
-            'answer' => $question->answerHtml($locale),
-        ])->values()->all();
+        // Who is shown and what an element is: the module's RecordQuery (see below).
+        $items = (new FaqQuery)->selected($selection)->locale($locale)->get();
 
         if ($selection->markup) {
             // your own JSON-LD — see "One markup per page" below
@@ -87,10 +77,11 @@ final class QuestionSource implements CollectionSource
   pass PHPStan: its type is invariant, and a literal element never matches it.
 - **What is visible is the source's decision**: published, not in the bin, translated into
   `$locale`. The contract only hands it the language.
-- **`Selection::apply()`** is the shared part for a model on `HasCategories`
-  ([Categories](/guide/categories)): several categories by a subquery, without repeats; one
-  category in its own order (`item_position`), anything else in the general one (`position`); the
-  limit. The visibility goes on the query before it.
+- **`RecordQuery::selected($selection)`** is the shared part: the editor's categories, relation
+  and limit laid over the module's [`RecordQuery`](#a-helper-for-templates-recordquery) — several
+  categories without repeats, one category in its own order (`item_position`), anything else in
+  the general one (`position`), the limit counted after the language. A source is that query, its
+  language and, if it prints any, its markup.
 - **`permission()`** decides who sees the source in the field at all. An administrator without it
   gets a note instead of a form, and `GET /api/cms/collections` does not list it for them.
 
@@ -146,19 +137,21 @@ an empty list rather than an error, and the page goes on living.
 
 A collection is what the editor of a page chooses. A template of the site — or a block that wants
 something the field does not do — asks for the records itself: `services()`, `reviews()`,
-`recipes()`, `events()`, `team()`. They are one class, `WebxUi\Admin\Collections\RecordQuery`, and a
-module that writes a sixth extends it rather than copying one of the five.
+`recipes()`, `events()`, `team()`, `press()`. They are one class, `WebxUi\Admin\Collections\RecordQuery`,
+and a module that writes another extends it rather than copying one of them. So does a source
+without a helper: the FAQ's questions are a `RecordQuery` that only its block uses.
 
 What the class holds for every module:
 
-| Step / output           | What it does                                                             |
-| ----------------------- | ------------------------------------------------------------------------ |
-| `only([12, 7])`         | These and no others, **in this order** — the order wins over any other   |
-| `except($record)`       | All but these: an id, a model or a list                                  |
-| `take(6)`               | At most six — counted **after** the language, in php; null or zero — all |
-| `locale('uk')`          | The language of the cards; by default the one the page is rendered in    |
-| `get()`, `first()`      | A list of cards, or one; the query itself can be looped over and counted |
-| `models()`, `isEmpty()` | The models behind the cards; whether there is anything to show           |
+| Step / output           | What it does                                                                 |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `only([12, 7])`         | These and no others, **in this order** — the order wins over any other       |
+| `except($record)`       | All but these: an id, a model or a list                                      |
+| `take(6)`               | At most six — counted **after** the language, in php; null or zero — all     |
+| `locale('uk')`          | The language of the cards; by default the one the page is rendered in        |
+| `get()`, `first()`      | A list of cards, or one; the query itself can be looped over and counted     |
+| `models()`, `isEmpty()` | The models behind the cards; whether there is anything to show               |
+| `selected($selection)`  | What an editor chose in a `wx-collection` field: categories, relation, limit |
 
 Every step returns a copy, so a template can keep one query and branch it. And the rules that hold
 for all of them: an **untouched filter is no filter** (an editor's empty field means "everything"),
@@ -218,9 +211,15 @@ catalogue (`services()->categories()`, `reviews()->categories()`) stays the modu
 conditions on a category and its records differ too much between modules to share. It reads the
 state through `categoryIds()`, `onlyIds()`, `exceptIds()` and `limit()`.
 
-The source of the same records usually calls the helper: `items()` is the helper with the
-editor's limit, language and relation, so the block and the template never disagree about what
-a card is. Name the helper in `Doctor\Checks\Helpers` too — `webx:doctor` then says when a site's
+The source of the same records calls the helper — `items()` is
+`(new TeamQuery)->selected($selection)->locale($locale)->get()` — so the block and the template
+never disagree about what a card is or who may be seen.
+
+One helper may list more than one kind of record. `press()` lists outlets or, after
+`->articles()`, articles: the kind is a step (`withStep('listing', …)`) and every hook answers by
+it, which is why `newQuery()`, `order()` and `narrow()` see a `Builder<covariant TModel>` — a query
+of one of the kinds, not of their union. A second class per kind would lose what was said before
+the switch: `press()->featured()->articles()`. Name the helper in `Doctor\Checks\Helpers` too — `webx:doctor` then says when a site's
 function of the same name took its place.
 
 ## The block types a module offers

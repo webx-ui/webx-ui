@@ -59,17 +59,6 @@ final class RecipesSource implements CollectionSource
      */
     public function items(Selection $selection, string $locale): array
     {
-        $query = (new RecipeQuery)
-            ->in($selection->categories)
-            ->take($selection->limit)
-            ->locale($locale);
-
-        $related = $selection->related();
-
-        if ($related !== null) {
-            $query = $query->relatedTo($related['type'], $related['ids']);
-        }
-
-        return $query->get();
+        return (new RecipeQuery)->selected($selection)->locale($locale)->get();
     }
 }

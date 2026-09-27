@@ -55,15 +55,6 @@ final class EntrySource implements CollectionSource
     {
         $this->asked = $selection;
 
-        return $selection->apply(Entry::query()->where('name', '!=', '')->with('sections'))
-            ->get()
-            ->map(static fn (Entry $entry): array => [
-                'id' => $entry->id,
-                'anchor' => 'entry-'.$entry->id,
-                'categories' => $entry->sections->modelKeys(),
-                'name' => $entry->name,
-            ])
-            ->values()
-            ->all();
+        return (new EntryQuery)->selected($selection)->locale($locale)->get();
     }
 }
