@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Blocks;
 
+use Closure;
 use Illuminate\Contracts\Validation\Factory as ValidatorFactory;
 use Illuminate\Filesystem\Filesystem;
 use WebxUi\Blocks\Exceptions\BlocksException;
@@ -35,18 +36,33 @@ final class BlockOffers
     /** @var array<string, list<string>> module → files and directories of documents */
     private array $offers = [];
 
+    /**
+     * What a module does to a document before it is read, keyed by the path it offered.
+     *
+     * @var array<string, Closure(array<string, mixed>): array<string, mixed>>
+     */
+    private array $shapes = [];
+
     public function __construct(
         private readonly Filesystem $files,
         private readonly ValidatorFactory $validator,
     ) {}
 
     /**
+     * `$shape`, when given, is run over each document of the path as it is read: what only the
+     * site's config knows — the options of a select, say — goes into the type then, at install.
+     *
      * @param  string  $module  The module's id in the panel: `faq`.
      * @param  string  $path  One document, or a directory of `*.json` documents.
+     * @param  (Closure(array<string, mixed>): array<string, mixed>)|null  $shape
      */
-    public function offer(string $module, string $path): void
+    public function offer(string $module, string $path, ?Closure $shape = null): void
     {
         $this->offers[$module][] = $path;
+
+        if ($shape !== null) {
+            $this->shapes[$path] = $shape;
+        }
     }
 
     /**
@@ -78,11 +94,16 @@ final class BlockOffers
                 continue;
             }
 
-            foreach ($this->files($module) as $file) {
+            foreach ($this->files($module) as [$file, $shape]) {
                 $document = json_decode((string) $this->files->get($file), true);
 
                 if (! is_array($document)) {
                     throw new BlocksException("{$file} is not a block document.");
+                }
+
+                if ($shape !== null) {
+                    /** @var array<string, mixed> $document */
+                    $document = $shape($document);
                 }
 
                 $slug = is_string($document['slug'] ?? null) ? $document['slug'] : basename($file, '.json');
@@ -150,22 +171,30 @@ final class BlockOffers
     public function forget(): void
     {
         $this->offers = [];
+        $this->shapes = [];
     }
 
     /**
-     * @return list<string>
+     * Every document file of a module, each with the shape of the path it was offered by.
+     *
+     * @return list<array{string, (Closure(array<string, mixed>): array<string, mixed>)|null}>
      */
     private function files(string $module): array
     {
         $files = [];
 
         foreach ($this->offers[$module] ?? [] as $path) {
+            $shape = $this->shapes[$path] ?? null;
+
             if ($this->files->isDirectory($path)) {
                 $found = $this->files->glob(rtrim($path, '/\\').'/*.json');
                 sort($found);
-                array_push($files, ...$found);
+
+                foreach ($found as $file) {
+                    $files[] = [$file, $shape];
+                }
             } elseif ($this->files->exists($path)) {
-                $files[] = $path;
+                $files[] = [$path, $shape];
             }
         }
 

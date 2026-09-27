@@ -684,7 +684,14 @@ export function evaluate(expression: string, scope: Scope): unknown {
 
         if (name?.type !== 'name') throw new Error('Expected a property.')
 
-        value = localize(member(value, name.value))
+        const found = member(value, name.value)
+
+        // `press()->outlets()->take(3)->get()`: a method of what a helper handed back — the
+        // fluent queries of the modules, which a fixture builds as an object of functions.
+        value =
+          typeof found === 'function' && eat('(')
+            ? localize((found as (...args: unknown[]) => unknown).apply(value, list(')')))
+            : localize(found)
       } else {
         return value
       }
@@ -703,6 +710,34 @@ export function evaluate(expression: string, scope: Scope): unknown {
     }
 
     return items
+  }
+
+  /**
+   * `[1, 2]` is a list, `['count' => $n]` an object — the replacements a translation takes. A
+   * literal that mixes the two is not one a block template writes.
+   */
+  const array = (): unknown => {
+    const items: unknown[] = []
+    const keyed: Record<string, unknown> = {}
+    let keys = false
+
+    while (!eat(']')) {
+      const item = ternary()
+
+      if (eat('=>')) {
+        keys = true
+        keyed[String(item)] = ternary()
+      } else {
+        items.push(item)
+      }
+
+      if (!eat(',')) {
+        expect(']')
+        break
+      }
+    }
+
+    return keys ? keyed : items
   }
 
   const primary = (): unknown => {
@@ -737,7 +772,7 @@ export function evaluate(expression: string, scope: Scope): unknown {
           return value
         }
 
-        if (token.value === '[') return list(']')
+        if (token.value === '[') return array()
     }
 
     throw new Error(`Unexpected ${token.value}.`)
@@ -798,6 +833,9 @@ const FUNCTIONS: Record<string, (...args: unknown[]) => unknown> = {
   json_encode: (value) => JSON.stringify(value ?? null),
   isset: (...values) => values.every((value) => value !== null && value !== undefined),
   empty: (value) => !truthy(value),
+  /* Without a callback: what is left once PHP's falsy values are out, keys renumbered like
+     `array_values()` would — a template joins the rest with `implode`. */
+  array_filter: (value) => (Array.isArray(value) ? value.filter((item) => truthy(item)) : []),
 }
 
 /* ------------------------------------------------------------------------------ values ----- */

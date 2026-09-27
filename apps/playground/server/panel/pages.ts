@@ -442,6 +442,40 @@ add(
   [publication(1, '2026-09-24T18:00:00+00:00', null)],
 )
 
+/*
+ * The index of the press (decision 12 of its spec): not a route of the module but a page with its
+ * blocks — the logo strip of the featured outlets, the catalogue in a section for each kind the
+ * way omnivitality has it, and the latest articles. Last, for the same reason as the ones above.
+ */
+add(
+  {
+    title: 'Пресса о нас',
+    slug: 'press',
+    parent: home.row.id,
+    status: 'published',
+    updated_at: '2026-09-27T09:30:00+00:00',
+  },
+  {
+    blocks: [
+      block('press-logos', {
+        title: { ru: 'Нас читают', en: 'As featured in' },
+        featured: true,
+      }),
+      block('press-outlets', {
+        title: { ru: 'Издания', en: 'Outlets' },
+        group: true,
+        kinds: ['authored', 'expert_comment'],
+      }),
+      block('press-articles', {
+        title: { ru: 'Последние статьи', en: 'Latest articles' },
+        kinds: [],
+        limit: 6,
+      }),
+    ],
+  },
+  [publication(1, '2026-09-27T09:30:00+00:00', null)],
+)
+
 function publication(number: number, createdAt: string, comment: string | null): PageVersion {
   return {
     number,

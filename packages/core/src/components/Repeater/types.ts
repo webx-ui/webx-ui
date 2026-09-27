@@ -44,6 +44,13 @@ export interface RepeaterProps<T extends object = Record<string, unknown>> {
   plain?: boolean
   /** Accessible name for the list of rows. */
   ariaLabel?: string
+  /**
+   * The server's refusal of each row, by position, under the names the row's fields answer to
+   * (`{ title: [...] }`). Given at all, every row answers to its own errors and nothing else —
+   * inside a form, a row's `title` would otherwise show the error of the form's own `title`.
+   * A refused row unfolds, and its header says so.
+   */
+  rowErrors?: Record<string, string[]>[]
 }
 
 export interface RepeaterEmits<T extends object = Record<string, unknown>> {

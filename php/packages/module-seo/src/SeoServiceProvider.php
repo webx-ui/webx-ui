@@ -96,6 +96,7 @@ class SeoServiceProvider extends ServiceProvider
         $screens->extend('recipes.category-form', __DIR__.'/../resources/screens/recipes.category-form.json');
         $screens->extend('events.form', __DIR__.'/../resources/screens/events.form.json');
         $screens->extend('events.category-form', __DIR__.'/../resources/screens/events.category-form.json');
+        $screens->extend('press.outlet-form', __DIR__.'/../resources/screens/press.outlet-form.json');
 
         if (! $this->app->runningInConsole()) {
             return;
