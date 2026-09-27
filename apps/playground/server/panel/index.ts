@@ -28,6 +28,7 @@ import {
   templateFailure,
   useCollectionResolver,
   useLinkResolver,
+  withEntity,
   type BlockVersionRecord,
 } from './blocks'
 import {
@@ -216,6 +217,16 @@ import {
   type ServiceCategoryRecord,
   type ServiceRecord,
 } from './services'
+import {
+  findMember,
+  listTeam,
+  memberDetail,
+  memberRow,
+  networkOptions,
+  reorderTeam,
+  resolveTeam,
+  writeMember,
+} from './team'
 
 /**
  * The panel's backend, in memory.
@@ -444,6 +455,16 @@ on('GET', '/manifest', ({ locale }) => ({
         permissions: ['reviews.view', 'reviews.manage'],
         meta: {},
       },
+      /* One entry and no group either (§5.6 of the team spec): no categories to stand beside. */
+      {
+        id: 'team',
+        title: line(locale, 'webx-team', 'module.team'),
+        icon: 'users',
+        order: 620,
+        group: null,
+        permissions: ['team.view', 'team.manage'],
+        meta: {},
+      },
       /* One entry and no group of its own (§4.9): a group around a single item is a heading
          over itself. */
       {
@@ -580,6 +601,9 @@ on('GET', '/screens/([\\w.-]+)', ({ params, locale }) => {
 
   // The kinds of an article are configuration, handed to the field with the screen (§4.6).
   if (params[0] === 'press.outlet-form') withOptions(tree, 'article-kind', kindOptions(locale))
+
+  // The networks are the site's config, patched onto the select inside the repeater (§5.4).
+  if (params[0] === 'team.form') withNamedOptions(tree, 'network', networkOptions())
 
   return { data: { screen: params[0], root: tree } }
 })
@@ -1896,10 +1920,11 @@ on('GET', '/links/routes', () => ({
  * FAQ (`faq.ts`) and the reviews (`reviews.ts`). The preview reads a block's choice the way the site does — in the language of
  * the page, which is Russian here, as everywhere else the preview draws.
  */
-useCollectionResolver((source, value) => {
+useCollectionResolver((source, value, entity) => {
   if (source === 'faq') return resolveFaq(value, 'ru')
   if (source === 'reviews') return resolveReviews(value, 'ru')
   if (source === 'recipes') return resolveRecipes(value, 'ru')
+  if (source === 'team') return resolveTeam(value, 'ru', entity)
 
   return { items: [], groups: [], filter: false }
 })
@@ -2088,6 +2113,65 @@ on('POST', '/reviews/(\\d+)/restore', ({ params, locale }) => {
   return { data: reviewRow(record, locale) }
 })
 
+/* ------------------------------------------------------------------------------- team ----- */
+
+/*
+ * The team (§5.7 of its spec): the list whole, no pages, no filters, and a new person written
+ * before they exist — the shape of the press, whose one order it shares.
+ */
+on('GET', '/team', ({ query, locale }) => listTeam(Object.fromEntries(query), locale))
+
+on('POST', '/team', ({ body, locale }) => {
+  const written = writeMember(null, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: memberDetail(written.record, locale) }
+})
+
+on('POST', '/team/reorder', ({ body }) => {
+  reorderTeam(Array.isArray(body.ids) ? (body.ids as number[]).map(Number) : [])
+
+  return { data: null }
+})
+
+on('GET', '/team/(\\d+)', ({ params, locale }) => ({
+  data: memberDetail(memberRecord(params[0]), locale),
+}))
+
+on('PUT', '/team/(\\d+)', ({ params, body, locale }) => {
+  const record = memberRecord(params[0])
+  const written = writeMember(record, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: memberDetail(record, locale) }
+})
+
+on('DELETE', '/team/(\\d+)', ({ params }) => {
+  memberRecord(params[0]).deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+on('POST', '/team/(\\d+)/restore', ({ params, locale }) => {
+  const record = findMember(Number(params[0]))
+
+  if (record === null || record.deleted_at === null) throw new HttpFailure(404, 'Not found.')
+
+  record.deleted_at = null
+
+  return { data: memberRow(record, locale) }
+})
+
+function memberRecord(id: string) {
+  const record = findMember(Number(id))
+
+  if (record === null || record.deleted_at !== null) throw new HttpFailure(404, 'No such person.')
+
+  return record
+}
+
 /* ------------------------------------------------------------------------------ press ----- */
 
 /*
@@ -2156,6 +2240,21 @@ function withOptions(
   for (const node of nodes) {
     if (node.id === id) node.props = { ...node.props, options }
     if (Array.isArray(node.children)) withOptions(node.children as typeof nodes, id, options)
+  }
+}
+
+/**
+ * The same, by the field's name rather than the node's id: the select of a network is found by
+ * what it saves, so the stand-in screen and the module's own name the node however they like.
+ */
+function withNamedOptions(
+  nodes: { name?: string; props?: Record<string, unknown>; children?: unknown[] }[],
+  name: string,
+  options: unknown[],
+): void {
+  for (const node of nodes) {
+    if (node.name === name) node.props = { ...node.props, options }
+    if (Array.isArray(node.children)) withNamedOptions(node.children as typeof nodes, name, options)
   }
 }
 
@@ -4443,9 +4542,11 @@ function previewService(id: number): string {
     return missingPreview('No such service.')
   }
 
-  return document(
-    serviceText(record.values.title, 'ru') || `#${record.id}`,
-    (record.values.blocks ?? []) as Block[],
+  return withEntity({ type: 'service', id: record.id }, () =>
+    document(
+      serviceText(record.values.title, 'ru') || `#${record.id}`,
+      (record.values.blocks ?? []) as Block[],
+    ),
   )
 }
 
