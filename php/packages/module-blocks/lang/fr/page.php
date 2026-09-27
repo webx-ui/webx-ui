@@ -37,8 +37,8 @@ return [
     'root' => 'La page elle-même',
     'max-per-entity' => 'Par page',
     'max-per-entity-help' => 'Combien d’instances une page peut contenir. Vide : sans limite.',
-    'sort' => 'Ordre',
-    'sort-help' => 'L’ordre dans la cascade CSS et dans la liste.',
+    'sort' => 'Ordre des styles',
+    'sort-help' => 'L’ordre des styles sur la page : les règles d’un bloc plus tardif l’emportent. Déplacer les cartes ne le change pas.',
     'enabled' => 'Proposé aux rédacteurs',
     'enabled-help' => 'Désactivé, le bloc reste sur les pages où il est déjà, mais ne peut plus être ajouté.',
 

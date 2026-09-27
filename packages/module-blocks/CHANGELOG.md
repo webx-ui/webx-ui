@@ -1,5 +1,57 @@
 # @webx-ui/module-blocks
 
+## 0.10.2
+
+### Patch Changes
+
+- Updated dependencies [50ea8a5]
+- Updated dependencies [85b8fca]
+  - @webx-ui/core@0.34.0
+  - @webx-ui/schema@0.6.2
+  - @webx-ui/module-admin@0.18.1
+
+## 0.10.1
+
+### Patch Changes
+
+- 0e1ce8f: Letting go of a dragged block card no longer opens that block: the click a real mouse sends after the drop is ignored.
+
+## 0.10.0
+
+### Minor Changes
+
+- 264c23a: The cards of the Blocks section are dragged into order, and the picker offers the types in it. The order is a new `position`, apart from `sort`, which stays the order of the styles on the page (now labelled so). A migration numbers the existing types in the order they had.
+
+### Patch Changes
+
+- 264c23a: A block's `···` menu offers "Move to…": the block goes whole into another container or out to the page, and only to places whose rules let it stand there.
+- 3adb99c: "Add a block" in a block's sample form offers only what that block lets inside, and a page field's own `allow` narrows its top level as it always said it would.
+
+## 0.9.3
+
+### Patch Changes
+
+- 3893f13: A block's `···` menu offers "Add after": the new block goes right under that one, at the top level and inside a container alike, instead of at the end of the list.
+
+## 0.9.2
+
+### Patch Changes
+
+- e292f0f: A component's thumbnail on the Blocks screen shows the whole component. It was drawn at a column's
+  width and cut to a 120 px band, so a card taller than it is wide showed only its photo; now the
+  root of what was drawn is measured inside the frame and scaled to fit a 180 px box both ways, in
+  the middle of it, clipped to the component itself. A small one — a badge — keeps its own scale
+  rather than being blown up. Blocks are drawn as before: a band of a page, from the top.
+
+## 0.9.1
+
+### Patch Changes
+
+- 17f87d0: A component's sample can leave a `wx-data` input empty. The empty editor is `null` — the call that
+  passes nothing, which a component has to survive and which publishing now checks when the sample
+  says so — rather than "Not valid JSON"; a `null` shows as an empty editor, and a typed `null` is no
+  longer turned back into `{}`. The JSON lint stays quiet on the empty editor.
+
 ## 0.9.0
 
 ### Minor Changes

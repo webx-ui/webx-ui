@@ -37,8 +37,8 @@ return [
     'root' => 'La pagina stessa',
     'max-per-entity' => 'Per pagina',
     'max-per-entity-help' => 'Quante istanze può contenere una pagina. Vuoto: senza limite.',
-    'sort' => 'Ordine',
-    'sort-help' => 'L’ordine nella cascata CSS e nell’elenco.',
+    'sort' => 'Ordine degli stili',
+    'sort-help' => 'L’ordine degli stili nella pagina: vincono le regole di un blocco successivo. Trascinare le schede non lo cambia.',
     'enabled' => 'Proposto ai redattori',
     'enabled-help' => 'Disattivato, il blocco resta sulle pagine dove già si trova, ma non può essere aggiunto.',
 

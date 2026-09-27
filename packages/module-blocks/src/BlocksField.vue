@@ -29,6 +29,7 @@ import {
   type TypeRegistry,
 } from '@webx-ui/schema'
 import { createBlocksApi, type BlocksApi } from './api'
+import BlockMoveDialog from './BlockMoveDialog.vue'
 import BlockPicker from './BlockPicker.vue'
 import BlocksPreview from './BlocksPreview.vue'
 import BlocksTree from './BlocksTree.vue'
@@ -45,7 +46,8 @@ import {
   walk,
 } from './content'
 import { useBlocksMessages } from './i18n'
-import { blocksPreviewKey, blocksRootKey } from './preview'
+import { blocksOwnerKey, blocksPreviewKey, blocksRootKey } from './preview'
+import { destinations, type Destination } from './move'
 import { formSchema } from './schema'
 import type { BlockNode, BlockType } from './types'
 
@@ -99,6 +101,8 @@ const props = withDefaults(
 const model = defineModel<BlockNode[]>({ default: () => [] })
 
 const nested = inject(blocksRootKey, false)
+/* Inside the block editor's sample form, the top level is that block rather than a page. */
+const owner = inject(blocksOwnerKey, null)
 provide(blocksRootKey, true)
 
 useBlocksMessages()
@@ -266,11 +270,12 @@ async function add(
   parentKey: string | null,
   field: string | null,
   slot: ScreenNode | null,
+  index?: number,
 ): Promise<void> {
   const parent = parentKey ? locate(tree.value, parentKey) : null
   const parentType = parent
     ? (catalog.value.find((type) => type.slug === parent.node.type) ?? null)
-    : null
+    : (owner?.value ?? null)
   const allow =
     parentKey === null ? props.allow : ((slot?.props?.allow as string[] | undefined) ?? null)
   const max = parentKey === null ? props.max : ((slot?.props?.max as number | undefined) ?? null)
@@ -295,7 +300,7 @@ async function add(
   if (!type) return
 
   const node = makeNode(type.slug, structuredSample(type))
-  set(insertNode(tree.value, parentKey, field, list.length, node))
+  set(insertNode(tree.value, parentKey, field, index ?? list.length, node))
   selectedKey.value = node.key
 }
 
@@ -352,6 +357,37 @@ function duplicate(key: string): void {
   const copy = cloneNode(found.node)
   set(insertNode(tree.value, found.parent?.key ?? null, found.field, found.index + 1, copy))
   selectedKey.value = copy.key
+}
+
+const chooseDestination = createModal<
+  Destination,
+  { title: string; destinations: Destination[]; topLabel: string }
+>(BlockMoveDialog)
+
+/**
+ * Into another container, or out to the top level, at the end of that list.
+ *
+ * The block goes whole, children and keys included: it is the same block in a new place, not
+ * a copy, so the preview's markers and anything pointing at its key still find it.
+ */
+async function move(key: string): Promise<void> {
+  const found = locate(tree.value, key)
+  if (!found) return
+
+  const place = await chooseDestination({
+    title: titleOf(found.node),
+    destinations: destinations(tree.value, key, catalog.value, {
+      owner: owner?.value ?? null,
+      allow: props.allow,
+      max: props.max,
+    }),
+    topLabel: owner?.value?.title ?? t('field.move-page'),
+  })
+
+  if (!place) return
+
+  const without = removeNode(tree.value, key)
+  set(insertNode(without, place.parentKey, place.field, Number.MAX_SAFE_INTEGER, found.node))
 }
 
 /*
@@ -490,12 +526,14 @@ const formRoot = computed(() =>
             <blocks-tree
               :nodes="tree"
               :catalog="catalog"
+              :max="max"
               :selected="selectedKey"
               :disabled="disabled"
               @select="select"
               @add="add"
               @remove="remove"
               @duplicate="duplicate"
+              @move="move"
               @visibility="visibility"
               @reorder="reorder"
             />

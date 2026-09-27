@@ -30,6 +30,8 @@ export interface BlocksApi {
   versions(id: number): Promise<BlockVersionMeta[]>
   version(id: number, number: number): Promise<BlockVersion>
   restore(id: number, number: number): Promise<BlockType>
+  /** The new order of some types — a group — in the places they held; the rest stay put. */
+  reorder(ids: number[]): Promise<void>
 }
 
 /** Everything under `/blocks`, below the panel's API path. */
@@ -68,5 +70,6 @@ export function createBlocksApi(admin: AdminContext): BlocksApi {
       admin.http
         .post<{ data: BlockType }>(`${base}/${id}/versions/${number}/restore`, {})
         .then(data),
+    reorder: (ids) => admin.http.post<unknown>(`${base}/reorder`, { ids }).then(() => undefined),
   }
 }

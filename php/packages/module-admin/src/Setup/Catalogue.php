@@ -86,6 +86,16 @@ final class Catalogue
             'label' => 'Recipes — recipes with categories, nutrition and schema.org markup, each a page of the site',
             'default' => false,
         ],
+        'events' => [
+            'package' => 'webx-ui/module-events',
+            'label' => 'Events — workshops and meetings with a date, a place and a link to book, each a page of the site',
+            'default' => false,
+        ],
+        'press' => [
+            'package' => 'webx-ui/module-press',
+            'label' => 'Press — the outlets that wrote about the site and their articles, a page per outlet and a strip of logos',
+            'default' => false,
+        ],
         'menu' => [
             'package' => 'webx-ui/module-menu',
             'label' => 'Menus — the header and the footer, and what each entry points at',

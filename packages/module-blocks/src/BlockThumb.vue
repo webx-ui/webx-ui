@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
 import { useElementWidth, WxIcon } from '@webx-ui/core'
 import { stageDocument, thumbDocument } from './frame'
 import { useSiteShell } from './shell'
@@ -15,6 +15,11 @@ import type { BlockThumbnail } from './types'
  * Drawn in the site's own clothes when the site has a stage: its stylesheets and fonts, and
  * the wrappers the block sits in on a page, without the header, the footer or any script
  * (see `siteShell`). Bare until that arrives, and bare where there is none.
+ *
+ * `fit` is for components. A block is a band of a page, and the top of it at full width is the
+ * right picture; a component is a whole thing — a card taller than it is wide — and cut to the
+ * height of the box it shows only its photo. So with `fit` the root of what was drawn is measured
+ * inside the frame and scaled to fit the box both ways, in the middle of it.
  */
 const props = withDefaults(
   defineProps<{
@@ -23,14 +28,42 @@ const props = withDefaults(
     width?: number
     /** How tall the picture is, in the panel's pixels. */
     height?: number
+    /** Scale what was drawn to fit the box, rather than the width to fill it. */
+    fit?: boolean
   }>(),
-  { width: 1280, height: 120 },
+  { width: 1280, height: 120, fit: false },
 )
 
 const box = ref<HTMLElement | null>(null)
 const boxWidth = useElementWidth(box)
 
-const scale = computed(() => (boxWidth.value > 0 ? boxWidth.value / props.width : 0.2))
+/** The root of what was drawn, in the frame's pixels; null until the frame has loaded. */
+const drawn = ref<{ left: number; top: number; width: number; height: number } | null>(null)
+
+/*
+ * How tall the frame is before scaling, when fitting. Tall enough for a card to lay itself out
+ * at its own height rather than squeezed into the box's; a layout in `vh` sees this too.
+ */
+const TALL = 1600
+
+const widthScale = computed(() => (boxWidth.value > 0 ? boxWidth.value / props.width : 0.2))
+
+const fitted = computed(() => {
+  const rect = drawn.value
+
+  if (!props.fit || !rect || rect.width <= 0 || rect.height <= 0 || boxWidth.value <= 0) {
+    return null
+  }
+
+  // Never larger than the width scale: a small badge stays small rather than blown up.
+  const scale = Math.min(widthScale.value, boxWidth.value / rect.width, props.height / rect.height)
+
+  return {
+    scale,
+    x: (boxWidth.value - rect.width * scale) / 2 - rect.left * scale,
+    y: (props.height - rect.height * scale) / 2 - rect.top * scale,
+  }
+})
 
 const shell = useSiteShell()
 
@@ -42,11 +75,64 @@ const srcdoc = computed(() => {
   return shell.value ? thumbDocument(shell.value, input) : stageDocument(input)
 })
 
-const frameStyle = computed(() => ({
-  width: `${props.width}px`,
-  height: `${Math.round(props.height / scale.value)}px`,
-  transform: `scale(${scale.value})`,
-}))
+const frameStyle = computed(() => {
+  const fit = fitted.value
+
+  const rect = drawn.value
+
+  if (fit && rect) {
+    return {
+      width: `${props.width}px`,
+      height: `${TALL}px`,
+      transform: `translate(${fit.x}px, ${fit.y}px) scale(${fit.scale})`,
+      // The component alone: the rest of the frame is a white page around it, and moved off
+      // the corner it shows as a white slab beside a small badge.
+      clipPath: `inset(${rect.top}px ${props.width - rect.left - rect.width}px ${TALL - rect.top - rect.height}px ${rect.left}px)`,
+    }
+  }
+
+  return {
+    width: `${props.width}px`,
+    height: props.fit ? `${TALL}px` : `${Math.round(props.height / widthScale.value)}px`,
+    transform: `scale(${widthScale.value})`,
+    // Until it is measured, a fitted frame would flash its top at the wrong scale; measured and
+    // found to have no size (a root with `display: contents`), it is drawn the ordinary way.
+    visibility: props.fit && drawn.value === null ? ('hidden' as const) : undefined,
+  }
+})
+
+let observer: ResizeObserver | null = null
+
+/*
+ * Measured inside the frame, and watched from inside it: a ResizeObserver belongs to its own
+ * window and does not see another document's elements, and fonts and pictures arriving late
+ * change the card's height after the load event.
+ */
+function onLoad(event: Event): void {
+  if (!props.fit) return
+
+  observer?.disconnect()
+
+  const frame = event.target as HTMLIFrameElement
+  const view = frame.contentWindow as (Window & typeof globalThis) | null
+  const doc = frame.contentDocument
+
+  if (!view || !doc?.body) return
+
+  const root = doc.querySelector<HTMLElement>('[data-wx-block]') ?? doc.body
+
+  const measure = (): void => {
+    const rect = root.getBoundingClientRect()
+
+    drawn.value = { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
+  }
+
+  measure()
+  observer = new view.ResizeObserver(measure)
+  observer.observe(root)
+}
+
+onBeforeUnmount(() => observer?.disconnect())
 </script>
 
 <template>
@@ -59,6 +145,7 @@ const frameStyle = computed(() => ({
       sandbox="allow-same-origin"
       tabindex="-1"
       aria-hidden="true"
+      @load="onLoad"
     />
     <div v-else class="wx-block-thumb__empty">
       <wx-icon name="grid" />

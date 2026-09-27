@@ -5,6 +5,7 @@ import WxActions from '../Actions/Actions.vue'
 import WxButton from '../Button/Button.vue'
 import WxIcon from '../Icon/Icon.vue'
 import WxSortableList from '../SortableList/SortableList.vue'
+import WxFormScope from '../../internal/FormScope'
 import type { SortableMove } from '../SortableList/types'
 import { localizedValue, useLocales, type LocalizedValue } from '../../composables/useLocalized'
 import type { RepeaterEmits, RepeaterProps } from './types'
@@ -28,6 +29,7 @@ const props = withDefaults(defineProps<RepeaterProps<T>>(), {
   size: 'md',
   plain: false,
   ariaLabel: undefined,
+  rowErrors: undefined,
 })
 
 const emit = defineEmits<RepeaterEmits<T>>()
@@ -132,6 +134,31 @@ function labelOf(item: T, index: number): string {
   return position
 }
 
+/** A row the server refused: something in `rowErrors` at its position. */
+function isInvalid(index: number): boolean {
+  const errors = props.rowErrors?.[index]
+
+  return errors !== undefined && Object.keys(errors).length > 0
+}
+
+/*
+ * A refused row opens by itself: the error is under a field, and a folded row hides the field —
+ * the save fails and nothing on screen says where.
+ */
+watch(
+  () => items.value.map((_item, index) => isInvalid(index)).join(),
+  () => {
+    const next = new Set(folded.value)
+
+    items.value.forEach((_item, index) => {
+      if (isInvalid(index)) next.delete(keyAt(index))
+    })
+
+    if (next.size !== folded.value.size) folded.value = next
+  },
+  { immediate: true },
+)
+
 function isOpen(index: number): boolean {
   return !foldable.value || !folded.value.has(keyAt(index))
 }
@@ -222,6 +249,7 @@ function onMove(move: SortableMove<T>) {
             :is="foldable ? 'button' : 'div'"
             v-if="foldable || itemLabel"
             class="wx-repeater__head"
+            :class="{ 'is-invalid': isInvalid(index) }"
             :type="foldable ? 'button' : undefined"
             :aria-expanded="foldable ? isOpen(index) : undefined"
             @click="foldable && toggle(index)"
@@ -246,7 +274,15 @@ function onMove(move: SortableMove<T>) {
           </component>
 
           <div v-show="isOpen(index)" class="wx-repeater__body">
+            <wx-form-scope v-if="rowErrors" :errors="rowErrors[index] ?? {}">
+              <slot
+                :item="items[index] as T"
+                :index="index"
+                :update="(patch: Partial<T>) => update(index, patch)"
+              />
+            </wx-form-scope>
             <slot
+              v-else
               :item="items[index] as T"
               :index="index"
               :update="(patch: Partial<T>) => update(index, patch)"
@@ -397,6 +433,11 @@ button.wx-repeater__head:focus-visible {
   outline: none;
   border-radius: var(--wx-radius-xs);
   box-shadow: var(--wx-ring-focus);
+}
+
+button.wx-repeater__head.is-invalid,
+.wx-repeater__head.is-invalid {
+  color: var(--wx-color-danger);
 }
 
 .wx-repeater__chevron {

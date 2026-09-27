@@ -2,6 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createRouter, createWebHistory } from 'vue-router'
 import { adminKey, createI18n, i18nKey, type AdminContext } from '@webx-ui/module-admin'
+import { VueDraggable } from 'vue-draggable-plus'
 import BlocksPage from './BlocksPage.vue'
 import type { BlockType, DeclaredComponent } from './types'
 
@@ -164,5 +165,66 @@ describe('WxBlocksPage with components', () => {
     const labels = wrapper.findAll('.wx-tabs__tab').map((tab) => tab.text())
 
     expect(labels).toContain('Components')
+  })
+
+  /*
+   * A group dragged into a new order sends only that group: the server puts it in the places
+   * it held, and the other groups stay where they were. jsdom has no pointer to drag with, so
+   * the drop is the list the sortable hands back.
+   */
+  it('sends a dragged group in its new order and shows it at once', async () => {
+    const post = vi.fn().mockResolvedValue({ data: {} })
+    const hero = type('hero', { id: 1, group: 'layout' })
+    const text = type('text', { id: 2 })
+    const quote = type('quote', { id: 3 })
+    const cta = type('cta', { id: 4 })
+    const extra = [5, 6].map((id) => type(`more-${id}`, { id }))
+    const { wrapper } = panel([hero, text, quote, cta, ...extra], [], post)
+
+    await flushPromises()
+
+    const content = wrapper.findAllComponents(VueDraggable)[1]!
+    content.vm.$emit('update:modelValue', [quote, text, cta, ...extra])
+    await flushPromises()
+
+    expect(post).toHaveBeenCalledWith('/api/cms/blocks/reorder', { ids: [3, 2, 4, 5, 6] })
+    expect(wrapper.findAll('.wx-block-card__title').map((title) => title.text())).toEqual([
+      'Hero',
+      'Quote',
+      'Text',
+      'Cta',
+      'More-5',
+      'More-6',
+    ])
+  })
+
+  /* A real mouse clicks the card it let go of; moving a card is not opening it. */
+  it('stays on the list after a card is dropped, and a click after that opens as before', async () => {
+    const { wrapper, router } = panel([type('hero', { id: 1 }), type('text', { id: 2 })], [])
+
+    await flushPromises()
+
+    wrapper.findComponent(VueDraggable).vm.$emit('end')
+    await wrapper.findAll('.wx-block-card')[0]!.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).not.toBe('/blocks/1')
+
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(Date.now() + 1000)
+    await wrapper.findAll('.wx-block-card')[0]!.trigger('click')
+    vi.useRealTimers()
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/blocks/1')
+  })
+
+  it('does not drag while searching', async () => {
+    const { wrapper } = panel([type('hero', { id: 1 }), type('text', { id: 2 })], [])
+
+    await flushPromises()
+    await wrapper.get('.wx-blocks-page__search input').setValue('he')
+
+    expect(wrapper.findComponent(VueDraggable).props('disabled')).toBe(true)
   })
 })

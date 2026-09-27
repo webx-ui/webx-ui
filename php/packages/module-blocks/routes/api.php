@@ -8,6 +8,7 @@ use WebxUi\Blocks\Http\Controllers\BlockVersionController;
 use WebxUi\Blocks\Http\Controllers\ComponentController;
 use WebxUi\Blocks\Http\Controllers\PublishController;
 use WebxUi\Blocks\Http\Controllers\RenderController;
+use WebxUi\Blocks\Http\Controllers\ReorderController;
 use WebxUi\Blocks\Http\Controllers\UsageController;
 
 Route::prefix((string) config('webx-admin.api_path').'/blocks')
@@ -34,6 +35,8 @@ Route::prefix((string) config('webx-admin.api_path').'/blocks')
 
         Route::middleware(['cms.can:blocks.manage', 'webx.blocks-editing'])->group(function (): void {
             Route::post('/', [BlockController::class, 'store'])->name('store');
+            // The order of the list and the picker; never the order of the styles (`sort`).
+            Route::post('reorder', ReorderController::class)->name('reorder');
             Route::put('{block}', [BlockController::class, 'update'])->whereNumber('block')->name('update');
             Route::delete('{block}', [BlockController::class, 'destroy'])->whereNumber('block')->name('destroy');
             Route::post('{block}/publish', PublishController::class)->whereNumber('block')->name('publish');

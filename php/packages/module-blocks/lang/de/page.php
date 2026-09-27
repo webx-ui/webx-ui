@@ -37,8 +37,8 @@ return [
     'root' => 'Die Seite selbst',
     'max-per-entity' => 'Pro Seite',
     'max-per-entity-help' => 'Wie viele Instanzen eine Seite enthalten darf. Leer — keine Grenze.',
-    'sort' => 'Reihenfolge',
-    'sort-help' => 'Die Reihenfolge in der CSS-Kaskade und in der Liste.',
+    'sort' => 'Stil-Reihenfolge',
+    'sort-help' => 'Die Reihenfolge der Stile auf der Seite: Die Regeln eines späteren Blocks gewinnen. Das Verschieben der Karten ändert sie nicht.',
     'enabled' => 'Redakteuren angeboten',
     'enabled-help' => 'Abgeschaltet bleibt der Block auf den Seiten, wo er bereits steht, kann aber nicht hinzugefügt werden.',
 

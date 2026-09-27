@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, provide, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   useAdmin,
@@ -48,6 +48,7 @@ import {
   type TagTarget,
 } from './completions'
 import { lintBlock } from './lint'
+import { blocksOwnerKey } from './preview'
 import {
   callerWords,
   callTag,
@@ -127,6 +128,21 @@ const settings = reactive({
   max_per_entity: null as number | null,
   is_enabled: true,
 })
+
+/* The sample form's nested constructors add into this block, as it stands in the settings. */
+provide(
+  blocksOwnerKey,
+  computed(() =>
+    block.value
+      ? {
+          ...block.value,
+          slug: settings.slug,
+          title: settings.title,
+          allow: settings.allow.length ? settings.allow : null,
+        }
+      : null,
+  ),
+)
 
 const content = reactive<BlockContent>({
   schema: [],

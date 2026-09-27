@@ -1,5 +1,26 @@
 # @webx-ui/core
 
+## 0.34.0
+
+### Minor Changes
+
+- 50ea8a5: A refusal of one row of a repeater lands under that row's field. `WxRepeater` takes `rowErrors`
+  — the errors of each row, by position — and then every row answers to its own and nothing else:
+  before, a row's `title` inside a form showed the error of the form's own `title`, in every row at
+  once. A refused row unfolds by itself and its header turns red. `wx-repeater` on a described
+  screen hands the server's `articles.2.url` and `articles.2.title.en` to the third row's `url` and
+  `title` without anything to set.
+
+## 0.33.3
+
+### Patch Changes
+
+- 2f19d67: `WxRichText` no longer writes to its model when it is locked and unlocked. Tiptap raises an update on
+  `setEditable`, and the editor wrote the same empty words back in another shape — a translatable
+  field the server sent as `[]` became `{ en: '' }` — so a form locked for the length of a request
+  (publishing a recipe) saw a change after it and autosaved a draft: "edits" came back a second
+  after Publish. The editor now switches without the update and skips a write that changes nothing.
+
 ## 0.33.2
 
 ### Patch Changes
