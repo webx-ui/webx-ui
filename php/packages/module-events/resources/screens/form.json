@@ -33,7 +33,7 @@
                       "type": "wx-col",
                       "props": {
                         "span": 24,
-                        "md": 12
+                        "sm": 12
                       },
                       "children": [
                         {
@@ -75,7 +75,7 @@
                       "type": "wx-col",
                       "props": {
                         "span": 24,
-                        "md": 12
+                        "sm": 12
                       },
                       "children": [
                         {
@@ -207,26 +207,52 @@
               "label": "trans::webx-events::screen.booking",
               "children": [
                 {
-                  "id": "price",
-                  "type": "wx-input",
-                  "name": "price",
-                  "label": "trans::webx-events::screen.price",
-                  "help": "trans::webx-events::screen.price-help",
-                  "localized": true,
-                  "props": {
-                    "maxlength": 255
-                  }
-                },
-                {
-                  "id": "price-amount",
-                  "type": "wx-input-number",
-                  "name": "price_amount",
-                  "label": "trans::webx-events::screen.price-amount",
-                  "help": "trans::webx-events::screen.price-amount-help",
-                  "props": {
-                    "min": 0,
-                    "max": 99999999
-                  }
+                  "id": "prices",
+                  "type": "wx-row",
+                  "children": [
+                    {
+                      "id": "prices-text",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 24,
+                        "sm": 12
+                      },
+                      "children": [
+                        {
+                          "id": "price",
+                          "type": "wx-input",
+                          "name": "price",
+                          "label": "trans::webx-events::screen.price",
+                          "help": "trans::webx-events::screen.price-help",
+                          "localized": true,
+                          "props": {
+                            "maxlength": 255
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "prices-amount",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 24,
+                        "sm": 12
+                      },
+                      "children": [
+                        {
+                          "id": "price-amount",
+                          "type": "wx-input-number",
+                          "name": "price_amount",
+                          "label": "trans::webx-events::screen.price-amount",
+                          "help": "trans::webx-events::screen.price-amount-help",
+                          "props": {
+                            "min": 0,
+                            "max": 99999999
+                          }
+                        }
+                      ]
+                    }
+                  ]
                 },
                 {
                   "id": "booking-url",
