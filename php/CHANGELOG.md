@@ -1,5 +1,28 @@
 # @webx-ui/php
 
+## 0.45.0
+
+### Minor Changes
+
+- 1966d54: `webx-ui/module-team`: the people of the organisation — a photo, a name, a job title, a short
+  text, social links from a list the site configures, and the services each of them provides when
+  the site has `module-services`. No page of their own and no categories: they reach the site in the
+  offered block **Team** (a grid, a slider or a list — "who does this" on a service's page is the
+  list with "only related to the current one") and through `team()` in a template. A person is a
+  relation target, `team-member`, for other modules. `webx:setup` knows the module as `team`, and
+  `webx:doctor` checks `team()`.
+- 1966d54: `WebxUi\Admin\Collections\RecordQuery` in `module-admin`: the steps and rules shared by the site
+  helpers (`only()`, `except()`, `take()`, `locale()`, categories by id or slug, `relatedTo()`, the
+  limit counted after the language), for a module to extend with its model, visibility and cards.
+  `services()`, `reviews()`, `recipes()` and `events()` now extend it and answer exactly as before.
+  `Selection::apply()` accepts a model without categories when none are chosen.
+- 1966d54: `webx-ui/module-team` for agents and the demo: `team_list`, `team_get`, `team_create`,
+  `team_update`, `team_delete`, `team_reorder` through the panel's own form and order — services as
+  ids or addresses when the site has them, a network the site does not have refused with the list of
+  those it has — and `team://catalog` to read first. `webx:demo` seeds six people, `/team` with a
+  grid and "who does it" on a demo service. The template editor of a block type knows the card of
+  the `team` source.
+
 ## 0.44.1
 
 ### Patch Changes
