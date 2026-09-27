@@ -320,11 +320,17 @@ final class ArticleTools
         $article->setTranslations('title', $title);
         $article->setTranslations('slug', $slug);
         $article->author_id = $this->authorId($user);
-        $article->save();
 
-        if ($values !== []) {
-            $this->form()->save($article, $values, null, $this->authorId($user));
-        }
+        // One transaction for the row and its values: a value the screen refuses must not leave
+        // a bare article behind with its address already taken — the routing observer writes the
+        // address on `created`, inside this same transaction, so it goes with the row.
+        $article->getConnection()->transaction(function () use ($article, $values, $user): void {
+            $article->save();
+
+            if ($values !== []) {
+                $this->form()->save($article, $values, null, $this->authorId($user));
+            }
+        });
 
         return $this->get(['article' => $article->refresh()->getKey()], $user);
     }

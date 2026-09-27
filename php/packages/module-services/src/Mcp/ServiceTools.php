@@ -252,11 +252,17 @@ final class ServiceTools
         $service = new Service;
         $service->setTranslations('title', $title);
         $service->setTranslations('slug', $slug);
-        $service->save();
 
-        if ($values !== []) {
-            $this->form()->save($service, $values, $this->can($user), $this->authorId($user));
-        }
+        // One transaction for the row and its values: a value the screen refuses must not leave
+        // a bare service behind with its address already taken — the routing observer writes the
+        // address on `created`, inside this same transaction, so it goes with the row.
+        $service->getConnection()->transaction(function () use ($service, $values, $user): void {
+            $service->save();
+
+            if ($values !== []) {
+                $this->form()->save($service, $values, $this->can($user), $this->authorId($user));
+            }
+        });
 
         return $this->get(['service' => $service->refresh()->getKey()], $user);
     }

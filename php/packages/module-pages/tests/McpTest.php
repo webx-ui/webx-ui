@@ -228,6 +228,23 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function a_refused_value_leaves_no_page_and_no_address_behind(): void
+    {
+        $routes = Route::query()->count();
+
+        // A translated field given as a bare string: the screen refuses it after the node is in.
+        $this->agent('create', ['title' => 'Contacts', 'values' => ['title' => 'Contacts']], $this->editor())
+            ->assertHasErrors(['title']);
+
+        $this->assertSame(1, Page::query()->withTrashed()->count());
+        $this->assertSame($routes, Route::query()->count());
+
+        // And the address is still free for the call that gets it right.
+        $this->agent('create', ['title' => 'Contacts', 'values' => ['title' => ['en' => 'Contacts']]], $this->editor())
+            ->assertOk();
+    }
+
+    #[Test]
     public function an_update_writes_the_draft_and_an_old_revision_is_refused(): void
     {
         $about = $this->page('about');
