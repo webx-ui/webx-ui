@@ -1,0 +1,142 @@
+{
+  "files": {
+    "health-style": "health-style.svg",
+    "business-herald": "business-herald.svg",
+    "city-portal": "city-portal.svg",
+    "kitchen-weekly": "kitchen-weekly.svg",
+    "scan": "press-scan.pdf"
+  },
+  "folder": { "en": "Press", "ru": "Пресса" },
+  "outlets": [
+    {
+      "key": "health-and-style",
+      "title": { "en": "Health & Style", "ru": "Здоровье и стиль" },
+      "summary": {
+        "en": "A monthly magazine on health, food and the way we live.",
+        "ru": "Ежемесячный журнал о здоровье, питании и образе жизни."
+      },
+      "logo": "health-style",
+      "website_url": "https://health-style.example",
+      "featured": true,
+      "articles": [
+        {
+          "title": {
+            "en": "Interview: planning a week of plates",
+            "ru": "Интервью: как собрать тарелку на неделю"
+          },
+          "excerpt": {
+            "en": "On why a menu for the week is simpler than it looks.",
+            "ru": "Разговор о том, почему меню на неделю проще, чем кажется."
+          },
+          "kind": "interview",
+          "published_on": "2025-03-14",
+          "url": "https://health-style.example/interview-week-plates"
+        },
+        {
+          "title": {
+            "en": "Column: breakfast without sugar",
+            "ru": "Колонка: завтрак без сахара"
+          },
+          "kind": "authored",
+          "published_on": "2025-03-01",
+          "date_precision": "month",
+          "url": "https://health-style.example/column-breakfast",
+          "file": "scan"
+        },
+        {
+          "title": { "en": "Ten kitchens worth a visit" },
+          "excerpt": { "en": "Only in English: the Russian site does not show it at all." },
+          "kind": "mention",
+          "published_on": "2024-11-20",
+          "url": "https://health-style.example/ten-kitchens"
+        }
+      ]
+    },
+    {
+      "key": "business-herald",
+      "title": { "en": "Business Herald", "ru": "Деловой вестник" },
+      "summary": { "en": "The business paper of the city.", "ru": "Деловая газета города." },
+      "logo": "business-herald",
+      "website_url": "https://herald.example",
+      "featured": true,
+      "articles": [
+        {
+          "title": {
+            "en": "Expert comment: the market of healthy food",
+            "ru": "Комментарий эксперта: рынок здорового питания"
+          },
+          "kind": "expert_comment",
+          "published_on": "2023-01-01",
+          "date_precision": "year",
+          "url": "https://herald.example/healthy-food-market"
+        },
+        {
+          "title": { "en": "Five new places for lunch", "ru": "Пять новых мест для обеда" },
+          "excerpt": {
+            "en": "The scan of the page is the article.",
+            "ru": "Скан полосы — это и есть материал."
+          },
+          "kind": "mention",
+          "published_on": "2024-08-12",
+          "date_precision": "month",
+          "file": "scan"
+        }
+      ]
+    },
+    {
+      "key": "city-portal",
+      "title": { "en": "City Portal", "ru": "Городской портал" },
+      "logo": "city-portal",
+      "website_url": "https://city.example",
+      "featured": false,
+      "articles": [
+        {
+          "title": {
+            "en": "On seasonal produce",
+            "ru": "Авторская колонка о сезонных продуктах"
+          },
+          "kind": "authored",
+          "published_on": "2024-06-05",
+          "url": "https://city.example/seasonal"
+        },
+        {
+          "title": { "en": "An old note", "ru": "Старая заметка" },
+          "kind": "mention",
+          "published_on": "2019-02-10",
+          "url": "https://city.example/old-note",
+          "is_hidden": true
+        }
+      ]
+    },
+    {
+      "key": "kitchen-weekly",
+      "title": { "en": "Kitchen Weekly", "ru": "Кухня недели" },
+      "logo": "kitchen-weekly",
+      "featured": true,
+      "published": false,
+      "articles": [
+        {
+          "title": { "en": "Recipe of the week", "ru": "Рецепт недели" },
+          "kind": "interview",
+          "published_on": "2025-05-02",
+          "url": "https://kitchen.example/recipe"
+        }
+      ]
+    }
+  ],
+  "page": {
+    "title": { "en": "Press", "ru": "Пресса" },
+    "seo": {
+      "title": { "en": "Press about us", "ru": "Пресса о нас" },
+      "description": {
+        "en": "Magazines, papers and portals that wrote about us — interviews, columns and expert comments.",
+        "ru": "Журналы, газеты и порталы, которые писали о нас, — интервью, колонки и комментарии экспертов."
+      }
+    },
+    "logos": { "title": { "en": "As featured in", "ru": "О нас пишут" } },
+    "catalog": {
+      "title": { "en": "Press", "ru": "Пресса" },
+      "kinds": ["authored", "expert_comment", "interview", "mention"]
+    }
+  }
+}

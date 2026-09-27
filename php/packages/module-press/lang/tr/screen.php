@@ -28,6 +28,7 @@ return [
     'article-title-help' => 'Bir haber bir dilde yalnızca o dilde başlığı varsa görünür.',
     'excerpt' => 'Özet',
     'kind' => 'Tür',
+    'kind-none' => 'Türsüz',
     'published-on' => 'Tarih',
     'date-precision' => 'Kesinlik',
     'date-precision-help' => 'Tarihin ne kadarı yazılır: gün, ay ya da yalnızca yıl.',

@@ -66,7 +66,7 @@ const canManage = computed(() => context.can('press.manage'))
 const title = computed(
   () =>
     context.state.manifest?.modules.find((module) => module.id === 'press')?.title ??
-    t('module.title'),
+    t('module.press'),
 )
 
 const view = computed<TabValue>({
@@ -266,7 +266,7 @@ function unseen(row: OutletRow): boolean {
         class="wx-press__panes"
         :list-width="360"
         :detail-min="520"
-        :detail-label="t('module.title')"
+        :detail-label="t('module.press')"
       >
         <template #list>
           <div class="wx-press__bar">

@@ -4,7 +4,7 @@ import type {
   BlockType,
   BlockVersionMeta,
 } from '../../../../packages/module-blocks/src/types'
-import { existsSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { blade, defineFunction, Html, escape, type TagCall } from './blade'
 import { minutesText, sampleCard } from './recipes'
@@ -1556,19 +1556,9 @@ export function clone<T>(value: T): T {
 
 offered('reviews', 'php/packages/module-reviews/resources/blocks/reviews.json')
 
-/*
- * The press offers three (§4.8 of its spec). The composer half was written beside this one
- * (P1 ∥ P2), so until its files are on the branch the playground draws its own copies of them.
- */
+/* The press offers three (§4.8 of its spec). */
 for (const slug of ['press-logos', 'press-outlets', 'press-articles']) {
-  const shipped = `php/packages/module-press/resources/blocks/${slug}.json`
-
-  offered(
-    slug,
-    existsSync(fileURLToPath(new URL(`../../../../${shipped}`, import.meta.url)))
-      ? shipped
-      : `apps/playground/server/panel/press/blocks/${slug}.json`,
-  )
+  offered(slug, `php/packages/module-press/resources/blocks/${slug}.json`)
 }
 
 /**

@@ -526,7 +526,7 @@ function query(state: QueryState): Record<string, (...args: unknown[]) => unknow
   return {
     outlets: () => next({ what: 'outlets' }),
     articles: () => next({ what: 'articles' }),
-    featured: () => next({ featured: true }),
+    featured: (value) => next({ featured: value !== false }),
     kind: (value) =>
       next({
         kinds: (Array.isArray(value) ? value : value === null || value === undefined ? [] : [value])
@@ -623,11 +623,17 @@ function articleCard(record: Article, owner: Outlet, locale: string): Record<str
 
   return {
     id: record.id,
-    outlet: { id: owner.id, title, url: urlOf(owner, locale), logo: logoCard(owner, title) },
+    // The outlet's logo is its address only, as `Cards::article()` gives it.
+    outlet: {
+      id: owner.id,
+      title,
+      url: urlOf(owner, locale),
+      logo: logoCard(owner, title)?.url ?? null,
+    },
     title: record.title[locale],
     excerpt: said(record.excerpt[locale]),
     kind: record.kind,
-    kind_label: record.kind === null ? '' : word(locale, `kinds.${record.kind}`),
+    kind_label: record.kind === null ? null : word(locale, `kinds.${record.kind}`),
     date: record.published_on,
     when: when(record.published_on, record.date_precision, locale),
     target: record.url ?? pdf,
@@ -681,10 +687,15 @@ defineFunction('press', () =>
   }),
 )
 defineFunction('config', (key, fallback) => (key === 'webx-press.kinds' ? [...KINDS] : fallback))
-defineFunction('__', (key) => {
+defineFunction('__', (key, replace) => {
   const [namespace, path] = String(key).split('::')
+  const line = namespace === 'webx-press' && path !== undefined ? word(DEFAULT, path) : String(key)
 
-  return namespace === 'webx-press' && path !== undefined ? word(DEFAULT, path) : String(key)
+  // `:count` and the like, as the translator fills them.
+  return Object.entries(replace !== null && typeof replace === 'object' ? replace : {}).reduce(
+    (text, [name, value]) => text.replaceAll(`:${name}`, String(value)),
+    line,
+  )
 })
 
 /* ---------------------------------------------------------------------------- helpers ----- */

@@ -28,6 +28,7 @@ return [
     'article-title-help' => 'Uma matéria só é visível num idioma se tiver título nele.',
     'excerpt' => 'Resumo',
     'kind' => 'Tipo',
+    'kind-none' => 'Sem tipo',
     'published-on' => 'Data',
     'date-precision' => 'Precisão',
     'date-precision-help' => 'Quanto da data se imprime: o dia, o mês ou só o ano.',

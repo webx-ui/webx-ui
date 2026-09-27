@@ -72,7 +72,7 @@
             "panel": {
                 "import": "import { press } from '@webx-ui/module-press'",
                 "style": "@webx-ui/module-press/style.css",
-                "register": "...press()"
+                "register": "press()"
             }
         }
     },

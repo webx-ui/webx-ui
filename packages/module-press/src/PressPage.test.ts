@@ -40,6 +40,15 @@ function row(id: number, title: string, over: Partial<OutletRow> = {}): OutletRo
   }
 }
 
+/*
+ * The languages the panel edits in. One by default; the test of the address sets two, the way a
+ * site whose default is Russian has them, and moves the active one.
+ */
+let languages = { list: ref([{ code: 'en', name: 'English' }]), active: ref('en') }
+
+/* Where the open outlet is on the site, as the form answers it. */
+let address = '/press/health-and-style'
+
 const list: OutletsList = {
   data: [
     row(1, 'Health & Style', {
@@ -56,9 +65,10 @@ const list: OutletsList = {
 
 function detail(id: number, title: string): OutletDetail {
   return {
-    outlet: { id, title, published: true, deleted_at: null, url: '/press/health-and-style' },
+    outlet: { id, title, published: true, deleted_at: null, url: address },
     values: {
       title: { en: title },
+      slug: { ru: 'zdorovye-i-stil', en: 'health-and-style' },
       published: true,
       articles: [
         { id: 11, title: { en: 'Interview: a week of plates' }, url: 'https://a.example/1' },
@@ -82,7 +92,10 @@ const screen: ScreenNode[] = [
         id: 'general',
         type: 'wx-tab',
         label: 'General',
-        children: [{ id: 'title', type: 'wx-input', name: 'title', localized: true }],
+        children: [
+          { id: 'title', type: 'wx-input', name: 'title', localized: true },
+          { id: 'slug', type: 'wx-slug', name: 'slug', localized: true },
+        ],
       },
       {
         id: 'articles-tab',
@@ -157,10 +170,7 @@ async function panel(query = '', can = true) {
           [adminKey as symbol]: admin,
           [i18nKey as symbol]: i18n,
           // What a panel always provides; without it a localized field hands back a plain string.
-          [localesKey as symbol]: {
-            list: ref([{ code: 'en', name: 'English' }]),
-            active: ref('en'),
-          },
+          [localesKey as symbol]: languages,
         },
       },
     },
@@ -190,6 +200,8 @@ async function openArticles(wrapper: Mounted) {
 
 beforeEach(() => {
   confirm.mockReset()
+  languages = { list: ref([{ code: 'en', name: 'English' }]), active: ref('en') }
+  address = '/press/health-and-style'
 })
 
 afterEach(() => {
@@ -338,6 +350,33 @@ describe('WxPressPage', () => {
 
     expect(open).toHaveBeenCalledWith('/press/health-and-style', '_blank', 'noopener')
     open.mockRestore()
+  })
+
+  it('warns of a move only in the language of the address it has', async () => {
+    languages = {
+      list: ref([
+        { code: 'ru', name: 'Русский' },
+        { code: 'en', name: 'English' },
+      ]),
+      active: ref('ru'),
+    }
+    // The address in the panel's language, which is not the site's default: it carries `/en`.
+    address = '/en/press/health-and-style'
+
+    const { wrapper } = await panel('?outlet=1')
+    const slug = () => wrapper.find<HTMLInputElement>('.wx-slug input')
+    const warned = () => wrapper.find('.wx-slug .wx-alert').exists()
+
+    // Russian is edited, the address is English: nothing to compare, nothing said.
+    expect(slug().element.value).toBe('zdorovye-i-stil')
+    expect(warned()).toBe(false)
+
+    languages.active.value = 'en'
+    await flushPromises()
+    expect(warned()).toBe(false)
+
+    await slug().setValue('health-style')
+    expect(warned()).toBe(true)
   })
 
   it('asks before another outlet takes the place of unsaved words', async () => {
