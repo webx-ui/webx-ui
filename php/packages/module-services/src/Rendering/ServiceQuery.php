@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace WebxUi\Services\Rendering;
 
-use ArrayIterator;
-use Countable;
 use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use IteratorAggregate;
-use Traversable;
-use WebxUi\Admin\Collections\Selection;
-use WebxUi\Localization\Locales;
+use WebxUi\Admin\Collections\RecordQuery;
 use WebxUi\Services\Models\Service;
 use WebxUi\Services\Models\ServiceCategory;
 
@@ -26,148 +22,29 @@ use WebxUi\Services\Models\ServiceCategory;
  *     services()->except($service)->take(3)        // "other services" on a service page
  *     services()->categories()                     // the catalogue, grouped
  *
- * Every step returns a new query, so a template can keep one and branch it. What a reader may
- * see is not a step: published, out of the bin and written in the language being read — a
- * service without a slug in it has no address there, and a card that leads to a 404 is worse
- * than a shorter list. The shape of a card is {@see Cards}, the same one a `wx-collection` field
- * hands over, so a block can move between the two without its markup changing.
+ * What a reader may see is not a step: published, out of the bin and written in the language
+ * being read — a service without a slug in it has no address there, and a card that leads to a
+ * 404 is worse than a shorter list. The shape of a card is {@see Cards}, the same one a
+ * `wx-collection` field hands over, so a block can move between the two without its markup
+ * changing. The steps themselves and their rules are {@see RecordQuery}'s.
  *
- * @implements IteratorAggregate<int, array<string, mixed>>
+ * @extends RecordQuery<Service>
  */
-final class ServiceQuery implements Countable, IteratorAggregate
+final class ServiceQuery extends RecordQuery
 {
-    /**
-     * @param  list<int|string>|null  $categories  Ids, or slugs in the query's language; null — no filter.
-     * @param  list<int>|null  $only
-     * @param  list<int>  $except
-     */
-    public function __construct(
-        private readonly ?array $categories = null,
-        private readonly ?array $only = null,
-        private readonly array $except = [],
-        private readonly ?int $limit = null,
-        private readonly ?string $locale = null,
-    ) {}
-
     /**
      * Only what is filed under these categories: an id, a slug, a category, or a list of them.
      *
      * Nothing — null, an empty string or list — is no filter at all, because that is what an
      * editor's untouched field sends and "every service" is what it means. A slug nobody has is
-     * not nothing: it matches no service rather than all of them.
+     * not nothing: it matches no service rather than all of them. One category lists its
+     * services in its own order.
      *
      * @param  int|string|ServiceCategory|iterable<int|string|ServiceCategory>|null  $categories
      */
     public function in(int|string|ServiceCategory|iterable|null $categories): self
     {
-        $given = [];
-
-        foreach (is_iterable($categories) ? $categories : [$categories] as $category) {
-            if ($category instanceof ServiceCategory) {
-                $given[] = (int) $category->getKey();
-            } elseif (is_int($category) || (is_string($category) && ctype_digit($category))) {
-                $given[] = (int) $category;
-            } elseif (is_string($category) && trim($category) !== '') {
-                $given[] = trim($category);
-            }
-        }
-
-        return new self($given === [] ? null : $given, $this->only, $this->except, $this->limit, $this->locale);
-    }
-
-    /**
-     * These services and no others, in the order given — the order is the point of choosing.
-     *
-     * @param  int|Service|iterable<int|string|Service>  $services
-     */
-    public function only(int|Service|iterable $services): self
-    {
-        return new self($this->categories, $this->ids($services), $this->except, $this->limit, $this->locale);
-    }
-
-    /** @param  int|Service|iterable<int|string|Service>|null  $services */
-    public function except(int|Service|iterable|null $services): self
-    {
-        $except = $services === null ? [] : $this->ids($services);
-
-        return new self($this->categories, $this->only, [...$this->except, ...$except], $this->limit, $this->locale);
-    }
-
-    /** At most this many; null or zero — all of them. */
-    public function take(int|string|null $limit): self
-    {
-        $limit = is_string($limit) && ctype_digit($limit) ? (int) $limit : $limit;
-
-        return new self($this->categories, $this->only, $this->except, is_int($limit) && $limit > 0 ? $limit : null, $this->locale);
-    }
-
-    /** The language the cards are written in; by default, the one being rendered. */
-    public function locale(?string $locale): self
-    {
-        return new self($this->categories, $this->only, $this->except, $this->limit, $locale);
-    }
-
-    /** @return list<array<string, mixed>> */
-    public function get(): array
-    {
-        $locale = $this->resolvedLocale();
-        $categories = $this->categoryIds($locale);
-
-        if ($categories === []) {
-            return [];
-        }
-
-        $query = Service::query()->visible()->with(Cards::RELATIONS);
-
-        if ($this->only !== null) {
-            $query->whereIn('services.id', $this->only === [] ? [0] : $this->only);
-        }
-
-        if ($this->except !== []) {
-            $query->whereNotIn('services.id', $this->except);
-        }
-
-        // No limit in SQL: whether a service is written in a language is a question of its slug,
-        // and the limit counts what is shown.
-        $query = (new Selection($categories ?? []))->apply($query);
-
-        /** @var EloquentCollection<int, Service> $services */
-        $services = $query->get();
-
-        $services = $services->filter(static fn (Service $service): bool => $service->hasUrlIn($locale));
-
-        if ($this->only !== null) {
-            $order = array_flip($this->only);
-            $services = $services->sortBy(static fn (Service $service): int => $order[(int) $service->getKey()] ?? PHP_INT_MAX);
-        }
-
-        if ($this->limit !== null) {
-            $services = $services->take($this->limit);
-        }
-
-        return $this->cards()->services($services->values()->all(), $locale);
-    }
-
-    /** @return array<string, mixed>|null */
-    public function first(): ?array
-    {
-        return $this->take(1)->get()[0] ?? null;
-    }
-
-    public function isEmpty(): bool
-    {
-        return $this->get() === [];
-    }
-
-    public function count(): int
-    {
-        return count($this->get());
-    }
-
-    /** @return Traversable<int, array<string, mixed>> */
-    public function getIterator(): Traversable
-    {
-        return new ArrayIterator($this->get());
+        return $this->withCategories($categories);
     }
 
     /**
@@ -189,21 +66,24 @@ final class ServiceQuery implements Countable, IteratorAggregate
             return [];
         }
 
+        $only = $this->onlyIds();
+        $except = $this->exceptIds();
+
         $query = ServiceCategory::query()
             ->visible()
             ->ordered()
             ->with([
                 'cover',
                 'routes',
-                'services' => function (Relation $services): void {
+                'services' => static function (Relation $services) use ($only, $except): void {
                     $services->whereNotNull('services.published_at');
 
-                    if ($this->except !== []) {
-                        $services->whereNotIn('services.id', $this->except);
+                    if ($except !== []) {
+                        $services->whereNotIn('services.id', $except);
                     }
 
-                    if ($this->only !== null) {
-                        $services->whereIn('services.id', $this->only === [] ? [0] : $this->only);
+                    if ($only !== null) {
+                        $services->whereIn('services.id', $only === [] ? [0] : $only);
                     }
 
                     $services->orderBy('service_category.item_position')
@@ -228,81 +108,41 @@ final class ServiceQuery implements Countable, IteratorAggregate
 
             $services = $category->services->filter(static fn (Service $service): bool => $service->hasUrlIn($locale));
 
-            if ($this->limit !== null) {
-                $services = $services->take($this->limit);
+            if ($this->limit() !== null) {
+                $services = $services->take($this->limit());
             }
 
             if ($services->isEmpty()) {
                 continue;
             }
 
-            $groups[] = $this->cards()->category($category, $services->values()->all(), $locale);
+            $groups[] = $this->cardMaker()->category($category, $services->values()->all(), $locale);
         }
 
         return $groups;
     }
 
-    /**
-     * The categories asked for as ids: null for no filter, and an empty list for a filter nothing
-     * passes — a slug that names no category.
-     *
-     * @return list<int>|null
-     */
-    private function categoryIds(string $locale): ?array
+    protected function newQuery(string $locale): Builder
     {
-        if ($this->categories === null) {
-            return null;
-        }
-
-        $ids = [];
-        $slugs = [];
-
-        foreach ($this->categories as $category) {
-            is_int($category) ? $ids[] = $category : $slugs[] = $category;
-        }
-
-        if ($slugs !== []) {
-            $found = ServiceCategory::query()
-                ->where(static function (Builder $query) use ($slugs, $locale): void {
-                    foreach ($slugs as $slug) {
-                        $query->orWhere('slug->'.$locale, $slug);
-                    }
-                })
-                ->pluck('id')
-                ->map(intval(...))
-                ->all();
-
-            $ids = [...$ids, ...$found];
-        }
-
-        return array_values(array_unique($ids));
+        return Service::query()->visible()->with(Cards::RELATIONS);
     }
 
-    /**
-     * @param  int|string|Service|iterable<int|string|Service>  $services
-     * @return list<int>
-     */
-    private function ids(int|string|Service|iterable $services): array
+    protected function shownIn(Model $record, string $locale): bool
     {
-        $ids = [];
-
-        foreach (is_iterable($services) ? $services : [$services] as $service) {
-            if ($service instanceof Service) {
-                $ids[] = (int) $service->getKey();
-            } elseif (is_int($service) || (is_string($service) && ctype_digit($service))) {
-                $ids[] = (int) $service;
-            }
-        }
-
-        return array_values(array_unique($ids));
+        return $record->hasUrlIn($locale);
     }
 
-    private function resolvedLocale(): string
+    protected function categoryModel(): string
     {
-        return $this->locale ?? Container::getInstance()->make(Locales::class)->current();
+        return ServiceCategory::class;
     }
 
-    private function cards(): Cards
+    protected function cards(array $records, string $locale): array
+    {
+        return $this->cardMaker()->services($records, $locale);
+    }
+
+    private function cardMaker(): Cards
     {
         return Container::getInstance()->make(Cards::class);
     }

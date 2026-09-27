@@ -482,6 +482,38 @@ module-team (T3). В конце — «Итог T1» в §8 спеки (каки�
 TeamQuery по ним), коммит, пуш в claude.
 ```
 
+#### Итог T1 — сделано 27.09.2026
+
+- `WebxUi\Admin\Collections\RecordQuery<TModel>` — абстрактный класс, состояние в приватных
+  свойствах, шаг — `clone` с одной правкой. Публичное: `only()`, `except()`, `take()`,
+  `locale()`, `get()`, `models()`, `first()`, `isEmpty()`, `count()`, `getIterator()`,
+  `resolvedLocale()`. Модуль открывает своим публичным методом защищённые `withCategories()` и
+  `withRelated()` (у `TeamQuery` — только `relatedTo()`), свои шаги кладёт `withStep()` и читает
+  `step()` (так живут `when` событий и `nutrients` рецептов).
+- **Хуки, по которым T3 пишет `TeamQuery`:** `newQuery(string $locale): Builder` — видимое в SQL
+  с предзагрузкой для карточек (обязателен); `cards(array $records, string $locale)`
+  (обязателен); `shownIn(Model, string $locale)` — видимость по словам, по умолчанию `true`
+  (команде не нужен: решение 8); `categoryModel()` — модель слага категории, по умолчанию `null`;
+  `order(Builder, ?int $category)` — по умолчанию `orderedIn`, а у модели без него — `position`,
+  `id` (команде ничего переопределять не надо); `narrow(Builder, string $locale)` — свои фильтры.
+- Сгруппированный каталог `categories()` остался в `ServiceQuery` и `ReviewQuery`: у двух
+  потребителей разные условия на связь и на видимость самой категории, общий движок был бы
+  параметром на каждую строку. Они читают состояние через `categoryIds()`, `onlyIds()`,
+  `exceptIds()`, `limit()`.
+- **`RelatedLinks` не вынесен.** Посылка §4.4 не подтвердилась: у событий в карточке ссылок на
+  услуги нет вовсе (их собирает `EventPage` через `services()->only()`), потребитель один —
+  рецепты. И вынести его в `module-admin` нельзя без новой зависимости: сборка читает
+  `WebxUi\Routing\Models\Route`, а `module-admin` от `routing` не зависит. T3 копирует
+  `loadServices()`/`serviceLinks()`/`url()`/`title()` из `module-recipes/src/Rendering/Cards.php`.
+- Поведение не менялось: ни один тест четырёх модулей не правился, php-набор целиком — 1736
+  зелёных (PHP 8.4), pint и phpstan чистые. Разница только в SQL: одна категория у услуг и отзывов
+  теперь фильтруется ещё и `whereIn` по пивоту поверх join'а `orderedIn` — избыточно, результат
+  тот же.
+- `Selection::apply()` принимает модель без категорий, если категории не выбраны, и сортирует её
+  по `position`, `id`; выбранные категории у такой модели — по-прежнему исключение.
+- Тесты: `module-admin/tests/RecordQueryTest.php` на фикстурах `ChefQuery` (без категорий, как
+  команда) и `DishQuery` (категории по слагу). Changeset — `.changeset/record-query.md`.
+
 ### T2 — `module-team`, npm
 
 ```
