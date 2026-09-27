@@ -1,5 +1,18 @@
 # @webx-ui/php
 
+## 0.44.1
+
+### Patch Changes
+
+- 45170fe: A `wx-row` on a screen is as wide as one field, not as the card. Every field stops at
+  `--wx-field-max-width`, so a row across the card put "Start" at its left edge and "End" a
+  thousand pixels away, each still leaving most of its column empty. The row now splits one
+  field's width in two (columns answer to the row, so a pair of halves is `sm: 12`).
+
+  The event form uses it twice: start and end side by side, and the price with its number.
+
+- 91b2846: `services_create`, `articles_create` and `pages_create` write the row and its values in one transaction: a value the screen refuses no longer leaves a bare entity behind with its address taken.
+
 ## 0.44.0
 
 ### Minor Changes
