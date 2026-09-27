@@ -28,6 +28,7 @@ return [
     'article-title-help' => 'An article is shown in a language only when it has a title in it.',
     'excerpt' => 'Excerpt',
     'kind' => 'Kind',
+    'kind-none' => 'No kind',
     'published-on' => 'Date',
     'date-precision' => 'Known to',
     'date-precision-help' => 'How much of the date is printed: the day, the month, or the year only.',

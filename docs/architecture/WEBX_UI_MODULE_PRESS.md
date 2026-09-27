@@ -591,7 +591,7 @@ release.yml); мерж релизного PR; npm view всех поднятых
 webx-ui/module-press на Packagist. Удалить ветку feat/press-panel.
 
 Демо: webx-cms.local — module-press в scripts/packages.mjs, link-panel.sh, composer require,
-импорт и ...press() в resources/js/admin.ts руками (webx:panel --sync не трогает существующий
+импорт и press() в resources/js/admin.ts руками (webx:panel --sync не трогает существующий
 файл), migrate, webx:blocks:offered --install --module=press, cache:clear (словарь), демо §4.12
 тинкером со своим журналом, npx vite build; хомлаб — то же в registry, npm ls
 @webx-ui/module-admin — одна версия, коммит и пуш в Gitea. Строку реестра в
@@ -654,6 +654,60 @@ $shape)` в `module-blocks`: замыкание над документом пр
 - Хвост для P3: MCP-инструменты пишут материалы через `Article` напрямую — адреса издания
   пересчитываются сами (наблюдатель), но несколько записей подряд стоит завернуть в
   `Outlet::holdingAddresses()`.
+
+### Итог P3 (27.09.2026)
+
+`feat/press-panel` слит в `feat/module-press` без конфликтов; worktree `../webx-ui-press-panel`
+снят (git его отпустил, а каталог держал живой dev-сервер P2 на 5187 — погашен, каталог удалён;
+ветка `feat/press-panel` остаётся до выпуска).
+
+- **MCP (§4.11)** — `Mcp\PressTools` и `Mcp\PressResources`, подключены через `PressModule`
+  (`ProvidesMcpTools`). Десять инструментов ровно по спеке. **Все записи материалов — это
+  `OutletForm::save()` издания с одной строкой больше, меньше или изменённой**, то есть одна
+  транзакция и те же отказы, что у панели; ключ отказа `articles.<n>.<поле>` переписывается в
+  `article #<id> <поле>` / `the new article <поле>`. Исключение одно: `press_articles_move` в
+  **другое** издание пишет `outlet_id` сам (в транзакции и в `Outlet::holdingAddresses()`) — форма
+  одного издания строку другого не примет, а удалить-и-создать сменило бы id. `press_update` с
+  ключом `articles` отказывает: список, прочитанный агентом, стёр бы материал, добавленный после.
+  Издание по имени ищется сравнением в PHP, а не `LIKE`: sqlite не сворачивает регистр кириллицы.
+- **Демо (§4.12)** — `Demo\PressDemo` и `resources/demo/press.json` + четыре логотипа-SVG и
+  одностраничный PDF (`press-scan.pdf`, генерированный, латиница). Файлы — через `FileStore` в папку
+  «Пресса»/«Press» библиотеки, издания — через `OutletForm`. Страница `/{приставка}` (ребёнок
+  главной): `press-logos` (только отмеченные) + `press-outlets` группами. `requires()` —
+  `media`, `blocks`, `pages` если стоит.
+- **Слова сведены по тесту паритета:** панель говорит `outlet.*` (34 ключа) — сервер получил
+  `lang/*/outlet.php` на десять языков вместо `list.php`, который серверный код не использовал
+  нигде; `module.title` панели → `module.press` сервера; группа `screen` в `messages.ts` теперь
+  повторяет серверный экран (он настоящий). Новое слово `screen.kind-none` на десять языков.
+- **Экран P1 догнал проверенное P2 в браузере:** у повторителя `itemLabel: "title"` и
+  `sortable: true` (без них нет «#N · заголовок» и ручек), у логотипа `aspect: null` (широкий
+  логотип не режется в квадрат), у вида — подсказка `kind-none`. Копии экрана и блоков в
+  `apps/playground/server/panel/press/` удалены, плейграунд читает файлы пакета.
+- **Шаблоны трёх блоков переписаны без `@php`** — Blade плейграунда его не знает и печатал
+  шаблоны P1 сырыми. Разметка и классы P1 те же; `Kinds::label()` → `__('webx-press::kinds.'.$kind)`,
+  `Kinds::all()` → `config('webx-press.kinds', [])`. Плейграунд научился литералу
+  `['count' => …]` и заменам в `__()`; карточки фикстуры приведены к `Cards` (у материала
+  `outlet.logo` — строка).
+- **Две настоящие поломки шва, найденные на слиянии:** `extra.webx.panel.register` был
+  `...press()`, а `press()` на npm-стороне возвращает один модуль, не массив — `webx:panel --sync`
+  вписал бы спред объекта; теперь `press()`. И плашка «адрес переедет» горела при открытии любого
+  издания, если язык панели не язык по умолчанию: `outlet.url` приходит на языке панели
+  (`/en/press/…`), а `wx-slug` сравнивает со слагом на языке правки. `OutletPane` теперь снимает
+  языковой сегмент и отдаёт адрес полю только на его языке; тест в `PressPage.test.ts`.
+- Гайд `apps/docs/guide/press.md` (всё из промпта P3, плюс API панели и MCP) и строка в
+  сайдбаре; README npm-пакета; в README composer-пакета — MCP, демо, переводы. Changeset
+  `module-press-mcp-demo.md` (`@webx-ui/php` и `@webx-ui/module-press` — minor).
+- Тесты: `McpTest` (11), `DemoTest` (4); пакет — 71, весь php — зелёный; pint и phpstan чисто.
+  npm: `module-press` 15, с `module-admin`, core `Repeater` и `schema` — 323; vue-tsc пакета и
+  плейграунда, eslint, prettier — чисто. В этом worktree `node_modules` не было вовсе — сделан
+  свой `pnpm install --frozen-lockfile` (обычный каталог, основной чекаут цел).
+- **Живьём:** `webx-cms.local` в local-режиме на этом worktree (`--no-install`, только composer),
+  `migrate`, одиннадцать запросов трубой в `mcp:start webx`: создание с материалами, материал только
+  по-русски на позицию 1 (издание стало видно на `ru`), отказы «вид не из конфига» и «не PDF»
+  названы по материалу, перенос в неопубликованное издание с сохранением id, порядок, каталог,
+  `dry_run` удаления. `tools/list` отдаёт по 100 — `press_*` на второй странице. Сайт возвращён из
+  копий (симлинки сняты, `composer install`), `git status` чист, главная 200.
+- Для P4: на сайте в `resources/js/admin.ts` — `press()`, без спреда.
 
 ## 7. Отложено
 

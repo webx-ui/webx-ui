@@ -102,23 +102,35 @@ const title = computed(() => {
 
 /*
  * The address field is the panel's shared one (`wx-slug`), and this is what it prints. The form
- * answers with the page's address (`url`); the field wants it without the host and the slash.
+ * answers with the page's address (`url`) in the panel's language — `/en/press/…` on a site whose
+ * default is another — while the field compares it with the slug in the language being edited.
+ * So the address is handed over without the host, the slash and the language, and only in its own
+ * language: in any other the field has nothing to compare with, and says nothing rather than
+ * warning that a page moves which does not.
  */
 provideRecordAddress({
   values,
   prefix,
-  path: computed(() => pathOf(outlet.value?.url ?? null)),
+  path: computed(() => pathIn(outlet.value?.url ?? null, locales.active.value)),
   moving: () => t('outlet.address-moving'),
 })
 
-function pathOf(url: string | null): string | null {
+function pathIn(url: string | null, locale: string): string | null | undefined {
   if (url === null) return null
 
+  let segments: string[]
+
   try {
-    return new URL(url, 'http://site.invalid').pathname.replace(/^\/+/, '')
+    segments = new URL(url, 'http://site.invalid').pathname.split('/').filter((one) => one !== '')
   } catch {
     return null
   }
+
+  const codes = locales.list.value.map((one) => one.code)
+  const own =
+    codes.includes(segments[0] ?? '') && segments[0] !== codes[0] ? segments.shift()! : codes[0]
+
+  return own === undefined || own === locale ? segments.join('/') : undefined
 }
 
 function take(detail: OutletDetail): void {

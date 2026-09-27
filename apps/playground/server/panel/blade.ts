@@ -712,6 +712,34 @@ export function evaluate(expression: string, scope: Scope): unknown {
     return items
   }
 
+  /**
+   * `[1, 2]` is a list, `['count' => $n]` an object — the replacements a translation takes. A
+   * literal that mixes the two is not one a block template writes.
+   */
+  const array = (): unknown => {
+    const items: unknown[] = []
+    const keyed: Record<string, unknown> = {}
+    let keys = false
+
+    while (!eat(']')) {
+      const item = ternary()
+
+      if (eat('=>')) {
+        keys = true
+        keyed[String(item)] = ternary()
+      } else {
+        items.push(item)
+      }
+
+      if (!eat(',')) {
+        expect(']')
+        break
+      }
+    }
+
+    return keys ? keyed : items
+  }
+
   const primary = (): unknown => {
     const token = tokens[at++]
 
@@ -744,7 +772,7 @@ export function evaluate(expression: string, scope: Scope): unknown {
           return value
         }
 
-        if (token.value === '[') return list(']')
+        if (token.value === '[') return array()
     }
 
     throw new Error(`Unexpected ${token.value}.`)

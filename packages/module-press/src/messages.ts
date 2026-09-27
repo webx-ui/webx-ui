@@ -5,13 +5,16 @@ import type { Messages } from '@webx-ui/module-admin'
  * one. The server ships the same lines in ten languages under `webx-press::` and overrides these;
  * `messages.test.ts` keeps the two sets of keys equal.
  *
+ * `screen` is what the described screen `press.outlet-form` is labelled with: the server sends the
+ * labels as `trans::webx-press::screen.*`, and these are what they say when no dictionary came.
+ *
  * `kinds` are the four of the default config (decision 3). A kind a site adds brings its word in
  * `lang/vendor/webx-press` — the server labels the options of the field itself, so a kind missing
  * here is only missing from a panel that runs with no server at all.
  */
 export const pressMessages: Record<string, Messages> = {
   module: {
-    title: 'Press',
+    press: 'Press',
   },
   outlet: {
     new: 'New outlet',
@@ -53,46 +56,49 @@ export const pressMessages: Record<string, Messages> = {
   },
   screen: {
     general: 'General',
-    articles: 'Articles',
-    seo: 'SEO',
-    'seo-empty': 'The SEO of the outlet page is set here when the SEO module is installed.',
     outlet: 'Outlet',
     logo: 'Logo',
-    'logo-help': 'Without one, the site prints the name as text.',
+    'logo-help': 'Without a logo the site prints the name.',
     title: 'Name',
-    'title-help': 'Not written in a language, it is shown as written in another one: it is a name.',
+    'title-help': 'Where it is not written in a language, the name from another one is shown.',
     slug: 'Address',
+    'slug-help':
+      "The outlet's page. A language with articles and no address of its own takes this one.",
     'website-url': 'Website',
-    'website-url-help':
-      'The address of the outlet itself, starting with http:// or https://. The page of the outlet links to it.',
-    summary: 'Description',
-    'summary-help': 'A sentence or two for the page of the outlet.',
+    'website-url-help': 'An address that starts with http:// or https://.',
+    summary: 'About the outlet',
+    'summary-help':
+      'A few words under the name on its page, and its description for search engines.',
     settings: 'Settings',
     published: 'Published',
-    'published-help':
-      'On the site from the moment it is saved — in the languages its articles have a title in.',
-    featured: 'In the logo strip',
-    'featured-help': 'A logo strip set to “featured only” shows the outlets marked here.',
-    'articles-list': 'Articles',
-    'articles-help':
-      'In the order they are shown on the page of the outlet. Drag a row by its grip to move it.',
+    'published-help': 'On the site at once — in the languages it has articles in.',
+    featured: 'In the strip of logos',
+    'featured-help': 'Shown by the logos block set to the marked outlets only.',
+    articles: 'Articles',
+    'articles-help': "In the order they are shown on the outlet's page. Saved with the outlet.",
+    'article-label': '#:number · :title',
+    'article-untitled': 'Untitled',
     'article-title': 'Title',
     'article-title-help': 'An article is shown in a language only when it has a title in it.',
-    excerpt: 'Summary',
+    excerpt: 'Excerpt',
     kind: 'Kind',
     'kind-none': 'No kind',
     'published-on': 'Date',
-    'date-precision': 'Shown as',
-    'date-precision-day': 'Day',
-    'date-precision-month': 'Month',
-    'date-precision-year': 'Year',
+    'date-precision': 'Known to',
+    'date-precision-help': 'How much of the date is printed: the day, the month, or the year only.',
+    precision: {
+      day: 'Day',
+      month: 'Month',
+      year: 'Year',
+    },
     url: 'Link',
-    'url-help':
-      'The article on the site of the outlet. A link, a PDF, or both: then the link leads and the PDF is offered beside it.',
+    'url-help': "The article on the outlet's site. Without it the title leads to the PDF.",
     file: 'PDF',
     'file-help': 'A PDF from the library — a scan of the page, say.',
     hidden: 'Do not show',
-    'hidden-help': 'Kept with the outlet, and left off the site.',
+    'hidden-help': 'Kept here, and shown nowhere on the site.',
+    seo: 'SEO',
+    'seo-empty': 'The SEO card appears here when module-seo is installed.',
   },
   kinds: {
     mention: 'Mention',

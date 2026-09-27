@@ -156,6 +156,55 @@ php artisan webx:routes:rebuild --type=press-outlet
 
 The old addresses stay behind as aliases that redirect.
 
+## For an agent: MCP
+
+With the panel's MCP server on, the section is ten tools behind `press:read` and `press:write`:
+
+| Tool                    | What it does                                                      |
+| ----------------------- | ----------------------------------------------------------------- |
+| `press_list`            | Every outlet in its order, or words — or the bin                  |
+| `press_get`             | One outlet in full, with its articles and where each is seen      |
+| `press_create`          | An outlet at the end of the list, with its articles; unpublished  |
+| `press_update`          | The outlet's own values; its articles are not touched here        |
+| `press_delete`          | To the bin, its articles with it                                  |
+| `press_reorder`         | The order of the outlets                                          |
+| `press_articles_add`    | An article at the end of an outlet, or at a `position`            |
+| `press_articles_update` | An article's values, by language                                  |
+| `press_articles_delete` | An article, for good — `is_hidden` keeps it instead               |
+| `press_articles_move`   | An article to another place in its outlet, or into another outlet |
+
+An outlet is named by its id or by its name in any language; an article by its id. A plain string
+in a translated field is the default language, `{ "en": "…", "ru": "…" }` is every language at
+once. A kind is a key of `webx-press.kinds`, and the tools list the site's own. A logo and a PDF
+are library keys (`"media/ab/cd/scan.pdf"`), and a key the library does not have is refused.
+
+Every write — the articles' too — is a save of the outlet's form, the one the panel uses, in one
+transaction: a refused article leaves the outlet as it was, and is refused where the panel would
+refuse it, named by the article's id. Moving an article into another outlet keeps its id.
+
+Before writing, an agent reads **`press://catalog`**: every outlet in its order, unpublished ones
+included, with its articles in theirs — each with its kind, when it ran, where it leads, the
+languages its title is written in (`written_in`) and the ones a reader sees it in (`visible_in`).
+
+## Demo content
+
+`php artisan webx:demo` puts four logos and a one-page PDF into a **Press** folder of the library,
+and four outlets with eight articles in English and Russian, as far as the site has them. Every
+kind of the default four is there; one article leads to the PDF only and one to an address with the
+PDF beside it; one is hidden; one has a title in English only, so the Russian site does not show it;
+two are dated to the month and one to the year. One outlet is not published, one is left out of
+the strip of logos.
+
+The offered block types are installed if the site has not taken them yet; then, with
+`webx-ui/module-pages`, a page at the prefix under the home page: the strip of the marked logos, and
+the catalogue in groups by kind under it. An outlet that already exists leaves the demo alone;
+`--remove` takes all of it back out.
+
+## Translations
+
+Ten languages ship: `en`, `ru` and `uk` are read by a native speaker; `de`, `pl`, `fr`, `es`, `it`,
+`pt` and `tr` are machine translations. Corrections from a native speaker are welcome.
+
 ## License
 
 MIT

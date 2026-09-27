@@ -25,7 +25,9 @@
                   "help": "trans::webx-press::screen.logo-help",
                   "props": {
                     "accept": "image",
-                    "width": 240
+                    "aspect": null,
+                    "width": 240,
+                    "height": 120
                   }
                 },
                 {
@@ -113,7 +115,9 @@
               "name": "articles",
               "help": "trans::webx-press::screen.articles-help",
               "props": {
-                "max": 500
+                "max": 500,
+                "itemLabel": "title",
+                "sortable": true
               },
               "children": [
                 {
@@ -164,6 +168,7 @@
                           "props": {
                             "clearable": true,
                             "teleport": true,
+                            "placeholder": "trans::webx-press::screen.kind-none",
                             "options": []
                           }
                         }

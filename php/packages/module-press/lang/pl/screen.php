@@ -28,6 +28,7 @@ return [
     'article-title-help' => 'Artykuł jest widoczny w języku tylko wtedy, gdy ma w nim tytuł.',
     'excerpt' => 'Krótki opis',
     'kind' => 'Rodzaj',
+    'kind-none' => 'Bez rodzaju',
     'published-on' => 'Data',
     'date-precision' => 'Dokładność',
     'date-precision-help' => 'Ile daty drukować: dzień, miesiąc albo tylko rok.',

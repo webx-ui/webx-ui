@@ -28,6 +28,7 @@ return [
     'article-title-help' => 'Ein Beitrag ist in einer Sprache nur sichtbar, wenn er dort einen Titel hat.',
     'excerpt' => 'Kurzbeschreibung',
     'kind' => 'Art',
+    'kind-none' => 'Ohne Art',
     'published-on' => 'Datum',
     'date-precision' => 'Genauigkeit',
     'date-precision-help' => 'Wie viel vom Datum gedruckt wird: Tag, Monat oder nur das Jahr.',

@@ -28,6 +28,7 @@ return [
     'article-title-help' => 'Un article n’est visible dans une langue que s’il y a un titre.',
     'excerpt' => 'Extrait',
     'kind' => 'Type',
+    'kind-none' => 'Sans type',
     'published-on' => 'Date',
     'date-precision' => 'Précision',
     'date-precision-help' => 'Ce que la date affiche : le jour, le mois ou seulement l’année.',

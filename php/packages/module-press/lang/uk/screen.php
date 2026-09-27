@@ -28,6 +28,7 @@ return [
     'article-title-help' => 'Матеріал видно мовою, лише якщо нею є заголовок.',
     'excerpt' => 'Короткий опис',
     'kind' => 'Вид',
+    'kind-none' => 'Без виду',
     'published-on' => 'Дата',
     'date-precision' => 'Точність',
     'date-precision-help' => 'Скільки дати друкувати: день, місяць або лише рік.',
