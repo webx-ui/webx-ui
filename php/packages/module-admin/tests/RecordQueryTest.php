@@ -166,12 +166,47 @@ final class RecordQueryTest extends TestCase
         $this->chef('Clara', 2);
         $this->chef('Anna', 0);
 
-        $titles = (new Selection([], 5))->apply(Chef::query())->pluck('title')->all();
-
-        $this->assertSame(['Anna', 'Clara'], $titles);
+        $this->assertSame(['Anna', 'Clara'], $this->titles((new ChefQuery)->selected(new Selection([], 5))));
 
         $this->expectException(InvalidArgumentException::class);
-        (new Selection([3]))->apply(Chef::query());
+        (new ChefQuery)->selected(new Selection([3]))->get();
+    }
+
+    #[Test]
+    public function a_selection_is_the_same_steps_a_template_takes(): void
+    {
+        $starters = $this->section('Starters');
+        $mains = $this->section('Mains');
+        $soup = $this->dish('Soup', 0);
+        $stew = $this->dish('Stew', 1);
+        $this->dish('Cake', 2);
+
+        $soup->syncCategories([$starters->id]);
+        $stew->syncCategories([$mains->id, $starters->id]);
+
+        $dishes = (new DishQuery)->locale('en');
+
+        $this->assertSame(['Soup', 'Stew', 'Cake'], $this->titles($dishes->selected(new Selection)));
+        $this->assertSame(['Soup', 'Stew'], $this->titles($dishes->selected(new Selection([$starters->id]))));
+        $this->assertSame(['Soup'], $this->titles($dishes->selected(new Selection([$mains->id, $starters->id], 1))));
+
+        $anna = $this->chef('Anna', 0);
+        $boris = $this->chef('Boris-ru', 1);
+        $clara = $this->chef('Clara', 2);
+        $this->chef('Dora', 3);
+
+        foreach ([$anna, $boris, $clara] as $chef) {
+            $chef->syncRelated('dishes', 'dish', [$soup->id]);
+        }
+
+        $chefs = (new ChefQuery)->locale('en');
+
+        // The relation, then the language, then the limit — as `relatedTo()->take()` would.
+        $this->assertSame(['Anna', 'Clara'], $this->titles($chefs->selected(new Selection([], 2, relatedType: 'dish', relatedIds: [$soup->id]))));
+        $this->assertSame([], $this->titles($chefs->selected(new Selection([], null, relatedType: 'dish', relatedIds: []))));
+
+        // "Related to this page" never answered filters nothing, as a block drawn on its sample.
+        $this->assertCount(3, $chefs->selected(new Selection([], null, relatedType: 'dish', relatedCurrent: true)));
     }
 
     /**

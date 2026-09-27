@@ -173,7 +173,9 @@ every render, so the new kind is already there.
 ## `press()` in a template
 
 For a template of the site, or a block that wants what the offered ones do not do. It returns cards,
-never models, and never shows what a reader may not see in the language of the page.
+and never shows what a reader may not see in the language of the page. It is a
+[`RecordQuery`](./collections#a-helper-for-templates-recordquery), so the shared steps mean what they
+mean in `services()` or `team()`.
 
 ```blade
 @foreach (press()->featured()->take(12) as $outlet)
@@ -197,6 +199,7 @@ never models, and never shows what a reader may not see in the language of the p
 | `take(6)`             | At most this many, counted after what is not seen; null or 0 — all    |
 | `locale('uk')`        | The language of the cards; by default the page's                      |
 | `get()`, `first()`    | The cards, or one; the query itself can be looped over and counted    |
+| `models()`            | The outlets or articles behind the cards, for code that needs a model |
 
 An outlet's card:
 

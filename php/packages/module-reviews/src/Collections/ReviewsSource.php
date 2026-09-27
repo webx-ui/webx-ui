@@ -58,10 +58,6 @@ final class ReviewsSource implements CollectionSource
      */
     public function items(Selection $selection, string $locale): array
     {
-        return (new ReviewQuery)
-            ->in($selection->categories)
-            ->take($selection->limit)
-            ->locale($locale)
-            ->get();
+        return (new ReviewQuery)->selected($selection)->locale($locale)->get();
     }
 }

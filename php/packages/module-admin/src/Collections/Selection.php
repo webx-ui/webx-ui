@@ -4,13 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Collections;
 
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use InvalidArgumentException;
-use WebxUi\Admin\Categories\HasCategories;
-use WebxUi\Admin\Relations\HasRelations;
-use WebxUi\Admin\Relations\Relations;
-
 /**
  * Which records of a source a block shows: the value of a `wx-collection` field, read.
  *
@@ -19,6 +12,9 @@ use WebxUi\Admin\Relations\Relations;
  * to know the rule: markup is on when no category was chosen (decision 8 of the FAQ spec). A
  * question shown on every page of a service must not be marked up on every one of them; the page
  * that lists them all is the one a search engine should take.
+ *
+ * A source lays the choice over its records with {@see RecordQuery::selected()}, so the filters
+ * mean the same in a block as in a template.
  *
  * The third filter is a relation (§3.6 of the recipes spec): only the records related to these
  * services — `related: { type: 'service', ids: [7] }` — or, with `current`, to the record whose
@@ -159,71 +155,6 @@ final readonly class Selection
         }
 
         return ['type' => $this->relatedType, 'ids' => $this->relatedIds];
-    }
-
-    /**
-     * The choice laid over a query of records filed under categories — the part every source
-     * built on {@see HasCategories} would otherwise write again.
-     *
-     * One category — its order (`item_position`); none or several — the order of the whole list,
-     * each record once. The relation filter, on a model with {@see HasRelations}: related in any
-     * role to one of the chosen records. What is visible is left to the caller: that is the
-     * source's rule.
-     *
-     * @template TModel of Model
-     *
-     * @param  Builder<TModel>  $query
-     * @return Builder<TModel>
-     */
-    public function apply(Builder $query): Builder
-    {
-        $model = $query->getModel();
-
-        // A model without categories — a team — is fine as long as none were chosen: the field
-        // of a source without them offers no choice, so categories here are a caller's mistake.
-        $categorised = method_exists($model, 'categoryLinks');
-
-        if (! $categorised && $this->categories !== []) {
-            throw new InvalidArgumentException($model::class.' is not filed under categories.');
-        }
-
-        if ($categorised && count($this->categories) > 1) {
-            $relation = $model->categoryLinks();
-
-            $query->whereIn(
-                $model->qualifyColumn($model->getKeyName()),
-                $relation->newPivotStatement()
-                    ->select($relation->getForeignPivotKeyName())
-                    ->whereIn($relation->getRelatedPivotKeyName(), $this->categories),
-            );
-        }
-
-        $related = $this->related();
-
-        if ($related !== null && method_exists($model, 'relationKey')) {
-            $query->whereIn(
-                $model->qualifyColumn($model->getKeyName()),
-                Relations::rows($model)
-                    ->select('owner_id')
-                    ->where('owner_type', $model->relationKey())
-                    ->where('target_type', $related['type'])
-                    ->whereIn('target_id', $related['ids']),
-            );
-        }
-
-        // Through `scopes()` rather than the magic call: PHPStan finds no `orderedIn()` on a
-        // builder of a model it only knows as `Model`.
-        if (method_exists($model, 'scopeOrderedIn')) {
-            $query->scopes(['orderedIn' => [$this->category()]]);
-        } else {
-            $query->orderBy($model->qualifyColumn('position'))->orderBy($model->qualifyColumn($model->getKeyName()));
-        }
-
-        if ($this->limit !== null) {
-            $query->limit($this->limit);
-        }
-
-        return $query;
     }
 
     /**

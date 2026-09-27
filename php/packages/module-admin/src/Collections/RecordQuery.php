@@ -10,6 +10,7 @@ use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 use IteratorAggregate;
 use Traversable;
 use WebxUi\Admin\Relations\Relations;
@@ -72,7 +73,10 @@ abstract class RecordQuery implements Countable, IteratorAggregate
      * The records a reader may see, as SQL can tell: published, out of the bin, loaded with what
      * the cards need. What only the words can tell is {@see shownIn()}.
      *
-     * @return Builder<TModel>
+     * Covariant, because a query may list more than one kind of record (`press()`: outlets or
+     * articles) and only reads the builder it gets.
+     *
+     * @return Builder<covariant TModel>
      */
     abstract protected function newQuery(string $locale): Builder;
 
@@ -108,7 +112,7 @@ abstract class RecordQuery implements Countable, IteratorAggregate
      * categories keep an order of their own lists it in that one. By default `orderedIn` —
      * a category's order or the global one — and `position`, `id` for a model without categories.
      *
-     * @param  Builder<TModel>  $query
+     * @param  Builder<covariant TModel>  $query
      */
     protected function order(Builder $query, ?int $category): void
     {
@@ -127,7 +131,7 @@ abstract class RecordQuery implements Countable, IteratorAggregate
     /**
      * The module's own filters over what the steps here already did.
      *
-     * @param  Builder<TModel>  $query
+     * @param  Builder<covariant TModel>  $query
      */
     protected function narrow(Builder $query, string $locale): void {}
 
@@ -149,6 +153,19 @@ abstract class RecordQuery implements Countable, IteratorAggregate
         return $this->with(static function (self $query) use ($records): void {
             $query->except = [...$query->except, ...($records === null ? [] : self::ids($records))];
         });
+    }
+
+    /**
+     * What an editor chose in a `wx-collection` field — its categories, its relation and its
+     * limit — so that a source is this and a language, and who may be seen stays the helper's
+     * rule. What the source cannot do the choice no longer holds ({@see Selection::of()}).
+     */
+    public function selected(Selection $selection): static
+    {
+        $query = $this->withCategories($selection->categories)->take($selection->limit);
+        $related = $selection->related();
+
+        return $related === null ? $query : $query->withRelated($related['type'], $related['ids']);
     }
 
     /** At most this many; null or zero — all of them. */
@@ -194,6 +211,12 @@ abstract class RecordQuery implements Countable, IteratorAggregate
         $model = $query->getModel();
         $key = $model->qualifyColumn($model->getKeyName());
 
+        // A caller's mistake, not a filter: listing everything instead would be the one answer
+        // sure to be wrong. A source without categories never hands any ({@see Selection::of()}).
+        if ($categories !== null && ! method_exists($model, 'categoryLinks')) {
+            throw new InvalidArgumentException($model::class.' is not filed under categories.');
+        }
+
         if ($this->only !== null) {
             $query->whereIn($key, $this->only === [] ? [0] : $this->only);
         }
@@ -202,6 +225,7 @@ abstract class RecordQuery implements Countable, IteratorAggregate
             $query->whereNotIn($key, $this->except);
         }
 
+        // `method_exists` again only so that PHPStan knows the method is there.
         if ($categories !== null && method_exists($model, 'categoryLinks')) {
             $links = $model->categoryLinks();
 
