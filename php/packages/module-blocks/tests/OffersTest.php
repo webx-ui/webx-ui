@@ -87,6 +87,44 @@ final class OffersTest extends TestCase
         $this->assertSame(0, Block::query()->count());
     }
 
+    /**
+     * What only the site's config knows — the options of a select — goes into the document as it
+     * is read, and into nothing else the module offers.
+     */
+    #[Test]
+    public function a_module_shapes_its_document_when_it_is_read(): void
+    {
+        $shaped = storage_path('framework/testing/shaped-'.bin2hex(random_bytes(4)));
+        File::ensureDirectoryExists($shaped);
+        File::put("{$shaped}/kinds.json", (string) json_encode([
+            'slug' => 'kinds',
+            'title' => 'Kinds',
+            'schema' => [['id' => 'kinds', 'type' => 'wx-select', 'props' => ['multiple' => true, 'options' => []]]],
+            'template' => '<div data-wx-block="kinds"></div>',
+            'sample' => [],
+        ]));
+
+        try {
+            $this->app->make(BlockOffers::class)->offer('kinds', $shaped, static function (array $document): array {
+                $document['schema'][0]['props']['options'] = [['value' => 'interview', 'label' => 'Interview']];
+
+                return $document;
+            });
+
+            $this->artisan('webx:blocks:offered', ['--install' => true, '--module' => ['kinds']])->assertSuccessful();
+
+            $kinds = Block::query()->where('slug', 'kinds')->with('publishedVersion')->firstOrFail();
+
+            $this->assertSame(
+                [['value' => 'interview', 'label' => 'Interview']],
+                $kinds->publishedVersion?->schema[0]['props']['options'] ?? null,
+            );
+            $this->assertFalse(Block::query()->where('slug', 'faq')->exists(), 'the module named is the only one installed');
+        } finally {
+            File::deleteDirectory($shaped);
+        }
+    }
+
     private function write(string $slug, string $template): void
     {
         File::put("{$this->dir}/{$slug}.json", (string) json_encode([

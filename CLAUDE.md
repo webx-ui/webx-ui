@@ -720,9 +720,14 @@ icon="plus">` когда-то компилировался, проходил typ
   два процесса дошли до записи одновременно, `Laravel framework bootstrap failed` с
   `rename(…\bootstrap\cache\serXXXX.tmp, …\services.php): Access is denied`, что читается как
   права на каталог. Поэтому после `composer install` в свежем `php/` манифест надо прогреть
-  **один раз и последовательно**: `php vendor/orchestra/testbench-core/laravel/artisan
-package:discover`, убрать за ним `bootstrap/cache/*.tmp`, и только потом `analyse`. Ни в CI,
-  ни в основном чекауте этого не видно: там `vendor` уже обжитой.
+  **один раз и последовательно**: `TESTBENCH_WORKING_PATH="$(cygpath -m $PWD)" php
+vendor/bin/testbench package:discover` из `php/`, убрать за ним `bootstrap/cache/*.tmp`, и
+  только потом `analyse`. Голый `php vendor/orchestra/testbench-core/laravel/artisan` для этого не
+  годится: без рабочего пути он ищет `vendor/autoload.php` внутри самого testbench и падает на
+  `require` — выглядит как сломанный `composer install`. Ни в CI, ни в основном чекауте этого не
+  видно: там `vendor` уже обжитой. **И новый пакет в `php/` — это `composer update
+webx-ui/<пакет>`**, после которого манифест прогревается заново (снести `packages.php` и
+  `services.php`): до этого тест отвечает «Class …ServiceProvider not found».
 - **Лоадер локально не увидеть: ответ приходит быстрее, чем панель его нарисует.** Патчить
   `window.fetch` из консоли поздно — `createHttp` биндит его при создании клиента. Задерживать
   надо `Response.prototype.json` (обернуть в промис с `setTimeout`), тогда `loading` держится
