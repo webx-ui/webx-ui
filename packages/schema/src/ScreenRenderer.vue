@@ -155,6 +155,20 @@ defineExpose({
 }
 
 /*
+ * A row splits one field's width between two, it does not spread them across the card. Every
+ * field stops at `--wx-field-max-width`, so a row as wide as the card put "Start" at the left
+ * edge and "End" a thousand pixels away — two fields that belong together read as unrelated,
+ * and each still left most of its column empty.
+ *
+ * Plus the gutter the row pulls back with its negative margins, so its outer edges line up with
+ * the fields above and below. The columns answer to the row's width, so a pair of halves is
+ * `sm: 12` — `md` needs 768px of room and a row this size never has it.
+ */
+.wx-screen__row {
+  max-width: calc(var(--wx-field-max-width, 640px) + var(--wx-row-gutter, 0px));
+}
+
+/*
  * A number is a few digits, and a field as wide as a title put its − and + a whole line apart,
  * with the digits alone in the middle. The core's own number keeps `width: 100%` — a filter row
  * or a table cell decides its width — so the cap is the screen's.
