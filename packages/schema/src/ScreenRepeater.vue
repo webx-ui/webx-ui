@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, useAttrs } from 'vue'
+import { computed, inject, useAttrs } from 'vue'
 import { WxRepeater } from '@webx-ui/core'
-import { WxScreenNodes, type RenderContext } from './render'
+import { screenErrorsKey, WxScreenNodes, type RenderContext } from './render'
 import type { ScreenModel, ScreenNode } from './types'
 
 defineOptions({ name: 'WxScreenRepeater', inheritAttrs: false })
@@ -30,6 +30,48 @@ const model = defineModel<ScreenModel[]>({ default: () => [] })
 const items = computed<ScreenModel[]>(() => (Array.isArray(model.value) ? model.value : []))
 
 const attrs = useAttrs()
+
+/** The names one item's fields answer to — through layout, not into a nested repeater. */
+function fieldNames(nodes: ScreenNode[]): string[] {
+  return nodes.flatMap((child) =>
+    child.name === undefined ? fieldNames(child.children ?? []) : [child.name],
+  )
+}
+
+const refusal = inject(screenErrorsKey, null)
+
+/**
+ * The refusal, row by row, under the names the row's fields answer to.
+ *
+ * The server names a field of a row by its path — `articles.2.url`, and a translated one down to
+ * the language, `articles.2.title.en` — while the field inside the row is simply `url` or
+ * `title`. Each row gets its own part, the same way the renderer maps `slug.en` onto `slug`,
+ * and nothing else: without it a row's `title` shows the record's own `title` error.
+ */
+const rowErrors = computed<Record<string, string[]>[] | undefined>(() => {
+  const errors = refusal?.value
+
+  if (props.name === undefined) return undefined
+
+  const fields = fieldNames(props.node.children ?? [])
+
+  return items.value.map((_item, index) => {
+    const prefix = `${props.name}.${index}.`
+    const out: Record<string, string[]> = {}
+
+    for (const [key, messages] of Object.entries(errors ?? {})) {
+      if (!key.startsWith(prefix)) continue
+
+      const rest = key.slice(prefix.length)
+      const field = fields.find((name) => rest.startsWith(`${name}.`))
+
+      out[rest] = messages
+      if (field !== undefined && out[field] === undefined) out[field] = messages
+    }
+
+    return out
+  })
+})
 
 /**
  * The panel's words, where the core has only English defaults: the core does not know the
@@ -66,7 +108,12 @@ const bound = computed(() => {
 </script>
 
 <template>
-  <wx-repeater v-bind="bound" :model-value="items" @update:model-value="model = $event">
+  <wx-repeater
+    v-bind="bound"
+    :model-value="items"
+    :row-errors="rowErrors"
+    @update:model-value="model = $event"
+  >
     <template #default="{ item, update }">
       <wx-screen-nodes
         :nodes="node.children ?? []"

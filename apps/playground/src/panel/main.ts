@@ -8,6 +8,7 @@ import { inbox } from '@webx-ui/module-inbox'
 import { media } from '@webx-ui/module-media'
 import { menu } from '@webx-ui/module-menu'
 import { pages } from '@webx-ui/module-pages'
+import { press } from '@webx-ui/module-press'
 import { recipes } from '@webx-ui/module-recipes'
 import { reviews } from '@webx-ui/module-reviews'
 import { seo } from '@webx-ui/module-seo'
@@ -54,6 +55,7 @@ const admin = createAdmin({
     ...faq(),
     ...reviews(),
     ...recipes(),
+    press(),
     ...events(),
     menu(),
     media(),

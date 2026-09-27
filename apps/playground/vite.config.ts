@@ -82,6 +82,7 @@ export default defineConfig({
       pkg('module-media'),
       pkg('module-menu'),
       pkg('module-pages'),
+      pkg('module-press'),
       pkg('module-recipes'),
       pkg('module-reviews'),
       pkg('module-seo'),
