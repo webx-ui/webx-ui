@@ -1,0 +1,88 @@
+{
+  "members": [
+    {
+      "key": "anna",
+      "name": { "en": "Anna Petrova", "ru": "Анна Петрова" },
+      "job_title": { "en": "Founder, lead developer", "ru": "Основатель, ведущий разработчик" },
+      "text": {
+        "en": "Builds the sites and answers for the deadlines.\nTwelve years of Laravel, and a soft spot for fast pages.",
+        "ru": "Собирает сайты и отвечает за сроки.\nДвенадцать лет с Laravel и слабость к быстрым страницам."
+      },
+      "socials": [
+        { "network": "linkedin", "url": "https://www.linkedin.com/in/example-anna" },
+        { "network": "telegram", "url": "https://t.me/example_anna" }
+      ],
+      "services": ["company-website", "online-catalogue"]
+    },
+    {
+      "key": "igor",
+      "name": { "en": "Igor Smirnov", "ru": "Игорь Смирнов" },
+      "job_title": { "en": "Designer", "ru": "Дизайнер" },
+      "text": {
+        "en": "Draws what the developers then build: brands, pages, the small things in between.",
+        "ru": "Рисует то, что потом собирают разработчики: бренды, страницы и мелочи между ними."
+      },
+      "socials": [
+        { "network": "instagram", "url": "https://www.instagram.com/example_igor" },
+        { "network": "myspace", "url": "https://myspace.com/example-igor" }
+      ],
+      "services": ["company-website", "brand-identity", "design-system"]
+    },
+    {
+      "key": "olga",
+      "name": { "en": "Olga Kuznetsova", "ru": "Ольга Кузнецова" },
+      "job_title": { "en": "Project manager", "ru": "Менеджер проектов" },
+      "text": {
+        "en": "Keeps every project on its calendar, and every client in the loop."
+      },
+      "socials": [{ "network": "linkedin", "url": "https://www.linkedin.com/in/example-olga" }],
+      "services": ["landing-page", "site-maintenance"]
+    },
+    {
+      "key": "pavel",
+      "name": { "en": "Pavel Orlov", "ru": "Павел Орлов" },
+      "job_title": { "en": "SEO specialist", "ru": "SEO-специалист" },
+      "text": {
+        "en": "Makes sure what is built gets found.",
+        "ru": "Следит, чтобы сделанное находили."
+      },
+      "services": ["seo-audit", "content-editing"]
+    },
+    {
+      "key": "maria",
+      "name": { "en": "Maria Volkova", "ru": "Мария Волкова" },
+      "job_title": { "en": "Content editor", "ru": "Редактор" },
+      "text": {
+        "en": "Writes the words on the pages, and fixes the ones clients send.",
+        "ru": "Пишет слова на страницах и правит те, что присылают клиенты."
+      },
+      "services": ["content-editing"]
+    },
+    {
+      "key": "dmitry",
+      "name": { "en": "Dmitry Sokolov", "ru": "Дмитрий Соколов" },
+      "job_title": { "en": "Developer", "ru": "Разработчик" },
+      "text": {
+        "en": "Joins next month.",
+        "ru": "Выходит в следующем месяце."
+      },
+      "published": false
+    }
+  ],
+  "page": {
+    "slug": "team",
+    "title": { "en": "Team", "ru": "Команда" },
+    "block": { "title": { "en": "Our team", "ru": "Наша команда" } },
+    "seo": {
+      "title": { "en": "Our team", "ru": "Наша команда" },
+      "description": {
+        "en": "The people who build the sites: developers, designers, managers.",
+        "ru": "Люди, которые делают сайты: разработчики, дизайнеры, менеджеры."
+      }
+    }
+  },
+  "service": {
+    "slug": "company-website",
+    "block": { "title": { "en": "Who does it", "ru": "Кто делает" } }
+  }
+}

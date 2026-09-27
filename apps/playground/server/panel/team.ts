@@ -265,6 +265,15 @@ export function writeMember(
       // A row with neither is a row somebody added and left: dropped, not refused (§5.4).
       if (network === '' && url === '') return
 
+      // A link the person already has to a network the config dropped goes back as it came, as
+      // on the server (`MemberForm::socials()`): the form sends back what it opened with.
+      const kept = record?.socials.some((one) => one.network === network && one.url === url)
+
+      if (!(network in NETWORKS) && kept) {
+        socials!.push({ network, url })
+        return
+      }
+
       if (network === '') errors[`${at}.network`] = ['Выберите сеть.']
       else if (!(network in NETWORKS)) errors[`${at}.network`] = ['Такой сети нет в списке сайта.']
 

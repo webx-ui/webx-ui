@@ -73,7 +73,7 @@
             "panel": {
                 "import": "import { team } from '@webx-ui/module-team'",
                 "style": "@webx-ui/module-team/style.css",
-                "register": "...team()"
+                "register": "team()"
             }
         }
     },

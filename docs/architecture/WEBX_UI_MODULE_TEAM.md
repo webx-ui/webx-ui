@@ -1,6 +1,7 @@
 # `webx-ui/module-team` — спецификация и план реализации
 
-Статус: спроектирован 27.09.2026, не начинался. Пакеты — `webx-ui/module-team` (composer) и
+Статус: спроектирован 27.09.2026, T1–T4 сделаны 27.09.2026 на `feat/module-team`, выпуск (T5)
+впереди. Пакеты — `webx-ui/module-team` (composer) и
 `@webx-ui/module-team` (npm).
 
 Команда — люди организации: фото, имя, должность, короткий текст, соцсети, по желанию — услуги,
@@ -718,6 +719,53 @@ local-режиме на этом worktree (MONOREPO=… packages.mjs local); д�
 В конце — «Итог T4», коммит, пуш в claude.
 ```
 
+#### Итог T4 — сделано 27.09.2026
+
+- **Слияние.** `claude/feat/team-panel` влит в `feat/module-team`; конфликт был только в
+  `lang/en/{member,screen}.php` — взят файл T3 целиком (его ключи надмножество, девять языков
+  переведены под него), а английский пол `messages.ts` в npm пересобран из `lang/en` T3, иначе
+  паритет краснел. Спека слилась сама, все три итога на месте. Копии плейграунда
+  (`apps/playground/server/panel/team/`) и развилки `ownOr()`/`existsSync` удалены: экран и тип
+  блока читаются с диска из `php/packages/module-team/resources`; в фикстурах `show_text: true`
+  стал `hide_text: false`, а мок сохраняет ссылку на убранную из конфига сеть, если она у
+  человека уже была, — как сервер. Проверено в браузере: `/preview/page/21` рисует шаблон T3 во
+  всех трёх видах. Worktree `../webx-ui-team-panel` удалён (dev-сервер T2 погашен), ветка
+  `feat/team-panel` осталась.
+- **Найдено и исправлено:** `extra.webx.panel.register` у composer-пакета был `...team()`, а
+  `team()` возвращает один модуль, не массив, — `webx:panel --sync` вписал бы в `admin.ts`
+  спред объекта, и сборка сайта упала бы. Теперь `team()`; в промпте T5 то же.
+- **MCP** (`src/Mcp/TeamTools.php`, `TeamResources.php`, подключены в `TeamModule` вместе с
+  демо): шесть инструментов §5.8 через `MemberList`, `MemberForm::save()` (она уже в транзакции) и
+  `Ordering::move()`. Сеть проверяется **до** формы и отказ называет ключи сетей (форма называет
+  их подписями — агенту нужны ключи); ссылка, которая у человека уже есть, на убранную из конфига
+  сеть проходит обратно, как у формы. `services` — id или адрес через реестр адресов, аргумента нет
+  без `module-services`, а названная услуга без модуля — отказ «no services module».
+  `team://catalog` — сети в шапке, люди вне корзины по порядку с `published`, `written_in`,
+  `services`.
+- **Живьём** на `webx-cms.local` в local-режиме на этом worktree, трубой в `mcp:start webx`:
+  создание с фото, соцсетью и услугами (id и адрес), отказы (чужая сеть со списком, несуществующий
+  адрес услуги) без строк в базе, `dry_run`, обновление с языками и очисткой услуг, порядок,
+  корзина, список корзины, отказ по имени вместо id, `team://catalog`. Сайт возвращён из копий в
+  скретчпаде (`composer.json`, `composer.lock`, `package.json`, `package-lock.json`, база),
+  ссылки в `vendor/webx-ui` сняты, `composer install`; `packages.mjs check` — registry, `git
+status` чистый. npm-половину на сайт не ставил — это T5.
+- **Демо** (`src/Demo/TeamDemo.php`, `resources/demo/team.json`): шесть человек §5.9 — Дмитрий не
+  опубликован, у Ольги нет русского текста, соцсети у Анны, Игоря и Ольги, у Игоря `myspace` вне
+  конфига (в базе есть, в карточке нет). Люди пишутся моделью мимо формы — иначе ссылку на чужую
+  сеть не завести. `requires()`: `media`, `blocks`+`pages` парой, `services` если стоит; без
+  блоков и страниц блок не ставится нигде, даже в услугу. Страница `/team` — сетка, три колонки;
+  в услуге `company-website` — «Who does it», список, `related.current`.
+- **Доки:** `apps/docs/guide/team.md` (+ сайдбар после Reviews), раздел «A helper for templates:
+  `RecordQuery`» в `collections.md`, README npm-пакета, разделы MCP и Demo в README
+  composer-пакета, `team` в `SOURCE_ITEMS` автокомплита шаблона (`module-blocks`) с тестом.
+  Changeset — `.changeset/team-agents.md` (`@webx-ui/php` minor, `@webx-ui/module-blocks` patch).
+- **Гейты:** php на 8.4 — pint, phpstan чистые, 1875 тестов (в `module-team` 64: `McpTest` 11,
+  `DemoTest` 5, плюс «без услуг агенту не предлагают» в `WithoutServicesTest`). npm — vitest
+  `module-team` и `completions`, `vue-tsc` у `module-team` и `module-blocks`, eslint и prettier на
+  своих файлах. В worktree сделан `pnpm install --frozen-lockfile` (каталог обычный, свой
+  `node_modules`) и собраны `dist` у tokens, core, schema, module-admin. Полный гейт и
+  `docs:build` — T5.
+
 ### T5 — выпуск
 
 ```
@@ -741,7 +789,7 @@ PR; npm view всех поднятых пакетов и тег php-v<верси
 Удалить ветку feat/team-panel.
 
 Демо: webx-cms.local — module-team в scripts/packages.mjs, link-panel.sh, composer require,
-импорт и ...team() в resources/js/admin.ts руками (webx:panel --sync не трогает существующий
+импорт и team() в resources/js/admin.ts руками (webx:panel --sync не трогает существующий
 файл), migrate, webx:blocks:offered --install --module=team, cache:clear (словарь), демо §5.9
 тинкером со своим журналом, npx vite build; хомлаб — то же в registry, npm ls
 @webx-ui/module-admin — одна версия, коммит и пуш в Gitea. Строку реестра в

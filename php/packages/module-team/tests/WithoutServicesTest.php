@@ -8,6 +8,9 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Relations\Relations;
+use WebxUi\Mcp\Registry\ToolRegistry;
+use WebxUi\Mcp\Server\RegistryTool;
+use WebxUi\Mcp\Server\WebxServer;
 use WebxUi\Services\ServicesServiceProvider;
 use WebxUi\Team\Models\Member;
 
@@ -93,5 +96,19 @@ final class WithoutServicesTest extends TestCase
         $this->assertSame([], $team['relations'] ?? null);
         $this->assertArrayHasKey('categories', $team);
         $this->assertNull($team['categories']);
+    }
+
+    #[Test]
+    public function an_agent_is_offered_no_services_and_told_why_when_it_names_one(): void
+    {
+        $registry = $this->app->make(ToolRegistry::class);
+
+        $this->assertArrayNotHasKey('services', $registry->tool('team_create')->tool->inputSchema['properties'] ?? []);
+
+        $response = WebxServer::actingAs($this->editor(), 'cms')
+            ->tool(new RegistryTool($registry->tool('team_create')), ['name' => 'Anna', 'services' => [1]]);
+
+        $response->assertHasErrors(['no services module']);
+        $this->assertSame(0, Member::withTrashed()->count());
     }
 }

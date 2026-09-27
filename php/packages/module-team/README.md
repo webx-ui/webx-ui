@@ -185,6 +185,47 @@ POST   team/reorder          { ids }
 A row is `{ id, name, job_title, initials, photo: { thumb } | null, published, position,
 updated_at, deleted_at }`; `member` is `{ id, name, published, deleted_at }`.
 
+## MCP
+
+With `webx-ui/mcp` serving the panel to an agent, the section is six tools behind `team:read` and
+`team:write` — the same list, form and order code as the panel:
+
+| Tool           | What it does                                                           |
+| -------------- | ---------------------------------------------------------------------- |
+| `team_list`    | Everybody in the order of the site, or words — or the bin              |
+| `team_get`     | One person in full: every language, the links, the services, the extra |
+| `team_create`  | A person at the end of the team; unpublished unless asked              |
+| `team_update`  | The values — on the site at once, the team has no draft                |
+| `team_delete`  | To the bin                                                             |
+| `team_reorder` | The one order — the people named first, the rest where they were       |
+
+A person is named by their id only — names repeat. A plain string in `name`, `job_title` or `text`
+is the default language. `photo` is a library key; a key the library does not have is refused.
+`socials` is the whole list of `{ network, url }`; a network the site does not have is refused
+with the list of those it has, and a link the person already has to a network taken off the list
+goes back as it came. `services` takes ids or addresses and is offered only when
+`webx-ui/module-services` is installed. Every change takes `dry_run: true`, and `team_create` is
+one transaction: a refusal leaves nobody behind.
+
+The resource **`team://catalog`** is what an agent reads first: the networks the site accepts, and
+everybody in order — unpublished people included and marked — with the languages their text is
+written in and the services they are linked to.
+
+## Demo
+
+`php artisan webx:demo` seeds six people from `resources/demo/team.json`, in English and Russian as
+far as the site has them: one not published, one without a Russian text (shown on the Russian page
+without it), three with social links — one of them to a network the config does not have, stored
+and left off the card. No photos: the block draws the initials. The offered block type is installed
+if the site has not taken it, and then:
+
+- with `webx-ui/module-pages` — a page `/team` with everybody in a grid;
+- with `webx-ui/module-services` — the people linked to the demo services, and a list of «who does
+  it» (the service of this page) on the demo service `company-website`.
+
+The demo needs the library's demo first, and the pages' and services' when they are installed.
+`webx:demo --remove` takes all of it back out. A team that already has anybody in it is left alone.
+
 ## License
 
 MIT
