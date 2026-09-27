@@ -1,5 +1,13 @@
 # @webx-ui/module-pages
 
+## 0.3.24
+
+### Patch Changes
+
+- 95df90f: Leaving the editor while an autosave is on its way no longer asks whether to leave without saving: the save waits for the one in flight, and goes again only for what was typed meanwhile.
+- Updated dependencies [45170fe]
+  - @webx-ui/schema@0.6.3
+
 ## 0.3.23
 
 ### Patch Changes
