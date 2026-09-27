@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'new' => 'Neue Person',
+    'untitled' => 'Ohne Namen',
+    'search' => 'Im Team suchen',
+    'empty' => 'Noch niemand im Team.',
+    'empty-help' => 'Eine Person erscheint auf der Website über einen Team-Block, auf jeder Seite.',
+    'empty-search' => 'Nichts gefunden.',
+    'empty-bin' => 'Der Papierkorb ist leer.',
+    'all' => 'Alle',
+    'trashed' => 'Papierkorb',
+    'not-published' => 'Nicht veröffentlicht',
+    'no-job-title' => 'Keine Funktion',
+    'order' => 'Ziehen, um die Reihenfolge auf der Website zu ändern.',
+    'choose' => 'Person auswählen',
+    'choose-help' => 'Oder eine neue hinzufügen: die erste Zeile der Liste.',
+    'save' => 'Speichern',
+    'saved' => 'Gespeichert.',
+    'save-failed' => 'Nicht gespeichert.',
+    'cancel' => 'Abbrechen',
+    'delete' => 'Löschen',
+    'delete-title' => '„:name“ aus dem Team löschen?',
+    'delete-text' => 'Die Person kommt in den Papierkorb und verschwindet aus allen Blöcken der Website. Wiederhergestellt kehrt sie an ihren Platz zurück.',
+    'deleted' => 'In den Papierkorb verschoben.',
+    'restore' => 'Wiederherstellen',
+    'restored' => 'Wiederhergestellt.',
+    'reorder-failed' => 'Die neue Reihenfolge wurde nicht gespeichert.',
+    'leave-title' => 'Ohne Speichern verlassen?',
+    'leave-text' => 'Was Sie über diese Person geschrieben haben, ist nicht auf dem Server.',
+    'leave' => 'Verlassen',
+    'back' => 'Zurück zur Liste',
+];

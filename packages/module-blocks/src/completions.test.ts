@@ -167,6 +167,27 @@ describe('the template', () => {
     ])
   })
 
+  it('knows the card of the team source', () => {
+    const team = templateCompletions({
+      schema: () => [{ id: 'team', type: 'wx-collection', props: { source: 'team' } }],
+      styles: () => '',
+    })
+
+    expect(labels(ask(team, "@foreach ($team['items'] as $member) {{ $member['|"))).toEqual([
+      'id',
+      'anchor',
+      'categories',
+      'name',
+      'initials',
+      'job_title',
+      'text',
+      'photo',
+      'socials',
+      'service_links',
+      'fields',
+    ])
+  })
+
   it('offers the classes the styles declare, nested ones resolved', () => {
     expect(labels(ask(source, '<div class="b-hero |"'))).toEqual(['b-hero__inner', 'b-hero__title'])
   })

@@ -113,6 +113,7 @@ const SOURCE_ITEMS: Record<string, string[]> = {
     'nutrients',
     'fields',
   ],
+  team: ['name', 'initials', 'job_title', 'text', 'photo', 'socials', 'service_links', 'fields'],
 }
 
 export function templateCompletions({

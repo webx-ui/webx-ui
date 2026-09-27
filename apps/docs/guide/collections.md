@@ -142,6 +142,87 @@ A block placed and never touched shows the whole collection: the field has no va
 `wx-collection` reads a missing value as "all". A source that is gone — the module was removed — is
 an empty list rather than an error, and the page goes on living.
 
+## A helper for templates: `RecordQuery`
+
+A collection is what the editor of a page chooses. A template of the site — or a block that wants
+something the field does not do — asks for the records itself: `services()`, `reviews()`,
+`recipes()`, `events()`, `team()`. They are one class, `WebxUi\Admin\Collections\RecordQuery`, and a
+module that writes a sixth extends it rather than copying one of the five.
+
+What the class holds for every module:
+
+| Step / output           | What it does                                                             |
+| ----------------------- | ------------------------------------------------------------------------ |
+| `only([12, 7])`         | These and no others, **in this order** — the order wins over any other   |
+| `except($record)`       | All but these: an id, a model or a list                                  |
+| `take(6)`               | At most six — counted **after** the language, in php; null or zero — all |
+| `locale('uk')`          | The language of the cards; by default the one the page is rendered in    |
+| `get()`, `first()`      | A list of cards, or one; the query itself can be looped over and counted |
+| `models()`, `isEmpty()` | The models behind the cards; whether there is anything to show           |
+
+Every step returns a copy, so a template can keep one query and branch it. And the rules that hold
+for all of them: an **untouched filter is no filter** (an editor's empty field means "everything"),
+while a filter that named something and found nothing is a filter **nothing passes** — a typo in a
+slug must not quietly become every record there is.
+
+A module gives the class its model, its visibility and its cards:
+
+```php
+use Illuminate\Container\Container;
+use Illuminate\Database\Eloquent\Builder;
+use WebxUi\Admin\Collections\RecordQuery;
+
+/** @extends RecordQuery<Member> */
+final class TeamQuery extends RecordQuery
+{
+    // A step of its own over a protected one, typed as the module wants it.
+    public function relatedTo(string $type, int|object|iterable $records): self
+    {
+        return $this->withRelated($type, $records);
+    }
+
+    // What a reader may see, as SQL can tell — published, out of the bin — with what the cards need.
+    protected function newQuery(string $locale): Builder
+    {
+        return Member::query()->visible();
+    }
+
+    protected function cards(array $records, string $locale): array
+    {
+        return Container::getInstance()->make(Cards::class)->members($records, $locale);
+    }
+}
+```
+
+and a helper that returns it, guarded — a short name may already be the site's:
+
+```php
+if (! function_exists('team')) {
+    function team(): TeamQuery { return new TeamQuery; }
+}
+```
+
+The rest are hooks, each with a default that fits most modules:
+
+| Hook                            | Default                            | Override when                                                  |
+| ------------------------------- | ---------------------------------- | -------------------------------------------------------------- |
+| `shownIn($record, $locale)`     | `true`                             | visibility is a question of words: reviews without a text      |
+| `order($query, ?int $category)` | `orderedIn`, else `position`, `id` | the order is not by hand: events by their date                 |
+| `categoryModel()`               | `null` — categories by id only     | the categories have slugs: `->in('breakfast')`                 |
+| `narrow($query, $locale)`       | nothing                            | the module has filters of its own: `nutrients()`, `upcoming()` |
+
+The protected steps a module opens as its own public methods are `withCategories()` (usually
+`in()`), `withRelated()` (`relatedTo()`, see [Relations](./relations)) and, for anything else,
+`withStep($name, $value)` read back with `step($name)` in `narrow()` or `order()`. A grouped
+catalogue (`services()->categories()`, `reviews()->categories()`) stays the module's own: the
+conditions on a category and its records differ too much between modules to share. It reads the
+state through `categoryIds()`, `onlyIds()`, `exceptIds()` and `limit()`.
+
+The source of the same records usually calls the helper: `items()` is the helper with the
+editor's limit, language and relation, so the block and the template never disagree about what
+a card is. Name the helper in `Doctor\Checks\Helpers` too — `webx:doctor` then says when a site's
+function of the same name took its place.
+
 ## The block types a module offers
 
 Block types are made in the panel and live in the database, and a module does not register one. It

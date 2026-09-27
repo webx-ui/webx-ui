@@ -42,6 +42,7 @@ export default defineConfig({
             { text: 'Services', link: '/guide/services' },
             { text: 'FAQ', link: '/guide/faq' },
             { text: 'Reviews', link: '/guide/reviews' },
+            { text: 'Team', link: '/guide/team' },
             { text: 'Recipes', link: '/guide/recipes' },
             { text: 'Events', link: '/guide/events' },
             { text: 'Press', link: '/guide/press' },

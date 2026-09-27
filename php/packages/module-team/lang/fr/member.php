@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'new' => 'Nouvelle personne',
+    'untitled' => 'Sans nom',
+    'search' => 'Rechercher dans l’équipe',
+    'empty' => 'Personne dans l’équipe pour l’instant.',
+    'empty-help' => 'Une personne apparaît sur le site dans un bloc Équipe, sur n’importe quelle page.',
+    'empty-search' => 'Aucun résultat.',
+    'empty-bin' => 'La corbeille est vide.',
+    'all' => 'Tous',
+    'trashed' => 'Corbeille',
+    'not-published' => 'Non publié',
+    'no-job-title' => 'Sans fonction',
+    'order' => 'Faites glisser pour changer l’ordre sur le site.',
+    'choose' => 'Choisissez une personne',
+    'choose-help' => 'Ou ajoutez-en une : la première ligne de la liste.',
+    'save' => 'Enregistrer',
+    'saved' => 'Enregistré.',
+    'save-failed' => 'Non enregistré.',
+    'cancel' => 'Annuler',
+    'delete' => 'Supprimer',
+    'delete-title' => 'Supprimer « :name » de l’équipe ?',
+    'delete-text' => 'La personne part à la corbeille et quitte tous les blocs du site. Restaurée, elle reprend sa place.',
+    'deleted' => 'Placé dans la corbeille.',
+    'restore' => 'Restaurer',
+    'restored' => 'Restauré.',
+    'reorder-failed' => 'Le nouvel ordre n’a pas été enregistré.',
+    'leave-title' => 'Quitter sans enregistrer ?',
+    'leave-text' => 'Ce que vous avez écrit sur cette personne n’est pas sur le serveur.',
+    'leave' => 'Quitter',
+    'back' => 'Retour à la liste',
+];

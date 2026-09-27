@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'new' => 'Nova pessoa',
+    'untitled' => 'Sem nome',
+    'search' => 'Pesquisar na equipe',
+    'empty' => 'Ainda não há ninguém na equipe.',
+    'empty-help' => 'Uma pessoa aparece no site num bloco Equipe, em qualquer página.',
+    'empty-search' => 'Nada encontrado.',
+    'empty-bin' => 'A lixeira está vazia.',
+    'all' => 'Todos',
+    'trashed' => 'Lixeira',
+    'not-published' => 'Não publicado',
+    'no-job-title' => 'Sem cargo',
+    'order' => 'Arraste para mudar a ordem no site.',
+    'choose' => 'Escolha uma pessoa',
+    'choose-help' => 'Ou adicione uma nova: a primeira linha da lista.',
+    'save' => 'Salvar',
+    'saved' => 'Salvo.',
+    'save-failed' => 'Não foi salvo.',
+    'cancel' => 'Cancelar',
+    'delete' => 'Excluir',
+    'delete-title' => 'Excluir “:name” da equipe?',
+    'delete-text' => 'A pessoa vai para a lixeira e sai de todos os blocos do site. Restaurada, volta ao seu lugar.',
+    'deleted' => 'Movido para a lixeira.',
+    'restore' => 'Restaurar',
+    'restored' => 'Restaurado.',
+    'reorder-failed' => 'A nova ordem não foi salva.',
+    'leave-title' => 'Sair sem salvar?',
+    'leave-text' => 'O que você escreveu sobre esta pessoa não está no servidor.',
+    'leave' => 'Sair',
+    'back' => 'Voltar à lista',
+];

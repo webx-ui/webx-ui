@@ -96,6 +96,11 @@ final class Catalogue
             'label' => 'Press — the outlets that wrote about the site and their articles, a page per outlet and a strip of logos',
             'default' => false,
         ],
+        'team' => [
+            'package' => 'webx-ui/module-team',
+            'label' => 'Team — the people of the organisation with their photos and social links, shown on any page as a block',
+            'default' => false,
+        ],
         'menu' => [
             'package' => 'webx-ui/module-menu',
             'label' => 'Menus — the header and the footer, and what each entry points at',
