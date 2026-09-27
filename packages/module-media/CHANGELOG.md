@@ -1,5 +1,15 @@
 # @webx-ui/module-media
 
+## 0.8.16
+
+### Patch Changes
+
+- Updated dependencies [50ea8a5]
+- Updated dependencies [85b8fca]
+  - @webx-ui/core@0.34.0
+  - @webx-ui/schema@0.6.2
+  - @webx-ui/module-admin@0.18.1
+
 ## 0.8.15
 
 ### Patch Changes
