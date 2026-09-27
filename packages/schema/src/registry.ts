@@ -64,7 +64,12 @@ export const coreTypes: TypeRegistry = {
     bind: (node) => ({ value: node.id }),
   },
   'wx-card': { component: WxCard, kind: 'layout', labelProp: 'title' },
-  'wx-row': { component: WxRow, kind: 'layout' },
+  'wx-row': {
+    component: WxRow,
+    kind: 'layout',
+    // Marked so the renderer can hold a row at the width of one field (see `ScreenRenderer.vue`).
+    bind: (node) => ({ class: ['wx-screen__row', node.props?.class] }),
+  },
   'wx-col': {
     component: WxCol,
     kind: 'layout',
