@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { applyPatch } from '../../../../packages/schema/src/patch'
 import type { Patch, ScreenNode } from '../../../../packages/schema/src/types'
@@ -81,10 +81,24 @@ const SCREENS: Record<string, { base: string; patches: string[] }> = {
     base: 'php/packages/module-press/resources/screens/outlet-form.json',
     patches: ['php/packages/module-seo/resources/screens/press.outlet-form.json'],
   },
+  /* The composer half is written on its own branch (T3 of the team spec): until its screen is on
+     disk, the playground's copy stands in, and the copy goes when the branches meet (T4). */
+  'team.form': {
+    base: ownOr(
+      'php/packages/module-team/resources/screens/form.json',
+      'apps/playground/server/panel/team/form.json',
+    ),
+    patches: [],
+  },
   'recipes.nutrient-form': {
     base: 'php/packages/module-recipes/resources/screens/nutrient-form.json',
     patches: [],
   },
+}
+
+/** The module's own file when it exists, the stand-in otherwise. */
+function ownOr(path: string, standIn: string): string {
+  return existsSync(root(path)) ? path : standIn
 }
 
 /* A declaration and not a `const`: the table above calls it while the module loads. */

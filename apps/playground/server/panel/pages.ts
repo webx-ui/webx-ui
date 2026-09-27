@@ -476,6 +476,53 @@ add(
   [publication(1, '2026-09-27T09:30:00+00:00', null)],
 )
 
+/*
+ * The team page of §5.9 with all three layouts of the block on it at once, so that one preview
+ * shows them: everybody as a grid, the people of two services as a slider, and the list with
+ * biographies. Last, for the same reason as the ones above.
+ */
+add(
+  {
+    title: 'Команда',
+    slug: 'team',
+    parent: home.row.id,
+    status: 'published',
+    updated_at: '2026-09-27T12:30:00+00:00',
+  },
+  {
+    blocks: [
+      block('team', {
+        title: { ru: 'Наша команда', en: 'Our team' },
+        team: { categories: [], limit: null, filter: false, markup: null, related: null },
+        layout: 'grid',
+        columns: 4,
+        show_text: true,
+      }),
+      block('team', {
+        title: { ru: 'Кто делает сайты', en: 'Who builds the sites' },
+        team: {
+          categories: [],
+          limit: null,
+          filter: false,
+          markup: null,
+          related: { type: 'service', ids: [1, 2] },
+        },
+        layout: 'slider',
+        columns: 2,
+        autoplay: true,
+        show_text: true,
+      }),
+      block('team', {
+        title: { ru: 'О каждом', en: 'About everyone' },
+        team: { categories: [], limit: 3, filter: false, markup: null, related: null },
+        layout: 'list',
+        show_text: true,
+      }),
+    ],
+  },
+  [publication(1, '2026-09-27T12:30:00+00:00', null)],
+)
+
 function publication(number: number, createdAt: string, comment: string | null): PageVersion {
   return {
     number,

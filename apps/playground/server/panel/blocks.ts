@@ -4,7 +4,7 @@ import type {
   BlockType,
   BlockVersionMeta,
 } from '../../../../packages/module-blocks/src/types'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { blade, defineFunction, Html, escape, type TagCall } from './blade'
 import { minutesText, sampleCard } from './recipes'
@@ -1306,6 +1306,26 @@ export const blockTypes: BlockType[] = [
     /* `content` is the file `module-press` offers, read off disk: see `offered()` below. */
   },
   {
+    id: 18,
+    slug: 'team',
+    title: 'Команда',
+    description: 'Люди из раздела «Команда» — сеткой, слайдером или списком.',
+    icon: 'users',
+    group: 'content',
+    sort: 38,
+    allow: null,
+    allowed_in: null,
+    max_per_entity: null,
+    is_enabled: true,
+    draft: null,
+    published: version(1, '2026-09-27T12:00:00+00:00', 'Offered by team'),
+    usage_count: 0,
+    thumbnail: null,
+    created_at: '2026-09-27T12:00:00+00:00',
+    updated_at: '2026-09-27T12:00:00+00:00',
+    /* `content` is the file `module-team` offers, read off disk: see `offered()` below. */
+  },
+  {
     id: 12,
     slug: 'recipes',
     title: 'Рецепты',
@@ -1556,6 +1576,18 @@ export function clone<T>(value: T): T {
 
 offered('reviews', 'php/packages/module-reviews/resources/blocks/reviews.json')
 
+/* Until `module-team` has its block on disk (T3 of its spec), the playground's copy stands in. */
+offered(
+  'team',
+  existsSync(
+    fileURLToPath(
+      new URL('../../../../php/packages/module-team/resources/blocks/team.json', import.meta.url),
+    ),
+  )
+    ? 'php/packages/module-team/resources/blocks/team.json'
+    : 'apps/playground/server/panel/team/team.json',
+)
+
 /* The press offers three (§4.8 of its spec). */
 for (const slug of ['press-logos', 'press-outlets', 'press-articles']) {
   offered(slug, `php/packages/module-press/resources/blocks/${slug}.json`)
@@ -1735,7 +1767,11 @@ export function useLinkResolver(resolver: typeof resolveLink): void {
  * link resolver: which sections exist is the fixtures' business, not the renderer's. A section
  * nobody answers for is an empty list, as on a site whose module was removed.
  */
-let resolveCollection: (source: string, value: unknown) => Record<string, unknown> = () => ({
+let resolveCollection: (
+  source: string,
+  value: unknown,
+  entity: PreviewEntity | null,
+) => Record<string, unknown> = () => ({
   items: [],
   groups: [],
   filter: false,
@@ -1743,6 +1779,31 @@ let resolveCollection: (source: string, value: unknown) => Record<string, unknow
 
 export function useCollectionResolver(resolver: typeof resolveCollection): void {
   resolveCollection = resolver
+}
+
+/** The record whose page is being drawn — what "related to the current one" is answered against. */
+export interface PreviewEntity {
+  type: string
+  id: number
+}
+
+let entity: PreviewEntity | null = null
+
+/**
+ * Draws with `current` as the record the page belongs to (`Selection::forEntity()` on a site).
+ * Outside of it — a block on its sample, a page of the tree — there is none, and the filter
+ * narrows nothing, which is what the server does too.
+ */
+export function withEntity<T>(current: PreviewEntity | null, draw: () => T): T {
+  const before = entity
+
+  entity = current
+
+  try {
+    return draw()
+  } finally {
+    entity = before
+  }
 }
 
 /** The `wx-collection` fields of a schema, through layout nodes but not into a repeater's item. */
@@ -1890,7 +1951,7 @@ export function renderTemplate(
   values = { ...values }
 
   for (const node of collectionNodes(schema)) {
-    values[node.id] = resolveCollection(String(node.props?.source ?? ''), values[node.id])
+    values[node.id] = resolveCollection(String(node.props?.source ?? ''), values[node.id], entity)
   }
 
   /*

@@ -13,6 +13,7 @@ import { recipes } from '@webx-ui/module-recipes'
 import { reviews } from '@webx-ui/module-reviews'
 import { seo } from '@webx-ui/module-seo'
 import { services } from '@webx-ui/module-services'
+import { team } from '@webx-ui/module-team'
 /* The opt-in typeface; the tokens themselves come in with the core stylesheet. */
 import '@webx-ui/tokens/fonts.css'
 import UserMenu from './UserMenu.vue'
@@ -54,6 +55,7 @@ const admin = createAdmin({
     ...services(),
     ...faq(),
     ...reviews(),
+    team(),
     ...recipes(),
     press(),
     ...events(),
