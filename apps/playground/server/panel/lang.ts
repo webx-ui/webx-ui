@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { pressMessages } from '../../../../packages/module-press/src/messages'
 
 /**
  * The panel's dictionary, read out of the PHP packages.
@@ -26,6 +27,7 @@ const NAMESPACES: Record<string, string> = {
   'module-media': 'webx-media',
   'module-menu': 'webx-menu',
   'module-pages': 'webx-pages',
+  'module-press': 'webx-press',
   'module-recipes': 'webx-recipes',
   'module-reviews': 'webx-reviews',
   'module-seo': 'webx-seo',
@@ -66,6 +68,16 @@ export function dictionary(locale: string): Record<string, Record<string, Messag
     const dir = root(`php/packages/${pkg}/lang/${locale}`)
 
     if (!existsSync(dir)) {
+      // The press was written in two halves at once (P1 ∥ P2 of its spec): until the composer
+      // half's files are on this branch, its English is the package's own.
+      if (
+        pkg === 'module-press' &&
+        locale === 'en' &&
+        !existsSync(root(`php/packages/${pkg}/lang`))
+      ) {
+        namespaces[namespace] = pressMessages as Record<string, Messages>
+      }
+
       continue
     }
 
