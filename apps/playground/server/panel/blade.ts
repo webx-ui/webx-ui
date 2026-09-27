@@ -684,7 +684,14 @@ export function evaluate(expression: string, scope: Scope): unknown {
 
         if (name?.type !== 'name') throw new Error('Expected a property.')
 
-        value = localize(member(value, name.value))
+        const found = member(value, name.value)
+
+        // `press()->outlets()->take(3)->get()`: a method of what a helper handed back — the
+        // fluent queries of the modules, which a fixture builds as an object of functions.
+        value =
+          typeof found === 'function' && eat('(')
+            ? localize((found as (...args: unknown[]) => unknown).apply(value, list(')')))
+            : localize(found)
       } else {
         return value
       }
@@ -798,6 +805,9 @@ const FUNCTIONS: Record<string, (...args: unknown[]) => unknown> = {
   json_encode: (value) => JSON.stringify(value ?? null),
   isset: (...values) => values.every((value) => value !== null && value !== undefined),
   empty: (value) => !truthy(value),
+  /* Without a callback: what is left once PHP's falsy values are out, keys renumbered like
+     `array_values()` would — a template joins the rest with `implode`. */
+  array_filter: (value) => (Array.isArray(value) ? value.filter((item) => truthy(item)) : []),
 }
 
 /* ------------------------------------------------------------------------------ values ----- */
