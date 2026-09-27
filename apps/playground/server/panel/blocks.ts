@@ -1246,6 +1246,66 @@ export const blockTypes: BlockType[] = [
     /* `content` is the file `module-reviews` offers, read off disk: see `offered()` below. */
   },
   {
+    id: 15,
+    slug: 'press-logos',
+    title: 'Нас читают',
+    description: 'Логотипы изданий, которые писали о сайте.',
+    icon: 'newspaper',
+    group: 'content',
+    sort: 43,
+    allow: null,
+    allowed_in: null,
+    max_per_entity: null,
+    is_enabled: true,
+    draft: null,
+    published: version(1, '2026-09-27T09:00:00+00:00', 'Offered by press'),
+    usage_count: 0,
+    thumbnail: null,
+    created_at: '2026-09-27T09:00:00+00:00',
+    updated_at: '2026-09-27T09:00:00+00:00',
+    /* `content` is the file `module-press` offers, read off disk: see `offered()` below. */
+  },
+  {
+    id: 16,
+    slug: 'press-outlets',
+    title: 'Каталог изданий',
+    description: 'Издания сеткой или секциями по виду материала.',
+    icon: 'newspaper',
+    group: 'content',
+    sort: 44,
+    allow: null,
+    allowed_in: null,
+    max_per_entity: null,
+    is_enabled: true,
+    draft: null,
+    published: version(1, '2026-09-27T09:00:00+00:00', 'Offered by press'),
+    usage_count: 0,
+    thumbnail: null,
+    created_at: '2026-09-27T09:00:00+00:00',
+    updated_at: '2026-09-27T09:00:00+00:00',
+    /* `content` is the file `module-press` offers, read off disk: see `offered()` below. */
+  },
+  {
+    id: 17,
+    slug: 'press-articles',
+    title: 'Лента материалов',
+    description: 'Последние материалы всех изданий, от новых.',
+    icon: 'newspaper',
+    group: 'content',
+    sort: 45,
+    allow: null,
+    allowed_in: null,
+    max_per_entity: null,
+    is_enabled: true,
+    draft: null,
+    published: version(1, '2026-09-27T09:00:00+00:00', 'Offered by press'),
+    usage_count: 0,
+    thumbnail: null,
+    created_at: '2026-09-27T09:00:00+00:00',
+    updated_at: '2026-09-27T09:00:00+00:00',
+    /* `content` is the file `module-press` offers, read off disk: see `offered()` below. */
+  },
+  {
     id: 12,
     slug: 'recipes',
     title: 'Рецепты',
@@ -1495,6 +1555,11 @@ export function clone<T>(value: T): T {
 }
 
 offered('reviews', 'php/packages/module-reviews/resources/blocks/reviews.json')
+
+/* The press offers three (§4.8 of its spec). */
+for (const slug of ['press-logos', 'press-outlets', 'press-articles']) {
+  offered(slug, `php/packages/module-press/resources/blocks/${slug}.json`)
+}
 
 /**
  * A type whose content is the file a module offers (`BlockOffers`), read off disk on every use

@@ -1,5 +1,5 @@
-import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { disableAutoUnmount, enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { adminKey, adminTypes, createI18n, i18nKey, type AdminContext } from '@webx-ui/module-admin'
@@ -8,6 +8,12 @@ import { coreTypes, type ScreenNode } from '@webx-ui/schema'
 import RecipeEditorPage from './RecipeEditorPage.vue'
 import RecipeHistory from './RecipeHistory.vue'
 import type { RecipeDetail, RecipeRow } from './types'
+
+// The editor's autosave pause outlives a test that never unmounts it, and fires into a torn-down
+// jsdom: "Element is not defined" from a ref callback, after every test has already passed. The
+// switch is global to the test utils, so it is handed back for the next file in a shared worker.
+enableAutoUnmount(afterEach)
+afterAll(disableAutoUnmount)
 
 const porridge: RecipeRow = {
   id: 7,
@@ -149,7 +155,7 @@ async function panel(first = detail('r1')) {
 
   await flushPromises()
 
-  return { wrapper, get, put, post }
+  return { wrapper, get, put, post, router }
 }
 
 afterEach(() => {
@@ -275,5 +281,27 @@ describe('WxRecipeEditorPage', () => {
 
     expect(post).toHaveBeenCalledWith('/api/cms/recipes/7/publish', {})
     expect(get.mock.calls.filter(([url]) => url === '/api/cms/recipes/7')).toHaveLength(2)
+  })
+
+  it('leaves without asking when the save is already on its way', async () => {
+    const { wrapper, put, router } = await panel()
+
+    let answer: (value: unknown) => void = () => {}
+    put.mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)))
+
+    await wrapper.find('input').setValue('Oat porridge')
+    await wrapper.find('.wx-recipe-editor').trigger('focusout')
+    expect(put).toHaveBeenCalledTimes(1)
+
+    // Leaving while that request is out used to skip the save, read `dirty` and ask.
+    const leaving = router.push('/recipes')
+    await flushPromises()
+
+    answer({ data: detail('r2', { title: 'Oat porridge' }) })
+    await leaving
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/recipes')
+    expect(put).toHaveBeenCalledTimes(1)
   })
 })

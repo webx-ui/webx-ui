@@ -1,5 +1,27 @@
 # @webx-ui/module-blog
 
+## 0.5.9
+
+### Patch Changes
+
+- 95df90f: Leaving the editor while an autosave is on its way no longer asks whether to leave without saving: the save waits for the one in flight, and goes again only for what was typed meanwhile.
+- acc5de9: Turning a page of articles or submissions sends one request, not two. The watcher over the filters
+  read them through one getter that returned a new array each time, so every change of the address —
+  the page turn included — fired it, and a second request without `per_page` raced the table's own.
+- Updated dependencies [45170fe]
+  - @webx-ui/schema@0.6.3
+
+## 0.5.8
+
+### Patch Changes
+
+- Updated dependencies [50ea8a5]
+- Updated dependencies [85b8fca]
+  - @webx-ui/core@0.34.0
+  - @webx-ui/schema@0.6.2
+  - @webx-ui/module-admin@0.18.1
+  - @webx-ui/module-blocks@0.10.2
+
 ## 0.5.7
 
 ### Patch Changes

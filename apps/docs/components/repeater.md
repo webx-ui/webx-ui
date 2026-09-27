@@ -97,6 +97,12 @@ whose order means nothing.
 A [screen described as JSON](/guide/screens) has this as `wx-repeater`, the one type with a nested
 model: the node's children are the fields of one row, and a `name` inside it is a key of the item.
 
+A refusal the server names by its path — `articles.2.url`, or `articles.2.title.en` for a translated
+field — lands under that field of the third row, and the row unfolds. Outside a screen the same is
+`rowErrors`: the errors of each row by position, under the names its fields answer to. Given at all,
+every row inside a `WxForm` answers to its own errors only, so a row's `title` no longer shows the
+error of the form's own `title`.
+
 ## Props
 
 | Prop          | Type                                         | Default              |
@@ -118,6 +124,7 @@ model: the node's children are the fields of one row, and a `name` inside it is 
 | `size`        | `'sm' \| 'md'`                               | `'md'`               |
 | `plain`       | `boolean`                                    | `false`              |
 | `ariaLabel`   | `string`                                     | —                    |
+| `rowErrors`   | `Record<string, string[]>[]`                 | —                    |
 
 ## Slots
 

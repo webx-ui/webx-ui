@@ -276,8 +276,11 @@ function narrow(name: 'rubric' | 'tag' | 'author', value: unknown): void {
   })
 }
 
+/* One source per value, not one getter returning an array: `query` is rebuilt on every change of
+   the address, so an array is new each time and the watcher would fire on a page turn too —
+   a second request, without `per_page`, racing the one `onState` already sent. */
 watch(
-  () => [view.value, query.value.rubric, query.value.tag, query.value.author] as const,
+  [view, () => query.value.rubric, () => query.value.tag, () => query.value.author],
   () => void load(),
 )
 

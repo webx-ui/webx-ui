@@ -1,5 +1,41 @@
 # @webx-ui/php
 
+## 0.44.1
+
+### Patch Changes
+
+- 45170fe: A `wx-row` on a screen is as wide as one field, not as the card. Every field stops at
+  `--wx-field-max-width`, so a row across the card put "Start" at its left edge and "End" a
+  thousand pixels away, each still leaving most of its column empty. The row now splits one
+  field's width in two (columns answer to the row, so a pair of halves is `sm: 12`).
+
+  The event form uses it twice: start and end side by side, and the price with its number.
+
+- 91b2846: `services_create`, `articles_create` and `pages_create` write the row and its values in one transaction: a value the screen refuses no longer leaves a bare entity behind with its address taken.
+
+## 0.44.0
+
+### Minor Changes
+
+- 50ea8a5: The press for agents and in the demo. Ten MCP tools — `press_list`, `press_get`, `press_create`,
+  `press_update`, `press_delete`, `press_reorder`, and the articles one at a time with
+  `press_articles_add`, `press_articles_update`, `press_articles_delete` and `press_articles_move` —
+  each a save of the outlet's form in one transaction, and `press://catalog` to read first: every
+  outlet with its articles, where each is seen and where it leads. `webx:demo` brings four outlets
+  and eight articles with logos and a PDF in the library, and a page at the prefix with the strip of
+  logos over the catalogue. The panel registers as `press()` rather than `...press()`, and the address
+  field of an outlet no longer warns of a move when the panel and the edited text are in different
+  languages.
+- 50ea8a5: New `webx-ui/module-press`: the outlets that wrote about the site — a logo, a name, a few words and
+  a link — and the articles in them, each leading out to the article or to a PDF from the library.
+  A page per outlet under its own prefix, seen in a language only where it has an article titled in
+  it; kinds of article from the config; the date to the day, the month or the year; `press()` for
+  templates; schema.org `ItemList` of `Article`s on an outlet's page; three offered block types — a
+  strip of logos, a catalogue of outlets grouped by kind, a feed of the latest articles.
+  `module-seo` patches its card onto the new screen, `webx:setup` and `webx:doctor` know the
+  package, and `BlockOffers::offer()` takes a callback that puts the site's config into a document as
+  it is installed.
+
 ## 0.43.0
 
 ### Minor Changes

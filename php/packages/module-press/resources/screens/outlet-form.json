@@ -1,0 +1,285 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "press.outlet-form",
+  "model": "outlet",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "general",
+          "type": "wx-tab",
+          "label": "trans::webx-press::screen.general",
+          "children": [
+            {
+              "id": "outlet",
+              "type": "wx-card",
+              "label": "trans::webx-press::screen.outlet",
+              "children": [
+                {
+                  "id": "logo",
+                  "type": "wx-media",
+                  "name": "logo",
+                  "label": "trans::webx-press::screen.logo",
+                  "help": "trans::webx-press::screen.logo-help",
+                  "props": {
+                    "accept": "image",
+                    "aspect": null,
+                    "width": 240,
+                    "height": 120
+                  }
+                },
+                {
+                  "id": "title",
+                  "type": "wx-input",
+                  "name": "title",
+                  "label": "trans::webx-press::screen.title",
+                  "help": "trans::webx-press::screen.title-help",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 255
+                  }
+                },
+                {
+                  "id": "slug",
+                  "type": "wx-slug",
+                  "name": "slug",
+                  "label": "trans::webx-press::screen.slug",
+                  "help": "trans::webx-press::screen.slug-help",
+                  "localized": true
+                },
+                {
+                  "id": "website-url",
+                  "type": "wx-input",
+                  "name": "website_url",
+                  "label": "trans::webx-press::screen.website-url",
+                  "help": "trans::webx-press::screen.website-url-help",
+                  "props": {
+                    "maxlength": 2048,
+                    "placeholder": "https://"
+                  }
+                },
+                {
+                  "id": "summary",
+                  "type": "wx-textarea",
+                  "name": "summary",
+                  "label": "trans::webx-press::screen.summary",
+                  "help": "trans::webx-press::screen.summary-help",
+                  "localized": true,
+                  "props": {
+                    "rows": 4,
+                    "maxlength": 2000,
+                    "showCount": true
+                  }
+                }
+              ]
+            },
+            {
+              "id": "settings",
+              "type": "wx-card",
+              "label": "trans::webx-press::screen.settings",
+              "children": [
+                {
+                  "id": "published",
+                  "type": "wx-switch",
+                  "name": "published",
+                  "label": "trans::webx-press::screen.published",
+                  "help": "trans::webx-press::screen.published-help"
+                },
+                {
+                  "id": "featured",
+                  "type": "wx-switch",
+                  "name": "featured",
+                  "label": "trans::webx-press::screen.featured",
+                  "help": "trans::webx-press::screen.featured-help"
+                }
+              ]
+            },
+            {
+              "id": "project-fields",
+              "type": "wx-card",
+              "label": "trans::webx-admin::screens.project-fields",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "articles-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-press::screen.articles",
+          "children": [
+            {
+              "id": "articles",
+              "type": "wx-repeater",
+              "name": "articles",
+              "help": "trans::webx-press::screen.articles-help",
+              "props": {
+                "max": 500,
+                "itemLabel": "title",
+                "sortable": true
+              },
+              "children": [
+                {
+                  "id": "article-id",
+                  "type": "wx-input-number",
+                  "name": "id",
+                  "visible": false
+                },
+                {
+                  "id": "article-title",
+                  "type": "wx-input",
+                  "name": "title",
+                  "label": "trans::webx-press::screen.article-title",
+                  "help": "trans::webx-press::screen.article-title-help",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 500
+                  }
+                },
+                {
+                  "id": "article-excerpt",
+                  "type": "wx-textarea",
+                  "name": "excerpt",
+                  "label": "trans::webx-press::screen.excerpt",
+                  "localized": true,
+                  "props": {
+                    "rows": 3,
+                    "maxlength": 2000
+                  }
+                },
+                {
+                  "id": "article-facts",
+                  "type": "wx-row",
+                  "children": [
+                    {
+                      "id": "article-kind-col",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 24,
+                        "md": 8
+                      },
+                      "children": [
+                        {
+                          "id": "article-kind",
+                          "type": "wx-select",
+                          "name": "kind",
+                          "label": "trans::webx-press::screen.kind",
+                          "props": {
+                            "clearable": true,
+                            "teleport": true,
+                            "placeholder": "trans::webx-press::screen.kind-none",
+                            "options": []
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "article-date-col",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 24,
+                        "md": 8
+                      },
+                      "children": [
+                        {
+                          "id": "article-published-on",
+                          "type": "wx-date-picker",
+                          "name": "published_on",
+                          "label": "trans::webx-press::screen.published-on",
+                          "props": {
+                            "type": "date",
+                            "clearable": true,
+                            "teleport": true,
+                            "valueFormat": "yyyy-MM-dd"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "article-precision-col",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 24,
+                        "md": 8
+                      },
+                      "children": [
+                        {
+                          "id": "article-date-precision",
+                          "type": "wx-segmented",
+                          "name": "date_precision",
+                          "label": "trans::webx-press::screen.date-precision",
+                          "help": "trans::webx-press::screen.date-precision-help",
+                          "props": {
+                            "options": [
+                              {
+                                "value": "day",
+                                "label": "trans::webx-press::screen.precision.day"
+                              },
+                              {
+                                "value": "month",
+                                "label": "trans::webx-press::screen.precision.month"
+                              },
+                              {
+                                "value": "year",
+                                "label": "trans::webx-press::screen.precision.year"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "article-url",
+                  "type": "wx-input",
+                  "name": "url",
+                  "label": "trans::webx-press::screen.url",
+                  "help": "trans::webx-press::screen.url-help",
+                  "props": {
+                    "maxlength": 2048,
+                    "placeholder": "https://"
+                  }
+                },
+                {
+                  "id": "article-file",
+                  "type": "wx-file",
+                  "name": "file",
+                  "label": "trans::webx-press::screen.file",
+                  "help": "trans::webx-press::screen.file-help",
+                  "props": {
+                    "accept": "document"
+                  }
+                },
+                {
+                  "id": "article-hidden",
+                  "type": "wx-switch",
+                  "name": "is_hidden",
+                  "label": "trans::webx-press::screen.hidden",
+                  "help": "trans::webx-press::screen.hidden-help"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "seo",
+          "type": "wx-tab",
+          "label": "trans::webx-press::screen.seo",
+          "children": [
+            {
+              "id": "seo-placeholder",
+              "type": "wx-alert",
+              "label": "trans::webx-press::screen.seo-empty",
+              "props": {
+                "type": "info",
+                "variant": "soft"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

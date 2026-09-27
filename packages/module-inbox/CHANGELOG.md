@@ -1,5 +1,22 @@
 # @webx-ui/module-inbox
 
+## 0.4.12
+
+### Patch Changes
+
+- acc5de9: Turning a page of articles or submissions sends one request, not two. The watcher over the filters
+  read them through one getter that returned a new array each time, so every change of the address —
+  the page turn included — fired it, and a second request without `per_page` raced the table's own.
+
+## 0.4.11
+
+### Patch Changes
+
+- Updated dependencies [50ea8a5]
+- Updated dependencies [85b8fca]
+  - @webx-ui/core@0.34.0
+  - @webx-ui/module-admin@0.18.1
+
 ## 0.4.10
 
 ### Patch Changes

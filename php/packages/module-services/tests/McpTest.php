@@ -13,6 +13,7 @@ use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\Registry\ToolRegistry;
 use WebxUi\Mcp\Server\RegistryTool;
 use WebxUi\Mcp\Server\WebxServer;
+use WebxUi\Routing\Models\Route;
 use WebxUi\Services\Models\Service;
 use WebxUi\Services\Models\ServiceCategory;
 
@@ -120,6 +121,21 @@ final class McpTest extends TestCase
         $this->category('implants');
 
         $this->agent('services_create', ['title' => 'Implants'])->assertHasErrors(['already taken']);
+    }
+
+    #[Test]
+    public function a_refused_value_leaves_no_service_and_no_address_behind(): void
+    {
+        // A translated field given as a bare string: the screen refuses it after the row is in.
+        $this->agent('services_create', ['title' => 'Dental implants', 'values' => ['lead' => 'Turnkey.']])
+            ->assertHasErrors(['lead']);
+
+        $this->assertSame(0, Service::query()->withTrashed()->count());
+        $this->assertSame(0, Route::query()->count());
+
+        // And the address is still free for the call that gets it right.
+        $this->agent('services_create', ['title' => 'Dental implants', 'values' => ['lead' => ['en' => 'Turnkey.']]])
+            ->assertOk();
     }
 
     #[Test]

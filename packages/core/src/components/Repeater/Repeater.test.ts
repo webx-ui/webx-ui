@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { ref } from 'vue'
+import { defineComponent, ref } from 'vue'
 import { localesKey } from '../../composables/useLocalized'
+import WxForm from '../Form/Form.vue'
+import WxFormItem from '../FormItem/FormItem.vue'
+import WxInput from '../Input/Input.vue'
 import WxRepeater from './Repeater.vue'
 
 interface Office {
@@ -177,5 +180,41 @@ describe('WxRepeater', () => {
     const wrapper = repeater({ modelValue: [], emptyText: 'No offices yet' })
 
     expect(wrapper.text()).toContain('No offices yet')
+  })
+
+  /*
+   * A row is a form inside the form: its `city` is not the form's `city`, and the server's
+   * refusal of one row belongs under that row's field — which has to be open to be seen.
+   */
+  it('gives each row its own errors, and opens a refused one', () => {
+    const Host = defineComponent({
+      components: { WxForm, WxFormItem, WxInput, WxRepeater },
+      setup: () => ({ items: ref(offices.map((office) => ({ ...office }))) }),
+      template: `
+        <wx-form :model="{}" :errors="{ city: ['Not the head office.'] }">
+          <wx-repeater
+            v-model="items"
+            item-label="city"
+            collapsed
+            :row-errors="[{}, { city: ['Too long.'] }]"
+          >
+            <template #default="{ item }">
+              <wx-form-item name="city" label="City">
+                <wx-input :model-value="item.city" />
+              </wx-form-item>
+            </template>
+          </wx-repeater>
+        </wx-form>`,
+    })
+
+    const wrapper = mount(Host, { attachTo: document.body })
+    const fields = wrapper.findAll('.wx-form-item')
+
+    expect(fields[0]!.find('.wx-form-item__error').exists()).toBe(false)
+    expect(fields[1]!.get('.wx-form-item__error').text()).toBe('Too long.')
+
+    const heads = wrapper.findAll('.wx-repeater__head')
+    expect(heads.map((head) => head.classes('is-invalid'))).toEqual([false, true])
+    expect(heads.map((head) => head.attributes('aria-expanded'))).toEqual(['false', 'true'])
   })
 })

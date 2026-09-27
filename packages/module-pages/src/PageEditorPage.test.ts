@@ -1,11 +1,17 @@
-import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { disableAutoUnmount, enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { adminKey, createI18n, i18nKey, type AdminContext } from '@webx-ui/module-admin'
 import { coreTypes, type ScreenNode } from '@webx-ui/schema'
 import PageEditorPage from './PageEditorPage.vue'
 import type { PageDetail, PageRow } from './types'
+
+// The editor's autosave pause outlives a test that never unmounts it, and fires into a torn-down
+// jsdom: "Element is not defined" from a ref callback, after every test has already passed. The
+// switch is global to the test utils, so it is handed back for the next file in a shared worker.
+enableAutoUnmount(afterEach)
+afterAll(disableAutoUnmount)
 
 const about: PageRow = {
   id: 2,
@@ -87,7 +93,7 @@ async function panel(first = detail('r1')) {
 
   await flushPromises()
 
-  return { wrapper, get, put, post }
+  return { wrapper, get, put, post, router }
 }
 
 /** Type into the one field the screen has, the way a person would. */
@@ -191,5 +197,27 @@ describe('WxPageEditorPage', () => {
     const { wrapper } = await panel()
 
     expect(wrapper.find('a[href*="_preview"]').exists()).toBe(true)
+  })
+
+  it('leaves without asking when the save is already on its way', async () => {
+    const { wrapper, put, router } = await panel()
+
+    let answer: (value: unknown) => void = () => {}
+    put.mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)))
+
+    await type(wrapper, 'About us')
+    await wrapper.find('.wx-page-editor').trigger('focusout')
+    expect(put).toHaveBeenCalledTimes(1)
+
+    // Leaving while that request is out used to skip the save, read `dirty` and ask.
+    const leaving = router.push('/pages')
+    await flushPromises()
+
+    answer({ data: detail('r2', 'About us') })
+    await leaving
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/pages')
+    expect(put).toHaveBeenCalledTimes(1)
   })
 })

@@ -1,5 +1,29 @@
 # @webx-ui/schema
 
+## 0.6.3
+
+### Patch Changes
+
+- 45170fe: A `wx-row` on a screen is as wide as one field, not as the card. Every field stops at
+  `--wx-field-max-width`, so a row across the card put "Start" at its left edge and "End" a
+  thousand pixels away, each still leaving most of its column empty. The row now splits one
+  field's width in two (columns answer to the row, so a pair of halves is `sm: 12`).
+
+  The event form uses it twice: start and end side by side, and the price with its number.
+
+## 0.6.2
+
+### Patch Changes
+
+- 50ea8a5: A refusal of one row of a repeater lands under that row's field. `WxRepeater` takes `rowErrors`
+  — the errors of each row, by position — and then every row answers to its own and nothing else:
+  before, a row's `title` inside a form showed the error of the form's own `title`, in every row at
+  once. A refused row unfolds by itself and its header turns red. `wx-repeater` on a described
+  screen hands the server's `articles.2.url` and `articles.2.title.en` to the third row's `url` and
+  `title` without anything to set.
+- Updated dependencies [50ea8a5]
+  - @webx-ui/core@0.34.0
+
 ## 0.6.1
 
 ### Patch Changes
