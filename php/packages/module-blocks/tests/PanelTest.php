@@ -105,6 +105,36 @@ final class PanelTest extends TestCase
     }
 
     #[Test]
+    public function a_group_is_rearranged_in_its_own_places_and_the_styles_keep_their_order(): void
+    {
+        // Created in this order, so they stand in it: a new type joins the end of the list.
+        $hero = Block::query()->create(['slug' => 'hero', 'title' => 'Hero', 'sort' => 5]);
+        $text = Block::query()->create(['slug' => 'text', 'title' => 'Text', 'sort' => 1]);
+        $cta = Block::query()->create(['slug' => 'cta', 'title' => 'CTA', 'sort' => 3]);
+        $quote = Block::query()->create(['slug' => 'quote', 'title' => 'Quote']);
+
+        $this->assertSame([1, 2, 3, 4], [$hero->position, $text->position, $cta->position, $quote->position]);
+
+        // Two of the four, the way a section is dragged: they swap the places they held, and
+        // the ones between and around them do not move.
+        $this->actingAs($this->editor(), 'cms')
+            ->postJson($this->api('reorder'), ['ids' => [$cta->id, $hero->id]])
+            ->assertOk();
+
+        $listed = $this->actingAs($this->editor(), 'cms')->getJson($this->api(''))->assertOk();
+
+        $this->assertSame(['cta', 'text', 'hero', 'quote'], array_column($listed->json('data'), 'slug'));
+        $this->assertSame([5, 1, 3, 0], array_map(
+            static fn (string $slug): int => (int) Block::query()->where('slug', $slug)->value('sort'),
+            ['hero', 'text', 'cta', 'quote'],
+        ));
+
+        $this->actingAs($this->editor(['blocks.view']), 'cms')
+            ->postJson($this->api('reorder'), ['ids' => [$hero->id]])
+            ->assertForbidden();
+    }
+
+    #[Test]
     public function saving_content_writes_a_version_and_saving_nothing_new_does_not(): void
     {
         $block = $this->draft('hero');

@@ -141,6 +141,10 @@ const editor = useEditor({
   ],
   onUpdate: () => {
     const html = readHtml()
+    // Tiptap raises an update for things that are not edits too. Writing the same words back
+    // still changes the model's shape — an empty `[]` from the server becomes `{ en: '' }` —
+    // and a form that compares snapshots reads that as a change and autosaves a draft.
+    if (html === currentValue.value) return
     locales.write(editing.value, html)
     emit('change', html)
   },
@@ -167,9 +171,8 @@ watch(currentValue, (value) => {
 })
 
 /*
- * Tiptap's `setEditable` emits an update by default, and an update writes the document back in
- * Tiptap's own spelling (`<li>x</li>` becomes `<li><p>x</p></li>`). A form locked while it
- * publishes would then come back changed without a keystroke — and autosave the change.
+ * Without the update Tiptap sends by default: a form locked for the length of a request and
+ * unlocked after it would otherwise hear every editor on it "change" at once.
  */
 watch(editable, (value) => editor.value?.setEditable(value, false))
 

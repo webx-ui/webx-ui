@@ -1,5 +1,62 @@
 # @webx-ui/php
 
+## 0.44.0
+
+### Minor Changes
+
+- 50ea8a5: The press for agents and in the demo. Ten MCP tools — `press_list`, `press_get`, `press_create`,
+  `press_update`, `press_delete`, `press_reorder`, and the articles one at a time with
+  `press_articles_add`, `press_articles_update`, `press_articles_delete` and `press_articles_move` —
+  each a save of the outlet's form in one transaction, and `press://catalog` to read first: every
+  outlet with its articles, where each is seen and where it leads. `webx:demo` brings four outlets
+  and eight articles with logos and a PDF in the library, and a page at the prefix with the strip of
+  logos over the catalogue. The panel registers as `press()` rather than `...press()`, and the address
+  field of an outlet no longer warns of a move when the panel and the edited text are in different
+  languages.
+- 50ea8a5: New `webx-ui/module-press`: the outlets that wrote about the site — a logo, a name, a few words and
+  a link — and the articles in them, each leading out to the article or to a PDF from the library.
+  A page per outlet under its own prefix, seen in a language only where it has an article titled in
+  it; kinds of article from the config; the date to the day, the month or the year; `press()` for
+  templates; schema.org `ItemList` of `Article`s on an outlet's page; three offered block types — a
+  strip of logos, a catalogue of outlets grouped by kind, a feed of the latest articles.
+  `module-seo` patches its card onto the new screen, `webx:setup` and `webx:doctor` know the
+  package, and `BlockOffers::offer()` takes a callback that puts the site's config into a document as
+  it is installed.
+
+## 0.43.0
+
+### Minor Changes
+
+- 7c0fac5: `module-events` for agents and for a first look: eight `events_*` tools and the shared
+  `event_categories_*`, with "Duplicate" as `events_duplicate` and every date read as ISO 8601 in
+  the site's timezone when it names no offset; `events://catalog` with the events to come per
+  category and a count of the past ones; and demo content whose dates are counted from the moment it
+  is seeded. In the panel an event of days now shows the same calendar days in every browser, west
+  or east of the site.
+- 7c0fac5: New `webx-ui/module-events`: workshops, meetings and webinars with a date, a place, a price and a
+  link to book, each a page of fixed structure. Flat categories with pages of their own, related
+  services, the events to come on the index and the category pages with the past ones kept at their
+  addresses, `events()` for templates, an `.ics` file per event, schema.org `Event`, and "Duplicate"
+  for the next event of a series. `module-seo` patches its card onto the two new screens, and
+  `webx:setup` and `webx:doctor` know the package.
+
+### Patch Changes
+
+- c260c23: The recipe editor shows "Rich in" on the Recipe tab, at the end of the Nutrition card, beside the values it sums up, instead of under Categories on the Settings tab.
+
+## 0.42.3
+
+### Patch Changes
+
+- 264c23a: The cards of the Blocks section are dragged into order, and the picker offers the types in it. The order is a new `position`, apart from `sort`, which stays the order of the styles on the page (now labelled so). A migration numbers the existing types in the order they had.
+- 264c23a: A block's `···` menu offers "Move to…": the block goes whole into another container or out to the page, and only to places whose rules let it stand there.
+
+## 0.42.2
+
+### Patch Changes
+
+- 3893f13: A block's `···` menu offers "Add after": the new block goes right under that one, at the top level and inside a container alike, instead of at the end of the list.
+
 ## 0.42.1
 
 ### Patch Changes

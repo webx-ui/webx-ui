@@ -2,11 +2,13 @@ import { createAdmin, type Admin, type AdminPlugin } from '@webx-ui/module-admin
 import { admins, connect } from '@webx-ui/module-auth'
 import { blocks } from '@webx-ui/module-blocks'
 import { blog } from '@webx-ui/module-blog'
+import { events } from '@webx-ui/module-events'
 import { faq } from '@webx-ui/module-faq'
 import { inbox } from '@webx-ui/module-inbox'
 import { media } from '@webx-ui/module-media'
 import { menu } from '@webx-ui/module-menu'
 import { pages } from '@webx-ui/module-pages'
+import { press } from '@webx-ui/module-press'
 import { recipes } from '@webx-ui/module-recipes'
 import { reviews } from '@webx-ui/module-reviews'
 import { seo } from '@webx-ui/module-seo'
@@ -53,6 +55,8 @@ const admin = createAdmin({
     ...faq(),
     ...reviews(),
     ...recipes(),
+    press(),
+    ...events(),
     menu(),
     media(),
     blocks(),

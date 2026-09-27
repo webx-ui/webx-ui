@@ -265,7 +265,21 @@ describe('WxRichText', () => {
     expect(wrapper.classes()).toContain('is-disabled')
   })
 
-  it('does not write the model when it is locked and unlocked', async () => {
+  it('leaves the model alone when it is locked and unlocked', async () => {
+    // What a server sends for a translatable field nobody has filled in: an empty list.
+    const locales = twoLocales()
+    const wrapper = await mountEditor({ modelValue: [], localized: true }, locales)
+
+    await wrapper.setProps({ disabled: true })
+    await flush()
+    await wrapper.setProps({ disabled: false })
+    await flush()
+
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+    expect(wrapper.emitted('change')).toBeUndefined()
+  })
+
+  it('leaves HTML written elsewhere alone when it is locked and unlocked', async () => {
     // Tiptap reads `<li>text</li>` as `<li><p>text</p></li>`; stored HTML written elsewhere
     // (seeders, an agent, an import) comes back different the moment anything is emitted.
     const wrapper = await mountEditor({ modelValue: '<ul><li>One</li></ul>' })

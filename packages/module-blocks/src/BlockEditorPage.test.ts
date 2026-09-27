@@ -1,5 +1,5 @@
-import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { disableAutoUnmount, enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 import { createRouter, createWebHistory } from 'vue-router'
 import { adminKey, createI18n, i18nKey, type AdminContext } from '@webx-ui/module-admin'
 import BlockEditorPage from './BlockEditorPage.vue'
@@ -121,6 +121,14 @@ async function openTab(wrapper: Awaited<ReturnType<typeof editor>>['wrapper'], l
 afterEach(() => {
   document.body.innerHTML = ''
 })
+
+// The editor's autosave pause outlives a test that never unmounts it, and fires into a torn-down
+// jsdom: "Element is not defined" from a ref callback, after every test has already passed. The
+// switch is global to the test utils, so it is handed back for the next file in a shared worker.
+// Registered after the body is emptied because after-hooks run in reverse: the editor has to be
+// unmounted while its teleports are still in the document.
+enableAutoUnmount(afterEach)
+afterAll(disableAutoUnmount)
 
 describe('WxBlockEditorPage for a component', () => {
   it('names the fields "Input data" and says where it is called from', async () => {

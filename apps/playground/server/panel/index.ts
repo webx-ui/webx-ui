@@ -64,6 +64,15 @@ import {
   writeReview,
 } from './reviews'
 import {
+  findOutlet,
+  kindOptions,
+  listOutlets,
+  outletDetail,
+  outletRow,
+  reorderOutlets,
+  writeOutlet,
+} from './press'
+import {
   admins,
   countForms,
   eventsFor,
@@ -162,6 +171,30 @@ import {
   type TermKind as RecipeTermKind,
 } from './recipes'
 import { drawRecipePage, RECIPE_PAGE_STYLES } from './recipes-site'
+import {
+  createEvent,
+  createTerm as createEventTerm,
+  discard as discardEvent,
+  drawEventPage,
+  duplicateEvent,
+  EVENT_PAGE_STYLES,
+  eventDetail,
+  find as findEvent,
+  findTerm as findEventTerm,
+  listEvents,
+  publish as publishEvent,
+  reorderTerms as reorderEventTerms,
+  restoreVersion as restoreEventVersion,
+  revision as eventRevision,
+  row as eventRow,
+  termDetail as eventTermDetail,
+  termRow as eventTermRow,
+  eventCategories,
+  writeEvent,
+  writeTerm as writeEventTerm,
+  PREFIX as EVENTS_PREFIX,
+  type EventRecord,
+} from './events'
 import { relationCandidates } from './relations'
 import { screen, screenNames } from './screens'
 import {
@@ -301,6 +334,12 @@ on('GET', '/manifest', ({ locale }) => ({
         icon: 'heart',
         order: 700,
       },
+      {
+        id: 'events',
+        title: line(locale, 'webx-events', 'module.group'),
+        icon: 'calendar',
+        order: 750,
+      },
       { id: 'system', title: line(locale, 'webx-admin', 'nav.system'), icon: 'gear', order: 900 },
     ],
     modules: [
@@ -405,6 +444,17 @@ on('GET', '/manifest', ({ locale }) => ({
         permissions: ['reviews.view', 'reviews.manage'],
         meta: {},
       },
+      /* One entry and no group of its own (§4.9): a group around a single item is a heading
+         over itself. */
+      {
+        id: 'press',
+        title: line(locale, 'webx-press', 'module.title'),
+        icon: 'newspaper',
+        order: 650,
+        group: null,
+        permissions: ['press.view', 'press.manage'],
+        meta: {},
+      },
       {
         id: 'review-categories',
         title: line(locale, 'webx-reviews', 'module.categories'),
@@ -439,6 +489,24 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 720,
         group: 'recipes',
         permissions: ['recipes.categories.manage'],
+        meta: {},
+      },
+      {
+        id: 'events',
+        title: line(locale, 'webx-events', 'module.events'),
+        icon: 'calendar',
+        order: 750,
+        group: 'events',
+        permissions: ['events.view', 'events.manage'],
+        meta: {},
+      },
+      {
+        id: 'event-categories',
+        title: line(locale, 'webx-events', 'module.categories'),
+        icon: 'folder',
+        order: 760,
+        group: 'events',
+        permissions: ['events.categories.manage'],
         meta: {},
       },
       {
@@ -503,12 +571,15 @@ on('GET', '/translations/([\\w-]+)', ({ params }) => ({
   data: { locale: params[0], fallback: 'en', namespaces: dictionary(params[0]) },
 }))
 
-on('GET', '/screens/([\\w.-]+)', ({ params }) => {
+on('GET', '/screens/([\\w.-]+)', ({ params, locale }) => {
   const tree = screen(params[0])
 
   if (tree === null) {
     throw new HttpFailure(404, `No screen named ${params[0]}.`)
   }
+
+  // The kinds of an article are configuration, handed to the field with the screen (§4.6).
+  if (params[0] === 'press.outlet-form') withOptions(tree, 'article-kind', kindOptions(locale))
 
   return { data: { screen: params[0], root: tree } }
 })
@@ -812,6 +883,17 @@ on('GET', '/blocks/catalog', () => ({
     .filter((type) => type.kind !== 'component' && type.is_enabled && type.published !== null)
     .map((type) => ({ ...type, thumbnail: thumbnailOf(type) })),
 }))
+
+/* The ids take the places they held, in the new order; the rest of the list does not move. */
+on('POST', '/blocks/reorder', ({ body }) => {
+  const ids = (body.ids as number[]).map(Number)
+  const next = ids.map((id) => blockTypes.find((type) => type.id === id)!)
+  const slots = blockTypes.flatMap((type, index) => (ids.includes(type.id) ? [index] : []))
+
+  slots.forEach((slot, index) => (blockTypes[slot] = next[index]!))
+
+  return { data: { ids } }
+})
 
 on('POST', '/blocks', ({ body }) => {
   const now = new Date().toISOString()
@@ -2005,6 +2087,77 @@ on('POST', '/reviews/(\\d+)/restore', ({ params, locale }) => {
 
   return { data: reviewRow(record, locale) }
 })
+
+/* ------------------------------------------------------------------------------ press ----- */
+
+/*
+ * The press (§4.10 of its spec): outlets whole and without pages, a new one written before it
+ * exists, its articles saved as rows of its form in the same request.
+ */
+on('GET', '/press', ({ query, locale }) => listOutlets(Object.fromEntries(query), locale))
+
+on('POST', '/press', ({ body, locale }) => {
+  const written = writeOutlet(null, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: outletDetail(written.record, locale) }
+})
+
+on('POST', '/press/reorder', ({ body }) => {
+  reorderOutlets(Array.isArray(body.ids) ? (body.ids as number[]).map(Number) : [])
+
+  return { data: null }
+})
+
+on('GET', '/press/(\\d+)', ({ params, locale }) => ({
+  data: outletDetail(outletRecord(params[0]), locale),
+}))
+
+on('PUT', '/press/(\\d+)', ({ params, body, locale }) => {
+  const record = outletRecord(params[0])
+  const written = writeOutlet(record, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: outletDetail(record, locale) }
+})
+
+on('DELETE', '/press/(\\d+)', ({ params }) => {
+  outletRecord(params[0]).deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+on('POST', '/press/(\\d+)/restore', ({ params, locale }) => {
+  const record = findOutlet(Number(params[0]))
+
+  if (record === null) throw new HttpFailure(404, 'No such outlet.')
+
+  record.deleted_at = null
+
+  return { data: outletRow(record, locale) }
+})
+
+function outletRecord(id: string) {
+  const record = findOutlet(Number(id))
+
+  if (record === null || record.deleted_at !== null) throw new HttpFailure(404, 'No such outlet.')
+
+  return record
+}
+
+/** Puts `options` on the node with this id, wherever in the tree it is. */
+function withOptions(
+  nodes: { id: string; props?: Record<string, unknown>; children?: unknown[] }[],
+  id: string,
+  options: unknown[],
+): void {
+  for (const node of nodes) {
+    if (node.id === id) node.props = { ...node.props, options }
+    if (Array.isArray(node.children)) withOptions(node.children as typeof nodes, id, options)
+  }
+}
 
 /* The categories of the reviews, through the shared category API: no address, so no prefix. */
 on('GET', '/reviews/categories', ({ locale }) => ({
@@ -3518,6 +3671,170 @@ function recipeTerm(kind: RecipeTermKind, id: string) {
   return record
 }
 
+/* ------------------------------------------------------------------------------ events ----- */
+
+/*
+ * The events (§4.10 of the events spec): a page of them, the upcoming ones by default, and every
+ * moment answered in the server's zone with its offset (`events.ts`).
+ */
+on('GET', '/events', ({ query, locale }) => listEvents(query, locale))
+
+on('POST', '/events', ({ body, locale }) => {
+  const title = String(body.title ?? 'Новое событие')
+  const slug = typeof body.slug === 'string' && body.slug !== '' ? body.slug : slugify(title)
+
+  return { data: eventDetail(createEvent(title, slug), locale) }
+})
+
+on('GET', '/events/(\\d+)', ({ params, locale }) => ({
+  data: eventDetail(eventRecord(params[0]), locale),
+}))
+
+on('PUT', '/events/(\\d+)', ({ params, body, locale }) => {
+  const record = eventRecord(params[0])
+  const sent = { ...((body.values ?? {}) as Record<string, unknown>) }
+
+  if (typeof body.revision === 'string' && body.revision !== eventRevision(record)) {
+    throw new HttpFailure(
+      409,
+      'Кто-то сохранил это событие, пока вы его редактировали.',
+      eventDetail(record, locale),
+    )
+  }
+
+  if (sent.title !== undefined && Object.values(asMap(sent.title, '')).every((one) => !one)) {
+    throw new HttpFailure(422, 'Invalid', undefined, {
+      title: ['Название нужно хотя бы на одном языке.'],
+    })
+  }
+
+  if (sent.seo !== undefined) sent.seo = storedSeo(sent.seo)
+
+  const errors = writeEvent(record, sent)
+
+  if (errors !== null) throw new HttpFailure(422, 'Invalid', undefined, errors)
+
+  return { data: eventDetail(record, locale) }
+})
+
+on('DELETE', '/events/(\\d+)', ({ params }) => {
+  eventRecord(params[0]).deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+on('POST', '/events/(\\d+)/restore', ({ params, locale }) => {
+  const record = eventRecord(params[0])
+
+  record.deleted_at = null
+
+  return { data: eventRow(record, locale) }
+})
+
+on('POST', '/events/(\\d+)/discard', ({ params, locale }) => {
+  const record = eventRecord(params[0])
+
+  discardEvent(record)
+
+  return { data: eventDetail(record, locale) }
+})
+
+/* Decision 9: the copy's form, so the panel can open it at once. */
+on('POST', '/events/(\\d+)/duplicate', ({ params, locale }) => ({
+  data: eventDetail(duplicateEvent(eventRecord(params[0])), locale),
+}))
+
+on('POST', '/events/(\\d+)/publish', ({ params, locale }) => {
+  const record = eventRecord(params[0])
+
+  publishEvent(record)
+
+  return { data: eventRow(record, locale) }
+})
+
+on('POST', '/events/(\\d+)/unpublish', ({ params, locale }) => {
+  const record = eventRecord(params[0])
+
+  record.status = 'unpublished'
+  record.published_at = null
+  record.updated_at = new Date().toISOString()
+
+  return { data: eventRow(record, locale) }
+})
+
+on('GET', '/events/(\\d+)/versions', ({ params }) => ({ data: eventRecord(params[0]).versions }))
+
+on('POST', '/events/(\\d+)/versions/(\\d+)/restore', ({ params, locale }) => {
+  const record = eventRecord(params[0])
+
+  if (!restoreEventVersion(record, Number(params[1]))) {
+    throw new HttpFailure(404, 'No such version.')
+  }
+
+  return { data: eventDetail(record, locale) }
+})
+
+/* The categories: the panel's shared category API, as the recipes have it. */
+on('GET', '/events/categories', ({ locale }) => ({
+  data: eventCategories
+    .filter((one) => one.deleted_at === null)
+    .map((one) => eventTermRow(one, locale)),
+  prefix: EVENTS_PREFIX,
+}))
+
+on('POST', '/events/categories', ({ body, locale }) => {
+  const title = localized(body.title) || 'Новая категория'
+  const slug = localized(body.slug) || slugify(title)
+
+  return { data: eventTermRow(createEventTerm(asMap(body.title, title), slug), locale) }
+})
+
+on('POST', '/events/categories/reorder', ({ body }) => {
+  reorderEventTerms(Array.isArray(body.ids) ? (body.ids as unknown[]).map(Number) : [])
+
+  return { data: null }
+})
+
+on('GET', '/events/categories/(\\d+)', ({ params, locale }) => ({
+  data: eventTermDetail(eventTerm(params[0]), locale),
+}))
+
+on('PUT', '/events/categories/(\\d+)', ({ params, body, locale }) => {
+  const record = eventTerm(params[0])
+  const errors = writeEventTerm(record, (body.values ?? {}) as Record<string, unknown>, locale)
+
+  if (errors !== null) throw new HttpFailure(422, 'Invalid', undefined, errors)
+
+  return { data: eventTermDetail(record, locale) }
+})
+
+on('DELETE', '/events/categories/(\\d+)', ({ params, locale }) => {
+  const record = eventTerm(params[0])
+  const count = eventTermRow(record, locale).events_count
+
+  if (count > 0) throw new HttpFailure(422, `Событий здесь ещё: ${count}.`)
+
+  record.deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+function eventRecord(id: string): EventRecord {
+  const record = findEvent(Number(id))
+
+  if (record === null) throw new HttpFailure(404, 'No such event.')
+
+  return record
+}
+
+function eventTerm(id: string) {
+  const record = findEventTerm(Number(id))
+
+  if (record === null) throw new HttpFailure(404, 'No such category.')
+
+  return record
+}
+
 /* ------------------------------------------------------------------------------- media ----- */
 
 on('GET', '/media/directories', () => ({ data: directories }))
@@ -4152,6 +4469,21 @@ function previewRecipe(id: number): string {
   )
 }
 
+/** The draft of an event, drawn as its page (§4.5) — no blocks, like a recipe. */
+function previewEvent(id: number): string {
+  const record = findEvent(id)
+
+  if (record === null) {
+    return missingPreview('No such event.')
+  }
+
+  return siteLayout(
+    `#${record.id}`,
+    `<style>${EVENT_PAGE_STYLES}</style>`,
+    drawEventPage(record, 'ru'),
+  )
+}
+
 function missingPreview(message: string): string {
   return `<!doctype html><title>404</title><p>${message}</p>`
 }
@@ -4365,7 +4697,9 @@ export function panelServer(): Plugin {
           return
         }
 
-        const preview = url.pathname.match(/^\/preview\/(page|article|service|recipe)\/(\d+)$/)
+        const preview = url.pathname.match(
+          /^\/preview\/(page|article|service|recipe|event)\/(\d+)$/,
+        )
 
         if (preview !== null) {
           const id = Number(preview[2])
@@ -4378,7 +4712,9 @@ export function panelServer(): Plugin {
                 ? previewService(id)
                 : preview[1] === 'recipe'
                   ? previewRecipe(id)
-                  : previewArticle(id),
+                  : preview[1] === 'event'
+                    ? previewEvent(id)
+                    : previewArticle(id),
           )
 
           return

@@ -1,0 +1,49 @@
+{
+  "slug": "press-articles",
+  "title": "Press articles",
+  "description": "The latest articles of every outlet, with the outlet's logo.",
+  "icon": null,
+  "group": "content",
+  "sort": 2,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "title",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "kinds",
+      "type": "wx-select",
+      "label": "Kinds of article",
+      "help": "Filled with the kinds of the site when the block was installed. Empty is every kind.",
+      "props": {
+        "multiple": true,
+        "clearable": true,
+        "options": []
+      }
+    },
+    {
+      "id": "limit",
+      "type": "wx-input-number",
+      "label": "At most",
+      "help": "Empty is six.",
+      "props": {
+        "min": 1,
+        "max": 100
+      }
+    }
+  ],
+  "template": "<section class=\"b-press-articles\" data-wx-block=\"press-articles\">\n    @if ($title)\n        <h2 class=\"b-press-articles__title\">{{ $title }}</h2>\n    @endif\n    <ul class=\"b-press-articles__list\">\n        @foreach (press()->articles()->kind($kinds)->take($limit ?: 6)->get() as $article)\n            <li class=\"b-press-articles__item\">\n                <article class=\"b-press-articles__card\">\n                    <p class=\"b-press-articles__outlet\">\n                        @if ($article['outlet']['logo'])\n                            <img class=\"b-press-articles__logo\" src=\"{{ $article['outlet']['logo'] }}\" alt=\"\" loading=\"lazy\">\n                        @endif\n                        @if ($article['outlet']['url'])\n                            <a href=\"{{ $article['outlet']['url'] }}\">{{ $article['outlet']['title'] }}</a>\n                        @else\n                            <span>{{ $article['outlet']['title'] }}</span>\n                        @endif\n                    </p>\n                    <h3 class=\"b-press-articles__name\">\n                        @if ($article['target'])\n                            <a href=\"{{ $article['target'] }}\" target=\"_blank\" rel=\"noopener\">{{ $article['title'] }}</a>\n                        @else\n                            {{ $article['title'] }}\n                        @endif\n                    </h3>\n                    @if ($article['kind_label'] || $article['when'] !== '')\n                        <p class=\"b-press-articles__meta\">\n                            @if ($article['kind_label'])\n                                <span>{{ $article['kind_label'] }}</span>\n                            @endif\n                            @if ($article['when'] !== '')\n                                <time datetime=\"{{ $article['date'] }}\">{{ $article['when'] }}</time>\n                            @endif\n                        </p>\n                    @endif\n                    @if ($article['excerpt'] !== '')\n                        <p class=\"b-press-articles__excerpt\">{{ $article['excerpt'] }}</p>\n                    @endif\n                    @if ($article['url'] && $article['pdf'])\n                        <p class=\"b-press-articles__pdf\"><a href=\"{{ $article['pdf'] }}\" target=\"_blank\" rel=\"noopener\">{{ __('webx-press::site.pdf') }}</a></p>\n                    @endif\n                </article>\n            </li>\n        @endforeach\n    </ul>\n</section>\n",
+  "styles": ".b-press-articles {\n    container-type: inline-size;\n}\n\n.b-press-articles__title {\n    margin: 0 0 1em;\n}\n\n.b-press-articles__list {\n    display: grid;\n    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18em), 1fr));\n    gap: 1.5em;\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n/* A grid or flex box outranks the browser's own [hidden] rule. */\n.b-press-articles__list[hidden],\n.b-press-articles__card[hidden],\n.b-press-articles__outlet[hidden] {\n    display: none;\n}\n\n.b-press-articles__item {\n    min-width: 0;\n}\n\n.b-press-articles__card {\n    display: flex;\n    flex-direction: column;\n    gap: 0.5em;\n    box-sizing: border-box;\n    height: 100%;\n    padding: 1.25em;\n    border: 1px solid color-mix(in srgb, currentColor 15%, transparent);\n    border-radius: 0.75em;\n}\n\n.b-press-articles__outlet {\n    display: flex;\n    align-items: center;\n    gap: 0.5em;\n    margin: 0;\n    font-size: 0.9em;\n}\n\n.b-press-articles__outlet a {\n    color: inherit;\n}\n\n.b-press-articles__logo {\n    display: block;\n    width: auto;\n    min-width: 0;\n    height: 1.5em;\n    object-fit: contain;\n}\n\n.b-press-articles__name {\n    margin: 0;\n    font-size: 1.1em;\n}\n\n.b-press-articles__name a {\n    color: inherit;\n}\n\n.b-press-articles__meta {\n    display: flex;\n    flex-wrap: wrap;\n    gap: 0 0.75em;\n    margin: 0;\n    font-size: 0.9em;\n    opacity: 0.7;\n}\n\n.b-press-articles__excerpt {\n    flex: 1;\n    margin: 0;\n}\n\n.b-press-articles__pdf {\n    margin: 0;\n}\n",
+  "script": "",
+  "sample": {
+    "title": "In the press",
+    "kinds": [],
+    "limit": 6
+  }
+}

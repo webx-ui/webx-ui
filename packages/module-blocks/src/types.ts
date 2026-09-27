@@ -85,7 +85,10 @@ export interface BlockType {
   description: string | null
   icon: string | null
   group: string
+  /** The order of the styles on the page: a later type's rules win. Not the list's order. */
   sort: number
+  /** Where the type stands in the list and the picker, as editors arranged it. */
+  position?: number
   /** Types allowed inside; `null` means the block is not a container. */
   allow: string[] | null
   /** Types that may hold this one, `root` standing for the page itself; `null` means anywhere. */

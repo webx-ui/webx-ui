@@ -1,5 +1,14 @@
 # @webx-ui/admin
 
+## 0.18.1
+
+### Patch Changes
+
+- 85b8fca: `WxScreenHead` declares `back` as a string, a route object or a boolean at runtime. The router's type could not be resolved by the compiler, so the prop was checked as a boolean alone, and every editor passing its list's path warned "Expected Boolean, got String".
+- Updated dependencies [50ea8a5]
+  - @webx-ui/core@0.34.0
+  - @webx-ui/schema@0.6.2
+
 ## 0.18.0
 
 ### Minor Changes
