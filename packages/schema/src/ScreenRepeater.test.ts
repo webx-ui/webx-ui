@@ -142,4 +142,36 @@ describe('wx-repeater', () => {
     expect(wrapper.find('.wx-repeater').exists()).toBe(true)
     expect(wrapper.findAll('.wx-repeater__row')).toHaveLength(0)
   })
+
+  /*
+   * The server names a field of a row by its path, down to the language of a translated one —
+   * and a field of the record may share its name with a field of a row.
+   */
+  it('puts a refusal under the field of the row it names, and only there', () => {
+    const wrapper = mount(WxScreenRenderer, {
+      attachTo: document.body,
+      props: {
+        root: [{ id: 'hq-city', type: 'wx-input', name: 'city', label: 'Head office' }, ...root],
+        modelValue: { city: 'Kyiv', 'contacts.offices': [{ city: 'Lviv' }, { city: 'Odesa' }] },
+        errors: {
+          city: ['Not this city.'],
+          'contacts.offices.1.city.en': ['Too long.'],
+        },
+      },
+    })
+
+    // The record's own field, then the first row (untouched) and the second (refused).
+    const outer = wrapper.findAll('.wx-form-item')[0]
+    const [first, second] = wrapper
+      .findAll('.wx-repeater__body .wx-form-item')
+      .filter((item) => item.find('input[name="city"]').exists())
+    expect(outer!.get('.wx-form-item__error').text()).toBe('Not this city.')
+    expect(first!.find('.wx-form-item__error').exists()).toBe(false)
+    expect(second!.get('.wx-form-item__error').text()).toBe('Too long.')
+
+    // The refused row opens by itself and says so; the other stays folded.
+    const heads = wrapper.findAll('.wx-repeater__head')
+    expect(heads.map((head) => head.classes('is-invalid'))).toEqual([false, true])
+    expect(heads.map((head) => head.attributes('aria-expanded'))).toEqual(['false', 'true'])
+  })
 })

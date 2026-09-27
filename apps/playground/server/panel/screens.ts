@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { applyPatch } from '../../../../packages/schema/src/patch'
 import type { Patch, ScreenNode } from '../../../../packages/schema/src/types'
@@ -77,14 +77,37 @@ const SCREENS: Record<string, { base: string; patches: string[] }> = {
     base: 'php/packages/module-events/resources/screens/category-form.json',
     patches: ['php/packages/module-seo/resources/screens/events.category-form.json'],
   },
+  /*
+   * The composer half's own files once they are on this branch, the playground's copy until then:
+   * the panel of the press was written beside the server (P1 ∥ P2 of the spec), not after it.
+   */
+  'press.outlet-form': {
+    base: either(
+      'php/packages/module-press/resources/screens/outlet-form.json',
+      'apps/playground/server/panel/press/outlet-form.json',
+    ),
+    patches: [
+      either(
+        'php/packages/module-seo/resources/screens/press.outlet-form.json',
+        'apps/playground/server/panel/press/seo.press.outlet-form.json',
+      ),
+    ],
+  },
   'recipes.nutrient-form': {
     base: 'php/packages/module-recipes/resources/screens/nutrient-form.json',
     patches: [],
   },
 }
 
-const root = (path: string): string =>
-  fileURLToPath(new URL(`../../../../${path}`, import.meta.url))
+/* A declaration and not a `const`: the table above calls it while the module loads. */
+function root(path: string): string {
+  return fileURLToPath(new URL(`../../../../${path}`, import.meta.url))
+}
+
+/** The first of two files that is there. */
+function either(path: string, fallback: string): string {
+  return existsSync(root(path)) ? path : fallback
+}
 
 export function screen(name: string): ScreenNode[] | null {
   const described = SCREENS[name]

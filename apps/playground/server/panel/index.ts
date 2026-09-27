@@ -64,6 +64,15 @@ import {
   writeReview,
 } from './reviews'
 import {
+  findOutlet,
+  kindOptions,
+  listOutlets,
+  outletDetail,
+  outletRow,
+  reorderOutlets,
+  writeOutlet,
+} from './press'
+import {
   admins,
   countForms,
   eventsFor,
@@ -435,6 +444,17 @@ on('GET', '/manifest', ({ locale }) => ({
         permissions: ['reviews.view', 'reviews.manage'],
         meta: {},
       },
+      /* One entry and no group of its own (§4.9): a group around a single item is a heading
+         over itself. */
+      {
+        id: 'press',
+        title: line(locale, 'webx-press', 'module.title'),
+        icon: 'newspaper',
+        order: 650,
+        group: null,
+        permissions: ['press.view', 'press.manage'],
+        meta: {},
+      },
       {
         id: 'review-categories',
         title: line(locale, 'webx-reviews', 'module.categories'),
@@ -551,12 +571,15 @@ on('GET', '/translations/([\\w-]+)', ({ params }) => ({
   data: { locale: params[0], fallback: 'en', namespaces: dictionary(params[0]) },
 }))
 
-on('GET', '/screens/([\\w.-]+)', ({ params }) => {
+on('GET', '/screens/([\\w.-]+)', ({ params, locale }) => {
   const tree = screen(params[0])
 
   if (tree === null) {
     throw new HttpFailure(404, `No screen named ${params[0]}.`)
   }
+
+  // The kinds of an article are configuration, handed to the field with the screen (§4.6).
+  if (params[0] === 'press.outlet-form') withOptions(tree, 'article-kind', kindOptions(locale))
 
   return { data: { screen: params[0], root: tree } }
 })
@@ -2064,6 +2087,77 @@ on('POST', '/reviews/(\\d+)/restore', ({ params, locale }) => {
 
   return { data: reviewRow(record, locale) }
 })
+
+/* ------------------------------------------------------------------------------ press ----- */
+
+/*
+ * The press (§4.10 of its spec): outlets whole and without pages, a new one written before it
+ * exists, its articles saved as rows of its form in the same request.
+ */
+on('GET', '/press', ({ query, locale }) => listOutlets(Object.fromEntries(query), locale))
+
+on('POST', '/press', ({ body, locale }) => {
+  const written = writeOutlet(null, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: outletDetail(written.record, locale) }
+})
+
+on('POST', '/press/reorder', ({ body }) => {
+  reorderOutlets(Array.isArray(body.ids) ? (body.ids as number[]).map(Number) : [])
+
+  return { data: null }
+})
+
+on('GET', '/press/(\\d+)', ({ params, locale }) => ({
+  data: outletDetail(outletRecord(params[0]), locale),
+}))
+
+on('PUT', '/press/(\\d+)', ({ params, body, locale }) => {
+  const record = outletRecord(params[0])
+  const written = writeOutlet(record, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: outletDetail(record, locale) }
+})
+
+on('DELETE', '/press/(\\d+)', ({ params }) => {
+  outletRecord(params[0]).deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+on('POST', '/press/(\\d+)/restore', ({ params, locale }) => {
+  const record = findOutlet(Number(params[0]))
+
+  if (record === null) throw new HttpFailure(404, 'No such outlet.')
+
+  record.deleted_at = null
+
+  return { data: outletRow(record, locale) }
+})
+
+function outletRecord(id: string) {
+  const record = findOutlet(Number(id))
+
+  if (record === null || record.deleted_at !== null) throw new HttpFailure(404, 'No such outlet.')
+
+  return record
+}
+
+/** Puts `options` on the node with this id, wherever in the tree it is. */
+function withOptions(
+  nodes: { id: string; props?: Record<string, unknown>; children?: unknown[] }[],
+  id: string,
+  options: unknown[],
+): void {
+  for (const node of nodes) {
+    if (node.id === id) node.props = { ...node.props, options }
+    if (Array.isArray(node.children)) withOptions(node.children as typeof nodes, id, options)
+  }
+}
 
 /* The categories of the reviews, through the shared category API: no address, so no prefix. */
 on('GET', '/reviews/categories', ({ locale }) => ({
