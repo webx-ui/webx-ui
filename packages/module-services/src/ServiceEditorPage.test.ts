@@ -1,5 +1,5 @@
-import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { disableAutoUnmount, enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { adminKey, adminTypes, createI18n, i18nKey, type AdminContext } from '@webx-ui/module-admin'
@@ -8,6 +8,12 @@ import { coreTypes, type ScreenNode } from '@webx-ui/schema'
 import ServiceEditorPage from './ServiceEditorPage.vue'
 import ServiceHistory from './ServiceHistory.vue'
 import type { ServiceDetail, ServiceRow } from './types'
+
+// The editor's autosave pause outlives a test that never unmounts it, and fires into a torn-down
+// jsdom: "Element is not defined" from a ref callback, after every test has already passed. The
+// switch is global to the test utils, so it is handed back for the next file in a shared worker.
+enableAutoUnmount(afterEach)
+afterAll(disableAutoUnmount)
 
 const implants: ServiceRow = {
   id: 7,
