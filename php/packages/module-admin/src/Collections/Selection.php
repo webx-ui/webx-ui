@@ -179,11 +179,15 @@ final readonly class Selection
     {
         $model = $query->getModel();
 
-        if (! method_exists($model, 'categoryLinks')) {
+        // A model without categories — a team — is fine as long as none were chosen: the field
+        // of a source without them offers no choice, so categories here are a caller's mistake.
+        $categorised = method_exists($model, 'categoryLinks');
+
+        if (! $categorised && $this->categories !== []) {
             throw new InvalidArgumentException($model::class.' is not filed under categories.');
         }
 
-        if (count($this->categories) > 1) {
+        if ($categorised && count($this->categories) > 1) {
             $relation = $model->categoryLinks();
 
             $query->whereIn(
@@ -209,7 +213,11 @@ final readonly class Selection
 
         // Through `scopes()` rather than the magic call: PHPStan finds no `orderedIn()` on a
         // builder of a model it only knows as `Model`.
-        $query->scopes(['orderedIn' => [$this->category()]]);
+        if (method_exists($model, 'scopeOrderedIn')) {
+            $query->scopes(['orderedIn' => [$this->category()]]);
+        } else {
+            $query->orderBy($model->qualifyColumn('position'))->orderBy($model->qualifyColumn($model->getKeyName()));
+        }
 
         if ($this->limit !== null) {
             $query->limit($this->limit);

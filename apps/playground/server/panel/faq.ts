@@ -182,6 +182,15 @@ export function collectionSources(locale: string): unknown[] {
       // "Only related to" on a recipes block: the recipes of one service (§3.6).
       relations: [{ key: 'service', title: locale === 'ru' ? 'Услуги' : 'Services' }],
     },
+    {
+      key: 'team',
+      title: locale === 'ru' ? 'Команда' : 'Team',
+      // No categories (decision 1 of the team spec): the field hides its choice of them.
+      categories: null,
+      markup: false,
+      // "Who does it" on the page of a service: the people of that one (§5.3).
+      relations: [{ key: 'service', title: locale === 'ru' ? 'Услуги' : 'Services' }],
+    },
   ]
 }
 

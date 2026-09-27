@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'new' => 'Nowa osoba',
+    'untitled' => 'Bez imienia',
+    'search' => 'Szukaj w zespole',
+    'empty' => 'W zespole nie ma jeszcze nikogo.',
+    'empty-help' => 'Osoba trafia na stronę blokiem „Zespół” na dowolnej podstronie.',
+    'empty-search' => 'Nic nie znaleziono.',
+    'empty-bin' => 'Kosz jest pusty.',
+    'all' => 'Wszyscy',
+    'trashed' => 'Kosz',
+    'not-published' => 'Nieopublikowany',
+    'no-job-title' => 'Bez stanowiska',
+    'order' => 'Przeciągnij, aby zmienić kolejność na stronie.',
+    'choose' => 'Wybierz osobę',
+    'choose-help' => 'Albo dodaj nową: pierwszy wiersz listy.',
+    'save' => 'Zapisz',
+    'saved' => 'Zapisano.',
+    'save-failed' => 'Nie zapisano.',
+    'cancel' => 'Anuluj',
+    'delete' => 'Usuń',
+    'delete-title' => 'Usunąć „:name” z zespołu?',
+    'delete-text' => 'Osoba trafi do kosza i zniknie ze wszystkich bloków na stronie. Po przywróceniu wróci na swoje miejsce.',
+    'deleted' => 'Przeniesiono do kosza.',
+    'restore' => 'Przywróć',
+    'restored' => 'Przywrócono.',
+    'reorder-failed' => 'Nowa kolejność nie została zapisana.',
+    'leave-title' => 'Wyjść bez zapisywania?',
+    'leave-text' => 'To, co napisano o tej osobie, nie jest na serwerze.',
+    'leave' => 'Wyjdź',
+    'back' => 'Wróć do listy',
+];

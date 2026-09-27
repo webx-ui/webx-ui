@@ -271,6 +271,30 @@ service({
   cover: 1,
 })
 
+/*
+ * "Who does it" on the company website (§5.9 of the team spec): the people related to the page
+ * the block stands on, in the list layout — answered against the service being previewed.
+ */
+{
+  const website = serviceBySlug('company-website')
+  const whoDoesIt = block('team', {
+    title: { ru: 'Кто делает', en: 'Who does it' },
+    team: {
+      categories: [],
+      limit: null,
+      filter: false,
+      markup: null,
+      related: { type: 'service', ids: [], current: true },
+    },
+    layout: 'list',
+    hide_text: false,
+  })
+
+  for (const values of [website.values, website.live, ...Object.values(website.snapshots)]) {
+    if (values !== null) (values.blocks as BlockNode[]).push(clone(whoDoesIt))
+  }
+}
+
 /* Filed the way `services.json` files them: maintenance last in Websites and first in Support. */
 for (const [slug, members] of [
   ['websites', ['landing-page', 'company-website', 'online-catalogue', 'site-maintenance']],

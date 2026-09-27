@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'new' => 'Yeni kişi',
+    'untitled' => 'Adsız',
+    'search' => 'Ekipte ara',
+    'empty' => 'Ekipte henüz kimse yok.',
+    'empty-help' => 'Bir kişi siteye herhangi bir sayfadaki Ekip bloğuyla çıkar.',
+    'empty-search' => 'Sonuç bulunamadı.',
+    'empty-bin' => 'Çöp kutusu boş.',
+    'all' => 'Tümü',
+    'trashed' => 'Çöp kutusu',
+    'not-published' => 'Yayımlanmadı',
+    'no-job-title' => 'Unvan yok',
+    'order' => 'Sitedeki sırayı değiştirmek için sürükleyin.',
+    'choose' => 'Bir kişi seçin',
+    'choose-help' => 'Ya da yeni birini ekleyin: listenin ilk satırı.',
+    'save' => 'Kaydet',
+    'saved' => 'Kaydedildi.',
+    'save-failed' => 'Kaydedilmedi.',
+    'cancel' => 'İptal',
+    'delete' => 'Sil',
+    'delete-title' => '“:name” ekipten silinsin mi?',
+    'delete-text' => 'Kişi çöp kutusuna gider ve sitedeki tüm bloklardan çıkar. Geri yüklenince yerine döner.',
+    'deleted' => 'Çöp kutusuna taşındı.',
+    'restore' => 'Geri yükle',
+    'restored' => 'Geri yüklendi.',
+    'reorder-failed' => 'Yeni sıra kaydedilmedi.',
+    'leave-title' => 'Kaydetmeden çıkılsın mı?',
+    'leave-text' => 'Bu kişi hakkında yazdıklarınız sunucuda değil.',
+    'leave' => 'Çık',
+    'back' => 'Listeye dön',
+];
