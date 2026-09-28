@@ -29,6 +29,7 @@ final class Helpers implements Check
         'recipes' => 'webx-ui/module-recipes',
         'reviews' => 'webx-ui/module-reviews',
         'services' => 'webx-ui/module-services',
+        'tariffs' => 'webx-ui/module-tariffs',
         'team' => 'webx-ui/module-team',
     ];
 
