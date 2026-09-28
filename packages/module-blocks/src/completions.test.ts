@@ -188,6 +188,33 @@ describe('the template', () => {
     ])
   })
 
+  it('knows the card of the tariffs source', () => {
+    const tariffs = templateCompletions({
+      schema: () => [{ id: 'tariffs', type: 'wx-collection', props: { source: 'tariffs' } }],
+      styles: () => '',
+    })
+
+    expect(labels(ask(tariffs, "@foreach ($tariffs['items'] as $tariff) {{ $tariff['|"))).toEqual([
+      'id',
+      'anchor',
+      'categories',
+      'name',
+      'badge',
+      'price',
+      'amount',
+      'currency',
+      'symbol',
+      'period',
+      'price_text',
+      'features',
+      'description',
+      'button',
+      'featured',
+      'service_links',
+      'fields',
+    ])
+  })
+
   it('knows what banners() and banners_layout() hand a template', () => {
     const loop = "@foreach (banners('hero')->get() as $banner) {{ $banner['|"
     expect(labels(ask(source, loop))).toEqual([

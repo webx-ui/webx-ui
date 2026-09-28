@@ -196,6 +196,55 @@ published, deleted_at }`. Refusals land under `name.<default language>`, `price`
 `button_variant`, `button_link` (a label without a link) and `features.<n>.text` — the row as the
 editor counts them, empty ones included. Empty rows of the list are dropped.
 
+## MCP
+
+With `webx-ui/mcp` serving the panel to an agent, the section is six tools behind `tariffs:read`
+and `tariffs:write` — the same list, form and order code as the panel:
+
+| Tool              | What it does                                                                |
+| ----------------- | --------------------------------------------------------------------------- |
+| `tariffs_list`    | The tariffs in the order of the site, of a group, or words — or the bin     |
+| `tariffs_get`     | One tariff in full: every language, the lines, the button, groups, services |
+| `tariffs_create`  | A tariff at the end of the list; unpublished unless asked                   |
+| `tariffs_update`  | The values — on the site at once, tariffs have no draft                     |
+| `tariffs_delete`  | To the bin                                                                  |
+| `tariffs_reorder` | The whole order, or the order inside one group                              |
+
+The groups are `tariff_groups_list`, `_create`, `_update`, `_delete` and `_reorder` — the tools
+every module's categories have, behind `tariff-groups:write`.
+
+A tariff is named by its id; a group by its id or its title in any language. A plain string in a
+translated field is the default language. `price` is a number or `null`. `currency` is a code of
+`webx-tariffs.currencies`; `features` a list of lines, each a string or a map of languages;
+`button` is `{ label, link, variant }` — `link` an address or an entity as `menu_add_link` takes
+it — and `null` takes the button away. A currency or a look the site does not have is refused
+**before** the form, with the keys it has; one the tariff already has, taken off the list since,
+goes back as it came. `services` takes ids or addresses and is offered only when
+`webx-ui/module-services` is installed. Every change takes `dry_run: true`, and `tariffs_create` is
+one transaction: a refusal leaves nothing behind.
+
+The resource **`tariffs://catalog`** is what an agent reads first: the currencies and the looks
+the site accepts, then every group in order with its tariffs in the group's order — unpublished
+ones included and marked — each with the price in one line, `featured`, `written_in` (the languages
+of the name and of the description) and its services; the tariffs in no group at the end.
+
+## Demo
+
+`php artisan webx:demo` seeds one group, «For business», and three tariffs from
+`resources/demo/tariffs.json`, in English and Russian as far as the site has them: **Combo
+Starter** ($750 /mo, one line of the list only in English — the Russian list is a line shorter),
+**Combo Growth** (recommended, $1,380 /mo, linked to a demo service) and **Combo Enterprise** (no
+number, «On request»). The buttons lead to a page of the pages demo, else to the first page of the
+address registry; without pages there are no buttons. The offered block type is installed if the
+site has not taken it, and then:
+
+- with `webx-ui/module-pages` — a page `/pricing` with every tariff in a slider of three columns;
+- with `webx-ui/module-services` — a grid of «what it costs» (the service of this page) on the demo
+  service `company-website`, where Growth is the one shown.
+
+The demo needs the pages' and services' demos first when they are installed. `webx:demo --remove`
+takes all of it back out. A site that already has any tariff is left alone.
+
 ## License
 
 MIT

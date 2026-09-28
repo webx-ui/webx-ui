@@ -1,0 +1,87 @@
+{
+  "group": {
+    "key": "business",
+    "title": { "en": "For business", "ru": "Для бизнеса" }
+  },
+  "tariffs": [
+    {
+      "key": "starter",
+      "name": { "en": "Combo Starter", "ru": "Combo Starter" },
+      "badge": { "en": "30 HOURS / 25$", "ru": "30 ЧАСОВ / 25$" },
+      "price": 750,
+      "currency": "USD",
+      "period": { "en": "/mo", "ru": "/мес" },
+      "features": [
+        { "en": "Design of up to five pages", "ru": "Дизайн до пяти страниц" },
+        { "en": "Responsive layout", "ru": "Адаптивная вёрстка" },
+        { "en": "Content editing", "ru": "Редактура текстов" },
+        { "en": "Basic SEO", "ru": "Базовое SEO" },
+        { "en": "Monthly report", "ru": "Отчёт раз в месяц" },
+        { "en": "Slack channel with the team" }
+      ],
+      "description": {
+        "en": "Thirty hours a month for a small site that keeps changing: new pages, new texts, small fixes.",
+        "ru": "Тридцать часов в месяц для небольшого сайта, который всё время меняется: новые страницы, тексты, мелкие правки."
+      },
+      "button": { "label": { "en": "Get started", "ru": "Начать" }, "variant": "secondary" }
+    },
+    {
+      "key": "growth",
+      "name": { "en": "Combo Growth", "ru": "Combo Growth" },
+      "badge": { "en": "60 HOURS / 23$", "ru": "60 ЧАСОВ / 23$" },
+      "price": 1380,
+      "currency": "USD",
+      "period": { "en": "/mo", "ru": "/мес" },
+      "featured": true,
+      "features": [
+        { "en": "Everything in Starter", "ru": "Всё из Starter" },
+        { "en": "Design system", "ru": "Дизайн-система" },
+        { "en": "Landing pages for campaigns", "ru": "Лендинги под кампании" },
+        { "en": "SEO audit every quarter", "ru": "SEO-аудит раз в квартал" }
+      ],
+      "description": {
+        "en": "Sixty hours a month for a site that is the business: a team on call, and a plan for the quarter.",
+        "ru": "Шестьдесят часов в месяц для сайта, который и есть бизнес: команда на связи и план на квартал."
+      },
+      "button": { "label": { "en": "Get started", "ru": "Начать" }, "variant": "primary" },
+      "services": ["company-website"]
+    },
+    {
+      "key": "enterprise",
+      "name": { "en": "Combo Enterprise", "ru": "Combo Enterprise" },
+      "badge": { "en": "120+ HOURS", "ru": "120+ ЧАСОВ" },
+      "price": null,
+      "price_text": { "en": "On request", "ru": "По запросу" },
+      "features": [
+        { "en": "Everything in Growth", "ru": "Всё из Growth" },
+        { "en": "A dedicated team", "ru": "Выделенная команда" },
+        { "en": "Response within an hour", "ru": "Ответ в течение часа" }
+      ],
+      "description": {
+        "en": "For a site that several teams write to at once. We agree the hours and the terms together.",
+        "ru": "Для сайта, в который пишут сразу несколько команд. Часы и условия обсуждаем вместе."
+      },
+      "button": { "label": { "en": "Contact us", "ru": "Связаться" }, "variant": "secondary" }
+    }
+  ],
+  "page": {
+    "slug": "pricing",
+    "title": { "en": "Pricing", "ru": "Цены" },
+    "block": {
+      "title": { "en": "Pricing", "ru": "Цены" },
+      "includes_title": { "en": "This plan includes:", "ru": "В тариф входит:" },
+      "featured_label": { "en": "Recommended", "ru": "Рекомендуем" }
+    },
+    "seo": {
+      "title": { "en": "Pricing", "ru": "Цены" },
+      "description": {
+        "en": "Three plans by the hour, from a small site to a dedicated team.",
+        "ru": "Три тарифа по часам: от небольшого сайта до выделенной команды."
+      }
+    }
+  },
+  "service": {
+    "slug": "company-website",
+    "block": { "title": { "en": "What it costs", "ru": "Сколько стоит" } }
+  }
+}

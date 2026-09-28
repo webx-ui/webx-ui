@@ -114,6 +114,22 @@ const SOURCE_ITEMS: Record<string, string[]> = {
     'fields',
   ],
   team: ['name', 'initials', 'job_title', 'text', 'photo', 'socials', 'service_links', 'fields'],
+  tariffs: [
+    'name',
+    'badge',
+    'price',
+    'amount',
+    'currency',
+    'symbol',
+    'period',
+    'price_text',
+    'features',
+    'description',
+    'button',
+    'featured',
+    'service_links',
+    'fields',
+  ],
 }
 
 /**
