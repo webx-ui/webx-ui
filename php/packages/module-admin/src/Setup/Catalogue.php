@@ -106,6 +106,11 @@ final class Catalogue
             'label' => 'Banners — pictures with words and buttons in named places, printed by the site\'s templates',
             'default' => false,
         ],
+        'tariffs' => [
+            'package' => 'webx-ui/module-tariffs',
+            'label' => 'Tariffs — price cards with what each plan includes, shown on any page as a block',
+            'default' => false,
+        ],
         'menu' => [
             'package' => 'webx-ui/module-menu',
             'label' => 'Menus — the header and the footer, and what each entry points at',

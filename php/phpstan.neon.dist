@@ -44,6 +44,8 @@ parameters:
         - packages/module-team/tests
         - packages/module-banners/src
         - packages/module-banners/tests
+        - packages/module-tariffs/src
+        - packages/module-tariffs/tests
         - packages/nested-set/src
         - packages/nested-set/tests
         - packages/routing/src
