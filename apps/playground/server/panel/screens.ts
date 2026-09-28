@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { applyPatch } from '../../../../packages/schema/src/patch'
 import type { Patch, ScreenNode } from '../../../../packages/schema/src/types'
@@ -89,10 +89,31 @@ const SCREENS: Record<string, { base: string; patches: string[] }> = {
     base: 'php/packages/module-banners/resources/screens/form.json',
     patches: [],
   },
+  // Until module-tariffs has files of its own (session T1): the stand-ins beside this file.
+  'tariffs.form': {
+    base: ownOr('php/packages/module-tariffs/resources/screens/form.json', 'tariffs/form.json'),
+    patches: [],
+  },
+  'tariffs.category-form': {
+    base: ownOr(
+      'php/packages/module-tariffs/resources/screens/category-form.json',
+      'tariffs/category-form.json',
+    ),
+    patches: [],
+  },
   'recipes.nutrient-form': {
     base: 'php/packages/module-recipes/resources/screens/nutrient-form.json',
     patches: [],
   },
+}
+
+/**
+ * The module's own file once it exists, the playground's stand-in (a path beside this file) until
+ * then — so the screen switches over by itself the day the composer half lands, and the stand-in
+ * and this function are what the merge deletes.
+ */
+function ownOr(own: string, standIn: string): string {
+  return existsSync(root(own)) ? own : `apps/playground/server/panel/${standIn}`
 }
 
 /* A declaration and not a `const`: the table above calls it while the module loads. */

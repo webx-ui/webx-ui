@@ -1,0 +1,82 @@
+{
+  "slug": "tariffs",
+  "title": "Tariffs",
+  "description": "Price cards from the tariffs section: a slider or a grid — all of them, some groups, or only those related to the service of the page.",
+  "icon": null,
+  "group": "content",
+  "sort": 0,
+  "allow": null,
+  "allowed_in": null,
+  "max_per_entity": null,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "title",
+      "type": "wx-input",
+      "label": "Heading",
+      "localized": true
+    },
+    {
+      "id": "tariffs",
+      "type": "wx-collection",
+      "label": "Tariffs",
+      "props": {
+        "source": "tariffs"
+      }
+    },
+    {
+      "id": "layout",
+      "type": "wx-segmented",
+      "label": "Layout",
+      "props": {
+        "options": [
+          {
+            "value": "slider",
+            "label": "Slider"
+          },
+          {
+            "value": "grid",
+            "label": "Grid"
+          }
+        ]
+      }
+    },
+    {
+      "id": "columns",
+      "type": "wx-input-number",
+      "label": "Columns",
+      "props": {
+        "min": 1,
+        "max": 4
+      }
+    },
+    {
+      "id": "includes_title",
+      "type": "wx-input",
+      "label": "Above the list",
+      "localized": true
+    },
+    {
+      "id": "featured_label",
+      "type": "wx-input",
+      "label": "Featured label",
+      "localized": true
+    }
+  ],
+  "template": "<section class=\"b-tariffs\" data-wx-block=\"tariffs\" data-tariffs-layout=\"{{ $layout ?: 'slider' }}\" style=\"--tariffs-columns: {{ $columns ?: 3 }}\">\n    @if ($title)\n        <h2 class=\"b-tariffs__title\">{{ $title }}</h2>\n    @endif\n    <div class=\"b-tariffs__viewport\">\n        <ul class=\"b-tariffs__track\">\n            @foreach ($tariffs['items'] as $tariff)\n                <li class=\"b-tariffs__item\">\n                    <article class=\"b-tariffs__card{{ $tariff['featured'] ? ' is-featured' : '' }}\" id=\"{{ $tariff['anchor'] }}\">\n                        @if ($tariff['featured'] && $featured_label)\n                            <p class=\"b-tariffs__flag\">{{ $featured_label }}</p>\n                        @endif\n                        @if ($tariff['badge'] !== '')\n                            <p class=\"b-tariffs__badge\">{{ $tariff['badge'] }}</p>\n                        @endif\n                        <h3 class=\"b-tariffs__name\">{{ $tariff['name'] }}</h3>\n                        {{-- The symbol stands before the number here (\"$750\"). Where it stands is the site's: \"750$\" is this one line of the copy. --}}\n                        @if ($tariff['price'] !== null)\n                            <p class=\"b-tariffs__price\">\n                                <span class=\"b-tariffs__amount\">{{ $tariff['symbol'] }}{{ $tariff['amount'] }}</span>\n                                @if ($tariff['period'] !== '')\n                                    <span class=\"b-tariffs__period\">{{ $tariff['period'] }}</span>\n                                @endif\n                            </p>\n                        @elseif ($tariff['price_text'] !== '')\n                            <p class=\"b-tariffs__price b-tariffs__price--words\">{{ $tariff['price_text'] }}</p>\n                        @endif\n                        @if ($tariff['features'])\n                            @if ($includes_title)\n                                <p class=\"b-tariffs__includes\">{{ $includes_title }}</p>\n                            @endif\n                            <ul class=\"b-tariffs__features{{ count($tariff['features']) > 4 ? ' is-wide' : '' }}\">\n                                @foreach ($tariff['features'] as $feature)\n                                    <li>{{ $feature }}</li>\n                                @endforeach\n                            </ul>\n                        @endif\n                        @if ($tariff['description'] !== '')\n                            <p class=\"b-tariffs__text\">{!! nl2br(e($tariff['description'])) !!}</p>\n                        @endif\n                        @if ($tariff['service_links'])\n                            <ul class=\"b-tariffs__services\">\n                                @foreach ($tariff['service_links'] as $service)\n                                    <li>\n                                        @if ($service['url'])\n                                            <a href=\"{{ $service['url'] }}\">{{ $service['title'] }}</a>\n                                        @else\n                                            {{ $service['title'] }}\n                                        @endif\n                                    </li>\n                                @endforeach\n                            </ul>\n                        @endif\n                        @if ($tariff['button'])\n                            <a class=\"b-tariffs__button b-tariffs__button--{{ $tariff['button']['variant'] }}\" href=\"{{ $tariff['button']['url'] }}\" target=\"{{ $tariff['button']['new_tab'] ? '_blank' : '_self' }}\" rel=\"{{ $tariff['button']['rel'] ?? '' }}\">{{ $tariff['button']['label'] }}</a>\n                        @endif\n                    </article>\n                </li>\n            @endforeach\n        </ul>\n    </div>\n    @if (($layout ?: 'slider') === 'slider')\n        {{-- Printed hidden: the script shows it, and only when the cards do not all fit. Without the script the ribbon is scrolled by a finger and there is no count, rather than a count that is wrong. --}}\n        <div class=\"b-tariffs__nav\" hidden>\n            <p class=\"b-tariffs__count\" aria-live=\"polite\"><span data-tariffs-current>01</span> / <span data-tariffs-total>01</span></p>\n            <button type=\"button\" class=\"b-tariffs__arrow\" data-tariffs-step=\"-1\" aria-label=\"Previous\">&#8249;</button>\n            <button type=\"button\" class=\"b-tariffs__arrow\" data-tariffs-step=\"1\" aria-label=\"Next\">&#8250;</button>\n        </div>\n    @endif\n</section>\n",
+  "styles": ".b-tariffs {\n    container-type: inline-size;\n    --tariffs-gap: 1.5em;\n}\n\n.b-tariffs__title {\n    margin: 0 0 1em;\n}\n\n/* A flex or grid box outranks the browser's own [hidden] rule. */\n.b-tariffs__nav[hidden] {\n    display: none;\n}\n\n/* The grid: up to `--tariffs-columns` across, fewer when a card would be narrower than 15em. */\n.b-tariffs__track {\n    display: grid;\n    grid-template-columns: repeat(\n        auto-fill,\n        minmax(min(100%, max(15em, (100% - (var(--tariffs-columns, 3) - 1) * var(--tariffs-gap)) / var(--tariffs-columns, 3))), 1fr)\n    );\n    gap: var(--tariffs-gap);\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n.b-tariffs__item {\n    display: flex;\n    min-width: 0;\n}\n\n/* One height across the row, and the button at the bottom of every card whatever is above it. */\n.b-tariffs__card {\n    display: flex;\n    flex: 1 1 auto;\n    flex-direction: column;\n    gap: 0.75em;\n    box-sizing: border-box;\n    min-width: 0;\n    margin: 0;\n    padding: 1.75em 1.5em;\n    border: 1px solid color-mix(in srgb, currentColor 15%, transparent);\n    border-radius: 1em;\n}\n\n.b-tariffs__card.is-featured {\n    border-color: currentColor;\n    background: color-mix(in srgb, currentColor 5%, transparent);\n}\n\n.b-tariffs__flag {\n    align-self: flex-start;\n    margin: 0;\n    padding: 0.25em 0.75em;\n    border-radius: 999px;\n    font-size: 0.8em;\n    font-weight: 600;\n    background: color-mix(in srgb, currentColor 12%, transparent);\n}\n\n.b-tariffs__badge {\n    margin: 0;\n    font-size: 0.8em;\n    font-weight: 600;\n    letter-spacing: 0.06em;\n    text-transform: uppercase;\n    opacity: 0.7;\n}\n\n.b-tariffs__name {\n    margin: 0;\n    font-size: 1.35em;\n}\n\n.b-tariffs__price {\n    display: flex;\n    flex-wrap: wrap;\n    align-items: baseline;\n    gap: 0.25em;\n    margin: 0;\n}\n\n.b-tariffs__amount {\n    font-size: 2.25em;\n    font-weight: 700;\n    line-height: 1.1;\n    font-variant-numeric: tabular-nums;\n}\n\n.b-tariffs__period {\n    opacity: 0.7;\n}\n\n.b-tariffs__price--words {\n    font-size: 1.5em;\n    font-weight: 700;\n}\n\n.b-tariffs__includes {\n    margin: 0.5em 0 0;\n    font-weight: 600;\n}\n\n.b-tariffs__features {\n    margin: 0;\n    padding: 0;\n    list-style: none;\n}\n\n.b-tariffs__features li {\n    position: relative;\n    margin: 0 0 0.4em;\n    padding-inline-start: 1.5em;\n    break-inside: avoid;\n}\n\n.b-tariffs__features li::before {\n    content: '\\2713';\n    position: absolute;\n    inset-inline-start: 0;\n    font-weight: 700;\n}\n\n/* A long list in two columns, as in the sample the module was drawn from. */\n.b-tariffs__features.is-wide {\n    columns: 2;\n    column-gap: 1.5em;\n}\n\n.b-tariffs__text {\n    margin: 0;\n    opacity: 0.8;\n}\n\n.b-tariffs__services {\n    display: flex;\n    flex-wrap: wrap;\n    gap: 0.35em 0.75em;\n    margin: 0;\n    padding: 0;\n    font-size: 0.9em;\n    list-style: none;\n}\n\n.b-tariffs__services a {\n    color: inherit;\n}\n\n.b-tariffs__button {\n    display: inline-flex;\n    align-items: center;\n    justify-content: center;\n    box-sizing: border-box;\n    margin-top: auto;\n    padding: 0.8em 1.5em;\n    border: 1px solid currentColor;\n    border-radius: 999px;\n    font-weight: 600;\n    letter-spacing: 0.04em;\n    text-align: center;\n    text-decoration: none;\n    text-transform: uppercase;\n    color: inherit;\n}\n\n/* Neutral on purpose: the block knows neither the site's colours nor which of them is the\n   background, so \"primary\" is the heavier of the looks and the site's copy paints it. */\n.b-tariffs__button--primary {\n    border-width: 2px;\n    background: color-mix(in srgb, currentColor 12%, transparent);\n}\n\n.b-tariffs__button--link {\n    border-color: transparent;\n    padding-inline: 0;\n    text-decoration: underline;\n}\n\n/* A slider is a ribbon that scrolls sideways — without the script, too. One card on a phone. */\n.b-tariffs[data-tariffs-layout='slider'] .b-tariffs__viewport {\n    overflow-x: auto;\n    scrollbar-width: thin;\n    scroll-snap-type: x mandatory;\n}\n\n.b-tariffs[data-tariffs-layout='slider'] .b-tariffs__track {\n    display: flex;\n}\n\n.b-tariffs[data-tariffs-layout='slider'] .b-tariffs__item {\n    flex: 0 0 calc((100% - (var(--tariffs-columns, 3) - 1) * var(--tariffs-gap)) / var(--tariffs-columns, 3));\n    scroll-snap-align: start;\n}\n\n@container (max-width: 40em) {\n    .b-tariffs[data-tariffs-layout='slider'] .b-tariffs__item {\n        flex-basis: 100%;\n    }\n}\n\n@container (max-width: 30em) {\n    .b-tariffs__features.is-wide {\n        columns: 1;\n    }\n}\n\n.b-tariffs__nav {\n    display: flex;\n    align-items: center;\n    justify-content: flex-end;\n    gap: 0.5em;\n    margin-top: 1em;\n}\n\n.b-tariffs__count {\n    margin: 0 auto 0 0;\n    font-variant-numeric: tabular-nums;\n    letter-spacing: 0.08em;\n}\n\n.b-tariffs__arrow {\n    width: 2.5em;\n    height: 2.5em;\n    font: inherit;\n    color: inherit;\n    background: none;\n    border: 1px solid currentColor;\n    border-radius: 50%;\n    cursor: pointer;\n}\n\n.b-tariffs__arrow:disabled {\n    opacity: 0.35;\n    cursor: default;\n}\n",
+  "script": "const layout = el.dataset.tariffsLayout || 'slider'\nconst viewport = el.querySelector('.b-tariffs__viewport')\nconst track = el.querySelector('.b-tariffs__track')\nconst nav = el.querySelector('.b-tariffs__nav')\n\nif (layout === 'slider' && viewport && track && nav) {\n  const still = window.matchMedia('(prefers-reduced-motion: reduce)')\n  const items = Array.from(track.querySelectorAll('.b-tariffs__item'))\n  const arrows = Array.from(nav.querySelectorAll('[data-tariffs-step]'))\n  const current = nav.querySelector('[data-tariffs-current]')\n  const total = nav.querySelector('[data-tariffs-total]')\n  const two = (number) => String(number).padStart(2, '0')\n\n  // One card further, measured rather than assumed: the number across changes with the width.\n  const step = () => {\n    const first = items[0]\n    const gap = parseFloat(getComputedStyle(track).columnGap) || 0\n    return first ? first.getBoundingClientRect().width + gap : viewport.clientWidth\n  }\n  const atEnd = () => viewport.scrollLeft + viewport.clientWidth >= viewport.scrollWidth - 2\n  // The count is the first card in sight: \"01 / 03\" at the start, the last one that can lead at the end.\n  const first = () => {\n    const size = step()\n    return size > 0 ? Math.min(items.length - 1, Math.round(viewport.scrollLeft / size)) : 0\n  }\n\n  const update = () => {\n    // One card, or all of them in sight: nothing to turn, so neither arrows nor a count.\n    nav.hidden = items.length < 2 || viewport.scrollWidth <= viewport.clientWidth + 1\n    if (nav.hidden) return\n\n    if (current) current.textContent = two(first() + 1)\n    if (total) total.textContent = two(items.length)\n\n    for (const arrow of arrows) {\n      arrow.disabled =\n        Number(arrow.dataset.tariffsStep) < 0 ? viewport.scrollLeft <= 1 : atEnd()\n    }\n  }\n\n  for (const arrow of arrows) {\n    arrow.addEventListener('click', () => {\n      viewport.scrollBy({\n        left: (Number(arrow.dataset.tariffsStep) || 1) * step(),\n        behavior: still.matches ? 'auto' : 'smooth',\n      })\n    })\n  }\n\n  viewport.addEventListener('scroll', update, { passive: true })\n  if ('ResizeObserver' in window) new ResizeObserver(update).observe(viewport)\n  update()\n}\n",
+  "sample": {
+    "title": "Pricing",
+    "tariffs": {
+      "categories": [],
+      "limit": null,
+      "filter": false,
+      "markup": false
+    },
+    "layout": "slider",
+    "columns": 3,
+    "includes_title": "This plan includes:",
+    "featured_label": "Recommended"
+  }
+}

@@ -4,7 +4,7 @@ import type {
   BlockType,
   BlockVersionMeta,
 } from '../../../../packages/module-blocks/src/types'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { blade, defineFunction, Html, escape, type TagCall } from './blade'
 import { minutesText, sampleCard } from './recipes'
@@ -1326,6 +1326,26 @@ export const blockTypes: BlockType[] = [
     /* `content` is the file `module-team` offers, read off disk: see `offered()` below. */
   },
   {
+    id: 19,
+    slug: 'tariffs',
+    title: 'Тарифы',
+    description: 'Карточки цен из раздела «Тарифы» — слайдером или сеткой.',
+    icon: 'tag',
+    group: 'content',
+    sort: 39,
+    allow: null,
+    allowed_in: null,
+    max_per_entity: null,
+    is_enabled: true,
+    draft: null,
+    published: version(1, '2026-09-28T09:00:00+00:00', 'Offered by tariffs'),
+    usage_count: 0,
+    thumbnail: null,
+    created_at: '2026-09-28T09:00:00+00:00',
+    updated_at: '2026-09-28T09:00:00+00:00',
+    /* `content` is the file `module-tariffs` offers, read off disk: see `offered()` below. */
+  },
+  {
     id: 12,
     slug: 'recipes',
     title: 'Рецепты',
@@ -1577,6 +1597,21 @@ export function clone<T>(value: T): T {
 offered('reviews', 'php/packages/module-reviews/resources/blocks/reviews.json')
 
 offered('team', 'php/packages/module-team/resources/blocks/team.json')
+
+/* The module's own file once session T1 lands it, the stand-in beside this file until then. */
+offered(
+  'tariffs',
+  existsSync(
+    fileURLToPath(
+      new URL(
+        '../../../../php/packages/module-tariffs/resources/blocks/tariffs.json',
+        import.meta.url,
+      ),
+    ),
+  )
+    ? 'php/packages/module-tariffs/resources/blocks/tariffs.json'
+    : 'apps/playground/server/panel/tariffs/tariffs.json',
+)
 
 /* The press offers three (§4.8 of its spec). */
 for (const slug of ['press-logos', 'press-outlets', 'press-articles']) {
