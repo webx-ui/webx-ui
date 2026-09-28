@@ -65,9 +65,12 @@
                 "@webx-ui/module-blocks": "^0.10.5"
             },
             "panel": {
-                "import": "import { blocks } from '@webx-ui/module-blocks'",
+                "import": "import { blocks, regions } from '@webx-ui/module-blocks'",
                 "style": "@webx-ui/module-blocks/style.css",
-                "register": "blocks()"
+                "register": [
+                    "blocks()",
+                    "regions()"
+                ]
             }
         }
     },

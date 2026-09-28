@@ -124,7 +124,7 @@ final class InboxTools
             Tool::read(
                 'list',
                 'What has come in through one form, newest first. The same filters the panel has: a status by its '
-                .'key, unread only, who it is assigned to, a date range, and a search that looks inside every '
+                .'key, unread only, who it is assigned to, a date range, where on the site the form stood, and a search that looks inside every '
                 .'answer and not only the ones that are columns. Spam is left out unless you ask for it by status. '
                 .'Each row carries the answers the form marks as columns; inbox_get opens one in full.',
                 fn (array $arguments): array => $this->list($arguments),
@@ -135,6 +135,7 @@ final class InboxTools
                     'from' => ['type' => 'string', 'description' => 'On or after this date, YYYY-MM-DD.'],
                     'to' => ['type' => 'string', 'description' => 'On or before this date, YYYY-MM-DD.'],
                     'search' => ['type' => 'string', 'description' => 'Text in any answer, or a submission id.'],
+                    'placement' => ['type' => 'string', 'description' => 'Where on the site the form stood (footer, article …), as the placements of the answer list them; "none" for submissions whose page did not say.'],
                     'sort' => ['type' => 'string', 'description' => 'created_at · id · status · values.<field name>; a leading - reverses it. Newest first when omitted.'],
                     'page' => ['type' => 'integer'],
                     'per_page' => ['type' => 'integer', 'description' => '5 to 100; 25 when omitted.'],
@@ -392,6 +393,7 @@ final class InboxTools
             'from' => $arguments['from'] ?? null,
             'to' => $arguments['to'] ?? null,
             'search' => $arguments['search'] ?? null,
+            'placement' => $arguments['placement'] ?? null,
             'sort' => $arguments['sort'] ?? null,
         ]);
 
@@ -410,6 +412,8 @@ final class InboxTools
             'last_page' => $page->lastPage(),
             'per_page' => $page->perPage(),
             'counts' => $list->counts($request),
+            // Where on the site this form has been sent from; null is "the page did not say".
+            'placements' => $list->placements(),
             'submissions' => array_map(
                 fn (Submission $submission): array => (new SubmissionRowResource($submission, $list->columns))->resolve($request),
                 $page->items(),

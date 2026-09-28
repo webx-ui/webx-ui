@@ -27,6 +27,9 @@ use WebxUi\Routing\RouteTypes;
  */
 final class Preview
 {
+    /** The type a region's token is made for; its id is the region's name. */
+    public const REGION = 'region';
+
     public function __construct(
         private readonly RouteTypes $types,
         private readonly PreviewToken $token,
@@ -52,6 +55,26 @@ final class Preview
             'id' => $id,
             'token' => $this->token->make($type->type, $id, $adminId, $expires),
         ]);
+    }
+
+    /**
+     * A signed link to the draft of a region, drawn on a page of the site (§6 of the regions
+     * spec). The front page unless `$at` says otherwise; the panel appends `&at=` to the link it
+     * was given when the editor picks another page, so the token does not name one.
+     */
+    public function regionUrl(string $name, ?int $adminId = null, ?int $minutes = null, ?string $at = null): string
+    {
+        $expires = time() + 60 * max(1, $minutes ?? $this->minutes());
+        $parameters = [
+            'name' => $name,
+            'token' => $this->token->make(self::REGION, $name, $adminId, $expires),
+        ];
+
+        if ($at !== null && $at !== '' && $at !== '/') {
+            $parameters['at'] = $at;
+        }
+
+        return $this->url->route('webx.blocks.regions.preview', $parameters);
     }
 
     /** The grant in a request's token, if the token is genuine and for this entity. */

@@ -214,7 +214,8 @@ of components:
    [SEO](/guide/seo), the [block constructor](/guide/blocks), [pages](/guide/pages) — the first
    entity that puts the tree, the address registry, the blocks, the drafts and the SEO card
    together on something real — the [blog](/guide/blog), the [inbox](/guide/inbox) and, newest,
-   the [menus](/guide/menu), which are what turns all of those into something a visitor can reach.
+   the [menus](/guide/menu), which are what turns all of those into something a visitor can reach,
+   and the [layout regions](/guide/layout-regions) — the header and the footer made of blocks.
    Each of them is also a set of MCP tools, so an agent reaches the panel through the same doors
    an editor does.
 3. An in-admin component editor: fields defined as JSON plus a Blade template and CSS, generated

@@ -24,6 +24,7 @@ use WebxUi\Auth\Models\CmsUser;
  * @property string $hash
  * @property Carbon|null $read_at
  * @property string $source
+ * @property string|null $placement
  * @property array<string, mixed> $meta
  * @property Carbon|null $notified_at
  * @property string|null $notify_error

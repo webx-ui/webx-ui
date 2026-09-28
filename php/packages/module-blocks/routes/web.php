@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use WebxUi\Blocks\Http\Controllers\BundleController;
 use WebxUi\Blocks\Http\Controllers\PreviewController;
+use WebxUi\Blocks\Http\Controllers\RegionPreviewController;
 use WebxUi\Blocks\Http\Controllers\StageController;
 
 $prefix = trim((string) config('webx-blocks.bundles.path', 'blocks'), '/');
@@ -16,6 +17,13 @@ $preview = trim((string) config('webx-blocks.preview.path', '_preview'), '/');
 Route::get("{$preview}/block-stage", StageController::class)
     ->middleware([...(array) config('webx-blocks.preview.middleware', ['web']), 'cms.auth', 'cms.can:blocks.view,blocks.manage'])
     ->name('webx.blocks.stage');
+
+// The draft of a region, drawn on the page at ?at= (the front page by default). Under a token and
+// in the same middleware as the preview of an entity: the page it draws on is the site's own.
+Route::get("{$preview}/region/{name}", RegionPreviewController::class)
+    ->where('name', '[a-z][a-z0-9-]*')
+    ->middleware((array) config('webx-blocks.preview.middleware', ['web']))
+    ->name('webx.blocks.regions.preview');
 
 // The draft of an entity, under a signed token. In the `web` group on purpose: the handler
 // behind it is the one that answers the real address, and it expects the same session,

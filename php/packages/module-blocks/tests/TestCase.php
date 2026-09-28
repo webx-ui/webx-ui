@@ -175,7 +175,7 @@ abstract class TestCase extends Orchestra
 
             $content['schema'] = array_map(
                 static fn (string $id): array => ['id' => $id, 'type' => 'wx-input'],
-                array_values(array_diff(array_unique($found[1]), ['block', 'entity', '__env'])),
+                array_values(array_diff(array_unique($found[1]), ['block', 'entity', 'region', 'attributes', '__env'])),
             );
         }
 

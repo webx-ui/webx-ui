@@ -106,6 +106,21 @@ A page may carry several forms. Each prints a hidden `webx_form`, and that is ho
 knows that the errors — or the thank-you — in the session are its own. Keep it in a view you
 rewrite, or two forms will both light up red over one refusal.
 
+### Where the form stands
+
+```blade
+<x-webx-inbox::form slug="subscribe" placement="footer" />
+```
+
+One form of subscription in the footer and in every article is one form, and `placement` is
+what tells the two apart. The `<form>` gets `wx-form--footer` beside `wx-form`, so the site
+styles each by CSS alone; the views of the form and of every field get `$placement`; and a
+hidden `webx_placement` makes the submission remember it — the panel shows "Placement: footer"
+in the card and offers a filter once a form has come in from more than one place. The value is
+a name (`[a-z][a-z0-9-]*`, up to 32 characters); anything else is dropped with a warning in the
+log rather than an exception, because the form on the page matters more than a typo in one of
+its attributes. `none` is reserved: it is what the filter says for "the page did not say".
+
 ### Making it yours
 
 ```bash

@@ -43,7 +43,9 @@ final class BlockInput
             'allow' => ['nullable', 'array'],
             'allow.*' => $slug,
             'allowed_in' => ['nullable', 'array'],
-            'allowed_in.*' => $slug,
+            // A type's slug, `root` for the page itself — or `region:header`, the top of a region
+            // of the layout (§3.2 of the regions spec).
+            'allowed_in.*' => ['string', 'max:72', 'regex:/^(region:)?[a-z][a-z0-9-]*$/'],
             'max_per_entity' => ['nullable', 'integer', 'min:1', 'max:32767'],
             'is_enabled' => ['nullable', 'boolean'],
             'comment' => ['nullable', 'string', 'max:255'],

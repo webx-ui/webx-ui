@@ -8,6 +8,8 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use WebxUi\Blocks\Content;
+use WebxUi\Blocks\Models\Region;
+use WebxUi\Blocks\Regions;
 
 /**
  * Where a block type stands.
@@ -147,6 +149,11 @@ final class Usage
      */
     private function title(Model $entity): ?string
     {
+        // A region has no words of its own; its name in the list is the declared one.
+        if ($entity instanceof Region) {
+            return (string) __('webx-blocks::regions.usage', ['title' => $this->container->make(Regions::class)->title($entity->name)]);
+        }
+
         $title = $entity->getAttribute('title');
 
         if (is_string($title) && $title !== '') {
@@ -188,8 +195,23 @@ final class Usage
     private function entities(): iterable
     {
         $classes = $this->config->get('webx-blocks.entities', []);
+        $classes = is_array($classes) ? $classes : [];
 
-        foreach (is_array($classes) ? $classes : [] as $class) {
+        // The regions always, whether or not the site listed them: they are this package's own
+        // entity, and a type standing in the header is checked on the header's values before it
+        // is published (§7.4 of the regions spec). Only the declared ones — a row whose name left
+        // the config prints nowhere.
+        if (! in_array(Region::class, $classes, true)) {
+            $declared = array_keys($this->container->make(Regions::class)->declared());
+
+            if ($declared !== []) {
+                foreach (Region::query()->whereIn('name', $declared)->cursor() as $region) {
+                    yield $region;
+                }
+            }
+        }
+
+        foreach ($classes as $class) {
             if (! is_string($class) || ! class_exists($class)) {
                 continue;
             }

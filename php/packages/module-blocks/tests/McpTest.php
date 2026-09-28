@@ -37,7 +37,7 @@ final class McpTest extends TestCase
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['blocks_list', 'blocks_get', 'blocks_create', 'blocks_update', 'blocks_publish', 'blocks_render', 'blocks_get_content', 'blocks_set_content', 'blocks_edit_content', 'blocks_preview_url'],
+            ['blocks_list', 'blocks_get', 'blocks_create', 'blocks_update', 'blocks_publish', 'blocks_render', 'blocks_get_content', 'blocks_set_content', 'blocks_edit_content', 'blocks_preview_url', 'blocks_regions', 'blocks_region_publish', 'blocks_region_unpublish'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('blocks')),
         );
 

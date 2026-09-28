@@ -193,6 +193,8 @@ export interface SubmissionRow {
   assignee: InboxAdmin | null
   is_read: boolean
   source: string
+  /** Where on the site the form stood (`footer`, `article`), or null when the page did not say. */
+  placement: string | null
   files_count: number
   created_at: string | null
   /* A table row, so the index signature `WxTable` asks of what it draws. */
@@ -206,6 +208,12 @@ export interface SubmissionRow {
 export interface SubmissionsPage extends InboxPage<SubmissionRow> {
   columns: SubmissionColumn[]
   counts: SubmissionCounts
+  /**
+   * Every place on the site the form has been sent from, `null` for the page that did not say —
+   * over the whole form rather than the filter, so the placement filter can always be undone.
+   * More than one is what makes that filter worth showing.
+   */
+  placements: (string | null)[]
 }
 
 /** One answer, with the question as it was asked at the time (§2.2). */
@@ -262,6 +270,8 @@ export interface InboxSubmission {
   events: SubmissionEvent[]
   is_read: boolean
   source: string
+  /** Where on the site the form stood (`footer`, `article`), or null when the page did not say. */
+  placement: string | null
   notified_at: string | null
   notify_error: string | null
   /** The neighbours in the list this was opened from, so the arrows walk the same pile. */
@@ -277,6 +287,8 @@ export interface SubmissionQuery {
   search?: string
   /** An administrator's id, or `none` — the pile nobody has picked up. */
   assignee?: string | null
+  /** A placement, or `none` — the submissions whose page did not say. */
+  placement?: string | null
   sort?: string | null
   page?: number
   per_page?: number

@@ -24,6 +24,9 @@
         'describedBy' => $help === '' ? null : $id.'-help',
         'labelledBy' => $grouped && $label !== '' ? $id.'-label' : null,
         'accept' => $type === 'file' ? '.'.implode(',.', $files->extensions($field)) : null,
+        // Where the form stands (`footer`, `article`), or null — for a control that looks
+        // different in a narrow footer than in the body of a page.
+        'placement' => $placement ?? null,
     ];
 @endphp
 

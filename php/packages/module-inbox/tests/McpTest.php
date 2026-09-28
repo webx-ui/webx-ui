@@ -260,6 +260,25 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function the_agent_sees_where_a_submission_was_sent_from_and_filters_by_it(): void
+    {
+        $form = $this->form();
+        $this->filled($form, ['name' => 'Ada'], ['placement' => 'footer']);
+        $grace = $this->filled($form, ['name' => 'Grace'], ['placement' => 'article']);
+
+        $all = $this->content($this->agent('list', ['form' => 'contact'])->assertOk());
+        $this->assertSame(['article', 'footer'], $all['placements']);
+        $this->assertSame(['article', 'footer'], array_column($all['submissions'], 'placement'));
+
+        $footer = $this->content($this->agent('list', ['form' => 'contact', 'placement' => 'footer'])->assertOk());
+        $this->assertSame(1, $footer['total']);
+        $this->assertSame('Ada', $footer['submissions'][0]['values']['name']);
+
+        $one = $this->content($this->agent('get', ['submission' => (int) $grace->getKey()])->assertOk());
+        $this->assertSame('article', $one['placement']);
+    }
+
+    #[Test]
     public function one_submission_opens_with_its_answers_notes_and_log(): void
     {
         $form = $this->form();

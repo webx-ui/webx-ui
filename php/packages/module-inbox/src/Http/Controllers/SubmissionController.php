@@ -63,6 +63,9 @@ final class SubmissionController
             // without them the browser would have to fetch the form to know what it is drawing.
             'columns' => array_map($this->column(...), $list->columns),
             'counts' => $list->counts($request),
+            // Where on the site this form has been sent from, for the placement filter —
+            // carried by the list so that the filter costs no second request.
+            'placements' => $list->placements(),
         ]);
     }
 

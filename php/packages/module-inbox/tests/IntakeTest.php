@@ -324,6 +324,26 @@ final class IntakeTest extends TestCase
     }
 
     #[Test]
+    public function it_remembers_where_on_the_site_the_form_stood(): void
+    {
+        $this->form();
+
+        $this->postJson($this->intake(), [
+            'fields' => ['name' => 'Ada', 'email' => 'ada@example.test'],
+            'webx_placement' => 'footer',
+        ])->assertOk();
+
+        // What arrives is the browser's to send, so anything that is not a name is nothing —
+        // and the submission still goes through.
+        $this->postJson($this->intake(), [
+            'fields' => ['name' => 'Grace', 'email' => 'grace@example.test'],
+            'webx_placement' => '<script>',
+        ])->assertOk();
+
+        $this->assertSame(['footer', null], Submission::query()->orderBy('id')->pluck('placement')->all());
+    }
+
+    #[Test]
     public function it_drops_the_last_octet_of_the_address_when_told_to(): void
     {
         config(['webx-inbox.anonymise_ip' => true]);

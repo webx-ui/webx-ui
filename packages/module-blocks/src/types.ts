@@ -213,3 +213,60 @@ export interface BlockNode {
    */
   hidden?: boolean
 }
+
+/**
+ * One layout region as the section lists it: declared by the site's config, and a row in the
+ * database only once somebody saved it — `id` is `null` until then, like a declared menu.
+ */
+export interface RegionRow {
+  name: string
+  id: number | null
+  title: string
+  description: string | null
+  /** What the config lets stand at the top level; `null` — any block. */
+  allow: string[] | null
+  /** How many blocks the top level may hold; `null` — no limit. */
+  max: number | null
+  /** On the site: published, and visitors see the blocks rather than the code's view. */
+  published: boolean
+  published_at: string | null
+  /** Edits waiting that the site does not have yet. */
+  has_draft: boolean
+  /** Blocks in the tree being edited, top level only. */
+  count: number
+  /** The view the site prints while the region is empty, or `null` when the tag names none. */
+  fallback: string | null
+  updated_at: string | null
+}
+
+/** One region with what is being edited in it. */
+export interface RegionDetail extends RegionRow {
+  /** The draft when there is one, else what is published. */
+  blocks: BlockNode[]
+  revision: string
+  /** Signed; the editor appends `&at=<path>` for the page to draw the region on. */
+  preview_url: string
+  /** Whether "Move the markup into a block" is offered: the region is empty and the view found. */
+  can_adopt: boolean
+}
+
+/** A save refused because somebody else wrote first: the region as it now is. */
+export interface RegionConflict {
+  message: string
+  revision: string
+}
+
+export interface RegionVersion {
+  number: number
+  created_at: string | null
+  author: { id: number; name: string } | null
+  source: BlockSource
+  comment: string | null
+  is_pinned: boolean
+}
+
+/** What "Move the markup into a block" made: the region with one block, and its new type. */
+export interface RegionAdopted {
+  region: RegionDetail
+  block: { id: number; slug: string }
+}
