@@ -97,11 +97,11 @@ REPOSITORY="$(
     # this checkout, and the whole run would prove nothing about the change under test.
     $COMPOSER_BIN config repositories.packagist.org \
         '{"type":"composer","url":"https://repo.packagist.org","exclude":["webx-ui/*"]}'
-    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' webx-ui/module-pages:'*' webx-ui/module-inbox:'*' webx-ui/module-blog:'*' webx-ui/module-services:'*' webx-ui/module-faq:'*' webx-ui/module-reviews:'*' webx-ui/module-recipes:'*' webx-ui/module-events:'*' webx-ui/module-press:'*' webx-ui/module-team:'*' --no-interaction --no-progress --quiet
+    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' webx-ui/module-pages:'*' webx-ui/module-inbox:'*' webx-ui/module-blog:'*' webx-ui/module-services:'*' webx-ui/module-faq:'*' webx-ui/module-reviews:'*' webx-ui/module-recipes:'*' webx-ui/module-events:'*' webx-ui/module-press:'*' webx-ui/module-team:'*' webx-ui/module-banners:'*' --no-interaction --no-progress --quiet
 )
 
 step "The packages came from the checkout, not from Packagist"
-for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages module-inbox module-blog module-services module-faq module-reviews module-recipes module-events module-press module-team module-media nested-set routing; do
+for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages module-inbox module-blog module-services module-faq module-reviews module-recipes module-events module-press module-team module-banners module-media nested-set routing; do
     [ -L "$APP/vendor/webx-ui/$package" ] || [ -f "$APP/vendor/webx-ui/$package/.git" ] \
         || fail "vendor/webx-ui/$package is a copy, so a released version was installed instead of this checkout"
     note "webx-ui/$package is linked to the checkout"
@@ -132,6 +132,7 @@ step "Providers are found by discovery, not by hand"
         "webx-ui/module-events" => "WebxUi\\Events\\EventsServiceProvider",
         "webx-ui/module-press" => "WebxUi\\Press\\PressServiceProvider",
         "webx-ui/module-team" => "WebxUi\\Team\\TeamServiceProvider",
+        "webx-ui/module-banners" => "WebxUi\\Banners\\BannersServiceProvider",
     ];
     foreach ($expected as $package => $provider) {
         if (! in_array($provider, $manifest[$package]["providers"] ?? [], true)) {

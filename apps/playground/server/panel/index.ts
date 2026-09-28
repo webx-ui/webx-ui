@@ -227,6 +227,21 @@ import {
   resolveTeam,
   writeMember,
 } from './team'
+import {
+  bannerDetail,
+  bannerRow,
+  createPlace,
+  deletePlace,
+  findBanner,
+  known as knownPlace,
+  listBanners,
+  listPlaces,
+  Refusal,
+  renamePlace,
+  reorderBanners,
+  variantOptions,
+  writeBanner,
+} from './banners'
 
 /**
  * The panel's backend, in memory.
@@ -469,11 +484,21 @@ on('GET', '/manifest', ({ locale }) => ({
          over itself. */
       {
         id: 'press',
-        title: line(locale, 'webx-press', 'module.title'),
+        title: line(locale, 'webx-press', 'module.press'),
         icon: 'newspaper',
         order: 650,
         group: null,
         permissions: ['press.view', 'press.manage'],
+        meta: {},
+      },
+      /* One entry and no group (§5.4 of the banners spec): after the team and the press. */
+      {
+        id: 'banners',
+        title: line(locale, 'webx-banners', 'module.banners'),
+        icon: 'image',
+        order: 660,
+        group: null,
+        permissions: ['banners.view', 'banners.manage'],
         meta: {},
       },
       {
@@ -604,6 +629,9 @@ on('GET', '/screens/([\\w.-]+)', ({ params, locale }) => {
 
   // The networks are the site's config, patched onto the select inside the repeater (§5.4).
   if (params[0] === 'team.form') withNamedOptions(tree, 'network', networkOptions())
+
+  // The looks of a button, from the config onto the select inside the repeater (§5.3).
+  if (params[0] === 'banners.form') withNamedOptions(tree, 'variant', variantOptions())
 
   return { data: { screen: params[0], root: tree } }
 })
@@ -2168,6 +2196,109 @@ function memberRecord(id: string) {
   const record = findMember(Number(id))
 
   if (record === null || record.deleted_at !== null) throw new HttpFailure(404, 'No such person.')
+
+  return record
+}
+
+/* ---------------------------------------------------------------------------- banners ----- */
+
+/*
+ * Banners (§5.6 of their spec): places named by key — a declared one before it has a row — and
+ * the banners of one of them in their order. What `banners.ts` refuses it throws as a `Refusal`,
+ * and this turns it into the server's own failure.
+ */
+function refusing<T>(run: () => T): T {
+  try {
+    return run()
+  } catch (error) {
+    if (error instanceof Refusal) {
+      throw new HttpFailure(error.status, error.message, undefined, error.errors, error.extra)
+    }
+
+    throw error
+  }
+}
+
+/* A declared place's name is a translation key, read in the panel's language: the server's `__()`. */
+const placeName = (locale: string) => (key: string) => line(locale, 'webx-banners', key)
+
+on('GET', '/banners/places', ({ locale }) => ({ data: listPlaces(locale, placeName(locale)) }))
+
+on('POST', '/banners/places', ({ body, locale }) =>
+  refusing(() => ({ data: createPlace(body, locale, placeName(locale)) })),
+)
+
+on('PUT', '/banners/places/([\\w-]+)', ({ params, body, locale }) =>
+  refusing(() => ({ data: renamePlace(params[0], body, locale, placeName(locale)) })),
+)
+
+on('DELETE', '/banners/places/([\\w-]+)', ({ params }) =>
+  refusing(() => {
+    deletePlace(params[0])
+
+    return { data: null }
+  }),
+)
+
+on('GET', '/banners/places/([\\w-]+)/banners', ({ params, query, locale }) =>
+  refusing(() => ({ data: listBanners(params[0], query.get('trashed') === '1', locale) })),
+)
+
+on('POST', '/banners/places/([\\w-]+)/banners', ({ params, body, locale }) =>
+  refusing(() => {
+    const key = params[0]
+
+    if (!knownPlace(key)) throw new Refusal(404, 'No such place.')
+
+    const written = writeBanner(null, (body.values ?? {}) as Record<string, unknown>, key)
+
+    return { data: bannerDetail(written, locale) }
+  }),
+)
+
+on('POST', '/banners/places/([\\w-]+)/reorder', ({ params, body }) =>
+  refusing(() => {
+    reorderBanners(params[0], body.ids)
+
+    return { data: null }
+  }),
+)
+
+on('GET', '/banners/(\\d+)', ({ params, locale }) => ({
+  data: bannerDetail(bannerRecord(params[0]), locale),
+}))
+
+on('PUT', '/banners/(\\d+)', ({ params, body, locale }) =>
+  refusing(() => {
+    const record = bannerRecord(params[0])
+    const place = typeof body.place === 'string' ? body.place : null
+
+    writeBanner(record, (body.values ?? {}) as Record<string, unknown>, place)
+
+    return { data: bannerDetail(record, locale) }
+  }),
+)
+
+on('DELETE', '/banners/(\\d+)', ({ params }) => {
+  bannerRecord(params[0]).deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+on('POST', '/banners/(\\d+)/restore', ({ params, locale }) => {
+  const record = findBanner(Number(params[0]))
+
+  if (record === null || record.deleted_at === null) throw new HttpFailure(404, 'Not found.')
+
+  record.deleted_at = null
+
+  return { data: bannerRow(record, locale) }
+})
+
+function bannerRecord(id: string) {
+  const record = findBanner(Number(id))
+
+  if (record === null || record.deleted_at !== null) throw new HttpFailure(404, 'No such banner.')
 
   return record
 }

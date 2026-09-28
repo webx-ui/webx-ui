@@ -101,6 +101,11 @@ final class Catalogue
             'label' => 'Team — the people of the organisation with their photos and social links, shown on any page as a block',
             'default' => false,
         ],
+        'banners' => [
+            'package' => 'webx-ui/module-banners',
+            'label' => 'Banners — pictures with words and buttons in named places, printed by the site\'s templates',
+            'default' => false,
+        ],
         'menu' => [
             'package' => 'webx-ui/module-menu',
             'label' => 'Menus — the header and the footer, and what each entry points at',

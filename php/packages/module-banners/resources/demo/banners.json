@@ -1,0 +1,78 @@
+{
+  "places": {
+    "hero": [
+      {
+        "key": "spring",
+        "image": "demo-wide.jpg",
+        "image_mobile": "demo-square.jpg",
+        "title": { "en": "Spring is here", "ru": "Пришла весна" },
+        "text": {
+          "en": "New hours, new faces, the same care.\nCome and see what changed.",
+          "ru": "Новые часы работы, новые лица, прежняя забота.\nПриходите посмотреть, что изменилось."
+        },
+        "buttons": [
+          {
+            "label": { "en": "Read more", "ru": "Подробнее" },
+            "link": "page",
+            "variant": "primary"
+          },
+          {
+            "label": { "en": "Get in touch", "ru": "Связаться" },
+            "link": "/contact",
+            "variant": "secondary"
+          }
+        ],
+        "enabled": true
+      },
+      {
+        "key": "studio",
+        "image": "demo-wide.jpg",
+        "image_mobile": "demo-square.jpg",
+        "video": true,
+        "title": { "en": "Inside the studio", "ru": "Внутри студии" },
+        "text": {
+          "en": "A minute of how the work is done.",
+          "ru": "Минута о том, как делается работа."
+        },
+        "buttons": [
+          {
+            "label": { "en": "Book a visit", "ru": "Записаться" },
+            "link": "/booking",
+            "variant": "primary"
+          }
+        ],
+        "enabled": true
+      },
+      {
+        "key": "support",
+        "image": "demo-wide.jpg",
+        "title": { "en": "Support in English" },
+        "text": { "en": "Shown on the English pages only: it has no Russian words." },
+        "buttons": [{ "label": { "en": "Write to us" }, "link": "/contact", "variant": "link" }],
+        "enabled": true
+      },
+      {
+        "key": "workshop",
+        "image": "demo-wide.jpg",
+        "title": { "en": "Autumn workshop", "ru": "Осенний воркшоп" },
+        "text": {
+          "en": "Switched off: in the panel, not on the site.",
+          "ru": "Выключен: есть в панели, нет на сайте."
+        },
+        "enabled": false
+      }
+    ],
+    "promo": [
+      {
+        "key": "promo",
+        "image": "demo-wide.jpg",
+        "image_mobile": "demo-square.jpg",
+        "title": { "en": "Ten percent off in May", "ru": "Скидка десять процентов в мае" },
+        "buttons": [
+          { "label": { "en": "Details", "ru": "Условия" }, "link": "page", "variant": "primary" }
+        ],
+        "enabled": true
+      }
+    ]
+  }
+}

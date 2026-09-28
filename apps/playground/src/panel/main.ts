@@ -1,5 +1,6 @@
 import { createAdmin, type Admin, type AdminPlugin } from '@webx-ui/module-admin'
 import { admins, connect } from '@webx-ui/module-auth'
+import { banners } from '@webx-ui/module-banners'
 import { blocks } from '@webx-ui/module-blocks'
 import { blog } from '@webx-ui/module-blog'
 import { events } from '@webx-ui/module-events'
@@ -58,6 +59,7 @@ const admin = createAdmin({
     team(),
     ...recipes(),
     press(),
+    banners(),
     ...events(),
     menu(),
     media(),
