@@ -15,7 +15,8 @@ Then questions, with the answers already worked out from the directory you are s
  Database .................. mysql / example · create it? yes
  Languages ................. en
  Modules ................... ◼ pages   ◼ media   ◼ seo    ◼ settings
-                             ◼ blocks  ◻ blog    ◼ inbox  ◼ admins
+                             ◼ blocks  ◼ inbox   ◼ menu   ◼ admins
+                             ◻ blog    ◻ services  … and nine more content modules
  Demo content .............. yes
  Administrator ............. you@example.com
 ```
@@ -59,7 +60,7 @@ cd example.local
 cp .env.example .env && php artisan key:generate
 
 php artisan webx:setup --no-interaction \
-  --modules=pages,media,seo,settings,blocks,inbox,admins \
+  --modules=pages,media,seo,settings,blocks,inbox,menu,admins \
   --db=example --locales=en,uk --demo
 ```
 
@@ -405,4 +406,8 @@ When the site opens, remove the two lines or set `WEBX_SITE_GATE=false`.
 - [Extending](./extending.md) — publishing a module's views, replacing its services, the
   registries to add your own things to.
 - [Addresses](./routing.md) — the registry every public URL comes from.
-- [Pages](./pages.md), [Blog](./blog.md), [Blocks](./blocks.md) — what the modules actually do.
+- What the modules actually do: [Pages](./pages.md), [Blocks](./blocks.md),
+  [Menus](./menu.md), [Inbox](./inbox.md), [SEO](./seo.md), and the content modules —
+  [Blog](./blog.md), [Services](./services.md), [FAQ](./faq.md), [Reviews](./reviews.md),
+  [Team](./team.md), [Banners](./banners.md), [Tariffs](./tariffs.md), [Recipes](./recipes.md),
+  [Events](./events.md), [Press](./press.md), [Vacancies](./vacancies.md).

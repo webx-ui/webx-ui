@@ -193,8 +193,14 @@ dependent tasks come after that, once the first pass has been lived with.
 
 MediaLibrary / Gallery ✅ — the library itself, and the fields that reach into it:
 `wx-media` for one picture, `wx-gallery` for a grid of them in an order somebody dragged them
-into, `wx-file` and `wx-files` for documents. See [Media fields](/guide/media). Markdown,
-LinkPicker and BlockPicker are still open.
+into, `wx-file` and `wx-files` for documents. See [Media fields](/guide/media).
+
+LinkPicker ✅ — `WxLinkPicker` and the `wx-link` field in the panel: pick a page, an article or
+any other entity that has an address, or type your own. It came with the [menus](/guide/menu).
+
+BlockPicker ✅ — choosing a block type to insert, in the [block constructor](/guide/blocks).
+
+Markdown ⬜ — still open.
 
 ## Not components
 
@@ -208,15 +214,26 @@ of components:
 
 ## Beyond components
 
-1. `@webx-ui/adapter-laravel` — paginator, 422 validation errors, sort/filter query parameters.
-2. CMS building blocks on top of `core`: the panel's sections, each a pair of packages — the
-   [file manager](/guide/media), [administrators](/guide/admins), [settings](/guide/settings),
-   [SEO](/guide/seo), the [block constructor](/guide/blocks), [pages](/guide/pages) — the first
-   entity that puts the tree, the address registry, the blocks, the drafts and the SEO card
-   together on something real — the [blog](/guide/blog), the [inbox](/guide/inbox) and, newest,
-   the [menus](/guide/menu), which are what turns all of those into something a visitor can reach,
-   and the [layout regions](/guide/layout-regions) — the header and the footer made of blocks.
-   Each of them is also a set of MCP tools, so an agent reaches the panel through the same doors
-   an editor does.
-3. An in-admin component editor: fields defined as JSON plus a Blade template and CSS, generated
-   into files by Laravel.
+1. `@webx-ui/adapter-laravel` ⬜ — paginator, 422 validation errors, sort/filter query
+   parameters. Not started.
+2. The panel ✅ — sections on top of `core`, each a pair of packages (npm `@webx-ui/module-*` and
+   composer `webx-ui/module-*`), and each also a set of MCP tools, so an
+   [agent](/guide/agents) reaches the panel through the same doors an editor does:
+   - the core of a site: the [file manager](/guide/media), [administrators](/guide/admins),
+     [settings](/guide/settings), [SEO](/guide/seo), the [block constructor](/guide/blocks) with
+     its [layout regions](/guide/layout-regions) — the header and the footer made of blocks,
+     [pages](/guide/pages), [menus](/guide/menu), the [inbox](/guide/inbox) and
+     [database backups](/guide/backups);
+   - content: the [blog](/guide/blog), [services](/guide/services), [FAQ](/guide/faq),
+     [reviews](/guide/reviews), [team](/guide/team), [banners](/guide/banners),
+     [tariffs](/guide/tariffs), [recipes](/guide/recipes), [events](/guide/events),
+     [press](/guide/press) and [vacancies](/guide/vacancies);
+   - the libraries underneath, which live without the panel too: `routing` (the
+     [address registry](/guide/routing)), `nested-set`, `localization` and `mcp`.
+3. A new site in one command ✅ — `composer create-project webx-ui/site`, see
+   [A new site](/guide/new-site).
+4. Block types edited in the panel ✅ — fields, a Blade template, CSS and a script, kept in the
+   database rather than generated into files; see [Blocks](/guide/blocks).
+5. Many sites from one install ⬜ — one panel, many domains, a design per domain. Designed, not
+   started.
+6. A catalogue for shops ⬜ — a core plus satellite modules. Being designed.

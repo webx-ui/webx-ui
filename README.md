@@ -14,13 +14,25 @@
 
 ## Packages
 
-| Package                                | Version                                                                                                   | Description                                                        |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| [`@webx-ui/tokens`](./packages/tokens) | [![npm](https://img.shields.io/npm/v/@webx-ui/tokens.svg)](https://www.npmjs.com/package/@webx-ui/tokens) | Design tokens as `--wx-*` CSS variables, light and dark            |
-| [`@webx-ui/core`](./packages/core)     | [![npm](https://img.shields.io/npm/v/@webx-ui/core.svg)](https://www.npmjs.com/package/@webx-ui/core)     | Vue 3 components styled entirely through those tokens              |
-| [`@webx-ui/schema`](./packages/schema) | [![npm](https://img.shields.io/npm/v/@webx-ui/schema.svg)](https://www.npmjs.com/package/@webx-ui/schema) | Contracts for rendering admin screens from JSON (work in progress) |
+| Package                                | Version                                                                                                   | Description                                             |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| [`@webx-ui/tokens`](./packages/tokens) | [![npm](https://img.shields.io/npm/v/@webx-ui/tokens.svg)](https://www.npmjs.com/package/@webx-ui/tokens) | Design tokens as `--wx-*` CSS variables, light and dark |
+| [`@webx-ui/core`](./packages/core)     | [![npm](https://img.shields.io/npm/v/@webx-ui/core.svg)](https://www.npmjs.com/package/@webx-ui/core)     | Vue 3 components styled entirely through those tokens   |
+| [`@webx-ui/schema`](./packages/schema) | [![npm](https://img.shields.io/npm/v/@webx-ui/schema.svg)](https://www.npmjs.com/package/@webx-ui/schema) | Admin screens described as JSON, and their renderer     |
+
+The admin panel built on them is a set of sections — pages, media, blocks, menus, SEO, the blog and
+other content modules — each a pair of packages: `@webx-ui/module-*` on npm and `webx-ui/module-*`
+(the Laravel half) on Packagist. The list is on the [roadmap](https://webx-ui.github.io/webx-ui/guide/roadmap).
 
 ## Quick start
+
+A whole site with the panel:
+
+```bash
+composer create-project webx-ui/site example.local
+```
+
+See [A new site](https://webx-ui.github.io/webx-ui/guide/new-site). Just the components:
 
 ```bash
 pnpm add @webx-ui/core @webx-ui/tokens
@@ -63,6 +75,9 @@ Full guide: **https://webx-ui.github.io/webx-ui/**
 packages/tokens     @webx-ui/tokens
 packages/core       @webx-ui/core
 packages/schema     @webx-ui/schema
+packages/module-*   @webx-ui/module-* — the panel's sections, npm half
+php/packages/*      webx-ui/* — the composer half, mirrored to Packagist
+php/site            webx-ui/site — the skeleton of a new site
 apps/docs           VitePress documentation site (not published)
 apps/playground     Vite sandbox for local development (not published)
 ```

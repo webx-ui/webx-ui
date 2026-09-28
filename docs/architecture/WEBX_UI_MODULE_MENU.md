@@ -1,6 +1,6 @@
 # `webx-ui/module-menu` — спецификация и план реализации
 
-Статус: спроектирован 22.09.2026; сессии 1, A, B и C написаны, остаётся D — выпуск и оба демо.
+Статус: спроектирован и выпущен 22.09.2026 в v0.30.0 (`@webx-ui/module-menu@0.1.0`), итог — §15.
 Пакеты — `webx-ui/module-menu` (composer) и `@webx-ui/module-menu` (npm).
 
 Меню сайта: именованные меню, дерево пунктов, три вида цели. Адреса — реестр
@@ -176,7 +176,7 @@ interface LinkSource
 `LinkSources` — синглтон с `register()`, `all()`, `find(string $type)`, по образцу `SeoSources`.
 Регистрация — в `boot()` провайдера модуля.
 
-**Первые источники (в той же сессии):** `pages` (`module-pages`, подсказка — путь в дереве),
+**Первые источники (тем же релизом):** `pages` (`module-pages`, подсказка — путь в дереве),
 `article`, `rubric`, `tag` (`module-blog`). Всё, у чего есть `HasUrl`, может добавиться позже
 своим пакетом.
 
@@ -548,139 +548,23 @@ MCP-инструменты, включая `dry_run` и отказ по скоу
 `<x-header>` на `menu('header')`, если пакет установлен, и оставляет прежние десять строк, если
 нет.
 
-## 15. Пошаговый план
+## 15. Выпуск
 
-| Сессия | Что                                                                          | Ветка               |
-| ------ | ---------------------------------------------------------------------------- | ------------------- |
-| **1**  | ядро: `LinkSources`, `Link`, эндпоинты, `WxLinkPicker`, `wx-link`, `SiteUrl` | `feat/link-sources` |
-| **A**  | пакет: схема, модели, конфиг, рендер, хелпер, компонент, кеш                 | `feat/module-menu`  |
-| **B**  | API панели и экраны: список меню, дерево, форма пункта                       | та же               |
-| **C**  | MCP, гайд `apps/docs/guide/menu.md`, демо                                    | та же               |
-| **D**  | выпуск, оба демо, шапка и подвал `omnivitality`                              | —                   |
+Выпущен 22.09.2026 одним PR (#231): composer-половина в `v0.30.0`, `@webx-ui/module-menu@0.1.0`
+в npm; стоит на обоих демо. Тем же релизом уехал контракт ссылок из §3 — `LinkSource`,
+`LinkCandidate`, `LinkSources`, `WxLinkPicker`, тип поля `wx-link` в `module-admin` и
+`WebxUi\Routing\SiteUrl` (языковой префикс переехал туда из `HasUrl`); первые источники —
+страницы, статьи, рубрики и теги блога, у всех `available` = опубликовано и адрес есть.
 
-Промпты ниже самодостаточны: в каждом сказано, что прочитать, что сделать и чего не делать.
+Что выпуск добавил к спеке:
 
-### 1 — контракт ссылок в ядре
+- **Пакет вписан в `Setup\Catalogue` и в `extra.webx.{npm,panel}` своего composer.json.** Без
+  первого `webx:setup` модуль не предлагает, без второго `webx:panel --sync` не подключает
+  npm-половину. Общее правило про четыре места регистрации — CLAUDE.md §4.
+- **Скелет `webx-ui/site` печатает шапку через `menu('header')`** и падает обратно на дерево
+  страниц, если меню нет, — то, что просил §14.
 
-```
-Этап 1 из §15 WEBX_UI_MODULE_MENU.md: контракт источников ссылок в module-admin.
-
-Прочитать: §§3,15 спеки; php/packages/module-seo/src/Rendering/{SeoSource.php,SeoSources.php} и
-php/packages/routing/src/{RouteTypes.php,RouteType.php,HasUrl.php} — образец реестра и то, откуда
-берётся языковой префикс; php/packages/module-admin/src/Screens/{FieldType.php,FieldTypes.php} и
-Screens/Types/RichTextType.php — образец типа поля; php/packages/module-media/src/Screens/
-{MediaFieldType.php,MediaValues.php} — как тип поля хранит структуру, а не строку;
-packages/module-pages/src/PagePicker.vue — образец пикера на WxTreeSelect.
-
-Сделать:
-- routing: WebxUi\Routing\SiteUrl (to(), prefix()), HasUrl::localePrefix() переезжает туда,
-  поведение прежнее, тест на обе стратегии webx-localization;
-- module-admin: контракт LinkSource (в том числе model() — по нему подписывается кеш меню),
-  LinkCandidate, LinkSources (синглтон), значение Link, контроллеры
-  /api/cms/links/{sources,search,resolve,routes}, права в фильтре разделов;
-- module-admin: тип поля wx-link на обеих половинах (php LinkType с валидацией и store(),
-  LinkField.vue) и компонент WxLinkPicker в @webx-ui/module-admin;
-- источники: PageLinkSource в module-pages (подсказка — путь в дереве), Article/Rubric/Tag в
-  module-blog; у всех четырёх available = опубликовано и адрес есть;
-- тесты §13 про LinkSources и SiteUrl; changeset на @webx-ui/module-admin и @webx-ui/php.
-
-Не делать: ничего про меню. Пакета module-menu в этой сессии не существует.
-
-Проверить живьём: wx-link в конструкторе блоков на webx-cms.local — сборка module-admin, потом
-npx vite build в самом сайте.
-```
-
-### A — пакет и публичная половина
-
-```
-Сессия A из §15 WEBX_UI_MODULE_MENU.md: composer-пакет webx-ui/module-menu.
-
-Прочитать: §§2,4,5,6,7,8,13 спеки; php/packages/module-pages/{composer.json,src/
-PagesServiceProvider.php,src/Models/Page.php,database/migrations/*} — образец во всём;
-php/packages/nested-set/src/HasNestedSet.php — scope-атрибуты, appendTo, ordered;
-php/packages/module-settings/src/helpers.php и его composer.json (autoload.files) — образец
-хелпера; php/packages/module-admin/src/Links/* из этапа 1.
-
-Сделать: php/packages/module-menu — composer.json (module-admin, routing, nested-set,
-localization, mcp), провайдер, конфиг §5; миграции §4; модели Menu и MenuItem (HasNestedSet со
-скоупом menu_id, HasTranslations); ленивое создание строки конфигурного меню; рендер §8 —
-MenuTree, MenuLink, хелпер menu() под function_exists, Blade-компонент и публикация вьюх;
-MenuCache (ключи, built_at, TTL, выключатель, точечный сброс по индексу entity) и подписка на
-все источники §8 — MenuItem (в том числе moved), Menu, Route и модели всех зарегистрированных
-LinkSource через model(); активность §6 вместе с исключением для главной; lang/* на десять
-языков; README, LICENSE; тесты §13, кроме экранных и MCP — группу про кеш написать целиком,
-она тут главная.
-
-Не делать: ни API панели, ни npm-пакета (B), ни MCP (C).
-
-Проверить живьём: на webx-cms.local вывести menu('header') во вьюхе и увидеть три вида цели.
-```
-
-### B — API панели и экраны
-
-```
-Сессия B из §15 WEBX_UI_MODULE_MENU.md: раздел «Меню» в панели.
-
-Прочитать: §§9,10 спеки; php/packages/module-pages/{routes/api.php,src/Http/**,src/Panel/
-PagesModule.php} — образец контроллеров, ресурсов и модуля панели; packages/module-pages/src/
-{module.ts,PagesPage.vue,api.ts,i18n.ts} — образец npm-пакета; packages/core/src/components/
-{ListDetail,SortableList} и их демо в apps/docs; WxLinkPicker из этапа 1.
-
-Сделать: маршруты и контроллеры §10, включая оба cache/flush, ресурсы меню (с cache: enabled и
-built_at) и пункта (с resolved); MenuModule (id menu, группа контента, order 400, права
-menu.view/menu.manage); npm-пакет @webx-ui/module-menu — экран WxListDetail со списком меню и
-деревом пунктов, перетаскивание с вложенностью, WxRowMenu, диалог формы пункта через openModal,
-создание и удаление своего меню, отметка «кеш собран …» через WxDate со сбросом в строке и
-сбросом всех меню в шапке (тост после ответа, отметка обновляется); i18n; тесты php и vitest;
-changeset.
-
-Не делать: MCP и демо (C).
-
-Проверить живьём: scripts/link-panel.sh, composer update "webx-ui/*" в webx-cms.local, раздел в
-браузере — и обязательно на 375 px: у ящика WxListDetail нет крестика, возврат рисует слот detail.
-```
-
-### C — MCP, гайд, демо
-
-```
-Сессия C из §15 WEBX_UI_MODULE_MENU.md: инструменты агента, документация и демо-содержимое.
-
-Прочитать: §§11,14 спеки; php/packages/module-pages/src/Mcp/{PageTools.php,PageResources.php} —
-образец инструментов, dry_run и скоупов; php/packages/module-pages/src/Demo/PagesDemo.php —
-образец демо с requires и журналом; apps/docs/guide/pages.md — образец гайда;
-docs/architecture/WEBX_UI_MCP_ACCESS.md §§ про скоупы и имена.
-
-Сделать: шесть инструментов §11 с dry_run и скоупами menu:read/menu:write, ресурс menu://menus;
-MenuDemo (requires pages) §14; гайд apps/docs/guide/menu.md — как объявить меню в конфиге, как
-вывести его во вьюхе, чем пункт на сущность отличается от пункта на путь, и раздел про кеш, где
-первой строкой сказано про выключатель и кнопку: «правка не доехала» выглядит не как кеш, а как
-сломанное сохранение; страница в дорожной карте; тесты §13 про MCP; changeset.
-
-Не делать: выпуск и демо-сайты (D).
-
-Проверить живьём: webx:mcp-tools и вызов menu_get_tree на webx-cms.local.
-```
-
-### D — выпуск и оба демо
-
-```
-Сессия D из §15 WEBX_UI_MODULE_MENU.md: выпуск module-menu.
-
-Сделать: гейт целиком (§4 брифа), PR, мерж, релизный PR changesets; первую версию npm-пакета
-@webx-ui/module-menu публикует человек — и не из main, а из ветки changeset-release/main, иначе
-workspace:^ заморозится на «до релиза»; затем Trusted Publishing на npmjs.com; проверить
-php-split и тег php-v<версия>.
-
-Потом оба демо: webx-cms.local (scripts/link-panel.sh + composer update "webx-ui/*") и
-webx-cms.alexx.group (режим registry, поднять диапазоны, коммит, пуш — каретка на нулевом мажоре
-минор не пинует, ночной прогон свежий релиз не привезёт).
-
-Потом omnivitality-v2.local: шапка и подвал переезжают на menu('header') и menu('footer') —
-семь пунктов, три группы заголовками, CTA «Speak to Katia» внешней ссылкой с вариантом button.
-Ссылки /privacy, /terms, /contact, /faqs — пунктами меню, а не буквальными в шаблоне.
-
-Обновить: CLAUDE.md §§2,6 и память; всё, что стоило времени, — в §4 брифа тем же коммитом.
-```
+Открыто: ничего сверх §16.
 
 ## 16. Отложено
 

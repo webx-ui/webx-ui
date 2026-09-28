@@ -1,9 +1,8 @@
 # WebX UI — скорость выпуска
 
-Принято 24.09.2026, сделано тогда же на ветке `ci/release-speed`: §§1, 2.1–2.3, 2.5 — код
-(`ci.yml`, `release.yml`, `php-split.yml`, `.changeset/config.json`, `packages.mjs next` в
-`webx-cms.local`). Руками остаются право App на pull requests (§2.2) и очередь мержа в ruleset
-(§2.4). Открытые вопросы в конце — не решены, по умолчанию «нет».
+Принято и сделано 24.09.2026 (#278): §§1, 2.1–2.5 работают — CI параллельно, version PR открывает
+App и его CI стартует сам, очередь мержа в ruleset (§2.4). Не проверен живьём только канал `next`
+(§1). Открытые вопросы в конце — не решены, по умолчанию «нет».
 
 ## Проблема
 
@@ -155,8 +154,9 @@ verify:
 `actions/create-github-app-token`, суженный до `webx-ui` с `contents: write` и
 `pull-requests: write`, — и прогон стартует сам.
 
-Руками: в настройках App добавить право **Pull requests: write** (сейчас у неё только
-contents) и принять новое право в установке организации. Имя App станет автором version PR.
+Право **Pull requests: write** у App выдано и принято в установке организации; автор version
+PR — `app/webx-ui-split`. Проверено на первом же релизе после этого (v0.40.0, #280, 24.09.2026):
+прогоны встали в `queued` сами, без approve.
 
 ### 2.3. Version PR — лёгкий CI
 
@@ -174,8 +174,9 @@ Version PR меняет только версии, `CHANGELOG.md` и конст�
 текущего `main`. Цена — «влить `main`, ждать CI заново» руками. Merge queue даёт то же
 обещание без человека: PR встаёт в очередь, GitHub сам собирает `main` + PR, гоняет CI и мержит.
 
-- В ruleset: правило `merge_queue` (метод `squash`, группа 1–5, `check_response_timeout` 15 мин)
-  вместо `strict`. Правит владелец организации в настройках репозитория.
+- В ruleset `22758520`: правило `merge_queue` (метод `squash`, группа 1–5,
+  `check_response_timeout` 15 мин, `ALLGREEN`) вместо `strict` — включено. В очередь ставит
+  мутация `enqueuePullRequest`, а не `gh pr merge` (CLAUDE.md §5).
 - В `ci.yml`: триггер `merge_group`.
 - PHP CI и smoke — не обязательные чеки, в очереди их можно не гонять.
 
@@ -217,23 +218,16 @@ npm отдаёт версию                    ~5
 Против сорока, из которых человек ждал почти всё. Дальше резать можно только auto-merge на
 version PR и автоматический бамп манифестов хомлаба — это отдельный разговор (см. ниже).
 
-## Порядок работ
+## Выпуск
 
-Один PR, но проверяется по кускам, потому что каждый кусок виден только на настоящем GitHub:
-
-1. 2.1 + 2.5 — `ci.yml` параллельно, агрегатор, `release.yml` без двойной сборки. Проверка:
-   прогон этого же PR, агрегатор зелёный; нарочно сломанный тест делает агрегатор красным.
-2. 2.2 + 2.3 — токен App в `changesets/action`, лёгкий путь для version PR. Проверка — на первом
-   же version PR после мержа: CI стартовал сам, шёл ~1.5 мин.
-3. 1 — джоб `next`, вход `branch` у `php-split.yml`, `snapshot` в конфиге changesets. Проверка —
-   `gh workflow run release.yml --ref <эта ветка>`: `npm view @webx-ui/core dist-tags`, ветка
-   `next` в `webx-ui/module-admin`, `dev-next` на packagist.org.
-4. `packages.mjs next` — в репозитории `webx-cms.local`, отдельным коммитом там.
-5. 2.4 — ruleset правит человек; `merge_group` в `ci.yml` едет в п. 1.
-6. §5 CLAUDE.md — канал `next`, агрегатор, merge queue, App вместо `approve`; строку про
-   `action_required` убрать.
-
-Changeset не нужен: ни один публикуемый пакет не меняется.
+Сделано 24.09.2026 одним PR (#278), без changeset'а — публикуемые пакеты не менялись: `ci.yml`
+параллельно с агрегатором и триггером `merge_group`, `release.yml` без двойной сборки и с токеном
+App, лёгкий путь для version PR, джоб `next`, вход `branch` у `php-split.yml`, `snapshot` в
+конфиге changesets; `packages.mjs next` — отдельным коммитом в `webx-cms.local`; CLAUDE.md §5
+переписан под агрегатор, очередь и App. Очередь мержа и право App включены руками и работают с
+v0.40.0. **Канал `next` живьём не запускался:** на 28.09.2026 dist-tag `next` у пакетов в
+реестре нет (`npm view @webx-ui/core dist-tags`), и ни `gh workflow run release.yml --ref
+<ветка>`, ни `dev-next` на Packagist, ни `packages.mjs next` на сайте не проверены.
 
 ## Открытые вопросы
 
