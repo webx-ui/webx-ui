@@ -21,24 +21,54 @@ export default defineConfig({
     sidebar: {
       '/guide/': [
         {
-          text: 'Guide',
+          text: 'Getting started',
           items: [
             { text: 'Introduction', link: '/guide/' },
             { text: 'Installation', link: '/guide/installation' },
             { text: 'A new site', link: '/guide/new-site' },
             { text: 'Theming', link: '/guide/theming' },
             { text: 'Languages', link: '/guide/languages' },
+          ],
+        },
+        {
+          text: 'Building the panel',
+          items: [
             { text: 'Dialogs from code', link: '/guide/modals' },
             { text: 'Building a screen', link: '/guide/building-a-screen' },
             { text: 'Lists', link: '/guide/lists' },
+            { text: 'Screens', link: '/guide/screens' },
+            { text: 'Extending', link: '/guide/extending' },
+          ],
+        },
+        {
+          text: 'Shared contracts',
+          items: [
+            { text: 'Addresses', link: '/guide/routing' },
+            { text: 'Categories', link: '/guide/categories' },
+            { text: 'Collections', link: '/guide/collections' },
+            { text: 'Relations', link: '/guide/relations' },
+          ],
+        },
+        {
+          text: 'Core modules',
+          items: [
             { text: 'The file manager', link: '/guide/media' },
             { text: 'Administrators', link: '/guide/admins' },
             { text: 'AI agents', link: '/guide/agents' },
             { text: 'Pages', link: '/guide/pages' },
+            { text: 'Blocks', link: '/guide/blocks' },
+            { text: 'Layout regions', link: '/guide/layout-regions' },
+            { text: 'Menus', link: '/guide/menu' },
+            { text: 'Settings', link: '/guide/settings' },
+            { text: 'SEO', link: '/guide/seo' },
+            { text: 'Inbox', link: '/guide/inbox' },
+            { text: 'Database backups', link: '/guide/backups' },
+          ],
+        },
+        {
+          text: 'Content modules',
+          items: [
             { text: 'Blog', link: '/guide/blog' },
-            { text: 'Categories', link: '/guide/categories' },
-            { text: 'Collections', link: '/guide/collections' },
-            { text: 'Relations', link: '/guide/relations' },
             { text: 'Services', link: '/guide/services' },
             { text: 'FAQ', link: '/guide/faq' },
             { text: 'Reviews', link: '/guide/reviews' },
@@ -49,18 +79,11 @@ export default defineConfig({
             { text: 'Events', link: '/guide/events' },
             { text: 'Press', link: '/guide/press' },
             { text: 'Vacancies', link: '/guide/vacancies' },
-            { text: 'Inbox', link: '/guide/inbox' },
-            { text: 'Menus', link: '/guide/menu' },
-            { text: 'Settings', link: '/guide/settings' },
-            { text: 'SEO', link: '/guide/seo' },
-            { text: 'Addresses', link: '/guide/routing' },
-            { text: 'Blocks', link: '/guide/blocks' },
-            { text: 'Layout regions', link: '/guide/layout-regions' },
-            { text: 'Screens', link: '/guide/screens' },
-            { text: 'Database backups', link: '/guide/backups' },
-            { text: 'Extending', link: '/guide/extending' },
-            { text: 'Roadmap', link: '/guide/roadmap' },
           ],
+        },
+        {
+          text: 'Roadmap',
+          items: [{ text: 'Roadmap', link: '/guide/roadmap' }],
         },
       ],
       '/tokens/': [

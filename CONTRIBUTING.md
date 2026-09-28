@@ -93,9 +93,20 @@ its own repository, and Packagist picks the tag up. See
 
 ## Pull requests
 
-`main` is protected: changes land through PRs with green CI (lint, format, typecheck, tests, build,
-docs build). No approving review is required, but the branch has to be **up to date with `main`** —
-if it has fallen behind, merge `main` into it and let CI run again.
+`main` is closed by a ruleset with a **merge queue**: changes land through PRs, no approving review
+is required, and the required check is `Lint, typecheck, test, build` — an aggregate of the
+parallel jobs in `ci.yml` (when it fails, look at those jobs). Once the PR's own CI is green, put it
+in the queue; GitHub builds `main` plus the PR, runs CI once more and merges. There is no need to
+bring the branch up to date by hand.
+
+`gh pr merge` does not enqueue (it tries to enable auto-merge, which the repository does not
+allow). Use the button on the PR, or:
+
+```bash
+gh api graphql -f query='mutation{enqueuePullRequest(input:{pullRequestId:"<id>"}){mergeQueueEntry{state position}}}'
+```
+
+where `<id>` is `gh pr view <number> --json id -q .id`.
 
 Add a changeset to any PR that changes a published package:
 
@@ -110,12 +121,21 @@ Pick the packages, pick the bump (`patch` / `minor` / `major` — pre-1.0 we sta
 
 1. Merging a PR with changesets makes the release workflow open a **"chore: version packages"** PR
    with the version bumps and changelogs.
-2. Merging that PR publishes the packages to npm.
+2. Merging that PR publishes the packages to npm, tags the PHP packages `php-v<version>` and runs
+   `php-split.yml`, which mirrors each composer package into its own repository for Packagist. If
+   the npm job fails after the tag, re-run only the mirror:
+   `gh workflow run php-split.yml --ref main -f tag=v<version>`.
 
 Publishing uses **npm Trusted Publishing (OIDC)** from GitHub Actions — there is no `NPM_TOKEN` in
-the repository secrets. The very first `0.0.1` of each package is published manually by the owner
-(`pnpm publish --access public`), after which Trusted Publishing is configured on npmjs.com against
-this repo's `release.yml`.
+the repository secrets. Trusted Publishing cannot create a name, so the first version of each new
+package is published manually by the owner — from a worktree of the `changeset-release/main`
+branch, where every `workspace:^` range already resolves to the versions it will ship with (check
+the ranges in the packed tarball before publishing). After that, Trusted Publishing is configured
+on npmjs.com against this repo's `release.yml`.
+
+A branch can be shown on a live site without a release: `gh workflow run release.yml --ref <branch>`
+publishes a snapshot under the `next` dist-tag. See
+[`docs/architecture/WEBX_UI_RELEASE_SPEED.md`](docs/architecture/WEBX_UI_RELEASE_SPEED.md).
 
 ## Documentation
 

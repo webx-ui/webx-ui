@@ -1,10 +1,8 @@
-# `webx-ui/module-vacancies` — спецификация и план реализации
+# `webx-ui/module-vacancies` — спецификация
 
-Статус: спроектирован 28.09.2026 (V0, один docs-PR со спекой тарифов); V1 (php), V2 (npm) и
-V3 (слияние, MCP, демо, гайд) сделаны 28.09.2026, впереди V4 — выпуск вместе с тарифами. Пакеты —
-`webx-ui/module-vacancies` (composer) и `@webx-ui/module-vacancies` (npm). Делается
-**параллельно с `module-tariffs`** (`WEBX_UI_MODULE_TARIFFS.md`) и выходит с ним одним релизом
-(V4, §8).
+Статус: спроектирован и выпущен 28.09.2026 в v0.48.0 одним релизом с `module-tariffs`
+(`WEBX_UI_MODULE_TARIFFS.md`), стоит на обоих демо (§8). Пакеты — `webx-ui/module-vacancies`
+(composer) и `@webx-ui/module-vacancies` (npm).
 
 Вакансии — «кого мы ищем»: должность, где и как работать, условия, зарплата словами и числами,
 задачи, требования и что предлагаем. У вакансии свой адрес и **страница жёсткой структуры, без
@@ -32,8 +30,7 @@ V3 (слияние, MCP, демо, гайд) сделаны 28.09.2026, впер
 
 ## 2. Принятые решения (не переоткрывать)
 
-Решения 1–9 принял пользователь в обсуждении 28.09.2026; 10–20 — решения спеки, их можно
-оспорить до V1.
+Решения 1–9 принял пользователь в обсуждении 28.09.2026; 10–20 — решения спеки.
 
 1. **Своя страница под приставкой.** Вакансия — `/{приставка}/{вакансия}`, приставка
    `webx-vacancies.prefix` (по умолчанию `careers`), пустой не бывает. Индекс `/{приставка}`
@@ -58,8 +55,8 @@ V3 (слияние, MCP, демо, гайд) сделаны 28.09.2026, впер
 6. **Блоков нет.** Сайт выводит вакансии хелпером `vacancies()` на `RecordQuery` (§4.8).
    Предложенный блок — потом (§7).
 7. **Связь с услугами** — решает спека (решение 12).
-8. **Параллельно с тарифами, выпуск общий.** Свои ветки и worktree; выпускает одна сессия оба
-   модуля одним релизом (V4).
+8. **Параллельно с тарифами, выпуск общий.** Свои ветки и worktree, оба модуля вышли одним
+   релизом (§8).
 9. **Слова интерфейса — на десяти языках**, как у остальных модулей (`de en es fr it pl pt ru tr
 uk`).
 
@@ -283,8 +280,8 @@ vacancy_category_vacancy    categoryLinks('vacancy', 'vacancy_categories')
     нет свойства (текст `salary` в разметку не идёт);
   - `url`, `identifier` не печатаем (нет своего номера вакансии).
   - Проверять на validator.schema.org **и** в Rich Results Test: вакансии Google показывает любому
-    сайту, в отличие от FAQ (CLAUDE.md §4). Если Rich Results не разрешит `@id` организации —
-    печатать рядом `name` (V3 решает по результату и пишет в итог).
+    сайту, в отличие от FAQ (CLAUDE.md §4). `hiringOrganization` только по `@id` Rich Results
+    принимает — проверено на хомлабе при выпуске (§8), `name` рядом не нужен.
 - Закрытая — `noindex` своим источником SEO (решение 14), из карты сайта уходит сама.
 - Индекс — `ItemList` открытых через `Seo::push()`, как у событий.
 
@@ -403,7 +400,7 @@ Categories**. Права: `vacancies.view`, `vacancies.manage`, `vacancies.categ
 
 ### 4.11. API панели
 
-Формы зафиксированы заранее, чтобы V1 и V2 шли параллельно:
+Формы ответов (по ним панель и сервер писались параллельно):
 
 ```
 GET    /api/cms/vacancies          ?state=open|closed|all&category=&status=&q=&trashed=1
@@ -447,19 +444,18 @@ POST   /api/cms/vacancies/reorder  { ids }                  без category, к�
   `salary_unit`; валюта не из конфига и не сохранённая — `salary_currency`; `country` не
   `^[A-Z]{2}$` — `country` (строчные приводятся к заглавным, не отказ); `valid_through` раньше
   `posted_at` — `valid_through`; вид занятости не из списка — `employment_types`
-  (`OptionListType`); строка повторителя — `duties.<n>.text.<язык>` и т. д. (`rowErrors`, итог
-  P2 у прессы: `WxScreenRepeater` раскладывает `<поле>.<n>.<поле строки>[.<язык>]`); форма,
+  (`OptionListType`); строка повторителя — `duties.<n>.text.<язык>` и т. д. (`rowErrors` у прессы: `WxScreenRepeater` раскладывает `<поле>.<n>.<поле строки>[.<язык>]`); форма,
   которой нет, — `form`; больше одной — `form` (`max: 1`). Пустая строка повторителя
   выбрасывается.
-- **Что в `vacancy` черновое, а что — с сайта (V1):** слова (`title`, `slug`, `workplace`, `city`,
+- **Что в `vacancy` черновое, а что — с сайта:** слова (`title`, `slug`, `workplace`, `city`,
   `employment_types`) и `categories` — из черновика, как у событий; `closed`, `closed_reason`,
   `valid_through`, `posted_at` — с сайта: по ним сортируют вкладки, и строка на Open, называющая
   себя закрытой из-за неопубликованной правки, стояла бы не на своей вкладке. Черновые даты — в
   `values`.
-- **`close`/`reopen` (V1):** 409 не только с правками, но и у вакансии, которой нет на сайте
+- **`close`/`reopen`:** 409 не только с правками, но и у вакансии, которой нет на сайте
   (иначе кнопка выложила бы её); тело — `{ message }`. `reopen` у истёкшей снимает и
   `valid_through`, иначе кнопка оставила бы её закрытой.
-- **`reorder` (V1):** названные id получают места, которые занимают сейчас, в новом порядке —
+- **`reorder`:** названные id получают места, которые занимают сейчас, в новом порядке —
   закрытые между ними (вкладка Open) остаются на своих; id, которого нет, — 422 `ids`.
 - **Публикация:** `posted_at` пуст — ставится сегодняшним днём в поясе приложения (решение 15).
 - **Дублирование:** копия — черновик, ни разу не опубликованный; все поля, категории и форма;
@@ -497,16 +493,16 @@ CLAUDE.md §4 «Новый composer-пакет надо прописать в `p
 регистрируется в четырёх местах»:
 
 - `php/composer.json` — `require`, `autoload-dev`, карта версий path-репозитория
-  (`node scripts/sync-php-version.mjs`); `phpunit.xml.dist`; `phpstan.neon.dist` (V1);
+  (`node scripts/sync-php-version.mjs`); `phpunit.xml.dist`; `phpstan.neon.dist`;
 - `Setup\Catalogue` (`vacancies`), `Doctor\Checks\Helpers` (`vacancies`), `extra.webx` в
   `composer.json` пакета: `npm` — `@webx-ui/module-vacancies: ^0.1.0`, `panel` — `import {
-vacancies }`, стиль, `register: "...vacancies()"` (два модуля — спред, как у событий) (V1);
+vacancies }`, стиль, `register: "...vacancies()"` (два модуля — спред, как у событий);
 - `apps/playground/src/panel/main.ts`, алиас в `apps/playground/vite.config.ts`, зависимость в
-  `apps/playground/package.json` и lock, `server/panel/{index,screens,relations}.ts` (V2);
+  `apps/playground/package.json` и lock, `server/panel/{index,screens,relations}.ts`;
 - `scripts/php-smoke.sh` — **три места**: строка `composer require`, список пакетов в цикле и
-  карта провайдеров (V4); `scripts/packages.mjs` в `webx-cms.local` (V4);
+  карта провайдеров; `scripts/packages.mjs` в `webx-cms.local`;
 - иконка `briefcase` — `packages/module-admin/src/icons.test.ts` проверит сам; сайдбар доков —
-  `apps/docs/.vitepress/config.ts` (V3).
+  `apps/docs/.vitepress/config.ts`.
 
 ### 4.15. Тесты, которые обязательны
 
@@ -557,19 +553,18 @@ salary_min` — 422; число без единицы — 422.
 
 ## 6. Слова
 
-Все ключи `webx-vacancies::*` на десять языков панели заводит **V1** — серверные и нужные
-панели: `module` (раздел, группа, категории), `panel` (вкладки Open/Closed/All/Bin, «Новая
+Ключи `webx-vacancies::*` на десяти языках панели — серверные и нужные панели: `module` (раздел, группа, категории), `panel` (вкладки Open/Closed/All/Bin, «Новая
 вакансия», «Дублировать», «Закрыть набор», «Открыть набор», бейджи Closed/Expired, «Удалённо»,
 пустые списки, подсказка про перетаскивание с фильтром), `vacancy` (подписи фактов на сайте:
 где, занятость, зарплата, «до», «Вакансия закрыта», «Задачи», «Требования», «Мы предлагаем»,
 «Открытых вакансий сейчас нет», «Другие вакансии», «Все»; восемь видов занятости; пять единиц —
 «в час» … «в год»; `workplace` — три), `category` (ключ и его подсказка), `screen` (подписи и
 `-help` экранов), `site`, `errors` (вилка, единица, валюта, страна, срок раньше размещения,
-категория занята, слаг категории занят, `close` с правками), `relations` (если понадобится).
+категория занята, слаг категории занят, `close` с правками), `editor` (панель действий, диалоги, история — как `event.php` у событий).
 Счёт — в конце строки или отдельная строка на единицу (CLAUDE.md §4 про `:count`). В
-`module-inbox` — одна новая строка `relations.form` («Форма») на десяти языках. V2 держит
-английский пол в `messages.ts` и тест паритета; чего не хватило — дописывает в `lang/en` и пишет
-в итог.
+`module-inbox` — одна новая строка `relations.form` («Форма») на десяти языках. Английский пол
+панели — `messages.ts`, паритет с `lang/en` держит его тест (перечисления — вложенными ключами
+сервера: `vacancy.employment.FULL_TIME`, `vacancy.workplace.onsite`).
 
 ## 7. Отложено
 
@@ -610,444 +605,38 @@ salary_min` — 422; число без единицы — 422.
 8. Несколько мест у одной вакансии («Киев или Львов») — сейчас это две вакансии через
    «Дублировать».
 
-## 8. Пошаговый план
+## 8. Выпуск
 
-**Выпуск один, в самом конце, общий с тарифами** (V4); до него ни PR, ни ожидания CI. Каждая
-сессия гонит локальный гейт своей половины (php — `composer lint && composer analyse && composer
-test` из `php/` на PHP 8.4, в свежем worktree сначала прогреть манифест Testbench
-последовательно — CLAUDE.md §4 «И то же самое на пустом `vendor`»; npm — точечно `npx vitest run
-… --pool=forks --poolOptions.forks.singleFork` из корня worktree, `npx vue-tsc -p tsconfig.json
---noEmit` в пакете, eslint и prettier на своих файлах). Полный гейт — только V4. `pnpm` в
-worktree с симлинком на `node_modules` не запускать (CLAUDE.md §4).
+Выпущен 28.09.2026 в **v0.48.0** одним релизом с тарифами (#334 вакансии, #336 тарифы,
+релизный #335): `webx-ui/module-vacancies` на Packagist, `@webx-ui/module-vacancies@0.1.0` на npm
+(первая версия — пользователем из `changeset-release/main`, затем Trusted Publishing); релиз
+поднял `@webx-ui/module-blocks` до 0.10.5. Стоит на обоих демо: `/careers` с группами и фильтром,
+открытая вакансия с `JobPosting`, закрытая с пометкой и `noindex`.
 
-**V2 идёт параллельно с V1**: npm-половина с php не пересекается по файлам, а API зафиксирован в
-§4.11. V3 сливает ветку V2 и дальше идёт по основной. Тарифы идут своими ветками и сессиями
-(`WEBX_UI_MODULE_TARIFFS.md` §8) и с вакансиями не пересекаются ничем, кроме списков регистрации
-(§4.14) — их сводит V4.
+Что решилось по ходу и пригодится дальше:
 
-| Сессия | Ветка / worktree                                        | Что                                  |
-| ------ | ------------------------------------------------------- | ------------------------------------ |
-| **V0** | `docs/plan-vacancies-tariffs`                           | спеки вакансий и тарифов, docs-PR    |
-| **V1** | `feat/module-vacancies` / `../webx-ui-module-vacancies` | php: пакет целиком, цель в inbox     |
-| **V2** | `feat/vacancies-panel` / `../webx-ui-vacancies-panel`   | npm: панель, плейграунд; параллельно |
-| **V3** | `feat/module-vacancies`                                 | слияние V2, MCP, демо, гайд          |
-| **V4** | обе ветки, вакансий и тарифов                           | совместный выпуск с тарифами, демо   |
-
-Промпты ниже самодостаточны. Каждая сессия в конце дописывает сюда «Итог Vn» — что следующей
-надо знать сверх промпта, — и строку в память `custom-modules-workflow`. Общее: gh не в PATH —
-`"C:\Program Files\GitHub CLI\gh.exe"`; пушить в `claude`, не в `origin`.
-
-### V1 — php
-
-```
-Сессия V1 из §8 docs/architecture/WEBX_UI_MODULE_VACANCIES.md: composer-пакет
-webx-ui/module-vacancies и цель связей inbox-form в module-inbox. Идёт параллельно с V2.
-module-admin не трогать; блоков нет (решение 6).
-
-Начало: git fetch claude; git worktree add ../webx-ui-module-vacancies -b feat/module-vacancies
-claude/main (если docs-PR спеки ещё не смержен — от claude/docs/plan-vacancies-tariffs). В php/:
-composer install, прогреть манифест Testbench последовательно. PR не открывать.
-
-Прочитать: спеку целиком (решения §2, схема §3, модуль §4, слова §6); php/packages/module-events
-— образец почти во всём (адреса и выключаемый индекс, черновик, версии, SEO, крошки, разметка,
-Cards/EventQuery/helpers, Views, Panel с Duplicate и Revision, lang на десять языков и тест
-паритета, WithoutServicesTest); module-recipes — ручной порядок (position, RecipeOrderController,
-unversionedAttributes); module-admin/src/{Collections/RecordQuery.php, Categories/*,
-Relations/*}; module-faq/src/Models/FaqCategory.php — категория без адреса; module-services
-ServiceQuery::categories() — образец groups(); module-blog/src/Seo/TagIndexing.php и
-TagSource.php — свой noindex; module-seo DefaultsSource::organizationId(); module-inbox Models/Form,
-InboxServiceProvider, View/Components/Form; module-team — опции селекта патчем из конфига.
-CLAUDE.md §4: string-колонка и длина дефолта, hidden/visible у модели, отказ в created/updated,
-«Главная не получает адрес» (Reserved), mergeConfigFrom на один уровень, «Rich Results Test не
-показывает FAQ».
-
-Сделать: module-inbox — Relations\FormTarget и регистрация §4.3, строка relations.form на десяти
-языках, тест (пикер без прав inbox.*, удаление формы уносит связь). php/packages/module-vacancies
-— composer.json с extra.webx и autoload files, провайдер, конфиг §4.9 (prefix обязателен,
-currencies код => символ), миграции §3, модели §4.1 со скоупами open/closed (whereDate, пояс
-приложения), адрес и индекс §4.4, публичная часть и вьюхи §§4.5–4.6 (части — @include, группы,
-фильтр ?category=), SEO, noindex закрытой и JobPosting §4.7, VacancyQuery с groups(), Cards,
-vacancies() §4.8; API §4.11 (формы — ровно как там, по ним параллельно пишется панель; по одной
-транзакции на сохранение, создание, дублирование, close/reopen; posted_at на первой публикации);
-экраны vacancies.form и vacancies.category-form с карточкой project-fields, опции валюты патчем
-из конфига; права и модули панели §4.10; все слова webx-vacancies::* §6 на десять языков;
-строка vacancies() в webx:doctor; README, LICENSE; регистрации §4.14 кроме плейграунда, сайта и
-smoke; тесты §4.15; changeset minor на @webx-ui/php.
-
-Не делать: npm (V2), MCP и демо (V3), печать формы отклика (§7 п. 2), блоки. Если форма ответа
-API должна отличаться от §4.11 — поправить §4.11 тем же коммитом и сказать об этом в итоге
-крупно: V2 пишет мок по ней. В конце — «Итог V1» в §8, коммит, пуш в claude.
-```
-
-#### Итог V1
-
-Сделано 28.09.2026 на `feat/module-vacancies`. Гейт php-половины на PHP 8.4 — `pint --test`,
-`phpstan analyse` (холодный кеш) и весь `phpunit` (1985) зелёные. В пакете 47 тестов, плюс
-`FormTargetTest` в `module-inbox`; `DoctorTest` в `module-admin` перечисляет хелперы поимённо —
-`vacancies()` дописан туда.
-
-**Форма ответа API — по §4.11, с четырьмя уточнениями, внесёнными в §4.11 этим же коммитом.**
-Мок V2 должен их учесть:
-
-1. **Ошибка строки повторителя — `duties.<n>.text.<язык>`**, а не `duties.<n>.text`: поле
-   переводимое, и ошибка называется по языку, как у прессы. `WxScreenRepeater` понимает оба.
-2. **В `vacancy` (строка списка и форма) `closed`, `closed_reason`, `valid_through`,
-   `posted_at` — с сайта**, а слова и категории — из черновика. Черновые даты — в `values`.
-3. **`close`/`reopen` — 409 и у вакансии не на сайте** (тело `{ message }`), а `reopen` у
-   истёкшей снимает `valid_through`.
-4. **`reorder` раздаёт названным id их же нынешние места** в новом порядке; неизвестный id —
-   422 `ids`.
-
-Что следующим надо знать сверх промпта:
-
-- **История на экране — узел `wx-vacancy-history`** (`form.json`, вкладка History), как
-  `wx-event-history` у событий: его регистрирует npm-половина. Цель патча валют — узел
-  `salary-currency` (опции приходят из конфига, в JSON пусто), поле формы отклика — узел и имя
-  `form`.
-- **Группы слов:** `module`, `errors`, `site`, `vacancy` (факты страницы и перечисления —
-  `vacancy.workplace.*`, `vacancy.employment.*`, `vacancy.unit.*` «в месяц»), `category`,
-  `panel` (список), **`editor`** (панель действий, диалоги, история — как `event.php` у событий;
-  в §6 его не было) и `screen` (подписи экрана, в том числе `screen.unit-*` для селекта).
-  `relations` не заведена: своей цели связей у модуля нет (решение 12). Английский — в
-  `lang/en`, у V2 его пол в `messages.ts` сверять с этими файлами.
-- **Чужие пакеты, кроме `module-inbox`:** в `module-seo` — патч `vacancies.form.json` (карточка
-  SEO), в `module-admin` — строки в `Setup\Catalogue` и `Doctor\Checks\Helpers` (§4.14 их и
-  называет). Больше ядро не менялось.
 - **Кнопке «Закрыть набор» кросс-проверки не нужны:** `Closing` пишет черновик мимо
-  `VacancyWriter::check()`. Иначе вакансию, у которой `posted_at` позже `valid_through`
-  (выставили уже истёкшей), нельзя было бы закрыть — 422 про поле, которого редактор не трогал.
+  `VacancyWriter::check()`, иначе вакансию с `posted_at` позже `valid_through` нельзя было бы
+  закрыть. Панель предлагает закрыть и открыть только опубликованную; истёкшую по дате открывает
+  дата в редакторе, а не меню.
 - **Валюта, убранная из конфига,** проходит так: `VacancyForm` снимает `salary_currency` с входа,
-  если она совпадает с сохранённой, — тогда `wx-select` её не проверяет, а черновик оставляет
-  прежнюю. Проверка писателя — второй рубеж для MCP (V3).
-- **Несуществующая форма — 422 `form`** проверяется в `VacancyForm` до экрана:
-  `RelationsType::store()` молча выбрасывает неизвестные id.
-- **`vacancies()->groups()`** отдаёт `[{ id, slug, title, vacancies }]`; последняя группа
-  «Другие вакансии» — `id: null, slug: null`, её нет при фильтре по категориям.
-- MCP и демо (V3) должны идти через `VacancyForm`, `Duplicate` и `Closing` — там все транзакции
-  и проверки. `VacanciesModule` пока не реализует `ProvidesMcpTools`/`ProvidesDemo`,
-  `CategoriesModule` — `CategoryTools`.
+  если она совпадает с сохранённой. Несуществующая форма — 422 `form` в `VacancyForm` до экрана:
+  `RelationsType::store()` неизвестные id молча выбрасывает.
+- **Даты — дни, а не моменты:** `valueFormat: "yyyy-MM-dd"` у пикера, в списке день собирается из
+  частей (`days.ts`), а не `new Date('YYYY-MM-DD')`; `useDates()`/`WxDate` для этих полей не
+  годятся. Проверено тестом в четырёх поясах.
+- MCP, контроллеры и демо идут через одни `VacancyForm`, `Duplicate`, `Closing`, `Panel\Reorder`
+  и `VacancyForm::blank()`. У экрана `wx-categories` — `main: false`: главной категории нет.
+- **«Какая вакансия» в заявке — без правки `module-inbox`:** `<x-webx-inbox::form
+:values="['vacancy' => $title]">` заполняет скрытое поле; демо-форма `job-application` его
+  носит. Это половина §7 п. 2.
+- При слиянии двух веток счётчик рядом со списком (`array_fill` в `DoctorTest`) не сводится
+  сам — сверять руками.
 
-### V2 — npm
+Открыто:
 
-```
-Сессия V2 из §8 docs/architecture/WEBX_UI_MODULE_VACANCIES.md: npm-пакет
-@webx-ui/module-vacancies. Параллельно с V1, php не трогать (кроме lang/en пакета, если V1 его
-ещё не завёл, — записать в итог). module-admin не трогать.
-
-Начало: git fetch claude; git worktree add ../webx-ui-vacancies-panel -b feat/vacancies-panel
-claude/main (или от claude/docs/plan-vacancies-tariffs, если docs-PR не смержен); pnpm install
---frozen-lockfile (каталог обычный); собрать dist tokens, core, schema, module-admin (тесты
-соседних пакетов видят module-admin из dist — CLAUDE.md §4). PR не открывать.
-
-Прочитать: спеку (решения §2, панель §4.10, API §4.11, слова §6); итоги EV2 и EV3 в
-WEBX_UI_MODULE_EVENTS.md; packages/module-events целиком — образец (вкладки списка, редактор с
-вкладками, автосейв, ревизия, история, предпросмотр, Duplicate); packages/module-recipes —
-список с перетаскиванием без пагинации; apps/playground/server/panel/{events.ts,recipes.ts,
-relations.ts,inbox.ts,screens.ts,lang.ts}. CLAUDE.md §4: context.can() булево или computed,
-вкладки в тестах (mousedown), фильтры таблицы в тестах, WxDate, календарь и язык
-(dateLocaleKey), valueFormat у wx-date-picker, перетаскивание в панели браузера (клавиатурой на
-ручке), WxActions collapse в таблице.
-
-Сделать: packages/module-vacancies (0.0.0) — модуль панели §4.10: список без пагинации,
-вкладки Open · Closed · All · Bin, бейджи Closed/Expired, приглушённые закрытые в All,
-перетаскивание на Open и All без фильтров (иначе подсказка почему), «Дублировать» и «Закрыть /
-открыть набор» в меню строки, «Дублировать» в WxActionBar редактора (сначала сохраняет, потом
-открывает копию); редактор Vacancy · Settings · SEO · History; даты valid_through и posted_at —
-строки дня (type: date, valueFormat yyyy-MM-dd): проверить, что пояс браузера их не сдвигает;
-категории через categoryRoutes с экраном vacancies.category-form; i18n с английским полом и
-тестом паритета. Плейграунд: server/panel/vacancies.ts по формам §4.11 (даты фикстуры — от
-текущего дня; одна закрытая вручную, одна истёкшая, одна черновиком), цель inbox-form в
-relations.ts из фикстуры inbox.ts, модуль в main.ts, алиас в vite.config.ts, зависимость в
-package.json и lock; экраны — свои копии, если V1 ещё не положил файлы (V3 уберёт); предпросмотр
-страницы вакансии по §4.6; vitest; changeset minor на module-vacancies.
-
-Проверить в браузере на плейграунде (фоновый npx vite --port 5189, preview_start с url):
-создать вакансию, заполнить все вкладки, три повторителя на двух языках, remote прячет город,
-вилка с ошибкой min > max под полем, форма отклика из пикера и снятие выбора, закрыть набор и
-открыть, «до» вчерашним днём — вакансия уходит на Closed как Expired, дублирование, порядок
-клавиатурой на ручке, 375 px и тёмная тема. В конце — «Итог V2» в §8 на своей ветке, коммит,
-пуш в claude.
-```
-
-#### Итог V2 (28.09.2026)
-
-Ветка `feat/vacancies-panel` (worktree `../webx-ui-vacancies-panel`, от `claude/main` на
-`9d541ab8`, docs-PR уже был смержен). К концу сессии php-половины V1 на `claude` ещё не было —
-мок и экраны написаны ровно по §4.11 и §4.10. **`lang/en` пакета V2 не заводил**, в php не трогал
-ничего. У worktree свой `node_modules` (обычный каталог), pnpm там безопасен.
-
-- **`packages/module-vacancies`** (0.0.0, changeset minor): `vacancies()` — два модуля панели
-  (`vacancies`, `vacancy-categories`), категории — `categoryRoutes(vacancyCategoriesOptions())`,
-  счётчик `vacancies_count`, «показать вакансии» ведёт в `?category=<id>&view=all`. Список —
-  `WxSortableList` без пагинации, как у рецептов; вкладки Open (по умолчанию) · Closed · All · Bin;
-  строка: должность и адрес · где (город / «Remote» / «город · Hybrid»), занятость словами, «until
-  <день>» · категории, бейдж Closed/Expired с подсказкой почему, статус. В All закрытые приглушены.
-  Статус и категория — за своей воронкой (`WxPopover` + `WxIndicator`, как у `WxTable`), чипы
-  `WxFilterChips` под строкой поиска. Ручки — только на Open и All без поиска и фильтров, иначе
-  подсказка под списком (своя на Closed: «порядок ставится на Open и All»). Меню строки: открыть,
-  дублировать, на сайте, закрыть набор / открыть набор, снять/опубликовать, в корзину. «Закрыть» и
-  «Открыть» предлагаются **только опубликованной** (закрытие — это публикация, у черновика оно
-  опубликовало бы черновик) и только когда есть что переключать: истёкшую по дате «открыть» из меню
-  нельзя — её открывает дата в редакторе. У вакансии с правками панель не шлёт запрос вовсе, а
-  говорит «сначала опубликуйте или отмените» (сервер всё равно отвечает 409).
-- **Редактор** — как у событий (автосейв, ревизия, 409, 422 под полем, предпросмотр, история,
-  «Дублировать» в `WxActionBar` — сначала сохраняет, потом открывает копию); под названием — «Open
-  until <день>» и «On the site since», у закрытой — бейдж Closed/Expired.
-- **Даты — дни, а не моменты.** Пикер `type: date` с `valueFormat: "yyyy-MM-dd"` держит строку
-  как есть: `days.test.ts` монтирует `WxDatePicker` в Honolulu, New York, Kiritimati и Hong Kong и
-  видит тот же `30.11.2026`. Список и шапка рисуют день из частей (`days.ts`: `dayOf`,
-  `formatDay`, `longDay`), а не `new Date('YYYY-MM-DD')` — тот UTC-полночь и западнее Гринвича
-  даёт день раньше; `useDates()`/`WxDate` для этих полей не годятся по той же причине. В браузере
-  (Europe/Kiev против «сервера» в Asia/Hong_Kong) введённое 15.11.2026 ушло `2026-11-15` и
-  вернулось тем же.
-- **Слова.** `messages.ts` — группы `module`, `panel`, **`editor`** (слова редактора: сохранение,
-  конфликт, публикация, история — в §6 им места не было названо, у событий это `event`) и
-  `category`, плюс подмножество `vacancy` (виды занятости `employment-full-time` … и
-  `workplace-*`, которые список берёт у сайта). **V1/V3: завести `lang/*/editor.php` ключ в ключ
-  с `messages.ts`**, а в `vacancy.php` — эти ключи с этими именами; тест паритета сверяет
-  `module`, `panel`, `editor`, `category` на равенство и `vacancy` на вхождение. Слово категории
-  без адреса — `category.no-page` (подставлено вместо общего `no-address`), подпись ключа —
-  `category.field-key`.
-- **Плейграунд**: `server/panel/vacancies.ts` — «сервер» в поясе Asia/Hong_Kong, «сегодня» —
-  его день, даты от момента старта; 8 вакансий (офис с вилкой в UAH и формой, удалённый
-  подрядчик в USD в час, гибрид с зарплатой словами без срока, закрытая вручную, истёкшая
-  позавчера, черновик в двух категориях, без категории и без русского, одна в корзине), все 422
-  §4.11 под своими именами (`salary_max`, `salary_unit`, `salary_currency`, `country`,
-  `valid_through`, `employment_types`, `duties.<n>.text`, `form`), `posted_at` первой публикацией,
-  close/reopen с 409 у вакансии с правками, дублирование (`-2`, сразу после оригинала),
-  предпросмотр `/preview/vacancy/<id>` по §4.6 (пометка «Вакансия закрыта», зарплата словами или
-  из чисел). Цель `inbox-form` в `relations.ts` из `forms` фикстуры `inbox.ts` (выключенная форма
-  `job` — «Not on the site»). Модуль в `main.ts`, алиас, зависимость и lock.
-- **Порядок на вкладке Open — вопрос к V1.** Там перетаскивают только открытые, и `reorder`
-  получает не все id. Мок отвечает так: пришедшие id занимают **те же места, что занимали**, в
-  новом порядке, а непришедшие (закрытые, корзина) стоят где стояли. Если сервер вместо этого
-  нумерует пришедшие с единицы, закрытая вакансия между двумя открытыми после первого же
-  перетаскивания на Open съезжает — это видно только на All.
-- **Копии экранов** — `apps/playground/server/panel/vacancies/{form,category-form}.json` и
-  `seo.vacancies.form.json` (копия SEO-патча событий), подключены в `screens.ts`. Опции валюты в
-  копии — статически четыре из конфига по умолчанию. Слова `webx-vacancies::*` до прихода
-  php-половины отдаёт `lang.ts` из `INTERIM_VACANCIES_WORDS` (`vacancies.ts`: `messages.ts` плюс
-  `screen.*` и единицы `vacancy.unit-*`) — только пока нет `php/packages/module-vacancies/lang`.
-- **V3:** экраны в `screens.ts` — на `php/packages/module-vacancies/resources/screens/*` и
-  SEO-патч `module-seo`; удалить `server/panel/vacancies/`, `INTERIM_VACANCIES_WORDS` и ветку в
-  `lang.ts`; снять `skipIf` в `messages.test.ts`. Имена полей экрана V2 — ровно из §4.11
-  (`form`, `is_closed`, `valid_through`, `posted_at`, `duties`/`requirements`/`benefits` с
-  `text`), так что панель поедет на экран V1 без правки, если V1 не переименовал.
-- Тесты: 31 (`VacanciesPage` 10, `VacancyEditorPage` 9, `days` 10, `messages` 2) + 5 паритета
-  под `skipIf`. `vue-tsc`, eslint, prettier, `vite build` пакета — чисто.
-- В браузере (5189, 1280 и 375 px, светлая и тёмная): создание из диалога; все вкладки; город,
-  адрес, зарплата словами на RU и EN; три повторителя на RU и EN в одних строках — на сервер
-  ушло `[{ text: { ru, en } }]`; Remote прячет город и адрес; вилка 90 000 > 80 000 — ошибка под
-  «To», число без единицы — под «Per»; форма отклика из пикера (выключенная помечена), снятие
-  выбора — `form: []`, выбор другой; публикация ставит `posted_at` сегодняшним днём «сервера»;
-  закрыть и открыть набор из меню строки; «до» вчерашним днём при `posted_at` сегодня — 422 под
-  «Open until», после сдвига «Posted on» — вакансия на Closed как Expired; дублирование из
-  редактора; порядок клавиатурой на ручке (пробел, стрелка, пробел) — `reorder` ушёл, сервер
-  согласен; 375 px — без горизонтальной прокрутки ни в списке, ни в редакторе.
-- **Не подтверждено, к вакансиям отношения не имеет:** календарь `WxDatePicker` в панели браузера
-  не закрывался кликом снаружи — ни здесь, ни на редакторе событий. Скорее всего способ, которым
-  панель браузера шлёт клик, а не баг; проверять на настоящей мыши, прежде чем чинить.
-
-### V3 — слияние, MCP, демо, доки
-
-```
-Сессия V3 из §8 docs/architecture/WEBX_UI_MODULE_VACANCIES.md: MCP, демо, гайд.
-
-Worktree ../webx-ui-module-vacancies, ветка feat/module-vacancies. Первым делом: git fetch
-claude; git merge claude/feat/vacancies-panel (спека — нужны все итоги; lang/en — объединить
-ключи, messages.ts сверить с lang/en V1); убрать копии экранов и временные слова из плейграунда,
-снять skipIf с теста паритета; удалить worktree ../webx-ui-vacancies-panel (сначала погасить его
-dev-сервер, симлинки — find -type l -delete), ветку оставить до выпуска.
-
-Прочитать: §§4.12–4.14 спеки и итоги V1, V2; php/packages/module-events/src/{Mcp,Demo}/* с
-resources/demo; module-inbox/src/Demo/InboxDemo.php (как демо заводит форму через журнал);
-apps/docs/guide/events.md — образец гайда; CLAUDE.md §4 про mcp:start (только трубой), про
-tools/list по сто инструментов, про возврат webx-cms.local после local-режима из копий и про
-новый пакет в local-режиме (require --no-update, потом update "webx-ui/*").
-
-Сделать: VacancyTools и vacancies://catalog §4.12 (создание, сохранение, дублирование,
-close/reopen — в транзакции; форма — слаг или id, без module-inbox аргумента нет); VacanciesDemo
-§4.13 с датами от момента посева и динамическим requires() (inbox — своя форма job-application);
-apps/docs/guide/vacancies.md — приставка и выключенный индекс, открытые и закрытые, группы и
-фильтр по категориям, хелпер vacancies() с примером во вьюхе сайта, JobPosting и как его
-проверить, зарплата текстом и числом, валюты в конфиге, форма отклика и как сайт печатает её
-сам сейчас (<x-webx-inbox::form> по $form), «Дублировать», патч с полем проекта; ссылка в
-сайдбаре доков; README npm-пакета, разделы MCP и демо в README composer-пакета; тесты MCP и
-демо; changeset. Гейт php-половины и точечно npm.
-
-Проверить живьём: инструменты через cat … | php artisan mcp:start webx на webx-cms.local в
-local-режиме на этом worktree (до переключения — копии composer.json, composer.lock,
-package.json, package-lock.json, database/database.sqlite в скретчпад; после — назад и composer
-install); индекс, фильтр, открытая и закрытая вакансия curl'ом — JobPosting в ответе открытой,
-noindex и пометка у закрытой. Ничего на сайте не коммитить — это V4. В конце — «Итог V3»,
-коммит, пуш в claude.
-```
-
-#### Итог V3
-
-Сделано 28.09.2026 на `feat/module-vacancies`: `feat/vacancies-panel` слита без конфликтов,
-worktree `../webx-ui-vacancies-panel` удалён (dev-сервер погашен, симлинки сняты), ветка оставлена
-до выпуска. У этого worktree теперь свой `node_modules` (обычный каталог, `pnpm install
---frozen-lockfile`), pnpm здесь безопасен. Гейт php-половины на PHP 8.4 — `pint --test`, `phpstan`,
-весь `phpunit` (2006) — зелёный; в пакете 68 тестов (+ `McpTest` 14, `DemoTest` 6, один в
-`WithoutInboxTest`). npm точечно: vitest пакета (36), `vue-tsc`, eslint, prettier — чисто.
-
-- **Слова двух половин назывались по-разному, и тест паритета это поймал сразу, как сняли
-  `skipIf`.** Перечисления: V1 держал `vacancy.workplace.onsite` и `vacancy.employment.FULL_TIME`
-  вложенными массивами, V2 — плоские `vacancy.workplace-onsite`, `employment-full-time`. Правда у
-  сервера: `messages.ts` переписан на вложенные ключи (`employmentKey('FULL_TIME')` →
-  `vacancy.employment.FULL_TIME`, `t()` панели ходит по точкам). Группа `panel` — наоборот, правда у
-  панели: в `lang/*/panel.php` на всех десяти языках 16 новых строк, шесть переименованы
-  (`closed` → `closed-manual`, `expired` → `closed-expired`, `closed-done` → `closed`,
-  `reopened-done` → `reopened`, `order-hint` → `order-all`, `order-filtered` → `order-locked`),
-  девять серверных без потребителя (`column-*`, `remote`) убраны. `editor.duplicated` переехал в
-  `panel`, в `editor` добавлен `open-until`; в `category` — `no-page`, а ключ категории в панели
-  теперь `category.field-slug` (как на экране V1), не `field-key`. И смысл: `panel.open` в ru, uk и
-  pl был прилагательным («Открыта»), а в меню строки это действие — теперь «Открыть».
-- **Плейграунд — на настоящих экранах и словах:** `screens.ts` смотрит в
-  `php/packages/module-vacancies/resources/screens` и SEO-патч `module-seo`, копии
-  `server/panel/vacancies/` и `INTERIM_VACANCIES_WORDS` удалены. Проверено в браузере: список и
-  редактор рисуются с серверными словами. Попутно на экране у `wx-categories` поставлено
-  `main: false` — у вакансии нет главной категории, а поле рисовало бейдж «Main».
-- **MCP (§4.12):** `Mcp\VacancyTools` — одиннадцать инструментов через `VacancyList`,
-  `VacancyForm`, `Duplicate`, `Closing`; создание, сохранение и публикация — в транзакции.
-  Порядок вынесен из контроллера в `Panel\Reorder` (контроллер и `vacancies_reorder` зовут один
-  код), умолчания новой вакансии — в `VacancyForm::blank()` (контроллер и `vacancies_create`).
-  Коды (`workplace`, `employment_types`, `salary_unit`, валюта, дни `YYYY-MM-DD`) проверяются до
-  экрана и отказ называет список; валюта, убранная из конфига, проходит у вакансии, которая её
-  уже носит. `form` — слаг, id, `null` или список из одного; без `module-inbox` в описании
-  инструментов о форме ни слова, `form` в ответах и в каталоге нет, а переданная — отказ.
-  `close`/`reopen` отказывают теми же словами, что 409 панели.
-- **Категории агенту — общий `CategoryTools`, и у категории без адреса он называет её по
-  названию, а слаг из строк списка убирает** (так задумано для FAQ). Ядро не трогали: слаг
-  категории вакансий агент видит в `values` ответа и в `vacancies://catalog`, а `vacancies_*`
-  принимают категорию слагом. Если агенту понадобится `vacancy_categories_update` по слагу —
-  это правка `CategoryTools` (признак «слаг есть, адреса нет» в `CategoryKind`), не модуля.
-- **Демо (§4.13):** семь вакансий, дни от момента посева; без русского и без категории — одна и
-  та же (удалённый подрядчик), чтобы на английском индексе была группа «Other vacancies».
-  `requires()` — `['inbox']` только при установленном inbox. Форма `job-application` заводится
-  через журнал полем за полем, как `InboxDemo`; форма с таким слагом, которая уже есть, —
-  своя у сайта: выбирается, в журнал не пишется и `--remove` её не трогает.
-- **«Какая вакансия» в заявке решается без правки `module-inbox`:** у `<x-webx-inbox::form>` есть
-  `:values`, который заполняет скрытые поля по имени. Демо-форма носит скрытое `vacancy`
-  (`in_table`), гайд и комментарий в `vacancy/apply` печатают форму с
-  `:values="['vacancy' => $title]"`. Это закрывает половину §7 п. 2 — печать формы в пакете
-  по-прежнему отложена.
-- **Живьём на `webx-cms.local`** (local на этом worktree, потом назад из копий): новый пакет — в
-  два шага, как в §4 CLAUDE.md; карта версий `packages.mjs` пакет уже знала (она сканирует
-  каталог), а списков `NPM_PACKAGES`/`COMPOSER_PACKAGES` там ещё нет — это V4. Через
-  `cat … | php artisan mcp:start webx`: все одиннадцать инструментов и каталог отвечают;
-  `tools/list` отдаёт сто и `nextCursor`, вакансии — на второй странице. curl: `/careers` —
-  три группы на ru и четыре на en, `?category=sales` — одна, неизвестный ключ — 200 и пусто;
-  открытая — `JobPosting` с `hiringOrganization {@id}`, `jobLocation`, `baseSalary`
-  `minValue`/`maxValue`; закрытая — 200, «Вакансия закрыта», `noindex,follow`, без разметки и
-  не в карте сайта; черновик и страница без русского текста на ru — 404. Опубликованная
-  на время часть `vacancy/apply` напечатала форму с `fields[vacancy]` = должность. После возврата
-  сайт минуту отвечал 500 `FormTarget not found` с путём worktree — realpath-кеш OSPanel, прошло
-  само.
-- **Не проверено:** Rich Results Test и validator.schema.org — у локального сайта нет публичного
-  адреса. Разрешит ли Rich Results `hiringOrganization` только по `@id` (§4.7) — решать V4 на
-  хомлабе; не разрешит — печатать рядом `name`.
-
-### V4 — совместный выпуск с тарифами
-
-Одна сессия выпускает **оба** модуля одним релизом. Спека тарифов своим T4 ссылается сюда: её
-промпт — этот. Готовы должны быть V3 здесь и T3 у тарифов (`WEBX_UI_MODULE_TARIFFS.md` §8).
-
-```
-Сессия V4 из §8 docs/architecture/WEBX_UI_MODULE_VACANCIES.md (она же T4 из
-WEBX_UI_MODULE_TARIFFS.md): совместный выпуск module-vacancies и module-tariffs, оба демо.
-
-Прочитать: итоги V1–V3 здесь и итоги сессий тарифов в WEBX_UI_MODULE_TARIFFS.md §8; CLAUDE.md §5
-целиком — очередь мержа мутацией enqueuePullRequest (gh pr merge в очередь не ставит),
-enqueuePullRequest отказывает до зелёного CI, пустой headCommit в очереди, первая публикация
-npm-пакета — человеком из changeset-release/main, тег php-пакетов до публикации, Composer и CDN
-Packagist; docs/architecture/WEBX_UI_PHP_RELEASE.md; итог B4 в WEBX_UI_MODULE_BANNERS.md —
-последний такой выпуск; память webx-cms-local-demo-site, webx-cms-homelab-deploy, release-speed.
-
-До релиза руками пользователя (напомнить в начале и проверить до мержа релизного PR):
-репозитории-зеркала webx-ui/module-vacancies и webx-ui/module-tariffs на GitHub — без них
-php-split упадёт.
-
-Сделать:
-1. Погасить dev-серверы. В каждой ветке (feat/module-vacancies, feat/module-tariffs): git fetch
-   claude; git merge claude/main; полный гейт npm и php/ (PHP 8.4). Гейт упирается в память —
-   CLAUDE.md §4: по одной ветке, не параллельно.
-2. Первая ветка — PR, зелёный CI, enqueuePullRequest, дождаться MERGED. Вторая — git merge
-   claude/main и **свести списки регистрации**: php/composer.json (require, autoload-dev, карта
-   версий), phpunit.xml.dist, phpstan.neon.dist, Setup\Catalogue, Doctor\Checks\Helpers,
-   apps/playground/{src/panel/main.ts, vite.config.ts, package.json, server/panel/*},
-   pnpm-lock.yaml (pnpm install, не руками), apps/docs/.vitepress/config.ts, .changeset/* (оба
-   остаются). Гейт второй ветки заново, PR, CI, очередь.
-3. scripts/php-smoke.sh — оба пакета во всех трёх местах (require, цикл, карта провайдеров), тем
-   же PR второй ветки; smoke против MariaDB с обоими (базы пустыми, порты 8123/8124 свободны —
-   CLAUDE.md §4).
-4. Релизный PR от App — один на оба модуля. Снять changeset-release/main в отдельный worktree,
-   pnpm install, dist, pnpm pack @webx-ui/module-vacancies и @webx-ui/module-tariffs, проверить
-   диапазоны @webx-ui/* в обоих тарболах. Первая публикация обоих — пользователь из своего
-   терминала с 2FA, затем Trusted Publishing у обоих (webx-ui / webx-ui / release.yml). Мерж
-   релизного PR; npm view всех поднятых пакетов; тег php-v<версия>; php-split прошёл по обоим
-   новым зеркалам (git ls-remote); webx-ui/module-vacancies и webx-ui/module-tariffs на
-   Packagist — пользователь. Удалить ветки feat/vacancies-panel и feat/tariffs-panel,
-   worktree релиза.
-
-Демо: webx-cms.local — оба пакета в scripts/packages.mjs, link-panel.sh, composer require в
-два шага (require "webx-ui/<пакет>:*" --no-update, потом update "webx-ui/*"), импорт и
-...vacancies() и тарифы в resources/js/admin.ts руками (webx:panel --sync существующий файл не
-трогает), migrate, cache:clear (словарь), демо обоих тинкером со своими журналами, npx vite
-build; хомлаб — то же в registry, npm ls @webx-ui/module-admin — одна версия, коммит и пуш в
-Gitea. omnivitality-v2.local — только если пользователь скажет. Docs-PR: WEBX_UI_COMPOSER_PACKAGES.md
-(пункты 8 и 10 «Запланированы» зачеркнуть, строки в «Модули»), CLAUDE.md §§2,6.
-
-Проверить живьём на обоих: /careers — группы, фильтр, закрытых нет; открытая вакансия —
-JobPosting (validator.schema.org и Rich Results Test — пользователь или сессия, если есть
-доступ); закрытая — 200, пометка, noindex, нет в sitemap; тарифы — по своей спеке; раздел
-панели по-русски; телефон — пользователь. В конце — «Итог V4» здесь и строка в итоге T4 у
-тарифов, что выпуск сделан этой сессией.
-```
-
-#### Итог V4 — сделано 28.09.2026
-
-Оба модуля выпущены одним релизом **v0.48.0** (#334 вакансии, #336 тарифы, релизный #335):
-`webx-ui/module-vacancies` и `webx-ui/module-tariffs` на Packagist (зеркала и отправка —
-пользователь), `@webx-ui/module-vacancies@0.1.0` и `@webx-ui/module-tariffs@0.1.0` на npm
-(первые версии — пользователь из своего терминала тарболами, собранными из
-`changeset-release/main`; диапазоны в обоих `core ^0.34.0`, `module-admin ^0.18.1`,
-`schema ^0.6.3`; затем Trusted Publishing), релиз поднял ещё `@webx-ui/module-blocks` до 0.10.5
-(автокомплит `tariffs`). `php-split` прошёл, `v0.48.0` в обоих новых зеркалах есть. Ветки
-`feat/vacancies-panel` и `feat/tariffs-panel` и worktree релиза удалены.
-
-- **Зеркала нужны к первому PR, а не к релизному.** Пуш в `main`, который трогает `php/**`,
-  сразу запускает `php-split` без тега (`WEBX_UI_PHP_RELEASE.md`), — на этот раз оба
-  репозитория уже были, и после мержа #334/#336 в них лежало содержимое, так что на Packagist
-  пакеты отправлены до мержа релизного PR.
-- **Гейты.** Вакансии: полный npm, php на 8.4 (2006). Тарифы после слияния `main` с вакансиями:
-  полный npm, php (2073), `scripts/php-smoke.sh` против MariaDB с обоими пакетами (провайдеры
-  найдены, миграции прошли, оба смоука зелёные). Конфликтов слияния четыре, все — соседние строки
-  списков (`composer.json` autoload-dev, `Catalogue`, `DoctorTest`, `screens.ts` плейграунда);
-  остальное git свёл сам. **Но слияние молча оставило неправильный тест:** в `DoctorTest`
-  список хелперов объединился, а `array_fill(0, 10, …)` рядом — нет (каждая ветка подняла его
-  до десяти сама), и зелёный по отдельности тест упал на одиннадцатом `ok`. Счётчик рядом со
-  списком после слияния двух веток сверять руками.
-- **Демо на обоих — тинкером, у каждого свой журнал** (`storage/app/vacancies-demo-journal.json`,
-  `tariffs-demo-journal.json`). Услуги на сайте не демо модуля, поэтому связь Growth и блок
-  «Сколько стоит» дописаны вторым скриптом на первую услугу («Имплантация под ключ») — через
-  собственный `TariffsDemo::service()` и в тот же журнал. На хомлабе скрипты — под `www-data`
-  (`docker exec -u www-data`), чтобы журналы не оказались файлами root'а. Сайт на registry
-  (Gitea `5330b10`); composer на `webx-cms.local` увидел v0.48.0 с 11-й попытки (CDN Packagist,
-  CLAUDE.md §5); `npm ls` — одна копия `module-admin` (0.18.1) и `module-blocks` (0.10.5).
-- **Проверено на обоих curl'ом:** `/careers` — три группы на ru и четыре на en («Other
-  vacancies»), `?category=sales` — одна, закрытой вручную и истёкшей в списке нет; открытая —
-  `JobPosting`; обе закрытые — 200, «Вакансия закрыта», `noindex,follow`, без разметки и вне
-  `sitemap-vacancy.xml`; `/pricing` — три карточки, Growth с «Рекомендуем», Enterprise «По
-  запросу», счёт; на en у Starter список длиннее; услуга — ровно Growth под «Сколько стоит».
-  В браузере на `webx-cms.local`: слайдер «01 / 03», «назад» выключена в начале; 375 px — одна
-  карточка во всю ширину, прокрутки вбок нет ни на `/pricing`, ни на `/careers`; разделы
-  «Вакансии» и «Тарифы» панели по-русски. На хомлабе словарь панели проверен ответом
-  `/api/cms/translations/ru` (входить в панель не на локальном хосте сессия не может).
-- **`hiringOrganization` только по `@id` Google принимает** (вопрос из итога V3 закрыт):
-  Rich Results Test на `webx-cms.alexx.group/careers/php-developer` — Job Postings «1 valid
-  item», два необязательных замечания (`addressRegion`, `postalCode`); validator.schema.org —
-  0 ошибок и 0 предупреждений у `JobPosting`, `BreadcrumbList`, `WebSite`. `name` рядом
-  печатать не нужно.
-- Телефон (формы, перетаскивание) — за пользователем.
+- Формы и перетаскивание на настоящем телефоне — проверка за пользователем.
+- `CategoryTools` у категории без адреса убирает слаг из строк списка, поэтому
+  `vacancy_categories_update` по слагу не принимает; понадобится — это правка `CategoryTools`
+  (признак «слаг есть, адреса нет» в `CategoryKind`), не модуля.
+- Отложенное — §7.

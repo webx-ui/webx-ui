@@ -1,6 +1,6 @@
 # `webx-ui/module-blog` — спецификация и план реализации
 
-Статус: спроектирован 18.09.2026, выпущен 19.09.2026 — все сессии закрыты (§17). Пакеты —
+Статус: выпущен 19.09.2026 в v0.23.0 (§17). Пакеты —
 `webx-ui/module-blog` (composer) и `@webx-ui/module-blog` (npm), оба стоят на обоих демо.
 
 Блог: статьи, рубрики, теги. Содержимое статьи — блоки конструктора (`webx-ui/module-blocks`),
@@ -64,7 +64,7 @@
 14. **Автор — администратор** (`module-auth`), не своя сущность. Гостевые авторы — это справочник
     людей, и он не про блог.
 15. **Тело статьи — блоки.** Прозу держит блок «Текст» на типе поля `wx-rich-text`, который
-    приезжает в `module-admin` до этого модуля (§17, этап 1). Двух механизмов содержимого в одной
+    приезжает в `module-admin` до этого модуля (§17). Двух механизмов содержимого в одной
     панели не будет.
 16. **Экран формы описанный** (`blog.article-form`), списки — компоненты пакета: узла-таблицы в
     схеме экранов нет, и придумывать его здесь не место.
@@ -419,161 +419,35 @@ POST   /api/cms/blog/tags/mass           { ids: [], action: index|noindex|delete
 (реестр, пуш в Gitea). Наполнить десятком настоящих статей с обложками, тремя-четырьмя рубриками и
 десятком тегов, включая пару дублей — иначе слияние проверить не на чем.
 
-## 17. Пошаговый план
+## 17. Выпуск
 
-| Сессия | Что                                                                 | Ветка               |
-| ------ | ------------------------------------------------------------------- | ------------------- |
-| **1**  | ✅ `module-admin`: тип поля `wx-rich-text`, дата у `publish()`      | `feat/wx-rich-text` |
-| **A**  | ✅ пакет: схема, модели, адреса, обработчики, вьюхи, RSS            | `feat/module-blog`  |
-| **B**  | ✅ API панели и экран списка статей                                 | та же               |
-| **C**  | ✅ редактор статьи: вкладки, блоки, автосейв, ревизия, предпросмотр | та же               |
-| **D**  | ✅ рубрики и теги: экраны, порядок, инлайн-переименование, слияние  | та же               |
-| **E**  | ✅ MCP, гайд `apps/docs/guide/blog.md`                              | та же               |
-| **F**  | ✅ выпуск, оба демо, наполнение                                     | —                   |
+Выпущен 19.09.2026 в v0.23.0 (npm `@webx-ui/module-blog@0.1.0`) и стоит на обоих демо: 11 статей
+во всех состояниях, 4 рубрики, 12 тегов с двумя парами дублей. До модуля в `module-admin` приехали
+тип поля `wx-rich-text` и аргумент `at` у `HasDraft::publish()`. Что решилось при реализации сверх
+написанного выше:
 
-Промпты ниже самодостаточны: в каждом сказано, что прочитать, что сделать и чего не делать.
+- **Меню — три модуля панели** (`articles`, `rubrics`, `tags`) в группе `blog`: навигация рисует
+  строку на модуль. Группа пишется в `webx-admin.groups` из провайдера на boot. От id модуля
+  зависят и имена MCP-инструментов (`BoundTool::fullName()`); `blog://feed` и `write_article` — у
+  `ArticlesModule`.
+- **Редактор сохраняет значения описанного экрана** (`PUT { values, revision }`, `ArticleForm`
+  поверх `ScreenValues`) — иначе не сохранялась бы карточка `wx-seo` из патча `module-seo`.
+  `ArticleRequest` остался только у `POST`; отдельного `PATCH …/draft` нет — автосейв и «Сохранить
+  черновик» одно действие.
+- **Сохранение делится надвое:** текст, адрес, анонс и обложка — в черновик; рубрики, теги,
+  похожие и закрепление — сразу (строку pivot в черновик не положить).
+- **Дата** неопубликованной статьи лежит в черновике (`applyDraft` пропускает `published_at`) и
+  уходит в `publish(at:)`; у опубликованной и запланированной пишется в колонку сразу — по ней
+  сортируют списки. Момент приводится к поясу приложения (`Panel\Instant`).
+- **Список** — фильтры подзапросами, варианты фильтров едут рядом с `data` и `meta`; корзина —
+  вкладка списка. Рубрики — `WxListDetail` с формой-компонентом (не описанный экран); теги —
+  таблица на любой ширине, переименование адрес не двигает; индексация тега — через
+  `TagIndexing` → `hasRuleFor`, то есть фильтр — `whereIn` по списку из php.
+- **`rubrics_create` и `tags_create` нет**, есть `tags_merge` с `dry_run`.
+- **Миграции модуля — `2026_01_02_*`:** они ссылаются на `media_files`.
+- **Публичные вьюхи** печатают `<title>` сами и держат обложку в `max-width: 100%`.
 
-### 1 — `wx-rich-text` и дата публикации
-
-```
-Этап 1 из §17 WEBX_UI_MODULE_BLOG.md: тип поля wx-rich-text в module-admin.
-
-Прочитать: §§7,14 спеки; php/packages/module-media/src/Screens/{MediaFieldType.php,MediaValues.php}
-и его регистрацию в MediaServiceProvider — образец типа поля; php/packages/module-admin/src/
-Screens/{FieldType.php,FieldTypes.php}; packages/module-media/src/MediaField.vue и его регистрацию
-в module.ts — образец npm-половины; packages/core/src/components/RichText.
-
-Сделать: тип поля wx-rich-text на обеих половинах — php (FieldType, валидация значения, поддержка
-localized) и npm (компонент поля на WxRichText, регистрация в реестре типов module-admin);
-необязательный аргумент ?CarbonInterface $at = null у HasDraft::publish() с тестом на то, что без
-него поведение прежнее; страница доков и демо; changeset на @webx-ui/module-admin и @webx-ui/php.
-
-Не делать: ничего блогового. Пакета module-blog в этой сессии не существует.
-
-Проверить живьём: поле в конструкторе блоков на webx-cms.local — сборка module-admin, потом
-npx vite build в сайте.
-```
-
-### A — пакет, адреса, публичная половина
-
-```
-Сессия A из §17 WEBX_UI_MODULE_BLOG.md: composer-пакет webx-ui/module-blog.
-
-Прочитать: §§2–9,12 спеки; php/packages/module-pages/{composer.json,src/PagesServiceProvider.php,
-src/PageHandler.php,src/Models/Page.php,database/migrations/*,resources/views/show.blade.php} —
-образец во всём; php/packages/routing/src/{RouteTypes.php,RouteType.php,Formatters/*,HasUrl.php};
-php/packages/module-admin/src/Versions/{HasDraft.php,HasVersions.php}; php/packages/module-seo/src/
-{Rendering/{SeoSource.php,SeoSources.php,SeoData.php,EntitySource.php},Panel/{UrlRuleSource.php,
-UrlMatcher.php}} — источники, приоритеты, мерж и кеш правил; docs/architecture/
-WEBX_UI_ROUTING.md §§4,6,8 и WEBX_UI_MODULE_SEO.md §§4,5.
-
-Сделать: php/packages/module-blog — composer.json (module-admin, module-auth, module-blocks,
-module-media, module-seo, routing, localization, mcp), провайдер, конфиг (prefix, per_page,
-related, tags.noindex, имена вьюх); миграции §3; модели Article, Rubric, Tag со связями,
-HasUrl, HasSeo, HasTranslations, HasDraft+HasVersions у статьи, isPublished/scopePublished §7;
-регистрацию трёх типов в RouteTypes §4; обработчики и минимальные вьюхи ленты, рубрики, тега,
-статьи; RSS; подбор похожих §8; TagSource с приоритетом 40 и метод hasRuleFor у UrlRuleSource в
-module-seo — тег с правилом SEO индексируется целиком §12; lang/* на десять языков; README,
-LICENSE; тесты §15, кроме экранных и MCP.
-
-Не делать: ни API панели, ни npm-пакета (B и дальше). Демо не трогать.
-```
-
-### B — API панели и список статей
-
-```
-Сессия B из §17 WEBX_UI_MODULE_BLOG.md: раздел «Blog» и список статей.
-
-Прочитать: §§10,11 спеки; php/packages/module-pages/{routes/api.php,src/Http/**,src/Panel/*} —
-образец контроллеров, ресурсов и модуля панели; packages/module-pages/src/{module.ts,PagesPage.vue,
-api.ts,i18n.ts} — образец npm-пакета; прототип «Статьи — список» и «Статьи на телефоне» по ссылке
-в шапке спеки.
-
-Сделать: маршруты и контроллеры статей §11 (список с фильтрами и подзапросами, CRUD, publish,
-unpublish, restore), ресурс статьи; BlogModule с пунктами меню Articles/Rubrics/Tags;
-npm-пакет @webx-ui/module-blog — экран списка статей: таблица с layout=fixed и ширинами, обложка,
-чипы рубрик, WxDate, статусы §10, фильтры, WxRowMenu, карточки на телефоне; i18n; тесты php и
-vitest; changeset.
-
-Не делать: редактор (C), рубрики и теги (D).
-
-Проверить живьём: scripts/link-panel.sh, composer update "webx-ui/*" в webx-cms.local, раздел в
-браузере, в том числе на 375 px.
-```
-
-### C — редактор статьи
-
-```
-Сессия C из §17 WEBX_UI_MODULE_BLOG.md: редактор статьи.
-
-Прочитать: §§7,10,12 спеки; packages/module-pages/src/{PageEditorPage.vue,PageHistory.vue,
-editor.ts,slug.ts} — образец вкладок, автосейва, ревизии и предпросмотра; docs/architecture/
-WEBX_UI_MODULE_BLOCKS.md §§12,14; module-seo — как карточка wx-seo приезжает патчем; прототипы
-«Статья — Контент» и «Статья — Настройки».
-
-Сделать: экран blog.article-form (описанный, resources/screens/article-form.json) и его хост;
-вкладки Контент/Настройки/SEO/История; конструктор блоков; поля настроек §10 — рубрики
-перетаскиванием с меткой «главная», комбобокс тегов с созданием на лету, дата и время публикации с
-подсказкой, автор, обложка, анонс, закрепление, похожие; автосейв в черновик, панель действий,
-предпросмотр по токену, 409 по ревизии; тесты (вкладки — mousedown); changeset.
-
-Не делать: экраны рубрик и тегов (D).
-
-Проверить живьём: создать статью с будущей датой на webx-cms.local — на сайте 404, в панели
-«Запланирована»; сдвинуть дату — появилась.
-```
-
-### D — рубрики и теги
-
-```
-Сессия D из §17 WEBX_UI_MODULE_BLOG.md: экраны рубрик и тегов.
-
-Прочитать: §§6,10,11,12 спеки; прототипы «Рубрики», «Теги», «Слияние тегов»; packages/core/src/
-components/ListDetail; php/packages/module-inbox — образец экрана со статусами и перетаскиванием;
-module-seo — запись в seo_redirects.
-
-Сделать: маршруты и контроллеры рубрик и тегов §11 (в том числе reorder и merge); экран рубрик на
-WxListDetail с перетаскиванием и формой; отказ удаления рубрики со статьями (422 с числом);
-экран тегов: выделение, инлайн-переименование, фильтры, панель выделения, диалог слияния с
-галочкой редиректов; колонка «Индексация» в трёх состояниях и фильтр «Не индексируются» по тому
-же правилу, что и рендер (hasRuleFor, §12); тесты §15 на слияние, на отказ удаления и на три
-состояния индексации; changeset.
-
-Не делать: MCP и гайд (E).
-
-Проверить живьём: слить два тега на webx-cms.local и проверить, что старый адрес отвечает 301;
-завести в SEO правило на адрес тега и убедиться, что страница отдаёт заголовок правила без
-noindex, а в списке тегов строка сменила состояние.
-```
-
-### E — MCP и документация
-
-```
-Сессия E из §17 WEBX_UI_MODULE_BLOG.md: MCP и гайд.
-
-Прочитать: §13 спеки; php/packages/module-pages/src/Mcp/* — образец инструментов, ресурса и
-промпта; apps/docs/guide/pages.md — образец гайда.
-
-Сделать: инструменты articles_*, rubrics_list, tags_list, tags_merge; ресурс blog://feed; промпт
-write_article; тесты MCP; apps/docs/guide/blog.md; ссылку в сайдбаре доков; README пакета;
-changeset.
-
-Не делать: выпуск (F).
-```
-
-### F — выпуск и демо
-
-```
-Сессия F из §17 WEBX_UI_MODULE_BLOG.md: релиз и демо.
-
-Прочитать: §16 спеки; docs/architecture/WEBX_UI_PHP_RELEASE.md; CLAUDE.md §5 — правила релиза,
-первая публикация нового npm-пакета вручную из ветки changeset-release/main.
-
-Сделать: гейт целиком; PR, мерж, релизный PR; публикация @webx-ui/module-blog вручную из
-changeset-release/main с проверкой диапазонов в тарболе; php-тег и split; оба демо —
-webx-cms.local из чекаута и webx-cms.alexx.group из реестра с пушем в Gitea; наполнение демо
-статьями, рубриками и тегами §16; проверка ленты, рубрики, тега, RSS и телефона на живом сайте.
-```
+**Открыто:** всё отложенное — §18.
 
 ## 18. Отложено
 

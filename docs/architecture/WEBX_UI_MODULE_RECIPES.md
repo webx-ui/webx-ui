@@ -1,7 +1,7 @@
 # `webx-ui/module-recipes` — спецификация и план реализации
 
-Статус: спроектирован 24.09.2026, промпты сессий RC1–RC6 — в §6; все шесть сделаны, **выпущен 24.09.2026 в v0.41.0** (итог RC6). Пакеты — `webx-ui/module-recipes` (composer) и
-`@webx-ui/module-recipes` (npm).
+Статус: выпущен 24.09.2026 в v0.41.0 (`@webx-ui/module-recipes@0.1.0`), итог — §6. Пакеты —
+`webx-ui/module-recipes` (composer) и `@webx-ui/module-recipes` (npm).
 
 Рецепты — записи с галереей, ингредиентами, способом приготовления, пищевой ценностью, временем и
 порциями. У рецепта свой адрес и **страница жёсткой структуры, без блоков**: её рисует вьюха
@@ -187,9 +187,9 @@ id, название на языке панели, подпись, миниат�
 
 В поле `wx-collection` это ещё один выбор под категориями: «Только связанные с: [услуга]».
 **«Связанные с той записью, на странице которой стоит блок»** — отдельный флаг `related.current`
-(сделан в RC1: рендер блока свою сущность знает).
+(рендер блока свою сущность знает — §6).
 
-Значение, как его хранит `store()` — форма, которую пишет панель (RC2), сервер (RC1) ей совпадает:
+Значение, как его хранит `store()` — форма, которую пишет панель, и сервер ей совпадает:
 
 ```json
 {
@@ -205,7 +205,8 @@ id, название на языке панели, подпись, миниат�
   у «не сужено» одно написание.
 - `ids` — по возрастанию, без повторов, как `categories`.
 - «Связанные с этой страницей» — `{ "type": "service", "ids": [], "current": true }`: ключ
-  `current` пишется только включённым, `ids` при нём всегда `[]`. Панель его пока не рисует (RC5).
+  `current` пишется только включённым, `ids` при нём всегда `[]`. В панели это переключатель
+  «The record of the page it stands on».
 - Разметка по умолчанию выключена и при `related`: сужено связью — та же «часть коллекции»,
   что и категория.
 - `type` не из `relations()` источника — `related` выбрасывается; правило поля отвечает
@@ -230,7 +231,7 @@ GET /api/cms/relations/{target}?ids[]=        → то же, в порядке i
 предлагать (сама запись, когда цель — её же тип: похожие рецепты). `visible: false` без
 `trashed` — «не на сайте» (снята с публикации, скрыта). Права — `permission` цели; без них 403,
 и поле рисуется только списком выбранного, без «Добавить»; неизвестная цель — 404.
-`trashed` и `except[]` добавлены в RC1.
+`trashed` (пометка «в корзине») и `except[]` добавлены при реализации.
 
 ### 3.8. Второй вид категорий у одной модели
 
@@ -415,7 +416,7 @@ recipe_nutrient_recipe    categoryLinks('recipe', 'recipe_nutrients')
 - **Recipe** — галерея (`wx-media`, список), ингредиенты и способ приготовления (`wx-rich-text`,
   `localized`, подсказка «списком»), пищевая ценность — пять `wx-input` с `localized` в одной
   карточке (узел `wx-recipe-nutrition` или просто пять полей с именами `nutrition.calories` —
-  решить в RC3 по тому, что проще отдаёт `ScreenRecord`; имена с точкой буквальны, CLAUDE.md §4).
+  выбраны пять полей, §5.10; имена с точкой буквальны, CLAUDE.md §4).
 - **Settings** — заголовок и адрес, `lead` со счётчиком, время, порции, категории
   (`wx-categories`), источники (`wx-categories`, `main: false`), услуги (`wx-relations`, target
   `service`), похожие (`wx-relations`, target `recipe`, подсказка «пусто — подберутся сами»),
@@ -432,7 +433,7 @@ recipe_nutrient_recipe    categoryLinks('recipe', 'recipe_nutrients')
 
 ### 5.10. API панели
 
-Формы зафиксированы заранее, чтобы RC3 и RC4 шли параллельно:
+Формы зафиксированы заранее, чтобы php- и npm-половины шли параллельно:
 
 ```
 GET    /api/cms/recipes            ?category=&nutrient=&service=&status=&q=&trashed=1   (search= — синоним q)
@@ -452,7 +453,7 @@ POST   /api/cms/recipes/reorder    { ids }                  без category (р�
        /api/cms/relations/{target}                                    §3.7
 ```
 
-**Поправлено в RC3 (панель RC4 пишется уже по этому):**
+**Поправлено при реализации:**
 
 - `status` — `draft | published | modified | unpublished`, **ровно как у услуг и блога**, а не
   `live | live-changed`: «как у услуг» было замыслом, слова — опиской, и npm-код услуг читает
@@ -497,8 +498,8 @@ id в `recipes_update` (`services`, `related`); услугу можно назв
 Всё из CLAUDE.md §4 («прописать в `php/` четыре раза», «раздел панели — в четырёх местах»):
 `php/composer.json`, `phpunit.xml.dist`, `phpstan.neon.dist`, `Setup\Catalogue`,
 `extra.webx.npm`/`extra.webx.panel`, `apps/playground/src/panel/main.ts`, `scripts/packages.mjs`
-в `webx-cms.local` и строка в `scripts/php-smoke.sh` (RC6); `module-services` регистрирует цель
-`service` (RC1); иконка группы — по набору (`icons.test.ts`).
+в `webx-cms.local` и строка в `scripts/php-smoke.sh`; `module-services` регистрирует цель
+`service`; иконка группы — по набору (`icons.test.ts`).
 
 ### 5.14. Тесты, которые обязательны
 
@@ -514,537 +515,41 @@ id в `recipes_update` (`services`, `related`); услугу можно назв
 - Блок в виде `catalog`: вторая страница, фильтр по источнику, `canonical`/`noindex`.
 - Блок-витрина на своём `sample` и с фильтром по услуге — через настоящий путь записи.
 
-## 6. Пошаговый план
-
-**Выпуск один, в конце** (RC6), до него ни PR, ни ожидания CI — как у FAQ и отзывов. Каждая
-сессия гонит локальный гейт своей половины; полный — только RC6. Одна ветка
-`feat/module-recipes` (worktree `../webx-ui-module-recipes`), параллельные сессии — на своих
-ветках, их сливает следующая.
-
-| Сессия  | Ветка / worktree                                      | Что                                                                |
-| ------- | ----------------------------------------------------- | ------------------------------------------------------------------ |
-| **RC1** | `feat/module-recipes`                                 | php `module-admin`: связи §3 целиком, §3.8; цель `service`         |
-| **RC2** | `feat/relations-panel` / `../webx-ui-relations-panel` | npm: `wx-relations`, фильтр по связи в `wx-collection`, плейграунд |
-| **RC3** | `feat/module-recipes`                                 | php `module-recipes`: §§4–5 кроме MCP и демо                       |
-| **RC4** | `feat/recipes-panel` / `../webx-ui-recipes-panel`     | npm `module-recipes`: панель по §5.10, плейграунд                  |
-| **RC5** | `feat/module-recipes`                                 | слияние RC2 и RC4, MCP, демо, гайд, README, doctor                 |
-| **RC6** | `feat/module-recipes`                                 | выпуск, оба демо                                                   |
-
-RC1 ∥ RC2 (API поля — §3.7), затем RC3 ∥ RC4 (API — §5.10). Промпты ниже самодостаточны. В конце
-каждой сессии — «Итог RCn» сюда (что следующей надо знать сверх промпта) и строка в память
-`custom-modules-workflow`.
-
-Общее для всех: gh не в PATH — `"C:\Program Files\GitHub CLI\gh.exe"`; пушить в `claude`, не в
-`origin`; php-гейт — `composer lint && composer analyse && composer test` из `php/` на
-`C:\Work\OSPanel\modules\PHP-8.4\php.exe` (в свежем worktree сначала прогреть манифест Testbench
-последовательно — CLAUDE.md §4 «И то же самое на пустом `vendor`»); npm — точечно
-`npx vitest run <файлы> --pool=forks --poolOptions.forks.singleFork` **из корня worktree**,
-`npx vue-tsc -p tsconfig.json --noEmit` в пакете, eslint и prettier на своих файлах. `pnpm` в
-worktree с симлинком на `node_modules` не запускать (CLAUDE.md §4).
-
-### RC1 — связи, php (`module-admin`)
-
-```
-Сессия RC1 из §6 docs/architecture/WEBX_UI_MODULE_RECIPES.md: общий механизм связей в
-module-admin, php-половина. Идёт параллельно с RC2.
-
-Начало: git fetch claude; git worktree add ../webx-ui-module-recipes -b feat/module-recipes
-claude/main (если PR #284 со спекой ещё не смержен — от claude/docs/plan-recipes). В php/ этого
-worktree: composer install, прогреть манифест Testbench (CLAUDE.md §4). PR не открывать.
-
-Прочитать: §§2,3 спеки целиком; php/packages/module-admin/src/{Categories/*,Collections/*,
-Links/LinkSources.php,Screens/ScreenRecord.php,Screens/Types/*} — образцы реестра, типа поля и
-раскладки значений; docs/architecture/WEBX_UI_MODULE_SERVICES.md §3 и итоги K1, K2 — как
-выносили категории; итог F1 в docs/architecture/WEBX_UI_MODULE_FAQ.md (ResolvesMissing, Selection);
-php/packages/module-services/src/ServicesServiceProvider.php.
-
-Сделать в php/packages/module-admin: миграция webx_relations §3.2; Relations\RelationTarget,
-RelationTargets (синглтон, регистрация из провайдера), HasRelations §3.4 с предзагрузкой
-Relations::load() и обратным Relations::owners(); forceDeleted с обеих сторон §3.3;
-Screens\Types\RelationsType (wx-relations) §3.5 — узел снимается с экрана, если цели нет в
-реестре, значение при этом не трогается; ScreenRecord раскладывает wx-relations в связи, у HasDraft
-— в черновик (как categories у услуги); маршрут GET /api/cms/relations/{target} §3.7 с правами
-цели; Selection + CollectionSource::relations() §3.6 (фильтр related, нормализация, источник без
-связей его не видит); HasCategories со второй связью §3.8 (имя связи параметром, по умолчанию —
-categoryRelation()); строка в webx:doctor про связи на снятые модули; слова webx-admin::relations.*
-на десять языков. В php/packages/module-services — регистрация цели service (+ слово в lang).
-Тесты на фикстурах двух моделей: всё из §3.9 php-стороны, включая forceDeleted с обеих сторон,
-мягкое удаление не трогает строки, снятый модуль-цель, черновик применяет связи публикацией,
-wx-collection с related через настоящий путь записи обеих дверей. Changeset на @webx-ui/php
-(minor).
-
-Выяснить и записать в итог: знает ли рендер блока сущность, на странице которой стоит
-(module-blocks, контекст рендера — Stage, Renderer, то, что передаёт module-pages/module-services).
-Знает — сделать related.current в Selection (§3.6); не знает — не делать и дописать в §7.
-
-Не делать: npm (RC2), module-recipes (RC3). Если форма ответа §3.7 или значение поля всё-таки
-должны отличаться — поправить спеку тем же коммитом и сказать об этом в итоге крупно: RC2 пишет мок
-по ней. В конце — «Итог RC1», коммит, пуш в claude.
-```
-
-#### Итог RC1 — сделано 24.09.2026
-
-Всё из промпта на ветке `feat/module-recipes`; гейт php-половины зелёный (pint, phpstan, все
-тесты на PHP 8.4). Что следующим сессиям надо знать сверх §3:
-
-- **RC2 закончил раньше, и сервер подогнан под то, что пишет панель** (итог RC2 ниже):
-  `/api/cms/collections` — `relations: [{ key, title }]`; значение `wx-collection` — пять ключей,
-  `related: { type, ids } | null`; разметка по умолчанию выключена и при `related`; слова —
-  `webx-admin::relations.*` ровно под именами RC2 (английский совпадает с `messages.ts`). **Сверх
-  RC2 на сервере — только добавления, панель их может не знать:** в ответе `/relations/{target}`
-  есть `trashed` (корзину можно пометить отдельно от «не на сайте» — слово `field-trashed`),
-  кандидатов режет необязательный `except[]` (панель исключает себя сама через
-  `provideRelationOwner`), у `related` бывает `current: true` (§3.6; слова
-  `collection-related-current` и `…-current-hint` уже в lang — рисовать в RC5). Отказ «больше
-  `max`» сервер говорит словом панели `field-full`. **RC5:** `lang/*/relations.php` уже под
-  ключами RC2 — сливать нечего; остаётся дописать в `messages.ts` три новых ключа
-  (`field-trashed`, `collection-related-current`, `collection-related-current-hint`) и добавить
-  группу `relations` в тест паритета.
-- **Рендер блока свою сущность знает — `related.current` сделан.** `renderBlocks()` у страниц,
-  услуг и статей отдаёт рендереру `$this`, но до типа поля она не доходила: `Values::resolve()`
-  звал `resolve()` без неё. Теперь есть маркер `Screens\ResolvesForEntity` (`resolveFor()`), и
-  `Rendering\Values` передаёт сущность только такому типу; вложенные блоки получают ту же. Сущность
-  называется ключом цели (`RelationTargets::keyOf()`), поэтому «связанные с этой страницей» на
-  странице `module-pages` не показывает ничего — страницы не цель.
-- **Код** — `WebxUi\Admin\Relations\{RelationTarget, RelationTargets, HasRelations, Relations}`,
-  тип `Screens\Types\RelationsType`, маркер `Screens\Withdraws`, `Http\Controllers\RelationController`,
-  `Doctor\Checks\Relations`. Цель по умолчанию читает переводимый `title` (или `name`), `isVisible()`,
-  корзину и `position`; модуль наследует и переопределяет `subtitle()`/`thumb()`/`query()` — так
-  сделан `WebxUi\Services\Relations\ServiceTarget` (подпись — категории, миниатюра — обложка).
-- **Как модуль пишет связи с экрана** — три строки, RC3 делает так же: `ScreenRecord::split()`
-  сам уносит поля `wx-relations` в `$split->relations` (в `own`/`taken`/`extra` их не называть);
-  после записи черновика — `$screenRecord->saveRelations($model, $split)`; в `values` формы —
-  `...$screenRecord->relationValues($screen, $model)`. Писатель черновика должен строить его от
-  `draftValues()`, как `ServiceWriter`: черновик, собранный с нуля, потеряет ключ связей. У модели с `HasDraft` выбор лежит в черновике под
-  ключом `Relations::DRAFT` (`relations`), по роли, и применяется публикацией через мутатор
-  `setRelationsAttribute()` + `saved`; `withDraft()` (предпросмотр) читает его. Роль, вернувшаяся
-  к опубликованному, из черновика уходит — сохранение без изменений не делает запись «изменённой».
-  **Спека говорила «ровно как categories у услуги» — у услуги категории как раз не черновые**,
-  они пишутся сразу (`ServiceWriter`); у рецепта §5.14 требует категории публикацией — это RC3
-  делает у себя (например, тем же ключом черновика), общий код для категорий этого не умеет.
-- **Снятый модуль-цель** — узел `wx-relations` уходит из `ScreenRegistry::tree()` (не из кеша
-  патчей: цели регистрируют другие провайдеры), значит и из ответа экрана, и из `validate()`:
-  присланное значение не пишется ни в связи, ни в `extra`, строки в таблице не трогаются.
-- **Удаление**: `RelationTargets::register()` вешает слушатель `eloquent.forceDeleted: <модель>`
-  (или `deleted` у модели без мягкого удаления) через диспетчер, у владельца — `bootHasRelations()`.
-  Корзина строк не трогает.
-- **`HasCategories`** — `categoryLinks(?string $name)`, `syncCategories($ids, ?string $name)`,
-  `scopeInCategory($q, $id, ?string $name)`; главная категория и `orderedIn` — по-прежнему
-  связь по умолчанию.
-- **Попутно починено:** панель услуг сохраняла блоки мимо типов полей (`storeBlocks()` не
-  вызывался — грабля CLAUDE.md §4 «значения идут через тип поля»); у блога та же дыра, вынесена
-  отдельной задачей. `CollectionSource` получил метод — все источники (`faq`, `reviews`, `services`
-  и фикстуры) отвечают `relations(): []`.
-- История версий связей не хранит (§7).
-- Worktree: `php/vendor` поставлен, манифест Testbench прогрет; parallel phpstan на свежем
-  манифесте падал «Access is denied» на `services.php` — помог один прогон `phpstan --debug` по
-  одному каталогу (он однопроцессный) после удаления `bootstrap/cache/*`.
-
-### RC2 — связи, npm (`module-admin`)
-
-```
-Сессия RC2 из §6 docs/architecture/WEBX_UI_MODULE_RECIPES.md: поле wx-relations и фильтр по связи
-в wx-collection, npm-половина module-admin. Идёт параллельно с RC1, php не трогает.
-
-Начало: git fetch claude; git worktree add ../webx-ui-relations-panel -b feat/relations-panel
-<та же база, что у RC1: claude/main или claude/docs/plan-recipes>; pnpm install --frozen-lockfile
-в этом worktree (каталог обычный — node_modules будет свой, CLAUDE.md §4); собрать dist у tokens,
-core, schema. PR не открывать.
-
-Прочитать: §§3.5–3.7,3.9 спеки; packages/module-admin/src/collections/* (WxCollectionField — итог
-F2 спеки FAQ) и поле wx-categories — образцы; apps/playground/server/panel/ (faq.ts, services) —
-как устроены фикстуры; CLAUDE.md §4 про перетаскивание в панели браузера (клавиатурой на ручке),
-про фрагмент в корне компонента и :deep(), про 375 px.
-
-Сделать в packages/module-admin: WxRelationsField (тип wx-relations): выбранные строками с
-перетаскиванием (WxSortableList) и удалением, «Добавить» — поиск через GET
-/api/cms/relations/{target}?q=, названия выбранных через ?ids[]=, пометка невидимой цели, без прав
-(403) — только список; регистрация типа в реестре полей; в WxCollectionField — выбор «только
-связанные с» для источника, у которого relations() не пуст (форма значения — как в Selection
-§3.6). Слова — английский пол в messages.ts под ключами webx-admin::relations.* (RC1 заводит их в
-lang; сверить имена по спеке, расхождение — в итог). Плейграунд: мок /api/cms/relations/service и
-/relations/recipe по §3.7, поле на экране услуги или отдельной фикстуре — чтобы было где нажать.
-vitest на поле и на новый выбор в WxCollectionField; changeset на @webx-ui/module-admin (minor).
-Гайд: раздел «Связи» в apps/docs/guide/collections.md или свой relations.md со ссылкой в сайдбаре.
-
-Проверить в браузере на плейграунде (фоновый npx vite --port 5186 в apps/playground, preview_start
-с url): выбрать, переставить клавиатурой на ручке, убрать, пометка невидимой, 375 px и тёмная
-тема. В конце — «Итог RC2» в §6 спеки на своей ветке, коммит, пуш в claude.
-```
-
-#### Итог RC2 (24.09.2026)
-
-Сделано на `feat/relations-panel`: `WxRelationsField` (`packages/module-admin/src/relations/`),
-тип `wx-relations` в `adminTypes` (`wide: true`), выбор «только связанные с» в
-`WxCollectionField`, мок `/api/cms/relations/{service,recipe}` (`apps/playground/server/panel/relations.ts`),
-поле «Recipes» на `services.form` патчем проекта плейграунда, гайд `apps/docs/guide/relations.md`
-(в сайдбаре после Collections), changeset minor на `@webx-ui/module-admin`. Проверено в браузере
-на `/panel/services/1` и в блоке FAQ на `/panel/pages/17`: выбор, перестановка клавиатурой на ручке,
-удаление, сохранение (`values.recipes` → `[3, 4]`), пометка невидимой, 375 px, тёмная тема.
-
-**Что RC1/RC3/RC5 должны знать — всё это форма, которую написала панель, и сервер обязан ей
-совпасть:**
-
-- **`GET /api/cms/collections` отдаёт `relations` объектами, а не строками:**
-  `relations: [{ key: 'service', title: 'Услуги' }]` — `title` на языке панели, как у самого
-  источника (берётся из `label` цели в `RelationTargets`). Без названия панели нечем подписать
-  «Только связанные с “Услуги”». `CollectionSource::relations(): list<string>` остаётся как в §3.6 —
-  название дописывает контроллер. Панель на всякий случай понимает и голые строки (подпись = ключ),
-  и отсутствие ключа (`[]`) — то есть старый сервер не ломает поле.
-- **Значение `wx-collection` — пять ключей:** `related: { type, ids } | null`; `ids` сортируются
-  и чистятся, как `categories`; `type` без `ids` пишется как `null` — у «не сужено» одно написание.
-  `Selection::normalise()` должен делать ровно это.
-- **Разметка по умолчанию выключена и при `related`:** `defaultMarkup()` — «нет категорий **и**
-  нет `related`». Сузить по связи — это та же «часть коллекции», что и категория. `Selection` на
-  сервере должен считать дефолт так же, иначе переключатель покажет не то, что напечатает сайт.
-- **`related.current` не сделан** — ждёт ответа RC1 (знает ли рендер блока свою сущность).
-- **403 = только список:** ни поиска, ни удаления, ни перетаскивания; строки — `#id`, потому что
-  `ids[]` отвечает тем же 403. Если RC1 решит отдавать названия выбранного и без прав — поле
-  покажет их без правки, но удалять всё равно не даст.
-- **«Себя не предлагать» — на стороне панели:** `provideRelationOwner({ type, id })` из
-  `module-admin`; экран рецепта (RC4) обязан его вызвать, иначе «Похожие рецепты» предложат сам
-  рецепт. Сервер `id` владельца не знает, и знать ему незачем.
-- **Пометка одна — «Not on the site»**, а не «снята»/«в корзине» из §3.5: в ответе §3.7 есть
-  только `visible`. Хотим различать — нужен `state` в ответе, пока не стал.
-- **Поиск в моке не отдаёт корзину**, а `ids[]` отдаёт (с `visible: false`) — так и серверу.
-- **Слова — `webx-admin::relations.*`**, группа `relations` (в `messages.ts`): `field-add`,
-  `field-searching`, `field-nothing`, `field-empty`, `field-remove`, `field-drag`, `field-hidden`,
-  `field-missing`, `field-full` (`:max`), `field-forbidden`, `collection-related`,
-  `collection-related-to` (`:target`), `collection-related-type`, `collection-related-any`.
-  Слова фильтра в `wx-collection` положены сюда же, а не в `collections.*`: тест паритета
-  `messages.test.ts` сверяет `collections` с `lang/en/collections.php`, а php здесь не трогали.
-  **RC5:** слить с тем, что RC1 завёл в `lang/*/relations.php`, и добавить `'relations'` в список
-  групп теста паритета. Отказы сервера (`unknown-target` и т. п.) — ключи RC1, панель их не
-  знает и не должна.
-- Мок называет цели связей у источника `faq` (`relations: [service]`) — заранее, чтобы фильтру
-  было где стоять; предпросмотр `related` игнорирует. Когда появится настоящий источник рецептов —
-  убрать у `faq`.
-- Попутно: `WxCollectionField` рисовал приглушённый текст несуществующим `--wx-text-secondary`;
-  заменено на `--wx-text-muted`.
-
-### RC3 — `module-recipes`, php
-
-```
-Сессия RC3 из §6 docs/architecture/WEBX_UI_MODULE_RECIPES.md: composer-пакет webx-ui/module-recipes.
-Идёт параллельно с RC4.
-
-Worktree ../webx-ui-module-recipes, ветка feat/module-recipes. Первым делом: git fetch claude;
-git merge claude/feat/relations-panel (конфликт возможен только в спеке — итоги RC1 и RC2 оба
-нужны, и в lang/* module-admin — объединить ключи); сразу пуш — RC4 ответвляется от этого
-состояния. Worktree ../webx-ui-relations-panel после этого удалить (git worktree remove), ветку
-оставить до выпуска. PR не открывать.
-
-Прочитать: §§2,4,5 спеки и итоги RC1, RC2; php/packages/module-services целиком — образец почти во
-всём (адреса, черновик, версии, SEO, крошки, разметка, Cards/ServiceQuery/helpers, Views, Panel);
-php/packages/module-faq/src/Collections/* и resources/blocks — предложенный блок;
-php/packages/module-seo — HasStructuredData, SitemapRoutes, Seo::push(); CLAUDE.md §4 про
-«Главная не получает адрес, пока у сайта есть свой маршрут» (Reserved) и про wx-rich-text
-(data-wx-path, store()).
-
-Сделать: php/packages/module-recipes — composer.json с extra.webx и autoload files, провайдер,
-конфиг (prefix обязателен, index, per-page, similar, views), миграции §4, модели §5.1 (две связи
-категорий, HasRelations), адреса и индекс §5.3 (index = false — маршрута нет), публичная часть и
-вьюхи §§5.4–5.5 (части — @include, фрагмент каталога общий для индекса, категории и блока),
-похожие §5.6 (один запрос с очками в SQL), SEO и разметка Recipe §5.7 (ингредиенты и шаги из <li>,
-иначе абзацы), крошки через то, что стоит по пути {prefix}; RecipeQuery, Cards, recipes(),
-RecipesSource с relations() = ['service'], тип блока §5.8 с mode showcase|catalog в BlockOffers за
-class_exists; API §5.10 (формы ответов — ровно как там: по ним параллельно пишется панель, одна
-транзакция на сохранение); экраны recipes.form, recipes.category-form, recipes.nutrient-form с
-карточкой project-fields; права и модули панели §5.9; цель связей recipe (для похожих); все слова
-webx-recipes::* на десять языков — и серверные, и нужные панели; строка recipes() в webx:doctor;
-README, LICENSE; регистрации §5.13 кроме плейграунда, сайта и smoke; тесты §5.14 кроме MCP;
-changeset на @webx-ui/php.
-
-Не делать: npm (RC4), MCP и демо (RC5). Если форма ответа API всё-таки должна отличаться от §5.10
-— поправить §5.10 тем же коммитом и сказать об этом в итоге крупно. В конце — «Итог RC3», коммит,
-пуш в claude.
-```
-
-#### Итог RC3 (24.09.2026)
-
-Сделано на `feat/module-recipes`: пакет `php/packages/module-recipes` целиком по §§4–5 без MCP и
-демо, карточка SEO на `recipes.form` и `recipes.category-form` патчами из `module-seo`, строка
-`recipes()` в `webx:doctor` (`Doctor\Checks\Helpers`), модуль в `Setup\Catalogue`, регистрации в
-`php/` (composer, phpunit, phpstan), changeset на `@webx-ui/php`. Гейт php по пакету зелёный
-(pint, phpstan по всему `php/`, 43 теста пакета); соседние `module-admin`, `module-seo`, `module-services` зелёные.
-
-**§5.10 поправлен — крупно:** статусы `draft | published | modified | unpublished` (как у услуг,
-а не `live`/`live-changed`); в ответе формы есть `prefix`; строка списка несёт ещё `path`,
-`published_at`, `revision`; пищевая ценность — пять полей с буквальными именами
-`nutrition.<ключ>`, так же и в `values`; галерея — `wx-gallery`. RC4 знал это до начала работы
-(договорились сообщениями) — его панель и мок написаны уже по новой форме.
-
-Что следующим сессиям надо знать сверх промпта:
-
-- **Черновик.** Категории и источники ждут в черновике под `category_ids`/`nutrient_ids`,
-  публикация отдаёт их мутаторам `setCategoryIdsAttribute()`/`setNutrientIdsAttribute()`, а
-  `saved` пишет в связующие таблицы — тот же приём, что у связей (`HasRelations`). Вернули как
-  было — ключ из черновика уходит. Превью-копия читает их из `shownCategories()`/
-  `shownNutrients()`, поэтому вьюхи и крошки берут категории оттуда, а не из связи.
-- **Один порядок.** `Recipe::scopeOrderedIn()` перекрывает общий: с категорией только фильтрует,
-  сортирует всегда по `position` — поэтому `Selection::apply()` и общий код порядка категорий
-  рецептам его не навязывают. `reorder` — свой контроллер без `category`.
-- **Каталог.** `Rendering\Catalog` — готовые ссылки фильтра и страниц, фрагмент
-  `partials/catalog` — только разметка. Индекс и категория считают страницу по лёгким заготовкам
-  и строят карточки только для неё (`CatalogPage`), блок режет уже разрешённые карточки
-  `wx-collection` (`Catalog::block()`; шаблон блока — `@include` фрагмента, в плейграунде RC4
-  рисует его своей заменой). `noindex` у `?nutrient=` — `Seo\FilteredCatalogSource` (приоритет 45),
-  канонический без фильтра `module-seo` строит сам; вне диапазона страниц — 404 у индекса и
-  категории, у блока — пусто.
-- **Похожие** — `Rendering\Similar`: очки одним запросом (`count(*)`-подзапросы по связующим
-  таблицам и `webx_relations`, выражение повторено в `where`, без `HAVING`); ручные при любом
-  числе не добиваются; выбраны, но все в корзине — подбор.
-- **Без `module-blocks`:** блока нет (`BlockOffers` за `class_exists`), `preview_url` — `null`,
-  обработчик не спрашивает `PreviewGrant`. **Без `module-services`:** узел `services` снимается
-  общим механизмом RC1, `filters.services` — `null`, услуги на странице не печатаются.
-- **Пустая приставка** — исключение в `boot()` провайдера (`RecipesServiceProvider::prefix()`),
-  до регистрации чего-либо; отдельной проверки в `webx:doctor` нет — при такой приставке команда
-  не загрузится вовсе, и исключение говорит, что делать.
-- **Слова.** `lang/*/{panel,recipe,category,nutrient,module}.php` — английские RC4 байт в байт
-  (при слиянии — одинаковое добавление); серверные — `screen`, `site`, `errors`, `relations`.
-  Все группы на десяти языках, тест паритета — `tests/TranslationsTest.php`.
-- **RC5:** `RecipesModule` пока без `ProvidesMcpTools`/`ProvidesDemo`; `extra.webx.npm` уже
-  `^0.1.0`. Иконки: группа `heart`, рецепты `file-text`, категории `folder`, источники `tag`.
-
-### RC4 — `module-recipes`, npm
-
-```
-Сессия RC4 из §6 docs/architecture/WEBX_UI_MODULE_RECIPES.md: npm-пакет @webx-ui/module-recipes.
-Идёт параллельно с RC3, php не трогает.
-
-Начало: git fetch claude; git worktree add ../webx-ui-recipes-panel -b feat/recipes-panel
-claude/feat/module-recipes (после того, как RC3 влил RC2 и запушил — иначе wx-relations в
-module-admin нет); pnpm install --frozen-lockfile; собрать dist у tokens, core, schema,
-module-admin (тесты соседних пакетов видят module-admin из dist — CLAUDE.md §4). PR не открывать.
-
-Прочитать: §§2,5.8–5.10 спеки и итоги RC1, RC2; packages/module-services целиком — образец (список
-без пагинации, редактор с вкладками, автосейв, ревизия, история, предпросмотр); итог RC2 —
-wx-relations; apps/playground/server/panel/services* — образец мока; CLAUDE.md §4 про context.can()
-булево или computed, про вкладки в тестах (mousedown), про фильтры таблицы, про WxDate.
-
-Сделать: packages/module-recipes (версия 0.0.0) — модуль панели §5.9: список (перетаскивание
-только без фильтров, подсказка почему), редактор с вкладками Recipe · Settings · SEO · History,
-категории и источники через categoryRoutes; i18n с английским полом и тестом паритета (ключи
-заводит RC3 в php/packages/module-recipes/lang; чего не хватило — дописать туда же и сказать в
-итоге); плейграунд: apps/playground/server/panel/recipes.ts по формам §5.10, модуль в main.ts,
-тип блока recipes (оба mode) и страница с ним в фикстурах, предпросмотр страницы рецепта (свой
-рендерер плейграунда — CLAUDE.md §4 про renderTemplate); vitest; changeset (minor).
-
-Проверить в браузере на плейграунде (фоновый npx vite --port 5186, preview_start с url): создать
-рецепт, заполнить все вкладки, галерея из трёх картинок и смена обложки перетаскиванием, услуги и
-похожие через wx-relations, перетаскивание в списке без фильтра и подсказка с фильтром, блок в
-обоих видах в предпросмотре, 375 px и тёмная тема. В конце — «Итог RC4» в §6 спеки на своей
-ветке, коммит, пуш в claude.
-```
-
-#### Итог RC4 (24.09.2026)
-
-Сделано на `feat/recipes-panel`: пакет `packages/module-recipes` (0.0.0, changeset minor) —
-`recipes()` отдаёт три модуля (`recipes`, `recipe-categories`, `recipe-nutrients`), список,
-редактор `recipes.form` с узлом `wx-recipe-history`, диалог создания, категории и источники через
-`categoryRoutes` (`recipeCategoriesOptions()`, `recipeNutrientsOptions()`); 22 теста, включая
-паритет слов. Плейграунд: мок `/api/cms/recipes*` (`apps/playground/server/panel/recipes.ts`),
-цель связей `recipe` на настоящей фикстуре, источник коллекции `recipes` с `relations: [service]`,
-тип блока `recipes` в обоих видах, страница «Рецепты — витрина» (`/panel/pages/19`), предпросмотр
-`/preview/recipe/{id}`, папка «Рецепты» в медиатеке, поле проекта «Author's note». Проверено в
-браузере: создание, галерея из трёх и смена обложки перестановкой, ингредиенты списком, пищевая
-ценность, время и порции, категории и источники, услуга и похожий рецепт (себя пикер не предлагает,
-неопубликованный — с пометкой), SEO, публикация и история, перетаскивание списка клавиатурой без
-фильтра и подсказка с фильтром, блок-витрина с фильтром по услуге и каталог с пагинацией в
-предпросмотре, 375 px (горизонтального скролла нет ни на одной вкладке), светлая и тёмная тема.
-
-**С RC3 согласовано по ходу (сообщениями), панель написана под это:**
-
-- Статусы — как у услуг: `draft | published | modified | unpublished` (RC3 правит §5.10).
-- Форма — `{ recipe, values, revision, prefix, preview_url }`; `recipe` — строка списка плюс
-  `path`, `published_at`, `revision`. Строка списка несёт и `path`, и `published_at`. `POST` —
-  `{ data: { recipe, values } }`, панель берёт `recipe`.
-- Поиск — `q=` (сервер понимает и `search=`). Фильтры — `category`, `nutrient`, `service`,
-  `status`, `trashed=1`; `filters.services: null` без `module-services` — фильтра услуги нет.
-- Галерея — тип `wx-gallery` (у `module-media` это и есть «список `wx-media`»), имя `gallery`.
-  Пищевая ценность — пять полей с **буквальными** именами `nutrition.calories` … `nutrition.fiber`,
-  в `values` лежат под этими ключами, не картой. Вкладки `recipe · settings · seo · history`,
-  карточка `project-fields` на `settings`. Счётчик у обоих видов категорий — `recipes_count`.
-- Слова `panel`, `recipe`, `category`, `nutrient` и `module` — английский пол в
-  `php/packages/module-recipes/lang/en/*.php` сгенерирован из `messages.ts` на этой ветке; RC3
-  берёт эти файлы байт в байт и переводит на остальные девять языков, поэтому при слиянии en —
-  одинаковое добавление. Группы `screen`, `errors`, `relations`, `site` — RC3. Иконки в
-  манифесте: группа `heart`, рецепты `file-text`, категории `folder`, источники `tag`.
-
-**RC5 при слиянии:**
-
-- Плейграунд читает экраны `recipes.form`, `recipes.category-form`, `recipes.nutrient-form` из
-  `php/packages/module-recipes/resources/screens/` и падает на копии в
-  `apps/playground/server/panel/recipes/*.json`, пока файлов RC3 нет; SEO — патч
-  `module-seo/…/recipes.form.json`, иначе патч услуг (он заменяет тот же `seo-placeholder`). После
-  слияния копии удалить и `Source[]` в `screens.ts` свести к строкам — и проверить, что у RC3 те
-  же имена полей.
-- Тип блока `recipes` в плейграунде — **всегда заглушка** `RECIPES_BLOCK` из `recipes-site.ts`, а
-  не `resources/blocks/recipes.json`: шаблон RC3 — это `@include('webx-recipes::partials.catalog',
-…)`, общий фрагмент индекса, категории и блока (§5.8), а маленький Blade плейграунда не умеет ни
-  `@include`, ни пагинатор. Заглушка повторяет то, что RC3 назвал: схема `title`, `recipes`,
-  `mode`, `per_page`, `columns` и его `sample`; внутри корня `.b-recipes[data-wx-block]` — разметка
-  фрагмента (`.wx-recipes` > `__filter` с `__chip` и `aria-current`, `__grid` > `__card` >
-  `__link` с `__cover` и `__name`, `__time`, `nav` > `__pages`, `__more` в витрине). Линты
-  конструктора на ней чистые. Поменяется фрагмент у RC3 — поправить заглушку, а не Blade.
-- `relations` у источника `faq` в моке убран (итог RC2 просил это сделать, когда появится
-  настоящий источник рецептов); поле «Recipes» на `services.form` (патч проекта из RC2) оставлено.
-- Мелочь, найденная глазами: пустой список у поля «Rich in» говорит общим словом поля категорий
-  «In no category yet» — у `wx-categories` нет пропа для своего слова.
-- В панели браузера скриншот после клика часто на шаг отстаёт от DOM (папка медиатеки «показывала»
-  файлы предыдущей) — сначала `javascript_tool`/`get_page_text`, потом верить картинке.
-
-### RC5 — слияние, MCP, демо, доки
-
-```
-Сессия RC5 из §6 docs/architecture/WEBX_UI_MODULE_RECIPES.md: MCP, демо, гайд.
-
-Worktree ../webx-ui-module-recipes, ветка feat/module-recipes. Первым делом: git fetch claude;
-git merge claude/feat/recipes-panel (конфликты — спека и lang/*: объединить); worktree
-../webx-ui-recipes-panel удалить, ветку оставить до выпуска.
-
-Прочитать: §§5.11,5.12 спеки и итоги RC1–RC4; php/packages/module-services/src/{Mcp,Demo}/* и
-php/packages/module-reviews/src/{Mcp,Demo}/* с resources/demo; apps/docs/guide/services.md и
-reviews.md; CLAUDE.md §4 про mcp:start (только трубой), про возврат webx-cms.local после
-local-режима из копий и про новый пакет в local-режиме (require --no-update, потом update).
-
-Сделать: RecipesTools и recipes://catalog §5.11 (создание в транзакции; в описании инструментов —
-ингредиенты и способ HTML-списком), связи services и related в recipes_update (услуга — id или
-адресом); RecipesDemo §5.12 с динамическим requires(); apps/docs/guide/recipes.md — адреса и
-приставка, выключенный индекс и страница с блоком-каталогом на его месте, два вида блока и общий
-фрагмент каталога, что публиковать ради своей вёрстки, похожие рецепты, разметка Recipe и как её
-проверить, связи с услугами, патч с полем проекта (комментарий автора), два каталога на одной
-странице делят ?page=; раздел про связи в гайде module-admin, если RC2 его не сделал; ссылки в
-сайдбаре; README npm-пакета, разделы MCP и демо в README composer-пакета; recipes в автокомплите
-шаблона блоков (ключи карточки); тесты MCP и демо; changeset. Гейт php-половины и vitest/vue-tsc
-npm.
-
-Проверить живьём: инструменты через cat … | php artisan mcp:start webx на webx-cms.local в
-local-режиме на этом worktree (до переключения — копии composer.json, composer.lock, package.json,
-package-lock.json, database/database.sqlite в скретчпад; после — назад и composer install);
-страница рецепта, индекс и категория curl'ом — разметка Recipe в ответе. Ничего на сайте не
-коммитить — это RC6. В конце — «Итог RC5», коммит, пуш в claude.
-```
-
-#### Итог RC5 (24.09.2026)
-
-Сделано на `feat/module-recipes`: влит `feat/recipes-panel` (конфликтов не было — английские
-`lang/en/*` у RC3 и RC4 совпали байт в байт); worktree `../webx-ui-recipes-panel` снят с учёта git, но
-каталог `apps/playground` в нём держит живой процесс — dev-сервер RC4 на **5186** (порт занят до
-сих пор); погасить его и удалить каталог в RC6 — **сначала `find … -type l -delete`**, там симлинки.
-`RecipeTools` + `recipes://catalog` (`src/Mcp/`), `RecipesDemo` + `resources/demo/recipes.json`,
-категорийные инструменты на `CategoriesModule`/`NutrientsModule`, гайд `apps/docs/guide/recipes.md`
-(в сайдбаре после Reviews), разделы MCP и демо в README composer-пакета (README npm-пакета RC4 уже
-написал), ключи карточки `recipes` в автокомплите шаблона блоков, changeset `recipes-mcp-demo.md`.
-Гейт php-половины зелёный целиком (pint, phpstan, 1624 теста на 8.4), vitest по `module-admin`,
-`module-recipes`, `module-blocks` — 317 зелёных, vue-tsc по трём пакетам чистый.
-
-Что RC6 надо знать:
-
-- **Worktree теперь с собственным `node_modules`** (`pnpm install --frozen-lockfile`, каталог
-  обычный, не симлинк): pnpm здесь запускать можно, dist у tokens, core, schema, module-admin
-  собран. Плейграунд vue-tsc без dist остальных модулей не проходит — это не ошибка, полный
-  `pnpm build` в RC6 его закроет.
-- **MCP.** Рецепт, услуга в `services` и похожий в `related` — id или адрес; категория в `values` —
-  id или слаг, источник — id или название (как у отзывов). Строка в переводимом поле — язык по
-  умолчанию. Пищевая ценность — пять буквальных имён или один объект `nutrition`. `blocks` в values
-  — отказ словами. Похожий «сам на себя» — отказ. Создание и сохранение — в транзакции
-  (`$recipe->getConnection()->transaction`).
-- **Демо** — `requires()`: `media` всегда, `services` если стоит, `blocks`+`pages` только парой.
-  Услуги связывает только с услугами **из журнала демо**: на `webx-cms.local` услуги не демо, и
-  `webx:demo --module=recipes` связей не делает — это правильно, и там их добавлял агент.
-- **Проверено живьём** на `webx-cms.local` (local-режим на этот worktree, затем назад из копий, сайт
-  как был — в local-режиме на основной чекаут): `cat … | php artisan mcp:start webx` — 18
-  инструментов, каталог, связь услуг адресом и `recipes_list service=…` после публикации, создание
-  со слагом категории, отказы; curl — `Recipe` полный (ингредиенты и шаги из `<li>`, `nutrition`,
-  `author` по `@id`), `ItemList` на индексе и категории, `?nutrient=` — `noindex, follow` и
-  canonical без фильтра, `/recipes-showcase` с обоими видами и `?page=2`, английский-только рецепт —
-  404 по-русски.
-- **Сверх промпта из хвостов RC1/RC2:** в `module-admin` — переключатель «The record of the page it
-  stands on» (`related.current`) в `WxCollectionField` (проверен в браузере на `/panel/pages/19`),
-  пометка «In the bin» по `trashed` в `WxRelationsField`, три ключа в `messages.ts` и группа
-  `relations` в тесте паритета. Паритет `collections` был красным после RC1 (`unknown-relation`,
-  `unknown-related` не было в `messages.ts`) — добавлены.
-- Копии экранов плейграунда (`apps/playground/server/panel/recipes/*.json`) удалены, `screens.ts`
-  читает файлы RC3 и патч SEO рецептов напрямую — имена полей совпали.
-
-### RC6 — выпуск
-
-```
-Сессия RC6 из §6 docs/architecture/WEBX_UI_MODULE_RECIPES.md: выпуск module-recipes и связей,
-оба демо.
-
-Прочитать: итоги RC1–RC5; CLAUDE.md §5 целиком — особенно «gh pr merge в очередь не ставит»
-(ставит graphql-мутация enqueuePullRequest), «Первую версию нового npm-пакета публикует человек»,
-«Ручная публикация замораживает диапазоны», «Тег php-пакетов ставится до публикации», «Composer
-после релиза может минут десять не видеть новую версию»; итог R4 в
-docs/architecture/WEBX_UI_MODULE_REVIEWS.md — тот же выпуск; память webx-cms-local-demo-site,
-webx-cms-homelab-deploy, release-speed.
-
-До релиза (руками пользователя, сессия напоминает и проверяет): репозиторий-зеркало
-webx-ui/module-recipes на GitHub.
-
-Сделать: погасить dev-серверы; полный гейт npm и php/ (PHP 8.4); module-recipes в
-scripts/php-smoke.sh рядом с module-reviews и smoke против MariaDB (миграции webx_relations и
-recipes на настоящей СУБД — длины дефолтов, CLAUDE.md §4); PR, зелёный CI, в очередь мутацией;
-релизный PR — снять changeset-release/main в отдельный worktree, pnpm install, dist, pnpm pack
-@webx-ui/module-recipes и проверить диапазоны @webx-ui/* в тарболе; первая публикация —
-пользователь из своего терминала с 2FA, затем Trusted Publishing (webx-ui / webx-ui / release.yml);
-мерж релизного PR; npm view всех поднятых пакетов и тег php-v<версия>; webx-ui/module-recipes на
-Packagist (пользователь). Удалить ветки feat/relations-panel и feat/recipes-panel.
-
-Демо: webx-cms.local — module-recipes в scripts/packages.mjs, link-panel.sh, composer require в два
-шага, импорт и ...recipes() в resources/js/admin.ts руками, migrate,
-webx:blocks:offered --install --module=recipes, cache:clear, демо §5.12 тинкером со своим
-журналом, npx vite build; хомлаб — то же в registry, npm ls @webx-ui/module-admin — одна версия,
-коммит и пуш в Gitea. omnivitality-v2.local — только если пользователь скажет (там он ведёт шаги
-сам). Строку реестра в WEBX_UI_COMPOSER_PACKAGES.md (из «Запланированы» в «Модули») и CLAUDE.md
-§§2,6 — отдельным docs-PR.
-
-Проверить живьём на обоих: индекс с пагинацией и фильтром по источнику; выключенный индекс и
-страница module-pages по пути /{prefix} с блоком-каталогом, она же в крошках рецепта; страница
-рецепта со всеми частями, похожие руками и подбором, услуги; витрина в демо-услуге с фильтром по
-этой услуге; Recipe на validator.schema.org и в Rich Results Test; телефон — пользователь.
-```
-
-#### Итог RC6 — сделано 24.09.2026
-
-Выпущено в v0.41.0 (#285, релизный #287): `webx-ui/module-recipes` на Packagist,
-`@webx-ui/module-recipes@0.1.0` на npm (первая версия — руками из тарбола, снятого с
-`changeset-release/main`; диапазоны `^0.33.2`/`^0.18.0`/`^0.6.1` на ядро, каркас и схему проверены
-до публикации), `@webx-ui/module-admin@0.18.0` — минор, поэтому следом патчами поднялись все
-модули панели. Гейты npm и php (8.4) зелёные, `scripts/php-smoke.sh` ставит модуль рядом с
-отзывами и прошёл против MariaDB 11.8 обеими половинами; миграции `webx_relations` и рецептов
-прошли и на MySQL 8 хомлаба. Ветки `feat/relations-panel`, `feat/recipes-panel` удалены, #284
-(план) закрыт — он целиком вошёл в #285.
-
-- **Smoke падает на базах прошлого прогона**, а не на коде: `webx_smoke` и `webx_smoke_site`
-  скрипт не чистит, и падает миграция Passport — CLAUDE.md §4 дописан.
-- **Демо на обоих сайтах — тинкером со своим журналом** (`storage/app/recipes-demo-journal.json`,
-  скрипты — `RecipesDemo::seed()` на новом `DemoLedger`). Библиотека и услуги там не демо,
-  поэтому модуль сам не нашёл ни картинок, ни услуг: галерея (две картинки сайта) и связи
-  (овсянка — «Удаление зуба», чечевичный суп — «Удаление зуба» и «Отбеливание») дописаны тем же
-  скриптом через `changed()`/`syncRelated()`. Сверх демо и в тот же журнал: витрина «Что есть
-  после» с `related.current` в конце услуги «Удаление зуба» и страница `module-pages` `/recipes`
-  с блоком-каталогом. На обоих сайтах `WEBX_RECIPES_INDEX=false` и `WEBX_RECIPES_PER_PAGE=2` —
-  шесть рецептов иначе не дают ни второй страницы, ни занятой приставки.
-- **Проверено живьём на обоих:** индекс (до выключения, локально) и страница `/recipes` —
-  по две карточки, `?page=2`, `?page=3` — 404, `?nutrient=` — `noindex, follow` и canonical без
-  фильтра; крошки рецепта «Главная › Рецепты › Супы › …» через страницу; страница рецепта со всеми
-  частями, похожие руками у овсянки (один, без добивки) и подбором у остальных (по три); услуги
-  ссылками; черновик и рецепт только по-английски на `/ru` — 404, английский на `/en` — 200;
-  `/recipes-showcase` — оба вида; витрина в «Удалении зуба» — ровно два её рецепта, в других
-  услугах блока нет. `Recipe` на validator.schema.org — 0 ошибок; Rich Results Test — Recipes и
-  Breadcrumbs валидны, 16 необязательных замечаний (`video`, `recipeCuisine`, `aggregateRating`,
-  `keywords`, `name`/`url` у шагов). Панель: список со статусами, редактор со всеми вкладками.
-- **`omnivitality-v2.local`** (по просьбе пользователя): модуль стоит — все `webx-ui/*` на
-  `^0.41.0`, npm одной копией каркаса, импорт и `...recipes()` в `admin.ts`, миграции на MariaDB,
-  тип блока, `webx:panel --sync` поставил рецепты в `<x-layout>` сайта, `webx:doctor` чистый.
-  Содержимого нет — импорт со старого сайта (§7) за ним.
-- **Найдено глазами:** ручка перетаскивания в списке рецептов (и услуг, отзывов, FAQ) говорит
-  `aria-label` «Reorder: …» по-английски посреди русской панели — дефолт `WxSortableList`,
-  переводят его только `module-media` и поле связей. Вынесено отдельной задачей.
-- Телефон — за пользователем.
+## 6. Выпуск
+
+Выпущен 24.09.2026 в v0.41.0 (#285, релизный #287) вместе со связями в `module-admin` (минор
+`@webx-ui/module-admin@0.18.0`); стоит на обоих демо и на `omnivitality-v2.local` (без
+содержимого). На обоих демо `WEBX_RECIPES_INDEX=false`: адрес приставки занимает страница с
+блоком-каталогом.
+
+Решения реализации, которые дополняют или меняют §§3–5:
+
+- **Связи с экрана — три строки:** `ScreenRecord::split()` уносит поля `wx-relations` в
+  `$split->relations`, после записи — `saveRelations($model, $split)`, в `values` —
+  `relationValues()`. У модели с `HasDraft` выбор лежит в черновике под `Relations::DRAFT` и
+  применяется публикацией; писатель черновика строит его от `draftValues()`, иначе ключ теряется.
+- **Рендер блока знает свою сущность** — маркер `Screens\ResolvesForEntity` (`resolveFor()`);
+  сущность называется ключом цели, поэтому на странице `module-pages` «связанные с этой» пусты.
+- **Снятый модуль-цель** уносит узел `wx-relations` из `ScreenRegistry::tree()`; удаление цели —
+  слушатель `forceDeleted` (корзина связей не трогает). Себя из кандидатов исключает панель
+  (`provideRelationOwner`), сервер знает только `except[]`.
+- **Категории и источники рецепта — в черновике** (`category_ids`/`nutrient_ids`, мутаторы,
+  `saved`); предпросмотр читает `shownCategories()`/`shownNutrients()`. Порядок один —
+  `position` (`Recipe::scopeOrderedIn()` перекрывает общий).
+- **Каталог** — `Rendering\Catalog` и фрагмент `partials/catalog` на индекс, категорию и блок;
+  `noindex` у `?nutrient=` — `Seo\FilteredCatalogSource` (приоритет 45); страница вне диапазона — 404. Тип блока в плейграунде — заглушка `RECIPES_BLOCK` (его Blade не знает `@include`):
+  поменялся фрагмент — править заглушку.
+- **Похожие** — одним запросом без `HAVING`; ручные не добиваются, все ручные в корзине — подбор.
+- Пустая приставка — исключение в `boot()` провайдера. MCP пишет в транзакции; рецепт — id или
+  адрес, категория — id или слаг, источник — id или название.
+
+Открыто:
+
+- Ручка перетаскивания в списках (рецепты, услуги, отзывы, FAQ) говорит `aria-label` «Reorder: …»
+  по-английски — дефолт `WxSortableList`; вынесено отдельной задачей.
+- Пустое поле «Rich in» говорит словом категорий «In no category yet» — узлу источников не передан
+  свой `emptyText`.
+- Проверка на телефоне — за пользователем.
 
 ## 7. Отложено
 
@@ -1054,6 +559,6 @@ webx:blocks:offered --install --module=recipes, cache:clear, демо §5.12 т�
 - Порядок внутри категории и внутри услуги (решение 4) — если понадобится, `item_position` уже в
   таблице категорий, а у связей есть `position`.
 - Пагинация списка в панели, если сотни рецептов без неё окажутся тяжёлыми.
-- Отзывы, FAQ, команда → услуги тем же механизмом.
+- Отзывы и FAQ → услуги тем же механизмом (команда и тарифы уже связаны).
 - Связи в истории версий: снимок публикации — колонки, связей в нём нет, поэтому откат к старой
-  версии связи не возвращает (итог RC1).
+  версии связи не возвращает.
