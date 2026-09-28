@@ -1,0 +1,278 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "tariffs.form",
+  "model": "tariff",
+  "root": [
+    {
+      "id": "tariff",
+      "type": "wx-card",
+      "label": "trans::webx-tariffs::screen.tariff",
+      "children": [
+        {
+          "id": "name",
+          "type": "wx-input",
+          "name": "name",
+          "label": "trans::webx-tariffs::screen.name",
+          "help": "trans::webx-tariffs::screen.name-help",
+          "localized": true,
+          "props": {
+            "maxlength": 255
+          }
+        },
+        {
+          "id": "badge",
+          "type": "wx-input",
+          "name": "badge",
+          "label": "trans::webx-tariffs::screen.badge",
+          "help": "trans::webx-tariffs::screen.badge-help",
+          "localized": true,
+          "props": {
+            "maxlength": 120
+          }
+        },
+        {
+          "id": "featured",
+          "type": "wx-switch",
+          "name": "featured",
+          "label": "trans::webx-tariffs::screen.featured",
+          "help": "trans::webx-tariffs::screen.featured-help"
+        }
+      ]
+    },
+    {
+      "id": "pricing",
+      "type": "wx-card",
+      "label": "trans::webx-tariffs::screen.pricing",
+      "children": [
+        {
+          "id": "price-row",
+          "type": "wx-row",
+          "children": [
+            {
+              "id": "price-col",
+              "type": "wx-col",
+              "props": {
+                "span": 24,
+                "sm": 12
+              },
+              "children": [
+                {
+                  "id": "price",
+                  "type": "wx-input-number",
+                  "name": "price",
+                  "label": "trans::webx-tariffs::screen.price",
+                  "help": "trans::webx-tariffs::screen.price-help",
+                  "props": {
+                    "min": 0,
+                    "precision": 2,
+                    "max": 99999999.99
+                  }
+                }
+              ]
+            },
+            {
+              "id": "currency-col",
+              "type": "wx-col",
+              "props": {
+                "span": 24,
+                "sm": 12
+              },
+              "children": [
+                {
+                  "id": "currency",
+                  "type": "wx-select",
+                  "name": "currency",
+                  "label": "trans::webx-tariffs::screen.currency",
+                  "help": "trans::webx-tariffs::screen.currency-help",
+                  "props": {
+                    "placeholder": "trans::webx-tariffs::screen.currency-placeholder",
+                    "clearable": true
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "period",
+          "type": "wx-input",
+          "name": "period",
+          "label": "trans::webx-tariffs::screen.period",
+          "help": "trans::webx-tariffs::screen.period-help",
+          "localized": true,
+          "props": {
+            "maxlength": 60
+          }
+        },
+        {
+          "id": "price-text",
+          "type": "wx-input",
+          "name": "price_text",
+          "label": "trans::webx-tariffs::screen.price-text",
+          "help": "trans::webx-tariffs::screen.price-text-help",
+          "localized": true,
+          "props": {
+            "maxlength": 120
+          }
+        }
+      ]
+    },
+    {
+      "id": "includes",
+      "type": "wx-card",
+      "label": "trans::webx-tariffs::screen.features",
+      "children": [
+        {
+          "id": "features",
+          "type": "wx-repeater",
+          "name": "features",
+          "help": "trans::webx-tariffs::screen.features-help",
+          "props": {
+            "max": 50,
+            "sortable": true,
+            "itemLabel": "text",
+            "addLabel": "trans::webx-tariffs::screen.features-add",
+            "emptyText": "trans::webx-tariffs::screen.features-empty"
+          },
+          "children": [
+            {
+              "id": "feature-text",
+              "type": "wx-input",
+              "name": "text",
+              "label": "trans::webx-tariffs::screen.feature",
+              "localized": true,
+              "props": {
+                "maxlength": 255
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "about",
+      "type": "wx-card",
+      "label": "trans::webx-tariffs::screen.about",
+      "children": [
+        {
+          "id": "description",
+          "type": "wx-textarea",
+          "name": "description",
+          "label": "trans::webx-tariffs::screen.description",
+          "help": "trans::webx-tariffs::screen.description-help",
+          "localized": true,
+          "props": {
+            "rows": 4,
+            "maxlength": 2000
+          }
+        }
+      ]
+    },
+    {
+      "id": "button",
+      "type": "wx-card",
+      "label": "trans::webx-tariffs::screen.button",
+      "children": [
+        {
+          "id": "button-label",
+          "type": "wx-input",
+          "name": "button_label",
+          "label": "trans::webx-tariffs::screen.button-label",
+          "help": "trans::webx-tariffs::screen.button-label-help",
+          "localized": true,
+          "props": {
+            "maxlength": 120
+          }
+        },
+        {
+          "id": "button-row",
+          "type": "wx-row",
+          "children": [
+            {
+              "id": "button-link-col",
+              "type": "wx-col",
+              "props": {
+                "span": 24,
+                "sm": 16
+              },
+              "children": [
+                {
+                  "id": "button-link",
+                  "type": "wx-link",
+                  "name": "button_link",
+                  "label": "trans::webx-tariffs::screen.button-link",
+                  "help": "trans::webx-tariffs::screen.button-link-help",
+                  "props": {
+                    "allowNone": false
+                  }
+                }
+              ]
+            },
+            {
+              "id": "button-variant-col",
+              "type": "wx-col",
+              "props": {
+                "span": 24,
+                "sm": 8
+              },
+              "children": [
+                {
+                  "id": "button-variant",
+                  "type": "wx-select",
+                  "name": "button_variant",
+                  "label": "trans::webx-tariffs::screen.button-variant",
+                  "props": {
+                    "placeholder": "trans::webx-tariffs::screen.button-variant-placeholder"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "type": "wx-card",
+      "label": "trans::webx-tariffs::screen.settings",
+      "children": [
+        {
+          "id": "categories",
+          "type": "wx-categories",
+          "name": "categories",
+          "label": "trans::webx-tariffs::screen.categories",
+          "help": "trans::webx-tariffs::screen.categories-help",
+          "props": {
+            "source": "tariffs/categories",
+            "main": false,
+            "addText": "trans::webx-tariffs::screen.categories-add",
+            "emptyText": "trans::webx-tariffs::screen.categories-empty"
+          }
+        },
+        {
+          "id": "services",
+          "type": "wx-relations",
+          "name": "services",
+          "label": "trans::webx-tariffs::screen.services",
+          "help": "trans::webx-tariffs::screen.services-help",
+          "props": {
+            "target": "service"
+          }
+        },
+        {
+          "id": "published",
+          "type": "wx-switch",
+          "name": "published",
+          "label": "trans::webx-tariffs::screen.published",
+          "help": "trans::webx-tariffs::screen.published-help"
+        }
+      ]
+    },
+    {
+      "id": "project-fields",
+      "type": "wx-card",
+      "label": "trans::webx-admin::screens.project-fields",
+      "children": []
+    }
+  ]
+}

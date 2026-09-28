@@ -243,6 +243,24 @@ import {
   type ServiceRecord,
 } from './services'
 import {
+  createCategory as createTariffCategory,
+  currencyOptions,
+  findCategory as findTariffCategory,
+  findTariff,
+  listTariffs,
+  reorderCategories as reorderTariffCategories,
+  reorderTariffs,
+  resolveTariffs,
+  tariffCategories,
+  tariffCategoryDetail,
+  tariffCategoryRow,
+  tariffDetail,
+  tariffRow,
+  variantOptions as tariffVariantOptions,
+  writeCategory as writeTariffCategory,
+  writeTariff,
+} from './tariffs'
+import {
   findMember,
   listTeam,
   memberDetail,
@@ -378,6 +396,13 @@ on('GET', '/manifest', ({ locale }) => ({
         title: line(locale, 'webx-reviews', 'module.group'),
         icon: 'star',
         order: 600,
+      },
+      /* After the banners (§5.2 of the tariffs spec): the heading over tariffs and their groups. */
+      {
+        id: 'tariffs',
+        title: line(locale, 'webx-tariffs', 'module.group'),
+        icon: 'tag',
+        order: 680,
       },
       {
         id: 'recipes',
@@ -533,6 +558,25 @@ on('GET', '/manifest', ({ locale }) => ({
         meta: {},
       },
       {
+        id: 'tariffs',
+        title: line(locale, 'webx-tariffs', 'module.tariffs'),
+        icon: 'list',
+        order: 680,
+        group: 'tariffs',
+        permissions: ['tariffs.view', 'tariffs.manage'],
+        meta: {},
+      },
+      /* Groups in the words, categories in the code (decision 14 of the tariffs spec). */
+      {
+        id: 'tariff-groups',
+        title: line(locale, 'webx-tariffs', 'module.groups'),
+        icon: 'folder',
+        order: 690,
+        group: 'tariffs',
+        permissions: ['tariffs.groups.manage'],
+        meta: {},
+      },
+      {
         id: 'review-categories',
         title: line(locale, 'webx-reviews', 'module.categories'),
         icon: 'folder',
@@ -681,6 +725,12 @@ on('GET', '/screens/([\\w.-]+)', ({ params, locale }) => {
 
   // The looks of a button, from the config onto the select inside the repeater (§5.3).
   if (params[0] === 'banners.form') withNamedOptions(tree, 'variant', variantOptions())
+
+  // The currencies and the looks of the button, from the config onto their selects (§4.3).
+  if (params[0] === 'tariffs.form') {
+    withNamedOptions(tree, 'currency', currencyOptions())
+    withNamedOptions(tree, 'button_variant', tariffVariantOptions())
+  }
 
   return { data: { screen: params[0], root: tree } }
 })
@@ -1922,7 +1972,7 @@ function linkRows(type: string, locale: string): LinkRow[] {
  * A link printed by a block template: the entity's address, worked out now rather than stored —
  * which is the whole point of keeping the entity and not the address.
  */
-useLinkResolver((link) => {
+function resolveLinkValue(link: Record<string, unknown>): Record<string, unknown> {
   const type =
     typeof link.target === 'string' && link.target === 'entity' ? String(link.entity_type) : null
   const found =
@@ -1942,7 +1992,9 @@ useLinkResolver((link) => {
     label: found?.title ?? null,
     available: link.target === 'entity' ? (found?.available ?? false) : true,
   }
-})
+}
+
+useLinkResolver(resolveLinkValue)
 
 on('GET', '/links/sources', ({ locale }) => ({
   data: LINK_SOURCES.map((source) => ({
@@ -2002,6 +2054,7 @@ useCollectionResolver((source, value, entity) => {
   if (source === 'reviews') return resolveReviews(value, 'ru')
   if (source === 'recipes') return resolveRecipes(value, 'ru')
   if (source === 'team') return resolveTeam(value, 'ru', entity)
+  if (source === 'tariffs') return resolveTariffs(value, 'ru', entity, resolveLinkValue)
 
   return { items: [], groups: [], filter: false }
 })
@@ -2189,6 +2242,119 @@ on('POST', '/reviews/(\\d+)/restore', ({ params, locale }) => {
 
   return { data: reviewRow(record, locale) }
 })
+
+/* ---------------------------------------------------------------------------- tariffs ----- */
+
+/*
+ * The tariffs (§5.4 of the tariffs spec): the list whole, no pages, a new tariff written before it
+ * exists, the order dragged in the list or inside one group — the shape of the reviews.
+ */
+on('GET', '/tariffs', ({ query, locale }) => listTariffs(Object.fromEntries(query), locale))
+
+on('POST', '/tariffs', ({ body, locale }) => {
+  const written = writeTariff(null, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: tariffDetail(written.record, locale) }
+})
+
+on('POST', '/tariffs/reorder', ({ body }) => {
+  const ids = Array.isArray(body.ids) ? (body.ids as number[]).map(Number) : []
+
+  reorderTariffs(ids, typeof body.category === 'number' ? body.category : null)
+
+  return { data: null }
+})
+
+on('GET', '/tariffs/(\\d+)', ({ params, locale }) => ({
+  data: tariffDetail(tariffRecord(params[0]), locale),
+}))
+
+on('PUT', '/tariffs/(\\d+)', ({ params, body, locale }) => {
+  const record = tariffRecord(params[0])
+  const written = writeTariff(record, (body.values ?? {}) as Record<string, unknown>)
+
+  if ('errors' in written) throw new HttpFailure(422, 'Invalid', undefined, written.errors)
+
+  return { data: tariffDetail(record, locale) }
+})
+
+on('DELETE', '/tariffs/(\\d+)', ({ params }) => {
+  tariffRecord(params[0]).deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+on('POST', '/tariffs/(\\d+)/restore', ({ params, locale }) => {
+  const record = findTariff(Number(params[0]))
+
+  if (record === null || record.deleted_at === null) throw new HttpFailure(404, 'Not found.')
+
+  record.deleted_at = null
+
+  return { data: tariffRow(record, locale) }
+})
+
+/* The groups of the tariffs, through the shared category API: no address, so no prefix. */
+on('GET', '/tariffs/categories', ({ locale }) => ({
+  data: tariffCategories
+    .filter((category) => category.deleted_at === null)
+    .map((category) => tariffCategoryRow(category, locale)),
+  prefix: null,
+}))
+
+on('POST', '/tariffs/categories', ({ body, locale }) => ({
+  data: tariffCategoryRow(createTariffCategory(body.title), locale),
+}))
+
+on('POST', '/tariffs/categories/reorder', ({ body }) => {
+  reorderTariffCategories(Array.isArray(body.ids) ? (body.ids as number[]).map(Number) : [])
+
+  return { data: null }
+})
+
+on('GET', '/tariffs/categories/(\\d+)', ({ params, locale }) => ({
+  data: tariffCategoryDetail(tariffCategory(params[0]), locale),
+}))
+
+on('PUT', '/tariffs/categories/(\\d+)', ({ params, body, locale }) => {
+  const record = tariffCategory(params[0])
+  const errors = writeTariffCategory(record, (body.values ?? {}) as Record<string, unknown>)
+
+  if (errors !== null) throw new HttpFailure(422, 'Invalid', undefined, errors)
+
+  return { data: tariffCategoryDetail(record, locale) }
+})
+
+on('DELETE', '/tariffs/categories/(\\d+)', ({ params, locale }) => {
+  const record = tariffCategory(params[0])
+  const count = Number(tariffCategoryRow(record, locale).tariffs_count)
+
+  // The panel keeps the button out of reach while a group holds anything.
+  if (count > 0) throw new HttpFailure(422, `В группе ещё тарифов: ${count}.`)
+
+  record.deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+function tariffRecord(id: string) {
+  const record = findTariff(Number(id))
+
+  // The bin is not reachable by id, as with route-model binding on the server.
+  if (record === null || record.deleted_at !== null) throw new HttpFailure(404, 'No such tariff.')
+
+  return record
+}
+
+function tariffCategory(id: string) {
+  const record = findTariffCategory(Number(id))
+
+  if (record === null) throw new HttpFailure(404, 'No such group.')
+
+  return record
+}
 
 /* ------------------------------------------------------------------------------- team ----- */
 

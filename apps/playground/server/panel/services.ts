@@ -290,8 +290,24 @@ service({
     hide_text: false,
   })
 
+  /* "What it costs" (§5.6 of the tariffs spec): the tariffs related to this service, as a grid —
+     answered against the service being previewed, so Growth alone. */
+  const whatItCosts = block('tariffs', {
+    title: { ru: 'Сколько стоит', en: 'What it costs' },
+    tariffs: {
+      categories: [],
+      limit: null,
+      filter: false,
+      markup: null,
+      related: { type: 'service', ids: [], current: true },
+    },
+    layout: 'grid',
+    columns: 3,
+    featured_label: { ru: 'Рекомендуем', en: 'Recommended' },
+  })
+
   for (const values of [website.values, website.live, ...Object.values(website.snapshots)]) {
-    if (values !== null) (values.blocks as BlockNode[]).push(clone(whoDoesIt))
+    if (values !== null) (values.blocks as BlockNode[]).push(clone(whoDoesIt), clone(whatItCosts))
   }
 }
 

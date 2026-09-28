@@ -88,6 +88,7 @@ export default defineConfig({
       pkg('module-reviews'),
       pkg('module-seo'),
       pkg('module-services'),
+      pkg('module-tariffs'),
       pkg('module-team'),
       pkg('module-vacancies'),
     ],
