@@ -18,7 +18,6 @@ use WebxUi\Vacancies\Panel\Duplicate;
 use WebxUi\Vacancies\Panel\Revision;
 use WebxUi\Vacancies\Panel\VacancyForm;
 use WebxUi\Vacancies\Panel\VacancyList;
-use WebxUi\Vacancies\Support\Salary;
 
 /**
  * The section's list, and one vacancy as its editor opens it (§4.11).
@@ -70,19 +69,10 @@ final class VacancyController
      * On site, full time, in the first currency of the site and its country (§4.11). In a
      * transaction: an address refused leaves no vacancy without one.
      */
-    public function store(VacancyRequest $request, VacancyForm $form, Salary $salary): JsonResponse
+    public function store(VacancyRequest $request, VacancyForm $form): JsonResponse
     {
-        $vacancy = $this->db->transaction(static function () use ($request, $salary): Vacancy {
-            $country = strtoupper(trim((string) config('webx-vacancies.country', '')));
-
-            $vacancy = new Vacancy([
-                'title' => $request->title(),
-                'slug' => $request->slug(),
-                'workplace' => Vacancy::ONSITE,
-                'employment_types' => ['FULL_TIME'],
-                'salary_currency' => $salary->defaultCurrency(),
-                'country' => preg_match('/^[A-Z]{2}$/', $country) === 1 ? $country : null,
-            ]);
+        $vacancy = $this->db->transaction(static function () use ($request, $form): Vacancy {
+            $vacancy = $form->blank($request->title(), $request->slug());
             $vacancy->save();
 
             return $vacancy;

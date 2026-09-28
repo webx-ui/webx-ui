@@ -148,24 +148,30 @@ export const vacanciesMessages: Record<string, Messages> = {
     deleted: 'The category is in the bin.',
     saved: 'The category is saved.',
     'field-title': 'Title',
-    'field-key': 'Key',
+    'field-slug': 'Key',
+    'field-slug-help':
+      'In the address of the filter: ?category=… Latin letters, digits and hyphens.',
   },
   vacancy: {
-    'workplace-onsite': 'On site',
-    'workplace-remote': 'Remote',
-    'workplace-hybrid': 'Hybrid',
-    'employment-full-time': 'Full-time',
-    'employment-part-time': 'Part-time',
-    'employment-contractor': 'Contract',
-    'employment-temporary': 'Temporary',
-    'employment-intern': 'Internship',
-    'employment-volunteer': 'Volunteer',
-    'employment-per-diem': 'Per diem',
-    'employment-other': 'Other',
+    workplace: {
+      onsite: 'On site',
+      remote: 'Remote',
+      hybrid: 'Hybrid',
+    },
+    employment: {
+      FULL_TIME: 'Full-time',
+      PART_TIME: 'Part-time',
+      CONTRACTOR: 'Contract',
+      TEMPORARY: 'Temporary',
+      INTERN: 'Internship',
+      VOLUNTEER: 'Volunteer',
+      PER_DIEM: 'Per day',
+      OTHER: 'Other',
+    },
   },
 }
 
-/** The word of a schema.org employment type: `FULL_TIME` → `vacancy.employment-full-time`. */
+/** The word of a schema.org employment type: `FULL_TIME` → `vacancy.employment.FULL_TIME`, as the server names it. */
 export function employmentKey(code: string): string {
-  return `vacancy.employment-${code.toLowerCase().replace(/_/g, '-')}`
+  return `vacancy.employment.${code}`
 }

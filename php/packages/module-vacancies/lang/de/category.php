@@ -8,6 +8,7 @@ return [
     'empty-help' => 'Eine Kategorie ist eine Gruppe der Karriereseite — Entwicklung, Vertrieb — und der Filter darüber.',
     'order' => 'Ziehen, um die Reihenfolge der Gruppen auf der Karriereseite zu ändern.',
     'hidden' => 'Auf der Website verborgen',
+    'no-page' => 'Eine Gruppe, ohne eigene Seite',
     'vacancies' => 'Stellen: :count',
     'show-vacancies' => 'Ihre Stellenangebote anzeigen',
     'delete-blocked' => 'Diese Kategorie enthält noch Stellenangebote. Verschieben Sie sie zuerst.',

@@ -111,9 +111,12 @@ its own `vacancy/apply`:
 
 ```blade
 @if ($form)
-    <x-webx-inbox::form :slug="$form" />
+    <x-webx-inbox::form :slug="$form" :values="['vacancy' => $title]" />
 @endif
 ```
+
+`:values` fills a hidden field named `vacancy`, if the form has one, so a submission says which
+vacancy it answered.
 
 Without `module-inbox` the field is not on the screen and the rest works as it does anywhere.
 
@@ -145,6 +148,34 @@ counted per group. A card is plain data: `id`, `url`, `title`, `lead`, `workplac
 `address`, `employment_types`, `employment` (in words), `salary`, `salary_range` (`min`, `max`,
 `unit`, `currency`, `symbol` — or null), `valid_through`, `posted_at`, `closed`, `categories`,
 `category_names`, `form`, `fields` (the project's own fields).
+
+## MCP
+
+Eleven tools behind `vacancies:read` and `vacancies:write`, through the same doors as the panel —
+the screen checks an agent's values, and a create, a save, a copy and closing are each one
+transaction:
+
+`vacancies_list` (`state`: `open` by default, `closed`, `all`; or the bin), `vacancies_get`,
+`vacancies_create`, `vacancies_update`, `vacancies_duplicate`, `vacancies_publish`,
+`vacancies_unpublish`, `vacancies_close`, `vacancies_reopen`, `vacancies_delete`,
+`vacancies_reorder`; and `vacancy_categories_*` — the shared category tools.
+
+A vacancy is its id or its address, a category its id or its key. Days are `YYYY-MM-DD`; the kinds
+of employment and the unit are schema.org codes; the currency is one of the site's list, and a
+value outside its list is refused with the list. `form` is the slug or id of an inbox form — and
+without `module-inbox` the tools say nothing about a form and refuse one. `vacancies://catalog` is
+what to read first: the categories with their keys and open vacancies, the closed ones counted, the
+currencies and the country.
+
+## Demo
+
+`php artisan webx:demo` seeds three categories — development, sales, support — and seven vacancies,
+each showing one rule (a monthly range in UAH, a remote contract by the hour in USD in English only
+and in no category, a salary in words only, two categories, closed by hand, expired, a draft). The
+days are counted from the moment of seeding. With `module-inbox` the demo makes the form
+`job-application` — name, email, phone, a CV, a letter and a hidden `vacancy` — and chooses it in
+the open vacancies; a form with that slug already there is chosen and left alone. `--remove` takes
+the rest back out.
 
 ## License
 

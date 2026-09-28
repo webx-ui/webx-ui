@@ -408,7 +408,8 @@
                   "label": "trans::webx-vacancies::screen.categories",
                   "help": "trans::webx-vacancies::screen.categories-help",
                   "props": {
-                    "source": "vacancies/categories"
+                    "source": "vacancies/categories",
+                    "main": false
                   }
                 },
                 {

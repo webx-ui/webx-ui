@@ -1,6 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { INTERIM_VACANCIES_WORDS } from './vacancies'
 
 /**
  * The panel's dictionary, read out of the PHP packages.
@@ -85,15 +84,6 @@ export function dictionary(locale: string): Record<string, Record<string, Messag
     }
 
     namespaces[namespace] = groups
-  }
-
-  // Until the php half of the vacancies is on this branch: its English, in every language (V3
-  // removes this with `INTERIM_VACANCIES_WORDS`).
-  if (
-    namespaces['webx-vacancies'] === undefined &&
-    !existsSync(root('php/packages/module-vacancies/lang'))
-  ) {
-    namespaces['webx-vacancies'] = INTERIM_VACANCIES_WORDS
   }
 
   for (const [namespace, groups] of Object.entries(SITE[locale] ?? {})) {

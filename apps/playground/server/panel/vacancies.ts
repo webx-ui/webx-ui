@@ -7,7 +7,6 @@ import type {
   VacancyVersion,
 } from '../../../../packages/module-vacancies/src/types'
 import type { ScreenModel } from '../../../../packages/schema/src/types'
-import { vacanciesMessages } from '../../../../packages/module-vacancies/src/messages'
 import { forms } from './inbox'
 
 /**
@@ -1103,82 +1102,4 @@ export function text(value: unknown, locale: string): string {
 
 export function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T
-}
-
-/* ------------------------------------------------------------------------ interim words ----- */
-
-/**
- * What the server will say under `webx-vacancies::` once the php half is on this branch, and until
- * then only: `lang.ts` hands these out while `php/packages/module-vacancies/lang` does not exist.
- * The panel's groups come from the package's own English; the screen's words and the rest of the
- * site's group are here. V3 deletes this with the copies of the screens (`vacancies/*.json`).
- */
-export const INTERIM_VACANCIES_WORDS: Record<string, Record<string, string>> = {
-  ...(vacanciesMessages as Record<string, Record<string, string>>),
-  vacancy: {
-    ...(vacanciesMessages.vacancy as Record<string, string>),
-    'unit-hour': 'per hour',
-    'unit-day': 'per day',
-    'unit-week': 'per week',
-    'unit-month': 'per month',
-    'unit-year': 'per year',
-  },
-  screen: {
-    vacancy: 'Vacancy',
-    where: 'Where',
-    workplace: 'Where the work is done',
-    city: 'City',
-    address: 'Address',
-    'address-help': 'The street, the district — whatever a candidate needs to find the office.',
-    country: 'Country',
-    'country-help': 'ISO: UA, PL. Only for search engines — the page prints the city.',
-    terms: 'Terms',
-    'employment-types': 'Employment',
-    salary: 'Salary',
-    'salary-help': 'In words, as the page prints it: “from ₴60,000”, “after the interview”.',
-    'salary-min': 'From',
-    'salary-max': 'To',
-    'salary-unit': 'Per',
-    'salary-currency': 'Currency',
-    'salary-numbers-help':
-      'The numbers are for search engines and the cards; the words above are what the page says.',
-    about: 'About the job',
-    description: 'Description',
-    lists: 'Duties, requirements, what we offer',
-    duties: 'Duties',
-    'duties-help': 'One line each. An empty line is dropped.',
-    requirements: 'Requirements',
-    'requirements-help': 'One line each. An empty line is dropped.',
-    benefits: 'What we offer',
-    'benefits-help': 'One line each. An empty line is dropped.',
-    line: 'Line',
-    settings: 'Settings',
-    naming: 'Name and address',
-    title: 'Position',
-    slug: 'Address',
-    'slug-help': 'Changing it keeps the old address working: it leads to the new one.',
-    lead: 'Lead',
-    'lead-help': 'A sentence or two without formatting, for the cards and search engines.',
-    taxonomy: 'Categories and response',
-    categories: 'Categories',
-    'categories-help': 'The groups the list of vacancies is split into, and its filter.',
-    form: 'Response form',
-    'form-help': 'The inbox form a candidate answers with. The site prints it on the page.',
-    hiring: 'Hiring',
-    'is-closed': 'The hiring is closed',
-    'is-closed-help': 'Closed early: the vacancy leaves the lists, its page stays with a note.',
-    'valid-through': 'Open until',
-    'valid-through-help': 'The last day, included. After it the vacancy closes by itself.',
-    'posted-at': 'Posted on',
-    'posted-at-help':
-      'For search engines. Set by the first publication; change it when the hiring opens again.',
-    'posted-at-placeholder': 'Set when published',
-    seo: 'SEO',
-    'seo-empty': 'Install module-seo to write the title and description of this page.',
-    history: 'History',
-    'category-key-help':
-      'In the address of the filter: ?category=… Small latin letters and dashes.',
-    visible: 'Shown on the site',
-    'category-visible-help': 'A hidden category is no group of the list and no filter.',
-  },
 }

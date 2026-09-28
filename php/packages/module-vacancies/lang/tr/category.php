@@ -8,6 +8,7 @@ return [
     'empty-help' => 'Kategori, kariyer sayfasının bir grubudur —yazılım, satış— ve üstündeki filtredir.',
     'order' => 'Kariyer sayfasındaki grupların sırasını değiştirmek için sürükleyin.',
     'hidden' => 'Sitede gizli',
+    'no-page' => 'Kendi sayfası olmayan bir grup',
     'vacancies' => 'İlanlar: :count',
     'show-vacancies' => 'İlanlarını göster',
     'delete-blocked' => 'Bu kategoride hâlâ ilan var. Önce onları taşıyın.',
