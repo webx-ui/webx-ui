@@ -6,9 +6,14 @@ namespace WebxUi\Vacancies\Tests;
 
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Testing\Fluent\AssertableJson;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Relations\Relations;
 use WebxUi\Inbox\InboxServiceProvider;
+use WebxUi\Mcp\Registry\ToolRegistry;
+use WebxUi\Mcp\Server\RegistryTool;
+use WebxUi\Mcp\Server\WebxServer;
+use WebxUi\Vacancies\Demo\VacanciesDemo;
 
 /**
  * A site without `module-inbox` (decision 3): no "Application form" field on the screen, no `form`
@@ -81,5 +86,36 @@ final class WithoutInboxTest extends TestCase
         // A copy of it does not fail either, and does not carry what nobody can see.
         $copy = $this->actingAs($this->editor(), 'cms')->postJson($this->api($vacancy->id.'/duplicate'))->assertCreated();
         $this->assertSame([], DB::table(Relations::TABLE)->where('owner_id', $copy->json('data.vacancy.id'))->pluck('target_id')->all());
+    }
+
+    #[Test]
+    public function an_agent_is_not_told_about_a_form_and_is_refused_one(): void
+    {
+        $registry = $this->app->make(ToolRegistry::class);
+
+        $this->assertStringNotContainsString('inbox_forms_list', $registry->tool('vacancies_update')->tool->description);
+
+        $vacancy = $this->vacancy('designer');
+        $agent = WebxServer::actingAs($this->editor(), 'cms');
+
+        $agent->tool(new RegistryTool($registry->tool('vacancies_update')), ['vacancy' => $vacancy->id, 'values' => ['form' => 'job-application']])
+            ->assertHasErrors(['no inbox module']);
+
+        // And the answer carries no `form` that would always be null.
+        $agent->tool(new RegistryTool($registry->tool('vacancies_get')), ['vacancy' => $vacancy->id])
+            ->assertOk()
+            ->assertStructuredContent(fn (AssertableJson $json) => $json->missing('vacancy.form')->etc());
+
+        // The demo asks for no inbox demo either: a name it gave that is not installed would skip it whole.
+        $this->assertSame([], $this->app->make(VacanciesDemo::class)->requires());
+
+        // Nor the catalogue.
+        $vacancy->syncCategories([$this->category('design')->id]);
+
+        foreach ($registry->resources() as $resource) {
+            if ($resource->uri === 'vacancies://catalog') {
+                $this->assertArrayNotHasKey('form', ($resource->handler)()['categories'][0]['open'][0]);
+            }
+        }
     }
 }

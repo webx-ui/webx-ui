@@ -8,6 +8,7 @@ return [
     'empty-help' => 'Una categoría es un grupo de la página de empleo —desarrollo, ventas— y el filtro sobre ella.',
     'order' => 'Arrastra para cambiar el orden de los grupos en la página de empleo.',
     'hidden' => 'Oculta del sitio',
+    'no-page' => 'Un grupo, sin página propia',
     'vacancies' => 'Vacantes: :count',
     'show-vacancies' => 'Mostrar sus vacantes',
     'delete-blocked' => 'Esta categoría todavía tiene vacantes. Muévelas primero.',

@@ -41,7 +41,7 @@ export function vacancyCategoriesOptions(path = '/vacancies'): CategoriesOptions
       deleted: 'webx-vacancies::category.deleted',
       saved: 'webx-vacancies::category.saved',
       'field-title': 'webx-vacancies::category.field-title',
-      'field-slug': 'webx-vacancies::category.field-key',
+      'field-slug': 'webx-vacancies::category.field-slug',
     },
   }
 }

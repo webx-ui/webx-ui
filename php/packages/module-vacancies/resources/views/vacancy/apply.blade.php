@@ -6,9 +6,10 @@
         @if ($form)
             <section class="wx-vacancy__apply">
                 <h2>Apply</h2>
-                <x-webx-inbox::form :slug="$form" />
+                <x-webx-inbox::form :slug="$form" :values="['vacancy' => $title]" />
             </section>
         @endif
 
-    Not drawn at all on a closed vacancy.
+    `:values` fills a hidden field named `vacancy`, if the form has one, so a submission says which
+    vacancy it answered. Not drawn at all on a closed vacancy.
 --}}

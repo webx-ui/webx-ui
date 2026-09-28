@@ -40,7 +40,7 @@ draws one entry per module. The server puts both in the `vacancies` group.
 - **The editor** — the described screen `vacancies.form` with the tabs Vacancy · Settings · SEO ·
   History, autosaved into a draft and guarded by a revision. «Open until» and «Posted on» are
   calendar days (`YYYY-MM-DD`) and read the same day in every zone. «Duplicate» in the bar saves,
-  copies and opens the copy. The categories, the response form and «closed» wait in the draft and
+  copies and opens the copy. The categories, the application form and «closed» wait in the draft and
   reach the site on «Publish». A project adds its own fields with a patch into the
   `project-fields` card.
 - **Categories** — the panel's shared category screens (`categoryRoutes`): groups with a key for

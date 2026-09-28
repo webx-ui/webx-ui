@@ -1,7 +1,7 @@
 # `webx-ui/module-vacancies` — спецификация и план реализации
 
-Статус: спроектирован 28.09.2026 (V0, один docs-PR со спекой тарифов); V1 (php) сделан
-28.09.2026, V2–V4 впереди. Пакеты —
+Статус: спроектирован 28.09.2026 (V0, один docs-PR со спекой тарифов); V1 (php), V2 (npm) и
+V3 (слияние, MCP, демо, гайд) сделаны 28.09.2026, впереди V4 — выпуск вместе с тарифами. Пакеты —
 `webx-ui/module-vacancies` (composer) и `@webx-ui/module-vacancies` (npm). Делается
 **параллельно с `module-tariffs`** (`WEBX_UI_MODULE_TARIFFS.md`) и выходит с ним одним релизом
 (V4, §8).
@@ -885,7 +885,69 @@ noindex и пометка у закрытой. Ничего на сайте не
 
 #### Итог V3
 
-_Заполняет сессия V3._
+Сделано 28.09.2026 на `feat/module-vacancies`: `feat/vacancies-panel` слита без конфликтов,
+worktree `../webx-ui-vacancies-panel` удалён (dev-сервер погашен, симлинки сняты), ветка оставлена
+до выпуска. У этого worktree теперь свой `node_modules` (обычный каталог, `pnpm install
+--frozen-lockfile`), pnpm здесь безопасен. Гейт php-половины на PHP 8.4 — `pint --test`, `phpstan`,
+весь `phpunit` (2006) — зелёный; в пакете 68 тестов (+ `McpTest` 14, `DemoTest` 6, один в
+`WithoutInboxTest`). npm точечно: vitest пакета (36), `vue-tsc`, eslint, prettier — чисто.
+
+- **Слова двух половин назывались по-разному, и тест паритета это поймал сразу, как сняли
+  `skipIf`.** Перечисления: V1 держал `vacancy.workplace.onsite` и `vacancy.employment.FULL_TIME`
+  вложенными массивами, V2 — плоские `vacancy.workplace-onsite`, `employment-full-time`. Правда у
+  сервера: `messages.ts` переписан на вложенные ключи (`employmentKey('FULL_TIME')` →
+  `vacancy.employment.FULL_TIME`, `t()` панели ходит по точкам). Группа `panel` — наоборот, правда у
+  панели: в `lang/*/panel.php` на всех десяти языках 16 новых строк, шесть переименованы
+  (`closed` → `closed-manual`, `expired` → `closed-expired`, `closed-done` → `closed`,
+  `reopened-done` → `reopened`, `order-hint` → `order-all`, `order-filtered` → `order-locked`),
+  девять серверных без потребителя (`column-*`, `remote`) убраны. `editor.duplicated` переехал в
+  `panel`, в `editor` добавлен `open-until`; в `category` — `no-page`, а ключ категории в панели
+  теперь `category.field-slug` (как на экране V1), не `field-key`. И смысл: `panel.open` в ru, uk и
+  pl был прилагательным («Открыта»), а в меню строки это действие — теперь «Открыть».
+- **Плейграунд — на настоящих экранах и словах:** `screens.ts` смотрит в
+  `php/packages/module-vacancies/resources/screens` и SEO-патч `module-seo`, копии
+  `server/panel/vacancies/` и `INTERIM_VACANCIES_WORDS` удалены. Проверено в браузере: список и
+  редактор рисуются с серверными словами. Попутно на экране у `wx-categories` поставлено
+  `main: false` — у вакансии нет главной категории, а поле рисовало бейдж «Main».
+- **MCP (§4.12):** `Mcp\VacancyTools` — одиннадцать инструментов через `VacancyList`,
+  `VacancyForm`, `Duplicate`, `Closing`; создание, сохранение и публикация — в транзакции.
+  Порядок вынесен из контроллера в `Panel\Reorder` (контроллер и `vacancies_reorder` зовут один
+  код), умолчания новой вакансии — в `VacancyForm::blank()` (контроллер и `vacancies_create`).
+  Коды (`workplace`, `employment_types`, `salary_unit`, валюта, дни `YYYY-MM-DD`) проверяются до
+  экрана и отказ называет список; валюта, убранная из конфига, проходит у вакансии, которая её
+  уже носит. `form` — слаг, id, `null` или список из одного; без `module-inbox` в описании
+  инструментов о форме ни слова, `form` в ответах и в каталоге нет, а переданная — отказ.
+  `close`/`reopen` отказывают теми же словами, что 409 панели.
+- **Категории агенту — общий `CategoryTools`, и у категории без адреса он называет её по
+  названию, а слаг из строк списка убирает** (так задумано для FAQ). Ядро не трогали: слаг
+  категории вакансий агент видит в `values` ответа и в `vacancies://catalog`, а `vacancies_*`
+  принимают категорию слагом. Если агенту понадобится `vacancy_categories_update` по слагу —
+  это правка `CategoryTools` (признак «слаг есть, адреса нет» в `CategoryKind`), не модуля.
+- **Демо (§4.13):** семь вакансий, дни от момента посева; без русского и без категории — одна и
+  та же (удалённый подрядчик), чтобы на английском индексе была группа «Other vacancies».
+  `requires()` — `['inbox']` только при установленном inbox. Форма `job-application` заводится
+  через журнал полем за полем, как `InboxDemo`; форма с таким слагом, которая уже есть, —
+  своя у сайта: выбирается, в журнал не пишется и `--remove` её не трогает.
+- **«Какая вакансия» в заявке решается без правки `module-inbox`:** у `<x-webx-inbox::form>` есть
+  `:values`, который заполняет скрытые поля по имени. Демо-форма носит скрытое `vacancy`
+  (`in_table`), гайд и комментарий в `vacancy/apply` печатают форму с
+  `:values="['vacancy' => $title]"`. Это закрывает половину §7 п. 2 — печать формы в пакете
+  по-прежнему отложена.
+- **Живьём на `webx-cms.local`** (local на этом worktree, потом назад из копий): новый пакет — в
+  два шага, как в §4 CLAUDE.md; карта версий `packages.mjs` пакет уже знала (она сканирует
+  каталог), а списков `NPM_PACKAGES`/`COMPOSER_PACKAGES` там ещё нет — это V4. Через
+  `cat … | php artisan mcp:start webx`: все одиннадцать инструментов и каталог отвечают;
+  `tools/list` отдаёт сто и `nextCursor`, вакансии — на второй странице. curl: `/careers` —
+  три группы на ru и четыре на en, `?category=sales` — одна, неизвестный ключ — 200 и пусто;
+  открытая — `JobPosting` с `hiringOrganization {@id}`, `jobLocation`, `baseSalary`
+  `minValue`/`maxValue`; закрытая — 200, «Вакансия закрыта», `noindex,follow`, без разметки и
+  не в карте сайта; черновик и страница без русского текста на ru — 404. Опубликованная
+  на время часть `vacancy/apply` напечатала форму с `fields[vacancy]` = должность. После возврата
+  сайт минуту отвечал 500 `FormTarget not found` с путём worktree — realpath-кеш OSPanel, прошло
+  само.
+- **Не проверено:** Rich Results Test и validator.schema.org — у локального сайта нет публичного
+  адреса. Разрешит ли Rich Results `hiringOrganization` только по `@id` (§4.7) — решать V4 на
+  хомлабе; не разрешит — печатать рядом `name`.
 
 ### V4 — совместный выпуск с тарифами
 

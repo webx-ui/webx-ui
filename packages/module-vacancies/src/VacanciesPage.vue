@@ -466,11 +466,11 @@ function address(vacancy: VacancyRow): string {
 
 /** Where: the city, "Remote", or the city and "Hybrid" — what a candidate reads first. */
 function where(vacancy: VacancyRow): string {
-  if (vacancy.workplace === 'remote') return t('vacancy.workplace-remote')
+  if (vacancy.workplace === 'remote') return t('vacancy.workplace.remote')
 
   const city = vacancy.city !== '' ? vacancy.city : t('panel.no-city')
 
-  return vacancy.workplace === 'hybrid' ? `${city} · ${t('vacancy.workplace-hybrid')}` : city
+  return vacancy.workplace === 'hybrid' ? `${city} · ${t('vacancy.workplace.hybrid')}` : city
 }
 
 function employment(vacancy: VacancyRow): string {

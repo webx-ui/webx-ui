@@ -8,6 +8,7 @@ return [
     'empty-help' => 'Una categoria è un gruppo della pagina carriere — sviluppo, vendite — e il filtro sopra di essa.',
     'order' => 'Trascina per cambiare l\'ordine dei gruppi nella pagina carriere.',
     'hidden' => 'Nascosta dal sito',
+    'no-page' => 'Un gruppo, senza una pagina propria',
     'vacancies' => 'Offerte: :count',
     'show-vacancies' => 'Mostra le sue offerte',
     'delete-blocked' => 'Questa categoria contiene ancora offerte. Spostale prima.',

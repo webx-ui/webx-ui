@@ -59,6 +59,28 @@ final class VacancyForm
     ) {}
 
     /**
+     * A new vacancy, not saved yet: its title and address, on site, full time, in the first
+     * currency of the site and its country (§4.11) — what the panel's "New vacancy" and an
+     * agent's `vacancies_create` both start from.
+     *
+     * @param  array<string, string>|string  $title
+     * @param  array<string, string>|string|null  $slug
+     */
+    public function blank(array|string $title, array|string|null $slug): Vacancy
+    {
+        $country = strtoupper(trim((string) config('webx-vacancies.country', '')));
+
+        return new Vacancy([
+            'title' => $title,
+            'slug' => $slug,
+            'workplace' => Vacancy::ONSITE,
+            'employment_types' => ['FULL_TIME'],
+            'salary_currency' => $this->salary->defaultCurrency(),
+            'country' => preg_match('/^[A-Z]{2}$/', $country) === 1 ? $country : null,
+        ]);
+    }
+
+    /**
      * A vacancy and everything its editor needs around it (§4.11): the record, the values of the
      * screen, the revision those values are, the prefix of its address and a link to the draft —
      * minted per response, because it is signed and short-lived. No link without `module-blocks`,

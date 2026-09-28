@@ -12,6 +12,11 @@ says `noindex`. Flat categories without pages are the groups and the filter
 `module-inbox`, chosen in the vacancy. Draft, history, ordering by hand, "Duplicate", SEO.
 `webx:setup` knows the module as `vacancies`, and `webx:doctor` checks `vacancies()`.
 
+For an agent, eleven `vacancies_*` tools — list, get, create, update, duplicate, publish,
+unpublish, close, reopen, delete, reorder — through the panel's own doors, `vacancy_categories_*`,
+and `vacancies://catalog`. `webx:demo` seeds three categories and seven vacancies with days counted
+from the moment of seeding, and with `module-inbox` a `job-application` form chosen in the open ones.
+
 `webx-ui/module-inbox`: a form is a relation target, `inbox-form`, that anybody who edits
 another section may pick — no permission of the inbox needed. A deleted form takes the choices
 pointing at it along.
