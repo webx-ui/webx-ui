@@ -61,7 +61,7 @@ const edit = createModal<PlaceRow, { place?: PlaceRow | null }>(PlaceDialog)
 const title = computed(
   () =>
     admin.state.manifest?.modules.find((module) => module.id === 'banners')?.title ??
-    t('module.title'),
+    t('module.banners'),
 )
 
 /** Which place is open, kept in the address — so "back" from a banner lands on its place. */

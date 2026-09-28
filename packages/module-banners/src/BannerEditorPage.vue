@@ -111,7 +111,7 @@ const back = computed(() => {
 const section = computed(
   () =>
     admin.state.manifest?.modules.find((module) => module.id === 'banners')?.title ??
-    t('module.title'),
+    t('module.banners'),
 )
 
 const placeOptions = computed(() =>

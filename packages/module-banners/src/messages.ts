@@ -8,7 +8,7 @@ import type { Messages } from '@webx-ui/module-admin'
  */
 export const bannersMessages: Record<string, Messages> = {
   module: {
-    title: 'Banners',
+    banners: 'Banners',
   },
   places: {
     // The names of the two places the package's config declares (§5.3).

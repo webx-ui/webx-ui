@@ -494,7 +494,7 @@ on('GET', '/manifest', ({ locale }) => ({
       /* One entry and no group (§5.4 of the banners spec): after the team and the press. */
       {
         id: 'banners',
-        title: line(locale, 'webx-banners', 'module.title'),
+        title: line(locale, 'webx-banners', 'module.banners'),
         icon: 'image',
         order: 660,
         group: null,
