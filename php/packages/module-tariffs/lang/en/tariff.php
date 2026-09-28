@@ -31,6 +31,7 @@ return [
     'restore' => 'Restore',
     'restored' => 'The tariff is back.',
     'reorder-failed' => 'The new order was not saved.',
+    'order-group' => 'Drag to change the order inside this group. The rest of the list keeps its own.',
     'leave-title' => 'Leave without saving?',
     'leave-text' => 'What you changed in this tariff is not on the server.',
     'leave' => 'Leave',

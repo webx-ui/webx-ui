@@ -33,6 +33,7 @@ const NAMESPACES: Record<string, string> = {
   'module-seo': 'webx-seo',
   'module-services': 'webx-services',
   'module-settings': 'webx-settings',
+  'module-tariffs': 'webx-tariffs',
   'module-team': 'webx-team',
 }
 

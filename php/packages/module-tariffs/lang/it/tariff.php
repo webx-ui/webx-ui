@@ -31,6 +31,7 @@ return [
     'restore' => 'Ripristina',
     'restored' => 'La tariffa è tornata.',
     'reorder-failed' => 'Il nuovo ordine non è stato salvato.',
+    'order-group' => 'Trascina per cambiare l’ordine all’interno di questo gruppo. Il resto dell’elenco mantiene il proprio.',
     'leave-title' => 'Uscire senza salvare?',
     'leave-text' => 'Le modifiche a questa tariffa non sono sul server.',
     'leave' => 'Esci',

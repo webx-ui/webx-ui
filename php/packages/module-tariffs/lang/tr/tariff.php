@@ -31,6 +31,7 @@ return [
     'restore' => 'Geri yükle',
     'restored' => 'Tarife geri geldi.',
     'reorder-failed' => 'Yeni sıra kaydedilmedi.',
+    'order-group' => 'Bu gruptaki sırayı değiştirmek için sürükleyin. Listenin geri kalanı kendi sırasını korur.',
     'leave-title' => 'Kaydetmeden çıkılsın mı?',
     'leave-text' => 'Bu tarifede değiştirdikleriniz sunucuda değil.',
     'leave' => 'Çık',

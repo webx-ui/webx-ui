@@ -523,6 +523,40 @@ add(
   [publication(1, '2026-09-27T12:30:00+00:00', null)],
 )
 
+/*
+ * The prices of §5.6 of the tariffs spec, in both layouts at once: every tariff as the slider of
+ * the sample (the count, the flag over the featured one, the list heading), and the business
+ * group as a grid without either. Last, for the same reason as the ones above.
+ */
+add(
+  {
+    title: 'Цены',
+    slug: 'pricing',
+    parent: home.row.id,
+    status: 'published',
+    updated_at: '2026-09-28T09:30:00+00:00',
+  },
+  {
+    blocks: [
+      block('tariffs', {
+        title: { ru: 'Тарифы', en: 'Pricing' },
+        tariffs: { categories: [], limit: null, filter: false, markup: null, related: null },
+        layout: 'slider',
+        columns: 3,
+        includes_title: { ru: 'В тариф входит:', en: 'This plan includes:' },
+        featured_label: { ru: 'Рекомендуем', en: 'Recommended' },
+      }),
+      block('tariffs', {
+        title: { ru: 'Для бизнеса', en: 'For business' },
+        tariffs: { categories: [1], limit: null, filter: false, markup: null, related: null },
+        layout: 'grid',
+        columns: 3,
+      }),
+    ],
+  },
+  [publication(1, '2026-09-28T09:30:00+00:00', null)],
+)
+
 function publication(number: number, createdAt: string, comment: string | null): PageVersion {
   return {
     number,

@@ -1326,6 +1326,26 @@ export const blockTypes: BlockType[] = [
     /* `content` is the file `module-team` offers, read off disk: see `offered()` below. */
   },
   {
+    id: 19,
+    slug: 'tariffs',
+    title: 'Тарифы',
+    description: 'Карточки цен из раздела «Тарифы» — слайдером или сеткой.',
+    icon: 'tag',
+    group: 'content',
+    sort: 39,
+    allow: null,
+    allowed_in: null,
+    max_per_entity: null,
+    is_enabled: true,
+    draft: null,
+    published: version(1, '2026-09-28T09:00:00+00:00', 'Offered by tariffs'),
+    usage_count: 0,
+    thumbnail: null,
+    created_at: '2026-09-28T09:00:00+00:00',
+    updated_at: '2026-09-28T09:00:00+00:00',
+    /* `content` is the file `module-tariffs` offers, read off disk: see `offered()` below. */
+  },
+  {
     id: 12,
     slug: 'recipes',
     title: 'Рецепты',
@@ -1577,6 +1597,8 @@ export function clone<T>(value: T): T {
 offered('reviews', 'php/packages/module-reviews/resources/blocks/reviews.json')
 
 offered('team', 'php/packages/module-team/resources/blocks/team.json')
+
+offered('tariffs', 'php/packages/module-tariffs/resources/blocks/tariffs.json')
 
 /* The press offers three (§4.8 of its spec). */
 for (const slug of ['press-logos', 'press-outlets', 'press-articles']) {
