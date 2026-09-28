@@ -21,6 +21,8 @@ final class Helpers implements Check
 {
     /** Function → the package that declares it in its `src/helpers.php`. */
     private const HELPERS = [
+        'banners' => 'webx-ui/module-banners',
+        'banners_layout' => 'webx-ui/module-banners',
         'events' => 'webx-ui/module-events',
         'menu' => 'webx-ui/module-menu',
         'press' => 'webx-ui/module-press',

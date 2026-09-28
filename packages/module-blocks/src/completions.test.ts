@@ -188,6 +188,34 @@ describe('the template', () => {
     ])
   })
 
+  it('knows what banners() and banners_layout() hand a template', () => {
+    const loop = "@foreach (banners('hero')->get() as $banner) {{ $banner['|"
+    expect(labels(ask(source, loop))).toEqual([
+      'id',
+      'anchor',
+      'place',
+      'title',
+      'text',
+      'image',
+      'image_mobile',
+      'video',
+      'buttons',
+      'fields',
+    ])
+
+    const buttons =
+      "@foreach (banners('hero')->get() as $b) @foreach ($b['buttons'] as $button) {{ $button['|"
+    expect(labels(ask(source, buttons))).toEqual(['label', 'url', 'new_tab', 'rel', 'variant'])
+
+    const layout = labels(ask(source, "@php($layout = banners_layout('hero')) {{ $layout['|"))
+    expect(layout[0]).toBe('layout')
+    expect(layout).toContain('video_on_mobile')
+
+    const found = labels(ask(source, '<div>\n  @fo|'))
+    expect(found).toContain('@foreach banners')
+    expect(labels(ask(source, '<div>\n  @ph|'))).toContain('@php banners_layout')
+  })
+
   it('offers the classes the styles declare, nested ones resolved', () => {
     expect(labels(ask(source, '<div class="b-hero |"'))).toEqual(['b-hero__inner', 'b-hero__title'])
   })

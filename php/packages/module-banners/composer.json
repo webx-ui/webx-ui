@@ -1,0 +1,81 @@
+{
+    "name": "webx-ui/module-banners",
+    "description": "Banners for the WebX UI admin panel: a picture (and one for phones), a video, a title, a text and up to three buttons, kept in named places and printed by the site's own templates through banners().",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "webx-ui",
+        "laravel",
+        "admin",
+        "cms",
+        "banners",
+        "slider"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-banners"
+    },
+    "require": {
+        "php": "^8.3",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/routing": "^13.0",
+        "illuminate/support": "^13.0",
+        "webx-ui/localization": "^0.46.0",
+        "webx-ui/mcp": "^0.46.0",
+        "webx-ui/module-admin": "^0.46.0",
+        "webx-ui/module-media": "^0.46.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/module-pages": "^0.46.0"
+    },
+    "suggest": {
+        "webx-ui/module-pages": "A button of a banner can point at a page, and follows it when the page moves."
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Banners\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Banners\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Banners\\BannersServiceProvider"
+            ]
+        },
+        "webx": {
+            "module": "banners",
+            "npm": {
+                "@webx-ui/module-banners": "^0.1.0"
+            },
+            "panel": {
+                "import": "import { banners } from '@webx-ui/module-banners'",
+                "style": "@webx-ui/module-banners/style.css",
+                "register": "banners()"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

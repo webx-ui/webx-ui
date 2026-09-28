@@ -83,6 +83,7 @@ folder(5, 1, 'Отзывы')
 folder(6, 1, 'Рецепты')
 folder(7, 1, 'События')
 folder(8, 1, 'Пресса')
+folder(9, 1, 'Баннеры')
 
 /**
  * @param name What the library calls it — and what the generated picture says on its face.
@@ -230,7 +231,50 @@ for (const [path, name] of [
 }
 pdf(8, 'press/health-style-2025-03.pdf', 'Здоровье и стиль, март 2025', '2026-09-27T09:05:00+00:00')
 
+/* The banners' pictures — wide ones, one narrower crop for a phone — and one video, which the
+   library lists and a banner plays over its picture. There are no bytes behind the video: the
+   panel shows its name, and a playground has no business carrying a binary. */
+for (const [path, name, width, height] of [
+  ['banners/spring-sale.svg', 'Весенняя распродажа', 1920, 720],
+  ['banners/spring-sale-mobile.svg', 'Весенняя распродажа, телефон', 800, 1000],
+  ['banners/studio.svg', 'Студия за работой', 1920, 720],
+  ['banners/support.svg', 'Поддержка 24/7', 1920, 720],
+  ['banners/workshop.svg', 'Воркшоп по дизайну', 1920, 720],
+  ['banners/blog-side.svg', 'Подписка на рассылку', 600, 600],
+] as const) {
+  image(9, path, name, width, height, '2026-09-28T09:00:00+00:00')
+}
+video(9, 'banners/showreel.mp4', 'Шоурил студии', '2026-09-28T09:05:00+00:00')
+
 recount()
+
+/** A video the library lists: a name, a kind and no bytes (see the banners above). */
+function video(directoryId: number, path: string, name: string, createdAt: string): MediaFile {
+  const file: MediaFile = {
+    id: nextFileId++,
+    directory_id: directoryId,
+    name,
+    file_name: path.slice(path.lastIndexOf('/') + 1),
+    extension: 'mp4',
+    mime: 'video/mp4',
+    type: 'video',
+    size: 4_200_000,
+    width: 1920,
+    height: 1080,
+    path,
+    url: `/fixtures/media/${path}`,
+    thumb: null,
+    source: `/fixtures/media/${path}`,
+    editable: false,
+    has_original: false,
+    duplicate: false,
+    created_at: createdAt,
+  }
+
+  files.push(file)
+
+  return file
+}
 
 /**
  * A PDF of one page that says what it is: enough for a link to open in a browser tab, which is

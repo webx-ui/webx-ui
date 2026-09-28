@@ -74,6 +74,7 @@ export default defineConfig({
       pkg('schema'),
       pkg('module-admin'),
       pkg('module-auth'),
+      pkg('module-banners'),
       pkg('module-blocks'),
       pkg('module-blog'),
       pkg('module-events'),
