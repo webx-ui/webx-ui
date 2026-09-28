@@ -141,6 +141,27 @@ ones the visitor was reading.
 There is no code dependency on `module-blocks`: a block type in the constructor prints the same
 tag, so the form works on a site with no block editor at all.
 
+### Where the form stands
+
+```blade
+<x-webx-inbox::form slug="subscribe" placement="footer" />
+```
+
+One subscription form in the footer and in every article is one form, and `placement` is what
+tells the two apart. The `<form>` gets `wx-form--footer` beside `wx-form`, so the site styles each
+by CSS alone; the views of the form and of every field get `$placement`; and a hidden
+`webx_placement` makes the submission remember it — the card of a submission says
+«Placement: footer», and the list offers a filter once a form has come in from more than one
+place. `inbox_get` and `inbox_list` return it, and `inbox_list` filters by it.
+
+The value is a name — `[a-z][a-z0-9-]*`, up to 32 characters. Anything else is dropped with a
+warning in the log rather than an exception: the form on the page matters more than a typo in one
+of its attributes. `none` is reserved; it is what the filter says for «the page did not say».
+
+This is what a footer made of blocks needs from the inbox: a block whose template prints
+`<x-webx-inbox::form :slug="$form" placement="footer" />`, styled by `.wx-form--footer` — see
+[Layout regions](/guide/layout-regions).
+
 ### Making the markup yours
 
 ```bash

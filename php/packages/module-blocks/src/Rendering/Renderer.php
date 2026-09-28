@@ -10,6 +10,7 @@ use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Support\HtmlString;
+use Illuminate\View\ComponentAttributeBag;
 use Psr\Log\LoggerInterface;
 use Throwable;
 use WebxUi\Blocks\BlockType;
@@ -63,6 +64,20 @@ final class Renderer
      */
     private bool $strict = false;
 
+    /** The region being rendered, handed to its templates as `$region`; null on a page. */
+    private ?RegionContext $region = null;
+
+    /**
+     * What threw inside the region being rendered, collected so that the caller can decide what
+     * a failure means there; null outside a region, where a failure is only ever logged or shown.
+     *
+     * @var list<array{key: string, type: string, message: string, line: int|null}>|null
+     */
+    private ?array $regionFailures = null;
+
+    /** Whether a failure on the live site goes to the log — not while publishing checks a tree. */
+    private bool $report = true;
+
     public function __construct(
         private readonly BlockTypes $types,
         private readonly TemplateCompiler $compiler,
@@ -79,6 +94,40 @@ final class Renderer
     public function render(?iterable $blocks, ?object $entity = null): HtmlString
     {
         return new HtmlString($this->list($blocks, $entity, 0));
+    }
+
+    /**
+     * A region of the layout (§5 of the regions spec): its tree rendered like content, in a frame
+     * of its own.
+     *
+     * Its own list of types, so that the region's bundle is printed by its tag and the page's
+     * `@webxBlocks` keeps printing the page's — neither carries the other's types. Its own record
+     * of failures, because in a region one failed block is not a gap but a reason to print the
+     * fallback instead. Everything else — nesting, visibility, components called inside — is the
+     * code content goes through. The page's state is put back afterwards whatever happens, so a
+     * header rendered in the middle of a page leaves the page's bookkeeping as it found it.
+     *
+     * @param  iterable<array-key, mixed>|null  $blocks
+     * @param  bool  $report  Whether a failure goes to the log; a publication check only wants to know.
+     */
+    public function region(?iterable $blocks, ?object $entity, RegionContext $region, bool $preview = false, bool $report = true): RegionRender
+    {
+        $saved = [$this->used, $this->preview, $this->region, $this->regionFailures, $this->report, $this->rootCalls];
+
+        $this->used = [];
+        $this->preview = $preview;
+        $this->region = $region;
+        $this->regionFailures = [];
+        $this->report = $report;
+        $this->rootCalls = [];
+
+        try {
+            $html = $this->list($blocks, $entity, 0);
+
+            return new RegionRender($html, $this->used, $this->regionFailures);
+        } finally {
+            [$this->used, $this->preview, $this->region, $this->regionFailures, $this->report, $this->rootCalls] = $saved;
+        }
     }
 
     /**
@@ -316,6 +365,9 @@ final class Renderer
         $this->rootCalls = [];
         $this->substitutes = [];
         $this->strict = false;
+        $this->region = null;
+        $this->regionFailures = null;
+        $this->report = true;
     }
 
     /**
@@ -421,6 +473,22 @@ final class Renderer
             $data[$name] = $slot;
         }
 
+        // `$region` everywhere, null outside a region, so that one template serves a page and a
+        // header without `isset()`. A type that names a field `region` keeps its field.
+        if (! array_key_exists('region', $data)) {
+            $data['region'] = $this->region;
+        }
+
+        // The region tag's attributes as `$attributes` too — the way its fallback view gets them.
+        // That is what lets the markup from code become a block type unchanged (§7.3 of the
+        // regions spec): a header view written with `$attributes->get('tone')` keeps working.
+        // Empty on a page.
+        if (! array_key_exists('attributes', $data)) {
+            /** @var array<string, mixed> $attributes */
+            $attributes = $this->region?->data() ?? [];
+            $data['attributes'] = new ComponentAttributeBag($attributes);
+        }
+
         $data['block'] = $context;
         $data['entity'] = $context->entity;
 
@@ -490,8 +558,14 @@ final class Renderer
      */
     private function failed(BlockContext $context, Throwable $failure, ?int $line): string
     {
+        if ($this->regionFailures !== null) {
+            $this->regionFailures[] = ['key' => $context->key, 'type' => $context->type, 'message' => $failure->getMessage(), 'line' => $line];
+        }
+
         if (! $this->preview) {
-            Container::getInstance()->make(ExceptionHandler::class)->report($failure);
+            if ($this->report) {
+                Container::getInstance()->make(ExceptionHandler::class)->report($failure);
+            }
 
             return '';
         }

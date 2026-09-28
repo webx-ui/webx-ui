@@ -1,11 +1,14 @@
-export { blocks, type BlocksOptions } from './module'
-export { createBlocksApi, type BlocksApi } from './api'
+export { blocks, regions, type BlocksOptions, type RegionsOptions } from './module'
+export { createBlocksApi, createRegionsApi, type BlocksApi, type RegionsApi } from './api'
 export { blocksMessages } from './messages'
 export {
   blocksPreviewKey,
+  blocksTopKey,
   provideBlocksPreview,
+  provideBlocksTop,
   useBlocksPreview,
   type BlocksPreview,
+  type BlocksTop,
 } from './preview'
 export {
   cloneNode,
@@ -32,6 +35,8 @@ export { default as WxBlockEditorPage } from './BlockEditorPage.vue'
 export { default as WxBlockPicker } from './BlockPicker.vue'
 export { default as WxBlockThumb } from './BlockThumb.vue'
 export { default as WxBlockStage } from './BlockStage.vue'
+export { default as WxRegionsPage } from './RegionsPage.vue'
+export { default as WxRegionEditorPage } from './RegionEditorPage.vue'
 export type {
   BlockContent,
   BlockInput,
@@ -49,6 +54,11 @@ export type {
   DeclaredComponent,
   Lint,
   PublishRefusal,
+  RegionAdopted,
+  RegionConflict,
+  RegionDetail,
+  RegionRow,
+  RegionVersion,
   RenderInput,
   RenderResult,
   ShapeField,

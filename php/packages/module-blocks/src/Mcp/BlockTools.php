@@ -11,6 +11,7 @@ use Illuminate\Contracts\Validation\Factory as ValidatorFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
 use Throwable;
+use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\BlockComponents;
 use WebxUi\Blocks\BlockShapes;
@@ -21,17 +22,22 @@ use WebxUi\Blocks\ContentEdit;
 use WebxUi\Blocks\ContentValues;
 use WebxUi\Blocks\Exceptions\BlockNotPublishable;
 use WebxUi\Blocks\Exceptions\BlocksException;
+use WebxUi\Blocks\Exceptions\RegionRefused;
 use WebxUi\Blocks\Http\Resources\BlockResource;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
+use WebxUi\Blocks\Models\Region;
 use WebxUi\Blocks\Panel\BlockInput;
 use WebxUi\Blocks\Panel\Customiser;
 use WebxUi\Blocks\Panel\Graph;
 use WebxUi\Blocks\Panel\Lints;
 use WebxUi\Blocks\Panel\Publisher;
 use WebxUi\Blocks\Panel\PublishFailed;
+use WebxUi\Blocks\Panel\RegionForm;
+use WebxUi\Blocks\Panel\RegionWriter;
 use WebxUi\Blocks\Panel\Usage;
 use WebxUi\Blocks\Preview\Preview;
+use WebxUi\Blocks\Regions;
 use WebxUi\Blocks\Rendering\Bundles;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\Schema;
@@ -61,7 +67,14 @@ final class BlockTools
             'type' => 'string',
             'description' => 'Which kind of entity: '.$this->entityNames().'.',
         ];
-        $id = ['type' => ['integer', 'string'], 'description' => 'The entity\'s id.'];
+        $id = ['type' => ['integer', 'string'], 'description' => 'The entity\'s id; for a region, its name (header, footer).'];
+        $region = ['type' => 'string', 'description' => 'The region, by name: '.$this->regionNames().'.'];
+
+        // The content tools reach the regions of the layout too, which are behind their own
+        // permission (§8 of the regions spec): the tool lets in either, the handler asks for the
+        // one the entity needs.
+        $reads = ['blocks.view', 'blocks.manage', 'blocks.regions'];
+        $writes = ['blocks.manage', 'blocks.regions'];
         $revision = [
             'type' => 'string',
             'description' => 'The revision blocks_get_content returned. Left out, the write goes in whatever happened since.',
@@ -139,13 +152,14 @@ final class BlockTools
                 .'{ key, type, values } nodes where a value may itself be such a list. With outline it answers with '
                 .'the map alone — key, type, nesting and a line of text each — and with key, one node in full. '
                 .'Read the map first: the values of twenty blocks are not what you need to edit one.',
-                fn (array $arguments): array => $this->getContent($arguments),
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->getContent($arguments, $user),
                 ['properties' => [
                     'entity' => $entity,
                     'id' => $id,
                     'outline' => ['type' => 'boolean', 'description' => 'The map of the page instead of the trees.'],
                     'key' => ['type' => 'string', 'description' => 'One node, with whatever is nested inside it.'],
                 ], 'required' => ['entity', 'id']],
+                permission: $reads,
             ),
 
             Tool::mutating(
@@ -161,6 +175,7 @@ final class BlockTools
                     'blocks' => ['type' => 'array', 'items' => ['type' => 'object'], 'description' => 'The whole tree, top to bottom.'],
                     'revision' => $revision,
                 ], 'required' => ['entity', 'id', 'blocks']],
+                permission: $writes,
             ),
 
             Tool::mutating(
@@ -187,18 +202,51 @@ final class BlockTools
                             .'stays in the content and is not drawn on the site, its nested blocks with it.',
                     ],
                 ], 'required' => ['entity', 'id', 'ops']],
+                permission: $writes,
             ),
 
             Tool::read(
                 'preview_url',
                 'A signed link to the draft of an entity as the page it will be — the drafts of the block types '
-                .'included. Good for an hour; open it to see the whole page rather than one block.',
+                .'included. Good for an hour; open it to see the whole page rather than one block. For a region '
+                .'it is a page of the site with the region\'s draft on it: the front page, or the path in at.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->previewUrl($arguments, $user),
                 ['properties' => [
                     'entity' => $entity,
                     'id' => $id,
                     'minutes' => ['type' => 'integer', 'description' => 'How long the link lives; the site\'s default when omitted.'],
+                    'at' => ['type' => 'string', 'description' => 'Regions only: the path of the page to draw the region on, such as /about. The front page when omitted.'],
                 ], 'required' => ['entity', 'id']],
+                permission: $reads,
+            ),
+
+            Tool::read(
+                'regions',
+                'The regions of the layout — the header, the footer — whose content is blocks: name, title, which '
+                .'types each takes, whether its blocks are on the site or the markup from code is (fallback, the view '
+                .'the layout prints while the region is empty or unpublished), how many blocks it holds and a preview '
+                .'link. Edit one with blocks_get_content / blocks_edit_content, entity "region", id its name.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->regions($user),
+                permission: 'blocks.regions',
+            ),
+
+            Tool::mutating(
+                'region_publish',
+                'Publish the draft of a region, so the site prints its blocks in place of the markup from code. '
+                .'Refused, naming the block and the line, when any block of the draft fails to render — on the site '
+                .'a failing block would make the whole region fall back. With dry_run the check runs and nothing moves.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->regionPublish($arguments, $user),
+                ['properties' => ['name' => $region], 'required' => ['name']],
+                permission: 'blocks.regions',
+            ),
+
+            Tool::mutating(
+                'region_unpublish',
+                'Take a region off the site: the layout prints the markup from code again. The blocks and the draft '
+                .'stay, for the next publication.',
+                fn (array $arguments): array => $this->regionUnpublish($arguments),
+                ['properties' => ['name' => $region], 'required' => ['name']],
+                permission: 'blocks.regions',
             ),
         ];
     }
@@ -451,9 +499,10 @@ final class BlockTools
      * @param  array<string, mixed>  $arguments
      * @return array<string, mixed>
      */
-    private function getContent(array $arguments): array
+    private function getContent(array $arguments, ?Authenticatable $user = null): array
     {
         $entity = $this->entity($arguments);
+        $this->authorise($entity, $user, false);
         $column = $this->column($entity);
         $live = $entity->getAttribute($column);
         $draft = method_exists($entity, 'draftValues') ? $entity->draftValues() : [];
@@ -462,7 +511,7 @@ final class BlockTools
 
         $head = [
             'entity' => $this->entities()->nameOf($entity),
-            'id' => $entity->getKey(),
+            'id' => $entity instanceof Region ? $entity->name : $entity->getKey(),
             'title' => $this->title($entity),
             'published' => method_exists($entity, 'isPublished') ? (bool) $entity->isPublished() : true,
             // What an edit would change, and the revision of exactly that — the draft when there
@@ -523,6 +572,7 @@ final class BlockTools
     private function editContent(array $arguments, ?Authenticatable $user): array
     {
         $entity = $this->entity($arguments);
+        $this->authorise($entity, $user, true);
         $ops = $arguments['ops'] ?? null;
 
         if (! is_array($ops) || ! array_is_list($ops) || $ops === []) {
@@ -664,6 +714,16 @@ final class BlockTools
         // with one side.
         $tree = $this->container->make(ContentValues::class)->store($tree);
 
+        // A region takes what its declaration and the types' `allowed_in` let it take — the same
+        // gate the panel's save goes through.
+        if ($entity instanceof Region) {
+            try {
+                $this->container->make(RegionWriter::class)->admissible($entity->name, $tree);
+            } catch (RegionRefused $refused) {
+                throw new ToolFailure('Not accepted — '.$refused->sentence());
+            }
+        }
+
         $column = $this->column($entity);
         $asDraft = method_exists($entity, 'saveDraft');
         $count = 0;
@@ -693,7 +753,10 @@ final class BlockTools
         $result = ['written' => $asDraft ? 'draft' : $column] + $report;
 
         try {
-            $result['preview_url'] = $this->container->make(Preview::class)->url($entity, $this->authorId($user));
+            $preview = $this->container->make(Preview::class);
+            $result['preview_url'] = $entity instanceof Region
+                ? $preview->regionUrl($entity->name, $this->authorId($user))
+                : $preview->url($entity, $this->authorId($user));
         } catch (Throwable) {
             // An entity outside the address registry has no preview; the content is written all the same.
         }
@@ -708,6 +771,7 @@ final class BlockTools
     private function setContent(array $arguments, ?Authenticatable $user): array
     {
         $entity = $this->entity($arguments);
+        $this->authorise($entity, $user, true);
         $blocks = $arguments['blocks'] ?? null;
 
         if (! is_array($blocks) || ! array_is_list($blocks)) {
@@ -726,11 +790,16 @@ final class BlockTools
     private function previewUrl(array $arguments, ?Authenticatable $user): array
     {
         $entity = $this->entity($arguments);
+        $this->authorise($entity, $user, false);
         $minutes = $arguments['minutes'] ?? null;
         $preview = $this->container->make(Preview::class);
 
+        $at = is_string($arguments['at'] ?? null) ? $arguments['at'] : null;
+
         try {
-            $url = $preview->url($entity, $this->authorId($user), is_int($minutes) && $minutes > 0 ? $minutes : null);
+            $url = $entity instanceof Region
+                ? $preview->regionUrl($entity->name, $this->authorId($user), is_int($minutes) && $minutes > 0 ? $minutes : null, $at)
+                : $preview->url($entity, $this->authorId($user), is_int($minutes) && $minutes > 0 ? $minutes : null);
         } catch (Throwable $failure) {
             throw new ToolFailure("No preview for this entity: {$failure->getMessage()}");
         }
@@ -933,6 +1002,10 @@ final class BlockTools
 
     private function title(Model $entity): ?string
     {
+        if ($entity instanceof Region) {
+            return $this->container->make(Regions::class)->title($entity->name);
+        }
+
         $title = $entity->getAttribute('title');
 
         if (is_array($title)) {
@@ -1020,7 +1093,7 @@ final class BlockTools
             'group' => ['type' => 'string', 'enum' => is_array($groups) ? array_values($groups) : [], 'description' => 'The section of the picker.'],
             'sort' => ['type' => 'integer'],
             'allow' => $slugList + ['description' => 'Types allowed inside; null when the block is not a container.'],
-            'allowed_in' => $slugList + ['description' => 'Where the block may go: type slugs, "root" for the page itself; null for anywhere.'],
+            'allowed_in' => $slugList + ['description' => 'Where the block may go: type slugs, "root" for the page itself, "region:header" for the top of that region of the layout; null for anywhere.'],
             'max_per_entity' => ['type' => ['integer', 'null']],
             'is_enabled' => ['type' => 'boolean'],
             'schema' => ['type' => 'array', 'items' => ['type' => 'object'], 'description' => 'Screen nodes; see blocks://fields.'],
@@ -1030,6 +1103,148 @@ final class BlockTools
             'sample' => ['type' => 'object', 'description' => 'A value for every field.'],
             'comment' => ['type' => 'string', 'description' => 'A line for the history of versions.'],
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function regions(?Authenticatable $user): array
+    {
+        $form = $this->container->make(RegionForm::class);
+        $preview = $this->container->make(Preview::class);
+        $regions = [];
+
+        foreach (array_keys($this->container->make(Regions::class)->declared()) as $name) {
+            $row = $form->row($name);
+
+            $regions[] = [
+                'name' => $row['name'],
+                'title' => $row['title'],
+                'description' => $row['description'],
+                'allow' => $row['allow'],
+                'max' => $row['max'],
+                // What the site prints there now, in one word: the blocks, or the markup from code.
+                'state' => $row['published'] ? ($row['has_draft'] ? 'published, with a draft' : 'published') : ($row['id'] === null ? 'never saved' : ($row['has_draft'] ? 'draft' : 'unpublished')),
+                'published' => $row['published'],
+                'has_draft' => $row['has_draft'],
+                'fallback' => $row['fallback'],
+                'blocks' => $row['count'],
+                'preview_url' => $preview->regionUrl($name, $this->authorId($user)),
+            ];
+        }
+
+        return ['regions' => $regions, 'count' => count($regions)];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function regionPublish(array $arguments, ?Authenticatable $user): array
+    {
+        $region = $this->declaredRegion($arguments);
+        $writer = $this->container->make(RegionWriter::class);
+        $row = $this->container->make(Regions::class)->find($region->name);
+
+        if ($row === null) {
+            throw new ToolFailure("Region [{$region->name}] was never saved: write its blocks with blocks_set_content or blocks_edit_content first.");
+        }
+
+        try {
+            if ($this->dryRun($arguments)) {
+                $failures = $writer->check($row);
+
+                if ($failures !== []) {
+                    throw new ToolFailure('Would not publish: '.implode(' ', $failures));
+                }
+
+                $fallback = $this->container->make(Regions::class)->fallbackOf($region->name);
+
+                return [
+                    'dry_run' => true,
+                    'ok' => true,
+                    'blocks' => Regions::visible($row->editingTree()),
+                    'would' => $row->isPublished()
+                        ? 'replace the published blocks of the region'
+                        : 'replace the markup from code'.($fallback === null ? '' : " ({$fallback})").' on every page of the site',
+                ];
+            }
+
+            $published = $writer->publish($region->name, $this->authorId($user), EntityVersion::SOURCE_MCP);
+        } catch (RegionRefused $refused) {
+            throw new ToolFailure('Not published: '.$refused->sentence());
+        }
+
+        return [
+            'published' => true,
+            'name' => $published->name,
+            'version' => $published->publishedVersions()->value('number'),
+            'blocks' => Regions::visible($published->blocksTree()),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function regionUnpublish(array $arguments): array
+    {
+        $region = $this->declaredRegion($arguments);
+        $row = $this->container->make(Regions::class)->find($region->name);
+        $was = $row instanceof Region && $row->isPublished();
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would' => $was ? 'print the markup from code in place of the region\'s blocks' : 'nothing: the region is not on the site'];
+        }
+
+        $this->container->make(RegionWriter::class)->unpublish($region->name);
+
+        return ['unpublished' => $was, 'name' => $region->name];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    private function declaredRegion(array $arguments): Region
+    {
+        $name = $arguments['name'] ?? null;
+
+        if (! is_string($name) || $name === '') {
+            throw new ToolFailure('`name` is required: the region, as blocks_regions lists it.');
+        }
+
+        return $this->entities()->region($name);
+    }
+
+    /**
+     * The one permission an entity needs on top of the tool's: a region is `blocks.regions`, and
+     * everything else is the section's own pair. Nobody to ask — a local run with no user — is
+     * not refused, the same rule as the tools themselves.
+     */
+    private function authorise(Model $entity, ?Authenticatable $user, bool $write): void
+    {
+        if (! $user instanceof HasPermissions) {
+            return;
+        }
+
+        $needs = $entity instanceof Region
+            ? ['blocks.regions']
+            : ($write ? ['blocks.manage'] : ['blocks.view', 'blocks.manage']);
+
+        foreach ($needs as $permission) {
+            if ($user->hasPermission($permission)) {
+                return;
+            }
+        }
+
+        throw new ToolFailure('Your administrator account may not do this: it needs ['.implode('] or [', $needs).'].');
+    }
+
+    private function regionNames(): string
+    {
+        $names = array_keys($this->container->make(Regions::class)->declared());
+
+        return $names === [] ? 'none declared (webx-blocks.regions)' : implode(', ', $names);
     }
 
     private function usage(): Usage

@@ -8,6 +8,7 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Container\Container;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Blocks\Models\Block;
+use WebxUi\Blocks\Regions;
 use WebxUi\Mcp\McpResource;
 
 /**
@@ -183,6 +184,8 @@ final class BlockResources
             'max_depth' => (int) $config->get('webx-blocks.max_depth', 5),
             'editing' => (bool) $config->get('webx-blocks.editing', true),
             'entities' => array_keys($this->container->make(Entities::class)->names()),
+            // The regions of the layout, by name: entity "region" with one of these as its id.
+            'regions' => array_keys($this->container->make(Regions::class)->declared()),
             'preview_minutes' => (int) $config->get('webx-blocks.preview.ttl', 60),
         ];
     }

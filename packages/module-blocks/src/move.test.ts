@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { destinations } from './move'
+import { allows, destinations } from './move'
 import type { BlockNode, BlockType } from './types'
 
 function type(slug: string, extra: Partial<BlockType> = {}): BlockType {
@@ -89,5 +89,22 @@ describe('destinations', () => {
     const narrowed = { owner: null, allow: ['rich-text'], max: null }
 
     expect(destinations(tree(), 'h2', catalog, narrowed)).toEqual([])
+  })
+})
+
+describe('the top level of a layout region', () => {
+  const header = type('site-header', { allowed_in: ['region:header'] })
+  const pageOnly = type('hero', { allowed_in: ['root'] })
+  const anywhere = type('text')
+
+  it('offers a type made for the region there, and only there', () => {
+    expect(allows(header, null, null, 'region:header')).toBe(true)
+    expect(allows(header, null, null, 'region:footer')).toBe(false)
+    expect(allows(header, null, null)).toBe(false)
+  })
+
+  it('keeps a type meant for the page out of the region, and lets a type with no rule in', () => {
+    expect(allows(pageOnly, null, null, 'region:header')).toBe(false)
+    expect(allows(anywhere, null, null, 'region:header')).toBe(true)
   })
 })

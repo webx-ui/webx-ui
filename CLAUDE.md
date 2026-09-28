@@ -1463,6 +1463,10 @@ addAttributes })` с `parseHTML`/`renderHTML`. Видно только если 
    на версиях, проверка родителей при публикации; модуль объявляет точку с запасной вьюхой
    (`BlockComponents`, `@webxPart`), «Настроить» копирует её в черновик. Первая точка —
    `recipe-card`. Спецификация — `docs/architecture/WEBX_UI_BLOCK_COMPONENTS.md`.
+   **Зоны лейаута написаны 28.09.2026** (LR1–LR3 на `feat/layout-regions`, не выпущены): шапка и
+   подвал деревом блоков за тегом `<x-webx-blocks::region name="header" fallback="…" />`, раздел
+   «Зоны сайта» под `blocks.regions`, `placement` у формы inbox, предложенный блок `menu`.
+   Спецификация — `docs/architecture/WEBX_UI_LAYOUT_REGIONS.md`, гайд — `apps/docs/guide/layout-regions.md`.
 6. **`module-pages`** — **выпущен 16.09.2026** и стоит на обоих демо: дерево страниц,
    **главная — корневой узел** с пустым слагом, адрес форматтером `TreePath` (политика `Fail`),
    переводимые `title` и `slug`, мягкое удаление веткой, список табличным деревом (а на телефоне

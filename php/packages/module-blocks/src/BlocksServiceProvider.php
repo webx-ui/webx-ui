@@ -15,16 +15,20 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Blocks\Console\BundlesCommand;
 use WebxUi\Blocks\Console\ClearCommand;
 use WebxUi\Blocks\Console\ExportCommand;
 use WebxUi\Blocks\Console\ImportCommand;
 use WebxUi\Blocks\Console\OfferedCommand;
+use WebxUi\Blocks\Console\RegionsCommand;
 use WebxUi\Blocks\Fields\DataType;
 use WebxUi\Blocks\Fields\SlotType;
 use WebxUi\Blocks\Http\Middleware\EnsureEditing;
 use WebxUi\Blocks\Panel\BlocksModule;
 use WebxUi\Blocks\Panel\Publisher;
+use WebxUi\Blocks\Panel\RegionForm;
+use WebxUi\Blocks\Panel\RegionsModule;
 use WebxUi\Blocks\Panel\Usage;
 use WebxUi\Blocks\Preview\Preview;
 use WebxUi\Blocks\Preview\PreviewToken;
@@ -51,6 +55,7 @@ class BlocksServiceProvider extends ServiceProvider
         $this->app->singleton(Preview::class);
         $this->app->singleton(Usage::class);
         $this->app->singleton(Publisher::class);
+        $this->app->singleton(Regions::class);
 
         // What modules offer as block types (§3.4 of the FAQ spec). Filled from their providers.
         $this->app->singleton(BlockOffers::class);
@@ -100,11 +105,20 @@ class BlocksServiceProvider extends ServiceProvider
         // included — they are compiled by the same Blade that compiles the site's views.
         Blade::component('webx-block', BlockTag::class);
 
+        // `<x-webx-blocks::region>` is a class under this namespace; `<x-webx-blocks::standalone>`
+        // stays the anonymous view it was — the compiler looks for a class first, then a view.
+        Blade::componentNamespace('WebxUi\Blocks\View\Components', 'webx-blocks');
+
         /** @var Router $router */
         $router = $this->app->make('router');
         $router->aliasMiddleware('webx.blocks-editing', EnsureEditing::class);
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(BlocksModule::class));
+
+        // The regions are a section of their own: edited by whoever edits the pages, not by
+        // whoever may write Blade (§7.1 of the regions spec).
+        $this->app->make(ModuleRegistry::class)->register($this->app->make(RegionsModule::class));
+        $this->app->make(ScreenRegistry::class)->register(RegionForm::SCREEN, __DIR__.'/../resources/screens/regions.form.json');
 
         $this->registerGateOpenings();
 
@@ -118,7 +132,7 @@ class BlocksServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->commands([BundlesCommand::class, ClearCommand::class, ExportCommand::class, ImportCommand::class, OfferedCommand::class]);
+        $this->commands([BundlesCommand::class, ClearCommand::class, ExportCommand::class, ImportCommand::class, OfferedCommand::class, RegionsCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-blocks.php' => config_path('webx-blocks.php'),
@@ -151,6 +165,11 @@ class BlocksServiceProvider extends ServiceProvider
             }
 
             $token = $request->query('token');
+
+            // A region's draft on a page of the site: the token names the region, not a row.
+            if ($preview !== '' && is_string($token) && preg_match('#^'.preg_quote($preview, '#').'/region/([a-z][a-z0-9-]*)$#', trim($request->path(), '/'), $region) === 1) {
+                return $this->app->make(PreviewToken::class)->verify($token, Preview::REGION, $region[1]) !== null;
+            }
 
             return $preview !== ''
                 && is_string($token)

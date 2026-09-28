@@ -50,6 +50,8 @@ final class SubmissionRowResource extends JsonResource
             'assignee' => AdminBrief::of($submission->assignee),
             'is_read' => $submission->read_at !== null,
             'source' => $submission->source,
+            // Where on the site the form stood (`footer`, `article`), or null.
+            'placement' => $submission->placement,
             'files_count' => (int) ($submission->getAttribute('files_count') ?? 0),
             'created_at' => $submission->created_at?->toAtomString(),
         ];

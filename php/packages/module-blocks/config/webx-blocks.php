@@ -162,4 +162,36 @@ return [
 
     'layout' => env('WEBX_BLOCKS_LAYOUT'),
 
+    /*
+    |---------------------------------------------------------------------------
+    | Regions of the layout
+    |---------------------------------------------------------------------------
+    |
+    | Named places of the site's layout whose content is a tree of blocks,
+    | edited in the panel like a page, with the markup from code printed for
+    | as long as the region is empty or unpublished:
+    |
+    |     <x-webx-blocks::region name="header" fallback="components.header" />
+    |
+    | A region exists where the layout prints that tag and is declared here;
+    | the row behind it appears the first time it is saved. Empty by default,
+    | because whoever writes the layout is the one who knows its regions.
+    |
+    |     'regions' => [
+    |         'header' => [
+    |             'title' => 'trans::webx-blocks::regions.header',
+    |             'description' => 'Top of every page: logo, menu, the call to action.',
+    |             'allow' => null,   // the block types allowed at the top; null for any
+    |             'max' => null,     // how many blocks at the top; null for no limit
+    |         ],
+    |         'footer' => ['title' => 'trans::webx-blocks::regions.footer'],
+    |     ],
+    |
+    | A name is lower-case letters, digits and dashes. A block type offered
+    | only here says so with `"region:header"` in its `allowed_in`.
+    |
+    */
+
+    'regions' => [],
+
 ];

@@ -100,6 +100,23 @@ A flat `<ul>` with `wx-menu__*` classes and no styling, published with
 `php artisan vendor:publish --tag=webx-menu-views`. It exists so that the first day of a new site
 does not begin with writing a `<ul>`, and it is meant to be thrown away on the second.
 
+### As a block
+
+With [`webx-ui/module-blocks`](/guide/blocks) on the site, the package offers a block type
+**Menu** — for a header or a footer made of blocks (a [layout region](/guide/layout-regions)), or
+anywhere else a block stands:
+
+```bash
+php artisan webx:blocks:offered --install --module=menu
+```
+
+Two fields: which menu, and the layout — one line, a line with dropdowns, or columns for a
+footer. The menu field is a select **filled at install time** with the site's menus, declared ones
+first; a menu made later is added to the list in the type's form. The template prints what the
+component prints, under `.b-menu` classes: `attrs()` on each link, `aria-current` on the way to
+the visitor's page, headings as text. A site whose menu looks otherwise edits the template in the
+panel; a type the site already has under the slug `menu` is never touched.
+
 ## An item points at one of three things
 
 And it says which, in a column of its own. Guessing — "if there is no entity it must be a URL" —

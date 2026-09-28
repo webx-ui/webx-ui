@@ -42,6 +42,10 @@ Three places where the site makes the library its own:
 view a module ships stands inside it. The agreement is two lines long — a `head` slot and the
 default slot for the content — and `config('webx-pages.layout')` and its siblings are what point
 at it. Keep `@stack('head')`: a slot is one place, and what a block type pushes cannot reach it.
+The header and the footer are regions — `<x-webx-blocks::region name="header"
+fallback="components.header" />`, declared in `config/webx-blocks.php`: until somebody publishes
+blocks there in the panel, the site prints `components/header.blade.php` as it always did. Without
+`webx-ui/module-blocks` the tag prints its fallback and nothing else (`AppServiceProvider`).
 
 **The views.** `php artisan vendor:publish --tag=webx-blog-views` copies a module's public views
 into `resources/views/vendor/`, where they win over the package's. Per file, not per directory:

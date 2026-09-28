@@ -1,0 +1,36 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "regions.form",
+  "model": "region",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "content",
+          "type": "wx-tab",
+          "label": "trans::webx-blocks::region.tab-content",
+          "children": [
+            {
+              "id": "blocks",
+              "type": "wx-blocks",
+              "name": "blocks"
+            }
+          ]
+        },
+        {
+          "id": "history",
+          "type": "wx-tab",
+          "label": "trans::webx-blocks::region.tab-history",
+          "children": [
+            {
+              "id": "versions",
+              "type": "wx-region-history"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

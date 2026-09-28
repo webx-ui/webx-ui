@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Inbox\Tests;
 
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
@@ -139,6 +140,61 @@ final class PublicFormTest extends TestCase
             '<input type="hidden" name="webx_locale" value="en">',
             $this->render(),
         );
+    }
+
+    #[Test]
+    public function a_placement_is_a_class_and_a_hidden_field_and_not_an_attribute(): void
+    {
+        $this->form();
+
+        $html = $this->render('<x-webx-inbox::form slug="contact" placement="footer" />');
+
+        $this->assertStringContainsString('class="wx-form wx-form--footer"', $html);
+        $this->assertStringContainsString('<input type="hidden" name="webx_placement" value="footer">', $html);
+        // A prop now, so Blade no longer prints it on `<form>` as an attribute nobody reads.
+        $this->assertStringNotContainsString('placement="footer"', $html);
+
+        // Without one there is neither the modifier nor the field.
+        $plain = $this->render();
+        $this->assertStringContainsString('class="wx-form"', $plain);
+        $this->assertStringNotContainsString('webx_placement', $plain);
+    }
+
+    #[Test]
+    public function the_views_of_the_fields_are_told_the_placement(): void
+    {
+        $this->form();
+
+        // A published control is where a site would ask, so a stand-in for one says what it got.
+        $views = sys_get_temp_dir().'/webx-inbox-placement-'.getmypid();
+        @mkdir($views.'/fields', 0777, true);
+        file_put_contents($views.'/fields/text.blade.php', '<i data-placement="{{ $placement ?? \'-\' }}"></i>');
+        $this->app['view']->prependNamespace('webx-inbox', $views);
+
+        try {
+            $html = $this->render('<x-webx-inbox::form slug="contact" placement="article" />');
+        } finally {
+            @unlink($views.'/fields/text.blade.php');
+            @rmdir($views.'/fields');
+            @rmdir($views);
+        }
+
+        $this->assertStringContainsString('<i data-placement="article"></i>', $html);
+    }
+
+    #[Test]
+    public function a_placement_that_is_not_a_name_is_dropped_with_a_warning(): void
+    {
+        $this->form();
+
+        Log::shouldReceive('warning')->once()->withArgs(static fn (string $message): bool => str_contains($message, 'placement'));
+
+        $html = $this->render('<x-webx-inbox::form slug="contact" placement="Footer Area" />');
+
+        // The form is still there — it matters more than a typo in one of its attributes.
+        $this->assertStringContainsString('class="wx-form"', $html);
+        $this->assertStringNotContainsString('webx_placement', $html);
+        $this->assertStringNotContainsString('Footer Area', $html);
     }
 
     #[Test]

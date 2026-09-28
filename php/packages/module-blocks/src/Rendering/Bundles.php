@@ -54,7 +54,18 @@ final class Bundles
             return new HtmlString(sprintf('<script src="%s"></script>', e($this->runtimeUrl())));
         }
 
-        $bundle = $this->build($this->renderer->usedTypes());
+        return $this->tagsFor($this->renderer->usedTypes(), $what);
+    }
+
+    /**
+     * The same tags for a set of types handed in — what a region prints around itself, since
+     * its types are not the page's (§5 of the regions spec).
+     *
+     * @param  iterable<array-key, BlockType>  $types
+     */
+    public function tagsFor(iterable $types, string $what = 'all'): HtmlString
+    {
+        $bundle = $this->build($types);
 
         if (! $bundle instanceof BlockBundle) {
             return new HtmlString('');

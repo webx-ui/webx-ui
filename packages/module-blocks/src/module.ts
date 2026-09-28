@@ -4,6 +4,9 @@ import BlockDataField from './BlockDataField.vue'
 import BlockEditorPage from './BlockEditorPage.vue'
 import BlocksField from './BlocksField.vue'
 import BlocksPage from './BlocksPage.vue'
+import RegionEditorPage from './RegionEditorPage.vue'
+import RegionHistory from './RegionHistory.vue'
+import RegionsPage from './RegionsPage.vue'
 
 export interface BlocksOptions {
   /** Where the section lives inside the panel. */
@@ -52,6 +55,42 @@ export function blocks(options: BlocksOptions = {}): AdminModule {
         kind: 'field',
         bind: () => ({ rows: 3, placeholder: '<p>…</p>' }),
       },
+    },
+  }
+}
+
+export interface RegionsOptions {
+  /** Where the section lives inside the panel. */
+  path?: string
+}
+
+/**
+ * The layout regions — the header and the footer made of blocks — as a section of their own.
+ *
+ * A second module rather than two more routes of `blocks()`: the navigation is one entry per
+ * module, and this one stands in a different place for a different person. Blocks is the
+ * developer's section, closed by `blocks.manage` because a template is code; the header is
+ * edited by whoever edits the pages, under `blocks.regions`. The id matches the module the
+ * server reports, which is what puts the entry in the menu.
+ */
+export function regions(options: RegionsOptions = {}): AdminModule {
+  const path = options.path ?? '/regions'
+
+  return {
+    id: 'regions',
+    path,
+    routes: [
+      { path, name: 'webx.regions', component: RegionsPage, props: { base: path } },
+      {
+        path: `${path}/:name`,
+        name: 'webx.regions.edit',
+        component: RegionEditorPage,
+        props: { base: path },
+      },
+    ],
+    // The part of `regions.form` that is not a field: it reads the region from the editor.
+    types: {
+      'wx-region-history': { component: RegionHistory, kind: 'display' },
     },
   }
 }

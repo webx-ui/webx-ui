@@ -7,6 +7,7 @@ namespace WebxUi\Blocks\Console;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use WebxUi\Blocks\BlockTypes;
+use WebxUi\Blocks\Regions;
 use WebxUi\Blocks\Rendering\TemplateCompiler;
 
 /**
@@ -23,10 +24,15 @@ final class ClearCommand extends Command
 
     protected $description = 'Forget the cached block types and drop the compiled templates';
 
-    public function handle(BlockTypes $types, TemplateCompiler $compiler, Filesystem $files): int
+    public function handle(BlockTypes $types, TemplateCompiler $compiler, Filesystem $files, Regions $regions): int
     {
         $types->forget();
         $this->info('Block types forgotten.');
+
+        // The regions' published trees too: a restored database leaves them just as stale.
+        foreach (array_keys($regions->declared()) as $name) {
+            $regions->forget($name);
+        }
 
         $directory = $compiler->directory();
 
