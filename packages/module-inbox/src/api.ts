@@ -108,15 +108,18 @@ export function createInboxApi(admin: AdminContext): InboxApi {
       admin.http
         .get<{
           data: SubmissionsPage['data']
-          meta: Omit<SubmissionsPage, 'data' | 'columns' | 'counts'>
+          meta: Omit<SubmissionsPage, 'data' | 'columns' | 'counts' | 'placements'>
           columns: SubmissionsPage['columns']
           counts: SubmissionsPage['counts']
+          placements?: SubmissionsPage['placements']
         }>(`${base}/forms/${formId}/submissions`, { query: listQuery(query) })
         .then((body) => ({
           ...body.meta,
           data: body.data,
           columns: body.columns,
           counts: body.counts,
+          // Optional on the wire: a server from before placements answers without them.
+          placements: body.placements ?? [],
         })),
 
     submission: (id, query = {}) =>
@@ -165,6 +168,7 @@ function listQuery(query: SubmissionQuery): Record<string, string | number | und
     view: query.view === undefined || query.view === '' ? undefined : query.view,
     search: query.search === undefined || query.search === '' ? undefined : query.search,
     assignee: query.assignee ?? undefined,
+    placement: query.placement ?? undefined,
     sort: query.sort ?? undefined,
     page: query.page,
     per_page: query.per_page,

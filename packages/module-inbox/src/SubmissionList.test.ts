@@ -38,12 +38,17 @@ function row(id: number, values: Record<string, string>, read = false): Submissi
     assignee: null,
     is_read: read,
     source: 'web',
+    placement: null,
     files_count: 0,
     created_at: '2026-09-18T08:10:00Z',
   }
 }
 
-function panel(rows: SubmissionRow[], can: (permission: string) => boolean = () => true) {
+function panel(
+  rows: SubmissionRow[],
+  can: (permission: string) => boolean = () => true,
+  placements: (string | null)[] = [],
+) {
   const get = vi.fn().mockImplementation((path: string) => {
     if (path.endsWith('/statuses')) {
       return Promise.resolve({ data: [status] })
@@ -64,6 +69,7 @@ function panel(rows: SubmissionRow[], can: (permission: string) => boolean = () 
         { key: 'email', label: 'Email', type: 'email' },
       ],
       counts: { all: rows.length, unread: 1, statuses: { new: rows.length } },
+      placements,
     })
   })
 
@@ -186,6 +192,51 @@ describe('WxInboxSubmissionList', () => {
     expect(wrapper.text()).not.toContain('Add by hand')
     // Reading is still reading: the export is behind `inbox.view` like the list itself.
     expect(wrapper.text()).toContain('Export')
+  })
+
+  it('has no placement filter while the form has come in from one place only', async () => {
+    const { wrapper } = panel([row(1, { name: 'Ada' })], () => true, ['footer'])
+
+    await flushPromises()
+
+    // One form in one place is nothing to filter, so the funnel is not drawn at all.
+    expect(wrapper.find('.wx-table__filter button').exists()).toBe(false)
+  })
+
+  it('filters by placement once there is more than one, and says so in a chip', async () => {
+    const { wrapper, router, get } = panel([row(1, { name: 'Ada' })], () => true, [
+      null,
+      'article',
+      'footer',
+    ])
+
+    await flushPromises()
+
+    // The filters live in a popover, which mounts nothing until it is opened (CLAUDE.md §4).
+    await wrapper.get('.wx-table__filter button').trigger('click')
+    await flushPromises()
+
+    const select = wrapper
+      .findAllComponents({ name: 'WxSelect' })
+      .find((item) => item.props('placeholder') === 'Any placement')
+
+    expect(select).toBeDefined()
+    // The page that did not say is a choice of its own, under a word rather than a blank.
+    expect(select!.props('options')).toEqual([
+      { value: 'none', label: 'Not specified' },
+      { value: 'article', label: 'article' },
+      { value: 'footer', label: 'footer' },
+    ])
+
+    select!.vm.$emit('update:modelValue', 'footer')
+    await flushPromises()
+
+    expect(router.currentRoute.value.query.placement).toBe('footer')
+    expect(get).toHaveBeenLastCalledWith(
+      '/api/cms/inbox/forms/7/submissions',
+      expect.objectContaining({ query: expect.objectContaining({ placement: 'footer' }) }),
+    )
+    expect(wrapper.text()).toContain('Placement: footer')
   })
 
   it("turns a page with one request, not the table's and a second one racing it", async () => {

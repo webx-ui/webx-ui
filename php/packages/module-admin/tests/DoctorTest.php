@@ -12,6 +12,7 @@ use WebxUi\Admin\Doctor\Checks\Languages;
 use WebxUi\Admin\Doctor\Checks\Layouts;
 use WebxUi\Admin\Doctor\Checks\NpmRanges;
 use WebxUi\Admin\Doctor\Checks\PanelOpens;
+use WebxUi\Admin\Doctor\Checks\Regions;
 use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Admin\Doctor\VersionRange;
 use WebxUi\Admin\Panel\PackageRegistry;
@@ -167,6 +168,32 @@ final class DoctorTest extends TestCase
         $this->assertStringContainsString('webx:panel --sync', $found[0]->detail);
     }
 
+    // -- the regions of the layout -------------------------------------------------------------
+
+    #[Test]
+    public function it_warns_about_a_region_the_layout_does_not_print(): void
+    {
+        $this->layout("<html><head>{{ \$head ?? '' }}@stack('head')</head><body>\n<x-webx-blocks::region name=\"header\" fallback=\"components.header\" />\n{{ \$slot }}</body></html>\n");
+        $this->app['config']->set('webx-pages.layout', 'layout');
+        $this->app['config']->set('webx-blocks.regions', ['header' => ['title' => 'Header'], 'footer' => ['title' => 'Footer']]);
+
+        $found = $this->regions();
+
+        $this->assertCount(2, $found, $this->details($found));
+        $this->assertSame(Diagnosis::OK, $found[0]->state);
+        $this->assertTrue($found[1]->warned());
+        $this->assertStringContainsString('[footer]', $found[1]->detail);
+    }
+
+    #[Test]
+    public function it_says_nothing_about_regions_when_none_are_declared(): void
+    {
+        $this->layout("<html><head>@stack('head')</head><body>{{ \$slot }}</body></html>\n");
+        $this->app['config']->set('webx-pages.layout', 'layout');
+
+        $this->assertSame([], $this->regions());
+    }
+
     // -- both halves -------------------------------------------------------------------------
 
     #[Test]
@@ -316,6 +343,12 @@ final class DoctorTest extends TestCase
             $this->app['view'],
             $this->packages(),
         ))->run();
+    }
+
+    /** @return list<Diagnosis> */
+    private function regions(): array
+    {
+        return (new Regions($this->app['config'], $this->files, $this->app['view'], $this->packages()))->run();
     }
 
     /** @param array<string, string> $dependencies */

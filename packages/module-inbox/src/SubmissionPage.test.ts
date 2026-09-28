@@ -52,6 +52,7 @@ function submission(over: Partial<InboxSubmission> = {}): InboxSubmission {
     events: [{ id: 1, type: 'created', from: null, to: 'new', author: null, created_at: null }],
     is_read: true,
     source: 'web',
+    placement: null,
     notified_at: '2026-09-18T08:10:00Z',
     notify_error: null,
     previous_id: 6,
@@ -142,6 +143,17 @@ describe('WxInboxSubmissionPage', () => {
     await nextTick()
 
     expect(wrapper.text()).toContain('https://example.test/contacts')
+    // No placement, no line for it: most forms stand in one place and say nothing.
+    expect(wrapper.text()).not.toContain('Placement')
+  })
+
+  it('says where on the site the form stood, when the page said so', async () => {
+    const { wrapper } = await open(submission({ placement: 'footer' }))
+
+    await wrapper.findAll('.wx-tabs__tab')[2]!.trigger('mousedown')
+    await nextTick()
+
+    expect(wrapper.text()).toMatch(/Placement\s*footer/)
   })
 
   it('answers by mail to whoever wrote in', async () => {

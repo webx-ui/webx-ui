@@ -11,6 +11,7 @@ use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Status;
 use WebxUi\Inbox\Models\Submission;
+use WebxUi\Inbox\Support\Placement;
 
 /**
  * The list of one form's submissions, with the answers that are columns in it.
@@ -124,6 +125,31 @@ final class ListQuery
     }
 
     /**
+     * Every place on the site this form has brought something in from, null included when
+     * some of it came from a page that did not say (§11.2).
+     *
+     * Over the whole form and not the filtered list: it is what the placement filter offers,
+     * and a filter whose choices shrank to the one already picked could never be undone from
+     * inside itself. The panel shows that filter only when there is more than one place to
+     * choose from — one form in one place is nothing to filter.
+     *
+     * @return list<string|null>
+     */
+    public function placements(): array
+    {
+        /** @var list<string|null> $placements */
+        $placements = Submission::query()
+            ->where('form_id', $this->form->getKey())
+            ->distinct()
+            ->orderBy('placement')
+            ->limit(50)
+            ->pluck('placement')
+            ->all();
+
+        return array_values($placements);
+    }
+
+    /**
      * The submissions either side of this one, in the list it was opened from.
      *
      * The filters are honoured — that is what makes the arrows in the card's head walk the
@@ -211,6 +237,15 @@ final class ListQuery
 
         if ($request->filled('to')) {
             $query->where('inbox_submissions.created_at', '<=', Carbon::parse((string) $request->query('to'))->endOfDay());
+        }
+
+        if ($request->filled('placement')) {
+            $placement = (string) $request->query('placement');
+
+            // Like the assignee: "the page did not say" is a pile of its own, and it has no name.
+            $placement === Placement::NONE
+                ? $query->whereNull('inbox_submissions.placement')
+                : $query->where('inbox_submissions.placement', $placement);
         }
 
         $term = trim((string) $request->query('search', ''));

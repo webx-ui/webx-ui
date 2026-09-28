@@ -105,6 +105,11 @@ const SCREENS: Record<string, { base: string; patches: string[] }> = {
     base: 'php/packages/module-vacancies/resources/screens/category-form.json',
     patches: [],
   },
+  // Tabs and nothing else: the region's words and its preview come from the editor, not the screen.
+  'regions.form': {
+    base: 'php/packages/module-blocks/resources/screens/regions.form.json',
+    patches: [],
+  },
   'recipes.nutrient-form': {
     base: 'php/packages/module-recipes/resources/screens/nutrient-form.json',
     patches: [],

@@ -451,6 +451,80 @@ const PUBLICATIONS_STYLES = `.b-publications__inner {
 }
 `
 
+/*
+ * The site's header as a block — what "Move the markup into a block" makes of the layout's own
+ * header, and what the `header` region of the playground is built from. Offered only at the top
+ * of that region (`region:header` in `allowed_in`): a header in the middle of an article is a
+ * block nobody wants in the picker.
+ */
+const SITE_HEADER_TEMPLATE = `<div class="b-site-header" data-wx-block="site-header">
+    <div class="b-site-header__inner">
+        <a class="b-site-header__logo" href="/">{{ $logo }}</a>
+        <nav class="b-site-header__nav">
+            @foreach (menu('header') as $item)
+                <a href="{{ $item['href'] }}">{{ $item['label'] }}</a>
+            @endforeach
+        </nav>
+        @if ($button_label)
+            <a class="b-site-header__button" href="{{ $button['url'] }}">{{ $button_label }}</a>
+        @endif
+    </div>
+</div>
+`
+
+const SITE_HEADER_STYLES = `.b-site-header {
+    container-type: inline-size;
+    border-bottom: 1px solid #e6e8ee;
+    background: #fff;
+}
+
+.b-site-header__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.5rem;
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 0.875rem 1.5rem;
+}
+
+.b-site-header__logo {
+    font-weight: 800;
+    font-size: 1.25rem;
+    color: #10224b;
+    text-decoration: none;
+}
+
+.b-site-header__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    flex: 1;
+}
+
+.b-site-header__nav a {
+    color: #1f2430;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.b-site-header__button {
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    background: #2f6fdb;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+@container (max-width: 560px) {
+    .b-site-header__nav {
+        order: 3;
+        flex-basis: 100%;
+    }
+}
+`
+
 const FORM_TEMPLATE = `<section class="b-form" data-wx-block="form">
     <div class="b-form__inner">
         <h2 class="b-form__title">{{ $title }}</h2>
@@ -1490,6 +1564,48 @@ export const blockTypes: BlockType[] = [
         title: 'Оставьте заявку',
         text: 'Перезвоним в рабочее время.',
         form: 'feedback',
+      },
+    },
+  },
+  {
+    id: 20,
+    slug: 'site-header',
+    title: 'Шапка сайта',
+    description: 'Логотип, меню header и кнопка. Только в зоне «Шапка».',
+    icon: 'sidebar',
+    group: 'layout',
+    sort: 5,
+    allow: null,
+    allowed_in: ['region:header'],
+    max_per_entity: 1,
+    is_enabled: true,
+    draft: null,
+    published: version(1, '2026-09-28T09:00:00+00:00', 'Перенесено из components.header'),
+    usage_count: 1,
+    thumbnail: null,
+    created_at: '2026-09-28T09:00:00+00:00',
+    updated_at: '2026-09-28T09:00:00+00:00',
+    content: {
+      schema: [
+        { id: 'logo', type: 'wx-input', label: 'Логотип (текст)' },
+        { id: 'button_label', type: 'wx-input', label: 'Кнопка', localized: true },
+        { id: 'button', type: 'wx-link', label: 'Куда ведёт кнопка', props: { allowNone: false } },
+      ],
+      template: SITE_HEADER_TEMPLATE,
+      styles: SITE_HEADER_STYLES,
+      script: null,
+      sample: {
+        logo: 'Webx Demo',
+        button_label: 'Связаться',
+        button: {
+          target: 'url',
+          entity_type: null,
+          entity_id: null,
+          url: '/contacts',
+          hash: null,
+          new_tab: false,
+          rel: [],
+        },
       },
     },
   },

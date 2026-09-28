@@ -7,8 +7,10 @@ import {
   useTranslate,
   WxDate,
   rowMenuWidth,
+  WxFilterChips,
   WxRowMenu,
   WxScreenHead,
+  type AppliedFilter,
   type RowAction,
   type ScreenAction,
 } from '@webx-ui/module-admin'
@@ -27,6 +29,7 @@ import {
   WxTabs,
   WxText,
   WxEntityCard,
+  WxFormItem,
   WxTooltip,
   useElementWidth,
   type TabItem,
@@ -128,9 +131,59 @@ const query = computed(() => ({
   view: view.value,
   search: typeof route.query.search === 'string' ? route.query.search : '',
   assignee: typeof route.query.assignee === 'string' ? route.query.assignee : null,
+  placement: typeof route.query.placement === 'string' ? route.query.placement : null,
   sort: typeof route.query.sort === 'string' ? route.query.sort : null,
   page: Number(route.query.page ?? 1) || 1,
 }))
+
+/*
+ * Where on the site the form has been sent from — the footer, an article (layout regions §11).
+ *
+ * The list carries the places with its rows, over the whole form rather than the filter, so the
+ * filter costs no request of its own and its choices never shrink to the one already picked. It
+ * is offered only when there is more than one place: one form in one place is nothing to filter.
+ * And it stays while a placement is in the address, or a filter that arrived by link could not be
+ * taken off.
+ */
+const placementOptions = computed(() =>
+  (page.value?.placements ?? []).map((placement) =>
+    placement === null
+      ? { value: 'none', label: t('panel.placement-none') }
+      : { value: placement, label: placement },
+  ),
+)
+
+const hasPlacements = computed(
+  () => placementOptions.value.length > 1 || query.value.placement !== null,
+)
+
+const applied = computed<AppliedFilter[]>(() => {
+  const placement = query.value.placement
+
+  if (placement === null) return []
+
+  const label =
+    placementOptions.value.find((option) => option.value === placement)?.label ??
+    (placement === 'none' ? t('panel.placement-none') : placement)
+
+  return [
+    {
+      key: 'placement',
+      label: `${t('panel.meta-placement')}: ${label}`,
+      clear: () => narrow(undefined),
+    },
+  ]
+})
+
+function narrow(placement: unknown): void {
+  void router.replace({
+    query: {
+      ...route.query,
+      placement: typeof placement === 'string' && placement !== '' ? placement : undefined,
+      page: undefined,
+    },
+  })
+}
 
 const views = computed<TabItem[]>(() => {
   const counts = page.value?.counts
@@ -214,7 +267,10 @@ const columns = computed<TableColumn<SubmissionRow>[]>(() => {
  * reader their form is dead when it is not.
  */
 const emptyText = computed(() =>
-  query.value.view === 'all' && query.value.search === '' && query.value.assignee === null
+  query.value.view === 'all' &&
+  query.value.search === '' &&
+  query.value.assignee === null &&
+  query.value.placement === null
     ? t('panel.submissions-empty')
     : t('panel.submissions-none'),
 )
@@ -239,6 +295,7 @@ async function load(state?: TableState): Promise<void> {
       view: query.value.view,
       search: state?.search ?? query.value.search,
       assignee: query.value.assignee,
+      placement: query.value.placement,
       sort: state?.sort ? `${state.sort.order === 'desc' ? '-' : ''}${state.sort.key}` : null,
       page: state?.page ?? query.value.page,
       per_page: state?.perPage,
@@ -274,7 +331,7 @@ function onState(state: TableState): void {
    has to notice rather than go on showing the previous form's submissions. One source per value,
    not a getter returning an array: that array is new on every change of the address, so a page
    turn would clear the selection and ask a second time, racing the request `onState` sent. */
-watch([() => props.form.id, view, () => query.value.assignee], () => {
+watch([() => props.form.id, view, () => query.value.assignee, () => query.value.placement], () => {
   selected.value = []
   void load()
 })
@@ -382,6 +439,7 @@ const exportHref = computed(() =>
     view: query.value.view,
     search: query.value.search,
     assignee: query.value.assignee,
+    placement: query.value.placement,
     sort: query.value.sort,
   }),
 )
@@ -438,6 +496,7 @@ defineExpose({ create: byHand })
         :search-placeholder="t('panel.search-submissions')"
         :empty-text="emptyText"
         :cards-below="cardsBelow"
+        :filters-count="applied.length"
         @row-click="open"
         @state-change="onState"
         @selection-change="(_keys: unknown, rows: SubmissionRow[]) => (selected = rows)"
@@ -468,6 +527,23 @@ defineExpose({ create: byHand })
               {{ t('panel.delete') }}
             </wx-button>
           </div>
+        </template>
+
+        <template v-if="hasPlacements" #filters>
+          <wx-form-item :label="t('panel.meta-placement')">
+            <wx-select
+              :model-value="query.placement"
+              :options="placementOptions"
+              :placeholder="t('panel.any-placement')"
+              clearable
+              size="sm"
+              @update:model-value="narrow"
+            />
+          </wx-form-item>
+        </template>
+
+        <template v-if="applied.length > 0" #applied>
+          <wx-filter-chips :filters="applied" />
         </template>
 
         <template #cell-status="{ row }">

@@ -303,6 +303,12 @@ const details = computed(() => {
     rows.push({ label: t('panel.meta-page'), value: meta.page, link: true })
   }
 
+  // Where on that page the form stood — the footer, an article — beside the page it answers.
+  const placement = submission.value?.placement
+  if (typeof placement === 'string' && placement !== '') {
+    rows.push({ label: t('panel.meta-placement'), value: placement })
+  }
+
   if (typeof meta.referrer === 'string' && meta.referrer !== '') {
     rows.push({ label: t('panel.meta-referrer'), value: meta.referrer, link: true })
   }

@@ -111,6 +111,26 @@ everywhere.
 - Calls from the site's own view files are invisible to all of this. A component such a view
   calls should be given a `fallback` there.
 
+## Regions
+
+A region is a named place of the site's layout — the header, the footer — whose content is a
+tree of blocks, edited like a page's: `blocks_get_content` / `blocks_edit_content` with
+`entity: "region"` and the region's name as `id`, then `blocks_region_publish`. It is not a
+component: a component is code called from templates, a region is one place an editor fills.
+`blocks_regions` lists them, with the view the layout prints while a region is empty or
+unpublished (`fallback`).
+
+- A type meant only for a region says so: `allowed_in: ["region:header"]`. The region's own
+  `allow` and `max` limit its top level.
+- A block in a region sees `$entity` — the entity of the page the visitor is on, or null — and
+  `$region`: `$region->name`, `$region->data('compact')` (the tag's attributes),
+  `$region->path()`. Outside a region, and on the sample, `$region` is null: write
+  `$region?->data('compact')`.
+- The HTML of a region is never cached, so a template may call `menu('header')`, `settings()`,
+  `auth()` and `@csrf` and be right on every page.
+- On the site a region in which any block throws prints its fallback entirely. Render every type
+  you put there with `blocks_render` first; `blocks_region_publish` refuses a draft that fails.
+
 ## The loop
 
 1. Create the type as a draft with `blocks_create`.

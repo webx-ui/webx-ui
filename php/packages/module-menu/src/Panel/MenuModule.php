@@ -34,6 +34,9 @@ final class MenuModule extends AbstractModule implements ProvidesDemo, ProvidesM
 {
     use ProvidesMcpDefaults;
 
+    /** The section's id, and the module a block type offered from this package is filed under. */
+    public const ID = 'menu';
+
     public function __construct(
         private readonly MenuTools $tools,
         private readonly MenuResources $resources,
@@ -42,7 +45,7 @@ final class MenuModule extends AbstractModule implements ProvidesDemo, ProvidesM
 
     public function id(): string
     {
-        return 'menu';
+        return self::ID;
     }
 
     public function title(): string

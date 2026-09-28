@@ -13,6 +13,8 @@
         that what came back in the session is its own,
       · `webx_locale` — the intake stands outside the site's own middleware, so the language
         it answers in is the one this says the page was printed in,
+      · `webx_placement` — where on the site the form stood (`placement="footer"`), so the
+        panel can tell a subscription from the footer from one out of an article,
       · the honeypot and the timestamp — the antispam that costs the visitor nothing,
       · `data-webx-*` — what the enhancement script looks for; drop them and the form still
         works, it just reloads the page to say so.
@@ -25,7 +27,7 @@
     action="{{ $action }}"
     @if ($multipart) enctype="multipart/form-data" @endif
     data-webx-form="{{ $form->slug }}"
-    {{ $attributes->merge(['class' => 'wx-form']) }}
+    {{ $attributes->merge(['class' => 'wx-form'.($placement === null ? '' : ' wx-form--'.$placement)]) }}
 >
     <input type="hidden" name="webx_form" value="{{ $form->slug }}">
 
@@ -36,6 +38,11 @@
     {{-- The language this page is printed in. The intake's stack is written out by hand and so
          carries nothing the site added to its `web` group, the language included. --}}
     <input type="hidden" name="webx_locale" value="{{ $locale }}">
+
+    {{-- Where on the site this form stands, when the page said so. --}}
+    @if ($placement !== null)
+        <input type="hidden" name="webx_placement" value="{{ $placement }}">
+    @endif
 
     <input type="hidden" name="{{ $timestampField }}" value="{{ $timestamp }}">
 
@@ -49,6 +56,7 @@
                 'name' => 'fields['.$field->key().']'.($field->isMultiple() ? '[]' : ''),
                 'value' => $values[$field->key()] ?? null,
                 'messages' => $invalid['fields.'.$field->key()] ?? [],
+                'placement' => $placement,
             ])
         @endforeach
     </div>

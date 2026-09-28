@@ -55,6 +55,7 @@ export default defineConfig({
             { text: 'SEO', link: '/guide/seo' },
             { text: 'Addresses', link: '/guide/routing' },
             { text: 'Blocks', link: '/guide/blocks' },
+            { text: 'Layout regions', link: '/guide/layout-regions' },
             { text: 'Screens', link: '/guide/screens' },
             { text: 'Database backups', link: '/guide/backups' },
             { text: 'Extending', link: '/guide/extending' },

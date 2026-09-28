@@ -9,11 +9,16 @@ import type { BlockNode, BlockType } from './types'
  * narrows it to, when it does. The picker asks this for a new block and "Move to" for an
  * existing one, and the two must not disagree about where a block can go.
  */
-export function allows(type: BlockType, parent: BlockType | null, allow: string[] | null): boolean {
+export function allows(
+  type: BlockType,
+  parent: BlockType | null,
+  allow: string[] | null,
+  root = 'root',
+): boolean {
   if (parent === null) {
     const fieldAllows = allow === null || allow.includes(type.slug)
 
-    return fieldAllows && (type.allowed_in === null || type.allowed_in.includes('root'))
+    return fieldAllows && (type.allowed_in === null || type.allowed_in.includes(root))
   }
 
   const parentAllows = allow
@@ -40,6 +45,11 @@ export interface TopLevel {
   owner: BlockType | null
   allow: string[] | null
   max: number | null
+  /**
+   * What the top level is called in `allowed_in`: `root` for a page, `region:<name>` for a
+   * layout region — a type made for the header must not be offered in the middle of an article.
+   */
+  root?: string
 }
 
 /**
@@ -64,7 +74,7 @@ export function destinations(
   const here = (parentKey: string | null, field: string | null) =>
     (moving.parent?.key ?? null) === parentKey && moving.field === field
 
-  if (!here(null, null) && allows(type, top.owner, top.allow)) {
+  if (!here(null, null) && allows(type, top.owner, top.allow, top.root)) {
     found.push({
       parentKey: null,
       field: null,
