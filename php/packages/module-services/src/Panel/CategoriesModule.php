@@ -61,6 +61,6 @@ final class CategoriesModule extends ServicesGroup implements ProvidesMcpTools
      */
     public function mcpTools(): array
     {
-        return (new CategoryTools(ServiceCategory::class, $this->form))->all();
+        return (new CategoryTools(ServiceCategory::class, $this->form, $this->id()))->all();
     }
 }

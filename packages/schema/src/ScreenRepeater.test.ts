@@ -168,6 +168,11 @@ describe('wx-repeater', () => {
     expect(outer!.get('.wx-form-item__error').text()).toBe('Not this city.')
     expect(first!.find('.wx-form-item__error').exists()).toBe(false)
     expect(second!.get('.wx-form-item__error').text()).toBe('Too long.')
+    // And not a second time under the repeater as a whole: two errors on screen, not three.
+    expect(wrapper.findAll('.wx-form-item__error').map((error) => error.text())).toEqual([
+      'Not this city.',
+      'Too long.',
+    ])
 
     // The refused row opens by itself and says so; the other stays folded.
     const heads = wrapper.findAll('.wx-repeater__head')

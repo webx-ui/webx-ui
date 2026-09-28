@@ -65,6 +65,6 @@ final class CategoriesModule extends VacanciesGroup implements ProvidesMcpTools
      */
     public function mcpTools(): array
     {
-        return (new CategoryTools(VacancyCategory::class, $this->form))->all();
+        return (new CategoryTools(VacancyCategory::class, $this->form, $this->id()))->all();
     }
 }

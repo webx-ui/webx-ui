@@ -60,6 +60,6 @@ final class CategoriesModule extends RecipesGroup implements ProvidesMcpTools
      */
     public function mcpTools(): array
     {
-        return (new CategoryTools(RecipeCategory::class, $this->form))->all();
+        return (new CategoryTools(RecipeCategory::class, $this->form, $this->id()))->all();
     }
 }
