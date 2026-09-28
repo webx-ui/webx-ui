@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { applyPatch } from '../../../../packages/schema/src/patch'
 import type { Patch, ScreenNode } from '../../../../packages/schema/src/types'
@@ -85,10 +85,24 @@ const SCREENS: Record<string, { base: string; patches: string[] }> = {
     base: 'php/packages/module-team/resources/screens/form.json',
     patches: [],
   },
+  // The playground's copy until module-banners ships its own file (B1 of the banners spec): the
+  // package's is taken the moment it exists. B3 removes the copy and this fork.
+  'banners.form': {
+    base: ownOr(
+      'php/packages/module-banners/resources/screens/form.json',
+      'apps/playground/server/panel/banners/form.json',
+    ),
+    patches: [],
+  },
   'recipes.nutrient-form': {
     base: 'php/packages/module-recipes/resources/screens/nutrient-form.json',
     patches: [],
   },
+}
+
+/** The package's own file when it is there, the playground's copy of it until then. */
+function ownOr(own: string, copy: string): string {
+  return existsSync(root(own)) ? own : copy
 }
 
 /* A declaration and not a `const`: the table above calls it while the module loads. */

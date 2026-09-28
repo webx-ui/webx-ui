@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'hero' => 'Hero',
+    'promo' => 'Promo',
+    'places' => 'Places',
+    'count' => 'Banners',
+    'new' => 'New place',
+    'new-title' => 'New place',
+    'rename' => 'Rename',
+    'rename-title' => 'Rename the place',
+    'renamed' => 'Renamed.',
+    'created' => 'The place is ready.',
+    'delete' => 'Delete',
+    'delete-title' => 'Delete the place “:place”?',
+    'delete-text' => 'There is nothing in it. A template that still asks for it gets an empty list, not an error.',
+    'delete-empty-first' => 'Delete: empty it first',
+    'delete-blocked' => 'Banners in this place, the bin included: :count. Take them out first.',
+    'deleted' => 'The place is deleted.',
+    'field-title' => 'Name',
+    'field-key' => 'Key',
+    'key-help' => 'Lowercase Latin letters, digits and hyphens, starting with a letter. A template asks for the place by it, so it cannot be changed later.',
+    'declared' => 'Declared in the config',
+    'declared-help' => 'Cannot be renamed or deleted here: a template asks for it by its key.',
+    'usage' => 'In a template:',
+    'layout-single' => 'One banner',
+    'layout-random' => 'A random one',
+    'layout-slider' => 'Slider',
+    'empty' => 'No places yet.',
+    'empty-help' => 'The site’s config declares the places its templates ask for.',
+    'choose' => 'Choose a place',
+    'choose-help' => 'Its banners open beside the list.',
+    'create' => 'Create',
+    'save' => 'Save',
+    'cancel' => 'Cancel',
+];
