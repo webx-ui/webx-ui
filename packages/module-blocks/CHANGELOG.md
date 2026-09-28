@@ -1,5 +1,13 @@
 # @webx-ui/module-blocks
 
+## 0.10.4
+
+### Patch Changes
+
+- 1f193b4: The template editor knows `banners()` and `banners_layout()`: `@` offers the loop over a place and
+  the layout call, and inside them `$banner['`, `$button['` and `$layout['` offer what the card and
+  the options hold.
+
 ## 0.10.3
 
 ### Patch Changes
