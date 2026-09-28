@@ -152,7 +152,8 @@ final class McpTest extends TestCase
 
         $listed = $this->content($this->agent('team_reorder', ['members' => [$third->id, $first->id]]));
 
-        $this->assertSame([$third->id, $first->id, $second->id], array_column($listed['members'], 'id'));
+        // The two named trade their places; the one left out stays between them.
+        $this->assertSame([$third->id, $second->id, $first->id], array_column($listed['members'], 'id'));
         $this->agent('team_reorder', ['members' => [$first->id, 'Anna']])->assertHasErrors(['their id']);
     }
 

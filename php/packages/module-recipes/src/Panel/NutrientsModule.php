@@ -60,6 +60,6 @@ final class NutrientsModule extends RecipesGroup implements ProvidesMcpTools
      */
     public function mcpTools(): array
     {
-        return (new CategoryTools(RecipeNutrient::class, $this->form))->all();
+        return (new CategoryTools(RecipeNutrient::class, $this->form, $this->id()))->all();
     }
 }

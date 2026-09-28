@@ -149,6 +149,35 @@ final class CategoriesTest extends TestCase
     }
 
     #[Test]
+    public function the_rows_named_trade_their_places_and_the_rest_stay_put(): void
+    {
+        $faq = $this->section('FAQ');
+        [$one, $two, $three, $four] = array_map(fn (int $at): Entry => $this->entry('Entry '.$at, $at), [0, 1, 2, 3]);
+        $ids = static fn (Entry ...$entries): array => array_map(static fn (Entry $entry): mixed => $entry->getKey(), $entries);
+
+        foreach ([$one, $two, $three, $four] as $entry) {
+            $entry->syncCategories([$faq->getKey()]);
+        }
+
+        // Numbering the named ones from the top used to give 1, 4, 2, 3: the second and the
+        // fourth hold the second and the fourth place, and only swap them.
+        Ordering::move(Entry::class, $ids($four, $two));
+        $this->assertSame($ids($one, $four, $three, $two), Entry::query()->orderedIn()->pluck('id')->all());
+
+        Ordering::move(Entry::class, $ids($four, $two), $faq->getKey());
+        $this->assertSame($ids($one, $four, $three, $two), Entry::query()->orderedIn($faq->getKey())->pluck('id')->all());
+
+        // A list nobody dragged yet shares its places; it is made a run in the order it shows first.
+        Entry::query()->update(['position' => 0]);
+        Ordering::move(Entry::class, $ids($three, $one));
+        $this->assertSame($ids($three, $two, $one, $four), Entry::query()->orderedIn()->pluck('id')->all());
+
+        // An id that is not in the list moves nothing and takes no place.
+        Ordering::move(Entry::class, [999, ...$ids($four, $three)]);
+        $this->assertSame($ids($four, $two, $one, $three), Entry::query()->orderedIn()->pluck('id')->all());
+    }
+
+    #[Test]
     public function the_whole_list_is_reordered_without_a_category_and_one_category_with_it(): void
     {
         $faq = $this->section('FAQ');

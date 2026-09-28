@@ -195,15 +195,19 @@ final class McpTest extends TestCase
         $third = $this->tariff('Third');
 
         $listed = $this->content($this->agent('tariffs_reorder', ['tariffs' => [$third->id, $first->id]]));
-        $this->assertSame([$third->id, $first->id, $second->id], array_column($listed['tariffs'], 'id'));
+        // The two named trade the places they held; the one left out stays between them.
+        $this->assertSame([$third->id, $second->id, $first->id], array_column($listed['tariffs'], 'id'));
 
         $inGroup = $this->content($this->agent('tariffs_reorder', ['tariffs' => [$second->id, $first->id], 'group' => 'For business']));
         $this->assertSame('the order of this group', $inGroup['order']);
         $this->assertSame([$second->id, $first->id], array_column($inGroup['tariffs'], 'id'));
         // The whole list kept its own.
-        $this->assertSame([$third->id, $first->id, $second->id], array_column($this->content($this->agent('tariffs_list'))['tariffs'], 'id'));
+        $this->assertSame([$third->id, $second->id, $first->id], array_column($this->content($this->agent('tariffs_list'))['tariffs'], 'id'));
 
         $this->agent('tariffs_reorder', ['tariffs' => [$third->id], 'group' => $group->id])->assertHasErrors(['Not in this group']);
+
+        // The shared group tools name their list the way the agent sees it, prefix and all.
+        $this->agent('tariff_groups_update', ['group' => 'nowhere', 'values' => []])->assertHasErrors(['tariff_groups_list has them all']);
     }
 
     #[Test]

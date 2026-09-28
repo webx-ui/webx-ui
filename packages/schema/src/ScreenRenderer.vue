@@ -72,7 +72,7 @@ function names(nodes: ScreenNode[]): string[] {
  * every field looked fine. A key is matched against the field names rather than cut at its first
  * dot, because a name may carry a dot of its own (`general.project-name`, CLAUDE.md §4).
  */
-const fieldErrors = computed<ValidationErrors | undefined>(() => {
+const failing = computed<ValidationErrors | undefined>(() => {
   if (props.errors === undefined) return undefined
 
   const fields = names(applied.value.root)
@@ -87,8 +87,34 @@ const fieldErrors = computed<ValidationErrors | undefined>(() => {
   return out
 })
 
-// For the nodes that act on a refusal rather than only draw it — the tabs (`ScreenTabs.vue`).
-provide(screenErrorsKey, fieldErrors)
+/**
+ * What the form draws: the same, less a row's refusal put under the repeater's own name.
+ *
+ * `duties.1.text.ru` is a field of the second row, and the row draws it there (`ScreenRepeater`);
+ * under the repeater as a whole it read as a second, different refusal of the list itself. The
+ * tabs still need it under `duties`, since that is the name they know the field by.
+ */
+const fieldErrors = computed<ValidationErrors | undefined>(() => {
+  if (props.errors === undefined || failing.value === undefined) return undefined
+
+  const out: ValidationErrors = { ...failing.value }
+
+  for (const name of Object.keys(out)) {
+    if (props.errors[name] !== undefined) continue
+
+    const rows = Object.keys(props.errors).filter((key) => key.startsWith(`${name}.`))
+
+    if (rows.length > 0 && rows.every((key) => /^\d+\./.test(key.slice(name.length + 1)))) {
+      delete out[name]
+    }
+  }
+
+  return out
+})
+
+// For the nodes that act on a refusal rather than only draw it — the tabs (`ScreenTabs.vue`)
+// and the rows of a repeater.
+provide(screenErrorsKey, failing)
 
 watch(
   () => applied.value.errors,
