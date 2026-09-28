@@ -31,6 +31,7 @@ return [
     'restore' => 'Restaurer',
     'restored' => 'Le tarif est de retour.',
     'reorder-failed' => 'Le nouvel ordre n’a pas été enregistré.',
+    'order-group' => 'Faites glisser pour changer l’ordre dans ce groupe. Le reste de la liste garde le sien.',
     'leave-title' => 'Quitter sans enregistrer ?',
     'leave-text' => 'Vos modifications de ce tarif ne sont pas sur le serveur.',
     'leave' => 'Quitter',

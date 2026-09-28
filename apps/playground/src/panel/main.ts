@@ -14,6 +14,7 @@ import { recipes } from '@webx-ui/module-recipes'
 import { reviews } from '@webx-ui/module-reviews'
 import { seo } from '@webx-ui/module-seo'
 import { services } from '@webx-ui/module-services'
+import { tariffs } from '@webx-ui/module-tariffs'
 import { team } from '@webx-ui/module-team'
 /* The opt-in typeface; the tokens themselves come in with the core stylesheet. */
 import '@webx-ui/tokens/fonts.css'
@@ -60,6 +61,7 @@ const admin = createAdmin({
     ...recipes(),
     press(),
     banners(),
+    ...tariffs(),
     ...events(),
     menu(),
     media(),

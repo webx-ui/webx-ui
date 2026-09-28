@@ -31,6 +31,7 @@ return [
     'restore' => 'Restaurar',
     'restored' => 'La tarifa ha vuelto.',
     'reorder-failed' => 'El nuevo orden no se guardó.',
+    'order-group' => 'Arrastre para cambiar el orden dentro de este grupo. El resto de la lista conserva el suyo.',
     'leave-title' => '¿Salir sin guardar?',
     'leave-text' => 'Lo que cambió en esta tarifa no está en el servidor.',
     'leave' => 'Salir',

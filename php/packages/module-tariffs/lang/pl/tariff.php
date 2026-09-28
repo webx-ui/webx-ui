@@ -31,6 +31,7 @@ return [
     'restore' => 'Przywróć',
     'restored' => 'Taryfa wróciła.',
     'reorder-failed' => 'Nowa kolejność nie została zapisana.',
+    'order-group' => 'Przeciągnij, aby zmienić kolejność w tej grupie. Reszta listy zachowuje własną.',
     'leave-title' => 'Wyjść bez zapisywania?',
     'leave-text' => 'Zmian w tej taryfie nie ma na serwerze.',
     'leave' => 'Wyjdź',

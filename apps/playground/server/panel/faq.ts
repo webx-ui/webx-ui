@@ -191,6 +191,15 @@ export function collectionSources(locale: string): unknown[] {
       // "Who does it" on the page of a service: the people of that one (§5.3).
       relations: [{ key: 'service', title: locale === 'ru' ? 'Услуги' : 'Services' }],
     },
+    {
+      key: 'tariffs',
+      title: locale === 'ru' ? 'Тарифы' : 'Tariffs',
+      categories: 'tariffs/categories',
+      // No markup (decision 7 of the tariffs spec): a price list has no rich result of its own.
+      markup: false,
+      // "What it costs" on the page of a service: the tariffs of that one (decision 4).
+      relations: [{ key: 'service', title: locale === 'ru' ? 'Услуги' : 'Services' }],
+    },
   ]
 }
 

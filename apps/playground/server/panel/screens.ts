@@ -89,6 +89,14 @@ const SCREENS: Record<string, { base: string; patches: string[] }> = {
     base: 'php/packages/module-banners/resources/screens/form.json',
     patches: [],
   },
+  'tariffs.form': {
+    base: 'php/packages/module-tariffs/resources/screens/form.json',
+    patches: [],
+  },
+  'tariffs.category-form': {
+    base: 'php/packages/module-tariffs/resources/screens/category-form.json',
+    patches: [],
+  },
   'recipes.nutrient-form': {
     base: 'php/packages/module-recipes/resources/screens/nutrient-form.json',
     patches: [],

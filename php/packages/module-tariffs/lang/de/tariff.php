@@ -31,6 +31,7 @@ return [
     'restore' => 'Wiederherstellen',
     'restored' => 'Der Tarif ist zurück.',
     'reorder-failed' => 'Die neue Reihenfolge wurde nicht gespeichert.',
+    'order-group' => 'Ziehen, um die Reihenfolge innerhalb dieser Gruppe zu ändern. Der Rest der Liste behält seine eigene.',
     'leave-title' => 'Ohne Speichern verlassen?',
     'leave-text' => 'Ihre Änderungen an diesem Tarif sind nicht auf dem Server.',
     'leave' => 'Verlassen',

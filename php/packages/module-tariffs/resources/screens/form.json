@@ -52,7 +52,8 @@
               "id": "price-col",
               "type": "wx-col",
               "props": {
-                "span": 12
+                "span": 24,
+                "sm": 12
               },
               "children": [
                 {
@@ -63,7 +64,8 @@
                   "help": "trans::webx-tariffs::screen.price-help",
                   "props": {
                     "min": 0,
-                    "precision": 2
+                    "precision": 2,
+                    "max": 99999999.99
                   }
                 }
               ]
@@ -72,7 +74,8 @@
               "id": "currency-col",
               "type": "wx-col",
               "props": {
-                "span": 12
+                "span": 24,
+                "sm": 12
               },
               "children": [
                 {
@@ -82,7 +85,8 @@
                   "label": "trans::webx-tariffs::screen.currency",
                   "help": "trans::webx-tariffs::screen.currency-help",
                   "props": {
-                    "placeholder": "trans::webx-tariffs::screen.currency-placeholder"
+                    "placeholder": "trans::webx-tariffs::screen.currency-placeholder",
+                    "clearable": true
                   }
                 }
               ]
@@ -188,7 +192,8 @@
               "id": "button-link-col",
               "type": "wx-col",
               "props": {
-                "span": 16
+                "span": 24,
+                "sm": 16
               },
               "children": [
                 {
@@ -196,6 +201,7 @@
                   "type": "wx-link",
                   "name": "button_link",
                   "label": "trans::webx-tariffs::screen.button-link",
+                  "help": "trans::webx-tariffs::screen.button-link-help",
                   "props": {
                     "allowNone": false
                   }
@@ -206,7 +212,8 @@
               "id": "button-variant-col",
               "type": "wx-col",
               "props": {
-                "span": 8
+                "span": 24,
+                "sm": 8
               },
               "children": [
                 {
@@ -237,7 +244,9 @@
           "help": "trans::webx-tariffs::screen.categories-help",
           "props": {
             "source": "tariffs/categories",
-            "main": false
+            "main": false,
+            "addText": "trans::webx-tariffs::screen.categories-add",
+            "emptyText": "trans::webx-tariffs::screen.categories-empty"
           }
         },
         {
