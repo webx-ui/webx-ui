@@ -202,7 +202,7 @@ final class McpTest extends TestCase
         $this->agent('recipes_reorder', ['recipes' => [$third->id, '/recipes/first'], 'dry_run' => true])->assertOk();
         $this->assertSame([$first->id, $second->id, $third->id], Recipe::query()->orderedIn()->pluck('id')->all());
 
-        $listed = $this->content($this->agent('recipes_reorder', ['recipes' => [$third->id, '/recipes/first']]));
+        $listed = $this->content($this->agent('recipes_reorder', ['recipes' => [$third->id, '/recipes/first', $second->id]]));
 
         $this->assertSame([$third->id, $first->id], array_slice(array_column($listed['recipes'], 'id'), 0, 2));
         $this->assertArrayNotHasKey('category', $this->app->make(ToolRegistry::class)->tool('recipes_reorder')->tool->inputSchema['properties']);

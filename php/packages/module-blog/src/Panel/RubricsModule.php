@@ -57,6 +57,6 @@ final class RubricsModule extends BlogModule implements ProvidesMcpTools
      */
     public function mcpTools(): array
     {
-        return (new CategoryTools(Rubric::class, $this->form))->all();
+        return (new CategoryTools(Rubric::class, $this->form, $this->id()))->all();
     }
 }

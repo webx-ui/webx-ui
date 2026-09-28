@@ -62,6 +62,6 @@ final class CategoriesModule extends EventsGroup implements ProvidesMcpTools
      */
     public function mcpTools(): array
     {
-        return (new CategoryTools(EventCategory::class, $this->form))->all();
+        return (new CategoryTools(EventCategory::class, $this->form, $this->id()))->all();
     }
 }

@@ -59,12 +59,22 @@ const current = computed<number | null>(() =>
   typeof model.value === 'number' && Number.isFinite(model.value) ? model.value : null,
 )
 
+/**
+ * A number as the field shows it: to the precision when it has a fraction — `2.50`, a price
+ * reads in cents — and bare when it is whole. `1380.00` on a price that is a round sum read as
+ * an amount somebody typed to the cent. The model keeps the number as it is either way.
+ */
+function show(value: number): string {
+  const text = value.toFixed(precision.value)
+  return Number.isInteger(Number(text)) ? String(Math.trunc(Number(text))) : text
+}
+
 /** What the user sees. Kept as text so a half-typed "-" or "1." survives. */
-const display = ref(current.value === null ? '' : current.value.toFixed(precision.value))
+const display = ref(current.value === null ? '' : show(current.value))
 
 watch(current, (value) => {
   if (focused.value) return
-  display.value = value === null ? '' : value.toFixed(precision.value)
+  display.value = value === null ? '' : show(value)
 })
 
 const disabled = computed(() => field.disabled.value)
@@ -103,7 +113,7 @@ function stepBy(direction: 1 | -1) {
   const base = current.value ?? clamp(0)
   const next = clamp(base + direction * props.step)
   commit(next)
-  display.value = next.toFixed(precision.value)
+  display.value = show(next)
 }
 
 function onInput(event: Event) {
@@ -123,12 +133,12 @@ function normalize() {
   }
   const parsed = Number.parseFloat(display.value)
   if (!Number.isFinite(parsed)) {
-    display.value = current.value === null ? '' : current.value.toFixed(precision.value)
+    display.value = current.value === null ? '' : show(current.value)
     return
   }
   const next = clamp(parsed)
   commit(next)
-  display.value = next.toFixed(precision.value)
+  display.value = show(next)
 }
 
 function onFocus(event: FocusEvent) {

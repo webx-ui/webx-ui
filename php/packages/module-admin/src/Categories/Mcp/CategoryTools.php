@@ -34,10 +34,14 @@ final readonly class CategoryTools
 {
     /**
      * @param  class-string<Model&Category>  $model
+     * @param  string|null  $module  The id of the module the tools are served under — what their
+     *                               names start with, so a refusal can name the list tool as the
+     *                               agent sees it (`tariff_groups_list`, not `groups_list`).
      */
     public function __construct(
         private string $model,
         private CategoryForm $form,
+        private ?string $module = null,
     ) {}
 
     /**
@@ -121,8 +125,8 @@ final readonly class CategoryTools
 
             Tool::mutating(
                 'reorder',
-                "Put the {$many} in a new order — the order of the menu on the site. Name them all, first to last; "
-                .'one left out stays where it is.',
+                "Put the {$many} in a new order — the order of the menu on the site. Name them in the order they "
+                .'should stand in: they trade the places they hold among themselves, and one left out stays where it is.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->reorder($arguments)),
                 ['properties' => [
                     'ids' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'The ids, first to last.'],
@@ -300,6 +304,14 @@ final readonly class CategoryTools
         return [$this->kind()->noun => $this->row($category), 'values' => $this->form->values($category)];
     }
 
+    /** The list tool by the name the agent calls it. */
+    private function listTool(): string
+    {
+        return $this->module === null
+            ? 'The list of '.$this->kind()->plural
+            : str_replace('-', '_', $this->module).'_list';
+    }
+
     /**
      * By id, or by the slug an agent read off an address.
      *
@@ -316,7 +328,7 @@ final readonly class CategoryTools
         };
 
         if (! $found instanceof Category) {
-            throw new ToolFailure("There is no {$this->kind()->noun} {$this->printable($key)}. {$this->kind()->plural}_list has them all.");
+            throw new ToolFailure("There is no {$this->kind()->noun} {$this->printable($key)}. {$this->listTool()} has them all.");
         }
 
         return $found;

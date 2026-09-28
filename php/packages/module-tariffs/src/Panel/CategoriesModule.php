@@ -63,6 +63,6 @@ final class CategoriesModule extends TariffsGroup implements ProvidesMcpTools
      */
     public function mcpTools(): array
     {
-        return (new CategoryTools(TariffCategory::class, $this->form))->all();
+        return (new CategoryTools(TariffCategory::class, $this->form, $this->id()))->all();
     }
 }

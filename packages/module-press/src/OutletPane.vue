@@ -21,6 +21,7 @@ import {
   WxScreen,
   WxScreenHead,
   type ScreenAction,
+  useBodyKeys,
 } from '@webx-ui/module-admin'
 import type { ScreenModel } from '@webx-ui/schema'
 import { createPressApi } from './api'
@@ -239,6 +240,9 @@ function onKeydown(event: KeyboardEvent): void {
     if (dirty.value || props.id === null) void save()
   }
 }
+
+// And from the page around the form, where a click on empty space leaves the focus.
+useBodyKeys(onKeydown)
 
 onMounted(() => {
   void load()
