@@ -48,6 +48,7 @@ export default defineConfig({
             { text: 'Recipes', link: '/guide/recipes' },
             { text: 'Events', link: '/guide/events' },
             { text: 'Press', link: '/guide/press' },
+            { text: 'Vacancies', link: '/guide/vacancies' },
             { text: 'Inbox', link: '/guide/inbox' },
             { text: 'Menus', link: '/guide/menu' },
             { text: 'Settings', link: '/guide/settings' },
