@@ -1,0 +1,417 @@
+{
+  "categories": [
+    {
+      "key": "development",
+      "title": {
+        "en": "Development",
+        "ru": "Разработка"
+      }
+    },
+    {
+      "key": "sales",
+      "title": {
+        "en": "Sales",
+        "ru": "Продажи"
+      }
+    },
+    {
+      "key": "support",
+      "title": {
+        "en": "Support",
+        "ru": "Поддержка"
+      }
+    }
+  ],
+  "form": {
+    "slug": "job-application",
+    "title": {
+      "en": "Job application",
+      "ru": "Отклик на вакансию"
+    },
+    "options": {
+      "thank-you.heading": {
+        "en": "Thank you",
+        "ru": "Спасибо"
+      },
+      "thank-you.text": {
+        "en": "Your application is with us. If your experience fits, we will write within a week.",
+        "ru": "Ваш отклик у нас. Если опыт подойдёт, мы напишем в течение недели."
+      },
+      "design.submit-text": {
+        "en": "Apply",
+        "ru": "Откликнуться"
+      },
+      "email_field": "email",
+      "antispam.honeypot": true,
+      "antispam.min_seconds": 3
+    },
+    "fields": [
+      {
+        "name": "name",
+        "type": "text",
+        "title": {
+          "en": "Your name",
+          "ru": "Ваше имя"
+        },
+        "is_required": true,
+        "is_fullsize": false,
+        "in_table": true
+      },
+      {
+        "name": "email",
+        "type": "email",
+        "title": {
+          "en": "Email",
+          "ru": "Почта"
+        },
+        "placeholder": {
+          "en": "you@example.com",
+          "ru": "you@example.com"
+        },
+        "is_required": true,
+        "is_fullsize": false,
+        "in_table": true
+      },
+      {
+        "name": "phone",
+        "type": "tel",
+        "title": {
+          "en": "Phone",
+          "ru": "Телефон"
+        },
+        "is_fullsize": false
+      },
+      {
+        "name": "resume",
+        "type": "file",
+        "title": {
+          "en": "CV",
+          "ru": "Резюме"
+        },
+        "help": {
+          "en": "PDF or Word, up to 10 MB.",
+          "ru": "PDF или Word, до 10 МБ."
+        },
+        "options": {
+          "extensions": ["pdf", "doc", "docx"]
+        },
+        "is_required": true
+      },
+      {
+        "name": "letter",
+        "type": "textarea",
+        "title": {
+          "en": "Cover letter",
+          "ru": "Сопроводительное письмо"
+        },
+        "help": {
+          "en": "Why this job, and what you would do in your first month.",
+          "ru": "Почему эта работа и что бы вы сделали в первый месяц."
+        }
+      },
+      {
+        "name": "vacancy",
+        "type": "hidden",
+        "title": {
+          "en": "Vacancy",
+          "ru": "Вакансия"
+        },
+        "in_table": true
+      }
+    ]
+  },
+  "vacancies": [
+    {
+      "slug": "php-developer",
+      "title": {
+        "en": "PHP developer",
+        "ru": "PHP-разработчик"
+      },
+      "lead": {
+        "en": "Laravel, a product of our own, and a team of five that ships every week.",
+        "ru": "Laravel, собственный продукт и команда из пяти человек, которая выпускается каждую неделю."
+      },
+      "workplace": "onsite",
+      "city": {
+        "en": "Kyiv",
+        "ru": "Киев"
+      },
+      "address": {
+        "en": "12 Khreshchatyk Street, 3rd floor",
+        "ru": "ул. Крещатик, 12, 3-й этаж"
+      },
+      "country": "UA",
+      "employment_types": ["FULL_TIME"],
+      "salary": {
+        "en": "₴60,000–90,000 a month",
+        "ru": "60 000–90 000 ₴ в месяц"
+      },
+      "salary_min": 60000,
+      "salary_max": 90000,
+      "salary_unit": "MONTH",
+      "salary_currency": "UAH",
+      "description": {
+        "en": "<p>We build the booking system four hundred clinics run on. You will own a part of it — from the migration to the page — and talk to the people who use it.</p>",
+        "ru": "<p>Мы делаем систему записи, на которой работают четыреста клиник. Вам достанется её часть целиком — от миграции до страницы — и разговоры с теми, кто ей пользуется.</p>"
+      },
+      "duties": [
+        {
+          "en": "Write and review code in Laravel 13",
+          "ru": "Писать и ревьюить код на Laravel 13"
+        },
+        {
+          "en": "Design tables and migrations",
+          "ru": "Проектировать таблицы и миграции"
+        },
+        {
+          "en": "Take part in planning every two weeks",
+          "ru": "Участвовать в планировании раз в две недели"
+        }
+      ],
+      "requirements": [
+        {
+          "en": "Three years of PHP",
+          "ru": "Три года на PHP"
+        },
+        {
+          "en": "SQL beyond the ORM",
+          "ru": "SQL не только через ORM"
+        },
+        {
+          "en": "Tests as part of the work, not after it",
+          "ru": "Тесты как часть работы, а не после неё"
+        }
+      ],
+      "benefits": [
+        {
+          "en": "Paid courses and conferences",
+          "ru": "Оплаченные курсы и конференции"
+        },
+        {
+          "en": "Health insurance",
+          "ru": "Медицинская страховка"
+        },
+        {
+          "en": "24 days of paid leave",
+          "ru": "24 дня оплачиваемого отпуска"
+        }
+      ],
+      "posted_in_days": -10,
+      "valid_in_days": 45,
+      "categories": ["development"],
+      "form": true
+    },
+    {
+      "slug": "frontend-contractor",
+      "title": {
+        "en": "Frontend contractor (Vue)"
+      },
+      "lead": {
+        "en": "Three months of Vue 3 on the admin panel, from anywhere, paid by the hour."
+      },
+      "workplace": "remote",
+      "country": "UA",
+      "employment_types": ["CONTRACTOR", "TEMPORARY"],
+      "salary": {
+        "en": "$25–40 an hour"
+      },
+      "salary_min": 25,
+      "salary_max": 40,
+      "salary_unit": "HOUR",
+      "salary_currency": "USD",
+      "description": {
+        "en": "<p>A fixed piece of work: the new screens of the admin panel, with a designer and a backend developer beside you.</p><p>This vacancy shows two things: it is written in English only, and it is in no category — the last group of the careers page, Other vacancies.</p>"
+      },
+      "duties": [
+        {
+          "en": "Build the screens from the designs"
+        },
+        {
+          "en": "Cover them with component tests"
+        }
+      ],
+      "requirements": [
+        {
+          "en": "Vue 3 and TypeScript"
+        },
+        {
+          "en": "Four hours of overlap with Kyiv time"
+        }
+      ],
+      "posted_in_days": -3,
+      "valid_in_days": 30,
+      "categories": [],
+      "form": true
+    },
+    {
+      "slug": "support-specialist",
+      "title": {
+        "en": "Customer support specialist",
+        "ru": "Специалист поддержки"
+      },
+      "lead": {
+        "en": "Answer the clinics by chat and phone, half the week at the office.",
+        "ru": "Отвечать клиникам в чате и по телефону, половину недели — в офисе."
+      },
+      "workplace": "hybrid",
+      "city": {
+        "en": "Lviv",
+        "ru": "Львов"
+      },
+      "country": "UA",
+      "employment_types": ["PART_TIME"],
+      "salary": {
+        "en": "After the interview",
+        "ru": "По результатам собеседования"
+      },
+      "description": {
+        "en": "<p>Four hours a day, mornings or evenings — you choose. No numbers for the salary: this vacancy shows a salary written in words only.</p>",
+        "ru": "<p>Четыре часа в день, утром или вечером — выбираете вы. Чисел у зарплаты нет: эта вакансия показывает зарплату только словами.</p>"
+      },
+      "duties": [
+        {
+          "en": "Answer the chat within ten minutes",
+          "ru": "Отвечать в чате в течение десяти минут"
+        },
+        {
+          "en": "Write down what keeps being asked",
+          "ru": "Записывать то, о чём спрашивают снова и снова"
+        }
+      ],
+      "benefits": [
+        {
+          "en": "Hours of your choice",
+          "ru": "Удобный график"
+        }
+      ],
+      "posted_in_days": -5,
+      "categories": ["support"],
+      "form": true
+    },
+    {
+      "slug": "sales-engineer",
+      "title": {
+        "en": "Sales engineer",
+        "ru": "Инженер по продажам"
+      },
+      "lead": {
+        "en": "Between the developers and the clinics: demos, pilots and the first month of a new client.",
+        "ru": "Между разработчиками и клиниками: демонстрации, пилоты и первый месяц нового клиента."
+      },
+      "workplace": "onsite",
+      "city": {
+        "en": "Warsaw",
+        "ru": "Варшава"
+      },
+      "address": {
+        "en": "Prosta 20",
+        "ru": "ул. Проста, 20"
+      },
+      "country": "PL",
+      "employment_types": ["FULL_TIME"],
+      "salary": {
+        "en": "from €2,500 a month",
+        "ru": "от 2 500 € в месяц"
+      },
+      "salary_min": 2500,
+      "salary_unit": "MONTH",
+      "salary_currency": "EUR",
+      "description": {
+        "en": "<p>In two categories at once, development and sales: it stands in both groups of the careers page.</p>",
+        "ru": "<p>Сразу в двух категориях, разработке и продажах: стоит в обеих группах страницы вакансий.</p>"
+      },
+      "requirements": [
+        {
+          "en": "Two years of selling software",
+          "ru": "Два года продаж программного обеспечения"
+        },
+        {
+          "en": "English and Polish",
+          "ru": "Английский и польский"
+        }
+      ],
+      "posted_in_days": -7,
+      "valid_in_days": 60,
+      "categories": ["development", "sales"],
+      "form": true
+    },
+    {
+      "slug": "sales-manager",
+      "title": {
+        "en": "Sales manager",
+        "ru": "Менеджер по продажам"
+      },
+      "lead": {
+        "en": "The hiring is closed by hand: the page stays, marked, out of the lists and of search.",
+        "ru": "Набор закрыт вручную: страница остаётся с пометкой, вне списков и поиска."
+      },
+      "workplace": "onsite",
+      "city": {
+        "en": "Kyiv",
+        "ru": "Киев"
+      },
+      "country": "UA",
+      "employment_types": ["FULL_TIME"],
+      "salary": {
+        "en": "₴40,000 a month plus a bonus",
+        "ru": "40 000 ₴ в месяц плюс бонус"
+      },
+      "salary_min": 40000,
+      "salary_unit": "MONTH",
+      "salary_currency": "UAH",
+      "posted_in_days": -30,
+      "valid_in_days": 30,
+      "is_closed": true,
+      "categories": ["sales"]
+    },
+    {
+      "slug": "account-manager",
+      "title": {
+        "en": "Account manager",
+        "ru": "Аккаунт-менеджер"
+      },
+      "lead": {
+        "en": "Its last day was the day before yesterday: it closed by itself.",
+        "ru": "Её последний день был позавчера: она закрылась сама."
+      },
+      "workplace": "remote",
+      "country": "UA",
+      "employment_types": ["FULL_TIME"],
+      "salary": {
+        "en": "$1,500 a month",
+        "ru": "1 500 $ в месяц"
+      },
+      "salary_min": 1500,
+      "salary_max": 1500,
+      "salary_unit": "MONTH",
+      "salary_currency": "USD",
+      "posted_in_days": -40,
+      "valid_in_days": -2,
+      "categories": ["sales", "support"]
+    },
+    {
+      "slug": "office-manager",
+      "title": {
+        "en": "Office manager",
+        "ru": "Офис-менеджер"
+      },
+      "lead": {
+        "en": "Still a draft: it waits in the panel until somebody publishes it.",
+        "ru": "Пока черновик: ждёт в панели, пока его не опубликуют."
+      },
+      "workplace": "onsite",
+      "city": {
+        "en": "Kyiv",
+        "ru": "Киев"
+      },
+      "country": "UA",
+      "employment_types": ["FULL_TIME", "PART_TIME"],
+      "salary": {
+        "en": "To be agreed",
+        "ru": "По договорённости"
+      },
+      "draft": true,
+      "categories": ["support"]
+    }
+  ]
+}

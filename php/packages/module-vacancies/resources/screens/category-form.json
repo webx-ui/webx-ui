@@ -1,0 +1,47 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "vacancies.category-form",
+  "model": "vacancy-category",
+  "root": [
+    {
+      "id": "naming",
+      "type": "wx-card",
+      "children": [
+        {
+          "id": "title",
+          "type": "wx-input",
+          "name": "title",
+          "label": "trans::webx-vacancies::category.field-title",
+          "localized": true,
+          "props": {
+            "maxlength": 255
+          }
+        },
+        {
+          "id": "slug",
+          "type": "wx-input",
+          "name": "slug",
+          "label": "trans::webx-vacancies::category.field-slug",
+          "help": "trans::webx-vacancies::category.field-slug-help",
+          "localized": true,
+          "props": {
+            "maxlength": 255
+          }
+        },
+        {
+          "id": "is-visible",
+          "type": "wx-switch",
+          "name": "is_visible",
+          "label": "trans::webx-vacancies::screen.visible",
+          "help": "trans::webx-vacancies::screen.category-visible-help"
+        }
+      ]
+    },
+    {
+      "id": "project-fields",
+      "type": "wx-card",
+      "label": "trans::webx-admin::screens.project-fields",
+      "children": []
+    }
+  ]
+}

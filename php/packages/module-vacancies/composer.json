@@ -1,0 +1,88 @@
+{
+    "name": "webx-ui/module-vacancies",
+    "description": "Vacancies for the WebX UI admin panel: open positions with the place, the kind of employment, the salary in words and in numbers, duties, requirements and benefits, each a page of fixed structure with schema.org JobPosting, flat categories as groups and a filter, closed vacancies and an application form from module-inbox.",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "webx-ui",
+        "laravel",
+        "admin",
+        "cms",
+        "vacancies",
+        "careers",
+        "jobs"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-vacancies"
+    },
+    "require": {
+        "php": "^8.3",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/routing": "^13.0",
+        "illuminate/support": "^13.0",
+        "illuminate/view": "^13.0",
+        "webx-ui/localization": "^0.47.0",
+        "webx-ui/mcp": "^0.47.0",
+        "webx-ui/module-admin": "^0.47.0",
+        "webx-ui/module-seo": "^0.47.0",
+        "webx-ui/routing": "^0.47.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/module-blocks": "^0.47.0",
+        "webx-ui/module-inbox": "^0.47.0",
+        "webx-ui/module-pages": "^0.47.0"
+    },
+    "suggest": {
+        "webx-ui/module-inbox": "The Application form field on a vacancy.",
+        "webx-ui/module-blocks": "The preview of a draft.",
+        "webx-ui/module-pages": "A page at the prefix, made of blocks, in place of the index."
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Vacancies\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Vacancies\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Vacancies\\VacanciesServiceProvider"
+            ]
+        },
+        "webx": {
+            "module": "vacancies",
+            "npm": {
+                "@webx-ui/module-vacancies": "^0.1.0"
+            },
+            "panel": {
+                "import": "import { vacancies } from '@webx-ui/module-vacancies'",
+                "style": "@webx-ui/module-vacancies/style.css",
+                "register": "...vacancies()"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

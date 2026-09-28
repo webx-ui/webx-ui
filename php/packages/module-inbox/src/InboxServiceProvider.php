@@ -11,9 +11,11 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Notes\NoteTypes;
+use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Inbox\Console\PruneSubmissionsCommand;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Panel\InboxModule;
+use WebxUi\Inbox\Relations\FormTarget;
 use WebxUi\Inbox\Rendering\Assets;
 use WebxUi\Inbox\Support\Forms;
 
@@ -51,6 +53,10 @@ class InboxServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(InboxModule::class));
+
+        // A form is something another record can choose — a vacancy its application form. A
+        // form deleted takes the rows pointing at it along; one with submissions is not deleted.
+        $this->app->make(RelationTargets::class)->register(new FormTarget);
 
         // Notes on a submission are the panel's own feature, not this module's (§2.17): the
         // table, the trait and the endpoint live in `module-admin`, and what is said here is

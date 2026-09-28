@@ -90,6 +90,7 @@ export default defineConfig({
       pkg('module-services'),
       pkg('module-tariffs'),
       pkg('module-team'),
+      pkg('module-vacancies'),
     ],
   },
   // Two pages: the component playground, and the panel with the module screens in it.

@@ -31,6 +31,7 @@ final class Helpers implements Check
         'services' => 'webx-ui/module-services',
         'tariffs' => 'webx-ui/module-tariffs',
         'team' => 'webx-ui/module-team',
+        'vacancies' => 'webx-ui/module-vacancies',
     ];
 
     public function __construct(private readonly Catalogue $catalogue) {}

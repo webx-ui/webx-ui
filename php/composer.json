@@ -26,6 +26,7 @@
         "webx-ui/module-settings": "*",
         "webx-ui/module-tariffs": "*",
         "webx-ui/module-team": "*",
+        "webx-ui/module-vacancies": "*",
         "webx-ui/nested-set": "*",
         "webx-ui/routing": "*"
     },
@@ -64,6 +65,7 @@
                     "webx-ui/module-settings": "0.47.0",
                     "webx-ui/module-tariffs": "0.47.0",
                     "webx-ui/module-team": "0.47.0",
+                    "webx-ui/module-vacancies": "0.47.0",
                     "webx-ui/nested-set": "0.47.0",
                     "webx-ui/routing": "0.47.0"
                 }
@@ -94,7 +96,8 @@
             "WebxUi\\Services\\Tests\\": "packages/module-services/tests/",
             "WebxUi\\Settings\\Tests\\": "packages/module-settings/tests/",
             "WebxUi\\Tariffs\\Tests\\": "packages/module-tariffs/tests/",
-            "WebxUi\\Team\\Tests\\": "packages/module-team/tests/"
+            "WebxUi\\Team\\Tests\\": "packages/module-team/tests/",
+            "WebxUi\\Vacancies\\Tests\\": "packages/module-vacancies/tests/"
         }
     },
     "minimum-stability": "stable",

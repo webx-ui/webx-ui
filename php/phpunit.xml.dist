@@ -27,6 +27,7 @@
             <directory>packages/module-services/tests</directory>
             <directory>packages/module-settings/tests</directory>
             <directory>packages/module-team/tests</directory>
+            <directory>packages/module-vacancies/tests</directory>
             <directory>packages/module-banners/tests</directory>
             <directory>packages/module-tariffs/tests</directory>
             <directory>packages/nested-set/tests</directory>
@@ -54,6 +55,7 @@
             <directory>packages/module-services/src</directory>
             <directory>packages/module-settings/src</directory>
             <directory>packages/module-team/src</directory>
+            <directory>packages/module-vacancies/src</directory>
             <directory>packages/module-banners/src</directory>
             <directory>packages/module-tariffs/src</directory>
             <directory>packages/nested-set/src</directory>
