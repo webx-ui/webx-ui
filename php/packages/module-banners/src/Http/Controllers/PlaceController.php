@@ -134,19 +134,7 @@ final class PlaceController
             throw ValidationException::withMessages(['ids' => (string) __('webx-banners::errors.ids')]);
         }
 
-        $ids = array_values(array_unique(array_map(intval(...), $ids)));
-        $place = Place::query()->where('key', $key)->first();
-        $own = $place === null ? [] : Banner::query()->where('place_id', $place->getKey())->pluck('id')->map(intval(...))->all();
-
-        if (array_diff($ids, $own) !== []) {
-            throw ValidationException::withMessages(['ids' => (string) __('webx-banners::errors.ids-foreign')]);
-        }
-
-        Banner::query()->getConnection()->transaction(static function () use ($ids): void {
-            foreach ($ids as $position => $id) {
-                Banner::query()->whereKey($id)->update(['position' => $position]);
-            }
-        });
+        $this->editor->reorder($key, array_map(intval(...), $ids));
 
         return ApiResponse::noContent();
     }

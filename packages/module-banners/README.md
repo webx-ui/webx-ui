@@ -45,3 +45,6 @@ A banner opens on a page of its own (`/banners/<id>`, a new one at `/banners/new
 the place above the described screen `banners.form`, one **Save** under it, Ctrl+S, and a question
 before leaving with something unsaved. Moved to another place, a banner stands last in it. A new
 banner starts switched off.
+
+The guide — places, the two helpers, a complete template with its styles and slider script, the
+agent's tools — is at https://webx-ui.github.io/webx-ui/guide/banners.

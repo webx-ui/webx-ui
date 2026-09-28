@@ -32,7 +32,7 @@ final class PlaceEditor
     /**
      * Every place, in the order of {@see Places::keys()}.
      *
-     * @return list<array{id: int|null, key: string, title: string, declared: bool, layout: string, count: int}>
+     * @return list<array{id: int|null, key: string, title: string, declared: bool, layout: string, count: int, titles?: array<string, string>}>
      */
     public function all(): array
     {
@@ -48,7 +48,7 @@ final class PlaceEditor
     }
 
     /**
-     * @return array{id: int|null, key: string, title: string, declared: bool, layout: string, count: int}
+     * @return array{id: int|null, key: string, title: string, declared: bool, layout: string, count: int, titles?: array<string, string>}
      */
     public function one(string $key): array
     {
@@ -109,6 +109,32 @@ final class PlaceEditor
         $place->delete();
     }
 
+    /**
+     * The order inside a place, first to last, as the editor drags it and as an agent names it.
+     * The banners left out keep their positions. All of it or none: an id that is not in this
+     * place — or one in the bin — moves nothing.
+     *
+     * @param  list<int>  $ids
+     *
+     * @throws ValidationException
+     */
+    public function reorder(string $key, array $ids): void
+    {
+        $ids = array_values(array_unique($ids));
+        $place = Place::query()->where('key', $key)->first();
+        $own = $place === null ? [] : Banner::query()->where('place_id', $place->getKey())->pluck('id')->map(intval(...))->all();
+
+        if (array_diff($ids, $own) !== []) {
+            throw ValidationException::withMessages(['ids' => (string) __('webx-banners::errors.ids-foreign')]);
+        }
+
+        Banner::query()->getConnection()->transaction(static function () use ($ids): void {
+            foreach ($ids as $position => $id) {
+                Banner::query()->whereKey($id)->update(['position' => $position]);
+            }
+        });
+    }
+
     /** Every banner of the place, the bin included. */
     public function bannersIn(Place $place): int
     {
@@ -121,18 +147,27 @@ final class PlaceEditor
     }
 
     /**
-     * @return array{id: int|null, key: string, title: string, declared: bool, layout: string, count: int}
+     * @return array{id: int|null, key: string, title: string, declared: bool, layout: string, count: int, titles?: array<string, string>}
      */
     private function describe(string $key, ?Place $row): array
     {
-        return [
+        $declared = $this->places->isDeclared($key);
+        $place = [
             'id' => $row === null ? null : (int) $row->getKey(),
             'key' => $key,
             'title' => $this->places->title($key, $row),
-            'declared' => $this->places->isDeclared($key),
+            'declared' => $declared,
             'layout' => $this->places->layout($key),
             'count' => $row === null ? 0 : (int) ($row->getAttribute('banners_count') ?? 0),
         ];
+
+        // Every language of a name somebody wrote, so that renaming it sends them all back rather
+        // than the one the list shows. A declared place's name is the config's, never written.
+        if (! $declared && $row !== null) {
+            $place['titles'] = $row->getTranslations('title');
+        }
+
+        return $place;
     }
 
     /** @throws ValidationException */

@@ -7,7 +7,8 @@ banners the way the site's design wants them.
 
 The module has no public route, no page, no block and no view. What reaches the site is data:
 the cards of `banners()` and the layout options of `banners_layout()`. The markup, the styles and
-the slider's script are the site's own; a complete example is below.
+the slider's script are the site's own; a template is below, and a complete one with its styles
+and script is in the guide: https://webx-ui.github.io/webx-ui/guide/banners.
 
 ## Requirements
 
@@ -200,7 +201,7 @@ cannot be chosen for a new one, and the site prints it with the first variant.
 Under `webx-admin.api_path` (`/api/cms`), behind `cms.auth`:
 
 ```
-GET    banners/places                    { data: [{ id|null, key, title, declared, layout, count }] }
+GET    banners/places                    { data: [{ id|null, key, title, declared, layout, count, titles? }] }
 POST   banners/places                    { key, title } → 201 { data: place }
 PUT    banners/places/{key}              { title }        only somebody's own place
 DELETE banners/places/{key}              only somebody's own and empty; 422 with `count`
@@ -227,6 +228,23 @@ Screens::extend('banners.form', [[
     'node' => ['id' => 'badge', 'type' => 'wx-input', 'name' => 'badge', 'label' => 'Badge', 'localized' => true],
 ]]);
 ```
+
+## For an agent: MCP
+
+Nine tools through the same doors as the panel, behind `banners:read` and `banners:write`:
+`banners_places`, `banners_place_create`, `banners_place_delete`, `banners_list`, `banners_get`,
+`banners_create`, `banners_update`, `banners_delete`, `banners_reorder`. A place is its key, a
+banner its id, a picture or a video a library key (an unknown one is refused). A button is
+`{ label, link, variant }` — `link` an address or an entity as `menu_add_link` takes it, a look the
+config does not have refused with the list of those it has. `banners://catalog` is what an agent
+reads first: the looks, the layouts, every place with its banners in order, `written_in` and
+`has_video` on each — and the reminder that a template, not a block, puts a place on the site.
+
+## Demo content
+
+`php artisan webx:demo` fills `hero` with four banners (three on, one of them without Russian
+words, and one off) and `promo` with one, on the library's demo pictures. A button "to a page" points
+at a page of the pages demo, else at the first page the site has. No page or template is touched.
 
 ## License
 

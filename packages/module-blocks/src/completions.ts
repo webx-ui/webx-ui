@@ -116,6 +116,58 @@ const SOURCE_ITEMS: Record<string, string[]> = {
   team: ['name', 'initials', 'job_title', 'text', 'photo', 'socials', 'service_links', 'fields'],
 }
 
+/**
+ * Helpers a template calls by name rather than through a field — what the value they answer
+ * holds. Banners have no source for `wx-collection` (decision 7 of their spec): the helper is the
+ * only way a template gets them, so it is the one written out here. `banners()` gives the cards
+ * of a place, `banners_layout()` the merged options its template draws them with.
+ */
+const HELPER_KEYS: Record<string, string[]> = {
+  banners: [
+    'id',
+    'anchor',
+    'place',
+    'title',
+    'text',
+    'image',
+    'image_mobile',
+    'video',
+    'buttons',
+    'fields',
+  ],
+  banners_layout: [
+    'layout',
+    'interval',
+    'autoplay',
+    'loop',
+    'arrows',
+    'dots',
+    'pause_on_hover',
+    'ratio',
+    'ratio_mobile',
+    'breakpoint',
+    'video_on_mobile',
+  ],
+}
+
+/** What a helper's value is named by among the loop variables — no field can be called this. */
+const HELPER = 'helper:'
+
+/** The parts of a helper's value that are lists in turn: `$banner['buttons']`. */
+const HELPER_PARTS: Record<string, Record<string, string[]>> = {
+  banners: { buttons: ['label', 'url', 'new_tab', 'rel', 'variant'] },
+}
+
+/** The helpers as `@` offers them: the call and the loop around it, the place for the caret. */
+const HELPER_SNIPPETS: [string, string, string][] = [
+  [
+    '@foreach banners',
+    "@foreach (banners('${place}')->get() as $banner)\n\t${}\n@endforeach",
+    'the banners of a place',
+  ],
+  ['@php banners_layout', "@php($layout = banners_layout('${place}'))", 'its layout and options'],
+]
+
 export function templateCompletions({
   schema,
   styles,
@@ -518,6 +570,15 @@ function keysOf(variable: string, schema: ScreenNode[], template: string): [stri
 
   const list = loopVariables(template).get(variable)
   const [name, part] = list?.split('.') ?? []
+
+  // `$banner` of `banners(…)->get() as $banner`, `$layout` of `$layout = banners_layout(…)`,
+  // and one level down: `$button` of `$banner['buttons'] as $button`.
+  if (name?.startsWith(HELPER)) {
+    const helper = name.slice(HELPER.length)
+    const keys = part ? HELPER_PARTS[helper]?.[part] : HELPER_KEYS[helper]
+    return (keys ?? []).map((key) => [key, `${helper}()`])
+  }
+
   const source = name ? fields(schema).find((node) => node.id === name) : undefined
   if (!source) return []
 
@@ -543,10 +604,23 @@ function keysOf(variable: string, schema: ScreenNode[], template: string): [stri
 function loopVariables(template: string): Map<string, string> {
   const found = new Map<string, string>()
 
+  // A helper's value, looped over or kept in a variable: named `helper:<name>`, which no field
+  // can be called.
+  for (const match of template.matchAll(
+    /\b(\w+)\([^()]*\)(?:->\w+\([^()]*\))*\s+as\s+\$(\w+)|\$(\w+)\s*=\s*(\w+)\(/g,
+  )) {
+    const helper = match[1] ?? match[4]!
+    if (helper in HELPER_KEYS) found.set(match[2] ?? match[3]!, `${HELPER}${helper}`)
+  }
+
   for (const match of template.matchAll(
     /\$(\w+)(?:\[\s*['"](\w+)['"]\s*\])?\s+as\s+\$(\w+)(?:\s*=>\s*\$(\w+))?/g,
   )) {
-    found.set(match[4] ?? match[3]!, match[2] ? `${match[1]}.${match[2]}` : match[1]!)
+    const name = match[1]!
+    const outer = found.get(name)
+    const value = outer?.startsWith(HELPER) ? outer : name
+
+    found.set(match[4] ?? match[3]!, match[2] ? `${value}.${match[2]}` : value)
   }
 
   return found
@@ -592,6 +666,9 @@ function directives(schema: ScreenNode[]): Completion[] {
         type: 'keyword',
         boost: 10,
       }),
+    ),
+    ...HELPER_SNIPPETS.map(([label, template, info]) =>
+      snippetCompletion(template, { label, info, type: 'function', boost: -5 }),
     ),
     ...['@elseif', '@else', '@endif', '@endforeach', '@endisset', '@empty', '@endforelse'].map(
       (label) => ({ label, type: 'keyword', boost: -10 }),
