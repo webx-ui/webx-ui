@@ -34,6 +34,7 @@ const NAMESPACES: Record<string, string> = {
   'module-services': 'webx-services',
   'module-settings': 'webx-settings',
   'module-team': 'webx-team',
+  'module-vacancies': 'webx-vacancies',
 }
 
 type Messages = { [key: string]: string | Messages }

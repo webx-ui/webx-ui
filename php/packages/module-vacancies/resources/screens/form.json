@@ -1,0 +1,532 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "vacancies.form",
+  "model": "vacancy",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "vacancy",
+          "type": "wx-tab",
+          "label": "trans::webx-vacancies::screen.vacancy",
+          "children": [
+            {
+              "id": "where",
+              "type": "wx-card",
+              "label": "trans::webx-vacancies::screen.where",
+              "children": [
+                {
+                  "id": "workplace",
+                  "type": "wx-segmented",
+                  "name": "workplace",
+                  "label": "trans::webx-vacancies::screen.workplace",
+                  "props": {
+                    "options": [
+                      {
+                        "value": "onsite",
+                        "label": "trans::webx-vacancies::vacancy.workplace.onsite"
+                      },
+                      {
+                        "value": "remote",
+                        "label": "trans::webx-vacancies::vacancy.workplace.remote"
+                      },
+                      {
+                        "value": "hybrid",
+                        "label": "trans::webx-vacancies::vacancy.workplace.hybrid"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "city",
+                  "type": "wx-input",
+                  "name": "city",
+                  "label": "trans::webx-vacancies::screen.city",
+                  "localized": true,
+                  "visible": {
+                    "when": "workplace",
+                    "not": "remote"
+                  },
+                  "props": {
+                    "maxlength": 255
+                  }
+                },
+                {
+                  "id": "address",
+                  "type": "wx-input",
+                  "name": "address",
+                  "label": "trans::webx-vacancies::screen.address",
+                  "localized": true,
+                  "visible": {
+                    "when": "workplace",
+                    "not": "remote"
+                  },
+                  "props": {
+                    "maxlength": 255
+                  }
+                },
+                {
+                  "id": "country",
+                  "type": "wx-input",
+                  "name": "country",
+                  "label": "trans::webx-vacancies::screen.country",
+                  "help": "trans::webx-vacancies::screen.country-help",
+                  "props": {
+                    "maxlength": 2,
+                    "placeholder": "UA"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "terms",
+              "type": "wx-card",
+              "label": "trans::webx-vacancies::screen.terms",
+              "children": [
+                {
+                  "id": "employment-types",
+                  "type": "wx-checkbox-group",
+                  "name": "employment_types",
+                  "label": "trans::webx-vacancies::screen.employment",
+                  "props": {
+                    "options": [
+                      {
+                        "value": "FULL_TIME",
+                        "label": "trans::webx-vacancies::vacancy.employment.FULL_TIME"
+                      },
+                      {
+                        "value": "PART_TIME",
+                        "label": "trans::webx-vacancies::vacancy.employment.PART_TIME"
+                      },
+                      {
+                        "value": "CONTRACTOR",
+                        "label": "trans::webx-vacancies::vacancy.employment.CONTRACTOR"
+                      },
+                      {
+                        "value": "TEMPORARY",
+                        "label": "trans::webx-vacancies::vacancy.employment.TEMPORARY"
+                      },
+                      {
+                        "value": "INTERN",
+                        "label": "trans::webx-vacancies::vacancy.employment.INTERN"
+                      },
+                      {
+                        "value": "VOLUNTEER",
+                        "label": "trans::webx-vacancies::vacancy.employment.VOLUNTEER"
+                      },
+                      {
+                        "value": "PER_DIEM",
+                        "label": "trans::webx-vacancies::vacancy.employment.PER_DIEM"
+                      },
+                      {
+                        "value": "OTHER",
+                        "label": "trans::webx-vacancies::vacancy.employment.OTHER"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "salary",
+                  "type": "wx-input",
+                  "name": "salary",
+                  "label": "trans::webx-vacancies::screen.salary",
+                  "help": "trans::webx-vacancies::screen.salary-help",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 255
+                  }
+                },
+                {
+                  "id": "salary-numbers",
+                  "type": "wx-row",
+                  "children": [
+                    {
+                      "id": "salary-min-col",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 12,
+                        "sm": 6
+                      },
+                      "children": [
+                        {
+                          "id": "salary-min",
+                          "type": "wx-input-number",
+                          "name": "salary_min",
+                          "label": "trans::webx-vacancies::screen.salary-min",
+                          "props": {
+                            "min": 0,
+                            "max": 9999999999
+                          },
+                          "help": "trans::webx-vacancies::screen.salary-numbers-help"
+                        }
+                      ]
+                    },
+                    {
+                      "id": "salary-max-col",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 12,
+                        "sm": 6
+                      },
+                      "children": [
+                        {
+                          "id": "salary-max",
+                          "type": "wx-input-number",
+                          "name": "salary_max",
+                          "label": "trans::webx-vacancies::screen.salary-max",
+                          "props": {
+                            "min": 0,
+                            "max": 9999999999
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "salary-unit-col",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 12,
+                        "sm": 6
+                      },
+                      "children": [
+                        {
+                          "id": "salary-unit",
+                          "type": "wx-select",
+                          "name": "salary_unit",
+                          "label": "trans::webx-vacancies::screen.salary-unit",
+                          "props": {
+                            "clearable": true,
+                            "options": [
+                              {
+                                "value": "HOUR",
+                                "label": "trans::webx-vacancies::screen.unit-HOUR"
+                              },
+                              {
+                                "value": "DAY",
+                                "label": "trans::webx-vacancies::screen.unit-DAY"
+                              },
+                              {
+                                "value": "WEEK",
+                                "label": "trans::webx-vacancies::screen.unit-WEEK"
+                              },
+                              {
+                                "value": "MONTH",
+                                "label": "trans::webx-vacancies::screen.unit-MONTH"
+                              },
+                              {
+                                "value": "YEAR",
+                                "label": "trans::webx-vacancies::screen.unit-YEAR"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "salary-currency-col",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 12,
+                        "sm": 6
+                      },
+                      "children": [
+                        {
+                          "id": "salary-currency",
+                          "type": "wx-select",
+                          "name": "salary_currency",
+                          "label": "trans::webx-vacancies::screen.salary-currency",
+                          "props": {
+                            "clearable": true,
+                            "options": []
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "about",
+              "type": "wx-card",
+              "label": "trans::webx-vacancies::screen.about",
+              "children": [
+                {
+                  "id": "description",
+                  "type": "wx-rich-text",
+                  "name": "description",
+                  "label": "trans::webx-vacancies::screen.description",
+                  "localized": true
+                }
+              ]
+            },
+            {
+              "id": "duties-card",
+              "type": "wx-card",
+              "label": "trans::webx-vacancies::vacancy.duties",
+              "children": [
+                {
+                  "id": "duties",
+                  "type": "wx-repeater",
+                  "name": "duties",
+                  "help": "trans::webx-vacancies::screen.lines-help",
+                  "props": {
+                    "itemLabel": "text",
+                    "sortable": true,
+                    "max": 30
+                  },
+                  "children": [
+                    {
+                      "id": "duty-text",
+                      "type": "wx-input",
+                      "name": "text",
+                      "label": "trans::webx-vacancies::screen.line",
+                      "localized": true,
+                      "props": {
+                        "maxlength": 500
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "requirements-card",
+              "type": "wx-card",
+              "label": "trans::webx-vacancies::vacancy.requirements",
+              "children": [
+                {
+                  "id": "requirements",
+                  "type": "wx-repeater",
+                  "name": "requirements",
+                  "help": "trans::webx-vacancies::screen.lines-help",
+                  "props": {
+                    "itemLabel": "text",
+                    "sortable": true,
+                    "max": 30
+                  },
+                  "children": [
+                    {
+                      "id": "requirement-text",
+                      "type": "wx-input",
+                      "name": "text",
+                      "label": "trans::webx-vacancies::screen.line",
+                      "localized": true,
+                      "props": {
+                        "maxlength": 500
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "benefits-card",
+              "type": "wx-card",
+              "label": "trans::webx-vacancies::vacancy.benefits",
+              "children": [
+                {
+                  "id": "benefits",
+                  "type": "wx-repeater",
+                  "name": "benefits",
+                  "help": "trans::webx-vacancies::screen.lines-help",
+                  "props": {
+                    "itemLabel": "text",
+                    "sortable": true,
+                    "max": 30
+                  },
+                  "children": [
+                    {
+                      "id": "benefit-text",
+                      "type": "wx-input",
+                      "name": "text",
+                      "label": "trans::webx-vacancies::screen.line",
+                      "localized": true,
+                      "props": {
+                        "maxlength": 500
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "settings",
+          "type": "wx-tab",
+          "label": "trans::webx-vacancies::screen.settings",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "label": "trans::webx-vacancies::screen.naming",
+              "children": [
+                {
+                  "id": "title",
+                  "type": "wx-input",
+                  "name": "title",
+                  "label": "trans::webx-vacancies::screen.title",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 255
+                  }
+                },
+                {
+                  "id": "slug",
+                  "type": "wx-slug",
+                  "name": "slug",
+                  "label": "trans::webx-vacancies::screen.slug",
+                  "localized": true
+                },
+                {
+                  "id": "lead",
+                  "type": "wx-textarea",
+                  "name": "lead",
+                  "label": "trans::webx-vacancies::screen.lead",
+                  "help": "trans::webx-vacancies::screen.lead-help",
+                  "localized": true,
+                  "props": {
+                    "rows": 3,
+                    "maxlength": 2000,
+                    "showCount": true
+                  }
+                }
+              ]
+            },
+            {
+              "id": "taxonomy",
+              "type": "wx-card",
+              "label": "trans::webx-vacancies::screen.taxonomy",
+              "children": [
+                {
+                  "id": "categories",
+                  "type": "wx-categories",
+                  "name": "categories",
+                  "label": "trans::webx-vacancies::screen.categories",
+                  "help": "trans::webx-vacancies::screen.categories-help",
+                  "props": {
+                    "source": "vacancies/categories",
+                    "main": false
+                  }
+                },
+                {
+                  "id": "form",
+                  "type": "wx-relations",
+                  "name": "form",
+                  "label": "trans::webx-vacancies::screen.form",
+                  "help": "trans::webx-vacancies::screen.form-help",
+                  "props": {
+                    "target": "inbox-form",
+                    "max": 1
+                  }
+                }
+              ]
+            },
+            {
+              "id": "hiring",
+              "type": "wx-card",
+              "label": "trans::webx-vacancies::screen.hiring",
+              "children": [
+                {
+                  "id": "is-closed",
+                  "type": "wx-switch",
+                  "name": "is_closed",
+                  "label": "trans::webx-vacancies::screen.is-closed",
+                  "help": "trans::webx-vacancies::screen.is-closed-help"
+                },
+                {
+                  "id": "hiring-dates",
+                  "type": "wx-row",
+                  "children": [
+                    {
+                      "id": "valid-through-col",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 24,
+                        "sm": 12
+                      },
+                      "children": [
+                        {
+                          "id": "valid-through",
+                          "type": "wx-date-picker",
+                          "name": "valid_through",
+                          "label": "trans::webx-vacancies::screen.valid-through",
+                          "help": "trans::webx-vacancies::screen.valid-through-help",
+                          "props": {
+                            "type": "date",
+                            "clearable": true,
+                            "teleport": true,
+                            "valueFormat": "yyyy-MM-dd"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "posted-at-col",
+                      "type": "wx-col",
+                      "props": {
+                        "span": 24,
+                        "sm": 12
+                      },
+                      "children": [
+                        {
+                          "id": "posted-at",
+                          "type": "wx-date-picker",
+                          "name": "posted_at",
+                          "label": "trans::webx-vacancies::screen.posted-at",
+                          "help": "trans::webx-vacancies::screen.posted-at-help",
+                          "props": {
+                            "type": "date",
+                            "clearable": true,
+                            "teleport": true,
+                            "valueFormat": "yyyy-MM-dd"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "project-fields",
+              "type": "wx-card",
+              "label": "trans::webx-admin::screens.project-fields",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "seo",
+          "type": "wx-tab",
+          "label": "trans::webx-vacancies::screen.seo",
+          "children": [
+            {
+              "id": "seo-placeholder",
+              "type": "wx-alert",
+              "label": "trans::webx-vacancies::screen.seo-empty",
+              "props": {
+                "type": "info",
+                "variant": "soft"
+              }
+            }
+          ]
+        },
+        {
+          "id": "history",
+          "type": "wx-tab",
+          "label": "trans::webx-vacancies::screen.history",
+          "children": [
+            {
+              "id": "versions",
+              "type": "wx-vacancy-history"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

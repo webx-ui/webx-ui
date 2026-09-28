@@ -106,6 +106,11 @@ final class Catalogue
             'label' => 'Banners — pictures with words and buttons in named places, printed by the site\'s templates',
             'default' => false,
         ],
+        'vacancies' => [
+            'package' => 'webx-ui/module-vacancies',
+            'label' => 'Vacancies — open positions with terms and salary, each a page of the site with schema.org JobPosting',
+            'default' => false,
+        ],
         'menu' => [
             'package' => 'webx-ui/module-menu',
             'label' => 'Menus — the header and the footer, and what each entry points at',
