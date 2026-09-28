@@ -1,5 +1,12 @@
 # @webx-ui/php
 
+## 0.49.1
+
+### Patch Changes
+
+- d739cc4: The offered `menu` block and the demo header and footer state `width: 100%` on their root: a query
+  container in a flex-row frame around a region shrank to nothing.
+
 ## 0.49.0
 
 ### Minor Changes
