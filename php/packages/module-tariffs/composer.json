@@ -1,0 +1,84 @@
+{
+    "name": "webx-ui/module-tariffs",
+    "description": "Tariffs for the WebX UI admin panel: price cards with a badge, a price in a currency of the site's list or words instead of one, what the plan includes, a description and a button, in flat groups, shown on any page as a block — a slider or a grid — and in templates through tariffs().",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "webx-ui",
+        "laravel",
+        "admin",
+        "cms",
+        "tariffs",
+        "pricing"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-tariffs"
+    },
+    "require": {
+        "php": "^8.3",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/routing": "^13.0",
+        "illuminate/support": "^13.0",
+        "webx-ui/localization": "^0.47.0",
+        "webx-ui/mcp": "^0.47.0",
+        "webx-ui/module-admin": "^0.47.0",
+        "webx-ui/module-blocks": "^0.47.0",
+        "webx-ui/routing": "^0.47.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/module-pages": "^0.47.0",
+        "webx-ui/module-services": "^0.47.0"
+    },
+    "suggest": {
+        "webx-ui/module-pages": "A page with a tariffs block is the site's page of prices.",
+        "webx-ui/module-services": "A tariff can be linked to the services it is for, and a service's page can show what it costs."
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\Tariffs\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\Tariffs\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\Tariffs\\TariffsServiceProvider"
+            ]
+        },
+        "webx": {
+            "module": "tariffs",
+            "npm": {
+                "@webx-ui/module-tariffs": "^0.1.0"
+            },
+            "panel": {
+                "import": "import { tariffs } from '@webx-ui/module-tariffs'",
+                "style": "@webx-ui/module-tariffs/style.css",
+                "register": "...tariffs()"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -209,7 +209,9 @@ php/
   отвечает «pathspec did not match» на первом же файле. Перед переключением копировать в
   скретчпад `composer.json`, `composer.lock`, `package.json`, `package-lock.json` и
   `database/database.sqlite` (база там sqlite), потом положить назад и `composer install`.
-  **Новый пакет в local-режиме одним `composer require` не ставится:** он тянет свежие диапазоны
+  Если на сайте будет `webx:demo`, туда же — `storage/app/webx-demo.json`: журнал демо не в git и
+  не в базе, и вернувшаяся база остаётся рядом с журналом, где записаны строки, которых в ней уже
+  нет. **Новый пакет в local-режиме одним `composer require` не ставится:** он тянет свежие диапазоны
   соседей (`^0.39`), а частичное обновление держит их на версиях из lock'а — «fixed to v0.37.0 …
   by a partial update». Два шага: `require "webx-ui/<пакет>:*" --no-update`, потом
   `update "webx-ui/*"`.
