@@ -18,6 +18,7 @@ use WebxUi\Blocks\Panel\Authors;
 use WebxUi\Blocks\Panel\BlockInput;
 use WebxUi\Blocks\Panel\Graph;
 use WebxUi\Blocks\Panel\Usage;
+use WebxUi\Blocks\Regions;
 
 /**
  * The types: the list the section opens on, the catalogue the constructor reads, and the
@@ -59,7 +60,7 @@ final class BlockController
      * disabled ones too, because a block already on a page keeps its form even after its
      * type was hidden from the picker.
      */
-    public function catalog(Usage $usage): JsonResponse
+    public function catalog(Request $request, Usage $usage, Regions $regions): JsonResponse
     {
         $blocks = Block::query()
             ->published()
@@ -69,6 +70,18 @@ final class BlockController
             ->orderBy('position')
             ->orderBy('slug')
             ->get();
+
+        // `?region=header`: only what may stand at the top of that region — its `allow`, and the
+        // types whose `allowed_in` names it or nothing (§3.2 of the regions spec). Nested blocks
+        // are still the container's business, so the picker inside one asks without it.
+        $region = $request->query('region');
+
+        if (is_string($region) && $regions->has($region)) {
+            $allow = $regions->declared()[$region]['allow'];
+
+            $blocks = $blocks->filter(static fn (Block $block): bool => ($allow === null || in_array($block->slug, $allow, true))
+                && ($block->allowed_in === null || in_array(Regions::ALLOWED_IN.$region, $block->allowed_in, true)))->values();
+        }
 
         return ApiResponse::data($this->many($blocks, $usage->counts(), withContent: true));
     }

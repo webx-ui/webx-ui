@@ -27,8 +27,17 @@ const props = withDefaults(
     groups?: string[]
     /** Where a person with the right can go and make a type. */
     blocksPath?: string | null
+    /** What the top level is called in `allowed_in`: a page, or a layout region. */
+    root?: string
   }>(),
-  { parent: null, allow: null, tree: () => [], groups: () => [], blocksPath: null },
+  {
+    parent: null,
+    allow: null,
+    tree: () => [],
+    groups: () => [],
+    blocksPath: null,
+    root: 'root',
+  },
 )
 
 const { resolve, dismiss, open } = useModal<BlockType>()
@@ -45,7 +54,7 @@ interface Option {
 
 /** Allowed here at all: the same rule "Move to" goes by. */
 function allowedHere(type: BlockType): boolean {
-  return allows(type, props.parent, props.allow)
+  return allows(type, props.parent, props.allow, props.root)
 }
 
 /*

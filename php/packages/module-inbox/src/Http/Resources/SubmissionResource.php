@@ -58,6 +58,8 @@ final class SubmissionResource extends JsonResource
             'events' => $submission->events->map($this->event(...))->values()->all(),
             'is_read' => $submission->read_at !== null,
             'source' => $submission->source,
+            // Where on the site the form stood (`footer`, `article`), or null.
+            'placement' => $submission->placement,
             'notified_at' => $submission->notified_at?->toAtomString(),
             'notify_error' => $submission->notify_error,
             // Which submission is before and after this one *in the list it was opened from*,

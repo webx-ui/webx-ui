@@ -16,6 +16,7 @@ use WebxUi\Inbox\Models\Status;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Models\SubmissionEvent;
 use WebxUi\Inbox\Storage\FileStore;
+use WebxUi\Inbox\Support\Placement;
 
 /**
  * Turning validated input into a submission (§6.4–6.5).
@@ -48,7 +49,10 @@ final class Intake
             // second attempt would leave both answers in the list.
             $submission->files->each->delete();
             $submission->values()->delete();
-            $submission->forceFill(['meta' => $this->meta->of($request, $source)])->save();
+            $submission->forceFill([
+                'meta' => $this->meta->of($request, $source),
+                'placement' => $this->placement($request, $source),
+            ])->save();
         }
 
         $this->write($submission, $form, $values, $request);
@@ -120,11 +124,25 @@ final class Intake
             'hash' => $hash,
             'source' => $source,
             'meta' => $this->meta->of($request, $source),
+            'placement' => $this->placement($request, $source),
         ]);
 
         $submission->log(SubmissionEvent::CREATED, null, $status->key);
 
         return $submission;
+    }
+
+    /**
+     * Where on the site the form stood, as its hidden `webx_placement` says (§11.2).
+     *
+     * Checked again here and not trusted: the component printed a name, but what arrives is
+     * whatever the visitor's browser sent, and it goes into a column of 32. Something else is
+     * quietly nothing — a submission is not refused over the label on the envelope. A
+     * submission typed in by hand stood nowhere on the site.
+     */
+    private function placement(Request $request, string $source): ?string
+    {
+        return $source === Submission::SOURCE_WEB ? Placement::of($request->input('webx_placement')) : null;
     }
 
     /**

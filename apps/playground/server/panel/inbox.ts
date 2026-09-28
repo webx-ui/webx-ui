@@ -256,6 +256,11 @@ export interface SubmissionRecord {
   assignee_id: number | null
   is_read: boolean
   source: string
+  /**
+   * Where on the site the form stood (`footer`, `article`), or null when the page did not say.
+   * Optional so that a record typed in by hand, which stood nowhere, can leave it out.
+   */
+  placement?: string | null
   values: Record<string, string | null>
   files: SubmissionAttachment[]
   meta: SubmissionMeta
@@ -304,6 +309,7 @@ const MESSAGES = [
 
 const PAGES = ['/services/development', '/contacts', '/', '/services', '/about/team']
 const SOURCES = ['form', 'form', 'form', 'panel', 'api']
+const PLACEMENTS = ['footer', null, 'article']
 
 let submissionId = 0
 
@@ -319,6 +325,7 @@ function submission(
     assignee_id: input.assignee_id ?? null,
     is_read: input.is_read ?? false,
     source: input.source ?? 'form',
+    placement: input.placement ?? null,
     values: input.values ?? {},
     files: input.files ?? [],
     meta: input.meta ?? {},
@@ -357,6 +364,10 @@ for (let index = 0; index < 46; index += 1) {
       assignee_id: assigneeId as number | null,
       is_read: index > 3,
       source: SOURCES[index % SOURCES.length],
+      // The brief form stands on the contacts page, in the footer and under articles, so its
+      // list has places to filter by; one in three pages did not say.
+      placement:
+        SOURCES[index % SOURCES.length] === 'panel' ? null : PLACEMENTS[index % PLACEMENTS.length],
       values: {
         name,
         email: `${transliterate(name.split(' ')[0]).toLowerCase()}@example.com`,
@@ -411,6 +422,8 @@ for (let index = 0; index < 17; index += 1) {
       status_id: [1, 2, 3][index % 3],
       assignee_id: index % 3 === 0 ? null : 2,
       is_read: index > 1,
+      // The callback form stands in one place only, so its list has no placement filter.
+      placement: 'header',
       values: {
         name,
         phone: `+380 9${index % 9} ${200 + index} 11 ${20 + index}`,
@@ -554,3 +567,21 @@ export function countForms(): void {
 }
 
 countForms()
+
+/**
+ * Every place a form's submissions came from, `null` for the page that did not say — what the
+ * list answers under `placements`, over the whole form rather than the filter.
+ */
+export function placementsOf(records: SubmissionRecord[]): (string | null)[] {
+  const found = [...new Set(records.map((record) => record.placement ?? null))]
+
+  // Nulls first, the way the server's `orderBy('placement')` puts them.
+  return found.sort((one, two) =>
+    one === two ? 0 : one === null ? -1 : two === null ? 1 : one.localeCompare(two),
+  )
+}
+
+/** The list's `placement` filter: a name, or `none` for the page that did not say. */
+export function matchesPlacement(record: SubmissionRecord, placement: string): boolean {
+  return placement === 'none' ? (record.placement ?? null) === null : record.placement === placement
+}

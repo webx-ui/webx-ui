@@ -100,6 +100,34 @@ final class PanelSubmissionsTest extends TestCase
     }
 
     #[Test]
+    public function the_list_says_where_each_one_was_sent_from_and_filters_by_it(): void
+    {
+        $form = $this->form();
+        $this->filled($form, ['name' => 'Ada'], ['placement' => 'footer']);
+        $this->filled($form, ['name' => 'Grace'], ['placement' => 'article']);
+        $this->filled($form, ['name' => 'Alan']);
+
+        $url = $this->api('forms/'.$form->getKey().'/submissions');
+
+        $all = $this->actingAs($this->editor(), 'cms')->getJson($url)->assertOk();
+
+        // Every place the form has been sent from, the page that did not say included — the
+        // choices of the filter, and whether there is anything to filter at all.
+        $this->assertSame([null, 'article', 'footer'], $all->json('placements'));
+        // Newest first: Alan, Grace, Ada.
+        $this->assertSame([null, 'article', 'footer'], array_column((array) $all->json('data'), 'placement'));
+
+        $footer = $this->actingAs($this->editor(), 'cms')->getJson($url.'?placement=footer')->assertOk();
+        $this->assertSame(['Ada'], array_column(array_column((array) $footer->json('data'), 'values'), 'name'));
+        $this->assertSame(1, $footer->json('counts.all'));
+        // The choices stay whole under the filter, or it could not be undone from inside itself.
+        $this->assertSame([null, 'article', 'footer'], $footer->json('placements'));
+
+        $nowhere = $this->actingAs($this->editor(), 'cms')->getJson($url.'?placement=none')->assertOk();
+        $this->assertSame(['Alan'], array_column(array_column((array) $nowhere->json('data'), 'values'), 'name'));
+    }
+
+    #[Test]
     public function opening_one_marks_it_read_and_brings_its_neighbours(): void
     {
         $form = $this->form();

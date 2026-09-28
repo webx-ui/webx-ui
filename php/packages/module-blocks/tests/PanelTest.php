@@ -31,7 +31,13 @@ final class PanelTest extends TestCase
         $module = $this->firstWhere($response->json('data.modules'), 'id', 'blocks');
 
         $this->assertNotNull($module);
-        $this->assertSame(['blocks.view', 'blocks.manage'], $module['permissions']);
+        $this->assertSame(['blocks.view', 'blocks.manage', 'blocks.regions'], $module['permissions']);
+
+        // The regions are an entry of their own, answering to the third permission.
+        $regions = $this->firstWhere($response->json('data.modules'), 'id', 'regions');
+        $this->assertNotNull($regions);
+        $this->assertSame('Site regions', $regions['title']);
+        $this->assertNull($regions['group']);
         $this->assertSame(['content', 'layout', 'media'], $module['meta']['groups']);
         $this->assertTrue($module['meta']['editing']);
         $this->assertSame(['swiper'], $module['meta']['provides']);

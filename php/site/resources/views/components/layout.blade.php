@@ -96,11 +96,18 @@
     @stack('head')
 </head>
 <body>
-    <x-header />
+    {{--
+        The header and the footer are regions: trees of blocks an editor arranges in the panel
+        ("Site regions"), with the view named in `fallback` printed for as long as a region is
+        empty or unpublished. Declared in config/webx-blocks.php. The frame around a region —
+        sticky, a width, a shadow — belongs here, on an element around the tag; the tag prints
+        no element of its own.
+    --}}
+    <x-webx-blocks::region name="header" fallback="components.header" />
 
     <main>{{ $slot }}</main>
 
-    <x-footer />
+    <x-webx-blocks::region name="footer" fallback="components.footer" />
 
     @stack('scripts')
 </body>

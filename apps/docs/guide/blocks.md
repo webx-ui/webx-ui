@@ -405,6 +405,14 @@ A customised part brings its own styles and script, so the module's page prints
 is not — and renders its body before the layout: the bundle is made of what was rendered, and a
 head slot is worked out before the body.
 
+## Layout regions
+
+A block type can also stand in the site's header or footer: a region of the layout is a named
+place whose content is a tree of blocks, edited and published like a page, with the markup from
+code printed while it is empty. The tag, the declaration, the preview on a real page and the
+**Site regions** section are on a page of their own — [Layout regions](/guide/layout-regions).
+A type meant only for a region names it in `allowed_in`: `["region:header"]`.
+
 ## Styles and scripts on the site
 
 The types on a page are known from its tree, so the page gets one stylesheet and one script, named

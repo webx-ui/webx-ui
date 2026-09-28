@@ -46,7 +46,7 @@ import {
   walk,
 } from './content'
 import { useBlocksMessages } from './i18n'
-import { blocksOwnerKey, blocksPreviewKey, blocksRootKey } from './preview'
+import { blocksOwnerKey, blocksPreviewKey, blocksRootKey, blocksTopKey } from './preview'
 import { destinations, type Destination } from './move'
 import { formSchema } from './schema'
 import type { BlockNode, BlockType } from './types'
@@ -103,6 +103,9 @@ const model = defineModel<BlockNode[]>({ default: () => [] })
 const nested = inject(blocksRootKey, false)
 /* Inside the block editor's sample form, the top level is that block rather than a page. */
 const owner = inject(blocksOwnerKey, null)
+/* In a layout region's editor, the top level is that region rather than a page. */
+const top = inject(blocksTopKey, null)
+provide(blocksTopKey, ref(null))
 provide(blocksRootKey, true)
 
 useBlocksMessages()
@@ -118,6 +121,11 @@ let api: BlocksApi | null = null
 
 const loaded = ref<BlockType[]>([])
 const catalog = computed(() => props.catalog ?? loaded.value)
+
+/* The field's own props win: a screen that narrows the top level has said so on purpose. */
+const topAllow = computed(() => props.allow ?? top?.value?.allow ?? null)
+const topMax = computed(() => props.max ?? top?.value?.max ?? null)
+const topRoot = computed(() => top?.value?.root ?? 'root')
 
 const tree = computed<BlockNode[]>(() => (Array.isArray(model.value) ? model.value : []))
 
@@ -259,6 +267,7 @@ const pick = createModal<
     tree: BlockNode[]
     groups: string[]
     blocksPath: string
+    root: string
   }
 >(BlockPicker)
 
@@ -277,8 +286,8 @@ async function add(
     ? (catalog.value.find((type) => type.slug === parent.node.type) ?? null)
     : (owner?.value ?? null)
   const allow =
-    parentKey === null ? props.allow : ((slot?.props?.allow as string[] | undefined) ?? null)
-  const max = parentKey === null ? props.max : ((slot?.props?.max as number | undefined) ?? null)
+    parentKey === null ? topAllow.value : ((slot?.props?.allow as string[] | undefined) ?? null)
+  const max = parentKey === null ? topMax.value : ((slot?.props?.max as number | undefined) ?? null)
   const list =
     parentKey === null
       ? tree.value
@@ -295,6 +304,8 @@ async function add(
     tree: tree.value,
     groups: groups.value,
     blocksPath: props.blocksPath,
+    // Only the top level is the region; a container's field is named by its own type.
+    root: parentKey === null ? topRoot.value : 'root',
   })
 
   if (!type) return
@@ -378,10 +389,11 @@ async function move(key: string): Promise<void> {
     title: titleOf(found.node),
     destinations: destinations(tree.value, key, catalog.value, {
       owner: owner?.value ?? null,
-      allow: props.allow,
-      max: props.max,
+      allow: topAllow.value,
+      max: topMax.value,
+      root: topRoot.value,
     }),
-    topLabel: owner?.value?.title ?? t('field.move-page'),
+    topLabel: owner?.value?.title ?? top?.value?.label ?? t('field.move-page'),
   })
 
   if (!place) return

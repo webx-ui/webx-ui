@@ -8,6 +8,7 @@ use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
 use Illuminate\View\Component;
@@ -21,6 +22,7 @@ use WebxUi\Inbox\Models\Form as FormModel;
 use WebxUi\Inbox\Rendering\Assets;
 use WebxUi\Inbox\Storage\FileStore;
 use WebxUi\Inbox\Support\Forms;
+use WebxUi\Inbox\Support\Placement;
 
 /**
  * `<x-webx-inbox::form slug="contact" />` — a form of the panel, printed on the site (§10).
@@ -55,6 +57,9 @@ final class Form extends Component
         private readonly array $values = [],
         private readonly ?string $action = null,
         private readonly ?string $view = null,
+        // A constructor argument so that Blade takes it out of `$attributes`: otherwise it
+        // would be printed on `<form>` as an attribute nobody reads.
+        private readonly ?string $placement = null,
     ) {}
 
     public function render(): View|string
@@ -93,7 +98,32 @@ final class Form extends Component
             'assets' => $this->assets,
             'submitText' => $this->submitText($form),
             'values' => $this->prefill($fields, $mine),
+            'placement' => $this->placement($form),
         ]);
+    }
+
+    /**
+     * Where the form stands, when that is a name (§11.2).
+     *
+     * Anything else is dropped with a line in the log rather than an exception: the form on
+     * the page matters more than a typo in one of its attributes.
+     */
+    private function placement(FormModel $form): ?string
+    {
+        if ($this->placement === null || $this->placement === '') {
+            return null;
+        }
+
+        $placement = Placement::of($this->placement);
+
+        if ($placement === null) {
+            Log::warning('webx-inbox: the placement of a form is not a name and is ignored.', [
+                'form' => $form->slug,
+                'placement' => $this->placement,
+            ]);
+        }
+
+        return $placement;
     }
 
     private function form(): ?FormModel

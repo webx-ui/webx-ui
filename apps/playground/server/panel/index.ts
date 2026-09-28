@@ -79,6 +79,8 @@ import {
   eventsFor,
   fields,
   forms,
+  matchesPlacement,
+  placementsOf,
   statuses,
   submissions,
   valuesFor,
@@ -95,6 +97,21 @@ import {
   slugify,
   type PageRecord,
 } from './pages'
+import {
+  discardDraft as discardRegionDraft,
+  publishedTree,
+  publishRegion,
+  regionDetail,
+  regionRow,
+  regions,
+  restoreVersion as restoreRegionVersion,
+  revisionOf as regionRevision,
+  saveDraft as saveRegionDraft,
+  treeOf as regionTree,
+  unpublishRegion,
+  type RegionRecord,
+} from './regions'
+import { defineFunction } from './blade'
 import {
   PREFIX,
   articles,
@@ -657,6 +674,16 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 400,
         group: null,
         permissions: ['menu.view', 'menu.manage'],
+        meta: {},
+      },
+      {
+        id: 'regions',
+        title: line(locale, 'webx-blocks', 'module.regions'),
+        icon: 'sidebar',
+        /* Beside the menu (§7.1 of the regions spec): content an editor changes, not code. */
+        order: 410,
+        group: null,
+        permissions: ['blocks.regions'],
         meta: {},
       },
       {
@@ -1703,6 +1730,12 @@ on('GET', '/inbox/forms/(\\d+)/submissions', ({ params, query }) => {
     )
   }
 
+  const placement = query.get('placement')
+
+  if (placement !== null && placement !== '') {
+    found = found.filter((record) => matchesPlacement(record, placement))
+  }
+
   found = [...found].sort((one, two) => sortValue(two, query) - sortValue(one, query))
 
   const total = found.length
@@ -1723,6 +1756,7 @@ on('GET', '/inbox/forms/(\\d+)/submissions', ({ params, query }) => {
       .filter((field) => field.form_id === formId && field.in_table)
       .map((field) => ({ key: field.key, label: field.title.ru ?? field.key, type: field.type })),
     counts: counts(all),
+    placements: placementsOf(all),
   }
 })
 
@@ -2886,6 +2920,159 @@ on('POST', '/seo/test-url', ({ body }) => {
       sitemap: { included: false, reason: 'unknown' },
     },
   }
+})
+
+/* ------------------------------------------------------------------ layout regions ----- */
+
+function region(name: string): RegionRecord {
+  const record = regions.get(name)
+
+  if (record === undefined) throw new HttpFailure(404, 'No such region.')
+
+  return record
+}
+
+/* The playground's administrator is a super-user, so "Move the markup into a block" is offered
+   wherever the region is empty and a view stands behind it. */
+const regionAnswer = (record: RegionRecord) => ({
+  data: regionDetail(record, record.fallback !== null),
+})
+
+on('GET', '/regions', () => ({ data: [...regions.values()].map(regionRow) }))
+
+on('GET', '/regions/([\\w-]+)', ({ params }) => regionAnswer(region(params[0])))
+
+on('PUT', '/regions/([\\w-]+)', ({ params, body }) => {
+  const record = region(params[0])
+
+  if (typeof body.revision === 'string' && body.revision !== regionRevision(record)) {
+    throw new HttpFailure(
+      409,
+      'Somebody else saved this region while you were editing it.',
+      undefined,
+      undefined,
+      { revision: regionRevision(record) },
+    )
+  }
+
+  saveRegionDraft(record, (body.blocks ?? []) as Block[])
+
+  return regionAnswer(record)
+})
+
+on('POST', '/regions/([\\w-]+)/publish', ({ params }) => {
+  const record = region(params[0])
+
+  /* What `Renderer::region()` refuses on the server: a block the site cannot draw. */
+  const unknown = regionTree(record).find(
+    (node) => !blockTypes.some((type) => type.slug === node.type),
+  )
+
+  if (unknown !== undefined) {
+    throw new HttpFailure(422, 'The region cannot be drawn.', undefined, {
+      blocks: [`Block "${unknown.type}" has no published type, so the region cannot be drawn.`],
+    })
+  }
+
+  publishRegion(record)
+
+  return regionAnswer(record)
+})
+
+on('POST', '/regions/([\\w-]+)/unpublish', ({ params }) => {
+  const record = region(params[0])
+
+  unpublishRegion(record)
+
+  return regionAnswer(record)
+})
+
+on('DELETE', '/regions/([\\w-]+)/draft', ({ params }) => {
+  const record = region(params[0])
+
+  discardRegionDraft(record)
+
+  return regionAnswer(record)
+})
+
+on('GET', '/regions/([\\w-]+)/versions', ({ params }) => ({
+  // The list without the trees each version keeps for a restore.
+  data: region(params[0]).versions.map((version) => {
+    const { blocks, ...meta } = version
+
+    void blocks
+
+    return meta
+  }),
+}))
+
+on('POST', '/regions/([\\w-]+)/versions/(\\d+)/restore', ({ params }) => {
+  const record = region(params[0])
+
+  if (!restoreRegionVersion(record, Number(params[1]))) {
+    throw new HttpFailure(404, 'No such version.')
+  }
+
+  return regionAnswer(record)
+})
+
+/*
+ * "Move the markup into a block" (§7.3): the layout's own header or footer becomes a type of
+ * `kind = block` offered only in this region, and one of it goes into the draft. The source is the
+ * markup `siteLayout()` draws for the region, which is what the fallback view is here.
+ */
+on('POST', '/regions/([\\w-]+)/adopt', ({ params }) => {
+  const record = region(params[0])
+
+  if (regionTree(record).length > 0) {
+    throw new HttpFailure(409, 'The region already has blocks.')
+  }
+
+  const slug = `site-${record.name}`
+
+  if (blockTypes.some((type) => type.slug === slug)) {
+    throw new HttpFailure(422, 'A block type with this identifier exists.', undefined, {
+      slug: [`The type "${slug}" already exists.`],
+    })
+  }
+
+  const now = new Date().toISOString()
+  const id = Math.max(...blockTypes.map((type) => type.id)) + 1
+  const template = fallbackMarkup(record.name).replace(/^<(\w+)/, `<$1 data-wx-block="${slug}"`)
+
+  blockTypes.push({
+    id,
+    slug,
+    title: record.title,
+    description: `Moved from ${record.fallback ?? 'the layout'}.`,
+    icon: 'sidebar',
+    group: 'layout',
+    sort: 0,
+    allow: null,
+    allowed_in: [`region:${record.name}`],
+    max_per_entity: 1,
+    is_enabled: true,
+    draft: null,
+    published: {
+      number: 1,
+      source: 'panel',
+      comment: null,
+      author_id: 1,
+      author: 'Анна Ковальчук',
+      created_at: now,
+    },
+    usage_count: 1,
+    thumbnail: null,
+    created_at: now,
+    updated_at: now,
+    content: { schema: [], template, styles: '', script: null, sample: {} },
+  })
+
+  saveRegionDraft(record, [
+    { key: `r${Math.random().toString(36).slice(2, 8)}`, type: slug, values: {} },
+  ])
+
+  return { ...regionAnswer(record), block: { id, slug } }
 })
 
 on('GET', '/menus', () => ({ data: listMenus().map(menuRow) }))
@@ -4809,6 +4996,7 @@ function row(record: SubmissionRecord) {
     assignee: admins.find((admin) => admin.id === record.assignee_id) ?? null,
     is_read: record.is_read,
     source: record.source,
+    placement: record.placement ?? null,
     files_count: record.files.length,
     created_at: record.created_at,
   }
@@ -4832,6 +5020,7 @@ function detail(record: SubmissionRecord, query?: URLSearchParams) {
     events: eventsFor(record),
     is_read: record.is_read,
     source: record.source,
+    placement: record.placement ?? null,
     notified_at: record.notified_at,
     notify_error: record.notify_error,
     previous_id: index > 0 ? siblings[index - 1].id : null,
@@ -5144,7 +5333,7 @@ function missingPreview(message: string): string {
   return `<!doctype html><title>404</title><p>${message}</p>`
 }
 
-function document(title: string, nodes: Block[]): string {
+function document(title: string, nodes: Block[], markers = true): string {
   /* Every type on the page, nested ones included: a container's styles are not enough. */
   const used = new Set(nodes.flatMap((node) => types(node)))
   const styles = blockTypes
@@ -5160,7 +5349,11 @@ function document(title: string, nodes: Block[]): string {
     .map((node) => draw(node, called))
     .join('\n')
 
-  return siteLayout(title, `<style>${[styles, ...called].join('\n')}</style>`, html)
+  return siteLayout(
+    title,
+    `<style>${[styles, ...called].join('\n')}</style>`,
+    markers ? html : withoutMarkers(html),
+  )
 }
 
 /**
@@ -5172,6 +5365,10 @@ function document(title: string, nodes: Block[]): string {
  * stand on — against the browser's defaults every block looks like a draft.
  */
 function siteLayout(title: string, head: string, body: string): string {
+  /* A region with blocks replaces the layout's own markup, as the tag does on a real site. */
+  const header = regionMarkup('header')
+  const footer = regionMarkup('footer')
+
   const top = siteMenu('header')
     .map((item) => `<a href="${item.href ?? '#'}">${escapeHtml(item.label)}</a>`)
     .join('')
@@ -5196,22 +5393,121 @@ function siteLayout(title: string, head: string, body: string): string {
     ${head}
   </head>
   <body>
-    <header class="site-header">
-      <div class="site-wrap site-header__inner">
-        <a class="site-logo" href="/">Webx Demo</a>
-        <nav class="site-nav">${top}</nav>
-      </div>
-    </header>
+    ${header ?? fallbackMarkup('header', top)}
     <main class="site-main">
 ${body}
     </main>
-    <footer class="site-footer">
-      <div class="site-wrap site-footer__inner">${groups}</div>
-      <div class="site-wrap site-footer__legal">© 2026 Webx Demo</div>
-    </footer>
+    ${footer ?? fallbackMarkup('footer', undefined, groups)}
   </body>
 </html>`
 }
+
+/**
+ * The layout's own header and footer — `components.header` and `components.footer` of a real
+ * site: what the region tag prints while the region is empty, and what "Move the markup into a
+ * block" copies.
+ */
+function fallbackMarkup(name: string, top?: string, groups?: string): string {
+  if (name === 'header') {
+    const links =
+      top ??
+      siteMenu('header')
+        .map((item) => `<a href="${item.href ?? '#'}">${escapeHtml(item.label)}</a>`)
+        .join('')
+
+    return `<header class="site-header">
+      <div class="site-wrap site-header__inner">
+        <a class="site-logo" href="/">Webx Demo</a>
+        <nav class="site-nav">${links}</nav>
+      </div>
+    </header>`
+  }
+
+  if (name === 'footer') {
+    return `<footer class="site-footer">
+      <div class="site-wrap site-footer__inner">${groups ?? ''}</div>
+      <div class="site-wrap site-footer__legal">© 2026 Webx Demo</div>
+    </footer>`
+  }
+
+  return ''
+}
+
+/**
+ * The region being previewed, drawn from its draft — the `PreviewGrant` of a real site. Set only
+ * for the duration of one preview, which is synchronous: nothing else can draw in between.
+ */
+let previewing: { name: string; nodes: Block[] } | null = null
+
+/**
+ * What the layout prints for a region: its published blocks, or — in its own preview — the draft
+ * with the markers the panel selects blocks by. `null` when the tag would print the fallback.
+ */
+function regionMarkup(name: string): string | null {
+  const drafting = previewing?.name === name ? previewing.nodes : null
+  const nodes = drafting ?? (publishedTree(name) as Block[] | null)
+
+  if (nodes === null || !nodes.some((node) => node.hidden !== true)) return null
+
+  const used = new Set(nodes.flatMap((node) => types(node)))
+  const styles = blockTypes
+    .filter((type) => used.has(type.slug))
+    .map((type) => type.content?.styles ?? '')
+  const called: string[] = []
+  const html = nodes
+    .filter((node) => node.hidden !== true)
+    .map((node) => draw(node, called))
+    .join('\n')
+
+  // Its own styles, printed in the body before it (decision 7): the head is long written.
+  const sheet = `<style>${[...styles, ...called].join('\n')}</style>`
+
+  return drafting
+    ? `${sheet}\n<!--wx-region:${name}-->\n${html}\n<!--/wx-region:${name}-->`
+    : `${sheet}\n${withoutMarkers(html)}`
+}
+
+/** A block's markers are the panel's handle on it; a page under a region preview has none (§6). */
+function withoutMarkers(html: string): string {
+  return html.replace(/<!--\/?wx:[^>]*-->\n?/g, '')
+}
+
+/**
+ * A region on one page of the site (`/_preview/region/{name}?at=/about` of a real one, §6): the page as
+ * visitors see it, with the region drawn from its draft. An address that is not a page of the
+ * fixture draws the empty stage under the region, with a strip saying so.
+ */
+function previewRegion(name: string, at: string): string {
+  const record = regions.get(name)
+
+  if (record === undefined) return missingPreview('No such region.')
+
+  const path = at.replace(/^\/+|\/+$/g, '')
+  const found = [...pages.values()].find(
+    (item) => item.row.deleted_at === null && item.row.path === path,
+  )
+
+  previewing = { name, nodes: regionTree(record) as Block[] }
+
+  try {
+    if (found !== undefined) {
+      return document(found.row.title, (found.values.blocks ?? []) as Block[], false)
+    }
+
+    return siteLayout(
+      record.title,
+      '',
+      `<div style="padding:12px 16px;background:#fff7e6;color:#8a5a00;font:14px/1.4 system-ui,sans-serif">This page is not in the address registry: ${escapeHtml(at)}</div>`,
+    )
+  } finally {
+    previewing = null
+  }
+}
+
+/* `menu()` as a block template calls it — the header block lists the `header` menu. */
+defineFunction('menu', (key) =>
+  siteMenu(String(key)).map((item) => ({ label: item.label, href: item.href ?? '#' })),
+)
 
 /** What a site's base CSS does before any block adds its own: a typeface, a ground, a width. */
 const SITE_STYLES = `
@@ -5349,6 +5645,15 @@ export function panelServer(): Plugin {
         if (url.pathname === '/_preview/block-stage') {
           response.setHeader('Content-Type', 'text/html; charset=utf-8')
           response.end(blockStage())
+
+          return
+        }
+
+        const regionPreview = url.pathname.match(/^\/preview\/region\/([\w-]+)$/)
+
+        if (regionPreview !== null) {
+          response.setHeader('Content-Type', 'text/html; charset=utf-8')
+          response.end(previewRegion(regionPreview[1]!, url.searchParams.get('at') ?? '/'))
 
           return
         }

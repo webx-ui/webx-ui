@@ -11,6 +11,7 @@ use WebxUi\Blocks\Preview\PreviewGrant;
 
 /**
  * @method static string url(Model $entity, ?int $adminId = null, ?int $minutes = null)
+ * @method static string regionUrl(string $name, ?int $adminId = null, ?int $minutes = null, ?string $at = null)
  * @method static PreviewGrant|null grant(Request $request, string $type, string $id)
  * @method static bool active()
  * @method static int minutes()

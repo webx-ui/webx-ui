@@ -1,0 +1,41 @@
+{
+  "slug": "demo-header",
+  "title": "Header",
+  "description": "The top of every page: the name of the site, the header menu, one button.",
+  "icon": null,
+  "group": "layout",
+  "sort": 90,
+  "allow": null,
+  "allowed_in": ["region:header"],
+  "max_per_entity": 1,
+  "is_enabled": true,
+  "schema": [
+    {
+      "id": "logo",
+      "type": "wx-input",
+      "label": "Name",
+      "help": "Empty is the name of the project from the settings, or of the application."
+    },
+    {
+      "id": "button_label",
+      "type": "wx-input",
+      "label": "Button"
+    },
+    {
+      "id": "button_url",
+      "type": "wx-input",
+      "label": "Button address",
+      "props": {
+        "placeholder": "/contacts"
+      }
+    }
+  ],
+  "template": "@php\n    $name = $logo ?: (function_exists('settings') ? settings('general.project-name') : null) ?: config('app.name');\n    $items = function_exists('menu') ? menu('header') : [];\n@endphp\n<header class=\"b-demo-header\" data-wx-block=\"demo-header\">\n    <div class=\"b-demo-header__inner\">\n        <a class=\"b-demo-header__name\" href=\"{{ url('/') }}\">{{ $name }}</a>\n        @if (count($items) > 0)\n            <nav class=\"b-demo-header__menu\">\n                @foreach ($items as $item)\n                    @if ($item->url !== null)\n                        <a class=\"b-demo-header__link @if ($item->isActive()) is-active @endif\" @foreach ($item->attrs() as $attribute => $value) {{ $attribute }}=\"{{ $value }}\" @endforeach>{{ $item->label }}</a>\n                    @endif\n                @endforeach\n            </nav>\n        @endif\n        @if ($button_label)\n            <a class=\"b-demo-header__button\" href=\"{{ $button_url ?: url('/') }}\">{{ $button_label }}</a>\n        @endif\n    </div>\n</header>\n",
+  "styles": ".b-demo-header {\n    container-type: inline-size;\n    border-bottom: 1px solid var(--line, #e3e6ea);\n    background: #fff;\n}\n\n.b-demo-header__inner {\n    display: flex;\n    flex-wrap: wrap;\n    align-items: center;\n    gap: 0.75rem 1.5rem;\n    max-width: var(--page, 68rem);\n    margin: 0 auto;\n    padding: 1rem;\n}\n\n.b-demo-header__name {\n    margin-right: auto;\n    font-weight: 700;\n    color: inherit;\n    text-decoration: none;\n}\n\n.b-demo-header__menu {\n    display: flex;\n    flex-wrap: wrap;\n    gap: 0.25rem 1rem;\n}\n\n.b-demo-header__link {\n    color: inherit;\n    text-decoration: none;\n}\n\n.b-demo-header__link:hover,\n.b-demo-header__link.is-active {\n    color: var(--accent, #1c64d8);\n}\n\n.b-demo-header__button {\n    padding: 0.5rem 1rem;\n    border-radius: 0.5rem;\n    background: var(--accent, #1c64d8);\n    color: #fff;\n    font-weight: 600;\n    text-decoration: none;\n}\n\n@container (max-width: 36rem) {\n    .b-demo-header__menu {\n        order: 3;\n        width: 100%;\n    }\n}\n",
+  "script": null,
+  "sample": {
+    "logo": "",
+    "button_label": "Get in touch",
+    "button_url": "/contacts"
+  }
+}

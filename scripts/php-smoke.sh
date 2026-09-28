@@ -1162,11 +1162,16 @@ done
 HOME_PAGE="$(curl -s "$SITE_BASE/")"
 
 printf '%s' "$HOME_PAGE" | grep -q '<!doctype html>' || fail "the home page is not a document: $HOME_PAGE"
-# The layout seam, both halves of it: the skeleton's header around the module's view, and a
-# metatag that only reaches the head through @stack.
-printf '%s' "$HOME_PAGE" | grep -q 'site-header' || fail 'the home page did not stand in the layout'
+# The layout seam, both halves of it: the header around the module's view, and a metatag that
+# only reaches the head through @stack. The header is the demo's, made of blocks: the skeleton
+# declares its header and footer as regions, and the demo publishes both — so the stylesheet of
+# the region's own bundle stands in <body>, before it, where `@webxBlocks` in the head never
+# sees it.
+printf '%s' "$HOME_PAGE" | grep -q 'class="b-demo-header"' || fail 'the home page did not get the header region the demo published'
+printf '%s' "$HOME_PAGE" | sed -n '/<body/,$p' | grep -qE '<link rel="stylesheet" href="[^"]+/[a-f0-9]{16}\.css"><header class="b-demo-header"' \
+    || fail 'the header region did not print its own stylesheet in <body>'
 printf '%s' "$HOME_PAGE" | grep -q '<title>' || fail 'the SEO card did not reach the head'
-note 'the demo home page renders inside the layout, with its head filled in'
+note 'the demo home page renders inside the layout, with a header of blocks and its head filled in'
 
 expect 200 "$(status "$SITE_BASE/")" 'GET /'
 
@@ -1201,5 +1206,19 @@ AFTER="$("$PHP_BIN" -r 'echo md5_file($argv[1]).md5_file($argv[2]).md5_file($arg
 note 'the second run changed nothing'
 
 expect 200 "$(status "$SITE_BASE/")" 'GET / after the second run'
+
+step "Take the demo out"
+# The regions are rows the demo created, and the journal takes them back: the site prints the
+# header from code again, which is the whole promise of a fallback.
+site_artisan webx:demo --remove --no-interaction > "$WORKDIR/demo-remove.log" 2>&1 \
+    || { cat "$WORKDIR/demo-remove.log" >&2; fail 'webx:demo --remove did not succeed'; }
+
+# Not through `/`: the removal puts the home page back as the unpublished draft it was, and it
+# answers 404. The tag itself, rendered by the application, is the same question.
+REMOVED_HEADER="$(site_artisan tinker --execute="echo Illuminate\Support\Facades\Blade::render('<x-webx-blocks::region name=\"header\" fallback=\"components.header\" />');")"
+printf '%s' "$REMOVED_HEADER" | grep -q 'class="site-header"' \
+    || fail "without the demo the header is not the one from code: $REMOVED_HEADER"
+printf '%s' "$REMOVED_HEADER" | grep -q 'b-demo-header' && fail 'the demo header outlived the removal'
+note 'the removal gives the site back its header from code'
 
 printf '\n\033[32m== And one command turns an empty directory into a site with a panel on it.\033[0m\n'

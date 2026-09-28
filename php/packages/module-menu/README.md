@@ -60,6 +60,23 @@ There is a component too, and it is second on purpose — every real site has it
 php artisan vendor:publish --tag=webx-menu-views
 ```
 
+### As a block
+
+With [`webx-ui/module-blocks`](../module-blocks) on the site, the package offers a block type
+**Menu** — for a header or a footer built from blocks (a region of the layout), or anywhere else
+a block stands:
+
+```bash
+php artisan webx:blocks:offered --install --module=menu
+```
+
+It has two fields: which menu (the site's menus at the moment of the install, declared ones
+first; a menu made later is added to the list in the type's form) and the layout — one line,
+a line with dropdowns, or columns for a footer. The template prints what the component prints,
+under `.b-menu` classes: `attrs()` on each link, `aria-current` on the way to the visitor's
+page, headings as text. A site whose menu looks otherwise edits the template in the panel; a
+type the site already has under the slug `menu` is never touched.
+
 ## What an item points at
 
 | Target   | What is stored            | What the render does                               |

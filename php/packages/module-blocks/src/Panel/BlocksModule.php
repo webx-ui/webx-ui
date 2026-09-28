@@ -66,11 +66,16 @@ final class BlocksModule extends AbstractModule implements ProvidesDemo, Provide
     }
 
     /**
+     * The usual pair, and a third for the regions of the layout: editing, publishing and taking
+     * off the header and the footer (§7.1 of the regions spec). No view/manage pair there — a
+     * region is on the site for everybody to see, so looking at it without changing it is not a
+     * right worth granting.
+     *
      * @return list<string>
      */
     public function permissions(): array
     {
-        return ['blocks.view', 'blocks.manage'];
+        return ['blocks.view', 'blocks.manage', 'blocks.regions'];
     }
 
     /**
