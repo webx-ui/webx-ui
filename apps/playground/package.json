@@ -27,6 +27,7 @@
     "@webx-ui/module-reviews": "workspace:*",
     "@webx-ui/module-seo": "workspace:*",
     "@webx-ui/module-services": "workspace:*",
+    "@webx-ui/module-tariffs": "workspace:*",
     "@webx-ui/module-team": "workspace:*",
     "@webx-ui/schema": "workspace:*",
     "@webx-ui/tokens": "workspace:*",
