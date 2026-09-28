@@ -37,6 +37,14 @@ final class LayoutTest extends TestCase
     }
 
     #[Test]
+    public function the_config_leaves_the_page_layout_key_alone(): void
+    {
+        // A top-level `layout` is the Blade layout of a module's public pages: `webx:doctor`
+        // went looking for <x-slider> and reported every page of the module as a 500.
+        $this->assertArrayNotHasKey('layout', config('webx-banners'));
+    }
+
+    #[Test]
     public function a_layout_that_is_not_one_is_the_places(): void
     {
         $this->assertSame('single', banners_layout('promo', 'carousel')['layout']);
@@ -44,7 +52,7 @@ final class LayoutTest extends TestCase
         config()->set('webx-banners.places.hero.layout', 'mosaic');
         $this->assertSame('slider', banners_layout('hero')['layout'], 'an unknown layout of a place is the site\'s');
 
-        config()->set('webx-banners.layout', 'random');
+        config()->set('webx-banners.default_layout', 'random');
         $this->assertSame('random', banners_layout('hero')['layout']);
     }
 

@@ -149,7 +149,7 @@ final class Places
     {
         $own = $key === null ? null : ($this->declared()[$key]['layout'] ?? null);
 
-        foreach ([$own, $this->config->get('webx-banners.layout')] as $layout) {
+        foreach ([$own, $this->config->get('webx-banners.default_layout')] as $layout) {
             if (is_string($layout) && in_array($layout, self::LAYOUTS, true)) {
                 return $layout;
             }

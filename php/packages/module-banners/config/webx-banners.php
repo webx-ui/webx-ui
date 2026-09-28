@@ -40,9 +40,13 @@ return [
     | package draws none of them — `banners_layout()` hands the choice to the
     | site's template, which prints the markup.
     |
+    | Not `layout`: at the top of a module's config that key is the Blade
+    | layout its public pages stand in, and `webx:doctor` looks for it as a
+    | component.
+    |
     */
 
-    'layout' => 'slider',
+    'default_layout' => 'slider',
 
     /*
     |---------------------------------------------------------------------------

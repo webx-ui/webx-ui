@@ -262,7 +262,7 @@ return [
     ],
 
     // The layout of a place that names none: single, random or slider.
-    'layout' => 'slider',
+    'default_layout' => 'slider',
 
     // What a site's template reads through banners_layout(). A place overrides any of these
     // under its own `options`; the package draws nothing with them itself.
