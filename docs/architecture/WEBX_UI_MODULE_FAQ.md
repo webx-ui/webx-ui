@@ -1,7 +1,6 @@
 # `webx-ui/module-faq` и контракт «вставить блоком» — спецификация и план реализации
 
-Статус: спроектирован 24.09.2026; F1 и F2 (контракт, обе половины), F3 и F4 (`module-faq`, обе
-половины) и F5 (MCP, демо, доки) сделаны 24.09.2026, **выпущено 24.09.2026 в v0.37.0** (F6). Пакеты —
+Статус: выпущен 24.09.2026 в v0.37.0 (§6). Пакеты —
 `webx-ui/module-faq` (composer) и `@webx-ui/module-faq` (npm); контракт — в `module-admin` и
 `module-blocks` на обеих половинах.
 
@@ -18,8 +17,7 @@ FAQ — вопросы и ответы с плоскими категориям�
 | **1** | Контракт «вставить блоком»: источник записей, тип поля, типы блоков модуля | §3 здесь    |
 | **2** | `module-faq` — первый потребитель                                          | §4 здесь    |
 
-Выпуск у двух этапов **один, в самом конце** (§6): все сессии идут на одной ветке, без
-промежуточных PR и без ожидания CI между ними.
+Выпуск у двух этапов был **один** (§6).
 
 ## 1. Границы
 
@@ -320,425 +318,44 @@ POST   /api/cms/faq/questions/reorder    { ids, category? }     CategoryRoutes::
 в контракте ничего, кроме того, что в §3.2. Если при их спеке понадобится выбор отдельных
 записей (§1 «Снаружи»), это новое поле `Selection` (`ids`), а не новый тип.
 
-## 6. Пошаговый план
+## 6. Выпуск
 
-Все сессии — **на одной ветке `feat/module-faq`**, в одном worktree, пушатся в `claude` без PR.
-PR открывает только F6, и CI гоняется один раз. Каждая сессия гонит локальный гейт своей
-половины (php — `composer lint && composer analyse && composer test` из `php/` на PHP 8.4;
-npm — точечно `npx vitest run`, `npx vue-tsc` в пакете, из worktree бинарниками напрямую —
-CLAUDE.md §4 про pnpm в worktree), полный гейт — только F6.
+Оба этапа выпущены 24.09.2026 в v0.37.0 (#269, релизный #270; npm `@webx-ui/module-faq@0.1.0`) и
+стоят на обоих демо (демо тинкером со своим журналом, страница `/faq`). Что решилось при
+реализации сверх написанного выше:
 
-| Сессия | Что                                                                           |
-| ------ | ----------------------------------------------------------------------------- |
-| **F1** | php: `CollectionSource`, `CollectionType`, `BlockOffers`, `Seo::put()`        |
-| **F2** | npm: поле `wx-collection`, `/api/cms/collections`, плейграунд, гайд контракта |
-| **F3** | php: `module-faq` — схема, модели, источник, тип блока, API, экраны, права    |
-| **F4** | npm: `@webx-ui/module-faq` — вопросы в `WxListDetail`, категории, плейграунд  |
-| **F5** | MCP, демо, гайд, README                                                       |
-| **F6** | выпуск целиком, оба демо, проверка на телефоне и в Rich Results Test          |
+- **Контракт:** `items()` отдаёт `list<array>`, а не `Collection` (шаблон `TValue` инвариантен);
+  у источника есть `permission(): ?string` — им `/api/cms/collections` (`{ key, title, categories,
+markup }`) фильтрует по правам. `Selection::apply(Builder)` — общий фильтр и порядок для
+  источников на `HasCategories`; видимость — на источнике, до `apply()`.
+- **Группы фильтра считает `CollectionType`:** видимая категория с хоть одной показанной записью,
+  в том числе среди выбранных.
+- **Маркер `Screens\ResolvesMissing`:** нетронутое поле `wx-collection` резолвится как «все
+  записи»; прочие отсутствующие поля по-прежнему `null`.
+- **Правила на содержимом блоков не запускаются ни на одной двери** — `store()` единственный
+  фильтр: нормализует, режет `markup` и `categories` у источника без них. Язык — `Locales::current()`.
+- **`BlockOffers`:** ключ — id модуля панели (как в `Setup\Catalogue`); `webx:setup` зовёт
+  `webx:blocks:offered --install --module=<id>` после `migrate`; документ проверяется как импорт,
+  тип, не рисующийся на своём `sample`, остаётся черновиком (код выхода 1). `Seo::put()` с пустым
+  блоком снимает ключ.
+- **`module-faq`:** `require` — только `module-admin`, `module-blocks`, `localization`;
+  `module-seo` — `suggest`, разметку ещё выключает `webx-faq.markup`. Лимит источник считает в php
+  после видимости. Скрипт блока фильтрует по DOM (`data-faq-group`, `data-faq-categories`), а не по
+  `data-wx-values` — там только выбор редактора.
+- **Категория без адреса** (`prefix: null`): модель обнуляет `slug` на `saving`; общий список,
+  экран и `CategoryTools` адреса у такого вида не показывают. `CategoryTools::create` теперь
+  отвечает после `refresh()` (был `is_visible: false` у видимой — и у рубрик, и у услуг).
+- **Панель:** один маршрут `/faq`, вопрос — `?question=<id|new>`; «уйти без сохранения?» — только
+  при смене `question`. Новый вопрос — форма, `POST { values }` на первом сохранении. Узел
+  `wx-faq-anchor` — `kind: 'field'` без имени, копирует фрагмент `#якорь`. Ревизии и 409 у вопроса
+  нет — нет черновика.
+- **MCP:** вопрос — id или якорь, категория — id или название; строка несёт `visible_in`; строка
+  без языка — язык по умолчанию. Несуществующая категория — отказ до записи.
 
-Промпты ниже самодостаточны. Каждая сессия в конце дописывает сюда «Итог Fn» — что следующей
-надо знать сверх промпта, — и строку в память `custom-modules-workflow`.
-
-### F1 — контракт, php
-
-```
-Сессия F1 из §6 docs/architecture/WEBX_UI_MODULE_FAQ.md: контракт «вставить блоком», php-половина.
-
-Начало: git worktree add ../webx-ui-module-faq -b feat/module-faq от свежего main (git fetch
-claude); первым коммитом — эта спека, если её ещё нет на ветке. Дальше вся работа этапов 1–2 на
-этой ветке, PR не открывать.
-
-Прочитать: §§2,3 спеки; docs/architecture/WEBX_UI_MODULE_BLOCKS.md §§5,7,8,9,17 и сессию G;
-php/packages/module-admin/src/{Screens/FieldType.php,Screens/FieldTypes.php,Screens/ScreenValues.php,
-Links/LinkSources.php,Categories/*}; php/packages/module-media/src/Screens/MediaValues.php — как
-значение раскрывается только на чтении сайта; php/packages/module-blocks/src/{Rendering/*,
-Demo/BlocksDemo.php,Console/ImportCommand.php,Mcp/BlockTools.php}; php/packages/module-seo/src/
-Rendering/Seo.php — push().
-
-Сделать: WebxUi\Admin\Collections\{CollectionSource,CollectionSources,Selection}; тип
-wx-collection (CollectionType: rules/store/resolve, пустой список при пропавшем источнике);
-GET /api/cms/collections с фильтром по правам; BlockOffers и webx:blocks:offered [--install] в
-module-blocks, вызов из webx:setup для выбранных модулей; Seo::put() в module-seo и печать в
-head(); тесты на фикстурном источнике — в том числе запись wx-collection через PageForm::save и
-через blocks_edit_content; changeset на @webx-ui/php.
-
-Не делать: npm (F2), module-faq (F3). В конце — «Итог F1» в §6 спеки, коммит, пуш в claude.
-```
-
-#### Итог F1 — сделано 24.09.2026
-
-Всё из промпта на ветке; гейт php-половины зелёный (pint, phpstan, 1418 тестов на PHP 8.4).
-Что следующим сессиям надо знать сверх §3:
-
-- **`items()` возвращает `list<array<string, mixed>>`, а не `Collection`.** У `Collection` шаблон
-  `TValue` инвариантный, и любая реализация, которая строит элементы литералом, у PHPStan не
-  сходится с `Collection<int, array<string, mixed>>`; массив ковариантен. У Eloquent-источника
-  это `->map(...)->values()->all()`.
-- **В контракте появился `permission(): ?string`** — без него `/api/cms/collections` нечем
-  фильтровать по правам (§3.3). Правило то же, что у `LinkSources::allowed()`; у FAQ это
-  `faq.view`.
-- **`Selection::apply(Builder)`** — общий кусок для источников на `HasCategories`: фильтр по
-  нескольким категориям подзапросом (без повторов), порядок `orderedIn` по одной категории или
-  общий, лимит. Видимость (`published`, перевод на язык, корзина) — на источнике, до `apply()`.
-- **Группы фильтра считает `CollectionType`, а не источник.** Модель категорий берётся из
-  `CategorySources` по пути `categories()` источника — FAQ регистрирует там `faq/categories` и
-  так и так (ради `wx-categories`). Группа — видимая категория (`visible`, `ordered`), в которой
-  есть хоть одна показанная запись; **это правило и для выбранных категорий**: кнопка фильтра,
-  которая опустошает список, не нужна никому. Элемент без `categories` в группы не попадает.
-- **Новый маркер `Screens\ResolvesMissing`.** Блок хранит только то, что редактор задал, и поле,
-  которого нет в значениях, в шаблоне — `null`. Для `wx-collection` это неверно: блок, поставленный
-  и не тронутый, — «все записи», а шаблон FAQ на пустом `sample` падал бы на публикации
-  (`$list['items']` у `null`). `Rendering\Values` теперь резолвит отсутствующее поле только у
-  типов с этим маркером; всем прочим отсутствующее по-прежнему `null` — существующие шаблоны
-  печатают то же, что печатали.
-- **Правила на содержимом блоков не запускаются ни на одной двери** — `ContentValues` только
-  `store()`. Поэтому `store()` — единственное, что стоит между запросом и строкой: нормализует,
-  режет `markup` у источника без разметки и `categories` у источника без категорий. Id
-  несуществующей категории он оставляет (запросом не проверяет): на чтении она просто ничего не
-  находит. `rules()` работают там, где `wx-collection` стоит на описанном экране.
-- **Язык:** `Rendering\Values` зовёт `resolve()` без языка, поэтому тип берёт
-  `Locales::current()` — источник получает язык всегда.
-- **`BlockOffers`**: `offer('faq', __DIR__.'/../resources/blocks')` из `boot()` провайдера;
-  ключ — id модуля в панели, тот же, что в `Setup\Catalogue`, потому что `webx:setup` зовёт
-  `webx:blocks:offered --install --module=<id>` для выбранных модулей (новый шаг после
-  `migrate`, не фатальный, только если стоит `module-blocks`). Документ проверяется правилами
-  `BlockInput`, как импорт; версия пишется с `source: import` и комментарием `Offered by faq`;
-  тип, который не рисуется на своём `sample`, остаётся черновиком, а команда выходит с кодом 1.
-  `module-faq` требует `module-blocks`? — решать в F3; если нет, регистрация за
-  `class_exists(BlockOffers::class)`.
-- **`Seo::put($key, $block)`**: пустой блок снимает ключ; печатается после `push()`; вне
-  запроса живёт на экземпляре, как `push()`. `putBlocks()` — прочитать накопленное.
-- **Слова:** `webx-admin::collections.{unknown-source,unknown-category,limit,flag}` на все десять
-  языков — это отказы сервера; ключи поля F2 дописывает в тот же файл.
-- **`/api/cms/collections`** отвечает `{ data: [{ key, title, categories, markup }] }`.
-- Worktree: `php/vendor` поставлен (`composer.phar` — в скретчпаде сессии). Манифест Testbench
-  прогрет последовательным `phpunit --filter …`; `vendor/bin/testbench package:discover` не
-  годится — он создаёт `.env` (CLAUDE.md §4).
-
-### F2 — контракт, npm
-
-```
-Сессия F2 из §6 docs/architecture/WEBX_UI_MODULE_FAQ.md: поле wx-collection в панели.
-
-Работать в worktree ../webx-ui-module-faq на ветке feat/module-faq (не в основном чекауте —
-там другая сессия). Прочитать: §3 спеки и «Итог F1»; packages/module-admin/src/categories/ —
-как wx-categories берёт список по source; apps/docs/guide/categories.md;
-apps/playground/server/panel/ и renderTemplate() в предпросмотре блоков плейграунда.
-
-Сделать: компонент поля wx-collection в @webx-ui/module-admin (категории источника, лимит,
-«фильтр», «разметка» только если source.markup; подсказка про умолчание разметки из решения 8),
-регистрация типа; ключи webx-admin::collections.* в php/packages/module-admin/lang/* на все
-языки панели; мок /api/cms/collections и раскрытие wx-collection в renderTemplate() плейграунда
-на фикстурном источнике; гайд apps/docs/guide/collections.md для авторов модулей (контракт,
-BlockOffers, одна разметка на страницу и её ограничение из §3.5) и ссылка в сайдбаре; vitest;
-changeset на @webx-ui/module-admin.
-
-Проверить в браузере на плейграунде: поле в конструкторе блока, выбор сохраняется, предпросмотр
-перерисовывается; 375 px. В конце — «Итог F2» в спеке, коммит, пуш в claude.
-```
-
-#### Итог F2 — сделано 24.09.2026
-
-Всё из промпта на ветке; vitest (`collections`, паритет словаря, категории), `vue-tsc` у
-`module-admin`, eslint и prettier зелёные; `TranslationsTest` php-половины тоже. Проверено в
-браузере на плейграунде worktree: конструктор `/panel/blocks/10`, выбор категории, лимит, фильтр
-и разметка перерисовывают предпросмотр, сохранение переживает перезагрузку, на 375 px без
-горизонтального скролла. Что следующим сессиям надо знать сверх §3:
-
-- **Поле — `WxCollectionField` (`packages/module-admin/src/collections/`)**, тип `wx-collection`
-  в `adminTypes`, `wide: true`. Список источников — `collectionSources(admin)`: один запрос на
-  панель (`WeakMap` по `AdminContext`), упавший ответ не кешируется. Категории — тем же
-  `createCategoriesApi(admin, source.categories).list()`, что у `wx-categories`; у источника без
-  `categories` нет ни выбора категорий, ни фильтра, у источника без `markup` — переключателя
-  разметки. Источник, которого нет в ответе (не установлен или нет права), — строка
-  `collections.field-unavailable` вместо формы.
-- **Значение пишется целиком на каждое изменение** и нормализуется так же, как
-  `Selection::normalise()` (`normaliseCollection()` экспортирован): id по возрастанию без
-  повторов, лимит 1…100 или `null`. Переключатель разметки показывает `markup ?? (категорий нет)`;
-  тронули — пишется явное `true`/`false`, и под подсказкой появляется «Вернуть как по
-  умолчанию» (`markup: null`). Выбранная и пропавшая категория остаётся в выборе как `#id`.
-- **Плейсхолдер «Все категории» у `WxSelect multiple filterable` стоит рядом с чипами** — поле
-  поиска не прячется, и «Оплата · Все категории» читается как два ответа. Поэтому плейсхолдер
-  пустой, как только что-то выбрано.
-- **Слова:** двенадцать `webx-admin::collections.field-*` на все десять языков, в тех же файлах,
-  что отказы F1; английский пол — группа `collections` в `messages.ts`, и она теперь в тесте
-  паритета с `lang/en`.
-- **Плейграунд:** `server/panel/collections.ts` — фикстурный источник `faq` (четыре категории,
-  одна скрыта; семь вопросов, один черновик, один без английского) с разбором по правилам §3.1 —
-  **F4 его заменяет фикстурами модуля**, ключ и путь `faq/categories` те же. Мок отвечает
-  `GET /collections` и `GET /faq/categories`. Тип блока `faq-list` (id 10, «Вопросы из раздела»)
-  — рядом со старым `faq` на повторителе. `renderTemplate()` получил четвёртый аргумент — схему:
-  источник записан в ней, а не в значении, и нетронутое поле надо раскрывать как «все» — поэтому,
-  в отличие от ссылки, по форме значения его не узнать. Оба вызова (`draw()` в `blocks.ts` и
-  страница в `index.ts`) её передают. Сам наивный рендерер научился `@foreach ($x['items'] as …)`,
-  `@if ($x['filter'])` (ложь и пустой список — пусто) и `{!! $item['key'] !!}` в цикле.
-- **Гайд** — `apps/docs/guide/collections.md`, в сайдбаре после «Categories».
-- **Не сделано и не F2:** в каталоге типов полей для агента (`BlockResources` в `module-blocks`)
-  `wx-collection` нет, и автокомплит шаблона (`completions.ts`) не знает ключей
-  `items`/`groups`/`filter` — это F5.
-- Worktree: `node_modules` свой (`pnpm install --frozen-lockfile` — каталог обычный, не
-  симлинк); для тестов `module-admin` собраны `dist` у `tokens`, `core`, `schema`. vitest
-  запускать **из корня** worktree: конфиг один, в корне, а из каталога пакета jsdom не
-  поднимается и падает всё подряд с «document is not defined». Плейграунд worktree — фоновым
-  `npx vite --port 5184` в `apps/playground`.
-
-### F3 — `module-faq`, php
-
-```
-Сессия F3 из §6 docs/architecture/WEBX_UI_MODULE_FAQ.md: composer-пакет webx-ui/module-faq.
-
-Worktree ../webx-ui-module-faq, ветка feat/module-faq. Прочитать: §§2,4 спеки, «Итог F1» и
-«Итог F2»; php/packages/module-services — образец во всём (провайдер, CategoryKind, экраны,
-Panel\*, права, routes/api.php, регистрации); docs/architecture/WEBX_UI_MODULE_SERVICES.md §6
-итоги A и B.
-
-Сделать: php/packages/module-faq — composer.json с extra.webx, провайдер, конфиг, миграции §4.1,
-Question и FaqCategory §4.2, FaqSource §4.3 с FAQPage через Seo::put, resources/blocks/faq.json
-§4.4 в BlockOffers, API §4.6, экраны faq.form и faq.category-form, права и модули панели §4.5,
-lang/* на все языки панели, README, LICENSE; регистрации §4.9 кроме плейграунда и сайта; тесты
-§4.10 кроме MCP; changeset на @webx-ui/php.
-
-Не делать: npm (F4), MCP и демо (F5). В конце — «Итог F3», коммит, пуш в claude.
-```
-
-#### Итог F3 — сделано 24.09.2026
-
-Всё из промпта на ветке; гейт php-половины зелёный (pint, phpstan, полный phpunit на PHP 8.4),
-27 тестов модуля, `icons.test.ts` видит новые иконки. Что следующим сессиям надо знать сверх §4:
-
-- **Зависимости:** `require` — только `module-admin`, `module-blocks`, `localization`.
-  `module-seo` и `module-pages` — `require-dev` и `suggest`: разметка идёт за
-  `class_exists(Seo::class)`, и её же выключает `webx-faq.markup` (`WEBX_FAQ_MARKUP`) на весь сайт.
-  `BlockOffers` регистрируется без проверки — блоки обязательны, иначе вопросам некуда попасть.
-- **API для F4** (форма ответов — ровно та, что надо мокать в плейграунде):
-  список — `{ data: [{ id, question, anchor, published, position, locales, categories: [{ id,
-title }], updated_at, deleted_at }], filters: { categories: [{ id, title }] } }`, без `meta`;
-  `question` — текст на языке панели или `#id`; `locales` — языки, где есть и вопрос, и ответ
-  (опубликованность не учитывается — это отдельный флаг, чтобы список мог сказать «опубликован,
-  но не виден нигде»). `GET/PUT {id}` и `POST` отвечают `{ data: { question, values } }`, `POST` —
-  201; `values` — `question`/`answer` картами языков, `published`, `categories` (id по порядку) и
-  поля проекта. `restore` отвечает голым ресурсом. Отказ — 422 под именем поля (проверено на
-  `categories`). Ревизии и 409, как у услуг, нет: у вопроса нет черновика, спека её не просит.
-- **`POST` принимает `{ values }` и создаёт через ту же `QuestionForm::save`, что и `PUT`**, в
-  транзакции: отказ не оставляет строку. Пустой вопрос создать можно — якорь тогда `q-<id>`;
-  «Новый вопрос» строкой в списке может постить сразу или только на первом сохранении — решать F4.
-- **Узел `wx-faq-anchor` в `faq.form`** — без `name`, то есть не поле: F4 обязан
-  зарегистрировать компонент (якорь только для чтения и «Скопировать ссылку»), иначе рендерер
-  рисует красную заглушку. Значения у узла нет — якорь брать из `data.question.anchor` ответа.
-- **Категория FAQ без адреса:** `CategoryKind` без `prefix`, `categoryFields()` — `title` и
-  `is_visible`; общий `CategoryForm::create()` всё равно делает слаг из названия, поэтому модель
-  обнуляет `slug` на каждом `saving` (мимо `HasTranslations`, прямо в `attributes`). Общий экран
-  категорий должен при `prefix: null` не показывать колонку адреса — проверить в F4.
-- **Слова для панели уже лежат:** `webx-faq::question.*` (список, форма, корзина, копирование
-  ссылки, уход с несохранённым) и `webx-faq::category.*` на все десять языков; F4 дописывает
-  недостающее в те же файлы и держит английский пол в `messages.ts`.
-- **Скрипт блока не читает `data-wx-values`:** там лежит только выбор редактора, а не вопросы —
-  раскрытые `items`/`groups` в `$block->values` не попадают. Фильтр работает по DOM
-  (`data-faq-group` у кнопок, `data-faq-categories` у `<details>`), и это расхождение с текстом
-  §4.4 сознательное. Фильтр печатается с `hidden`, скрипт его показывает — без JS кнопки, которые
-  ничего не делают, не видны; `[hidden]` для `.b-faq__filter` и `.b-faq__item` объявлен явно
-  (CLAUDE.md §4 про `display: flex` и `[hidden]`). Подпись «Все» — поле блока `all_label`,
-  переводимое, пустое — «All».
-- **Лимит считается в php, после видимости:** `FaqSource` снимает лимит с `Selection` перед
-  `apply()` и режет уже отфильтрованное — иначе «первые пять» на русском были бы «первые пять
-  вообще, минус непереведённые». Вопросов десятки, это дёшево.
-- **Разметка копится в атрибутах запроса** (`webx-faq.markup`, по id, `+=` — первое место
-  выигрывает), вне запроса — на экземпляре; `FaqSource` — синглтон. Текст ответа — без тегов, с
-  переносами вместо `</p>`/`<br>`/`</li>`.
-- **Не сделано и не F3:** MCP (`QuestionsModule` пока не `ProvidesMcpTools`, `CategoriesModule`
-  без `CategoryTools`), демо (`ProvidesDemo` с `requires(): ['blocks']`) — F5. Строка реестра в
-  `WEBX_UI_COMPOSER_PACKAGES.md` — в docs-PR F6, как и у услуг.
-- **Тесты на обе двери** стоят на `module-pages` (`PUT /api/cms/pages/{id}` и
-  `blocks_edit_content` с `entity: page`); агенту нужно право `blocks.manage`, одного
-  `pages.manage` мало.
-- Worktree: `php/vendor/webx-ui/module-faq` — симлинк после `composer update webx-ui/module-faq`
-  (`composer.phar` — в скретчпаде сессии); перед phpstan снесён манифест Testbench и кеш
-  результатов, манифест прогрет одним `phpunit --filter`.
-
-### F4 — `module-faq`, npm
-
-```
-Сессия F4 из §6 docs/architecture/WEBX_UI_MODULE_FAQ.md: npm-пакет @webx-ui/module-faq.
-
-Worktree ../webx-ui-module-faq, ветка feat/module-faq. Прочитать: §4.5 спеки и итоги F1–F3;
-packages/module-services/src/* — модуль, api, список с useItemOrder; packages/module-menu/src/
-MenusPage.vue и packages/module-inbox/src/InboxPage.vue — WxListDetail в панели; хвост про
-WxListDetail в CLAUDE.md §6 (схлопывание у порога) и §4 про ящик без «назад».
-
-Сделать: packages/module-faq — модуль панели, «Вопросы» в WxListDetail (список с перетаскиванием
-и фильтром категории, форма faq.form, «Новый вопрос» строкой, якорь с копированием ссылки, Ctrl+S
-и вопрос при уходе), категории через categoryRoutes; i18n; плейграунд /panel/faq на фикстурах
-(apps/playground/server/panel/faq.ts, модуль в main.ts) плюс блок FAQ на одной из страниц
-фикстур; vitest (вкладки — mousedown, фильтры таблицы — после открытия воронки); changeset.
-Версия пакета 0.0.0 — первую публикацию делает человек в F6.
-
-Проверить в браузере на плейграунде: создать, перетащить с фильтром и без, 375 px и тёмная тема.
-В конце — «Итог F4», коммит, пуш в claude.
-```
-
-#### Итог F4 — сделано 24.09.2026
-
-Всё из промпта на ветке; vitest (`module-faq` — 14, категории и `WxListDetail`), `vue-tsc` у
-`core`, `module-admin`, `module-faq` и плейграунда, eslint и prettier зелёные;
-`TranslationsTest` php-половины тоже. Проверено в браузере на плейграунде worktree
-(`/panel/faq`): создание строкой и Ctrl+S, вопрос при уходе, порядок без фильтра и внутри
-категории, 375 px (ящик с «назад», без горизонтального скролла), тёмная тема. Что следующим
-сессиям надо знать сверх §4.5:
-
-- **Один маршрут.** `faq()` — два модуля (`faq`, `faq-categories`); у вопросов один маршрут
-  `/faq`, открытый вопрос — `?question=<id>` или `?question=new`, рядом с `category`, `q` и
-  `view` (`trashed` — корзина). Поэтому смена вопроса — это `onBeforeRouteUpdate`, и вопрос
-  «уйти без сохранения?» задаётся **только когда меняется `question`**: поиск тоже пишет в адрес,
-  и без этой проверки форма спрашивала бы на каждую букву.
-- **Новый вопрос — форма, а не запись.** Строка «Новый вопрос» открывает пустую форму, `POST`
-  уходит на первом сохранении (`{ values }`, как решил F3), и адрес меняет `new` на id. Если
-  список сужен до категории, новый вопрос начинается в ней.
-- **`wx-faq-anchor` зарегистрирован как `kind: 'field'`**, хотя имени у узла нет: так рендерер
-  рисует вокруг него подпись и подсказку узла (`WxFormItem`), а значения не связывает. Якорь
-  компонент берёт из контекста формы (`provideQuestionEditor`), копирует **фрагмент**
-  `#якорь`: своей страницы у вопроса нет, адрес — у той страницы, где стоит блок. До первого
-  сохранения — строка `question.anchor-later`.
-- **Новые слова** в `webx-faq::question.*` на все десять языков: `all`, `choose`,
-  `choose-help`, `cancel`, `anchor-later`. Английский пол — `faqMessages`, в тесте паритета
-  группы `module`, `question`, `screen`, `category`.
-- **Общий список категорий** больше не пишет «Нет адреса на этом языке» под каждой строкой, когда
-  у категорий модуля адресов нет вовсе (`prefix: null`) — патч `module-admin`. Экран категории
-  адрес и так не рисовал.
-- **`WxListDetail` больше не схлопывается у порога без конца** (хвост из CLAUDE.md §6 закрыт, патч
-  `core`): вставшая раскладка складывается, только уйдя на 24 px под порог. FAQ с длинной
-  формой справа попадал в эту полосу сразу.
-- **Плейграунд:** `server/panel/collections.ts` стал `faq.ts` — хранилище вопросов и категорий
-  с тем же API, что у сервера (список, форма, `POST` значениями, корзина, порядок общий и в
-  категории, категории без адреса), и `resolveFaq()` для предпросмотра. Вопросов девять:
-  добавлены «за границу» (со ссылкой в ответе) и опубликованный без ответа — тот, что список
-  помечает «виден нигде». Страница `/faq` (id 17, последней, чтобы не сдвинуть id, на которые
-  ссылаются меню) — блок `faq-list` «все категории, с фильтром». Тип блока в плейграунде
-  по-прежнему `faq-list` из F2, а не `resources/blocks/faq.json`.
-- **Перетаскивание в скрытой панели браузера мышью не проверить** — `left_click_drag` SortableJS не
-  принимает; проверено клавиатурой на ручке (тот же `emit('move')`), записано в CLAUDE.md §4.
-  Скриншоты в скрытой панели не снимаются вовсе, всё проверено замерами.
-- **Не сделано и не F4:** README npm-пакета — F5. `dist` у `module-faq` не собирался; для
-  плейграунда он не нужен (алиас на `src`).
-
-### F5 — MCP, демо, доки
-
-```
-Сессия F5 из §6 docs/architecture/WEBX_UI_MODULE_FAQ.md: MCP, демо, гайд.
-
-Worktree ../webx-ui-module-faq, ветка feat/module-faq. Прочитать: §§4.7,4.8 спеки и итоги
-F1–F4; php/packages/module-services/src/{Mcp/*,Demo/*} и resources/demo; apps/docs/guide/
-services.md; CLAUDE.md §4 про mcp:start (только трубой).
-
-Сделать: FaqTools и faq://catalog §4.7 (создание в транзакции), FaqDemo §4.8 с установкой
-предложенного блока и страницей /faq при module-pages; apps/docs/guide/faq.md (общая страница —
-это страница с блоком; разметка и её флаг; патч с полем проекта) и ссылка в сайдбаре; README
-npm-пакета; тесты MCP; changeset.
-
-Проверить живьём инструменты через cat … | php artisan mcp:start webx на webx-cms.local в
-local-режиме на этом worktree (MONOREPO=… packages.mjs local); сайт после проверки вернуть как
-был и ничего там не коммитить — это F6. В конце — «Итог F5», коммит, пуш в claude.
-```
-
-#### Итог F5 — сделано 24.09.2026
-
-Всё из промпта на ветке; гейт php-половины зелёный (pint, phpstan, полный phpunit на PHP 8.4 —
-1460 тестов), у модуля 42 теста, из них 11 на MCP и 5 на демо; vitest `completions`, `vue-tsc`
-`module-blocks`, eslint и prettier тоже. Инструменты проверены живьём трубой через
-`mcp:start webx` на `webx-cms.local` в local-режиме на этом worktree; сайт возвращён как был.
-Что сессии выпуска надо знать сверх §§4.7, 4.8:
-
-- **Инструменты — `Mcp\FaqTools` и `Mcp\FaqResources`**, вопрос называется id или якорем (с `#`
-  или без), категория — id или названием на любом языке: слага у неё нет. Строка списка несёт
-  `visible_in` (опубликован и написан на обоих полях) рядом с `written_in` — агенту видно
-  «опубликован, но не виден нигде». Строка без языка в `faq_create`/`faq_update` — язык по
-  умолчанию, а не язык запроса (у stdio-сервера он `en` при `ru` по умолчанию на демо).
-- **Создание — `QuestionForm::save(new Question, …)`**, та же транзакция, что у `POST` панели;
-  несуществующая категория отказывается до записи (`wx-categories` выбросил бы её молча, и агент
-  решил бы, что вопрос разложен).
-- **`CategoryTools` для вида без `prefix`** (патч `module-admin`): ни `slug` в `create`, ни
-  «адреса» в описаниях, ни `slug`/`paths` в строке, поиск по названию. И общий баг, найденный
-  только живьём: `create` отвечал `is_visible: false` у видимой категории — столбец с дефолтом
-  базы не лежит на модели после вставки; теперь ответ собирается после `refresh()`. Касалось и
-  рубрик, и категорий услуг.
-- **Английский отказ удаления категории** был «holds 1 questions» — единственный из десяти языков
-  со счётом посреди фразы; теперь «Questions still in this category: :count». У услуг и блога в
-  английском та же форма («holds :count services/articles») — не трогал.
-- **Демо — `Demo\FaqDemo`**, данные в `resources/demo/faq.json` (en и ru, пишется то, что есть у
-  сайта; «вопрос без перевода» — `urgent-fix`, только en). `requires()` динамический: `blocks` и
-  ещё `pages`/`services`, если они установлены, — иначе `faq` (500) по навигации шёл бы раньше
-  `media` (500, id позже по алфавиту), а значит раньше услуг, и блоку было бы некуда встать.
-  Установленное демо ставит тип блока через `BlockOffers` и записывает его в журнал, только если
-  поставило само. Страница `/faq` — ребёнок главной со слагом `faq` на всех языках заголовка и
-  карточкой SEO; отказ адреса — заметка, а не падение. Блок в услугу — только в демо-услугу
-  `company-website` из журнала этого прогона, через `changed` + новые версии, чтобы `--remove`
-  откатил. **На `webx-cms.local` демо не запускал** — это F6; тест `DemoTest` поднимает страницы
-  и услуги и проверяет `/faq` (один `FAQPage`, фильтр, черновика нет), услугу (вопросы оплаты
-  есть, `FAQPage` нет), `/ru/faq` без вопроса без перевода и полный `--remove`.
-- **Хвост F2 закрыт:** `wx-collection` в каталоге типов полей агента (`BlockResources`) и в
-  автокомплите шаблона — `items`/`groups`/`filter` после `$x[`, ключи записи и группы внутри
-  `@foreach ($x['items'] as $item)`. Поля записи сверх `id`/`anchor`/`categories` автокомплит не
-  знает: их знает только источник, а `/api/cms/collections` их не отдаёт.
-- **Доки:** `apps/docs/guide/faq.md` (в сайдбаре после «Services»), абзац про `prefix: null` в
-  `categories.md`, README npm-пакета, разделы MCP и демо в README composer-пакета. `composer.json`
-  модуля теперь требует `webx-ui/mcp` (как услуги); `module-media` и `module-services` — в
-  `require-dev` ради `DemoTest`.
-- **Возврат `webx-cms.local` после local-режима — из копий, а не из git:** `composer.lock` там не
-  отслеживается, а `packages.mjs local --no-install` переписывает и `package.json`. Записано в
-  CLAUDE.md §4.
-
-### F6 — выпуск
-
-```
-Сессия F6 из §6 docs/architecture/WEBX_UI_MODULE_FAQ.md: выпуск контракта и module-faq, оба демо.
-
-Прочитать: итоги F1–F5; CLAUDE.md §5 целиком — «Первую версию нового npm-пакета публикует
-человек», «Ручная публикация замораживает диапазоны», «CI на релизном PR ждёт ручного
-подтверждения», «Тег php-пакетов ставится до публикации»; docs/architecture/WEBX_UI_PHP_RELEASE.md;
-§6 D в WEBX_UI_MODULE_SERVICES.md — тот же выпуск, прошедший 23.09.2026; память
-webx-cms-local-demo-site и webx-cms-homelab-deploy.
-
-До релиза (руками пользователя, сессия напоминает и проверяет): репозиторий-зеркало
-webx-ui/module-faq на GitHub.
-
-Сделать: погасить dev-серверы; влить свежий main в ветку; полный гейт npm и php/ (PHP 8.4);
-scripts/php-smoke.sh против MariaDB; PR, зелёный CI, мерж; одобрить прогон релизного PR; снять
-changeset-release/main в отдельный worktree, pnpm install, dist, pnpm pack @webx-ui/module-faq и
-проверить диапазоны @webx-ui/* в тарболе; первая публикация — пользователь из своего терминала с
-2FA, затем Trusted Publishing (webx-ui / webx-ui / release.yml); мерж релизного PR; npm view
-всех поднятых пакетов и тег php-v<версия>; webx-ui/module-faq на Packagist.
-
-Демо: webx-cms.local — module-faq в scripts/packages.mjs, link-panel.sh, composer require,
-импорт и ...faq() в resources/js/admin.ts руками (webx:panel --sync не трогает существующий
-файл), migrate, webx:blocks:offered --install, cache:clear (словарь), демо по §4.8, npx vite
-build; хомлаб — то же в registry, npm ls @webx-ui/module-admin — одна версия, коммит и пуш в
-Gitea. Строку реестра в WEBX_UI_COMPOSER_PACKAGES.md и CLAUDE.md §§2,6 — отдельным docs-PR.
-
-Проверить живьём на обоих: /faq — фильтр, ссылка на #якорь открывает вопрос, FAQPage в <head>
-один; услуга с «FAQ по оплате» — вопросы есть, FAQPage нет; вопрос без перевода не виден на
-втором языке; список с перетаскиванием и форма на настоящем телефоне; Rich Results Test на /faq.
-```
-
-#### Итог F6 — сделано 24.09.2026
-
-Выпущено в v0.37.0 (#269, релизный #270): `webx-ui/module-faq` на Packagist, `@webx-ui/module-faq@0.1.0`
-на npm (первая версия — руками с `changeset-release/main`, диапазоны `^0.33.2`/`^0.17.0` на
-ядро и каркас проверены в тарболе), Trusted Publishing настроен. Гейты npm и php (8.4) и
-`scripts/php-smoke.sh` против MariaDB 11.8 зелёные; smoke теперь ставит `module-faq` и дважды
-гоняет `webx:blocks:offered --install`. Оба демо на v0.37.0, всё из промпта проверено живьём,
-кроме телефона — его делает человек.
-
-- **Демо FAQ на обоих сайтах сеяно не `webx:demo`.** Их содержимое не из журнала (журнала нет,
-  услуги — своя стоматология, а не демо-набор), и `webx:demo` насеял бы второй набор всех модулей.
-  `FaqDemo::seed()` вызван тинкером с отдельным журналом (`storage/app/faq-demo-journal.json`):
-  вопросы, категории, страница `/faq`. Блок «Вопросы об оплате» демо ставит только в свою
-  демо-услугу, поэтому в «Консультацию» (id 7) он добавлен тем же кодом руками.
-- **Rich Results Test про FAQ молчит, и это не поломка.** Он видит только Breadcrumbs: FAQ-сниппеты
-  Google с 2023 года показывает лишь авторитетным сайтам (гос- и медтематика), и тест для
-  остальных FAQ просто не перечисляет. Разметку проверяет https://validator.schema.org —
-  `FAQPage` на `/faq` там без ошибок и предупреждений. Записано в CLAUDE.md §4.
-- На хомлабе миграции FAQ прошли сами при загрузке (`webx:boot`), а `webx:blocks:offered
---install`, посев и `cache:clear` — руками внутри контейнера от `www-data`.
+**Открыто:** проверка на телефоне — за пользователем. Rich Results Test FAQ не показывает
+(сниппеты только для авторитетных сайтов) — `FAQPage` проверять на validator.schema.org. В
+английском отказе удаления категории у услуг и блога осталась форма «holds :count …».
+Отложенное — §7.
 
 ## 7. Отложено
 
