@@ -197,6 +197,31 @@ import {
   type EventRecord,
 } from './events'
 import { relationCandidates } from './relations'
+import {
+  createTerm as createVacancyTerm,
+  createVacancy,
+  discard as discardVacancy,
+  drawVacancyPage,
+  duplicateVacancy,
+  find as findVacancy,
+  findTerm as findVacancyTerm,
+  listVacancies,
+  publish as publishVacancy,
+  reorderTerms as reorderVacancyTerms,
+  reorderVacancies,
+  restoreVersion as restoreVacancyVersion,
+  revision as vacancyRevision,
+  row as vacancyRow,
+  setClosed as setVacancyClosed,
+  termDetail as vacancyTermDetail,
+  termRow as vacancyTermRow,
+  vacancyCategories,
+  vacancyDetail,
+  VACANCY_PAGE_STYLES,
+  writeTerm as writeVacancyTerm,
+  writeVacancy,
+  type VacancyRecord,
+} from './vacancies'
 import { screen, screenNames } from './screens'
 import {
   PREFIX as SERVICES_PREFIX,
@@ -365,6 +390,12 @@ on('GET', '/manifest', ({ locale }) => ({
         title: line(locale, 'webx-events', 'module.group'),
         icon: 'calendar',
         order: 750,
+      },
+      {
+        id: 'vacancies',
+        title: line(locale, 'webx-vacancies', 'module.group'),
+        icon: 'briefcase',
+        order: 770,
       },
       { id: 'system', title: line(locale, 'webx-admin', 'nav.system'), icon: 'gear', order: 900 },
     ],
@@ -553,6 +584,24 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 760,
         group: 'events',
         permissions: ['events.categories.manage'],
+        meta: {},
+      },
+      {
+        id: 'vacancies',
+        title: line(locale, 'webx-vacancies', 'module.vacancies'),
+        icon: 'briefcase',
+        order: 770,
+        group: 'vacancies',
+        permissions: ['vacancies.view', 'vacancies.manage'],
+        meta: {},
+      },
+      {
+        id: 'vacancy-categories',
+        title: line(locale, 'webx-vacancies', 'module.categories'),
+        icon: 'folder',
+        order: 780,
+        group: 'vacancies',
+        permissions: ['vacancies.categories.manage'],
         meta: {},
       },
       {
@@ -4065,6 +4114,200 @@ function eventTerm(id: string) {
   return record
 }
 
+/* ---------------------------------------------------------------------------- vacancies ----- */
+
+/*
+ * The vacancies (§4.11 of the vacancies spec): all of them at once in the one order, the open ones
+ * by default, and the two dates as calendar days (`vacancies.ts`).
+ */
+on('GET', '/vacancies', ({ query, locale }) => listVacancies(query, locale))
+
+on('POST', '/vacancies', ({ body, locale }) => {
+  const title = String(body.title ?? 'Новая вакансия')
+  const slug = typeof body.slug === 'string' && body.slug !== '' ? body.slug : slugify(title)
+
+  return { data: vacancyDetail(createVacancy(title, slug), locale) }
+})
+
+/* No `category` here, ever: the one order is the only one there is. */
+on('POST', '/vacancies/reorder', ({ body }) => {
+  if (!Array.isArray(body.ids)) {
+    throw new HttpFailure(422, 'Invalid', undefined, { ids: ['A list of ids.'] })
+  }
+
+  reorderVacancies((body.ids as unknown[]).map(Number))
+
+  return { data: null }
+})
+
+on('GET', '/vacancies/(\\d+)', ({ params, locale }) => ({
+  data: vacancyDetail(vacancyRecord(params[0]), locale),
+}))
+
+on('PUT', '/vacancies/(\\d+)', ({ params, body, locale }) => {
+  const record = vacancyRecord(params[0])
+  const sent = { ...((body.values ?? {}) as Record<string, unknown>) }
+
+  if (typeof body.revision === 'string' && body.revision !== vacancyRevision(record)) {
+    throw new HttpFailure(
+      409,
+      'Кто-то сохранил эту вакансию, пока вы её редактировали.',
+      vacancyDetail(record, locale),
+    )
+  }
+
+  if (sent.title !== undefined && Object.values(asMap(sent.title, '')).every((one) => !one)) {
+    throw new HttpFailure(422, 'Invalid', undefined, {
+      title: ['Должность нужна хотя бы на одном языке.'],
+    })
+  }
+
+  if (sent.seo !== undefined) sent.seo = storedSeo(sent.seo)
+
+  const errors = writeVacancy(record, sent)
+
+  if (errors !== null) throw new HttpFailure(422, 'Invalid', undefined, errors)
+
+  return { data: vacancyDetail(record, locale) }
+})
+
+on('DELETE', '/vacancies/(\\d+)', ({ params }) => {
+  vacancyRecord(params[0]).deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+on('POST', '/vacancies/(\\d+)/restore', ({ params, locale }) => {
+  const record = vacancyRecord(params[0])
+
+  record.deleted_at = null
+
+  return { data: vacancyRow(record, locale) }
+})
+
+on('POST', '/vacancies/(\\d+)/discard', ({ params, locale }) => {
+  const record = vacancyRecord(params[0])
+
+  discardVacancy(record)
+
+  return { data: vacancyDetail(record, locale) }
+})
+
+/* Decision 20: the copy's form, so the panel can open it at once. */
+on('POST', '/vacancies/(\\d+)/duplicate', ({ params, locale }) => ({
+  data: vacancyDetail(duplicateVacancy(vacancyRecord(params[0])), locale),
+}))
+
+on('POST', '/vacancies/(\\d+)/publish', ({ params, locale }) => {
+  const record = vacancyRecord(params[0])
+
+  publishVacancy(record)
+
+  return { data: vacancyRow(record, locale) }
+})
+
+on('POST', '/vacancies/(\\d+)/unpublish', ({ params, locale }) => {
+  const record = vacancyRecord(params[0])
+
+  record.status = 'unpublished'
+  record.published_at = null
+  record.updated_at = new Date().toISOString()
+
+  return { data: vacancyRow(record, locale) }
+})
+
+/* Closing and reopening publish `is_closed`, so edits waiting in the draft refuse it (§4.11). */
+on('POST', '/vacancies/(\\d+)/(close|reopen)', ({ params, locale }) => {
+  const record = vacancyRecord(params[0])
+
+  if (setVacancyClosed(record, params[1] === 'close') === 'edits') {
+    throw new HttpFailure(
+      409,
+      'У вакансии есть неопубликованные правки: сначала опубликуйте или отмените их.',
+    )
+  }
+
+  return { data: vacancyRow(record, locale) }
+})
+
+on('GET', '/vacancies/(\\d+)/versions', ({ params }) => ({
+  data: vacancyRecord(params[0]).versions,
+}))
+
+on('POST', '/vacancies/(\\d+)/versions/(\\d+)/restore', ({ params, locale }) => {
+  const record = vacancyRecord(params[0])
+
+  if (!restoreVacancyVersion(record, Number(params[1]))) {
+    throw new HttpFailure(404, 'No such version.')
+  }
+
+  return { data: vacancyDetail(record, locale) }
+})
+
+/* The categories: the panel's shared category API, groups with a key and no address. */
+on('GET', '/vacancies/categories', ({ locale }) => ({
+  data: vacancyCategories
+    .filter((one) => one.deleted_at === null)
+    .map((one) => vacancyTermRow(one, locale)),
+  prefix: null,
+}))
+
+on('POST', '/vacancies/categories', ({ body, locale }) => {
+  const title = localized(body.title) || 'Новая категория'
+  const slug = localized(body.slug) || slugify(title)
+  const made = createVacancyTerm(asMap(body.title, title), slug)
+
+  if ('errors' in made) throw new HttpFailure(422, 'Invalid', undefined, made.errors)
+
+  return { data: vacancyTermRow(made, locale) }
+})
+
+on('POST', '/vacancies/categories/reorder', ({ body }) => {
+  reorderVacancyTerms(Array.isArray(body.ids) ? (body.ids as unknown[]).map(Number) : [])
+
+  return { data: null }
+})
+
+on('GET', '/vacancies/categories/(\\d+)', ({ params, locale }) => ({
+  data: vacancyTermDetail(vacancyTerm(params[0]), locale),
+}))
+
+on('PUT', '/vacancies/categories/(\\d+)', ({ params, body, locale }) => {
+  const record = vacancyTerm(params[0])
+  const errors = writeVacancyTerm(record, (body.values ?? {}) as Record<string, unknown>, locale)
+
+  if (errors !== null) throw new HttpFailure(422, 'Invalid', undefined, errors)
+
+  return { data: vacancyTermDetail(record, locale) }
+})
+
+on('DELETE', '/vacancies/categories/(\\d+)', ({ params, locale }) => {
+  const record = vacancyTerm(params[0])
+  const count = vacancyTermRow(record, locale).vacancies_count
+
+  if (count > 0) throw new HttpFailure(422, `Вакансий здесь ещё: ${count}.`)
+
+  record.deleted_at = new Date().toISOString()
+
+  return { data: null }
+})
+
+function vacancyRecord(id: string): VacancyRecord {
+  const record = findVacancy(Number(id))
+
+  if (record === null) throw new HttpFailure(404, 'No such vacancy.')
+
+  return record
+}
+
+function vacancyTerm(id: string) {
+  const record = findVacancyTerm(Number(id))
+
+  if (record === null) throw new HttpFailure(404, 'No such category.')
+
+  return record
+}
+
 /* ------------------------------------------------------------------------------- media ----- */
 
 on('GET', '/media/directories', () => ({ data: directories }))
@@ -4716,6 +4959,21 @@ function previewEvent(id: number): string {
   )
 }
 
+/** The draft of a vacancy, drawn as its page (§4.6) — no blocks, like an event. */
+function previewVacancy(id: number): string {
+  const record = findVacancy(id)
+
+  if (record === null) {
+    return missingPreview('No such vacancy.')
+  }
+
+  return siteLayout(
+    `#${record.id}`,
+    `<style>${VACANCY_PAGE_STYLES}</style>`,
+    drawVacancyPage(record, 'ru'),
+  )
+}
+
 function missingPreview(message: string): string {
   return `<!doctype html><title>404</title><p>${message}</p>`
 }
@@ -4930,7 +5188,7 @@ export function panelServer(): Plugin {
         }
 
         const preview = url.pathname.match(
-          /^\/preview\/(page|article|service|recipe|event)\/(\d+)$/,
+          /^\/preview\/(page|article|service|recipe|event|vacancy)\/(\d+)$/,
         )
 
         if (preview !== null) {
@@ -4946,7 +5204,9 @@ export function panelServer(): Plugin {
                   ? previewRecipe(id)
                   : preview[1] === 'event'
                     ? previewEvent(id)
-                    : previewArticle(id),
+                    : preview[1] === 'vacancy'
+                      ? previewVacancy(id)
+                      : previewArticle(id),
           )
 
           return

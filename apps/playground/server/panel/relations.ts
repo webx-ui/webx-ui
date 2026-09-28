@@ -1,10 +1,12 @@
 import type { RelationCandidate } from '../../../../packages/module-admin/src/relations/api'
 import { recipes, row as recipeRow, visible as recipeVisible, type RecipeRecord } from './recipes'
 import { row as serviceRow, services, type ServiceRecord } from './services'
+import { forms } from './inbox'
 
 /**
- * The two targets of relations the playground has (§3.3 of the recipes spec): the services and
- * the recipes, both out of their own fixtures.
+ * The targets of relations the playground has (§3.3 of the recipes spec): the services and the
+ * recipes, both out of their own fixtures, and the forms of the inbox (§4.3 of the vacancies
+ * spec) — what a vacancy is answered with.
  *
  * Both answer the way `RelationController` does (§3.7): `q` searches, `ids[]` names what a form
  * opened with — the ones the site does not show included, since the field marks them rather than
@@ -49,6 +51,25 @@ const TARGETS: Record<string, Target> = {
         .map((record) => ({
           candidate: serviceCandidate(record, locale),
           deleted: record.deleted_at !== null,
+        })),
+  },
+  /*
+   * `FormTarget` of `module-inbox`: the title, the slug under it, ordered by `position`. A form
+   * that is switched off stays choosable-as-chosen and is marked, as a service in the bin is.
+   */
+  'inbox-form': {
+    all: (locale) =>
+      [...forms]
+        .sort((one, two) => one.position - two.position)
+        .map((form) => ({
+          candidate: {
+            id: form.id,
+            title: form.title[locale] || form.title.ru || form.slug,
+            subtitle: form.slug,
+            thumb: null,
+            visible: form.is_enabled,
+          },
+          deleted: false,
         })),
   },
   recipe: {
