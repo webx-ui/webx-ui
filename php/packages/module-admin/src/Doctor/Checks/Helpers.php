@@ -30,6 +30,7 @@ final class Helpers implements Check
         'reviews' => 'webx-ui/module-reviews',
         'services' => 'webx-ui/module-services',
         'team' => 'webx-ui/module-team',
+        'vacancies' => 'webx-ui/module-vacancies',
     ];
 
     public function __construct(private readonly Catalogue $catalogue) {}

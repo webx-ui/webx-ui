@@ -42,6 +42,8 @@ parameters:
         - packages/module-settings/tests
         - packages/module-team/src
         - packages/module-team/tests
+        - packages/module-vacancies/src
+        - packages/module-vacancies/tests
         - packages/module-banners/src
         - packages/module-banners/tests
         - packages/nested-set/src
