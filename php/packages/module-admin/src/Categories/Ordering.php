@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Admin\Categories;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Database\Query\Builder;
 use InvalidArgumentException;
 
 /**
@@ -15,10 +17,12 @@ use InvalidArgumentException;
  * the records inside that category, which is what an editor drags with that filter on (§2.5 of
  * the services spec).
  *
- * The whole list every time, one update per row inside a transaction. Rows the caller did not
- * name stay where they are rather than being pushed to the end: a second panel open on the same
- * list would otherwise have everything it could not see reordered behind its back. And the ids
- * are checked against the table, so a reorder only moves rows that are there.
+ * The ids are the list as somebody sees it, not necessarily all of it: a filtered view, a second
+ * panel that has not seen the newest row, an agent that named two. So the rows named take the
+ * places they hold now, in the new order, and every row not named stays exactly where it is.
+ * Numbering the named ones from the top instead would slip unnamed rows in between them — `[4, 2]`
+ * out of four once came back as 1, 4, 2, 3. Ids that are not in the list are skipped. One
+ * transaction.
  */
 final class Ordering
 {
@@ -28,20 +32,16 @@ final class Ordering
      */
     public static function move(string $model, array $ids, ?int $category = null): void
     {
-        $ids = array_values(array_map(intval(...), $ids));
+        $ids = array_values(array_unique(array_map(intval(...), $ids)));
         $instance = new $model;
 
         if ($category === null) {
-            $query = $instance->newQuery();
-            /** @var list<int> $allowed */
-            $allowed = $query->clone()->whereKey($ids)->pluck($instance->getKeyName())->map(intval(...))->all();
+            $key = $instance->getKeyName();
+            // Soft-deleted rows included: they keep their place and come back to it.
+            $rows = $instance->newQuery()->withoutGlobalScope(SoftDeletingScope::class)->toBase();
 
-            $instance->getConnection()->transaction(static function () use ($query, $ids, $allowed): void {
-                foreach ($ids as $position => $id) {
-                    if (in_array($id, $allowed, true)) {
-                        $query->clone()->whereKey($id)->update(['position' => $position]);
-                    }
-                }
+            $instance->getConnection()->transaction(static function () use ($rows, $key, $ids): void {
+                self::shuffle($rows, $key, 'position', $ids);
             });
 
             return;
@@ -56,9 +56,45 @@ final class Ordering
         $foreign = $relation->getForeignPivotKeyName();
 
         $instance->getConnection()->transaction(static function () use ($pivot, $foreign, $ids): void {
-            foreach ($ids as $position => $id) {
-                $pivot->clone()->where($foreign, $id)->update(['item_position' => $position]);
-            }
+            self::shuffle($pivot, $foreign, 'item_position', $ids);
         });
+    }
+
+    /**
+     * @param  list<int>  $ids
+     */
+    private static function shuffle(Builder $rows, string $key, string $column, array $ids): void
+    {
+        /** @var array<int, int> $all  id => place, in the order the list shows them */
+        $all = $rows->clone()
+            ->orderBy($column)
+            ->orderBy($key)
+            ->pluck($column, $key)
+            ->mapWithKeys(static fn (mixed $at, mixed $id): array => [(int) $id => (int) $at])
+            ->all();
+
+        // Places shared by two rows (a list nobody dragged yet) are made a run first, in the
+        // order the list shows them: handing a shared place out twice would tie them again.
+        if (count(array_unique($all)) !== count($all)) {
+            $place = 0;
+
+            foreach (array_keys($all) as $id) {
+                if ($all[$id] !== $place) {
+                    $rows->clone()->where($key, $id)->update([$column => $place]);
+                }
+
+                $all[$id] = $place++;
+            }
+        }
+
+        $named = array_values(array_filter($ids, static fn (int $id): bool => array_key_exists($id, $all)));
+        $slots = array_map(static fn (int $id): int => $all[$id], $named);
+        sort($slots);
+
+        foreach ($named as $n => $id) {
+            if ($all[$id] !== $slots[$n]) {
+                $rows->clone()->where($key, $id)->update([$column => $slots[$n]]);
+            }
+        }
     }
 }

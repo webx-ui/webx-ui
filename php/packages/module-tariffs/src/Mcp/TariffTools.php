@@ -193,9 +193,8 @@ final class TariffTools
             Tool::mutating(
                 'reorder',
                 'Put tariffs in a new order. Without a group it is the order of the whole list; with one it is the order '
-                .'inside that group only, and every other group keeps its own. Name every tariff of the list (or of the '
-                .'group), first to last: the named ones are numbered from the top, and one left out keeps the number it '
-                .'had — which may put it between them.',
+                .'inside that group only, and every other group keeps its own. Name the tariffs in the order they should '
+                .'stand in: they trade the places they hold among themselves, and the ones you leave out stay where they are.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->reorder($arguments)),
                 ['properties' => [
                     'tariffs' => ['type' => 'array', 'items' => $tariff, 'description' => 'The tariffs, first to last.'],

@@ -62,6 +62,6 @@ final class CategoriesModule extends FaqGroup implements ProvidesMcpTools
      */
     public function mcpTools(): array
     {
-        return (new CategoryTools(FaqCategory::class, $this->form))->all();
+        return (new CategoryTools(FaqCategory::class, $this->form, $this->id()))->all();
     }
 }

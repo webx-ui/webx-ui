@@ -265,6 +265,21 @@ describe('WxTariffsPage', () => {
     })
   })
 
+  // A click on empty space leaves the focus on <body>, outside the pane's own @keydown.
+  it('saves with Ctrl+S pressed while nothing has focus', async () => {
+    const { wrapper, put } = await panel('?tariff=1')
+
+    await wrapper.get('.wx-tariff input').setValue('Combo Starter Plus')
+    document.body.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 's', ctrlKey: true, bubbles: true, cancelable: true }),
+    )
+    await flushPromises()
+
+    expect(put).toHaveBeenCalledWith('/api/cms/tariffs/1', {
+      values: expect.objectContaining({ name: { en: 'Combo Starter Plus' } }),
+    })
+  })
+
   it('puts the refusal of a line of the list under that line', async () => {
     const { wrapper, put } = await panel('?tariff=1')
 

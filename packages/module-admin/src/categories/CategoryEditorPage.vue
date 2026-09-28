@@ -19,6 +19,7 @@ import type { ScreenModel } from '@webx-ui/schema'
 import { provideRecordAddress } from '../address'
 import { useAdmin } from '../admin'
 import { useErrorText } from '../errors'
+import { useBodyKeys } from '../keys'
 import SaveState from '../SaveState.vue'
 import Screen from '../Screen.vue'
 import ScreenHead from '../ScreenHead.vue'
@@ -182,6 +183,9 @@ function onKeydown(event: KeyboardEvent): void {
     if (dirty.value) void save()
   }
 }
+
+// And from the page around the form, where a click on empty space leaves the focus.
+useBodyKeys(onKeydown)
 
 watch(id, () => void load())
 

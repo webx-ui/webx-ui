@@ -100,6 +100,23 @@ describe('WxInputNumber', () => {
     expect(wrapper.get('input').element.value).toBe('2.50')
   })
 
+  it('shows a whole number without the zeros of the precision, and keeps it whole', async () => {
+    const wrapper = mount(WxInputNumber, { props: { modelValue: 1380, precision: 2 } })
+    const input = wrapper.get('input')
+
+    expect(input.element.value).toBe('1380')
+
+    await input.trigger('focus')
+    await input.setValue('1380.5')
+    await input.trigger('blur')
+
+    expect(input.element.value).toBe('1380.50')
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([1380.5])
+
+    await wrapper.setProps({ modelValue: 750 })
+    expect(input.element.value).toBe('750')
+  })
+
   it('does not step while disabled or readonly', async () => {
     const wrapper = mount(WxInputNumber, { props: { modelValue: 1, disabled: true } })
     await wrapper.get(increase).trigger('click')
