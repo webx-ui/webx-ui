@@ -93,6 +93,13 @@ container queries, no bare element selectors. What the two share is the site's C
 `--site-accent`, `--site-font`, whatever the layout declares — so that a header made of blocks and
 the page under it stay one design, and neither side reaches into the other's rules.
 
+The frame is usually a flex row (`<header class="site-header">` with the tag inside), and that
+has one consequence for the block: **a root with `container-type: inline-size` must state its
+width.** A query container has no intrinsic width, so as a flex item it shrinks to 0 px, and a
+one-line menu lays itself out as a column of single words. In the flow of a page the same block
+is fine, which is why it only shows up in a region. `width: 100%` on the root is enough; the
+offered `menu` block and the demo header and footer carry it.
+
 A region's styles and scripts are **its own bundle, printed by the tag** — a `<link
 rel="stylesheet">` before the region and a `<script type="module">` after it when the bundle has
 a script. `@webxBlocks` in `<head>` cannot carry them: the head is rendered before the layout
