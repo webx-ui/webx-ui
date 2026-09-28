@@ -1,5 +1,12 @@
 # @webx-ui/module-blocks
 
+## 0.10.5
+
+### Patch Changes
+
+- f6a84ef: The template editor completes the card of the `tariffs` source: `$tariff['amount']`, `['symbol']`,
+  `['price_text']`, `['features']`, `['button']` and the rest of what `module-tariffs` hands a block.
+
 ## 0.10.4
 
 ### Patch Changes
