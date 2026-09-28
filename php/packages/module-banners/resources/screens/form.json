@@ -15,28 +15,37 @@
           "label": "trans::webx-banners::screen.image",
           "help": "trans::webx-banners::screen.image-help",
           "props": {
-            "accept": "image"
+            "accept": "image",
+            "aspect": "16/6"
           }
         },
         {
-          "id": "image-mobile",
-          "type": "wx-media",
-          "name": "image_mobile",
-          "label": "trans::webx-banners::screen.image-mobile",
-          "help": "trans::webx-banners::screen.image-mobile-help",
-          "props": {
-            "accept": "image"
-          }
-        },
-        {
-          "id": "video",
-          "type": "wx-media",
-          "name": "video",
-          "label": "trans::webx-banners::screen.video",
-          "help": "trans::webx-banners::screen.video-help",
-          "props": {
-            "accept": "video"
-          }
+          "id": "media-row",
+          "type": "wx-row",
+          "children": [
+            {
+              "id": "image-mobile",
+              "type": "wx-media",
+              "name": "image_mobile",
+              "label": "trans::webx-banners::screen.image-mobile",
+              "help": "trans::webx-banners::screen.image-mobile-help",
+              "props": {
+                "accept": "image",
+                "aspect": "4/5",
+                "width": 200
+              }
+            },
+            {
+              "id": "video",
+              "type": "wx-media",
+              "name": "video",
+              "label": "trans::webx-banners::screen.video",
+              "help": "trans::webx-banners::screen.video-help",
+              "props": {
+                "accept": "video"
+              }
+            }
+          ]
         }
       ]
     },
@@ -113,7 +122,10 @@
                       "id": "button-link",
                       "type": "wx-link",
                       "name": "link",
-                      "label": "trans::webx-banners::screen.link"
+                      "label": "trans::webx-banners::screen.link",
+                      "props": {
+                        "allowNone": false
+                      }
                     }
                   ]
                 },
