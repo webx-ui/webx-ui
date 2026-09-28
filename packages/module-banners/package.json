@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-banners",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Banners for the WebX UI admin panel: pictures, a video and up to three buttons in named places, arranged by hand and printed by the site's own templates.",
   "license": "MIT",
   "type": "module",
