@@ -89,6 +89,18 @@ const SCREENS: Record<string, { base: string; patches: string[] }> = {
     base: 'php/packages/module-banners/resources/screens/form.json',
     patches: [],
   },
+  /*
+   * Copies until the php half of the vacancies is on this branch (V2 is written beside V1); V3
+   * points these at `php/packages/module-vacancies/resources/screens` and deletes the folder.
+   */
+  'vacancies.form': {
+    base: 'apps/playground/server/panel/vacancies/form.json',
+    patches: ['apps/playground/server/panel/vacancies/seo.vacancies.form.json'],
+  },
+  'vacancies.category-form': {
+    base: 'apps/playground/server/panel/vacancies/category-form.json',
+    patches: [],
+  },
   'recipes.nutrient-form': {
     base: 'php/packages/module-recipes/resources/screens/nutrient-form.json',
     patches: [],
