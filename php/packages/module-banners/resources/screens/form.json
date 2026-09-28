@@ -1,0 +1,165 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "banners.form",
+  "model": "banner",
+  "root": [
+    {
+      "id": "media",
+      "type": "wx-card",
+      "label": "trans::webx-banners::screen.media",
+      "children": [
+        {
+          "id": "image",
+          "type": "wx-media",
+          "name": "image",
+          "label": "trans::webx-banners::screen.image",
+          "help": "trans::webx-banners::screen.image-help",
+          "props": {
+            "accept": "image"
+          }
+        },
+        {
+          "id": "image-mobile",
+          "type": "wx-media",
+          "name": "image_mobile",
+          "label": "trans::webx-banners::screen.image-mobile",
+          "help": "trans::webx-banners::screen.image-mobile-help",
+          "props": {
+            "accept": "image"
+          }
+        },
+        {
+          "id": "video",
+          "type": "wx-media",
+          "name": "video",
+          "label": "trans::webx-banners::screen.video",
+          "help": "trans::webx-banners::screen.video-help",
+          "props": {
+            "accept": "video"
+          }
+        }
+      ]
+    },
+    {
+      "id": "words",
+      "type": "wx-card",
+      "label": "trans::webx-banners::screen.words",
+      "children": [
+        {
+          "id": "title",
+          "type": "wx-input",
+          "name": "title",
+          "label": "trans::webx-banners::screen.title",
+          "help": "trans::webx-banners::screen.title-help",
+          "localized": true,
+          "props": {
+            "maxlength": 255
+          }
+        },
+        {
+          "id": "text",
+          "type": "wx-textarea",
+          "name": "text",
+          "label": "trans::webx-banners::screen.text",
+          "help": "trans::webx-banners::screen.text-help",
+          "localized": true,
+          "props": {
+            "rows": 4,
+            "maxlength": 2000
+          }
+        }
+      ]
+    },
+    {
+      "id": "buttons-card",
+      "type": "wx-card",
+      "label": "trans::webx-banners::screen.buttons",
+      "children": [
+        {
+          "id": "buttons",
+          "type": "wx-repeater",
+          "name": "buttons",
+          "help": "trans::webx-banners::screen.buttons-help",
+          "props": {
+            "max": 3,
+            "sortable": true,
+            "itemLabel": "label",
+            "addLabel": "trans::webx-banners::screen.buttons-add",
+            "emptyText": "trans::webx-banners::screen.buttons-empty"
+          },
+          "children": [
+            {
+              "id": "button-label",
+              "type": "wx-input",
+              "name": "label",
+              "label": "trans::webx-banners::screen.label",
+              "localized": true,
+              "props": {
+                "maxlength": 120
+              }
+            },
+            {
+              "id": "button-row",
+              "type": "wx-row",
+              "children": [
+                {
+                  "id": "button-link-col",
+                  "type": "wx-col",
+                  "props": {
+                    "span": 16
+                  },
+                  "children": [
+                    {
+                      "id": "button-link",
+                      "type": "wx-link",
+                      "name": "link",
+                      "label": "trans::webx-banners::screen.link"
+                    }
+                  ]
+                },
+                {
+                  "id": "button-variant-col",
+                  "type": "wx-col",
+                  "props": {
+                    "span": 8
+                  },
+                  "children": [
+                    {
+                      "id": "button-variant",
+                      "type": "wx-select",
+                      "name": "variant",
+                      "label": "trans::webx-banners::screen.variant",
+                      "props": {
+                        "placeholder": "trans::webx-banners::screen.variant-placeholder"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "settings",
+      "type": "wx-card",
+      "label": "trans::webx-banners::screen.settings",
+      "children": [
+        {
+          "id": "enabled",
+          "type": "wx-switch",
+          "name": "enabled",
+          "label": "trans::webx-banners::screen.enabled",
+          "help": "trans::webx-banners::screen.enabled-help"
+        }
+      ]
+    },
+    {
+      "id": "project-fields",
+      "type": "wx-card",
+      "label": "trans::webx-admin::screens.project-fields",
+      "children": []
+    }
+  ]
+}
