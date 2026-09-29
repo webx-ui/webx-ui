@@ -92,7 +92,9 @@ Namespace: `webx-ui/*`, размещение: `php/packages/*` в монореп
 `wx-slug`, `wx-collection`, `wx-relations`), общие категории, контракт ссылок (`LinkSource`),
 «вставить блоком» (`CollectionSource`), связи между записями (`webx_relations`), `RecordQuery` для
 хелперов шаблона, ночные дампы ([`WEBX_UI_BACKUPS.md`](WEBX_UI_BACKUPS.md)), `webx:setup`,
-`webx:doctor`, `webx:boot` и `webx:demo` ([`WEBX_UI_NEW_SITE.md`](WEBX_UI_NEW_SITE.md)).
+`webx:doctor`, `webx:boot` и `webx:demo` ([`WEBX_UI_NEW_SITE.md`](WEBX_UI_NEW_SITE.md)), журнал изменений
+(`RecordsHistory`, `History::record/run`, узел `wx-history`, инструменты `history_*` —
+[`WEBX_UI_HISTORY.md`](WEBX_UI_HISTORY.md)).
 
 npm-пара: `@webx-ui/module-admin`
 
