@@ -188,7 +188,7 @@ class CatalogServiceProvider extends ServiceProvider
         if (! array_key_exists(CatalogModule::GROUP, $groups)) {
             $this->config()->set('webx-admin.groups', [
                 ...$groups,
-                CatalogModule::GROUP => ['title' => 'webx-catalog::module.group', 'icon' => 'shopping-bag', 'order' => 300],
+                CatalogModule::GROUP => ['title' => 'webx-catalog::module.group', 'icon' => 'cart', 'order' => 300],
             ]);
         }
 
