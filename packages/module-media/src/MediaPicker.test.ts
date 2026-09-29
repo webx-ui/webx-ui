@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick } from 'vue'
 import { openMediaFiles, openMediaPicker } from './openMediaPicker'
 import type { MediaFile } from './types'
@@ -42,15 +42,6 @@ function click(selector: string): void {
 function button(): HTMLButtonElement | null {
   return document.querySelector<HTMLButtonElement>('.wx-media-picker__confirm')
 }
-
-/** A modal takes its own node away on a timer; leaving one behind fails the next file. */
-afterEach(async () => {
-  const deadline = Date.now() + 2000
-
-  while (document.querySelectorAll('.wx-modal-host').length > 0 && Date.now() < deadline) {
-    await new Promise((resolve) => setTimeout(resolve, 10))
-  }
-})
 
 describe('the picker that takes several files', () => {
   it('hands the manager the limit and its own selection back', async () => {
