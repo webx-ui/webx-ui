@@ -20,13 +20,18 @@ import '@webx-ui/module-catalog/style.css'
 
 createAdmin({
   basePath: '/cms',
-  modules: [catalog()],
+  modules: [...catalog()],
 }).mount()
 ```
 
-`catalog()` is one section — the server registers one module, `catalog` — which opens on the
-products; the tree of categories and «Deleted» are reached from its head. The satellites
-(`module-catalog-*`) stand beside it in the `catalog` group of the navigation.
+`catalog()` returns two sections, as the server registers two modules: `catalog` — the products,
+with «Deleted» in the menu of their head — and `catalog-categories`, the tree. Spread it into
+`modules`. The satellites (`module-catalog-*`) stand beside them in the `catalog` group of the
+navigation.
+
+The «Filters» tab of a category is off by default (`webx-catalog.fields.facets`): with the
+category and the price alone there is nothing to arrange. A satellite that brings filters of its
+own switches it on.
 
 Keep the default path (`/catalog`): the server's refusal of a taken article number links to
 `{panel}/catalog/products/{id}`.

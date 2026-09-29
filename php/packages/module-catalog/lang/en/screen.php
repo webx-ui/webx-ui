@@ -9,6 +9,7 @@ return [
     'description' => 'Description',
     'images' => 'Pictures',
     'seo' => 'SEO',
+    'settings' => 'Settings',
     'history' => 'History',
     'filters' => 'Filters',
     'product-slug-help' => 'Made from the name when left empty. The address ends with the product number, so it need not be unique.',

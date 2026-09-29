@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace WebxUi\Catalog\Tests;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Orchestra\Testbench\Attributes\DefineEnvironment;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Catalog\Models\Product;
@@ -199,6 +201,7 @@ final class ApiTest extends TestCase
     }
 
     #[Test]
+    #[DefineEnvironment('withCategoryFacets')]
     public function a_category_opens_with_its_values(): void
     {
         $laptops = $this->category('laptops');
@@ -212,5 +215,13 @@ final class ApiTest extends TestCase
         $this->actingAs($this->editor(), 'cms')->putJson($this->api("categories/{$laptops->id}"), [
             'values' => ['facets' => [['key' => 'brand', 'visible' => true], ['key' => 'price', 'visible' => false]]],
         ])->assertOk()->assertJsonPath('data.values.facets.1', ['key' => 'price', 'visible' => false]);
+    }
+
+    /**
+     * @param  Application  $app
+     */
+    protected function withCategoryFacets($app): void
+    {
+        $app['config']->set('webx-catalog.fields.facets', true);
     }
 }

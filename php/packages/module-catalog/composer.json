@@ -73,7 +73,7 @@
             "panel": {
                 "import": "import { catalog } from '@webx-ui/module-catalog'",
                 "style": "@webx-ui/module-catalog/style.css",
-                "register": "catalog()"
+                "register": "...catalog()"
             }
         }
     },
