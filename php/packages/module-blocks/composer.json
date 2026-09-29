@@ -33,11 +33,11 @@
         "illuminate/validation": "^13.0",
         "illuminate/view": "^13.0",
         "php": "^8.3",
-        "webx-ui/localization": "^0.49.2",
-        "webx-ui/mcp": "^0.49.2",
-        "webx-ui/module-admin": "^0.49.2",
-        "webx-ui/module-auth": "^0.49.2",
-        "webx-ui/routing": "^0.49.2"
+        "webx-ui/localization": "^0.50.0",
+        "webx-ui/mcp": "^0.50.0",
+        "webx-ui/module-admin": "^0.50.0",
+        "webx-ui/module-auth": "^0.50.0",
+        "webx-ui/routing": "^0.50.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
@@ -62,7 +62,7 @@
         "webx": {
             "module": "blocks",
             "npm": {
-                "@webx-ui/module-blocks": "^0.11.0"
+                "@webx-ui/module-blocks": "^0.11.1"
             },
             "panel": {
                 "import": "import { blocks, regions } from '@webx-ui/module-blocks'",

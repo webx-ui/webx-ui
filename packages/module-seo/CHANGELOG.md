@@ -1,5 +1,12 @@
 # @webx-ui/module-seo
 
+## 0.5.6
+
+### Patch Changes
+
+- Updated dependencies [d1ff63d]
+  - @webx-ui/module-admin@0.19.0
+
 ## 0.5.5
 
 ### Patch Changes
