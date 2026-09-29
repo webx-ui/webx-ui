@@ -4,7 +4,8 @@
 product, the engine behind the lists and facets, and the storefront. Stock, brands, properties
 and labels come as satellites (`module-catalog-*`) that plug into its registries. The design is
 in `docs/architecture/WEBX_UI_CATALOG.md` and the core's spec in `WEBX_UI_MODULE_CATALOG.md`.
-This page covers the gallery for now, and its videos in particular.
+This page covers the gallery for now, and its videos in particular — on the server, in the panel
+and on the storefront.
 
 ## The gallery
 
@@ -40,6 +41,40 @@ need a queue worker.
 Files go with what holds them. Replacing a video or taking it off deletes its file at once, and
 deleting a picture deletes its video. A product moved into «Deleted» keeps its files, as it keeps
 its pictures.
+
+### In the panel
+
+The gallery on the product's «Pictures» tab takes videos in three ways:
+
+- **Dropped into the upload zone** with the pictures (`video/mp4`, `video/webm`). The browser
+  takes a frame of the video from the local file, a little way in, before anything is sent. That
+  frame goes up as the row's picture, then the file goes up in pieces, then the two are put
+  together along with the length the browser read. The row appears at once with its poster and a
+  bar showing the percentage, speed and time left, with pause and cancel. Cancelling also removes
+  the picture that was made of the frame. If the browser cannot open the file (usually a codec it
+  does not play), the panel asks for a picture and for the video to be attached to that.
+- **Attached to a picture** from the row's menu: «Attach a video file…» or «Attach a YouTube
+  link…». The link dialog also takes a direct link to an MP4 or WebM file. A row with a video
+  offers «Remove the video» instead, after a question, because a file is deleted at once.
+- **By address**: the «Upload from an address» card takes pictures, YouTube links and direct
+  links to files. A direct link answers «downloading on the server», and its row appears once the
+  queue is done with it. That row's poster is the server's plain frame, and the row says how to
+  get a real one: add a picture, attach the same link to it, delete the row.
+
+A row with a video has a ▶ (with its length, when known) in the middle of its preview. Clicking
+the preview opens the video in a new tab, not the poster.
+
+Uploads belong to the editor, not to the gallery's tab. The rest of the form can be filled in
+while a file goes up, and switching tabs does not stop it. The browser asks before the page is
+left mid-upload, and so does the panel's own navigation. An upload interrupted by a reload or a
+closed tab is offered again when the product is next opened. Choosing the same file (same name,
+size and date) continues from where the server stopped, onto the picture it was meant for.
+
+The limits come from the screen: the provider patches the `gallery` node with `video`,
+`videoTypes` and `videoMaxBytes`. The type and size are checked before a byte is sent. With
+`video: false` the gallery has no video menu, no `video/*` in its upload zone and no video words,
+and it never starts an upload. A server older than the video work sends no `video` prop, and the
+field then acts as if it were `false`.
 
 ### On the storefront
 

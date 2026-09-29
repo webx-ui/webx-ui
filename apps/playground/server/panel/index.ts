@@ -242,6 +242,8 @@ import {
 import { screen, screenNames } from './screens'
 import { historyOf, historyRun } from './history'
 import { catalogBytes, catalogHistory, catalogUpload, registerCatalog } from './catalog'
+import { Reply } from './reply'
+import { handleUploads } from './uploads'
 import {
   PREFIX as SERVICES_PREFIX,
   categoryIds as serviceCategoryIds,
@@ -5831,6 +5833,9 @@ export function panelServer(): Plugin {
           return
         }
 
+        /* The chunked uploads of module-admin: pieces of bytes, and offsets in the headers. */
+        if (handleUploads(request, response, url)) return
+
         if (url.pathname.startsWith('/api/cms/')) {
           void answer(request, response, url)
 
@@ -5871,6 +5876,13 @@ async function answer(request: IncomingMessage, response: ServerResponse, url: U
     const payload = route.handler({ params, query: url.searchParams, body, locale })
 
     await wait(DELAY)
+
+    if (payload instanceof Reply) {
+      response.statusCode = payload.status
+      response.end(JSON.stringify(payload.payload))
+
+      return
+    }
 
     response.statusCode = method === 'POST' ? 201 : 200
     response.end(JSON.stringify(payload))
