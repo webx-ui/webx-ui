@@ -31,6 +31,15 @@
   `action_required` — у App нет права **Pull requests: write** (или его не приняли в установке
   организации); временно `gh api -X POST repos/webx-ui/webx-ui/actions/runs/<id>/approve`, id — из
   `gh run list --branch changeset-release/main`.
+- **Красный Release на `main` посреди очереди — если релизный PR стоял в ней не первым.** Каждый
+  мерж в `main` запускает Release, и тот пересобирает `changeset-release/main` force-push'ем, а
+  ветку PR из очереди GitHub менять не даёт: «GH006: Protected branch update failed … Branches that
+  are queued for merging cannot be updated». Похоже на сломанный релиз, но ничего не потеряно, если
+  перед ним мержились PR без changeset'ов: собиралось бы то же самое, а следующий Release — на
+  мерже самого релизного PR — публикует всё. PR с changeset'ом впереди в этот релиз не попадёт:
+  его changeset останется в `main` и уедет следующим релизным PR. Поэтому релизный PR ставить в
+  очередь последним, когда перед ним никого нет, и после того, как App пересобрал его на свежем
+  `main`.
 
 ## Публикация в npm
 
