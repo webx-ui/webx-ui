@@ -76,7 +76,19 @@ export {
   type Http,
   type HttpOptions,
   type RequestOptions,
+  type SendOptions,
 } from './http'
+export {
+  forgetUnfinishedUpload,
+  MIN_CHUNK,
+  unfinishedUploads,
+  uploadFingerprint,
+  useChunkedUpload,
+  type ChunkedUpload,
+  type ChunkedUploadOptions,
+  type ChunkedUploadState,
+  type UnfinishedUpload,
+} from './uploads'
 export { adminTypes } from './screenTypes'
 export {
   categoryRoutes,

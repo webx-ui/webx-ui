@@ -38,6 +38,7 @@ export default defineConfig({
             { text: 'Lists', link: '/guide/lists' },
             { text: 'Screens', link: '/guide/screens' },
             { text: 'Extending', link: '/guide/extending' },
+            { text: 'Large uploads', link: '/guide/uploads' },
           ],
         },
         {

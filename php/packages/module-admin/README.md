@@ -310,10 +310,20 @@ not been one for two days. The site still needs a system cron on `schedule:run`.
 it, including how to pull one table out of a finished dump, is in
 [the guide](https://webx-ui.github.io/webx-ui/guide/backups).
 
+## Large uploads
+
+Files too large for one request — a product's video — come in pieces through four endpoints
+under `/api/cms/uploads`, appended to `storage/app/uploads/{id}.part` at the offset the server
+holds, so a dropped connection resumes rather than restarts. A module registers what an upload is
+for with `UploadPurposes` (permission, types, largest file) and takes the finished file with
+`Uploads::claim()`; `webx:prune-uploads` sweeps abandoned ones hourly. The panel side is
+`useChunkedUpload()` in `@webx-ui/module-admin`; the whole of it is in
+[the guide](https://webx-ui.github.io/webx-ui/guide/uploads).
+
 ## Configuration
 
 `config/webx-admin.php` covers the title, the two paths, the middleware groups, the version
-limits and the nightly backup. Moving the panel means clearing the route cache afterwards.
+limits, the nightly backup and chunked uploads. Moving the panel means clearing the route cache afterwards.
 
 ## Languages
 
