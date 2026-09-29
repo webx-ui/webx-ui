@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Exceptions\RuntimeException as ImageException;
+use WebxUi\Catalog\Gallery\Video\VideoProviders;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Media\Images\MissingSource;
 use WebxUi\Media\Images\Thumbnails;
@@ -28,6 +29,9 @@ use WebxUi\Media\Images\Thumbnails;
  * @property int|null $width
  * @property int|null $height
  * @property int|null $size
+ * @property string|null $video_provider
+ * @property string|null $video
+ * @property int|null $video_duration
  * @property int $position
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -39,7 +43,7 @@ class ProductImage extends Model
     protected $table = 'catalog_product_images';
 
     /** @var list<string> */
-    protected $fillable = ['product_id', 'path', 'alt', 'title', 'width', 'height', 'size', 'position'];
+    protected $fillable = ['product_id', 'path', 'alt', 'title', 'width', 'height', 'size', 'position', 'video_provider', 'video', 'video_duration'];
 
     /**
      * @return array<string, string>
@@ -51,6 +55,7 @@ class ProductImage extends Model
             'width' => 'integer',
             'height' => 'integer',
             'size' => 'integer',
+            'video_duration' => 'integer',
             'position' => 'integer',
         ];
     }
@@ -96,10 +101,79 @@ class ProductImage extends Model
         return Storage::disk(self::disk())->url($path);
     }
 
-    /** The files of the picture and every copy of it: a deleted picture takes them at once (§10.4). */
+    public function hasVideo(): bool
+    {
+        return $this->video_provider !== null && $this->video !== null && $this->video !== '';
+    }
+
+    public function hasVideoFile(): bool
+    {
+        return $this->hasVideo() && $this->video_provider === VideoProviders::FILE;
+    }
+
+    /**
+     * The video as the API, the storefront and the agent read it (§5 of the video spec): `url` is
+     * the file or the provider's page of the video, `embed` the iframe's address — null for a
+     * file, which plays in a `<video>`. Null without a video, and for a provider nobody registers
+     * any more: what cannot be played is not offered.
+     *
+     * @return array{provider: string, url: string, embed: string|null, duration: int|null}|null
+     */
+    public function videoData(): ?array
+    {
+        if (! $this->hasVideo()) {
+            return null;
+        }
+
+        $id = (string) $this->video;
+
+        if ($this->video_provider === VideoProviders::FILE) {
+            return ['provider' => VideoProviders::FILE, 'url' => Storage::disk(self::disk())->url($id), 'embed' => null, 'duration' => $this->video_duration];
+        }
+
+        $provider = app(VideoProviders::class)->find((string) $this->video_provider);
+
+        if ($provider === null) {
+            return null;
+        }
+
+        return ['provider' => $provider->key(), 'url' => $provider->watchUrl($id), 'embed' => $provider->embedUrl($id), 'duration' => $this->video_duration];
+    }
+
+    /**
+     * The files of the picture, every copy of it and its video: a deleted picture takes them at
+     * once (§10.4).
+     */
     public function eraseFiles(): void
     {
         app(Thumbnails::class)->forgetOf(self::disk(), $this->path);
         Storage::disk(self::disk())->delete($this->path);
+        $this->eraseVideoFile();
+    }
+
+    public function eraseVideoFile(): void
+    {
+        $this->eraseVideoFileOf($this->video_provider, $this->video);
+    }
+
+    /**
+     * A video file this row held before — replaced or taken off — unless another row holds the
+     * same one: a name is the hash of the content, so the same clip uploaded twice is one file.
+     */
+    public function eraseVideoFileOf(?string $provider, ?string $path): void
+    {
+        if ($provider !== VideoProviders::FILE || $path === null || $path === '') {
+            return;
+        }
+
+        $shared = self::query()
+            ->where('video_provider', VideoProviders::FILE)
+            ->where('video', $path)
+            ->whereKeyNot($this->getKey())
+            ->exists();
+
+        if (! $shared) {
+            Storage::disk(self::disk())->delete($path);
+        }
     }
 }

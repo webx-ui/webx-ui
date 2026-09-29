@@ -10,17 +10,17 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Gallery\Gallery;
+use WebxUi\Catalog\Gallery\QueuedVideo;
 use WebxUi\Catalog\Http\Resources\ImageResource;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Models\ProductImage;
 
 /**
  * The gallery of a product (§10.4, §11.2): add a picture from a file or from an address, put
- * them in order and caption them, take one away.
+ * them in order and caption them, attach a video to one or take it off, take one away.
  *
  * Each change is its own request rather than part of the form's save, because a file is not a
  * value: it lands on the disk the moment it is uploaded, and a form that holds it until "Save"
@@ -34,7 +34,11 @@ final class ProductImageController
         private readonly Catalog $catalog,
     ) {}
 
-    /** `multipart: file` or `{ url }`. */
+    /**
+     * `multipart: file` or `{ url }`. An address may be a video (§5 of the video spec): a
+     * provider's link answers with the new row, its cover as the picture; a direct link to a
+     * file answers 202 — the download is the queue's, and the row appears once it is done.
+     */
     public function store(Request $request, int $product): JsonResponse
     {
         $found = $this->product($product);
@@ -46,21 +50,41 @@ final class ProductImageController
         ]);
 
         $file = $request->file('file');
+        $added = $this->gallery->add($found, $file instanceof UploadedFile ? $file : (string) $request->input('url'));
 
-        $image = DB::transaction(function () use ($found, $file, $request): ProductImage {
-            $image = $file instanceof UploadedFile
-                ? $this->gallery->upload($found, $file)
-                : $this->gallery->fetch($found, (string) $request->input('url'));
+        return $added instanceof QueuedVideo
+            ? ApiResponse::data($added->toArray(), 202)
+            : ApiResponse::data(new ImageResource($added), 201);
+    }
 
-            $found->recordHistory(HistoryEntry::UPDATED, [
-                ['field' => 'images', 'from' => null, 'to' => basename($image->path)],
-            ]);
-            $this->catalog->touch([$found->id]);
+    /**
+     * `{ upload, duration? }` — a finished chunked upload of the purpose `catalog.video` — or
+     * `{ url }`: a video onto a picture, in place of the one it had. A direct link to a file is
+     * queued and answers 202, like adding one.
+     */
+    public function attachVideo(Request $request, int $product, int $image): JsonResponse
+    {
+        $picture = $this->image($product, $image);
 
-            return $image;
-        });
+        $validated = $request->validate([
+            'upload' => ['required_without:url', 'nullable', 'string', 'max:64'],
+            'url' => ['required_without:upload', 'nullable', 'url:http,https', 'max:2000'],
+            'duration' => ['nullable', 'integer', 'min:0', 'max:2147483647'],
+        ]);
 
-        return ApiResponse::data(new ImageResource($image), 201);
+        $source = is_string($validated['upload'] ?? null) && $validated['upload'] !== '' ? $validated['upload'] : (string) ($validated['url'] ?? '');
+        $duration = isset($validated['duration']) ? (int) $validated['duration'] : null;
+        $attached = $this->gallery->attachVideo($picture, $source, $duration, $request->user());
+
+        return $attached instanceof QueuedVideo
+            ? ApiResponse::data($attached->toArray(), 202)
+            : ApiResponse::data(new ImageResource($attached));
+    }
+
+    /** The video off a picture; a file goes from the disk at once, the picture stays. */
+    public function detachVideo(int $product, int $image): JsonResponse
+    {
+        return ApiResponse::data(new ImageResource($this->gallery->detachVideo($this->image($product, $image))));
     }
 
     /**
@@ -117,23 +141,14 @@ final class ProductImageController
     /** The row and the files at once (§10.4): a picture taken off a product is not kept anywhere. */
     public function destroy(int $product, int $image): JsonResponse
     {
-        $found = $this->product($product);
-        $picture = $found->images()->whereKey($image)->first() ?? throw new NotFoundHttpException;
-
-        DB::transaction(function () use ($found, $picture): void {
-            $picture->delete();
-
-            $found->recordHistory(HistoryEntry::UPDATED, [
-                ['field' => 'images', 'from' => basename($picture->path), 'to' => null],
-            ]);
-            $this->catalog->touch([$found->id]);
-        });
-
-        // After the commit: files are not transactional, and a rolled-back delete must not have
-        // taken them.
-        $picture->eraseFiles();
+        $this->gallery->remove($this->product($product), $this->image($product, $image));
 
         return ApiResponse::noContent();
+    }
+
+    private function image(int $product, int $image): ProductImage
+    {
+        return $this->product($product)->images()->whereKey($image)->first() ?? throw new NotFoundHttpException;
     }
 
     private function product(int $id): Product

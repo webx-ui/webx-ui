@@ -16,6 +16,7 @@ use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Admin\Uploads\UploadPurposes;
 use WebxUi\Catalog\Bulk\Actions\ExtraCategoryAction;
 use WebxUi\Catalog\Bulk\Actions\PublicationAction;
 use WebxUi\Catalog\Bulk\Actions\SetCategoryAction;
@@ -37,6 +38,9 @@ use WebxUi\Catalog\Facets\PriceFacet;
 use WebxUi\Catalog\Filter\FilterSerializer;
 use WebxUi\Catalog\Filter\FilterUrls;
 use WebxUi\Catalog\Filter\SegmentSerializer;
+use WebxUi\Catalog\Gallery\Gallery;
+use WebxUi\Catalog\Gallery\Video\VideoProviders;
+use WebxUi\Catalog\Gallery\Video\YouTubeProvider;
 use WebxUi\Catalog\Http\Controllers\StorefrontController;
 use WebxUi\Catalog\Links\CategoryLinkSource;
 use WebxUi\Catalog\Links\ProductLinkSource;
@@ -79,7 +83,8 @@ use WebxUi\Seo\Sitemap\SitemapSources;
  * storefront, and the registries its satellites plug into (§7). Most of what it does is
  * registrations — in its own registries and in somebody else's: two kinds of address, the answers
  * to addresses nobody holds any more, two screens, two field types, two kinds of journal entry,
- * two SEO sources, a file of the sitemap, a doctor's check and a section of the panel.
+ * two SEO sources, a file of the sitemap, a doctor's check, a purpose of chunked uploads and a
+ * section of the panel.
  */
 class CatalogServiceProvider extends ServiceProvider
 {
@@ -99,6 +104,7 @@ class CatalogServiceProvider extends ServiceProvider
         $this->app->singleton(CatalogEngines::class);
         $this->app->singleton(StorefrontParts::class);
         $this->app->singleton(FilterUrls::class);
+        $this->app->singleton(VideoProviders::class);
 
         $this->app->singleton(Catalog::class);
         $this->app->singleton(CategoryFacets::class);
@@ -121,6 +127,7 @@ class CatalogServiceProvider extends ServiceProvider
         $this->registerEngine();
         $this->registerStorefront();
         $this->registerBulk();
+        $this->registerVideo();
         $this->registerSources();
 
         if (! $this->app->runningInConsole()) {
@@ -210,6 +217,18 @@ class CatalogServiceProvider extends ServiceProvider
         if (! (bool) $this->config()->get('webx-catalog.fields.barcode', true)) {
             $patch[] = ['op' => 'remove', 'target' => 'barcode-col'];
         }
+
+        // What the gallery field needs to offer videos (§7 of the video spec): the flag, and the
+        // limits it checks a file against before sending a byte of it.
+        $patch[] = [
+            'op' => 'set',
+            'target' => 'gallery',
+            'props' => [
+                'video' => (bool) $this->config()->get('webx-catalog.fields.video', true),
+                'videoTypes' => array_values(array_map('strval', (array) $this->config()->get('webx-catalog.videos.types', []))),
+                'videoMaxBytes' => max(1, (int) $this->config()->get('webx-catalog.videos.max_size_mb', 2048)) * 1048576,
+            ],
+        ];
 
         $screens->extend(Product::SCREEN, $patch);
 
@@ -383,6 +402,24 @@ class CatalogServiceProvider extends ServiceProvider
         $actions->register(new ExtraCategoryAction(false));
         $actions->register(new TrashAction(true));
         $actions->register(new TrashAction(false));
+    }
+
+    /**
+     * Videos in the gallery (the video spec): YouTube as the first provider, and the purpose a
+     * file is uploaded in pieces under. The limits are closures, read on every upload, so that a
+     * site or a test changes them by config. Switched off, the purpose stays: the endpoint that
+     * attaches refuses, and an upload started before the switch is swept by its TTL.
+     */
+    private function registerVideo(): void
+    {
+        $this->app->make(VideoProviders::class)->register(new YouTubeProvider);
+
+        $this->app->make(UploadPurposes::class)->register(
+            Gallery::UPLOAD_PURPOSE,
+            permission: 'catalog.manage',
+            types: fn (): array => array_values(array_map('strval', (array) $this->config()->get('webx-catalog.videos.types', ['video/mp4', 'video/webm']))),
+            maxBytes: fn (): int => max(1, (int) $this->config()->get('webx-catalog.videos.max_size_mb', 2048)) * 1048576,
+        );
     }
 
     /**
