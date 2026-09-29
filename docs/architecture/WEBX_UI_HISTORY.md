@@ -74,7 +74,8 @@ null. Внешнего ключа на администратора нет (бы
   исключении — `failed` с текстом (и исключение летит дальше); сам прогон не откатывается —
   импорт, упавший на середине, сделал половину.
 - **Источник и автор** — из `HistoryContext` (scoped): middleware `webx.history` (каркас
-  дописывает его в конец `webx-admin.api_middleware` на `booting`, после `cms.auth`) ставит
+  дописывает его в конец `webx-admin.api_middleware` на `booting`, после `cms.auth`; API разделов
+  стоит за группой `webx.panel` — `web`, `webx.panel-locale`, `cms.auth`, `webx.history`) ставит
   `panel` и администратора; `RegistryTool` в `webx-ui/mcp` на время обработчика ставит `mcp`,
   администратора и `grant_id`; без двери — `console` в консоли и `api` в HTTP (с пользователем
   гарда по умолчанию). Свой API сайта ставит на маршруты `webx.history:api`. Модули их не

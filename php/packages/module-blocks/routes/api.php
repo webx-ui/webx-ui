@@ -13,7 +13,7 @@ use WebxUi\Blocks\Http\Controllers\ReorderController;
 use WebxUi\Blocks\Http\Controllers\UsageController;
 
 Route::prefix((string) config('webx-admin.api_path').'/blocks')
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.blocks.')
     ->group(function (): void {
         // What the constructor and the picker read, and what draws one block into the preview —
@@ -55,7 +55,7 @@ Route::prefix((string) config('webx-admin.api_path').'/blocks')
 // `blocks.regions` — not behind `blocks.manage` and not behind `webx-blocks.editing`, which is
 // about writing Blade. Addressed by the name the layout's tag uses.
 Route::prefix((string) config('webx-admin.api_path').'/regions')
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth', 'cms.can:blocks.regions'])
+    ->middleware(['webx.panel', 'cms.can:blocks.regions'])
     ->name('webx.blocks.regions.')
     ->group(function (): void {
         $name = '[a-z][a-z0-9-]*';

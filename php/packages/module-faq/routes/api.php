@@ -10,7 +10,7 @@ use WebxUi\Faq\Models\FaqCategory;
 use WebxUi\Faq\Models\Question;
 
 Route::prefix((string) config('webx-admin.api_path'))
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.faq.panel.')
     ->group(function (): void {
         /*

@@ -14,7 +14,7 @@ use WebxUi\Recipes\Models\RecipeCategory;
 use WebxUi\Recipes\Models\RecipeNutrient;
 
 Route::prefix((string) config('webx-admin.api_path'))
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.recipes.panel.')
     ->group(function (): void {
         /*
