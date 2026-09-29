@@ -1,3 +1,5 @@
+import { afterEach, vi } from 'vitest'
+
 /**
  * jsdom implements the DOM but not layout, so anything that measures geometry
  * returns nothing useful — and ProseMirror measures the caret whenever it scrolls
@@ -30,3 +32,22 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
     disconnect() {}
   } as unknown as typeof ResizeObserver
 }
+
+/*
+ * A modal opened from code (`openModal`, `confirm`) takes its host away on its own timer, a
+ * moment after it closes. A test that answers a confirm and ends at once leaves that timer
+ * behind; when it fires after the file's jsdom is gone, Vue unmounts the dialog's teleport
+ * into nothing — "Cannot read properties of null (reading 'nextSibling')" — and fails the job
+ * with every test green. Registered here, this hook runs after every file's own after-hooks.
+ * Under fake timers the test owns the clock, and a host that never goes is one still open —
+ * it has no timer to outlive anything, so the wait gives up on it.
+ */
+afterEach(async () => {
+  if (typeof document === 'undefined' || vi.isFakeTimers()) return
+
+  const deadline = Date.now() + 1000
+
+  while (document.querySelector('.wx-modal-host') && Date.now() < deadline) {
+    await new Promise((settle) => setTimeout(settle, 10))
+  }
+})
