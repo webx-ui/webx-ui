@@ -1,5 +1,12 @@
 # @webx-ui/module-tariffs
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [2ba4290]
+  - @webx-ui/module-admin@0.20.0
+
 ## 0.1.2
 
 ### Patch Changes
