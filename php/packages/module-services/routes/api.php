@@ -13,7 +13,7 @@ use WebxUi\Services\Models\Service;
 use WebxUi\Services\Models\ServiceCategory;
 
 Route::prefix((string) config('webx-admin.api_path'))
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.services.panel.')
     ->group(function (): void {
         /*

@@ -7,7 +7,7 @@ use WebxUi\Press\Http\Controllers\OutletController;
 use WebxUi\Press\Http\Controllers\OutletRestoreController;
 
 Route::prefix((string) config('webx-admin.api_path'))
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.press.panel.')
     ->group(function (): void {
         Route::middleware('cms.can:press.view,press.manage')->group(function (): void {

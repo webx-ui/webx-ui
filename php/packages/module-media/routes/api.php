@@ -10,9 +10,9 @@ use WebxUi\Media\Http\Controllers\SourceController;
 use WebxUi\Media\Http\Controllers\ThumbController;
 
 Route::prefix((string) config('webx-admin.api_path').'/media')
-    // `web` for the session the panel signs in with, the locale middleware so an error is worded
-    // in the language the browser is reading, and `cms.auth` because a library is not public.
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    // The panel's group: the session it signs in with, errors worded in the browser's language,
+    // `cms.auth` because a library is not public, and the journal told who is saving.
+    ->middleware('webx.panel')
     ->name('webx.media.')
     ->group(function (): void {
         Route::middleware('cms.can:media.view,media.manage')->group(function (): void {

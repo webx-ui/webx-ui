@@ -13,7 +13,7 @@ use WebxUi\Vacancies\Http\Controllers\VacancyVersionController;
 use WebxUi\Vacancies\Models\VacancyCategory;
 
 Route::prefix((string) config('webx-admin.api_path'))
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.vacancies.panel.')
     ->group(function (): void {
         // The categories first: `vacancies/categories` is a word where `vacancies/{vacancy}`

@@ -10,7 +10,7 @@ use WebxUi\Tariffs\Models\Tariff;
 use WebxUi\Tariffs\Models\TariffCategory;
 
 Route::prefix((string) config('webx-admin.api_path'))
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.tariffs.panel.')
     ->group(function (): void {
         /*

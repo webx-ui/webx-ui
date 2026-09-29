@@ -11,7 +11,7 @@ use WebxUi\Pages\Http\Controllers\PageRestoreController;
 use WebxUi\Pages\Http\Controllers\PageVersionController;
 
 Route::prefix((string) config('webx-admin.api_path').'/pages')
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.pages.')
     ->group(function (): void {
         Route::middleware('cms.can:pages.view,pages.manage')->group(function (): void {

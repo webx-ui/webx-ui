@@ -28,7 +28,7 @@ use WebxUi\Inbox\Http\Controllers\SubmissionMassController;
  * visitor's attachment has never been served any other way.
  */
 Route::prefix((string) config('webx-admin.api_path').'/inbox')
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.inbox.')
     ->group(function (): void {
         Route::middleware('cms.can:inbox.view,inbox.manage')->group(function (): void {

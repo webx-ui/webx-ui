@@ -10,7 +10,7 @@ use WebxUi\Reviews\Models\Review;
 use WebxUi\Reviews\Models\ReviewCategory;
 
 Route::prefix((string) config('webx-admin.api_path'))
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.reviews.panel.')
     ->group(function (): void {
         /*
