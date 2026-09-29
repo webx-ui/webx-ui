@@ -16,4 +16,8 @@ return [
     'image-unreachable' => 'The address did not answer with a file.',
     'image-not-a-picture' => 'The address answered with something that is not a JPEG, PNG, WebP or GIF picture.',
     'image-too-large' => 'The picture is larger than the limit.',
+    'video-off' => 'Videos are switched off on this site.',
+    'video-not-a-video' => 'This is not a video: an MP4 or WebM file, or a link to a video on YouTube.',
+    'video-too-large' => 'The video is larger than :max MB.',
+    'video-no-poster' => 'The cover of the video could not be fetched; check that the video exists and is public.',
 ];

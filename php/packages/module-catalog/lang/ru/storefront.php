@@ -8,6 +8,7 @@ return [
     'price-on-request' => 'Цена по запросу',
     'buy' => 'Купить',
     'ask-price' => 'Узнать цену',
+    'play-video' => 'Смотреть видео',
 
     'root' => 'Каталог',
     'search' => 'Поиск',
