@@ -14,6 +14,7 @@
             <directory>packages/module-auth/tests</directory>
             <directory>packages/module-blocks/tests</directory>
             <directory>packages/module-blog/tests</directory>
+            <directory>packages/module-catalog/tests</directory>
             <directory>packages/module-events/tests</directory>
             <directory>packages/module-faq/tests</directory>
             <directory>packages/module-inbox/tests</directory>
@@ -42,6 +43,7 @@
             <directory>packages/module-auth/src</directory>
             <directory>packages/module-blocks/src</directory>
             <directory>packages/module-blog/src</directory>
+            <directory>packages/module-catalog/src</directory>
             <directory>packages/module-events/src</directory>
             <directory>packages/module-faq/src</directory>
             <directory>packages/module-inbox/src</directory>
