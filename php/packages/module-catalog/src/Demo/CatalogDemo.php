@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Catalog\Demo;
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 use ReflectionClass;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Catalog\Gallery\Gallery;
@@ -13,6 +14,8 @@ use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Models\ProductImage;
 use WebxUi\Localization\Locales;
 use WebxUi\Media\MediaServiceProvider;
+use WebxUi\Routing\Models\Route;
+use WebxUi\Routing\Reserved;
 
 /**
  * A shop to look at (§15): fifteen categories three levels deep, a hundred and fifty products with
@@ -117,6 +120,7 @@ final class CatalogDemo
     {
         $category = new Category([
             'name' => [$locale => $name],
+            'slug' => [$locale => $this->freeSlug(Str::slug($name, '-', $locale), $locale)],
             'description' => [$locale => '<p>'.$name.' of the demo shop: made up, to show how a category looks.</p>'],
             'is_published' => true,
         ]);
@@ -125,6 +129,19 @@ final class CatalogDemo
         $ledger->created($category, 'Category '.$name);
 
         return $category->refresh();
+    }
+
+    /**
+     * A category's slug is filled from its name by the panel's form, not by the model, so the demo
+     * names one itself — without it a category has no address. Slugs are flat and shared with
+     * pages, so "home" or "men" may already be somebody's on the site.
+     */
+    private function freeSlug(string $slug, string $locale): string
+    {
+        $taken = static fn (string $path): bool => app(Reserved::class)->taken($path)
+            || Route::query()->where('locale', $locale)->where('path', $path)->exists();
+
+        return $taken($slug) ? $slug.'-shop' : $slug;
     }
 
     private function product(int $i, ?string $shelf, ?Category $main, ?Category $extra, string $locale, DemoLedger $ledger, ?string $name = null): Product
