@@ -33,6 +33,7 @@
 | [WEBX_UI_MODULE_BLOCKS.md](WEBX_UI_MODULE_BLOCKS.md)       | Конструктор блоков: схема, Blade, CSS, скрипт                        | выпущен 16.09.2026, v0.16.0               |
 | [WEBX_UI_MODULE_BLOG.md](WEBX_UI_MODULE_BLOG.md)           | Статьи из блоков, рубрики, теги, дата публикации                     | выпущен 19.09.2026, v0.23.0               |
 | [WEBX_UI_MODULE_CATALOG.md](WEBX_UI_MODULE_CATALOG.md)     | Ядро каталога: товары, категории, движок, витрина, массовые действия | код готов 29.09.2026 (K1–K4), выпуск — K5 |
+| [WEBX_UI_CATALOG_VIDEO.md](WEBX_UI_CATALOG_VIDEO.md)       | Видео в галерее товара: свой файл или YouTube, постер — картинка     | спека 29.09.2026, кода нет                |
 | [WEBX_UI_MODULE_EVENTS.md](WEBX_UI_MODULE_EVENTS.md)       | События: дата, место, цена, `.ics`, разметка `Event`                 | выпущен 25.09.2026, v0.43.0               |
 | [WEBX_UI_MODULE_FAQ.md](WEBX_UI_MODULE_FAQ.md)             | Вопросы и ответы, вставка блоком, `FAQPage`                          | выпущен 24.09.2026, v0.37.0               |
 | [WEBX_UI_MODULE_INBOX.md](WEBX_UI_MODULE_INBOX.md)         | Формы сайта и заявки с них, мини-CRM                                 | выпущен, v0.22.0                          |
