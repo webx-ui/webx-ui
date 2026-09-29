@@ -15,6 +15,7 @@ use WebxUi\Catalog\Demo\CatalogDemo;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Models\ProductImage;
+use WebxUi\Routing\Models\Route;
 
 /**
  * The demo shop (§15) and what the rest of the panel reaches the catalogue by (§14): `products()`,
@@ -33,6 +34,7 @@ final class DemoAndSourcesTest extends TestCase
 
         $this->assertSame(15, Category::query()->count());
         $this->assertSame(3, (int) Category::query()->max('depth') + 1, 'Three levels.');
+        $this->assertSame(15, Route::query()->where('entity_type', (new Category)->getMorphClass())->count(), 'Every category has an address.');
         $this->assertGreaterThanOrEqual(150, Product::withTrashed()->count());
         $this->assertGreaterThan(0, Product::query()->where('is_published', false)->whereNotNull('category_id')->count());
         $this->assertGreaterThan(0, Product::onlyTrashed()->count());
