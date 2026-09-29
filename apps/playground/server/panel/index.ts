@@ -241,6 +241,7 @@ import {
 } from './vacancies'
 import { screen, screenNames } from './screens'
 import { historyOf, historyRun } from './history'
+import { catalogBytes, catalogHistory, catalogUpload, registerCatalog } from './catalog'
 import {
   PREFIX as SERVICES_PREFIX,
   categoryIds as serviceCategoryIds,
@@ -428,6 +429,13 @@ on('GET', '/manifest', ({ locale }) => ({
         icon: 'heart',
         order: 700,
       },
+      /* The group the catalogue's satellites join (§1 of the catalogue spec). */
+      {
+        id: 'catalog',
+        title: line(locale, 'webx-catalog', 'module.group'),
+        icon: 'cart',
+        order: 300,
+      },
       {
         id: 'events',
         title: line(locale, 'webx-events', 'module.group'),
@@ -542,6 +550,16 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 600,
         group: 'reviews',
         permissions: ['reviews.view', 'reviews.manage'],
+        meta: {},
+      },
+      /* One section for products, their tree and «Deleted»: the server registers one module. */
+      {
+        id: 'catalog',
+        title: line(locale, 'webx-catalog', 'module.title'),
+        icon: 'cart',
+        order: 300,
+        group: 'catalog',
+        permissions: ['catalog.view', 'catalog.manage', 'catalog.delete'],
         meta: {},
       },
       /* Not a module of any package: a fake record with a made-up past, where the journal's node
@@ -1879,12 +1897,22 @@ on('GET', '/history/runs/(\\d+)', ({ params, query }) => {
 })
 
 on('GET', '/history/([\\w.-]+)/(\\d+)', ({ params, query }) => {
-  const found = historyOf(params[0]!, Number(params[1]), Number(query.get('page') ?? '1'))
+  const page = Number(query.get('page') ?? '1')
+  const found =
+    historyOf(params[0]!, Number(params[1]), page) ??
+    catalogHistory(params[0]!, Number(params[1]), page)
 
   if (found === null) throw new HttpFailure(404, 'That kind of record keeps no history.')
 
   return found
 })
+
+/* The catalogue (WEBX_UI_MODULE_CATALOG.md §11.2): its own file, as its fixtures are. */
+registerCatalog(
+  on,
+  (status, message, errors, extra) => new HttpFailure(status, message, undefined, errors, extra),
+  line,
+)
 
 on('GET', '/entities/([\\w-]+)/(\\d+)/notes', ({ params }) => ({
   data: notes.get(`${params[0]}:${params[1]}`) ?? [],
@@ -5751,6 +5779,36 @@ export function panelServer(): Plugin {
           return
         }
 
+        /* A product's pictures: an upload's own bytes, or a tile drawn for the fixtures. */
+        if (url.pathname.startsWith('/fixtures/catalog/')) {
+          const found = catalogBytes(decodeURIComponent(url.pathname.slice('/fixtures/'.length)))
+
+          if (found === null) {
+            response.statusCode = 404
+            response.end('No such file.')
+
+            return
+          }
+
+          response.setHeader('Content-Type', found.mime)
+          response.setHeader('Cache-Control', 'no-store')
+          response.end(found.bytes)
+
+          return
+        }
+
+        const picture = url.pathname.match(/^\/api\/cms\/catalog\/products\/(\d+)\/images$/)
+
+        if (
+          picture !== null &&
+          request.method === 'POST' &&
+          (request.headers['content-type'] ?? '').startsWith('multipart/')
+        ) {
+          void uploadPicture(request, response, Number(picture[1]))
+
+          return
+        }
+
         /* An upload is the one request that is not JSON, so it never reaches the router. */
         if (url.pathname === '/api/cms/media/files' && request.method === 'POST') {
           void upload(request, response)
@@ -5858,6 +5916,44 @@ async function upload(request: IncomingMessage, response: ServerResponse): Promi
 
   response.statusCode = 201
   response.end(JSON.stringify({ data: files }))
+}
+
+/** A product's picture: one file, answered as the gallery's image (§11.2). */
+async function uploadPicture(
+  request: IncomingMessage,
+  response: ServerResponse,
+  product: number,
+): Promise<void> {
+  const type = request.headers['content-type'] ?? ''
+  const boundary = /boundary=(?:"([^"]+)"|([^;]+))/.exec(type)
+  const parts =
+    boundary === null ? [] : split(await raw(request), `--${boundary[1] ?? boundary[2]}`)
+  const file = parts.find((part) => part.fileName !== null)
+
+  response.setHeader('Content-Type', 'application/json; charset=utf-8')
+
+  await wait(DELAY)
+
+  try {
+    const image = catalogUpload(
+      product,
+      file ? { fileName: file.fileName!, mime: file.mime, bytes: file.bytes } : undefined,
+      (status, message, errors) => new HttpFailure(status, message, undefined, errors),
+    )
+
+    response.statusCode = 201
+    response.end(JSON.stringify({ data: image }))
+  } catch (error) {
+    const failure = error instanceof HttpFailure ? error : null
+
+    response.statusCode = failure?.status ?? 500
+    response.end(
+      JSON.stringify({
+        message: error instanceof Error ? error.message : String(error),
+        errors: failure?.errors ?? {},
+      }),
+    )
+  }
 }
 
 interface Part {

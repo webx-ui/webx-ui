@@ -77,6 +77,7 @@ export default defineConfig({
       pkg('module-banners'),
       pkg('module-blocks'),
       pkg('module-blog'),
+      pkg('module-catalog'),
       pkg('module-events'),
       pkg('module-faq'),
       pkg('module-inbox'),

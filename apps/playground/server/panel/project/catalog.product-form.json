@@ -1,0 +1,19 @@
+[
+  {
+    "op": "set",
+    "target": "unit",
+    "props": {
+      "options": [
+        { "label": "trans::webx-catalog::units.pcs", "value": "pcs" },
+        { "label": "trans::webx-catalog::units.kg", "value": "kg" },
+        { "label": "trans::webx-catalog::units.g", "value": "g" },
+        { "label": "trans::webx-catalog::units.m", "value": "m" },
+        { "label": "trans::webx-catalog::units.m2", "value": "m2" },
+        { "label": "trans::webx-catalog::units.m3", "value": "m3" },
+        { "label": "trans::webx-catalog::units.l", "value": "l" },
+        { "label": "trans::webx-catalog::units.pack", "value": "pack" },
+        { "label": "trans::webx-catalog::units.set", "value": "set" }
+      ]
+    }
+  }
+]
