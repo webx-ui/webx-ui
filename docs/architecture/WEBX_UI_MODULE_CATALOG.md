@@ -524,16 +524,157 @@ Manticore — свои спеки, по порядку §10 архитектур
 
 ## 19. Выпуск
 
-Сессиями, каждая — свой PR с changeset:
+Пять сессий, каждая — свой PR с changeset (кроме K5). До них — сессия H1 журнала
+([`WEBX_UI_HISTORY.md`](WEBX_UI_HISTORY.md) §9): K1 пишет журнал через неё.
 
-0. **Журнал в `module-admin`** — [`WEBX_UI_HISTORY.md`](WEBX_UI_HISTORY.md), выпускается
-   раньше ядра.
-1. **php, данные:** миграции, модели, состояния, `routing`, soft delete, артикул, `Thumbnails` от
-   `(disk, path)`, API товаров и категорий, журнал.
-2. **php, каталог:** реестры §7, `SqlEngine`, очередь, `FilterUrls`, шаблоны витрины, SEO, карта
-   сайта, популярность.
-3. **npm:** экраны §11.1, галерея, вкладка «Фильтры», «Удалённые».
-4. **Массовые действия, MCP, демо, регистрации**, затем обычный путь: релиз → `webx-cms.local` →
-   хомлаб.
+| Сессия | Что                                                        | После       | Параллельно |
+| ------ | ---------------------------------------------------------- | ----------- | ----------- |
+| K1     | php, данные: схема, модели, состояния, адреса, API, журнал | H1 в `main` | —           |
+| K2     | php, каталог: реестры, `SqlEngine`, фильтр, витрина        | K1 в `main` | K3          |
+| K3     | npm: экраны панели, галерея, «Фильтры», «Удалённые»        | K1 в `main` | K2          |
+| K4     | массовые действия, MCP, демо, регистрации, плейграунд      | K2 и K3     | —           |
+| K5     | релиз и оба демо-сайта                                     | K4 в `main` | —           |
 
-Дальше — `module-catalog-properties` (§10 архитектуры, п. 4).
+Промпты ниже самодостаточны. Каждая сессия в конце дописывает сюда «Итог Kn» — что следующей
+надо знать сверх промпта: расхождения со спекой, решения, принятые по ходу, ловушки. Расхождение
+со спекой правится в самой спеке тем же коммитом, а не только в итоге.
+
+### K1 — php, данные
+
+```
+Сессия K1 из §19 docs/architecture/WEBX_UI_MODULE_CATALOG.md: composer-пакет
+webx-ui/module-catalog, слой данных. Журнал изменений (WEBX_UI_HISTORY.md) уже в main.
+
+Начало: git fetch claude; git worktree add ../webx-ui-catalog-k1 -b feat/catalog-data
+claude/main. PR открыть в конце, в очередь не ставить.
+
+Прочитать: WEBX_UI_CATALOG.md (решения 1–26, §4 контракты, §11 анатомия спутника) и эту спеку
+целиком; docs/pitfalls/laravel-and-php.md. Образцы: php/packages/module-pages — дерево на
+nested-set, строки routing, обработчик сущности с хвостом и без; module-admin/src/Categories —
+soft delete, восстановление и 422 «не пусто» (IsCategory сам не брать, §3); module-services —
+HasSeo, HasTranslations, экраны с патчами; localization — переводимые поля;
+module-media/src/Images/Thumbnails.php — превью.
+
+Сделать: composer.json (namespace WebxUi\Catalog, extra.webx пока без npm), провайдер, конфиг
+webx-catalog.php §13, миграции §3 целиком (служебные таблицы тоже — K2 их только заполняет),
+модели Product, Category, ProductImage; состояния и видимость §5 (снятый — урезанный шаблон,
+удалённый — 301/410); адреса §4 — типы routing catalog.category и catalog.product, 301 на
+каноническое написание товара, 422 на занятый слаг категории; категории §6.1 и §6.3 (дерево,
+перенос, снятие прячет поддерево, удаление только пустой); артикул с учётом удалённых и 422 с
+meta.taken_by; галерея §10.4 и метод Thumbnails от (disk, path) в module-media со старым как
+обёрткой; API §11.2 без bulk и facets — ровно по формам; права §11.5; журнал через
+History::record/RecordsHistory для товара и категории; ProductParts §7.4 — реестр и вызов в
+транзакции сохранения (частей пока нет, тест — на фейковой части). Шаблоны витрины — только
+product и product-unavailable, минимальные: остальное K2. Тесты §16, относящиеся к данным
+(адрес, категория, артикул, сохранение формы). Регистрация в php/ четыре раза (CLAUDE.md §4),
+changeset minor на @webx-ui/php. Гейт php на 8.4.
+
+Если форма ответа API разошлась со спекой — поправить §11.2 тем же коммитом и сказать крупно в
+итоге: K3 пишет мок по ней. В конце — «Итог K1» в §19, коммит по именам файлов, пуш в claude,
+PR.
+```
+
+### K2 — php, каталог
+
+```
+Сессия K2 из §19 docs/architecture/WEBX_UI_MODULE_CATALOG.md: реестры, движок и витрина
+module-catalog. K1 в main; параллельно идёт K3 (npm) в своём worktree — packages/module-catalog
+не трогать.
+
+Начало: git fetch claude; git worktree add ../webx-ui-catalog-k2 -b feat/catalog-engine
+claude/main. PR открыть в конце.
+
+Прочитать: WEBX_UI_CATALOG.md §4, §5, §8.1–8.5; эту спеку §7–§10 и «Итог K1»;
+docs/pitfalls/laravel-and-php.md. Образцы: module-blog — лента с пагинацией и SEO списка;
+module-team — RecordQuery; module-seo — HasSeo, шаблоны meta, карта сайта; module-blocks —
+@webxPart и переопределение шаблонов сайтом.
+
+Сделать: реестры §7 — Facets (фасеты ядра category и price), Sorts, DocumentContributor,
+ProductColumns, Purchasability, FilterUrls с переписчиками (prepare один раз на рендер),
+PopularitySignals; CatalogQuery/CatalogResult и SqlEngine §8.1–8.2; очередь §8.3
+(Catalog::touch, touchQuery, webx:catalog:index — при SqlEngine ничего не пишется); порог
+sql_engine_limit в webx:doctor; популярность §9 (flush-views, ночной пересчёт, PopularityFormula);
+разрешение фасетов категории §6.2 с наследованием и кешем; GET /api/cms/catalog/facets и
+фильтрация списка панели движком; витрина §10 — все шаблоны и точки @webxPart, фильтр ссылками,
+SEO и разметка, карта сайта пачками; корень /catalog/ за конфигом; поиск. Тесты §16 по движку,
+фасетам, FilterUrls, очереди, популярности, выключенной цене и штрихкоду. Changeset minor на
+@webx-ui/php. Гейт php на 8.4.
+
+Проверить витрину глазами: webx-cms.local, слинкованный с монорепой (docs/pitfalls/
+packages-and-demo-sites.md), фильтр без JS, 301 на одно написание, noindex на комбинациях.
+В конце — «Итог K2», коммит по именам файлов, пуш в claude, PR.
+```
+
+### K3 — npm, экраны панели
+
+```
+Сессия K3 из §19 docs/architecture/WEBX_UI_MODULE_CATALOG.md: npm-пакет
+@webx-ui/module-catalog. K1 в main; параллельно идёт K2 (php) — php/ не трогать.
+
+Начало: git fetch claude; git worktree add ../webx-ui-catalog-k3 -b feat/catalog-panel
+claude/main. Из worktree pnpm не запускать и preview_start по имени не звать — бинарники
+напрямую (CLAUDE.md §4). PR открыть в конце.
+
+Прочитать: эту спеку §11 и «Итог K1»; WEBX_UI_SCREENS.md; docs/pitfalls/vue-and-tests.md и
+layout-and-browser.md. Образцы: packages/module-pages — экран дерева с перетаскиванием;
+module-services — форма-описание с вкладками, патчи, SEO-вкладка; module-admin — узел history
+(H1), корзина категорий; module-media — загрузка файлов.
+
+Сделать: экраны §11.1 — catalog.products (поиск, фильтры из /facets, колонки, выбор строк под
+будущие массовые действия, бейдж «категория не задана»), catalog.product-form (вкладки, галерея
+с порядком и alt/title по языкам, «Открыть на сайте»), catalog.categories (дерево со счётчиками,
+перетаскивание, публикация), catalog.category-form (вкладка «Фильтры» §6.2 — «своя настройка»,
+откуда унаследовано, видимость и порядок), catalog.deleted (две вкладки, поиск,
+«Восстановить»); 422 с taken_by — ссылка в форме; слова; мок API плейграунда по §11.2 — до K4
+только то, что нужно экранам. Тесты компонентов; вёрстку — в браузере на /panel/ плейграунда, в
+тёмной теме и на узкой панели. Changeset minor на @webx-ui/module-catalog.
+
+Первая версия нового npm-пакета публикуется человеком (docs/pitfalls/release-and-ci.md) —
+сказать об этом в итоге. В конце — «Итог K3», коммит по именам файлов, пуш в claude, PR.
+```
+
+### K4 — массовые действия, MCP, демо
+
+```
+Сессия K4 из §19 docs/architecture/WEBX_UI_MODULE_CATALOG.md: завершение module-catalog.
+K1–K3 в main.
+
+Начало: git fetch claude; git worktree add ../webx-ui-catalog-k4 -b feat/catalog-finish
+claude/main. PR открыть в конце.
+
+Прочитать: эту спеку §11.4, §12, §14, §15 и итоги K1–K3; WEBX_UI_MCP_ACCESS.md §6 (право
+инструмента); docs/pitfalls/packages-and-demo-sites.md. Образцы: module-pages/src/Mcp и
+module-blog — инструменты и ресурсы; module-admin/src/Demo — ProvidesDemo и DemoLedger.
+
+Сделать: массовые действия §11.4 — catalog_bulk_runs, выбор id или запросом (id фиксируются в
+момент запуска), очередь пачками, синхронно до sync_limit, запись прогона в журнал, реестр
+действий для спутников, экран прогресса в catalog.products; MCP §12 — инструменты с правами из
+таблицы §12.1 (удаление — permission catalog.delete явно), ресурсы §12.2 включая части формы из
+ProductParts::describe(); демо §15; регистрации §14 все (Setup\Catalogue, extra.webx.npm и
+panel, apps/playground/src/panel/main.ts и фикстуры сервера, LinkSource, CollectionSource,
+RecordQuery) и строка в scripts/packages.mjs сайта webx-cms.local отдельным коммитом там.
+Оставшиеся тесты §16 (массовые, MCP-права). Changeset на оба пакета. Полный гейт CLAUDE.md §5 и
+php-гейт.
+
+Обновить реестр WEBX_UI_COMPOSER_PACKAGES.md и docs/architecture/README.md. В конце —
+«Итог K4», коммит по именам файлов, пуш в claude, PR.
+```
+
+### K5 — релиз и демо-сайты
+
+```
+Сессия K5 из §19 docs/architecture/WEBX_UI_MODULE_CATALOG.md: выпуск module-catalog. K4 в main.
+
+Прочитать: docs/pitfalls/release-and-ci.md, WEBX_UI_PHP_RELEASE.md, CLAUDE.md §5 «Релиз» и
+«После релиза».
+
+Сделать: смержить «chore: version packages»; первую версию @webx-ui/module-catalog публикует
+человек — подготовить ему шаги и дождаться; проверить npm view и composer show, а не веру.
+Демо: webx-cms.local — scripts/link-panel.sh, composer update "webx-ui/*", webx:setup
+предлагает каталог, webx:demo его наполняет; хомлаб — режим registry, composer update, коммит и
+пуш в Gitea. Пройти глазами на обоих: категория с фильтром, товар, снятый и удалённый товар,
+панель — список, форма, дерево, «Удалённые», массовое действие, история.
+
+В спеке: §19 сжать до «Выпуска» (что вышло, в какой версии, итоги одной строкой), статус в шапке
+и в README — «выпущен», CLAUDE.md §2 и §6 — каталог дальше со спутников. Docs-PR.
+```
