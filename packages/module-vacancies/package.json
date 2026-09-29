@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-vacancies",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Vacancies for the WebX UI admin panel: who the organisation is looking for — where and how, the terms and the pay, the duties, the requirements and what is offered — in flat categories, closed by hand or by date, with a response form from the inbox.",
   "license": "MIT",
   "type": "module",
