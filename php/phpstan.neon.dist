@@ -16,6 +16,8 @@ parameters:
         - packages/module-blocks/tests
         - packages/module-blog/src
         - packages/module-blog/tests
+        - packages/module-catalog/src
+        - packages/module-catalog/tests
         - packages/module-events/src
         - packages/module-events/tests
         - packages/module-faq/src

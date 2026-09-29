@@ -44,6 +44,7 @@ class Resolver
         private readonly Locales $locales,
         private readonly Config $config,
         private readonly Container $container,
+        private readonly Misses $misses,
     ) {}
 
     public function resolve(Request $request): Response
@@ -66,7 +67,9 @@ class Resolver
         $resolution = $this->match($locale, $path);
 
         if ($resolution === null) {
-            throw new NotFoundHttpException;
+            // Nothing holds the address. The module that owned something here may still know
+            // what it was: a product under another spelling, a deleted one that is gone for good.
+            return $this->misses->answer($request, $locale, $path) ?? throw new NotFoundHttpException;
         }
 
         if ($resolution->route->isAlias()) {

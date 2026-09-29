@@ -126,21 +126,25 @@ SEO — `HasSeo` из `module-seo` (своя таблица), как у всех
 | корень каталога | `/{catalog.root}/`          | только если включён; хвост фильтра тоже принимает           |
 | поиск           | `/{catalog.root}/search?q=` | маршрут Laravel, не реестр; всегда `noindex`                |
 
-- Слаг товара уникальным быть не обязан: `-{id}` делает адрес уникальным. Обработчик товара
-  сверяет написание и отвечает 301 на каноническое — в том числе после смены слага, без алиаса
-  на каждое переименование.
+- Слаг товара уникальным быть не обязан: `-{id}` делает адрес уникальным. Пустой слаг берётся из
+  названия. Любое другое написание — 301 на каноническое, в том числе после смены слага. Сделано
+  не в обработчике (до него доходит только точное совпадение из реестра), а в `CatalogMisses` —
+  обработчике промахов `routing` (`Misses`, §8 `WEBX_UI_ROUTING.md`): реестр ничего не нашёл →
+  спрашивают модули. Совпадение со страницей `name-12` — редкость, тип товара на нём берёт суффикс
+  (`OnConflict::Suffix`), а не 422: импорт не должен вставать.
 - Слаг категории проверяет `routing` при сохранении — занятый адрес страницы или другой
-  категории даёт 422 с тем, кто его держит.
+  категории даёт 422 с тем, кто его держит. `_` в слаге категории — 422 формы (им отмечен фильтр).
+  Пустой слаг берётся из названия.
 - Хвост категории разбирает сериализатор фильтра (§7.7): сегмент с `_` — фильтр, остальное — 404.
 - Языковая приставка — как у всех сущностей, решает `routing`.
 
 ## 5. Состояния товара
 
-| Состояние     | Каталог, поиск, фасеты | Прямая ссылка                                | Купить              |
-| ------------- | ---------------------- | -------------------------------------------- | ------------------- |
-| опубликован\* | да                     | полная страница                              | по `Purchasability` |
-| снят          | нет                    | урезанная страница, 200, `noindex`           | нет                 |
-| удалён        | нет                    | 301 на основную категорию; нет видимой — 410 | нет                 |
+| Состояние     | Каталог, поиск, фасеты | Прямая ссылка                                                                                      | Купить              |
+| ------------- | ---------------------- | -------------------------------------------------------------------------------------------------- | ------------------- |
+| опубликован\* | да                     | полная страница                                                                                    | по `Purchasability` |
+| снят          | нет                    | урезанная страница, 200, `noindex`                                                                 | нет                 |
+| удалён        | нет                    | 301 на основную категорию, если она видна, иначе на первую видимую дополнительную; нет такой — 410 | нет                 |
 
 \* И виден: хотя бы одна его категория опубликована вместе со всеми предками (§6.3). Опубликованный,
 но невидимый товар ведёт себя как снятый.
@@ -214,9 +218,12 @@ commerce.
 
 ### 7.4. `ProductParts` и `ProductColumns`
 
-- `ProductParts` — §11 архитектуры: `key()`, `describe(): PartSchema` (поля для ресурса MCP, §12.2), `rules()`, `read(Collection $products)`, `write(Product,
-array $input): array $changes`. Возвращённые изменения идут в журнал одной записью вместе с
-  изменениями ядра.
+- `ProductParts` — §11 архитектуры: реестр `ProductPart` с `key()` (`[a-z0-9-]`, он же приставка
+  полей на экране), `describe(): PartSchema` (поля для ресурса MCP, §12.2: `PartField` — имя, тип,
+  подпись, правила, допустимые значения или ссылка на инструмент), `rules()` (ключи без
+  приставки), `read(Eloquent\Collection $products): array<id, array<поле, значение>>`,
+  `write(Product, array $input): list<{ field, from, to }>`. Возвращённые изменения идут в журнал
+  одной записью вместе с изменениями ядра; `rules()` всех частей проверяются до транзакции.
 - `ProductColumns` — колонка списка панели: ключ, подпись, `values(Collection $products)` пачкой,
   сортируемая ли (тогда через `Sorts`).
 
@@ -370,30 +377,64 @@ Blade в `resources/views/vendor/webx-catalog/…` у сайта переопр�
 ### 11.2. API панели
 
 ```
-GET    /api/cms/catalog/products              ?q&facets&sort&page&state=published|unpublished|no-category
-POST   /api/cms/catalog/products              → 201
-GET    /api/cms/catalog/products/{id}         → товар + read() всех частей
-PUT    /api/cms/catalog/products/{id}         одна транзакция: ядро + write() частей + журнал + touch
-DELETE /api/cms/catalog/products/{id}         soft
-POST   /api/cms/catalog/products/{id}/restore
-POST   /api/cms/catalog/products/{id}/images  multipart | { url }
-PUT    /api/cms/catalog/products/{id}/images  порядок, alt, title
-DELETE /api/cms/catalog/products/{id}/images/{image}
-GET    /api/cms/catalog/deleted               ?type=products|categories&q&page
-GET    /api/cms/catalog/categories            дерево со счётчиками
-POST   /api/cms/catalog/categories
-PUT    /api/cms/catalog/categories/{id}
-POST   /api/cms/catalog/categories/{id}/move  { parent_id, before_id }
-DELETE /api/cms/catalog/categories/{id}       422 с числами, если не пуста
-POST   /api/cms/catalog/categories/{id}/restore
+GET    /api/cms/catalog/products              ?q&facets&sort&page&per_page&state=published|unpublished|no-category
+POST   /api/cms/catalog/products              { values } → 201, как GET одного
+GET    /api/cms/catalog/products/{id}         → { data: { product, values, images } }
+PUT    /api/cms/catalog/products/{id}         { values } — одна транзакция: ядро + write() частей + журнал + touch
+DELETE /api/cms/catalog/products/{id}         soft → 204
+POST   /api/cms/catalog/products/{id}/restore → { data: product }
+POST   /api/cms/catalog/products/{id}/images  multipart file | { url } → 201 { data: image }
+PUT    /api/cms/catalog/products/{id}/images  { images: [{ id, alt?, title? }] } — вся галерея по порядку → { data: [image] }
+DELETE /api/cms/catalog/products/{id}/images/{image} → 204, файлы сразу
+GET    /api/cms/catalog/deleted               ?type=products|categories&q&page&per_page
+GET    /api/cms/catalog/categories            → { data: [узел дерева] }
+GET    /api/cms/catalog/categories/{id}       → { data: { category, values } }
+POST   /api/cms/catalog/categories            { values, parent_id? } → 201, как GET одной
+PUT    /api/cms/catalog/categories/{id}       { values }
+POST   /api/cms/catalog/categories/{id}/move  { parent_id, before_id } → { data: [узел дерева] } — всё дерево
+DELETE /api/cms/catalog/categories/{id}       204; не пуста — 422 с meta { products, children }
+POST   /api/cms/catalog/categories/{id}/restore → { data: category }
 GET    /api/cms/catalog/facets                реестр: ключ, код, вид, подпись
 POST   /api/cms/catalog/bulk                  { action, params, selection: { ids } | { query } } → run
 GET    /api/cms/catalog/bulk/{run}            прогресс
 ```
 
-Список — формат `->paginate()`. Фильтр и сортировка — белый список из реестров, произвольные
-колонки отклоняются (§9 архитектуры). Занятый артикул — 422 с `meta.taken_by: { id, name, url }`,
-форма показывает ссылку.
+Список — формат `->paginate()` как есть, и рядом `counts: { no_category }` (решение 3). Фильтр и
+сортировка — белый список, произвольные колонки отклоняются (§9 архитектуры); пока нет реестра
+`Sorts` — `sort=default|new|name|price_asc|price_desc`, по умолчанию `priority desc, created_at
+desc`. Занятый артикул — 422 с `errors.sku` и `meta.taken_by: { id, name, url, deleted }`, `url` —
+адрес товара в панели `/{webx-admin.path}/catalog/products/{id}`, форма показывает ссылку.
+
+Формы — экраны-описания в php-пакете (`resources/screens/product-form.json`,
+`category-form.json`), и API пишет **ровно по ним**: `values` — поля экрана по `name`, как у
+services. Переводимые — картой языков, которая накладывается на имеющиеся. Поле части спутника на
+экране называется `<ключ части>.<поле>` (`stock.status`) и в `values` приезжает так же — один
+ключ с точкой, не вложенность. Поле экрана, которое не взяло ни ядро, ни часть, — ошибка
+разработчика, громко. Выключенные цена и штрихкод снимаются с экрана патчем в провайдере, поэтому
+их нет ни в форме, ни в записи, ни в ответе.
+
+- **`product`** (строка списка и шапка формы): `id, name` (на языке панели), `sku, barcode*, price*,
+old_price*` (числа), `unit, priority, is_published, state` (`published|unpublished|deleted`),
+  `visible` (§5), `category: { id, name, deleted } | null`, `image: { id, url, thumb } | null`,
+  `url` (адрес на сайте, у снятого тоже — урезанная страница; у удалённого `null`),
+  `created_at, updated_at, deleted_at`.
+- **`values` товара**: `name, slug, summary, description` — карты языков; `sku, barcode, category_id,
+categories` (дополнительные, без основной), `price, old_price, unit, priority, is_published`,
+  `seo`; плюс `read()` каждой части под `<ключ>.<поле>`.
+- **`image`**: `id, path, url, thumb, alt, title` (карты языков), `width, height, size, position`.
+- **Узел дерева**: `id, parent_id, name, slug, depth, is_published, visible, products_count` (живые,
+  основная и дополнительные, с потомками, каждый товар один раз), `url, children`.
+- **`category`**: `id, parent_id, name, slug, depth, is_published, visible, products_count, url,
+created_at, updated_at, deleted_at`; **`values`**: `name, slug, description` (карты),
+  `cover: { path } | null`, `is_published`, `facets` (`null` — унаследовано, иначе `[{ key,
+visible }]` по порядку), `seo`.
+- **`deleted`**: `->paginate()`; строка товара `{ id, name, sku, category: { id, name, deleted } |
+null, deleted_at }`, категории `{ id, name, slug, parent: { id, name, deleted } | null,
+deleted_at }`.
+
+Узлы экранов, которые рисует K3: `wx-catalog-category` (одна категория, `props.multiple` — список),
+`wx-catalog-facets` (вкладка «Фильтры»), `wx-catalog-gallery` (галерея — отдельные запросы выше,
+не значение формы); `wx-history` — из `module-admin`.
 
 ### 11.3. Журнал
 
@@ -470,6 +511,7 @@ return [
     'popularity' => ['views' => true, 'decay' => 0.9, 'weights' => ['views' => 1], 'touch_threshold' => 0.05],
     'images' => ['disk' => 'public', 'max_size_kb' => 10240],
     'bulk' => ['chunk' => 500, 'sync_limit' => 50],
+    'layout' => env('WEBX_CATALOG_LAYOUT'),             // Blade-компонент лейаута витрины, как у всех модулей
 ];
 ```
 
@@ -574,6 +616,75 @@ changeset minor на @webx-ui/php. Гейт php на 8.4.
 итоге: K3 пишет мок по ней. В конце — «Итог K1» в §19, коммит по именам файлов, пуш в claude,
 PR.
 ```
+
+### Итог K1
+
+Сделано 29.09.2026 одним PR (php + changeset minor на `@webx-ui/php`).
+
+- **`webx-ui/module-catalog`:** миграции §3 целиком (служебные таблицы пустые — их заполняет K2),
+  модели `Product`, `Category`, `ProductImage`; состояния и видимость §5 одним SQL-скоупом
+  (`Category::scopeVisible()` — нет снятого или удалённого предка; `Product::scopeVisible()` —
+  опубликован и есть видимая основная или дополнительная); адреса §4 (`catalog.category` — `Slug`,
+  `Fail`, `acceptsTail`; `catalog.product` — `SlugId`, `Suffix`); `ProductHandler` (полная или
+  урезанная страница, `noindex` заголовком и `UnavailableSource` на 60), `CategoryHandler`;
+  `CatalogMisses`; артикул с удалёнными и `meta.taken_by`; категории §6.1 и §6.3 (дерево, перенос,
+  снятие прячет ветку, удаление только пустой, 410); галерея §10.4 (`Gallery`: файл или адрес);
+  API §11.2 без `bulk` и `facets`; права §11.5; журнал; `ProductParts`; `Catalog::touch()`,
+  `touchQuery()`, `touchCategory()`; экраны `catalog.product-form` и `catalog.category-form`;
+  типы полей `wx-catalog-category`, `wx-catalog-facets`; настройки фасетов категории
+  (`FacetSettings`: чтение и запись строк, без разрешения); шаблоны `product`,
+  `product-unavailable` и заглушка `category`; словари en и ru.
+- **`webx-ui/routing`:** `Misses` / `MissHandler` — модуль отвечает за адрес, которого нет в
+  реестре, до 404 (§8 п. 7 `WEBX_UI_ROUTING.md`); отказ «адрес занят» называет держателя по
+  `name`, если у него нет `title`.
+- **`webx-ui/module-media`:** `Thumbnails::variantOf($disk, $path, …)` и `forgetOf()`, превью
+  рядом с картинкой (`…/thumbs/{имя}/…`); `variant(MediaFile)` — через тот же код, ключи прежние.
+- **`scripts/php-smoke.sh`:** `module-catalog` в прогоне против MariaDB.
+- **Тесты:** `module-catalog/tests` — `AddressesTest`, `CategoriesTest`, `ProductFormTest` (часть —
+  фикстура `NotePart`), `ApiTest`; `routing/tests/MissesTest`, `module-media/tests/ThumbnailsTest`.
+
+**Разошлось со спекой — API §11.2 переписан выше, K3 мокает по нему:** тела запросов — `{ values }`
+по полям экрана (как у services), поля частей — ключом `<часть>.<поле>`; добавлен
+`GET /categories/{id}` (форме категории нужны значения); `POST /categories` принимает `parent_id`;
+`move` отвечает всем деревом; список — пагинатор плюс `counts.no_category`; у `taken_by` есть
+`deleted`, а `url` — адрес в панели `/{webx-admin.path}/catalog/products/{id}`, то есть **маршрут
+формы товара в панели K3 должен быть ровно таким**. Поправлены и §4 (301 на написание делает
+`CatalogMisses`, а не обработчик), §5 (удалённый — сначала основная, потом первая видимая
+дополнительная), §7.4 (сигнатуры частей), §13 (ключ `layout`).
+
+Решения по ходу:
+
+- `routing` на переименование всё равно оставляет алиас — это его общее правило; `CatalogMisses`
+  отвечает и без алиаса. Вычищать алиасы товаров не стали.
+- Журнал: `Product` и `Category` не пишут `updated` трейтом, а держат изменения из своего
+  `updated` и отдают форме (`takeHistoryChanges()`), которая пишет одну запись — `published` /
+  `unpublished`, если сменилась публикация, иначе `updated`. Галерея пишет `updated` с полем
+  `images` (имя файла) на добавление и удаление; порядок и подписи картинок в журнал не идут.
+  Перенос категории — поле `parent` с именами.
+- Формы — экраны в php-пакете, `wx-seo` стоит в них прямо (каталог требует `module-seo`), без
+  патча в `module-seo`. Цена и штрихкод при выключенном конфиге снимаются патчем экрана в
+  провайдере.
+- Слаг категории и товара, если пуст, — из названия (`Str::slug` с языком).
+
+Для K2:
+
+- `Catalog::needsIndex()` пока читает конфиг (`engine !== 'sql'`) — завести на
+  `engine()->needsIndex()`; `touch*` уже пишут в очередь.
+- `CategoryHandler` отвечает 404 на любой хвост и печатает заглушку `category` — заменить
+  витриной и разбором хвоста. `ProductController::SORTS` — заменить реестром `Sorts` с теми же
+  ключами; `facets` в списке не принимается.
+- `@webxPart` в `module-admin` — это компонент, который сайт переопределяет, с запасным партиалом
+  модуля, а не точка, куда несколько спутников кладут своё. В `product-unavailable` точка стоит с
+  пустым партиалом `webx-catalog::partials.unavailable`; как в неё писать спутнику — решить в K2.
+- `description` печатается как сохранён (`{!! !!}`): картинки внутри rich-text надо пересчитывать
+  на чтении (ловушка «Адрес картинки внутри HTML не хранить»).
+
+Для K3: узлы `wx-catalog-category` (`props.multiple`), `wx-catalog-facets`, `wx-catalog-gallery`
+(галерея — отдельными запросами, не значением формы); ключи `values` с точкой — один ключ.
+
+Для K5: **до первого релиза с каталогом человек создаёт зеркало** `gh repo create
+webx-ui/module-catalog --public` и отправляет пакет на Packagist (`WEBX_UI_PHP_RELEASE.md`, шаги 1
+и 3). Пока зеркала нет, джоба `php-split` для `module-catalog` на пуше в `main` будет красной.
 
 ### K2 — php, каталог
 

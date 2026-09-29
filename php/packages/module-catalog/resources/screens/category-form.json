@@ -1,0 +1,106 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "catalog.category-form",
+  "model": "catalog.category",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "main",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog::screen.main",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "name",
+                  "type": "wx-input",
+                  "name": "name",
+                  "label": "trans::webx-catalog::category.name",
+                  "localized": true,
+                  "props": { "maxlength": 255 }
+                },
+                {
+                  "id": "slug",
+                  "type": "wx-slug",
+                  "name": "slug",
+                  "label": "trans::webx-catalog::category.slug",
+                  "help": "trans::webx-catalog::screen.category-slug-help",
+                  "localized": true
+                },
+                {
+                  "id": "is_published",
+                  "type": "wx-switch",
+                  "name": "is_published",
+                  "label": "trans::webx-catalog::category.is_published",
+                  "help": "trans::webx-catalog::screen.category-published-help"
+                }
+              ]
+            },
+            {
+              "id": "presentation",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "cover",
+                  "type": "wx-media",
+                  "name": "cover",
+                  "label": "trans::webx-catalog::category.cover",
+                  "props": { "accept": "image", "captions": false, "aspect": "4/3" }
+                },
+                {
+                  "id": "description",
+                  "type": "wx-rich-text",
+                  "name": "description",
+                  "label": "trans::webx-catalog::category.description",
+                  "localized": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "filters-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog::screen.filters",
+          "children": [
+            {
+              "id": "facets",
+              "type": "wx-catalog-facets",
+              "name": "facets",
+              "label": "trans::webx-catalog::category.facets"
+            }
+          ]
+        },
+        {
+          "id": "seo-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog::screen.seo",
+          "children": [
+            {
+              "id": "seo",
+              "type": "wx-seo",
+              "name": "seo"
+            }
+          ]
+        },
+        {
+          "id": "history-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog::screen.history",
+          "children": [
+            {
+              "id": "history",
+              "type": "wx-history",
+              "props": { "type": "catalog.category", "title": "" }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
