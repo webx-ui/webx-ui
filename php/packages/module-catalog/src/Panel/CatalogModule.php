@@ -31,7 +31,7 @@ final class CatalogModule extends AbstractModule
 
     public function icon(): string
     {
-        return 'shopping-bag';
+        return 'cart';
     }
 
     public function order(): int
