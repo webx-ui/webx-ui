@@ -31,6 +31,7 @@ import {
 import type { ScreenModel } from '@webx-ui/schema'
 import { createCatalogApi } from './api'
 import { provideProductEditor } from './editor'
+import { createGalleryVideo } from './galleryVideo'
 import { useCatalogMessages } from './i18n'
 import { lastSegment } from './paths'
 import type { ProductDetail, ProductImage, ProductRow, SkuHolder } from './types'
@@ -117,7 +118,14 @@ const subtitle = computed(() => {
   return row.sku ?? undefined
 })
 
-provideProductEditor({ product, images, locked })
+/* The uploads of video files outlive the gallery's tab, so they are kept here (galleryVideo.ts). */
+const video = createGalleryVideo({
+  admin: context,
+  product: computed(() => product.value?.id ?? null),
+  images,
+})
+
+provideProductEditor({ product, images, locked, video })
 provideHistorySubject({ id: computed(() => product.value?.id ?? null) })
 
 /*
@@ -258,6 +266,19 @@ onBeforeUnmount(() => {
 })
 
 onBeforeRouteLeave(async () => {
+  // A video going up pauses when the page goes; choosing the same file again continues it.
+  if (video.busy.value) {
+    const leave = await confirm({
+      title: t('panel.video-leave-title'),
+      message: t('panel.video-leave-text'),
+      confirmText: t('panel.leave'),
+      cancelText: t('panel.cancel'),
+      tone: 'danger',
+    })
+
+    if (!leave) return false
+  }
+
   if (!dirty.value || !canManage.value) return true
 
   return await confirm({

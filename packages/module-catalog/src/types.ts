@@ -116,6 +116,32 @@ export interface ProductImage {
   height: number | null
   size: number | null
   position: number
+  /** The video attached to the picture, which is then its poster (the video spec, §1.1). */
+  video?: ProductVideo | null
+}
+
+/** A video in the gallery: a file on the gallery's disk, or one on a provider's site. */
+export interface ProductVideo {
+  /** `file`, or the provider's key (`youtube`). */
+  provider: string
+  /** The file, or the provider's page of the video. */
+  url: string
+  /** The address for an iframe; `null` for a file. */
+  embed: string | null
+  /** Whole seconds, when known. */
+  duration: number | null
+}
+
+/**
+ * The answer to a direct link to a video file: the server downloads it in its queue, and the row
+ * appears — or the picture gets its video — when that is done.
+ */
+export interface QueuedVideo {
+  queued: true
+  product: number
+  url: string
+  /** The picture the video goes onto; `null` for a new row. */
+  image: number | null
 }
 
 /** One product as its editor opens it. */

@@ -17,6 +17,7 @@ import type {
   ProductDetail,
   ProductImage,
   ProductQuery,
+  QueuedVideo,
   ProductRow,
   ProductsPage,
 } from './types'
@@ -42,6 +43,19 @@ export interface CatalogApi {
     images: Pick<ProductImage, 'id' | 'alt' | 'title'>[],
   ): Promise<ProductImage[]>
   removeImage(id: number, image: number): Promise<void>
+  /**
+   * An address the server fetches: a picture or a YouTube video comes back as the new row, a
+   * direct link to a video file as `QueuedVideo` — the row appears once the queue has it.
+   */
+  fetchImage(id: number, url: string): Promise<ProductImage | QueuedVideo>
+  /** A finished chunked upload (`upload` is its id) or an address, onto a picture of the gallery. */
+  attachVideo(
+    id: number,
+    image: number,
+    source: { upload: string; duration?: number | null } | { url: string },
+  ): Promise<ProductImage | QueuedVideo>
+  /** The file, if it is one, is deleted at once. */
+  detachVideo(id: number, image: number): Promise<ProductImage>
 
   categories(): Promise<CategoryNode[]>
   category(id: number): Promise<CategoryDetail>
@@ -194,6 +208,20 @@ export function createCatalogApi(admin: AdminContext): CatalogApi {
         .then(data),
     removeImage: (id, image) =>
       admin.http.delete<void>(`${base}/products/${id}/images/${image}`).then(() => undefined),
+    fetchImage: (id, url) =>
+      admin.http
+        .post<{ data: ProductImage | QueuedVideo }>(`${base}/products/${id}/images`, { url })
+        .then(data),
+    attachVideo: (id, image, source) =>
+      admin.http
+        .post<{
+          data: ProductImage | QueuedVideo
+        }>(`${base}/products/${id}/images/${image}/video`, source)
+        .then(data),
+    detachVideo: (id, image) =>
+      admin.http
+        .delete<{ data: ProductImage }>(`${base}/products/${id}/images/${image}/video`)
+        .then(data),
 
     categories: () => admin.http.get<{ data: CategoryNode[] }>(`${base}/categories`).then(data),
     category: (id) =>

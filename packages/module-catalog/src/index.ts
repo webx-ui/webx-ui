@@ -11,6 +11,15 @@ export {
   type ProductEditorContext,
   type CategoryEditorContext,
 } from './editor'
+export {
+  createGalleryVideo,
+  VIDEO_PURPOSE,
+  type GalleryVideo,
+  type GalleryVideoOptions,
+  type UnfinishedVideo,
+  type VideoJob,
+  type VideoJobStage,
+} from './galleryVideo'
 export { useCategoryTree, useFacetRegistry, type CategoryTree, type FacetRegistry } from './store'
 export { default as WxCatalogProductsPage } from './ProductsPage.vue'
 export { default as WxCatalogProductEditor } from './ProductEditorPage.vue'
@@ -38,6 +47,8 @@ export type {
   ProductDetail,
   ProductImage,
   ProductQuery,
+  ProductVideo,
+  QueuedVideo,
   ProductRow,
   ProductSort,
   ProductState,
