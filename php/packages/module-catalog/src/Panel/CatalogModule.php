@@ -24,7 +24,7 @@ use WebxUi\Mcp\Tool;
  * and restores, `delete` does those and opens «Deleted». Categories go by the same three: the
  * people who file products are the people who arrange the shelves.
  *
- * To an agent it is the same section by other doors (§12): fifteen tools behind the same three
+ * To an agent it is the same section by other doors (§12): twenty-one tools behind the same three
  * permissions, and six resources to read before writing. The scopes are `catalog:read` and
  * `catalog:write`.
  */

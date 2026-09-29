@@ -10,7 +10,8 @@ use WebxUi\Catalog\Models\ProductImage;
 
 /**
  * One picture of the gallery as the editor shows it: the file, a preview, the size, and `alt`
- * and `title` in every language — the editor writes all of them at once (§11.1).
+ * and `title` in every language — the editor writes all of them at once (§11.1) — and the video
+ * attached to it, `{ provider, url, embed, duration }` or null (§5 of the video spec).
  *
  * @mixin ProductImage
  */
@@ -35,6 +36,7 @@ final class ImageResource extends JsonResource
             'height' => $image->height,
             'size' => $image->size,
             'position' => $image->position,
+            'video' => $image->videoData(),
         ];
     }
 }

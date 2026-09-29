@@ -39,6 +39,14 @@ Route::prefix((string) config('webx-admin.api_path').'/catalog')
                 ->whereNumber('product')
                 ->whereNumber('image')
                 ->name('products.images.destroy');
+            Route::post('products/{product}/images/{image}/video', [ProductImageController::class, 'attachVideo'])
+                ->whereNumber('product')
+                ->whereNumber('image')
+                ->name('products.images.video.store');
+            Route::delete('products/{product}/images/{image}/video', [ProductImageController::class, 'detachVideo'])
+                ->whereNumber('product')
+                ->whereNumber('image')
+                ->name('products.images.video.destroy');
 
             Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
             Route::put('categories/{category}', [CategoryController::class, 'update'])->whereNumber('category')->name('categories.update');

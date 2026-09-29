@@ -46,6 +46,7 @@ return [
     'fields' => [
         'barcode' => (bool) env('WEBX_CATALOG_BARCODE', true),
         'facets' => (bool) env('WEBX_CATALOG_CATEGORY_FACETS', false),
+        'video' => (bool) env('WEBX_CATALOG_VIDEO', true),
     ],
 
     /*
@@ -113,6 +114,25 @@ return [
     'images' => [
         'disk' => env('WEBX_CATALOG_IMAGES_DISK', 'public'),
         'max_size_kb' => 10240,
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Videos in the gallery
+    |---------------------------------------------------------------------------
+    |
+    | A video is attached to a picture of the gallery, which is its poster: a
+    | link to YouTube, or a file of our own, stored as it is — no re-encoding.
+    | A file comes in pieces through the panel's chunked upload, so the limit
+    | here is the only one: PHP's and nginx's never see a whole file. The type
+    | is checked by the content. `fields.video` switched off hides the player
+    | and refuses new videos; the ones attached are kept.
+    |
+    */
+
+    'videos' => [
+        'max_size_mb' => 2048,
+        'types' => ['video/mp4', 'video/webm'],
     ],
 
     'bulk' => ['chunk' => 500, 'sync_limit' => 50],
