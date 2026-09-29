@@ -1,0 +1,122 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+
+    /*
+    |---------------------------------------------------------------------------
+    | The root of the catalogue
+    |---------------------------------------------------------------------------
+    |
+    | `/catalog/` — a page with the top categories and a filter over the whole
+    | catalogue. Off by default: in most shops a top category is just a list,
+    | and a page of its own is one nobody asked for. Off means no address at all.
+    |
+    */
+
+    'root' => [
+        'enabled' => (bool) env('WEBX_CATALOG_ROOT', false),
+        'prefix' => env('WEBX_CATALOG_ROOT_PREFIX', 'catalog'),
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Price and the optional fields
+    |---------------------------------------------------------------------------
+    |
+    | The columns are always there; switched off, a field is gone from the form,
+    | the facets and the exchange columns alike. The currency is the site's.
+    |
+    */
+
+    'price' => ['enabled' => (bool) env('WEBX_CATALOG_PRICE', true)],
+
+    'fields' => ['barcode' => (bool) env('WEBX_CATALOG_BARCODE', true)],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Units of measure
+    |---------------------------------------------------------------------------
+    |
+    | Keys, not words: the label of each is `webx-catalog::units.<key>` in the
+    | module's dictionary, so a site adds a unit here and its word there.
+    |
+    */
+
+    'units' => ['pcs', 'kg', 'g', 'm', 'm2', 'm3', 'l', 'pack', 'set'],
+
+    'default_unit' => 'pcs',
+
+    /*
+    |---------------------------------------------------------------------------
+    | The engine behind the catalogue, search and facets
+    |---------------------------------------------------------------------------
+    |
+    | `sql` is the database itself, honest up to a couple of thousand live
+    | products; `manticore` comes with `webx-ui/catalog-manticore`. Past the
+    | limit `webx:doctor` says so.
+    |
+    */
+
+    'engine' => env('WEBX_CATALOG_ENGINE', 'sql'),
+
+    'sql_engine_limit' => 2000,
+
+    'per_page' => 24,
+
+    /*
+    |---------------------------------------------------------------------------
+    | Sorting
+    |---------------------------------------------------------------------------
+    |
+    | The sorts a reader is offered, in this order, and the steps of the
+    | default one: the hand-set priority, then popularity, then the newest.
+    |
+    */
+
+    'sorts' => ['default', 'price_asc', 'price_desc', 'popular', 'new', 'name'],
+
+    'default_sort' => ['priority' => 'desc', 'score' => 'desc', 'created_at' => 'desc'],
+
+    'popularity' => [
+        'views' => true,
+        'decay' => 0.9,
+        'weights' => ['views' => 1],
+        'touch_threshold' => 0.05,
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | The gallery of a product
+    |---------------------------------------------------------------------------
+    |
+    | Straight onto this disk under `catalog/{id div 1000}/{id}/`, not into the
+    | media library: half a million product photos belong to no editor's tree.
+    |
+    */
+
+    'images' => [
+        'disk' => env('WEBX_CATALOG_IMAGES_DISK', 'public'),
+        'max_size_kb' => 10240,
+    ],
+
+    'bulk' => ['chunk' => 500, 'sync_limit' => 50],
+
+    /*
+    |---------------------------------------------------------------------------
+    | The layout the storefront stands in
+    |---------------------------------------------------------------------------
+    |
+    | The name of a Blade component — `'layout'` for the `<x-layout>` a site keeps
+    | in `resources/views/components/layout.blade.php`. Empty prints the
+    | package's own bare document. Two slots: `head` and the default one.
+    |
+    | The markup of each page is overridden the usual way, by a view of the same
+    | name in `resources/views/vendor/webx-catalog/`.
+    |
+    */
+
+    'layout' => env('WEBX_CATALOG_LAYOUT'),
+
+];

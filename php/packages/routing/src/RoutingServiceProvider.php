@@ -31,6 +31,7 @@ class RoutingServiceProvider extends ServiceProvider
         $this->app->singleton(UniquePath::class);
         $this->app->singleton(RouteSync::class);
         $this->app->singleton(Resolver::class);
+        $this->app->singleton(Misses::class);
 
         // The one thing the registry offers a panel to read. Bound to an interface rather than
         // exposed as a class, because the screen that shows it lives in another package and a
