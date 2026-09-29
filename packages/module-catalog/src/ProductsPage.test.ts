@@ -32,6 +32,14 @@ function row(id: number, over: Partial<ProductRow> = {}): ProductRow {
 const facets: FacetInfo[] = [
   { key: 'category', code: 'category', kind: 'tree', label: 'Category' },
   { key: 'price', code: 'price', kind: 'range', label: 'Price' },
+  { key: 'brand', code: 'brand', kind: 'terms', label: 'Brand' },
+]
+
+/* The registry's orders: no price ones, as on a site with prices switched off. */
+const sorts = [
+  { key: 'default', label: 'Default' },
+  { key: 'popular', label: 'Popular' },
+  { key: 'new', label: 'Newest' },
 ]
 
 function page(rows: ProductRow[], extra: Partial<Page> = {}): Page {
@@ -50,7 +58,7 @@ function page(rows: ProductRow[], extra: Partial<Page> = {}): Page {
 
 async function panel(address: string, answer = page([row(1), row(2, { category: null })])) {
   const get = vi.fn().mockImplementation((url: string) => {
-    if (url.endsWith('/catalog/facets')) return Promise.resolve({ data: facets })
+    if (url.endsWith('/catalog/facets')) return Promise.resolve({ data: facets, meta: { sorts } })
     if (url.endsWith('/catalog/categories')) return Promise.resolve({ data: [] })
 
     return Promise.resolve(answer)
@@ -105,9 +113,49 @@ describe('WxCatalogProductsPage', () => {
   it('asks for the facets chosen in the address, in the nested form Laravel reads', async () => {
     const { get } = await panel('/catalog/products?f.category=2&f.price=100-500&view=published')
 
+    // The reload the facets cause keeps the table's page size: the server pages as it counts.
     expect(decodeURIComponent(listCalls(get).at(-1)!)).toBe(
-      '/api/cms/catalog/products?state=published&facets[category][]=2&facets[price][min]=100&facets[price][max]=500',
+      '/api/cms/catalog/products?state=published&per_page=15&facets[category][]=2&facets[price][min]=100&facets[price][max]=500',
     )
+  })
+
+  it('sends a sort the registry knows, and drops one it does not', async () => {
+    const known = await panel('/catalog/products?sort=popular')
+
+    expect(listCalls(known.get).at(-1)).toContain('sort=popular')
+
+    // A price sort on a site without prices would be a 422: it is not asked for at all.
+    const unknown = await panel('/catalog/products?sort=price_asc')
+
+    expect(listCalls(unknown.get).at(-1)).not.toContain('sort=')
+  })
+
+  it('offers the sorts of the registry and the values the list counted for a terms facet', async () => {
+    const { wrapper } = await panel(
+      '/catalog/products',
+      page([row(1)], {
+        facets: {
+          brand: {
+            key: 'brand',
+            kind: 'terms',
+            values: [
+              { value: 'acme', label: 'Acme', count: 4 },
+              { value: 'zeta', label: 'Zeta', count: 1 },
+            ],
+          },
+        },
+      }),
+    )
+
+    await wrapper.get('.wx-table__filter button').trigger('click')
+    await flushPromises()
+
+    const selects = wrapper.findAllComponents({ name: 'WxSelect' })
+    const options = (index: number) =>
+      (selects[index]!.props('options') as { label: string }[]).map((one) => one.label)
+
+    expect(options(0)).toEqual(['Default', 'Popular', 'Newest'])
+    expect(options(1)).toEqual(['Acme (4)', 'Zeta (1)'])
   })
 
   it('counts the products nobody filed on their own tab, and marks them in the list', async () => {

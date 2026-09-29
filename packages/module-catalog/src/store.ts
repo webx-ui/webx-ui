@@ -1,7 +1,7 @@
-import { ref, type Ref } from 'vue'
+import { computed, ref, type ComputedRef, type Ref } from 'vue'
 import type { AdminContext } from '@webx-ui/module-admin'
 import { createCatalogApi } from './api'
-import type { CategoryNode, FacetInfo, FacetKind } from './types'
+import type { CategoryNode, FacetInfo, FacetKind, FacetRegistryAnswer, SortInfo } from './types'
 
 /**
  * What several screens of the catalogue read and nobody should ask for twice: the tree of
@@ -19,7 +19,7 @@ interface Shelf<T> {
 
 interface CatalogStore {
   tree: Shelf<CategoryNode[]>
-  facets: Shelf<FacetInfo[]>
+  facets: Shelf<FacetRegistryAnswer>
 }
 
 const stores = new WeakMap<AdminContext, CatalogStore>()
@@ -86,30 +86,35 @@ export function useCategoryTree(admin: AdminContext): CategoryTree {
 }
 
 export interface FacetRegistry {
-  facets: Ref<FacetInfo[] | null>
-  load(): Promise<FacetInfo[]>
+  facets: ComputedRef<FacetInfo[] | null>
+  /** The orders the list offers, in the registry's order; empty until the answer. */
+  sorts: ComputedRef<SortInfo[]>
+  load(): Promise<FacetRegistryAnswer>
 }
 
 /**
- * The facets every category can show (§7.1). Their kind is lowercased on the way in: the server
- * names the enum's cases, and a panel comparing with `'range'` should not care how they are cased.
+ * The facets every category can show (§7.1) and the sorts of the list (§7.2) — one answer, since
+ * the list needs both before it can draw its filter. The kind is lowercased on the way in: a panel
+ * comparing with 'range' should not care how the server cased its enum.
  */
 export function useFacetRegistry(admin: AdminContext): FacetRegistry {
   const shelf = storeOf(admin).facets
   const api = createCatalogApi(admin)
 
   return {
-    facets: shelf.value,
+    facets: computed(() => shelf.value.value?.facets ?? null),
+    sorts: computed(() => shelf.value.value?.sorts ?? []),
     load: () =>
       fetchInto(
         shelf,
         () =>
-          api.facets().then((facets) =>
-            facets.map((facet) => ({
+          api.facets().then((answer) => ({
+            sorts: answer.sorts,
+            facets: answer.facets.map((facet) => ({
               ...facet,
               kind: String(facet.kind).toLowerCase() as FacetKind,
             })),
-          ),
+          })),
         false,
       ),
   }

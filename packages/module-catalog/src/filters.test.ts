@@ -68,7 +68,7 @@ describe('the query the list is asked with', () => {
       ['facets[category][]', '2'],
       ['facets[category][]', '5'],
       ['facets[price][min]', '100'],
-      ['facets[in-stock]', '1'],
+      ['facets[in-stock][]', '1'],
     ])
   })
 })

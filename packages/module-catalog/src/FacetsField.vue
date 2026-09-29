@@ -100,14 +100,28 @@ function show(key: string, visible: boolean | string | number | null): void {
 }
 
 /**
- * Up the tree from the parent until somebody has a setting of their own. One request per level;
- * a catalogue is four levels deep on a bad day, and the answer is cached nowhere because the
- * reader may have just changed a parent's setting in the next tab.
+ * Whose setting this is. The server names the ancestor (`facets_from`), and one request reads
+ * its rows — the setting is shown, not only named. A server that does not say is walked up the
+ * tree from the parent until somebody has a setting of their own, one request per level.
  */
 async function findSource(parent: number | null): Promise<void> {
-  let next = parent
+  const from = editor?.facetsFrom.value
 
   source.value = null
+
+  if (from === null) return
+
+  if (from !== undefined) {
+    const detail = await api.category(from.id)
+
+    if (Array.isArray(detail.values.facets)) {
+      source.value = { name: from.name, rows: detail.values.facets as FacetSetting[] }
+    }
+
+    return
+  }
+
+  let next = parent
 
   while (next !== null) {
     const detail = await api.category(next)
@@ -136,10 +150,11 @@ async function load(): Promise<void> {
   }
 }
 
+/* A move or a save changes whose setting it is; the editor hands both over with the answer. */
 watch(
-  () => editor?.category.value?.parent_id,
-  (parent, before) => {
-    if (parent !== before) void load()
+  () => [editor?.category.value?.parent_id, JSON.stringify(editor?.facetsFrom.value)],
+  (now, before) => {
+    if (now[0] !== before[0] || now[1] !== before[1]) void load()
   },
 )
 
