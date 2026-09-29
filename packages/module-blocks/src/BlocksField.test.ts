@@ -1,5 +1,5 @@
 import { flushPromises, mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import BlocksField from './BlocksField.vue'
 import type { BlockNode, BlockType } from './types'
 
@@ -115,15 +115,6 @@ function confirmIt(): void {
 
   buttons[buttons.length - 1]!.click()
 }
-
-/* A dialog takes its own node away on a timer; one left behind is found by the next test. */
-afterEach(async () => {
-  const deadline = Date.now() + 2000
-
-  while (document.querySelectorAll('.wx-modal-host').length > 0 && Date.now() < deadline) {
-    await new Promise((settle) => setTimeout(settle, 10))
-  }
-})
 
 function emitted(wrapper: ReturnType<typeof field>): BlockNode[] | null {
   const updates = wrapper.emitted('update:modelValue') as [BlockNode[]][] | undefined
