@@ -105,9 +105,11 @@ class UniquePath
             return null;
         }
 
+        // A page is titled, a product or a category is named; whichever the entity has.
+        $attribute = $entity->getAttribute('title') !== null ? 'title' : 'name';
         $title = method_exists($entity, 'getTranslation')
-            ? $entity->getTranslation('title', $locale)
-            : $entity->getAttribute('title');
+            ? $entity->getTranslation($attribute, $locale)
+            : $entity->getAttribute($attribute);
 
         return is_string($title) && trim($title) !== '' ? trim($title) : null;
     }

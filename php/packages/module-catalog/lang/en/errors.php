@@ -1,0 +1,19 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'sku-taken' => 'The article number is taken by the product :name',
+    'publish-needs-category' => 'A product cannot be published without a main category.',
+    'category-has-products' => 'The category is not empty. Products in it: :count',
+    'category-has-children' => 'The category has subcategories. Subcategories: :count',
+    'slug-underscore' => 'The address of a category cannot contain "_": it marks a filter in the address.',
+    'unknown-category' => 'There is no such category.',
+    'move-into-itself' => 'A category cannot be moved inside itself.',
+    'name-required' => 'Give it a name in at least one language.',
+    'facet-shape' => 'A filter setting is a list of facet keys, each shown or hidden.',
+    'images-mismatch' => 'The list has to name every picture of the product, and nothing else.',
+    'image-unreachable' => 'The address did not answer with a file.',
+    'image-not-a-picture' => 'The address answered with something that is not a JPEG, PNG, WebP or GIF picture.',
+    'image-too-large' => 'The picture is larger than the limit.',
+];

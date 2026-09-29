@@ -1,0 +1,219 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "catalog.product-form",
+  "model": "catalog.product",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "main",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog::screen.main",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "name",
+                  "type": "wx-input",
+                  "name": "name",
+                  "label": "trans::webx-catalog::product.name",
+                  "localized": true,
+                  "props": { "maxlength": 255 }
+                },
+                {
+                  "id": "slug",
+                  "type": "wx-slug",
+                  "name": "slug",
+                  "label": "trans::webx-catalog::product.slug",
+                  "help": "trans::webx-catalog::screen.product-slug-help",
+                  "localized": true
+                },
+                {
+                  "id": "codes",
+                  "type": "wx-row",
+                  "children": [
+                    {
+                      "id": "sku-col",
+                      "type": "wx-col",
+                      "children": [
+                        {
+                          "id": "sku",
+                          "type": "wx-input",
+                          "name": "sku",
+                          "label": "trans::webx-catalog::product.sku",
+                          "props": { "maxlength": 64 }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "barcode-col",
+                      "type": "wx-col",
+                      "children": [
+                        {
+                          "id": "barcode",
+                          "type": "wx-input",
+                          "name": "barcode",
+                          "label": "trans::webx-catalog::product.barcode",
+                          "props": { "maxlength": 64 }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "placement",
+              "type": "wx-card",
+              "label": "trans::webx-catalog::screen.categories",
+              "children": [
+                {
+                  "id": "category_id",
+                  "type": "wx-catalog-category",
+                  "name": "category_id",
+                  "label": "trans::webx-catalog::product.category",
+                  "help": "trans::webx-catalog::screen.category-help"
+                },
+                {
+                  "id": "categories",
+                  "type": "wx-catalog-category",
+                  "name": "categories",
+                  "label": "trans::webx-catalog::product.categories",
+                  "props": { "multiple": true }
+                }
+              ]
+            },
+            {
+              "id": "pricing",
+              "type": "wx-card",
+              "label": "trans::webx-catalog::screen.pricing",
+              "children": [
+                {
+                  "id": "prices",
+                  "type": "wx-row",
+                  "children": [
+                    {
+                      "id": "price-col",
+                      "type": "wx-col",
+                      "children": [
+                        {
+                          "id": "price",
+                          "type": "wx-input-number",
+                          "name": "price",
+                          "label": "trans::webx-catalog::product.price",
+                          "props": { "min": 0, "max": 9999999999.99, "precision": 2 }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "old-price-col",
+                      "type": "wx-col",
+                      "children": [
+                        {
+                          "id": "old_price",
+                          "type": "wx-input-number",
+                          "name": "old_price",
+                          "label": "trans::webx-catalog::product.old_price",
+                          "props": { "min": 0, "max": 9999999999.99, "precision": 2 }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "unit",
+                  "type": "wx-select",
+                  "name": "unit",
+                  "label": "trans::webx-catalog::product.unit",
+                  "props": { "options": [] }
+                }
+              ]
+            },
+            {
+              "id": "publication",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "priority",
+                  "type": "wx-input-number",
+                  "name": "priority",
+                  "label": "trans::webx-catalog::product.priority",
+                  "help": "trans::webx-catalog::screen.priority-help",
+                  "props": { "min": -1000000, "max": 1000000, "step": 1 }
+                },
+                {
+                  "id": "is_published",
+                  "type": "wx-switch",
+                  "name": "is_published",
+                  "label": "trans::webx-catalog::product.is_published"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "description-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog::screen.description",
+          "children": [
+            {
+              "id": "summary",
+              "type": "wx-textarea",
+              "name": "summary",
+              "label": "trans::webx-catalog::product.summary",
+              "help": "trans::webx-catalog::screen.summary-help",
+              "localized": true,
+              "props": { "rows": 3, "maxlength": 1000, "showCount": true }
+            },
+            {
+              "id": "description",
+              "type": "wx-rich-text",
+              "name": "description",
+              "label": "trans::webx-catalog::product.description",
+              "localized": true
+            }
+          ]
+        },
+        {
+          "id": "images-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog::screen.images",
+          "children": [
+            {
+              "id": "gallery",
+              "type": "wx-catalog-gallery"
+            }
+          ]
+        },
+        {
+          "id": "seo-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog::screen.seo",
+          "children": [
+            {
+              "id": "seo",
+              "type": "wx-seo",
+              "name": "seo"
+            }
+          ]
+        },
+        {
+          "id": "history-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog::screen.history",
+          "children": [
+            {
+              "id": "history",
+              "type": "wx-history",
+              "props": { "type": "catalog.product", "title": "" }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
