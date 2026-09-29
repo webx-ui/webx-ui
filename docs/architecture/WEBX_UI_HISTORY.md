@@ -103,5 +103,34 @@
 
 ## 9. Выпуск
 
-Одна сессия, один PR (php + npm + changeset), до ядра каталога. Первые потребители сразу после —
-товар и категория каталога; остальные модули подключают трейт по мере запросов.
+Одна сессия H1, один PR (php + npm + changeset), до ядра каталога. Подключение трейта в
+остальных модулях — по мере запросов, не в этой сессии. В конце сессия дописывает сюда «Итог H1».
+
+### H1 — журнал в `module-admin`
+
+```
+Сессия H1 из §9 docs/architecture/WEBX_UI_HISTORY.md: журнал изменений в webx-ui/module-admin
+и @webx-ui/module-admin. Первый потребитель — ядро каталога (WEBX_UI_MODULE_CATALOG.md, сессия
+K1), его кода ещё нет.
+
+Начало: git fetch claude; git worktree add ../webx-ui-history -b feat/admin-history claude/main.
+Из worktree pnpm не запускать и preview_start по имени не звать (CLAUDE.md §4). PR открыть в
+конце, в очередь не ставить.
+
+Прочитать: эту спеку целиком; WEBX_UI_MCP_ACCESS.md §6 (право инструмента) и как пишется
+mcp_calls — оттуда брать автора-агента и id гранта; WEBX_UI_SCREENS.md — новый тип узла;
+docs/pitfalls/laravel-and-php.md и vue-and-tests.md. Образцы в module-admin:
+Console/PruneVersionsCommand (чистка пачками по расписанию), Versions (запись в транзакции
+сохранения), Notes (лента под сущностью), Doctor.
+
+Сделать: миграция admin_history §3; RecordsHistory, History::record и History::run §4;
+HistoryContext и его установка в middleware панели, в MCP и в консоли; реестр типов сущностей с
+подписями полей и правом на просмотр §5; API §5; MCP-инструменты history_get и history_runs и
+ресурс типов §6; конфиг и webx:history:prune §7; узел экрана history в npm (лента, «было →
+стало», WxDate, ссылка на прогон) с тестами и демо на плейграунде — на фейковой сущности.
+Тесты §8. Changeset на @webx-ui/php и @webx-ui/module-admin. Полный гейт CLAUDE.md §5 и
+php-гейт.
+
+Если сигнатуры разошлись со спекой — поправить спеку тем же коммитом: K1 пишет по ней. В
+конце — «Итог H1» в §9, коммит по именам файлов, пуш в claude, PR.
+```
