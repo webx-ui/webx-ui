@@ -1,0 +1,66 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "demo.product",
+  "model": "product",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "product",
+          "type": "wx-tab",
+          "label": "Товар",
+          "children": [
+            {
+              "id": "main",
+              "type": "wx-card",
+              "children": [
+                { "id": "name", "type": "wx-input", "name": "name", "label": "Название" },
+                { "id": "sku", "type": "wx-input", "name": "sku", "label": "Артикул" },
+                {
+                  "id": "price",
+                  "type": "wx-input-number",
+                  "name": "price",
+                  "label": "Цена",
+                  "props": { "min": 0, "step": 10 }
+                },
+                {
+                  "id": "stock",
+                  "type": "wx-input-number",
+                  "name": "stock",
+                  "label": "Остаток",
+                  "props": { "min": 0 }
+                },
+                {
+                  "id": "is_visible",
+                  "type": "wx-switch",
+                  "name": "is_visible",
+                  "label": "Показывать на сайте"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "history",
+          "type": "wx-tab",
+          "label": "История",
+          "children": [
+            {
+              "id": "history-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "history-feed",
+                  "type": "wx-history",
+                  "props": { "type": "demo.product", "title": "" }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -3,6 +3,7 @@ import CategoriesField from './categories/CategoriesField.vue'
 import CollectionField from './collections/CollectionField.vue'
 import LinkField from './LinkField.vue'
 import RelationsField from './relations/RelationsField.vue'
+import HistoryFeed from './HistoryFeed.vue'
 import ListScreen from './ListScreen.vue'
 import RichTextField from './RichTextField.vue'
 import SlugField from './SlugField.vue'
@@ -37,6 +38,10 @@ import SlugField from './SlugField.vue'
  *
  * `wx-relations` is a record pointing at records of another section — the services of a recipe,
  * its similar recipes — by id, in order (`relations/`).
+ *
+ * `wx-history` is who changed the record and what (WEBX_UI_HISTORY.md §5): a tab of any form is
+ * `{ "type": "wx-history", "props": { "type": "catalog.product" } }`, and the record's id comes
+ * from the editor hosting the screen (`provideHistorySubject`). It draws and edits nothing.
  */
 export const adminTypes: TypeRegistry = {
   'wx-list': { component: ListScreen, kind: 'layout', labelProp: 'title' },
@@ -54,4 +59,6 @@ export const adminTypes: TypeRegistry = {
   'wx-relations': { component: RelationsField, kind: 'field', wide: true },
   'wx-slug': { component: SlugField, kind: 'field' },
   'wx-category-slug': { component: SlugField, kind: 'field' },
+  // The node's label is the feed's heading; inside a tab that already names it, `props.title: ""`.
+  'wx-history': { component: HistoryFeed, kind: 'display', labelProp: 'title' },
 }

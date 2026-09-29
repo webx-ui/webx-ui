@@ -398,8 +398,9 @@ GET    /api/cms/catalog/bulk/{run}            прогресс
 ### 11.3. Журнал
 
 Товар и категория пишут журнал ([`WEBX_UI_HISTORY.md`](WEBX_UI_HISTORY.md)); вкладка «История»
-— узел `history` в обеих формах. Запись о сохранении товара собирает изменения ядра и всех
-`ProductParts`; импорт и массовое действие — одна запись на прогон со строками по товарам.
+— узел `wx-history` в обеих формах (редактор отдаёт id через `provideHistorySubject`). Запись о
+сохранении товара собирает изменения ядра и всех `ProductParts`; импорт и массовое действие —
+одна запись на прогон со строками по товарам.
 
 ### 11.4. Массовые действия
 
@@ -617,7 +618,7 @@ claude/main. Из worktree pnpm не запускать и preview_start по и
 
 Прочитать: эту спеку §11 и «Итог K1»; WEBX_UI_SCREENS.md; docs/pitfalls/vue-and-tests.md и
 layout-and-browser.md. Образцы: packages/module-pages — экран дерева с перетаскиванием;
-module-services — форма-описание с вкладками, патчи, SEO-вкладка; module-admin — узел history
+module-services — форма-описание с вкладками, патчи, SEO-вкладка; module-admin — узел wx-history
 (H1), корзина категорий; module-media — загрузка файлов.
 
 Сделать: экраны §11.1 — catalog.products (поиск, фильтры из /facets, колонки, выбор строк под

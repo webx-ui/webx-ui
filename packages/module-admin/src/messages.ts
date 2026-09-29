@@ -145,6 +145,39 @@ export const adminMessages: Record<string, Messages> = {
     forbidden: 'You may not read the notes of this record.',
     'not-yours': 'A note is edited by whoever wrote it.',
   },
+  // Who changed a record and what (`wx-history`). The words of the fields are the modules' and
+  // arrive with the rows; these are the frame's: the events, the doors, the run.
+  history: {
+    title: 'History',
+    empty: 'Nothing has been changed here yet.',
+    unsaved: 'The history begins with the first save.',
+    'unknown-author': 'Nobody signed in',
+    'event-created': 'Created',
+    'event-updated': 'Changed',
+    'event-deleted': 'Deleted',
+    'event-restored': 'Restored',
+    'event-published': 'Published',
+    'event-unpublished': 'Unpublished',
+    'event-run': 'Run',
+    'source-panel': 'in the panel',
+    'source-mcp': 'through an agent',
+    'source-import': 'by an import',
+    'source-bulk': 'by a bulk action',
+    'source-api': 'through the API',
+    'source-console': 'from the console',
+    'empty-value': 'empty',
+    long: 'changed, :from → :to characters',
+    run: 'Part of a run',
+    'run-title': 'Run',
+    'run-rows': 'Rows: :count',
+    'run-failed': 'Stopped: :message',
+    search: 'Record id',
+    more: 'Show more',
+    // The three the server says and the browser only ever repeats.
+    'no-type': 'That kind of record keeps no history.',
+    missing: 'That run no longer exists.',
+    forbidden: 'You may not read the history of this record.',
+  },
   // Where a link goes. The sections of the picker are named by whichever modules registered them;
   // these are the words around them, plus the six the server says when a link will not do.
   links: {

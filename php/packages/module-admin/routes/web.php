@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use WebxUi\Admin\Http\Controllers\CollectionController;
+use WebxUi\Admin\Http\Controllers\HistoryController;
 use WebxUi\Admin\Http\Controllers\IconController;
 use WebxUi\Admin\Http\Controllers\LinkController;
 use WebxUi\Admin\Http\Controllers\LocaleController;
@@ -53,6 +54,14 @@ Route::prefix((string) config('webx-admin.api_path'))
             ->whereNumber('note')->name('notes.update');
         Route::delete('notes/{note}', [NoteController::class, 'destroy'])
             ->whereNumber('note')->name('notes.destroy');
+
+        // Who changed what (§5 of the journal spec). The run first: `runs` would otherwise be
+        // read as a type. Like the notes, the type is a registered one and says which
+        // permission its history is behind.
+        Route::get('history/runs/{id}', [HistoryController::class, 'run'])
+            ->whereNumber('id')->name('history.run');
+        Route::get('history/{type}/{id}', [HistoryController::class, 'index'])
+            ->where('type', '[a-z0-9_.-]+')->whereNumber('id')->name('history.index');
     });
 
 // The two things the panel needs before it can draw the sign-in screen, and therefore before

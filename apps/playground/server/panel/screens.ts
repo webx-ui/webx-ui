@@ -114,6 +114,11 @@ const SCREENS: Record<string, { base: string; patches: string[] }> = {
     base: 'php/packages/module-recipes/resources/screens/nutrient-form.json',
     patches: [],
   },
+  // A record of no module, with the journal's node on a tab of its form (WEBX_UI_HISTORY.md).
+  'demo.product': {
+    base: 'apps/playground/server/panel/project/demo.product.json',
+    patches: [],
+  },
 }
 
 /* A declaration and not a `const`: the table above calls it while the module loads. */

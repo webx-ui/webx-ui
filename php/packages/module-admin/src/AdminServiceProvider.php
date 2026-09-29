@@ -25,6 +25,7 @@ use WebxUi\Admin\Console\DoctorCommand;
 use WebxUi\Admin\Console\InstallCommand;
 use WebxUi\Admin\Console\MakeModuleCommand;
 use WebxUi\Admin\Console\PanelCommand;
+use WebxUi\Admin\Console\PruneHistoryCommand;
 use WebxUi\Admin\Console\PruneVersionsCommand;
 use WebxUi\Admin\Console\SetupCommand;
 use WebxUi\Admin\Contracts\AssetUrls;
@@ -33,6 +34,11 @@ use WebxUi\Admin\Contracts\SiteUrls;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Gate\CloseSite;
 use WebxUi\Admin\Gate\Openings;
+use WebxUi\Admin\History\HistoryContext;
+use WebxUi\Admin\History\HistoryTypes;
+use WebxUi\Admin\History\Journal;
+use WebxUi\Admin\History\Mcp\HistoryModule;
+use WebxUi\Admin\Http\Middleware\HistorySource;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Admin\Links\RoutingSiteUrls;
@@ -64,6 +70,7 @@ use WebxUi\Admin\Screens\Types\TimeType;
 use WebxUi\Admin\Screens\Types\TreeSelectType;
 use WebxUi\Admin\Support\Parts;
 use WebxUi\Localization\Locales;
+use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Routing\SiteUrl;
 
 class AdminServiceProvider extends ServiceProvider
@@ -190,6 +197,8 @@ class AdminServiceProvider extends ServiceProvider
             return $types;
         });
 
+        $this->registerHistory();
+
         // The backup directory has no state anywhere else, so this holds no state either: it
         // is a singleton to be injectable by name, not because it remembers anything.
         $this->app->singleton(Backups::class);
@@ -229,7 +238,10 @@ class AdminServiceProvider extends ServiceProvider
         $this->registerCategoryMacros();
         $this->registerPartDirective();
         $this->registerBackupSchedule();
+        $this->registerHistorySchedule();
         $this->registerGate();
+
+        $this->app->make('router')->aliasMiddleware('webx.history', HistorySource::class);
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -257,6 +269,7 @@ class AdminServiceProvider extends ServiceProvider
             InstallCommand::class,
             MakeModuleCommand::class,
             PanelCommand::class,
+            PruneHistoryCommand::class,
             PruneVersionsCommand::class,
             SetupCommand::class,
         ]);
@@ -286,6 +299,67 @@ class AdminServiceProvider extends ServiceProvider
             $schedule->command(BackupCommand::class)
                 ->dailyAt($backups->at())
                 // Two web servers behind one database would otherwise dump it twice a night.
+                ->onOneServer()
+                ->withoutOverlapping();
+        });
+    }
+
+    /**
+     * The journal of who changed what (WEBX_UI_HISTORY.md).
+     *
+     * The context is scoped: it is who is acting in this request, and a worker serves the next
+     * one as somebody else. The register is a singleton filled from providers, like the notes'.
+     *
+     * The panel's API group gets `webx.history` at its end — after whatever authenticates, so
+     * that the administrator is known by then. On `booting`, because `webx-ui/module-auth`
+     * replaces the whole group from its `register()`: every `register()` has run by then, and
+     * no route has been declared yet.
+     *
+     * The agent's tools are a module of their own, registered the moment a first type is: a
+     * panel that keeps no journal offers no tools to read one, and a site without
+     * `webx-ui/mcp` does not load the class at all.
+     */
+    private function registerHistory(): void
+    {
+        $this->app->scoped(HistoryContext::class);
+
+        $this->app->singleton(HistoryTypes::class, static fn ($app): HistoryTypes => new HistoryTypes(
+            static function () use ($app): void {
+                $modules = $app->make(ModuleRegistry::class);
+
+                if (interface_exists(ProvidesMcpTools::class) && ! $modules->has('history')) {
+                    $modules->register($app->make(HistoryModule::class));
+                }
+            },
+        ));
+
+        $this->app->singleton(Journal::class);
+
+        $this->app->booting(function (): void {
+            $config = $this->app->make('config');
+            $group = (array) $config->get('webx-admin.api_middleware', []);
+
+            if (! in_array('webx.history', $group, true)) {
+                $config->set('webx-admin.api_middleware', [...$group, 'webx.history']);
+            }
+        });
+    }
+
+    /**
+     * The daily trim of the journal, put on the schedule by the package like the backup: a
+     * journal nobody remembered to trim is most of the database two years later.
+     */
+    private function registerHistorySchedule(): void
+    {
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $config = $this->app->make('config');
+
+            if (! $config->get('webx-admin.history.enabled', true)) {
+                return;
+            }
+
+            $schedule->command(PruneHistoryCommand::class)
+                ->dailyAt((string) $config->get('webx-admin.history.prune_at', '03:40'))
                 ->onOneServer()
                 ->withoutOverlapping();
         });

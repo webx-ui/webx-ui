@@ -166,6 +166,35 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | History
+    |---------------------------------------------------------------------------
+    |
+    | Who changed what: one row per save of a model with `RecordsHistory`,
+    | shown by the `wx-history` screen node and read by agents through
+    | `history_get`. Rows older than `retention_days` go every night at
+    | `prune_at` (`webx:history:prune`), a run with all its rows at once.
+    |
+    | `skip_fields` are never written for any model — timestamps and the
+    | bounds of a tree are how a record is stored, not what it says. A value
+    | longer than `long_value` characters is written as "changed" with its
+    | length before and after, rather than twice in full.
+    |
+    */
+
+    'history' => [
+        'enabled' => env('WEBX_HISTORY_ENABLED', true),
+        'retention_days' => env('WEBX_HISTORY_RETENTION_DAYS', 365),
+        'prune_at' => env('WEBX_HISTORY_PRUNE_AT', '03:40'),
+        'long_value' => 500,
+        'skip_fields' => [
+            'created_at', 'updated_at', 'deleted_at',
+            'lft', 'rgt', 'depth',
+            'password', 'remember_token',
+        ],
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
     | Nightly database backup
     |---------------------------------------------------------------------------
     |

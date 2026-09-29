@@ -31,6 +31,7 @@ describe('the English here matches the English the server ships', () => {
     'backup',
     'errors',
     'notes',
+    'history',
     'rich-text',
     'links',
     'categories',

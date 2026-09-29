@@ -240,6 +240,7 @@ import {
   type VacancyRecord,
 } from './vacancies'
 import { screen, screenNames } from './screens'
+import { historyOf, historyRun } from './history'
 import {
   PREFIX as SERVICES_PREFIX,
   categoryIds as serviceCategoryIds,
@@ -541,6 +542,17 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 600,
         group: 'reviews',
         permissions: ['reviews.view', 'reviews.manage'],
+        meta: {},
+      },
+      /* Not a module of any package: a fake record with a made-up past, where the journal's node
+         is looked at until the catalogue writes real rows (WEBX_UI_HISTORY.md). */
+      {
+        id: 'history-demo',
+        title: 'Журнал (демо)',
+        icon: 'clock',
+        order: 890,
+        group: 'system',
+        permissions: [],
         meta: {},
       },
       /* One entry and no group either (§5.6 of the team spec): no categories to stand beside. */
@@ -1848,6 +1860,31 @@ const notes = new Map<
   string,
   { id: number; body: string; author: unknown; created_at: string; updated_at: string | null }[]
 >()
+
+/*
+ * The journal (WEBX_UI_HISTORY.md §5), of the one fake record that has one. The run first, as
+ * on the server: `runs` would otherwise be read as a type.
+ */
+on('GET', '/history/runs/(\\d+)', ({ params, query }) => {
+  const search = query.get('search')
+  const found = historyRun(
+    Number(params[0]),
+    Number(query.get('page') ?? '1'),
+    search !== null && /^\d+$/.test(search) ? Number(search) : null,
+  )
+
+  if (found === null) throw new HttpFailure(404, 'That run no longer exists.')
+
+  return found
+})
+
+on('GET', '/history/([\\w.-]+)/(\\d+)', ({ params, query }) => {
+  const found = historyOf(params[0]!, Number(params[1]), Number(query.get('page') ?? '1'))
+
+  if (found === null) throw new HttpFailure(404, 'That kind of record keeps no history.')
+
+  return found
+})
 
 on('GET', '/entities/([\\w-]+)/(\\d+)/notes', ({ params }) => ({
   data: notes.get(`${params[0]}:${params[1]}`) ?? [],
