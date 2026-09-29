@@ -3,6 +3,7 @@ import { admins, connect } from '@webx-ui/module-auth'
 import { banners } from '@webx-ui/module-banners'
 import { blocks, regions } from '@webx-ui/module-blocks'
 import { blog } from '@webx-ui/module-blog'
+import { catalog } from '@webx-ui/module-catalog'
 import { events } from '@webx-ui/module-events'
 import { faq } from '@webx-ui/module-faq'
 import { inbox } from '@webx-ui/module-inbox'
@@ -66,6 +67,7 @@ const admin = createAdmin({
     pages(),
     ...blog(),
     ...services(),
+    catalog(),
     ...faq(),
     ...reviews(),
     team(),
