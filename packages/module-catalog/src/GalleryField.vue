@@ -8,7 +8,7 @@ import {
   WxAlert,
   WxBadge,
   WxButton,
-  WxFormItem,
+  WxCard,
   WxInput,
   WxSortableList,
   WxText,
@@ -219,36 +219,38 @@ onBeforeUnmount(() => {
               >
                 {{ t('panel.gallery-main') }}
               </wx-badge>
+              <!-- On the picture rather than under the fields: a line of its own made every row
+                   taller and left the fields hanging off-centre. -->
+              <span
+                v-if="(item as ProductImage).width && (item as ProductImage).height"
+                class="wx-catalog-gallery__size"
+              >
+                {{ (item as ProductImage).width }}×{{ (item as ProductImage).height }}
+              </span>
             </a>
 
+            <!-- No label above each field: the placeholder says which is which, and a row a label
+                 taller is a list where three pictures fill the screen. -->
             <div class="wx-catalog-gallery__words">
-              <wx-form-item :label="t('panel.gallery-alt')" :help="t('panel.gallery-alt-help')">
-                <wx-input
-                  :model-value="(item as ProductImage).alt"
-                  localized
-                  size="sm"
-                  :disabled="locked"
-                  @update:model-value="(text) => caption(item as ProductImage, 'alt', text)"
-                />
-              </wx-form-item>
-
-              <wx-form-item :label="t('panel.gallery-title')">
-                <wx-input
-                  :model-value="(item as ProductImage).title"
-                  localized
-                  size="sm"
-                  :disabled="locked"
-                  @update:model-value="(text) => caption(item as ProductImage, 'title', text)"
-                />
-              </wx-form-item>
-
-              <wx-text
-                v-if="(item as ProductImage).width && (item as ProductImage).height"
+              <wx-input
+                :model-value="(item as ProductImage).alt"
+                localized
                 size="sm"
-                tone="muted"
-              >
-                {{ (item as ProductImage).width }} × {{ (item as ProductImage).height }}
-              </wx-text>
+                :placeholder="t('panel.gallery-alt')"
+                :aria-label="t('panel.gallery-alt')"
+                :title="t('panel.gallery-alt-help')"
+                :disabled="locked"
+                @update:model-value="(text) => caption(item as ProductImage, 'alt', text)"
+              />
+              <wx-input
+                :model-value="(item as ProductImage).title"
+                localized
+                size="sm"
+                :placeholder="t('panel.gallery-title')"
+                :aria-label="t('panel.gallery-title')"
+                :disabled="locked"
+                @update:model-value="(text) => caption(item as ProductImage, 'title', text)"
+              />
             </div>
           </div>
         </template>
@@ -276,15 +278,17 @@ onBeforeUnmount(() => {
           @add="add"
         />
 
-        <!-- Not a <form>: the gallery stands inside the screen's own, and Enter here must fetch
+        <!-- A card of its own: a way in that is rarely taken, kept out of the way of the one that is.
+             Not a <form>: the gallery stands inside the screen's own, and Enter here must fetch
              the picture rather than submit the product. -->
-        <wx-form-item :label="t('panel.gallery-url')">
+        <wx-card :title="t('panel.gallery-url')">
           <div class="wx-catalog-gallery__address">
             <wx-input
               v-model="address"
               type="url"
               size="sm"
               placeholder="https://"
+              :aria-label="t('panel.gallery-url')"
               @keydown.enter.prevent="fetchAddress"
             />
             <wx-button
@@ -297,7 +301,7 @@ onBeforeUnmount(() => {
               {{ t('panel.gallery-url-add') }}
             </wx-button>
           </div>
-        </wx-form-item>
+        </wx-card>
       </template>
     </template>
   </div>
@@ -317,16 +321,15 @@ onBeforeUnmount(() => {
 
 .wx-catalog-gallery__item {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
-  gap: var(--wx-space-16);
-  align-items: start;
-  padding-block: var(--wx-space-8);
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: var(--wx-space-12);
+  align-items: center;
 }
 
 .wx-catalog-gallery__thumb {
   position: relative;
   display: block;
-  width: 96px;
+  width: 72px;
   aspect-ratio: 1;
   overflow: clip;
   border-radius: var(--wx-radius-sm);
@@ -344,8 +347,26 @@ onBeforeUnmount(() => {
 
 .wx-catalog-gallery__main {
   position: absolute;
-  inset-inline-start: var(--wx-space-4);
-  inset-block-start: var(--wx-space-4);
+  inset-inline-start: var(--wx-space-2);
+  inset-block-start: var(--wx-space-2);
+}
+
+/*
+ * The dim behind a dialog and a fixed white, not the inverse text: that one turns dark in the dark
+ * theme, and the strip is dark in both — it has to read on whatever the picture is.
+ */
+.wx-catalog-gallery__size {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  padding-block: var(--wx-space-2);
+  background: var(--wx-bg-overlay);
+  color: var(--wx-color-white);
+  font-size: var(--wx-font-size-xs);
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Two fields side by side while there is room for two readable lines of text, stacked below. */
@@ -358,10 +379,6 @@ onBeforeUnmount(() => {
 @container (min-width: 640px) {
   .wx-catalog-gallery__words {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .wx-catalog-gallery__words > .wx-text {
-    grid-column: 1 / -1;
   }
 }
 

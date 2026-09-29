@@ -64,7 +64,7 @@ return [
     'sku-open-deleted' => 'Найти его в «Удалённых»',
     'gallery-add' => 'Добавить картинки',
     'gallery-hint' => 'JPEG, PNG, WebP или GIF. Первая картинка — главная.',
-    'gallery-url' => 'Или по адресу',
+    'gallery-url' => 'Загрузить по адресу',
     'gallery-url-add' => 'Загрузить',
     'gallery-empty' => 'Картинок пока нет.',
     'gallery-main' => 'Главная',

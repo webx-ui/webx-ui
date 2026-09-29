@@ -120,9 +120,11 @@ const SCREENS: Record<string, { base: string; patches: string[] }> = {
     base: 'php/packages/module-catalog/resources/screens/product-form.json',
     patches: ['apps/playground/server/panel/project/catalog.product-form.json'],
   },
+  // «Filters» is off by default (`webx-catalog.fields.facets`) and taken off by the provider's
+  // patch; a site with the properties has it on — drop this patch to see the tab.
   'catalog.category-form': {
     base: 'php/packages/module-catalog/resources/screens/category-form.json',
-    patches: [],
+    patches: ['apps/playground/server/panel/project/catalog.category-form.json'],
   },
   // A record of no module, with the journal's node on a tab of its form (WEBX_UI_HISTORY.md).
   'demo.product': {

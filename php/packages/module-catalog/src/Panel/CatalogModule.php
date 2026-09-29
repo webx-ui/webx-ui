@@ -16,8 +16,9 @@ use WebxUi\Mcp\Prompt;
 use WebxUi\Mcp\Tool;
 
 /**
- * The catalogue as a section of the panel: products, categories and «Deleted», in a group of its
- * own that the satellites join — brands, stock, labels stand beside it, not inside it (§1).
+ * The catalogue as a section of the panel: products and «Deleted», in a group of its own that the
+ * satellites join — brands, stock, labels stand beside it, not inside it (§1). The tree of
+ * categories is `CatalogCategoriesModule`, an entry beside it that owns nothing of its own.
  *
  * Three permissions (§11.5): `view` opens the section, `manage` writes everything but deletes
  * and restores, `delete` does those and opens «Deleted». Categories go by the same three: the

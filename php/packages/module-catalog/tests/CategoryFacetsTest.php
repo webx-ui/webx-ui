@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Catalog\Tests;
 
+use Illuminate\Foundation\Application;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Catalog\Facets\CategoryFacets;
 use WebxUi\Catalog\Facets\Facet;
@@ -102,5 +103,15 @@ final class CategoryFacetsTest extends TestCase
     private function facets(): CategoryFacets
     {
         return $this->app->make(CategoryFacets::class);
+    }
+
+    /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        parent::defineEnvironment($app);
+        // On, as on a site with the properties: off, there is nothing here to arrange.
+        $app['config']->set('webx-catalog.fields.facets', true);
     }
 }
