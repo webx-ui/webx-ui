@@ -114,6 +114,16 @@ const SCREENS: Record<string, { base: string; patches: string[] }> = {
     base: 'php/packages/module-recipes/resources/screens/nutrient-form.json',
     patches: [],
   },
+  // The unit's options are the provider's patch on the server (`webx-catalog.units`); here the
+  // fixture carries the same list.
+  'catalog.product-form': {
+    base: 'php/packages/module-catalog/resources/screens/product-form.json',
+    patches: ['apps/playground/server/panel/project/catalog.product-form.json'],
+  },
+  'catalog.category-form': {
+    base: 'php/packages/module-catalog/resources/screens/category-form.json',
+    patches: [],
+  },
   // A record of no module, with the journal's node on a tab of its form (WEBX_UI_HISTORY.md).
   'demo.product': {
     base: 'apps/playground/server/panel/project/demo.product.json',
