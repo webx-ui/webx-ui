@@ -1,4 +1,5 @@
 import { inject, provide, type InjectionKey, type Ref } from 'vue'
+import type { GalleryVideo } from './galleryVideo'
 import type { CategoryRow, ProductImage, ProductRow } from './types'
 
 /**
@@ -15,6 +16,12 @@ export interface ProductEditorContext {
   images: Ref<ProductImage[]>
   /** Closed for writing: no permission, or a save in flight. */
   locked: Ref<boolean>
+  /**
+   * Video files on their way into the gallery. Kept up here rather than in the gallery field, whose
+   * tab is taken down when another is opened — and an upload with it. The field makes its own
+   * when an editor leaves it out.
+   */
+  video?: GalleryVideo
 }
 
 export const productEditorKey: InjectionKey<ProductEditorContext> = Symbol('wx-catalog-product')

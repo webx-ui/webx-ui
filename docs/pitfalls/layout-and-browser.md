@@ -40,6 +40,16 @@
   видит. `left_click` по пустому месту закрывает календарь сразу
   (на `/panel/vacancies/1`). И проверять по DOM (`.dp--menu` пропал), а не по скриншоту
   — он бывает на шаг позади.
+- **`navigate` панели браузера уходит со страницы без вопроса «Покинуть сайт?»,** даже когда
+  `beforeunload` вызывает `preventDefault()`. Кажется, что защита от ухода не работает. Проверять её
+  синтетическим событием: `const e = new Event('beforeunload', { cancelable: true });
+dispatchEvent(e); e.defaultPrevented`, а в тесте так же.
+- **Видео для проверки загрузки делается в самой странице, без ffmpeg:** `canvas.captureStream()`
+  в `MediaRecorder` с `video/mp4;codecs=avc1` (Chrome) или `video/webm;codecs=vp8`. Файл кладётся
+  во вход загрузки через `DataTransfer` и событие `change`. Нужен большой, чтобы успеть нажать
+  паузу, — дописать нули (`new File([clip, new Uint8Array(15e6)], …)`): кадр и проверка
+  содержимого смотрят только в начало файла. Нативный диалог выбора файла (`input.click()`) на
+  время проверки заглушать: `HTMLInputElement.prototype.click = () => {}`.
 
 ## Перетаскивание
 
