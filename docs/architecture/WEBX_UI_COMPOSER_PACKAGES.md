@@ -803,13 +803,39 @@ MCP: `tariffs_*` (шесть), `tariff_groups_*`, ресурс `tariffs://catalo
 
 Права: `tariffs.view`, `tariffs.manage`.
 
+### `webx-ui/module-catalog` — каталог товаров
+
+Статус: код готов 29.09.2026 (сессии K1–K4), выпуск — K5 — [спецификация
+ядра](WEBX_UI_MODULE_CATALOG.md), архитектура семейства — [WEBX_UI_CATALOG.md](WEBX_UI_CATALOG.md).
+
+Ядро семейства: товары с ценой, единицей и галереей, дерево категорий с плоскими адресами, три
+состояния товара и «Удалённые», реестры для спутников (`Facets`, `Sorts`, `ProductParts`,
+`ProductColumns`, `Purchasability`, `FilterUrls`, `PopularitySignals`, `BulkActions`), движок
+`SqlEngine` с очередью индексации под внешние движки, витрина в шаблонах с фильтром ссылками.
+
+- **На сайте** — категория и корень с фильтром, товар (снятый — урезанная страница), поиск;
+  `products()` на общем `RecordQuery` (`->category('slug')->sort('popular')->take(8)`), источник
+  `products` для `wx-collection`, категории и товары в `LinkSources` меню.
+- **Массовые действия** — выбор id или «всё по фильтру» (id фиксируются в момент запуска), до
+  `bulk.sync_limit` — в запросе, больше — очередью пачками (`catalog_bulk_runs`), одна запись
+  журнала на прогон; спутники регистрируют свои действия.
+- **Демо** — `webx:demo`: 15 категорий в три уровня, ~150 товаров с картинками и всеми состояниями.
+
+npm-пара: `@webx-ui/module-catalog` — раздел «Каталог»: список с фасетами и массовыми
+действиями, форма товара с галереей, дерево категорий с «Фильтрами», «Удалённые».
+
+MCP: `catalog_*` (пятнадцать, удаление и восстановление — за `catalog.delete`), ресурсы
+`catalog://facets`, `fields`, `addresses`, `categories`, `product-parts`, `bulk-actions`.
+
+Права: `catalog.view`, `catalog.manage`, `catalog.delete`.
+
 ---
 
 ## Упомянуты ранее, детализировать позже
 
 - `webx-ui/module-products` — товары: цены, склад, категории, бренды, характеристики. Вырос в
-  семейство каталога — ядро плюс спутники `module-catalog-*`; архитектура —
-  `docs/architecture/WEBX_UI_CATALOG.md` (согласована 29.09.2026), спека ядра — `WEBX_UI_MODULE_CATALOG.md`.
+  семейство каталога: ядро — `module-catalog` выше, спутники `module-catalog-*` (склад, бренды,
+  свойства…) — по порядку §10 `docs/architecture/WEBX_UI_CATALOG.md`, не начаты.
 
 `webx-ui/module-news` из прежней редакции стал `module-blog` — выше, в «Модулях».
 

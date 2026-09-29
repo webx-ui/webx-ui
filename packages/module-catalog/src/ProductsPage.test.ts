@@ -186,9 +186,36 @@ describe('WxCatalogProductsPage', () => {
 
     expect(wrapper.find('.wx-catalog-products__selection').text()).toContain('Selected: 1')
 
-    await wrapper.find('.wx-catalog-products__selection button').trigger('click')
+    const clear = wrapper
+      .findAll('.wx-catalog-products__selection button')
+      .find((one) => one.text().includes('Clear the selection'))
+    await clear!.trigger('click')
 
     expect(wrapper.find('.wx-catalog-products__selection').exists()).toBe(false)
+  })
+
+  it('picks everything the filter finds as the query, not as the ticked rows', async () => {
+    const { wrapper } = await panel('/catalog/products?view=unpublished&q=lamp', {
+      ...page([row(1), row(2)]),
+      total: 40,
+    })
+
+    await wrapper.findAll('tbody input[type="checkbox"]')[0]!.setValue(true)
+
+    const all = wrapper
+      .findAll('.wx-catalog-products__selection button')
+      .find((one) => one.text().includes('Select everything found: 40'))
+    await all!.trigger('click')
+
+    expect(wrapper.find('.wx-catalog-products__selection').text()).toContain(
+      'Selected everything found: 40',
+    )
+
+    const bar = wrapper.findComponent({ name: 'BulkBar' })
+    expect(bar.props('count')).toBe(40)
+    expect(bar.props('selection')).toEqual({
+      query: { q: 'lamp', state: 'unpublished', facets: {} },
+    })
   })
 
   it('opens a product in its editor', async () => {

@@ -222,3 +222,59 @@ export interface DeletedCategory {
 }
 
 export type DeletedKind = 'products' | 'categories'
+
+/** What a bulk action asks for before it runs (`PartField` on the server). */
+export interface BulkParam {
+  name: string
+  /** `category` draws the tree; anything else with `values` a list; the rest a text field. */
+  type: string
+  label: string
+  rules?: string[]
+  /** The allowed values, or the tool that lists them — which the panel does not follow. */
+  values?: Array<string | number | { value: string | number; label: string }> | string
+}
+
+/** One bulk action the server offers this administrator (§11.4): the core's or a satellite's. */
+export interface BulkActionInfo {
+  key: string
+  label: string
+  permission: string
+  /** It acts on the products in «Deleted» — a restore. */
+  trashed: boolean
+  params: BulkParam[]
+}
+
+/** Rows ticked, or everything the list's query finds — turned into ids when the run starts. */
+export type BulkSelection =
+  | { ids: number[] }
+  | {
+      query: {
+        q?: string
+        state?: string
+        facets?: Record<
+          string,
+          Array<string | number> | { min?: number | null; max?: number | null }
+        >
+      }
+    }
+
+export interface BulkRunError {
+  id: number
+  name: string
+  message: string
+}
+
+/** A run: done inside the request (`id` null) or queued, polled until it is `done` or `failed`. */
+export interface BulkRun {
+  id: number | null
+  action: string
+  label: string
+  status: 'queued' | 'running' | 'done' | 'failed'
+  total: number
+  done: number
+  failed: number
+  errors: BulkRunError[]
+  history_id: number | null
+  created_at: string | null
+  finished_at: string | null
+}

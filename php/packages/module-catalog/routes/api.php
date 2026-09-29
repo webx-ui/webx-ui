@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use WebxUi\Catalog\Http\Controllers\BulkController;
 use WebxUi\Catalog\Http\Controllers\CategoryController;
 use WebxUi\Catalog\Http\Controllers\DeletedController;
 use WebxUi\Catalog\Http\Controllers\FacetController;
@@ -15,7 +16,9 @@ use WebxUi\Catalog\Http\Controllers\ProductImageController;
  * and opens «Deleted». Categories go by the same three.
  */
 Route::prefix((string) config('webx-admin.api_path').'/catalog')
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    // `webx.history` by name: this group is not the frame's `api_middleware`, and without it a
+    // save from the panel would be journaled as `api` with nobody behind it.
+    ->middleware(['web', 'webx.panel-locale', 'cms.auth', 'webx.history'])
     ->name('webx.catalog.')
     ->group(function (): void {
         Route::middleware('cms.can:catalog.view,catalog.manage,catalog.delete')->group(function (): void {
@@ -40,6 +43,14 @@ Route::prefix((string) config('webx-admin.api_path').'/catalog')
             Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
             Route::put('categories/{category}', [CategoryController::class, 'update'])->whereNumber('category')->name('categories.update');
             Route::post('categories/{category}/move', [CategoryController::class, 'move'])->whereNumber('category')->name('categories.move');
+        });
+
+        // Each action names its own permission — a delete is `catalog.delete` — and the runner
+        // asks it; the door only keeps out whoever can do none of them.
+        Route::middleware('cms.can:catalog.manage,catalog.delete')->group(function (): void {
+            Route::get('bulk', [BulkController::class, 'index'])->name('bulk.index');
+            Route::post('bulk', [BulkController::class, 'store'])->name('bulk.store');
+            Route::get('bulk/{run}', [BulkController::class, 'show'])->whereNumber('run')->name('bulk.show');
         });
 
         Route::middleware('cms.can:catalog.delete')->group(function (): void {

@@ -87,6 +87,11 @@ RouteLocationRaw | boolean` компилировался в `{ type: Boolean }`:
   висит, навигация тоже. Ни ошибки, ни предупреждения; из обработчика клика тот же код работает.
   У нас: `useModal` берёт ручку из `parent.provides` сам.
 
+- **В тесте пункт `WxDropdown` не находится, хотя меню «открыто».** С `stubs: { teleport: true }`
+  панель Reka не рисует пункты там, где их ищут, и `document.querySelectorAll('.wx-dropdown-item')`
+  пуст. Без заглушки, с `attachTo: document.body`: клик по кнопке-триггеру, `flushPromises()`,
+  пункты — в `document`, как в `RowMenu.test.ts`.
+
 ## Редакторы: Tiptap, CodeMirror, датапикер, canvas
 
 - **`setEditable()` у Tiptap — это событие `update`, а не только переключатель.** Форма, которая

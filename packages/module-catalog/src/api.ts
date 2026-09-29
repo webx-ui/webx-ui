@@ -2,6 +2,9 @@ import { readCookie, type AdminContext } from '@webx-ui/module-admin'
 import type { Paginated } from '@webx-ui/core'
 import type { ScreenModel } from '@webx-ui/schema'
 import type {
+  BulkActionInfo,
+  BulkRun,
+  BulkSelection,
   CategoryDetail,
   CategoryNode,
   CategoryRow,
@@ -51,6 +54,16 @@ export interface CatalogApi {
 
   /** The registry of facets, with the sorts the list is offered. */
   facets(): Promise<FacetRegistryAnswer>
+
+  /** The bulk actions this administrator may start, with what each asks for (§11.4). */
+  bulkActions(): Promise<BulkActionInfo[]>
+  /** Done at once when small (`id` null in the answer), queued otherwise. */
+  startBulk(
+    action: string,
+    params: Record<string, unknown>,
+    selection: BulkSelection,
+  ): Promise<BulkRun>
+  bulkRun(id: number): Promise<BulkRun>
 
   deleted(
     kind: 'products',
@@ -207,6 +220,11 @@ export function createCatalogApi(admin: AdminContext): CatalogApi {
       admin.http
         .get<{ data: FacetInfo[]; meta?: { sorts?: SortInfo[] } }>(`${base}/facets`)
         .then((body) => ({ facets: body.data, sorts: body.meta?.sorts ?? [] })),
+
+    bulkActions: () => admin.http.get<{ data: BulkActionInfo[] }>(`${base}/bulk`).then(data),
+    startBulk: (action, params, selection) =>
+      admin.http.post<{ data: BulkRun }>(`${base}/bulk`, { action, params, selection }).then(data),
+    bulkRun: (id) => admin.http.get<{ data: BulkRun }>(`${base}/bulk/${id}`).then(data),
 
     deleted: ((kind: DeletedKind, query: { q?: string; page?: number; per_page?: number } = {}) => {
       const search = new URLSearchParams({ type: kind })
