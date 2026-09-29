@@ -62,12 +62,24 @@ export class HttpError extends Error {
   }
 }
 
+export interface SendOptions extends RequestOptions {
+  /** Sent as it is — bytes, a `Blob`, a string — with no `Content-Type` added for it. */
+  body?: BodyInit | null
+}
+
 export interface Http {
   get<T>(path: string, options?: RequestOptions): Promise<T>
   post<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T>
   put<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T>
   patch<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T>
   delete<T>(path: string, options?: RequestOptions): Promise<T>
+  /**
+   * A request with the panel's conventions (the CSRF cookie, the standing headers, 419 and 401)
+   * and nothing else: the body goes as it is and the response comes back whatever its status.
+   * For what JSON does not fit — the pieces of a chunked upload, a `HEAD` asked for a header.
+   * Optional so that a hand-made client in a test or a project does not have to grow one.
+   */
+  send?(method: string, path: string, options?: SendOptions): Promise<Response>
 }
 
 const UNSAFE = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
@@ -92,13 +104,12 @@ export function createHttp(options: HttpOptions = {}): Http {
     csrfFetched = true
   }
 
-  async function request<T>(
+  async function send(
     method: string,
     path: string,
-    body?: unknown,
-    options: RequestOptions = {},
+    options: SendOptions & { json?: boolean } = {},
     retried = false,
-  ): Promise<T> {
+  ): Promise<Response> {
     const unsafe = UNSAFE.has(method)
 
     if (unsafe) {
@@ -121,7 +132,7 @@ export function createHttp(options: HttpOptions = {}): Http {
       }
     }
 
-    if (body !== undefined) {
+    if (options.json === true) {
       headers['Content-Type'] = 'application/json'
     }
 
@@ -130,7 +141,7 @@ export function createHttp(options: HttpOptions = {}): Http {
       credentials: 'same-origin',
       headers,
       signal: options.signal,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: options.body ?? undefined,
     })
 
     // 419 is Laravel for "your CSRF token has gone stale", which happens after a session is
@@ -139,12 +150,27 @@ export function createHttp(options: HttpOptions = {}): Http {
     if (response.status === 419 && unsafe && !retried) {
       await ensureCsrfCookie(true)
 
-      return request<T>(method, path, body, options, true)
+      return send(method, path, options, true)
     }
 
     if (response.status === 401) {
       onUnauthenticated?.()
     }
+
+    return response
+  }
+
+  async function request<T>(
+    method: string,
+    path: string,
+    body?: unknown,
+    options: RequestOptions = {},
+  ): Promise<T> {
+    const response = await send(method, path, {
+      ...options,
+      json: body !== undefined,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
 
     if (!response.ok) {
       throw await toError(response)
@@ -163,10 +189,11 @@ export function createHttp(options: HttpOptions = {}): Http {
     put: (path, body, options) => request('PUT', path, body, options),
     patch: (path, body, options) => request('PATCH', path, body, options),
     delete: (path, options) => request('DELETE', path, undefined, options),
+    send: (method, path, options) => send(method.toUpperCase(), path, options),
   }
 }
 
-async function toError(response: Response): Promise<HttpError> {
+export async function toError(response: Response): Promise<HttpError> {
   let body: unknown = null
 
   try {

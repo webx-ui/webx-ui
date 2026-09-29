@@ -14,6 +14,7 @@ use WebxUi\Admin\Http\Controllers\RelationController;
 use WebxUi\Admin\Http\Controllers\ScreenController;
 use WebxUi\Admin\Http\Controllers\ShellController;
 use WebxUi\Admin\Http\Controllers\TranslationController;
+use WebxUi\Admin\Http\Controllers\UploadController;
 
 Route::prefix((string) config('webx-admin.api_path'))
     ->middleware((array) config('webx-admin.api_middleware'))
@@ -62,6 +63,16 @@ Route::prefix((string) config('webx-admin.api_path'))
             ->whereNumber('id')->name('history.run');
         Route::get('history/{type}/{id}', [HistoryController::class, 'index'])
             ->where('type', '[a-z0-9_.-]+')->whereNumber('id')->name('history.index');
+
+        // Large files a piece at a time (§4 of the video spec). What a file is for is a
+        // registered purpose, which says who may send one; the session is its sender's alone.
+        Route::post('uploads', [UploadController::class, 'store'])->name('uploads.store');
+        Route::get('uploads/{id}', [UploadController::class, 'show'])
+            ->whereUuid('id')->name('uploads.show');
+        Route::patch('uploads/{id}', [UploadController::class, 'append'])
+            ->whereUuid('id')->name('uploads.append');
+        Route::delete('uploads/{id}', [UploadController::class, 'destroy'])
+            ->whereUuid('id')->name('uploads.destroy');
     });
 
 // The two things the panel needs before it can draw the sign-in screen, and therefore before

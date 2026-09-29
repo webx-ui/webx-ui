@@ -3,8 +3,8 @@
 Дополнение к [`WEBX_UI_MODULE_CATALOG.md`](WEBX_UI_MODULE_CATALOG.md) §3 и §10.4: к картинке
 галереи можно прикрепить ролик — свой файл или ссылку на YouTube. Большие файлы идут частями
 через загрузку по кускам, которая живёт в `module-admin` и годится любому модулю. Пакеты:
-`webx-ui/module-catalog`, `webx-ui/module-admin` и их npm-половины. Статус: спека, кода нет
-(29.09.2026).
+`webx-ui/module-catalog`, `webx-ui/module-admin` и их npm-половины. Статус: V1 (загрузка кусками в
+`module-admin`) сделан, V2 и V3 впереди (29.09.2026).
 
 ## 1. Решения (не переоткрывать)
 
@@ -229,3 +229,39 @@ DELETE /api/cms/catalog/products/{id}/images/{image}/video    → { data: image 
 
 Демо (`webx:demo`) получает один ролик YouTube у одного товара; своих файлов в демо нет — не
 тащить мегабайты в пакет.
+
+## Итог V1
+
+Загрузка кусками живёт в `module-admin` на обеих половинах; гайд для людей —
+`apps/docs/guide/uploads.md`. Что V2 и V3 надо знать сверх своих промптов:
+
+- **Ответы — под `data`, как у всей панели:** `POST /api/cms/uploads` отвечает
+  `{ data: { id, offset, size, chunk_size } }` — `201` на новую сессию, `200` на найденную по
+  отпечатку — и заголовком `Upload-Offset`. `HEAD` — это `GET uploads/{id}` (тот же ответ, тело
+  отбрасывается). Отпечаток в базе — `sha1` строки, которую прислал клиент.
+- **Отказы — `UploadRefused`, он рендерит себя сам:** 422 с `errors.purpose|type|size|upload`,
+  403 без права, 404 на чужую, истёкшую и несуществующую сессию одинаково, 409 с настоящим
+  `Upload-Offset`. Брошенный из контроллера каталога, он отвечает так же.
+- **Регистрация назначения (V2, провайдер каталога):**
+  `UploadPurposes::register('catalog.video', permission: 'catalog.manage', types: fn () => config('webx-catalog.videos.types'), maxBytes: fn () => config('webx-catalog.videos.max_size_mb') * 1048576)`
+  — замыкания читаются при каждом запросе, так что тесты и сайт меняют лимиты конфигом. Флаг
+  `fields.video` выключен — отказ даёт уже эндпоинт прикрепления, регистрацию можно не трогать.
+- **Забрать файл:** `app(Uploads::class)->claim($upload, 'catalog.video', $request->user())` →
+  `ClaimedUpload { id, path, name, size, type }`; сессии после этого нет. Проверка содержимого
+  (`finfo` на `$claimed->path`), `hash_file('sha1', …)` и перенос — дело V2 **до**
+  `$claimed->moveTo($disk, $path)` (потоком, `.part` удаляется) или `$claimed->discard()` при отказе.
+  Незабранный `.part` подметёт `webx:prune-uploads` через TTL.
+- **Куски лежат на локальном диске** `storage/app/uploads` независимо от диска галереи: в облачный
+  дописывать нельзя. `webx:prune-uploads` в расписании ежечасно; `webx:doctor` (`UploadSpace`)
+  предупреждает, когда свободного места меньше самого большого `maxBytes`.
+- **npm:** `useChunkedUpload({ admin?, storage?, retries?, retryDelay? })`; к пяти состояниям
+  спеки добавлено `idle`. `start(file, purpose)` резолвится id, когда файл целиком на сервере,
+  `null` при отмене и реджектится при ошибке; пауза промис не трогает. Рядом —
+  `unfinishedUploads(purpose)`, `forgetUnfinishedUpload(fingerprint, purpose)`,
+  `uploadFingerprint(file)`, `MIN_CHUNK`. У `Http` появился необязательный `send()` — запрос
+  с CSRF и заголовками панели, но без JSON и без броска на не-2xx.
+- **Для V3:** композабл ставит загрузку на паузу, когда умирает его scope, — держать его на
+  уровне формы, а не строки галереи, которая может перерисоваться. `beforeunload` композабл не
+  вешает: вопрос «уйти во время загрузки?» — забота `GalleryField`. Сервер плейграунда
+  (`apps/playground/server/panel`) эндпоинтов `/uploads` пока не знает — V3 добавляет их в
+  фикстуры вместе с роликами.
