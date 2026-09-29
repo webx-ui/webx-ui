@@ -1,5 +1,78 @@
 # @webx-ui/php
 
+## 0.50.0
+
+### Minor Changes
+
+- d1ff63d: The change history in `module-admin` (`WEBX_UI_HISTORY.md`): the `admin_history` table, one row
+  per save with who, when, through which door and what changed. `RecordsHistory` on a model writes
+  its saves field by field (translated fields per language, service fields and secrets left out,
+  long values as a length); `History::record()` and `History::recordFor()` write by hand, and
+  `History::run()` puts an import or a bulk action under one parent row. The source and the author
+  come from `HistoryContext`, set by the new `webx.history` middleware at the end of the panel's API
+  group, by the MCP server (`mcp` with the administrator and the grant) and `console` otherwise. A
+  module registers its types with field labels and a view permission (`HistoryTypes::register`);
+  `GET /api/cms/history/{type}/{id}` and `GET /api/cms/history/runs/{id}` read them, and so do the
+  MCP tools `history_get` and `history_runs` with the `history://types` resource. Rows older than
+  `webx-admin.history.retention_days` (365) go nightly with `webx:history:prune`.
+- 425b6b7: `webx-ui/module-catalog`, the data layer of the catalogue core (`WEBX_UI_MODULE_CATALOG.md`, session
+  K1): products, a tree of categories with flat slugs, prices and units, a gallery on a disk of its
+  own, three product states and «Deleted». Addresses from the registry — a category at `/{slug}`, a
+  product at `/{slug}-{id}` with 301 from any other spelling; an unpublished or invisible product
+  answers a trimmed page with `noindex`, a deleted one 301 to its category or 410. The panel API
+  (products, gallery, categories with move, «Deleted»), the permissions `catalog.view`,
+  `catalog.manage`, `catalog.delete`, the journal for products and categories, and `ProductParts` —
+  the registry satellites write their share of the product form through, in the form's transaction.
+
+  `webx-ui/routing`: `Misses` — handlers a module registers for addresses the registry holds no row
+  for, asked before the 404. The refusal of a taken address names an entity by `name` when it has no
+  `title`.
+
+  `webx-ui/module-media`: `Thumbnails::variantOf($disk, $path, …)` and `forgetOf()` for a picture
+  outside the library, with previews kept beside it; `variant(MediaFile)` goes through the same code.
+
+- 5af368f: `webx-ui/module-catalog`, the engine and the storefront of the catalogue core
+  (`WEBX_UI_MODULE_CATALOG.md`, session K2): the registries satellites plug into — `Facets` (the
+  core's `category` as a tree and `price` as a range), `Sorts`, `Documents` / `DocumentContributor`,
+  `ProductColumns`, `Purchasability`, `FilterUrls` with rewriters, `PopularitySignals`,
+  `StorefrontParts`; `CatalogQuery` / `CatalogResult` and `SqlEngine`; the index queue with
+  `webx:catalog:index`; popularity with `webx:catalog:flush-views` and the nightly
+  `webx:catalog:popularity`; a category's facets inherited from the nearest configured ancestor. The
+  storefront: a category with a filter of links that works without a script (`/laptops/brand_apple`,
+  one spelling, 301 on any other), `noindex` on combinations, ranges, sorts and later pages, the
+  root `/catalog/` behind the config, the search, `Product` / `Offer` / `ItemList` markup, the first
+  levels of the filter in the sitemap. The panel gets `GET /api/cms/catalog/facets` and a list of
+  products searched and counted by the engine.
+
+  `webx-ui/module-admin`: `DoctorChecks` — checks a module adds to `webx:doctor`.
+
+  `webx-ui/module-seo`: `SitemapSources` — addresses a module adds to the sitemap without rows in the
+  registry.
+
+- 7d47c13: `module-catalog` is complete. Bulk actions (§11.4): the `BulkActions` registry satellites add to,
+  the core's publish, unpublish, set, add and remove a category, delete and restore; `GET`/`POST
+/api/cms/catalog/bulk` and `GET /bulk/{run}`; a selection by ids or by the list's query, fixed as
+  ids when the run starts; up to `bulk.sync_limit` inside the request, more queued in chunks
+  (`catalog_bulk_runs`, `catalog_bulk_run_items`, the `ProcessBulkChunk` job), each chunk a
+  transaction with a savepoint per product, one journal run with a row per product. Fifteen MCP
+  tools with the permissions of §12.1 — deleting and restoring behind `catalog.delete`, `catalog_bulk`
+  asking it for those two actions — `dry_run` that does the write and takes it back, and six
+  resources, the parts of the product form among them. `webx:demo` seeds a shop of fifteen
+  categories and about a hundred and fifty products. `products()` on `RecordQuery`, the
+  `products` collection, categories and products in the menu's link sources, the catalogue in
+  `webx:setup`'s list and `extra.webx` for `webx:panel --sync`. The catalogue's API routes now carry
+  `webx.history`, so a save from the panel is journaled as `panel` with its author.
+
+### Patch Changes
+
+- 31ef272: `webx-ui/module-catalog`: the words of the panel's catalogue screens, `webx-catalog::panel.*`, in
+  English and Russian.
+- 2622b5d: Saves made in the panel are journalled as `panel` with the signed-in administrator in every
+  module, not only in `module-admin`. The frame registers a `webx.panel` middleware group (`web`,
+  `webx.panel-locale`, `cms.auth`, `webx.history`), and every module's panel API now sits behind it
+  instead of a hand-written list that left out `webx.history` — its rows said `api` and named nobody.
+  `module-auth`'s signed-in routes carry `webx.history` too.
+
 ## 0.49.2
 
 ### Patch Changes

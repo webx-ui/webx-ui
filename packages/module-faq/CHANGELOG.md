@@ -1,5 +1,12 @@
 # @webx-ui/module-faq
 
+## 0.1.4
+
+### Patch Changes
+
+- Updated dependencies [d1ff63d]
+  - @webx-ui/module-admin@0.19.0
+
 ## 0.1.3
 
 ### Patch Changes
