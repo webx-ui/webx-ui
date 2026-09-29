@@ -890,10 +890,9 @@ run_http_checks() {
 
     # The token outlives the session it was granted in — that is the whole point of it.
     local tools
-    tools="$(curl -s -H 'Accept: application/json' -H 'Content-Type: application/json' \
-        -H "Authorization: Bearer $MCP_TOKEN" -X POST -d "$rpc" "$BASE/api/cms/mcp")"
-    printf '%s' "$tools" | grep -q '"blocks_list"' \
-        || fail "[$phase] the MCP server did not list the blocks tools to a token: $tools"
+    tools="$(list_tools "$MCP_TOKEN")"
+    grep -qx 'blocks_list' <<<"$tools" \
+        || fail "[$phase] the MCP server did not list the blocks tools to a token; it listed: $(tr '\n' ' ' <<<"$tools")"
     note "[$phase] and lists the blocks tools to the agent's token"
 
     # A token granted over OAuth carries one scope for the whole server, so a tool that writes
@@ -912,11 +911,10 @@ run_http_checks() {
     # the token, and it is stronger than their permissions: the tools that write are neither
     # listed to it nor answered.
     local read_tools
-    read_tools="$(curl -s -H 'Accept: application/json' -H 'Content-Type: application/json' \
-        -H "Authorization: Bearer $MCP_READ_TOKEN" -X POST -d "$rpc" "$BASE/api/cms/mcp")"
-    printf '%s' "$read_tools" | grep -q '"blocks_list"' \
-        || fail "[$phase] a read-only connection was not shown the tools that look: $read_tools"
-    printf '%s' "$read_tools" | grep -q '"blocks_create"' \
+    read_tools="$(list_tools "$MCP_READ_TOKEN")"
+    grep -qx 'blocks_list' <<<"$read_tools" \
+        || fail "[$phase] a read-only connection was not shown the tools that look; it was shown: $(tr '\n' ' ' <<<"$read_tools")"
+    grep -qx 'blocks_create' <<<"$read_tools" \
         && fail "[$phase] a read-only connection was shown a tool that writes"
     note "[$phase] a read-only connection sees the tools that look and not the ones that write"
 
@@ -928,6 +926,29 @@ run_http_checks() {
     printf '%s' "$refused_write" | grep -q '"error"' \
         || fail "[$phase] a read-only connection was allowed to write: $refused_write"
     note "[$phase] and is refused when it tries to write anyway"
+}
+
+# The names of every tool a token is shown, one per line. `tools/list` answers a hundred at a
+# time, and a site with every module has more than that: a tool past the first page is listed
+# only behind `nextCursor`.
+list_tools() {
+    local token="$1" cursor="" params page
+
+    for _ in $(seq 1 20); do
+        params='{}'
+        [ -n "$cursor" ] && params='{"cursor":"'"$cursor"'"}'
+
+        page="$(curl -s -H 'Accept: application/json' -H 'Content-Type: application/json' \
+            -H "Authorization: Bearer $token" -X POST \
+            -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":'"$params"'}' "$BASE/api/cms/mcp")"
+
+        "$PHP_BIN" -r '$r = json_decode(stream_get_contents(STDIN), true); foreach ($r["result"]["tools"] ?? [] as $t) { echo $t["name"], PHP_EOL; }' <<<"$page"
+        cursor="$("$PHP_BIN" -r '$r = json_decode(stream_get_contents(STDIN), true); echo $r["result"]["nextCursor"] ?? "";' <<<"$page")"
+
+        [ -z "$cursor" ] && break
+    done
+
+    return 0
 }
 
 serve() {
