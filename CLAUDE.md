@@ -52,8 +52,8 @@ Laravel. Библиотека публикуется в npm, админки — 
 
 ## 2. Состояние
 
-Актуально на 28.09.2026: `@webx-ui/core@0.34.0`, `@webx-ui/tokens@0.4.0`, `@webx-ui/schema@0.6.3`
-и девятнадцать `@webx-ui/module-*` опубликованы в npm, composer-половина — одной версией `v0.49.1`
+Актуально на 29.09.2026: `@webx-ui/core@0.34.1`, `@webx-ui/tokens@0.4.0`, `@webx-ui/schema@0.6.4`
+и двадцать `@webx-ui/module-*` опубликованы в npm, composer-половина — одной версией `v0.50.0`
 на Packagist, сайт документации живёт на https://webx-ui.github.io/webx-ui/. Версии тут устаревают
 первыми — считать их подсказкой, а не фактом: точный ответ даёт `npm view @webx-ui/core version` и
 `composer show webx-ui/module-admin`.
@@ -66,7 +66,7 @@ Laravel. Библиотека публикуется в npm, админки — 
   `openModal` / `createModal` / `useModal` / `confirm` / `openImageEditor` — «диалоги из
   кода»: любой компонент монтируется вне дерева приложения и возвращает промис с ответом
   (`apps/docs/guide/modals.md`).
-- **Панель** — 19 разделов (`module-*`) и 4 библиотеки (`nested-set`, `localization`, `mcp`,
+- **Панель** — 20 разделов (`module-*`) и 4 библиотеки (`nested-set`, `localization`, `mcp`,
   `routing`), все выпущены. Что есть, зачем и с какой версии — реестр
   `docs/architecture/WEBX_UI_COMPOSER_PACKAGES.md`; каждая спека — в
   `docs/architecture/README.md`.
@@ -242,10 +242,10 @@ docs/
 1. Остаток волны 3 ядра: Carousel, Anchor, Splitter, Watermark, Marquee.
 2. **Gantt** — решено делать своим, не начинали (обоснование в roadmap).
 3. CMS-блоки: из списка открыт только Markdown.
-4. **Каталог для магазинов** — ядро `module-catalog` плюс спутники `module-catalog-*`.
-   Архитектура — `docs/architecture/WEBX_UI_CATALOG.md`, спека ядра —
-   `WEBX_UI_MODULE_CATALOG.md` (обе 29.09.2026). Первым идёт журнал изменений в `module-admin`
-   (`WEBX_UI_HISTORY.md`), потом ядро. Кода нет.
+4. **Каталог для магазинов** — ядро `module-catalog` и журнал изменений `module-admin`
+   выпущены 29.09.2026 (v0.50.0); дальше спутники `module-catalog-*` по порядку §10
+   `docs/architecture/WEBX_UI_CATALOG.md`, первым `module-catalog-properties` — без него фасетам
+   нечего показывать. Открытое по ядру — «Открыто» в §19 `WEBX_UI_MODULE_CATALOG.md`.
 5. Экраны как описание: `admins.form` и форма правила SEO на экраны пока не переводятся
    (решение 14.09.2026); `@webx-ui/adapter-laravel` — после.
 6. **Многосайтовость** — v3: одна установка, много доменов, одна панель, у каждого домена свой
