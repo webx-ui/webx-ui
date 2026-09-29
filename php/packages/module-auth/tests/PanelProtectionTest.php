@@ -41,8 +41,10 @@ final class PanelProtectionTest extends TestCase
     #[Test]
     public function installing_this_package_is_what_closed_the_panel(): void
     {
+        // The frame appends the journal's door after the whole group, whoever set it: by then
+        // the administrator is known.
         $this->assertSame(
-            ['web', 'cms.auth', 'webx.panel-locale'],
+            ['web', 'cms.auth', 'webx.panel-locale', 'webx.history'],
             config('webx-admin.api_middleware'),
         );
     }
