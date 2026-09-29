@@ -20,6 +20,7 @@ use WebxUi\Admin\Doctor\Checks\Regions;
 use WebxUi\Admin\Doctor\Checks\Relations;
 use WebxUi\Admin\Doctor\Checks\SiteGate;
 use WebxUi\Admin\Doctor\Checks\Storage;
+use WebxUi\Admin\Doctor\Checks\UploadSpace;
 use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Admin\Doctor\DoctorChecks;
 
@@ -55,6 +56,7 @@ final class DoctorCommand extends Command
         NpmRanges::class,
         Migrations::class,
         Storage::class,
+        UploadSpace::class,
         Layouts::class,
         Regions::class,
         Helpers::class,

@@ -26,6 +26,7 @@ use WebxUi\Admin\Console\InstallCommand;
 use WebxUi\Admin\Console\MakeModuleCommand;
 use WebxUi\Admin\Console\PanelCommand;
 use WebxUi\Admin\Console\PruneHistoryCommand;
+use WebxUi\Admin\Console\PruneUploadsCommand;
 use WebxUi\Admin\Console\PruneVersionsCommand;
 use WebxUi\Admin\Console\SetupCommand;
 use WebxUi\Admin\Contracts\AssetUrls;
@@ -70,6 +71,9 @@ use WebxUi\Admin\Screens\Types\TagsType;
 use WebxUi\Admin\Screens\Types\TimeType;
 use WebxUi\Admin\Screens\Types\TreeSelectType;
 use WebxUi\Admin\Support\Parts;
+use WebxUi\Admin\Uploads\FreeSpace;
+use WebxUi\Admin\Uploads\UploadPurposes;
+use WebxUi\Admin\Uploads\Uploads;
 use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Routing\SiteUrl;
@@ -203,6 +207,18 @@ class AdminServiceProvider extends ServiceProvider
 
         $this->registerHistory();
 
+        // What a chunked upload may be for, filled from providers like the journal's types; the
+        // pieces themselves go to the local disk whatever the site's default one is, because
+        // they are appended to, and a cloud disk has no append.
+        $this->app->singleton(UploadPurposes::class);
+        $this->app->singleton(FreeSpace::class);
+        $this->app->singleton(Uploads::class, static fn ($app): Uploads => new Uploads(
+            $app->make('config'),
+            $app->make(UploadPurposes::class),
+            $app->make(FreeSpace::class),
+            $app->storagePath('app'.DIRECTORY_SEPARATOR.'uploads'),
+        ));
+
         // The backup directory has no state anywhere else, so this holds no state either: it
         // is a singleton to be injectable by name, not because it remembers anything.
         $this->app->singleton(Backups::class);
@@ -243,6 +259,7 @@ class AdminServiceProvider extends ServiceProvider
         $this->registerPartDirective();
         $this->registerBackupSchedule();
         $this->registerHistorySchedule();
+        $this->registerUploadsSchedule();
         $this->registerGate();
 
         $router = $this->app->make('router');
@@ -281,6 +298,7 @@ class AdminServiceProvider extends ServiceProvider
             MakeModuleCommand::class,
             PanelCommand::class,
             PruneHistoryCommand::class,
+            PruneUploadsCommand::class,
             PruneVersionsCommand::class,
             SetupCommand::class,
         ]);
@@ -371,6 +389,20 @@ class AdminServiceProvider extends ServiceProvider
 
             $schedule->command(PruneHistoryCommand::class)
                 ->dailyAt((string) $config->get('webx-admin.history.prune_at', '03:40'))
+                ->onOneServer()
+                ->withoutOverlapping();
+        });
+    }
+
+    /**
+     * The hourly sweep of abandoned chunked uploads. Hourly rather than nightly: an abandoned
+     * upload can be gigabytes, and a day's worth of them is how a disk fills up.
+     */
+    private function registerUploadsSchedule(): void
+    {
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->command(PruneUploadsCommand::class)
+                ->hourly()
                 ->onOneServer()
                 ->withoutOverlapping();
         });

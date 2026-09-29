@@ -195,6 +195,29 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Chunked uploads
+    |---------------------------------------------------------------------------
+    |
+    | Large files — a product's video — come in pieces, appended to a file
+    | under `storage/app/uploads` until it is whole, so that neither PHP's
+    | limits nor a dropped connection decide how large a file may be. A piece
+    | is `chunk_mb` or 90 % of what `upload_max_filesize` and `post_max_size`
+    | allow, whichever is smaller; the browser halves it when the web server
+    | answers 413.
+    |
+    | An upload nobody has sent a piece to for `ttl_hours` goes with its file,
+    | hourly (`webx:prune-uploads`). Until then the same file chosen again
+    | carries on from where it stopped.
+    |
+    */
+
+    'uploads' => [
+        'ttl_hours' => env('WEBX_UPLOADS_TTL_HOURS', 24),
+        'chunk_mb' => env('WEBX_UPLOADS_CHUNK_MB', 8),
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
     | Nightly database backup
     |---------------------------------------------------------------------------
     |
