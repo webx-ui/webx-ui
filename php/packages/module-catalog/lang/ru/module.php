@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 return [
-    'title' => 'Каталог',
+    'title' => 'Товары',
     'group' => 'Каталог',
     'products' => 'Товары',
     'categories' => 'Категории',

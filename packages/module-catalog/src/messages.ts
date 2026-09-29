@@ -11,7 +11,7 @@ import type { Messages } from '@webx-ui/module-admin'
  */
 export const catalogMessages: Record<string, Messages> = {
   module: {
-    title: 'Catalog',
+    title: 'Products',
     group: 'Catalog',
     products: 'Products',
     categories: 'Categories',
@@ -130,7 +130,7 @@ export const catalogMessages: Record<string, Messages> = {
 
     'gallery-add': 'Add pictures',
     'gallery-hint': 'JPEG, PNG, WebP or GIF. The first picture is the main one.',
-    'gallery-url': 'Or by address',
+    'gallery-url': 'Upload from an address',
     'gallery-url-add': 'Fetch',
     'gallery-empty': 'No pictures yet.',
     'gallery-main': 'Main',

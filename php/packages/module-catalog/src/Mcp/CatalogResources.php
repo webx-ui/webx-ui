@@ -43,7 +43,8 @@ final class CatalogResources
             new McpResource(
                 'catalog://fields',
                 'Units and switched-off fields',
-                'The units of measure this site uses and whether price and barcode are on. A switched-off field '
+                'The units of measure this site uses and whether price, barcode and the filters of a category are '
+                .'on. A switched-off field '
                 .'is not on the form and is refused — do not offer it.',
                 fn (): array => $this->fields(),
             ),
@@ -105,6 +106,7 @@ final class CatalogResources
             'price' => (bool) $config->get('webx-catalog.price.enabled', true),
             'currency' => $config->get('webx-catalog.price.currency'),
             'barcode' => (bool) $config->get('webx-catalog.fields.barcode', true),
+            'facets' => (bool) $config->get('webx-catalog.fields.facets', false),
             'units' => array_map(static fn (string $unit): array => ['value' => $unit, 'label' => (string) __('webx-catalog::units.'.$unit)], $units),
             'default_unit' => (string) $config->get('webx-catalog.default_unit', 'pcs'),
         ];

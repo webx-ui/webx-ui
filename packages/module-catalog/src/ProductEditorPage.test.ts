@@ -97,7 +97,7 @@ async function panel(first = detail()) {
     i18n,
     state: { manifest: null, user: null, status: 'ready', error: null },
     can: () => true,
-    types: { ...coreTypes, ...adminTypes, ...catalog().types },
+    types: { ...coreTypes, ...adminTypes, ...catalog()[0]!.types },
     loadScreen: () => Promise.resolve(screen),
     screenPatch: () => [],
   } as unknown as AdminContext
