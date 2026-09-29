@@ -44,6 +44,21 @@ export { errorText, useErrorText } from './errors'
 export { useBodyKeys } from './keys'
 export { createNotesApi, type EntityNote, type NoteAuthor, type NotesApi } from './notes'
 export {
+  createHistoryApi,
+  historySubjectKey,
+  historyValue,
+  provideHistorySubject,
+  useHistorySubject,
+  type HistoryApi,
+  type HistoryChange,
+  type HistoryEntry,
+  type HistoryEvent,
+  type HistoryPage,
+  type HistoryRun,
+  type HistorySource,
+  type HistorySubject,
+} from './history'
+export {
   createLinksApi,
   emptyLink,
   type LinkCandidate,
@@ -130,6 +145,7 @@ export { default as WxRenameButton } from './RenameButton.vue'
 export { default as WxHelpButton } from './HelpButton.vue'
 export { default as WxDate } from './DateText.vue'
 export { default as WxNotes } from './NotesFeed.vue'
+export { default as WxHistory } from './HistoryFeed.vue'
 export { default as WxBackupNote } from './BackupNote.vue'
 export { default as WxRichTextField } from './RichTextField.vue'
 export { default as WxLinkPicker } from './LinkPicker.vue'

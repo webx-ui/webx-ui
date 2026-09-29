@@ -12,6 +12,7 @@ use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Tool as McpTool;
+use WebxUi\Admin\History\HistoryContext;
 use WebxUi\Mcp\Calls\Recorder;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Grants\Grants;
@@ -155,7 +156,14 @@ final class RegistryTool extends McpTool
         }
 
         try {
-            $result = ($this->bound->tool->handler)($arguments, $user);
+            // Whatever the handler saves goes into the journal as the agent's doing: `mcp`, the
+            // administrator who connected it and the connection (WEBX_UI_HISTORY.md §6).
+            $result = Container::getInstance()->make(HistoryContext::class)->during(
+                HistoryContext::MCP,
+                $user,
+                $this->grants()->forUser($user)?->id,
+                fn (): mixed => ($this->bound->tool->handler)($arguments, $user),
+            );
         } catch (ToolFailure $failure) {
             return Response::error($failure->getMessage());
         }

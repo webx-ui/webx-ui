@@ -20,6 +20,7 @@ import { vacancies } from '@webx-ui/module-vacancies'
 /* The opt-in typeface; the tokens themselves come in with the core stylesheet. */
 import '@webx-ui/tokens/fonts.css'
 import UserMenu from './UserMenu.vue'
+import HistoryDemoPage from './HistoryDemoPage.vue'
 
 /**
  * The panel itself, against a server that lives in the Vite config.
@@ -43,6 +44,15 @@ const session: AdminPlugin = {
       avatar: null,
     }))
   },
+}
+
+/**
+ * A section of no package: a fake record whose form has the journal on a tab. The catalogue that
+ * will be the first to write real rows has no code yet, and the node is the frame's.
+ */
+const historyDemo = {
+  id: 'history-demo',
+  routes: [{ path: '/history-demo', component: HistoryDemoPage }],
 }
 
 const admin = createAdmin({
@@ -72,6 +82,7 @@ const admin = createAdmin({
     seo(),
     admins(),
     connect(),
+    historyDemo,
   ],
   plugins: [session],
   userMenu: UserMenu,
