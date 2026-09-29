@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+namespace WebxUi\Catalog\Facets;
+
+/**
+ * A field of the search document (§4.2 of the architecture): how a feature lies in an index that
+ * is not the database. `SqlEngine` never reads these — the database is its index — but an engine
+ * that keeps one builds its schema from every contributor's fields and compares it with the live
+ * one.
+ */
+final class IndexField
+{
+    public const INT = 'int';
+
+    public const FLOAT = 'float';
+
+    public const BOOL = 'bool';
+
+    public const STRING = 'string';
+
+    /** Full text: searched, not filtered. */
+    public const TEXT = 'text';
+
+    public const TIMESTAMP = 'timestamp';
+
+    /**
+     * @param  bool  $multi  Several values per product: the categories with their ancestors.
+     * @param  bool  $localized  One field per language, `name_en`, `name_ru`.
+     */
+    public function __construct(
+        public readonly string $name,
+        public readonly string $type,
+        public readonly bool $multi = false,
+        public readonly bool $localized = false,
+    ) {}
+}

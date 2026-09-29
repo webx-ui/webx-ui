@@ -32,6 +32,7 @@ use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\Contracts\BrandingSource;
 use WebxUi\Admin\Contracts\SiteUrls;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\Gate\CloseSite;
 use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\History\HistoryContext;
@@ -109,6 +110,9 @@ class AdminServiceProvider extends ServiceProvider
         // What the password over a site in testing lets through. A singleton because the
         // packages that answer where the panel's browser has to reach add their own from boot.
         $this->app->singleton(Openings::class);
+
+        // What modules add to `webx:doctor` after the frame's own checks.
+        $this->app->singleton(DoctorChecks::class);
 
         // The language prefix, when there is an address registry to ask. Behind `class_exists`
         // because the frame does not require `webx-ui/routing` — a panel of settings and

@@ -197,7 +197,14 @@ commerce.
 - `code()` — код в адресе (`brand`), `[a-z0-9-]`, уникален в реестре — проверка при регистрации;
 - `kind()` — `Terms | Range | Toggle | Tree`;
 - `indexable()` — может ли первый уровень быть открыт (§8.1 архитектуры);
-- `slugs(array $ids)` / `resolveSlugs(array $slugs)` — пачкой, для сериализатора.
+- `slugs(array $ids)` / `resolveSlugs(array $slugs)` — пачкой, для сериализатора;
+- `normalise(FacetValue)` — одно написание выбора (у дерева предок поглощает потомков);
+- `sqlValues(QueryBuilder $productIds)` — пары `(product_id, value)` для `SqlEngine`: дерево
+  отдаёт значение вместе со всеми предками, движок сам группирует и считает;
+- у `Tree` ещё `TreeFacet::parents(array $values)` — чтобы фильтр нарисовал дерево.
+
+Значения — строки (id или код фасета), слаги живут только в адресе. `AbstractFacet` даёт
+умолчания: индексируемый — у `Terms` и `Tree`, значение — сам себе слаг и подпись.
 
 Ядро регистрирует `category` (Tree) и `price` (Range, если цена включена). Панель использует
 те же фасеты в фильтре списка, плюс собственные фильтры ядра, которых на сайте нет:
@@ -234,7 +241,9 @@ commerce.
 
 §4.4 архитектуры. Правила ядра: товар не виден (§5) → «снят с продажи»; цена включена и не
 указана → «цена по запросу». Ответ — `yes` или `no` с кодом причины и подписью; кнопку («Купить»
-или «Узнать цену» формой `module-inbox`) рисует шаблон по ответу.
+или «Узнать цену» формой `module-inbox`) рисует шаблон по ответу. Правило — `PurchaseRule::refuse(
+Collection)` пачкой; первый отказ и есть ответ. «Снят» ядро ставит первым, «цена по запросу» —
+`register($rule, last: true)`, после всех спутников, когда бы они ни зарегистрировались.
 
 ### 7.6. `ExchangeColumns`
 
@@ -262,6 +271,13 @@ interface FilterUrlRewriter
 `RewrittenUrl` — базовый путь и остаток состояния, который дописывается сегментами (решение 26
 архитектуры). Ядро переписчиков не имеет; первый — `module-catalog-landings`.
 
+«Один раз на рендер» держится так: адрес самой страницы строится в той же пачке, что и ссылки её
+фильтра, и обработчик сравнивает с ним запрошенный адрес — другое написание, выбранная
+подкатегория, набор, забранный посадочной, дают 301 без второго `prepare()`. Одна подкатегория,
+выбранная на странице категории, — это переход (§8.3 архитектуры), и его делает сериализатор:
+`/noutbuki/category_igrovye` пишется как `/igrovye`. Диапазон без скрипта — форма
+`?range[price][from]=…&range[price][to]=…`, которая отвечает 302 на адрес с сегментом.
+
 ### 7.8. `PopularitySignals`
 
 `key()`, `values(array $productIds): array` пачкой. Ядро: `views`. Веса — конфиг (§9).
@@ -270,9 +286,12 @@ interface FilterUrlRewriter
 
 ### 8.1. Запрос и ответ
 
-`CatalogQuery`: контекст (`category`, `root`, `search`, `brand` и прочие — строкой и id, ядро
-про бренды не знает), выбранные значения фасетов, текст поиска, сортировка, страница, размер
-страницы, язык, `withUnpublished` (панель), `withTrashed` (раздел «Удалённые»).
+`CatalogQuery`: контекст (`category`, `root`, `search`, `panel`, `brand` и прочие — строкой и id,
+ядро про бренды не знает); `scope` — где стоит страница (категория страницы, бренд страницы
+бренда), сужает и список, и все счётчики; `facets` — что выбрал читатель, свой фасет не сужает;
+`count` — какие фасеты считать; текст поиска, сортировка, страница, размер страницы, язык,
+`withUnpublished` (панель), `onlyTrashed` (раздел «Удалённые»), `state` — собственные фильтры
+панели (`published|unpublished|no-category`).
 
 `CatalogResult`: `ids` страницы в порядке движка, `total`, `facets` — по видимым фасетам:
 значения со счётчиками (`Terms`), min/max (`Range`), число (`Toggle`), счётчики с потомками
@@ -298,9 +317,14 @@ interface FilterUrlRewriter
   `engine()->needsIndex()`; иначе ничего.
 - `Catalog::touchQuery(Builder $products)` — `insert … select` одним запросом: для справочников и
   категорий (§6.3).
+- Помечает сама модель (`saved`, `deleted`, `restored` у `Product`): любая дверь в таблицу —
+  форма, импорт, спутник — помечает товар, никто не обязан помнить.
 - `webx:catalog:index` по расписанию раз в минуту: пачки по 500, документ у всех вкладчиков
-  одним проходом на пачку, удаление из очереди после ответа движка. Повтор безвреден.
-  `--rebuild` — полная перестройка со схемой.
+  одним проходом на пачку. Пачка вынимается из очереди **до** обращения к движку и возвращается
+  в неё, если движок отказал: при обратном порядке правка, сделанная, пока пачка строилась,
+  терялась бы — её `insert ignore` ложился на строку, которую сейчас удалят. Повтор безвреден.
+  `--rebuild` — полная перестройка со схемой. В индекс идут и удалённые (`is_deleted`) — «Удалённые»
+  ищут тем же движком; товара, которого нет в таблице совсем, движок лишается (`remove`).
 - Упавший движок не роняет сохранение (§5.2 архитектуры): очередь копится, `webx:doctor`
   показывает её длину и возраст первой записи.
 
@@ -308,8 +332,10 @@ interface FilterUrlRewriter
 
 - **Просмотры.** Страница товара (не бот по простому списку user-agent) — инкремент в кеше.
   `webx:catalog:flush-views` раз в пять минут сбрасывает накопленное в
-  `catalog_product_popularity.views` одним `insert … on duplicate key update`. Включается
-  конфигом `popularity.views`.
+  `catalog_product_popularity.views` двумя запросами на пачку — `insert ignore` недостающих строк и
+  `update … case` — вместо `on duplicate key update`, который MySQL и sqlite пишут по-разному.
+  Кеш — одна запись под блокировкой; не дождался блокировки — просмотр не посчитан, страница не
+  ждёт. Включается конфигом `popularity.views`.
 - **Затухание.** Ночью `webx:catalog:popularity`: `views = views × decay` (0.9 по умолчанию),
   затем `score = Σ вес × сигнал` пачками по всем `PopularitySignals`. Товары, чей `score`
   сдвинулся больше порога, — в `touch()`.
@@ -329,21 +355,31 @@ Blade в `resources/views/vendor/webx-catalog/…` у сайта переопр�
 Точки для спутников (`@webxPart`): `catalog.card.badges`, `catalog.card.meta`,
 `catalog.product.aside`, `catalog.product.tabs`, `catalog.product.unavailable`.
 
+`@webxPart` — один компонент на точку, который сайт переопределяет целиком; писать в точку
+нескольким спутникам позволяет реестр `StorefrontParts`. Спутник регистрирует `StorefrontPart`
+(точка, вьюха, `prepare(Collection $products)` — один запрос на страницу), а запасной партиал
+точки (`webx-catalog::points.<точка>`) печатает все зарегистрированные части по порядку.
+
 ### 10.2. Фильтр
 
 Ссылки, а не форма: у каждого значения — готовый адрес из `FilterUrls::buildMany()`, с
-`rel="nofollow"` там, где адрес закрыт. Работает без JS. Скрипт — только ползунку цены и
-сворачиванию длинных списков. Пустые значения (счётчик 0) показываются серыми без ссылки.
+`rel="nofollow"` там, где адрес закрыт. Работает без JS. Пустые значения (счётчик 0) показываются
+серыми без ссылки. Скрипта в ядре нет вовсе: длинный список сворачивает `<details>`, цену
+принимает форма (§7.7), ползунок — забота сайта.
 
 ### 10.3. SEO
 
 - Категория, товар, корень — `HasSeo` и шаблоны `module-seo`.
 - Первый уровень фильтра — шаблон «{категория} {значение}» (решение 17), закрытые комбинации —
   `noindex, follow`, `?sort=` и `?page=` — как в §7.2.
-- Разметка: `Product` + `Offer` (если цена включена и указана), `BreadcrumbList`, `ItemList` на
-  категории.
+- Разметка: `Product` + `Offer` (если цена включена, указана и задана валюта
+  `webx-catalog.price.currency`), `BreadcrumbList`, `ItemList` на категории.
 - Карта сайта — видимые товары, категории, непустые первые уровни; товары — пачками, с
-  `lastmod` по `updated_at`.
+  `lastmod` по `updated_at`. Товары и категории — строки реестра, их карта берёт сама; первые
+  уровни — файл `catalog-filters` через `SitemapSources` из `module-seo` (адрес, забранный
+  посадочной, пропускается — у посадочной своя строка).
+- SEO страницы списка говорит `ListingSource` (60): на чистой категории — её карточка, на первом
+  уровне — шаблон, на остальном — `noindex, follow`; правило для адреса (100) бьёт всё.
 
 ### 10.4. Галерея товара
 
@@ -399,10 +435,15 @@ POST   /api/cms/catalog/bulk                  { action, params, selection: { ids
 GET    /api/cms/catalog/bulk/{run}            прогресс
 ```
 
-Список — формат `->paginate()` как есть, и рядом `counts: { no_category }` (решение 3). Фильтр и
-сортировка — белый список, произвольные колонки отклоняются (§9 архитектуры); пока нет реестра
-`Sorts` — `sort=default|new|name|price_asc|price_desc`, по умолчанию `priority desc, created_at
-desc`. Занятый артикул — 422 с `errors.sku` и `meta.taken_by: { id, name, url, deleted }`, `url` —
+Список — формат `->paginate()` как есть, ищет и считает движок, и рядом `counts: { no_category }`
+(решение 3), `facets` — по ключу фасета `{ key, kind, values: [{ value, label, count }] }` для
+`terms`/`tree`, `{ min, max }` для `range`, `{ count }` для `toggle`, — и `columns: [{ key, label,
+sort }]` колонок спутников; у каждой строки их значения под `columns`. Выбор фасетов —
+`facets[category][]=3&facets[price][min]=100`. Фильтр и сортировка — белый список, произвольные
+колонки отклоняются (§9 архитектуры); `sort` — ключ реестра `Sorts`, неизвестный — 422.
+`GET /facets` отвечает `data: [{ key, code, kind, label, indexable }]` и `meta.sorts: [{ key,
+label }]`. `GET /categories/{id}` несёт ещё `facets_from: { id, name } | null` — откуда
+унаследованы фасеты, если своих нет (`null` и при своих, и при «все по умолчанию»). Занятый артикул — 422 с `errors.sku` и `meta.taken_by: { id, name, url, deleted }`, `url` —
 адрес товара в панели `/{webx-admin.path}/catalog/products/{id}`, форма показывает ссылку.
 
 Формы — экраны-описания в php-пакете (`resources/screens/product-form.json`,
@@ -500,7 +541,7 @@ deleted_at }`.
 ```php
 return [
     'root' => ['enabled' => false, 'prefix' => 'catalog'],
-    'price' => ['enabled' => true],                  // currency — валюта сайта
+    'price' => ['enabled' => true, 'currency' => null],  // ISO 4217; без неё нет Offer в разметке
     'fields' => ['barcode' => true],
     'units' => ['pcs', 'kg', 'g', 'm', 'm2', 'm3', 'l', 'pack', 'set'], 'default_unit' => 'pcs',
     'engine' => 'sql',                              // 'manticore' — из catalog-manticore
@@ -512,6 +553,7 @@ return [
     'images' => ['disk' => 'public', 'max_size_kb' => 10240],
     'bulk' => ['chunk' => 500, 'sync_limit' => 50],
     'layout' => env('WEBX_CATALOG_LAYOUT'),             // Blade-компонент лейаута витрины, как у всех модулей
+    'middleware' => ['web', 'webx.locale'],            // корня и поиска — маршрутов, а не строк реестра
 ];
 ```
 
@@ -716,6 +758,57 @@ SEO и разметка, карта сайта пачками; корень /cat
 packages-and-demo-sites.md), фильтр без JS, 301 на одно написание, noindex на комбинациях.
 В конце — «Итог K2», коммит по именам файлов, пуш в claude, PR.
 ```
+
+### Итог K2
+
+Сделано 29.09.2026 одним PR (php + changeset minor на `@webx-ui/php`).
+
+- **`webx-ui/module-catalog`:** реестры §7 — `Facets` (`CategoryFacet` деревом, `PriceFacet`
+  диапазоном; `AbstractFacet` с умолчаниями), `Sorts` (`CoreSort` по шагам), `Documents` +
+  `CoreDocument`, `ProductColumns`, `Purchasability` + `CoreRules`, `FilterUrls` +
+  `SegmentSerializer` + переписчики, `PopularitySignals` + `ViewsSignal`, `StorefrontParts`;
+  `CatalogEngines` (`sql`), `CatalogQuery` / `CatalogResult` / `SqlEngine`; очередь (`Catalog`,
+  `Indexer`, `webx:catalog:index`); популярность (`ViewCounter`, `Popularity`,
+  `PopularityFormula`, `webx:catalog:flush-views`, `webx:catalog:popularity`, расписание в
+  провайдере); `CategoryFacets` — разрешение §6.2 с кешем по поколению; `EngineCheck` в
+  `webx:doctor`; `GET /facets`, список панели через движок; витрина — `Storefront`, `Listing`,
+  `FilterGroups`, `CatalogPage`, шаблоны `category`, `root`, `search`, `product`,
+  `product-unavailable`, `filter` (+ `filter.terms|range|toggle|tree|option`), `grid`, `card`,
+  `sort`, `pagination`, `breadcrumbs`, `points.*`; SEO — `ListingSource`, `ProductMarkup`,
+  `FilterSitemap`; корень и поиск — маршруты `webx.catalog.root|search`.
+- **`webx-ui/module-admin`:** `DoctorChecks` — у доктора был зашитый список, модулю некуда было
+  встать.
+- **`webx-ui/module-seo`:** `SitemapSources` / `SitemapSource` — адреса без строки в реестре и без
+  именованного маршрута (первые уровни фильтра).
+- **Тесты:** `EngineTest`, `CategoryFacetsTest`, `FilterUrlsTest`, `StorefrontTest`,
+  `QueueTest`, `PopularityTest`, `RegistriesTest`; фикстуры — `ColourFacet` (фасет спутника на
+  своей таблице), `IndexingEngine` (движок с индексом), `LandingRewriter`.
+- **Глазами:** `webx-cms.local`, слинкованный с worktree, — категория, фильтр ссылками и форма
+  цены без JS, 301 на одно написание и на подкатегорию, `noindex` на диапазоне и сортировке,
+  404 на чужом хвосте, страница товара. Сайт возвращён в состояние реестра.
+
+Разошлось со спекой — поправлено выше: §7.1 (`normalise`, `sqlValues`, `TreeFacet`), §7.5
+(`last: true`), §7.7 (как держится «один раз на рендер», форма диапазона), §8.1 (`scope`,
+`count`, `onlyTrashed` вместо `withTrashed`, `state`), §8.3 (пометка моделью; пачка вынимается до
+движка), §9 (сброс просмотров двумя переносимыми запросами), §10.1–10.3 (`StorefrontParts`,
+скрипта нет, валюта, `ListingSource`), §11.2 (ответ списка, `/facets`, `facets_from` — **K3 это
+мокает**), §13 (`price.currency`, `middleware`).
+
+Решения по ходу:
+
+- `?page=` за первой — `noindex` с каноникалом на первую, как `?sort=` (§10.3 «как в §7.2»);
+  страница за последней — 404.
+- В контексте категории фасет категории — навигация по детям с сохранением остального выбора;
+  выбор нескольких подкатегорий — фильтр, закрыт.
+- Фасет, скрытый в категории, в её адресе — 404, а не игнор.
+
+Для K3: `GET /facets`, `facets` и `columns` в ответе списка, `facets_from` у категории — как в
+§11.2 выше; `sort` списка — ключи из `meta.sorts`.
+
+Для K4: `ProductColumn::sort()` пока только отдаётся панели — сортировка по колонке спутника
+идёт через его `Sort` в реестре. Предупреждение о пороге `SqlEngine` на дашборде панели не
+сделано (в `webx:doctor` есть) — дашборду нужен свой шов для модулей. На сайте, где у
+`module-pages` есть страница `catalog`, включённый корень её перекрывает: маршрут бьёт реестр.
 
 ### K3 — npm, экраны панели
 

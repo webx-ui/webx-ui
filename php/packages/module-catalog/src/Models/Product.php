@@ -16,13 +16,18 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\History\RecordsHistory;
+use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Exceptions\CatalogException;
 use WebxUi\Catalog\Routing\CatalogMisses;
+use WebxUi\Catalog\Seo\ProductMarkup;
 use WebxUi\Localization\HasTranslations;
+use WebxUi\Localization\Locales;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
+use WebxUi\Routing\Models\Route;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasStructuredData;
 use WebxUi\Seo\HasSeo;
 
 /**
@@ -59,7 +64,7 @@ use WebxUi\Seo\HasSeo;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Product extends Model implements HasBreadcrumbs, Visible
+class Product extends Model implements HasBreadcrumbs, HasStructuredData, Visible
 {
     use HasSeo;
     use HasTranslations;
@@ -136,6 +141,14 @@ class Product extends Model implements HasBreadcrumbs, Visible
                 throw CatalogException::publishNeedsCategory();
             }
         });
+
+        // Every door into the table marks the product for the engine — the form, an import, a
+        // satellite's own save — so none of them has to remember to. A second mark from a caller
+        // that marks as well is ignored by the queue; under `SqlEngine` nothing is written at all.
+        $touch = static fn (self $product) => app(Catalog::class)->touch([$product->getKey()]);
+        static::saved($touch);
+        static::deleted($touch);
+        static::registerModelEvent('restored', $touch);
 
         // A product whose main category went to the bin while it was in the bin itself comes back
         // without one, and therefore unpublished (§6.3): published without a category is the one
@@ -307,6 +320,35 @@ class Product extends Model implements HasBreadcrumbs, Visible
         $trail[] = new Crumb($this->displayName($locale), $this->url($locale));
 
         return $trail;
+    }
+
+    /**
+     * The address, from the registry rows a list loaded in one go when it did: a grid of cards
+     * that asked `url()` of each would ask the registry once per card.
+     */
+    public function listedUrl(?string $locale = null): string
+    {
+        $locale ??= app(Locales::class)->current();
+
+        if ($this->relationLoaded('routes')) {
+            $row = $this->routes->first(static fn (Route $route): bool => $route->kind === Route::CANONICAL && $route->locale === $locale);
+
+            if ($row instanceof Route) {
+                return $this->urlOf($row->path, $locale);
+            }
+        }
+
+        return $this->url($locale);
+    }
+
+    /**
+     * `Product`, with an `Offer` when there is a price and a currency to put in it (§10.3).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function structuredData(string $locale): array
+    {
+        return app(ProductMarkup::class)->for($this, $locale);
     }
 
     /** An id in the journal is a name there: "Laptops → Tablets", not "3 → 7". */
