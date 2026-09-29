@@ -19,7 +19,7 @@ use WebxUi\Menu\Http\Controllers\MenuItemMoveController;
  * would otherwise match the word `cache` and take the request meant for all of them.
  */
 Route::prefix((string) config('webx-admin.api_path').'/menus')
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.menus.')
     ->where(['key' => '[A-Za-z0-9_-]+'])
     ->group(function (): void {

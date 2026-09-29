@@ -29,7 +29,7 @@ Route::prefix((string) config('webx-admin.api_path').'/auth')
             ->middleware('throttle:'.(string) config('webx-auth.throttle'))
             ->name('login');
 
-        Route::middleware('cms.auth')->group(function (): void {
+        Route::middleware(['cms.auth', 'webx.history'])->group(function (): void {
             Route::post('logout', [SessionController::class, 'destroy'])->name('logout');
             Route::get('me', MeController::class)->name('me');
             // Yourself, and only the parts of yourself that are yours to change. Deliberately

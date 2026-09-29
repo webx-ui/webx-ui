@@ -13,7 +13,7 @@ use WebxUi\Blog\Http\Controllers\TagController;
 use WebxUi\Blog\Models\Rubric;
 
 Route::prefix((string) config('webx-admin.api_path').'/blog')
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.blog.panel.')
     ->group(function (): void {
         Route::middleware('cms.can:blog.articles.view,blog.articles.manage')->group(function (): void {

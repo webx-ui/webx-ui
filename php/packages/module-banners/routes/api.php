@@ -7,7 +7,7 @@ use WebxUi\Banners\Http\Controllers\BannerController;
 use WebxUi\Banners\Http\Controllers\PlaceController;
 
 Route::prefix((string) config('webx-admin.api_path'))
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.banners.panel.')
     ->group(function (): void {
         // A place is addressed by its key: a declared one has no id until its first banner.

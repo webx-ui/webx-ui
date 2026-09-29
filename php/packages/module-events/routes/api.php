@@ -12,7 +12,7 @@ use WebxUi\Events\Http\Controllers\EventVersionController;
 use WebxUi\Events\Models\EventCategory;
 
 Route::prefix((string) config('webx-admin.api_path'))
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.events.panel.')
     ->group(function (): void {
         // The categories first: `events/categories` is a word where `events/{event}` expects a

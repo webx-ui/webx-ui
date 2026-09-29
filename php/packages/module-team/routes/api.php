@@ -7,7 +7,7 @@ use WebxUi\Team\Http\Controllers\MemberController;
 use WebxUi\Team\Http\Controllers\MemberRestoreController;
 
 Route::prefix((string) config('webx-admin.api_path'))
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.team.panel.')
     ->group(function (): void {
         Route::middleware('cms.can:team.view,team.manage')->group(function (): void {

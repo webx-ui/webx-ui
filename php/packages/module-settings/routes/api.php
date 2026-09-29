@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 use WebxUi\Settings\Http\Controllers\SettingsController;
 
 Route::prefix((string) config('webx-admin.api_path').'/settings')
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.settings.')
     ->group(function (): void {
         Route::get('', [SettingsController::class, 'index'])
