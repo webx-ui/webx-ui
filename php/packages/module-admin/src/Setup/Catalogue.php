@@ -116,6 +116,11 @@ final class Catalogue
             'label' => 'Vacancies — open positions with terms and salary, each a page of the site with schema.org JobPosting',
             'default' => false,
         ],
+        'catalog' => [
+            'package' => 'webx-ui/module-catalog',
+            'label' => 'Catalog — products with prices and pictures in a tree of categories, a filter and bulk actions',
+            'default' => false,
+        ],
         'menu' => [
             'package' => 'webx-ui/module-menu',
             'label' => 'Menus — the header and the footer, and what each entry points at',
