@@ -10,7 +10,7 @@ use WebxUi\Seo\Http\Controllers\SitemapStatusController;
 use WebxUi\Seo\Http\Controllers\TestUrlController;
 
 Route::prefix((string) config('webx-admin.api_path').'/seo')
-    ->middleware(['web', 'webx.panel-locale', 'cms.auth'])
+    ->middleware('webx.panel')
     ->name('webx.seo.')
     ->group(function (): void {
         Route::middleware('cms.can:seo.view,seo.manage')->group(function (): void {

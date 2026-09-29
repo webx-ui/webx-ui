@@ -245,7 +245,14 @@ class AdminServiceProvider extends ServiceProvider
         $this->registerHistorySchedule();
         $this->registerGate();
 
-        $this->app->make('router')->aliasMiddleware('webx.history', HistorySource::class);
+        $router = $this->app->make('router');
+        $router->aliasMiddleware('webx.history', HistorySource::class);
+
+        // What every module's own panel API sits behind. One name rather than a list each
+        // module copies: the copies were how `webx.history` went missing from them, and saves
+        // made in the panel were journalled as `api` with nobody behind them. `webx.history`
+        // goes last, after `cms.auth` has made the administrator the request's user.
+        $router->middlewareGroup('webx.panel', ['web', 'webx.panel-locale', 'cms.auth', 'webx.history']);
 
         if (! $this->app->runningInConsole()) {
             return;
