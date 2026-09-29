@@ -214,7 +214,7 @@ commerce.
 
 ### 7.4. `ProductParts` и `ProductColumns`
 
-- `ProductParts` — §11 архитектуры: `rules()`, `read(Collection $products)`, `write(Product,
+- `ProductParts` — §11 архитектуры: `key()`, `describe(): PartSchema` (поля для ресурса MCP, §12.2), `rules()`, `read(Collection $products)`, `write(Product,
 array $input): array $changes`. Возвращённые изменения идут в журнал одной записью вместе с
   изменениями ядра.
 - `ProductColumns` — колонка списка панели: ключ, подпись, `values(Collection $products)` пачкой,
@@ -416,14 +416,42 @@ GET    /api/cms/catalog/bulk/{run}            прогресс
 
 ## 12. MCP
 
-Инструменты (изменяющие — с `dry_run`): `catalog_products_list` (фасеты и поиск, как в панели),
-`catalog_products_get`, `catalog_products_create`, `catalog_products_update` (включая части
-спутников по ключам), `catalog_products_publish` / `unpublish`, `catalog_products_delete` /
-`restore`, `catalog_categories_tree`, `catalog_categories_create` / `update` / `move` /
-`delete`, `catalog_bulk` (с `dry_run` — число затронутых и первые двадцать).
+### 12.1. Инструменты и права
 
-Ресурсы: реестр фасетов, единицы, правила слагов и адресов, дерево категорий кратко. Записи
-агента попадают в журнал с источником `mcp`.
+Изменяющие — с `dry_run`. Право панели — по правилу
+[`WEBX_UI_MCP_ACCESS.md`](WEBX_UI_MCP_ACCESS.md) §6: скоуп токена даёт `catalog:read` /
+`catalog:write`, а ограничивает право администратора, подключившего агента. Удаление названо
+явно — `Tool::mutating(..., permission: 'catalog.delete')`: без этого дефолт вывел бы
+`catalog.manage`, и агент редактора удалял бы товары, которые сам редактор удалить не может.
+
+| Инструмент                                                        | Право                                                              |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `catalog_products_list` (фасеты и поиск, как в панели)            | `catalog.view`                                                     |
+| `catalog_products_get` (с частями спутников)                      | `catalog.view`                                                     |
+| `catalog_categories_tree`                                         | `catalog.view`                                                     |
+| `catalog_products_create` / `update` (с частями спутников)        | `catalog.manage`                                                   |
+| `catalog_products_publish` / `unpublish`                          | `catalog.manage`                                                   |
+| `catalog_categories_create` / `update` / `move`                   | `catalog.manage`                                                   |
+| `catalog_bulk` (с `dry_run` — число затронутых и первые двадцать) | `catalog.manage`; действия `delete` и `restore` — `catalog.delete` |
+| `catalog_products_delete` / `restore`                             | `catalog.delete`                                                   |
+| `catalog_categories_delete` / `restore`                           | `catalog.delete`                                                   |
+
+Записи агента попадают в журнал с источником `mcp`; прочитать журнал агент может инструментами
+`module-admin` ([`WEBX_UI_HISTORY.md`](WEBX_UI_HISTORY.md) §6).
+
+### 12.2. Ресурсы
+
+- реестр фасетов (ключ, код в адресе, вид, подпись);
+- единицы и включённые поля (цена, штрихкод) — чтобы агент не предлагал выключенное;
+- правила слагов и адресов (§4);
+- дерево категорий кратко (id, название, слаг, родитель, опубликована);
+- **части формы товара** — из `ProductParts`: у каждой части ключ, подпись, модуль и поля с
+  типом, правилами и допустимыми значениями (для справочников — ссылка на инструмент или
+  ресурс, где их взять). Ядро собирает ресурс из реестра и про спутники не знает;
+  `catalog_products_update` принимает части ровно по этим ключам, неизвестный ключ — ошибка с
+  перечнем известных.
+
+Для этого у `ProductParts` есть `describe(): PartSchema` (§7.4).
 
 ## 13. Конфиг `webx-catalog.php`
 
