@@ -807,7 +807,7 @@ MCP: `tariffs_*` (шесть), `tariff_groups_*`, ресурс `tariffs://catalo
 
 - `webx-ui/module-products` — товары: цены, склад, категории, бренды, характеристики. Вырос в
   семейство каталога — ядро плюс спутники `module-catalog-*`; архитектура —
-  `docs/architecture/WEBX_UI_CATALOG.md` (в работе, PR #329).
+  `docs/architecture/WEBX_UI_CATALOG.md` (согласована 29.09.2026), спека ядра — `WEBX_UI_MODULE_CATALOG.md`.
 
 `webx-ui/module-news` из прежней редакции стал `module-blog` — выше, в «Модулях».
 
@@ -815,7 +815,8 @@ MCP: `tariffs_*` (шесть), `tariff_groups_*`, ресурс `tariffs://catalo
 
 ## Кандидаты (не решено, нужны ли отдельными пакетами)
 
-- `webx-ui/activity-log` — журнал действий администраторов
+- ~~`webx-ui/activity-log` — журнал действий администраторов~~ — не пакет: журнал изменений живёт в
+  `module-admin` (29.09.2026, `WEBX_UI_HISTORY.md`).
 - ~~`webx-ui/taxonomy` — категории и теги как общий сервис для news/products~~ — отказались
   23.09.2026: код категорий общий (в `module-admin`), данные у каждого модуля свои
   (`WEBX_UI_MODULE_SERVICES.md` §2.3).
