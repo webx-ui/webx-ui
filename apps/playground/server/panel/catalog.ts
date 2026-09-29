@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import type {
   CategoryNode,
   CategoryRow,
@@ -11,6 +12,8 @@ import type {
   HistoryEntry,
   HistoryPage,
 } from '../../../../packages/module-admin/src/history'
+import { Reply } from './reply'
+import { claimUpload } from './uploads'
 
 /**
  * The catalogue's half of the fake server (§11.2 of WEBX_UI_MODULE_CATALOG.md): products,
@@ -71,6 +74,8 @@ interface ImageRecord {
   height: number
   size: number
   position: number
+  /** A file on the gallery's disk (its path, or an address for one fetched by link) or a YouTube id. */
+  video: { provider: 'file' | 'youtube'; ref: string; duration: number | null } | null
 }
 
 export type Handler = (context: {
@@ -332,20 +337,37 @@ for (const product of products.filter((one) => one.id % 4 !== 0)) {
     height: 800,
     size: 2048,
     position: 1,
+    video: null,
   })
 
   if (product.id === 1) {
-    images.push({
-      id: 11,
-      product_id: 1,
-      path: 'catalog/0/1/side.svg',
-      alt: { ru: 'Вид сбоку', en: 'Side view' },
-      title: {},
-      width: 800,
-      height: 800,
-      size: 2048,
-      position: 2,
-    })
+    /* The two kinds of video (the video spec, §7): one on YouTube, one a file of the site's own. */
+    images.push(
+      {
+        id: 11,
+        product_id: 1,
+        path: 'catalog/0/1/side.svg',
+        alt: { ru: 'Вид сбоку', en: 'Side view' },
+        title: {},
+        width: 800,
+        height: 800,
+        size: 2048,
+        position: 2,
+        video: { provider: 'youtube', ref: 'aqz-KE-bpKQ', duration: null },
+      },
+      {
+        id: 12,
+        product_id: 1,
+        path: 'catalog/0/1/clip.svg',
+        alt: { ru: 'Лампа в работе', en: 'The lamp at work' },
+        title: {},
+        width: 800,
+        height: 800,
+        size: 2048,
+        position: 3,
+        video: { provider: 'file', ref: 'catalog/0/1/clip.webm', duration: 3 },
+      },
+    )
   }
 }
 
@@ -432,6 +454,26 @@ function imagesOf(product: number): ImageRecord[] {
   return images.filter((one) => one.product_id === product).sort((a, b) => a.position - b.position)
 }
 
+function videoRow(video: ImageRecord['video']): ProductImage['video'] {
+  if (video === null) return null
+
+  if (video.provider === 'youtube') {
+    return {
+      provider: 'youtube',
+      url: `https://www.youtube.com/watch?v=${video.ref}`,
+      embed: `https://www.youtube-nocookie.com/embed/${video.ref}`,
+      duration: null,
+    }
+  }
+
+  return {
+    provider: 'file',
+    url: /^https?:\/\//.test(video.ref) ? video.ref : imageUrl(video.ref),
+    embed: null,
+    duration: video.duration,
+  }
+}
+
 function imageRow(record: ImageRecord): ProductImage {
   return {
     id: record.id,
@@ -444,6 +486,7 @@ function imageRow(record: ImageRecord): ProductImage {
     height: record.height,
     size: record.size,
     position: record.position,
+    video: videoRow(record.video),
   }
 }
 
@@ -751,6 +794,10 @@ export function catalogBytes(path: string): { mime: string; bytes: Buffer } | nu
 
   if (uploaded) return uploaded
   if (!path.startsWith('catalog/')) return null
+  // The demo clip is a file of the playground's own; any other video is only what was uploaded.
+  if (path === 'catalog/0/1/clip.webm') return { mime: 'video/webm', bytes: demoClip() }
+  if (/\.(mp4|webm)$/.test(path)) return null
+  if (path.endsWith('.png')) return { mime: 'image/png', bytes: PLACEHOLDER }
 
   return { mime: 'image/svg+xml; charset=utf-8', bytes: Buffer.from(drawn(path)) }
 }
@@ -783,24 +830,80 @@ export function catalogUpload(
   return addImage(product, path, file.bytes.length)
 }
 
-function addImage(product: ProductRecord, path: string, size: number): ProductImage {
+function addImage(
+  product: ProductRecord,
+  path: string,
+  size: number,
+  video: ImageRecord['video'] = null,
+  box: { width: number; height: number } = { width: 800, height: 800 },
+): ProductImage {
   const record: ImageRecord = {
     id: nextId(images),
     product_id: product.id,
     path,
     alt: {},
     title: {},
-    width: 800,
-    height: 800,
+    ...box,
     size,
     position: Math.max(0, ...imagesOf(product.id).map((one) => one.position)) + 1,
+    video,
   }
 
   images.push(record)
-  record_images(product.id, null, path.split('/').pop() ?? path)
+  record_images(product.id, null, imageLabel(record))
 
   return imageRow(record)
 }
+
+/** The journal's name of a row: the file, and its video when it has one (V2's «Итог»). */
+function imageLabel(record: ImageRecord, name?: string): string {
+  const file = `«${record.path.split('/').pop() ?? record.path}»`
+
+  if (record.video === null) return record.path.split('/').pop() ?? record.path
+  if (record.video.provider === 'youtube') return `${file} ▶ YouTube`
+
+  return `${file} ▶ ${name ?? record.video.ref.split('/').pop()}`
+}
+
+/* ------------------------------------------------------------------------ videos ----- */
+
+/* The server's poster for a video fetched by a link without a picture: one dark pixel, as it
+   draws where GD is missing — the panel recognises the row by that shape. */
+const PLACEHOLDER = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNQUFAAAABSACl1eIV3AAAAAElFTkSuQmCC',
+  'base64',
+)
+
+let clip: Buffer | null = null
+
+/** The demo row's video, read once from the playground's public folder. */
+function demoClip(): Buffer {
+  clip ??= fs.readFileSync(new URL('../../public/demo-clip.webm', import.meta.url))
+
+  return clip
+}
+
+const YOUTUBE =
+  /^https?:\/\/(?:(?:www\.|m\.|music\.)?youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/
+
+function youTubeId(url: string): string | null {
+  return YOUTUBE.exec(url)?.[1] ?? null
+}
+
+function videoFileLink(url: string): boolean {
+  return /^https?:\/\/[^?#]+\.(mp4|webm)(?:[?#].*)?$/i.test(url)
+}
+
+/** What `finfo` would say of the bytes: MP4 has `ftyp` at 4, WebM starts with the EBML mark. */
+function videoType(bytes: Buffer): 'mp4' | 'webm' | null {
+  if (bytes.length >= 8 && bytes.subarray(4, 8).toString('latin1') === 'ftyp') return 'mp4'
+  if (bytes.length >= 4 && bytes.readUInt32BE(0) === 0x1a45dfa3) return 'webm'
+
+  return null
+}
+
+/* How long the fake queue takes to "download" a direct link. */
+const QUEUE_DELAY = 4000
 
 function record_images(product: number, from: string | null, to: string | null): void {
   record('catalog.product', product, 'updated', [{ field: 'images', label: 'Картинки', from, to }])
@@ -1163,6 +1266,41 @@ export function registerCatalog(
       })
     }
 
+    const youtube = youTubeId(url)
+
+    if (youtube !== null) {
+      // The poster is YouTube's cover on a real server; here a drawn tile stands for it.
+      const row = addImage(
+        product,
+        `catalog/0/${product.id}/youtube-${youtube}.svg`,
+        0,
+        { provider: 'youtube', ref: youtube, duration: null },
+        { width: 1280, height: 720 },
+      )
+      const kept = images.find((one) => one.id === row.id)!
+
+      kept.alt = { en: 'A video on YouTube' }
+
+      return { data: imageRow(kept) }
+    }
+
+    // A direct link to a file: the real server downloads it in its queue, and the row comes then.
+    if (videoFileLink(url)) {
+      setTimeout(() => {
+        if (productById(product.id) === undefined) return
+
+        addImage(
+          product,
+          `catalog/0/${product.id}/${Date.now().toString(16)}.png`,
+          PLACEHOLDER.length,
+          { provider: 'file', ref: url, duration: null },
+          { width: 1, height: 1 },
+        )
+      }, QUEUE_DELAY)
+
+      return new Reply(202, { data: { queued: true, product: product.id, url, image: null } })
+    }
+
     const image = addImage(
       product,
       `catalog/0/${product.id}/by-address-${Date.now().toString(16)}.svg`,
@@ -1213,9 +1351,107 @@ export function registerCatalog(
     const [gone] = images.splice(at, 1)
 
     uploads.delete(gone!.path)
-    record_images(product.id, gone!.path.split('/').pop() ?? gone!.path, null)
+    // Deleting the picture deletes its video (§5).
+    if (gone!.video?.provider === 'file') uploads.delete(gone!.video.ref)
+    record_images(product.id, imageLabel(gone!), null)
 
     return null
+  })
+
+  const findImage = (product: ProductRecord, id: string) => {
+    const found = images.find((one) => one.id === Number(id) && one.product_id === product.id)
+
+    if (!found) throw fail(404, 'No such picture.')
+
+    return found
+  }
+
+  const refused = (field: string, key: string, locale: string) => {
+    const message = line(locale, 'webx-catalog', `errors.${key}`)
+
+    return fail(422, message, { [field]: [message] })
+  }
+
+  /* A video onto a picture: a finished upload, or an address (the video spec, V2's «Итог»). */
+  on('POST', '/catalog/products/(\\d+)/images/(\\d+)/video', ({ params, body, locale }) => {
+    const product = findProduct(params[0]!)
+    const image = findImage(product, params[1]!)
+    const before = imageLabel(image)
+
+    if (typeof body.upload === 'string') {
+      const claimed = claimUpload(body.upload, 'catalog.video')
+
+      if (claimed === 'missing') throw fail(404, 'No such upload.')
+      if (claimed === 'refused') {
+        throw fail(422, 'The upload is not finished.', {
+          upload: ['The upload is not finished.'],
+        })
+      }
+
+      const kind = videoType(claimed.bytes)
+
+      if (kind === null) throw refused('upload', 'video-not-a-video', locale)
+
+      if (image.video?.provider === 'file') uploads.delete(image.video.ref)
+
+      const path = `catalog/0/${product.id}/${Date.now().toString(16)}.${kind}`
+      const duration = Number(body.duration)
+
+      uploads.set(path, { mime: `video/${kind}`, bytes: claimed.bytes })
+      image.video = {
+        provider: 'file',
+        ref: path,
+        duration: Number.isFinite(duration) && duration > 0 ? Math.round(duration) : null,
+      }
+      record_images(product.id, before, imageLabel(image, claimed.name))
+
+      return new Reply(200, { data: imageRow(image) })
+    }
+
+    const url = typeof body.url === 'string' ? body.url.trim() : ''
+    const youtube = youTubeId(url)
+
+    if (youtube !== null) {
+      if (image.video?.provider === 'file') uploads.delete(image.video.ref)
+
+      image.video = { provider: 'youtube', ref: youtube, duration: null }
+      record_images(product.id, before, imageLabel(image))
+
+      return new Reply(200, { data: imageRow(image) })
+    }
+
+    if (videoFileLink(url)) {
+      setTimeout(() => {
+        if (!images.includes(image)) return
+
+        const was = imageLabel(image)
+        image.video = { provider: 'file', ref: url, duration: null }
+        record_images(product.id, was, imageLabel(image))
+      }, QUEUE_DELAY)
+
+      return new Reply(202, {
+        data: { queued: true, product: product.id, url, image: image.id },
+      })
+    }
+
+    throw refused('url', 'video-not-a-video', locale)
+  })
+
+  /* Taking the video off; on a picture without one, the same answer and not an error. */
+  on('DELETE', '/catalog/products/(\\d+)/images/(\\d+)/video', ({ params }) => {
+    const product = findProduct(params[0]!)
+    const image = findImage(product, params[1]!)
+
+    if (image.video !== null) {
+      const before = imageLabel(image)
+
+      if (image.video.provider === 'file') uploads.delete(image.video.ref)
+
+      image.video = null
+      record_images(product.id, before, null)
+    }
+
+    return { data: imageRow(image) }
   })
 
   on('GET', '/catalog/categories', ({ locale }) => ({ data: treeOf(locale) }))
