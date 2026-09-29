@@ -682,9 +682,9 @@ PR.
 Для K3: узлы `wx-catalog-category` (`props.multiple`), `wx-catalog-facets`, `wx-catalog-gallery`
 (галерея — отдельными запросами, не значением формы); ключи `values` с точкой — один ключ.
 
-Для K5: **до первого релиза с каталогом человек создаёт зеркало** `gh repo create
-webx-ui/module-catalog --public` и отправляет пакет на Packagist (`WEBX_UI_PHP_RELEASE.md`, шаги 1
-и 3). Пока зеркала нет, джоба `php-split` для `module-catalog` на пуше в `main` будет красной.
+Для K5: зеркало `webx-ui/module-catalog` создано 29.09.2026 (пустое — первый коммит засеет
+`php-split`). Остаётся **отправить пакет на Packagist руками** (`WEBX_UI_PHP_RELEASE.md`, шаг 3) —
+в окне между мержем K1 (сплит зальёт `composer.json`) и мержем первого релизного PR с каталогом.
 
 ### K2 — php, каталог
 
