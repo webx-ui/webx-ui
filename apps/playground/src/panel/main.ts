@@ -67,7 +67,7 @@ const admin = createAdmin({
     pages(),
     ...blog(),
     ...services(),
-    catalog(),
+    ...catalog(),
     ...faq(),
     ...reviews(),
     team(),

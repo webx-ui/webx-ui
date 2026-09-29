@@ -22,7 +22,9 @@
                   "name": "name",
                   "label": "trans::webx-catalog::category.name",
                   "localized": true,
-                  "props": { "maxlength": 255 }
+                  "props": {
+                    "maxlength": 255
+                  }
                 },
                 {
                   "id": "slug",
@@ -50,7 +52,12 @@
                   "type": "wx-media",
                   "name": "cover",
                   "label": "trans::webx-catalog::category.cover",
-                  "props": { "accept": "image", "captions": false, "aspect": "4/3" }
+                  "props": {
+                    "accept": "image",
+                    "captions": false,
+                    "aspect": "4/3",
+                    "width": 400
+                  }
                 },
                 {
                   "id": "description",
@@ -69,10 +76,16 @@
           "label": "trans::webx-catalog::screen.filters",
           "children": [
             {
-              "id": "facets",
-              "type": "wx-catalog-facets",
-              "name": "facets",
-              "label": "trans::webx-catalog::category.facets"
+              "id": "filters-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "facets",
+                  "type": "wx-catalog-facets",
+                  "name": "facets",
+                  "label": "trans::webx-catalog::category.facets"
+                }
+              ]
             }
           ]
         },
@@ -82,9 +95,15 @@
           "label": "trans::webx-catalog::screen.seo",
           "children": [
             {
-              "id": "seo",
-              "type": "wx-seo",
-              "name": "seo"
+              "id": "seo-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "seo",
+                  "type": "wx-seo",
+                  "name": "seo"
+                }
+              ]
             }
           ]
         },
@@ -94,9 +113,18 @@
           "label": "trans::webx-catalog::screen.history",
           "children": [
             {
-              "id": "history",
-              "type": "wx-history",
-              "props": { "type": "catalog.category", "title": "" }
+              "id": "history-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "history",
+                  "type": "wx-history",
+                  "props": {
+                    "type": "catalog.category",
+                    "title": ""
+                  }
+                }
+              ]
             }
           ]
         }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Catalog\Facets;
 
 use Illuminate\Contracts\Cache\Repository as Cache;
+use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Support\Facades\DB;
 use WebxUi\Catalog\Models\Category;
 
@@ -31,6 +32,7 @@ final class CategoryFacets
     public function __construct(
         private readonly Facets $facets,
         private readonly Cache $cache,
+        private readonly Config $config,
     ) {}
 
     /**
@@ -67,7 +69,9 @@ final class CategoryFacets
      */
     public function resolve(?Category $category): array
     {
-        if ($category === null || ! $category->exists) {
+        // Switched off, the tab is gone, and settings nobody can see or change must not decide
+        // what a visitor is offered.
+        if ($category === null || ! $category->exists || ! $this->enabled()) {
             return ['from' => null, 'facets' => null];
         }
 
@@ -123,6 +127,11 @@ final class CategoryFacets
         }
 
         return ['from' => $from, 'facets' => $facets];
+    }
+
+    private function enabled(): bool
+    {
+        return (bool) $this->config->get('webx-catalog.fields.facets', false);
     }
 
     private function generation(): string

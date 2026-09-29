@@ -528,13 +528,6 @@ const actions = computed<ScreenAction[]>(() => {
     })
   }
 
-  leads.push({
-    key: 'categories',
-    label: t('module.categories'),
-    icon: 'folder',
-    run: () => void router.push(`${props.base}/categories`),
-  })
-
   if (canDelete.value) {
     leads.push({
       key: 'deleted',

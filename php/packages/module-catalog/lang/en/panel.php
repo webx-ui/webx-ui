@@ -64,7 +64,7 @@ return [
     'sku-open-deleted' => 'Find it in «Deleted»',
     'gallery-add' => 'Add pictures',
     'gallery-hint' => 'JPEG, PNG, WebP or GIF. The first picture is the main one.',
-    'gallery-url' => 'Or by address',
+    'gallery-url' => 'Upload from an address',
     'gallery-url-add' => 'Fetch',
     'gallery-empty' => 'No pictures yet.',
     'gallery-main' => 'Main',

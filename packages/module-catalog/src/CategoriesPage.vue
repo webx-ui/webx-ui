@@ -281,8 +281,6 @@ const actions = computed<ScreenAction[]>(() => {
     <wx-list-screen
       :title="t('module.categories')"
       :subtitle="canManage && rows.length > 0 ? t('panel.category-order') : undefined"
-      :back="`${props.base}/products`"
-      :back-label="t('module.products')"
       :actions="actions"
     >
       <wx-table

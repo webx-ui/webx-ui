@@ -30,6 +30,12 @@ return [
     | whole site, an ISO 4217 code; only the markup reads it, and a product's
     | `Offer` is left out of it while it is not set.
     |
+    | `facets` is the «Filters» tab of a category: which filters it shows and in
+    | what order. Off by default — with the category and the price alone there
+    | is nothing to arrange; a satellite that brings filters of its own (the
+    | properties) switches it on. Off, every category shows every filter, and
+    | what was chosen before is kept but not applied.
+    |
     */
 
     'price' => [
@@ -37,7 +43,10 @@ return [
         'currency' => env('WEBX_CATALOG_CURRENCY'),
     ],
 
-    'fields' => ['barcode' => (bool) env('WEBX_CATALOG_BARCODE', true)],
+    'fields' => [
+        'barcode' => (bool) env('WEBX_CATALOG_BARCODE', true),
+        'facets' => (bool) env('WEBX_CATALOG_CATEGORY_FACETS', false),
+    ],
 
     /*
     |---------------------------------------------------------------------------

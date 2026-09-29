@@ -552,7 +552,7 @@ on('GET', '/manifest', ({ locale }) => ({
         permissions: ['reviews.view', 'reviews.manage'],
         meta: {},
       },
-      /* One section for products, their tree and «Deleted»: the server registers one module. */
+      /* The products with «Deleted», and the tree beside them: two modules, two entries. */
       {
         id: 'catalog',
         title: line(locale, 'webx-catalog', 'module.title'),
@@ -560,6 +560,15 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 300,
         group: 'catalog',
         permissions: ['catalog.view', 'catalog.manage', 'catalog.delete'],
+        meta: {},
+      },
+      {
+        id: 'catalog-categories',
+        title: line(locale, 'webx-catalog', 'module.categories'),
+        icon: 'folder',
+        order: 301,
+        group: 'catalog',
+        permissions: [],
         meta: {},
       },
       /* Not a module of any package: a fake record with a made-up past, where the journal's node

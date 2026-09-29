@@ -18,24 +18,24 @@ export interface CatalogOptions {
 }
 
 /**
- * The catalogue as a section of the panel (§11): products, their categories as a tree, and
- * «Deleted».
+ * The catalogue as sections of the panel (§11): the products with «Deleted», and their categories
+ * as a tree.
  *
- * One section and not three, because the server registers one module — `catalog` — and the
- * navigation draws one entry per module. The products are where it opens; the tree and «Deleted»
- * are reached from their head. The satellites (brands, stock, labels) stand beside it in the
- * `catalog` group as sections of their own.
+ * Two modules, because the navigation is one entry per module and the tree is opened often enough
+ * to want its own — the server registers `catalog` and `catalog-categories` in the `catalog`
+ * group, beside the satellites (brands, stock, labels). «Deleted» is reached from the head of the
+ * products: it holds categories too, but it is visited rarely, and by whoever may delete.
  *
  * The three node types are what only this module can draw on its two screens: a category picker
  * that knows the tree, the «Filters» tab of a category (§6.2), and the gallery.
  */
-export function catalog(options: CatalogOptions = {}): AdminModule {
+export function catalog(options: CatalogOptions = {}): AdminModule[] {
   const path = options.path ?? '/catalog'
   const props = { base: path }
 
-  return {
+  const products: AdminModule = {
     id: 'catalog',
-    path,
+    path: `${path}/products`,
     routes: [
       { path, redirect: `${path}/products` },
       { path: `${path}/products`, name: 'webx.catalog.products', component: ProductsPage, props },
@@ -43,18 +43,6 @@ export function catalog(options: CatalogOptions = {}): AdminModule {
         path: `${path}/products/:id(\\d+)`,
         name: 'webx.catalog.products.edit',
         component: ProductEditorPage,
-        props,
-      },
-      {
-        path: `${path}/categories`,
-        name: 'webx.catalog.categories',
-        component: CategoriesPage,
-        props,
-      },
-      {
-        path: `${path}/categories/:id(\\d+)`,
-        name: 'webx.catalog.categories.edit',
-        component: CategoryEditorPage,
         props,
       },
       { path: `${path}/deleted`, name: 'webx.catalog.deleted', component: DeletedPage, props },
@@ -67,4 +55,25 @@ export function catalog(options: CatalogOptions = {}): AdminModule {
       'wx-catalog-gallery': { component: GalleryField, kind: 'display' },
     },
   }
+
+  const categories: AdminModule = {
+    id: 'catalog-categories',
+    path: `${path}/categories`,
+    routes: [
+      {
+        path: `${path}/categories`,
+        name: 'webx.catalog.categories',
+        component: CategoriesPage,
+        props,
+      },
+      {
+        path: `${path}/categories/:id(\\d+)`,
+        name: 'webx.catalog.categories.edit',
+        component: CategoryEditorPage,
+        props,
+      },
+    ],
+  }
+
+  return [products, categories]
 }

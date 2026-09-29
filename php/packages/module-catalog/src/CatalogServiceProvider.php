@@ -42,6 +42,7 @@ use WebxUi\Catalog\Links\CategoryLinkSource;
 use WebxUi\Catalog\Links\ProductLinkSource;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Panel\CatalogCategoriesModule;
 use WebxUi\Catalog\Panel\CatalogModule;
 use WebxUi\Catalog\Panel\CategoryFieldType;
 use WebxUi\Catalog\Panel\FacetsFieldType;
@@ -212,6 +213,10 @@ class CatalogServiceProvider extends ServiceProvider
 
         $screens->extend(Product::SCREEN, $patch);
 
+        if (! (bool) $this->config()->get('webx-catalog.fields.facets', false)) {
+            $screens->extend(Category::SCREEN, [['op' => 'remove', 'target' => 'filters-tab']]);
+        }
+
         $fields = $this->app->make(FieldTypes::class);
         $fields->register('wx-catalog-category', new CategoryFieldType);
         $fields->register('wx-catalog-facets', new FacetsFieldType);
@@ -259,7 +264,9 @@ class CatalogServiceProvider extends ServiceProvider
             ]);
         }
 
-        $this->app->make(ModuleRegistry::class)->register($this->app->make(CatalogModule::class));
+        $modules = $this->app->make(ModuleRegistry::class);
+        $modules->register($this->app->make(CatalogModule::class));
+        $modules->register(new CatalogCategoriesModule);
     }
 
     /**
