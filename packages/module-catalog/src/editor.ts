@@ -36,6 +36,11 @@ export interface CategoryEditorContext {
   category: Ref<CategoryRow | null>
   /** Closed for writing — what the screen's form says to its own controls, for the ones it cannot. */
   locked: Ref<boolean>
+  /**
+   * The server's answer to "whose facet setting does it show" (`facets_from`): the ancestor, `null`
+   * for its own or the default, `undefined` when the server did not say.
+   */
+  facetsFrom: Ref<{ id: number; name: string } | null | undefined>
 }
 
 export const categoryEditorKey: InjectionKey<CategoryEditorContext> = Symbol('wx-catalog-category')

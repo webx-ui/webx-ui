@@ -517,6 +517,32 @@ function categoryValues(record: CategoryRecord): Record<string, unknown> {
   }
 }
 
+/**
+ * Whose facet setting a category shows while it has none (§6.2): the nearest ancestor with one.
+ * `null` for its own, and for nobody above it — every facet by default. As `CategoryForm` has it.
+ */
+function facetsFrom(record: CategoryRecord, locale: string): { id: number; name: string } | null {
+  if (record.facets !== null) return null
+
+  let parent = record.parent_id === null ? undefined : categoryById(record.parent_id)
+
+  while (parent) {
+    if (parent.facets !== null) return { id: parent.id, name: word(parent.name, locale) }
+
+    parent = parent.parent_id === null ? undefined : categoryById(parent.parent_id)
+  }
+
+  return null
+}
+
+function categoryDetail(record: CategoryRecord, locale: string) {
+  return {
+    category: categoryRow(record, locale),
+    values: categoryValues(record),
+    facets_from: facetsFrom(record, locale),
+  }
+}
+
 function paginate<T>(rows: T[], query: URLSearchParams) {
   const perPage = Math.min(100, Math.max(1, Number(query.get('per_page') ?? 20) || 20))
   const last = Math.max(1, Math.ceil(rows.length / perPage))
@@ -773,7 +799,20 @@ export function registerCatalog(
     },
   ]
 
-  on('GET', '/catalog/facets', ({ locale }) => ({ data: facets(locale) }))
+  /* The sorts of the registry (§7.2), in its order, with the core's words as K2 ships them. */
+  const SORTS: [string, Map][] = [
+    ['default', { ru: 'По умолчанию', en: 'Default' }],
+    ['price_asc', { ru: 'Сначала дешёвые', en: 'Cheapest first' }],
+    ['price_desc', { ru: 'Сначала дорогие', en: 'Most expensive first' }],
+    ['popular', { ru: 'Популярные', en: 'Popular' }],
+    ['new', { ru: 'Новинки', en: 'Newest' }],
+    ['name', { ru: 'По названию', en: 'By name' }],
+  ]
+
+  on('GET', '/catalog/facets', ({ locale }) => ({
+    data: facets(locale).map((facet) => ({ ...facet, indexable: facet.kind !== 'range' })),
+    meta: { sorts: SORTS.map(([key, label]) => ({ key, label: word(label, locale) })) },
+  }))
 
   on('GET', '/catalog/products', ({ query, locale }) => {
     const term = query.get('q') ?? ''
@@ -781,31 +820,69 @@ export function registerCatalog(
     const inside = new Set(wanted.flatMap((id) => subtree(id)))
     const min = query.get('facets[price][min]')
     const max = query.get('facets[price][max]')
+    const sort = query.get('sort') ?? 'default'
 
-    let found = live(products).filter((one) => matches(term, one.name, one.sku))
+    // A white list, as on the server: an order nobody registered is refused, not ignored.
+    if (!SORTS.some(([key]) => key === sort)) {
+      throw fail(422, 'The selected sort is invalid.', { sort: ['The selected sort is invalid.'] })
+    }
+
+    let base = live(products).filter((one) => matches(term, one.name, one.sku))
 
     switch (query.get('state')) {
       case 'published':
-        found = found.filter((one) => one.is_published)
+        base = base.filter((one) => one.is_published)
         break
       case 'unpublished':
-        found = found.filter((one) => !one.is_published)
+        base = base.filter((one) => !one.is_published)
         break
       case 'no-category':
-        found = found.filter((one) => one.category_id === null)
+        base = base.filter((one) => one.category_id === null)
         break
     }
 
-    if (inside.size > 0) {
-      found = found.filter((one) =>
-        [one.category_id, ...one.categories].some((id) => id !== null && inside.has(id)),
-      )
+    const byCategory = (one: ProductRecord) =>
+      inside.size === 0 ||
+      [one.category_id, ...one.categories].some((id) => id !== null && inside.has(id))
+    const byPrice = (one: ProductRecord) =>
+      (min === null || (one.price !== null && one.price >= Number(min))) &&
+      (max === null || (one.price !== null && one.price <= Number(max)))
+
+    const found = base.filter((one) => byCategory(one) && byPrice(one))
+
+    /*
+     * Each facet counted without its own choice, the way the engine does it: picking one category
+     * does not take the others out of the filter.
+     */
+    const counted: Record<string, unknown> = {}
+    const forCategories = base.filter(byPrice)
+    const perCategory = live(categories).map((one) => {
+      const ids = new Set(subtree(one.id))
+
+      return {
+        value: String(one.id),
+        label: word(one.name, locale),
+        count: forCategories.filter((product) =>
+          [product.category_id, ...product.categories].some((id) => id !== null && ids.has(id)),
+        ).length,
+      }
+    })
+    const prices = base
+      .filter(byCategory)
+      .map((one) => one.price)
+      .filter((price): price is number => price !== null)
+
+    counted.category = {
+      key: 'category',
+      kind: 'tree',
+      values: perCategory.filter((one) => one.count > 0),
     }
-
-    if (min !== null) found = found.filter((one) => one.price !== null && one.price >= Number(min))
-    if (max !== null) found = found.filter((one) => one.price !== null && one.price <= Number(max))
-
-    const sort = query.get('sort') ?? 'default'
+    counted.price = {
+      key: 'price',
+      kind: 'range',
+      min: prices.length > 0 ? Math.min(...prices) : null,
+      max: prices.length > 0 ? Math.max(...prices) : null,
+    }
     const byName = (a: ProductRecord, b: ProductRecord) =>
       word(a.name, locale).localeCompare(word(b.name, locale), locale)
     const price = (one: ProductRecord) => one.price ?? Number.POSITIVE_INFINITY
@@ -831,6 +908,9 @@ export function registerCatalog(
         query,
       ),
       counts: { no_category: live(products).filter((one) => one.category_id === null).length },
+      facets: counted,
+      // No satellite columns in the core: the list says so rather than leaving the key out.
+      columns: [],
     }
   })
 
@@ -1094,7 +1174,7 @@ export function registerCatalog(
   on('GET', '/catalog/categories/(\\d+)', ({ params, locale }) => {
     const found = findCategory(params[0]!)
 
-    return { data: { category: categoryRow(found, locale), values: categoryValues(found) } }
+    return { data: categoryDetail(found, locale) }
   })
 
   const writeCategory = (
@@ -1213,7 +1293,7 @@ export function registerCatalog(
 
     writeCategory(target, (body.values ?? {}) as Record<string, unknown>, locale)
 
-    return { data: { category: categoryRow(target, locale), values: categoryValues(target) } }
+    return { data: categoryDetail(target, locale) }
   })
 
   on('PUT', '/catalog/categories/(\\d+)', ({ params, body, locale }) => {
@@ -1221,7 +1301,7 @@ export function registerCatalog(
 
     writeCategory(target, (body.values ?? {}) as Record<string, unknown>, locale)
 
-    return { data: { category: categoryRow(target, locale), values: categoryValues(target) } }
+    return { data: categoryDetail(target, locale) }
   })
 
   /** `{ parent_id, before_id }` → the whole tree, as `CategoryController::move()` answers. */

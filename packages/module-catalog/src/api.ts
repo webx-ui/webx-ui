@@ -9,6 +9,8 @@ import type {
   DeletedKind,
   DeletedProduct,
   FacetInfo,
+  FacetRegistryAnswer,
+  SortInfo,
   ProductDetail,
   ProductImage,
   ProductQuery,
@@ -47,7 +49,8 @@ export interface CatalogApi {
   removeCategory(id: number): Promise<void>
   restoreCategory(id: number): Promise<CategoryRow>
 
-  facets(): Promise<FacetInfo[]>
+  /** The registry of facets, with the sorts the list is offered. */
+  facets(): Promise<FacetRegistryAnswer>
 
   deleted(
     kind: 'products',
@@ -68,8 +71,10 @@ export const CATALOG_API = 'catalog'
 
 /**
  * The list's query as Laravel reads nested parameters: `facets[brand][]=3`,
- * `facets[price][min]=100`, `facets[in-stock]=1`. Empty choices are left out, so a filter that
- * was opened and closed again asks for nothing.
+ * `facets[price][min]=100`. Every facet's choice is a list, a toggle's too — on is
+ * `facets[in-stock][]=1`, the value the storefront's own links send; a bare `facets[in-stock]=1`
+ * is refused. Empty choices are left out, so a filter that was opened and closed again asks for
+ * nothing.
  */
 export function productSearch(query: ProductQuery): URLSearchParams {
   const search = new URLSearchParams()
@@ -82,7 +87,7 @@ export function productSearch(query: ProductQuery): URLSearchParams {
 
   for (const [key, choice] of Object.entries(query.facets ?? {})) {
     if (choice === true) {
-      search.set(`facets[${key}]`, '1')
+      search.set(`facets[${key}][]`, '1')
     } else if (Array.isArray(choice)) {
       for (const value of choice) search.append(`facets[${key}][]`, String(value))
     } else {
@@ -198,7 +203,10 @@ export function createCatalogApi(admin: AdminContext): CatalogApi {
     restoreCategory: (id) =>
       admin.http.post<{ data: CategoryRow }>(`${base}/categories/${id}/restore`, {}).then(data),
 
-    facets: () => admin.http.get<{ data: FacetInfo[] }>(`${base}/facets`).then(data),
+    facets: () =>
+      admin.http
+        .get<{ data: FacetInfo[]; meta?: { sorts?: SortInfo[] } }>(`${base}/facets`)
+        .then((body) => ({ facets: body.data, sorts: body.meta?.sorts ?? [] })),
 
     deleted: ((kind: DeletedKind, query: { q?: string; page?: number; per_page?: number } = {}) => {
       const search = new URLSearchParams({ type: kind })

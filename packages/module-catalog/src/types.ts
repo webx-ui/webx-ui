@@ -53,17 +53,42 @@ export interface ProductRow {
 export interface ProductColumnInfo {
   key: string
   label: string
-  sortable?: boolean
+  /** The key of the `Sorts` registry that orders by it, or `null`. */
+  sort?: string | null
 }
 
-/** The list: Laravel's paginator as it is, with the number of products nobody filed (decision 3). */
+/**
+ * What one facet counts for the list as it is filtered, its own choice aside: the values of a
+ * terms or tree facet with their words and counts, the bounds of a range, the products a toggle
+ * would leave.
+ */
+export interface FacetCount {
+  key: string
+  kind: FacetKind
+  values?: { value: string; label: string; count: number }[]
+  min?: number | null
+  max?: number | null
+  count?: number
+}
+
+/**
+ * The list: Laravel's paginator as it is, with the number of products nobody filed (decision 3),
+ * the facets' counts and the satellites' columns.
+ */
 export interface ProductsPage extends Paginated<ProductRow> {
   counts: { no_category: number }
+  facets?: Record<string, FacetCount>
   columns?: ProductColumnInfo[]
 }
 
-/** How the list can be ordered until the engine's `Sorts` registry answers for it. */
-export type ProductSort = 'default' | 'new' | 'name' | 'price_asc' | 'price_desc'
+/** A key of the `Sorts` registry: `default`, `new`, `popular`, `price_asc` — whatever it holds. */
+export type ProductSort = string
+
+/** One way to order the list, as the registry names it. */
+export interface SortInfo {
+  key: string
+  label: string
+}
 
 /** One facet's choice in the list's filter: values, a range, or on. */
 export type FacetChoice =
@@ -75,7 +100,7 @@ export interface ProductQuery {
   sort?: ProductSort | null
   page?: number
   per_page?: number
-  /** Facet key → what is chosen. Sent as `facets[key][]=…`, `facets[key][min]=…`, `facets[key]=1`. */
+  /** Facet key → what is chosen. Sent as `facets[key][]=…`, `facets[key][min]=…`; on is `facets[key][]=1`. */
   facets?: Record<string, FacetChoice>
 }
 
@@ -142,6 +167,11 @@ export interface CategoryRow extends CategoryFields {
 export interface CategoryDetail {
   category: CategoryRow
   values: ScreenModel
+  /**
+   * Whose facet setting it shows while it has none of its own: the nearest ancestor with one.
+   * `null` when it has its own, and when nobody above it has — every facet by default (§6.2).
+   */
+  facets_from?: { id: number; name: string } | null
 }
 
 /** A category's own facet setting: the facets in its order, each shown or not (§6.2). */
@@ -153,15 +183,22 @@ export interface FacetSetting {
 export type FacetKind = 'terms' | 'range' | 'toggle' | 'tree'
 
 /**
- * One facet of the registry. `options` are the values a terms facet can be narrowed to in the
- * panel's list; a tree facet (the categories) is chosen from the tree itself.
+ * One facet of the registry. Its values are not here: the list counts them for what it shows
+ * (`ProductsPage.facets`), and the tree facet (the categories) is chosen from the tree itself.
  */
 export interface FacetInfo {
   key: string
   code: string
   kind: FacetKind
   label: string
-  options?: { value: string | number; label: string }[]
+  /** Whether its first level may be an open page of the storefront (§8.1 of the architecture). */
+  indexable?: boolean
+}
+
+/** `GET /facets`: the registry of facets, and the sorts the list can be ordered by. */
+export interface FacetRegistryAnswer {
+  facets: FacetInfo[]
+  sorts: SortInfo[]
 }
 
 /** A row of «Deleted» — products. */

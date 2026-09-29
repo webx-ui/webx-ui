@@ -63,6 +63,7 @@ const id = computed(() => Number(route.params.id))
 const list = computed(() => `${props.base}/categories`)
 
 const category = ref<CategoryRow | null>(null)
+const facetsFrom = ref<CategoryDetail['facets_from']>(undefined)
 const values = ref<ScreenModel>({})
 const snapshot = ref('')
 
@@ -108,7 +109,7 @@ const parents = computed(() =>
     : [],
 )
 
-provideCatalogCategoryEditor({ category, locked })
+provideCatalogCategoryEditor({ category, locked, facetsFrom })
 provideHistorySubject({ id: computed(() => category.value?.id ?? null) })
 
 /* The address of a category is flat at the root of the site at any depth (decision 23). */
@@ -121,6 +122,7 @@ provideRecordAddress({
 
 function take(detail: CategoryDetail): void {
   category.value = detail.category
+  facetsFrom.value = detail.facets_from
   values.value = detail.values
   snapshot.value = JSON.stringify(detail.values)
 }

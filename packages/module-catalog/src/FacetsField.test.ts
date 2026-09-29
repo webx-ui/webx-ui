@@ -43,9 +43,13 @@ const tree: Record<number, { category: CategoryRow; values: { facets: FacetSetti
   2: { category: category(2, 1, 'Laptops'), values: { facets: null } },
 }
 
-function field(value: FacetSetting[] | null, parent: number | null = 2) {
+function field(
+  value: FacetSetting[] | null,
+  parent: number | null = 2,
+  from: { id: number; name: string } | null | undefined = undefined,
+) {
   const get = vi.fn().mockImplementation((url: string) => {
-    if (url.endsWith('/facets')) return Promise.resolve({ data: registry })
+    if (url.endsWith('/facets')) return Promise.resolve({ data: registry, meta: { sorts: [] } })
 
     const id = Number(url.split('/').pop())
 
@@ -60,6 +64,7 @@ function field(value: FacetSetting[] | null, parent: number | null = 2) {
       provideCatalogCategoryEditor({
         category: ref(category(3, parent, 'Gaming')),
         locked: ref(false),
+        facetsFrom: ref(from),
       })
 
       return () =>
@@ -78,6 +83,25 @@ function field(value: FacetSetting[] | null, parent: number | null = 2) {
 }
 
 describe('WxCatalogFacetsField', () => {
+  it('reads the setting of the ancestor the server names, and only that one', async () => {
+    const { wrapper, get } = field(null, 2, { id: 1, name: 'Computers' })
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('As in “Computers”')
+    expect(get).toHaveBeenCalledWith('/api/cms/catalog/categories/1')
+    expect(get).not.toHaveBeenCalledWith('/api/cms/catalog/categories/2')
+  })
+
+  it('asks nobody when the server says the default is what it shows', async () => {
+    const { wrapper, get } = field(null, 2, null)
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('All filters, in their default order')
+    expect(get.mock.calls.filter(([url]) => String(url).includes('/categories/'))).toEqual([])
+  })
+
   it('says whose setting a category inherits, walking up past the ones without', async () => {
     const { wrapper, get } = field(null)
 

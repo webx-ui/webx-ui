@@ -32,6 +32,7 @@ import {
   WxTooltip,
   WxTreeSelect,
   type RowKey,
+  type SelectOption,
   type TabItem,
   type TableColumn,
   type TableState,
@@ -50,6 +51,7 @@ import type {
   ProductQuery,
   ProductRow,
   ProductSort,
+  SortInfo,
   ProductsPage,
 } from './types'
 
@@ -69,8 +71,6 @@ const props = withDefaults(defineProps<{ base?: string }>(), { base: '/catalog' 
 
 /** Where the row stops being a row. Below it the table draws cards and this screen draws one. */
 const CARDS = 640
-
-const SORTS: ProductSort[] = ['default', 'new', 'name', 'price_asc', 'price_desc']
 
 const context = useAdmin()
 const api = createCatalogApi(context)
@@ -94,6 +94,8 @@ const selected = ref<RowKey[]>([])
 /* The table's own search and page, started from the address: coming back lands where it left. */
 const search = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const pageNumber = ref(Number(route.query.page ?? 1) || 1)
+/* The page size the table last asked for: a reload after a filter has to page the same way. */
+let perPage: number | undefined
 
 const create = createModal<ProductDetail, Record<string, never>>(ProductCreateDialog)
 
@@ -112,11 +114,22 @@ const view = computed<TabValue>({
   },
 })
 
+/**
+ * The orders are the registry's (§7.2): a satellite adds its own, and a site without prices has
+ * none by price — a sort the server does not know is a 422, so nothing is offered or asked for
+ * that it did not list. Until it answers, the default order is the one there is.
+ */
+const sorts = computed<SortInfo[]>(() =>
+  registry.sorts.value.length > 0
+    ? registry.sorts.value
+    : [{ key: 'default', label: t('panel.sort-default') }],
+)
+
 const sort = computed<ProductSort>(() => {
   const asked = route.query.sort
 
-  return typeof asked === 'string' && SORTS.includes(asked as ProductSort)
-    ? (asked as ProductSort)
+  return typeof asked === 'string' && registry.sorts.value.some((one) => one.key === asked)
+    ? asked
     : 'default'
 })
 
@@ -187,7 +200,7 @@ function query(state?: TableState): ProductQuery {
     state: view.value as ProductQuery['state'],
     sort: sort.value,
     page: state?.page ?? pageNumber.value,
-    per_page: state?.perPage,
+    per_page: state?.perPage ?? perPage,
     facets: chosen.value,
   }
 }
@@ -212,6 +225,8 @@ async function load(state?: TableState): Promise<void> {
 }
 
 function onState(state: TableState): void {
+  perPage = state.perPage
+
   const wanted: LocationQueryRaw = {
     ...route.query,
     q: state.search === '' ? undefined : state.search,
@@ -246,13 +261,41 @@ function clearFilters(): void {
   void router.replace({ query: { ...rest, page: undefined } })
 }
 
+/**
+ * What a terms facet can be narrowed to: the values the list counted for it, with how many
+ * products each would leave. The engine counts a facet without its own choice, so picking one
+ * value does not take the others away; a chosen value that counts nothing any more stays offered,
+ * or it could not be taken off.
+ */
+function optionsOf(key: string): SelectOption[] {
+  const counted = page.value?.facets?.[key]?.values ?? []
+  const options: SelectOption[] = counted.map((one) => ({
+    value: one.value,
+    label: `${one.label} (${one.count})`,
+  }))
+
+  for (const value of valuesOf(key)) {
+    if (!counted.some((one) => one.value === value)) options.push({ value, label: value })
+  }
+
+  return options
+}
+
 /** Values of a terms facet, or of the tree, for a chip: "Category: Laptops, Tablets". */
 function valueLabel(facet: FacetInfo, value: string | number): string {
   if (facet.kind === 'tree') return categoryNames.value.get(String(value)) ?? `#${value}`
 
   return (
-    facet.options?.find((option) => String(option.value) === String(value))?.label ?? String(value)
+    page.value?.facets?.[facet.key]?.values?.find((one) => one.value === String(value))?.label ??
+    String(value)
   )
+}
+
+/** The bounds a range facet has in the list as it stands, said in its fields before anything is typed. */
+function boundOf(key: string, end: 'min' | 'max'): string {
+  const bound = page.value?.facets?.[key]?.[end]
+
+  return typeof bound === 'number' ? money.value.format(bound) : ''
 }
 
 const applied = computed<AppliedFilter[]>(() =>
@@ -501,7 +544,7 @@ const actions = computed<ScreenAction[]>(() => {
           <wx-form-item :label="t('panel.sort')">
             <wx-select
               :model-value="sort"
-              :options="SORTS.map((key) => ({ value: key, label: t(`panel.sort-${key}`) }))"
+              :options="sorts.map((one) => ({ value: one.key, label: one.label }))"
               size="sm"
               @update:model-value="order"
             />
@@ -533,7 +576,7 @@ const actions = computed<ScreenAction[]>(() => {
                 :min="0"
                 :controls="false"
                 size="sm"
-                :placeholder="t('panel.range-from')"
+                :placeholder="boundOf(facet.key, 'min') || t('panel.range-from')"
                 :aria-label="`${facet.label}: ${t('panel.range-from')}`"
                 @update:model-value="
                   (value: number | null | undefined) =>
@@ -545,7 +588,7 @@ const actions = computed<ScreenAction[]>(() => {
                 :min="0"
                 :controls="false"
                 size="sm"
-                :placeholder="t('panel.range-to')"
+                :placeholder="boundOf(facet.key, 'max') || t('panel.range-to')"
                 :aria-label="`${facet.label}: ${t('panel.range-to')}`"
                 @update:model-value="
                   (value: number | null | undefined) =>
@@ -564,12 +607,7 @@ const actions = computed<ScreenAction[]>(() => {
             <wx-select
               v-else
               :model-value="valuesOf(facet.key)"
-              :options="
-                (facet.options ?? []).map((option) => ({
-                  value: String(option.value),
-                  label: option.label,
-                }))
-              "
+              :options="optionsOf(facet.key)"
               multiple
               filterable
               clearable
