@@ -40,6 +40,8 @@ final class DemoAndSourcesTest extends TestCase
         $this->assertGreaterThan(0, Product::onlyTrashed()->count());
         $this->assertSame(2, Product::query()->whereNull('category_id')->count());
         $this->assertSame(Product::withTrashed()->count(), ProductImage::query()->count());
+        // One video, a link rather than a file: nothing but pictures lands on the disk.
+        $this->assertSame(['youtube'], ProductImage::query()->whereNotNull('video')->pluck('video_provider')->all());
 
         $path = ProductImage::query()->value('path');
         Storage::disk('public')->assertExists((string) $path);

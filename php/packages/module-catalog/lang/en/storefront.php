@@ -8,6 +8,7 @@ return [
     'price-on-request' => 'Price on request',
     'buy' => 'Buy',
     'ask-price' => 'Ask the price',
+    'play-video' => 'Play the video',
 
     'root' => 'Catalogue',
     'search' => 'Search',

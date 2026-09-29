@@ -80,6 +80,7 @@ export default defineConfig({
             { text: 'Events', link: '/guide/events' },
             { text: 'Press', link: '/guide/press' },
             { text: 'Vacancies', link: '/guide/vacancies' },
+            { text: 'Catalogue', link: '/guide/catalog' },
           ],
         },
         {

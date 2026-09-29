@@ -13,6 +13,9 @@ use WebxUi\Catalog\Purchase\Purchasability;
  * offer: prices switched on, a price written, and a currency the site named. A price without a
  * currency is a number a search engine cannot read, and it is left out rather than guessed.
  *
+ * Videos of the gallery are its `subjectOf`, a `VideoObject` each (§6 of the video spec) — unless
+ * the site switched videos off, and then the storefront says nothing about them at all.
+ *
  * The trail is `module-seo`'s `BreadcrumbList`, from the product's crumbs, and not repeated here.
  */
 final class ProductMarkup
@@ -38,6 +41,12 @@ final class ProductMarkup
             'image' => $product->images->map(static fn ($image): string => $image->url())->values()->all() ?: null,
             'category' => $product->category?->displayName($locale),
         ], static fn (mixed $value): bool => $value !== null && $value !== '' && $value !== []);
+
+        $videos = $this->videos($product, $locale);
+
+        if ($videos !== []) {
+            $block['subjectOf'] = $videos;
+        }
 
         $offer = $this->offer($product);
 
@@ -68,6 +77,52 @@ final class ProductMarkup
             'availability' => $verdict->purchasable ? 'https://schema.org/InStock' : 'https://schema.org/Discontinued',
             'url' => $product->url(),
         ];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function videos(Product $product, string $locale): array
+    {
+        if (! (bool) $this->config->get('webx-catalog.fields.video', true)) {
+            return [];
+        }
+
+        $name = $product->displayName($locale);
+        $videos = [];
+
+        foreach ($product->images as $image) {
+            $video = $image->videoData();
+
+            if ($video === null) {
+                continue;
+            }
+
+            $alt = $this->text($image->getTranslation('alt', $locale));
+
+            $videos[] = array_filter([
+                '@type' => 'VideoObject',
+                'name' => $alt ?? $name,
+                'description' => $this->text($product->getTranslation('summary', $locale)) ?? $name,
+                'thumbnailUrl' => $image->url(),
+                'uploadDate' => $image->created_at?->toAtomString(),
+                'contentUrl' => $video['embed'] === null ? $video['url'] : null,
+                'embedUrl' => $video['embed'],
+                'duration' => $video['duration'] !== null ? self::duration($video['duration']) : null,
+            ], static fn (mixed $value): bool => $value !== null && $value !== '');
+        }
+
+        return $videos;
+    }
+
+    /** ISO 8601, the way schema.org reads a duration: `PT1M5S`. */
+    private static function duration(int $seconds): string
+    {
+        $hours = intdiv($seconds, 3600);
+        $minutes = intdiv($seconds % 3600, 60);
+        $rest = $seconds % 60;
+
+        return 'PT'.($hours > 0 ? $hours.'H' : '').($minutes > 0 ? $minutes.'M' : '').($rest > 0 || $seconds === 0 ? $rest.'S' : '');
     }
 
     private function text(mixed $value): ?string

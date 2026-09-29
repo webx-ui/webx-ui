@@ -61,6 +61,12 @@ final class CatalogDemo
 
     private const PICTURES = ['demo-wide.jpg', 'demo-square.jpg'];
 
+    /**
+     * The one video of the demo: Big Buck Bunny, the Blender Foundation's open film on its own
+     * channel. A link rather than a file — megabytes do not belong in a package.
+     */
+    public const VIDEO = 'aqz-KE-bpKQ';
+
     public function __construct(
         private readonly Gallery $gallery,
         private readonly Locales $locales,
@@ -175,6 +181,12 @@ final class CatalogDemo
             // Test mode: a file of the package, not something that came up a socket.
             $image = $this->gallery->upload($product, new UploadedFile($path, $picture, 'image/jpeg', null, true));
             $image->setTranslation('alt', $locale, $name);
+
+            // The first product plays a video over its own demo picture: nothing is fetched.
+            if ($i === 0) {
+                $image->forceFill(['video_provider' => 'youtube', 'video' => self::VIDEO]);
+            }
+
             $image->save();
             // Recorded after the product, so removing them goes first. The file is its own entry:
             // a picture's row going does not take its bytes (the panel's delete erases them itself).

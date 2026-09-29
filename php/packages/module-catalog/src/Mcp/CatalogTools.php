@@ -15,10 +15,14 @@ use WebxUi\Catalog\Bulk\BulkRunner;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Engine\CatalogQuery;
 use WebxUi\Catalog\Facets\Facets;
+use WebxUi\Catalog\Gallery\Gallery;
+use WebxUi\Catalog\Gallery\QueuedVideo;
 use WebxUi\Catalog\Http\Resources\CategoryResource;
+use WebxUi\Catalog\Http\Resources\ImageResource;
 use WebxUi\Catalog\Http\Resources\ProductResource;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Models\ProductImage;
 use WebxUi\Catalog\Panel\CategoryForm;
 use WebxUi\Catalog\Panel\CategoryMover;
 use WebxUi\Catalog\Panel\CategoryTree;
@@ -42,6 +46,10 @@ use WebxUi\Mcp\Tool;
  * and an editor's agent would delete products the editor cannot. `dry_run` of a write does the
  * write inside a transaction and takes it back, so the answer is what would really have happened
  * — the refusal included — rather than a guess at it.
+ *
+ * The gallery is the exception: a picture or a video lands on the disk, and a rolled-back row would
+ * leave the file behind. Adding, attaching and removing answer `dry_run` with what the address is
+ * and what would be done, without fetching a byte; captions and order roll back as usual.
  */
 final class CatalogTools
 {
@@ -61,6 +69,8 @@ final class CatalogTools
             'description' => 'Field name → value, as catalog_products_get returns them. Text fields take one language as a string '
                 .'or every language as { "en": "…" }. A satellite\'s field is "<part>.<field>" — read catalog://product-parts first.',
         ];
+        $image = ['type' => 'integer', 'description' => 'The picture id, as catalog_products_gallery returns it.'];
+        $words = ['description' => 'One language as a string, or every language as { "en": "…" }; a language left out keeps what it had.'];
         $selection = [
             'type' => 'object',
             'description' => 'Which products: { "ids": [1, 2] }, or { "query": { "q", "state", "facets" } } — the same query as '
@@ -224,6 +234,96 @@ final class CatalogTools
                 }),
                 ['properties' => ['category' => $category], 'required' => ['category']],
                 permission: self::DELETE,
+            ),
+
+            Tool::read(
+                'products_gallery',
+                'The gallery of a product in order, the first being the main picture: each picture\'s id, address, '
+                .'alt and title in every language, size, and the video attached to it — { provider, url, embed, '
+                .'duration } or null. Whether this site takes videos at all is in catalog://fields.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->gallery($this->product($arguments))),
+                ['properties' => ['product' => $product], 'required' => ['product']],
+            ),
+
+            Tool::mutating(
+                'products_gallery_add',
+                'Add to the gallery from an address: a picture (JPEG, PNG, WebP, GIF), a YouTube link — its cover '
+                .'becomes the picture and the video is attached to it — or a direct link to an MP4 or WebM file, which '
+                .'is downloaded on the queue: the answer says it was queued, and the row appears when the file is in. '
+                .'Files from your own machine cannot be sent this way.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->galleryAdd($arguments)),
+                ['properties' => [
+                    'product' => $product,
+                    'url' => ['type' => 'string', 'description' => 'http(s) address of the picture or the video.'],
+                    'alt' => $words,
+                    'title' => $words,
+                    'position' => ['type' => 'integer', 'description' => 'Where it goes, 0 being the main picture; last when omitted.'],
+                ], 'required' => ['product', 'url']],
+            ),
+
+            Tool::mutating(
+                'products_gallery_update',
+                'Caption a picture of the gallery: its alt, read aloud to somebody who does not see it, and its title.',
+                fn (array $arguments): array => $this->write($arguments, function () use ($arguments): array {
+                    $picture = $this->image($arguments);
+
+                    foreach (['alt', 'title'] as $field) {
+                        if (array_key_exists($field, $arguments)) {
+                            $this->caption($picture, $field, $arguments[$field]);
+                        }
+                    }
+
+                    $picture->save();
+
+                    return ['image' => (new ImageResource($picture))->resolve()];
+                }),
+                ['properties' => ['product' => $product, 'image' => $image, 'alt' => $words, 'title' => $words], 'required' => ['product', 'image']],
+            ),
+
+            Tool::mutating(
+                'products_gallery_order',
+                'Put the gallery in order: every picture id of the product, each once, the first becoming the main one.',
+                fn (array $arguments): array => $this->write($arguments, function () use ($arguments): array {
+                    $found = $this->product($arguments);
+                    $this->order($found, is_array($arguments['images'] ?? null) ? array_values($arguments['images']) : []);
+
+                    return $this->gallery($found);
+                }),
+                ['properties' => [
+                    'product' => $product,
+                    'images' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Every picture id, in the new order.'],
+                ], 'required' => ['product', 'images']],
+            ),
+
+            Tool::mutating(
+                'products_gallery_video',
+                'Attach a video to a picture, which becomes its poster, in place of the video it had: a YouTube link at '
+                .'once, a direct link to an MP4 or WebM file on the queue. url: null takes the video off — a file is '
+                .'deleted at once; the picture stays. Refused when the site switched videos off (catalog://fields).',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->galleryVideo($arguments)),
+                ['properties' => [
+                    'product' => $product,
+                    'image' => $image,
+                    'url' => ['type' => ['string', 'null'], 'description' => 'The video, or null to take it off.'],
+                ], 'required' => ['product', 'image', 'url']],
+            ),
+
+            Tool::mutating(
+                'products_gallery_remove',
+                'Take a picture off the gallery, its files and its video with it — at once and for good. When it was '
+                .'the main picture, the next one becomes main.',
+                fn (array $arguments): array => $this->attempt(function () use ($arguments): array {
+                    $picture = $this->image($arguments);
+
+                    if ((bool) ($arguments[Tool::DRY_RUN] ?? false)) {
+                        return ['dry_run' => true, 'would_remove' => (new ImageResource($picture))->resolve()];
+                    }
+
+                    $this->container->make(Gallery::class)->remove($this->product($arguments), $picture);
+
+                    return ['removed' => $picture->id];
+                }),
+                ['properties' => ['product' => $product, 'image' => $image], 'required' => ['product', 'image']],
             ),
 
             Tool::mutating(
@@ -402,6 +502,170 @@ final class CatalogTools
         }
 
         return $values;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function gallery(Product $product): array
+    {
+        return [
+            'product' => $product->id,
+            'images' => $product->images()->get()->map(static fn (ProductImage $image): array => (new ImageResource($image))->resolve())->values()->all(),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function galleryAdd(array $arguments): array
+    {
+        $found = $this->product($arguments);
+        $url = $this->url($arguments['url'] ?? null);
+        $gallery = $this->container->make(Gallery::class);
+        $kind = $gallery->classify($url);
+
+        if ($kind['kind'] !== 'picture' && ! $gallery->videoEnabled()) {
+            throw new ToolFailure('Videos are switched off on this site (catalog://fields); add a picture instead.');
+        }
+
+        if ((bool) ($arguments[Tool::DRY_RUN] ?? false)) {
+            return ['dry_run' => true, 'would' => match ($kind['kind']) {
+                'video' => 'add the cover of the '.($kind['provider'] ?? '').' video '.($kind['id'] ?? '').' as a picture, with the video attached',
+                'video-file' => 'queue the download of the video file; the row appears when it is in, behind a plain poster',
+                default => 'fetch the address and add it as a picture, if it answers with one',
+            }];
+        }
+
+        $added = $gallery->add($found, $url);
+
+        if ($added instanceof QueuedVideo) {
+            return $added->toArray();
+        }
+
+        DB::transaction(function () use ($added, $arguments, $found): void {
+            foreach (['alt', 'title'] as $field) {
+                if (array_key_exists($field, $arguments)) {
+                    $this->caption($added, $field, $arguments[$field]);
+                }
+            }
+
+            $added->save();
+
+            if (is_int($arguments['position'] ?? null)) {
+                $ids = $found->images()->pluck('id')
+                    ->map(static fn (mixed $id): int => (int) $id)
+                    ->reject(static fn (int $id): bool => $id === $added->id)
+                    ->values()
+                    ->all();
+                array_splice($ids, max(0, min(count($ids), $arguments['position'])), 0, [$added->id]);
+                $this->order($found, $ids);
+            }
+        });
+
+        return ['image' => (new ImageResource($added->refresh()))->resolve()];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function galleryVideo(array $arguments): array
+    {
+        $picture = $this->image($arguments);
+        $gallery = $this->container->make(Gallery::class);
+        $dry = (bool) ($arguments[Tool::DRY_RUN] ?? false);
+
+        if (($arguments['url'] ?? null) === null) {
+            if ($dry) {
+                return ['dry_run' => true, 'would' => $picture->hasVideo() ? 'take the video off; a file is deleted' : 'nothing: the picture has no video'];
+            }
+
+            return ['image' => (new ImageResource($gallery->detachVideo($picture)))->resolve()];
+        }
+
+        if (! $gallery->videoEnabled()) {
+            throw new ToolFailure('Videos are switched off on this site (catalog://fields).');
+        }
+
+        $url = $this->url($arguments['url']);
+        $kind = $gallery->classify($url);
+
+        if ($dry) {
+            return ['dry_run' => true, 'would' => match ($kind['kind']) {
+                'video' => 'attach the '.($kind['provider'] ?? '').' video '.($kind['id'] ?? '').($picture->hasVideo() ? ', in place of the one it has' : ''),
+                'video-file' => 'queue the download of the video file and attach it when it is in',
+                default => 'ask the address whether it is a video file; a picture is refused',
+            }];
+        }
+
+        $attached = $gallery->attachVideo($picture, $url);
+
+        return $attached instanceof QueuedVideo ? $attached->toArray() : ['image' => (new ImageResource($attached))->resolve()];
+    }
+
+    /**
+     * The whole order at once, as the panel sends it: a list that leaves a picture out, or names
+     * one twice, is an order of some other gallery.
+     *
+     * @param  list<mixed>  $ids
+     */
+    private function order(Product $product, array $ids): void
+    {
+        $sent = array_map(static fn (mixed $id): int => is_int($id) || (is_string($id) && ctype_digit($id)) ? (int) $id : 0, $ids);
+        $images = $product->images()->get()->keyBy('id');
+        $known = $images->keys()->map(static fn (mixed $id): int => (int) $id)->sort()->values()->all();
+        $sorted = $sent;
+        sort($sorted);
+
+        if ($sorted !== $known) {
+            throw new ToolFailure((string) __('webx-catalog::errors.images-mismatch').' The gallery has: '.implode(', ', $known).'.');
+        }
+
+        foreach ($sent as $position => $id) {
+            /** @var ProductImage $image */
+            $image = $images[$id];
+            $image->position = $position;
+            $image->save();
+        }
+
+        $this->container->make(Catalog::class)->touch([$product->id]);
+    }
+
+    private function caption(ProductImage $image, string $field, mixed $value): void
+    {
+        if (is_string($value) || $value === null) {
+            $image->setTranslation($field, app()->getLocale(), $value === null ? null : mb_substr($value, 0, 500));
+
+            return;
+        }
+
+        if (! is_array($value)) {
+            throw new ToolFailure("{$field} is a string or a map of languages.");
+        }
+
+        $words = [];
+
+        foreach ($value as $locale => $text) {
+            $words[(string) $locale] = is_string($text) ? mb_substr($text, 0, 500) : null;
+        }
+
+        $image->setTranslations($field, [...$image->getTranslations($field), ...$words]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    private function image(array $arguments): ProductImage
+    {
+        return $this->product($arguments)->images()->whereKey($this->id($arguments, 'image'))->first()
+            ?? throw new ToolFailure('The product has no such picture; catalog_products_gallery lists them.');
+    }
+
+    private function url(mixed $url): string
+    {
+        return is_string($url) && preg_match('#^https?://\S+$#i', trim($url)) === 1 ? trim($url) : throw new ToolFailure('url is an http(s) address.');
     }
 
     /**
