@@ -26,11 +26,16 @@ return [
     |---------------------------------------------------------------------------
     |
     | The columns are always there; switched off, a field is gone from the form,
-    | the facets and the exchange columns alike. The currency is the site's.
+    | the facets and the exchange columns alike. The currency is one for the
+    | whole site, an ISO 4217 code; only the markup reads it, and a product's
+    | `Offer` is left out of it while it is not set.
     |
     */
 
-    'price' => ['enabled' => (bool) env('WEBX_CATALOG_PRICE', true)],
+    'price' => [
+        'enabled' => (bool) env('WEBX_CATALOG_PRICE', true),
+        'currency' => env('WEBX_CATALOG_CURRENCY'),
+    ],
 
     'fields' => ['barcode' => (bool) env('WEBX_CATALOG_BARCODE', true)],
 
@@ -118,5 +123,18 @@ return [
     */
 
     'layout' => env('WEBX_CATALOG_LAYOUT'),
+
+    /*
+    |---------------------------------------------------------------------------
+    | The middleware of the root and the search
+    |---------------------------------------------------------------------------
+    |
+    | The two storefront pages that are routes rather than rows of the address
+    | registry. The same stack the registry answers through: a session, and the
+    | decision about which language the request is in.
+    |
+    */
+
+    'middleware' => ['web', 'webx.locale'],
 
 ];

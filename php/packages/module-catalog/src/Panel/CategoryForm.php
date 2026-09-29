@@ -10,6 +10,7 @@ use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\Screens\ScreenRecord;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Exceptions\CatalogException;
+use WebxUi\Catalog\Facets\CategoryFacets;
 use WebxUi\Catalog\Http\Resources\CategoryResource;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Localization\Locales;
@@ -50,7 +51,26 @@ final class CategoryForm
         return [
             'category' => new CategoryResource($category),
             'values' => $this->values($category),
+            'facets_from' => $this->facetsFrom($category),
         ];
+    }
+
+    /**
+     * Whose facet settings a category without its own shows (§6.2): the nearest configured
+     * ancestor, or null for "every facet by default" — and null as well when it has its own.
+     *
+     * @return array{id: int, name: string}|null
+     */
+    private function facetsFrom(Category $category): ?array
+    {
+        if (FacetSettings::of($category) !== null) {
+            return null;
+        }
+
+        $from = app(CategoryFacets::class)->resolve($category)['from'];
+        $owner = $from === null ? null : Category::withTrashed()->find($from);
+
+        return $owner instanceof Category ? ['id' => (int) $owner->id, 'name' => $owner->displayName()] : null;
     }
 
     /**
