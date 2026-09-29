@@ -9,13 +9,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Admin\Contracts\HasPermissions;
-use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Catalog\Catalog;
-use WebxUi\Catalog\Exceptions\CatalogException;
 use WebxUi\Catalog\Http\Resources\CategoryResource;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Panel\CategoryForm;
+use WebxUi\Catalog\Panel\CategoryMover;
 use WebxUi\Catalog\Panel\CategoryTree;
 
 /**
@@ -27,6 +26,7 @@ final class CategoryController
     public function __construct(
         private readonly CategoryForm $form,
         private readonly CategoryTree $tree,
+        private readonly CategoryMover $mover,
     ) {}
 
     /** The whole tree at once: a catalogue has dozens of categories, not thousands. */
@@ -78,34 +78,7 @@ final class CategoryController
         $parent = isset($validated['parent_id']) ? $this->find((int) $validated['parent_id']) : null;
         $before = isset($validated['before_id']) ? $this->find((int) $validated['before_id']) : null;
 
-        if ($parent !== null && ($parent->is($node) || $parent->isDescendantOf($node))) {
-            throw CatalogException::moveIntoItself();
-        }
-
-        if ($before !== null && $before->parent_id !== $parent?->getKey()) {
-            throw CatalogException::unknownCategory('before_id');
-        }
-
-        $from = $node->parent_id === null ? null : Category::withTrashed()->find($node->parent_id);
-
-        DB::transaction(static function () use ($node, $parent, $before, $from): void {
-            match (true) {
-                $before !== null => $node->insertBefore($before),
-                $parent !== null => $node->appendTo($parent),
-                default => $node->saveAsRoot(),
-            };
-
-            if ($from?->getKey() !== $parent?->getKey()) {
-                $node->recordHistory(HistoryEntry::UPDATED, [[
-                    'field' => 'parent',
-                    'from' => $from?->displayName(),
-                    'to' => $parent?->displayName(),
-                ]]);
-            }
-
-            // Visibility is inherited, so a branch moved under a hidden parent hides with it.
-            app(Catalog::class)->touchCategory($node);
-        });
+        $this->mover->move($node, $parent, $before);
 
         return ApiResponse::data($this->tree->build());
     }

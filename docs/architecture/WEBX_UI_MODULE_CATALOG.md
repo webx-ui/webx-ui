@@ -1,6 +1,6 @@
 # `webx-ui/module-catalog` — спецификация ядра каталога
 
-Статус: согласовано 29.09.2026, кода нет. Архитектура семейства, контракты и решения 1–26 —
+Статус: согласовано 29.09.2026; код готов (K1–K4), выпуск — K5. Архитектура семейства, контракты и решения 1–26 —
 [`WEBX_UI_CATALOG.md`](WEBX_UI_CATALOG.md); здесь они не повторяются, только уточняются. Журнал
 изменений, на который ядро опирается, — [`WEBX_UI_HISTORY.md`](WEBX_UI_HISTORY.md).
 
@@ -431,7 +431,8 @@ POST   /api/cms/catalog/categories/{id}/move  { parent_id, before_id } → { dat
 DELETE /api/cms/catalog/categories/{id}       204; не пуста — 422 с meta { products, children }
 POST   /api/cms/catalog/categories/{id}/restore → { data: category }
 GET    /api/cms/catalog/facets                реестр: ключ, код, вид, подпись
-POST   /api/cms/catalog/bulk                  { action, params, selection: { ids } | { query } } → run
+GET    /api/cms/catalog/bulk                  действия, которые этому администратору можно запускать
+POST   /api/cms/catalog/bulk                  { action, params, selection: { ids } | { query } } → 200 run (сразу) | 202 run (очередь)
 GET    /api/cms/catalog/bulk/{run}            прогресс
 ```
 
@@ -480,6 +481,15 @@ visible }]` по порядку), `seo`.
 null, deleted_at }`, категории `{ id, name, slug, parent: { id, name, deleted } | null,
 deleted_at }`.
 
+- **Действие** (`GET /bulk`, K4): `{ key, label, permission, trashed, params: [PartField] }` —
+  `trashed` у восстановления (действует на «Удалённые»), `params` — что спросить до запуска
+  (`type: category` — дерево категорий). Список уже отфильтрован по правам вызывающего.
+- **Прогон** (`POST /bulk`, `GET /bulk/{run}`, K4): `{ id, action, label, status:
+queued|running|done|failed, total, done, failed, errors: [{ id, name, message }] (первые сто),
+history_id, created_at, finished_at }`. До `bulk.sync_limit` товаров — сделано в запросе, `200`
+  и `id: null`; больше — `202`, панель опрашивает. `selection.query` — `{ q, state, facets }` как у
+  списка; `selection.ids` — не больше 10 000.
+
 Узлы экранов, которые рисует K3: `wx-catalog-category` (одна категория, `props.multiple` — список),
 `wx-catalog-facets` (вкладка «Фильтры»), `wx-catalog-gallery` (галерея — отдельные запросы выше,
 не значение формы); `wx-history` — из `module-admin`.
@@ -498,6 +508,17 @@ deleted_at }`.
 (фильтр списка целиком — «выбрано 40 312»), который превращается в id в момент запуска.
 Выполняется очередью пачками по 500, каждая пачка — транзакция и один `touch`; экран показывает
 прогресс и ошибки по товарам. До 50 товаров — синхронно, без прогона.
+
+Как сделано (K4): реестр `BulkActions` с контрактом `BulkAction` (`key`, `label`, `permission`,
+`trashed`, `params(): list<PartField>`, `rules`, `apply(Product, params): changes`); ядро
+регистрирует `publish`, `unpublish`, `set-category`, `add-category`, `remove-category`, `delete`,
+`restore`. Id прогона лежат в `catalog_bulk_run_items`, пачка идёт от курсора (последний id)
+под блокировкой строки прогона, поэтому повтор пачки ничего не делает дважды; товар — точка
+сохранения внутри транзакции пачки. Задание очереди — `ProcessBulkChunk`, одна пачка на задание,
+следующая ставится за ней. Журнал: запись прогона открывается при запуске, строки каждой пачки
+пишутся под неё от имени запустившего (`admin_id` и `admin_name` в прогоне — у воркера никто не
+вошёл), `summary` при закрытии получает `rows`, `done`, `errors`. После прогона с отказами панель
+оставляет выбранными именно отказавшие товары.
 
 ### 11.5. Права
 
@@ -543,6 +564,10 @@ deleted_at }`.
 
 Для этого у `ProductParts` есть `describe(): PartSchema` (§7.4).
 
+Адреса (K4): `catalog://facets` (с сортировками), `catalog://fields`, `catalog://addresses`,
+`catalog://categories`, `catalog://product-parts` и сверх списка `catalog://bulk-actions` — что
+умеет `catalog_bulk` и что каждое действие спрашивает.
+
 ## 13. Конфиг `webx-catalog.php`
 
 ```php
@@ -574,6 +599,13 @@ return [
 `catalog.product`. `LinkSource` для меню — категории и товары. `RecordQuery`:
 `products()->category('slug')->sort('popular')->take(8)`. `CollectionSource` — «товары» для
 `wx-collection`.
+
+Сделано в K4: `CategoryLinkSource` и `ProductLinkSource` каталога (свои, не рамочный
+`CategoryLinkSource`: у каталога дерево с наследуемой видимостью, «доступно» — видимо по §5);
+`products()` — `ProductQuery` на `RecordQuery`, категория с поддеревом, сортировка ключом `Sorts`;
+`ProductsSource` (`products`) без выбора категорий в поле — у каталога дерево со своим API, а
+`wx-categories` читает плоский список; полка одной категории — `products()->category(…)` в
+шаблоне блока.
 
 ## 15. Демо
 
@@ -932,6 +964,63 @@ php-гейт.
 Обновить реестр WEBX_UI_COMPOSER_PACKAGES.md и docs/architecture/README.md. В конце —
 «Итог K4», коммит по именам файлов, пуш в claude, PR.
 ```
+
+### Итог K4
+
+Сделано 29.09.2026 одним PR (php + npm, changeset minor на `@webx-ui/php` и
+`@webx-ui/module-catalog`).
+
+- **Массовые действия §11.4:** `Bulk\BulkAction` + реестр `BulkActions` (спутник — одна строка в
+  провайдере), действия ядра (`PublicationAction`, `SetCategoryAction`, `ExtraCategoryAction`,
+  `TrashAction`), `BulkSelection` (id или запрос списка через тот же движок, страницами по
+  1000), `BulkRunner` (сразу до `sync_limit`, иначе прогон и очередь), задание
+  `ProcessBulkChunk`, модель `BulkRun`, `BulkController` и три маршрута. В миграцию K1 дописаны
+  колонки прогона (`admin_name`, `selection`, `cursor`, `history_id`, `finished_at`) и таблица
+  `catalog_bulk_run_items` — пакет ещё не выпускался, поэтому правка на месте, а не новой миграцией.
+- **MCP §12:** `Mcp\CatalogTools` — пятнадцать инструментов, права по таблице §12.1 (удаление и
+  восстановление — `permission: 'catalog.delete'`; `catalog_bulk` за `catalog.manage` и сам
+  спрашивает `catalog.delete` у `delete`/`restore`); `dry_run` делает запись в транзакции и
+  откатывает её; неизвестная часть формы — ошибка со списком известных. `Mcp\CatalogResources` —
+  шесть ресурсов, части формы — из `ProductParts::describe()`.
+- **Демо §15:** `Demo\CatalogDemo` — 15 категорий в три уровня, 150 товаров плюс два без
+  категории, снятые и удалённые; картинки — два градиента `module-media/resources/demo` через
+  `Gallery::upload`, файл каждой картинки — отдельной записью журнала демо (строка картинки при
+  удалении файлов не трогает). `CatalogModule` — `ProvidesDemo` и `ProvidesMcpTools`.
+- **Регистрации §14:** `Setup\Catalogue` (`catalog`), `extra.webx.npm` (`^0.1.0`) и
+  `extra.webx.panel` (`catalog()` — один раздел, без `...`), `products()` (`Rendering\ProductQuery`,
+  `Rendering\Cards`, `src/helpers.php`), `Collections\ProductsSource`, `Links\CategoryLinkSource` и
+  `Links\ProductLinkSource`; плейграунд — мок `bulk` и фикстуры до 15 категорий и ~150 товаров;
+  строка в `scripts/packages.mjs` сайта `webx-cms.local` — коммит там, **не запушен** (пуш
+  запускает деплой хомлаба, а режим `registry` до первой публикации npm-пакета падает на
+  `npm view` — это K5).
+- **Панель:** `BulkBar.vue` (действия с сервера, прогресс опросом раз в 1,5 с, отказы по товарам)
+  и `BulkParamsDialog.vue` в полосе выбора списка; «Выбрать всё найденное: N» шлёт запрос, а не
+  id. Проверено в плейграунде: запрос на 148 товаров в фоне, отказ без категории, тёмная тема,
+  375 px.
+- **Тесты:** `BulkTest` (сразу и очередью, id фиксируются при запуске, повтор пачки, отказ не
+  роняет соседей, права по действиям), `McpTest` (права §12.1, `dry_run`, журнал `mcp`, части и
+  поля в ресурсах), `DemoAndSourcesTest`; npm — `BulkBar.test.ts` и «всё найденное» в
+  `ProductsPage.test.ts`.
+
+Разошлось со спекой — поправлено выше: §11.2 (`GET /bulk`, формы действия и прогона, `200`/`202`),
+§11.4 и §14 (как сделано), §12.2 (адреса ресурсов и лишний `catalog://bulk-actions`).
+
+Решения по ходу:
+
+- **Маршруты каталога получили `webx.history`.** Без него правка из панели шла в журнал как `api`
+  без автора: каркас добавляет middleware только в `api_middleware`, а группы модулей пишут список
+  руками. У остальных модулей та же дыра — вынесена отдельной задачей (ловушка в
+  `docs/pitfalls/laravel-and-php.md`).
+- После прогона с отказами в списке остаются выбранными ровно отказавшие товары — рядом с их
+  списком, для второй попытки.
+- `line()` мока плейграунда читал только два уровня словаря — `bulk.actions.publish` приезжал
+  ключом; теперь идёт по всему пути.
+
+Для K5: первая публикация `@webx-ui/module-catalog` — человеком (`docs/pitfalls/release-and-ci.md`),
+отправка пакета на Packagist — «Итог K1». На `webx-cms.local` после `link-panel.sh` — запушить
+коммит `packages.mjs`, `webx:setup` предложит каталог, `webx:demo` его наполнит; очередь массовых
+действий на сайте нужна живая (`queue:work`, в скелете — supervisord), иначе прогон больше 50
+товаров стоит в `queued`. Страницы гайда `apps/docs/guide/catalog.md` пока нет.
 
 ### K5 — релиз и демо-сайты
 

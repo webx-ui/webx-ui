@@ -4947,10 +4947,16 @@ function submission(id: string): SubmissionRecord {
 
 /** One line out of a package's own `lang` files, falling back to English and then to the key. */
 function line(locale: string, namespace: string, path: string): string {
-  const [group, key] = path.split('.')
+  // The whole path, not two levels of it: a group may nest (`bulk.actions.publish`).
+  const [group = '', ...keys] = path.split('.')
 
   for (const code of [locale, 'en']) {
-    const value = dictionary(code)[namespace]?.[group]?.[key]
+    let value: unknown = dictionary(code)[namespace]?.[group]
+
+    for (const key of keys) {
+      value =
+        value && typeof value === 'object' ? (value as Record<string, unknown>)[key] : undefined
+    }
 
     if (typeof value === 'string') {
       return value
