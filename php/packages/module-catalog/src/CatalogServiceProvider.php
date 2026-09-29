@@ -9,11 +9,19 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\History\HistoryTypes;
+use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Catalog\Bulk\Actions\ExtraCategoryAction;
+use WebxUi\Catalog\Bulk\Actions\PublicationAction;
+use WebxUi\Catalog\Bulk\Actions\SetCategoryAction;
+use WebxUi\Catalog\Bulk\Actions\TrashAction;
+use WebxUi\Catalog\Bulk\BulkActions;
+use WebxUi\Catalog\Collections\ProductsSource;
 use WebxUi\Catalog\Console\FlushViewsCommand;
 use WebxUi\Catalog\Console\IndexCommand;
 use WebxUi\Catalog\Console\PopularityCommand;
@@ -30,6 +38,8 @@ use WebxUi\Catalog\Filter\FilterSerializer;
 use WebxUi\Catalog\Filter\FilterUrls;
 use WebxUi\Catalog\Filter\SegmentSerializer;
 use WebxUi\Catalog\Http\Controllers\StorefrontController;
+use WebxUi\Catalog\Links\CategoryLinkSource;
+use WebxUi\Catalog\Links\ProductLinkSource;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Panel\CatalogModule;
@@ -78,6 +88,7 @@ class CatalogServiceProvider extends ServiceProvider
 
         // The registries satellites fill from their own providers; the core fills them first.
         $this->app->singleton(ProductParts::class);
+        $this->app->singleton(BulkActions::class);
         $this->app->singleton(Facets::class);
         $this->app->singleton(Sorts::class);
         $this->app->singleton(Documents::class);
@@ -108,6 +119,8 @@ class CatalogServiceProvider extends ServiceProvider
         $this->registerPanel();
         $this->registerEngine();
         $this->registerStorefront();
+        $this->registerBulk();
+        $this->registerSources();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -346,6 +359,37 @@ class CatalogServiceProvider extends ServiceProvider
                     ->name($route['name'].'.localised');
             }
         }
+    }
+
+    /**
+     * The core's bulk actions (§11.4), first in the list; satellites add theirs — a label, a stock
+     * status — to the same registry from their own providers.
+     */
+    private function registerBulk(): void
+    {
+        $actions = $this->app->make(BulkActions::class);
+
+        $actions->register(new PublicationAction(true));
+        $actions->register(new PublicationAction(false));
+        $actions->register(new SetCategoryAction);
+        $actions->register(new ExtraCategoryAction(true));
+        $actions->register(new ExtraCategoryAction(false));
+        $actions->register(new TrashAction(true));
+        $actions->register(new TrashAction(false));
+    }
+
+    /**
+     * What the rest of the panel reaches the catalogue by (§14): categories and products for a
+     * menu or a link field, and products for a `wx-collection` block. From the provider rather
+     * than the routes file, which `route:cache` never runs.
+     */
+    private function registerSources(): void
+    {
+        $links = $this->app->make(LinkSources::class);
+        $links->register(new CategoryLinkSource);
+        $links->register(new ProductLinkSource);
+
+        $this->app->make(CollectionSources::class)->register(new ProductsSource);
     }
 
     /**

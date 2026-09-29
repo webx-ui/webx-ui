@@ -17,9 +17,9 @@ use WebxUi\Catalog\Engine\CatalogQuery;
 use WebxUi\Catalog\Engine\FacetResult;
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\Facets;
-use WebxUi\Catalog\Facets\FacetValue;
 use WebxUi\Catalog\Http\Resources\ProductResource;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Panel\ChosenFacets;
 use WebxUi\Catalog\Panel\ProductColumns;
 use WebxUi\Catalog\Panel\ProductForm;
 use WebxUi\Catalog\Sorts\Sorts;
@@ -53,7 +53,7 @@ final class ProductController
      * The facets come as `facets[category][]=3`, `facets[price][min]=100` — a key of the registry
      * or nothing. Sorting and filtering are a white list: an arbitrary name is refused, not obeyed.
      */
-    public function index(Request $request, Locales $locales, Catalog $catalog, Facets $facets, Sorts $sorts, ProductColumns $columns, Listing $listing): JsonResponse
+    public function index(Request $request, Locales $locales, Catalog $catalog, Facets $facets, ChosenFacets $chosenFacets, Sorts $sorts, ProductColumns $columns, Listing $listing): JsonResponse
     {
         $validated = $request->validate([
             'q' => ['nullable', 'string', 'max:200'],
@@ -68,7 +68,7 @@ final class ProductController
         $locale = $locales->current();
         $perPage = (int) ($validated['per_page'] ?? 20);
         $page = (int) ($validated['page'] ?? 1);
-        $chosen = $this->facets($facets, (array) ($validated['facets'] ?? []));
+        $chosen = $chosenFacets->read((array) ($validated['facets'] ?? []));
 
         $result = $catalog->engine()->search(new CatalogQuery(
             locale: $locale,
@@ -105,32 +105,6 @@ final class ProductController
             'facets' => $this->counted($facets, $result->facets, $locale),
             'columns' => $columns->describe(),
         ]);
-    }
-
-    /**
-     * @param  array<mixed>  $input
-     * @return array<string, FacetValue>
-     */
-    private function facets(Facets $facets, array $input): array
-    {
-        $chosen = [];
-
-        foreach ($input as $key => $value) {
-            $facet = is_string($key) ? $facets->find($key) : null;
-
-            if ($facet === null || ! is_array($value)) {
-                continue;
-            }
-
-            $chosen[$key] = $facet->kind() === FacetKind::Range
-                ? FacetValue::range(
-                    is_numeric($value['min'] ?? null) ? (float) $value['min'] : null,
-                    is_numeric($value['max'] ?? null) ? (float) $value['max'] : null,
-                )
-                : FacetValue::of(array_filter($value, static fn (mixed $one): bool => is_string($one) || is_int($one)));
-        }
-
-        return $chosen;
     }
 
     /**

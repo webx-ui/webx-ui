@@ -15,6 +15,7 @@ use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Localization\Locales;
 use WebxUi\Localization\LocalizationServiceProvider;
+use WebxUi\Mcp\McpServiceProvider;
 use WebxUi\Media\MediaServiceProvider;
 use WebxUi\NestedSet\NestedSetServiceProvider;
 use WebxUi\Routing\RoutingServiceProvider;
@@ -36,6 +37,8 @@ abstract class TestCase extends Orchestra
             AdminServiceProvider::class,
             // The panel's administrators: the journal names who saved a product.
             AuthServiceProvider::class,
+            // The agent's doors (§12).
+            McpServiceProvider::class,
             MediaServiceProvider::class,
             SettingsServiceProvider::class,
             SeoServiceProvider::class,

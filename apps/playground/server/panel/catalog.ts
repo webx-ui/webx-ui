@@ -16,10 +16,10 @@ import type {
  * The catalogue's half of the fake server (§11.2 of WEBX_UI_MODULE_CATALOG.md): products,
  * categories as a tree, the gallery, «Deleted», the facet registry, and the journal of both.
  *
- * Only what the panel's screens ask for — the bulk actions and MCP come with K4. The shapes are
- * the server's (`ProductResource`, `CategoryTree`, `DeletedController`), and so are its refusals:
- * a taken article number names its holder, a category that is not empty says how much is in it,
- * a product without a main category cannot be published.
+ * What the panel's screens ask for, the bulk actions of §11.4 included (MCP has no screen). The
+ * shapes are the server's (`ProductResource`, `CategoryTree`, `DeletedController`), and so are
+ * its refusals: a taken article number names its holder, a category that is not empty says how
+ * much is in it, a product without a main category cannot be published.
  */
 
 type Map = Record<string, string>
@@ -144,6 +144,10 @@ category(8, 6, 2, 'Пылесосы', 'Vacuum cleaners', 'pylesosy')
 category(9, null, 3, 'Аксессуары', 'Accessories', 'aksessuary', { is_published: false })
 category(10, 9, 1, 'Чехлы', 'Cases', 'chehly')
 category(11, null, 4, 'Распродажа', 'Sale', 'rasprodazha', { deleted_at: at(3) })
+category(12, 1, 3, 'Аудио', 'Audio', 'audio')
+category(13, 12, 1, 'Наушники', 'Headphones', 'naushniki')
+category(14, 12, 2, 'Колонки', 'Speakers', 'kolonki')
+category(15, 9, 2, 'Кабели', 'Cables', 'kabeli')
 
 const products: ProductRecord[] = []
 
@@ -269,6 +273,50 @@ products.push({
   category_id: 11,
   deleted_at: at(2),
 })
+
+/*
+ * The rest of the demo shop (§15: about a hundred and fifty): series of the same few things, so
+ * that "select everything found" picks more than a request does at once and the bulk run has a
+ * progress bar to show. Every seventeenth is unpublished.
+ */
+const SERIES: [string, string, number, number][] = [
+  ['Наушники Pulse', 'Pulse earphones', 13, 4990],
+  ['Колонка Boom', 'Boom speaker', 14, 3490],
+  ['Кабель Flex', 'Flex cable', 15, 490],
+  ['Чехол Shell', 'Shell case', 10, 890],
+  ['Чайник Aqua', 'Aqua kettle', 7, 2990],
+  ['Пылесос Cyclone', 'Cyclone vacuum', 8, 12990],
+  ['Смартфон Nova', 'Nova phone', 4, 24990],
+  ['Ноутбук Slate', 'Slate laptop', 2, 64990],
+]
+
+for (let index = 0; index < 120; index++) {
+  const [ru, en, main, base] = SERIES[index % SERIES.length]!
+  const number = Math.floor(index / SERIES.length) + 2
+  const id = 100 + index
+  const price = base + ((index * 137) % 2000)
+
+  products.push({
+    id,
+    name: { ru: `${ru} ${number}`, en: `${en} ${number}` },
+    slug: { ru: slugOf(`${ru} ${number}`), en: slugOf(`${en} ${number}`) },
+    sku: `WX-${String(2000 + index)}`,
+    barcode: null,
+    summary: {},
+    description: {},
+    category_id: main,
+    categories: [],
+    price,
+    old_price: index % 7 === 0 ? Math.round(price * 1.2) : null,
+    unit: 'pcs',
+    priority: 0,
+    is_published: index % 17 !== 5,
+    seo: {},
+    created_at: at(90 - (index % 60)),
+    updated_at: at(index % 30),
+    deleted_at: null,
+  })
+}
 
 const images: ImageRecord[] = []
 
@@ -603,11 +651,12 @@ function record(
   id: number,
   event: HistoryEntry['event'],
   changes: HistoryChange[],
+  source: HistoryEntry['source'] = 'panel',
 ): void {
   journal.unshift({
     id: journal.length + 1,
     event,
-    source: 'panel',
+    source,
     subject: { type, id },
     admin: ANNA,
     grant_id: null,
@@ -1444,5 +1493,260 @@ export function registerCatalog(
       })
 
     return paginate(rows, query)
+  })
+
+  registerBulk(on, fail, line)
+}
+
+/* ------------------------------------------------------------------------ bulk ----- */
+
+interface BulkRecord {
+  /** `null` — done inside the request, never a run to poll. */
+  id: number | null
+  action: string
+  params: Record<string, unknown>
+  ids: number[]
+  cursor: number
+  done: number
+  failed: number
+  errors: { id: number; name: string; message: string }[]
+  status: 'queued' | 'running' | 'done' | 'failed'
+  created_at: string
+  finished_at: string | null
+}
+
+const runs: BulkRecord[] = []
+
+/* The server's `sync_limit`; its chunk of 500 is smaller here, so that a run over the demo shop's
+   hundred and fifty takes a few polls and the progress bar is there to be looked at. */
+const SYNC_LIMIT = 50
+const CHUNK = 40
+
+const ACTIONS: { key: string; permission: string; trashed: boolean; category: boolean }[] = [
+  { key: 'publish', permission: 'catalog.manage', trashed: false, category: false },
+  { key: 'unpublish', permission: 'catalog.manage', trashed: false, category: false },
+  { key: 'set-category', permission: 'catalog.manage', trashed: false, category: true },
+  { key: 'add-category', permission: 'catalog.manage', trashed: false, category: true },
+  { key: 'remove-category', permission: 'catalog.manage', trashed: false, category: true },
+  { key: 'delete', permission: 'catalog.delete', trashed: false, category: false },
+  { key: 'restore', permission: 'catalog.delete', trashed: true, category: false },
+]
+
+/** §11.4: bulk actions — the list of them, a start, and a run's progress. */
+function registerBulk(
+  on: (method: string, pattern: string, handler: Handler) => void,
+  fail: Fail,
+  line: Line,
+): void {
+  const describe = (locale: string) =>
+    ACTIONS.map((action) => ({
+      key: action.key,
+      label: line(locale, 'webx-catalog', `bulk.actions.${action.key}`),
+      permission: action.permission,
+      trashed: action.trashed,
+      params: action.category
+        ? [
+            {
+              name: 'category_id',
+              type: 'category',
+              label: line(locale, 'webx-catalog', 'bulk.params.category'),
+              rules: ['required', 'integer'],
+              values: 'catalog_categories_tree',
+            },
+          ]
+        : [],
+    }))
+
+  const answer = (run: BulkRecord, locale: string) => ({
+    id: run.id,
+    action: run.action,
+    label: line(locale, 'webx-catalog', `bulk.actions.${run.action}`),
+    status: run.status,
+    total: run.ids.length,
+    done: run.done,
+    failed: run.failed,
+    errors: run.errors,
+    history_id: null,
+    created_at: run.created_at,
+    finished_at: run.finished_at,
+  })
+
+  /** The list's query, the same filters `GET /products` applies, turned into ids now. */
+  const select = (selection: Record<string, unknown>, trashed: boolean): number[] => {
+    const pool = products.filter((one) => (one.deleted_at !== null) === trashed)
+
+    if (Array.isArray(selection.ids)) {
+      const wanted = new Set(selection.ids.map(Number))
+
+      return pool.filter((one) => wanted.has(one.id)).map((one) => one.id)
+    }
+
+    const query = (selection.query ?? {}) as {
+      q?: string
+      state?: string
+      facets?: Record<string, unknown>
+    }
+    const chosen = query.facets?.category
+    const inside = new Set(
+      (Array.isArray(chosen) ? chosen : []).map(Number).flatMap((id) => subtree(id)),
+    )
+    const price = (query.facets?.price ?? {}) as { min?: number | null; max?: number | null }
+    const byState = (one: ProductRecord) => {
+      switch (query.state) {
+        case 'published':
+          return one.is_published
+        case 'unpublished':
+          return !one.is_published
+        case 'no-category':
+          return one.category_id === null
+        default:
+          return true
+      }
+    }
+
+    return pool
+      .filter((one) => matches(query.q ?? '', one.name, one.sku))
+      .filter(byState)
+      .filter(
+        (one) =>
+          inside.size === 0 ||
+          [one.category_id, ...one.categories].some((id) => id !== null && inside.has(id)),
+      )
+      .filter(
+        (one) =>
+          (price.min == null || (one.price !== null && one.price >= price.min)) &&
+          (price.max == null || (one.price !== null && one.price <= price.max)),
+      )
+      .map((one) => one.id)
+      .sort((a, b) => a - b)
+  }
+
+  /** One product, refused the way the server refuses it. */
+  const apply = (run: BulkRecord, id: number, locale: string): void => {
+    const product = products.find((one) => one.id === id)
+    const target = Number(run.params.category_id)
+    const refuse = (message: string) => {
+      run.failed++
+      run.errors.push({ id, name: product ? word(product.name, locale) : `#${id}`, message })
+    }
+
+    if (!product) {
+      refuse(line(locale, 'webx-catalog', 'bulk.errors.gone'))
+
+      return
+    }
+
+    switch (run.action) {
+      case 'publish':
+        if (product.category_id === null) {
+          refuse(line(locale, 'webx-catalog', 'errors.publish-needs-category'))
+
+          return
+        }
+        if (!product.is_published) {
+          product.is_published = true
+          record('catalog.product', id, 'published', [], 'bulk')
+        }
+        break
+      case 'unpublish':
+        if (product.is_published) {
+          product.is_published = false
+          record('catalog.product', id, 'unpublished', [], 'bulk')
+        }
+        break
+      case 'set-category':
+        product.category_id = target
+        product.categories = product.categories.filter((one) => one !== target)
+        record('catalog.product', id, 'updated', [], 'bulk')
+        break
+      case 'add-category':
+        if (product.category_id !== target && !product.categories.includes(target)) {
+          product.categories = [...product.categories, target]
+          record('catalog.product', id, 'updated', [], 'bulk')
+        }
+        break
+      case 'remove-category':
+        product.categories = product.categories.filter((one) => one !== target)
+        break
+      case 'delete':
+        product.deleted_at = now()
+        record('catalog.product', id, 'deleted', [], 'bulk')
+        break
+      case 'restore':
+        product.deleted_at = null
+        if (product.category_id !== null && !categoryById(product.category_id)) {
+          product.category_id = null
+          product.is_published = false
+        }
+        record('catalog.product', id, 'restored', [], 'bulk')
+        break
+    }
+
+    product.updated_at = now()
+    run.done++
+  }
+
+  const advance = (run: BulkRecord, locale: string, size: number) => {
+    const chunk = run.ids.slice(run.cursor, run.cursor + size)
+
+    for (const id of chunk) apply(run, id, locale)
+
+    run.cursor += chunk.length
+    run.status = run.cursor >= run.ids.length ? 'done' : 'running'
+    if (run.status === 'done') run.finished_at = now()
+  }
+
+  on('GET', '/catalog/bulk', ({ locale }) => ({ data: describe(locale) }))
+
+  on('POST', '/catalog/bulk', ({ body, locale }) => {
+    const action = ACTIONS.find((one) => one.key === body.action)
+
+    if (!action) {
+      const message = line(locale, 'webx-catalog', 'bulk.errors.unknown-action').replace(
+        ':known',
+        ACTIONS.map((one) => one.key).join(', '),
+      )
+
+      throw fail(422, message, { action: [message] })
+    }
+
+    const params = (body.params ?? {}) as Record<string, unknown>
+
+    if (action.category && !categoryById(Number(params.category_id))) {
+      const message = line(locale, 'webx-catalog', 'errors.unknown-category')
+
+      throw fail(422, message, { category_id: [message] })
+    }
+
+    const ids = select((body.selection ?? {}) as Record<string, unknown>, action.trashed)
+    const small = ids.length <= SYNC_LIMIT
+    const run: BulkRecord = {
+      id: small ? null : runs.length + 1,
+      action: action.key,
+      params,
+      ids,
+      cursor: 0,
+      done: 0,
+      failed: 0,
+      errors: [],
+      status: 'queued',
+      created_at: now(),
+      finished_at: null,
+    }
+
+    // Small: done inside the request, answered without an id. Large: a run, one chunk per poll.
+    if (small) advance(run, locale, ids.length)
+    else runs.push(run)
+
+    return { data: answer(run, locale) }
+  })
+
+  on('GET', '/catalog/bulk/(\\d+)', ({ params, locale }) => {
+    const run = runs.find((one) => one.id === Number(params[0]))
+
+    if (!run) throw fail(404, 'No such run.')
+    if (run.status !== 'done') advance(run, locale, CHUNK)
+
+    return { data: answer(run, locale) }
   })
 }

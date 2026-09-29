@@ -39,12 +39,14 @@ import {
   type TabValue,
   type TreeSelectValue,
 } from '@webx-ui/core'
+import BulkBar from './BulkBar.vue'
 import ProductCreateDialog from './ProductCreateDialog.vue'
 import { createCatalogApi } from './api'
 import { FACET_PREFIX, readFacets, writeFacet } from './filters'
 import { useCatalogMessages } from './i18n'
 import { flatten, useCategoryTree, useFacetRegistry } from './store'
 import type {
+  BulkSelection,
   FacetChoice,
   FacetInfo,
   ProductDetail,
@@ -59,10 +61,9 @@ import type {
  * The products of the catalogue (§11.1): a page of rows, the views of decision 3 over it, the
  * facets as filters behind the funnel, and a checkbox per row.
  *
- * The checkboxes are for the bulk actions that come next (§11.4); for now they say how many are
- * picked and can be cleared. They live here from the start so that the row does not change shape
- * the day the actions arrive — and a selection outlives the page it was made on, which is what
- * "select these twelve across three pages" needs.
+ * The checkboxes are for the bulk actions (§11.4): a selection outlives the page it was made on,
+ * which is what "select these twelve across three pages" needs, and "everything found" picks the
+ * filter itself rather than its ids. The actions and their progress are `BulkBar`'s.
  *
  * What the list shows beyond the core's columns is the satellites' (`ProductColumns`, §7.4): the
  * server says which, and each row carries its values under their keys.
@@ -91,6 +92,8 @@ const width = useElementWidth(root)
 const page = ref<ProductsPage | null>(null)
 const loading = ref(true)
 const selected = ref<RowKey[]>([])
+/** The whole of what the filter finds is picked, not only the ticked rows. */
+const everything = ref(false)
 /* The table's own search and page, started from the address: coming back lands where it left. */
 const search = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const pageNumber = ref(Number(route.query.page ?? 1) || 1)
@@ -340,8 +343,51 @@ function treeChoice(key: string): TreeSelectValue {
   return valuesOf(key).map(Number)
 }
 
+/** How many the list finds as it is filtered — what "select everything found" would pick. */
+const found = computed(() => page.value?.total ?? 0)
+
+/**
+ * "Everything found" is the list's query, not its ids (§11.4): the server turns it into ids when
+ * the run starts, so forty thousand products never travel through the browser.
+ */
+const bulkSelection = computed<BulkSelection>(() => {
+  if (!everything.value) return { ids: selected.value.map(Number) }
+
+  const facetsQuery: Record<
+    string,
+    Array<string | number> | { min?: number | null; max?: number | null }
+  > = {}
+
+  for (const [key, choice] of Object.entries(chosen.value)) {
+    // A toggle is sent the way the list sends it: a list with `1` in it.
+    facetsQuery[key] = choice === true ? ['1'] : choice
+  }
+
+  return { query: { q: search.value, state: String(view.value), facets: facetsQuery } }
+})
+
+function clearSelection(): void {
+  selected.value = []
+  everything.value = false
+}
+
+/**
+ * What refused stays picked, and nothing else: the strip keeps its list of refusals beside the
+ * very products it names, ready for another go once they are put right.
+ */
+function onBulkFinished(refused: number[]): void {
+  everything.value = false
+  selected.value = refused
+  void load()
+}
+
 /* One source per value, not one getter returning an array: a page turn must not fire a second
    request racing the one `onState` already sent. */
+watch([view, sort, () => JSON.stringify(chosen.value), search], () => {
+  // "Everything found" was everything this filter found; another filter finds something else.
+  everything.value = false
+})
+
 watch([view, sort, () => JSON.stringify(chosen.value)], () => {
   // A new filter is a new list: the page it was on belongs to the list it was on. If that moves
   // the table's page, the table asks for itself; otherwise nobody would.
@@ -506,15 +552,32 @@ const actions = computed<ScreenAction[]>(() => {
 <template>
   <div ref="root" class="wx-catalog-products">
     <wx-list-screen v-model:view="view" :title="title" :views="views" :actions="actions">
-      <!-- What is picked, said above the rows it was picked from. The actions on it are the next
-           session's (§11.4); until then the strip counts and clears. -->
-      <div v-if="selected.length > 0" class="wx-catalog-products__selection">
+      <!-- What is picked, said above the rows it was picked from, with what can be done to it. -->
+      <div v-if="selected.length > 0 || everything" class="wx-catalog-products__selection">
         <wx-text size="sm" weight="medium">
-          {{ t('panel.selected', { count: selected.length }) }}
+          {{
+            everything
+              ? t('panel.selected-all', { count: found })
+              : t('panel.selected', { count: selected.length })
+          }}
         </wx-text>
-        <wx-button size="sm" variant="text" @click="selected = []">
+        <wx-button
+          v-if="!everything && found > selected.length"
+          size="sm"
+          variant="text"
+          @click="everything = true"
+        >
+          {{ t('panel.select-all-found', { count: found }) }}
+        </wx-button>
+        <wx-button size="sm" variant="text" @click="clearSelection">
           {{ t('panel.select-clear') }}
         </wx-button>
+        <bulk-bar
+          v-if="canManage || canDelete"
+          :count="everything ? found : selected.length"
+          :selection="bulkSelection"
+          @finished="onBulkFinished"
+        />
       </div>
 
       <wx-table
@@ -716,6 +779,7 @@ const actions = computed<ScreenAction[]>(() => {
 
 .wx-catalog-products__selection {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wx-space-12);
   padding: var(--wx-space-8) var(--wx-space-16);
