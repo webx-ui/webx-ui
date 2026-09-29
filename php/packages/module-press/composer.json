@@ -29,18 +29,18 @@
         "illuminate/http": "^13.0",
         "illuminate/routing": "^13.0",
         "illuminate/support": "^13.0",
-        "webx-ui/localization": "^0.50.0",
-        "webx-ui/mcp": "^0.50.0",
-        "webx-ui/module-admin": "^0.50.0",
-        "webx-ui/module-blocks": "^0.50.0",
-        "webx-ui/module-media": "^0.50.0",
-        "webx-ui/module-seo": "^0.50.0",
-        "webx-ui/routing": "^0.50.0"
+        "webx-ui/localization": "^0.51.0",
+        "webx-ui/mcp": "^0.51.0",
+        "webx-ui/module-admin": "^0.51.0",
+        "webx-ui/module-blocks": "^0.51.0",
+        "webx-ui/module-media": "^0.51.0",
+        "webx-ui/module-seo": "^0.51.0",
+        "webx-ui/routing": "^0.51.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/module-pages": "^0.50.0"
+        "webx-ui/module-pages": "^0.51.0"
     },
     "suggest": {
         "webx-ui/module-pages": "A page at the prefix with the catalogue block is the site's page of press."
