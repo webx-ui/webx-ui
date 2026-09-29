@@ -8,26 +8,36 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use WebxUi\Catalog\Engine\CatalogEngine;
+use WebxUi\Catalog\Engine\CatalogEngines;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 
 /**
- * Marks products for the engine to reindex (§8.3).
+ * The engine the site chose, and the marks that tell it what to reindex (§8.3).
  *
  * A mark is a row in `catalog_index_queue` and nothing else: no call to the engine, so a save
- * never waits for it and never fails because of it (§5.2 of the architecture). Under `SqlEngine`
- * the database is the index, and nothing is written at all.
- *
- * Which engine needs an index is K2's to wire through the engine itself; until then the rule is
- * the config's: anything but `sql` keeps an index of its own.
+ * never waits for it and never fails because of it (§5.2 of the architecture). Whether marks are
+ * written at all is the engine's to say — under `SqlEngine` the database is the index, and
+ * nothing is written.
  */
 final class Catalog
 {
-    public function __construct(private readonly Config $config) {}
+    private ?CatalogEngine $engine = null;
+
+    public function __construct(
+        private readonly Config $config,
+        private readonly CatalogEngines $engines,
+    ) {}
+
+    public function engine(): CatalogEngine
+    {
+        return $this->engine ??= $this->engines->make((string) $this->config->get('webx-catalog.engine', 'sql'));
+    }
 
     public function needsIndex(): bool
     {
-        return (string) $this->config->get('webx-catalog.engine', 'sql') !== 'sql';
+        return $this->engine()->needsIndex();
     }
 
     /**
@@ -83,5 +93,20 @@ final class Catalog
         }
 
         $this->touchQuery(Product::withTrashed()->inCategories($category->subtree()->withTrashed()->pluck('id')->all()));
+    }
+
+    /**
+     * How many products wait for the engine, and since when the oldest has.
+     *
+     * @return array{waiting: int, oldest: Carbon|null}
+     */
+    public function queue(): array
+    {
+        $row = DB::table('catalog_index_queue')->selectRaw('count(*) as waiting, min(queued_at) as oldest')->first();
+
+        return [
+            'waiting' => (int) ($row->waiting ?? 0),
+            'oldest' => isset($row->oldest) ? Carbon::parse((string) $row->oldest) : null,
+        ];
     }
 }

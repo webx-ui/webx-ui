@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use WebxUi\Catalog\Http\Controllers\CategoryController;
 use WebxUi\Catalog\Http\Controllers\DeletedController;
+use WebxUi\Catalog\Http\Controllers\FacetController;
 use WebxUi\Catalog\Http\Controllers\ProductController;
 use WebxUi\Catalog\Http\Controllers\ProductImageController;
 
@@ -22,6 +23,7 @@ Route::prefix((string) config('webx-admin.api_path').'/catalog')
             Route::get('products/{product}', [ProductController::class, 'show'])->whereNumber('product')->name('products.show');
             Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
             Route::get('categories/{category}', [CategoryController::class, 'show'])->whereNumber('category')->name('categories.show');
+            Route::get('facets', FacetController::class)->name('facets');
         });
 
         Route::middleware('cms.can:catalog.manage')->group(function (): void {

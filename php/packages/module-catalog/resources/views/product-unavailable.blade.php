@@ -26,9 +26,9 @@
         </header>
 
         @if ($image !== null)
-            <img src="{{ $image->url() }}" alt="{{ $image->getTranslation('alt') ?? $product->displayName() }}">
+            <img src="{{ $image->url() }}" alt="{{ $image->getTranslation('alt') ?: $product->displayName() }}">
         @endif
 
-        @webxPart('catalog.product.unavailable', ['product' => $product], 'webx-catalog::partials.unavailable')
+        @webxPart('catalog.product.unavailable', ['product' => $product], 'webx-catalog::points.product-unavailable')
     </article>
 </x-dynamic-component>

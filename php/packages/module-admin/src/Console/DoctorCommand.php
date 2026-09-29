@@ -21,6 +21,7 @@ use WebxUi\Admin\Doctor\Checks\Relations;
 use WebxUi\Admin\Doctor\Checks\SiteGate;
 use WebxUi\Admin\Doctor\Checks\Storage;
 use WebxUi\Admin\Doctor\Diagnosis;
+use WebxUi\Admin\Doctor\DoctorChecks;
 
 /**
  * Whether this site is actually standing up.
@@ -71,7 +72,7 @@ final class DoctorCommand extends Command
         $failed = 0;
         $warned = 0;
 
-        foreach (self::CHECKS as $class) {
+        foreach ([...self::CHECKS, ...$container->make(DoctorChecks::class)->all()] as $class) {
             foreach ($this->diagnose($container, $class) as $diagnosis) {
                 $this->say($diagnosis);
 
