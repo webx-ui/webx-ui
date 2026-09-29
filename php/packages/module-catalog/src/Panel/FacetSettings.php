@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace WebxUi\Catalog\Panel;
 
 use Illuminate\Support\Facades\DB;
+use WebxUi\Catalog\Facets\CategoryFacets;
 use WebxUi\Catalog\Models\Category;
 
 /**
  * A category's own facet settings — the rows of `catalog_category_facets` (§6.2).
  *
- * Read and written here, resolved elsewhere: which facets a category ends up showing (its own
- * rows, the nearest configured ancestor's, or every facet of the registry) is the engine's
- * question, asked with the registry in hand.
+ * Read and written here, resolved in {@see CategoryFacets}: which facets a category ends up
+ * showing — its own rows, the nearest configured ancestor's, or every facet of the registry.
  */
 final class FacetSettings
 {
@@ -71,6 +71,9 @@ final class FacetSettings
         }
 
         $after = self::of($category);
+
+        // Whatever inherits from this one inherits something else now.
+        app(CategoryFacets::class)->forget();
 
         return $before === $after ? null : [
             'field' => 'facets',

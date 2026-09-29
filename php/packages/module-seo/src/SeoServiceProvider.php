@@ -32,6 +32,7 @@ use WebxUi\Seo\Rendering\SeoSources;
 use WebxUi\Seo\Screens\SeoFieldType;
 use WebxUi\Seo\Sitemap\Sitemap;
 use WebxUi\Seo\Sitemap\SitemapRoutes;
+use WebxUi\Seo\Sitemap\SitemapSources;
 use WebxUi\Settings\Events\SettingsSaved;
 use WebxUi\Settings\Settings;
 
@@ -57,6 +58,7 @@ class SeoServiceProvider extends ServiceProvider
         $this->app->singleton(Breadcrumbs::class);
         $this->app->singleton(Sitemap::class);
         $this->app->singleton(SitemapRoutes::class);
+        $this->app->singleton(SitemapSources::class);
     }
 
     public function boot(): void

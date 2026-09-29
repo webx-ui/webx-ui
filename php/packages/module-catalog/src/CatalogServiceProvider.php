@@ -4,35 +4,71 @@ declare(strict_types=1);
 
 namespace WebxUi\Catalog;
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\Doctor\DoctorChecks;
 use WebxUi\Admin\History\HistoryTypes;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Catalog\Console\FlushViewsCommand;
+use WebxUi\Catalog\Console\IndexCommand;
+use WebxUi\Catalog\Console\PopularityCommand;
+use WebxUi\Catalog\Doctor\EngineCheck;
+use WebxUi\Catalog\Documents\CoreDocument;
+use WebxUi\Catalog\Documents\Documents;
+use WebxUi\Catalog\Engine\CatalogEngines;
+use WebxUi\Catalog\Engine\SqlEngine;
+use WebxUi\Catalog\Facets\CategoryFacet;
+use WebxUi\Catalog\Facets\CategoryFacets;
+use WebxUi\Catalog\Facets\Facets;
+use WebxUi\Catalog\Facets\PriceFacet;
+use WebxUi\Catalog\Filter\FilterSerializer;
+use WebxUi\Catalog\Filter\FilterUrls;
+use WebxUi\Catalog\Filter\SegmentSerializer;
+use WebxUi\Catalog\Http\Controllers\StorefrontController;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Panel\CatalogModule;
 use WebxUi\Catalog\Panel\CategoryFieldType;
 use WebxUi\Catalog\Panel\FacetsFieldType;
+use WebxUi\Catalog\Panel\ProductColumns;
 use WebxUi\Catalog\Parts\ProductParts;
+use WebxUi\Catalog\Popularity\PopularityFormula;
+use WebxUi\Catalog\Popularity\PopularitySignals;
+use WebxUi\Catalog\Popularity\ViewsSignal;
+use WebxUi\Catalog\Purchase\CoreRules;
+use WebxUi\Catalog\Purchase\Purchasability;
 use WebxUi\Catalog\Routing\CatalogMisses;
 use WebxUi\Catalog\Routing\CategoryHandler;
 use WebxUi\Catalog\Routing\ProductHandler;
+use WebxUi\Catalog\Seo\FilterSitemap;
+use WebxUi\Catalog\Seo\ListingSource;
 use WebxUi\Catalog\Seo\UnavailableSource;
+use WebxUi\Catalog\Sorts\CoreSort;
+use WebxUi\Catalog\Sorts\Sorts;
+use WebxUi\Catalog\Storefront\StorefrontParts;
+use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Routing\Formatters\Slug;
 use WebxUi\Routing\Formatters\SlugId;
 use WebxUi\Routing\Misses;
 use WebxUi\Routing\OnConflict;
 use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
+use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Rendering\SeoSources;
+use WebxUi\Seo\Sitemap\SitemapRoutes;
+use WebxUi\Seo\Sitemap\SitemapSources;
 
 /**
- * The core of the catalogue: products, a tree of categories, the gallery, and the registries its
- * satellites plug into (§7). Most of what it does is registrations in somebody else's registry —
- * two kinds of address, the answers to addresses nobody holds any more, two screens, two field
- * types, two kinds of journal entry and a section of the panel.
+ * The core of the catalogue: products, a tree of categories, the gallery, the engine and the
+ * storefront, and the registries its satellites plug into (§7). Most of what it does is
+ * registrations — in its own registries and in somebody else's: two kinds of address, the answers
+ * to addresses nobody holds any more, two screens, two field types, two kinds of journal entry,
+ * two SEO sources, a file of the sitemap, a doctor's check and a section of the panel.
  */
 class CatalogServiceProvider extends ServiceProvider
 {
@@ -40,8 +76,23 @@ class CatalogServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/webx-catalog.php', 'webx-catalog');
 
+        // The registries satellites fill from their own providers; the core fills them first.
         $this->app->singleton(ProductParts::class);
+        $this->app->singleton(Facets::class);
+        $this->app->singleton(Sorts::class);
+        $this->app->singleton(Documents::class);
+        $this->app->singleton(ProductColumns::class);
+        $this->app->singleton(Purchasability::class);
+        $this->app->singleton(PopularitySignals::class);
+        $this->app->singleton(CatalogEngines::class);
+        $this->app->singleton(StorefrontParts::class);
+        $this->app->singleton(FilterUrls::class);
+
         $this->app->singleton(Catalog::class);
+        $this->app->singleton(CategoryFacets::class);
+        $this->app->singleton(CategoryFacet::class);
+        $this->app->bindIf(FilterSerializer::class, SegmentSerializer::class, shared: true);
+        $this->app->bindIf(PopularityFormula::class, PopularityFormula::class);
     }
 
     public function boot(): void
@@ -55,12 +106,15 @@ class CatalogServiceProvider extends ServiceProvider
         $this->registerScreens();
         $this->registerHistory();
         $this->registerPanel();
-
-        $this->app->make(SeoSources::class)->register(new UnavailableSource);
+        $this->registerEngine();
+        $this->registerStorefront();
 
         if (! $this->app->runningInConsole()) {
             return;
         }
+
+        $this->commands([IndexCommand::class, FlushViewsCommand::class, PopularityCommand::class]);
+        $this->registerSchedule();
 
         $this->publishes([
             __DIR__.'/../config/webx-catalog.php' => config_path('webx-catalog.php'),
@@ -135,7 +189,7 @@ class CatalogServiceProvider extends ServiceProvider
             )],
         ]];
 
-        if (! (bool) $this->config()->get('webx-catalog.price.enabled', true)) {
+        if (! $this->priced()) {
             $patch[] = ['op' => 'remove', 'target' => 'prices'];
         }
 
@@ -193,6 +247,130 @@ class CatalogServiceProvider extends ServiceProvider
         }
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(CatalogModule::class));
+    }
+
+    /**
+     * The core's entries in its own registries (§7), first, so they lead every list: the facets
+     * category and price, the sorts, the core's share of the document, the refusals to sell, the
+     * views as a signal, the database as an engine.
+     *
+     * Switched-off prices are not registered at all rather than hidden: no facet, no sort, no
+     * field in the document, no refusal — a site without prices has no trace of them.
+     *
+     * "Price on request" is registered as the last word of the chain: a satellite's "out of
+     * stock" says more.
+     */
+    private function registerEngine(): void
+    {
+        $facets = $this->app->make(Facets::class);
+        $facets->register($this->app->make(CategoryFacet::class));
+
+        if ($this->priced()) {
+            $facets->register(new PriceFacet);
+        }
+
+        $sorts = $this->app->make(Sorts::class);
+        $sorts->register(CoreSort::default((array) $this->config()->get('webx-catalog.default_sort', [])));
+
+        if ($this->priced()) {
+            $sorts->register(new CoreSort('price_asc', ['price' => 'asc']));
+            $sorts->register(new CoreSort('price_desc', ['price' => 'desc']));
+        }
+
+        $sorts->register(new CoreSort('popular', ['score' => 'desc', 'created_at' => 'desc']));
+        $sorts->register(new CoreSort('new', ['created_at' => 'desc']));
+        $sorts->register(new CoreSort('name', ['name' => 'asc']));
+
+        $this->app->make(Documents::class)->register($this->app->make(CoreDocument::class));
+        $this->app->make(PopularitySignals::class)->register(new ViewsSignal);
+        $this->app->make(CatalogEngines::class)->register('sql', SqlEngine::class);
+
+        $rules = $this->app->make(CoreRules::class);
+        $purchasability = $this->app->make(Purchasability::class);
+        $purchasability->register($rules->onSale());
+        $purchasability->register($rules->priced(), last: true);
+
+        $this->app->make(DoctorChecks::class)->register(EngineCheck::class);
+
+        // A category moved to another branch inherits another branch's facets; nested-set moves
+        // without an `updated`, and says so with an event of its own.
+        $this->app->make(Dispatcher::class)->listen('eloquent.moved: '.Category::class, function (): void {
+            $this->app->make(CategoryFacets::class)->forget();
+        });
+    }
+
+    /**
+     * The storefront's SEO and its two routes (§4, §10): the search always, the root of the
+     * catalogue only when it is switched on (decision 25 of the architecture).
+     *
+     * Ordinary routes, so they win before the registry's fallback is reached and `Reserved`
+     * closes their addresses to pages. The search is registered first: the root takes a tail,
+     * and `/catalog/search` must not be read as a filter of the root. Where the site puts the
+     * language in the path, each is registered twice, as the blog's are.
+     */
+    private function registerStorefront(): void
+    {
+        $sources = $this->app->make(SeoSources::class);
+        $sources->register(new UnavailableSource);
+        $sources->register(new ListingSource);
+
+        $this->app->make(SitemapSources::class)->register($this->app->make(FilterSitemap::class));
+
+        $prefix = UrlNormaliser::key((string) $this->config()->get('webx-catalog.root.prefix', 'catalog'));
+
+        if ($prefix === '') {
+            return;
+        }
+
+        $routes = [['path' => $prefix.'/search/{tail?}', 'action' => 'search', 'name' => 'webx.catalog.search']];
+
+        if ((bool) $this->config()->get('webx-catalog.root.enabled', false)) {
+            $routes[] = ['path' => $prefix.'/{tail?}', 'action' => 'root', 'name' => 'webx.catalog.root'];
+            $this->app->make(SitemapRoutes::class)->register('webx.catalog.root');
+        }
+
+        /** @var list<string> $middleware */
+        $middleware = array_values((array) $this->config()->get('webx-catalog.middleware', ['web', 'webx.locale']));
+        $localised = (string) $this->config()->get('webx-localization.strategy', 'prefix') === 'prefix';
+
+        foreach ($routes as $route) {
+            Route::get($route['path'], [StorefrontController::class, $route['action']])
+                ->where(['tail' => '.*'])
+                ->middleware($middleware)
+                ->name($route['name']);
+
+            if ($localised) {
+                Route::get('{'.OneSpellingPerAddress::PARAMETER.'}/'.$route['path'], [StorefrontController::class, $route['action']])
+                    ->where(['tail' => '.*'])
+                    ->middleware([...$middleware, OneSpellingPerAddress::class])
+                    ->name($route['name'].'.localised');
+            }
+        }
+    }
+
+    /**
+     * The worker every minute where the engine keeps an index, the views every five minutes, the
+     * recount nightly — put on the schedule by the package, as the frame's backup is. `onOneServer`:
+     * two workers on one queue would each index half of it twice.
+     */
+    private function registerSchedule(): void
+    {
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            if ($this->app->make(Catalog::class)->needsIndex()) {
+                $schedule->command(IndexCommand::class)->everyMinute()->withoutOverlapping()->onOneServer();
+            }
+
+            if ((bool) $this->config()->get('webx-catalog.popularity.views', true)) {
+                $schedule->command(FlushViewsCommand::class)->everyFiveMinutes()->onOneServer();
+            }
+
+            $schedule->command(PopularityCommand::class)->dailyAt('03:30')->onOneServer();
+        });
+    }
+
+    private function priced(): bool
+    {
+        return (bool) $this->config()->get('webx-catalog.price.enabled', true);
     }
 
     private function config(): Config

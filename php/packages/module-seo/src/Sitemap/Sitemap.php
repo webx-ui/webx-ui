@@ -67,6 +67,7 @@ final class Sitemap
         private readonly Alternates $alternates,
         private readonly Cache $cache,
         private readonly Config $config,
+        private readonly SitemapSources $sources,
     ) {}
 
     public function enabled(): bool
@@ -243,7 +244,48 @@ final class Sitemap
             $all[self::ROUTES] = [...($all[self::ROUTES] ?? []), ...$named];
         }
 
+        foreach ($this->sources->all() as $source) {
+            $entries = $this->sourceEntries($source);
+
+            if ($entries !== []) {
+                $all[$source->name()] = [...($all[$source->name()] ?? []), ...$entries];
+            }
+        }
+
         return $all;
+    }
+
+    /**
+     * A module's own addresses, in every language, through the same resolver as the rest. Each
+     * is its own group: nothing says which address of one language is which of another, and an
+     * `hreflang` guessed wrong is worse than none.
+     *
+     * @return list<Entry>
+     */
+    private function sourceEntries(SitemapSource $source): array
+    {
+        $entries = [];
+        $seen = [];
+
+        foreach ($this->locales->codes() as $locale) {
+            foreach ($source->entries($locale) as $entry) {
+                $path = $this->path($entry['path'], $locale);
+
+                if (isset($seen[$path]) || ! $this->indexable($path, null, $locale)) {
+                    continue;
+                }
+
+                $seen[$path] = true;
+                $entries[] = [
+                    'loc' => URL::to($path),
+                    'lastmod' => $entry['lastmod'],
+                    'locale' => $locale,
+                    'group' => $source->name().':'.$path,
+                ];
+            }
+        }
+
+        return $entries;
     }
 
     /**
