@@ -7,6 +7,7 @@ import FacetsField from './FacetsField.vue'
 import GalleryField from './GalleryField.vue'
 import ProductEditorPage from './ProductEditorPage.vue'
 import ProductsPage from './ProductsPage.vue'
+import ToneField from './ToneField.vue'
 
 export interface CatalogOptions {
   /**
@@ -26,8 +27,9 @@ export interface CatalogOptions {
  * group, beside the satellites (brands, stock, labels). «Deleted» is reached from the head of the
  * products: it holds categories too, but it is visited rarely, and by whoever may delete.
  *
- * The three node types are what only this module can draw on its two screens: a category picker
- * that knows the tree, the «Filters» tab of a category (§6.2), and the gallery.
+ * The node types are what only this module can draw: a category picker that knows the tree, the
+ * «Filters» tab of a category (§6.2), the gallery, and the tone of a reference book's record —
+ * the satellites' screens use it, and the six tones are the core's (`Dictionary`).
  */
 export function catalog(options: CatalogOptions = {}): AdminModule[] {
   const path = options.path ?? '/catalog'
@@ -53,6 +55,8 @@ export function catalog(options: CatalogOptions = {}): AdminModule[] {
       // to read which filter is which.
       'wx-catalog-facets': { component: FacetsField, kind: 'field', wide: true },
       'wx-catalog-gallery': { component: GalleryField, kind: 'display' },
+      // The tone of a label or a stock status: here, because both satellites paint in the same six.
+      'wx-catalog-tone': { component: ToneField, kind: 'field' },
     },
   }
 

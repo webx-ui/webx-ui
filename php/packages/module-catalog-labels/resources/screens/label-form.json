@@ -29,7 +29,7 @@
         },
         {
           "id": "color",
-          "type": "wx-select",
+          "type": "wx-catalog-tone",
           "name": "color",
           "label": "trans::webx-catalog-labels::label.color",
           "help": "trans::webx-catalog-labels::label.color-help",

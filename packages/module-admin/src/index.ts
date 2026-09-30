@@ -92,8 +92,10 @@ export {
 export { adminTypes } from './screenTypes'
 export {
   categoryRoutes,
+  categoryEditorKey,
   createCategoriesApi,
   itemOrderMode,
+  provideCategoryEditor,
   reorderItems,
   useCategoryEditor,
   useCategoryWords,
@@ -166,6 +168,7 @@ export { default as WxCategoriesPage } from './categories/CategoriesPage.vue'
 export { default as WxCategoryCreateDialog } from './categories/CategoryCreateDialog.vue'
 export { default as WxCategoryEditorPage } from './categories/CategoryEditorPage.vue'
 export { default as WxCategoriesField } from './categories/CategoriesField.vue'
+export { default as WxSourceSelect } from './categories/SourceSelect.vue'
 export { default as WxCollectionField } from './collections/CollectionField.vue'
 export { default as WxRelationsField } from './relations/RelationsField.vue'
 export { default as WxSlugField } from './SlugField.vue'

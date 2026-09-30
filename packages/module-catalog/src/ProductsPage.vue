@@ -40,6 +40,7 @@ import {
   type TreeSelectValue,
 } from '@webx-ui/core'
 import BulkBar from './BulkBar.vue'
+import ColumnValue from './ColumnValue.vue'
 import ProductCreateDialog from './ProductCreateDialog.vue'
 import { createCatalogApi } from './api'
 import { FACET_PREFIX, readFacets, writeFacet } from './filters'
@@ -171,6 +172,17 @@ const categoryNames = computed(
  * when it changed, then the satellites', then the category — what is left is the picture, the
  * name and the state, which is what identifies a product and what somebody is looking for.
  */
+const EXTRA = 140
+const CATEGORY_FROM = 860
+
+/*
+ * The width each satellite's column is drawn from on: one after another after the category's, so
+ * a third satellite drops first rather than taking its room out of the name — the table is laid out
+ * `fixed`, and there the name's `minWidth` gives way to the widths around it (three satellites at
+ * 1080px left it 59px). «Updated» goes before any of them.
+ */
+const extraFrom = (index: number) => CATEGORY_FROM + EXTRA * (index + 1)
+
 const columns = computed<TableColumn<ProductRow>[]>(() => {
   if (asCards.value) {
     // The card is the row: a tap opens the product, and a line of its own for the `···` would make
@@ -181,18 +193,23 @@ const columns = computed<TableColumn<ProductRow>[]>(() => {
   return [
     { key: 'image', label: '', width: 64 },
     { key: 'name', label: t('panel.column-product'), minWidth: 200 },
-    { key: 'category', label: t('product.category'), width: 180, hideBelow: 860 },
+    { key: 'category', label: t('product.category'), width: 180, hideBelow: CATEGORY_FROM },
     ...(priced.value
       ? [{ key: 'price', label: t('product.price'), width: 150, align: 'right' as const }]
       : []),
-    ...extra.value.map((column) => ({
+    ...extra.value.map((column, index) => ({
       key: `x.${column.key}`,
       label: column.label,
-      width: 120,
-      hideBelow: 1040,
+      width: EXTRA,
+      hideBelow: extraFrom(index),
     })),
     { key: 'state', label: t('panel.column-state'), width: 150, hideBelow: 720 },
-    { key: 'updated_at', label: t('panel.column-updated'), width: 130, hideBelow: 1180 },
+    {
+      key: 'updated_at',
+      label: t('panel.column-updated'),
+      width: 130,
+      hideBelow: Math.max(1180, extraFrom(extra.value.length - 1) + 130),
+    },
     { key: 'actions', label: '', width: rowMenuWidth, align: 'right' },
   ]
 })
@@ -506,13 +523,10 @@ function unit(product: ProductRow): string {
   return product.unit ? ` / ${t(`units.${product.unit}`)}` : ''
 }
 
-function cell(product: ProductRow, key: string): string {
-  const value = product.columns?.[key]
-
-  if (value === null || value === undefined || value === '') return '—'
-  if (typeof value === 'boolean') return value ? '✓' : '—'
-
-  return String(value)
+function hasValue(value: unknown): boolean {
+  return Array.isArray(value)
+    ? value.length > 0
+    : value !== null && value !== undefined && value !== ''
 }
 
 const actions = computed<ScreenAction[]>(() => {
@@ -718,7 +732,7 @@ const actions = computed<ScreenAction[]>(() => {
         </template>
 
         <template v-for="column in extra" :key="column.key" #[`cell-x.${column.key}`]="{ row }">
-          <wx-text size="sm" truncate>{{ cell(row, column.key) }}</wx-text>
+          <column-value :value="row.columns?.[column.key]" />
         </template>
 
         <template #cell-state="{ row }">
@@ -753,6 +767,13 @@ const actions = computed<ScreenAction[]>(() => {
               <wx-text v-if="priced && row.price != null" size="sm">
                 {{ price(row.price) }}{{ unit(row) }}
               </wx-text>
+              <!-- The satellites' values that are there; an empty one is not worth a dash on a card. -->
+              <template v-for="column in extra" :key="column.key">
+                <column-value
+                  v-if="hasValue(row.columns?.[column.key])"
+                  :value="row.columns?.[column.key]"
+                />
+              </template>
             </template>
           </wx-entity-card>
         </template>
