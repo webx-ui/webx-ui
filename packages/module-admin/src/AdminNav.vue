@@ -13,7 +13,9 @@ import { useTranslate } from './i18n'
  * panel running — each as a branch that opens on its own when a section under it is current.
  *
  * A group names its own icon; the gear is what it falls back to, because that is the picture
- * every group had before groups could carry one.
+ * every group had before groups could carry one. Inside a group, the entries under no caption
+ * come first and each caption follows with its own — a caption adds no depth, and on the narrow
+ * rail it is a rule.
  */
 defineProps<{ collapsed?: boolean }>()
 
@@ -76,6 +78,15 @@ const current = computed<string>({
         :icon="entry.icon ?? undefined"
         :label="entry.title"
       />
+      <wx-menu-group v-for="section in group.sections" :key="section.id" :title="section.title">
+        <wx-menu-item
+          v-for="entry in section.entries"
+          :key="entry.id"
+          :value="entry.id"
+          :icon="entry.icon ?? undefined"
+          :label="entry.title"
+        />
+      </wx-menu-group>
     </wx-submenu>
   </wx-menu>
 </template>

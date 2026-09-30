@@ -269,19 +269,23 @@ class CatalogServiceProvider extends ServiceProvider
 
     /**
      * The group is added to the panel's config at boot rather than shipped as a default: a site
-     * that published `webx-admin.php` has its own copy of the list (CLAUDE.md §4).
+     * that published `webx-admin.php` has its own copy of the list (CLAUDE.md §4). So is its
+     * «Dictionaries» caption, which the satellites' reference lists stand under — into a group
+     * the site wrote itself as well, since that copy predates the caption.
      */
     private function registerPanel(): void
     {
         /** @var array<string, mixed> $groups */
         $groups = (array) $this->config()->get('webx-admin.groups', []);
+        $group = $groups[CatalogModule::GROUP] ?? ['title' => 'webx-catalog::module.group', 'icon' => 'cart', 'order' => 300];
 
-        if (! array_key_exists(CatalogModule::GROUP, $groups)) {
-            $this->config()->set('webx-admin.groups', [
-                ...$groups,
-                CatalogModule::GROUP => ['title' => 'webx-catalog::module.group', 'icon' => 'cart', 'order' => 300],
-            ]);
+        if (is_array($group)) {
+            $sections = is_array($group['sections'] ?? null) ? $group['sections'] : [];
+            $sections[CatalogModule::DICTIONARIES] ??= ['title' => 'webx-catalog::module.dictionaries', 'order' => 100];
+            $group['sections'] = $sections;
         }
+
+        $this->config()->set('webx-admin.groups', [...$groups, CatalogModule::GROUP => $group]);
 
         $modules = $this->app->make(ModuleRegistry::class);
         $modules->register($this->app->make(CatalogModule::class));

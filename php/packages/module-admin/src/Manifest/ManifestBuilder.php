@@ -8,6 +8,7 @@ use Illuminate\Contracts\Config\Repository;
 use Throwable;
 use WebxUi\Admin\Backups\Backups;
 use WebxUi\Admin\Contracts\BrandingSource;
+use WebxUi\Admin\Contracts\HasNavSection;
 use WebxUi\Admin\Contracts\Module;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -37,7 +38,7 @@ final class ManifestBuilder
      *     locale: string,
      *     locales: list<array{code: string, name: string, nativeName: string, direction: string, default: bool}>,
      *     panelLocales: list<array{code: string, name: string, nativeName: string, direction: string, default: bool}>,
-     *     groups: list<array{id: string, title: string, icon: string|null, order: int}>,
+     *     groups: list<array{id: string, title: string, icon: string|null, order: int, sections: list<array{id: string, title: string, order: int}>}>,
      *     modules: list<array<string, mixed>>,
      *     screens: list<string>,
      *     backup: array{at: string|null, bytes: int|null}|null,
@@ -129,6 +130,7 @@ final class ManifestBuilder
             'icon' => $module->icon(),
             'order' => $module->order(),
             'group' => $module->group(),
+            'section' => $module instanceof HasNavSection ? $module->navSection() : null,
             'permissions' => $module->permissions(),
             // Whatever the module itself wants to say, kept in its own room so it can never
             // shadow the fields above.
@@ -144,7 +146,11 @@ final class ManifestBuilder
      * the branch with the picture it has always drawn, so a group written before this existed
      * looks exactly as it looked.
      *
-     * @return list<array{id: string, title: string, icon: string|null, order: int}>
+     * A group may split its entries with captions: `sections` maps an id to a title key and an
+     * order, the same way groups themselves are described, and a module names one through
+     * {@see HasNavSection}.
+     *
+     * @return list<array{id: string, title: string, icon: string|null, order: int, sections: list<array{id: string, title: string, order: int}>}>
      */
     private function groups(): array
     {
@@ -160,11 +166,34 @@ final class ManifestBuilder
                 'title' => (string) __($title),
                 'icon' => $icon,
                 'order' => is_array($group) ? (int) ($group['order'] ?? 0) : 0,
+                'sections' => $this->sections(is_array($group) ? ($group['sections'] ?? []) : []),
             ];
         }
 
         usort($groups, static fn (array $a, array $b): int => [$a['order'], $a['id']] <=> [$b['order'], $b['id']]);
 
         return $groups;
+    }
+
+    /**
+     * @return list<array{id: string, title: string, order: int}>
+     */
+    private function sections(mixed $configured): array
+    {
+        $sections = [];
+
+        foreach (is_array($configured) ? $configured : [] as $id => $section) {
+            $title = is_array($section) ? (string) ($section['title'] ?? $id) : (string) $section;
+
+            $sections[] = [
+                'id' => (string) $id,
+                'title' => (string) __($title),
+                'order' => is_array($section) ? (int) ($section['order'] ?? 0) : 0,
+            ];
+        }
+
+        usort($sections, static fn (array $a, array $b): int => [$a['order'], $a['id']] <=> [$b['order'], $b['id']]);
+
+        return $sections;
     }
 }

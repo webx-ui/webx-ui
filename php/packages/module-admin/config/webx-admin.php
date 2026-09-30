@@ -117,6 +117,13 @@ return [
     | holds what keeps the panel running — settings, administrators — apart
     | from what the site is about.
     |
+    | A group may split its entries with captions — `sections`, described the
+    | same way — and a module stands under one by implementing HasNavSection:
+    |
+    |     'catalog' => [..., 'sections' => [
+    |         'dictionaries' => ['title' => 'webx-catalog::module.dictionaries', 'order' => 100],
+    |     ]],
+    |
     */
 
     'groups' => [

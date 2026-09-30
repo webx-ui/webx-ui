@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace WebxUi\Catalog\Tests;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Storage;
+use Orchestra\Testbench\Attributes\DefineEnvironment;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Collections\Selection;
 use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Admin\Links\LinkSources;
+use WebxUi\Admin\Manifest\ManifestBuilder;
 use WebxUi\Admin\Setup\Catalogue;
 use WebxUi\Catalog\Demo\CatalogDemo;
 use WebxUi\Catalog\Models\Category;
@@ -23,6 +26,33 @@ use WebxUi\Routing\Models\Route;
  */
 final class DemoAndSourcesTest extends TestCase
 {
+    #[Test]
+    public function the_catalog_group_has_a_dictionaries_caption_and_categories_lead(): void
+    {
+        $manifest = $this->app->make(ManifestBuilder::class)->build();
+
+        $group = collect($manifest['groups'])->firstWhere('id', 'catalog');
+        $this->assertIsArray($group);
+        $this->assertSame([['id' => 'dictionaries', 'title' => 'Dictionaries', 'order' => 100]], $group['sections']);
+
+        $entries = collect($manifest['modules'])->where('group', 'catalog')->pluck('id')->values()->all();
+        $this->assertSame(['catalog-categories', 'catalog'], $entries);
+    }
+
+    #[Test]
+    #[DefineEnvironment('aSiteThatWroteTheCatalogGroup')]
+    public function a_catalog_group_the_site_wrote_itself_still_gets_the_caption(): void
+    {
+        $group = config('webx-admin.groups.catalog');
+        $this->assertSame('Shop', $group['title']);
+        $this->assertArrayHasKey('dictionaries', $group['sections']);
+    }
+
+    protected function aSiteThatWroteTheCatalogGroup(Application $app): void
+    {
+        $app['config']->set('webx-admin.groups', ['catalog' => ['title' => 'Shop', 'order' => 50]]);
+    }
+
     #[Test]
     public function the_demo_fills_every_tab_and_is_removed_without_a_trace(): void
     {

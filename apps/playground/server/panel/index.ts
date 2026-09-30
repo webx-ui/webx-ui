@@ -437,6 +437,13 @@ on('GET', '/manifest', ({ locale }) => ({
         title: line(locale, 'webx-catalog', 'module.group'),
         icon: 'cart',
         order: 300,
+        sections: [
+          {
+            id: 'dictionaries',
+            title: line(locale, 'webx-catalog', 'module.dictionaries'),
+            order: 100,
+          },
+        ],
       },
       {
         id: 'events',
@@ -554,23 +561,23 @@ on('GET', '/manifest', ({ locale }) => ({
         permissions: ['reviews.view', 'reviews.manage'],
         meta: {},
       },
-      /* The products with «Deleted», and the tree beside them: two modules, two entries. */
-      {
-        id: 'catalog',
-        title: line(locale, 'webx-catalog', 'module.title'),
-        icon: 'cart',
-        order: 300,
-        group: 'catalog',
-        permissions: ['catalog.view', 'catalog.manage', 'catalog.delete'],
-        meta: {},
-      },
+      /* The tree and the products with «Deleted»: two modules, two entries, categories first. */
       {
         id: 'catalog-categories',
         title: line(locale, 'webx-catalog', 'module.categories'),
         icon: 'folder',
-        order: 301,
+        order: 300,
         group: 'catalog',
         permissions: [],
+        meta: {},
+      },
+      {
+        id: 'catalog',
+        title: line(locale, 'webx-catalog', 'module.title'),
+        icon: 'cart',
+        order: 301,
+        group: 'catalog',
+        permissions: ['catalog.view', 'catalog.manage', 'catalog.delete'],
         meta: {},
       },
       /* Not a module of any package: a fake record with a made-up past, where the journal's node
