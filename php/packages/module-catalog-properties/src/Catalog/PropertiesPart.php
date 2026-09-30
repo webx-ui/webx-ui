@@ -47,8 +47,14 @@ final class PropertiesPart implements ProductPart
                 'values',
                 'object',
                 'webx-catalog-properties::product.properties',
-                ['nullable', 'array', '{ "<property_id>": id | [ids] | number | true | { "<locale>": text } | null }'],
-                'catalog_properties_list',
+                [
+                    'nullable',
+                    'array',
+                    '{ "<property_id>": value | [values] | number | true | { "<locale>": text } | null }',
+                    'a value of a reference book is its id or its slug in any language (catalog_property_values_list); an unknown slug is refused — make it with catalog_property_values_create',
+                    'only the properties of the set of the main category (catalog_categories_properties); a key left out is not touched, null takes the value away',
+                ],
+                'catalog://properties',
             ),
         ]);
     }

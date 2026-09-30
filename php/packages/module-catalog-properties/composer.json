@@ -34,6 +34,7 @@
         "webx-ui/localization": "^0.53.1",
         "webx-ui/module-admin": "^0.53.1",
         "webx-ui/module-catalog": "^0.53.1",
+        "webx-ui/mcp": "^0.53.1",
         "webx-ui/module-media": "^0.53.1",
         "webx-ui/nested-set": "^0.53.1"
     },
@@ -58,7 +59,15 @@
             ]
         },
         "webx": {
-            "module": "catalog-properties"
+            "module": "catalog-properties",
+            "npm": {
+                "@webx-ui/module-catalog-properties": "^0.1.0"
+            },
+            "panel": {
+                "import": "import { catalogProperties } from '@webx-ui/module-catalog-properties'",
+                "style": "@webx-ui/module-catalog-properties/style.css",
+                "register": "...catalogProperties()"
+            }
         }
     },
     "config": {

@@ -18,7 +18,7 @@ import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import { createCatalogApi, useProductEditor } from '@webx-ui/module-catalog'
 import { screenErrorsKey } from '@webx-ui/schema'
 import { createPropertiesApi } from './api'
-import { formatNumber, propertyName, wordsIn } from './format'
+import { fieldDecimals, formatNumber, propertyName, wordsIn } from './format'
 import { NAMESPACE, useCatalogPropertiesMessages } from './i18n'
 import type { EffectiveSet, HeldValue, PropertyRow } from './types'
 import ValueSelect from './ValueSelect.vue'
@@ -356,6 +356,7 @@ const groupTitle = (group: EffectiveSet['groups'][number]) =>
             </span>
             <wx-input-number
               :model-value="number(read(property.id))"
+              :precision="fieldDecimals(property.precision, number(read(property.id)))"
               :controls="false"
               :disabled="locked"
               :aria-label="propertyName(property, locale)"

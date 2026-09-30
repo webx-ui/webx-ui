@@ -105,6 +105,16 @@ final class Tool
     }
 
     /**
+     * The same tool under a longer name: `list` becomes `property_groups_list`. For tools built by
+     * a shared helper and served under a module whose id is not the prefix they need — a satellite's
+     * tools under the module it extends.
+     */
+    public function prefixed(string $prefix): self
+    {
+        return new self($prefix.$this->name, $this->description, $this->inputSchema, $this->mutating, $this->scope, $this->permissions, $this->handler);
+    }
+
+    /**
      * @param  array<string, mixed>  $arguments
      */
     public function isDryRun(array $arguments): bool

@@ -857,9 +857,11 @@ MCP: `catalog_labels_*`, `catalog_stock_*`, `catalog_brands_*` (по пять: `
 
 ### `webx-ui/module-catalog-properties` — свойства товаров
 
-Статус: в работе, серия P1–P5 — [спецификация](WEBX_UI_CATALOG_PROPERTIES.md) (§14). Сделаны правки
-ядра (P1), php-пакет с данными и API (P2), витрина (P3) и раздел панели с npm-пакетом
-`@webx-ui/module-catalog-properties` (P4); впереди MCP и демо. Не выпущен: до первого релиза —
+Статус: серия P1–P5 сделана — [спецификация](WEBX_UI_CATALOG_PROPERTIES.md) (§14, §15): правки
+ядра, php-пакет с данными и API, витрина, раздел панели с npm-пакетом
+`@webx-ui/module-catalog-properties`, MCP (инструменты каталога `catalog_properties_*`,
+`catalog_property_values_*`, `catalog_property_groups_*`, `catalog_categories_properties`) и демо.
+Не выпущен: до первого релиза —
 зеркало и Packagist руками (`WEBX_UI_PHP_RELEASE.md`), первую версию npm-пакета публикует человек.
 
 Свойства четырёх типов (справочник — плоский или деревом, число с единицами, текст, да/нет),
