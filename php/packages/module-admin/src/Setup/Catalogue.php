@@ -121,6 +121,16 @@ final class Catalogue
             'label' => 'Catalog — products with prices and pictures in a tree of categories, a filter and bulk actions',
             'default' => false,
         ],
+        'catalog-labels' => [
+            'package' => 'webx-ui/module-catalog-labels',
+            'label' => 'Catalog labels — top, sale, new: badges on the cards and a filter (needs the catalog)',
+            'default' => false,
+        ],
+        'catalog-stock' => [
+            'package' => 'webx-ui/module-catalog-stock',
+            'label' => 'Catalog stock — in stock, out of stock, on order, and whether it can be bought (needs the catalog)',
+            'default' => false,
+        ],
         'menu' => [
             'package' => 'webx-ui/module-menu',
             'label' => 'Menus — the header and the footer, and what each entry points at',

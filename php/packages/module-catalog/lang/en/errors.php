@@ -20,4 +20,7 @@ return [
     'video-not-a-video' => 'This is not a video: an MP4 or WebM file, or a link to a video on YouTube.',
     'video-too-large' => 'The video is larger than :max MB.',
     'video-no-poster' => 'The cover of the video could not be fetched; check that the video exists and is public.',
+    'dictionary-code' => 'A code is lowercase Latin letters, digits and single hyphens, at most :max characters.',
+    'dictionary-code-taken' => 'This code is taken by another record of the list, perhaps one in the bin.',
+    'dictionary-tone' => 'A tone is one of: :tones.',
 ];
