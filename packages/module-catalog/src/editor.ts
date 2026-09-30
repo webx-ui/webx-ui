@@ -1,4 +1,5 @@
 import { inject, provide, type InjectionKey, type Ref } from 'vue'
+import type { ScreenModel } from '@webx-ui/schema'
 import type { GalleryVideo } from './galleryVideo'
 import type { CategoryRow, ProductImage, ProductRow } from './types'
 
@@ -16,6 +17,12 @@ export interface ProductEditorContext {
   images: Ref<ProductImage[]>
   /** Closed for writing: no permission, or a save in flight. */
   locked: Ref<boolean>
+  /**
+   * The values of the form as they are right now, edits included — what a satellite's node reads
+   * when it depends on another field: the properties' tab redraws for a main category chosen and
+   * not yet saved. Left out by an editor that has no form around its nodes.
+   */
+  values?: Ref<ScreenModel>
   /**
    * Video files on their way into the gallery. Kept up here rather than in the gallery field, whose
    * tab is taken down when another is opened — and an upload with it. The field makes its own

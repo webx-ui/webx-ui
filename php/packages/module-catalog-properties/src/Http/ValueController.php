@@ -38,6 +38,8 @@ final class ValueController
         $validated = $request->validate([
             'q' => ['nullable', 'string', 'max:255'],
             'parent_id' => ['nullable', 'integer'],
+            'ids' => ['nullable', 'array', 'max:500'],
+            'ids.*' => ['integer'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:500'],
         ]);
@@ -50,6 +52,22 @@ final class ValueController
         $owner->value_order === Property::MANUAL
             ? $query->orderBy('lft')
             : $query->orderByTranslation('title', 'asc', app()->getLocale())->orderBy('id');
+
+        // The values a product holds, by id and at any depth, for the form to name them.
+        if (isset($validated['ids'])) {
+            return new JsonResponse(['data' => $query->whereKey(array_map('intval', $validated['ids']))->get()->map(static fn (PropertyValue $value): array => [
+                ...Resources::value($value),
+                // A node of a tree is named by its path — «Metal / Steel» — which a picker opens to.
+                'ancestors' => PropertyValue::query()
+                    ->where('property_id', $owner->id)
+                    ->where('lft', '<', $value->lft)
+                    ->where('rgt', '>', $value->rgt)
+                    ->orderBy('lft')
+                    ->get()
+                    ->map(static fn (PropertyValue $ancestor): array => Resources::value($ancestor))
+                    ->all(),
+            ])->all()]);
+        }
 
         $term = trim((string) ($validated['q'] ?? ''));
 

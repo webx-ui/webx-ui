@@ -89,6 +89,13 @@ export interface CategoriesOptions {
   name: string
   /** The module the list is — its title in the manifest is the heading of both screens. */
   module: string
+  /**
+   * The heading instead, as a key of the dictionary — for a list that is not an entry of the
+   * navigation but stands under a section: the groups of the catalogue's properties.
+   */
+  title?: string
+  /** Where the list goes back to, and what that is called (a key), for a list that stands under another. */
+  back?: { path: string; label: string }
   /** The described screen of one category: `blog.category-form`. */
   screen: string
   /** The permission everything that writes asks for. */

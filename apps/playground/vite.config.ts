@@ -80,6 +80,7 @@ export default defineConfig({
       pkg('module-catalog'),
       pkg('module-catalog-brands'),
       pkg('module-catalog-labels'),
+      pkg('module-catalog-properties'),
       pkg('module-catalog-stock'),
       pkg('module-events'),
       pkg('module-faq'),
