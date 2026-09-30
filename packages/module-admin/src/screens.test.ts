@@ -95,6 +95,39 @@ describe('navigation groups', () => {
     expect(groups).toHaveLength(1)
     expect(groups[0]?.title).toBe('System')
     expect(groups[0]?.entries.map((entry) => entry.id)).toEqual(['settings', 'admins'])
+    expect(groups[0]?.sections).toEqual([])
+  })
+
+  it('puts an entry under the caption its group declares, and one it does not among the plain', async () => {
+    const captioned: Manifest = {
+      ...manifest,
+      groups: [
+        {
+          id: 'system',
+          title: 'System',
+          order: 900,
+          sections: [
+            { id: 'people', title: 'People', order: 100 },
+            { id: 'empty', title: 'Empty', order: 200 },
+          ],
+        },
+      ],
+      modules: manifest.modules.map((module) =>
+        module.id === 'admins'
+          ? { ...module, section: 'people' }
+          : module.id === 'settings'
+            ? { ...module, section: 'undeclared' }
+            : module,
+      ),
+    }
+    const admin = context(vi.fn(), { loadManifest: async () => captioned })
+    await admin.reload()
+
+    const [system] = admin.groups.value.groups
+
+    expect(system?.entries.map((entry) => entry.id)).toEqual(['settings'])
+    expect(system?.sections.map((section) => section.title)).toEqual(['People'])
+    expect(system?.sections[0]?.entries.map((entry) => entry.id)).toEqual(['admins'])
   })
 })
 

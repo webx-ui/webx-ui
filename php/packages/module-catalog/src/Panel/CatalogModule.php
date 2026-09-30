@@ -33,6 +33,9 @@ final class CatalogModule extends AbstractModule implements ProvidesDemo, Provid
     /** The id of the navigation group the satellites join as well. */
     public const GROUP = 'catalog';
 
+    /** The caption inside the group that reference lists — labels, stock — stand under. */
+    public const DICTIONARIES = 'dictionaries';
+
     public function __construct(
         private readonly CatalogTools $tools,
         private readonly CatalogResources $resources,
@@ -56,7 +59,7 @@ final class CatalogModule extends AbstractModule implements ProvidesDemo, Provid
 
     public function order(): int
     {
-        return 300;
+        return 301;
     }
 
     public function group(): string
