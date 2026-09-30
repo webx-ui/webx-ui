@@ -6,10 +6,12 @@ namespace WebxUi\Catalog\Filter;
 
 use WebxUi\Catalog\Facets\Facet;
 use WebxUi\Catalog\Models\Category;
+use WebxUi\Catalog\Storefront\ListingSubject;
 
 /**
- * Where a filter stands: the page's own address, the category of the page if it is one, the
- * facets this page may be filtered by, and the language.
+ * Where a filter stands: the page's own address, the category of the page if it is one — or the
+ * satellite's entity it is about, a brand — the facets this page may be filtered by, and the
+ * language.
  *
  * `$path` is the registry's spelling — no language prefix, no slashes on the ends —
  * `gaming-laptops` or `catalog`. The language prefix and the host are added once, at the end,
@@ -34,6 +36,7 @@ final class FilterContext
         public readonly array $facets,
         public readonly ?Category $category = null,
         public readonly array $query = [],
+        public readonly ?ListingSubject $subject = null,
     ) {}
 
     public function facet(string $key): ?Facet
@@ -63,6 +66,6 @@ final class FilterContext
      */
     public function withQuery(array $query): self
     {
-        return new self($this->context, $this->path, $this->locale, $this->facets, $this->category, $query);
+        return new self($this->context, $this->path, $this->locale, $this->facets, $this->category, $query, $this->subject);
     }
 }

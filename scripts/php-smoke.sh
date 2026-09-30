@@ -97,11 +97,11 @@ REPOSITORY="$(
     # this checkout, and the whole run would prove nothing about the change under test.
     $COMPOSER_BIN config repositories.packagist.org \
         '{"type":"composer","url":"https://repo.packagist.org","exclude":["webx-ui/*"]}'
-    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' webx-ui/module-pages:'*' webx-ui/module-inbox:'*' webx-ui/module-blog:'*' webx-ui/module-services:'*' webx-ui/module-faq:'*' webx-ui/module-reviews:'*' webx-ui/module-recipes:'*' webx-ui/module-events:'*' webx-ui/module-press:'*' webx-ui/module-team:'*' webx-ui/module-banners:'*' webx-ui/module-vacancies:'*' webx-ui/module-tariffs:'*' webx-ui/module-catalog:'*' webx-ui/module-catalog-labels:'*' webx-ui/module-catalog-stock:'*' --no-interaction --no-progress --quiet
+    $COMPOSER_BIN require webx-ui/module-auth:'*' webx-ui/module-settings:'*' webx-ui/module-seo:'*' webx-ui/module-blocks:'*' webx-ui/module-pages:'*' webx-ui/module-inbox:'*' webx-ui/module-blog:'*' webx-ui/module-services:'*' webx-ui/module-faq:'*' webx-ui/module-reviews:'*' webx-ui/module-recipes:'*' webx-ui/module-events:'*' webx-ui/module-press:'*' webx-ui/module-team:'*' webx-ui/module-banners:'*' webx-ui/module-vacancies:'*' webx-ui/module-tariffs:'*' webx-ui/module-catalog:'*' webx-ui/module-catalog-brands:'*' webx-ui/module-catalog-labels:'*' webx-ui/module-catalog-stock:'*' --no-interaction --no-progress --quiet
 )
 
 step "The packages came from the checkout, not from Packagist"
-for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages module-inbox module-blog module-services module-faq module-reviews module-recipes module-events module-press module-team module-banners module-vacancies module-tariffs module-catalog module-catalog-labels module-catalog-stock module-media nested-set routing; do
+for package in module-admin localization mcp module-auth module-settings module-seo module-blocks module-pages module-inbox module-blog module-services module-faq module-reviews module-recipes module-events module-press module-team module-banners module-vacancies module-tariffs module-catalog module-catalog-brands module-catalog-labels module-catalog-stock module-media nested-set routing; do
     [ -L "$APP/vendor/webx-ui/$package" ] || [ -f "$APP/vendor/webx-ui/$package/.git" ] \
         || fail "vendor/webx-ui/$package is a copy, so a released version was installed instead of this checkout"
     note "webx-ui/$package is linked to the checkout"
@@ -136,6 +136,7 @@ step "Providers are found by discovery, not by hand"
         "webx-ui/module-vacancies" => "WebxUi\\Vacancies\\VacanciesServiceProvider",
         "webx-ui/module-tariffs" => "WebxUi\\Tariffs\\TariffsServiceProvider",
         "webx-ui/module-catalog" => "WebxUi\\Catalog\\CatalogServiceProvider",
+        "webx-ui/module-catalog-brands" => "WebxUi\\CatalogBrands\\BrandsServiceProvider",
         "webx-ui/module-catalog-labels" => "WebxUi\\CatalogLabels\\LabelsServiceProvider",
         "webx-ui/module-catalog-stock" => "WebxUi\\CatalogStock\\StockServiceProvider",
     ];
