@@ -245,10 +245,12 @@ import {
   catalogBytes,
   catalogHistory,
   catalogUpload,
+  categoryLookup,
   liveProductIds,
   registerCatalog,
 } from './catalog'
 import { brandHistory, registerDictionaries } from './catalog-dictionaries'
+import { propertyHistory, registerProperties } from './catalog-properties'
 import { Reply } from './reply'
 import { handleUploads } from './uploads'
 import {
@@ -613,6 +615,16 @@ on('GET', '/manifest', ({ locale }) => ({
         title: line(locale, 'webx-catalog-stock', 'module.title'),
         icon: 'check-circle',
         order: 311,
+        group: 'catalog',
+        section: 'dictionaries',
+        permissions: [],
+        meta: {},
+      },
+      {
+        id: 'catalog-properties',
+        title: line(locale, 'webx-catalog-properties', 'module.title'),
+        icon: 'sliders',
+        order: 312,
         group: 'catalog',
         section: 'dictionaries',
         permissions: [],
@@ -1957,7 +1969,8 @@ on('GET', '/history/([\\w.-]+)/(\\d+)', ({ params, query }) => {
   const found =
     historyOf(params[0]!, Number(params[1]), page) ??
     catalogHistory(params[0]!, Number(params[1]), page) ??
-    brandHistory(params[0]!, Number(params[1]), page)
+    brandHistory(params[0]!, Number(params[1]), page) ??
+    propertyHistory(params[0]!)
 
   if (found === null) throw new HttpFailure(404, 'That kind of record keeps no history.')
 
@@ -1977,6 +1990,14 @@ registerDictionaries(
   (status, message, errors) => new HttpFailure(status, message, undefined, errors),
   line,
   liveProductIds,
+)
+
+/* Its properties (WEBX_UI_CATALOG_PROPERTIES.md): the books, the groups, the sets. */
+registerProperties(
+  on,
+  (status, message, errors, extra) => new HttpFailure(status, message, undefined, errors, extra),
+  line,
+  categoryLookup,
 )
 
 on('GET', '/entities/([\\w-]+)/(\\d+)/notes', ({ params }) => ({

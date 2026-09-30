@@ -34,6 +34,8 @@ final class PropertyController
             'type' => ['nullable', Rule::in(Property::TYPES)],
             'group' => ['nullable', 'integer'],
             'trashed' => ['nullable', 'boolean'],
+            'ids' => ['nullable', 'array', 'max:500'],
+            'ids.*' => ['integer'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:500'],
         ]);
@@ -52,6 +54,11 @@ final class PropertyController
 
         if (isset($validated['type'])) {
             $query->where('type', $validated['type']);
+        }
+
+        // The product form names the properties of values it holds outside the set (§7.2).
+        if (isset($validated['ids'])) {
+            $query->whereKey(array_map('intval', $validated['ids']));
         }
 
         if (isset($validated['group'])) {

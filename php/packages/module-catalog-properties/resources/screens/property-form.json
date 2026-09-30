@@ -22,7 +22,9 @@
                   "name": "title",
                   "label": "trans::webx-catalog-properties::property.title",
                   "localized": true,
-                  "props": { "maxlength": 255 }
+                  "props": {
+                    "maxlength": 255
+                  }
                 },
                 {
                   "id": "code",
@@ -31,11 +33,13 @@
                   "label": "trans::webx-catalog-properties::property.code",
                   "help": "trans::webx-catalog-properties::property.code-help",
                   "localized": true,
-                  "props": { "maxlength": 48 }
+                  "props": {
+                    "maxlength": 48
+                  }
                 },
                 {
                   "id": "type",
-                  "type": "wx-select",
+                  "type": "wx-catalog-property-type",
                   "name": "type",
                   "label": "trans::webx-catalog-properties::property.type",
                   "help": "trans::webx-catalog-properties::property.type-help",
@@ -65,7 +69,10 @@
                   "type": "wx-select",
                   "name": "group_id",
                   "label": "trans::webx-catalog-properties::property.group_id",
-                  "props": { "source": "catalog/property-groups", "clearable": true }
+                  "props": {
+                    "source": "catalog/property-groups",
+                    "clearable": true
+                  }
                 }
               ]
             },
@@ -78,19 +85,39 @@
                   "id": "is-multiple",
                   "type": "wx-switch",
                   "name": "is_multiple",
-                  "label": "trans::webx-catalog-properties::property.is_multiple"
+                  "label": "trans::webx-catalog-properties::property.is_multiple",
+                  "visible": {
+                    "when": "type",
+                    "is": "select"
+                  }
                 },
                 {
                   "id": "is-tree",
                   "type": "wx-switch",
                   "name": "is_tree",
-                  "label": "trans::webx-catalog-properties::property.is_tree"
+                  "label": "trans::webx-catalog-properties::property.is_tree",
+                  "visible": {
+                    "when": "type",
+                    "is": "select"
+                  }
                 },
                 {
                   "id": "leaves-only",
                   "type": "wx-switch",
                   "name": "leaves_only",
-                  "label": "trans::webx-catalog-properties::property.leaves_only"
+                  "label": "trans::webx-catalog-properties::property.leaves_only",
+                  "visible": {
+                    "all": [
+                      {
+                        "when": "type",
+                        "is": "select"
+                      },
+                      {
+                        "when": "is_tree",
+                        "is": true
+                      }
+                    ]
+                  }
                 },
                 {
                   "id": "value-order",
@@ -108,19 +135,31 @@
                         "value": "manual"
                       }
                     ]
+                  },
+                  "visible": {
+                    "when": "type",
+                    "is": "select"
                   }
                 },
                 {
                   "id": "has-color",
                   "type": "wx-switch",
                   "name": "has_color",
-                  "label": "trans::webx-catalog-properties::property.has_color"
+                  "label": "trans::webx-catalog-properties::property.has_color",
+                  "visible": {
+                    "when": "type",
+                    "is": "select"
+                  }
                 },
                 {
                   "id": "has-image",
                   "type": "wx-switch",
                   "name": "has_image",
-                  "label": "trans::webx-catalog-properties::property.has_image"
+                  "label": "trans::webx-catalog-properties::property.has_image",
+                  "visible": {
+                    "when": "type",
+                    "is": "select"
+                  }
                 },
                 {
                   "id": "unit-prefix",
@@ -128,7 +167,13 @@
                   "name": "unit_prefix",
                   "label": "trans::webx-catalog-properties::property.unit_prefix",
                   "localized": true,
-                  "props": { "maxlength": 16 }
+                  "props": {
+                    "maxlength": 16
+                  },
+                  "visible": {
+                    "when": "type",
+                    "is": "number"
+                  }
                 },
                 {
                   "id": "unit-suffix",
@@ -136,14 +181,35 @@
                   "name": "unit_suffix",
                   "label": "trans::webx-catalog-properties::property.unit_suffix",
                   "localized": true,
-                  "props": { "maxlength": 16 }
+                  "props": {
+                    "maxlength": 16
+                  },
+                  "visible": {
+                    "when": "type",
+                    "is": "number"
+                  }
                 },
                 {
                   "id": "precision",
                   "type": "wx-input-number",
                   "name": "precision",
                   "label": "trans::webx-catalog-properties::property.precision",
-                  "props": { "min": 0, "max": 6 }
+                  "props": {
+                    "min": 0,
+                    "max": 6
+                  },
+                  "visible": {
+                    "when": "type",
+                    "is": "number"
+                  }
+                },
+                {
+                  "id": "number-example",
+                  "type": "wx-catalog-property-example",
+                  "visible": {
+                    "when": "type",
+                    "is": "number"
+                  }
                 },
                 {
                   "id": "toggle-slug",
@@ -151,9 +217,19 @@
                   "name": "toggle_slug",
                   "label": "trans::webx-catalog-properties::property.toggle_slug",
                   "localized": true,
-                  "props": { "maxlength": 48 }
+                  "props": {
+                    "maxlength": 48
+                  },
+                  "visible": {
+                    "when": "type",
+                    "is": "bool"
+                  }
                 }
-              ]
+              ],
+              "visible": {
+                "when": "type",
+                "in": ["select", "number", "bool"]
+              }
             },
             {
               "id": "filter",
@@ -164,7 +240,11 @@
                   "id": "is-filterable",
                   "type": "wx-switch",
                   "name": "is_filterable",
-                  "label": "trans::webx-catalog-properties::property.is_filterable"
+                  "label": "trans::webx-catalog-properties::property.is_filterable",
+                  "visible": {
+                    "when": "type",
+                    "in": ["select", "number", "bool"]
+                  }
                 },
                 {
                   "id": "filter-mode",
@@ -182,13 +262,37 @@
                         "value": "intervals"
                       }
                     ]
+                  },
+                  "visible": {
+                    "all": [
+                      {
+                        "when": "type",
+                        "is": "number"
+                      },
+                      {
+                        "when": "is_filterable",
+                        "is": true
+                      }
+                    ]
                   }
                 },
                 {
                   "id": "is-indexable",
                   "type": "wx-switch",
                   "name": "is_indexable",
-                  "label": "trans::webx-catalog-properties::property.is_indexable"
+                  "label": "trans::webx-catalog-properties::property.is_indexable",
+                  "visible": {
+                    "all": [
+                      {
+                        "when": "type",
+                        "in": ["select", "number", "bool"]
+                      },
+                      {
+                        "when": "is_filterable",
+                        "is": true
+                      }
+                    ]
+                  }
                 },
                 {
                   "id": "seo-pattern",
@@ -197,13 +301,31 @@
                   "label": "trans::webx-catalog-properties::property.seo_pattern",
                   "help": "trans::webx-catalog-properties::property.seo-pattern-help",
                   "localized": true,
-                  "props": { "maxlength": 255 }
+                  "props": {
+                    "maxlength": 255
+                  },
+                  "visible": {
+                    "all": [
+                      {
+                        "when": "type",
+                        "in": ["select", "number"]
+                      },
+                      {
+                        "when": "is_filterable",
+                        "is": true
+                      }
+                    ]
+                  }
                 },
                 {
                   "id": "is-searchable",
                   "type": "wx-switch",
                   "name": "is_searchable",
-                  "label": "trans::webx-catalog-properties::property.is_searchable"
+                  "label": "trans::webx-catalog-properties::property.is_searchable",
+                  "visible": {
+                    "when": "type",
+                    "in": ["select", "text"]
+                  }
                 }
               ]
             },
@@ -244,13 +366,57 @@
           "id": "values-tab",
           "type": "wx-tab",
           "label": "trans::webx-catalog-properties::property.tab-values",
-          "children": [{ "id": "values", "type": "wx-catalog-property-values" }]
+          "children": [
+            {
+              "id": "values-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "values",
+                  "type": "wx-catalog-property-values",
+                  "props": {
+                    "source": "catalog/properties"
+                  }
+                }
+              ]
+            }
+          ],
+          "visible": {
+            "when": "type",
+            "is": "select"
+          }
         },
         {
           "id": "intervals-tab",
           "type": "wx-tab",
           "label": "trans::webx-catalog-properties::property.tab-intervals",
-          "children": [{ "id": "intervals", "type": "wx-catalog-property-intervals" }]
+          "children": [
+            {
+              "id": "intervals-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "intervals",
+                  "type": "wx-catalog-property-intervals",
+                  "props": {
+                    "source": "catalog/properties"
+                  }
+                }
+              ]
+            }
+          ],
+          "visible": {
+            "all": [
+              {
+                "when": "type",
+                "is": "number"
+              },
+              {
+                "when": "filter_mode",
+                "is": "intervals"
+              }
+            ]
+          }
         },
         {
           "id": "history-tab",
@@ -264,7 +430,10 @@
                 {
                   "id": "history",
                   "type": "wx-history",
-                  "props": { "type": "catalog.property", "title": "" }
+                  "props": {
+                    "type": "catalog.property",
+                    "title": ""
+                  }
                 }
               ]
             }

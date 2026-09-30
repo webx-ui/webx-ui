@@ -6,6 +6,7 @@ import { blog } from '@webx-ui/module-blog'
 import { catalog } from '@webx-ui/module-catalog'
 import { catalogBrands } from '@webx-ui/module-catalog-brands'
 import { catalogLabels } from '@webx-ui/module-catalog-labels'
+import { catalogProperties } from '@webx-ui/module-catalog-properties'
 import { catalogStock } from '@webx-ui/module-catalog-stock'
 import { events } from '@webx-ui/module-events'
 import { faq } from '@webx-ui/module-faq'
@@ -73,6 +74,7 @@ const admin = createAdmin({
     ...catalog(),
     ...catalogBrands(),
     ...catalogLabels(),
+    ...catalogProperties(),
     ...catalogStock(),
     ...faq(),
     ...reviews(),
