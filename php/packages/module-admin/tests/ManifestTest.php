@@ -7,6 +7,7 @@ namespace WebxUi\Admin\Tests;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Contracts\BrandingSource;
+use WebxUi\Admin\Contracts\HasNavSection;
 use WebxUi\Admin\Manifest\Branding;
 use WebxUi\Admin\Manifest\BrandingImage;
 use WebxUi\Admin\Tests\Fixtures\MediaModule;
@@ -31,6 +32,50 @@ final class ManifestTest extends TestCase
             ->assertJsonPath('data.modules.1.order', 10)
             ->assertJsonPath('data.modules.1.permissions', ['pages.view', 'pages.manage'])
             ->assertJsonPath('data.modules.1.meta.tree', true);
+    }
+
+    #[Test]
+    public function a_group_names_its_captions_and_a_module_stands_under_one(): void
+    {
+        config()->set('webx-admin.groups', [
+            'shop' => ['title' => 'Shop', 'order' => 300, 'sections' => [
+                'late' => ['title' => 'Late', 'order' => 200],
+                'lists' => ['title' => 'Lists', 'order' => 100],
+            ]],
+        ]);
+
+        $this->register(new class extends AbstractModule implements HasNavSection
+        {
+            public function id(): string
+            {
+                return 'labels';
+            }
+
+            public function order(): int
+            {
+                return 1;
+            }
+
+            public function group(): string
+            {
+                return 'shop';
+            }
+
+            public function navSection(): string
+            {
+                return 'lists';
+            }
+        }, new PagesModule);
+
+        $this->getJson('/api/cms/manifest')
+            ->assertOk()
+            ->assertJsonPath('data.groups.0.sections', [
+                ['id' => 'lists', 'title' => 'Lists', 'order' => 100],
+                ['id' => 'late', 'title' => 'Late', 'order' => 200],
+            ])
+            ->assertJsonPath('data.modules.0.id', 'labels')
+            ->assertJsonPath('data.modules.0.section', 'lists')
+            ->assertJsonPath('data.modules.1.section', null);
     }
 
     #[Test]

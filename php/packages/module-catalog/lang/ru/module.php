@@ -7,6 +7,7 @@ return [
     'group' => 'Каталог',
     'products' => 'Товары',
     'categories' => 'Категории',
+    'dictionaries' => 'Справочники',
     'deleted' => 'Удалённые',
     'product' => 'Товар',
     'category' => 'Категория',

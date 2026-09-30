@@ -33,7 +33,7 @@ final class CatalogCategoriesModule extends AbstractModule
 
     public function order(): int
     {
-        return 301;
+        return 300;
     }
 
     public function group(): string

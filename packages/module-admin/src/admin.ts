@@ -146,6 +146,7 @@ export function createAdminContext(options: {
         icon: module.icon,
         path,
         group: module.group ?? null,
+        section: module.section ?? null,
       })
     }
 
@@ -173,12 +174,28 @@ export function createAdminContext(options: {
       top,
       groups: declared
         .filter((group) => byGroup.has(group.id))
-        .map((group) => ({
-          id: group.id,
-          title: group.title,
-          icon: group.icon ?? null,
-          entries: byGroup.get(group.id) ?? [],
-        })),
+        .map((group) => {
+          const entries = byGroup.get(group.id) ?? []
+          const sections = group.sections ?? []
+          // Like a group, a caption the server never declared is no caption: the entry stays
+          // with the plain ones rather than vanishing under a heading nobody can name.
+          const captioned = (entry: NavEntry) =>
+            sections.some((section) => section.id === entry.section)
+
+          return {
+            id: group.id,
+            title: group.title,
+            icon: group.icon ?? null,
+            entries: entries.filter((entry) => !captioned(entry)),
+            sections: sections
+              .map((section) => ({
+                id: section.id,
+                title: section.title,
+                entries: entries.filter((entry) => entry.section === section.id),
+              }))
+              .filter((section) => section.entries.length > 0),
+          }
+        }),
     }
   })
 
