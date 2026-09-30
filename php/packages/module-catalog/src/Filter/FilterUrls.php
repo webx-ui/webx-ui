@@ -6,6 +6,7 @@ namespace WebxUi\Catalog\Filter;
 
 use Illuminate\Support\Facades\URL;
 use WebxUi\Catalog\Engine\CatalogResult;
+use WebxUi\Catalog\Facets\ContextualIndexing;
 use WebxUi\Routing\SiteUrl;
 use WebxUi\Routing\UrlNormaliser;
 
@@ -105,8 +106,8 @@ final class FilterUrls
 
     /**
      * Whether this state's page is open to the index (§8.1 of the architecture, decision 18):
-     * exactly one value of exactly one facet, a facet that allows it, a list that is not empty,
-     * and not a search. Everything else is `noindex, follow`, and its links carry `nofollow`.
+     * exactly one value of exactly one facet, a facet that allows it — on this page, if it says
+     * where ({@see ContextualIndexing}) — a list that is not empty, and not a search. Everything else is `noindex, follow`, and its links carry `nofollow`.
      */
     public function indexable(FilterContext $context, FilterState $state, ?CatalogResult $result = null): bool
     {
@@ -127,6 +128,10 @@ final class FilterUrls
         $value = $state->get((string) $key);
 
         if ($facet === null || $value === null || $value->isRange() || ! $facet->indexable()) {
+            return false;
+        }
+
+        if ($facet instanceof ContextualIndexing && ! $facet->indexableIn($context)) {
             return false;
         }
 

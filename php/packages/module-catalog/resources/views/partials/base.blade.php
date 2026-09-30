@@ -14,6 +14,7 @@
     .webx-catalog-filter ul ul { padding-left: 16px; }
     .webx-catalog-filter__option.is-disabled { color: #8c959f; }
     .webx-catalog-filter__option.is-selected { font-weight: 600; }
+    .webx-catalog-filter__swatch { display: inline-block; width: 12px; height: 12px; margin-right: 6px; border-radius: 50%; border: 1px solid rgba(0, 0, 0, .15); vertical-align: -1px; object-fit: cover; }
     .webx-catalog-filter fieldset { border: 0; margin: 0 0 16px; padding: 0; }
     .webx-catalog-sort, .webx-catalog-pagination { display: flex; flex-wrap: wrap; gap: 12px; }
     .webx-catalog-sort .is-selected, .webx-catalog-pagination .is-current { font-weight: 600; }

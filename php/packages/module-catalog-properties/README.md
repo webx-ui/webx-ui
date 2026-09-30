@@ -59,6 +59,33 @@ delete), `catalog/property-groups` (the shared category screens), `catalog/categ
 (a category's own set and what it inherits) and `catalog/property-sets/{category}` (the set in force,
 by group, for the product form).
 
+## The storefront
+
+- **A card** (`catalog.card.meta`): the properties `in_card`, in the order of the set — view
+  `webx-catalog-properties::card`.
+- **The page of a product** (`catalog.product.tabs`): «Specifications», the properties `on_page` by
+  group — view `webx-catalog-properties::table`. A value of a reference book links to its page of
+  one value where that page is open. Publish the views with `--tag=webx-catalog-properties-views`.
+- **The filter** draws a value's colour or picture before its label.
+- **A page of one value** (`/laptops/color_black`) is open to search only in a category; on a
+  brand's page and at the root it is `noindex, follow`. Its title is the property's `seo_pattern`
+  (`{category}`, `{property}`, `{value}`) or the catalogue's «{category} {value}». Open pages with
+  products are in the catalogue's `catalog-filters` sitemap.
+- **A template:**
+
+```blade
+@foreach (products()->property('color', 'black')->property('weight', min: 1, max: 2)->take(8) as $card)
+    <a href="{{ $card['url'] }}">{{ $card['name'] }}</a>
+@endforeach
+
+@foreach ($product->properties() as $property)
+    {{ $property->label }}: {{ $property->formatted }}  {{-- also value, code, group, values, url --}}
+@endforeach
+```
+
+`property()` takes the code in the language read (or the id), then a slug or slugs (or ids), a
+`min` / `max` for a number (both ends included), nothing for «yes» or «has any value».
+
 ## Configuration
 
 `config/webx-catalog-properties.php` — `dynamic_facets.min_share` (0.1) and `dynamic_facets.limit`

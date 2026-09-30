@@ -8,6 +8,7 @@ use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Engine\CatalogQuery;
 use WebxUi\Catalog\Facets\CategoryFacet;
 use WebxUi\Catalog\Facets\CategoryFacets;
+use WebxUi\Catalog\Facets\ContextualIndexing;
 use WebxUi\Catalog\Facets\FacetValue;
 use WebxUi\Catalog\Filter\FilterContext;
 use WebxUi\Catalog\Filter\FilterSerializer;
@@ -67,6 +68,15 @@ final class FilterSitemap implements SitemapSource
                 $open,
                 $category,
             );
+
+            $open = array_values(array_filter(
+                $open,
+                static fn ($facet): bool => ! $facet instanceof ContextualIndexing || $facet->indexableIn($context),
+            ));
+
+            if ($open === []) {
+                continue;
+            }
 
             $result = $this->catalog->engine()->search(new CatalogQuery(
                 locale: $locale,

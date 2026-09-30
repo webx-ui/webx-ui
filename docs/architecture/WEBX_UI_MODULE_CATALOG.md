@@ -205,7 +205,11 @@ commerce.
 - `normalise(FacetValue)` — одно написание выбора (у дерева предок поглощает потомков);
 - `sqlValues(QueryBuilder $productIds)` — пары `(product_id, value)` для `SqlEngine`: дерево
   отдаёт значение вместе со всеми предками, движок сам группирует и считает;
-- у `Tree` ещё `TreeFacet::parents(array $values)` — чтобы фильтр нарисовал дерево.
+- у `Tree` ещё `TreeFacet::parents(array $values)` — чтобы фильтр нарисовал дерево;
+- необязательные: `ContextualIndexing::indexableIn(FilterContext)` — открыт ли первый уровень на
+  этой странице (свойства — только в категории); `TitledFacet::filterTitle($where, $label, $locale)`
+  — свой заголовок первого уровня вместо «{категория} {значение}»; `SwatchedFacet::swatches($values)`
+  — цвет или картинка значения перед подписью в фильтре (§8.2 `WEBX_UI_CATALOG_PROPERTIES.md`).
 
 Значения — строки (id или код фасета), слаги живут только в адресе. `AbstractFacet` даёт
 умолчания: индексируемый — у `Terms` и `Tree`, значение — сам себе слаг и подпись. Термы фильтр

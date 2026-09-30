@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogProperties;
 
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\ServiceProvider;
@@ -17,6 +18,7 @@ use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Parts\ProductParts;
 use WebxUi\Catalog\Search\SearchContributors;
+use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\CatalogProperties\Catalog\ProductValues;
 use WebxUi\CatalogProperties\Catalog\Properties;
 use WebxUi\CatalogProperties\Catalog\PropertiesDocument;
@@ -27,6 +29,10 @@ use WebxUi\CatalogProperties\Facets\PropertySource;
 use WebxUi\CatalogProperties\Models\Property;
 use WebxUi\CatalogProperties\Models\PropertyGroup;
 use WebxUi\CatalogProperties\Models\PropertyValue;
+use WebxUi\CatalogProperties\Storefront\CardProperties;
+use WebxUi\CatalogProperties\Storefront\ProductProperties;
+use WebxUi\CatalogProperties\Storefront\PropertyQuery;
+use WebxUi\CatalogProperties\Storefront\SpecsTable;
 use WebxUi\Localization\Locales;
 
 /**
@@ -35,8 +41,8 @@ use WebxUi\Localization\Locales;
  * the product form, the document, the bulk actions — plus a source of facets the core asks lazily,
  * which also says which of them belong on a page, and a share of the search.
  *
- * The section of the panel, the storefront parts and the agent's tools come with the next stages
- * of the series (§14): this provider is the data and the API.
+ * The storefront's parts and the template's query are here too; the section of the panel and the
+ * agent's tools come with the next stages of the series (§14).
  */
 class CatalogPropertiesServiceProvider extends ServiceProvider
 {
@@ -54,17 +60,21 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
         $this->app->singleton(PropertySets::class);
         $this->app->singleton(ProductValues::class);
         $this->app->singleton(PropertySource::class);
+        // One page's values: forgotten between the requests of a worker and between its jobs.
+        $this->app->scoped(ProductProperties::class);
     }
 
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog-properties');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog-properties');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->registerScreens();
         $this->registerHistory();
         $this->registerCatalog();
+        $this->registerStorefront();
         $this->registerEvents();
 
         if (! $this->app->runningInConsole()) {
@@ -78,6 +88,10 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../lang' => lang_path('vendor/webx-catalog-properties'),
         ], 'webx-catalog-properties-lang');
+
+        $this->publishes([
+            __DIR__.'/../resources/views' => resource_path('views/vendor/webx-catalog-properties'),
+        ], 'webx-catalog-properties-views');
     }
 
     /**
@@ -154,6 +168,26 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
                 $this->app->make(Locales::class),
             ));
         }
+    }
+
+    /**
+     * The storefront (§8): the short list on a card, «Specifications» on the page of a product,
+     * `products()->property(…)` and `$product->properties()` for a template. The first levels'
+     * SEO and the map of the site need nothing here — the facets answer the core's questions.
+     *
+     * `properties()` is a relation resolver that returns a list rather than a relation: Eloquent
+     * calls the resolver for the method, which is all a template does. `$product->properties`
+     * without the brackets is not a thing.
+     */
+    private function registerStorefront(): void
+    {
+        $parts = $this->app->make(StorefrontParts::class);
+        $parts->register(new CardProperties);
+        $parts->register(new SpecsTable);
+
+        PropertyQuery::register();
+
+        Product::resolveRelationUsing('properties', static fn (Product $product): array => Container::getInstance()->make(ProductProperties::class)->of($product));
     }
 
     private function registerEvents(): void
