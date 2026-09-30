@@ -18,6 +18,10 @@ parameters:
         - packages/module-blog/tests
         - packages/module-catalog/src
         - packages/module-catalog/tests
+        - packages/module-catalog-labels/src
+        - packages/module-catalog-labels/tests
+        - packages/module-catalog-stock/src
+        - packages/module-catalog-stock/tests
         - packages/module-events/src
         - packages/module-events/tests
         - packages/module-faq/src

@@ -10,6 +10,7 @@ use WebxUi\Catalog\Facets\CategoryFacet;
 use WebxUi\Catalog\Facets\Facet;
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\FacetValue;
+use WebxUi\Catalog\Facets\OrderedFacet;
 use WebxUi\Catalog\Facets\TreeFacet;
 use WebxUi\Catalog\Filter\FilterContext;
 use WebxUi\Catalog\Filter\FilterState;
@@ -144,7 +145,13 @@ final class FilterGroups
         $parents = $facet instanceof TreeFacet ? $facet->parents($values) : [];
         $ordered = $parents !== [] ? array_keys($parents) : $values;
 
-        if ($parents === []) {
+        if ($facet instanceof OrderedFacet) {
+            // The facet's own order, and whatever it has no words for after it.
+            $ordered = array_values(array_unique([
+                ...array_intersect(array_map('strval', array_keys($labels)), $values),
+                ...$values,
+            ]));
+        } elseif ($parents === []) {
             usort($ordered, static fn (string $a, string $b): int => strnatcasecmp($labels[$a] ?? $a, $labels[$b] ?? $b));
         }
 
