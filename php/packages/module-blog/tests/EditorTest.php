@@ -6,10 +6,13 @@ namespace WebxUi\Blog\Tests;
 
 use Illuminate\Support\Carbon;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\Facades\Screens;
+use WebxUi\Blocks\Models\Block;
 use WebxUi\Blog\Models\Article;
 use WebxUi\Blog\Models\Tag;
 use WebxUi\Blog\Panel\ArticleForm;
+use WebxUi\Blog\Tests\Fixtures\TipSource;
 use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Models\MediaFile;
 
@@ -169,6 +172,42 @@ final class EditorTest extends TestCase
         $article->refresh()->publish();
 
         $this->assertSame(7, $article->refresh()->extra('reading-time'));
+    }
+
+    #[Test]
+    public function a_save_keeps_a_collection_block_as_the_choice_the_source_can_act_on(): void
+    {
+        // `wx-blocks` is not a type the server registers, so the screen hands the tree over
+        // whole: without `storeBlocks()` on this door the request's choice went into the draft
+        // as it came. A source without categories or markup keeps neither, and a string that is
+        // a number is kept as one.
+        $this->app->make(CollectionSources::class)->register(new TipSource);
+
+        $block = Block::query()->create(['slug' => 'tips', 'title' => 'Tips']);
+        $block->saveVersion([
+            'template' => '<ul data-wx-block="tips">@foreach ($list[\'items\'] as $tip)<li>{{ $tip[\'text\'] }}</li>@endforeach</ul>',
+            'schema' => [['id' => 'list', 'type' => 'wx-collection', 'props' => ['source' => 'tips']]],
+        ]);
+        $block->publish();
+
+        $article = $this->article('signs-of-wear');
+
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson($this->api($article->getKey()), [
+                'values' => [
+                    'blocks' => [[
+                        'key' => 'k1',
+                        'type' => 'tips',
+                        'values' => ['list' => ['categories' => [4, 2], 'limit' => '3', 'filter' => true, 'markup' => true]],
+                    ]],
+                ],
+            ])
+            ->assertOk();
+
+        $this->assertSame(
+            ['categories' => [], 'limit' => 3, 'filter' => true, 'markup' => null, 'related' => null],
+            $article->refresh()->draftValues()['blocks'][0]['values']['list'],
+        );
     }
 
     /**
