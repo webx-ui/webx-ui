@@ -119,6 +119,49 @@ class StockStatus extends Dictionary
     }
 
     /**
+     * The number beside a status counts what the facet counts: the default one holds the products
+     * without a row too (§2.2), and "Show products" lands on all of them.
+     */
+    public function itemCount(): int
+    {
+        $rows = $this->products()->count();
+
+        return $this->is_default ? $rows + Product::query()->whereNotExists(self::rowOf(...))->count() : $rows;
+    }
+
+    /**
+     * The same number for every row of the list, as one subquery.
+     *
+     * @param  Builder<covariant \Illuminate\Database\Eloquent\Model>  $query
+     * @return Builder<covariant \Illuminate\Database\Eloquent\Model>
+     */
+    public function scopeWithItemCount(Builder $query): Builder
+    {
+        $table = $this->getTable();
+
+        $count = Product::query()->toBase()->selectRaw('count(*)')->where(static function (QueryBuilder $product) use ($table): void {
+            $product->whereExists(static function (QueryBuilder $row) use ($table): void {
+                self::rowOf($row);
+                $row->whereColumn(self::LINKS.'.status_id', $table.'.id');
+            })->orWhere(static function (QueryBuilder $unlisted) use ($table): void {
+                $unlisted->where($table.'.is_default', true)->whereNotExists(self::rowOf(...));
+            });
+        });
+
+        if ($query->getQuery()->columns === null) {
+            $query->select($table.'.*');
+        }
+
+        return $query->selectSub($count, static::categoryKind()->countKey());
+    }
+
+    /** The product's row in the link table. */
+    private static function rowOf(QueryBuilder $row): void
+    {
+        $row->from(self::LINKS)->whereColumn(self::LINKS.'.product_id', 'catalog_products.id');
+    }
+
+    /**
      * @return list<string>
      */
     public function categoryFields(): array

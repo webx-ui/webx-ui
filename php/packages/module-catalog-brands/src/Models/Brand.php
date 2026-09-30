@@ -159,6 +159,7 @@ class Brand extends Model implements Category, ListingSubject, Visible
             noun: 'brand',
             plural: 'brands',
             items: 'products',
+            single: true,
         );
     }
 
