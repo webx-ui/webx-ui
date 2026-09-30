@@ -88,7 +88,7 @@ class StockServiceProvider extends ServiceProvider
                     'id' => 'stock-status',
                     'type' => 'wx-select',
                     'name' => StockPart::KEY.'.status',
-                    'label' => 'trans::webx-catalog-stock::product.status',
+                    // No label of its own: the card above already says what this is.
                     'help' => 'trans::webx-catalog-stock::product.status-help',
                     'props' => [
                         'source' => self::SOURCE,

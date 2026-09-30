@@ -291,7 +291,6 @@ export const productFormPatches: Patch[] = [
             id: 'stock-status',
             type: 'wx-select',
             name: 'stock.status',
-            label: 'trans::webx-catalog-stock::product.status',
             help: 'trans::webx-catalog-stock::product.status-help',
             props: {
               source: 'catalog/stock',
