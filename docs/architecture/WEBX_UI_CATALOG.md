@@ -82,8 +82,8 @@
 смысл. Замена вдобавок участвует в `Purchasability`: снятый с производства товар отвечает
 «нельзя, есть замена».
 
-Адаптеры обмена (CSV, YML, CommerceML/1С, Google Merchant) — отдельные пакеты поверх §4.5;
-сколько их и какие первые — §7.
+Конвейер обмена, CSV и XLSX живут в ядре ([`WEBX_UI_MODULE_CATALOG_EXCHANGE.md`](WEBX_UI_MODULE_CATALOG_EXCHANGE.md), решение 1); YML, CommerceML и Google Merchant —
+отдельные пакеты через реестр форматов ядра, волна B.
 
 ## 4. Контракты ядра
 
@@ -419,7 +419,8 @@ Laravel), а не память одного запроса.
 5. `catalog-manticore` — проверяется на выгрузке alfatech в 85 тысяч товаров.
 6. `module-catalog-stock`, `module-catalog-brands`, `module-catalog-labels` — маленькие,
    параллельно.
-7. Обмен: конвейер ядра + CSV и XLS.
+7. Обмен: конвейер ядра + CSV и XLSX. Спека —
+   [`WEBX_UI_MODULE_CATALOG_EXCHANGE.md`](WEBX_UI_MODULE_CATALOG_EXCHANGE.md), написана 30.09.2026.
 8. `module-catalog-landings` — посадочные фильтров.
 
 **Волна B:** связи, группировка, конфигурируемый товар, таблицы размеров, YML и прочие фиды.
