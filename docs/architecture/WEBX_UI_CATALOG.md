@@ -414,7 +414,8 @@ Laravel), а не память одного запроса.
    Пункты 1–3 выпущены 29.09.2026 в v0.50.0.
 2. `module-catalog`, php: товары, категории, цена, реестры, очередь, `SqlEngine`.
 3. `module-catalog`, npm: список, дерево категорий, форма товара.
-4. `module-catalog-properties` — без него фасетам нечего показывать.
+4. `module-catalog-properties` — без него фасетам нечего показывать. Спека —
+   [`WEBX_UI_CATALOG_PROPERTIES.md`](WEBX_UI_CATALOG_PROPERTIES.md), согласована 30.09.2026.
 5. `catalog-manticore` — проверяется на выгрузке alfatech в 85 тысяч товаров.
 6. `module-catalog-stock`, `module-catalog-brands`, `module-catalog-labels` — маленькие,
    параллельно.
