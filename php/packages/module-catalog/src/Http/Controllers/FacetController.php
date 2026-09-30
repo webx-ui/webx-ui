@@ -9,6 +9,7 @@ use WebxUi\Catalog\Facets\Facet;
 use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Sorts\Sort;
 use WebxUi\Catalog\Sorts\Sorts;
+use WebxUi\Localization\Locales;
 
 /**
  * `GET /api/cms/catalog/facets` (§11.2): the registry as the panel needs it — every facet with
@@ -18,12 +19,15 @@ use WebxUi\Catalog\Sorts\Sorts;
  */
 final class FacetController
 {
-    public function __invoke(Facets $facets, Sorts $sorts): JsonResponse
+    public function __invoke(Facets $facets, Sorts $sorts, Locales $locales): JsonResponse
     {
+        // The code in the site's default language: the one an address without a prefix carries.
+        $locale = $locales->defaultCode();
+
         return new JsonResponse([
             'data' => array_map(static fn (Facet $facet): array => [
                 'key' => $facet->key(),
-                'code' => $facet->code(),
+                'code' => $facet->code($locale),
                 'kind' => $facet->kind()->value,
                 'label' => $facet->label(),
                 'indexable' => $facet->indexable(),

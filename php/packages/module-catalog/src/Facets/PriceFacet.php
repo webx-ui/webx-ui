@@ -25,11 +25,6 @@ final class PriceFacet extends AbstractFacet
         return self::KEY;
     }
 
-    public function code(): string
-    {
-        return self::KEY;
-    }
-
     public function kind(): FacetKind
     {
         return FacetKind::Range;

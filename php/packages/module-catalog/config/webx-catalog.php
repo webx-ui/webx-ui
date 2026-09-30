@@ -61,6 +61,22 @@ return [
 
     'units' => ['pcs', 'kg', 'g', 'm', 'm2', 'm3', 'l', 'pack', 'set'],
 
+    /*
+    |---------------------------------------------------------------------------
+    | The names of the filters in an address
+    |---------------------------------------------------------------------------
+    |
+    | `/laptops/price_100-500`: `price` is the facet's code. Per language, so a
+    | Russian address reads `/ru/noutbuki/cena_100-500`. Facet key → language →
+    | code, `[a-z0-9-]`, unique among the facets of that language. A language
+    | not named here, and a facet not named at all, keeps the English code.
+    |
+    | 'facet_codes' => ['price' => ['ru' => 'cena'], 'brand' => ['ru' => 'brend']],
+    |
+    */
+
+    'facet_codes' => [],
+
     'default_unit' => 'pcs',
 
     /*

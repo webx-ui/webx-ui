@@ -18,6 +18,10 @@ use WebxUi\Catalog\Models\Category;
  *
  * A facet registered after a category was configured is hidden in that category until somebody
  * switches it on: a module installed later must not change a filter an editor arranged by hand.
+ * A facet of a source ({@see FacetSource}) is not a module installed later but something an editor
+ * made a filter on purpose — a property put into a category's set and marked «in the filter» — so
+ * the settings that do not mention it show it last, and its source decides whether it belongs
+ * (§4.4 of the properties spec). Hidden in the settings, it stays hidden.
  * A key in the settings whose module is gone is skipped, not dropped — the settings keep it, and
  * putting the module back brings the facet back where it was.
  *
@@ -49,11 +53,19 @@ final class CategoryFacets
         }
 
         $visible = [];
+        $mentioned = [];
 
         foreach ($resolved['facets'] as $row) {
             $facet = $this->facets->find($row['key']);
+            $mentioned[$row['key']] = true;
 
             if ($facet !== null && $row['visible']) {
+                $visible[] = $facet;
+            }
+        }
+
+        foreach ($this->facets->all() as $facet) {
+            if (! isset($mentioned[$facet->key()]) && $this->facets->sourceOf($facet->key()) !== null) {
                 $visible[] = $facet;
             }
         }

@@ -86,6 +86,21 @@ final class BrandsTest extends TestCase
     }
 
     #[Test]
+    public function a_renamed_slug_keeps_its_old_filter_address_as_a_301_to_the_new_one(): void
+    {
+        $laptops = $this->category('laptops');
+        $apple = $this->brand('Apple');
+        $this->product('MacBook', $apple, $laptops);
+
+        $apple->update(['slug' => 'apple-inc']);
+        $apple->refresh()->update(['slug' => 'apple-computers']);
+        $this->get('/laptops/brand_apple')->assertStatus(301)->assertRedirect('http://localhost/laptops/brand_apple-computers');
+        $this->get('/laptops/brand_apple-inc')->assertStatus(301)->assertRedirect('http://localhost/laptops/brand_apple-computers');
+        $this->get('/laptops/brand_apple-computers')->assertOk()->assertSee('MacBook');
+        $this->get('/laptops/brand_banana')->assertNotFound();
+    }
+
+    #[Test]
     public function a_hidden_brand_answers_404_and_is_neither_a_choice_of_the_filter_nor_on_a_card(): void
     {
         $laptops = $this->category('laptops');

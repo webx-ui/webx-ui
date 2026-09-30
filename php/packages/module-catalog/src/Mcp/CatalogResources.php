@@ -13,6 +13,7 @@ use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Parts\ProductParts;
 use WebxUi\Catalog\Sorts\Sort;
 use WebxUi\Catalog\Sorts\Sorts;
+use WebxUi\Localization\Locales;
 use WebxUi\Mcp\McpResource;
 
 /**
@@ -82,10 +83,13 @@ final class CatalogResources
      */
     private function facets(): array
     {
+        // The code in the site's default language: the one an address without a prefix carries.
+        $locale = $this->container->make(Locales::class)->defaultCode();
+
         return [
             'facets' => array_map(static fn (Facet $facet): array => [
                 'key' => $facet->key(),
-                'code' => $facet->code(),
+                'code' => $facet->code($locale),
                 'kind' => $facet->kind()->value,
                 'label' => $facet->label(),
                 'indexable' => $facet->indexable(),
