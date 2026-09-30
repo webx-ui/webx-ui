@@ -75,6 +75,7 @@ final class FilterSitemap implements SitemapSource
                 scope: [CategoryFacet::KEY => FacetValue::of([(string) $category->id])],
                 count: array_map(static fn ($facet): string => $facet->key(), $open),
                 perPage: 1,
+                filter: $context,
             ));
 
             $states = [];

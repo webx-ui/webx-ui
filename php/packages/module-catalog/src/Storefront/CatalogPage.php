@@ -51,6 +51,26 @@ final class CatalogPage implements HasBreadcrumbs
         public readonly ?string $search = null,
     ) {}
 
+    /**
+     * The groups that stand open, in order.
+     *
+     * @return list<FilterGroup>
+     */
+    public function openGroups(): array
+    {
+        return array_values(array_filter($this->groups, static fn (FilterGroup $group): bool => $group->expanded));
+    }
+
+    /**
+     * The groups under «More filters», in order.
+     *
+     * @return list<FilterGroup>
+     */
+    public function moreGroups(): array
+    {
+        return array_values(array_filter($this->groups, static fn (FilterGroup $group): bool => ! $group->expanded));
+    }
+
     public function category(): ?Category
     {
         return $this->context->category;

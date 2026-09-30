@@ -50,10 +50,11 @@ final class FilterContext
         return null;
     }
 
+    /** The facet this page shows under this code in the page's language. */
     public function facetByCode(string $code): ?Facet
     {
         foreach ($this->facets as $facet) {
-            if ($facet->code() === $code) {
+            if ($facet->code($this->locale) === $code) {
                 return $facet;
             }
         }

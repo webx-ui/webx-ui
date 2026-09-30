@@ -41,11 +41,6 @@ class ColourFacet extends AbstractFacet
         return 'colour';
     }
 
-    public function code(): string
-    {
-        return 'colour';
-    }
-
     public function kind(): FacetKind
     {
         return FacetKind::Terms;

@@ -45,12 +45,8 @@ final class FilterGroups
         $self = $this->add($state);
         $plans = [];
 
-        foreach ($context->facets as $facet) {
-            $counted = $result->facet($facet->key());
-
-            if ($counted !== null) {
-                $plans[] = $this->plan($context, $state, $facet, $counted);
-            }
+        foreach ($this->ordered($context, $result) as [$facet, $counted]) {
+            $plans[] = [...$this->plan($context, $state, $facet, $counted), 'expanded' => $counted->expanded];
         }
 
         $reset = $state->isEmpty() ? null : $this->add(FilterState::empty());
@@ -67,6 +63,43 @@ final class FilterGroups
         }
 
         return ['groups' => $groups, 'reset' => $reset === null ? null : $urls[$reset], 'path' => $paths[$self]];
+    }
+
+    /**
+     * The counted facets in the page's order — except those whose source ranked them, which take
+     * the places the ranked ones hold, in their rank (§4.4 of the properties spec): on a search
+     * the property most of the found have comes first, wherever the page lists properties.
+     *
+     * @return list<array{0: Facet, 1: FacetResult}>
+     */
+    private function ordered(FilterContext $context, CatalogResult $result): array
+    {
+        $rows = [];
+        $slots = [];
+        $ranked = [];
+
+        foreach ($context->facets as $facet) {
+            $counted = $result->facet($facet->key());
+
+            if ($counted === null) {
+                continue;
+            }
+
+            if ($counted->rank !== null) {
+                $slots[] = count($rows);
+                $ranked[] = [$facet, $counted];
+            }
+
+            $rows[] = [$facet, $counted];
+        }
+
+        usort($ranked, static fn (array $a, array $b): int => $a[1]->rank <=> $b[1]->rank);
+
+        foreach ($slots as $i => $slot) {
+            $rows[$slot] = $ranked[$i];
+        }
+
+        return $rows;
     }
 
     /**
@@ -203,8 +236,9 @@ final class FilterGroups
 
             return new FilterGroup(
                 $facet,
-                range: [...$range, 'action' => $without, 'field' => 'range['.$facet->code().']'],
+                range: [...$range, 'action' => $without, 'field' => 'range['.$facet->code($context->locale).']'],
                 resetUrl: $plan['chosen'] ? $without : null,
+                expanded: (bool) ($plan['expanded'] ?? true),
             );
         }
 
@@ -233,7 +267,7 @@ final class FilterGroups
             ];
         }
 
-        return new FilterGroup($facet, options: $this->nest($flat));
+        return new FilterGroup($facet, options: $this->nest($flat), expanded: (bool) ($plan['expanded'] ?? true));
     }
 
     /**

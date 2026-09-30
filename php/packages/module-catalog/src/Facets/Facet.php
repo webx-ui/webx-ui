@@ -26,8 +26,12 @@ interface Facet
     /** The registry's name for it: `price`, `brand`, `p.color`. */
     public function key(): string;
 
-    /** Its name in an address, `[a-z0-9-]`, unique in the registry: `brand` in `brand_apple`. */
-    public function code(): string;
+    /**
+     * Its name in an address in this language, `[a-z0-9-]`, unique among the facets of that
+     * language: `brand` in `brand_apple`, `cvet` in `/ru/noutbuki/cvet_chernyy`. The key never
+     * reaches an address; the code does, so it is the one a reader of that language can read.
+     */
+    public function code(string $locale): string;
 
     public function kind(): FacetKind;
 

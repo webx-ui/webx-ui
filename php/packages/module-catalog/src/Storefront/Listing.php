@@ -77,6 +77,7 @@ final class Listing
             sort: $sort,
             page: $page,
             perPage: $perPage,
+            filter: $context,
         ));
 
         // A page past the last one is not an empty page of this list: it is no page at all.
