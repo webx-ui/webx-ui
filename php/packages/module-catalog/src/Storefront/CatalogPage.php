@@ -56,6 +56,20 @@ final class CatalogPage implements HasBreadcrumbs
         return $this->context->category;
     }
 
+    /** The satellite's entity the page is about — a brand — when it is not a category. */
+    public function subject(): ?ListingSubject
+    {
+        return $this->context->subject;
+    }
+
+    /**
+     * Whoever speaks for the plain page with their own SEO card: the category, or the subject.
+     */
+    public function owner(): Category|ListingSubject|null
+    {
+        return $this->context->category ?? $this->context->subject;
+    }
+
     /** Nothing chosen, the default order, the first page: the page the category's card is about. */
     public function isPlain(): bool
     {
@@ -79,10 +93,10 @@ final class CatalogPage implements HasBreadcrumbs
      */
     public function breadcrumbs(string $locale): array
     {
-        $category = $this->category();
+        $owner = $this->owner();
 
-        if ($category !== null) {
-            return $category->breadcrumbs($locale);
+        if ($owner !== null) {
+            return $owner->breadcrumbs($locale);
         }
 
         return [new Crumb($this->heading, $this->canonical)];

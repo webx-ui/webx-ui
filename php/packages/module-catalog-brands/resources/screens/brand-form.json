@@ -1,0 +1,135 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "catalog.brand-form",
+  "model": "catalog.brand",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "main",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-brands::brand.tab-main",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "title",
+                  "type": "wx-input",
+                  "name": "title",
+                  "label": "trans::webx-catalog-brands::brand.title",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 255
+                  }
+                },
+                {
+                  "id": "slug",
+                  "type": "wx-category-slug",
+                  "name": "slug",
+                  "label": "trans::webx-catalog-brands::brand.slug",
+                  "help": "trans::webx-catalog-brands::brand.slug-help",
+                  "localized": true
+                },
+                {
+                  "id": "logo",
+                  "type": "wx-media",
+                  "name": "logo",
+                  "label": "trans::webx-catalog-brands::brand.logo_id",
+                  "props": {
+                    "accept": "image",
+                    "captions": false,
+                    "width": 240
+                  }
+                },
+                {
+                  "id": "is-visible",
+                  "type": "wx-switch",
+                  "name": "is_visible",
+                  "label": "trans::webx-catalog-brands::brand.is_visible",
+                  "help": "trans::webx-catalog-brands::brand.visible-help"
+                },
+                {
+                  "id": "is-featured",
+                  "type": "wx-switch",
+                  "name": "is_featured",
+                  "label": "trans::webx-catalog-brands::brand.is_featured",
+                  "help": "trans::webx-catalog-brands::brand.featured-help"
+                }
+              ]
+            },
+            {
+              "id": "project-fields",
+              "type": "wx-card",
+              "label": "trans::webx-admin::screens.project-fields",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "description-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-brands::brand.tab-description",
+          "children": [
+            {
+              "id": "description-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "description",
+                  "type": "wx-rich-text",
+                  "name": "description",
+                  "label": "trans::webx-catalog-brands::brand.description",
+                  "help": "trans::webx-catalog-brands::brand.description-help",
+                  "localized": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "seo-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-brands::brand.tab-seo",
+          "children": [
+            {
+              "id": "seo-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "seo",
+                  "type": "wx-seo",
+                  "name": "seo"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "history-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-brands::brand.tab-history",
+          "children": [
+            {
+              "id": "history-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "history",
+                  "type": "wx-history",
+                  "props": {
+                    "type": "catalog.brand",
+                    "title": ""
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
