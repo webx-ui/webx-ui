@@ -1,0 +1,95 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "catalog.stock-status-form",
+  "model": "catalog-stock-status",
+  "root": [
+    {
+      "id": "naming",
+      "type": "wx-card",
+      "children": [
+        {
+          "id": "title",
+          "type": "wx-input",
+          "name": "title",
+          "label": "trans::webx-catalog-stock::status.title",
+          "localized": true,
+          "props": {
+            "maxlength": 255
+          }
+        },
+        {
+          "id": "code",
+          "type": "wx-input",
+          "name": "code",
+          "label": "trans::webx-catalog-stock::status.code",
+          "help": "trans::webx-catalog-stock::status.code-help",
+          "props": {
+            "maxlength": 32
+          }
+        },
+        {
+          "id": "color",
+          "type": "wx-select",
+          "name": "color",
+          "label": "trans::webx-catalog-stock::status.color",
+          "help": "trans::webx-catalog-stock::status.color-help",
+          "props": {
+            "options": [
+              {
+                "label": "trans::webx-catalog-stock::status.tones.neutral",
+                "value": "neutral"
+              },
+              {
+                "label": "trans::webx-catalog-stock::status.tones.primary",
+                "value": "primary"
+              },
+              {
+                "label": "trans::webx-catalog-stock::status.tones.success",
+                "value": "success"
+              },
+              {
+                "label": "trans::webx-catalog-stock::status.tones.warning",
+                "value": "warning"
+              },
+              {
+                "label": "trans::webx-catalog-stock::status.tones.danger",
+                "value": "danger"
+              },
+              {
+                "label": "trans::webx-catalog-stock::status.tones.info",
+                "value": "info"
+              }
+            ]
+          }
+        },
+        {
+          "id": "is-purchasable",
+          "type": "wx-switch",
+          "name": "is_purchasable",
+          "label": "trans::webx-catalog-stock::status.purchasable",
+          "help": "trans::webx-catalog-stock::status.purchasable-help"
+        },
+        {
+          "id": "is-default",
+          "type": "wx-switch",
+          "name": "is_default",
+          "label": "trans::webx-catalog-stock::status.default",
+          "help": "trans::webx-catalog-stock::status.default-help"
+        },
+        {
+          "id": "is-visible",
+          "type": "wx-switch",
+          "name": "is_visible",
+          "label": "trans::webx-catalog-stock::status.filterable",
+          "help": "trans::webx-catalog-stock::status.filterable-help"
+        }
+      ]
+    },
+    {
+      "id": "project-fields",
+      "type": "wx-card",
+      "label": "trans::webx-admin::screens.project-fields",
+      "children": []
+    }
+  ]
+}
