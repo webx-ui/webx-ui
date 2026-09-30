@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogProperties\Http;
 
+use Illuminate\Support\Facades\DB;
 use WebxUi\CatalogProperties\Models\Property;
+use WebxUi\CatalogProperties\Models\PropertyInterval;
 
 /**
  * The checks of a table of intervals sent at once: a slug `[a-z0-9-]` and one per language within
@@ -42,6 +44,38 @@ final class IntervalRows
         }
 
         return $errors;
+    }
+
+    /**
+     * Write the table as it is (§7.3): a row with an id is that interval, one without is new, and one
+     * left out is gone. The products of the property are marked — the intervals their numbers fall
+     * into are in their documents. The rows are {@see check()}ed first by the caller.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     */
+    public static function save(Property $owner, array $rows): void
+    {
+        DB::transaction(static function () use ($owner, $rows): void {
+            $kept = [];
+
+            foreach ($rows as $position => $row) {
+                $interval = isset($row['id']) ? PropertyInterval::query()->where('property_id', $owner->id)->find((int) $row['id']) : null;
+                $interval ??= new PropertyInterval(['property_id' => $owner->id]);
+                $interval->fill([
+                    'title' => self::map($row['title'] ?? null),
+                    'slug' => self::map($row['slug'] ?? null),
+                    'min' => $row['min'] ?? null,
+                    'max' => $row['max'] ?? null,
+                    'position' => $position,
+                ]);
+                $interval->save();
+                $kept[] = $interval->id;
+            }
+
+            PropertyInterval::query()->where('property_id', $owner->id)->whereNotIn('id', $kept === [] ? [0] : $kept)->delete();
+        });
+
+        $owner->touchProducts();
     }
 
     /**
