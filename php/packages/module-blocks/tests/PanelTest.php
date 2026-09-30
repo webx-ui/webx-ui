@@ -37,7 +37,8 @@ final class PanelTest extends TestCase
         $regions = $this->firstWhere($response->json('data.modules'), 'id', 'regions');
         $this->assertNotNull($regions);
         $this->assertSame('Site regions', $regions['title']);
-        $this->assertNull($regions['group']);
+        // Set up once and then rarely touched: under «System», beside the blocks it is made of.
+        $this->assertSame('system', $regions['group']);
         $this->assertSame(['content', 'layout', 'media'], $module['meta']['groups']);
         $this->assertTrue($module['meta']['editing']);
         $this->assertSame(['swiper'], $module['meta']['provides']);
