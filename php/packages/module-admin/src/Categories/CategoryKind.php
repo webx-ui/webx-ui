@@ -28,6 +28,7 @@ final readonly class CategoryKind
      * @param  string  $noun  One category, in the module's word: "rubric".
      * @param  string  $plural  The key of the list in answers: "rubrics".
      * @param  string  $items  What is filed under a category, plural: "articles".
+     * @param  bool  $single  An item is under one at most — a product's brand — so there is no main one among several.
      */
     public function __construct(
         public string $model,
@@ -38,6 +39,7 @@ final readonly class CategoryKind
         public string $noun = 'category',
         public string $plural = 'categories',
         public string $items = 'items',
+        public bool $single = false,
     ) {}
 
     /** The key the number of items travels under: `articles_count`. */
