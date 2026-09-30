@@ -174,6 +174,15 @@ final class ArticleForm
                 continue;
             }
 
+            // Every value inside the tree through its field type, as an agent's edit already goes:
+            // `wx-blocks` is a type the server does not register, so the screen alone lets the
+            // tree through untouched.
+            if ($field === 'blocks') {
+                $columns['blocks'] = $article->storeBlocks(is_iterable($stored['blocks']) ? $stored['blocks'] : []);
+
+                continue;
+            }
+
             $columns[$field] = $stored[$field];
         }
 
