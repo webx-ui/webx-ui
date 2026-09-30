@@ -10,6 +10,7 @@ use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Catalog\Demo\CatalogDemo;
 use WebxUi\Catalog\Mcp\CatalogResources;
 use WebxUi\Catalog\Mcp\CatalogTools;
+use WebxUi\Catalog\Mcp\SatelliteTools;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\Prompt;
@@ -26,7 +27,8 @@ use WebxUi\Mcp\Tool;
  *
  * To an agent it is the same section by other doors (§12): twenty-one tools behind the same three
  * permissions, and six resources to read before writing. The scopes are `catalog:read` and
- * `catalog:write`.
+ * `catalog:write`. A satellite whose tools belong to the catalogue by name adds them through
+ * {@see SatelliteTools}.
  */
 final class CatalogModule extends AbstractModule implements ProvidesDemo, ProvidesMcpTools
 {
@@ -40,6 +42,7 @@ final class CatalogModule extends AbstractModule implements ProvidesDemo, Provid
         private readonly CatalogTools $tools,
         private readonly CatalogResources $resources,
         private readonly CatalogDemo $demo,
+        private readonly SatelliteTools $satellites,
     ) {}
 
     public function id(): string
@@ -96,7 +99,7 @@ final class CatalogModule extends AbstractModule implements ProvidesDemo, Provid
      */
     public function mcpTools(): array
     {
-        return $this->tools->all();
+        return [...$this->tools->all(), ...$this->satellites->allTools()];
     }
 
     /**
@@ -104,7 +107,7 @@ final class CatalogModule extends AbstractModule implements ProvidesDemo, Provid
      */
     public function mcpResources(): array
     {
-        return $this->resources->all();
+        return [...$this->resources->all(), ...$this->satellites->allResources()];
     }
 
     /**

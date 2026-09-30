@@ -8,10 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
-use WebxUi\Catalog\Catalog;
-use WebxUi\CatalogProperties\Catalog\ProductValues;
+use WebxUi\CatalogProperties\Catalog\ValueBook;
 use WebxUi\CatalogProperties\Catalog\ValueMerger;
 use WebxUi\CatalogProperties\Models\Property;
 use WebxUi\CatalogProperties\Models\PropertyValue;
@@ -29,7 +26,7 @@ final class ValueController
 {
     public function __construct(
         private readonly ValueMerger $merger,
-        private readonly Catalog $catalog,
+        private readonly ValueBook $book,
     ) {}
 
     public function index(Request $request, int $property): JsonResponse
@@ -44,14 +41,7 @@ final class ValueController
             'per_page' => ['nullable', 'integer', 'min:1', 'max:500'],
         ]);
 
-        $query = PropertyValue::query()->where('property_id', $owner->id)->with('image');
-        $query->addSelect(['catalog_property_values.*', 'products_count' => DB::table(ProductValues::TABLE)
-            ->selectRaw('count(distinct product_id)')
-            ->whereColumn('value_id', 'catalog_property_values.id')]);
-
-        $owner->value_order === Property::MANUAL
-            ? $query->orderBy('lft')
-            : $query->orderByTranslation('title', 'asc', app()->getLocale())->orderBy('id');
+        $query = $this->book->listing($owner);
 
         // The values a product holds, by id and at any depth, for the form to name them.
         if (isset($validated['ids'])) {
@@ -96,35 +86,16 @@ final class ValueController
     {
         $owner = Property::query()->findOrFail($property);
 
-        if (! $owner->isSelect()) {
-            throw ValidationException::withMessages(['property' => [(string) __('webx-catalog-properties::errors.values-select')]]);
-        }
-
-        $validated = $this->validated($request);
-        $parent = isset($validated['parent_id']) ? $this->node($owner, (int) $validated['parent_id']) : null;
-
-        if ($parent !== null && ! $owner->is_tree) {
-            throw ValidationException::withMessages(['parent_id' => [(string) __('webx-catalog-properties::errors.not-tree')]]);
-        }
-
-        $value = new PropertyValue(['property_id' => $owner->id]);
-        $this->fill($value, $validated);
-
-        DB::transaction(static function () use ($value, $parent): void {
-            $parent === null ? $value->saveAsRoot() : $value->appendTo($parent);
-        });
-
-        return new JsonResponse(['data' => Resources::value($value->refresh())], 201);
+        return new JsonResponse(['data' => Resources::value($this->book->create($owner, $request->validate(ValueBook::RULES)))], 201);
     }
 
     public function update(Request $request, int $property, int $value): JsonResponse
     {
         $owner = Property::withTrashed()->findOrFail($property);
-        $node = $this->node($owner, $value);
-        $this->fill($node, $this->validated($request));
-        $node->save();
+        $fields = $request->validate(ValueBook::RULES);
+        unset($fields['parent_id']);
 
-        return new JsonResponse(['data' => Resources::value($node->refresh())]);
+        return new JsonResponse(['data' => Resources::value($this->book->update($this->node($owner, $value), $fields))]);
     }
 
     /**
@@ -134,32 +105,15 @@ final class ValueController
     {
         $owner = Property::withTrashed()->findOrFail($property);
         $validated = $request->validate(['parent_id' => ['nullable', 'integer'], 'before_id' => ['nullable', 'integer']]);
-        $node = $this->node($owner, $value);
-        $parent = isset($validated['parent_id']) ? $this->node($owner, (int) $validated['parent_id']) : null;
-        $before = isset($validated['before_id']) ? $this->node($owner, (int) $validated['before_id']) : null;
 
-        if ($parent !== null && ! $owner->is_tree) {
-            throw ValidationException::withMessages(['parent_id' => [(string) __('webx-catalog-properties::errors.not-tree')]]);
-        }
+        $moved = $this->book->move(
+            $owner,
+            $this->node($owner, $value),
+            isset($validated['parent_id']) ? (int) $validated['parent_id'] : null,
+            isset($validated['before_id']) ? (int) $validated['before_id'] : null,
+        );
 
-        if ($parent !== null && $parent->lft >= $node->lft && $parent->rgt <= $node->rgt) {
-            throw ValidationException::withMessages(['parent_id' => [(string) __('webx-catalog-properties::errors.move-into-itself')]]);
-        }
-
-        DB::transaction(static function () use ($node, $parent, $before): void {
-            if ($before !== null && $before->id !== $node->id) {
-                $node->insertBefore($before);
-            } elseif ($parent !== null) {
-                $node->appendTo($parent);
-            } else {
-                $node->saveAsRoot();
-            }
-        });
-
-        // A value moved under another is found under it: its products' documents list ancestors.
-        $this->catalog->touchQuery($node->affectedProducts());
-
-        return new JsonResponse(['data' => Resources::value($node->refresh())]);
+        return new JsonResponse(['data' => Resources::value($moved)]);
     }
 
     public function merge(Request $request, int $property, int $value): JsonResponse
@@ -175,8 +129,7 @@ final class ValueController
     public function destroy(int $property, int $value): Response|JsonResponse
     {
         $owner = Property::withTrashed()->findOrFail($property);
-        $node = $this->node($owner, $value);
-        $count = $node->productCount();
+        $count = $this->book->delete($this->node($owner, $value));
 
         if ($count > 0) {
             return new JsonResponse([
@@ -186,60 +139,11 @@ final class ValueController
             ], 422);
         }
 
-        $node->delete();
-
         return new Response(status: 204);
     }
 
     private function node(Property $owner, int $id): PropertyValue
     {
         return PropertyValue::query()->where('property_id', $owner->id)->findOrFail($id);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function validated(Request $request): array
-    {
-        return $request->validate([
-            'title' => ['sometimes', 'nullable'],
-            'slug' => ['sometimes', 'nullable'],
-            'parent_id' => ['sometimes', 'nullable', 'integer'],
-            'color' => ['sometimes', 'nullable', 'string', 'max:7'],
-            'image_id' => ['sometimes', 'nullable', 'integer', 'exists:media_files,id'],
-        ]);
-    }
-
-    /**
-     * @param  array<string, mixed>  $validated
-     */
-    private function fill(PropertyValue $value, array $validated): void
-    {
-        foreach (['title', 'slug'] as $field) {
-            if (! array_key_exists($field, $validated)) {
-                continue;
-            }
-
-            // Languages laid over those there; one sent empty is emptied, which for a slug means
-            // «make it again from the name».
-            $merged = $value->getTranslations($field);
-            $sent = is_array($validated[$field]) ? $validated[$field] : [app()->getLocale() => $validated[$field]];
-
-            foreach ($sent as $locale => $words) {
-                if (is_string($words) && trim($words) !== '') {
-                    $merged[(string) $locale] = trim($words);
-                } else {
-                    unset($merged[(string) $locale]);
-                }
-            }
-
-            $value->setTranslations($field, $merged);
-        }
-
-        foreach (['color', 'image_id'] as $field) {
-            if (array_key_exists($field, $validated)) {
-                $value->setAttribute($field, $validated[$field] === '' ? null : $validated[$field]);
-            }
-        }
     }
 }

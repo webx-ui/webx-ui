@@ -47,6 +47,7 @@ use WebxUi\Catalog\Gallery\Video\YouTubeProvider;
 use WebxUi\Catalog\Http\Controllers\StorefrontController;
 use WebxUi\Catalog\Links\CategoryLinkSource;
 use WebxUi\Catalog\Links\ProductLinkSource;
+use WebxUi\Catalog\Mcp\SatelliteTools;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Panel\CatalogCategoriesModule;
@@ -111,6 +112,7 @@ class CatalogServiceProvider extends ServiceProvider
         $this->app->singleton(VideoProviders::class);
         $this->app->singleton(SearchContributors::class);
         $this->app->singleton(FilterAliases::class);
+        $this->app->singleton(SatelliteTools::class);
 
         $this->app->singleton(Catalog::class);
         $this->app->singleton(CategoryFacets::class);

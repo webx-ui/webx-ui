@@ -19,6 +19,7 @@ return [
     'text' => 'A text is expected, or a map of languages.',
     'one-value' => 'This property takes one value.',
     'unknown-value' => 'There is no such value of this property.',
+    'unknown-slug' => '«:property» has no value «:slug». Make it first with catalog_property_values_create, or give the id.',
     'leaves-only' => 'Only a value with nothing under it can be chosen here.',
     'value-in-use' => 'Products hold this value — merge it into another instead. Products: :count',
     'values-select' => 'Only a reference book has values.',
