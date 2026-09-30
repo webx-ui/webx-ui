@@ -87,7 +87,15 @@ class LabelsServiceProvider extends ServiceProvider
                     'name' => LabelsPart::KEY.'.ids',
                     'label' => 'trans::webx-catalog-labels::product.labels',
                     'help' => 'trans::webx-catalog-labels::product.labels-help',
-                    'props' => ['source' => self::SOURCE],
+                    // No main one: labels have no order on a product, the badges stand in the list's.
+                    'props' => [
+                        'source' => self::SOURCE,
+                        'main' => false,
+                        'addText' => 'trans::webx-catalog-labels::product.labels-add',
+                        'removeText' => 'trans::webx-catalog-labels::product.labels-remove',
+                        'emptyText' => 'trans::webx-catalog-labels::product.labels-empty',
+                        'noneLeftText' => 'trans::webx-catalog-labels::product.labels-none-left',
+                    ],
                 ]],
             ],
         ]]);

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { applyPatch } from '../../../../packages/schema/src/patch'
 import type { Patch, ScreenNode } from '../../../../packages/schema/src/types'
+import { productFormPatches } from './catalog-dictionaries'
 
 /**
  * The screens the fake server hands out, built the way the real one builds them: the module's
@@ -14,8 +15,11 @@ import type { Patch, ScreenNode } from '../../../../packages/schema/src/types'
  * ships.
  */
 
-/** Each screen: whose description it is, and who writes over it. */
-const SCREENS: Record<string, { base: string; patches: string[] }> = {
+/**
+ * Each screen: whose description it is, and who writes over it — a file, or a patch a provider
+ * builds in code on the server (the satellites' cards in the product form).
+ */
+const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
   'pages.form': {
     base: 'php/packages/module-pages/resources/screens/form.json',
     patches: ['php/packages/module-seo/resources/screens/pages.form.json'],
@@ -118,13 +122,29 @@ const SCREENS: Record<string, { base: string; patches: string[] }> = {
   // fixture carries the same list.
   'catalog.product-form': {
     base: 'php/packages/module-catalog/resources/screens/product-form.json',
-    patches: ['apps/playground/server/panel/project/catalog.product-form.json'],
+    patches: [
+      'apps/playground/server/panel/project/catalog.product-form.json',
+      ...productFormPatches,
+    ],
   },
   // «Filters» is off by default (`webx-catalog.fields.facets`) and taken off by the provider's
   // patch; a site with the properties has it on — drop this patch to see the tab.
   'catalog.category-form': {
     base: 'php/packages/module-catalog/resources/screens/category-form.json',
     patches: ['apps/playground/server/panel/project/catalog.category-form.json'],
+  },
+  // The catalogue's reference books (WEBX_UI_CATALOG_DICTIONARIES.md §4).
+  'catalog.label-form': {
+    base: 'php/packages/module-catalog-labels/resources/screens/label-form.json',
+    patches: [],
+  },
+  'catalog.stock-status-form': {
+    base: 'php/packages/module-catalog-stock/resources/screens/stock-status-form.json',
+    patches: [],
+  },
+  'catalog.brand-form': {
+    base: 'php/packages/module-catalog-brands/resources/screens/brand-form.json',
+    patches: [],
   },
   // A record of no module, with the journal's node on a tab of its form (WEBX_UI_HISTORY.md).
   'demo.product': {
@@ -148,7 +168,7 @@ export function screen(name: string): ScreenNode[] | null {
   let tree = json<{ root: ScreenNode[] }>(described.base).root
 
   for (const patch of described.patches) {
-    tree = applyPatch(tree, json<Patch>(patch)).root
+    tree = applyPatch(tree, typeof patch === 'string' ? json<Patch>(patch) : patch).root
   }
 
   return tree

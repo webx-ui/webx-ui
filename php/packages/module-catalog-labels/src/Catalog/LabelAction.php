@@ -9,6 +9,7 @@ use Illuminate\Validation\Rule;
 use WebxUi\Catalog\Bulk\BulkAction;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Parts\PartField;
+use WebxUi\CatalogLabels\LabelsServiceProvider;
 use WebxUi\CatalogLabels\Models\Label;
 
 /**
@@ -42,7 +43,7 @@ final class LabelAction implements BulkAction
 
     public function params(): array
     {
-        return [new PartField('label_id', 'id', 'webx-catalog-labels::bulk.label', ['required', 'integer'], 'catalog_labels_list')];
+        return [new PartField('label_id', 'id', 'webx-catalog-labels::bulk.label', ['required', 'integer'], 'catalog_labels_list', LabelsServiceProvider::SOURCE)];
     }
 
     public function rules(): array

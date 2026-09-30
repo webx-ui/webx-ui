@@ -112,6 +112,17 @@ describe('WxSelect', () => {
     expect(wrapper.findAll('.wx-select__tag')).toHaveLength(2)
   })
 
+  it('shows the label of a value whose options arrive after it', async () => {
+    const wrapper = mountSelect({ filterable: true, modelValue: 'published', options: [] })
+    await nextTick()
+
+    expect((wrapper.get('.wx-select__input').element as HTMLInputElement).value).toBe('published')
+
+    await wrapper.setProps({ options })
+
+    expect((wrapper.get('.wx-select__input').element as HTMLInputElement).value).toBe('Published')
+  })
+
   it('puts the label back after a search that picked nothing', async () => {
     const wrapper = mountSelect({ filterable: true, modelValue: 'published' })
     await nextTick()

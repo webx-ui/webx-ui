@@ -205,6 +205,32 @@ final class LabelsTest extends TestCase
     }
 
     #[Test]
+    public function the_panels_list_offers_labels_in_their_own_order_and_the_bulk_dialog_knows_where_to_ask(): void
+    {
+        $laptops = $this->category('laptops');
+        $sale = $this->label('Sale');
+        $top = $this->label('Top');
+        DB::table('catalog_labels')->where('id', $top->id)->update(['position' => 1]);
+        DB::table('catalog_labels')->where('id', $sale->id)->update(['position' => 2]);
+        $this->product('One', $laptops, $sale);
+        $this->product('Two', $laptops, $sale);
+        $this->product('Three', $laptops, $top);
+
+        $editor = $this->editor();
+        $values = $this->actingAs($editor, 'cms')->getJson($this->api('products'))->assertOk()->json('facets.label.values');
+
+        // By position — neither by count (Sale has two) nor by id (Sale is older).
+        $this->assertSame([(string) $top->id, (string) $sale->id], array_column($values, 'value'));
+        $this->assertSame([1, 2], array_column($values, 'count'));
+
+        $described = $this->actingAs($editor, 'cms')->getJson($this->api('bulk'))->assertOk()->json('data');
+        $this->assertIsArray($described);
+        $actions = array_column($described, null, 'key');
+        $this->assertSame('catalog/labels', $actions['add-label']['params'][0]['source']);
+        $this->assertSame('catalog/labels', $actions['remove-label']['params'][0]['source']);
+    }
+
+    #[Test]
     public function the_list_is_read_with_the_catalogue_and_written_with_its_management(): void
     {
         $this->label('Sale');

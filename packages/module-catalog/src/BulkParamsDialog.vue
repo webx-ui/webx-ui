@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive } from 'vue'
-import { useAdmin, useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useTranslate, WxSourceSelect } from '@webx-ui/module-admin'
 import {
   useModal,
   WxButton,
@@ -21,7 +21,9 @@ import type { BulkActionInfo, BulkParam } from './types'
 /**
  * What a bulk action asks for before it runs — a category, a label — and the last word before it
  * does: how many products it is about to touch. The fields are drawn from what the server said
- * about the action, so a satellite's action gets its dialog without this file knowing it.
+ * about the action, so a satellite's action gets its dialog without this file knowing it: a
+ * param with a `source` is a choice out of that reference book (a label, a brand), and one that is
+ * not required says what choosing nothing does — for `set-brand`, take the brand off.
  */
 const props = defineProps<{ action: BulkActionInfo; count: number }>()
 
@@ -61,6 +63,10 @@ function optionsOf(param: BulkParam): SelectOption[] {
     : []
 }
 
+function required(param: BulkParam): boolean {
+  return param.rules?.includes('required') ?? false
+}
+
 function onCategory(param: BulkParam, value: TreeSelectValue): void {
   values[param.name] = Array.isArray(value) ? (value[0] ?? null) : value
 }
@@ -82,7 +88,7 @@ function apply(): void {
       v-for="param in action.params"
       :key="param.name"
       :label="param.label"
-      :required="param.rules?.includes('required')"
+      :required="required(param)"
       class="wx-catalog-bulk-params__field"
     >
       <wx-tree-select
@@ -97,6 +103,16 @@ function apply(): void {
         :filter-placeholder="t('panel.search-categories')"
         :aria-label="param.label"
         @update:model-value="(value: TreeSelectValue) => onCategory(param, value)"
+      />
+      <wx-source-select
+        v-else-if="param.source"
+        :model-value="(values[param.name] as number | null | undefined) ?? null"
+        :source="param.source"
+        filterable
+        :clearable="!required(param)"
+        :placeholder="required(param) ? undefined : t('panel.bulk-param-empty')"
+        :aria-label="param.label"
+        @update:model-value="(value: unknown) => (values[param.name] = value)"
       />
       <wx-select
         v-else-if="Array.isArray(param.values)"

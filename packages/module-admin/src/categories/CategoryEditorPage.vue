@@ -19,6 +19,7 @@ import type { ScreenModel } from '@webx-ui/schema'
 import { provideRecordAddress } from '../address'
 import { useAdmin } from '../admin'
 import { useErrorText } from '../errors'
+import { provideHistorySubject } from '../history'
 import { useBodyKeys } from '../keys'
 import SaveState from '../SaveState.vue'
 import Screen from '../Screen.vue'
@@ -92,6 +93,9 @@ const title = computed(() => {
 })
 
 provideCategoryEditor({ category, values, prefix, moving: () => w('address-moving') })
+
+/* A form with a journal tab (`wx-history`, the brands' one) reads whose journal it is here. */
+provideHistorySubject({ id: computed(() => category.value?.id ?? null) })
 
 /* The address field is the panel's shared one (`wx-slug`), and this is what it prints. */
 provideRecordAddress({
