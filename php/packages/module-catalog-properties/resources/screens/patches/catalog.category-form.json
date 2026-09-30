@@ -1,0 +1,25 @@
+[
+  {
+    "op": "add",
+    "target": "tabs",
+    "position": "after:main",
+    "node": {
+      "id": "properties-tab",
+      "type": "wx-tab",
+      "label": "trans::webx-catalog-properties::panel.category-tab",
+      "children": [
+        {
+          "id": "properties-card",
+          "type": "wx-card",
+          "children": [
+            {
+              "id": "category-properties",
+              "type": "wx-catalog-category-properties",
+              "props": { "source": "catalog/properties" }
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

@@ -19,6 +19,7 @@
     "@webx-ui/module-catalog": "workspace:*",
     "@webx-ui/module-catalog-brands": "workspace:*",
     "@webx-ui/module-catalog-labels": "workspace:*",
+    "@webx-ui/module-catalog-properties": "workspace:*",
     "@webx-ui/module-catalog-stock": "workspace:*",
     "@webx-ui/module-events": "workspace:*",
     "@webx-ui/module-faq": "workspace:*",

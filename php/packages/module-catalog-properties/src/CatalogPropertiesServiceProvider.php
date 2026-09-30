@@ -10,12 +10,14 @@ use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\History\HistoryTypes;
+use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Catalog\Bulk\BulkActions;
 use WebxUi\Catalog\Documents\Documents;
 use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
+use WebxUi\Catalog\Panel\ProductColumns;
 use WebxUi\Catalog\Parts\ProductParts;
 use WebxUi\Catalog\Search\SearchContributors;
 use WebxUi\Catalog\Storefront\StorefrontParts;
@@ -29,6 +31,8 @@ use WebxUi\CatalogProperties\Facets\PropertySource;
 use WebxUi\CatalogProperties\Models\Property;
 use WebxUi\CatalogProperties\Models\PropertyGroup;
 use WebxUi\CatalogProperties\Models\PropertyValue;
+use WebxUi\CatalogProperties\Panel\PropertiesModule;
+use WebxUi\CatalogProperties\Panel\PropertyColumns;
 use WebxUi\CatalogProperties\Storefront\CardProperties;
 use WebxUi\CatalogProperties\Storefront\ProductProperties;
 use WebxUi\CatalogProperties\Storefront\PropertyQuery;
@@ -41,8 +45,8 @@ use WebxUi\Localization\Locales;
  * the product form, the document, the bulk actions — plus a source of facets the core asks lazily,
  * which also says which of them belong on a page, and a share of the search.
  *
- * The storefront's parts and the template's query are here too; the section of the panel and the
- * agent's tools come with the next stages of the series (§14).
+ * The storefront's parts, the template's query and the section of the panel are here too; the
+ * agent's tools come with the last stage of the series (§14).
  */
 class CatalogPropertiesServiceProvider extends ServiceProvider
 {
@@ -95,8 +99,9 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
     }
 
     /**
-     * The property's editor, the group's, and the «Specifications» tab of the product form: one
-     * field, `properties.values`, which the node draws by the set of the main category.
+     * The property's editor, the group's, the «Specifications» tab of the product form — one field,
+     * `properties.values`, which the node draws by the set of the main category — and the
+     * «Properties» tab of a category, whose node saves the set itself (§7.2).
      */
     private function registerScreens(): void
     {
@@ -104,22 +109,9 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
         $screens->register(Property::SCREEN, __DIR__.'/../resources/screens/property-form.json');
         $screens->register(PropertyGroup::SCREEN, __DIR__.'/../resources/screens/property-group-form.json');
 
-        $screens->extend(Product::SCREEN, [[
-            'op' => 'add',
-            'target' => 'tabs',
-            'position' => 'after:main',
-            'node' => [
-                'id' => 'properties-tab',
-                'type' => 'wx-tab',
-                'label' => 'trans::webx-catalog-properties::product.tab',
-                'children' => [[
-                    'id' => 'properties-values',
-                    'type' => 'wx-catalog-product-properties',
-                    'name' => PropertiesPart::KEY.'.values',
-                    'props' => ['source' => self::SOURCE, 'sets' => 'catalog/property-sets'],
-                ]],
-            ],
-        ]]);
+        // Files, not arrays: the playground's fake server lays the same patches over the same screens.
+        $screens->extend(Product::SCREEN, __DIR__.'/../resources/screens/patches/catalog.product-form.json');
+        $screens->extend(Category::SCREEN, __DIR__.'/../resources/screens/patches/catalog.category-form.json');
 
         $this->app->make(CategorySources::class)->register(self::GROUPS, PropertyGroup::class, 'webx-catalog-properties::errors.group');
     }
@@ -150,7 +142,9 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
 
     private function registerCatalog(): void
     {
+        $this->app->make(ModuleRegistry::class)->register($this->app->make(PropertiesModule::class));
         $this->app->make(ProductParts::class)->register($this->app->make(PropertiesPart::class));
+        $this->app->make(ProductColumns::class)->source($this->app->make(PropertyColumns::class));
         $this->app->make(Documents::class)->register($this->app->make(PropertiesDocument::class));
 
         $source = $this->app->make(PropertySource::class);

@@ -28,6 +28,22 @@ import {
   isDictionaryAction,
   writeDictionaryValues,
 } from './catalog-dictionaries'
+import {
+  applyPropertyAction,
+  checkPropertyAction,
+  checkPropertyValues,
+  isPropertyAction,
+  PROPERTY_FIELDS,
+  propertyActions,
+  propertyCells,
+  propertyChoice,
+  propertyColumns,
+  propertyCounts,
+  propertyFacets,
+  propertyMatch,
+  propertyValues,
+  writePropertyValues,
+} from './catalog-properties'
 import { Reply } from './reply'
 import { claimUpload } from './uploads'
 
@@ -565,7 +581,11 @@ function productDetail(record: ProductRecord, locale: string) {
   return {
     product: productRow(record, locale),
     // The core's fields and `read()` of each satellite's part, under `<part>.<field>`.
-    values: { ...productValues(record), ...dictionaryValues(record.id) },
+    values: {
+      ...productValues(record),
+      ...dictionaryValues(record.id),
+      ...propertyValues(record.id, record.category_id),
+    },
     images: imagesOf(record.id).map(imageRow),
   }
 }
@@ -933,6 +953,17 @@ export function liveProductIds(): number[] {
   return live(products).map((one) => one.id)
 }
 
+/** A category as the properties read their sets: its parent, its name, whether it is binned. */
+export function categoryLookup(
+  id: number,
+): { parent_id: number | null; name: Map; deleted_at: string | null } | undefined {
+  const found = categoryById(id, true)
+
+  return found
+    ? { parent_id: found.parent_id, name: found.name, deleted_at: found.deleted_at }
+    : undefined
+}
+
 export function registerCatalog(
   on: (method: string, pattern: string, handler: Handler) => void,
   fail: Fail,
@@ -988,6 +1019,8 @@ export function registerCatalog(
       ...facets(locale).map((facet) => ({ ...facet, indexable: facet.kind !== 'range' })),
       // The satellites' (labels, stock, brands), after the core's, as the registry holds them.
       ...dictionaryFacets(locale, line),
+      // The properties' (`p.{id}`), only those in the filter.
+      ...propertyFacets(locale),
     ],
     meta: { sorts: SORTS.map(([key, label]) => ({ key, label: word(label, locale) })) },
   }))
@@ -1027,18 +1060,44 @@ export function registerCatalog(
       (max === null || (one.price !== null && one.price <= Number(max)))
 
     const choice = dictionaryChoice((key) => query.getAll(`facets[${key}][]`))
-    const byDictionaries = (one: ProductRecord) => dictionaryMatch(one.id, choice)
+    // A property's facet is a list (`facets[p.3][]`) or, a slider, bounds (`facets[p.4][min]`).
+    const chosenProperties = propertyChoice((key) => {
+      const list = query.getAll(`facets[${key}][]`)
+
+      if (list.length > 0) return list
+
+      const min = query.get(`facets[${key}][min]`)
+      const max = query.get(`facets[${key}][max]`)
+
+      return min === null && max === null ? undefined : { min, max }
+    })
+    const byDictionaries = (one: ProductRecord) =>
+      dictionaryMatch(one.id, choice) && propertyMatch(one.id, one.category_id, chosenProperties)
     const found = base.filter((one) => byCategory(one) && byPrice(one) && byDictionaries(one))
 
     /*
      * Each facet counted without its own choice, the way the engine does it: picking one category
      * does not take the others out of the filter.
      */
-    const counted: Record<string, unknown> = dictionaryCounts(
-      base.filter((one) => byCategory(one) && byPrice(one)).map((one) => one.id),
-      choice,
-      locale,
-    )
+    const counted: Record<string, unknown> = {
+      ...dictionaryCounts(
+        base
+          .filter(
+            (one) =>
+              byCategory(one) &&
+              byPrice(one) &&
+              propertyMatch(one.id, one.category_id, chosenProperties),
+          )
+          .map((one) => one.id),
+        choice,
+        locale,
+      ),
+      ...propertyCounts(
+        base.filter((one) => byCategory(one) && byPrice(one) && dictionaryMatch(one.id, choice)),
+        chosenProperties,
+        locale,
+      ),
+    }
     const forCategories = base.filter((one) => byPrice(one) && byDictionaries(one))
     const perCategory = live(categories).map((one) => {
       const ids = new Set(subtree(one.id))
@@ -1090,14 +1149,18 @@ export function registerCatalog(
       ...paginate(
         found.map((one) => ({
           ...productRow(one, locale),
-          columns: dictionaryCells(one.id, locale),
+          columns: {
+            ...dictionaryCells(one.id, locale),
+            ...propertyCells(one.id, one.category_id, locale),
+          },
         })),
         query,
       ),
       counts: { no_category: live(products).filter((one) => one.category_id === null).length },
       facets: counted,
-      // The satellites' columns (`ProductColumns`): the labels, the stock status, the brand.
-      columns: dictionaryColumns(locale, line),
+      // The satellites' columns (`ProductColumns`): the labels, the stock status, the brand, and
+      // the properties marked «in the list».
+      columns: [...dictionaryColumns(locale, line), ...propertyColumns(locale)],
     }
   })
 
@@ -1115,10 +1178,17 @@ export function registerCatalog(
     const next: ProductRecord = { ...product, categories: [...product.categories] }
     /* The satellites' fields: checked with the core's, written after them, one journal row. */
     const parts: Record<string, unknown> = {}
+    const propertyParts: Record<string, unknown> = {}
 
     for (const [name, value] of Object.entries(values)) {
       if (DICTIONARY_FIELDS.includes(name)) {
         parts[name] = value
+        continue
+      }
+
+      // `properties.outside` is read only: sent back, it is not a field of the screen.
+      if (PROPERTY_FIELDS.includes(name)) {
+        if (name === 'properties.values') propertyParts[name] = value
         continue
       }
 
@@ -1162,7 +1232,11 @@ export function registerCatalog(
     // A new main category that was an additional one stops being additional (decision 2).
     next.categories = [...new Set(next.categories)].filter((id) => id !== next.category_id)
 
-    const errors: Record<string, string[]> = checkDictionaryValues(parts, locale, line)
+    // The properties are checked against the set the product will have, not the one it had.
+    const errors: Record<string, string[]> = {
+      ...checkDictionaryValues(parts, locale, line),
+      ...checkPropertyValues(product.id, propertyParts, next.category_id, locale),
+    }
 
     if (Object.values(next.name).every((text) => text.trim() === '')) {
       errors[`name.${locale}`] = [line(locale, 'webx-catalog', 'errors.name-required')]
@@ -1218,7 +1292,10 @@ export function registerCatalog(
 
     Object.assign(product, next, { updated_at: now() })
 
-    const partChanges = writeDictionaryValues(product.id, parts, locale, line)
+    const partChanges = [
+      ...writeDictionaryValues(product.id, parts, locale, line),
+      ...writePropertyValues(product.id, propertyParts, locale),
+    ]
 
     if (created) {
       products.push(product)
@@ -1839,15 +1916,19 @@ function registerBulk(
           ]
         : [],
     })),
-    // The satellites' (`BulkActions`): labels on and off, a stock status, a brand.
+    // The satellites' (`BulkActions`): labels on and off, a stock status, a brand, properties.
     ...dictionaryActions(locale, line),
+    ...propertyActions(locale),
   ]
 
   const labelOf = (key: string, locale: string) =>
-    isDictionaryAction(key)
-      ? ((dictionaryActions(locale, line) as { key: string; label: string }[]).find(
-          (one) => one.key === key,
-        )?.label ?? key)
+    isDictionaryAction(key) || isPropertyAction(key)
+      ? ((
+          [...dictionaryActions(locale, line), ...propertyActions(locale)] as {
+            key: string
+            label: string
+          }[]
+        ).find((one) => one.key === key)?.label ?? key)
       : line(locale, 'webx-catalog', `bulk.actions.${key}`)
 
   const answer = (run: BulkRecord, locale: string) => ({
@@ -1885,6 +1966,7 @@ function registerBulk(
     )
     const price = (query.facets?.price ?? {}) as { min?: number | null; max?: number | null }
     const choice = dictionaryChoice((key) => query.facets?.[key])
+    const chosenProperties = propertyChoice((key) => query.facets?.[key])
     const byState = (one: ProductRecord) => {
       switch (query.state) {
         case 'published':
@@ -1912,6 +1994,7 @@ function registerBulk(
           (price.max == null || (one.price !== null && one.price <= price.max)),
       )
       .filter((one) => dictionaryMatch(one.id, choice))
+      .filter((one) => propertyMatch(one.id, one.category_id, chosenProperties))
       .map((one) => one.id)
       .sort((a, b) => a - b)
   }
@@ -1927,6 +2010,26 @@ function registerBulk(
 
     if (!product) {
       refuse(line(locale, 'webx-catalog', 'bulk.errors.gone'))
+
+      return
+    }
+
+    if (isPropertyAction(run.action)) {
+      const applied = applyPropertyAction(run.action, id, product.category_id, run.params, locale)
+
+      // One product refused — a property its category does not have — and the others go on.
+      if (!Array.isArray(applied)) {
+        refuse(applied.refused)
+
+        return
+      }
+
+      if (applied.length > 0) {
+        product.updated_at = now()
+        record('catalog.product', id, 'updated', applied, 'bulk')
+      }
+
+      run.done++
 
       return
     }
@@ -2007,9 +2110,15 @@ function registerBulk(
   on('GET', '/catalog/bulk', ({ locale }) => ({ data: describe(locale) }))
 
   on('POST', '/catalog/bulk', ({ body, locale }) => {
-    const action = isDictionaryAction(body.action)
-      ? { key: String(body.action), permission: 'catalog.manage', trashed: false, category: false }
-      : ACTIONS.find((one) => one.key === body.action)
+    const action =
+      isDictionaryAction(body.action) || isPropertyAction(body.action)
+        ? {
+            key: String(body.action),
+            permission: 'catalog.manage',
+            trashed: false,
+            category: false,
+          }
+        : ACTIONS.find((one) => one.key === body.action)
 
     if (!action) {
       const message = line(locale, 'webx-catalog', 'bulk.errors.unknown-action').replace(
@@ -2024,7 +2133,9 @@ function registerBulk(
 
     const refused = isDictionaryAction(action.key)
       ? checkDictionaryAction(action.key, params, locale, line)
-      : null
+      : isPropertyAction(action.key)
+        ? checkPropertyAction(action.key, params, locale)
+        : null
 
     if (refused) throw fail(422, Object.values(refused)[0]![0]!, refused)
 
