@@ -25,6 +25,7 @@ use WebxUi\Catalog\Bulk\Actions\SetCategoryAction;
 use WebxUi\Catalog\Bulk\Actions\TrashAction;
 use WebxUi\Catalog\Bulk\BulkActions;
 use WebxUi\Catalog\Collections\ProductsSource;
+use WebxUi\Catalog\Console\ExchangePruneCommand;
 use WebxUi\Catalog\Console\FlushViewsCommand;
 use WebxUi\Catalog\Console\IndexCommand;
 use WebxUi\Catalog\Console\PopularityCommand;
@@ -33,6 +34,16 @@ use WebxUi\Catalog\Documents\CoreDocument;
 use WebxUi\Catalog\Documents\Documents;
 use WebxUi\Catalog\Engine\CatalogEngines;
 use WebxUi\Catalog\Engine\SqlEngine;
+use WebxUi\Catalog\Exchange\Columns\CategoryColumn;
+use WebxUi\Catalog\Exchange\Columns\ExternalIdColumn;
+use WebxUi\Catalog\Exchange\Columns\IdColumn;
+use WebxUi\Catalog\Exchange\Columns\ImagesColumn;
+use WebxUi\Catalog\Exchange\Columns\ValueColumn;
+use WebxUi\Catalog\Exchange\ExchangeColumns;
+use WebxUi\Catalog\Exchange\ExchangeFiles;
+use WebxUi\Catalog\Exchange\ExchangeFormats;
+use WebxUi\Catalog\Exchange\Formats\CsvFormat;
+use WebxUi\Catalog\Exchange\Formats\XlsxFormat;
 use WebxUi\Catalog\Facets\CategoryFacet;
 use WebxUi\Catalog\Facets\CategoryFacets;
 use WebxUi\Catalog\Facets\Facets;
@@ -113,6 +124,8 @@ class CatalogServiceProvider extends ServiceProvider
         $this->app->singleton(SearchContributors::class);
         $this->app->singleton(FilterAliases::class);
         $this->app->singleton(SatelliteTools::class);
+        $this->app->singleton(ExchangeColumns::class);
+        $this->app->singleton(ExchangeFormats::class);
 
         $this->app->singleton(Catalog::class);
         $this->app->singleton(CategoryFacets::class);
@@ -136,13 +149,14 @@ class CatalogServiceProvider extends ServiceProvider
         $this->registerStorefront();
         $this->registerBulk();
         $this->registerVideo();
+        $this->registerExchange();
         $this->registerSources();
 
         if (! $this->app->runningInConsole()) {
             return;
         }
 
-        $this->commands([IndexCommand::class, FlushViewsCommand::class, PopularityCommand::class]);
+        $this->commands([IndexCommand::class, FlushViewsCommand::class, PopularityCommand::class, ExchangePruneCommand::class]);
         $this->registerSchedule();
 
         $this->publishes([
@@ -443,6 +457,52 @@ class CatalogServiceProvider extends ServiceProvider
     }
 
     /**
+     * The exchange (the exchange spec): CSV and XLSX, the core's columns in the order a file
+     * shows them (§7.1), and the purpose a file is uploaded in pieces under. A switched-off field
+     * has no column, as it has no field on the form. The upload takes any type: the extension
+     * decides the format, and the reader refuses what it cannot read.
+     */
+    private function registerExchange(): void
+    {
+        $formats = $this->app->make(ExchangeFormats::class);
+        $formats->register(new CsvFormat);
+        $formats->register(new XlsxFormat);
+
+        $columns = $this->app->make(ExchangeColumns::class);
+        $columns->register(new IdColumn);
+        $columns->register(new ValueColumn('sku'));
+
+        if ((bool) $this->config()->get('webx-catalog.fields.barcode', true)) {
+            $columns->register(new ValueColumn('barcode'));
+        }
+
+        $columns->register(new ExternalIdColumn);
+
+        foreach (['name', 'slug', 'summary', 'description'] as $translated) {
+            $columns->register(new ValueColumn($translated, localized: true));
+        }
+
+        $columns->register(new CategoryColumn);
+        $columns->register(new CategoryColumn(multiple: true));
+
+        if ($this->priced()) {
+            $columns->register(new ValueColumn('price', ValueColumn::DECIMAL));
+            $columns->register(new ValueColumn('old_price', ValueColumn::DECIMAL));
+        }
+
+        $columns->register(new ValueColumn('unit', ValueColumn::UNIT));
+        $columns->register(new ValueColumn('priority', ValueColumn::INTEGER));
+        $columns->register(new ValueColumn('is_published', ValueColumn::BOOLEAN));
+        $columns->register(new ImagesColumn);
+
+        $this->app->make(UploadPurposes::class)->register(
+            ExchangeFiles::UPLOAD_PURPOSE,
+            permission: 'catalog.manage',
+            maxBytes: fn (): int => max(1, (int) $this->config()->get('webx-catalog.exchange.max_bytes', 200 * 1024 * 1024)),
+        );
+    }
+
+    /**
      * What the rest of the panel reaches the catalogue by (§14): categories and products for a
      * menu or a link field, and products for a `wx-collection` block. From the provider rather
      * than the routes file, which `route:cache` never runs.
@@ -473,6 +533,7 @@ class CatalogServiceProvider extends ServiceProvider
             }
 
             $schedule->command(PopularityCommand::class)->dailyAt('03:30')->onOneServer();
+            $schedule->command(ExchangePruneCommand::class)->hourly()->onOneServer();
         });
     }
 
