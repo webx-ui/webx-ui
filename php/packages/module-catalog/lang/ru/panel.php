@@ -43,6 +43,7 @@ return [
     'select-all-found' => 'Выбрать всё найденное: :count',
     'selected-all' => 'Выбрано всё найденное: :count',
     'bulk-apply' => 'Применить',
+    'bulk-param-empty' => 'Ничего — снять',
     'bulk-confirm-title' => 'Применить «:action»?',
     'bulk-confirm-text' => 'Товаров, к которым применится: :count',
     'bulk-running' => 'Идёт в фоне. Готово :done из :total',

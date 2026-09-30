@@ -4,6 +4,9 @@ import { banners } from '@webx-ui/module-banners'
 import { blocks, regions } from '@webx-ui/module-blocks'
 import { blog } from '@webx-ui/module-blog'
 import { catalog } from '@webx-ui/module-catalog'
+import { catalogBrands } from '@webx-ui/module-catalog-brands'
+import { catalogLabels } from '@webx-ui/module-catalog-labels'
+import { catalogStock } from '@webx-ui/module-catalog-stock'
 import { events } from '@webx-ui/module-events'
 import { faq } from '@webx-ui/module-faq'
 import { inbox } from '@webx-ui/module-inbox'
@@ -68,6 +71,9 @@ const admin = createAdmin({
     ...blog(),
     ...services(),
     ...catalog(),
+    ...catalogBrands(),
+    ...catalogLabels(),
+    ...catalogStock(),
     ...faq(),
     ...reviews(),
     team(),

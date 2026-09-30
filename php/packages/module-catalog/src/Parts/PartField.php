@@ -16,6 +16,9 @@ final class PartField
      * @param  string  $label  A translation key or words.
      * @param  list<string>  $rules  Readable rules, as Laravel spells them.
      * @param  list<mixed>|string|null  $values  The allowed values, or the tool/resource that lists them.
+     * @param  string|null  $source  Where the panel asks for those values — the path a reference book
+     *                               answers at under the panel's API (`catalog/labels`). An agent reads
+     *                               `values`; a person picks from a list, and the list is the panel's.
      */
     public function __construct(
         public readonly string $name,
@@ -23,6 +26,7 @@ final class PartField
         public readonly string $label,
         public readonly array $rules = [],
         public readonly array|string|null $values = null,
+        public readonly ?string $source = null,
     ) {}
 
     /**
@@ -36,6 +40,7 @@ final class PartField
             'label' => (string) __($this->label),
             'rules' => $this->rules,
             'values' => $this->values,
+            'source' => $this->source,
         ], static fn (mixed $value): bool => $value !== null && $value !== []);
     }
 }

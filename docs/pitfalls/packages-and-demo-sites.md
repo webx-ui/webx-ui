@@ -126,6 +126,10 @@
 - **PHP-часть проверяется настоящим PHP.** Локально есть модули OSPanel
   (`C:\Work\OSPanel\modules\PHP-8.3\php.exe` и `PHP-8.4`); composer в PATH нет, phar кладётся в
   скретчпад. Гейт php-половины — `composer lint && composer analyse && composer test` из `php/`.
+  Скрипты composer зовут `php` по имени, и без него в PATH все три падают с «'php' is not
+  recognized» и вопросом про `allow-plugins` — похоже на сломанный `composer.json`. Либо каталог
+  `php.exe` в PATH, либо сами бинарники: `php.exe vendor/bin/pint --test`, `… phpstan analyse`,
+  `… phpunit`.
 - **Нижнюю версию матрицы проверяет CI, а не dev-корень.** Тулинг живёт быстрее пакета: PHPUnit 13
   требует PHP 8.4.1 и на 8.3 не ставится, хотя пакет заявляет `^8.3`. Сам `php/` с тех пор на 8.3
   не запускается: его `vendor` разрешён под 8.4.1, и `php.exe` из `PHP-8.3` падает в

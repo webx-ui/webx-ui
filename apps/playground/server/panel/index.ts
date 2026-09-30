@@ -241,7 +241,14 @@ import {
 } from './vacancies'
 import { screen, screenNames } from './screens'
 import { historyOf, historyRun } from './history'
-import { catalogBytes, catalogHistory, catalogUpload, registerCatalog } from './catalog'
+import {
+  catalogBytes,
+  catalogHistory,
+  catalogUpload,
+  liveProductIds,
+  registerCatalog,
+} from './catalog'
+import { brandHistory, registerDictionaries } from './catalog-dictionaries'
 import { Reply } from './reply'
 import { handleUploads } from './uploads'
 import {
@@ -578,6 +585,37 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 301,
         group: 'catalog',
         permissions: ['catalog.view', 'catalog.manage', 'catalog.delete'],
+        meta: {},
+      },
+      /* The satellites (§5 of the dictionaries spec): brands after the products, the labels and
+         the stock under «Dictionaries». No permissions of their own (decision 8). */
+      {
+        id: 'catalog-brands',
+        title: line(locale, 'webx-catalog-brands', 'module.title'),
+        icon: 'star',
+        order: 302,
+        group: 'catalog',
+        permissions: [],
+        meta: {},
+      },
+      {
+        id: 'catalog-labels',
+        title: line(locale, 'webx-catalog-labels', 'module.title'),
+        icon: 'tag',
+        order: 310,
+        group: 'catalog',
+        section: 'dictionaries',
+        permissions: [],
+        meta: {},
+      },
+      {
+        id: 'catalog-stock',
+        title: line(locale, 'webx-catalog-stock', 'module.title'),
+        icon: 'check-circle',
+        order: 311,
+        group: 'catalog',
+        section: 'dictionaries',
+        permissions: [],
         meta: {},
       },
       /* Not a module of any package: a fake record with a made-up past, where the journal's node
@@ -1918,7 +1956,8 @@ on('GET', '/history/([\\w.-]+)/(\\d+)', ({ params, query }) => {
   const page = Number(query.get('page') ?? '1')
   const found =
     historyOf(params[0]!, Number(params[1]), page) ??
-    catalogHistory(params[0]!, Number(params[1]), page)
+    catalogHistory(params[0]!, Number(params[1]), page) ??
+    brandHistory(params[0]!, Number(params[1]), page)
 
   if (found === null) throw new HttpFailure(404, 'That kind of record keeps no history.')
 
@@ -1930,6 +1969,14 @@ registerCatalog(
   on,
   (status, message, errors, extra) => new HttpFailure(status, message, undefined, errors, extra),
   line,
+)
+
+/* Its reference books (WEBX_UI_CATALOG_DICTIONARIES.md): labels, stock statuses, brands. */
+registerDictionaries(
+  on,
+  (status, message, errors) => new HttpFailure(status, message, undefined, errors),
+  line,
+  liveProductIds,
 )
 
 on('GET', '/entities/([\\w-]+)/(\\d+)/notes', ({ params }) => ({

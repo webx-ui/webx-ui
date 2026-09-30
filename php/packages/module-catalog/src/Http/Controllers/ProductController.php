@@ -17,6 +17,7 @@ use WebxUi\Catalog\Engine\CatalogQuery;
 use WebxUi\Catalog\Engine\FacetResult;
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\Facets;
+use WebxUi\Catalog\Facets\OrderedFacet;
 use WebxUi\Catalog\Http\Resources\ProductResource;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Panel\ChosenFacets;
@@ -131,11 +132,22 @@ final class ProductController
                 continue;
             }
 
-            $labels = $facet->labels(array_map('strval', array_keys($result->counts)), $locale);
+            $counted = array_map('strval', array_keys($result->counts));
+            $labels = $facet->labels($counted, $locale);
+
+            if ($facet instanceof OrderedFacet) {
+                // The order an editor gave the values (labels, stock), as the site's filter keeps it,
+                // and whatever the facet has no words for after it.
+                $counted = array_values(array_unique([
+                    ...array_intersect(array_map('strval', array_keys($labels)), $counted),
+                    ...$counted,
+                ]));
+            }
+
             $values = [];
 
-            foreach ($result->counts as $value => $count) {
-                $values[] = ['value' => (string) $value, 'label' => $labels[(string) $value] ?? (string) $value, 'count' => $count];
+            foreach ($counted as $value) {
+                $values[] = ['value' => $value, 'label' => $labels[$value] ?? $value, 'count' => $result->counts[$value]];
             }
 
             $counted[$key] = ['key' => $key, 'kind' => $result->kind->value, 'values' => $values];

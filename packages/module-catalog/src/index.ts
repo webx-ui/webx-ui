@@ -1,6 +1,9 @@
 export { catalog, type CatalogOptions } from './module'
 export { createCatalogApi, productSearch, CATALOG_API, type CatalogApi } from './api'
 export { catalogMessages } from './messages'
+export { dictionaryOptions, dictionarySection, type DictionaryOptions } from './dictionaries'
+export { FACET_PREFIX } from './filters'
+export { TONES, toneBadge, type Tone } from './tones'
 export {
   provideProductEditor,
   productEditorKey,
@@ -31,11 +34,15 @@ export { default as WxCatalogDeletedPage } from './DeletedPage.vue'
 export { default as WxCatalogCategoryField } from './CategoryField.vue'
 export { default as WxCatalogFacetsField } from './FacetsField.vue'
 export { default as WxCatalogGallery } from './GalleryField.vue'
+export { default as WxCatalogToneField } from './ToneField.vue'
+export { default as WxCatalogColumnValue } from './ColumnValue.vue'
 export type {
   CategoryDetail,
   CategoryNode,
   CategoryRef,
   CategoryRow,
+  ColumnRecord,
+  ColumnValue,
   DeletedCategory,
   DeletedKind,
   DeletedProduct,

@@ -8,6 +8,7 @@ use Illuminate\Validation\Rule;
 use WebxUi\Catalog\Bulk\BulkAction;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Parts\PartField;
+use WebxUi\CatalogBrands\BrandsServiceProvider;
 
 /**
  * Give every product chosen one brand — or none (§3 of the dictionaries spec). One action for
@@ -38,7 +39,7 @@ final class BrandAction implements BulkAction
 
     public function params(): array
     {
-        return [new PartField('brand_id', 'id', 'webx-catalog-brands::product.brand', ['nullable', 'integer'], 'catalog_brands_list')];
+        return [new PartField('brand_id', 'id', 'webx-catalog-brands::product.brand', ['nullable', 'integer'], 'catalog_brands_list', BrandsServiceProvider::SOURCE)];
     }
 
     public function rules(): array

@@ -179,6 +179,58 @@ describe('WxCatalogProductsPage', () => {
     expect(wrapper.find('tbody').text()).toContain('In stock')
   })
 
+  it('draws a satellite’s value by its shape: tags of a tone, a tag, a name muted when off the site', async () => {
+    const { wrapper } = await panel(
+      '/catalog/products',
+      page(
+        [
+          row(1, {
+            columns: {
+              labels: [
+                { id: 1, name: 'Top', code: 'top', color: 'primary' },
+                { id: 2, name: 'Sale', code: 'sale', color: 'danger' },
+              ],
+              stock: {
+                id: 3,
+                name: 'On order',
+                code: 'on-order',
+                color: 'warning',
+                purchasable: true,
+              },
+              brand: { id: 7, name: 'Proseware', visible: false },
+            },
+          }),
+          row(2, { columns: { brand: { id: 1, name: 'Northwind', visible: true } } }),
+        ],
+        {
+          columns: [
+            { key: 'labels', label: 'Labels' },
+            { key: 'stock', label: 'Stock status' },
+            { key: 'brand', label: 'Brand' },
+          ],
+        },
+      ),
+    )
+
+    const [first, second] = wrapper.findAll('tbody tr')
+    const tags = first!.findAll('.wx-catalog-column-value .wx-badge')
+
+    expect(tags.map((tag) => tag.text())).toEqual(['Top', 'Sale', 'On order'])
+    expect(tags[0]!.classes()).toContain('wx-badge--primary')
+    expect(tags[1]!.classes()).toContain('wx-badge--danger')
+    expect(tags[2]!.classes()).toContain('wx-badge--warning')
+
+    const brand = (tr: typeof first) =>
+      tr!
+        .findAll('.wx-catalog-column-value')
+        .find((cell) => /Proseware|Northwind/.test(cell.text()))
+
+    expect(brand(first)!.find('.wx-text').classes().join(' ')).toContain('muted')
+    expect(brand(second)!.find('.wx-text').classes().join(' ')).not.toContain('muted')
+    // No labels, no stock: a dash, not «[object Object]» nor an empty cell.
+    expect(second!.findAll('.wx-catalog-column-value.is-empty')).toHaveLength(2)
+  })
+
   it('says how many rows are picked and lets the pick go', async () => {
     const { wrapper } = await panel('/catalog/products')
 
