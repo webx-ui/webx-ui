@@ -15,6 +15,7 @@ import {
 } from '@webx-ui/core'
 import { useAdmin } from '../admin'
 import { useErrorText } from '../errors'
+import { useTranslate } from '../i18n'
 import ListScreen from '../ListScreen.vue'
 import RowMenu from '../RowMenu.vue'
 import type { RowAction, ScreenAction } from '../types'
@@ -42,6 +43,8 @@ const context = useAdmin()
 const api = createCategoriesApi(context, props.options.api)
 const router = useRouter()
 const w = useCategoryWords(props.options.words)
+/* The heading and the way back, when the options name their own keys. */
+const t = useTranslate('webx-admin')
 /* Not the server's `message`: the panel says how a request failed in its own words. */
 const message = useErrorText()
 
@@ -56,10 +59,11 @@ const addressed = ref(true)
 
 const canManage = computed(() => context.can(props.options.manage))
 
-const title = computed(
-  () =>
-    context.state.manifest?.modules.find((module) => module.id === props.options.module)?.title ??
-    '',
+const title = computed(() =>
+  props.options.title
+    ? t(props.options.title)
+    : (context.state.manifest?.modules.find((module) => module.id === props.options.module)
+        ?.title ?? ''),
 )
 
 const create = createModal<CategoryRow, { options: CategoriesOptions }>(CategoryCreateDialog)
@@ -184,7 +188,14 @@ async function reorder(): Promise<void> {
 </script>
 
 <template>
-  <list-screen class="wx-categories" :title="title" :actions="actions" padding="sm">
+  <list-screen
+    class="wx-categories"
+    :title="title"
+    :back="props.options.back?.path"
+    :back-label="props.options.back ? t(props.options.back.label) : undefined"
+    :actions="actions"
+    padding="sm"
+  >
     <wx-skeleton v-if="loading" class="wx-categories__loading" :rows="5" />
 
     <wx-empty v-else-if="rows.length === 0" :title="w('empty')" :description="w('empty-help')" />

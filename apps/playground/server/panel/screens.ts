@@ -125,13 +125,19 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
     patches: [
       'apps/playground/server/panel/project/catalog.product-form.json',
       ...productFormPatches,
+      // «Specifications»: the properties of the main category's set (WEBX_UI_CATALOG_PROPERTIES.md §7.2).
+      'php/packages/module-catalog-properties/resources/screens/patches/catalog.product-form.json',
     ],
   },
   // «Filters» is off by default (`webx-catalog.fields.facets`) and taken off by the provider's
   // patch; a site with the properties has it on — drop this patch to see the tab.
   'catalog.category-form': {
     base: 'php/packages/module-catalog/resources/screens/category-form.json',
-    patches: ['apps/playground/server/panel/project/catalog.category-form.json'],
+    patches: [
+      'apps/playground/server/panel/project/catalog.category-form.json',
+      // «Properties»: what the category inherits and what it adds.
+      'php/packages/module-catalog-properties/resources/screens/patches/catalog.category-form.json',
+    ],
   },
   // The catalogue's reference books (WEBX_UI_CATALOG_DICTIONARIES.md §4).
   'catalog.label-form': {
@@ -144,6 +150,15 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
   },
   'catalog.brand-form': {
     base: 'php/packages/module-catalog-brands/resources/screens/brand-form.json',
+    patches: [],
+  },
+  // The properties and their groups (WEBX_UI_CATALOG_PROPERTIES.md §7.1).
+  'catalog.property-form': {
+    base: 'php/packages/module-catalog-properties/resources/screens/property-form.json',
+    patches: [],
+  },
+  'catalog.property-group-form': {
+    base: 'php/packages/module-catalog-properties/resources/screens/property-group-form.json',
     patches: [],
   },
   // A record of no module, with the journal's node on a tab of its form (WEBX_UI_HISTORY.md).

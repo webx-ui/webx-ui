@@ -19,6 +19,7 @@ import type { ScreenModel } from '@webx-ui/schema'
 import { provideRecordAddress } from '../address'
 import { useAdmin } from '../admin'
 import { useErrorText } from '../errors'
+import { useTranslate } from '../i18n'
 import { provideHistorySubject } from '../history'
 import { useBodyKeys } from '../keys'
 import SaveState from '../SaveState.vue'
@@ -53,6 +54,8 @@ const route = useRoute()
 const router = useRouter()
 const locales = useLocales()
 const w = useCategoryWords(props.options.words)
+/* The heading and the way back, when the options name their own keys. */
+const t = useTranslate('webx-admin')
 /* Not the server's `message`: the panel says how a request failed in its own words. */
 const message = useErrorText()
 
@@ -79,10 +82,11 @@ const state = computed<'saving' | 'unsaved' | 'saved'>(() => {
   return dirty.value ? 'unsaved' : 'saved'
 })
 
-const section = computed(
-  () =>
-    context.state.manifest?.modules.find((module) => module.id === props.options.module)?.title ??
-    '',
+const section = computed(() =>
+  props.options.title
+    ? t(props.options.title)
+    : (context.state.manifest?.modules.find((module) => module.id === props.options.module)
+        ?.title ?? ''),
 )
 
 /** The name follows the field rather than the answer: a rename shows at the top as it is typed. */

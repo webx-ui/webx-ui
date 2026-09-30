@@ -11,11 +11,17 @@ use WebxUi\Catalog\Models\Product;
 /**
  * The satellites' columns of the panel's list of products (§7.4), in the order they registered.
  * The core's own columns are the list's, not this registry's: they are the product itself.
+ *
+ * Columns of the database come from sources ({@see ColumnSource}), asked on every read and
+ * after the registered ones; a source's column whose key is taken is left out.
  */
 final class ProductColumns
 {
     /** @var array<string, ProductColumn> */
     private array $columns = [];
+
+    /** @var list<ColumnSource> */
+    private array $sources = [];
 
     public function register(ProductColumn $column): void
     {
@@ -26,10 +32,23 @@ final class ProductColumns
         $this->columns[$column->key()] = $column;
     }
 
+    public function source(ColumnSource $source): void
+    {
+        $this->sources[] = $source;
+    }
+
     /** @return list<ProductColumn> */
     public function all(): array
     {
-        return array_values($this->columns);
+        $all = $this->columns;
+
+        foreach ($this->sources as $source) {
+            foreach ($source->columns() as $column) {
+                $all[$column->key()] ??= $column;
+            }
+        }
+
+        return array_values($all);
     }
 
     /**
@@ -60,7 +79,8 @@ final class ProductColumns
             $rows[(int) $product->id] = [];
         }
 
-        foreach ($this->columns as $key => $column) {
+        foreach ($this->all() as $column) {
+            $key = $column->key();
             $values = $column->values($products);
 
             foreach (array_keys($rows) as $id) {

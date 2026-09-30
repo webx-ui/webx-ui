@@ -125,7 +125,7 @@ const video = createGalleryVideo({
   images,
 })
 
-provideProductEditor({ product, images, locked, video })
+provideProductEditor({ product, images, locked, video, values })
 provideHistorySubject({ id: computed(() => product.value?.id ?? null) })
 
 /*
