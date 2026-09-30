@@ -181,6 +181,7 @@ final class Listing
                 ? (string) __('webx-catalog::storefront.search')
                 : (string) __('webx-catalog::storefront.search-for', ['q' => $search]),
             $context->category !== null => $this->filterTitle($context, $state) ?? $context->category->displayName($context->locale),
+            $context->subject !== null => $this->filterTitle($context, $state) ?? $context->subject->displayName($context->locale),
             default => (string) __('webx-catalog::storefront.root'),
         };
     }
@@ -209,7 +210,9 @@ final class Listing
             return null;
         }
 
-        $where = $context->category?->displayName($context->locale) ?? (string) __('webx-catalog::storefront.root');
+        $where = $context->category?->displayName($context->locale)
+            ?? $context->subject?->displayName($context->locale)
+            ?? (string) __('webx-catalog::storefront.root');
 
         return (string) __('webx-catalog::storefront.filter-title', ['category' => $where, 'value' => $label]);
     }

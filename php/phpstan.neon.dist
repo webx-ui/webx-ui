@@ -18,7 +18,9 @@ parameters:
         - packages/module-blog/tests
         - packages/module-catalog/src
         - packages/module-catalog/tests
+        - packages/module-catalog-brands/src
         - packages/module-catalog-labels/src
+        - packages/module-catalog-brands/tests
         - packages/module-catalog-labels/tests
         - packages/module-catalog-stock/src
         - packages/module-catalog-stock/tests

@@ -121,6 +121,11 @@ final class Catalogue
             'label' => 'Catalog — products with prices and pictures in a tree of categories, a filter and bulk actions',
             'default' => false,
         ],
+        'catalog-brands' => [
+            'package' => 'webx-ui/module-catalog-brands',
+            'label' => 'Catalog brands — a brand per product with its own page, logo and description, and a filter (needs the catalog)',
+            'default' => false,
+        ],
         'catalog-labels' => [
             'package' => 'webx-ui/module-catalog-labels',
             'label' => 'Catalog labels — top, sale, new: badges on the cards and a filter (needs the catalog)',

@@ -364,6 +364,11 @@ Blade в `resources/views/vendor/webx-catalog/…` у сайта переопр�
 (точка, вьюха, `prepare(Collection $products)` — один запрос на страницу), а запасной партиал
 точки (`webx-catalog::points.<точка>`) печатает все зарегистрированные части по порядку.
 
+Страница сущности спутника, которая есть выдача каталога (бренд), собирается тем же путём, что
+категория: `Storefront::listing()` со своим контекстом, scope и вьюхой, а `FilterContext::$subject`
+(`ListingSubject`) называет страницу, её крошки и SEO вместо категории
+([`WEBX_UI_CATALOG_DICTIONARIES.md`](WEBX_UI_CATALOG_DICTIONARIES.md) §12).
+
 ### 10.2. Фильтр
 
 Ссылки, а не форма: у каждого значения — готовый адрес из `FilterUrls::buildMany()`, с
