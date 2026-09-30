@@ -33,11 +33,6 @@ final class CategoryFacet extends AbstractFacet implements TreeFacet
         return self::KEY;
     }
 
-    public function code(): string
-    {
-        return self::KEY;
-    }
-
     public function kind(): FacetKind
     {
         return FacetKind::Tree;

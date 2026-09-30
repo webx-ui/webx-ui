@@ -33,11 +33,6 @@ final class StockFacet extends AbstractFacet implements OrderedFacet
         return self::KEY;
     }
 
-    public function code(): string
-    {
-        return self::KEY;
-    }
-
     public function kind(): FacetKind
     {
         return FacetKind::Terms;
