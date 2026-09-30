@@ -829,13 +829,40 @@ MCP: `catalog_*` (пятнадцать, удаление и восстановл
 
 Права: `catalog.view`, `catalog.manage`, `catalog.delete`.
 
+### `webx-ui/module-catalog-labels`, `-stock`, `-brands` — справочники каталога
+
+Статус: выпущены 30.09.2026 в v0.53.0, npm `@webx-ui/module-catalog-labels@0.1.0`,
+`-stock@0.1.0`, `-brands@0.1.0` — [спецификация](WEBX_UI_CATALOG_DICTIONARIES.md).
+
+Первые три спутника ядра, один каркас — набор `Categories` из `module-admin`:
+
+- **Метки** — несколько на товар: бейджи в карточке (тон из шести), фасет `label` с
+  мультивыбором, служебная метка без бейджа и не в фильтре, `products()->label('sale')`.
+- **Наличие** — один статус на товар, товар без строки — в статусе по умолчанию; статус без
+  «можно купить» даёт отказ в `Purchasability`; фасет `stock`, `products()->inStock()`.
+- **Бренды** — один на товар, своя страница `/brands/{slug}/` с хвостом фильтра и список
+  `/brands/`, логотип, описание, SEO, индексируемый фасет `brand`, `brands()->featured()`.
+
+Все три — поле формы товара, колонка и фильтр списка, массовые действия (`add-label`,
+`remove-label`, `set-stock`, `set-brand`), строка на витрине (`wx-catalog-badge--<тон>`,
+`wx-catalog-stock--<тон>`, `wx-catalog-brand`; стилей пакеты не несут).
+
+npm-пары: разделы «Метки», «Наличие» (под подписью «Справочники») и «Бренды» в группе «Каталог».
+
+MCP: `catalog_labels_*`, `catalog_stock_*`, `catalog_brands_*` (по пять: `list`, `create`,
+`update`, `reorder`, `delete`); поля товара — через `catalog_products_update`
+(`labels.ids`, `stock.status`, `brand.id`), массовые — через `catalog_bulk`.
+
+Права — каталога: `catalog.view`, `catalog.manage`.
+
 ---
 
 ## Упомянуты ранее, детализировать позже
 
 - `webx-ui/module-products` — товары: цены, склад, категории, бренды, характеристики. Вырос в
-  семейство каталога: ядро — `module-catalog` выше, спутники `module-catalog-*` (склад, бренды,
-  свойства…) — по порядку §10 `docs/architecture/WEBX_UI_CATALOG.md`, не начаты.
+  семейство каталога: ядро — `module-catalog` выше, первые спутники — справочники (метки,
+  наличие, бренды) там же; остальные `module-catalog-*` (свойства…) — по порядку §10
+  `docs/architecture/WEBX_UI_CATALOG.md`.
 
 `webx-ui/module-news` из прежней редакции стал `module-blog` — выше, в «Модулях».
 

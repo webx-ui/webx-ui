@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace WebxUi\CatalogBrands\Catalog;
 
+use Closure;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Parts\PartField;
 use WebxUi\Catalog\Parts\PartSchema;
@@ -39,7 +39,12 @@ final class BrandPart implements ProductPart
 
     public function rules(): array
     {
-        return ['id' => ['nullable', 'integer', Rule::exists('catalog_brands', 'id')->whereNull('deleted_at')]];
+        // The refusal names a brand: the key is `id`, and Laravel's own words would say "no such id".
+        return ['id' => ['nullable', 'integer', static function (string $attribute, mixed $value, Closure $fail): void {
+            if ($value !== null && ! Brand::query()->whereKey($value)->exists()) {
+                $fail((string) __('webx-catalog-brands::errors.unknown'));
+            }
+        }]];
     }
 
     public function read(Collection $products): array
