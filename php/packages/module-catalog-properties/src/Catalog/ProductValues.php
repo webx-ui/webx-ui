@@ -229,11 +229,23 @@ final class ProductValues
         $ids = [];
 
         foreach (is_array($value) ? $value : [$value] as $one) {
-            if (! is_int($one) && ! (is_string($one) && ctype_digit($one))) {
-                $this->fail($property, 'webx-catalog-properties::errors.unknown-value');
+            if (is_int($one) || (is_string($one) && ctype_digit($one))) {
+                $ids[] = (int) $one;
+
+                continue;
             }
 
-            $ids[] = (int) $one;
+            // A slug in any language, the one an agent read off an address or a list (§10).
+            $slug = is_string($one) ? strtolower(trim($one)) : '';
+            $found = preg_match(Property::CODE, $slug) === 1
+                ? PropertyValue::query()->where('property_id', $property->id)->whereTranslationLikeAny('slug', $slug)->value('id')
+                : null;
+
+            if ($found === null) {
+                $this->fail($property, 'webx-catalog-properties::errors.unknown-slug', ['slug' => is_scalar($one) ? (string) $one : '?']);
+            }
+
+            $ids[] = (int) $found;
         }
 
         return array_values(array_unique($ids));
@@ -300,10 +312,13 @@ final class ProductValues
     /**
      * @throws ValidationException
      */
-    private function fail(Property $property, string $message): never
+    /**
+     * @param  array<string, string>  $replace
+     */
+    private function fail(Property $property, string $message, array $replace = []): never
     {
         throw ValidationException::withMessages([
-            PropertiesPart::KEY.'.values.'.$property->id => [(string) __($message, ['property' => $property->displayName()])],
+            PropertiesPart::KEY.'.values.'.$property->id => [(string) __($message, ['property' => $property->displayName(), ...$replace])],
         ]);
     }
 }

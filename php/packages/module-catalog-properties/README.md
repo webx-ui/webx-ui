@@ -49,7 +49,17 @@ until the category has it again.
 ## The product form
 
 One field, `properties.values`: `{ "<property_id>": value }` — an id or ids, a number, `true`, or a
-map of languages. A key left out is not touched, `null` takes the value away.
+map of languages. A value of a reference book may also be its slug in any language. A key left out
+is not touched, `null` takes the value away.
+
+## To an agent
+
+The tools are served as the catalogue's, behind its `catalog:read` / `catalog:write` scopes:
+`catalog_properties_list`, `_get`, `_create`, `_update` (with a number's intervals), `_delete`,
+`_restore`, `_reorder`; `catalog_property_values_list`, `_create`, `_update`, `_move`, `_merge`,
+`_delete`; `catalog_property_groups_*`; `catalog_categories_properties` and `_set`. The resource
+`catalog://properties` says, per type, which flags and fields it keeps. A product's values are
+`properties.values` in `catalog_products_update`.
 
 ## API
 

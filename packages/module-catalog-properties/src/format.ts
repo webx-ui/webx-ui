@@ -49,3 +49,14 @@ export function exampleNumber(precision: number | null | undefined): number {
 
   return digits === 0 ? 12 : Number((12.5).toFixed(Math.min(digits, 1)))
 }
+
+/**
+ * The decimals a field of a product keeps: the property's precision, or more when the product
+ * holds more — a number is stored as it is, and a field that rounded `0.85` to `1` would save
+ * the `1`.
+ */
+export function fieldDecimals(precision: number, held: number | null): number {
+  const own = held === null ? 0 : (String(held).split('.')[1]?.length ?? 0)
+
+  return Math.min(6, Math.max(precision, own))
+}

@@ -7,6 +7,7 @@ namespace WebxUi\CatalogProperties\Panel;
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Contracts\HasNavSection;
 use WebxUi\Catalog\Panel\CatalogModule;
+use WebxUi\CatalogProperties\Mcp\PropertyTools;
 
 /**
  * The properties as an entry of the «Catalog» group, under its «Dictionaries» caption, after the
@@ -14,7 +15,8 @@ use WebxUi\Catalog\Panel\CatalogModule;
  * section rather than an entry of their own: they are opened once, when the card is laid out.
  *
  * No permissions of its own (decision 19): the catalogue's `catalog.view` reads, `catalog.manage`
- * writes. The agent's tools come with the last stage of the series.
+ * writes. The agent's tools are not this module's: they are served under the catalogue
+ * ({@see PropertyTools}), where their names belong.
  */
 final class PropertiesModule extends AbstractModule implements HasNavSection
 {

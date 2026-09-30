@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { exampleNumber, formatNumber, propertyName, wordsIn } from './format'
+import { exampleNumber, fieldDecimals, formatNumber, propertyName, wordsIn } from './format'
 
 describe('formatNumber()', () => {
   it('glues the units on as written, spaces included', () => {
@@ -32,5 +32,14 @@ describe('words', () => {
     )
     expect(propertyName({ id: 3, title: [], code: { en: 'weight' } }, 'en')).toBe('weight')
     expect(propertyName({ id: 3, title: null, code: null }, 'en')).toBe('#3')
+  })
+})
+
+describe('fieldDecimals()', () => {
+  it('never rounds away what the product holds', () => {
+    expect(fieldDecimals(0, 0.85)).toBe(2)
+    expect(fieldDecimals(2, 1)).toBe(2)
+    expect(fieldDecimals(1, null)).toBe(1)
+    expect(fieldDecimals(0, 0.1234567)).toBe(6)
   })
 })
