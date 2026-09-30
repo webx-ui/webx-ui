@@ -69,6 +69,15 @@ export interface ManifestGroup {
   /** A name from the icon set; `null` or absent leaves the branch with the default picture. */
   icon?: string | null
   order: number
+  /** Captions inside the group, in order; a module stands under one by naming its id. */
+  sections?: ManifestSection[]
+}
+
+/** A caption inside a navigation group: the catalogue's «Dictionaries». */
+export interface ManifestSection {
+  id: string
+  title: string
+  order: number
 }
 
 export interface ManifestModule {
@@ -78,6 +87,8 @@ export interface ManifestModule {
   order: number
   /** The group the section sits under, or null for the top level. */
   group?: string | null
+  /** The caption inside the group it stands under, or null among the group's plain entries. */
+  section?: string | null
   permissions: string[]
   /** Whatever the server-side module wanted to say, in its own room. */
   meta: Record<string, unknown>
@@ -175,6 +186,8 @@ export interface NavEntry {
   path: string
   /** Group id, or null at the top level. */
   group: string | null
+  /** Caption id inside the group, or null among its plain entries. */
+  section: string | null
 }
 
 /** A group with the entries that sit under it, in navigation order. */
@@ -182,6 +195,16 @@ export interface NavGroup {
   id: string
   title: string
   icon: string | null
+  /** The entries under no caption — they come first. */
+  entries: NavEntry[]
+  /** Captions that have entries, in the order the server declared them. */
+  sections: NavSection[]
+}
+
+/** A caption inside a group with the entries under it. */
+export interface NavSection {
+  id: string
+  title: string
   entries: NavEntry[]
 }
 
