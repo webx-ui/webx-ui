@@ -153,27 +153,7 @@ final class PropertyController
             return new JsonResponse(['message' => reset($errors)[0], 'errors' => $errors], 422);
         }
 
-        DB::transaction(static function () use ($owner, $rows): void {
-            $kept = [];
-
-            foreach ($rows as $position => $row) {
-                $interval = isset($row['id']) ? PropertyInterval::query()->where('property_id', $owner->id)->find((int) $row['id']) : null;
-                $interval ??= new PropertyInterval(['property_id' => $owner->id]);
-                $interval->fill([
-                    'title' => IntervalRows::map($row['title'] ?? null),
-                    'slug' => IntervalRows::map($row['slug'] ?? null),
-                    'min' => $row['min'] ?? null,
-                    'max' => $row['max'] ?? null,
-                    'position' => $position,
-                ]);
-                $interval->save();
-                $kept[] = $interval->id;
-            }
-
-            PropertyInterval::query()->where('property_id', $owner->id)->whereNotIn('id', $kept === [] ? [0] : $kept)->delete();
-        });
-
-        $owner->touchProducts();
+        IntervalRows::save($owner, $rows);
 
         return new JsonResponse(['data' => array_map(
             static fn (PropertyInterval $interval): array => Resources::interval($interval),

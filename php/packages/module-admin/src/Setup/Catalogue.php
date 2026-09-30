@@ -136,6 +136,11 @@ final class Catalogue
             'label' => 'Catalog stock — in stock, out of stock, on order, and whether it can be bought (needs the catalog)',
             'default' => false,
         ],
+        'catalog-properties' => [
+            'package' => 'webx-ui/module-catalog-properties',
+            'label' => 'Catalog properties — colour, material, weight: sets per category, specifications on the page and filters (needs the catalog)',
+            'default' => false,
+        ],
         'menu' => [
             'package' => 'webx-ui/module-menu',
             'label' => 'Menus — the header and the footer, and what each entry points at',

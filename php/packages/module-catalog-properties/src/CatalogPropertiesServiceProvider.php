@@ -15,6 +15,7 @@ use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Catalog\Bulk\BulkActions;
 use WebxUi\Catalog\Documents\Documents;
 use WebxUi\Catalog\Facets\Facets;
+use WebxUi\Catalog\Mcp\SatelliteTools;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Panel\ProductColumns;
@@ -28,6 +29,8 @@ use WebxUi\CatalogProperties\Catalog\PropertiesPart;
 use WebxUi\CatalogProperties\Catalog\PropertyActions;
 use WebxUi\CatalogProperties\Catalog\PropertySets;
 use WebxUi\CatalogProperties\Facets\PropertySource;
+use WebxUi\CatalogProperties\Mcp\PropertiesResource;
+use WebxUi\CatalogProperties\Mcp\PropertyTools;
 use WebxUi\CatalogProperties\Models\Property;
 use WebxUi\CatalogProperties\Models\PropertyGroup;
 use WebxUi\CatalogProperties\Models\PropertyValue;
@@ -45,8 +48,8 @@ use WebxUi\Localization\Locales;
  * the product form, the document, the bulk actions — plus a source of facets the core asks lazily,
  * which also says which of them belong on a page, and a share of the search.
  *
- * The storefront's parts, the template's query and the section of the panel are here too; the
- * agent's tools come with the last stage of the series (§14).
+ * The storefront's parts, the template's query, the section of the panel and the agent's tools —
+ * served as the catalogue's own — are here too.
  */
 class CatalogPropertiesServiceProvider extends ServiceProvider
 {
@@ -150,6 +153,12 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
         $source = $this->app->make(PropertySource::class);
         $this->app->make(Facets::class)->source($source);
         $this->app->make(SearchContributors::class)->register($source);
+
+        // The agent's tools and `catalog://properties` are the catalogue's (§10): its names, scopes
+        // and permissions. Built when an agent asks, not at boot.
+        $mcp = $this->app->make(SatelliteTools::class);
+        $mcp->tools(fn (): array => $this->app->make(PropertyTools::class)->all());
+        $mcp->resources(fn (): array => [$this->app->make(PropertiesResource::class)->resource()]);
 
         $actions = $this->app->make(BulkActions::class);
 
