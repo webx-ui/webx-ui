@@ -10,16 +10,49 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\FacetValue;
 use WebxUi\Catalog\Facets\IndexField;
+use WebxUi\Catalog\Facets\SwatchedFacet;
 use WebxUi\CatalogProperties\Models\PropertyValue;
 use WebxUi\Localization\Locales;
+use WebxUi\Media\Models\MediaFile;
+use WebxUi\Media\Storage\FileUrls;
 
 /**
  * A reference book as terms: `color_black`. The value is the id of the value; its slug is the
  * value's in the language of the page, falling back as a translation does, and the id where no
  * language has one.
+ *
+ * A book whose values carry a colour or a picture gives them to the filter as swatches (§8.2).
  */
-class ValueFacet extends PropertyFacet
+class ValueFacet extends PropertyFacet implements SwatchedFacet
 {
+    /** A dot in the filter is small; twice that for a dense screen. */
+    private const SWATCH = 48;
+
+    /**
+     * @param  list<string>  $values
+     * @return array<array-key, array{color: string|null, image: string|null}>
+     */
+    public function swatches(array $values): array
+    {
+        if ((! $this->property->has_color && ! $this->property->has_image) || $values === []) {
+            return [];
+        }
+
+        $urls = Container::getInstance()->make(FileUrls::class);
+        $swatches = [];
+
+        foreach ($this->load($values)->load('image') as $value) {
+            $color = $this->property->has_color && is_string($value->color) && $value->color !== '' ? $value->color : null;
+            $image = $this->property->has_image && $value->image instanceof MediaFile ? $urls->thumbUrl($value->image, self::SWATCH, self::SWATCH) : null;
+
+            if ($color !== null || $image !== null) {
+                $swatches[(string) $value->id] = ['color' => $color, 'image' => $image];
+            }
+        }
+
+        return $swatches;
+    }
+
     public function kind(): FacetKind
     {
         return FacetKind::Terms;

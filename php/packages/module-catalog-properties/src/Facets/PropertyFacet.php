@@ -9,7 +9,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use WebxUi\Catalog\Facets\AbstractFacet;
 use WebxUi\Catalog\Facets\BatchCountedFacet;
+use WebxUi\Catalog\Facets\ContextualIndexing;
 use WebxUi\Catalog\Facets\FacetValue;
+use WebxUi\Catalog\Facets\TitledFacet;
+use WebxUi\Catalog\Filter\FilterContext;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\CatalogProperties\Catalog\PropertySets;
 use WebxUi\CatalogProperties\Models\Property;
@@ -25,8 +28,12 @@ use WebxUi\CatalogProperties\Models\Property;
  *
  * A value of a property outside the set of the product's main category is not in any count and
  * matches no choice (decision 6): kept, not shown.
+ *
+ * A first level of a property is open only on a category's page (decision 22): on a brand's, in the
+ * root and in a search it is `noindex, follow`. Its title is the property's `seo_pattern` where it
+ * has one — «{category} in {value}» — and the core's «{category} {value}» where not (§5.3).
  */
-abstract class PropertyFacet extends AbstractFacet implements BatchCountedFacet
+abstract class PropertyFacet extends AbstractFacet implements BatchCountedFacet, ContextualIndexing, TitledFacet
 {
     public function __construct(protected readonly Property $property) {}
 
@@ -65,6 +72,28 @@ abstract class PropertyFacet extends AbstractFacet implements BatchCountedFacet
     public function indexable(): bool
     {
         return $this->property->is_indexable;
+    }
+
+    public function indexableIn(FilterContext $context): bool
+    {
+        return $context->context === FilterContext::CATEGORY && $context->category !== null;
+    }
+
+    public function filterTitle(string $where, string $label, string $locale): ?string
+    {
+        // No fallback: another language's wording around this language's words is worse than
+        // the core's template.
+        $pattern = $this->property->getTranslation('seo_pattern', $locale, false);
+
+        if (! is_string($pattern) || trim($pattern) === '') {
+            return null;
+        }
+
+        return trim(strtr($pattern, [
+            '{category}' => $where,
+            '{property}' => $this->property->displayName($locale),
+            '{value}' => $label,
+        ]));
     }
 
     /**
