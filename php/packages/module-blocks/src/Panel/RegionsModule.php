@@ -11,8 +11,9 @@ use WebxUi\Admin\AbstractModule;
  *
  * A second entry of the blocks package rather than a tab inside "Blocks", because the two are
  * opened by different people: that one is behind `blocks.manage` — saving a type is running
- * Blade — and a region is content, edited by whoever edits the pages. Beside the menu and in the
- * same place in the navigation, since that is what a header is made of.
+ * Blade — and a region is content, edited by whoever edits the pages. It is set up once and then
+ * rarely touched, so it lives under "System" beside the block constructor rather than among the
+ * sections an editor opens every day.
  *
  * The permission is declared once, by the blocks module, so that the role editor lists it once;
  * this entry only answers to it.
@@ -34,10 +35,15 @@ final class RegionsModule extends AbstractModule
         return 'sidebar';
     }
 
-    /** Right after the menu (400), before the block constructor keeps the site running (600). */
+    /** Right after the block constructor (600) that its regions are made of. */
     public function order(): int
     {
-        return 410;
+        return 610;
+    }
+
+    public function group(): string
+    {
+        return 'system';
     }
 
     /**

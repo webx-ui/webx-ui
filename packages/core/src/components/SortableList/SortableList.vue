@@ -469,6 +469,14 @@ function onKeydown(event: KeyboardEvent, index: number) {
   gap: var(--wx-space-4);
 }
 
+/*
+ * Buttons stand close, as a toolbar does; a line of text before them — a count, a status — is
+ * something else, and pressed up against the first button it reads as that button's caption.
+ */
+.wx-sortable-list__actions > :slotted(.wx-text + :not(.wx-text)) {
+  margin-inline-start: var(--wx-space-8);
+}
+
 /* What is left behind in the list while the row is being dragged. */
 .wx-sortable-list__row--ghost {
   opacity: 0.4;
