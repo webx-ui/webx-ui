@@ -62,7 +62,7 @@ final class Storefront
             $category,
         );
 
-        return $this->respond($request, $context, $tail, 'category', [
+        return $this->listing($request, $context, $tail, 'webx-catalog::category', [
             CategoryFacet::KEY => FacetValue::of([(string) $category->id]),
         ], (int) $category->id);
     }
@@ -71,7 +71,7 @@ final class Storefront
     {
         $context = new FilterContext(FilterContext::ROOT, $this->rootPath(), $this->locales->current(), $this->facets->all());
 
-        return $this->respond($request, $context, $tail, 'root', [], null, [
+        return $this->listing($request, $context, $tail, 'webx-catalog::root', [], null, [
             'categories' => Category::query()->visible()->whereNull('parent_id')->orderBy('lft')->get(),
         ]);
     }
@@ -88,7 +88,7 @@ final class Storefront
 
         $response = $term === ''
             ? response($this->views->make('webx-catalog::search', ['page' => null, 'term' => ''])->render())
-            : $this->respond($request, $context, $tail, 'search', [], null, ['term' => $term], $term);
+            : $this->listing($request, $context, $tail, 'webx-catalog::search', [], null, ['term' => $term], $term);
 
         $response->headers->set('X-Robots-Tag', 'noindex, follow');
 
@@ -102,10 +102,15 @@ final class Storefront
     }
 
     /**
+     * A page of the list at one spelling: the tail read, the page built, and a 301 when the address
+     * asked for is not the one the page gives itself. Public for a satellite whose entity has a page
+     * of the catalogue narrowed to it — a brand — which brings its own context, scope and view.
+     *
+     * @param  string  $view  the full name: `webx-catalog::category`, `webx-catalog-brands::brand`
      * @param  array<string, FacetValue>  $scope
      * @param  array<string, mixed>  $data
      */
-    private function respond(
+    public function listing(
         Request $request,
         FilterContext $context,
         string $tail,
@@ -135,7 +140,7 @@ final class Storefront
 
         $this->pushItemList($page);
 
-        return response($this->views->make('webx-catalog::'.$view, [...$data, 'page' => $page, 'category' => $page->category()])->render());
+        return response($this->views->make($view, [...$data, 'page' => $page, 'category' => $page->category()])->render());
     }
 
     /**

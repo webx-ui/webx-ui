@@ -36,11 +36,12 @@ final class ListingSource implements SeoSource
             return null;
         }
 
-        $category = $subject->category();
-        $base = $subject->state->isEmpty() && $category !== null ? ($category->seoData($locale) ?? SeoData::empty()) : SeoData::empty();
+        // A brand's page is a category's page in every respect that matters here.
+        $owner = $subject->owner();
+        $base = $subject->state->isEmpty() && $owner !== null ? ($owner->seoData($locale) ?? SeoData::empty()) : SeoData::empty();
 
         $own = SeoData::make([
-            'title' => $subject->state->isEmpty() && $category !== null ? null : ($subject->filterTitle ?? $subject->heading),
+            'title' => $subject->state->isEmpty() && $owner !== null ? null : ($subject->filterTitle ?? $subject->heading),
             'h1' => $subject->filterTitle,
             'robots' => $subject->indexable ? null : 'noindex, follow',
             // Only where a query makes the address another page; otherwise the page names itself.
