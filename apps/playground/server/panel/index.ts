@@ -778,9 +778,9 @@ on('GET', '/manifest', ({ locale }) => ({
         id: 'regions',
         title: line(locale, 'webx-blocks', 'module.regions'),
         icon: 'sidebar',
-        /* Beside the menu (§7.1 of the regions spec): content an editor changes, not code. */
-        order: 410,
-        group: null,
+        /* Under "System", after the blocks it is made of (§7.1 of the regions spec). */
+        order: 610,
+        group: 'system',
         permissions: ['blocks.regions'],
         meta: {},
       },

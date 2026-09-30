@@ -17,7 +17,11 @@ const submenu = useSubmenu()
  * A group labels entries; it does not contain them the way a submenu does. It adds
  * no depth, so the entries under it line up with everything else at their level.
  */
-const collapsed = computed(() => menu?.collapsed.value ?? false)
+/*
+ * The rail is what has no room. A flyout that opens beside it has the full width again, so
+ * a group there keeps its heading and lines its entries up at the start like any other.
+ */
+const collapsed = computed(() => (menu?.collapsed.value ?? false) && !submenu.inFlyout)
 const hasTitle = computed(() => Boolean(props.title || !collapsed.value))
 </script>
 
