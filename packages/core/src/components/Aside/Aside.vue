@@ -139,9 +139,30 @@ const classes = computed(() => [
   min-height: 0;
 }
 
+/*
+ * A menu is narrow, and the platform bar is a sixth of it. It is thin and themed here, and its
+ * room is kept whether it shows or not: a branch that opens and makes the list overflow would
+ * otherwise push every icon sideways by the width of the bar.
+ */
 .wx-aside--zoned.wx-aside--scroll .wx-aside__body {
+  --wx-aside-scrollbar-thumb: color-mix(in srgb, var(--wx-text-muted) 35%, transparent);
+
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--wx-aside-scrollbar-thumb) transparent;
+}
+
+/* Only a pointer that is over the menu needs to see where it is in it. */
+.wx-aside--zoned.wx-aside--scroll .wx-aside__body:not(:hover) {
+  scrollbar-color: transparent transparent;
+}
+
+/* The rail is 56px of centred icons; a bar there, however thin, puts them off centre. */
+.wx-aside--zoned.wx-aside--scroll.wx-aside--collapsed .wx-aside__body {
+  scrollbar-gutter: auto;
+  scrollbar-width: none;
 }
 
 /*

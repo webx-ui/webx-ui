@@ -321,10 +321,11 @@ const groupTitle = (group: EffectiveSet['groups'][number]) =>
           {{ groupTitle(group) }}
         </wx-text>
 
+        <!-- A switch names itself on its right, as "Published" does: a label above it is a line spent on one word. -->
         <wx-form-item
           v-for="property in group.properties"
           :key="property.id"
-          :label="propertyName(property, locale)"
+          :label="property.type === 'bool' ? undefined : propertyName(property, locale)"
           :error="errorOf(property.id)"
         >
           <value-tree-select
@@ -372,7 +373,7 @@ const groupTitle = (group: EffectiveSet['groups'][number]) =>
             v-else-if="property.type === 'bool'"
             :model-value="read(property.id) === true"
             :disabled="locked"
-            :aria-label="propertyName(property, locale)"
+            :label="propertyName(property, locale)"
             @update:model-value="(on) => write(property.id, on ? true : null)"
           />
           <wx-input
@@ -422,22 +423,23 @@ const groupTitle = (group: EffectiveSet['groups'][number]) =>
 </template>
 
 <style scoped>
+/* Twice the step between fields, so a group reads as a group at every width. */
 .wx-catalog-product-properties {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-16);
+  gap: calc(var(--wx-gap, var(--wx-space-16)) * 2);
 }
 
+/* The step of every form in the panel, so the fields here keep the rhythm of the other tabs. */
 .wx-catalog-product-properties__group {
   display: flex;
   flex-direction: column;
-  gap: var(--wx-space-4);
+  gap: var(--wx-gap, var(--wx-space-16));
 }
 
 .wx-catalog-product-properties__heading {
   padding-block-end: var(--wx-space-4);
   border-block-end: 1px solid var(--wx-border-muted);
-  margin-block-end: var(--wx-space-8);
 }
 
 .wx-catalog-product-properties__number {

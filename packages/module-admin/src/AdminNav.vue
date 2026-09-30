@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, useTemplateRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdmin } from './admin'
 import { useTranslate } from './i18n'
@@ -47,10 +47,34 @@ const current = computed<string>({
     }
   },
 })
+
+/*
+ * A long menu scrolls on its own, and a reload puts it back at the top — with the current
+ * section, often in a branch near the foot, out of sight. Once, on arrival: the menu comes with
+ * the manifest, so that is when there first is a current entry, and its branch opens with a
+ * transition, so the row is only where it will stay once that has run. Afterwards the user
+ * clicked the entry, so it is already where they are looking.
+ */
+const root = useTemplateRef<{ $el: Element | null }>('root')
+
+let revealed = false
+
+async function reveal(): Promise<void> {
+  const el = root.value?.$el
+
+  if (revealed || current.value === '' || !(el instanceof HTMLElement)) return
+  revealed = true
+  await Promise.allSettled((el.getAnimations?.({ subtree: true }) ?? []).map((a) => a.finished))
+  el.querySelector('.wx-menu-row.is-active')?.scrollIntoView?.({ block: 'center' })
+}
+
+onMounted(reveal)
+watch(current, reveal, { flush: 'post' })
 </script>
 
 <template>
   <wx-menu
+    ref="root"
     v-model="current"
     :collapsed="collapsed"
     :label="t('nav.sections')"

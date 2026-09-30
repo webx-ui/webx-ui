@@ -9,10 +9,16 @@
       "label": "trans::webx-catalog-properties::product.tab",
       "children": [
         {
-          "id": "properties-values",
-          "type": "wx-catalog-product-properties",
-          "name": "properties.values",
-          "props": { "source": "catalog/properties", "sets": "catalog/property-sets" }
+          "id": "properties-card",
+          "type": "wx-card",
+          "children": [
+            {
+              "id": "properties-values",
+              "type": "wx-catalog-product-properties",
+              "name": "properties.values",
+              "props": { "source": "catalog/properties", "sets": "catalog/property-sets" }
+            }
+          ]
         }
       ]
     }
