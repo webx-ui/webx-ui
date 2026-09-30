@@ -1,0 +1,70 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "catalog.label-form",
+  "model": "catalog-label",
+  "root": [
+    {
+      "id": "naming",
+      "type": "wx-card",
+      "children": [
+        {
+          "id": "title",
+          "type": "wx-input",
+          "name": "title",
+          "label": "trans::webx-catalog-labels::label.title",
+          "localized": true,
+          "props": {
+            "maxlength": 255
+          }
+        },
+        {
+          "id": "code",
+          "type": "wx-input",
+          "name": "code",
+          "label": "trans::webx-catalog-labels::label.code",
+          "help": "trans::webx-catalog-labels::label.code-help",
+          "props": {
+            "maxlength": 32
+          }
+        },
+        {
+          "id": "color",
+          "type": "wx-select",
+          "name": "color",
+          "label": "trans::webx-catalog-labels::label.color",
+          "help": "trans::webx-catalog-labels::label.color-help",
+          "props": {
+            "options": [
+              { "label": "trans::webx-catalog-labels::label.tones.neutral", "value": "neutral" },
+              { "label": "trans::webx-catalog-labels::label.tones.primary", "value": "primary" },
+              { "label": "trans::webx-catalog-labels::label.tones.success", "value": "success" },
+              { "label": "trans::webx-catalog-labels::label.tones.warning", "value": "warning" },
+              { "label": "trans::webx-catalog-labels::label.tones.danger", "value": "danger" },
+              { "label": "trans::webx-catalog-labels::label.tones.info", "value": "info" }
+            ]
+          }
+        },
+        {
+          "id": "is-badge",
+          "type": "wx-switch",
+          "name": "is_badge",
+          "label": "trans::webx-catalog-labels::label.badge",
+          "help": "trans::webx-catalog-labels::label.badge-help"
+        },
+        {
+          "id": "is-visible",
+          "type": "wx-switch",
+          "name": "is_visible",
+          "label": "trans::webx-catalog-labels::label.filterable",
+          "help": "trans::webx-catalog-labels::label.filterable-help"
+        }
+      ]
+    },
+    {
+      "id": "project-fields",
+      "type": "wx-card",
+      "label": "trans::webx-admin::screens.project-fields",
+      "children": []
+    }
+  ]
+}
