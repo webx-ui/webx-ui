@@ -1,5 +1,0 @@
----
-'@webx-ui/php': minor
----
-
-The catalogue's core gets the seams the properties need (P1 of `module-catalog-properties`), each useful without them. A facet's code is per language — `Facet::code(string $locale)`, set by `webx-catalog.facet_codes` (`'price' => ['ru' => 'cena']`), the English one where nothing is named; a facet of your own now overrides `baseCode()` rather than `code()`. The old spellings of filter addresses live in `catalog_filter_aliases`: a renamed code or value slug is a 301 to the new one, a deleted one drops out of the address, and brands record their renamed slugs there. Facets can come from the database through `Facets::source(FacetSource)`; such a source may pick the facets that belong on a page (`RelevantFacets`) — the rest are not counted, those it keeps collapsed stand under a new «More filters» `<details>` of the filter, and `FacetResult` carries `expanded`. Unchosen facets implementing `BatchCountedFacet` are counted in one query per source, and `SearchContributor` lets a satellite's words be found by `SqlEngine`. With none of that installed, the core facets and brands behave exactly as before.
