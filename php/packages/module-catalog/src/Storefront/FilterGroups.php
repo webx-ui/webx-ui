@@ -11,6 +11,7 @@ use WebxUi\Catalog\Facets\Facet;
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\FacetValue;
 use WebxUi\Catalog\Facets\OrderedFacet;
+use WebxUi\Catalog\Facets\SwatchedFacet;
 use WebxUi\Catalog\Facets\TreeFacet;
 use WebxUi\Catalog\Filter\FilterContext;
 use WebxUi\Catalog\Filter\FilterState;
@@ -176,6 +177,7 @@ final class FilterGroups
 
         $labels = $facet->labels($values, $context->locale);
         $parents = $facet instanceof TreeFacet ? $facet->parents($values) : [];
+        $swatches = $facet instanceof SwatchedFacet ? $facet->swatches($values) : [];
         $ordered = $parents !== [] ? array_keys($parents) : $values;
 
         if ($facet instanceof OrderedFacet) {
@@ -199,6 +201,7 @@ final class FilterGroups
                 'selected' => in_array($value, $chosen, true),
                 'target' => $state->toggle($key, $value),
                 'parent' => $parents[$value] ?? null,
+                'swatch' => $swatches[$value] ?? null,
             ];
         }
 
@@ -263,6 +266,7 @@ final class FilterGroups
                     url: ($count > 0 || $selected) && is_int($index) ? $urls[$index] : null,
                     selected: $selected,
                     nofollow: ! $this->urls->indexable($context, $target) || $count === 0,
+                    swatch: is_array($option['swatch'] ?? null) ? $option['swatch'] : null,
                 ),
             ];
         }
@@ -297,6 +301,7 @@ final class FilterGroups
                 $option->selected,
                 $option->nofollow,
                 $this->nest($flat, $option->value),
+                $option->swatch,
             );
         }
 

@@ -12,6 +12,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Engine\CatalogQuery;
 use WebxUi\Catalog\Facets\FacetValue;
+use WebxUi\Catalog\Facets\TitledFacet;
 use WebxUi\Catalog\Filter\FilterContext;
 use WebxUi\Catalog\Filter\FilterState;
 use WebxUi\Catalog\Filter\FilterUrls;
@@ -189,7 +190,8 @@ final class Listing
 
     /**
      * «{category} {value}» for a page with exactly one value chosen (decision 17 of the
-     * architecture) — the first level, whose title the template makes. Null otherwise.
+     * architecture) — the first level, whose title the template makes, or the facet's own
+     * wording ({@see TitledFacet}). Null otherwise.
      */
     private function filterTitle(FilterContext $context, FilterState $state): ?string
     {
@@ -214,6 +216,12 @@ final class Listing
         $where = $context->category?->displayName($context->locale)
             ?? $context->subject?->displayName($context->locale)
             ?? (string) __('webx-catalog::storefront.root');
+
+        $own = $facet instanceof TitledFacet ? $facet->filterTitle($where, $label, $context->locale) : null;
+
+        if ($own !== null && $own !== '') {
+            return $own;
+        }
 
         return (string) __('webx-catalog::storefront.filter-title', ['category' => $where, 'value' => $label]);
     }
