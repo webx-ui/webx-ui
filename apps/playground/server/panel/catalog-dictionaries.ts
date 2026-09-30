@@ -263,7 +263,6 @@ export const productFormPatches: Patch[] = [
             id: 'labels-ids',
             type: 'wx-categories',
             name: 'labels.ids',
-            label: 'trans::webx-catalog-labels::product.labels',
             help: 'trans::webx-catalog-labels::product.labels-help',
             props: {
               source: 'catalog/labels',
@@ -282,7 +281,7 @@ export const productFormPatches: Patch[] = [
     {
       op: 'add',
       target: 'main',
-      position: 'after:placement',
+      position: 'after:pricing',
       node: {
         id: 'stock-card',
         type: 'wx-card',
@@ -292,7 +291,6 @@ export const productFormPatches: Patch[] = [
             id: 'stock-status',
             type: 'wx-select',
             name: 'stock.status',
-            label: 'trans::webx-catalog-stock::product.status',
             help: 'trans::webx-catalog-stock::product.status-help',
             props: {
               source: 'catalog/stock',
@@ -318,7 +316,6 @@ export const productFormPatches: Patch[] = [
             id: 'brand-id',
             type: 'wx-select',
             name: 'brand.id',
-            label: 'trans::webx-catalog-brands::product.brand',
             help: 'trans::webx-catalog-brands::product.brand-help',
             props: {
               source: 'catalog/brands',

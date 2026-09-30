@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import {
   toast,
+  WxAction,
   WxAlert,
   WxButton,
   WxInput,
@@ -224,12 +225,10 @@ async function save(): Promise<void> {
         </template>
 
         <template #actions="{ item }">
-          <wx-button
-            size="sm"
-            variant="text"
-            icon="trash"
+          <wx-action
+            type="remove"
+            :label="t('panel.delete')"
             :disabled="locked"
-            :aria-label="t('panel.delete')"
             @click="remove((item as Row).key)"
           />
         </template>

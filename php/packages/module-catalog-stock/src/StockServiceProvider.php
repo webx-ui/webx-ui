@@ -68,7 +68,7 @@ class StockServiceProvider extends ServiceProvider
 
     /**
      * The editor of a status, and the field of the product form (§3): one choice in the «Main» tab,
-     * after the categories. The choices are the statuses the panel reads from `props.source`; the
+     * right under the price, since whether it can be bought is read together with what it costs. The choices are the statuses the panel reads from `props.source`; the
      * server checks the id against the table in the part's rules.
      */
     private function registerScreens(): void
@@ -79,7 +79,7 @@ class StockServiceProvider extends ServiceProvider
         $screens->extend(Product::SCREEN, [[
             'op' => 'add',
             'target' => 'main',
-            'position' => 'after:placement',
+            'position' => 'after:pricing',
             'node' => [
                 'id' => 'stock-card',
                 'type' => 'wx-card',
@@ -88,7 +88,7 @@ class StockServiceProvider extends ServiceProvider
                     'id' => 'stock-status',
                     'type' => 'wx-select',
                     'name' => StockPart::KEY.'.status',
-                    'label' => 'trans::webx-catalog-stock::product.status',
+                    // No label of its own: the card above already says what this is.
                     'help' => 'trans::webx-catalog-stock::product.status-help',
                     'props' => [
                         'source' => self::SOURCE,
