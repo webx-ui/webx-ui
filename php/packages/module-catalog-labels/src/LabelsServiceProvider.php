@@ -85,7 +85,7 @@ class LabelsServiceProvider extends ServiceProvider
                     'id' => 'labels-ids',
                     'type' => 'wx-categories',
                     'name' => LabelsPart::KEY.'.ids',
-                    'label' => 'trans::webx-catalog-labels::product.labels',
+                    // No label of its own: the card above already says what this is.
                     'help' => 'trans::webx-catalog-labels::product.labels-help',
                     // No main one: labels have no order on a product, the badges stand in the list's.
                     'props' => [

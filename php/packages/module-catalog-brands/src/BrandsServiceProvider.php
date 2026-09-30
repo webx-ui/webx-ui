@@ -142,7 +142,7 @@ class BrandsServiceProvider extends ServiceProvider
                     'id' => 'brand-id',
                     'type' => 'wx-select',
                     'name' => BrandPart::KEY.'.id',
-                    'label' => 'trans::webx-catalog-brands::product.brand',
+                    // No label of its own: the card above already says what this is.
                     'help' => 'trans::webx-catalog-brands::product.brand-help',
                     'props' => [
                         'source' => self::SOURCE,

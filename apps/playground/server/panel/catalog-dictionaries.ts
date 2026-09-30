@@ -263,7 +263,6 @@ export const productFormPatches: Patch[] = [
             id: 'labels-ids',
             type: 'wx-categories',
             name: 'labels.ids',
-            label: 'trans::webx-catalog-labels::product.labels',
             help: 'trans::webx-catalog-labels::product.labels-help',
             props: {
               source: 'catalog/labels',
@@ -318,7 +317,6 @@ export const productFormPatches: Patch[] = [
             id: 'brand-id',
             type: 'wx-select',
             name: 'brand.id',
-            label: 'trans::webx-catalog-brands::product.brand',
             help: 'trans::webx-catalog-brands::product.brand-help',
             props: {
               source: 'catalog/brands',
