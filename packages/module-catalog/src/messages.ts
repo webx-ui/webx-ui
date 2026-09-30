@@ -107,6 +107,7 @@ export const catalogMessages: Record<string, Messages> = {
     'select-all-found': 'Select everything found: :count',
     'selected-all': 'Selected everything found: :count',
     'bulk-apply': 'Apply',
+    'bulk-param-empty': 'Nothing — takes it off',
     'bulk-confirm-title': 'Apply «:action»?',
     'bulk-confirm-text': 'Products it applies to: :count',
     'bulk-running': 'Running in the background. Done :done of :total',

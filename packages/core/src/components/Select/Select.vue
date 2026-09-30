@@ -105,6 +105,14 @@ watch(
   { immediate: true },
 )
 
+/*
+ * The options may arrive after the value — a list asked from the server — and the box would go on
+ * showing the value itself. While the list is closed nobody is typing into it, so it follows.
+ */
+watch(singleLabel, (label) => {
+  if (!open.value && !props.multiple) searchText.value = label
+})
+
 watch(open, (value) => {
   if (value) {
     emit('open')

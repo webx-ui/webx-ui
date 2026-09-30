@@ -90,7 +90,11 @@ class StockServiceProvider extends ServiceProvider
                     'name' => StockPart::KEY.'.status',
                     'label' => 'trans::webx-catalog-stock::product.status',
                     'help' => 'trans::webx-catalog-stock::product.status-help',
-                    'props' => ['source' => self::SOURCE],
+                    'props' => [
+                        'source' => self::SOURCE,
+                        'clearable' => true,
+                        'placeholder' => 'trans::webx-catalog-stock::product.status-empty',
+                    ],
                 ]],
             ],
         ]]);

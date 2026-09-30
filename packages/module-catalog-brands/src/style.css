@@ -1,0 +1,5 @@
+/*
+ * The brands draw with the panel's shared screens and the catalogue's field types, and bring no
+ * styles of their own. The file is here because a site imports it — `extra.webx.panel.style` of
+ * the Composer half — and a stylesheet that is not there fails the build that imports it.
+ */

@@ -12,6 +12,22 @@ import type {
   HistoryEntry,
   HistoryPage,
 } from '../../../../packages/module-admin/src/history'
+import {
+  applyDictionaryAction,
+  checkDictionaryAction,
+  checkDictionaryValues,
+  DICTIONARY_FIELDS,
+  dictionaryActions,
+  dictionaryCells,
+  dictionaryChoice,
+  dictionaryColumns,
+  dictionaryCounts,
+  dictionaryFacets,
+  dictionaryMatch,
+  dictionaryValues,
+  isDictionaryAction,
+  writeDictionaryValues,
+} from './catalog-dictionaries'
 import { Reply } from './reply'
 import { claimUpload } from './uploads'
 
@@ -548,7 +564,8 @@ function productValues(record: ProductRecord): Record<string, unknown> {
 function productDetail(record: ProductRecord, locale: string) {
   return {
     product: productRow(record, locale),
-    values: productValues(record),
+    // The core's fields and `read()` of each satellite's part, under `<part>.<field>`.
+    values: { ...productValues(record), ...dictionaryValues(record.id) },
     images: imagesOf(record.id).map(imageRow),
   }
 }
@@ -911,6 +928,11 @@ function record_images(product: number, from: string | null, to: string | null):
 
 /* ------------------------------------------------------------------------ routes ----- */
 
+/** The products not in the bin, by id — what a reference book counts on each of its records. */
+export function liveProductIds(): number[] {
+  return live(products).map((one) => one.id)
+}
+
 export function registerCatalog(
   on: (method: string, pattern: string, handler: Handler) => void,
   fail: Fail,
@@ -962,7 +984,11 @@ export function registerCatalog(
   ]
 
   on('GET', '/catalog/facets', ({ locale }) => ({
-    data: facets(locale).map((facet) => ({ ...facet, indexable: facet.kind !== 'range' })),
+    data: [
+      ...facets(locale).map((facet) => ({ ...facet, indexable: facet.kind !== 'range' })),
+      // The satellites' (labels, stock, brands), after the core's, as the registry holds them.
+      ...dictionaryFacets(locale, line),
+    ],
     meta: { sorts: SORTS.map(([key, label]) => ({ key, label: word(label, locale) })) },
   }))
 
@@ -1000,14 +1026,20 @@ export function registerCatalog(
       (min === null || (one.price !== null && one.price >= Number(min))) &&
       (max === null || (one.price !== null && one.price <= Number(max)))
 
-    const found = base.filter((one) => byCategory(one) && byPrice(one))
+    const choice = dictionaryChoice((key) => query.getAll(`facets[${key}][]`))
+    const byDictionaries = (one: ProductRecord) => dictionaryMatch(one.id, choice)
+    const found = base.filter((one) => byCategory(one) && byPrice(one) && byDictionaries(one))
 
     /*
      * Each facet counted without its own choice, the way the engine does it: picking one category
      * does not take the others out of the filter.
      */
-    const counted: Record<string, unknown> = {}
-    const forCategories = base.filter(byPrice)
+    const counted: Record<string, unknown> = dictionaryCounts(
+      base.filter((one) => byCategory(one) && byPrice(one)).map((one) => one.id),
+      choice,
+      locale,
+    )
+    const forCategories = base.filter((one) => byPrice(one) && byDictionaries(one))
     const perCategory = live(categories).map((one) => {
       const ids = new Set(subtree(one.id))
 
@@ -1020,7 +1052,7 @@ export function registerCatalog(
       }
     })
     const prices = base
-      .filter(byCategory)
+      .filter((one) => byCategory(one) && byDictionaries(one))
       .map((one) => one.price)
       .filter((price): price is number => price !== null)
 
@@ -1056,13 +1088,16 @@ export function registerCatalog(
 
     return {
       ...paginate(
-        found.map((one) => productRow(one, locale)),
+        found.map((one) => ({
+          ...productRow(one, locale),
+          columns: dictionaryCells(one.id, locale),
+        })),
         query,
       ),
       counts: { no_category: live(products).filter((one) => one.category_id === null).length },
       facets: counted,
-      // No satellite columns in the core: the list says so rather than leaving the key out.
-      columns: [],
+      // The satellites' columns (`ProductColumns`): the labels, the stock status, the brand.
+      columns: dictionaryColumns(locale, line),
     }
   })
 
@@ -1078,8 +1113,15 @@ export function registerCatalog(
   ): void => {
     const before = productValues(product)
     const next: ProductRecord = { ...product, categories: [...product.categories] }
+    /* The satellites' fields: checked with the core's, written after them, one journal row. */
+    const parts: Record<string, unknown> = {}
 
     for (const [name, value] of Object.entries(values)) {
+      if (DICTIONARY_FIELDS.includes(name)) {
+        parts[name] = value
+        continue
+      }
+
       switch (name) {
         case 'name':
         case 'slug':
@@ -1120,7 +1162,7 @@ export function registerCatalog(
     // A new main category that was an additional one stops being additional (decision 2).
     next.categories = [...new Set(next.categories)].filter((id) => id !== next.category_id)
 
-    const errors: Record<string, string[]> = {}
+    const errors: Record<string, string[]> = checkDictionaryValues(parts, locale, line)
 
     if (Object.values(next.name).every((text) => text.trim() === '')) {
       errors[`name.${locale}`] = [line(locale, 'webx-catalog', 'errors.name-required')]
@@ -1176,13 +1218,18 @@ export function registerCatalog(
 
     Object.assign(product, next, { updated_at: now() })
 
+    const partChanges = writeDictionaryValues(product.id, parts, locale, line)
+
     if (created) {
       products.push(product)
 
       return
     }
 
-    const changes = diff(before, productValues(product), label('product', locale))
+    const changes = [
+      ...diff(before, productValues(product), label('product', locale)),
+      ...partChanges,
+    ]
     const event =
       product.is_published && !before.is_published
         ? 'published'
@@ -1774,8 +1821,8 @@ function registerBulk(
   fail: Fail,
   line: Line,
 ): void {
-  const describe = (locale: string) =>
-    ACTIONS.map((action) => ({
+  const describe = (locale: string) => [
+    ...ACTIONS.map((action) => ({
       key: action.key,
       label: line(locale, 'webx-catalog', `bulk.actions.${action.key}`),
       permission: action.permission,
@@ -1791,12 +1838,22 @@ function registerBulk(
             },
           ]
         : [],
-    }))
+    })),
+    // The satellites' (`BulkActions`): labels on and off, a stock status, a brand.
+    ...dictionaryActions(locale, line),
+  ]
+
+  const labelOf = (key: string, locale: string) =>
+    isDictionaryAction(key)
+      ? ((dictionaryActions(locale, line) as { key: string; label: string }[]).find(
+          (one) => one.key === key,
+        )?.label ?? key)
+      : line(locale, 'webx-catalog', `bulk.actions.${key}`)
 
   const answer = (run: BulkRecord, locale: string) => ({
     id: run.id,
     action: run.action,
-    label: line(locale, 'webx-catalog', `bulk.actions.${run.action}`),
+    label: labelOf(run.action, locale),
     status: run.status,
     total: run.ids.length,
     done: run.done,
@@ -1827,6 +1884,7 @@ function registerBulk(
       (Array.isArray(chosen) ? chosen : []).map(Number).flatMap((id) => subtree(id)),
     )
     const price = (query.facets?.price ?? {}) as { min?: number | null; max?: number | null }
+    const choice = dictionaryChoice((key) => query.facets?.[key])
     const byState = (one: ProductRecord) => {
       switch (query.state) {
         case 'published':
@@ -1853,6 +1911,7 @@ function registerBulk(
           (price.min == null || (one.price !== null && one.price >= price.min)) &&
           (price.max == null || (one.price !== null && one.price <= price.max)),
       )
+      .filter((one) => dictionaryMatch(one.id, choice))
       .map((one) => one.id)
       .sort((a, b) => a - b)
   }
@@ -1868,6 +1927,19 @@ function registerBulk(
 
     if (!product) {
       refuse(line(locale, 'webx-catalog', 'bulk.errors.gone'))
+
+      return
+    }
+
+    if (isDictionaryAction(run.action)) {
+      const changes = applyDictionaryAction(run.action, id, run.params, locale, line)
+
+      if (changes.length > 0) {
+        product.updated_at = now()
+        record('catalog.product', id, 'updated', changes, 'bulk')
+      }
+
+      run.done++
 
       return
     }
@@ -1935,7 +2007,9 @@ function registerBulk(
   on('GET', '/catalog/bulk', ({ locale }) => ({ data: describe(locale) }))
 
   on('POST', '/catalog/bulk', ({ body, locale }) => {
-    const action = ACTIONS.find((one) => one.key === body.action)
+    const action = isDictionaryAction(body.action)
+      ? { key: String(body.action), permission: 'catalog.manage', trashed: false, category: false }
+      : ACTIONS.find((one) => one.key === body.action)
 
     if (!action) {
       const message = line(locale, 'webx-catalog', 'bulk.errors.unknown-action').replace(
@@ -1947,6 +2021,12 @@ function registerBulk(
     }
 
     const params = (body.params ?? {}) as Record<string, unknown>
+
+    const refused = isDictionaryAction(action.key)
+      ? checkDictionaryAction(action.key, params, locale, line)
+      : null
+
+    if (refused) throw fail(422, Object.values(refused)[0]![0]!, refused)
 
     if (action.category && !categoryById(Number(params.category_id))) {
       const message = line(locale, 'webx-catalog', 'errors.unknown-category')

@@ -1,5 +1,6 @@
 import type { TypeRegistry } from '@webx-ui/schema'
 import CategoriesField from './categories/CategoriesField.vue'
+import SourceSelect from './categories/SourceSelect.vue'
 import CollectionField from './collections/CollectionField.vue'
 import LinkField from './LinkField.vue'
 import RelationsField from './relations/RelationsField.vue'
@@ -33,6 +34,10 @@ import SlugField from './SlugField.vue'
  * editor hosting the screen hands it the prefix (`provideRecordAddress`). `wx-category-slug` is
  * the same field under the name the category screens were first described with.
  *
+ * `wx-select` is the core's select that also takes `source` — a module's list as its options, the
+ * way `wx-categories` has it: the stock status of a product, its brand. Over the schema's own
+ * `wx-select`, which it is when there is no `source`.
+ *
  * `wx-collection` is a block's window onto another section — the FAQ's questions, a team — and
  * keeps which part of it to show, never the records (`collections/`).
  *
@@ -52,6 +57,7 @@ export const adminTypes: TypeRegistry = {
   // a form's width leaves the search box too narrow to read a page title in.
   'wx-link': { component: LinkField, kind: 'field', wide: true },
   'wx-categories': { component: CategoriesField, kind: 'field' },
+  'wx-select': { component: SourceSelect, kind: 'field' },
   // Wide: four controls in a column, and half a line leaves the category chips one to a row.
   'wx-collection': { component: CollectionField, kind: 'field', wide: true },
   // Wide: a row carries a picture, a name with a line under it and a mark, and the search box

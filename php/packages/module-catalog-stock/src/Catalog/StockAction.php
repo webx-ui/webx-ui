@@ -10,6 +10,7 @@ use WebxUi\Catalog\Bulk\BulkAction;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Parts\PartField;
 use WebxUi\CatalogStock\Models\StockStatus;
+use WebxUi\CatalogStock\StockServiceProvider;
 use WebxUi\Localization\Locales;
 
 /**
@@ -41,7 +42,7 @@ final class StockAction implements BulkAction
 
     public function params(): array
     {
-        return [new PartField('status_id', 'id', 'webx-catalog-stock::product.status', ['required', 'integer'], 'catalog_stock_list')];
+        return [new PartField('status_id', 'id', 'webx-catalog-stock::product.status', ['required', 'integer'], 'catalog_stock_list', StockServiceProvider::SOURCE)];
     }
 
     public function rules(): array

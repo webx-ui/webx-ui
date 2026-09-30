@@ -44,8 +44,24 @@ export interface ProductRow {
   updated_at: string | null
   deleted_at: string | null
   /** The satellites' columns (`ProductColumns`), by key. Absent while none is installed. */
-  columns?: Record<string, string | number | boolean | null>
+  columns?: Record<string, ColumnValue>
   /** A row of `WxTable`, which reads cells by key. */
+  [key: string]: unknown
+}
+
+/**
+ * What a satellite's column holds for one product: words, or a record by name — with a tone
+ * (`{ name, color }`, a stock status), or taken off the site (`{ name, visible: false }`, a brand) —
+ * or a list of those (labels). `ColumnValue.vue` draws each by its shape.
+ */
+export type ColumnValue = string | number | boolean | null | ColumnRecord | ColumnRecord[]
+
+export interface ColumnRecord {
+  id?: number | string
+  name: string
+  /** One of the six tones (`tones.ts`). */
+  color?: string | null
+  visible?: boolean
   [key: string]: unknown
 }
 
@@ -258,6 +274,8 @@ export interface BulkParam {
   rules?: string[]
   /** The allowed values, or the tool that lists them — which the panel does not follow. */
   values?: Array<string | number | { value: string | number; label: string }> | string
+  /** Where the panel asks for the values instead: a reference book's path (`catalog/labels`). */
+  source?: string
 }
 
 /** One bulk action the server offers this administrator (§11.4): the core's or a satellite's. */

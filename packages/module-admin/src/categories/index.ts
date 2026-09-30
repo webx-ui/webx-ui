@@ -1,5 +1,10 @@
 export { createCategoriesApi, reorderItems, type CategoriesApi } from './api'
-export { useCategoryEditor, type CategoryEditorContext } from './editor'
+export {
+  categoryEditorKey,
+  provideCategoryEditor,
+  useCategoryEditor,
+  type CategoryEditorContext,
+} from './editor'
 export {
   itemOrderMode,
   useItemOrder,

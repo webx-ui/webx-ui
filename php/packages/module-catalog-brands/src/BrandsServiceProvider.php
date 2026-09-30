@@ -144,7 +144,12 @@ class BrandsServiceProvider extends ServiceProvider
                     'name' => BrandPart::KEY.'.id',
                     'label' => 'trans::webx-catalog-brands::product.brand',
                     'help' => 'trans::webx-catalog-brands::product.brand-help',
-                    'props' => ['source' => self::SOURCE, 'filterable' => true, 'clearable' => true],
+                    'props' => [
+                        'source' => self::SOURCE,
+                        'filterable' => true,
+                        'clearable' => true,
+                        'placeholder' => 'trans::webx-catalog-brands::product.brand-empty',
+                    ],
                 ]],
             ],
         ]]);
