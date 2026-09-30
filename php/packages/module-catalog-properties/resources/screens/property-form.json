@@ -1,0 +1,276 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "catalog.property-form",
+  "model": "catalog.property",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "main",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-properties::property.tab-main",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "title",
+                  "type": "wx-input",
+                  "name": "title",
+                  "label": "trans::webx-catalog-properties::property.title",
+                  "localized": true,
+                  "props": { "maxlength": 255 }
+                },
+                {
+                  "id": "code",
+                  "type": "wx-input",
+                  "name": "code",
+                  "label": "trans::webx-catalog-properties::property.code",
+                  "help": "trans::webx-catalog-properties::property.code-help",
+                  "localized": true,
+                  "props": { "maxlength": 48 }
+                },
+                {
+                  "id": "type",
+                  "type": "wx-select",
+                  "name": "type",
+                  "label": "trans::webx-catalog-properties::property.type",
+                  "help": "trans::webx-catalog-properties::property.type-help",
+                  "props": {
+                    "options": [
+                      {
+                        "label": "trans::webx-catalog-properties::property.types.select",
+                        "value": "select"
+                      },
+                      {
+                        "label": "trans::webx-catalog-properties::property.types.number",
+                        "value": "number"
+                      },
+                      {
+                        "label": "trans::webx-catalog-properties::property.types.text",
+                        "value": "text"
+                      },
+                      {
+                        "label": "trans::webx-catalog-properties::property.types.bool",
+                        "value": "bool"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "group-id",
+                  "type": "wx-select",
+                  "name": "group_id",
+                  "label": "trans::webx-catalog-properties::property.group_id",
+                  "props": { "source": "catalog/property-groups", "clearable": true }
+                }
+              ]
+            },
+            {
+              "id": "values-shape",
+              "type": "wx-card",
+              "label": "trans::webx-catalog-properties::property.card-values",
+              "children": [
+                {
+                  "id": "is-multiple",
+                  "type": "wx-switch",
+                  "name": "is_multiple",
+                  "label": "trans::webx-catalog-properties::property.is_multiple"
+                },
+                {
+                  "id": "is-tree",
+                  "type": "wx-switch",
+                  "name": "is_tree",
+                  "label": "trans::webx-catalog-properties::property.is_tree"
+                },
+                {
+                  "id": "leaves-only",
+                  "type": "wx-switch",
+                  "name": "leaves_only",
+                  "label": "trans::webx-catalog-properties::property.leaves_only"
+                },
+                {
+                  "id": "value-order",
+                  "type": "wx-select",
+                  "name": "value_order",
+                  "label": "trans::webx-catalog-properties::property.value_order",
+                  "props": {
+                    "options": [
+                      {
+                        "label": "trans::webx-catalog-properties::property.orders.alpha",
+                        "value": "alpha"
+                      },
+                      {
+                        "label": "trans::webx-catalog-properties::property.orders.manual",
+                        "value": "manual"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "has-color",
+                  "type": "wx-switch",
+                  "name": "has_color",
+                  "label": "trans::webx-catalog-properties::property.has_color"
+                },
+                {
+                  "id": "has-image",
+                  "type": "wx-switch",
+                  "name": "has_image",
+                  "label": "trans::webx-catalog-properties::property.has_image"
+                },
+                {
+                  "id": "unit-prefix",
+                  "type": "wx-input",
+                  "name": "unit_prefix",
+                  "label": "trans::webx-catalog-properties::property.unit_prefix",
+                  "localized": true,
+                  "props": { "maxlength": 16 }
+                },
+                {
+                  "id": "unit-suffix",
+                  "type": "wx-input",
+                  "name": "unit_suffix",
+                  "label": "trans::webx-catalog-properties::property.unit_suffix",
+                  "localized": true,
+                  "props": { "maxlength": 16 }
+                },
+                {
+                  "id": "precision",
+                  "type": "wx-input-number",
+                  "name": "precision",
+                  "label": "trans::webx-catalog-properties::property.precision",
+                  "props": { "min": 0, "max": 6 }
+                },
+                {
+                  "id": "toggle-slug",
+                  "type": "wx-input",
+                  "name": "toggle_slug",
+                  "label": "trans::webx-catalog-properties::property.toggle_slug",
+                  "localized": true,
+                  "props": { "maxlength": 48 }
+                }
+              ]
+            },
+            {
+              "id": "filter",
+              "type": "wx-card",
+              "label": "trans::webx-catalog-properties::property.card-filter",
+              "children": [
+                {
+                  "id": "is-filterable",
+                  "type": "wx-switch",
+                  "name": "is_filterable",
+                  "label": "trans::webx-catalog-properties::property.is_filterable"
+                },
+                {
+                  "id": "filter-mode",
+                  "type": "wx-select",
+                  "name": "filter_mode",
+                  "label": "trans::webx-catalog-properties::property.filter_mode",
+                  "props": {
+                    "options": [
+                      {
+                        "label": "trans::webx-catalog-properties::property.modes.slider",
+                        "value": "slider"
+                      },
+                      {
+                        "label": "trans::webx-catalog-properties::property.modes.intervals",
+                        "value": "intervals"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "id": "is-indexable",
+                  "type": "wx-switch",
+                  "name": "is_indexable",
+                  "label": "trans::webx-catalog-properties::property.is_indexable"
+                },
+                {
+                  "id": "seo-pattern",
+                  "type": "wx-input",
+                  "name": "seo_pattern",
+                  "label": "trans::webx-catalog-properties::property.seo_pattern",
+                  "help": "trans::webx-catalog-properties::property.seo-pattern-help",
+                  "localized": true,
+                  "props": { "maxlength": 255 }
+                },
+                {
+                  "id": "is-searchable",
+                  "type": "wx-switch",
+                  "name": "is_searchable",
+                  "label": "trans::webx-catalog-properties::property.is_searchable"
+                }
+              ]
+            },
+            {
+              "id": "showing",
+              "type": "wx-card",
+              "label": "trans::webx-catalog-properties::property.card-showing",
+              "children": [
+                {
+                  "id": "in-card",
+                  "type": "wx-switch",
+                  "name": "in_card",
+                  "label": "trans::webx-catalog-properties::property.in_card"
+                },
+                {
+                  "id": "on-page",
+                  "type": "wx-switch",
+                  "name": "on_page",
+                  "label": "trans::webx-catalog-properties::property.on_page"
+                },
+                {
+                  "id": "in-list",
+                  "type": "wx-switch",
+                  "name": "in_list",
+                  "label": "trans::webx-catalog-properties::property.in_list"
+                }
+              ]
+            },
+            {
+              "id": "project-fields",
+              "type": "wx-card",
+              "label": "trans::webx-admin::screens.project-fields",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "values-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-properties::property.tab-values",
+          "children": [{ "id": "values", "type": "wx-catalog-property-values" }]
+        },
+        {
+          "id": "intervals-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-properties::property.tab-intervals",
+          "children": [{ "id": "intervals", "type": "wx-catalog-property-intervals" }]
+        },
+        {
+          "id": "history-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-properties::property.tab-history",
+          "children": [
+            {
+              "id": "history-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "history",
+                  "type": "wx-history",
+                  "props": { "type": "catalog.property", "title": "" }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

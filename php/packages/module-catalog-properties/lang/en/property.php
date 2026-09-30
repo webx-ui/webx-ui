@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'tab-main' => 'Main',
+    'tab-values' => 'Values',
+    'tab-intervals' => 'Intervals',
+    'tab-history' => 'History',
+    'card-values' => 'Values',
+    'card-filter' => 'Filter and search',
+    'card-showing' => 'Where it is shown',
+    'title' => 'Name',
+    'code' => 'Code',
+    'code-help' => 'Latin letters, digits and hyphens: the property in a filter address (color_black), per language. Made from the name when left empty.',
+    'type' => 'Type',
+    'type-help' => 'Chosen once: the values of the products have its shape.',
+    'types' => [
+        'select' => 'Reference book',
+        'number' => 'Number',
+        'text' => 'Text',
+        'bool' => 'Yes / no',
+    ],
+    'group_id' => 'Group',
+    'is_multiple' => 'Several values',
+    'is_tree' => 'Values in a tree',
+    'leaves_only' => 'Only the last level',
+    'is_filterable' => 'In the filter',
+    'filter_mode' => 'Filter by',
+    'modes' => [
+        'slider' => 'Slider',
+        'intervals' => 'Intervals',
+    ],
+    'is_indexable' => 'Pages of one value open to search engines',
+    'is_searchable' => 'Search by value',
+    'in_card' => 'On the card in the catalogue',
+    'on_page' => 'In the specifications of the product',
+    'in_list' => 'Column in the list of products',
+    'value_order' => 'Order of values',
+    'orders' => [
+        'alpha' => 'Alphabetical',
+        'manual' => 'By hand',
+    ],
+    'has_color' => 'Values have a colour',
+    'has_image' => 'Values have a picture',
+    'unit_prefix' => 'Before the number',
+    'unit_suffix' => 'After the number',
+    'precision' => 'Digits after the point',
+    'toggle_slug' => 'The word for «yes» in an address',
+    'seo_pattern' => 'Page title pattern',
+    'seo-pattern-help' => '{category}, {property} and {value} are replaced. Empty — the catalogue\'s own pattern.',
+];
