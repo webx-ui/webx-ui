@@ -1,5 +1,14 @@
 # @webx-ui/module-recipes
 
+## 0.1.6
+
+### Patch Changes
+
+- Updated dependencies [38c5b08]
+- Updated dependencies [5ebd999]
+  - @webx-ui/module-admin@0.21.0
+  - @webx-ui/core@0.34.2
+
 ## 0.1.5
 
 ### Patch Changes
