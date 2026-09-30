@@ -468,7 +468,7 @@ depth, has_children, products_count`.
 
 ### 9.2. `ExchangeColumns`
 
-Не объявляются до спеки обмена; формат — решение 12. Текст на языках — колонки `code` (язык по
+Провайдер колонок — [`WEBX_UI_MODULE_CATALOG_EXCHANGE.md`](WEBX_UI_MODULE_CATALOG_EXCHANGE.md) §7.2 (сессия E2); формат — решение 12. Текст на языках — колонки `code` (язык по
 умолчанию) и `code@ru`.
 
 ### 9.3. `StorefrontParts`
