@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-catalog-labels",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Labels for the catalogue of the WebX UI admin panel: top, sale, new — a reference book of badges, a field of the product form, a column and a filter of the list.",
   "license": "MIT",
   "type": "module",
