@@ -30,12 +30,20 @@ use WebxUi\Catalog\Models\Category;
  * On a category page, choosing one category below it is not a filter but a move: the address is
  * that category's own, with the rest of the choice after it — `/laptops/category_gaming-laptops`
  * would be a second address of `/gaming-laptops` (§8.3 of the architecture).
+ *
+ * Codes and slugs are the page's language's. A code or a slug nobody has now is looked up among
+ * the old spellings ({@see FilterAliases}) before the answer is a 404: a renamed one reads as its
+ * new self, a deleted one drops out — and either way the address differs from the one spelling,
+ * which is the 301.
  */
 final class SegmentSerializer implements FilterSerializer
 {
     private const RANGE = '/^(\d+(?:\.\d+)?)?-(\d+(?:\.\d+)?)?$/';
 
-    public function __construct(private readonly Facets $facets) {}
+    public function __construct(
+        private readonly Facets $facets,
+        private readonly FilterAliases $aliases,
+    ) {}
 
     public function parse(FilterContext $context, string $tail): ?FilterState
     {
@@ -56,11 +64,31 @@ final class SegmentSerializer implements FilterSerializer
             }
 
             [$code, $rest] = explode('_', $segment, 2);
-            $facet = $context->facetByCode($code);
             $parts = explode('_', $rest);
 
-            if ($facet === null || in_array('', $parts, true)) {
+            if (in_array('', $parts, true)) {
                 return null;
+            }
+
+            $facet = $context->facetByCode($code);
+
+            if ($facet === null) {
+                $alias = $this->aliases->code($code, $context->locale);
+
+                if ($alias === null) {
+                    return null;
+                }
+
+                // A facet that is gone: the segment drops out of the address.
+                if ($alias['target'] === null) {
+                    continue;
+                }
+
+                $facet = $context->facet($alias['facet']);
+
+                if ($facet === null) {
+                    return null;
+                }
             }
 
             if ($facet->kind() === FacetKind::Range) {
@@ -84,12 +112,25 @@ final class SegmentSerializer implements FilterSerializer
             $facet = $context->facet($key);
             $asked = array_values(array_unique($asked));
             $resolved = $facet?->resolveSlugs($asked, $context->locale) ?? [];
+            $values = array_values($resolved);
+            $missing = array_values(array_diff($asked, array_map('strval', array_keys($resolved))));
 
-            if (count($resolved) !== count($asked)) {
-                return null;
+            if ($missing !== []) {
+                $aliased = $this->aliases->values($key, $missing, $context->locale);
+
+                foreach ($missing as $slug) {
+                    if (! array_key_exists($slug, $aliased)) {
+                        return null;
+                    }
+
+                    // Null: a value that is gone drops out of the choice.
+                    if ($aliased[$slug] !== null) {
+                        $values[] = $aliased[$slug];
+                    }
+                }
             }
 
-            $chosen[$key] = FacetValue::of(array_values($resolved));
+            $chosen[$key] = FacetValue::of($values);
         }
 
         return FilterState::of($chosen);
@@ -135,7 +176,7 @@ final class SegmentSerializer implements FilterSerializer
                 }
 
                 if ($facet->kind() === FacetKind::Range) {
-                    $segments[] = $facet->code().'_'.$this->number($value->min).'-'.$this->number($value->max);
+                    $segments[] = $facet->code($context->locale).'_'.$this->number($value->min).'-'.$this->number($value->max);
 
                     continue;
                 }
@@ -147,7 +188,7 @@ final class SegmentSerializer implements FilterSerializer
                 }
 
                 sort($written, SORT_STRING);
-                $segments[] = $facet->code().'_'.implode('_', array_unique($written));
+                $segments[] = $facet->code($context->locale).'_'.implode('_', array_unique($written));
             }
 
             $tails[] = implode('/', $segments);

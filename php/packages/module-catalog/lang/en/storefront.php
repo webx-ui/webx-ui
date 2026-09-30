@@ -25,6 +25,7 @@ return [
     'apply' => 'Apply',
     'reset' => 'Reset',
     'more' => 'Show all',
+    'more-filters' => 'More filters',
 
     'sort' => 'Sort',
     'sort-default' => 'Recommended',

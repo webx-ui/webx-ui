@@ -159,7 +159,7 @@ final class RegistriesTest extends TestCase
                 return 'p.material';
             }
 
-            public function code(): string
+            protected function baseCode(): string
             {
                 return 'material_type';
             }

@@ -9,9 +9,28 @@ namespace WebxUi\Catalog\Facets;
  *
  * Indexable when it is a reference book; values are their own slugs and their own labels; a
  * choice is already in its one spelling. Anything of that a facet knows better, it overrides.
+ *
+ * The code in an address is the site's to translate, not the facet's: `webx-catalog.facet_codes`
+ * names it per language (`'price' => ['ru' => 'cena']`), and a language it does not name gets
+ * {@see baseCode()} — the key, unless the facet says otherwise.
  */
 abstract class AbstractFacet implements Facet
 {
+    public function code(string $locale): string
+    {
+        $codes = config('webx-catalog.facet_codes');
+        // Read as an array, not by a dotted path: a key like `p.12` is a dot of its own.
+        $configured = is_array($codes) && is_array($codes[$this->key()] ?? null) ? ($codes[$this->key()][$locale] ?? null) : null;
+
+        return is_string($configured) && $configured !== '' ? $configured : $this->baseCode();
+    }
+
+    /** The code in every language the config does not name. */
+    protected function baseCode(): string
+    {
+        return $this->key();
+    }
+
     public function indexable(): bool
     {
         return in_array($this->kind(), [FacetKind::Terms, FacetKind::Tree], true);

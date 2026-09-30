@@ -22,8 +22,10 @@ use WebxUi\Admin\History\RecordsHistory;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\HasExtra;
 use WebxUi\Catalog\Catalog;
+use WebxUi\Catalog\Filter\FilterAliases;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Storefront\ListingSubject;
+use WebxUi\CatalogBrands\Catalog\BrandFacet;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Screens\MediaFiles;
@@ -90,6 +92,9 @@ class Brand extends Model implements Category, ListingSubject, Visible
     /** The columns whose change changes what the products show or how they are found. */
     public const TOUCHING = ['title', 'slug', 'is_visible', 'logo_id'];
 
+    /** @var array<array-key, mixed>|null the slugs a save in progress is replacing */
+    private ?array $slugsBefore = null;
+
     /** The brand's own fields the journal names in words; the project's are named by their screen. */
     public const HISTORY = ['title', 'slug', 'description', 'logo_id', 'is_visible', 'is_featured'];
 
@@ -121,11 +126,22 @@ class Brand extends Model implements Category, ListingSubject, Visible
             }
         });
 
+        // The slugs before the save, taken here: by the brand's own `updated` the registry of
+        // addresses has already saved it again, and the raw originals hold the new ones.
+        static::updating(static function (self $brand): void {
+            $brand->slugsBefore = $brand->isDirty('slug') ? json_decode((string) $brand->getRawOriginal('slug'), true) : null;
+        });
+
         // A rename, a new address, a publication: every product of the brand shows it, and its
         // document holds it — one statement marks them all, never a loop.
         static::updated(static function (self $brand): void {
             if ($brand->wasChanged(self::TOUCHING)) {
                 Container::getInstance()->make(Catalog::class)->touchQuery($brand->affectedProducts());
+            }
+
+            if (is_array($brand->slugsBefore)) {
+                $brand->recordFilterAliases($brand->slugsBefore);
+                $brand->slugsBefore = null;
             }
         });
     }
@@ -366,6 +382,25 @@ class Brand extends Model implements Category, ListingSubject, Visible
         }
 
         return $value;
+    }
+
+    /**
+     * The slugs this save replaced, as old spellings of the brand in the filter (§4.2 of the
+     * properties spec): `/laptops/brand_old-name` keeps working, as a 301 to the new one.
+     *
+     * @param  array<array-key, mixed>  $before  language → slug, as the save found them
+     */
+    private function recordFilterAliases(array $before): void
+    {
+        $aliases = Container::getInstance()->make(FilterAliases::class);
+
+        foreach ($before as $locale => $old) {
+            $now = $this->getTranslation('slug', (string) $locale, false);
+
+            if (is_string($old) && $old !== '' && $old !== $now) {
+                $aliases->record(BrandFacet::KEY, (string) $locale, FilterAliases::VALUE, $old, (string) $this->getKey());
+            }
+        }
     }
 
     private function logoIdOf(mixed $value): ?int

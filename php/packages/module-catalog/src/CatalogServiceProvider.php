@@ -7,6 +7,7 @@ namespace WebxUi\Catalog;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Collections\CollectionSources;
@@ -36,6 +37,7 @@ use WebxUi\Catalog\Facets\CategoryFacet;
 use WebxUi\Catalog\Facets\CategoryFacets;
 use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Facets\PriceFacet;
+use WebxUi\Catalog\Filter\FilterAliases;
 use WebxUi\Catalog\Filter\FilterSerializer;
 use WebxUi\Catalog\Filter\FilterUrls;
 use WebxUi\Catalog\Filter\SegmentSerializer;
@@ -61,6 +63,7 @@ use WebxUi\Catalog\Purchase\Purchasability;
 use WebxUi\Catalog\Routing\CatalogMisses;
 use WebxUi\Catalog\Routing\CategoryHandler;
 use WebxUi\Catalog\Routing\ProductHandler;
+use WebxUi\Catalog\Search\SearchContributors;
 use WebxUi\Catalog\Seo\FilterSitemap;
 use WebxUi\Catalog\Seo\ListingSource;
 use WebxUi\Catalog\Seo\UnavailableSource;
@@ -106,6 +109,8 @@ class CatalogServiceProvider extends ServiceProvider
         $this->app->singleton(StorefrontParts::class);
         $this->app->singleton(FilterUrls::class);
         $this->app->singleton(VideoProviders::class);
+        $this->app->singleton(SearchContributors::class);
+        $this->app->singleton(FilterAliases::class);
 
         $this->app->singleton(Catalog::class);
         $this->app->singleton(CategoryFacets::class);
@@ -343,6 +348,11 @@ class CatalogServiceProvider extends ServiceProvider
         // without an `updated`, and says so with an event of its own.
         $this->app->make(Dispatcher::class)->listen('eloquent.moved: '.Category::class, function (): void {
             $this->app->make(CategoryFacets::class)->forget();
+        });
+
+        // The sources' facets are kept for a request; a worker's next job is another request.
+        $this->app->make(Dispatcher::class)->listen(JobProcessing::class, function (): void {
+            $this->app->make(Facets::class)->flush();
         });
     }
 

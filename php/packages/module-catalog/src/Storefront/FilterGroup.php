@@ -9,7 +9,8 @@ use WebxUi\Catalog\Facets\FacetKind;
 
 /**
  * One facet of the filter, ready to draw: its options, or for a range the ends, what is chosen,
- * and where the form without JavaScript sends the numbers (§10.2).
+ * and where the form without JavaScript sends the numbers (§10.2). Not `expanded`, it stands under
+ * «More filters» (§4.4 of the properties spec).
  */
 final class FilterGroup
 {
@@ -22,6 +23,7 @@ final class FilterGroup
         public readonly array $options = [],
         public readonly ?array $range = null,
         public readonly ?string $resetUrl = null,
+        public readonly bool $expanded = true,
     ) {}
 
     public function kind(): FacetKind
