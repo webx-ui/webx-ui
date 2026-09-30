@@ -281,7 +281,7 @@ export const productFormPatches: Patch[] = [
     {
       op: 'add',
       target: 'main',
-      position: 'after:placement',
+      position: 'after:pricing',
       node: {
         id: 'stock-card',
         type: 'wx-card',
