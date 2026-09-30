@@ -1,5 +1,15 @@
 # @webx-ui/module-services
 
+## 0.1.11
+
+### Patch Changes
+
+- Updated dependencies [38c5b08]
+- Updated dependencies [5ebd999]
+  - @webx-ui/module-admin@0.21.0
+  - @webx-ui/core@0.34.2
+  - @webx-ui/module-blocks@0.11.3
+
 ## 0.1.10
 
 ### Patch Changes
