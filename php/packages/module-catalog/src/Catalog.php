@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Catalog;
 
+use Closure;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -24,6 +25,9 @@ use WebxUi\Catalog\Models\Product;
 final class Catalog
 {
     private ?CatalogEngine $engine = null;
+
+    /** @var array<int, true>|null the ids a deferring caller collects, null when nobody is */
+    private ?array $deferred = null;
 
     public function __construct(
         private readonly Config $config,
@@ -49,6 +53,14 @@ final class Catalog
             return;
         }
 
+        if ($this->deferred !== null) {
+            foreach ($ids as $id) {
+                $this->deferred[(int) $id] = true;
+            }
+
+            return;
+        }
+
         $now = Carbon::now();
         $rows = [];
 
@@ -59,6 +71,37 @@ final class Catalog
         foreach (array_chunk(array_values($rows), 500) as $chunk) {
             DB::table('catalog_index_queue')->insertOrIgnore($chunk);
         }
+    }
+
+    /**
+     * Collect the marks of everything `$work` saves and write them together when it is done —
+     * one statement for a chunk of an import rather than one per row (decision 13 of the
+     * exchange spec). Called inside the chunk's transaction, so the marks are committed with the
+     * rows and rolled back with them; a nested call is part of the outer one.
+     *
+     * @template T
+     *
+     * @param  Closure(): T  $work
+     * @return T
+     */
+    public function deferTouch(Closure $work): mixed
+    {
+        if ($this->deferred !== null) {
+            return $work();
+        }
+
+        $this->deferred = [];
+
+        try {
+            $result = $work();
+            $ids = array_keys($this->deferred);
+        } finally {
+            $this->deferred = null;
+        }
+
+        $this->touch($ids);
+
+        return $result;
     }
 
     /**

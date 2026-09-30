@@ -155,6 +155,33 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Import and export of CSV and XLSX
+    |---------------------------------------------------------------------------
+    |
+    | A file of `sync_limit` rows or fewer is done inside the request; a larger
+    | one goes to the queue in chunks of `chunk` rows, one transaction each, a
+    | job doing chunks for `job_seconds` before it hands over to the next. After
+    | `max_errors` bad rows a run stops. A CSV that is neither UTF-8 nor marked
+    | by a BOM is read as `csv_fallback_encoding`. Files — what was imported,
+    | what was exported — live on `disk` for `keep_hours`; the runs and their
+    | errors for `keep_runs_days`.
+    |
+    */
+
+    'exchange' => [
+        'chunk' => 200,
+        'sync_limit' => 50,
+        'job_seconds' => 60,
+        'max_errors' => 1000,
+        'max_bytes' => 200 * 1024 * 1024,
+        'csv_fallback_encoding' => 'Windows-1252',
+        'disk' => env('WEBX_CATALOG_EXCHANGE_DISK', 'local'),
+        'keep_hours' => 24,
+        'keep_runs_days' => 90,
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
     | The layout the storefront stands in
     |---------------------------------------------------------------------------
     |
