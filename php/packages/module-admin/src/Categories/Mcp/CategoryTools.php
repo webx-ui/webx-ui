@@ -72,9 +72,12 @@ final readonly class CategoryTools
                 "The {$many} in the order they stand in on the site: what each is called in every language, "
                 .($addressed ? 'the address it answers at, ' : '')
                 ."whether it is visible, and how many {$items} are in it. "
-                .($addressed
-                    ? "The first {$one} of an item is its main one — the one in the breadcrumbs — so the order they are given in matters. "
-                    : "A {$one} has no address of its own: it is a way to pick and filter {$items}. ")
+                .match (true) {
+                    ! $addressed => "A {$one} has no address of its own: it is a way to pick and filter {$items}. ",
+                    // A brand is one per product: an agent told about a main one would look for the rest.
+                    $kind->single => '',
+                    default => "The first {$one} of an item is its main one — the one in the breadcrumbs — so the order they are given in matters. ",
+                }
                 ."Read this before filing anything, and reuse a {$one} rather than making a near-duplicate.",
                 fn (array $arguments): array => $this->list($arguments),
                 ['properties' => [

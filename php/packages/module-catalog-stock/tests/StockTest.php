@@ -145,6 +145,25 @@ final class StockTest extends TestCase
     }
 
     #[Test]
+    public function the_list_counts_a_product_without_a_row_under_the_default_as_the_filter_does(): void
+    {
+        $inStock = $this->stockStatus('in-stock');
+        $out = $this->stockStatus('out-of-stock');
+        $this->product('Rowless');
+        $this->product('Written', $inStock);
+        $this->product('Gone', $out);
+        $this->product('Binned')->delete();
+
+        /** @var list<array<string, mixed>> $rows */
+        $rows = $this->actingAs($this->editor(), 'cms')->getJson($this->api('stock'))->assertOk()->json('data');
+        $counts = collect($rows)->pluck('products_count', 'id')->all();
+
+        $this->assertSame([$inStock->id => 2, $out->id => 1, $this->stockStatus('on-order')->id => 0], $counts);
+        $this->assertSame(2, $inStock->itemCount());
+        $this->assertSame(1, $out->itemCount());
+    }
+
+    #[Test]
     public function the_filter_counts_a_product_without_a_row_under_the_default(): void
     {
         $inStock = $this->stockStatus('in-stock');

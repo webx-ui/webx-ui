@@ -19,6 +19,7 @@ use WebxUi\Catalog\Parts\ProductParts;
 use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\CatalogBrands\Catalog\BrandFacet;
 use WebxUi\CatalogBrands\Models\Brand;
+use WebxUi\Mcp\Registry\ToolRegistry;
 
 /**
  * §2.3 and §9 of the dictionaries spec: a brand's page is the catalogue narrowed to it, with the
@@ -245,7 +246,18 @@ final class BrandsTest extends TestCase
 
         $this->actingAs($editor, 'cms')->putJson($this->api("products/{$product->id}"), [
             'values' => ['brand.id' => 404],
-        ])->assertStatus(422)->assertJsonValidationErrors('brand.id');
+        ])->assertStatus(422)->assertJsonValidationErrors(['brand.id' => 'There is no such brand.']);
+    }
+
+    #[Test]
+    public function the_agent_is_not_told_about_a_main_brand_among_several(): void
+    {
+        // A product has one brand: the category sets' "the first is the main one" would send an
+        // agent looking for the others.
+        $description = $this->app->make(ToolRegistry::class)->tool('catalog_brands_list')->tool->description;
+
+        $this->assertStringContainsString('the address it answers at', $description);
+        $this->assertStringNotContainsString('main one', $description);
     }
 
     #[Test]
