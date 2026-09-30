@@ -1,5 +1,0 @@
----
-'@webx-ui/php': minor
----
-
-New composer package `webx-ui/module-catalog-properties` (P2 of the properties series): properties of products — a reference book (flat or a tree, with a colour and a picture per value), a number with a prefix, a suffix and a precision, a translated text, a yes/no. A category's set is its ancestors' properties then its own; a product shows, filters and is found by the set of its main category, and a value outside it is kept for when the category has it again (`clear-outside-set` deletes such values in bulk). The properties become facets of the catalogue from the database — terms, trees, sliders, intervals, toggles, all unchosen ones counted in one statement per kind — the set's on a category page and by coverage in the search, on a brand page and at the root (`webx-catalog-properties.dynamic_facets`). The product form gets `properties.values`; values merge into one another with their old addresses redirecting; codes and slugs are per language and renamed ones answer 301. The panel's section, the storefront parts and the agent's tools follow in the next stages.
