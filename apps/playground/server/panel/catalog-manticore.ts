@@ -101,6 +101,7 @@ export function registerManticore(on: On, fail: Fail, productCount: () => number
             reason: rebuilt ? null : 'the column [codes] is missing',
             documents: products,
             rebuilding: filling,
+            filled: filling ? state.done : null,
           },
           {
             locale: 'en',
@@ -109,6 +110,7 @@ export function registerManticore(on: On, fail: Fail, productCount: () => number
             reason: null,
             documents: rebuilt ? products : products - 3,
             rebuilding: filling,
+            filled: filling ? state.done : null,
           },
         ]
       : []

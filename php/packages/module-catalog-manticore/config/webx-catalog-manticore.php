@@ -153,6 +153,19 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | The rebuild's swap
+    |---------------------------------------------------------------------------
+    |
+    | A rebuilt table takes the live one's place by `DROP` and `RENAME`: some
+    | tens of milliseconds when the table is not there. A question that falls
+    | into them waits this many milliseconds and is asked once more.
+    |
+    */
+
+    'swap_wait' => 150,
+
+    /*
+    |---------------------------------------------------------------------------
     | The rebuild from the panel
     |---------------------------------------------------------------------------
     |

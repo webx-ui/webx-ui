@@ -874,13 +874,14 @@ MCP: `catalog_labels_*`, `catalog_stock_*`, `catalog_brands_*` (по пять: `
 
 ### `webx-ui/module-catalog-manticore` — движок Manticore
 
-Статус: M1–M3 из четырёх — [спецификация](WEBX_UI_CATALOG_MANTICORE.md) (§5, §7): движок
+Статус: M1–M4 сделаны, серия закрыта 01.10.2026 — [спецификация](WEBX_UI_CATALOG_MANTICORE.md) (§5, §7): движок
 `manticore` (таблица на язык с морфологией всех языков сайта, фасеты и счётчики одним заходом,
 перестройка подменой `{table}_next`, откат на `SqlEngine` или 503), поиск с кодами и двумя
 заходами исправлений, проверки doctor, общий набор тестов на оба движка и CI-джоба с Manticore;
 раздел «Система → Поисковый индекс» (только на этом движке) с перестройкой задачей в очереди и
-MCP `catalog_index_status`. npm-половина — `@webx-ui/module-catalog-manticore`. Впереди — демо и
-приёмка на reference-shop (M4). Не выпущен: до первого релиза — зеркало и Packagist руками
+MCP `catalog_index_status`. npm-половина — `@webx-ui/module-catalog-manticore`. Принят на выгрузке
+reference-shop (93 677 товаров, хомлаб): перестройка 44 с, категория с фасетами 44 мс, опечатка 51 мс
+(§4 спеки). Не выпущен: до первого релиза — зеркало и Packagist руками
 (`WEBX_UI_PHP_RELEASE.md`), первую версию npm-пакета публикует человек.
 
 Подключение: `WEBX_CATALOG_ENGINE=manticore`, `MANTICORE_HOST`, `MANTICORE_PORT`, обязательный
