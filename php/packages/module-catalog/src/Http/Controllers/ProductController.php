@@ -52,7 +52,8 @@ final class ProductController
      * - `facets`, what each facet counts for the list as filtered, a facet's own choice aside;
      * - `columns`, the satellites' columns (§7.4), whose values each row carries under `columns`;
      * - `corrected`, the words the list is for when the ones typed found nothing and the engine
-     *   found these instead (decisions 16–17 of the Manticore spec); `typed=1` asks for none.
+     *   found these instead (decisions 16–17 of the Manticore spec); `typed=1` asks for none;
+     * - `fell_back`, true when the engine did not answer and the database did (decision 13).
      *
      * A search that is the code of exactly one product is that one row (decision 21): an editor
      * who typed an article number wants that product, not the others that mention it.
@@ -93,7 +94,7 @@ final class ProductController
         ));
 
         if (count($result->exact) === 1 && $page === 1) {
-            $result = new CatalogResult($result->exact, 1, $result->facets, $result->exact, $result->corrected);
+            $result = new CatalogResult($result->exact, 1, $result->facets, $result->exact, $result->corrected, $result->fellBack);
         }
 
         $products = $listing->products($result->ids);
@@ -118,6 +119,7 @@ final class ProductController
             'facets' => $this->counted($facets, $result->facets, $locale),
             'columns' => $columns->describe(),
             'corrected' => $result->corrected,
+            'fell_back' => $result->fellBack,
         ]);
     }
 

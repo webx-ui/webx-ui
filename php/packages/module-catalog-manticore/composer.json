@@ -51,6 +51,17 @@
             "providers": [
                 "WebxUi\\Catalog\\Manticore\\ManticoreServiceProvider"
             ]
+        },
+        "webx": {
+            "module": "catalog-manticore",
+            "npm": {
+                "@webx-ui/module-catalog-manticore": "^0.1.0"
+            },
+            "panel": {
+                "import": "import { catalogManticore } from '@webx-ui/module-catalog-manticore'",
+                "style": "@webx-ui/module-catalog-manticore/style.css",
+                "register": "...catalogManticore()"
+            }
         }
     },
     "config": {

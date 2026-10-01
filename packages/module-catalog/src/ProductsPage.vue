@@ -19,6 +19,7 @@ import {
   createModal,
   toast,
   useElementWidth,
+  WxAlert,
   WxBadge,
   WxButton,
   WxEntityCard,
@@ -101,6 +102,9 @@ const pageNumber = ref(Number(route.query.page ?? 1) || 1)
 /* The search asked for as typed after the engine corrected it; another search is corrected again. */
 const typedFor = ref<string | null>(null)
 const corrected = computed(() => page.value?.corrected ?? null)
+
+/* The search index did not answer and the database did (decision 13 of the Manticore spec). */
+const fellBack = computed(() => page.value?.fell_back === true)
 /* The page size the table last asked for: a reload after a filter has to page the same way. */
 let perPage: number | undefined
 
@@ -609,6 +613,11 @@ const actions = computed<ScreenAction[]>(() => {
         />
       </div>
 
+      <!-- Work goes on without the index, but the search is cruder: say so over the list. -->
+      <wx-alert v-if="fellBack" class="wx-catalog-products__fell-back" type="warning">
+        {{ t('panel.fell-back') }}
+      </wx-alert>
+
       <!-- Found for other words than the ones typed: said, with the way back to them. -->
       <div v-if="corrected" class="wx-catalog-products__corrected">
         <wx-text size="sm">{{ t('panel.search-corrected', { corrected }) }}</wx-text>
@@ -830,6 +839,11 @@ const actions = computed<ScreenAction[]>(() => {
   padding: var(--wx-space-8) var(--wx-space-16);
   border-bottom: 1px solid var(--wx-border-default);
   background: var(--wx-bg-subtle);
+}
+
+.wx-catalog-products__fell-back {
+  /* The card already pads the table: the notice keeps to the same edges. */
+  margin-bottom: var(--wx-space-12);
 }
 
 .wx-catalog-products__image {

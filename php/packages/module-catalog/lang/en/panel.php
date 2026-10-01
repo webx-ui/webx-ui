@@ -26,6 +26,7 @@ return [
     'empty-search' => 'Nothing matches that.',
     'search-corrected' => 'Showing results for :corrected.',
     'search-instead' => 'Search instead for :q',
+    'fell-back' => 'The search index is not answering: the list comes from the database, and the search finds words as typed.',
     'view-all' => 'All',
     'view-published' => 'Published',
     'view-unpublished' => 'Unpublished',

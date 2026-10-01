@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Catalog\Engine;
 
+use Closure;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -81,8 +82,13 @@ final class Indexer
      * An engine that rebuilds aside ({@see RebuildsAside}) swaps the new index in at the end. A
      * product saved while a batch holding it was being built would be written stale into the new
      * index, so whatever changed since the start is queued again once the swap is done.
+     *
+     * `$progress` is told after every batch how many are written of how many — the panel's bar
+     * while a rebuild runs as a job.
+     *
+     * @param  (Closure(int, int): void)|null  $progress  written, of all
      */
-    public function rebuild(int $chunk = self::CHUNK): int
+    public function rebuild(int $chunk = self::CHUNK, ?Closure $progress = null): int
     {
         $engine = $this->catalog->engine();
         $started = Carbon::now()->subSecond();
@@ -91,9 +97,20 @@ final class Indexer
         DB::table('catalog_index_queue')->delete();
 
         $done = 0;
+        $total = $progress === null ? 0 : Product::withTrashed()->count();
 
-        Product::withTrashed()->select(['id'])->chunkById($chunk, function (Collection $products) use ($engine, &$done): void {
+        if ($progress !== null) {
+            $progress(0, $total);
+        }
+
+        Product::withTrashed()->select(['id'])->chunkById($chunk, function (Collection $products) use ($engine, &$done, &$total, $progress): void {
             $done += $this->write($engine, array_map('intval', $products->modelKeys()));
+
+            if ($progress !== null) {
+                // Products made meanwhile are written too: the bar never runs past its end.
+                $total = max($total, $done);
+                $progress($done, $total);
+            }
         });
 
         if ($engine instanceof RebuildsAside) {

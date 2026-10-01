@@ -58,6 +58,9 @@ final class ManticoreEngine implements RebuildsAside
     /** The alias of «the search is this product's code» in a select list. */
     private const EXACT = 'is_exact';
 
+    /** The cache key of what a live table has, by its name. */
+    private const LIVE = 'webx-catalog-manticore.live-schema.';
+
     /** @var array<string, TableSchema> locale → the schema its table should have */
     private array $schemas = [];
 
@@ -103,8 +106,9 @@ final class ManticoreEngine implements RebuildsAside
         }
 
         $this->fellBack = true;
+        $answer = $this->database->search($query);
 
-        return $this->database->search($query);
+        return new CatalogResult($answer->ids, $answer->total, $answer->facets, $answer->exact, $answer->corrected, fellBack: true);
     }
 
     /** Whether the last answer came from the database because Manticore did not — the panel's notice. */
@@ -148,6 +152,8 @@ final class ManticoreEngine implements RebuildsAside
             $this->server->sql($statement);
         }
 
+        $this->forgetLive();
+
         $this->rebuilding = $rebuild;
         $this->besideRebuild = ! $rebuild && array_filter($existing, static fn (string $name): bool => str_ends_with($name, '_next')) !== [];
     }
@@ -157,9 +163,12 @@ final class ManticoreEngine implements RebuildsAside
         $lines = [];
 
         foreach ($this->locales->codes() as $locale) {
-            $schema = $this->schema($locale);
+            $next = $this->server->table($locale, next: true);
 
             foreach ($this->targets($locale) as $table) {
+                // A live table of an older schema takes what it has columns for (§6 of the spec).
+                $schema = $table === $next ? $this->schema($locale) : $this->reading($locale);
+
                 foreach ($documents as $id => $document) {
                     $lines[] = ['replace' => ['table' => $table, 'id' => (int) $id, 'doc' => $schema->row($document)]];
                 }
@@ -197,13 +206,15 @@ final class ManticoreEngine implements RebuildsAside
         }
 
         $this->rebuilding = false;
+        $this->forgetLive();
     }
 
     /**
      * Each language's table as it stands: missing, of another schema (and why), or ready, with
-     * the documents in it — what `webx:doctor` reports and the panel will show.
+     * the documents in it, and whether a rebuild is filling the one beside it — what
+     * `webx:doctor` reports and «System → Search index» shows (decision 27).
      *
-     * @return array<string, array{table: string, state: string, reason: string|null, documents: int|null}>
+     * @return array<string, array{table: string, state: string, reason: string|null, documents: int|null, rebuilding: bool}>
      */
     public function status(): array
     {
@@ -213,37 +224,71 @@ final class ManticoreEngine implements RebuildsAside
 
         foreach ($this->locales->codes() as $locale) {
             $table = $this->server->table($locale);
-            $status[$locale] = ['table' => $table, 'state' => self::MISSING, 'reason' => null, 'documents' => null];
+            $status[$locale] = [
+                'table' => $table,
+                'state' => self::MISSING,
+                'reason' => null,
+                'documents' => null,
+                'rebuilding' => in_array($this->server->table($locale, next: true), $existing, true),
+            ];
 
             if (in_array($table, $existing, true)) {
                 $asked[$locale] = $table;
             }
         }
 
-        $queries = [];
+        $described = $this->describe(array_values($asked), count: true);
 
-        foreach ($asked as $table) {
-            $queries[] = 'DESCRIBE '.$table;
-            $queries[] = 'SHOW TABLE '.$table.' SETTINGS';
-            $queries[] = 'SELECT COUNT(*) AS documents FROM '.$table;
-        }
-
-        $answers = $this->server->sqlMany($queries);
-
-        foreach (array_keys($asked) as $index => $locale) {
-            $live = [];
-
-            foreach (self::rows($answers[$index * 3][0] ?? []) as $row) {
-                $live[(string) $row['Field']] = ['type' => (string) $row['Type'], 'props' => (string) $row['Properties']];
-            }
-
-            $reason = $this->schema($locale)->differs($live, self::settings($answers[$index * 3 + 1][0] ?? []));
+        foreach ($asked as $locale => $table) {
+            $live = $described[$table];
+            $this->cache->put(self::LIVE.$table, $live, $this->liveFor());
+            $reason = $this->schema($locale)->differs($live['columns'], $live['settings']);
             $status[$locale]['state'] = $reason === null ? self::READY : self::STALE;
             $status[$locale]['reason'] = $reason;
-            $status[$locale]['documents'] = (int) (self::rows($answers[$index * 3 + 2][0] ?? [])[0]['documents'] ?? 0);
+            $status[$locale]['documents'] = $live['documents'];
         }
 
         return $status;
+    }
+
+    /**
+     * What each language's table holds for one product — whether it is there and with which
+     * flags — for an agent asked why the product is not found (decision 28). Null for a table
+     * that is not there.
+     *
+     * @return array<string, array{table: string, indexed: bool|null, deleted?: bool, visible?: bool, published?: bool}>
+     */
+    public function document(int $id): array
+    {
+        $existing = $this->tables();
+        $asked = [];
+        $answer = [];
+
+        foreach ($this->locales->codes() as $locale) {
+            $table = $this->server->table($locale);
+            $answer[$locale] = ['table' => $table, 'indexed' => null];
+
+            if (in_array($table, $existing, true)) {
+                $asked[$locale] = 'SELECT id, is_deleted, is_visible, is_published FROM '.$table.' WHERE id = '.$id;
+            }
+        }
+
+        $sets = array_combine(array_keys($asked), $this->server->sqlMany(array_values($asked)));
+
+        foreach ($sets as $locale => $set) {
+            $row = self::rows($set[0] ?? [])[0] ?? null;
+            $answer[$locale]['indexed'] = $row !== null;
+
+            if ($row !== null) {
+                $answer[$locale] += [
+                    'deleted' => (bool) $row['is_deleted'],
+                    'visible' => (bool) $row['is_visible'],
+                    'published' => (bool) $row['is_published'],
+                ];
+            }
+        }
+
+        return $answer;
     }
 
     /**
@@ -286,7 +331,7 @@ final class ManticoreEngine implements RebuildsAside
     private function correction(CatalogQuery $query, string $term): ?string
     {
         $locale = $this->localeOf($query);
-        $schema = $this->schema($locale);
+        $schema = $this->reading($locale);
         $table = $this->server->table($locale);
         $layouts = new KeyboardLayouts((array) $this->config->get('webx-catalog-manticore.layouts', []));
         $spellings = $layouts->alternatives($term, $this->locales->codes(), $locale);
@@ -302,6 +347,11 @@ final class ManticoreEngine implements RebuildsAside
                     return $spelling;
                 }
             }
+        }
+
+        // A table of an older schema without infix has nothing to suggest from, until rebuilt.
+        if ($schema->infixLength() === 0) {
+            return null;
         }
 
         $words = preg_split('/\s+/u', $term, -1, PREG_SPLIT_NO_EMPTY) ?: [];
@@ -339,7 +389,7 @@ final class ManticoreEngine implements RebuildsAside
     private function ask(CatalogQuery $query): CatalogResult
     {
         $locale = $this->localeOf($query);
-        $schema = $this->schema($locale);
+        $schema = $this->reading($locale);
         $table = $this->server->table($locale);
         $plan = $this->plan($query, $schema);
         $limit = max(1, (int) $this->config->get('webx-catalog-manticore.facet_values', 5000));
@@ -886,6 +936,106 @@ final class ManticoreEngine implements RebuildsAside
         }
 
         return $this->rebuilding || $this->besideRebuild ? [$table, $next] : [$table];
+    }
+
+    /**
+     * The schema a language's live table is asked and written by: the one the contributors
+     * write now, or — while the table is of an older one, until a person rebuilds it
+     * (decision 9) — that one narrowed to what the table has. Manticore answers a column it
+     * does not know with an error, not with nothing; a narrowed question answers a new facet
+     * with nothing and the search without what the table lacks (§6 of the spec).
+     *
+     * The live table's columns are asked once a minute, not on every question.
+     */
+    private function reading(string $locale): TableSchema
+    {
+        $schema = $this->schema($locale);
+        $table = $this->server->table($locale);
+        $live = $this->cache->get(self::LIVE.$table);
+
+        if (! is_array($live)) {
+            $live = $this->describe([$table])[$table] ?? null;
+
+            // A table that is not there yet is made by the next `prepare()`: ask it as it will be.
+            if ($live === null) {
+                return $schema;
+            }
+
+            $this->cache->put(self::LIVE.$table, $live, $this->liveFor());
+        }
+
+        /** @var array{columns: array<string, array{type: string, props: string}>, settings: array<string, string>} $live */
+        return $schema->differs($live['columns'], $live['settings']) === null
+            ? $schema
+            : $schema->within($live['columns'], $live['settings']);
+    }
+
+    /**
+     * What the server says of each table: its columns, its settings and, with `$count`, its
+     * documents. A table that is not there is left out.
+     *
+     * @param  list<string>  $tables
+     * @return array<string, array{columns: array<string, array{type: string, props: string}>, settings: array<string, string>, documents: int|null}>
+     */
+    private function describe(array $tables, bool $count = false): array
+    {
+        if ($tables === []) {
+            return [];
+        }
+
+        $step = $count ? 3 : 2;
+        $queries = [];
+
+        foreach ($tables as $table) {
+            $queries[] = 'DESCRIBE '.$table;
+            $queries[] = 'SHOW TABLE '.$table.' SETTINGS';
+
+            if ($count) {
+                $queries[] = 'SELECT COUNT(*) AS documents FROM '.$table;
+            }
+        }
+
+        try {
+            $answers = $this->server->sqlMany($queries);
+        } catch (ManticoreError) {
+            // One of them is not there: ask one by one which.
+            if (count($tables) === 1) {
+                return [];
+            }
+
+            return array_merge(...array_map(fn (string $table): array => $this->describe([$table], $count), $tables));
+        }
+
+        $described = [];
+
+        foreach ($tables as $index => $table) {
+            $columns = [];
+
+            foreach (self::rows($answers[$index * $step][0] ?? []) as $row) {
+                $columns[(string) $row['Field']] = ['type' => (string) $row['Type'], 'props' => (string) $row['Properties']];
+            }
+
+            $described[$table] = [
+                'columns' => $columns,
+                'settings' => self::settings($answers[$index * $step + 1][0] ?? []),
+                'documents' => $count ? (int) (self::rows($answers[$index * $step + 2][0] ?? [])[0]['documents'] ?? 0) : null,
+            ];
+        }
+
+        return $described;
+    }
+
+    /** The live tables asked again at the next question: they were just made or swapped. */
+    private function forgetLive(): void
+    {
+        foreach ($this->locales->codes() as $locale) {
+            $this->cache->forget(self::LIVE.$this->server->table($locale));
+        }
+    }
+
+    private function liveFor(): int
+    {
+        return max(1, (int) $this->config->get('webx-catalog-manticore.schema_for', 60));
     }
 
     private function schema(string $locale): TableSchema
