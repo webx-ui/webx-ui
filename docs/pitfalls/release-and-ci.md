@@ -7,6 +7,14 @@
 
 ## Мерж и очередь
 
+- **Два зелёных PR дают красный `main`.** Очередь требует только `Lint, typecheck, test, build`,
+  PHP-джобы в него не входят, поэтому PR, у которого PHP красный из-за соседа, всё равно мержится.
+  Было так: один PR добавил модуль в `Setup\Catalogue`, другой сделал ключи `npm` и `requires`
+  обязательными — PHPStan упал у всех открытых PR сразу, включая docs-only. Симптом — одинаковый
+  крестик PHP у PR, которые не трогали PHP; смотреть `main`, а не свой PR.
+- **`actions/setup-node@v5` падает «Unable to locate executable file: pnpm» в джобе без pnpm.**
+  Пятая версия сама включает кеш по полю `packageManager` корневого `package.json` (у нас pnpm).
+  Джобе, которой pnpm не нужен (смоук ставит сайт через npm), — `package-manager-cache: false`.
 - **`gh pr merge` в очередь мержа не ставит — ни с `--squash`, ни без флага.** Он отвечает «The
   merge strategy for main is set by the merge queue» и пытается включить auto-merge, которого у
   репозитория нет: «Auto merge is not allowed for this repository». PR остаётся `OPEN` и `CLEAN`,
