@@ -54,6 +54,54 @@ final class LocalesConfig
     }
 
     /**
+     * The file with a fallback the site publishes in, or null when it already has one.
+     *
+     * The package ships `'fallback' => 'en'`, and a site in Russian alone then falls back to a
+     * language it does not have — every missing translation is blank, and the doctor fails the
+     * run that wrote it. Measured against the list the file ends up with rather than against
+     * the answer, so a fallback somebody chose from their own list stays where it is.
+     */
+    public static function rewriteFallback(string $contents): ?string
+    {
+        if (preg_match("/'locales'\s*=>\s*\[\n(.*?)\n\s*\],/s", $contents, $list) !== 1) {
+            return null;
+        }
+
+        preg_match_all("/'code'\s*=>\s*'([^']+)'/", $list[1], $codes);
+
+        $matched = preg_match("/('fallback'\s*=>\s*)'([^']*)'(,)/", $contents, $parts);
+
+        if ($matched !== 1) {
+            return null;
+        }
+
+        $fallback = self::fallback($parts[2], $codes[1]);
+
+        if ($fallback === null || $fallback === $parts[2]) {
+            return null;
+        }
+
+        return str_replace($parts[0], $parts[1]."'{$fallback}'".$parts[3], $contents);
+    }
+
+    /**
+     * The fallback for a site in these languages: the current one when the site publishes in
+     * it, the default language — the first — when it does not, null when there are none.
+     *
+     * @param  list<string>  $codes
+     */
+    public static function fallback(?string $current, array $codes): ?string
+    {
+        if ($codes === []) {
+            return null;
+        }
+
+        $current = $current === null ? '' : strtolower(trim($current));
+
+        return in_array($current, $codes, true) ? $current : $codes[0];
+    }
+
+    /**
      * The codes a list of answers boils down to: lower case, deduplicated, in the order given.
      *
      * @return list<string>
