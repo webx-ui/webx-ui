@@ -107,10 +107,15 @@ final class Storefront
      * asked for is not the one the page gives itself. Public for a satellite whose entity has a page
      * of the catalogue narrowed to it — a brand — which brings its own context, scope and view.
      *
+     * A landing brings a base too (§10.1 of the landings spec): its set, which the page starts from
+     * and the tail adds to. The address the page was asked at is then the base's own — the landing
+     * the rewriters name for it — and the tail after it.
+     *
      * @param  string  $view  the full name: `webx-catalog::category`, `webx-catalog-brands::brand`
      * @param  array<string, FacetValue>  $scope
      * @param  array<string, mixed>  $data
      * @param  bool  $asTyped  a search as typed, without the engine's correction
+     * @param  FilterState|null  $base  the state before the tail; null is nothing
      */
     public function listing(
         Request $request,
@@ -122,8 +127,11 @@ final class Storefront
         array $data = [],
         ?string $search = null,
         bool $asTyped = false,
+        ?FilterState $base = null,
     ): Response {
-        $state = $this->urls->parse($context, $tail) ?? throw new NotFoundHttpException;
+        $base ??= FilterState::empty();
+        $chosen = $this->urls->parse($context, $tail) ?? throw new NotFoundHttpException;
+        $state = $base->merge($chosen);
 
         // The form a range is typed into works without a script: it sends numbers in the query,
         // and they become a segment of the address.
@@ -133,14 +141,16 @@ final class Storefront
             return new RedirectResponse($this->urls->url($context->withQuery($this->kept($request)), $ranged), 302);
         }
 
-        $page = $this->listing->page($context, $state, $request, $scope, $search, $contextId, $asTyped);
+        $page = $this->listing->page($context, $state, $request, $scope, $search, $contextId, $asTyped, $base);
         $card = $search === null ? null : $this->cardOf($page, $request);
 
         if ($card !== null) {
             return new RedirectResponse($card, 302);
         }
 
-        if ($page->path !== trim($context->path.'/'.trim($tail, '/'), '/')) {
+        $asked = $base->isEmpty() ? $context->path : $this->urls->path($context, $base);
+
+        if ($page->path !== trim($asked.'/'.trim($tail, '/'), '/')) {
             $query = (string) $request->getQueryString();
 
             return new RedirectResponse($this->urls->absolute($context->withQuery([]), $page->path).($query === '' ? '' : '?'.$query), 301);

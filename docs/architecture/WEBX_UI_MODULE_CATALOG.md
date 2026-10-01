@@ -370,7 +370,10 @@ Blade в `resources/views/vendor/webx-catalog/…` у сайта переопр�
 `pagination`, `breadcrumbs`.
 
 Точки для спутников (`@webxPart`): `catalog.card.badges`, `catalog.card.meta`,
-`catalog.product.aside`, `catalog.product.tabs`, `catalog.product.unavailable`.
+`catalog.product.aside`, `catalog.product.tabs`, `catalog.product.unavailable`; на странице
+списка (шаблон `category`) — `catalog.listing.top` над сеткой и `catalog.listing.bottom` под
+пагинацией, обе получают `CatalogPage` как `page`. Тексты над списком и под пагинацией шаблон
+берёт у владельца страницы (`HasListingTexts`), а не у категории: у категории — описание сверху.
 
 `@webxPart` — один компонент на точку, который сайт переопределяет целиком; писать в точку
 нескольким спутникам позволяет реестр `StorefrontParts`. Спутник регистрирует `StorefrontPart`
