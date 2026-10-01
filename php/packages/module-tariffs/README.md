@@ -13,7 +13,7 @@ brings the address, the SEO and the menu entry; the module brings the cards.
 
 ## Requirements
 
-- PHP 8.3+, Laravel 13
+- PHP 8.4+, Laravel 13
 - `webx-ui/module-admin`, `webx-ui/module-blocks`, `webx-ui/localization`, `webx-ui/routing`
 - `webx-ui/module-pages` for a page to put the block on — suggested, not required
 - `webx-ui/module-services` to link tariffs to services — suggested, not required

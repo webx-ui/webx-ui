@@ -11,7 +11,7 @@ block on it.
 
 ## Requirements
 
-- PHP 8.3+, Laravel 13
+- PHP 8.4+, Laravel 13
 - `webx-ui/module-admin`, `webx-ui/module-media`, `webx-ui/module-seo`, `webx-ui/module-blocks`,
   `webx-ui/routing`, `webx-ui/localization`
 - `webx-ui/module-pages` for the page at the prefix — suggested, not required

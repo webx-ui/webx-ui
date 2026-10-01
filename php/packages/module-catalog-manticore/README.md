@@ -8,7 +8,7 @@ never is.
 
 ## Requirements
 
-- PHP 8.3+, Laravel 13
+- PHP 8.4+, Laravel 13
 - `webx-ui/module-catalog` and what it requires
 - A Manticore Search server (29 or later) reachable over its HTTP JSON API. The package does not
   install or configure it, and one server may serve several projects.

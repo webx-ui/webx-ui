@@ -6,7 +6,7 @@ the finished links rather than markup to override.
 
 ## Requirements
 
-- PHP 8.3+, Laravel 13
+- PHP 8.4+, Laravel 13
 - `webx-ui/module-admin` (the panel and the link contract), `webx-ui/routing` (addresses),
   `webx-ui/nested-set`, `webx-ui/localization`, `webx-ui/mcp`
 

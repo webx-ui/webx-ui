@@ -12,7 +12,7 @@ categories and products arrive as registrations.
 
 ## Requirements
 
-- PHP 8.3+
+- PHP 8.4+
 - Laravel 13
 - [`webx-ui/localization`](https://github.com/webx-ui/localization) — the languages an address is
   published in
