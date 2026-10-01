@@ -12,7 +12,7 @@ The address is `webx-ui/routing`, the draft, the history, the categories and the
 
 ## Requirements
 
-- PHP 8.3+, Laravel 13
+- PHP 8.4+, Laravel 13
 - `webx-ui/module-admin`, `webx-ui/module-seo`, `webx-ui/routing`, `webx-ui/localization`,
   `webx-ui/mcp`
 - Optional: `webx-ui/module-inbox` (the Application form field), `webx-ui/module-blocks` (the

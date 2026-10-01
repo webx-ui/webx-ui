@@ -6,7 +6,7 @@ patch, and saving goes by the same description — a key the tree does not name 
 
 ## Requirements
 
-- PHP 8.3+, Laravel 13
+- PHP 8.4+, Laravel 13
 - `webx-ui/module-admin`, `webx-ui/module-auth` (the panel and the sign-in), `webx-ui/mcp`
 
 ## Install

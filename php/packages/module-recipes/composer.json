@@ -22,7 +22,7 @@
         "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-recipes"
     },
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "illuminate/contracts": "^13.0",
         "illuminate/database": "^13.0",
         "illuminate/http": "^13.0",

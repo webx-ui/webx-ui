@@ -16,7 +16,7 @@ Status: the rendering half, the bundles of styles and scripts, the preview and t
 
 ## Requirements
 
-- PHP 8.3+
+- PHP 8.4+
 - Laravel 13
 
 ## Install
