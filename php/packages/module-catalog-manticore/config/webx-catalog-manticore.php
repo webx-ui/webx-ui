@@ -137,4 +137,34 @@ return [
 
     'relevance_sample' => 1000,
 
+    /*
+    |---------------------------------------------------------------------------
+    | A table of an older schema
+    |---------------------------------------------------------------------------
+    |
+    | Until a person rebuilds a table the doctor calls out of date, it is asked
+    | and written by what it has: a new facet answers nothing instead of the
+    | whole list answering an error. What it has is asked once per this many
+    | seconds, not on every question.
+    |
+    */
+
+    'schema_for' => 60,
+
+    /*
+    |---------------------------------------------------------------------------
+    | The rebuild from the panel
+    |---------------------------------------------------------------------------
+    |
+    | «System → Search index» rebuilds as a job on the queue, not in the
+    | request: seconds for the worker to give it before it is stopped, and the
+    | queue to send it to (null — the default one).
+    |
+    */
+
+    'rebuild' => [
+        'timeout' => 3600,
+        'queue' => env('MANTICORE_REBUILD_QUEUE'),
+    ],
+
 ];

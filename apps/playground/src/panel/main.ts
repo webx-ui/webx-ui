@@ -6,6 +6,7 @@ import { blog } from '@webx-ui/module-blog'
 import { catalog } from '@webx-ui/module-catalog'
 import { catalogBrands } from '@webx-ui/module-catalog-brands'
 import { catalogLabels } from '@webx-ui/module-catalog-labels'
+import { catalogManticore } from '@webx-ui/module-catalog-manticore'
 import { catalogProperties } from '@webx-ui/module-catalog-properties'
 import { catalogStock } from '@webx-ui/module-catalog-stock'
 import { events } from '@webx-ui/module-events'
@@ -90,6 +91,7 @@ const admin = createAdmin({
     media(),
     blocks(),
     seo(),
+    ...catalogManticore(),
     admins(),
     connect(),
     historyDemo,

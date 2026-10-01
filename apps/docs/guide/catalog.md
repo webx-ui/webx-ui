@@ -200,3 +200,53 @@ errors.
 
 A satellite's column describes its cell by implementing `DescribesCell` next to `ExchangeColumn`.
 A column without it is listed as text taken as it is.
+
+## The search index on Manticore
+
+The core answers lists, facets and the search from the database (`SqlEngine`), which is enough for
+a couple of thousand products. Past that, `webx-ui/module-catalog-manticore` makes a Manticore
+Search server the engine: a table per language, facets and counts in one round trip, a rebuild
+swapped in whole, and the database to fall back on. The design is in
+`docs/architecture/WEBX_UI_CATALOG_MANTICORE.md`.
+
+```bash
+composer require webx-ui/module-catalog-manticore
+npm install @webx-ui/module-catalog-manticore
+```
+
+```dotenv
+WEBX_CATALOG_ENGINE=manticore
+MANTICORE_HOST=127.0.0.1
+MANTICORE_PORT=9308
+# Required, no default: two sites on one server must not share tables.
+MANTICORE_TABLE_PREFIX=shop
+```
+
+`php artisan webx:catalog:index --rebuild` fills the index once; from there the queue of the core
+keeps it current. `php artisan webx:doctor` says whether the server answers and whether each
+table is of the schema the catalogue writes now.
+
+### In the panel
+
+«System → Search index» appears only on the Manticore engine. It shows the server (address,
+version, prefix, whether it answers), each language's table — products in it against products in
+the database, and why its schema is out of date — and the queue of saved products waiting to be
+written. A table out of date has «Rebuild»: a job on the queue (`RebuildIndex`, one at a time, an
+hour at most), which fills new tables beside the live ones and swaps them in; the page follows its
+progress. Looking needs `search-index.view`, rebuilding `search-index.manage`. The rebuild needs a
+running queue worker, as the bulk actions do; one not heard from for a quarter of an hour counts as
+stalled and may be started again.
+
+Until the rebuild, a table of an older schema is asked and written by what it has: a new filter
+answers nothing and a code is not found by a part, but the list does not break.
+
+When the server does not answer, the list of products says so over the rows and answers from the
+database, which searches the words as typed and corrects nothing. The storefront does the same
+up to `webx-catalog.sql_engine_limit` products and answers 503 past it.
+
+### Agents
+
+`catalog_index_status` reads the same page, and with `product` also why one product is or is not
+found: deleted, unpublished or hidden in the database, waiting in the queue since when, and what
+each table holds for it. It is read only: a rebuild is minutes of load, and its time is a
+person's to choose.
