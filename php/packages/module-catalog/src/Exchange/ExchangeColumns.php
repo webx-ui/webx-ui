@@ -66,27 +66,54 @@ final class ExchangeColumns
      */
     public function all(): array
     {
+        return $this->gather()[0];
+    }
+
+    /**
+     * The providers' columns that did not keep their code: the code → the one they got, or null
+     * when `p_<code>` was taken too and the column is not offered at all. What `webx:doctor`
+     * warns about: a file that names the column by the property's code fills the core's instead.
+     *
+     * @return array<string, string|null>
+     */
+    public function renamed(): array
+    {
+        return $this->gather()[1];
+    }
+
+    /**
+     * @return array{0: array<string, ExchangeColumn>, 1: array<string, string|null>}
+     */
+    private function gather(): array
+    {
         $all = $this->columns;
+        $renamed = [];
 
         foreach ($this->providers as $provider) {
             $provider = is_string($provider) ? $this->container->make($provider) : $provider;
 
             foreach ($provider->columns() as $column) {
-                $key = $column->key();
+                $own = $column->key();
+                $key = $own;
 
                 if (isset($all[$key])) {
                     $key = 'p_'.$key;
                     $column = new RenamedColumn($column, $key);
+                    $renamed[$own] = $key;
                 }
 
                 // Two properties that both became `p_…`: the second is not a column until renamed.
-                if (! isset($all[$key])) {
-                    $all[$key] = $column;
+                if (isset($all[$key])) {
+                    $renamed[$own] = null;
+
+                    continue;
                 }
+
+                $all[$key] = $column;
             }
         }
 
-        return $all;
+        return [$all, $renamed];
     }
 
     public function find(string $key): ?ExchangeColumn

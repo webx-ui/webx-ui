@@ -96,9 +96,11 @@ final class ValueColumn implements ExchangeColumn
 
     /**
      * `1 234,50`, `1,234.50`, `1234.5`: the last of `.` and `,` is the decimal point, the other
-     * one and every kind of space separate thousands.
+     * one and every kind of space separate thousands. Public for a satellite's number column.
+     *
+     * @throws RowError
      */
-    private static function decimal(string $cell): float
+    public static function decimal(string $cell): float
     {
         $clean = (string) preg_replace('/[\s\x{00A0}\x{202F}\']+/u', '', $cell);
         $point = max((int) strrpos($clean, '.'), (int) strrpos($clean, ','));
@@ -125,7 +127,12 @@ final class ValueColumn implements ExchangeColumn
         return (int) $clean;
     }
 
-    private static function boolean(string $cell): bool
+    /**
+     * Yes or no as `is_published` reads it — the one way every yes/no column of a file does.
+     *
+     * @throws RowError
+     */
+    public static function boolean(string $cell): bool
     {
         $clean = mb_strtolower(trim($cell));
 

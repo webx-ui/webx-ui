@@ -30,6 +30,7 @@ use WebxUi\Catalog\Console\FlushViewsCommand;
 use WebxUi\Catalog\Console\IndexCommand;
 use WebxUi\Catalog\Console\PopularityCommand;
 use WebxUi\Catalog\Doctor\EngineCheck;
+use WebxUi\Catalog\Doctor\ExchangeCheck;
 use WebxUi\Catalog\Documents\CoreDocument;
 use WebxUi\Catalog\Documents\Documents;
 use WebxUi\Catalog\Engine\CatalogEngines;
@@ -359,6 +360,7 @@ class CatalogServiceProvider extends ServiceProvider
         $purchasability->register($rules->priced(), last: true);
 
         $this->app->make(DoctorChecks::class)->register(EngineCheck::class);
+        $this->app->make(DoctorChecks::class)->register(ExchangeCheck::class);
 
         // A category moved to another branch inherits another branch's facets; nested-set moves
         // without an `updated`, and says so with an event of its own.

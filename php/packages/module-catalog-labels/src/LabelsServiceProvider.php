@@ -11,6 +11,7 @@ use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Catalog\Bulk\BulkActions;
 use WebxUi\Catalog\Documents\Documents;
+use WebxUi\Catalog\Exchange\ExchangeColumns;
 use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Panel\ProductColumns;
@@ -22,6 +23,7 @@ use WebxUi\CatalogLabels\Catalog\LabelAction;
 use WebxUi\CatalogLabels\Catalog\LabelFacet;
 use WebxUi\CatalogLabels\Catalog\LabelsColumn;
 use WebxUi\CatalogLabels\Catalog\LabelsDocument;
+use WebxUi\CatalogLabels\Catalog\LabelsExchangeColumn;
 use WebxUi\CatalogLabels\Catalog\LabelsPart;
 use WebxUi\CatalogLabels\Models\Label;
 use WebxUi\CatalogLabels\Panel\LabelsModule;
@@ -107,6 +109,8 @@ class LabelsServiceProvider extends ServiceProvider
     {
         $this->app->make(ProductParts::class)->register(new LabelsPart);
         $this->app->make(ProductColumns::class)->register(new LabelsColumn);
+        // The column of exchange files (§7.2 of the exchange spec).
+        $this->app->make(ExchangeColumns::class)->register(new LabelsExchangeColumn);
         $this->app->make(Facets::class)->register(new LabelFacet);
         $this->app->make(Documents::class)->register(new LabelsDocument);
         $this->app->make(StorefrontParts::class)->register(new BadgesPart);
