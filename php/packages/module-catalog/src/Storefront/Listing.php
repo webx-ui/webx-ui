@@ -42,6 +42,7 @@ final class Listing
 
     /**
      * @param  array<string, FacetValue>  $scope  where the page stands: its category, a brand
+     * @param  bool  $asTyped  the search as typed, without the engine's correction (`?typed=1`)
      */
     public function page(
         FilterContext $context,
@@ -50,6 +51,7 @@ final class Listing
         array $scope = [],
         ?string $search = null,
         ?int $contextId = null,
+        bool $asTyped = false,
     ): CatalogPage {
         $sort = $this->sortOf($request);
         $page = max(1, (int) $request->query('page', '1'));
@@ -59,6 +61,10 @@ final class Listing
 
         if ($search !== null) {
             $query['q'] = $search;
+
+            if ($asTyped) {
+                $query['typed'] = '1';
+            }
         }
 
         if ($sort !== Sorts::DEFAULT) {
@@ -79,6 +85,7 @@ final class Listing
             page: $page,
             perPage: $perPage,
             filter: $context,
+            asTyped: $asTyped,
         ));
 
         // A page past the last one is not an empty page of this list: it is no page at all.
@@ -105,7 +112,7 @@ final class Listing
             products: $paginator,
             groups: $filter['groups'],
             resetUrl: $filter['reset'],
-            sorts: $this->sortLinks($canonical, $sort, $search),
+            sorts: $this->sortLinks($canonical, $sort, $search, $asTyped),
             sort: $sort,
             verdicts: $this->purchasability->forMany($products),
             indexable: $this->urls->indexable($context, $state, $result) && $sort === Sorts::DEFAULT && $page === 1,
@@ -155,13 +162,14 @@ final class Listing
     /**
      * @return list<array{key: string, label: string, url: string, selected: bool}>
      */
-    private function sortLinks(string $canonical, string $current, ?string $search): array
+    private function sortLinks(string $canonical, string $current, ?string $search, bool $asTyped): array
     {
         $links = [];
 
         foreach ($this->sorts->storefront() as $sort) {
             $query = array_filter([
                 'q' => $search,
+                'typed' => $asTyped && $search !== null ? '1' : null,
                 'sort' => $sort->key() === Sorts::DEFAULT ? null : $sort->key(),
             ], static fn (?string $value): bool => $value !== null && $value !== '');
 

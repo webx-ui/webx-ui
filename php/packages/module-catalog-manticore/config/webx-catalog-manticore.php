@@ -87,13 +87,40 @@ return [
     | whose morphology is weak or missing. The weights put a match in the
     | page's own language above the same word in another language of the site.
     |
+    | A code — the article number, the barcode — is also searched by any part
+    | of it, `min_infix_len` characters at least. The infix is the table's, and
+    | the corrections of a search that found nothing (`CALL QSUGGEST`) need it
+    | as well; the names are still searched by their words and beginnings.
+    |
     */
 
     'min_prefix_len' => 3,
 
+    'min_infix_len' => 3,
+
     'weights' => [
         'own' => 10,
         'other' => 3,
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Keyboard layouts
+    |---------------------------------------------------------------------------
+    |
+    | A search that finds nothing is tried as if typed with another layout of
+    | the site's languages — «xt[jk» is «чехол» with English on — before its
+    | words are corrected. A layout is what the 47 keys of a US keyboard type,
+    | row by row, then the same with Shift. A language without one is skipped.
+    |
+    */
+
+    'layouts' => [
+        'en' => ['`1234567890-=qwertyuiop[]\\asdfghjkl;\'zxcvbnm,./', '~!@#$%^&*()_+QWERTYUIOP{}|ASDFGHJKL:"ZXCVBNM<>?'],
+        'ru' => ['ё1234567890-=йцукенгшщзхъ\\фывапролджэячсмитьбю.', 'Ё!"№;%:?*()_+ЙЦУКЕНГШЩЗХЪ/ФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,'],
+        'uk' => ['\'1234567890-=йцукенгшщзхїґфівапролджєячсмитьбю.', '₴!"№;%:?*()_+ЙЦУКЕНГШЩЗХЇҐФІВАПРОЛДЖЄЯЧСМИТЬБЮ,'],
+        'be' => ['ё1234567890-=йцукенгшўзх\'\\фывапролджэячсмітьбю.', 'Ё!"№;%:?*()_+ЙЦУКЕНГШЎЗХ\'/ФЫВАПРОЛДЖЭЯЧСМІТЬБЮ,'],
+        'de' => ['^1234567890ß´qwertzuiopü+#asdfghjklöäyxcvbnm,.-', '°!"§$%&/()=?`QWERTZUIOPÜ*\'ASDFGHJKLÖÄYXCVBNM;:_'],
     ],
 
     /*

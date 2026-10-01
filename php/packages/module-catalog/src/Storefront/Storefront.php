@@ -79,6 +79,7 @@ final class Storefront
     public function search(Request $request, string $tail): Response
     {
         $term = trim((string) $request->query('q', ''));
+        $typed = $request->query('typed') === '1';
         $context = new FilterContext(
             FilterContext::SEARCH,
             UrlNormaliser::join($this->rootPath(), 'search'),
@@ -88,7 +89,7 @@ final class Storefront
 
         $response = $term === ''
             ? response($this->views->make('webx-catalog::search', ['page' => null, 'term' => ''])->render())
-            : $this->listing($request, $context, $tail, 'webx-catalog::search', [], null, ['term' => $term], $term);
+            : $this->listing($request, $context, $tail, 'webx-catalog::search', [], null, ['term' => $term], $term, $typed);
 
         $response->headers->set('X-Robots-Tag', 'noindex, follow');
 
@@ -109,6 +110,7 @@ final class Storefront
      * @param  string  $view  the full name: `webx-catalog::category`, `webx-catalog-brands::brand`
      * @param  array<string, FacetValue>  $scope
      * @param  array<string, mixed>  $data
+     * @param  bool  $asTyped  a search as typed, without the engine's correction
      */
     public function listing(
         Request $request,
@@ -119,6 +121,7 @@ final class Storefront
         ?int $contextId,
         array $data = [],
         ?string $search = null,
+        bool $asTyped = false,
     ): Response {
         $state = $this->urls->parse($context, $tail) ?? throw new NotFoundHttpException;
 
@@ -130,7 +133,12 @@ final class Storefront
             return new RedirectResponse($this->urls->url($context->withQuery($this->kept($request)), $ranged), 302);
         }
 
-        $page = $this->listing->page($context, $state, $request, $scope, $search, $contextId);
+        $page = $this->listing->page($context, $state, $request, $scope, $search, $contextId, $asTyped);
+        $card = $search === null ? null : $this->cardOf($page, $request);
+
+        if ($card !== null) {
+            return new RedirectResponse($card, 302);
+        }
 
         if ($page->path !== trim($context->path.'/'.trim($tail, '/'), '/')) {
             $query = (string) $request->getQueryString();
@@ -141,6 +149,22 @@ final class Storefront
         $this->pushItemList($page);
 
         return response($this->views->make($view, [...$data, 'page' => $page, 'category' => $page->category()])->render());
+    }
+
+    /**
+     * The card a search goes straight to (decision 21 of the Manticore spec): the search is the
+     * code of one product on the site, and nothing is chosen around it. Null when it is not, or
+     * when two products share the code. 302, not 301: tomorrow the code may be another's.
+     */
+    private function cardOf(CatalogPage $page, Request $request): ?string
+    {
+        if (count($page->result->exact) !== 1 || $page->state->size() !== 0 || $request->query('page') !== null) {
+            return null;
+        }
+
+        $product = Product::query()->find($page->result->exact[0]);
+
+        return $product instanceof Product ? $product->url($page->context->locale) : null;
     }
 
     /**
@@ -181,6 +205,7 @@ final class Storefront
     {
         return array_filter([
             'q' => is_string($request->query('q')) ? (string) $request->query('q') : '',
+            'typed' => $request->query('typed') === '1' ? '1' : '',
             'sort' => is_string($request->query('sort')) ? (string) $request->query('sort') : '',
         ], static fn (string $value): bool => $value !== '');
     }

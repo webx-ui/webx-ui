@@ -51,7 +51,7 @@ final class Documents
                         throw new LogicException("Two contributors write the index field [{$name}].");
                     }
 
-                    $fields[$name] = new IndexField($name, $field->type, $field->multi);
+                    $fields[$name] = new IndexField($name, $field->type, $field->multi, code: $field->code);
                 }
             }
         }

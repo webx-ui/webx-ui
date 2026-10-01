@@ -98,6 +98,9 @@ const everything = ref(false)
 /* The table's own search and page, started from the address: coming back lands where it left. */
 const search = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const pageNumber = ref(Number(route.query.page ?? 1) || 1)
+/* The search asked for as typed after the engine corrected it; another search is corrected again. */
+const typedFor = ref<string | null>(null)
+const corrected = computed(() => page.value?.corrected ?? null)
 /* The page size the table last asked for: a reload after a filter has to page the same way. */
 let perPage: number | undefined
 
@@ -215,8 +218,11 @@ const columns = computed<TableColumn<ProductRow>[]>(() => {
 })
 
 function query(state?: TableState): ProductQuery {
+  const q = state?.search ?? search.value
+
   return {
-    q: state?.search ?? search.value,
+    q,
+    typed: typedFor.value !== null && typedFor.value === q,
     state: view.value as ProductQuery['state'],
     sort: sort.value,
     page: state?.page ?? pageNumber.value,
@@ -392,6 +398,11 @@ function clearSelection(): void {
  * What refused stays picked, and nothing else: the strip keeps its list of refusals beside the
  * very products it names, ready for another go once they are put right.
  */
+function searchAsTyped(): void {
+  typedFor.value = search.value
+  void load()
+}
+
 function onBulkFinished(refused: number[]): void {
   everything.value = false
   selected.value = refused
@@ -598,6 +609,14 @@ const actions = computed<ScreenAction[]>(() => {
         />
       </div>
 
+      <!-- Found for other words than the ones typed: said, with the way back to them. -->
+      <div v-if="corrected" class="wx-catalog-products__corrected">
+        <wx-text size="sm">{{ t('panel.search-corrected', { corrected }) }}</wx-text>
+        <wx-button size="sm" variant="text" @click="searchAsTyped">
+          {{ t('panel.search-instead', { q: search }) }}
+        </wx-button>
+      </div>
+
       <wx-table
         v-model:selected="selected"
         v-model:search="search"
@@ -802,7 +821,8 @@ const actions = computed<ScreenAction[]>(() => {
   min-width: 0;
 }
 
-.wx-catalog-products__selection {
+.wx-catalog-products__selection,
+.wx-catalog-products__corrected {
   display: flex;
   flex-wrap: wrap;
   align-items: center;

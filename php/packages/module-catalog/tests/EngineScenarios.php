@@ -232,6 +232,46 @@ abstract class EngineScenarios extends TestCase
     }
 
     #[Test]
+    public function the_product_whose_code_the_search_is_comes_first_and_is_named(): void
+    {
+        $plugs = $this->category('plugs');
+        $mention = $this->product('Adapter for AT-1234/56 and others', $plugs, ['priority' => 9]);
+        $plug = $this->product('Spark plug', $plugs, ['sku' => 'AT-1234/56']);
+        $scanned = $this->product('Ignition coil', $plugs, ['barcode' => '4601234567890']);
+        $imported = $this->product('Glow plug', $plugs, ['external_id' => 'ext-77']);
+
+        // Above a higher priority: the code is what was asked for (decision 20 of the Manticore spec).
+        $result = $this->search(search: 'AT-1234/56');
+        $this->assertSame([$plug->id, $mention->id], $result->ids);
+        $this->assertSame([$plug->id], $result->exact);
+
+        $this->assertSame([$scanned->id], $this->search(search: '4601234567890')->exact);
+        $this->assertSame([$imported->id], $this->search(search: 'ext-77')->ids);
+        $this->assertSame([$imported->id], $this->search(search: 'ext-77')->exact);
+
+        // A word is not a code: found, and nobody's code.
+        $this->assertSame([], $this->search(search: 'spark')->exact);
+        // The panel is told too, about a product the site does not show.
+        $hidden = $this->product('Unpublished plug', $plugs, ['sku' => 'NGK-1', 'is_published' => false]);
+        $this->assertSame([], $this->search(search: 'NGK-1')->exact);
+        $this->assertSame([$hidden->id], $this->search(search: 'NGK-1', withUnpublished: true)->exact);
+    }
+
+    #[Test]
+    public function what_the_query_language_reads_as_an_operator_is_a_character_typed(): void
+    {
+        $plugs = $this->category('plugs');
+        $this->product('Spark plug', $plugs, ['sku' => 'AT-1234/56']);
+
+        foreach (['AT-1234/56"', '"/-\'', 'AT-1234 | 56', '(spark)', 'spark*', '@name spark'] as $typed) {
+            // An answer, never an error of the query language.
+            $this->assertLessThanOrEqual(1, $this->search(search: $typed)->total, $typed);
+        }
+
+        $this->assertSame([], $this->search(search: '"/-\'')->ids);
+    }
+
+    #[Test]
     public function pages_follow_one_another_without_a_gap(): void
     {
         $laptops = $this->category('laptops');

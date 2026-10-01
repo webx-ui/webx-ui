@@ -24,6 +24,8 @@ return [
     'empty-products' => 'No products yet.',
     'empty-products-help' => 'A product lives in one main category and any number of others.',
     'empty-search' => 'Nothing matches that.',
+    'search-corrected' => 'Showing results for :corrected.',
+    'search-instead' => 'Search instead for :q',
     'view-all' => 'All',
     'view-published' => 'Published',
     'view-unpublished' => 'Unpublished',

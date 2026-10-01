@@ -59,14 +59,38 @@ final class TableSchemaTest extends TestCase
             $live[$name] = ['type' => $column['type'], 'props' => $column['props']];
         }
 
-        $settings = ['morphology' => 'stem_en, lemmatize_ru_all, libstemmer_de', 'min_prefix_len' => '3', 'index_exact_words' => '1'];
+        $settings = ['morphology' => 'stem_en, lemmatize_ru_all, libstemmer_de', 'min_prefix_len' => '3', 'min_infix_len' => '3', 'index_exact_words' => '1'];
 
         $this->assertNull($schema->differs(['id' => ['type' => 'bigint', 'props' => ''], ...$live], $settings));
-        $this->assertStringContainsString('morphology', (string) $schema->differs($live, ['morphology' => 'stem_en', 'min_prefix_len' => '3']));
+        $this->assertStringContainsString('morphology', (string) $schema->differs($live, [...$settings, 'morphology' => 'stem_en']));
+        // A table made before the codes had an infix is another table (M2).
+        $this->assertStringContainsString('min_infix_len', (string) $schema->differs($live, array_diff_key($settings, ['min_infix_len' => 1])));
         $this->assertStringContainsString('[brand]', (string) $schema->differs([...$live, 'brand' => ['type' => 'bigint', 'props' => '']], $settings));
 
         unset($live['pn']);
         $this->assertStringContainsString('[pn] is missing', (string) $schema->differs($live, $settings));
+    }
+
+    #[Test]
+    public function the_codes_are_kept_as_written_as_letters_and_digits_and_whole(): void
+    {
+        $schema = $this->schema('en');
+
+        $this->assertSame('at123456', TableSchema::flat('AT-1234/56'));
+        $this->assertSame('ngkbkr6e11', TableSchema::flat(' NGK.BKR6E-11 '));
+        $this->assertTrue($schema->hasCodes());
+        $this->assertSame('json', $schema->columns()[TableSchema::CODE_KEYS]['type']);
+        $this->assertContains(TableSchema::CODES_FLAT, $schema->textColumns());
+
+        $row = $schema->row(['sku' => 'AT-1234/56', 'barcode' => '4601234567890', 'external_id' => null]);
+
+        $this->assertSame('AT-1234/56 4601234567890', $row[TableSchema::CODES]);
+        $this->assertSame('at123456 4601234567890', $row[TableSchema::CODES_FLAT]);
+        $this->assertSame(['at123456', '4601234567890'], $row[TableSchema::CODE_KEYS]);
+        // The article number is still an attribute of its own.
+        $this->assertSame('AT-1234/56', $row['sku']);
+        $this->assertSame([], $schema->row([])[TableSchema::CODE_KEYS]);
+        $this->assertStringContainsString("min_infix_len='3'", $schema->create('t'));
     }
 
     private function schema(string $locale): TableSchema
@@ -80,6 +104,9 @@ final class TableSchemaTest extends TestCase
                 new IndexField('name_en', IndexField::TEXT),
                 new IndexField('name_ru', IndexField::TEXT),
                 new IndexField('name_de', IndexField::TEXT),
+                new IndexField('sku', IndexField::STRING, code: true),
+                new IndexField('barcode', IndexField::STRING, code: true),
+                new IndexField('external_id', IndexField::STRING, code: true),
             ],
             $locale,
             ['en', 'ru', 'de'],
