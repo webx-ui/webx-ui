@@ -409,6 +409,12 @@ php vendor/bin/testbench package:discover` из `php/`, убрать `bootstrap/
 - **Голое имя программы — не программа на Windows.** `proc_open` получает массив как есть и
   PATHEXT не смотрит, поэтому `npm` (то есть `npm.cmd`) просто не находится. У нас:
   `ExecutableFinder` вместо надежды на PATH.
+- **Язык сайта — это три значения, а не одно.** `locales` в `config/webx-localization.php`,
+  `fallback` там же и `APP_FALLBACK_LOCALE` в `.env`. Переписать только список — получить сайт на
+  `ru`, который откатывается на `en`, которого у него нет: пустые поля вместо ошибки и красный
+  `webx:doctor --strict` сразу после установки. Сверять fallback со списком, который остался в
+  файле, а не с ответом: вручную выбранный fallback из своего списка — решение человека. У нас:
+  `LocalesConfig::rewriteFallback()`.
 - Было: `vendor:publish` миграций Passport штампует копию временем публикации, и второй прогон
   (или публикация на старте контейнера) давал дубль и «table already exists». Починено в
   `SetupCommand::missingPassportMigrations()`; публиковать такое только один раз в репозиторий.
