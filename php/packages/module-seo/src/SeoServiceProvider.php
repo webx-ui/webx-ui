@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+// CI probe: a change in module-seo.
+
 namespace WebxUi\Seo;
 
 use Illuminate\Contracts\Events\Dispatcher;

@@ -1,3 +1,4 @@
+// CI probe: a change in module-seo.
 export { seo, type SeoOptions } from './module'
 export { createSeoApi, type SeoApi } from './api'
 export { seoMessages } from './messages'
