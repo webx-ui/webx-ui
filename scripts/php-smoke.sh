@@ -1307,8 +1307,12 @@ platform_artisan() {
         "$PHP_BIN" "$PLATFORM/artisan" "$@"
 }
 
+# Compose substitutes ${DB_USERNAME} and the rest from the shell before .env, and this run exports
+# the platform server's root account for setup: MariaDB in the container would be made for root
+# while the application, reading .env, signs in as webx — "Access denied" after a ten-minute build.
 platform_compose() {
-    (cd "$PLATFORM" && docker compose -p "$PLATFORM_PROJECT" "$@")
+    (cd "$PLATFORM" && env -u DB_CONNECTION -u DB_HOST -u DB_PORT -u DB_DATABASE -u DB_USERNAME -u DB_PASSWORD \
+        docker compose -p "$PLATFORM_PROJECT" "$@")
 }
 
 # The image is the verdict, so a failure shows what the container said before it went.
