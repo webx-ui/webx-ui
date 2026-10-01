@@ -101,6 +101,27 @@ describe('WxSearchIndexPage', () => {
     expect(wrapper.text()).toContain('The index is not of the schema the catalogue writes now')
   })
 
+  it('shows how far a rebuild from the console has got, by the table beside', async () => {
+    vi.useFakeTimers()
+    const [table] = report().tables
+    const { wrapper, get } = panel([
+      report({ tables: [{ ...table!, rebuilding: true, filled: 40 }] }),
+      report({ tables: [{ ...table!, rebuilding: true, filled: 80 }] }),
+    ])
+
+    await flushPromises()
+
+    // The console writes no progress of its own: the page counts the table being filled and
+    // keeps asking.
+    expect(wrapper.text()).toContain('A rebuild is filling the table beside it: 40 of 120')
+
+    await vi.advanceTimersByTimeAsync(2000)
+    await flushPromises()
+
+    expect(get).toHaveBeenCalledTimes(2)
+    expect(wrapper.text()).toContain('A rebuild is filling the table beside it: 80 of 120')
+  })
+
   it('queues the rebuild and follows it until it is done', async () => {
     vi.useFakeTimers()
     const running = report({ rebuild: { ...idle, state: 'running', done: 40, total: 120 } })
