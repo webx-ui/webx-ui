@@ -24,6 +24,8 @@ parameters:
         - packages/module-catalog-labels/tests
         - packages/module-catalog-manticore/src
         - packages/module-catalog-manticore/tests
+        - packages/module-catalog-landings/src
+        - packages/module-catalog-landings/tests
         - packages/module-catalog-properties/src
         - packages/module-catalog-properties/tests
         - packages/module-catalog-stock/src
