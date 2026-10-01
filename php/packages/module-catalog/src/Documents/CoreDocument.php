@@ -14,7 +14,8 @@ use WebxUi\Catalog\Models\Product;
 /**
  * What the core puts into a product's document (§7.3): the id, the three states and visibility,
  * the categories with every ancestor, the main one, the price, the hand-set priority, the score,
- * the date, and for the search the name in each language, the article number and the barcode.
+ * the date, and for the search the name in each language and the codes — the article number, the
+ * barcode, the external id.
  *
  * Unpublished and deleted products are in the index too: the panel searches with the same engine
  * as the site (decision 14 of the architecture), and the storefront cuts them off with a filter.
@@ -40,7 +41,8 @@ final class CoreDocument implements DocumentContributor
             new IndexField('score', IndexField::FLOAT),
             new IndexField('created_at', IndexField::TIMESTAMP),
             new IndexField('name', IndexField::TEXT, localized: true),
-            new IndexField('sku', IndexField::STRING),
+            new IndexField('sku', IndexField::STRING, code: true),
+            new IndexField('external_id', IndexField::STRING, code: true),
         ];
 
         if ($this->priced()) {
@@ -48,7 +50,7 @@ final class CoreDocument implements DocumentContributor
         }
 
         if ((bool) $this->config->get('webx-catalog.fields.barcode', true)) {
-            $fields[] = new IndexField('barcode', IndexField::STRING);
+            $fields[] = new IndexField('barcode', IndexField::STRING, code: true);
         }
 
         return $fields;
@@ -94,6 +96,7 @@ final class CoreDocument implements DocumentContributor
                 'score' => (float) ($scores[$id] ?? 0),
                 'created_at' => $product->created_at?->getTimestamp(),
                 'sku' => $product->sku,
+                'external_id' => $product->external_id,
             ];
 
             foreach ($locales as $locale) {

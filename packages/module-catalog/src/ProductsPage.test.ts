@@ -270,6 +270,22 @@ describe('WxCatalogProductsPage', () => {
     })
   })
 
+  it('says what the engine searched for instead, and asks for the words as typed', async () => {
+    const { wrapper, get } = await panel(
+      '/catalog/products?q=protectve',
+      page([row(1)], { corrected: 'protective' }),
+    )
+
+    const notice = wrapper.find('.wx-catalog-products__corrected')
+    expect(notice.text()).toContain('Showing results for protective.')
+
+    await notice.find('button').trigger('click')
+    await flushPromises()
+
+    expect(notice.text()).toContain('Search instead for protectve')
+    expect(listCalls(get).at(-1)).toContain('q=protectve&typed=1')
+  })
+
   it('opens a product in its editor', async () => {
     const { wrapper, router } = await panel('/catalog/products')
 
