@@ -13,7 +13,8 @@
 
 **Не ядро:** свойства, наличие, бренды, метки, связи — спутники из §3 архитектуры. Обмен
 (конвейер, CSV и XLSX) живёт в ядре, но описан отдельной спекой [`WEBX_UI_MODULE_CATALOG_EXCHANGE.md`](WEBX_UI_MODULE_CATALOG_EXCHANGE.md);
-здесь — только колонки ядра (§7.6). Manticore — пакет `catalog-manticore`, своя спека.
+здесь — только колонки ядра (§7.6). Manticore — пакет `module-catalog-manticore`, своя спека
+[`WEBX_UI_CATALOG_MANTICORE.md`](WEBX_UI_CATALOG_MANTICORE.md).
 
 Пакеты: composer `webx-ui/module-catalog` (namespace `WebxUi\Catalog`) и npm
 `@webx-ui/module-catalog`. Идентификатор модуля в панели — `catalog` (товары и «Удалённые»),
@@ -603,7 +604,7 @@ return [
     'price' => ['enabled' => true, 'currency' => null],  // ISO 4217; без неё нет Offer в разметке
     'fields' => ['barcode' => true],
     'units' => ['pcs', 'kg', 'g', 'm', 'm2', 'm3', 'l', 'pack', 'set'], 'default_unit' => 'pcs',
-    'engine' => 'sql',                              // 'manticore' — из catalog-manticore
+    'engine' => 'sql',                              // 'manticore' — из module-catalog-manticore
     'sql_engine_limit' => 2000,
     'per_page' => 24,
     'sorts' => ['default', 'price_asc', 'price_desc', 'popular', 'new', 'name'],
