@@ -7,10 +7,13 @@
 # This covers what that cannot — package discovery, a real database, a real session with a real
 # CSRF token, and the config and route caches a production deploy turns on.
 #
-# Two applications, because there are two ways in. The first is built here by hand, the way a
+# Three applications, because there are three ways in. The first is built here by hand, the way a
 # site older than the skeleton was. The second is `composer create-project webx-ui/site` and
 # `webx:setup`, the way a new one is made — and that half exists to be run against a real
-# server, because creating the database is the step sqlite does not have.
+# server, because creating the database is the step sqlite does not have. The third is a site
+# made with nobody there, the way a hosting platform makes one: the skeleton built into an image
+# by its own Dockerfile and judged by `webx:doctor --strict` inside the container. It needs
+# Docker and a MySQL-shaped server, and stands aside without them (SMOKE_PLATFORM, below).
 #
 # Locally:
 #   scripts/php-smoke.sh
@@ -1249,3 +1252,211 @@ printf '%s' "$REMOVED_HEADER" | grep -q 'b-demo-header' && fail 'the demo header
 note 'the removal gives the site back its header from code'
 
 printf '\n\033[32m== And one command turns an empty directory into a site with a panel on it.\033[0m\n'
+
+# --------------------------------------------------------------------------------------------
+#
+# The third way in: a site made by a program, the way a hosting platform makes one.
+#
+# Nobody answers a question here and nobody looks at a page. `create-project`, `webx:setup`
+# with every answer on the command line, an image built by the skeleton's own Dockerfile, and
+# `webx:doctor --strict` inside the running container as the one verdict that counts. Then the
+# two things a platform does next: a key for the MCP server without anybody pressing Allow,
+# and one more module — and the rebuild after it, whose cached front-end stage is exactly what
+# the doctor's bundle check once took for a stale build.
+#
+# Docker and a MySQL-shaped server are both needed — setup creates the database the way a
+# platform's does — so on a machine with neither the scenario says so and stands aside.
+# SMOKE_PLATFORM=0 skips it where both are there; SMOKE_PLATFORM=1 makes their absence a
+# failure rather than a skip, which is what CI wants.
+
+SMOKE_PLATFORM="${SMOKE_PLATFORM:-auto}"
+PLATFORM_REASON=""
+
+if [ "$SMOKE_PLATFORM" = "0" ]; then
+    PLATFORM_REASON='SMOKE_PLATFORM=0'
+elif [ "$DB_CONNECTION" = "sqlite" ]; then
+    PLATFORM_REASON='it needs a MySQL-shaped server, and this run is on sqlite'
+elif ! command -v docker > /dev/null 2>&1 || ! docker info > /dev/null 2>&1; then
+    PLATFORM_REASON='there is no Docker daemon to build the image with'
+elif ! command -v npm > /dev/null 2>&1; then
+    PLATFORM_REASON='there is no npm to write the lock file the image installs from'
+fi
+
+if [ -n "$PLATFORM_REASON" ]; then
+    [ "$SMOKE_PLATFORM" = "1" ] && fail "the platform scenario was asked for, but $PLATFORM_REASON"
+    step "A site made by a program — skipped"
+    note "$PLATFORM_REASON"
+    exit 0
+fi
+
+PLATFORM="$WORKDIR/platform"
+PLATFORM_PORT="$((PORT + 2))"
+PLATFORM_BASE="http://127.0.0.1:${PLATFORM_PORT}"
+PLATFORM_PROJECT="webx-smoke-platform-${PLATFORM_PORT}"
+
+platform_cleanup() {
+    if [ -f "$PLATFORM/docker-compose.yml" ]; then
+        (cd "$PLATFORM" && docker compose -p "$PLATFORM_PROJECT" down -v --remove-orphans > /dev/null 2>&1) || true
+    fi
+    site_cleanup
+}
+trap platform_cleanup EXIT
+
+platform_artisan() {
+    env -u DB_CONNECTION -u DB_HOST -u DB_PORT -u DB_DATABASE -u DB_USERNAME -u DB_PASSWORD \
+        "$PHP_BIN" "$PLATFORM/artisan" "$@"
+}
+
+platform_compose() {
+    (cd "$PLATFORM" && docker compose -p "$PLATFORM_PROJECT" "$@")
+}
+
+# The image is the verdict, so a failure shows what the container said before it went.
+platform_up() {
+    local what="$1"
+
+    platform_compose up -d --build --wait --wait-timeout 600 > "$WORKDIR/platform-up.log" 2>&1 || {
+        cat "$WORKDIR/platform-up.log" >&2
+        platform_compose logs app >&2 || true
+        fail "$what: the container did not come up healthy"
+    }
+}
+
+platform_doctor() {
+    local what="$1"
+
+    platform_compose exec -T app php artisan webx:doctor --strict > "$WORKDIR/platform-doctor.log" 2>&1 || {
+        cat "$WORKDIR/platform-doctor.log" >&2
+        fail "$what: webx:doctor --strict refused the container"
+    }
+    note "$what: webx:doctor --strict passes inside the container"
+}
+
+step "A site made by a program: create-project"
+$COMPOSER_BIN create-project webx-ui/site "$PLATFORM" \
+    --repository="$SITE_REPOSITORY" \
+    --no-install --no-scripts --no-interaction --quiet
+
+# The packages travel inside the build context, because the image installs them from the lock
+# and a path outside the context does not exist in there. Copies rather than links, for the same
+# reason. A platform would read them from Packagist; this run is about the checkout.
+cp -R "$MONOREPO/php/packages" "$PLATFORM/packages"
+
+PLATFORM_REPOSITORY="$(
+    "$PHP_BIN" -r '
+        $repository = json_decode($argv[1], true);
+        $repository["url"] = "packages/*";
+        $repository["options"]["symlink"] = false;
+        echo json_encode($repository);
+    ' "$REPOSITORY"
+)"
+
+(
+    cd "$PLATFORM"
+    $COMPOSER_BIN config repositories.webx "$PLATFORM_REPOSITORY"
+    $COMPOSER_BIN config repositories.packagist.org \
+        '{"type":"composer","url":"https://repo.packagist.org","exclude":["webx-ui/*"]}'
+    $COMPOSER_BIN install --no-interaction --no-progress --quiet
+)
+
+cp "$PLATFORM/.env.example" "$PLATFORM/.env"
+platform_artisan key:generate --quiet
+
+step "webx:setup with every answer given, and one language that is not English"
+# The build is not skipped: the image installs the front end from package-lock.json, and the
+# lock is what setup's `npm install` writes. The npm halves come from the registry, so a change
+# that needs an unreleased one fails here first — which is what would happen to a platform too.
+WEBX_ADMIN_PASSWORD="$ADMIN_PASSWORD" platform_artisan webx:setup \
+    --no-interaction \
+    --name='Platform Site' \
+    --domain="127.0.0.1:${PLATFORM_PORT}" \
+    --modules=pages,media,blocks,seo,settings,inbox,menu,admins \
+    --locales=ru \
+    --admin="platform@example.test" \
+    --admin-name=Platform \
+    --no-demo \
+    --db-connection="$DB_CONNECTION" \
+    --db="${DB_DATABASE:-webx}_platform" \
+    --db-host="${DB_HOST:-127.0.0.1}" \
+    --db-port="${DB_PORT:-3306}" \
+    --db-username="${DB_USERNAME:-root}" \
+    --db-password="${DB_PASSWORD:-}" \
+    "${SETUP_COMPOSER[@]}" > "$WORKDIR/platform-setup.log" 2>&1 \
+    || { cat "$WORKDIR/platform-setup.log" >&2; fail 'webx:setup did not finish on its own'; }
+
+[ -f "$PLATFORM/package-lock.json" ] || fail 'setup left no package-lock.json for the image to install from'
+note 'setup finished without a question, and left both lock files'
+
+# The container gets a database of its own beside it, as compose describes; the server setup
+# just used was the platform's, and its root account is not one MariaDB lets a container be.
+for pair in "DB_USERNAME=webx" "DB_PASSWORD=platform-secret" "DB_ROOT_PASSWORD=platform-root-secret" \
+    "APP_PORT=${PLATFORM_PORT}" "APP_BIND=127.0.0.1" "APP_URL=${PLATFORM_BASE}"; do
+    "$PHP_BIN" -r '
+        [, $file, $pair] = $argv;
+        [$key, $value] = explode("=", $pair, 2);
+        $lines = file($file, FILE_IGNORE_NEW_LINES);
+        $written = false;
+        foreach ($lines as $index => $line) {
+            if (str_starts_with($line, $key."=")) {
+                $lines[$index] = $key."=".$value;
+                $written = true;
+            }
+        }
+        if (! $written) {
+            $lines[] = $key."=".$value;
+        }
+        file_put_contents($file, implode("\n", $lines)."\n");
+    ' "$PLATFORM/.env" "$pair"
+done
+
+step "Build the image by the skeleton's Dockerfile and start it"
+platform_up 'the first build'
+expect 200 "$(curl -s -o /dev/null -w '%{http_code}' "$PLATFORM_BASE/up")" '[platform] GET /up'
+platform_doctor '[platform] the first build'
+
+step "A key to the MCP server, without anybody pressing Allow"
+# The administrator setup created lives in the platform's database, not in the container's —
+# the container migrated a fresh one — so the platform creates its own, the way it would.
+platform_compose exec -T -e WEBX_ADMIN_PASSWORD="$ADMIN_PASSWORD" app \
+    php artisan webx:admin --name=Platform --email=platform@example.test --super > /dev/null \
+    || fail '[platform] webx:admin did not create the administrator in the container'
+
+PLATFORM_ISSUED="$(platform_compose exec -T app php artisan webx:mcp:token --name=platform --json)" \
+    || fail "[platform] webx:mcp:token failed: $PLATFORM_ISSUED"
+PLATFORM_TOKEN="$("$PHP_BIN" -r 'echo json_decode(stream_get_contents(STDIN), true)["token"] ?? "";' <<<"$PLATFORM_ISSUED")"
+[ -n "$PLATFORM_TOKEN" ] || fail "[platform] webx:mcp:token printed no token: $PLATFORM_ISSUED"
+
+BASE="$PLATFORM_BASE" list_tools "$PLATFORM_TOKEN" > "$WORKDIR/platform-tools.txt"
+grep -qx 'pages_tree' "$WORKDIR/platform-tools.txt" \
+    || fail "[platform] the token was not shown the pages tools: $(tr '\n' ' ' < "$WORKDIR/platform-tools.txt")"
+grep -q '^faq_' "$WORKDIR/platform-tools.txt" && fail '[platform] faq tools before the module was added'
+note '[platform] the token opens the MCP server and lists the tools of the installed modules'
+
+step "One more module: webx:module:add, and the image again"
+platform_artisan webx:module:add webx-ui/module-faq "${SETUP_COMPOSER[@]}" > "$WORKDIR/platform-add.log" 2>&1 \
+    || { cat "$WORKDIR/platform-add.log" >&2; fail 'webx:module:add did not succeed'; }
+grep -qF 'faq()' "$PLATFORM/resources/js/admin.ts" || fail 'webx:module:add did not register the module in admin.ts'
+grep -q '@webx-ui/module-faq' "$PLATFORM/package-lock.json" || fail 'webx:module:add did not bring the lock file along'
+note 'composer require, webx:panel --sync and npm install, without a question'
+
+platform_up 'the build with a new module'
+platform_doctor '[platform] after webx:module:add'
+
+# The token was issued before the module was there. Without scopes it carries the server-wide
+# one, so the new module's tools are reachable without issuing another.
+BASE="$PLATFORM_BASE" list_tools "$PLATFORM_TOKEN" > "$WORKDIR/platform-tools.txt"
+grep -q '^faq_' "$WORKDIR/platform-tools.txt" \
+    || fail "[platform] the token issued before the module does not reach it: $(tr '\n' ' ' < "$WORKDIR/platform-tools.txt")"
+note '[platform] and the token issued earlier reaches the module added after it'
+
+step "A rebuild in which only the PHP changed"
+# The case the bundle check got wrong: Docker serves the front-end stage from its cache, built
+# from sources as they were, while the sources themselves arrive in the image anew — with the
+# mtime of this checkout. Touching an entry and changing a PHP file is exactly that build.
+touch "$PLATFORM/resources/js/admin.ts"
+printf '\n// Rebuilt by the smoke run.\n' >> "$PLATFORM/routes/console.php"
+
+platform_up 'the rebuild'
+platform_doctor '[platform] after a rebuild with the front end from the cache'
+
+printf '\n\033[32m== And a program can make a site, open its MCP server and add to it, with nobody there.\033[0m\n'

@@ -45,6 +45,12 @@ jobs:
           coverage: none
           tools: composer:v2
 
+      # The platform scenario runs `webx:setup` with the build, the way a platform does: the
+      # image installs the front end from the lock file that build writes.
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
       - name: Cache Composer downloads
         uses: actions/cache@v4
         with:
@@ -61,4 +67,6 @@ jobs:
           DB_USERNAME: root
           DB_PASSWORD: secret
           SMOKE_DIR: ${{ runner.temp }}/smoke
+          # Docker is on the runner, so the scenario that builds the image is not optional here.
+          SMOKE_PLATFORM: '1'
         run: bash scripts/php-smoke.sh

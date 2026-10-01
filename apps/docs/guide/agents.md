@@ -67,6 +67,38 @@ The address must also be **https**. Some clients refuse plain http outright, and
 do not should.
 :::
 
+### A key for a program
+
+A script that creates sites, a CI job, a tool of your own has nobody to press Allow. It gets a
+token from the server instead:
+
+```bash
+php artisan webx:mcp:token --name=deploy --admin=robot@your-site.example --json
+# {"token":"eyJ0…","type":"Bearer","scopes":["mcp:use"],"expires_at":"2027-10-01T12:00:00+00:00"}
+```
+
+and sends it as `Authorization: Bearer …` to the same address. It is a personal access token of
+an administrator, not a client of its own: every tool acts as somebody, so the key acts as the
+account named by `--admin` — the first active super administrator when that is left out, which
+is convenient on a fresh site and [worth replacing](#do-not-connect-a-super-administrator) by an
+account with a role afterwards.
+
+| option              | what it does                                                                                    |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| `--name=`           | required; what the token is called, and what `--revoke-existing` looks for                      |
+| `--scopes=`         | `pages:write,media:read`, checked against what the installed modules declare                    |
+| `--admin=`          | the sign-in address of the account it acts as; a switched-off account gets nothing              |
+| `--json`            | `{"token","type","scopes","expires_at"}` instead of the bare token                              |
+| `--revoke-existing` | revoke that account's live tokens of the same name first — how a script replaces its key safely |
+
+Without `--scopes`, or with `all`, the token carries `mcp:use` — what an agent connected over
+OAuth gets: the account's permissions decide, including on a module installed after the token
+was issued. Named scopes are held to one by one, and a module added later is out of reach until
+a new token names it. Each call issues a new token and leaves the earlier ones working; the
+token lives a year. Only the token goes to standard output and every refusal is a non-zero exit
+with the reason on standard error, so `TOKEN=$(php artisan webx:mcp:token --name=deploy)` is
+safe in a script.
+
 ## What an agent may do
 
 **Its permissions are yours.** There is no separate account, no role for robots, no second
@@ -192,5 +224,6 @@ half to find out why.
   stands in for it: do not give write access to somebody whose edits you want to read first.
 - **A grid of scopes on the consent screen.** One switch, because a matrix means explaining
   the words `pages:write` to somebody who came here to connect a chatbot.
-- **Keys for machines.** They will come with the first headless integration — CI, our own
-  scripts — as a table of their own. For a person, OAuth is both easier and safer.
+- **A table of keys for machines in the panel.** A program gets its key from
+  [`webx:mcp:token`](#a-key-for-a-program), on the server, by whoever may run artisan there. For
+  a person, OAuth is both easier and safer.
