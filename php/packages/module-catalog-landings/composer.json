@@ -1,0 +1,73 @@
+{
+    "name": "webx-ui/module-catalog-landings",
+    "description": "Landing pages of the WebX UI catalogue: a category's list with a set of filters chosen in advance, under an address, an SEO card and texts of its own, with recommended products and links between the catalogue's pages.",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "webx-ui",
+        "laravel",
+        "admin",
+        "cms",
+        "catalog",
+        "e-commerce",
+        "seo"
+    ],
+    "homepage": "https://github.com/webx-ui/webx-ui",
+    "authors": [
+        {
+            "name": "WebX UI",
+            "homepage": "https://github.com/webx-ui"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/webx-ui/webx-ui/issues",
+        "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-catalog-landings"
+    },
+    "require": {
+        "php": "^8.3",
+        "illuminate/bus": "^13.0",
+        "illuminate/console": "^13.0",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/events": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/queue": "^13.0",
+        "illuminate/routing": "^13.0",
+        "illuminate/support": "^13.0",
+        "illuminate/validation": "^13.0",
+        "illuminate/view": "^13.0",
+        "webx-ui/localization": "^0.55.0",
+        "webx-ui/module-admin": "^0.55.0",
+        "webx-ui/module-catalog": "^0.55.0",
+        "webx-ui/module-seo": "^0.55.0",
+        "webx-ui/routing": "^0.55.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0 || ^13.0",
+        "webx-ui/module-catalog-brands": "^0.55.0",
+        "webx-ui/module-catalog-properties": "^0.55.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "WebxUi\\CatalogLandings\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WebxUi\\CatalogLandings\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "WebxUi\\CatalogLandings\\CatalogLandingsServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

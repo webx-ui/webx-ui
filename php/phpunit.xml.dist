@@ -18,6 +18,7 @@
             <directory>packages/module-catalog-brands/tests</directory>
             <directory>packages/module-catalog-labels/tests</directory>
             <directory>packages/module-catalog-manticore/tests</directory>
+            <directory>packages/module-catalog-landings/tests</directory>
             <directory>packages/module-catalog-properties/tests</directory>
             <directory>packages/module-catalog-stock/tests</directory>
             <directory>packages/module-events/tests</directory>
@@ -52,6 +53,7 @@
             <directory>packages/module-catalog-brands/src</directory>
             <directory>packages/module-catalog-labels/src</directory>
             <directory>packages/module-catalog-manticore/src</directory>
+            <directory>packages/module-catalog-landings/src</directory>
             <directory>packages/module-catalog-properties/src</directory>
             <directory>packages/module-catalog-stock/src</directory>
             <directory>packages/module-events/src</directory>
