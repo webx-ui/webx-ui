@@ -1,5 +1,13 @@
 # @webx-ui/module-catalog-stock
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [64a5353]
+- Updated dependencies [92c75c1]
+  - @webx-ui/module-catalog@0.7.0
+
 ## 0.1.2
 
 ### Patch Changes
