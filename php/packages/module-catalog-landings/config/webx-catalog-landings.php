@@ -33,4 +33,20 @@ return [
 
     'recommended' => (int) env('WEBX_CATALOG_LANDINGS_RECOMMENDED', 8),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Generation
+    |--------------------------------------------------------------------------
+    |
+    | «Create in bulk» (§8.3): up to `sync_limit` landings are made inside the request, more go to
+    | the queue `chunk` at a time; one generation makes at most `max`.
+    |
+    */
+
+    'generate' => [
+        'sync_limit' => (int) env('WEBX_CATALOG_LANDINGS_GENERATE_SYNC', 50),
+        'chunk' => (int) env('WEBX_CATALOG_LANDINGS_GENERATE_CHUNK', 100),
+        'max' => (int) env('WEBX_CATALOG_LANDINGS_GENERATE_MAX', 5000),
+    ],
+
 ];

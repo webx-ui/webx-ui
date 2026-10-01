@@ -160,6 +160,11 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
     base: 'php/packages/module-catalog-brands/resources/screens/brand-form.json',
     patches: [],
   },
+  // A landing's form (WEBX_UI_CATALOG_LANDINGS.md §8.2).
+  'catalog.landing-form': {
+    base: 'php/packages/module-catalog-landings/resources/screens/landing-form.json',
+    patches: [],
+  },
   // The properties and their groups (WEBX_UI_CATALOG_PROPERTIES.md §7.1).
   'catalog.property-form': {
     base: 'php/packages/module-catalog-properties/resources/screens/property-form.json',

@@ -81,6 +81,7 @@ export default defineConfig({
       pkg('module-catalog-brands'),
       pkg('module-catalog-manticore'),
       pkg('module-catalog-labels'),
+      pkg('module-catalog-landings'),
       pkg('module-catalog-properties'),
       pkg('module-catalog-stock'),
       pkg('module-events'),
