@@ -7,6 +7,8 @@ namespace WebxUi\Catalog\Filter;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
+use WebxUi\Catalog\Events\FacetValueRetargeted;
 
 /**
  * The old spellings of the filter's addresses (§4.2 of the properties spec).
@@ -75,7 +77,8 @@ final class FilterAliases
 
     /**
      * Every alias that led to `$from` leads to `$to` now, in every language — a value merged into
-     * another, or deleted (null).
+     * another, or deleted (null). A value's retarget is also told as {@see FacetValueRetargeted},
+     * whether any alias led to it or not.
      */
     public function retarget(string $facetKey, string $kind, string $from, ?string $to): void
     {
@@ -84,6 +87,10 @@ final class FilterAliases
             ->where('kind', $kind)
             ->where('target', $from)
             ->update(['target' => $to, 'updated_at' => Carbon::now()]);
+
+        if ($kind === self::VALUE) {
+            Event::dispatch(new FacetValueRetargeted($facetKey, $from, $to));
+        }
     }
 
     /**

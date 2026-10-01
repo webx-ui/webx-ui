@@ -6,12 +6,14 @@ namespace WebxUi\CatalogBrands\Tests;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Engine\CatalogQuery;
+use WebxUi\Catalog\Events\FacetValueRetargeted;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Parts\PartSchema;
 use WebxUi\Catalog\Parts\ProductPart;
@@ -148,6 +150,19 @@ final class BrandsTest extends TestCase
         $this->get('/brands/apple')->assertStatus(410);
         $this->get('/brands/apple/category_laptops')->assertStatus(410);
         $this->get('/brands/nobody')->assertNotFound();
+    }
+
+    #[Test]
+    public function a_deleted_brand_is_told_as_a_value_of_the_filter_gone(): void
+    {
+        $apple = $this->brand('Apple');
+        Event::fake([FacetValueRetargeted::class]);
+
+        $this->actingAs($this->editor(), 'cms')->deleteJson($this->api("brands/{$apple->id}"))->assertNoContent();
+
+        Event::assertDispatched(FacetValueRetargeted::class, static fn (FacetValueRetargeted $event): bool => $event->facetKey === BrandFacet::KEY
+            && $event->from === (string) $apple->id
+            && $event->to === null);
     }
 
     #[Test]
