@@ -192,6 +192,13 @@ final class Catalogue
             'default' => false,
             'requires' => ['catalog', 'media'],
         ],
+        'catalog-manticore' => [
+            'package' => 'webx-ui/module-catalog-manticore',
+            'npm' => '@webx-ui/module-catalog-manticore',
+            'label' => 'Catalog on Manticore — search, filters and counts for tens of thousands of products, on a Manticore server you run (needs the catalog)',
+            'default' => false,
+            'requires' => ['catalog'],
+        ],
         'menu' => [
             'package' => 'webx-ui/module-menu',
             'npm' => '@webx-ui/module-menu',

@@ -26,6 +26,7 @@ return [
     'empty-search' => 'Ничего не нашлось.',
     'search-corrected' => 'Показаны результаты для :corrected.',
     'search-instead' => 'Искать :q',
+    'fell-back' => 'Поисковый индекс не отвечает: список — из базы, поиск находит слова как написаны.',
     'view-all' => 'Все',
     'view-published' => 'Опубликованные',
     'view-unpublished' => 'Снятые',

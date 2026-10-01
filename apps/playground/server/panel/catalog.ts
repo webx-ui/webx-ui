@@ -28,6 +28,7 @@ import {
   isDictionaryAction,
   writeDictionaryValues,
 } from './catalog-dictionaries'
+import { manticoreDown } from './catalog-manticore'
 import {
   applyPropertyAction,
   checkPropertyAction,
@@ -989,6 +990,11 @@ export function liveProductIds(): number[] {
   return live(products).map((one) => one.id)
 }
 
+/** Every product, the bin included — what the search index holds. */
+export function productCount(): number {
+  return products.length
+}
+
 /** A category as the properties read their sets: its parent, its name, whether it is binned. */
 export function categoryLookup(
   id: number,
@@ -1197,6 +1203,8 @@ export function registerCatalog(
       // The satellites' columns (`ProductColumns`): the labels, the stock status, the brand, and
       // the properties marked «in the list».
       columns: [...dictionaryColumns(locale, line), ...propertyColumns(locale)],
+      // The search index does not answer: the list is the database's (decision 13 of the Manticore spec).
+      fell_back: manticoreDown(),
     }
   })
 
