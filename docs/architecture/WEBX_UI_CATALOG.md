@@ -416,7 +416,8 @@ Laravel), а не память одного запроса.
 3. `module-catalog`, npm: список, дерево категорий, форма товара.
 4. `module-catalog-properties` — без него фасетам нечего показывать. Спека —
    [`WEBX_UI_CATALOG_PROPERTIES.md`](WEBX_UI_CATALOG_PROPERTIES.md), согласована 30.09.2026.
-5. `module-catalog-manticore` — проверяется на выгрузке reference-shop в 85 тысяч товаров.
+5. `module-catalog-manticore` — проверяется на выгрузке reference-shop в 85 тысяч товаров. Спека —
+   [`WEBX_UI_CATALOG_MANTICORE.md`](WEBX_UI_CATALOG_MANTICORE.md), согласована 01.10.2026.
 6. `module-catalog-stock`, `module-catalog-brands`, `module-catalog-labels` — маленькие,
    параллельно.
 7. Обмен: конвейер ядра + CSV и XLSX. Спека —
