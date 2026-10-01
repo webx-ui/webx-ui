@@ -14,10 +14,13 @@ use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Catalog\Events\FacetValueRetargeted;
 use WebxUi\Catalog\Events\ProductsIndexed;
 use WebxUi\Catalog\Filter\FilterUrls;
+use WebxUi\Catalog\Mcp\SatelliteTools;
 use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\CatalogLandings\Catalog\IndexedBases;
 use WebxUi\CatalogLandings\Catalog\LandingRepairs;
 use WebxUi\CatalogLandings\Console\CountCommand;
+use WebxUi\CatalogLandings\Mcp\LandingsResource;
+use WebxUi\CatalogLandings\Mcp\LandingTools;
 use WebxUi\CatalogLandings\Models\Landing;
 use WebxUi\CatalogLandings\Panel\LandingsModule;
 use WebxUi\CatalogLandings\Storefront\LandingHandler;
@@ -62,6 +65,12 @@ class CatalogLandingsServiceProvider extends ServiceProvider
 
         $this->app->make(ScreenRegistry::class)->register(Landing::SCREEN, __DIR__.'/../resources/screens/landing-form.json');
         $this->app->make(ModuleRegistry::class)->register($this->app->make(LandingsModule::class));
+
+        // The agent's tools and `catalog://landings` are the catalogue's (§11): its names, scopes and
+        // permissions. Built when an agent asks, not at boot.
+        $mcp = $this->app->make(SatelliteTools::class);
+        $mcp->tools(fn (): array => $this->app->make(LandingTools::class)->all());
+        $mcp->resources(fn (): array => [$this->app->make(LandingsResource::class)->resource()]);
 
         if (! $this->app->runningInConsole()) {
             return;

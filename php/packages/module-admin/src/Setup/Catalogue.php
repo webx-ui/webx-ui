@@ -192,6 +192,13 @@ final class Catalogue
             'default' => false,
             'requires' => ['catalog', 'media'],
         ],
+        'catalog-landings' => [
+            'package' => 'webx-ui/module-catalog-landings',
+            'npm' => '@webx-ui/module-catalog-landings',
+            'label' => 'Catalog landings — «Apple laptops», «under 50 000»: a list with filters chosen in advance under its own address, texts and SEO, made one by one or in bulk (needs the catalog)',
+            'default' => false,
+            'requires' => ['catalog', 'seo'],
+        ],
         'catalog-manticore' => [
             'package' => 'webx-ui/module-catalog-manticore',
             'npm' => '@webx-ui/module-catalog-manticore',
