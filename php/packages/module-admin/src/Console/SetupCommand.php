@@ -342,10 +342,15 @@ final class SetupCommand extends Command
             ? rtrim($this->answers['domain'], '/')
             : 'http://'.$this->answers['domain'];
 
+        $codes = LocalesConfig::codes($this->answers['locales']);
+
         $values = [
             'APP_NAME' => $this->answers['name'],
             'APP_URL' => $url,
-            'APP_LOCALE' => LocalesConfig::codes($this->answers['locales'])[0] ?? 'en',
+            'APP_LOCALE' => $codes[0] ?? 'en',
+            // Laravel's own fallback, kept on a language the site has for the same reason as
+            // the one in config/webx-localization.php.
+            'APP_FALLBACK_LOCALE' => LocalesConfig::fallback($this->env->get('APP_FALLBACK_LOCALE'), $codes) ?? 'en',
             'WEBX_ADMIN_TITLE' => $this->answers['name'],
             'DB_CONNECTION' => $this->server->connection,
         ];
@@ -467,19 +472,31 @@ final class SetupCommand extends Command
             return;
         }
 
-        $rewritten = LocalesConfig::rewrite((string) $files->get($path), $codes);
+        $contents = (string) $files->get($path);
+        $rewritten = LocalesConfig::rewrite($contents, $codes);
 
         if ($rewritten === null) {
             $this->components->twoColumnDetail(
                 'config/webx-localization.php',
                 'left as it is — `locales` is not the list that shipped',
             );
-
-            return;
+        } else {
+            $contents = $rewritten;
+            $this->components->twoColumnDetail('Languages', implode(', ', $codes).' — the first is the default');
         }
 
-        $files->put($path, $rewritten);
-        $this->components->twoColumnDetail('Languages', implode(', ', $codes).' — the first is the default');
+        // Whether the list was ours to write or not: a fallback outside it is one the doctor
+        // fails, and there is only one language it can sensibly be.
+        $fallback = LocalesConfig::rewriteFallback($contents);
+
+        if ($fallback !== null) {
+            $contents = $fallback;
+            $this->components->twoColumnDetail('Fallback language', 'set to the default language — the one it had is not among the site\'s');
+        }
+
+        if ($rewritten !== null || $fallback !== null) {
+            $files->put($path, $contents);
+        }
     }
 
     /**

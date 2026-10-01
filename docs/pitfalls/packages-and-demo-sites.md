@@ -214,6 +214,11 @@
   doctor сравнивает содержимое. Сайт со своим `vite.config.js` без плагина по-прежнему
   сравнивается по времени — скопировать `sources()` из `php/site/vite.config.js`. Проверка —
   `public/build/webx-sources.json` после `npm run build`.
+- **`COPY . .` везёт в образ то, что хост сгенерировал для себя.** После локального
+  `composer install` в `bootstrap/cache/packages.php` записаны провайдеры dev-пакетов (Pail), в
+  образе их нет — entrypoint падает на `package:discover` с «Class … not found», хотя сборка
+  прошла. `.dockerignore` сверять с `.gitignore`: всё, что git не видит, кроме исходников, —
+  кандидат и туда (кеши `bootstrap/cache/*.php`, `auth.json`, ключи `storage/*.key`).
 
 ## Плейграунд
 

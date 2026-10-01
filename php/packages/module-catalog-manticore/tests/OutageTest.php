@@ -77,6 +77,23 @@ final class OutageTest extends TestCase
     }
 
     #[Test]
+    public function the_storefront_answers_503_on_the_sites_own_page(): void
+    {
+        $this->app['config']->set('webx-catalog.sql_engine_limit', 0);
+        $this->product('ThinkPad', $this->category('laptops'));
+
+        $this->get('/laptops')
+            ->assertStatus(503)
+            ->assertHeader('Retry-After')
+            ->assertSee('<!doctype html>', false)
+            ->assertSee('The catalogue is temporarily unavailable')
+            ->assertSee('noindex', false)
+            ->assertDontSee('ThinkPad');
+
+        $this->getJson('/laptops')->assertStatus(503)->assertJsonPath('message', 'The catalogue is temporarily unavailable.');
+    }
+
+    #[Test]
     public function without_a_prefix_the_engine_does_not_start_and_the_doctor_says_why(): void
     {
         $this->app['config']->set('webx-catalog-manticore.table_prefix', null);

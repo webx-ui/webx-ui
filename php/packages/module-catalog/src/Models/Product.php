@@ -270,7 +270,24 @@ class Product extends Model implements HasBreadcrumbs, HasStructuredData, Visibl
     }
 
     /**
-     * Name, article number or barcode containing the words; the id itself when the words are one.
+     * A code of the product — the article number, the barcode, the external id — that is the term
+     * itself, as the database compares it.
+     *
+     * @param  Builder<covariant Model>  $query
+     * @return Builder<covariant Model>
+     */
+    public function scopeCoded(Builder $query, string $term): Builder
+    {
+        $table = $query->getModel()->getTable();
+
+        return $query->where(static fn (Builder $any): Builder => $any->where($table.'.sku', $term)
+            ->orWhere($table.'.barcode', $term)
+            ->orWhere($table.'.external_id', $term));
+    }
+
+    /**
+     * Name, article number, barcode or external id containing the words; the id itself when the
+     * words are one.
      *
      * @param  Builder<covariant Model>  $query
      * @return Builder<covariant Model>
@@ -283,7 +300,8 @@ class Product extends Model implements HasBreadcrumbs, HasStructuredData, Visibl
         return $query->where(static function (Builder $nested) use ($table, $like, $term): void {
             $nested->where(static fn (Builder $half): Builder => $half->whereTranslationLikeAny('name', $like))
                 ->orWhere($table.'.sku', 'like', $like)
-                ->orWhere($table.'.barcode', 'like', $like);
+                ->orWhere($table.'.barcode', 'like', $like)
+                ->orWhere($table.'.external_id', 'like', $like);
 
             if (ctype_digit($term)) {
                 $nested->orWhere($table.'.id', (int) $term);

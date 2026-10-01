@@ -15,6 +15,8 @@ return [
     'search-for' => 'Поиск: :q',
     'search-placeholder' => 'Название или артикул',
     'search-submit' => 'Найти',
+    'search-corrected' => 'Показаны результаты для :corrected.',
+    'search-instead' => 'Искать :q',
     'filter-title' => ':category :value',
 
     'filter' => 'Фильтр',

@@ -10,21 +10,36 @@ node_modules
 .github
 .idea
 .vscode
+.cursor
+.zed
+.codex
 
 # The secrets. The container is handed its environment by compose; a .env baked into an image
-# travels wherever the image does.
+# travels wherever the image does — and so do composer's credentials and the Passport keys of
+# whichever machine the build ran on.
 .env
 .env.*
 !.env.example
+auth.json
+storage/*.key
+
+# What the host generated for itself. The provider list in bootstrap/cache is the one the
+# host's `composer install` discovered, dev packages included, and the image has none of them:
+# the entrypoint's `package:discover` dies on a class that is not there. The same goes for a
+# cached config or route list, which carries the host's paths and settings.
+bootstrap/cache/*.php
+!bootstrap/cache/.gitignore
 
 public/build
 public/hot
+public/fonts-manifest.dev.json
 public/storage
 storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*
 storage/framework/views/*
 storage/app/*
+storage/pail
 database/database.sqlite
 *.log
 
