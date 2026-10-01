@@ -34,11 +34,15 @@ final class IndexField
     /**
      * @param  bool  $multi  Several values per product: the categories with their ancestors.
      * @param  bool  $localized  One field per language, `name_en`, `name_ru`.
+     * @param  bool  $code  A code of the product — the article number, the barcode: an engine with
+     *                      an index searches it as written and as its letters and digits alone, by
+     *                      any part of it, and puts the product whose code is the search first.
      */
     public function __construct(
         public readonly string $name,
         public readonly string $type,
         public readonly bool $multi = false,
         public readonly bool $localized = false,
+        public readonly bool $code = false,
     ) {}
 }

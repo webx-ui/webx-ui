@@ -117,6 +117,65 @@ final class ManticoreEngineTest extends EngineScenarios
         $this->assertSame([$kept->id], $this->ask('laptop', 'en')->ids);
     }
 
+    #[Test]
+    public function a_code_is_found_by_any_part_of_its_letters_and_digits(): void
+    {
+        $plugs = $this->category('plugs');
+        $plug = $this->product('Spark plug', $plugs, ['sku' => 'NGK.BKR6E-11']);
+        $case = $this->product('Phone case', $plugs, ['sku' => 'AT-1234/56']);
+        $this->settle();
+
+        $this->assertSame([$plug->id], $this->ask('bkr6e11', 'en')->ids);
+        $this->assertSame([$plug->id], $this->ask('BKR6E', 'en')->ids);
+        $this->assertSame([$case->id], $this->ask('at1234', 'en')->ids);
+        $this->assertSame([$case->id], $this->ask('34/5', 'en')->ids);
+        // Typed without its dashes, the whole code is still the product's own.
+        $this->assertSame([$case->id], $this->ask('at123456', 'en')->exact);
+        // A name is not searched by a part (decision 22): «lug» is no word of «plug» — only the
+        // correction finds it, and says so.
+        $this->assertSame([], $this->engine()->search(new CatalogQuery(locale: 'en', search: 'lug', asTyped: true))->ids);
+        $this->assertSame('plug', $this->ask('lug', 'en')->corrected);
+    }
+
+    #[Test]
+    public function a_search_that_finds_nothing_is_corrected_and_says_so(): void
+    {
+        $phones = $this->category('phones');
+        $case = $this->product('Protective case for phone', $phones);
+        $this->product('USB cable', $phones);
+        $this->settle();
+
+        $typo = $this->ask('protectve case', 'en');
+        $this->assertSame([$case->id], $typo->ids);
+        $this->assertSame('protective case', $typo->corrected);
+
+        // Found as typed: nothing to correct, nothing said.
+        $this->assertNull($this->ask('protective', 'en')->corrected);
+
+        // As typed, it is asked for: the empty answer is the answer.
+        $typed = $this->engine()->search(new CatalogQuery(locale: 'en', search: 'protectve case', asTyped: true));
+        $this->assertSame([], $typed->ids);
+        $this->assertNull($typed->corrected);
+
+        // Nothing near enough: empty, and no correction to show.
+        $none = $this->ask('zzzzqqq', 'en');
+        $this->assertSame(0, $none->total);
+        $this->assertNull($none->corrected);
+    }
+
+    #[Test]
+    public function a_search_typed_with_the_other_layout_is_found_as_meant(): void
+    {
+        $this->useLocales('en', 'ru');
+        $case = $this->product('Protective case', $this->category('phones'));
+        $case->setTranslation('name', 'ru', 'Чехол защитный')->save();
+        $this->settle();
+
+        $result = $this->ask('xt[jk', 'ru');
+        $this->assertSame([$case->id], $result->ids);
+        $this->assertSame('чехол', $result->corrected);
+    }
+
     private function ask(string $search, string $locale): CatalogResult
     {
         return $this->engine()->search(new CatalogQuery(locale: $locale, search: $search));

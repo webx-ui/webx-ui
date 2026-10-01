@@ -24,6 +24,9 @@ class ManticoreServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog-manticore');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog-manticore');
+
         $this->app->make(CatalogEngines::class)->register('manticore', ManticoreEngine::class);
         $this->app->make(DoctorChecks::class)->register(ManticoreCheck::class);
 
@@ -31,6 +34,10 @@ class ManticoreServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../config/webx-catalog-manticore.php' => config_path('webx-catalog-manticore.php'),
             ], 'webx-catalog-manticore-config');
+
+            $this->publishes([
+                __DIR__.'/../resources/views' => resource_path('views/vendor/webx-catalog-manticore'),
+            ], 'webx-catalog-manticore-views');
         }
     }
 }

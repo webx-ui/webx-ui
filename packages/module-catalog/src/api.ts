@@ -107,6 +107,7 @@ export function productSearch(query: ProductQuery): URLSearchParams {
   const search = new URLSearchParams()
 
   if (query.q) search.set('q', query.q)
+  if (query.q && query.typed) search.set('typed', '1')
   if (query.state) search.set('state', query.state)
   if (query.sort && query.sort !== 'default') search.set('sort', query.sort)
   if (query.page && query.page > 1) search.set('page', String(query.page))

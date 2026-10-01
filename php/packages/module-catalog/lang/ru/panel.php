@@ -24,6 +24,8 @@ return [
     'empty-products' => 'Товаров пока нет.',
     'empty-products-help' => 'У товара одна основная категория и сколько угодно дополнительных.',
     'empty-search' => 'Ничего не нашлось.',
+    'search-corrected' => 'Показаны результаты для :corrected.',
+    'search-instead' => 'Искать :q',
     'view-all' => 'Все',
     'view-published' => 'Опубликованные',
     'view-unpublished' => 'Снятые',
