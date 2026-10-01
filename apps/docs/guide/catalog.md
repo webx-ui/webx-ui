@@ -176,3 +176,27 @@ spot, with the languages their translations go out in.
 supplier is one step the next time. The settings of an import and the head of a profile are the
 described screens `catalog.exchange-import` and `catalog.exchange-profile`: a project takes a
 setting away or fixes it with a patch, as on any form.
+
+### Agents
+
+Five MCP tools cover the exchange, behind the panel's permissions: importing needs
+`catalog.manage`, the rest any of the three.
+
+- `catalog_exchange_columns` lists the columns the agent may use and how each cell reads.
+- `catalog_import` takes a file by address (`url`) and a profile, or a mapping with options. With
+  neither, the headers are matched the way the panel suggests.
+- `catalog_export` exports a filter or ids, with the columns of a profile or a list of codes.
+- `catalog_exchange_run` returns a run: its counts, its first fifty errors and, once an export is
+  done, `file_url`.
+- `catalog_exchange_profiles` lists the profiles.
+
+An agent has no upload, so a file it builds has to live at an address the server can download.
+`dry_run` on an import is the import's own check: every row goes through the columns and the
+form, every error is listed, and nothing is written. An export's `file_url` is a signed link that
+works without signing in for `exchange.keep_hours`. `catalog://exchange` puts the rules of the
+format on one page: the header, every column of the core and the satellites with how its cell
+reads, the options, what an empty cell does. Building the file right is cheaper than reading its
+errors.
+
+A satellite's column describes its cell by implementing `DescribesCell` next to `ExchangeColumn`.
+A column without it is listed as text taken as it is.

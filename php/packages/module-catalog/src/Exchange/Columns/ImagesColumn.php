@@ -6,6 +6,7 @@ namespace WebxUi\Catalog\Exchange\Columns;
 
 use Illuminate\Support\Collection;
 use WebxUi\Admin\History\HistoryContext;
+use WebxUi\Catalog\Exchange\DescribesCell;
 use WebxUi\Catalog\Exchange\FetchExchangeImages;
 use WebxUi\Catalog\Exchange\ImportContext;
 use WebxUi\Catalog\Exchange\RowError;
@@ -25,7 +26,7 @@ use WebxUi\Catalog\Models\ProductImage;
  * `images: append` (the default) adds what is missing; `replace` also takes off what the cell
  * does not name.
  */
-final class ImagesColumn implements WritesProduct
+final class ImagesColumn implements DescribesCell, WritesProduct
 {
     public const APPEND = 'append';
 
@@ -49,6 +50,12 @@ final class ImagesColumn implements WritesProduct
     public function localized(): bool
     {
         return false;
+    }
+
+    public function cellFormat(): string
+    {
+        return 'Picture addresses (http/https) through ";". Downloaded on the queue after the row is written, each address once; '
+            .'images: append adds what is missing, replace also takes off what the cell does not name.';
     }
 
     public function export(Collection $products, ?string $locale): array

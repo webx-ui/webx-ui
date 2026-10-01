@@ -570,6 +570,10 @@ history_id, created_at, finished_at }`. До `bulk.sync_limit` товаров �
 | `catalog_products_delete` / `restore`                             | `catalog.delete`                                                   |
 | `catalog_categories_delete` / `restore`                           | `catalog.delete`                                                   |
 
+Обмен файлами — ещё пять инструментов (`catalog_import`, `catalog_export`, `catalog_exchange_columns`,
+`catalog_exchange_run`, `catalog_exchange_profiles`) и ресурс `catalog://exchange`:
+[`WEBX_UI_MODULE_CATALOG_EXCHANGE.md`](WEBX_UI_MODULE_CATALOG_EXCHANGE.md) §9.
+
 Записи агента попадают в журнал с источником `mcp`; прочитать журнал агент может инструментами
 `module-admin` ([`WEBX_UI_HISTORY.md`](WEBX_UI_HISTORY.md) §6).
 

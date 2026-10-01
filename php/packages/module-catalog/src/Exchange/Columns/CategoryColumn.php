@@ -6,6 +6,7 @@ namespace WebxUi\Catalog\Exchange\Columns;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use WebxUi\Catalog\Exchange\DescribesCell;
 use WebxUi\Catalog\Exchange\ExchangeColumn;
 use WebxUi\Catalog\Exchange\ImportContext;
 use WebxUi\Catalog\Models\Product;
@@ -15,7 +16,7 @@ use WebxUi\Localization\Locales;
  * The main category (`category`) or the additional ones (`categories`, paths through `;`), by
  * path of names or `#id` — {@see CategoryPaths}.
  */
-final class CategoryColumn implements ExchangeColumn
+final class CategoryColumn implements DescribesCell, ExchangeColumn
 {
     public function __construct(private readonly bool $multiple = false) {}
 
@@ -37,6 +38,14 @@ final class CategoryColumn implements ExchangeColumn
     public function localized(): bool
     {
         return false;
+    }
+
+    public function cellFormat(): string
+    {
+        return $this->multiple
+            ? 'Additional categories: several paths through ";", each as in category.'
+            : 'The main category: a path of names in the default language from the top through "/" (Electronics/Phones), '
+                .'case aside, or #id. Two sisters of one name are refused — use #id. A missing one is created with create_missing.';
     }
 
     public function export(Collection $products, ?string $locale): array

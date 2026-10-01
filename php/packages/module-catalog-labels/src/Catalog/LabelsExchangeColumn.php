@@ -8,6 +8,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Categories\CategoryForm;
 use WebxUi\Catalog\Dictionaries\Dictionary;
+use WebxUi\Catalog\Exchange\DescribesCell;
 use WebxUi\Catalog\Exchange\ExchangeColumn;
 use WebxUi\Catalog\Exchange\ImportContext;
 use WebxUi\Catalog\Exchange\Lookup;
@@ -24,7 +25,7 @@ use WebxUi\CatalogLabels\Models\Label;
  * is still on its products, and still found by its code. An unknown code is created with
  * `create_missing` — named by its code, which a person renames in the panel afterwards.
  */
-final class LabelsExchangeColumn implements ExchangeColumn
+final class LabelsExchangeColumn implements DescribesCell, ExchangeColumn
 {
     private const BAG = 'labels';
 
@@ -46,6 +47,11 @@ final class LabelsExchangeColumn implements ExchangeColumn
     public function localized(): bool
     {
         return false;
+    }
+
+    public function cellFormat(): string
+    {
+        return 'Label codes through ";" (sale;new), case aside. A missing code ([a-z0-9-], up to 32) is created with create_missing, named by its code.';
     }
 
     public function export(Collection $products, ?string $locale): array

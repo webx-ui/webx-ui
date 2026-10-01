@@ -10,6 +10,7 @@ use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Catalog\Demo\CatalogDemo;
 use WebxUi\Catalog\Mcp\CatalogResources;
 use WebxUi\Catalog\Mcp\CatalogTools;
+use WebxUi\Catalog\Mcp\ExchangeTools;
 use WebxUi\Catalog\Mcp\SatelliteTools;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\McpResource;
@@ -25,8 +26,9 @@ use WebxUi\Mcp\Tool;
  * and restores, `delete` does those and opens «Deleted». Categories go by the same three: the
  * people who file products are the people who arrange the shelves.
  *
- * To an agent it is the same section by other doors (§12): twenty-one tools behind the same three
- * permissions, and six resources to read before writing. The scopes are `catalog:read` and
+ * To an agent it is the same section by other doors (§12): twenty-six tools behind the same three
+ * permissions — five of them the exchange, {@see ExchangeTools} — and seven resources to read
+ * before writing. The scopes are `catalog:read` and
  * `catalog:write`. A satellite whose tools belong to the catalogue by name adds them through
  * {@see SatelliteTools}.
  */
@@ -43,6 +45,7 @@ final class CatalogModule extends AbstractModule implements ProvidesDemo, Provid
         private readonly CatalogResources $resources,
         private readonly CatalogDemo $demo,
         private readonly SatelliteTools $satellites,
+        private readonly ExchangeTools $exchange,
     ) {}
 
     public function id(): string
@@ -99,7 +102,7 @@ final class CatalogModule extends AbstractModule implements ProvidesDemo, Provid
      */
     public function mcpTools(): array
     {
-        return [...$this->tools->all(), ...$this->satellites->allTools()];
+        return [...$this->tools->all(), ...$this->exchange->tools(), ...$this->satellites->allTools()];
     }
 
     /**
@@ -107,7 +110,7 @@ final class CatalogModule extends AbstractModule implements ProvidesDemo, Provid
      */
     public function mcpResources(): array
     {
-        return [...$this->resources->all(), ...$this->satellites->allResources()];
+        return [...$this->resources->all(), $this->exchange->resource(), ...$this->satellites->allResources()];
     }
 
     /**

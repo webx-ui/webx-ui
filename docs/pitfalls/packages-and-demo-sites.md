@@ -92,6 +92,16 @@
   `packages/*/node_modules` и `apps/*/node_modules` (они в `.gitignore`); pnpm после этого из
   worktree по-прежнему не звать. Проверка — `ls node_modules/.bin/prettier` перед первым
   форматированием; отформатированное до неё — прогнать ещё раз.
+- **Сайт, слинкованный с worktree, собирается из двух чекаутов сразу.** Junction
+  `packages/<пакет>/node_modules` целиком смотрит в основной чекаут, а там `@webx-ui/<сосед>` —
+  ссылка на **его** `packages/<сосед>`. Пакет из worktree импортирует соседа из чужого `dist`, и
+  сборка сайта падает `[MISSING_EXPORT]` с путём `../webx-ui.local/packages/<сосед>/dist` —
+  похоже на забытый экспорт в ветке. Хуже, когда экспорт есть: тогда сайт молча
+  собирается с прошлой версией соседа. Для линковки сайта `node_modules` пакета в worktree делать
+  настоящим каталогом: каждая запись — junction на основной чекаут, а `@webx-ui/*` — junction'ы на
+  пакеты самого worktree. Проверка — `ls -la packages/<пакет>/node_modules/@webx-ui` показывает
+  путь worktree. Сборку пакета из worktree `npx vite build` делает в его каталоге; без junction'а
+  на `node_modules` пакета она падает «Cannot find package 'vite-plugin-dts'».
 - **На пустом `php/vendor` первый `analyse` — гонка за манифест Testbench.** В worktree своего
   `php/vendor` нет, `composer install` манифест не пишет (он пишется при первой загрузке
   приложения), и первым приложение поднимает phpstan — сразу в несколько процессов. Дальше либо

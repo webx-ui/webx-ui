@@ -6,6 +6,7 @@ namespace WebxUi\CatalogStock\Catalog;
 
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use WebxUi\Catalog\Exchange\DescribesCell;
 use WebxUi\Catalog\Exchange\ExchangeColumn;
 use WebxUi\Catalog\Exchange\ImportContext;
 use WebxUi\Catalog\Exchange\Lookup;
@@ -25,7 +26,7 @@ use WebxUi\CatalogStock\Models\StockStatus;
  * because nobody chose: the empty cell reads back as "leave it", so a file sent back does not pin
  * forty thousand products to today's default, and moving the default later still moves them.
  */
-final class StockExchangeColumn implements ExchangeColumn
+final class StockExchangeColumn implements DescribesCell, ExchangeColumn
 {
     private const BAG = 'stock';
 
@@ -47,6 +48,11 @@ final class StockExchangeColumn implements ExchangeColumn
     public function localized(): bool
     {
         return false;
+    }
+
+    public function cellFormat(): string
+    {
+        return 'The code of a stock status. Never created, not even with create_missing; empty — leave it as it is.';
     }
 
     public function export(Collection $products, ?string $locale): array
