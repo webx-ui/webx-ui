@@ -19,7 +19,7 @@ use WebxUi\CatalogProperties\Models\PropertyValue;
  *
  * - `pv` — ids of the values of reference books, with their ancestors;
  * - `pi` — ids of the intervals a number falls into, so the facet of intervals counts nothing;
- * - `pn` — the numbers by property id, `{ "12": 1.35 }`, as JSON: a new property is no new field;
+ * - `pn` — the numbers by property id, `{ "12": 1.35 }`, a JSON map: a new property is no new field;
  * - `pb` — ids of the properties that say «yes»;
  * - `pt_{locale}` — the names of values and the texts of the properties searched by value.
  *
@@ -38,7 +38,7 @@ final class PropertiesDocument implements DocumentContributor
         return [
             new IndexField('pv', IndexField::INT, multi: true),
             new IndexField('pi', IndexField::INT, multi: true),
-            new IndexField('pn', IndexField::STRING),
+            new IndexField('pn', IndexField::JSON),
             new IndexField('pb', IndexField::INT, multi: true),
             new IndexField('pt', IndexField::TEXT, localized: true),
         ];
@@ -84,7 +84,7 @@ final class PropertiesDocument implements DocumentContributor
             }
 
             $document['pv'] = array_values(array_unique($document['pv']));
-            $document['pn'] = $document['pn'] === [] ? null : json_encode($document['pn']);
+            $document['pn'] = $document['pn'] === [] ? null : $document['pn'];
 
             foreach ($words as $locale => $list) {
                 $document['pt_'.$locale] = trim(implode(' ', array_unique($list)));

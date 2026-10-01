@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Catalog\Engine;
 
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 use WebxUi\Catalog\Catalog;
@@ -76,10 +77,15 @@ final class Indexer
     /**
      * The whole catalogue from scratch, with the schema made anew. The queue is emptied first:
      * everything in it is about to be written anyway.
+     *
+     * An engine that rebuilds aside ({@see RebuildsAside}) swaps the new index in at the end. A
+     * product saved while a batch holding it was being built would be written stale into the new
+     * index, so whatever changed since the start is queued again once the swap is done.
      */
     public function rebuild(int $chunk = self::CHUNK): int
     {
         $engine = $this->catalog->engine();
+        $started = Carbon::now()->subSecond();
         $engine->prepare($this->documents->schema($this->locales->codes()), rebuild: true);
 
         DB::table('catalog_index_queue')->delete();
@@ -89,6 +95,11 @@ final class Indexer
         Product::withTrashed()->select(['id'])->chunkById($chunk, function (Collection $products) use ($engine, &$done): void {
             $done += $this->write($engine, array_map('intval', $products->modelKeys()));
         });
+
+        if ($engine instanceof RebuildsAside) {
+            $engine->completeRebuild();
+            $this->catalog->touchQuery(Product::withTrashed()->where('updated_at', '>=', $started));
+        }
 
         return $done;
     }

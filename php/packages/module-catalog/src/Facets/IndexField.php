@@ -26,6 +26,12 @@ final class IndexField
     public const TIMESTAMP = 'timestamp';
 
     /**
+     * A map that grows without changing the schema: the numbers of properties by id. A facet
+     * reads one key of it as `{field}.{key}` — `pn.12`.
+     */
+    public const JSON = 'json';
+
+    /**
      * @param  bool  $multi  Several values per product: the categories with their ancestors.
      * @param  bool  $localized  One field per language, `name_en`, `name_ru`.
      */

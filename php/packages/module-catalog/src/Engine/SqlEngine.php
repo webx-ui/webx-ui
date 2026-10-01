@@ -10,10 +10,6 @@ use Illuminate\Support\Facades\DB;
 use WebxUi\Catalog\Facets\BatchCountedFacet;
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\Facets;
-use WebxUi\Catalog\Facets\RelevantFacets;
-use WebxUi\Catalog\Filter\FilterContext;
-use WebxUi\Catalog\Filter\FilterState;
-use WebxUi\Catalog\Models\Category;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Search\SearchContributors;
 use WebxUi\Catalog\Sorts\Sorts;
@@ -28,7 +24,7 @@ use WebxUi\Catalog\Sorts\Sorts;
  * count over the same products. The category of the page is a subtree by `lft/rgt`, main and
  * additional categories alike, so a parent holds everything below.
  *
- * Before counting, a source that picks its facets ({@see RelevantFacets}) is asked which of them
+ * Before counting, a source that picks its facets ({@see FacetPlacement}) is asked which of them
  * belong on the page; the rest are not counted at all. A chosen facet always is, and always open.
  *
  * It keeps no index, because the tables are one: {@see needsIndex()} is false, and nothing is
@@ -40,6 +36,7 @@ final class SqlEngine implements CatalogEngine
         private readonly Facets $facets,
         private readonly Sorts $sorts,
         private readonly SearchContributors $search,
+        private readonly FacetPlacement $placement,
     ) {}
 
     public function search(CatalogQuery $query): CatalogResult
@@ -139,7 +136,7 @@ final class SqlEngine implements CatalogEngine
     private function countAll(CatalogQuery $query, Builder $base): array
     {
         $found = $this->ids($base);
-        $placing = $this->relevant($query, $found);
+        $placing = $this->placement->place($query, $found);
         $single = [];
         /** @var array<string, array{facet: BatchCountedFacet, kind: FacetKind, keys: list<string>}> $batches */
         $batches = [];
@@ -151,7 +148,7 @@ final class SqlEngine implements CatalogEngine
                 continue;
             }
 
-            if ($facet instanceof BatchCountedFacet && ! $this->chosen($query, $key)) {
+            if ($facet instanceof BatchCountedFacet && ! FacetPlacement::chosen($query, $key)) {
                 $source = $this->facets->sourceOf($key);
                 $group = ($source === null ? $facet::class : spl_object_id($source)).'|'.$facet->kind()->value;
                 $batches[$group] ??= ['facet' => $facet, 'kind' => $facet->kind(), 'keys' => []];
@@ -177,86 +174,7 @@ final class SqlEngine implements CatalogEngine
             $counted += $this->countMany($batch['facet'], $batch['kind'], $batch['keys'], $found, $base);
         }
 
-        $facets = [];
-
-        foreach ($query->count as $key) {
-            if (isset($counted[$key])) {
-                $place = $placing[$key] ?? null;
-                $facets[$key] = $place === null ? $counted[$key] : $counted[$key]->placed($place['expanded'], $place['rank']);
-            }
-        }
-
-        return $facets;
-    }
-
-    /**
-     * What the sources that pick their facets keep on this page, and how: key → open or not, and
-     * the place. Null when no source picks — every facet asked about is counted. A facet of such a
-     * source that is not in the answer is left out, unless it is chosen.
-     *
-     * @return array<string, array{expanded: bool, rank: int|null}>|null
-     */
-    private function relevant(CatalogQuery $query, QueryBuilder $found): ?array
-    {
-        $placing = null;
-        $context = null;
-
-        foreach ($this->facets->sources() as $source) {
-            if (! $source instanceof RelevantFacets) {
-                continue;
-            }
-
-            $own = array_values(array_filter($query->count, fn (string $key): bool => $this->facets->sourceOf($key) === $source));
-
-            if ($own === []) {
-                continue;
-            }
-
-            if ($placing === null) {
-                $placing = [];
-
-                // Everything else asked about is counted as it always was.
-                foreach ($query->count as $key) {
-                    if ($this->facets->sourceOf($key) === null) {
-                        $placing[$key] = ['expanded' => true, 'rank' => null];
-                    }
-                }
-            }
-
-            $context ??= $query->filter ?? $this->context($query);
-            $rank = 0;
-
-            foreach ($source->relevant($context, FilterState::of($query->facets), clone $found) as $relevance) {
-                if (in_array($relevance->key, $own, true) && ! isset($placing[$relevance->key])) {
-                    $placing[$relevance->key] = ['expanded' => $relevance->expanded, 'rank' => $rank++];
-                }
-            }
-
-            // A chosen facet stays, open, whatever its share: otherwise the choice cannot be undone.
-            foreach ($own as $key) {
-                if ($this->chosen($query, $key)) {
-                    $placing[$key] = ['expanded' => true, 'rank' => $placing[$key]['rank'] ?? $rank++];
-                }
-            }
-        }
-
-        return $placing;
-    }
-
-    /** The page a question without one comes from, as far as the question says. */
-    private function context(CatalogQuery $query): FilterContext
-    {
-        $facets = array_values(array_filter(array_map(fn (string $key) => $this->facets->find($key), $query->count)));
-        $category = $query->context === FilterContext::CATEGORY && $query->contextId !== null
-            ? Category::query()->find($query->contextId)
-            : null;
-
-        return new FilterContext($query->context, '', $query->locale, $facets, $category instanceof Category ? $category : null);
-    }
-
-    private function chosen(CatalogQuery $query, string $key): bool
-    {
-        return isset($query->facets[$key]) && ! $query->facets[$key]->isEmpty();
+        return FacetPlacement::arrange($query, $counted, $placing);
     }
 
     /**
