@@ -222,6 +222,11 @@ class CatalogServiceProvider extends ServiceProvider
 
         $screens->register(Product::SCREEN, __DIR__.'/../resources/screens/product-form.json');
         $screens->register(Category::SCREEN, __DIR__.'/../resources/screens/category-form.json');
+        // The exchange's two forms (§8.1 of the exchange spec): how an import writes, and the head
+        // of a saved profile. Nothing saves them as a record — the panel sends their values as the
+        // options of a run or a profile — but described, a project can take a setting away.
+        $screens->register('catalog.exchange-import', __DIR__.'/../resources/screens/exchange-import.json');
+        $screens->register('catalog.exchange-profile', __DIR__.'/../resources/screens/exchange-profile.json');
 
         $units = array_values(array_map('strval', (array) $this->config()->get('webx-catalog.units', [])));
         $patch = [[

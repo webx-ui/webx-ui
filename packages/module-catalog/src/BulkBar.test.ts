@@ -1,6 +1,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { App } from 'vue'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { connectModals } from '@webx-ui/core'
 import { adminKey, createI18n, i18nKey, type AdminContext } from '@webx-ui/module-admin'
 import BulkBar from './BulkBar.vue'
@@ -45,7 +46,11 @@ function bar(post: ReturnType<typeof vi.fn>, get?: ReturnType<typeof vi.fn>) {
     props: { count: 2, selection: { ids: [1, 2] } },
     global: {
       // The dialog of a param is mounted apart from the bar, and reads the panel through this.
-      plugins: [{ install: (app: App) => connectModals(app) }],
+      // «Export» leaves for «Exchange», so the bar asks for the router.
+      plugins: [
+        createRouter({ history: createMemoryHistory(), routes: [{ path: '/', component: {} }] }),
+        { install: (app: App) => connectModals(app) },
+      ],
       provide: { [adminKey as symbol]: admin, [i18nKey as symbol]: admin.i18n },
     },
     attachTo: document.body,

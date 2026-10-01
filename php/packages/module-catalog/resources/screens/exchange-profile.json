@@ -1,0 +1,77 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "catalog.exchange-profile",
+  "model": "catalog.exchange-profile",
+  "root": [
+    {
+      "id": "head",
+      "type": "wx-card",
+      "children": [
+        {
+          "id": "name",
+          "type": "wx-input",
+          "name": "name",
+          "label": "trans::webx-catalog::exchange.settings.name",
+          "props": { "maxlength": 120 }
+        },
+        {
+          "id": "format",
+          "type": "wx-segmented",
+          "name": "format",
+          "label": "trans::webx-catalog::exchange.settings.format",
+          "props": {
+            "options": [
+              { "label": "trans::webx-catalog::exchange.settings.format-csv", "value": "csv" },
+              { "label": "trans::webx-catalog::exchange.settings.format-xlsx", "value": "xlsx" }
+            ]
+          }
+        },
+        {
+          "id": "encoding",
+          "type": "wx-select",
+          "name": "encoding",
+          "label": "trans::webx-catalog::exchange.settings.encoding",
+          "help": "trans::webx-catalog::exchange.settings.encoding-help",
+          "visible": {
+            "all": [
+              { "when": "direction", "is": "import" },
+              { "when": "format", "is": "csv" }
+            ]
+          },
+          "props": {
+            "clearable": true,
+            "placeholder": "trans::webx-catalog::exchange.settings.detect",
+            "options": [
+              { "label": "UTF-8", "value": "UTF-8" },
+              { "label": "Windows-1252", "value": "Windows-1252" },
+              { "label": "Windows-1251", "value": "Windows-1251" },
+              { "label": "ISO-8859-1", "value": "ISO-8859-1" }
+            ]
+          }
+        },
+        {
+          "id": "delimiter",
+          "type": "wx-select",
+          "name": "delimiter",
+          "label": "trans::webx-catalog::exchange.settings.delimiter",
+          "help": "trans::webx-catalog::exchange.settings.delimiter-help",
+          "visible": {
+            "all": [
+              { "when": "direction", "is": "import" },
+              { "when": "format", "is": "csv" }
+            ]
+          },
+          "props": {
+            "clearable": true,
+            "placeholder": "trans::webx-catalog::exchange.settings.detect",
+            "options": [
+              { "label": ",", "value": "," },
+              { "label": ";", "value": ";" },
+              { "label": "Tab", "value": "\t" }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

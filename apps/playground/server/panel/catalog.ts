@@ -44,6 +44,7 @@ import {
   propertyValues,
   writePropertyValues,
 } from './catalog-properties'
+import { registerExchange, type ExchangeStore } from './catalog-exchange'
 import { Reply } from './reply'
 import { claimUpload } from './uploads'
 
@@ -726,6 +727,9 @@ function nextId(list: { id: number }[]): number {
 
 const ANNA = { id: 1, name: 'Анна Ковальчук' }
 
+/* The run the journal is writing inside — an import — or null: rows carry it, as the server's do. */
+let journalRun: { id: number; summary: Record<string, unknown> } | null = null
+
 function record(
   type: string,
   id: number,
@@ -736,14 +740,46 @@ function record(
   journal.unshift({
     id: journal.length + 1,
     event,
-    source,
+    source: journalRun ? 'import' : source,
     subject: { type, id },
     admin: ANNA,
     grant_id: null,
     changes,
-    run: null,
+    run: journalRun,
     created_at: now(),
   })
+}
+
+/** `GET /history/runs/{id}` for a run the exchange opened: its rows, with the search by record. */
+export function catalogHistoryRun(id: number, page: number, search: number | null) {
+  const rows = journal.filter(
+    (one) => one.run?.id === id && (search === null || one.subject.id === search),
+  )
+  const head = journal.find((one) => one.run?.id === id)
+
+  if (head === undefined) return null
+
+  const last = Math.max(1, Math.ceil(rows.length / 20))
+  const current = Math.min(Math.max(1, page), last)
+
+  return {
+    run: {
+      ...head,
+      id,
+      event: 'run' as const,
+      subject: { type: 'catalog.product', id: null },
+      changes: [],
+      run: null,
+      summary: head.run?.summary ?? {},
+      rows: rows.length,
+    },
+    rows: {
+      data: rows.slice((current - 1) * 20, current * 20),
+      current_page: current,
+      last_page: last,
+      total: rows.length,
+    },
+  }
 }
 
 function diff(
@@ -1173,6 +1209,7 @@ export function registerCatalog(
     product: ProductRecord,
     values: Record<string, unknown>,
     locale: string,
+    dry = false,
   ): void => {
     const before = productValues(product)
     const next: ProductRecord = { ...product, categories: [...product.categories] }
@@ -1282,6 +1319,8 @@ export function registerCatalog(
         takenBy ? { meta: { taken_by: takenBy } } : undefined,
       )
     }
+
+    if (dry) return
 
     // Empty slug: made of the name, in every language that has one (§4).
     for (const [code, text] of Object.entries(next.name)) {
@@ -1855,7 +1894,67 @@ export function registerCatalog(
     return paginate(rows, query)
   })
 
-  registerBulk(on, fail, line)
+  const select = registerBulk(on, fail, line)
+
+  /* The exchange (WEBX_UI_MODULE_CATALOG_EXCHANGE.md §12): rows go through the same write. */
+  const store: ExchangeStore = {
+    products: () => products,
+    blank: () => ({
+      id: nextId(products),
+      name: {},
+      slug: {},
+      sku: null,
+      barcode: null,
+      summary: {},
+      description: {},
+      category_id: null,
+      categories: [],
+      price: null,
+      old_price: null,
+      unit: 'pcs',
+      priority: 0,
+      is_published: false,
+      seo: {},
+      created_at: now(),
+      updated_at: now(),
+      deleted_at: null,
+    }),
+    write: writeProduct,
+    categories: () => categories,
+    addCategory: (parent, name) => {
+      const made: CategoryRecord = {
+        id: nextId(categories),
+        parent_id: parent,
+        position: childrenOf(parent).length,
+        name: { [DEFAULT]: name },
+        slug: { [DEFAULT]: slugOf(name) },
+        description: {},
+        cover: null,
+        is_published: true,
+        facets: null,
+        seo: {},
+        created_at: now(),
+        updated_at: now(),
+        deleted_at: null,
+      }
+
+      categories.push(made)
+
+      return made.id
+    },
+    select,
+    inRun: (run, work) => {
+      journalRun = run
+      try {
+        return work()
+      } finally {
+        journalRun = null
+      }
+    },
+    defaultLocale: DEFAULT,
+  }
+
+  registerExchange(on, fail, line, store)
 }
 
 /* ------------------------------------------------------------------------ bulk ----- */
@@ -1897,7 +1996,7 @@ function registerBulk(
   on: (method: string, pattern: string, handler: Handler) => void,
   fail: Fail,
   line: Line,
-): void {
+): (selection: Record<string, unknown>, trashed: boolean) => number[] {
   const describe = (locale: string) => [
     ...ACTIONS.map((action) => ({
       key: action.key,
@@ -2176,4 +2275,6 @@ function registerBulk(
 
     return { data: answer(run, locale) }
   })
+
+  return select
 }
