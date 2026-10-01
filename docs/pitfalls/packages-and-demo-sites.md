@@ -149,7 +149,9 @@
   (`C:\Work\OSPanel\modules\PHP-8.3\php.exe` и `PHP-8.4`); composer в PATH нет, phar кладётся в
   скретчпад. Гейт php-половины — `composer lint && composer analyse && composer test` из `php/`.
   Скрипты composer зовут `php` по имени, и без него в PATH все три падают с «'php' is not
-  recognized» и вопросом про `allow-plugins` — похоже на сломанный `composer.json`. Либо каталог
+  recognized» и вопросом про `allow-plugins` — похоже на сломанный `composer.json`. В фоне и с
+  выводом в `| tail` ошибки не видно вовсе: composer молча ждёт ответа на этот вопрос, и гейт
+  «висит» без дочернего процесса. Либо каталог
   `php.exe` в PATH, либо сами бинарники: `php.exe vendor/bin/pint --test`, `… phpstan analyse`,
   `… phpunit`.
 - Было: dev-корень `php/` не запускался на 8.3 при пакетах на `^8.3` (PHPUnit 13 требует 8.4.1).
