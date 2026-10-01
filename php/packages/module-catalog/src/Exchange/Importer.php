@@ -549,6 +549,7 @@ final class Importer
             }
 
             $field = $column->field();
+            $entry = self::entry($column);
 
             foreach ($byLocale as $locale => $text) {
                 $text = trim($text);
@@ -570,6 +571,20 @@ final class Importer
 
                 if ($column instanceof WritesProduct) {
                     $writes[$key] = $value;
+                } elseif ($entry !== null) {
+                    // One entry of an object several columns make between them.
+                    /** @var array<string, mixed> $current */
+                    $current = is_array($input[$field] ?? null) ? $input[$field] : [];
+
+                    if ($column->localized()) {
+                        $words = is_array($current[$entry] ?? null) ? $current[$entry] : [];
+                        $words[$locale === '' ? $context->defaultLocale : $locale] = $value;
+                        $current[$entry] = $words;
+                    } else {
+                        $current[$entry] = $value;
+                    }
+
+                    $input[$field] = $current;
                 } elseif ($column->localized()) {
                     $current = $input[$field] ?? [];
                     $current[$locale === '' ? $context->defaultLocale : $locale] = $value;
@@ -583,6 +598,14 @@ final class Importer
         return [$input, $writes];
     }
 
+    /** The entry of an object field the column fills, under whatever code it was renamed to. */
+    private static function entry(ExchangeColumn $column): ?string
+    {
+        $own = $column instanceof RenamedColumn ? $column->column() : $column;
+
+        return $own instanceof EntryColumn ? $own->entry() : null;
+    }
+
     /**
      * The form's refusal, a line per field, named by the column that filled it.
      *
@@ -593,6 +616,13 @@ final class Importer
         $byField = [];
 
         foreach ($columns as $key => $column) {
+            $entry = self::entry($column);
+
+            // `properties.values.12` is the column of property 12, not the first property column.
+            if ($entry !== null) {
+                $byField[$column->field().'.'.$entry] ??= $key;
+            }
+
             $byField[$column->field()] ??= $key;
         }
 
