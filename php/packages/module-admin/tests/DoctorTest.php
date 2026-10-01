@@ -31,6 +31,9 @@ final class DoctorTest extends TestCase
     /** @var list<string> */
     private array $written = [];
 
+    /** @var list<string> */
+    private array $directories = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -42,6 +45,10 @@ final class DoctorTest extends TestCase
     {
         foreach ($this->written as $path) {
             $this->files->delete($path);
+        }
+
+        foreach ($this->directories as $path) {
+            $this->files->deleteDirectory($path);
         }
 
         parent::tearDown();
@@ -318,7 +325,89 @@ final class DoctorTest extends TestCase
             ->expectsOutputToContain('webx:panel --sync');
     }
 
+    // -- bundle ------------------------------------------------------------------------------
+
+    #[Test]
+    public function it_trusts_the_content_of_a_bundle_older_than_its_sources(): void
+    {
+        // Docker's layer cache: the build stage is an hour old, the sources were copied now.
+        $this->entry("import './theme'\n");
+        $this->write($this->app->basePath('resources/js/theme.ts'), "export const theme = 'dark'\n");
+        $this->built(['resources/js/admin.ts', 'resources/js/theme.ts'], time() - 3600);
+
+        $this->assertStringContainsString('Bundle: built from what is on disk now — 2 files', $this->details($this->halves()));
+    }
+
+    #[Test]
+    public function it_names_the_imported_file_that_changed_after_the_build(): void
+    {
+        $this->entry("import './theme'\n");
+        $this->write($this->app->basePath('resources/js/theme.ts'), "export const theme = 'dark'\n");
+        $this->built(['resources/js/admin.ts', 'resources/js/theme.ts'], time() + 3600);
+
+        $this->files->put($this->app->basePath('resources/js/theme.ts'), "export const theme = 'light'\n");
+
+        $this->assertStringContainsString(
+            'Bundle: resources/js/theme.ts has changed since the bundle was built',
+            $this->details($this->halves()),
+        );
+    }
+
+    #[Test]
+    public function it_catches_a_source_the_bundle_was_built_from_and_that_is_gone(): void
+    {
+        $this->entry("import './theme'\n");
+        $this->write($this->app->basePath('resources/js/theme.ts'), "export const theme = 'dark'\n");
+        $this->built(['resources/js/admin.ts', 'resources/js/theme.ts']);
+
+        $this->files->delete($this->app->basePath('resources/js/theme.ts'));
+
+        $this->assertStringContainsString('Bundle: resources/js/theme.ts is gone', $this->details($this->halves()));
+    }
+
+    #[Test]
+    public function it_falls_back_to_times_when_the_build_left_no_record(): void
+    {
+        // A site whose vite.config.js predates the plugin.
+        $this->entry("createAdmin({})\n");
+        $this->built(null, time() - 3600);
+
+        $this->assertStringContainsString(
+            'Bundle: resources/js/admin.ts has changed since the bundle was built',
+            $this->details($this->halves()),
+        );
+    }
+
     // -- scaffolding -------------------------------------------------------------------------
+
+    /**
+     * A build of the entry: the manifest, the file it names and, unless null, the record of the
+     * sources hashed as they are now.
+     *
+     * @param  list<string>|null  $sources
+     */
+    private function built(?array $sources, ?int $at = null): void
+    {
+        $build = $this->app->publicPath('build');
+        $this->files->ensureDirectoryExists($build.'/assets');
+        $this->directories[] = $build;
+
+        $this->files->put($build.'/manifest.json', (string) json_encode([
+            'resources/js/admin.ts' => ['file' => 'assets/admin.js', 'src' => 'resources/js/admin.ts', 'isEntry' => true],
+        ]));
+        $this->files->put($build.'/assets/admin.js', 'console.log(1)');
+        touch($build.'/assets/admin.js', $at ?? time());
+
+        if ($sources !== null) {
+            $files = [];
+
+            foreach ($sources as $name) {
+                $files[$name] = (string) hash_file('sha256', $this->app->basePath($name));
+            }
+
+            $this->files->put($build.'/webx-sources.json', (string) json_encode(['algorithm' => 'sha256', 'files' => $files]));
+        }
+    }
 
     private function packages(): PackageRegistry
     {

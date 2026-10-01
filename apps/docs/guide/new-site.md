@@ -210,7 +210,7 @@ php artisan webx:doctor
 
 ```
   ✓ Both halves: 8 packages on the server, all of them in resources/js/admin.ts.
-  ✓ Bundle: built, and no newer than every entry it was built from.
+  ✓ Bundle: built from what is on disk now — 4 files, every one unchanged.
   ✓ npm halves: 13 packages, each installed at the version the server asks for.
   ✓ Migrations: 39 applied on [mysql], none pending.
   ✓ storage:link: one link, and it leads where it should.
@@ -242,8 +242,13 @@ common is that none of them announce themselves:
 - **Both halves.** A Composer package installed and never wired in is a section the server
   answers for and nobody can reach; a call left in the entry file whose package is gone is a
   section the bundle draws and the server 404s.
-- **The bundle.** Built after the last change to the entry file — the commonest failure of the
-  three, and the one that looks most like the change simply not working.
+- **The bundle.** Built from the files on disk now — the commonest failure of the three, and the
+  one that looks most like the change simply not working. The skeleton's `vite.config.js` records
+  every file of the site the build read, with its hash, in `webx-sources.json` beside the
+  manifest, and the check hashes them again: an edit to a file the entry imports counts, and a
+  build stage Docker took from its cache does not look stale beside sources copied a minute
+  ago. A site whose `vite.config.js` predates that plugin is compared by modification time —
+  copy the `sources()` plugin from the skeleton to stop that.
 - **npm ranges.** Below 1.0 the caret pins the minor, so a site asking `^0.18.0` never reaches
   the 0.19 the module needs. That shows up as `[MISSING_EXPORT]` in a build, or as a component
   that is quietly missing at runtime.
