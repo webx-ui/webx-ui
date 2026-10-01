@@ -57,8 +57,18 @@ final class SetupFailed extends RuntimeException
         );
     }
 
-    public static function step(string $what, int $status): self
+    public static function unknownPackage(string $given, string $known): self
     {
-        return new self("{$what} exited with {$status}. Fix what it said and run `php artisan webx:setup` again — it carries on from where it stopped.");
+        return new self("[{$given}] is neither a Composer package (vendor/package) nor a module id. The ids are: {$known}.");
+    }
+
+    public static function notInstalled(string $package): self
+    {
+        return new self("composer require finished, and {$package} is still not in vendor/composer/installed.json.");
+    }
+
+    public static function step(string $what, int $status, string $again = 'php artisan webx:setup'): self
+    {
+        return new self("{$what} exited with {$status}. Fix what it said and run `{$again}` again — it carries on from where it stopped.");
     }
 }

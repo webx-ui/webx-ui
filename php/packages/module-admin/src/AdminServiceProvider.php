@@ -24,6 +24,8 @@ use WebxUi\Admin\Console\DemoCommand;
 use WebxUi\Admin\Console\DoctorCommand;
 use WebxUi\Admin\Console\InstallCommand;
 use WebxUi\Admin\Console\MakeModuleCommand;
+use WebxUi\Admin\Console\ModuleAddCommand;
+use WebxUi\Admin\Console\ModulesCommand;
 use WebxUi\Admin\Console\PanelCommand;
 use WebxUi\Admin\Console\PruneHistoryCommand;
 use WebxUi\Admin\Console\PruneUploadsCommand;
@@ -296,6 +298,8 @@ class AdminServiceProvider extends ServiceProvider
             DoctorCommand::class,
             InstallCommand::class,
             MakeModuleCommand::class,
+            ModuleAddCommand::class,
+            ModulesCommand::class,
             PanelCommand::class,
             PruneHistoryCommand::class,
             PruneUploadsCommand::class,
