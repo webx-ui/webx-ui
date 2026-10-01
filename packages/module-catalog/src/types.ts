@@ -97,6 +97,8 @@ export interface ProductsPage extends Paginated<ProductRow> {
   columns?: ProductColumnInfo[]
   /** The words the list is for when the ones typed found nothing and the engine corrected them. */
   corrected?: string | null
+  /** The engine did not answer and the database did: no corrections, words as typed. */
+  fell_back?: boolean
 }
 
 /** A key of the `Sorts` registry: `default`, `new`, `popular`, `price_asc` — whatever it holds. */

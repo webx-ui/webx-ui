@@ -14,6 +14,9 @@ namespace WebxUi\Catalog\Engine;
  * the storefront straight to its card (decisions 19–21 of the Manticore spec). `corrected` — the
  * words the list is for when the ones typed found nothing and the engine found these instead
  * (decision 16); null when the list is for what was typed.
+ *
+ * `fellBack` — the engine did not answer and the database did instead (decision 13): the panel says
+ * so over the list, because the database searches with `LIKE` and corrects nothing.
  */
 final class CatalogResult
 {
@@ -28,6 +31,7 @@ final class CatalogResult
         public readonly array $facets = [],
         public readonly array $exact = [],
         public readonly ?string $corrected = null,
+        public readonly bool $fellBack = false,
     ) {}
 
     public function facet(string $key): ?FacetResult

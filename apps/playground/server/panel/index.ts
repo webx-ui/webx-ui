@@ -248,8 +248,10 @@ import {
   catalogUpload,
   categoryLookup,
   liveProductIds,
+  productCount,
   registerCatalog,
 } from './catalog'
+import { registerManticore } from './catalog-manticore'
 import { brandHistory, registerDictionaries } from './catalog-dictionaries'
 import { propertyHistory, registerProperties } from './catalog-properties'
 import { Reply } from './reply'
@@ -802,6 +804,16 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 700,
         group: 'system',
         permissions: ['seo.view', 'seo.manage'],
+        meta: {},
+      },
+      {
+        id: 'search-index',
+        title: line(locale, 'webx-catalog-manticore', 'panel.title'),
+        icon: 'list',
+        /* After «SEO»: both are about being found. Only on the Manticore engine. */
+        order: 720,
+        group: 'system',
+        permissions: ['search-index.view', 'search-index.manage'],
         meta: {},
       },
       {
@@ -1984,6 +1996,9 @@ registerCatalog(
   (status, message, errors, extra) => new HttpFailure(status, message, undefined, errors, extra),
   line,
 )
+
+/* Its search index on Manticore (WEBX_UI_CATALOG_MANTICORE.md): «System → Search index». */
+registerManticore(on, (status, message) => new HttpFailure(status, message), productCount)
 
 /* Its reference books (WEBX_UI_CATALOG_DICTIONARIES.md): labels, stock statuses, brands. */
 registerDictionaries(

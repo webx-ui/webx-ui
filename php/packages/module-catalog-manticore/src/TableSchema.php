@@ -76,8 +76,8 @@ final class TableSchema
         private readonly array $locales,
         private readonly string $main,
         private readonly array $morphology = [],
-        private readonly int $minPrefixLen = 3,
-        private readonly int $minInfixLen = 3,
+        private int $minPrefixLen = 3,
+        private int $minInfixLen = 3,
     ) {
         $named = [];
 
@@ -233,6 +233,57 @@ final class TableSchema
         }
 
         return null;
+    }
+
+    /**
+     * This schema narrowed to what a live table of an older one has: a column it lacks, or has
+     * of another type, is left out, and so is whatever reads it — the codes when any of their
+     * three columns is missing, a number when its flag is. The prefix and infix are the table's.
+     * Asked and written by the result, the old table answers what it can until it is rebuilt
+     * instead of refusing the question (§6 of the Manticore spec).
+     *
+     * @param  array<string, array{type: string, props: string}>  $live  column → what `DESCRIBE` says
+     * @param  array<string, string>  $settings  what `SHOW TABLE … SETTINGS` says
+     */
+    public function within(array $live, array $settings): self
+    {
+        $has = fn (string $name): bool => isset($this->columns[$name], $live[$name])
+            && $live[$name]['type'] === $this->columns[$name]['type']
+            && $live[$name]['props'] === $this->columns[$name]['props'];
+
+        $narrowed = clone $this;
+        $narrowed->localized = array_values(array_filter($this->localized, $has));
+        $narrowed->texts = array_values(array_filter($this->texts, $has));
+        $narrowed->minPrefixLen = (int) ($settings['min_prefix_len'] ?? 0);
+        $narrowed->minInfixLen = (int) ($settings['min_infix_len'] ?? 0);
+
+        if (! $has(self::CODES) || ! $has(self::CODES_FLAT) || ! $has(self::CODE_KEYS)) {
+            $narrowed->codes = [];
+        }
+
+        foreach ($this->attributes as $name => $field) {
+            if (! $has($name) || ($this->flagged($field) && ! $has($name.'__set'))) {
+                unset($narrowed->attributes[$name]);
+            }
+        }
+
+        $kept = [...$narrowed->localized, ...$narrowed->texts, ...array_keys($narrowed->attributes)];
+
+        foreach (array_keys($narrowed->attributes) as $name) {
+            $kept[] = $name.'__set';
+        }
+
+        if ($narrowed->codes !== []) {
+            array_push($kept, self::CODES, self::CODES_FLAT, self::CODE_KEYS);
+        }
+
+        if ($has(self::OTHER)) {
+            $kept[] = self::OTHER;
+        }
+
+        $narrowed->columns = array_filter($this->columns, static fn (string $name): bool => in_array($name, $kept, true), ARRAY_FILTER_USE_KEY);
+
+        return $narrowed;
     }
 
     /**
