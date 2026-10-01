@@ -41,7 +41,7 @@ final class EngineCheck implements Check
             $live = Product::query()->count();
 
             return [$live > $limit
-                ? Diagnosis::warn('Catalogue engine', "{$live} live products on the database engine, past its limit of {$limit} — install webx-ui/catalog-manticore and set WEBX_CATALOG_ENGINE=manticore.")
+                ? Diagnosis::warn('Catalogue engine', "{$live} live products on the database engine, past its limit of {$limit} — install webx-ui/module-catalog-manticore and set WEBX_CATALOG_ENGINE=manticore.")
                 : Diagnosis::ok('Catalogue engine', "the database, with {$live} live products of the {$limit} it is meant for.")];
         }
 

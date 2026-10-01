@@ -62,7 +62,7 @@
 | Пакет                         | Что                                                                 | Зависит от                                              |
 | ----------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------- |
 | `module-catalog`              | товары, категории, цена, реестры §4, очередь индексации, SQL-движок | `module-admin`, `routing`, `nested-set`, `module-media` |
-| `catalog-manticore`           | движок поиска и фасетов на Manticore (библиотека, не раздел)        | `module-catalog`                                        |
+| `module-catalog-manticore`    | движок поиска и фасетов на Manticore (раздел без пункта меню)       | `module-catalog`                                        |
 | `module-catalog-properties`   | свойства, значения, наборы по категориям                            | `module-catalog`                                        |
 | `module-catalog-stock`        | статусы наличия, «можно купить», опциональный остаток               | `module-catalog`                                        |
 | `module-catalog-brands`       | бренды со своей страницей                                           | `module-catalog`                                        |
@@ -145,7 +145,7 @@ interface CatalogEngine
 ```
 
 Две реализации: `SqlEngine` в ядре (честно работает на небольших каталогах) и `ManticoreEngine`
-в `catalog-manticore`. Выбор — конфигом. Витрина получает id страницы и поднимает из базы только
+в `module-catalog-manticore`. Выбор — конфигом. Витрина получает id страницы и поднимает из базы только
 их, сохраняя порядок движка.
 
 ### 4.4. `Purchasability` — можно ли купить и почему нет
@@ -416,7 +416,7 @@ Laravel), а не память одного запроса.
 3. `module-catalog`, npm: список, дерево категорий, форма товара.
 4. `module-catalog-properties` — без него фасетам нечего показывать. Спека —
    [`WEBX_UI_CATALOG_PROPERTIES.md`](WEBX_UI_CATALOG_PROPERTIES.md), согласована 30.09.2026.
-5. `catalog-manticore` — проверяется на выгрузке reference-shop в 85 тысяч товаров.
+5. `module-catalog-manticore` — проверяется на выгрузке reference-shop в 85 тысяч товаров.
 6. `module-catalog-stock`, `module-catalog-brands`, `module-catalog-labels` — маленькие,
    параллельно.
 7. Обмен: конвейер ядра + CSV и XLSX. Спека —
