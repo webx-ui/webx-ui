@@ -16,7 +16,7 @@
         "source": "https://github.com/webx-ui/webx-ui/tree/main/php/site"
     },
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
         "webx-ui/module-admin": "^0.55.0",

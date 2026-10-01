@@ -12,7 +12,7 @@ and script is in the guide: https://webx-ui.github.io/webx-ui/guide/banners.
 
 ## Requirements
 
-- PHP 8.3+, Laravel 13
+- PHP 8.4+, Laravel 13
 - `webx-ui/module-admin`, `webx-ui/module-media`, `webx-ui/localization`, `webx-ui/mcp`
 - `webx-ui/module-pages` for a button to point at a page — suggested, not required
 

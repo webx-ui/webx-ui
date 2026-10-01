@@ -10,7 +10,7 @@ field by field, so a project adds one of its own without touching the resolver.
 
 ## Requirements
 
-- PHP 8.3+, Laravel 13
+- PHP 8.4+, Laravel 13
 - `webx-ui/module-admin`, `webx-ui/module-auth`, `webx-ui/module-settings`, `webx-ui/localization`,
   `webx-ui/mcp`, `webx-ui/routing`
 

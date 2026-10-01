@@ -11,7 +11,7 @@ Eloquent.
 
 ## Requirements
 
-- PHP 8.3+
+- PHP 8.4+
 - Laravel 13 (`illuminate/database`, `illuminate/support`)
 
 ## Install

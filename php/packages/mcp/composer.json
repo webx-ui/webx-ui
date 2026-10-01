@@ -21,7 +21,7 @@
         "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/mcp"
     },
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "illuminate/console": "^13.0",
         "illuminate/contracts": "^13.0",
         "illuminate/support": "^13.0",

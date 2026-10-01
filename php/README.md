@@ -10,7 +10,7 @@ repository, so every package is mirrored, read-only, to `github.com/webx-ui/<nam
 
 ## Requirements
 
-- PHP 8.3+ (CI runs 8.3 and 8.4)
+- PHP 8.4+ (CI runs 8.4 and 8.5)
 - Composer 2
 
 ## Setup

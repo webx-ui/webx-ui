@@ -7,7 +7,7 @@ is registrations in the core's registries.
 
 ## Requirements
 
-- PHP 8.3+, Laravel 13
+- PHP 8.4+, Laravel 13
 - `webx-ui/module-catalog` and what it requires
 
 ## Install

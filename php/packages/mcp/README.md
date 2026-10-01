@@ -9,7 +9,7 @@ A panel therefore exposes exactly the tools of the modules it actually has.
 
 ## Requirements
 
-- PHP 8.3+
+- PHP 8.4+
 - Laravel 13
 - `webx-ui/module-admin`; `laravel/mcp` comes with this package
 

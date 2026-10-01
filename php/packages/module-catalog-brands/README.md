@@ -7,7 +7,7 @@ and `brands()->featured()` in a template. A satellite of `webx-ui/module-catalog
 
 ## Requirements
 
-- PHP 8.3+, Laravel 13
+- PHP 8.4+, Laravel 13
 - `webx-ui/module-catalog` and what it requires (`module-media`, `module-seo`, `routing`)
 
 ## Install

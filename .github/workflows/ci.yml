@@ -6,9 +6,13 @@ on:
   pull_request:
   # The merge queue builds main plus the PR and needs the required check to report on it.
   merge_group:
+  # The full run a pull request may have skipped, once a day, so that nothing rots unseen.
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 # The steps used to run one after another in a single job (6.5 minutes). Only typecheck, the
@@ -19,8 +23,36 @@ concurrency:
 # The version PR is the exception. It changes versions, changelogs and the PHP constraints on
 # top of a main that already passed this workflow — and the merge queue keeps main green by
 # construction — so it only has to prove that it still installs and builds.
+#
+# A pull request and the merge queue check only what the change reaches: `changes` runs
+# scripts/affected.mjs against the base and the jobs below read its answer. A text-only change
+# runs lint alone; the jobs it skips still leave `verify` green, which is why a skip is decided
+# here and never with `paths-ignore` — a workflow that does not start reports no check at all,
+# and the queue waits for the required one forever. A push to main and the nightly run have no
+# base and check everything.
 
 jobs:
+  changes:
+    name: What the change reaches
+    runs-on: ubuntu-latest
+    env:
+      BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+    outputs:
+      node: ${{ steps.affected.outputs.node }}
+      node_filters: ${{ steps.affected.outputs.node_filters }}
+      node_tests: ${{ steps.affected.outputs.node_tests }}
+      docs: ${{ steps.affected.outputs.docs }}
+      manticore: ${{ steps.affected.outputs.manticore }}
+    steps:
+      - uses: actions/checkout@v5
+      # `pnpm ls --filter ...[<base>]` reads manifests only: no install needed.
+      - uses: pnpm/action-setup@v4
+      - name: Fetch the base
+        if: env.BASE != ''
+        run: git fetch --no-tags --depth=1 origin "$BASE"
+      - id: affected
+        run: node scripts/affected.mjs "$BASE"
+
   lint:
     name: Lint and format
     if: github.head_ref != 'changeset-release/main'
@@ -45,7 +77,8 @@ jobs:
 
   typecheck:
     name: Typecheck
-    if: github.head_ref != 'changeset-release/main'
+    needs: changes
+    if: github.head_ref != 'changeset-release/main' && needs.changes.outputs.node != 'none'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -56,16 +89,21 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm typecheck
+      - if: needs.changes.outputs.node == 'all'
+        run: pnpm typecheck
+      - if: needs.changes.outputs.node == 'some'
+        run: pnpm ${{ needs.changes.outputs.node_filters }} typecheck
 
+  # Three shards for the whole suite; the few packages a change reaches fit in one.
   test:
-    name: Test ${{ matrix.shard }}/3
-    if: github.head_ref != 'changeset-release/main'
+    name: Test ${{ matrix.shard }}/${{ strategy.job-total }}
+    needs: changes
+    if: github.head_ref != 'changeset-release/main' && needs.changes.outputs.node != 'none'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: ${{ fromJSON(needs.changes.outputs.node == 'all' && '[1, 2, 3]' || '[1]') }}
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -75,11 +113,16 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - run: pnpm test --shard=${{ matrix.shard }}/3
+      - if: needs.changes.outputs.node == 'all'
+        run: pnpm test --shard=${{ matrix.shard }}/3
+      # Vitest path filters; empty when only an app changed, and the apps have no unit tests.
+      - if: needs.changes.outputs.node == 'some' && needs.changes.outputs.node_tests != ''
+        run: pnpm test ${{ needs.changes.outputs.node_tests }}
 
   docs:
     name: Build docs
-    if: github.head_ref != 'changeset-release/main'
+    needs: changes
+    if: github.head_ref != 'changeset-release/main' && needs.changes.outputs.docs == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -112,7 +155,8 @@ jobs:
   # came up fails here instead of skipping quietly. EXTRA brings the lemmatizer dictionaries.
   manticore:
     name: PHP on Manticore
-    if: github.head_ref != 'changeset-release/main'
+    needs: changes
+    if: github.head_ref != 'changeset-release/main' && needs.changes.outputs.manticore == 'true'
     runs-on: ubuntu-latest
     services:
       manticore:
@@ -154,10 +198,11 @@ jobs:
 
   # The ruleset requires a check by this name, so it stays the one name the rest report into.
   # `always()` is the point: without it a failed job makes this one skipped, and GitHub counts
-  # a skipped required check as passed. Skipped jobs are fine — that is the version PR's path.
+  # a skipped required check as passed. Skipped jobs are fine — that is the version PR's path and
+  # the path of everything a change does not reach.
   verify:
     name: Lint, typecheck, test, build
-    needs: [lint, typecheck, test, docs, manticore, release-pr]
+    needs: [changes, lint, typecheck, test, docs, manticore, release-pr]
     if: always()
     runs-on: ubuntu-latest
     steps:
