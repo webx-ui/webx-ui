@@ -6,7 +6,6 @@ namespace WebxUi\Admin\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Composer;
 use Illuminate\Support\Str;
 
 use function Laravel\Prompts\confirm;
@@ -15,13 +14,13 @@ use function Laravel\Prompts\password;
 use function Laravel\Prompts\text;
 
 use PDO;
-use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 use WebxUi\Admin\Setup\Catalogue;
 use WebxUi\Admin\Setup\Connection;
 use WebxUi\Admin\Setup\Database;
 use WebxUi\Admin\Setup\EnvFile;
 use WebxUi\Admin\Setup\LocalesConfig;
+use WebxUi\Admin\Setup\Processes;
 use WebxUi\Admin\Setup\SetupFailed;
 
 /**
@@ -66,7 +65,7 @@ final class SetupCommand extends Command
 
     private Catalogue $catalogue;
 
-    private Composer $composer;
+    private Processes $processes;
 
     private Connection $server;
 
@@ -89,13 +88,10 @@ final class SetupCommand extends Command
      */
     private array $childEnv = [];
 
-    public function handle(Filesystem $files, Catalogue $catalogue, Composer $composer): int
+    public function handle(Filesystem $files, Catalogue $catalogue, Processes $processes): int
     {
         $this->catalogue = $catalogue;
-        // The container binds this under the string `composer`, with the application's base
-        // path already in it; injected by class name it is built fresh with no path at all,
-        // and `findComposer()` then looks for `/composer.phar` at the root of the drive.
-        $this->composer = $composer->setWorkingPath($this->laravel->basePath());
+        $this->processes = $processes;
         $this->env = new EnvFile($files, $this->laravel->basePath('.env'));
 
         if (! $this->env->exists()) {
@@ -303,7 +299,11 @@ final class SetupCommand extends Command
             }
 
             // Whatever is installed stays installed: this command adds, it does not uninstall.
-            return array_values(array_unique([...$ids, ...$this->catalogue->installed()]));
+            // What the chosen ones require comes along, as Composer would bring it anyway.
+            return array_values(array_unique([
+                ...$this->catalogue->withRequirements($ids),
+                ...$this->catalogue->installed(),
+            ]));
         }
 
         if (! $this->input->isInteractive()) {
@@ -318,7 +318,10 @@ final class SetupCommand extends Command
             hint: 'What is already installed stays, whether it is ticked or not.',
         );
 
-        return array_values(array_unique([...$chosen, ...$this->catalogue->installed()]));
+        return array_values(array_unique([
+            ...$this->catalogue->withRequirements($chosen),
+            ...$this->catalogue->installed(),
+        ]));
     }
 
     private function wantsDemo(): bool
@@ -722,7 +725,7 @@ final class SetupCommand extends Command
      */
     private function artisan(array $arguments, string $what, array $env = [], bool $fatal = true): void
     {
-        $this->mustRun([PHP_BINARY, $this->laravel->basePath('artisan'), ...$arguments], $what, $env, $fatal);
+        $this->mustRun([...$this->processes->artisan($this->laravel->basePath()), ...$arguments], $what, $env, $fatal);
     }
 
     /**
@@ -731,14 +734,12 @@ final class SetupCommand extends Command
      */
     private function mustRun(array $command, string $what, array $env = [], bool $fatal = true): void
     {
-        $process = new Process($command, $this->laravel->basePath(), $env + $this->childEnv);
-        // No timeout: `composer require` of seven packages and `npm install` both take minutes
-        // on a cold cache, and a run killed halfway leaves the site between two states.
-        $process->setTimeout(null);
-
-        $status = $process->run(function (string $type, string $buffer): void {
-            $this->output->write($buffer);
-        });
+        $status = $this->processes->run(
+            $command,
+            $this->laravel->basePath(),
+            $env + $this->childEnv,
+            fn (string $buffer) => $this->output->write($buffer),
+        );
 
         if ($status === 0) {
             return;
@@ -756,34 +757,13 @@ final class SetupCommand extends Command
     {
         $named = $this->option('composer');
 
-        return $this->executable(
-            $this->composer->findComposer(is_string($named) && $named !== '' ? $named : null),
-            'composer',
-        );
+        return $this->processes->composer($this->laravel->basePath(), is_string($named) ? $named : null);
     }
 
     /** @return list<string> */
     private function npmBinary(): array
     {
-        return $this->executable(['npm'], 'npm');
-    }
-
-    /**
-     * A bare name is not a program on Windows: `proc_open` gets the array as it is, so
-     * `npm` — which is `npm.cmd` — is simply not found. The finder knows about PATHEXT.
-     *
-     * @param  list<string>  $found
-     * @return list<string>
-     */
-    private function executable(array $found, string $name): array
-    {
-        if ($found !== [$name]) {
-            return $found;
-        }
-
-        $path = (new ExecutableFinder)->find($name);
-
-        return $path === null ? $found : [$path];
+        return $this->processes->npm();
     }
 
     private function domainFromUrl(): ?string

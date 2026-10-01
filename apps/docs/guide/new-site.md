@@ -96,6 +96,32 @@ process running `webx:setup` booted before it rewrote `.env` and before `compose
 configuration is the old file and its autoloader has never heard of the module it just
 installed. A child gets both.
 
+### One module, without the questions
+
+For a script — or a person who knows which module they want — there are two smaller commands:
+
+| command                                       | what it does                                                                                                |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `webx:modules`                                | the modules `webx:setup` offers, which of them each requires, and which are installed                       |
+| `webx:modules --json`                         | the same, for a script to read                                                                              |
+| `webx:module:add <vendor/package>`            | `composer require`, `webx:panel --sync`, `npm install`, `npm run build` — and stops at the first that fails |
+| `webx:module:add <vendor/package> --no-build` | the same without the build, for a pipeline that builds later                                                |
+
+```bash
+php artisan webx:module:add faq                     # a module id works too
+php artisan webx:module:add acme/module-gallery     # so does a package nobody here has heard of
+php artisan migrate                                 # its tables: module:add leaves them to the deploy
+```
+
+`webx:modules` needs no database, so it answers on a machine where the site has none yet. Each
+entry of the JSON is
+`{ id, package, npm, label, default, requires, installed }`: `id` is what `--modules` takes,
+`requires` the ids Composer will bring along with it, and an installed module the catalogue does
+not know — the site's own, a third party's — is listed by what its package says under
+`extra.webx`. `webx:module:add` is safe to run twice: an installed package skips Composer and
+still gets the rest, which is also how a run that stopped at npm is finished. Every step that
+fails is a non-zero exit — nothing is a warning a script could miss.
+
 ### Existing sites
 
 A site that was not made from the skeleton runs the same command. What it needs first is the
