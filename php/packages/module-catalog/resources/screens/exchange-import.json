@@ -1,0 +1,112 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "catalog.exchange-import",
+  "model": "catalog.exchange-options",
+  "root": [
+    {
+      "id": "settings",
+      "type": "wx-card",
+      "children": [
+        {
+          "id": "key",
+          "type": "wx-select",
+          "name": "key",
+          "label": "trans::webx-catalog::exchange.settings.key",
+          "help": "trans::webx-catalog::exchange.settings.key-help",
+          "props": {
+            "options": [
+              { "label": "trans::webx-catalog::exchange.settings.key-sku", "value": "sku" },
+              {
+                "label": "trans::webx-catalog::exchange.settings.key-external_id",
+                "value": "external_id"
+              },
+              { "label": "trans::webx-catalog::exchange.settings.key-barcode", "value": "barcode" },
+              { "label": "trans::webx-catalog::exchange.settings.key-id", "value": "id" }
+            ]
+          }
+        },
+        {
+          "id": "mode",
+          "type": "wx-radio-group",
+          "name": "mode",
+          "label": "trans::webx-catalog::exchange.settings.mode",
+          "help": "trans::webx-catalog::exchange.settings.mode-help",
+          "props": {
+            "options": [
+              { "label": "trans::webx-catalog::exchange.settings.mode-upsert", "value": "upsert" },
+              { "label": "trans::webx-catalog::exchange.settings.mode-update", "value": "update" },
+              { "label": "trans::webx-catalog::exchange.settings.mode-create", "value": "create" }
+            ]
+          }
+        },
+        {
+          "id": "empty_clears",
+          "type": "wx-switch",
+          "name": "empty_clears",
+          "label": "trans::webx-catalog::exchange.settings.empty_clears",
+          "help": "trans::webx-catalog::exchange.settings.empty_clears-help"
+        },
+        {
+          "id": "create_missing",
+          "type": "wx-switch",
+          "name": "create_missing",
+          "label": "trans::webx-catalog::exchange.settings.create_missing",
+          "help": "trans::webx-catalog::exchange.settings.create_missing-help"
+        },
+        {
+          "id": "absent",
+          "type": "wx-radio-group",
+          "name": "absent",
+          "label": "trans::webx-catalog::exchange.settings.absent",
+          "help": "trans::webx-catalog::exchange.settings.absent-help",
+          "props": {
+            "options": [
+              { "label": "trans::webx-catalog::exchange.settings.absent-keep", "value": "keep" },
+              {
+                "label": "trans::webx-catalog::exchange.settings.absent-unpublish",
+                "value": "unpublish"
+              }
+            ]
+          }
+        },
+        {
+          "id": "absent_scope",
+          "type": "wx-radio-group",
+          "name": "absent_scope",
+          "label": "trans::webx-catalog::exchange.settings.absent_scope",
+          "visible": { "when": "absent", "is": "unpublish" },
+          "props": {
+            "options": [
+              {
+                "label": "trans::webx-catalog::exchange.settings.absent_scope-categories",
+                "value": "categories"
+              },
+              {
+                "label": "trans::webx-catalog::exchange.settings.absent_scope-all",
+                "value": "all"
+              }
+            ]
+          }
+        },
+        {
+          "id": "images",
+          "type": "wx-radio-group",
+          "name": "images",
+          "label": "trans::webx-catalog::exchange.settings.images",
+          "props": {
+            "options": [
+              {
+                "label": "trans::webx-catalog::exchange.settings.images-append",
+                "value": "append"
+              },
+              {
+                "label": "trans::webx-catalog::exchange.settings.images-replace",
+                "value": "replace"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

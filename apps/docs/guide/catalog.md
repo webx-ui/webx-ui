@@ -4,8 +4,8 @@
 product, the engine behind the lists and facets, and the storefront. Stock, brands, properties
 and labels come as satellites (`module-catalog-*`) that plug into its registries. The design is
 in `docs/architecture/WEBX_UI_CATALOG.md` and the core's spec in `WEBX_UI_MODULE_CATALOG.md`.
-This page covers the gallery for now, and its videos in particular — on the server, in the panel
-and on the storefront.
+This page covers the gallery, its videos in particular — on the server, in the panel and on the
+storefront — and the import and export of products as CSV and XLSX files.
 
 ## The gallery
 
@@ -145,3 +145,34 @@ A provider implements `VideoProvider`: its `key()` (stored in `video_provider`),
 the journal, `idFrom($url)` (return `null` when the link is not one of its videos), `embedUrl()`,
 `watchUrl()`, `posterUrls()` (best first) and `title()`. Its links are then accepted everywhere a
 YouTube link is.
+
+## Import and export
+
+Products go in and out as CSV or XLSX files; the spec is
+`docs/architecture/WEBX_UI_MODULE_CATALOG_EXCHANGE.md`. A column of a file is a field of the
+product form — `sku`, `name`, `name@de` for a translation, `price`, `category` as a path of
+names, a label's code, a property by its code — and every row is saved by the same form, with its
+checks and its journal. A bad row is an error beside its number; its neighbours are written anyway.
+
+### In the panel
+
+«Exchange» is in the `···` of the products, after «Deleted». It lists every run with what it did:
+open one for its totals, the first hundred errors (all of them as a CSV file), the finished file of
+an export and, for an import, what it changed in the journal. A run that is still going is asked
+after every two seconds.
+
+**Import** is a wizard of three steps: a file — uploaded in pieces or downloaded by the server from
+an address — then its columns matched to the catalogue's with the first rows of the file under each,
+then how to write: the key that finds a product, which rows to take, whether an empty cell clears a
+field, what happens to products the file does not have, whether missing categories and values are
+created, and what pictures by address do. The last step checks the file without writing anything,
+or runs it, and can save it all as a profile.
+
+**Export** writes what the list of products has picked — ticked rows or everything a filter finds —
+from «Actions», or the whole catalogue from «Exchange»: the columns of a profile or chosen on the
+spot, with the languages their translations go out in.
+
+**Profiles** keep a name, a format, the settings and the columns, so that the same price list of a
+supplier is one step the next time. The settings of an import and the head of a profile are the
+described screens `catalog.exchange-import` and `catalog.exchange-profile`: a project takes a
+setting away or fixes it with a patch, as on any form.
