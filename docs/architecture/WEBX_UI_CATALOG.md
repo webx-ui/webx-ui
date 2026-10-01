@@ -422,7 +422,8 @@ Laravel), а не память одного запроса.
    параллельно.
 7. Обмен: конвейер ядра + CSV и XLSX. Спека —
    [`WEBX_UI_MODULE_CATALOG_EXCHANGE.md`](WEBX_UI_MODULE_CATALOG_EXCHANGE.md), написана 30.09.2026.
-8. `module-catalog-landings` — посадочные фильтров.
+8. `module-catalog-landings` — посадочные фильтров. Спека —
+   [`WEBX_UI_CATALOG_LANDINGS.md`](WEBX_UI_CATALOG_LANDINGS.md), согласована 01.10.2026.
 
 **Волна B:** связи, группировка, конфигурируемый товар, таблицы размеров, YML и прочие фиды.
 API для 1С — отдельно (решение 15).
