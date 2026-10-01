@@ -7,6 +7,7 @@ namespace WebxUi\CatalogLandings\Http;
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Models\Category;
+use WebxUi\Catalog\Models\Product;
 use WebxUi\CatalogLandings\Models\Landing;
 
 /**
@@ -50,13 +51,23 @@ final class LandingResource
      */
     public function full(Landing $landing): array
     {
+        $locale = app()->getLocale();
+        $recommended = $landing->recommended()->withTrashed()->get();
+
         return [
             ...$this->list($landing),
             'h1' => $landing->getTranslations('h1'),
             'text_above' => $landing->getTranslations('text_above'),
             'text_below' => $landing->getTranslations('text_below'),
             'sort' => $landing->sort,
-            'recommended' => $landing->recommended()->withTrashed()->pluck('catalog_products.id')->map(static fn (mixed $id): int => (int) $id)->all(),
+            'recommended' => $recommended->map(static fn (Product $product): int => (int) $product->id)->values()->all(),
+            // What the form shows for each id without asking the products again.
+            'recommended_items' => $recommended->map(static fn (Product $product): array => [
+                'id' => (int) $product->id,
+                'name' => (string) $product->getTranslation('name', $locale),
+                'sku' => $product->sku,
+                'deleted' => $product->deleted_at !== null,
+            ])->values()->all(),
             'seo' => $landing->seoValue(),
         ];
     }

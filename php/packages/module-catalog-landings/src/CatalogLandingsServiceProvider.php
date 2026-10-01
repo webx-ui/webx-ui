@@ -9,6 +9,8 @@ use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\History\HistoryTypes;
+use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Catalog\Events\FacetValueRetargeted;
 use WebxUi\Catalog\Events\ProductsIndexed;
 use WebxUi\Catalog\Filter\FilterUrls;
@@ -17,6 +19,7 @@ use WebxUi\CatalogLandings\Catalog\IndexedBases;
 use WebxUi\CatalogLandings\Catalog\LandingRepairs;
 use WebxUi\CatalogLandings\Console\CountCommand;
 use WebxUi\CatalogLandings\Models\Landing;
+use WebxUi\CatalogLandings\Panel\LandingsModule;
 use WebxUi\CatalogLandings\Storefront\LandingHandler;
 use WebxUi\CatalogLandings\Storefront\LandingPart;
 use WebxUi\CatalogLandings\Storefront\LandingRewriter;
@@ -32,7 +35,8 @@ use WebxUi\Routing\RouteTypes;
  * those addresses, the strip and the links in the storefront's points, the listeners that keep a
  * set true to its values and a count true to the list, the API and the journal.
  *
- * The section of the panel and the agent's tools come with the next stages (§13).
+ * The section of the panel is «Catalog» → «Landings» with the form `catalog.landing-form`; the
+ * agent's tools come with the next stage (§13).
  */
 class CatalogLandingsServiceProvider extends ServiceProvider
 {
@@ -55,6 +59,9 @@ class CatalogLandingsServiceProvider extends ServiceProvider
         $this->registerStorefront();
         $this->registerListeners();
         $this->registerHistory();
+
+        $this->app->make(ScreenRegistry::class)->register(Landing::SCREEN, __DIR__.'/../resources/screens/landing-form.json');
+        $this->app->make(ModuleRegistry::class)->register($this->app->make(LandingsModule::class));
 
         if (! $this->app->runningInConsole()) {
             return;

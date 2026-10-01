@@ -10,4 +10,7 @@ return [
     'unknown-facet' => 'There is no facet “:key”.',
     'unknown-sort' => 'There is no sort “:sort”.',
     'unknown-product' => 'There is no product #:id.',
+    'generate-facet' => 'Landings are generated over a facet of values: “:key” is not one.',
+    'generate-template' => 'The address template needs {value}: otherwise every landing gets one address.',
+    'generate-too-many' => 'One generation makes at most :max landings — narrow the bases or the values.',
 ];
