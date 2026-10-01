@@ -74,6 +74,42 @@ final class FilterState
         return $this->with($key, $current->has($value) ? $current->without($value) : $current->with($value));
     }
 
+    /**
+     * This state with another's choices put over it: a list takes the other's values in too, a
+     * range is replaced. What a landing's page reads — its set, and the reader's tail on top.
+     */
+    public function merge(self $over): self
+    {
+        $chosen = $this->chosen;
+
+        foreach ($over->chosen as $key => $value) {
+            $mine = $chosen[$key] ?? null;
+            $chosen[$key] = $mine !== null && ! $mine->isRange() && ! $value->isRange()
+                ? FacetValue::of([...$mine->values, ...$value->values])
+                : $value;
+        }
+
+        return self::of($chosen);
+    }
+
+    /** The same facets with the same choices, in whatever order. */
+    public function equals(self $other): bool
+    {
+        if (count($this->chosen) !== count($other->chosen)) {
+            return false;
+        }
+
+        foreach ($this->chosen as $key => $value) {
+            $theirs = $other->chosen[$key] ?? null;
+
+            if ($theirs === null || ! $value->equals($theirs)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /** How many values are chosen across every facet; a range counts as one. */
     public function size(): int
     {

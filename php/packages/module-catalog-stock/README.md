@@ -7,7 +7,7 @@ filter, the refusal to sell, and `products()->inStock()` in a template. A satell
 
 ## Requirements
 
-- PHP 8.3+, Laravel 13
+- PHP 8.4+, Laravel 13
 - `webx-ui/module-catalog` and what it requires
 
 ## Install

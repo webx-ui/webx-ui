@@ -10,7 +10,7 @@ The address is `webx-ui/routing`, the tree is `webx-ui/nested-set`, the journal 
 
 ## Requirements
 
-- PHP 8.3+, Laravel 13
+- PHP 8.4+, Laravel 13
 - `webx-ui/module-admin`, `webx-ui/module-media`, `webx-ui/module-seo`, `webx-ui/routing`,
   `webx-ui/nested-set`, `webx-ui/localization`
 

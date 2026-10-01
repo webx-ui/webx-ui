@@ -43,6 +43,7 @@ final class Listing
     /**
      * @param  array<string, FacetValue>  $scope  where the page stands: its category, a brand
      * @param  bool  $asTyped  the search as typed, without the engine's correction (`?typed=1`)
+     * @param  FilterState|null  $base  what the page stands on before the reader's choice — a landing's set
      */
     public function page(
         FilterContext $context,
@@ -52,8 +53,11 @@ final class Listing
         ?string $search = null,
         ?int $contextId = null,
         bool $asTyped = false,
+        ?FilterState $base = null,
     ): CatalogPage {
-        $sort = $this->sortOf($request);
+        $base ??= FilterState::empty();
+        $default = $this->defaultSort($context);
+        $sort = $this->sortOf($request, $default);
         $page = max(1, (int) $request->query('page', '1'));
         $perPage = max(1, (int) $this->config->get('webx-catalog.per_page', 24));
 
@@ -67,7 +71,7 @@ final class Listing
             }
         }
 
-        if ($sort !== Sorts::DEFAULT) {
+        if ($sort !== $default) {
             $query['sort'] = $sort;
         }
 
@@ -112,14 +116,15 @@ final class Listing
             products: $paginator,
             groups: $filter['groups'],
             resetUrl: $filter['reset'],
-            sorts: $this->sortLinks($canonical, $sort, $search, $asTyped),
+            sorts: $this->sortLinks($canonical, $sort, $default, $search, $asTyped),
             sort: $sort,
             verdicts: $this->purchasability->forMany($products),
-            indexable: $this->urls->indexable($context, $state, $result) && $sort === Sorts::DEFAULT && $page === 1,
+            indexable: $this->urls->indexable($context, $state, $result) && $sort === $default && $page === 1,
             canonical: $canonical,
-            heading: $this->heading($context, $state, $search),
-            filterTitle: $this->filterTitle($context, $state),
+            heading: $this->heading($context, $state, $search, $base),
+            filterTitle: $this->filterTitle($context, $state, $base),
             search: $search,
+            base: $base,
         );
     }
 
@@ -145,24 +150,42 @@ final class Listing
             ->values();
     }
 
-    /** `?sort=` from the storefront's list; anything else is the default order. */
-    private function sortOf(Request $request): string
+    /** `?sort=` from the storefront's list; anything else is the page's default order. */
+    private function sortOf(Request $request, string $default): string
     {
-        $asked = $request->query('sort');
+        return $this->offered($request->query('sort')) ?? $default;
+    }
 
+    /**
+     * The order the page opens in: its owner's own (§10.4 of the landings spec), when the storefront
+     * offers it, or the catalogue's.
+     */
+    private function defaultSort(FilterContext $context): string
+    {
+        $owner = $context->subject ?? $context->category;
+
+        return ($owner instanceof HasDefaultSort ? $this->offered($owner->defaultSort()) : null) ?? Sorts::DEFAULT;
+    }
+
+    /** The key, when the storefront's list offers it. */
+    private function offered(mixed $key): ?string
+    {
         foreach ($this->sorts->storefront() as $sort) {
-            if ($sort->key() === $asked) {
+            if ($sort->key() === $key) {
                 return $sort->key();
             }
         }
 
-        return Sorts::DEFAULT;
+        return null;
     }
 
     /**
+     * A link carries `?sort=` for every order but the page's default — the catalogue's own default
+     * included, when the owner opens in another.
+     *
      * @return list<array{key: string, label: string, url: string, selected: bool}>
      */
-    private function sortLinks(string $canonical, string $current, ?string $search, bool $asTyped): array
+    private function sortLinks(string $canonical, string $current, string $default, ?string $search, bool $asTyped): array
     {
         $links = [];
 
@@ -170,7 +193,7 @@ final class Listing
             $query = array_filter([
                 'q' => $search,
                 'typed' => $asTyped && $search !== null ? '1' : null,
-                'sort' => $sort->key() === Sorts::DEFAULT ? null : $sort->key(),
+                'sort' => $sort->key() === $default ? null : $sort->key(),
             ], static fn (?string $value): bool => $value !== null && $value !== '');
 
             $links[] = [
@@ -184,14 +207,14 @@ final class Listing
         return $links;
     }
 
-    private function heading(FilterContext $context, FilterState $state, ?string $search): string
+    private function heading(FilterContext $context, FilterState $state, ?string $search, FilterState $base): string
     {
         return match (true) {
             $context->context === FilterContext::SEARCH => $search === null || $search === ''
                 ? (string) __('webx-catalog::storefront.search')
                 : (string) __('webx-catalog::storefront.search-for', ['q' => $search]),
-            $context->category !== null => $this->filterTitle($context, $state) ?? $context->category->displayName($context->locale),
-            $context->subject !== null => $this->filterTitle($context, $state) ?? $context->subject->displayName($context->locale),
+            $context->subject !== null => $this->filterTitle($context, $state, $base) ?? $context->subject->displayName($context->locale),
+            $context->category !== null => $this->filterTitle($context, $state, $base) ?? $context->category->displayName($context->locale),
             default => (string) __('webx-catalog::storefront.root'),
         };
     }
@@ -199,11 +222,13 @@ final class Listing
     /**
      * «{category} {value}» for a page with exactly one value chosen (decision 17 of the
      * architecture) — the first level, whose title the template makes, or the facet's own
-     * wording ({@see TitledFacet}). Null otherwise.
+     * wording ({@see TitledFacet}). Null otherwise, and always on a page that stands on a set — a
+     * landing is called what its editor called it, whatever is chosen on it (§10.7 of the landings
+     * spec).
      */
-    private function filterTitle(FilterContext $context, FilterState $state): ?string
+    private function filterTitle(FilterContext $context, FilterState $state, FilterState $base): ?string
     {
-        if ($state->size() !== 1 || count($state->all()) !== 1) {
+        if (! $base->isEmpty() || $state->size() !== 1 || count($state->all()) !== 1) {
             return null;
         }
 

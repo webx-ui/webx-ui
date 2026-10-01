@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
 use WebxUi\Admin\History\HistoryEntry;
 use WebxUi\Admin\History\RecordsHistory;
 use WebxUi\Catalog\Exceptions\CatalogException;
+use WebxUi\Catalog\Storefront\HasListingTexts;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\NestedSet\HasNestedSet;
@@ -54,7 +55,7 @@ use WebxUi\Seo\HasSeo;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Category extends Model implements HasBreadcrumbs, Visible
+class Category extends Model implements HasBreadcrumbs, HasListingTexts, Visible
 {
     use HasNestedSet;
     use HasSeo;
@@ -272,6 +273,20 @@ class Category extends Model implements HasBreadcrumbs, Visible
         $name = $this->getTranslation('name', $locale);
 
         return is_string($name) && trim($name) !== '' ? $name : '#'.$this->getKey();
+    }
+
+    /** The description, above the products of the plain page. */
+    public function textAbove(string $locale): ?string
+    {
+        $description = $this->getTranslation('description', $locale);
+
+        return is_string($description) && trim($description) !== '' ? $description : null;
+    }
+
+    /** A category has one text; the place under the pages is a landing's (decision 6 of the landings spec). */
+    public function textBelow(string $locale): ?string
+    {
+        return null;
     }
 
     /**

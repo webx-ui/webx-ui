@@ -23,7 +23,7 @@
         "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-catalog"
     },
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "illuminate/auth": "^13.0",
         "illuminate/bus": "^13.0",
         "illuminate/contracts": "^13.0",
