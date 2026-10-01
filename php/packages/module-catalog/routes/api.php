@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 use WebxUi\Catalog\Http\Controllers\BulkController;
 use WebxUi\Catalog\Http\Controllers\CategoryController;
 use WebxUi\Catalog\Http\Controllers\DeletedController;
+use WebxUi\Catalog\Http\Controllers\ExchangeController;
+use WebxUi\Catalog\Http\Controllers\ExchangeProfileController;
 use WebxUi\Catalog\Http\Controllers\FacetController;
 use WebxUi\Catalog\Http\Controllers\ProductController;
 use WebxUi\Catalog\Http\Controllers\ProductImageController;
@@ -61,6 +63,29 @@ Route::prefix((string) config('webx-admin.api_path').'/catalog')
             Route::get('bulk/{run}', [BulkController::class, 'show'])->whereNumber('run')->name('bulk.show');
         });
 
+        // The exchange (§8.2 of the exchange spec): reading and exporting behind the right to
+        // open the catalogue, importing and changing profiles behind the right to write it.
+        Route::prefix('exchange')->name('exchange.')->group(function (): void {
+            Route::middleware('cms.can:catalog.view,catalog.manage,catalog.delete')->group(function (): void {
+                Route::get('columns', [ExchangeController::class, 'columns'])->name('columns');
+                Route::post('export', [ExchangeController::class, 'export'])->name('export');
+                Route::get('runs', [ExchangeController::class, 'runs'])->name('runs.index');
+                Route::get('runs/{run}', [ExchangeController::class, 'show'])->whereNumber('run')->name('runs.show');
+                Route::get('runs/{run}/errors', [ExchangeController::class, 'errors'])->whereNumber('run')->name('runs.errors');
+                Route::get('runs/{run}/file', [ExchangeController::class, 'file'])->whereNumber('run')->name('runs.file');
+                Route::get('profiles', [ExchangeProfileController::class, 'index'])->name('profiles.index');
+                Route::get('profiles/{profile}', [ExchangeProfileController::class, 'show'])->whereNumber('profile')->name('profiles.show');
+            });
+
+            Route::middleware('cms.can:catalog.manage')->group(function (): void {
+                Route::post('inspect', [ExchangeController::class, 'inspect'])->name('inspect');
+                Route::post('import', [ExchangeController::class, 'import'])->name('import');
+                Route::post('profiles', [ExchangeProfileController::class, 'store'])->name('profiles.store');
+                Route::put('profiles/{profile}', [ExchangeProfileController::class, 'update'])->whereNumber('profile')->name('profiles.update');
+                Route::delete('profiles/{profile}', [ExchangeProfileController::class, 'destroy'])->whereNumber('profile')->name('profiles.destroy');
+            });
+        });
+
         Route::middleware('cms.can:catalog.delete')->group(function (): void {
             Route::get('deleted', DeletedController::class)->name('deleted');
 
@@ -71,3 +96,10 @@ Route::prefix((string) config('webx-admin.api_path').'/catalog')
             Route::post('categories/{category}/restore', [CategoryController::class, 'restore'])->whereNumber('category')->name('categories.restore');
         });
     });
+
+// A finished export by the signed link of its run: an agent hands it on, and whoever opens it has
+// no session of the panel. The signature is the permission, and it dies with the file.
+Route::get((string) config('webx-admin.api_path').'/catalog/exchange/download/{run}', [ExchangeController::class, 'signed'])
+    ->whereNumber('run')
+    ->middleware('signed')
+    ->name('webx.catalog.exchange.download');

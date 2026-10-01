@@ -33,6 +33,7 @@ use WebxUi\Media\Images\Thumbnails;
  * @property string|null $video
  * @property int|null $video_duration
  * @property int $position
+ * @property string|null $source_hash
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
