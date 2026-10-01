@@ -1,0 +1,5 @@
+/*
+ * The page's own rules are scoped in its component; the file is here because a site imports it —
+ * `extra.webx.panel.style` of the Composer half — and a stylesheet that is not there fails the
+ * build that imports it.
+ */

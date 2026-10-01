@@ -286,6 +286,18 @@ describe('WxCatalogProductsPage', () => {
     expect(listCalls(get).at(-1)).toContain('q=protectve&typed=1')
   })
 
+  it('says over the list when the search index did not answer and the database did', async () => {
+    const quiet = await panel('/catalog/products', page([row(1)]))
+
+    expect(quiet.wrapper.find('.wx-catalog-products__fell-back').exists()).toBe(false)
+
+    const { wrapper } = await panel('/catalog/products', page([row(1)], { fell_back: true }))
+
+    expect(wrapper.find('.wx-catalog-products__fell-back').text()).toContain(
+      'The search index is not answering',
+    )
+  })
+
   it('opens a product in its editor', async () => {
     const { wrapper, router } = await panel('/catalog/products')
 

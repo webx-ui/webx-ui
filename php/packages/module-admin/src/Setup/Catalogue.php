@@ -141,6 +141,11 @@ final class Catalogue
             'label' => 'Catalog properties — colour, material, weight: sets per category, specifications on the page and filters (needs the catalog)',
             'default' => false,
         ],
+        'catalog-manticore' => [
+            'package' => 'webx-ui/module-catalog-manticore',
+            'label' => 'Catalog on Manticore — search, filters and counts for tens of thousands of products, on a Manticore server you run (needs the catalog)',
+            'default' => false,
+        ],
         'menu' => [
             'package' => 'webx-ui/module-menu',
             'label' => 'Menus — the header and the footer, and what each entry points at',
