@@ -14,6 +14,7 @@ use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Catalog\Bulk\BulkActions;
 use WebxUi\Catalog\Documents\Documents;
+use WebxUi\Catalog\Exchange\ExchangeColumns;
 use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Mcp\SatelliteTools;
 use WebxUi\Catalog\Models\Category;
@@ -28,6 +29,7 @@ use WebxUi\CatalogProperties\Catalog\PropertiesDocument;
 use WebxUi\CatalogProperties\Catalog\PropertiesPart;
 use WebxUi\CatalogProperties\Catalog\PropertyActions;
 use WebxUi\CatalogProperties\Catalog\PropertySets;
+use WebxUi\CatalogProperties\Exchange\PropertyExchangeColumns;
 use WebxUi\CatalogProperties\Facets\PropertySource;
 use WebxUi\CatalogProperties\Mcp\PropertiesResource;
 use WebxUi\CatalogProperties\Mcp\PropertyTools;
@@ -148,6 +150,7 @@ class CatalogPropertiesServiceProvider extends ServiceProvider
         $this->app->make(ModuleRegistry::class)->register($this->app->make(PropertiesModule::class));
         $this->app->make(ProductParts::class)->register($this->app->make(PropertiesPart::class));
         $this->app->make(ProductColumns::class)->source($this->app->make(PropertyColumns::class));
+        $this->app->make(ExchangeColumns::class)->provider(PropertyExchangeColumns::class);
         $this->app->make(Documents::class)->register($this->app->make(PropertiesDocument::class));
 
         $source = $this->app->make(PropertySource::class);

@@ -16,6 +16,12 @@ final class RenamedColumn implements ExchangeColumn
         private readonly string $key,
     ) {}
 
+    /** The column under its own code — what the importer asks whether it fills an entry. */
+    public function column(): ExchangeColumn
+    {
+        return $this->column;
+    }
+
     public function key(): string
     {
         return $this->key;
