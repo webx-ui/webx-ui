@@ -27,7 +27,9 @@ final class StockDocument implements DocumentContributor
         foreach ($products as $product) {
             $status = $of[(int) $product->id] ?? null;
             $documents[(int) $product->id] = [
-                'stock' => $status?->id,
+                // Only a status in the filter, as the facet counts only those: a hidden or binned
+                // one is no value in an index either (§6 of the Manticore spec).
+                'stock' => $status !== null && $status->is_visible && $status->deleted_at === null ? $status->id : null,
                 'purchasable' => $status === null || $status->is_purchasable,
             ];
         }

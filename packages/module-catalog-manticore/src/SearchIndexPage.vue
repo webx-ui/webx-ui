@@ -53,12 +53,21 @@ let timer: ReturnType<typeof setTimeout> | undefined
 const canManage = computed(() => context.can('search-index.manage'))
 const rebuild = computed<RebuildProgress | null>(() => report.value?.rebuild ?? null)
 
-/** Waiting or running, and still heard from: the page keeps asking. */
+/** Waiting or running, and still heard from: no second rebuild is offered. */
 const underway = computed(
   () =>
     rebuild.value !== null &&
     (rebuild.value.state === 'queued' || rebuild.value.state === 'running') &&
     !rebuild.value.stalled,
+)
+
+/**
+ * The page keeps asking while a rebuild is underway — or while a table is filled beside a live
+ * one: a rebuild started from the console writes no progress, only the table. That alone does
+ * not hold the button back, since a table left by a rebuild that was killed would hold it forever.
+ */
+const filling = computed(
+  () => underway.value || (report.value?.tables.some((table) => table.rebuilding) ?? false),
 )
 
 const actions = computed<ScreenAction[]>(() => {
@@ -141,7 +150,7 @@ async function load(): Promise<void> {
     loading.value = false
   }
 
-  if (underway.value) timer = setTimeout(() => void load(), POLL)
+  if (filling.value) timer = setTimeout(() => void load(), POLL)
 }
 
 async function start(): Promise<void> {
@@ -280,7 +289,14 @@ onBeforeUnmount(() => clearTimeout(timer))
                 <wx-badge :type="STATE[row.state]">{{ t(`panel.state-${row.state}`) }}</wx-badge>
                 <wx-text v-if="row.reason" size="xs" tone="muted">{{ row.reason }}</wx-text>
                 <wx-text v-if="row.rebuilding" size="xs" tone="muted">
-                  {{ t('panel.filling') }}
+                  {{
+                    row.filled == null
+                      ? t('panel.filling')
+                      : t('panel.filled', {
+                          done: count(row.filled),
+                          total: count(report.products),
+                        })
+                  }}
                 </wx-text>
               </div>
             </template>
