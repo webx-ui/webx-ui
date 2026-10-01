@@ -8,16 +8,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use WebxUi\Catalog\Catalog;
-use WebxUi\Catalog\Engine\CatalogQuery;
-use WebxUi\Catalog\Facets\CategoryFacet;
-use WebxUi\Catalog\Facets\CategoryFacets;
-use WebxUi\Catalog\Facets\Facet;
-use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\Facets;
-use WebxUi\Catalog\Facets\FacetValue;
-use WebxUi\Catalog\Filter\FilterContext;
 use WebxUi\Catalog\Models\Category;
+use WebxUi\CatalogLandings\Catalog\BaseFacets;
 use WebxUi\CatalogLandings\Catalog\LandingCounter;
 use WebxUi\CatalogLandings\Catalog\LandingGenerator;
 use WebxUi\CatalogLandings\Catalog\LandingSet;
@@ -177,12 +170,8 @@ final class LandingController
         ]]);
     }
 
-    /**
-     * The facets a base offers the set (§8.2): the category's own set of facets, or every one on
-     * the whole catalogue — the category's facet left out — each with the values its products
-     * have, counted, and a range's ends.
-     */
-    public function facets(Request $request, Catalog $catalog, Facets $facets, CategoryFacets $categoryFacets): JsonResponse
+    /** The facets a base offers the set (§8.2), with their values counted and a range's ends. */
+    public function facets(Request $request, BaseFacets $facets): JsonResponse
     {
         $validated = $request->validate(['category' => ['nullable', 'integer']]);
         $locale = app()->getLocale();
@@ -192,33 +181,17 @@ final class LandingController
             abort(404);
         }
 
-        $offered = array_values(array_filter(
-            $category instanceof Category ? $categoryFacets->visible($category) : $facets->all(),
-            static fn (Facet $facet): bool => $facet->key() !== CategoryFacet::KEY,
-        ));
-
-        $result = $catalog->engine()->search(new CatalogQuery(
-            locale: $locale,
-            context: $category instanceof Category ? FilterContext::CATEGORY : FilterContext::ROOT,
-            contextId: $category?->id,
-            scope: $category instanceof Category ? [CategoryFacet::KEY => FacetValue::of([(string) $category->id])] : [],
-            count: array_map(static fn (Facet $facet): string => $facet->key(), $offered),
-            perPage: 1,
-        ));
-
         $data = [];
 
-        foreach ($offered as $facet) {
-            $counted = $result->facet($facet->key());
-            $counts = $counted->counts ?? [];
+        foreach ($facets->of($category, $locale) as ['facet' => $facet, 'min' => $min, 'max' => $max, 'counts' => $counts]) {
             $labels = $facet->labels(array_map('strval', array_keys($counts)), $locale);
 
             $data[] = [
                 'key' => $facet->key(),
                 'label' => $facet->label(),
                 'kind' => $facet->kind()->value,
-                'min' => $facet->kind() === FacetKind::Range ? $counted?->min : null,
-                'max' => $facet->kind() === FacetKind::Range ? $counted?->max : null,
+                'min' => $min,
+                'max' => $max,
                 'values' => array_values(array_map(
                     static fn (string|int $value, int $count): array => ['value' => (string) $value, 'label' => (string) ($labels[(string) $value] ?? $value), 'count' => $count],
                     array_keys($counts),
