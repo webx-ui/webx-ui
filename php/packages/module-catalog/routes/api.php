@@ -98,8 +98,10 @@ Route::prefix((string) config('webx-admin.api_path').'/catalog')
     });
 
 // A finished export by the signed link of its run: an agent hands it on, and whoever opens it has
-// no session of the panel. The signature is the permission, and it dies with the file.
-Route::get((string) config('webx-admin.api_path').'/catalog/exchange/download/{run}', [ExchangeController::class, 'signed'])
+// no session of the panel. The signature is the permission, and it dies with the file. The name of
+// the file ends the address, so that an import by this address knows the format from it.
+Route::get((string) config('webx-admin.api_path').'/catalog/exchange/download/{run}/{name}', [ExchangeController::class, 'signed'])
     ->whereNumber('run')
+    ->where('name', '[a-z0-9.-]+')
     ->middleware('signed')
     ->name('webx.catalog.exchange.download');

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Catalog\Exchange\Columns;
 
+use Illuminate\Validation\ValidationException;
 use WebxUi\Catalog\Exchange\ImportContext;
 use WebxUi\Catalog\Exchange\RowError;
 use WebxUi\Catalog\Models\Category;
@@ -22,6 +23,9 @@ use WebxUi\Catalog\Panel\CategoryForm;
 final class CategoryPaths
 {
     public const BAG = 'categories';
+
+    /** How many numbered slugs a new category tries before its row fails. */
+    private const SLUG_ATTEMPTS = 20;
 
     /** @var array<int, array{parent: int, name: string}> */
     private array $nodes = [];
@@ -107,16 +111,45 @@ final class CategoryPaths
         }
 
         // Published: an import files products under it, and a hidden category would take them off
-        // the site without anybody having decided so.
-        $category = app(CategoryForm::class)->create(
-            ['name' => [$this->locale => $name], 'is_published' => true],
-            $parent === 0 ? null : $parent,
-        );
+        // the site without anybody having decided so. Slugs are flat while names repeat down the
+        // tree — «Gaskets» under two branches — so a taken slug gets a number rather than failing
+        // every row of the second branch.
+        $form = app(CategoryForm::class);
+        $base = str($name)->slug('-', $this->locale)->toString();
+
+        for ($attempt = 1; ; $attempt++) {
+            $values = ['name' => [$this->locale => $name], 'is_published' => true];
+
+            if ($attempt > 1 && $base !== '') {
+                $values['slug'] = [$this->locale => $base.'-'.$attempt];
+            }
+
+            try {
+                $category = $form->create($values, $parent === 0 ? null : $parent);
+
+                break;
+            } catch (ValidationException $taken) {
+                if ($attempt >= self::SLUG_ATTEMPTS || $base === '' || ! self::aboutSlug($taken)) {
+                    throw $taken;
+                }
+            }
+        }
 
         $context->made(self::BAG);
         $this->add((int) $category->id, $parent, $name);
 
         return (int) $category->id;
+    }
+
+    private static function aboutSlug(ValidationException $refused): bool
+    {
+        foreach (array_keys($refused->errors()) as $field) {
+            if ($field === 'slug' || str_starts_with($field, 'slug.')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function add(int $id, int $parent, string $name): void

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Catalog\Exchange\Columns;
 
 use Illuminate\Support\Collection;
+use WebxUi\Catalog\Exchange\DescribesCell;
 use WebxUi\Catalog\Exchange\ExchangeColumn;
 use WebxUi\Catalog\Exchange\ImportContext;
 use WebxUi\Catalog\Exchange\RowError;
@@ -12,7 +13,7 @@ use WebxUi\Catalog\Exchange\RowError;
 /**
  * The product's id: a key and nothing else. A new product never takes the id a file gives it.
  */
-final class IdColumn implements ExchangeColumn
+final class IdColumn implements DescribesCell, ExchangeColumn
 {
     public function key(): string
     {
@@ -32,6 +33,11 @@ final class IdColumn implements ExchangeColumn
     public function localized(): bool
     {
         return false;
+    }
+
+    public function cellFormat(): string
+    {
+        return 'The product id: a key only. A new product never takes the id a file gives it.';
     }
 
     public function export(Collection $products, ?string $locale): array

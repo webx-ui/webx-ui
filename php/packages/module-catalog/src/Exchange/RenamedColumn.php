@@ -9,7 +9,7 @@ use Illuminate\Support\Collection;
 /**
  * A provider's column whose code was the core's already: the same column under `p_<code>`.
  */
-final class RenamedColumn implements ExchangeColumn
+final class RenamedColumn implements DescribesCell, ExchangeColumn
 {
     public function __construct(
         private readonly ExchangeColumn $column,
@@ -40,6 +40,11 @@ final class RenamedColumn implements ExchangeColumn
     public function localized(): bool
     {
         return $this->column->localized();
+    }
+
+    public function cellFormat(): string
+    {
+        return $this->column instanceof DescribesCell ? $this->column->cellFormat() : '';
     }
 
     public function export(Collection $products, ?string $locale): array

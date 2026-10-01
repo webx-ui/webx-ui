@@ -201,7 +201,7 @@ final class ExchangeController
     }
 
     /** The same file by the run's signed link, without a session behind it. */
-    public function signed(int $run): Response
+    public function signed(int $run, string $name): Response
     {
         return $this->download($this->run($run));
     }
@@ -214,7 +214,7 @@ final class ExchangeController
             throw new NotFoundHttpException;
         }
 
-        $name = 'catalog-export-'.$run->id.'.'.pathinfo($run->file, PATHINFO_EXTENSION);
+        $name = $run->fileName();
         $stream = $disk->readStream($run->file);
 
         return new StreamedResponse(static function () use ($stream): void {
