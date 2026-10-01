@@ -215,6 +215,55 @@ final class SetupTest extends TestCase
     }
 
     #[Test]
+    public function the_fallback_follows_the_default_language_when_the_site_has_no_english(): void
+    {
+        $languages = (string) LocalesConfig::rewrite($this->shippedConfig(), ['ru', 'uk']);
+        $rewritten = LocalesConfig::rewriteFallback($languages);
+
+        $this->assertNotNull($rewritten);
+        $this->assertStringContainsString("'fallback' => 'ru',", (string) $rewritten);
+        $this->assertStringContainsString("['code' => 'uk'],", (string) $rewritten);
+    }
+
+    #[Test]
+    public function a_fallback_the_site_publishes_in_is_left_where_it_is(): void
+    {
+        // English among the answers keeps the shipped fallback.
+        $this->assertNull(LocalesConfig::rewriteFallback((string) LocalesConfig::rewrite($this->shippedConfig(), ['ru', 'en'])));
+        // And so does one somebody chose by hand from their own list.
+        $chosen = str_replace(
+            "'fallback' => 'en',",
+            "'fallback' => 'uk',",
+            (string) LocalesConfig::rewrite($this->shippedConfig(), ['ru', 'uk']),
+        );
+        $this->assertNull(LocalesConfig::rewriteFallback($chosen));
+        $this->assertNull(LocalesConfig::rewriteFallback($this->shippedConfig()));
+    }
+
+    #[Test]
+    public function the_fallback_is_measured_against_the_list_in_the_file(): void
+    {
+        // A list setup did not write is still the site's list, and `en` is not on it.
+        $changed = str_replace(
+            "        ['code' => 'en', 'default' => true],",
+            "        ['code' => 'de', 'default' => true],\n        ['code' => 'fr'],",
+            $this->shippedConfig(),
+        );
+
+        $this->assertStringContainsString("'fallback' => 'de',", (string) LocalesConfig::rewriteFallback($changed));
+    }
+
+    #[Test]
+    public function the_environment_fallback_is_the_current_one_or_the_default_language(): void
+    {
+        $this->assertSame('ru', LocalesConfig::fallback('en', ['ru']));
+        $this->assertSame('en', LocalesConfig::fallback('en', ['ru', 'en']));
+        $this->assertSame('uk', LocalesConfig::fallback('uk', ['ru', 'uk']));
+        $this->assertSame('ru', LocalesConfig::fallback(null, ['ru']));
+        $this->assertNull(LocalesConfig::fallback('en', []));
+    }
+
+    #[Test]
     public function it_reads_a_comma_separated_answer(): void
     {
         $this->assertSame(['ru', 'uk'], LocalesConfig::codes(' RU , uk '));
