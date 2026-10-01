@@ -10,7 +10,7 @@ it is closed."
 
 ## Requirements
 
-- PHP 8.3+, Laravel 13
+- PHP 8.4+, Laravel 13
 - `webx-ui/module-admin`, `webx-ui/module-auth`, `webx-ui/localization`, `webx-ui/mcp`
 
 ## Install

@@ -11,7 +11,7 @@ answer; the panel's front end is [`@webx-ui/module-media`](https://www.npmjs.com
 
 ## Requirements
 
-- PHP 8.3+
+- PHP 8.4+
 - Laravel 13
 - `webx-ui/module-admin`, `webx-ui/localization`, `webx-ui/mcp`, `webx-ui/nested-set`
 - `intervention/image` 3 (GD or Imagick)
