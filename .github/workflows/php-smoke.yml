@@ -47,9 +47,12 @@ jobs:
 
       # The platform scenario runs `webx:setup` with the build, the way a platform does: the
       # image installs the front end from the lock file that build writes.
+      # v5 caches by the root `packageManager` (pnpm) on its own and fails without pnpm on PATH;
+      # the scenario installs with npm in a site of its own, so there is nothing to cache.
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+          package-manager-cache: false
 
       - name: Cache Composer downloads
         uses: actions/cache@v4
