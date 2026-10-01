@@ -396,6 +396,11 @@ php vendor/bin/testbench package:discover` из `php/`, убрать `bootstrap/
   пути он ищет `vendor/autoload.php` внутри самого testbench. **Новый пакет в `php/` — это
   `composer update webx-ui/<пакет>`**, после которого манифест прогревается заново: до этого тест
   отвечает «Class …ServiceProvider not found».
+- **`phpstan analyse packages/<пакет>` падает на конфигах, которых никто не трогал.** Путь в
+  командной строке заменяет `paths` из `phpstan.neon.dist`, а вместе с ними и то, как Larastan
+  отличает каталог `config/` пакета, — и каждый `env()` в `config/*.php` становится ошибкой
+  `larastan.noEnvCallsOutsideOfConfig`, полтора десятка на чистой ветке. Похоже на чужую поломку
+  в `main`. Гнать как гейт — без пути, целиком; это и быстрее, чем разбираться.
 
 ## Установщик (webx:setup)
 
