@@ -24,6 +24,7 @@ const NAMESPACES: Record<string, string> = {
   'module-catalog': 'webx-catalog',
   'module-catalog-brands': 'webx-catalog-brands',
   'module-catalog-labels': 'webx-catalog-labels',
+  'module-catalog-landings': 'webx-catalog-landings',
   'module-catalog-manticore': 'webx-catalog-manticore',
   'module-catalog-properties': 'webx-catalog-properties',
   'module-catalog-stock': 'webx-catalog-stock',

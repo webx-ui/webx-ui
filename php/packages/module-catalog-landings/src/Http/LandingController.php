@@ -19,8 +19,11 @@ use WebxUi\Catalog\Facets\FacetValue;
 use WebxUi\Catalog\Filter\FilterContext;
 use WebxUi\Catalog\Models\Category;
 use WebxUi\CatalogLandings\Catalog\LandingCounter;
+use WebxUi\CatalogLandings\Catalog\LandingGenerator;
 use WebxUi\CatalogLandings\Catalog\LandingSet;
+use WebxUi\CatalogLandings\Catalog\LandingWords;
 use WebxUi\CatalogLandings\Models\Landing;
+use WebxUi\CatalogLandings\Models\LandingRun;
 
 /**
  * `/api/cms/catalog/landings` (§8.4 of the landings spec): the list with the panel's filters, a
@@ -33,6 +36,7 @@ final class LandingController
         private readonly LandingForm $form,
         private readonly LandingResource $resource,
         private readonly LandingCounter $counter,
+        private readonly LandingWords $words,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -144,8 +148,9 @@ final class LandingController
     }
 
     /**
-     * How many products a set shows on a base, nothing saved — and the landing that already holds
-     * it, so the form warns before the save refuses.
+     * How many products a set shows on a base, nothing saved — the landing that already holds it,
+     * so the form warns before the save refuses, and the address the set suggests,
+     * `{category}-{value}` per language (§8.2).
      */
     public function count(Request $request): JsonResponse
     {
@@ -168,6 +173,7 @@ final class LandingController
         return new JsonResponse(['data' => [
             'count' => $this->counter->count($categoryId, $set->state(app(Facets::class))),
             'taken' => $holder === null ? null : ['id' => (int) $holder->id, 'name' => $holder->label()],
+            'suggested' => (object) $this->words->slugs($categoryId === null ? null : Category::withTrashed()->find($categoryId), $set),
         ]]);
     }
 
@@ -222,6 +228,35 @@ final class LandingController
         }
 
         return new JsonResponse(['data' => $data]);
+    }
+
+    /**
+     * «Create in bulk» (§8.3): with `dry_run`, the table of what would be made, conflicts marked;
+     * without it, the free rows made — at once, or by the queue, whose run the panel then polls.
+     */
+    public function generate(Request $request, LandingGenerator $generator): JsonResponse
+    {
+        $params = $generator->validate($request->all());
+
+        if ($request->boolean('dry_run')) {
+            $rows = $generator->plan($params);
+
+            return new JsonResponse(['data' => [
+                'rows' => $rows,
+                'total' => count($rows),
+                'free' => count(array_filter($rows, static fn (array $row): bool => $row['conflict'] === null)),
+            ]]);
+        }
+
+        $run = $generator->run($params, $request->user());
+
+        return new JsonResponse(['data' => $run->toResponse()], $run->exists ? 202 : 200);
+    }
+
+    /** How far a queued generation has got. */
+    public function run(int $run): JsonResponse
+    {
+        return new JsonResponse(['data' => LandingRun::query()->findOrFail($run)->toResponse()]);
     }
 
     private function answer(Landing $landing, int $status = 200): JsonResponse

@@ -76,6 +76,9 @@ class Landing extends Model implements HasDefaultSort, HasListingTexts, ListingS
     /** The type the address registry and the journal know it by. */
     public const TYPE = 'catalog.landing';
 
+    /** The form of the panel (§8.2). */
+    public const SCREEN = 'catalog.landing-form';
+
     /** The recommended products, in their order (§4). */
     public const PRODUCTS = 'catalog_landing_products';
 

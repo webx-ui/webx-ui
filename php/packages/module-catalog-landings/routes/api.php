@@ -21,11 +21,13 @@ Route::prefix((string) config('webx-admin.api_path'))
             // Before `{landing}`: these are words, not ids.
             Route::get($path.'/facets', [LandingController::class, 'facets'])->name('facets');
             Route::post($path.'/count', [LandingController::class, 'count'])->name('count');
+            Route::get($path.'/generate/{run}', [LandingController::class, 'run'])->whereNumber('run')->name('generate.run');
             Route::get($path.'/{landing}', [LandingController::class, 'show'])->whereNumber('landing')->name('show');
         });
 
         Route::middleware('cms.can:catalog.manage')->group(static function () use ($path): void {
             Route::post($path, [LandingController::class, 'store'])->name('store');
+            Route::post($path.'/generate', [LandingController::class, 'generate'])->name('generate');
             Route::put($path.'/{landing}', [LandingController::class, 'update'])->whereNumber('landing')->name('update');
             Route::delete($path.'/{landing}', [LandingController::class, 'destroy'])->whereNumber('landing')->name('destroy');
             Route::post($path.'/{landing}/restore', [LandingController::class, 'restore'])->whereNumber('landing')->name('restore');
