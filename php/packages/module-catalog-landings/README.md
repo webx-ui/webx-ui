@@ -68,6 +68,16 @@ property in the bin drops out of every set at the next count. Saving the landing
 `unpublish`; `POST count` (a set → the number of products, and the landing that already holds it)
 and `GET facets?category=` (the facets of a base with their values).
 
+## To an agent
+
+The tools are the catalogue's — `catalog_landings_list`, `_get`, `_facets`, `_count`,
+`_create`, `_update`, `_publish`, `_unpublish`, `_delete`, `_restore`, `_generate` (with
+`dry_run` — the preview) and `_generation` — under the scopes `catalog:read` and
+`catalog:write`. A set is written in facet codes and value slugs, as an address spells them —
+`{ "brand": ["apple"], "price": { "max": 50000 } }` — and every answer gives the ids it is stored
+by beside them. `catalog://landings` holds the house rules: what a landing is, when to make one,
+how not to make the same one twice.
+
 ## License
 
 MIT

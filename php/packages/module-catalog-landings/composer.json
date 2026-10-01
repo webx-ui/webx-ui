@@ -37,6 +37,7 @@
         "illuminate/validation": "^13.0",
         "illuminate/view": "^13.0",
         "webx-ui/localization": "^0.55.0",
+        "webx-ui/mcp": "^0.55.0",
         "webx-ui/module-admin": "^0.55.0",
         "webx-ui/module-catalog": "^0.55.0",
         "webx-ui/module-seo": "^0.55.0",
@@ -63,6 +64,17 @@
             "providers": [
                 "WebxUi\\CatalogLandings\\CatalogLandingsServiceProvider"
             ]
+        },
+        "webx": {
+            "module": "catalog-landings",
+            "npm": {
+                "@webx-ui/module-catalog-landings": "^0.1.0"
+            },
+            "panel": {
+                "import": "import { catalogLandings } from '@webx-ui/module-catalog-landings'",
+                "style": "@webx-ui/module-catalog-landings/style.css",
+                "register": "...catalogLandings()"
+            }
         }
     },
     "config": {
