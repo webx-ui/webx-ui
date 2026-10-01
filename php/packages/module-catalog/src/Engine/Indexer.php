@@ -8,9 +8,11 @@ use Closure;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Throwable;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Documents\Documents;
+use WebxUi\Catalog\Events\ProductsIndexed;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Localization\Locales;
 
@@ -130,13 +132,24 @@ final class Indexer
         $products = Product::withTrashed()->whereKey($ids)->get();
         $found = array_map('intval', $products->modelKeys());
 
-        $engine->index($this->documents->build($products, $this->locales->codes()));
+        $documents = $this->documents->build($products, $this->locales->codes());
+        $engine->index($documents);
 
         $gone = array_values(array_diff($ids, $found));
 
         if ($gone !== []) {
             $engine->remove($gone);
         }
+
+        $categories = [];
+
+        foreach ($documents as $document) {
+            foreach ((array) ($document['categories'] ?? []) as $category) {
+                $categories[(int) $category] = true;
+            }
+        }
+
+        Event::dispatch(new ProductsIndexed($ids, array_keys($categories)));
 
         return count($found);
     }
