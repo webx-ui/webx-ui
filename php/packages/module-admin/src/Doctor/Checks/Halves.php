@@ -159,9 +159,13 @@ final class Halves implements Check
      * time: the same call, the same manifest, the same exception. What comes back names the
      * files the browser is actually served, wherever the site put its build directory.
      *
-     * Freshness is by modification time, which is all there is to go on and is enough — the
-     * failure this catches is a deploy that installed a module, wired it in and never built,
-     * and that leaves the entry file minutes newer than the bundle.
+     * Freshness is by content when the build left a record of it — `webx-sources.json` beside
+     * the manifest, written by the plugin in the skeleton's `vite.config.js`: every file of the
+     * site the build read, with its hash. Modification times lie in exactly the place this has
+     * to be right: Docker reuses a cached build stage beside sources it copied a minute ago,
+     * and the image comes out "stale" on the very build that made it. A site whose config
+     * predates the plugin has no record, and gets the times — which do catch the commoner
+     * failure, a deploy that installed a module, wired it in and never built.
      *
      * @param  list<string>  $entries
      * @return list<Diagnosis>
@@ -183,7 +187,7 @@ final class Halves implements Check
             )];
         }
 
-        $built = 0;
+        $assets = [];
 
         preg_match_all('/(?:src|href)="([^"]+)"/', $tags, $matches);
 
@@ -191,8 +195,86 @@ final class Halves implements Check
             $asset = $this->app->publicPath(ltrim((string) parse_url($url, PHP_URL_PATH), '/'));
 
             if ($this->files->exists($asset)) {
-                $built = max($built, (int) $this->files->lastModified($asset));
+                $assets[] = $asset;
             }
+        }
+
+        $record = $this->sources($assets);
+
+        return $record === null
+            ? $this->byTime($entries, $assets)
+            : $this->byContent($record);
+    }
+
+    /**
+     * What the build says it read, or null when it left no record that can be trusted.
+     *
+     * Looked for upwards from the files the browser is served rather than at a fixed path: the
+     * plugin writes it into Vite's output directory, which is the manifest's, and a site is free
+     * to name that whatever it likes.
+     *
+     * @param  list<string>  $assets
+     * @return array<string, string>|null
+     */
+    private function sources(array $assets): ?array
+    {
+        $public = rtrim(str_replace('\\', '/', $this->app->publicPath()), '/');
+
+        foreach ($assets as $asset) {
+            $directory = str_replace('\\', '/', dirname($asset));
+
+            while (str_starts_with($directory, $public.'/')) {
+                $path = $directory.'/webx-sources.json';
+
+                if ($this->files->exists($path)) {
+                    $record = json_decode((string) $this->files->get($path), true);
+
+                    if (! is_array($record) || ($record['algorithm'] ?? null) !== 'sha256' || ! is_array($record['files'] ?? null)) {
+                        return null;
+                    }
+
+                    return array_filter($record['files'], is_string(...));
+                }
+
+                $directory = dirname($directory);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @param  array<string, string>  $record
+     * @return list<Diagnosis>
+     */
+    private function byContent(array $record): array
+    {
+        foreach ($record as $name => $hash) {
+            $path = $this->app->basePath((string) $name);
+
+            if (! $this->files->exists($path)) {
+                return [Diagnosis::fail('Bundle', "{$name} is gone since the bundle was built from it — run `npm run build`.")];
+            }
+
+            if (! hash_equals($hash, hash_file('sha256', $path) ?: '')) {
+                return [Diagnosis::fail('Bundle', "{$name} has changed since the bundle was built — run `npm run build`.")];
+            }
+        }
+
+        return [Diagnosis::ok('Bundle', 'built from what is on disk now — '.count($record).' files, every one unchanged.')];
+    }
+
+    /**
+     * @param  list<string>  $entries
+     * @param  list<string>  $assets
+     * @return list<Diagnosis>
+     */
+    private function byTime(array $entries, array $assets): array
+    {
+        $built = 0;
+
+        foreach ($assets as $asset) {
+            $built = max($built, (int) $this->files->lastModified($asset));
         }
 
         $changed = 0;
