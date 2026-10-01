@@ -36,7 +36,7 @@
 | [WEBX_UI_CATALOG_VIDEO.md](WEBX_UI_CATALOG_VIDEO.md)                     | Видео в галерее товара: свой файл или YouTube, постер — картинка                          | сделано (V1–V3), 29.09.2026          |
 | [WEBX_UI_CATALOG_DICTIONARIES.md](WEBX_UI_CATALOG_DICTIONARIES.md)       | Справочники каталога: метки, наличие, бренды; подпись «Справочники» в меню                | выпущены 30.09.2026 в v0.53.0        |
 | [WEBX_UI_CATALOG_PROPERTIES.md](WEBX_UI_CATALOG_PROPERTIES.md)           | Свойства каталога: типы, значения, наборы по категориям, фасеты, характеристики           | выпущены 30.09.2026 в v0.54.0        |
-| [WEBX_UI_CATALOG_MANTICORE.md](WEBX_UI_CATALOG_MANTICORE.md)             | Движок Manticore: таблицы на язык, поиск с опечатками и по кодам, подмена при перестройке | согласована 01.10.2026, кода нет     |
+| [WEBX_UI_CATALOG_MANTICORE.md](WEBX_UI_CATALOG_MANTICORE.md)             | Движок Manticore: таблицы на язык, поиск с опечатками и по кодам, подмена при перестройке | M1 сделан 01.10.2026                 |
 | [WEBX_UI_MODULE_CATALOG_EXCHANGE.md](WEBX_UI_MODULE_CATALOG_EXCHANGE.md) | Обмен каталога: импорт и экспорт CSV и XLSX, профили, журнал ошибок                       | спека написана, код не начат (E1–E4) |
 | [WEBX_UI_MODULE_EVENTS.md](WEBX_UI_MODULE_EVENTS.md)                     | События: дата, место, цена, `.ics`, разметка `Event`                                      | выпущен 25.09.2026, v0.43.0          |
 | [WEBX_UI_MODULE_FAQ.md](WEBX_UI_MODULE_FAQ.md)                           | Вопросы и ответы, вставка блоком, `FAQPage`                                               | выпущен 24.09.2026, v0.37.0          |

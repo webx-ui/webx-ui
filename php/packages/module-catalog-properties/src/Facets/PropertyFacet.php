@@ -122,6 +122,44 @@ abstract class PropertyFacet extends AbstractFacet implements BatchCountedFacet,
         return FacetRows::of($keys, $products);
     }
 
+    /** The values of a reference book, an interval: the field holds them as they are. */
+    public function indexValues(FacetValue $value): FacetValue
+    {
+        return $value;
+    }
+
+    /**
+     * `pv` and `pi` hold the values of every property at once, so one count of the field is laid
+     * out by whose each value is ({@see owners()}) — one query for the whole batch.
+     */
+    public function splitIndexCounts(array $keys, array $counts): array
+    {
+        $split = array_fill_keys($keys, []);
+
+        $owners = $this->owners(array_map('intval', array_keys($counts)));
+
+        foreach ($counts as $value => $products) {
+            $key = isset($owners[(int) $value]) ? 'p.'.$owners[(int) $value] : null;
+
+            if ($key !== null && isset($split[$key])) {
+                $split[$key][$value] = $products;
+            }
+        }
+
+        return $split;
+    }
+
+    /**
+     * Which property each of these values of the field belongs to.
+     *
+     * @param  list<int>  $values
+     * @return array<int, int> value → property id
+     */
+    protected function owners(array $values): array
+    {
+        return [];
+    }
+
     /** The rows of the values table that match the choice. */
     abstract protected function narrow(QueryBuilder $rows, FacetValue $value): void;
 

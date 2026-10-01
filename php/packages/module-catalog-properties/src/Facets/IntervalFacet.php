@@ -88,6 +88,13 @@ final class IntervalFacet extends PropertyFacet implements OrderedFacet
         return is_string($slug) && $slug !== '' ? $slug : (string) $interval->id;
     }
 
+    protected function owners(array $values): array
+    {
+        return PropertyInterval::query()->whereKey($values)->pluck('property_id', 'id')
+            ->mapWithKeys(static fn (mixed $property, mixed $id): array => [(int) $id => (int) $property])
+            ->all();
+    }
+
     protected function narrow(QueryBuilder $rows, FacetValue $value): void
     {
         $chosen = $this->load($value->values);

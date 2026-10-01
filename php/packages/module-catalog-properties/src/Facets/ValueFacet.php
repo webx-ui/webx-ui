@@ -139,6 +139,13 @@ class ValueFacet extends PropertyFacet implements SwatchedFacet
         return is_string($slug) && $slug !== '' ? $slug : (string) $value->id;
     }
 
+    protected function owners(array $values): array
+    {
+        return PropertyValue::query()->whereKey($values)->pluck('property_id', 'id')
+            ->mapWithKeys(static fn (mixed $property, mixed $id): array => [(int) $id => (int) $property])
+            ->all();
+    }
+
     protected function narrow(QueryBuilder $rows, FacetValue $value): void
     {
         $rows->whereIn(FacetRows::TABLE.'.value_id', self::ids($value->values) ?: [0]);
