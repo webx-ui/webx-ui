@@ -11,13 +11,17 @@ use WebxUi\Catalog\Facets\AbstractFacet;
 use WebxUi\Catalog\Facets\BatchCountedFacet;
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\FacetValue;
+use WebxUi\Catalog\Facets\IndexField;
 use WebxUi\Catalog\Models\Product;
 
 /**
- * One property of {@see PropertySource} as a facet of terms.
+ * One property of {@see PropertySource} as a facet of terms. In an index every property shares one
+ * field, `props`, of `property:value` — the way the properties package shares `pv`.
  */
 final class PropertyFacet extends AbstractFacet implements BatchCountedFacet
 {
+    public const FIELD = 'props';
+
     public function __construct(
         private readonly string $property,
         private readonly PropertySource $source,
@@ -86,5 +90,30 @@ final class PropertyFacet extends AbstractFacet implements BatchCountedFacet
             ->selectRaw("'p.' || property as facet_key, product_id, value")
             ->whereIn('property', $properties)
             ->whereIn('product_id', clone $products);
+    }
+
+    public function field(): IndexField
+    {
+        return new IndexField(self::FIELD, IndexField::STRING, multi: true);
+    }
+
+    public function indexValues(FacetValue $value): FacetValue
+    {
+        return FacetValue::of(array_map(fn (string $one): string => $this->property.':'.$one, $value->values));
+    }
+
+    public function splitIndexCounts(array $keys, array $counts): array
+    {
+        $split = array_fill_keys($keys, []);
+
+        foreach ($counts as $value => $products) {
+            [$property, $one] = explode(':', (string) $value, 2) + [1 => ''];
+
+            if (isset($split['p.'.$property])) {
+                $split['p.'.$property][$one] = $products;
+            }
+        }
+
+        return $split;
     }
 }
