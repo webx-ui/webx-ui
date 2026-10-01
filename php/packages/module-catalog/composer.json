@@ -35,13 +35,13 @@
         "illuminate/validation": "^13.0",
         "illuminate/view": "^13.0",
         "openspout/openspout": "^4.32",
-        "webx-ui/localization": "^0.54.0",
-        "webx-ui/mcp": "^0.54.0",
-        "webx-ui/module-admin": "^0.54.0",
-        "webx-ui/module-media": "^0.54.0",
-        "webx-ui/module-seo": "^0.54.0",
-        "webx-ui/nested-set": "^0.54.0",
-        "webx-ui/routing": "^0.54.0"
+        "webx-ui/localization": "^0.55.0",
+        "webx-ui/mcp": "^0.55.0",
+        "webx-ui/module-admin": "^0.55.0",
+        "webx-ui/module-media": "^0.55.0",
+        "webx-ui/module-seo": "^0.55.0",
+        "webx-ui/nested-set": "^0.55.0",
+        "webx-ui/routing": "^0.55.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
@@ -69,7 +69,7 @@
         "webx": {
             "module": "catalog",
             "npm": {
-                "@webx-ui/module-catalog": "^0.5.0"
+                "@webx-ui/module-catalog": "^0.6.0"
             },
             "panel": {
                 "import": "import { catalog } from '@webx-ui/module-catalog'",
