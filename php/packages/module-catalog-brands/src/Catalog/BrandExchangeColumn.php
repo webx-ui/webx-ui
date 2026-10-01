@@ -8,6 +8,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 use LogicException;
 use WebxUi\Admin\Categories\CategoryForm;
+use WebxUi\Catalog\Exchange\DescribesCell;
 use WebxUi\Catalog\Exchange\ExchangeColumn;
 use WebxUi\Catalog\Exchange\ImportContext;
 use WebxUi\Catalog\Exchange\RowError;
@@ -24,7 +25,7 @@ use WebxUi\Localization\Locales;
  * the same brand. A name nobody has is created with `create_missing`, visible and with an address
  * made of the name, as the panel makes one.
  */
-final class BrandExchangeColumn implements ExchangeColumn
+final class BrandExchangeColumn implements DescribesCell, ExchangeColumn
 {
     public function key(): string
     {
@@ -44,6 +45,11 @@ final class BrandExchangeColumn implements ExchangeColumn
     public function localized(): bool
     {
         return false;
+    }
+
+    public function cellFormat(): string
+    {
+        return 'The brand: its slug, else its name case aside, or #id. A missing one is created with create_missing.';
     }
 
     public function export(Collection $products, ?string $locale): array
