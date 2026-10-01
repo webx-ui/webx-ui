@@ -1,3 +1,4 @@
+// CI probe: a change in core.
 import './styles/index.css'
 
 export * from './components'
