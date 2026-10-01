@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Catalog\Manticore;
 
+use Closure;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Support\Facades\DB;
@@ -93,7 +94,7 @@ final class ManticoreEngine implements RebuildsAside
 
         if (! $this->server->down()) {
             try {
-                return $this->answer($query);
+                return $this->throughSwap(fn (): CatalogResult => $this->answer($query));
             } catch (ManticoreUnavailable) {
                 // Remembered by the server; the fallback below.
             }
@@ -115,6 +116,28 @@ final class ManticoreEngine implements RebuildsAside
     public function fellBack(): bool
     {
         return $this->fellBack;
+    }
+
+    /**
+     * The question asked once more when it fell into a rebuild's swap: Manticore renames nothing
+     * onto a live table, so for some tens of milliseconds between `DROP` and `RENAME` the table is
+     * not there (§7 of the spec, M4). A moment later it is, and the reader never sees the gap.
+     *
+     * @param  Closure(): CatalogResult  $ask
+     */
+    private function throughSwap(Closure $ask): CatalogResult
+    {
+        try {
+            return $ask();
+        } catch (ManticoreError $error) {
+            if (! str_contains($error->getMessage(), 'unknown local table')) {
+                throw $error;
+            }
+
+            usleep(max(0, (int) $this->config->get('webx-catalog-manticore.swap_wait', 150)) * 1000);
+
+            return $ask();
+        }
     }
 
     public function needsIndex(): bool
@@ -211,25 +234,35 @@ final class ManticoreEngine implements RebuildsAside
 
     /**
      * Each language's table as it stands: missing, of another schema (and why), or ready, with
-     * the documents in it, and whether a rebuild is filling the one beside it — what
-     * `webx:doctor` reports and «System → Search index» shows (decision 27).
+     * the documents in it, and whether a rebuild is filling the one beside it and how far it has
+     * got — what `webx:doctor` reports and «System → Search index» shows (decision 27). The count
+     * of the table beside is what shows a rebuild started from the console, which writes no
+     * progress of its own.
      *
-     * @return array<string, array{table: string, state: string, reason: string|null, documents: int|null, rebuilding: bool}>
+     * @return array<string, array{table: string, state: string, reason: string|null, documents: int|null, rebuilding: bool, filled: int|null}>
      */
     public function status(): array
     {
         $existing = $this->tables();
         $status = [];
         $asked = [];
+        $beside = [];
 
         foreach ($this->locales->codes() as $locale) {
             $table = $this->server->table($locale);
+            $next = $this->server->table($locale, next: true);
+
+            if (in_array($next, $existing, true)) {
+                $beside[$locale] = 'SELECT COUNT(*) AS documents FROM '.$next;
+            }
+
             $status[$locale] = [
                 'table' => $table,
                 'state' => self::MISSING,
                 'reason' => null,
                 'documents' => null,
-                'rebuilding' => in_array($this->server->table($locale, next: true), $existing, true),
+                'rebuilding' => isset($beside[$locale]),
+                'filled' => null,
             ];
 
             if (in_array($table, $existing, true)) {
@@ -246,6 +279,17 @@ final class ManticoreEngine implements RebuildsAside
             $status[$locale]['state'] = $reason === null ? self::READY : self::STALE;
             $status[$locale]['reason'] = $reason;
             $status[$locale]['documents'] = $live['documents'];
+        }
+
+        try {
+            $counted = array_combine(array_keys($beside), $this->server->sqlMany(array_values($beside)));
+        } catch (ManticoreError) {
+            // The swap took the table away between the two questions: nothing beside any more.
+            $counted = [];
+        }
+
+        foreach ($counted as $locale => $sets) {
+            $status[$locale]['filled'] = (int) (self::rows($sets[0] ?? [])[0]['documents'] ?? 0);
         }
 
         return $status;
