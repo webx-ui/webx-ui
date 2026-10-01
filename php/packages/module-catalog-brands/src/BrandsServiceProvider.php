@@ -16,6 +16,7 @@ use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Catalog\Bulk\BulkActions;
 use WebxUi\Catalog\Documents\Documents;
+use WebxUi\Catalog\Exchange\ExchangeColumns;
 use WebxUi\Catalog\Facets\Facets;
 use WebxUi\Catalog\Models\Product;
 use WebxUi\Catalog\Panel\ProductColumns;
@@ -25,6 +26,7 @@ use WebxUi\Catalog\Storefront\StorefrontParts;
 use WebxUi\CatalogBrands\Catalog\BrandAction;
 use WebxUi\CatalogBrands\Catalog\BrandColumn;
 use WebxUi\CatalogBrands\Catalog\BrandDocument;
+use WebxUi\CatalogBrands\Catalog\BrandExchangeColumn;
 use WebxUi\CatalogBrands\Catalog\BrandFacet;
 use WebxUi\CatalogBrands\Catalog\BrandLine;
 use WebxUi\CatalogBrands\Catalog\BrandPart;
@@ -183,6 +185,8 @@ class BrandsServiceProvider extends ServiceProvider
     {
         $this->app->make(ProductParts::class)->register(new BrandPart);
         $this->app->make(ProductColumns::class)->register(new BrandColumn);
+        // The column of exchange files (§7.2 of the exchange spec).
+        $this->app->make(ExchangeColumns::class)->register(new BrandExchangeColumn);
         $this->app->make(Facets::class)->register(new BrandFacet);
         $this->app->make(Documents::class)->register(new BrandDocument);
         $this->app->make(BulkActions::class)->register(new BrandAction);

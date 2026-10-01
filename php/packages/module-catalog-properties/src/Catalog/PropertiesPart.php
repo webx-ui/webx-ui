@@ -103,6 +103,13 @@ final class PropertiesPart implements ProductPart
         foreach ($input['values'] as $key => $value) {
             $property = is_numeric($key) ? $this->properties->find((int) $key) : null;
 
+            // Nothing asked of a property outside the set: there is nothing of it in the form to take
+            // away — a file with a column per property sends that for every product of another
+            // category, and what such a product holds stays (decision 6).
+            if ($property !== null && $value === null && ! isset($set[(int) $property->id])) {
+                continue;
+            }
+
             if ($property === null || ! isset($set[(int) $property->id])) {
                 $errors[self::KEY.'.values.'.$key] = [(string) __('webx-catalog-properties::errors.outside-set')];
 
