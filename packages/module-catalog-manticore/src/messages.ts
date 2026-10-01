@@ -27,6 +27,7 @@ export const catalogManticoreMessages: Record<string, Messages> = {
     'state-stale': 'Schema out of date',
     'state-missing': 'Missing',
     filling: 'A rebuild is filling the table beside it.',
+    filled: 'A rebuild is filling the table beside it: :done of :total',
     'no-tables': 'The server did not say which tables it has.',
     queue: 'Queue',
     waiting: 'Waiting to be written',

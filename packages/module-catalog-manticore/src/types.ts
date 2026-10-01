@@ -25,6 +25,11 @@ export interface IndexTable {
   documents: number | null
   /** A rebuild is filling `{table}_next` beside it. */
   rebuilding: boolean
+  /**
+   * Products already in `{table}_next` — how far a rebuild has got, the console's too, which
+   * writes no progress of its own. Null when nothing is beside.
+   */
+  filled?: number | null
 }
 
 export interface RebuildProgress {

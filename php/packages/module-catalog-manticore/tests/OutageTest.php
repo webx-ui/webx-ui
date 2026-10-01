@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Catalog\Manticore\Tests;
 
 use Illuminate\Foundation\Application;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use LogicException;
 use PHPUnit\Framework\Attributes\Test;
@@ -74,6 +75,29 @@ final class OutageTest extends TestCase
         Http::fake();
         $this->assertSame([], $engine->search(new CatalogQuery(locale: 'en', context: 'panel', withUnpublished: true, search: 'nothing'))->ids);
         Http::assertNothingSent();
+    }
+
+    #[Test]
+    public function a_question_that_falls_into_the_swap_is_asked_once_more(): void
+    {
+        $this->app['config']->set('webx-catalog-manticore.swap_wait', 0);
+        $asked = 0;
+        $empty = [['columns' => [], 'data' => [], 'total' => 0, 'error' => '', 'warning' => '']];
+
+        // Between `DROP` and `RENAME` the table is not there; a moment later it is.
+        Http::fake(static function (Request $request) use (&$asked, $empty) {
+            parse_str($request->body(), $form);
+
+            if (str_starts_with((string) ($form['query'] ?? ''), 'SELECT id') && $asked++ === 0) {
+                return Http::response([['total' => 0, 'error' => "unknown local table(s) 'shop_catalog_products_en' in search request", 'warning' => '']]);
+            }
+
+            return Http::response($empty);
+        });
+
+        $this->assertSame([], $this->engine()->search(new CatalogQuery(locale: 'en'))->ids);
+        $this->assertSame(2, $asked);
+        $this->assertFalse($this->engine()->fellBack());
     }
 
     #[Test]
