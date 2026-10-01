@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Catalog\Exchange\Columns;
 
 use Illuminate\Support\Collection;
+use WebxUi\Catalog\Exchange\DescribesCell;
 use WebxUi\Catalog\Exchange\ExchangeColumn;
 use WebxUi\Catalog\Exchange\ImportContext;
 use WebxUi\Catalog\Exchange\RowError;
@@ -19,7 +20,7 @@ use WebxUi\Localization\Locales;
  * with a comma or with spaces between thousands, `yes`, `TRUE`. What the export writes is what the
  * import reads back as the same value, so that a file sent back untouched changes nothing.
  */
-final class ValueColumn implements ExchangeColumn
+final class ValueColumn implements DescribesCell, ExchangeColumn
 {
     public const TEXT = 'text';
 
@@ -60,6 +61,22 @@ final class ValueColumn implements ExchangeColumn
     public function localized(): bool
     {
         return $this->localized;
+    }
+
+    public function cellFormat(): string
+    {
+        return match ($this->kind) {
+            self::DECIMAL => 'A number: a point or a comma, spaces between thousands allowed, no currency.',
+            self::INTEGER => 'A whole number.',
+            self::BOOLEAN => '1/0, yes/no, true/false.'.($this->key === 'is_published' ? ' Publishing without a main category is refused.' : ''),
+            self::UNIT => 'A unit code from catalog://fields.',
+            default => match ($this->key) {
+                'slug' => 'Text; empty on a new product — made from the name.',
+                'description' => 'HTML as it is.',
+                'sku' => 'Text, unique among products, deleted ones included.',
+                default => 'Text as it is.',
+            },
+        };
     }
 
     public function export(Collection $products, ?string $locale): array

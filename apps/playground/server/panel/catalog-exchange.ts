@@ -437,7 +437,7 @@ export function registerExchange(
     admin_name: run.admin_name,
     file_url:
       run.direction === 'export' && run.status === 'done' && run.file !== null
-        ? `/api/cms/catalog/exchange/download/${run.id}?signature=playground`
+        ? `/api/cms/catalog/exchange/download/${run.id}/catalog-export-${run.id}.csv?signature=playground`
         : null,
     started_at: run.started_at,
     finished_at: run.finished_at,
@@ -1394,7 +1394,7 @@ export function handleExchangeFiles(
 
   const file =
     url.pathname.match(/^\/api\/cms\/catalog\/exchange\/runs\/(\d+)\/file$/) ??
-    url.pathname.match(/^\/api\/cms\/catalog\/exchange\/download\/(\d+)$/)
+    url.pathname.match(/^\/api\/cms\/catalog\/exchange\/download\/(\d+)\/[a-z0-9.-]+$/)
 
   if (file !== null) {
     const run = runs.find((one) => one.id === Number(file[1]))

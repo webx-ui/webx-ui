@@ -6,6 +6,7 @@ namespace WebxUi\CatalogProperties\Exchange;
 
 use Illuminate\Support\Collection;
 use WebxUi\Catalog\Exchange\Columns\ValueColumn;
+use WebxUi\Catalog\Exchange\DescribesCell;
 use WebxUi\Catalog\Exchange\EntryColumn;
 use WebxUi\Catalog\Exchange\ImportContext;
 use WebxUi\CatalogProperties\Catalog\PropertiesPart;
@@ -20,7 +21,7 @@ use WebxUi\CatalogProperties\Models\Property;
  * down a tree, `#id` where a name would mislead), a number without its unit, yes or no as
  * `is_published` reads it, and a text as it is — `code@de` for a translation.
  */
-final class PropertyExchangeColumn implements EntryColumn
+final class PropertyExchangeColumn implements DescribesCell, EntryColumn
 {
     public function __construct(
         private readonly Property $property,
@@ -56,6 +57,21 @@ final class PropertyExchangeColumn implements EntryColumn
     public function localized(): bool
     {
         return $this->property->isText();
+    }
+
+    public function cellFormat(): string
+    {
+        $property = $this->property;
+
+        return match ($property->type) {
+            Property::SELECT => 'A value by its name in the default language, case aside, else its slug, or #id'
+                .($property->is_tree ? '; a path of names through "/" down the tree' : '')
+                .($property->is_multiple ? '; several through ";"' : '')
+                .'. A missing value is created with create_missing.',
+            Property::NUMBER => 'A number without its unit: a point or a comma.',
+            Property::BOOL => '1/0, yes/no, true/false.',
+            default => 'Text as it is; '.$this->key().'@<locale> for a translation.',
+        }.' Only for products whose category has the property in its set.';
     }
 
     public function export(Collection $products, ?string $locale): array

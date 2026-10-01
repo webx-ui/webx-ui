@@ -144,6 +144,12 @@ class ExchangeRun extends Model
         ];
     }
 
+    /** What the finished export is called when it is downloaded. */
+    public function fileName(): string
+    {
+        return 'catalog-export-'.$this->id.'.'.pathinfo((string) $this->file, PATHINFO_EXTENSION);
+    }
+
     /**
      * The finished export, by a signed address that lives as long as the file: a link an agent
      * can hand on without a session behind it.
@@ -156,6 +162,6 @@ class ExchangeRun extends Model
 
         $until = $this->finished_at->copy()->addHours(max(1, (int) config('webx-catalog.exchange.keep_hours', 24)));
 
-        return $until->isPast() ? null : URL::temporarySignedRoute('webx.catalog.exchange.download', $until, ['run' => $this->id]);
+        return $until->isPast() ? null : URL::temporarySignedRoute('webx.catalog.exchange.download', $until, ['run' => $this->id, 'name' => $this->fileName()]);
     }
 }

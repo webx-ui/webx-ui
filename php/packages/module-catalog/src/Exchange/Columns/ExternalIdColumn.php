@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Catalog\Exchange\Columns;
 
 use Illuminate\Support\Collection;
+use WebxUi\Catalog\Exchange\DescribesCell;
 use WebxUi\Catalog\Exchange\ImportContext;
 use WebxUi\Catalog\Exchange\RowError;
 use WebxUi\Catalog\Exchange\WritesProduct;
@@ -15,7 +16,7 @@ use WebxUi\Catalog\Models\Product;
  * list. Not a field of the editor, so it is written beside the form's save rather than through
  * it; and not in the journal, which skips it anyway.
  */
-final class ExternalIdColumn implements WritesProduct
+final class ExternalIdColumn implements DescribesCell, WritesProduct
 {
     public function key(): string
     {
@@ -35,6 +36,11 @@ final class ExternalIdColumn implements WritesProduct
     public function localized(): bool
     {
         return false;
+    }
+
+    public function cellFormat(): string
+    {
+        return 'The id the product has in another system (accounting, a supplier). Text; one taken by another product is refused.';
     }
 
     public function export(Collection $products, ?string $locale): array

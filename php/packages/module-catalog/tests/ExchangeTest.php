@@ -238,6 +238,19 @@ final class ExchangeTest extends TestCase
     }
 
     #[Test]
+    public function a_name_repeated_down_the_tree_gets_a_numbered_slug_rather_than_an_error(): void
+    {
+        // Found by the reference-shop run: «Gaskets» under two branches, and every row of the second
+        // one refused because the flat slug was taken.
+        $run = $this->import("sku,name,category\nG-1,One,Engine/Gaskets\nG-2,Two,Hydraulics/Gaskets\nG-3,Three,Pumps/Gaskets\n", ['create_missing' => true]);
+
+        $this->assertSame([3, 0], [$run->created, $run->failed]);
+        $slugs = Category::query()->get()->filter(static fn (Category $one): bool => $one->getTranslation('name', 'en') === 'Gaskets')
+            ->map(static fn (Category $one): string => (string) $one->getTranslation('slug', 'en'))->sort()->values()->all();
+        $this->assertSame(['gaskets', 'gaskets-2', 'gaskets-3'], $slugs);
+    }
+
+    #[Test]
     public function a_path_two_sisters_make_ambiguous_is_refused_with_both_ids(): void
     {
         $one = $this->category('shoes');
@@ -514,7 +527,7 @@ final class ExchangeTest extends TestCase
 
         $this->assertNotNull($export['file_url']);
         $this->assertStringContainsString("sku,price\nB-1,12.50", $this->get($export['file_url'])->assertOk()->streamedContent());
-        $this->get($this->api('exchange/download/'.$export['id']))->assertForbidden();
+        $this->get($this->api('exchange/download/'.$export['id'].'/catalog-export-'.$export['id'].'.csv'))->assertForbidden();
 
         $viewer = $this->editor(['catalog.view']);
         $this->actingAs($viewer, 'cms')->postJson($this->api('exchange/import'), ['upload_id' => 'x', 'mapping' => []])->assertForbidden();
