@@ -1,0 +1,187 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "catalog.landing-form",
+  "model": "catalog.landing",
+  "root": [
+    {
+      "id": "tabs",
+      "type": "wx-tabs",
+      "children": [
+        {
+          "id": "main",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-landings::landing.tab-main",
+          "children": [
+            {
+              "id": "naming",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "name",
+                  "type": "wx-input",
+                  "name": "name",
+                  "label": "trans::webx-catalog-landings::landing.name",
+                  "help": "trans::webx-catalog-landings::landing.name-help",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 255
+                  }
+                },
+                {
+                  "id": "category",
+                  "type": "wx-catalog-category",
+                  "name": "category_id",
+                  "label": "trans::webx-catalog-landings::landing.category_id",
+                  "help": "trans::webx-catalog-landings::landing.category-help"
+                },
+                {
+                  "id": "set",
+                  "type": "wx-catalog-landing-set",
+                  "name": "filters",
+                  "label": "trans::webx-catalog-landings::landing.filters"
+                },
+                {
+                  "id": "slug",
+                  "type": "wx-catalog-landing-slug",
+                  "name": "slug",
+                  "label": "trans::webx-catalog-landings::landing.slug",
+                  "help": "trans::webx-catalog-landings::landing.slug-help",
+                  "localized": true
+                }
+              ]
+            },
+            {
+              "id": "display",
+              "type": "wx-card",
+              "label": "trans::webx-catalog-landings::landing.display",
+              "children": [
+                {
+                  "id": "sort",
+                  "type": "wx-catalog-landing-sort",
+                  "name": "sort",
+                  "label": "trans::webx-catalog-landings::landing.sort",
+                  "help": "trans::webx-catalog-landings::landing.sort-help"
+                },
+                {
+                  "id": "on-category",
+                  "type": "wx-switch",
+                  "name": "on_category",
+                  "label": "trans::webx-catalog-landings::landing.on_category",
+                  "help": "trans::webx-catalog-landings::landing.on-category-help"
+                },
+                {
+                  "id": "position",
+                  "type": "wx-input-number",
+                  "name": "position",
+                  "label": "trans::webx-catalog-landings::landing.position",
+                  "help": "trans::webx-catalog-landings::landing.position-help",
+                  "props": {
+                    "min": 0
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "texts-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-landings::landing.tab-texts",
+          "children": [
+            {
+              "id": "texts",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "h1",
+                  "type": "wx-input",
+                  "name": "h1",
+                  "label": "trans::webx-catalog-landings::landing.h1",
+                  "help": "trans::webx-catalog-landings::landing.h1-help",
+                  "localized": true,
+                  "props": {
+                    "maxlength": 255
+                  }
+                },
+                {
+                  "id": "text-above",
+                  "type": "wx-rich-text",
+                  "name": "text_above",
+                  "label": "trans::webx-catalog-landings::landing.text_above",
+                  "help": "trans::webx-catalog-landings::landing.text-help",
+                  "localized": true
+                },
+                {
+                  "id": "text-below",
+                  "type": "wx-rich-text",
+                  "name": "text_below",
+                  "label": "trans::webx-catalog-landings::landing.text_below",
+                  "localized": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "recommended-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-landings::landing.tab-recommended",
+          "children": [
+            {
+              "id": "recommended-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "recommended",
+                  "type": "wx-catalog-landing-products",
+                  "name": "recommended",
+                  "label": "trans::webx-catalog-landings::landing.recommended",
+                  "help": "trans::webx-catalog-landings::landing.recommended-help"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "seo-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-landings::landing.tab-seo",
+          "children": [
+            {
+              "id": "seo-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "seo",
+                  "type": "wx-seo",
+                  "name": "seo"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "history-tab",
+          "type": "wx-tab",
+          "label": "trans::webx-catalog-landings::landing.tab-history",
+          "children": [
+            {
+              "id": "history-card",
+              "type": "wx-card",
+              "children": [
+                {
+                  "id": "history",
+                  "type": "wx-history",
+                  "props": {
+                    "type": "catalog.landing",
+                    "title": ""
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
