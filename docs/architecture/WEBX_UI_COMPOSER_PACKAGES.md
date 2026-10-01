@@ -356,8 +356,8 @@ MCP: `seo_urls_list`, `seo_urls_get`, `seo_urls_set`, `seo_test_url`, `seo_redir
 поля `wx-seo` на сервере. Сопровождение сущностей (§17 спецификации) выпущено в v0.33.0 —
 контрактами, а не плагинами `SeoExtension`: `/sitemap.xml` индексом по типам реестра, hreflang из
 реестра, крошки (`HasBreadcrumbs`) и schema.org сущностей. Осталось отложенным (§16): лог 404 и
-`find_404s`; аудит (сущности без SEO, дубли title, длинные description); схлопывание цепочек
-редиректов; форма правила как экран.
+`find_404s`; схлопывание цепочек
+редиректов; форма правила как экран. Аудит сайта — отдельным модулем `module-audit` ниже.
 
 ### `webx-ui/module-media` — файловый менеджер
 
@@ -887,6 +887,17 @@ reference-shop (93 677 товаров, хомлаб): перестройка 44 
 Подключение: `WEBX_CATALOG_ENGINE=manticore`, `MANTICORE_HOST`, `MANTICORE_PORT`, обязательный
 `MANTICORE_TABLE_PREFIX`; первый раз — `php artisan webx:catalog:index --rebuild`.
 Права раздела — `search-index.view`, `search-index.manage`.
+
+### `webx-ui/module-audit` — аудит сайта
+
+Статус: спецификация написана 01.10.2026, код не начат — [спецификация](WEBX_UI_MODULE_AUDIT.md).
+Раздел «Аудит» в группе «Система»: обход своего сайта, снимок каждой страницы и около ста
+проверок без внешних сервисов — конфиг продакшена, зеркала и https, индексные файлы, слэши,
+soft 404, robots и карта, редиректы, title/description/H1, canonical, hreflang, JSON-LD,
+картинки, битые ссылки, заголовки безопасности, глубина и сироты. Модули приносят свои проверки
+и исправления контрактами `AuditCheck` / `AuditFix` (`module-seo` — нормализацию адресов и
+проверки по базе). npm-половина — `@webx-ui/module-audit`. Этапы A1–A5. Внешние поставщики —
+спутниками, первый — `module-audit-dataforseo`, опционально, если клиент платит за API.
 
 ---
 
