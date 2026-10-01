@@ -9,7 +9,7 @@ use LogicException;
 
 /**
  * The engines a site can choose between with `webx-catalog.engine`: the core's `sql`, and
- * `manticore` once `webx-ui/catalog-manticore` registers it.
+ * `manticore` once `webx-ui/module-catalog-manticore` registers it.
  */
 final class CatalogEngines
 {
