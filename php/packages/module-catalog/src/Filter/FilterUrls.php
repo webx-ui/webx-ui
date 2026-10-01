@@ -108,6 +108,9 @@ final class FilterUrls
      * Whether this state's page is open to the index (§8.1 of the architecture, decision 18):
      * exactly one value of exactly one facet, a facet that allows it — on this page, if it says
      * where ({@see ContextualIndexing}) — a list that is not empty, and not a search. Everything else is `noindex, follow`, and its links carry `nofollow`.
+     *
+     * A state a rewriter took whole and called indexable is open whatever its size ({@see RewrittenUrl}).
+     * The rewriters have been prepared by the {@see paths()} call that built the same links.
      */
     public function indexable(FilterContext $context, FilterState $state, ?CatalogResult $result = null): bool
     {
@@ -117,6 +120,10 @@ final class FilterUrls
 
         if ($state->isEmpty()) {
             return true;
+        }
+
+        if ($this->rewrittenWhole($context, $state)) {
+            return $result === null || $result->total > 0;
         }
 
         if ($state->size() !== 1 || count($state->all()) !== 1) {
@@ -136,6 +143,20 @@ final class FilterUrls
         }
 
         return $result === null || $result->total > 0;
+    }
+
+    /** Whether the first rewriter to answer took the whole state and opened it. */
+    private function rewrittenWhole(FilterContext $context, FilterState $state): bool
+    {
+        foreach ($this->rewriters as $rewriter) {
+            $rewritten = $rewriter->rewrite($context, $state);
+
+            if ($rewritten !== null) {
+                return $rewritten->indexable && $rewritten->rest->isEmpty();
+            }
+        }
+
+        return false;
     }
 
     /** The language prefix, the path, percent-encoded, and the query every link keeps. */

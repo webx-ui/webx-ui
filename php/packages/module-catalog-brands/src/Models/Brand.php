@@ -144,6 +144,13 @@ class Brand extends Model implements Category, ListingSubject, Visible
                 $brand->slugsBefore = null;
             }
         });
+
+        // Gone as a value of the filter, the way a deleted property value is: whoever keeps the
+        // brand by id — a landing's set — hears it from the one event the aliases fire.
+        static::deleted(static function (self $brand): void {
+            Container::getInstance()->make(FilterAliases::class)
+                ->retarget(BrandFacet::KEY, FilterAliases::VALUE, (string) $brand->getKey(), null);
+        });
     }
 
     /** `brands`, as the registry spells it; the list's address and the start of every brand's. */
