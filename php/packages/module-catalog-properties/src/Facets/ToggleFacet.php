@@ -8,6 +8,7 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\FacetValue;
 use WebxUi\Catalog\Facets\IndexField;
+use WebxUi\CatalogProperties\Models\Property;
 
 /**
  * A yes/no as a toggle: `wifi_yes`, the slug of «yes» the property's own in each language. Only
@@ -59,6 +60,24 @@ final class ToggleFacet extends PropertyFacet
         $yes = $this->property->toggleSlug($locale);
 
         return in_array($yes, $slugs, true) ? [$yes => self::ON] : [];
+    }
+
+    /** `pb` holds the ids of the properties that say yes: «yes» here is this property's id. */
+    public function indexValues(FacetValue $value): FacetValue
+    {
+        return $value->isEmpty() ? $value : FacetValue::of([(string) $this->property->id]);
+    }
+
+    public function splitIndexCounts(array $keys, array $counts): array
+    {
+        $split = [];
+
+        foreach ($keys as $key) {
+            $id = Property::idOfFacet($key);
+            $split[$key] = $id !== null && isset($counts[$id]) ? [self::ON => $counts[$id]] : [];
+        }
+
+        return $split;
     }
 
     protected function narrow(QueryBuilder $rows, FacetValue $value): void

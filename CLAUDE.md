@@ -134,13 +134,13 @@ docs/
 Каждая ловушка — симптом, причина, как лечится и как проверить. Прочитать нужный файл **до**
 работы в этой области: почти каждая выглядит как баг в твоём коде, а он ни при чём.
 
-| Файл                                       | Когда читать                                                                                                   |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| `docs/pitfalls/layout-and-browser.md`      | правишь CSS или раскладку, проверяешь что-то в панели браузера, жесты, фреймы, таблицы                         |
-| `docs/pitfalls/vue-and-tests.md`           | пропсы и обёртки, фрагменты, Reka-слои, Tiptap/CodeMirror/датапикер, vitest и jsdom, экраны панели             |
-| `docs/pitfalls/laravel-and-php.md`         | модели, nested-set, миграции, Blade, middleware, типы полей, Testbench, PHPStan, `webx:setup`, Passport и MCP  |
-| `docs/pitfalls/packages-and-demo-sites.md` | линкуешь `webx-cms.local` с монорепой, worktree, Git Bash и OSPanel, гейт и smoke локально, Docker, плейграунд |
-| `docs/pitfalls/release-and-ci.md`          | очередь мержа, публикация в npm и Packagist, первая версия нового пакета, демо после релиза                    |
+| Файл                                       | Когда читать                                                                                                            |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| `docs/pitfalls/layout-and-browser.md`      | правишь CSS или раскладку, проверяешь что-то в панели браузера, жесты, фреймы, таблицы                                  |
+| `docs/pitfalls/vue-and-tests.md`           | пропсы и обёртки, фрагменты, Reka-слои, Tiptap/CodeMirror/датапикер, vitest и jsdom, экраны панели                      |
+| `docs/pitfalls/laravel-and-php.md`         | модели, nested-set, миграции, Blade, middleware, типы полей, Testbench, PHPStan, `webx:setup`, Passport, MCP, Manticore |
+| `docs/pitfalls/packages-and-demo-sites.md` | линкуешь `webx-cms.local` с монорепой, worktree, Git Bash и OSPanel, гейт и smoke локально, Docker, плейграунд          |
+| `docs/pitfalls/release-and-ci.md`          | очередь мержа, публикация в npm и Packagist, первая версия нового пакета, демо после релиза                             |
 
 Новую ловушку, на которую ушло время, дописывать в файл её темы тем же коммитом: симптом первым,
 без дат и номеров PR. Когда код починен так, что в яму больше не попасть, — удалить пункт или

@@ -107,12 +107,57 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
+  # The catalogue's engine tests against a real Manticore (decision 26 of the Manticore spec): the
+  # same scenarios as the database engine, with `--fail-on-skipped` so that a server that never
+  # came up fails here instead of skipping quietly. EXTRA brings the lemmatizer dictionaries.
+  manticore:
+    name: PHP on Manticore
+    if: github.head_ref != 'changeset-release/main'
+    runs-on: ubuntu-latest
+    services:
+      manticore:
+        image: manticoresearch/manticore:29.0.2
+        env:
+          EXTRA: 1
+        ports:
+          - 9308:9308
+    defaults:
+      run:
+        working-directory: php
+    steps:
+      - uses: actions/checkout@v5
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, sqlite3
+          coverage: none
+          tools: composer:v2
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer/files
+          key: composer-8.4-${{ hashFiles('php/packages/*/composer.json', 'php/composer.json') }}
+          restore-keys: composer-8.4-
+      - run: composer install --no-interaction --no-progress
+      - name: Wait for Manticore
+        run: |
+          for attempt in $(seq 1 90); do
+            curl -sf 'http://127.0.0.1:9308/sql?mode=raw' --data-urlencode 'query=SHOW VERSION' && exit 0
+            sleep 2
+          done
+          echo '::error::Manticore did not come up.' && exit 1
+      - name: Test
+        env:
+          MANTICORE_TEST_HOST: 127.0.0.1
+          MANTICORE_TEST_PORT: 9308
+        run: vendor/bin/phpunit --fail-on-skipped packages/module-catalog-manticore/tests
+
   # The ruleset requires a check by this name, so it stays the one name the rest report into.
   # `always()` is the point: without it a failed job makes this one skipped, and GitHub counts
   # a skipped required check as passed. Skipped jobs are fine — that is the version PR's path.
   verify:
     name: Lint, typecheck, test, build
-    needs: [lint, typecheck, test, docs, release-pr]
+    needs: [lint, typecheck, test, docs, manticore, release-pr]
     if: always()
     runs-on: ubuntu-latest
     steps:

@@ -872,6 +872,18 @@ MCP: `catalog_labels_*`, `catalog_stock_*`, `catalog_brands_*` (по пять: `
 
 Права — каталога: `catalog.view`, `catalog.manage`.
 
+### `webx-ui/module-catalog-manticore` — движок Manticore
+
+Статус: M1 из четырёх — [спецификация](WEBX_UI_CATALOG_MANTICORE.md) (§5, §7): php-ядро пакета —
+движок `manticore` (таблица на язык с морфологией всех языков сайта, фасеты и счётчики одним
+заходом, перестройка подменой `{table}_next`, откат на `SqlEngine` или 503), проверки doctor,
+общий набор тестов на оба движка и CI-джоба с Manticore. Впереди — поиск (M2), раздел без пункта
+меню «Система → Поисковый индекс» и MCP (M3), демо и приёмка на alfatech (M4). Не выпущен: до
+первого релиза — зеркало и Packagist руками (`WEBX_UI_PHP_RELEASE.md`).
+
+Подключение: `WEBX_CATALOG_ENGINE=manticore`, `MANTICORE_HOST`, `MANTICORE_PORT`, обязательный
+`MANTICORE_TABLE_PREFIX`; первый раз — `php artisan webx:catalog:index --rebuild`.
+
 ---
 
 ## Упомянуты ранее, детализировать позже
