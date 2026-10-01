@@ -18,7 +18,11 @@ use WebxUi\Catalog\Models\Product;
  */
 interface StorefrontPart
 {
-    /** `catalog.card.badges`, `catalog.card.meta`, `catalog.product.aside`, `catalog.product.tabs`, `catalog.product.unavailable`. */
+    /**
+     * `catalog.card.badges`, `catalog.card.meta`, `catalog.product.aside`, `catalog.product.tabs`,
+     * `catalog.product.unavailable`; and on a page of the list, `catalog.listing.top` over the grid
+     * and `catalog.listing.bottom` under the pages, both given the `CatalogPage` as `page`.
+     */
     public function point(): string;
 
     /** The Blade view printed in the point, with the point's data and whatever {@see prepare()} gave. */

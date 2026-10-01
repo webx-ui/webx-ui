@@ -23,15 +23,22 @@ use WebxUi\Seo\Contracts\HasBreadcrumbs;
  * whether it is open to the index, what it is called when a filter is chosen, where its
  * canonical points. A category is the subject of its page only when nothing is chosen, and then
  * its own SEO card speaks for it.
+ *
+ * `$base` is what the page stands on before the reader chooses anything: nothing on a category,
+ * the set of a landing on a landing (§10.1 of the landings spec). "Nothing chosen" means "nothing
+ * over the base".
  */
 final class CatalogPage implements HasBreadcrumbs
 {
+    public readonly FilterState $base;
+
     /**
      * @param  LengthAwarePaginator<int, Product>  $products
      * @param  list<FilterGroup>  $groups
      * @param  list<array{key: string, label: string, url: string, selected: bool}>  $sorts
      * @param  array<int, Verdict>  $verdicts
      * @param  string  $path  the one spelling of this page's address, as the registry writes it
+     * @param  FilterState|null  $base  null is nothing
      */
     public function __construct(
         public readonly string $path,
@@ -49,7 +56,10 @@ final class CatalogPage implements HasBreadcrumbs
         public readonly string $heading,
         public readonly ?string $filterTitle = null,
         public readonly ?string $search = null,
-    ) {}
+        ?FilterState $base = null,
+    ) {
+        $this->base = $base ?? FilterState::empty();
+    }
 
     /**
      * The groups that stand open, in order.
@@ -83,17 +93,24 @@ final class CatalogPage implements HasBreadcrumbs
     }
 
     /**
-     * Whoever speaks for the plain page with their own SEO card: the category, or the subject.
+     * Whoever speaks for the plain page with their own SEO card and texts: the subject — a brand,
+     * a landing — or else the category. A landing stands on a category and still speaks for itself.
      */
     public function owner(): Category|ListingSubject|null
     {
-        return $this->context->category ?? $this->context->subject;
+        return $this->context->subject ?? $this->context->category;
     }
 
-    /** Nothing chosen, the default order, the first page: the page the category's card is about. */
+    /** Nothing chosen over the base, the default order, the first page: the page the owner's card is about. */
     public function isPlain(): bool
     {
-        return $this->state->isEmpty() && ! $this->isSorted() && $this->products->currentPage() === 1;
+        return ! $this->isFiltered() && ! $this->isSorted() && $this->products->currentPage() === 1;
+    }
+
+    /** The reader has chosen something over the base, or taken some of it off. */
+    public function isFiltered(): bool
+    {
+        return ! $this->state->equals($this->base);
     }
 
     public function isSorted(): bool

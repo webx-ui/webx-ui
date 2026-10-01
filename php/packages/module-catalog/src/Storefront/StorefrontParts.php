@@ -27,6 +27,8 @@ final class StorefrontParts
         'catalog.product.aside',
         'catalog.product.tabs',
         'catalog.product.unavailable',
+        'catalog.listing.top',
+        'catalog.listing.bottom',
     ];
 
     /** @var array<string, list<StorefrontPart>> */
