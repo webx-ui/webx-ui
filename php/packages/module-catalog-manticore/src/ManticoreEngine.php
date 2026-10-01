@@ -41,6 +41,11 @@ use WebxUi\Localization\Locales;
  *
  * A rebuild fills `{table}_next` beside the live tables and swaps them in at the end
  * (decision 8); a stale schema is only reported (decision 9) — {@see status()}.
+ *
+ * A search is the words and their beginnings, and a code by any part of it; the product whose
+ * code the search is comes first (decisions 19–22). When nothing is found, a second pass: the
+ * search as typed with another keyboard layout of the site's languages, then each word as
+ * `CALL QSUGGEST` spells it — and the answer says what it was for (decisions 15–17).
  */
 final class ManticoreEngine implements RebuildsAside
 {
@@ -49,6 +54,9 @@ final class ManticoreEngine implements RebuildsAside
     private const STALE = 'stale';
 
     private const READY = 'ready';
+
+    /** The alias of «the search is this product's code» in a select list. */
+    private const EXACT = 'is_exact';
 
     /** @var array<string, TableSchema> locale → the schema its table should have */
     private array $schemas = [];
@@ -82,7 +90,7 @@ final class ManticoreEngine implements RebuildsAside
 
         if (! $this->server->down()) {
             try {
-                return $this->ask($query);
+                return $this->answer($query);
             } catch (ManticoreUnavailable) {
                 // Remembered by the server; the fallback below.
             }
@@ -239,11 +247,98 @@ final class ManticoreEngine implements RebuildsAside
     }
 
     /**
+     * The answer to the question, or — when a search found nothing and was not asked as typed —
+     * to the first correction of it that finds something (decision 16). A correction that finds
+     * nothing either leaves the empty answer as it was: nothing is shown for words nobody typed.
+     */
+    private function answer(CatalogQuery $query): CatalogResult
+    {
+        $result = $this->ask($query);
+        $term = trim((string) $query->search);
+
+        if ($result->total > 0 || $term === '' || $query->asTyped) {
+            return $result;
+        }
+
+        try {
+            $corrected = $this->correction($query, $term);
+        } catch (ManticoreError) {
+            // A table of an older schema has no infix to suggest from: as typed, until rebuilt.
+            return $result;
+        }
+
+        if ($corrected === null) {
+            return $result;
+        }
+
+        $found = $this->ask($query->withSearch($corrected));
+
+        return $found->total === 0
+            ? $result
+            : new CatalogResult($found->ids, $found->total, $found->facets, $found->exact, $corrected);
+    }
+
+    /**
+     * Another spelling of the search that finds something: first the other keyboard layouts,
+     * side by side, the first that finds a product winning; then each word as the table's
+     * dictionary would spell it. Null when there is none.
+     */
+    private function correction(CatalogQuery $query, string $term): ?string
+    {
+        $locale = $this->localeOf($query);
+        $schema = $this->schema($locale);
+        $table = $this->server->table($locale);
+        $layouts = new KeyboardLayouts((array) $this->config->get('webx-catalog-manticore.layouts', []));
+        $spellings = $layouts->alternatives($term, $this->locales->codes(), $locale);
+
+        if ($spellings !== []) {
+            $answers = $this->server->sqlMany(array_map(
+                fn (string $spelling): string => $this->select($table, $query->withSearch($spelling), $schema).' LIMIT 1',
+                $spellings,
+            ));
+
+            foreach ($spellings as $index => $spelling) {
+                if (self::rows($answers[$index][0] ?? []) !== []) {
+                    return $spelling;
+                }
+            }
+        }
+
+        $words = preg_split('/\s+/u', $term, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $asked = [];
+
+        foreach ($words as $index => $word) {
+            // A code or a number is not a misspelt word.
+            if (mb_strlen($word) >= 2 && preg_match('/^\p{L}+$/u', $word) === 1) {
+                $asked[$index] = 'CALL QSUGGEST('.Manticore::quote(mb_strtolower($word)).', '.Manticore::quote($table).', 1 AS limit)';
+            }
+        }
+
+        if ($asked === []) {
+            return null;
+        }
+
+        $answers = array_combine(array_keys($asked), $this->server->sqlMany(array_values($asked)));
+
+        foreach ($answers as $index => $sets) {
+            $best = self::rows($sets[0] ?? [])[0]['suggest'] ?? null;
+
+            if (is_string($best) && $best !== '') {
+                $words[$index] = $best;
+            }
+        }
+
+        $corrected = implode(' ', $words);
+
+        return mb_strtolower($corrected) === mb_strtolower(implode(' ', preg_split('/\s+/u', $term, -1, PREG_SPLIT_NO_EMPTY) ?: [])) ? null : $corrected;
+    }
+
+    /**
      * The page, the total and the counts, in one round trip of statements side by side.
      */
     private function ask(CatalogQuery $query): CatalogResult
     {
-        $locale = in_array($query->locale, $this->locales->codes(), true) ? $query->locale : $this->locales->defaultCode();
+        $locale = $this->localeOf($query);
         $schema = $this->schema($locale);
         $table = $this->server->table($locale);
         $plan = $this->plan($query, $schema);
@@ -262,6 +357,10 @@ final class ManticoreEngine implements RebuildsAside
         }
 
         $statements = ['main' => $main];
+
+        if ($this->exactCode($query, $schema) !== null) {
+            $statements['exact'] = $this->select($table, $query, $schema).' AND '.self::EXACT.' = 1 LIMIT 2';
+        }
 
         if ($plan['ranges'] !== []) {
             $statements['ranges'] = $this->ends($table, $query, $schema, $plan['ranges']);
@@ -285,9 +384,10 @@ final class ManticoreEngine implements RebuildsAside
         $sets = $answers['main'];
         $ids = array_map(static fn (array $row): int => (int) $row['id'], self::rows($sets[0] ?? []));
         $total = (int) (self::rows($sets[1] ?? [])[0]['count(*)'] ?? 0);
+        $exact = array_map(static fn (array $row): int => (int) $row['id'], self::rows($answers['exact'][0] ?? []));
 
         if ($query->count === []) {
-            return new CatalogResult($ids, $total);
+            return new CatalogResult($ids, $total, exact: $exact);
         }
 
         $byColumn = [];
@@ -328,7 +428,7 @@ final class ManticoreEngine implements RebuildsAside
             $placing = $this->placement->place($query, DB::table('catalog_products')->select('id')->whereIn('id', $found === [] ? [0] : $found));
         }
 
-        return new CatalogResult($ids, $total, FacetPlacement::arrange($query, $counted, $placing));
+        return new CatalogResult($ids, $total, FacetPlacement::arrange($query, $counted, $placing), $exact);
     }
 
     /**
@@ -521,7 +621,13 @@ final class ManticoreEngine implements RebuildsAside
         $term = trim((string) $query->search);
 
         if ($term !== '') {
-            $where[] = 'MATCH('.Manticore::quote(self::escape($term)).')';
+            $match = $this->match($term, $schema);
+            $where[] = $match === null ? 'id = 0' : 'MATCH('.Manticore::quote($match).')';
+            $code = $this->exactCode($query, $schema);
+
+            if ($code !== null) {
+                $columns[] = 'IN('.TableSchema::CODE_KEYS.', '.Manticore::quote($code).') AS '.self::EXACT;
+            }
         }
 
         if ($query->onlyTrashed) {
@@ -665,9 +771,13 @@ final class ManticoreEngine implements RebuildsAside
         return $schema->attribute($field->name);
     }
 
-    /** The sort's steps in this table's columns; a missing price is last both ways, and the id ends it. */
+    /**
+     * The sort's steps in this table's columns; a missing price is last both ways, and the id ends
+     * it. The product whose code the search is comes before them all (decision 20).
+     */
     private function order(CatalogQuery $query, TableSchema $schema, string $locale): string
     {
+        $first = $this->exactCode($query, $schema) === null ? [] : [self::EXACT.' DESC'];
         $steps = [];
 
         foreach ($this->sorts->resolve($query->sort)->indexOrder($locale) as $name => $direction) {
@@ -694,7 +804,55 @@ final class ManticoreEngine implements RebuildsAside
         }
 
         // Manticore sorts by five keys at most; the id is the one that makes pages stable.
-        return implode(', ', [...array_slice($steps, 0, 4), 'id DESC']);
+        return implode(', ', [...$first, ...array_slice($steps, 0, 4 - count($first)), 'id DESC']);
+    }
+
+    /**
+     * The search in the query language (decisions 7, 19, 22): every word as written and, from
+     * `min_prefix_len` letters on, as the beginning of a longer one — `чехол | чехол*`; and the
+     * whole search as letters and digits, by any part of a code — `@codes_flat *at1234*`.
+     * Whatever the reader typed is a word, never an operator. Null when there is no word in it.
+     */
+    private function match(string $term, TableSchema $schema): ?string
+    {
+        $words = [];
+
+        foreach (preg_split('/\s+/u', $term, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $word) {
+            if (preg_match('/[\p{L}\p{N}]/u', $word) !== 1) {
+                continue;
+            }
+
+            $escaped = self::escape($word);
+            $words[] = mb_strlen($word) >= max(1, $schema->prefixLength()) && preg_match('/^[\p{L}\p{N}]+$/u', $word) === 1
+                ? '('.$escaped.' | '.$escaped.'*)'
+                : $escaped;
+        }
+
+        if ($words === []) {
+            return null;
+        }
+
+        $match = implode(' ', $words);
+        $flat = TableSchema::flat($term);
+
+        if ($schema->hasCodes() && $schema->infixLength() > 0 && mb_strlen($flat) >= $schema->infixLength()) {
+            $match = '('.$match.') | (@'.TableSchema::CODES_FLAT.' *'.$flat.'*)';
+        }
+
+        return $match;
+    }
+
+    /** The search as a whole code, flat — what a product's code must be to come first; or null. */
+    private function exactCode(CatalogQuery $query, TableSchema $schema): ?string
+    {
+        $flat = TableSchema::flat(trim((string) $query->search));
+
+        return $flat === '' || ! $schema->hasCodes() ? null : $flat;
+    }
+
+    private function localeOf(CatalogQuery $query): string
+    {
+        return in_array($query->locale, $this->locales->codes(), true) ? $query->locale : $this->locales->defaultCode();
     }
 
     private function weights(TableSchema $schema): string
@@ -707,8 +865,9 @@ final class ManticoreEngine implements RebuildsAside
             $weights[] = TableSchema::OTHER.'='.$other;
         }
 
-        // Every word also as the beginning of a word (decision 7): `protec` finds «protective».
-        return ', expand_keywords=1'.($weights === [] ? '' : ', field_weights=('.implode(', ', $weights).')');
+        // Not `expand_keywords`: with the table's infix it would look for `*word*` in the names too,
+        // and only a code is searched by a part (decision 22) — {@see match()} writes the stars.
+        return $weights === [] ? '' : ', field_weights=('.implode(', ', $weights).')';
     }
 
     /**
@@ -738,6 +897,7 @@ final class ManticoreEngine implements RebuildsAside
             $this->locales->defaultCode(),
             array_filter((array) $this->config->get('webx-catalog-manticore.morphology', []), 'is_string'),
             max(0, (int) $this->config->get('webx-catalog-manticore.min_prefix_len', 3)),
+            max(0, (int) $this->config->get('webx-catalog-manticore.min_infix_len', 3)),
         );
     }
 

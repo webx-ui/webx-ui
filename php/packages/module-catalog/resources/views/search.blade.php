@@ -24,6 +24,10 @@
             </form>
         </header>
 
+        @if ($page?->result->corrected !== null)
+            @include('webx-catalog::search-corrected', ['page' => $page])
+        @endif
+
         @if ($page !== null)
             <div class="webx-catalog-listing">
                 @include('webx-catalog::filter', ['page' => $page])

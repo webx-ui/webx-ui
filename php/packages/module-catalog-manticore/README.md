@@ -50,6 +50,20 @@ The morphology of a table is that of every language of the site, its own first
 (`webx-catalog-manticore.morphology`); a language not named there is indexed without morphology.
 The beginning of a word is always searched.
 
+## The search
+
+A search is its words and their beginnings, in any language of the site. The codes of a product —
+the article number, the barcode, the external id — are searched as written and by any part of their
+letters and digits: `at1234`, `34/5` and `AT-1234/56` all find `AT-1234/56`. Whatever the reader
+typed is a character, never an operator of the query language. The product whose code the search
+is comes first, and when it is the only one on the site the storefront goes straight to its card.
+
+A search that finds nothing gets a second pass: as typed with another keyboard layout of the site's
+languages (`xt[jk` is `чехол`; `webx-catalog-manticore.layouts`), then each word as the index's
+dictionary spells it (`CALL QSUGGEST`). The page says «Showing results for …» with a link to the
+words as typed (`?typed=1`); the lines are `webx-catalog::storefront.search-corrected` and
+`search-instead`, the view `webx-catalog::search-corrected`. The panel's list does the same.
+
 ## Rebuilding
 
 `webx:catalog:index --rebuild` fills `{table}_next` beside each live table and swaps it in when it
@@ -62,7 +76,9 @@ its data. `webx:doctor` reports a table that is out of date; when to rebuild is 
 
 The failure is remembered for `down_for` seconds (30), so nobody waits for it twice. Meanwhile the
 panel reads the database, and so does a storefront whose catalogue is within
-`webx-catalog.sql_engine_limit`; a larger catalogue answers 503 with `Retry-After`. Saving a product
+`webx-catalog.sql_engine_limit`; a larger catalogue answers 503 with `Retry-After`, on the site's
+own layout — header, menu and footer in place (the view `webx-catalog-manticore::unavailable`,
+published with `--tag=webx-catalog-manticore-views`). Saving a product
 never fails because of Manticore: the product waits in the queue.
 
 ## Config
@@ -71,8 +87,8 @@ never fails because of Manticore: the product waits in the queue.
 php artisan vendor:publish --tag=webx-catalog-manticore-config
 ```
 
-`connect_timeout`, `timeout`, `down_for`, `morphology`, `min_prefix_len`, `weights`,
-`facet_values`, `relevance_sample` — see the comments in the file.
+`connect_timeout`, `timeout`, `down_for`, `morphology`, `min_prefix_len`, `min_infix_len`,
+`weights`, `layouts`, `facet_values`, `relevance_sample` — see the comments in the file.
 
 ## License
 

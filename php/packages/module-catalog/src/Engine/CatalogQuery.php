@@ -22,6 +22,9 @@ use WebxUi\Catalog\Sorts\Sorts;
  * `brand`. The core knows nothing about brands; a facet that behaves differently on a brand's
  * page reads the word.
  *
+ * `asTyped` keeps an engine that can correct a search from doing it: nothing found for the words
+ * typed is the answer, not a reason to search for others (decision 16 of the Manticore spec).
+ *
  * `filter` is the page the question comes from, for a facet source that decides which of its
  * facets belong there ({@see RelevantFacets}); without it the engine makes one from the context.
  */
@@ -41,6 +44,7 @@ final class CatalogQuery
      * @param  bool  $onlyTrashed  «Deleted»: only the products in the bin
      * @param  string|null  $state  the panel's own filters (§7.1), which the site does not have
      * @param  FilterContext|null  $filter  the page asking, for the sources that pick their facets
+     * @param  bool  $asTyped  the words as typed, even when they find nothing
      */
     public function __construct(
         public readonly string $locale,
@@ -57,5 +61,28 @@ final class CatalogQuery
         public readonly bool $onlyTrashed = false,
         public readonly ?string $state = null,
         public readonly ?FilterContext $filter = null,
+        public readonly bool $asTyped = false,
     ) {}
+
+    /** The same question for other words: an engine trying a correction. */
+    public function withSearch(string $search): self
+    {
+        return new self(
+            locale: $this->locale,
+            context: $this->context,
+            contextId: $this->contextId,
+            scope: $this->scope,
+            facets: $this->facets,
+            count: $this->count,
+            search: $search,
+            sort: $this->sort,
+            page: $this->page,
+            perPage: $this->perPage,
+            withUnpublished: $this->withUnpublished,
+            onlyTrashed: $this->onlyTrashed,
+            state: $this->state,
+            filter: $this->filter,
+            asTyped: true,
+        );
+    }
 }

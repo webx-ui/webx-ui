@@ -167,6 +167,24 @@ final class StorefrontTest extends TestCase
     }
 
     #[Test]
+    public function a_search_that_is_the_code_of_one_product_goes_to_its_card(): void
+    {
+        $plug = $this->product('Spark plug', $this->laptops, ['sku' => 'AT-1234/56', 'slug' => 'spark-plug']);
+        $this->product('Adapter for AT-1234/56', $this->laptops);
+
+        $this->get('/catalog/search?q='.urlencode('AT-1234/56'))->assertStatus(302)->assertRedirect($plug->url());
+
+        // Two products with one barcode: the list, not a guess.
+        $this->product('Coil', $this->laptops, ['barcode' => '4601234567890']);
+        $this->product('Coil, the other', $this->laptops, ['barcode' => '4601234567890']);
+        $this->get('/catalog/search?q=4601234567890')->assertOk()->assertSee('Coil, the other');
+
+        // Not on the site: no card to go to.
+        $this->product('Hidden plug', $this->laptops, ['sku' => 'NGK-1', 'is_published' => false]);
+        $this->get('/catalog/search?q=NGK-1')->assertOk()->assertDontSee('Hidden plug');
+    }
+
+    #[Test]
     public function the_root_of_the_catalogue_is_off_by_default(): void
     {
         $this->get('/catalog')->assertNotFound();

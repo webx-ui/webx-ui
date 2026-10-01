@@ -95,6 +95,8 @@ export interface ProductsPage extends Paginated<ProductRow> {
   counts: { no_category: number }
   facets?: Record<string, FacetCount>
   columns?: ProductColumnInfo[]
+  /** The words the list is for when the ones typed found nothing and the engine corrected them. */
+  corrected?: string | null
 }
 
 /** A key of the `Sorts` registry: `default`, `new`, `popular`, `price_asc` — whatever it holds. */
@@ -112,6 +114,8 @@ export type FacetChoice =
 
 export interface ProductQuery {
   q?: string
+  /** The search as typed, without the engine's correction of words that find nothing. */
+  typed?: boolean
   state?: 'published' | 'unpublished' | 'no-category' | ''
   sort?: ProductSort | null
   page?: number

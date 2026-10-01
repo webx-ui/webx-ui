@@ -23,6 +23,14 @@ use WebxUi\Catalog\Facets\IndexField;
  *
  * The morphology is that of every language of the site, the table's own first: among languages of
  * one alphabet the first processor wins, and the German table must read German.
+ *
+ * The codes of a product — every field marked {@see IndexField::$code}: the article number, the
+ * barcode, the external id — are searched twice over (decisions 19–22): as written, split where
+ * they split (`codes`), and as their letters and digits alone (`codes_flat`), which the query
+ * reads by any part of it, `*1234*`. `code_keys` holds the same flat codes whole, for the one
+ * whose code the search is. The infix that the part of a code needs is the whole table's — Manticore
+ * has no infix per field in a real-time table, and `CALL QSUGGEST` needs it too — but only a code
+ * is ever asked for by a part: a name is asked for by its words and their beginnings.
  */
 final class TableSchema
 {
@@ -30,6 +38,15 @@ final class TableSchema
 
     /** Text columns that are also attributes, so that a list can be sorted by them. */
     public const SORTABLE = ['name'];
+
+    /** The codes as written, split where they split: `AT-1234/56` is at, 1234, 56. */
+    public const CODES = 'codes';
+
+    /** The codes as letters and digits alone, asked for by any part: `at123456`. */
+    public const CODES_FLAT = 'codes_flat';
+
+    /** The flat codes whole, a JSON list: whose code the search is. */
+    public const CODE_KEYS = 'code_keys';
 
     private const NAME = '/^[a-z_][a-z0-9_]*$/';
 
@@ -45,6 +62,9 @@ final class TableSchema
     /** @var list<string> */
     private array $texts = [];
 
+    /** @var list<string> the fields that are codes of the product */
+    private array $codes = [];
+
     /**
      * @param  list<IndexField>  $fields  as the documents' schema lists them: one per language
      * @param  list<string>  $locales  the site's languages
@@ -57,6 +77,7 @@ final class TableSchema
         private readonly string $main,
         private readonly array $morphology = [],
         private readonly int $minPrefixLen = 3,
+        private readonly int $minInfixLen = 3,
     ) {
         $named = [];
 
@@ -87,6 +108,10 @@ final class TableSchema
                 continue;
             }
 
+            if ($field->code && ! $field->multi) {
+                $this->codes[] = $field->name;
+            }
+
             $this->attributes[$field->name] = $field;
             $this->column($field->name, $this->attributeType($field));
 
@@ -98,6 +123,21 @@ final class TableSchema
         if ($this->localized !== [] && count($this->locales) > 1) {
             $this->column(self::OTHER, 'text indexed');
         }
+
+        if ($this->codes !== []) {
+            $this->column(self::CODES, 'text indexed');
+            $this->column(self::CODES_FLAT, 'text indexed');
+            $this->column(self::CODE_KEYS, 'json');
+        }
+    }
+
+    /**
+     * A code as its letters and digits alone, in lower case: `AT-1234/56` is `at123456` — and so
+     * is the search typed for it, whichever way it was typed.
+     */
+    public static function flat(string $code): string
+    {
+        return (string) preg_replace('/[^\p{L}\p{N}]+/u', '', mb_strtolower($code));
     }
 
     /** @return array<string, array{create: string, type: string, props: string}> */
@@ -122,6 +162,10 @@ final class TableSchema
         }
 
         $settings = ['min_prefix_len' => (string) $this->minPrefixLen];
+
+        if ($this->minInfixLen > 0) {
+            $settings['min_infix_len'] = (string) $this->minInfixLen;
+        }
 
         if ($processors !== []) {
             $settings['morphology'] = implode(', ', $processors);
@@ -228,6 +272,25 @@ final class TableSchema
             $row[$name] = self::text($document[$name] ?? null);
         }
 
+        if ($this->codes !== []) {
+            $written = [];
+            $flat = [];
+
+            foreach ($this->codes as $name) {
+                $code = self::text($document[$name] ?? null);
+
+                if ($code !== '') {
+                    $written[] = $code;
+                    $flat[] = self::flat($code);
+                }
+            }
+
+            $flat = array_values(array_unique(array_filter($flat, static fn (string $one): bool => $one !== '')));
+            $row[self::CODES] = implode(' ', $written);
+            $row[self::CODES_FLAT] = implode(' ', $flat);
+            $row[self::CODE_KEYS] = $flat;
+        }
+
         foreach ($this->attributes as $name => $field) {
             $value = $document[$name] ?? null;
             $row[$name] = $this->attributeValue($field, $value);
@@ -273,7 +336,25 @@ final class TableSchema
     /** @return list<string> the text columns of the table's own language and the rest */
     public function textColumns(): array
     {
-        return [...$this->localized, ...$this->texts];
+        return [...$this->localized, ...$this->texts, ...($this->codes === [] ? [] : [self::CODES, self::CODES_FLAT])];
+    }
+
+    /** Whether the table has codes to search by a part and to put first. */
+    public function hasCodes(): bool
+    {
+        return $this->codes !== [];
+    }
+
+    /** The shortest word whose beginning is searched. */
+    public function prefixLength(): int
+    {
+        return $this->minPrefixLen;
+    }
+
+    /** The shortest part of a code that is searched; 0 is none. */
+    public function infixLength(): int
+    {
+        return $this->minInfixLen;
     }
 
     public function hasOther(): bool

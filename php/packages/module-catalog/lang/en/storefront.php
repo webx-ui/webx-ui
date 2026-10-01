@@ -15,6 +15,8 @@ return [
     'search-for' => 'Search: :q',
     'search-placeholder' => 'Name or article number',
     'search-submit' => 'Find',
+    'search-corrected' => 'Showing results for :corrected.',
+    'search-instead' => 'Search instead for :q',
     'filter-title' => ':category :value',
 
     'filter' => 'Filter',
