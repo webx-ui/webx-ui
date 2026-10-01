@@ -85,7 +85,7 @@ return [
     |---------------------------------------------------------------------------
     |
     | `sql` is the database itself, honest up to a couple of thousand live
-    | products; `manticore` comes with `webx-ui/catalog-manticore`. Past the
+    | products; `manticore` comes with `webx-ui/module-catalog-manticore`. Past the
     | limit `webx:doctor` says so.
     |
     */
