@@ -14,6 +14,7 @@ use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Engine\CatalogQuery;
+use WebxUi\Catalog\Engine\CatalogResult;
 use WebxUi\Catalog\Engine\FacetResult;
 use WebxUi\Catalog\Facets\FacetKind;
 use WebxUi\Catalog\Facets\Facets;
@@ -49,7 +50,12 @@ final class ProductController
      * - `counts.no_category`, the products without a main category, which the filter "no
      *   category" shows even when it is not on (decision 3);
      * - `facets`, what each facet counts for the list as filtered, a facet's own choice aside;
-     * - `columns`, the satellites' columns (§7.4), whose values each row carries under `columns`.
+     * - `columns`, the satellites' columns (§7.4), whose values each row carries under `columns`;
+     * - `corrected`, the words the list is for when the ones typed found nothing and the engine
+     *   found these instead (decisions 16–17 of the Manticore spec); `typed=1` asks for none.
+     *
+     * A search that is the code of exactly one product is that one row (decision 21): an editor
+     * who typed an article number wants that product, not the others that mention it.
      *
      * The facets come as `facets[category][]=3`, `facets[price][min]=100` — a key of the registry
      * or nothing. Sorting and filtering are a white list: an arbitrary name is refused, not obeyed.
@@ -58,6 +64,7 @@ final class ProductController
     {
         $validated = $request->validate([
             'q' => ['nullable', 'string', 'max:200'],
+            'typed' => ['nullable', 'boolean'],
             'state' => ['nullable', Rule::in(self::STATES)],
             'sort' => ['nullable', Rule::in($sorts->keys())],
             'page' => ['nullable', 'integer', 'min:1'],
@@ -82,7 +89,12 @@ final class ProductController
             perPage: $perPage,
             withUnpublished: true,
             state: $validated['state'] ?? null,
+            asTyped: (bool) ($validated['typed'] ?? false),
         ));
+
+        if (count($result->exact) === 1 && $page === 1) {
+            $result = new CatalogResult($result->exact, 1, $result->facets, $result->exact, $result->corrected);
+        }
 
         $products = $listing->products($result->ids);
         $visible = Product::query()->whereKey($result->ids)->visible()->pluck('id')->map(static fn (mixed $id): int => (int) $id)->all();
@@ -105,6 +117,7 @@ final class ProductController
             'counts' => ['no_category' => Product::query()->whereNull('category_id')->count()],
             'facets' => $this->counted($facets, $result->facets, $locale),
             'columns' => $columns->describe(),
+            'corrected' => $result->corrected,
         ]);
     }
 

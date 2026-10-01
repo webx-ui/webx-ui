@@ -27,6 +27,9 @@ use WebxUi\Catalog\Sorts\Sorts;
  * Before counting, a source that picks its facets ({@see FacetPlacement}) is asked which of them
  * belong on the page; the rest are not counted at all. A chosen facet always is, and always open.
  *
+ * A search is `LIKE`, and nothing more (decision 18 of the Manticore spec): no corrections. A
+ * product whose code is the search itself comes first all the same, and is named in the answer.
+ *
  * It keeps no index, because the tables are one: {@see needsIndex()} is false, and nothing is
  * ever queued for it.
  */
@@ -43,10 +46,26 @@ final class SqlEngine implements CatalogEngine
     {
         $base = $this->base($query);
         $total = (clone $base)->count();
+        $term = trim((string) $query->search);
         $ids = [];
+        $exact = [];
 
         if ($total > 0) {
             $page = clone $base;
+
+            if ($term !== '') {
+                $exact = (clone $base)->coded($term)->limit(2)->pluck($base->getModel()->qualifyColumn('id'))
+                    ->map(static fn (mixed $id): int => (int) $id)->values()->all();
+            }
+
+            if ($exact !== []) {
+                $model = $page->getModel();
+                $page->orderByRaw(
+                    'CASE WHEN '.$model->qualifyColumn('sku').' = ? OR '.$model->qualifyColumn('barcode').' = ? OR '.$model->qualifyColumn('external_id').' = ? THEN 0 ELSE 1 END',
+                    [$term, $term, $term],
+                );
+            }
+
             $this->sorts->resolve($query->sort)->applySql($page, $query->locale);
 
             $ids = $page
@@ -58,7 +77,7 @@ final class SqlEngine implements CatalogEngine
                 ->all();
         }
 
-        return new CatalogResult($ids, $total, $query->count === [] ? [] : $this->countAll($query, $base));
+        return new CatalogResult($ids, $total, $query->count === [] ? [] : $this->countAll($query, $base), $exact);
     }
 
     public function needsIndex(): bool
