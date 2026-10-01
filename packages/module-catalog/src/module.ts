@@ -3,6 +3,10 @@ import CategoriesPage from './CategoriesPage.vue'
 import CategoryEditorPage from './CategoryEditorPage.vue'
 import CategoryField from './CategoryField.vue'
 import DeletedPage from './DeletedPage.vue'
+import ExchangeImportPage from './ExchangeImportPage.vue'
+import ExchangePage from './ExchangePage.vue'
+import ExchangeProfilePage from './ExchangeProfilePage.vue'
+import ExchangeProfilesPage from './ExchangeProfilesPage.vue'
 import FacetsField from './FacetsField.vue'
 import GalleryField from './GalleryField.vue'
 import ProductEditorPage from './ProductEditorPage.vue'
@@ -19,8 +23,8 @@ export interface CatalogOptions {
 }
 
 /**
- * The catalogue as sections of the panel (§11): the products with «Deleted», and their categories
- * as a tree.
+ * The catalogue as sections of the panel (§11): the products with «Deleted» and «Exchange», and
+ * their categories as a tree.
  *
  * Two modules, because the navigation is one entry per module and the tree is opened often enough
  * to want its own — the server registers `catalog` and `catalog-categories` in the `catalog`
@@ -48,6 +52,27 @@ export function catalog(options: CatalogOptions = {}): AdminModule[] {
         props,
       },
       { path: `${path}/deleted`, name: 'webx.catalog.deleted', component: DeletedPage, props },
+      // The exchange (§8.1 of the exchange spec): under the products, like «Deleted» — reached
+      // from their head, and lit in the navigation as the products.
+      { path: `${path}/exchange`, name: 'webx.catalog.exchange', component: ExchangePage, props },
+      {
+        path: `${path}/exchange/import`,
+        name: 'webx.catalog.exchange.import',
+        component: ExchangeImportPage,
+        props,
+      },
+      {
+        path: `${path}/exchange/profiles`,
+        name: 'webx.catalog.exchange.profiles',
+        component: ExchangeProfilesPage,
+        props,
+      },
+      {
+        path: `${path}/exchange/profiles/:id(\\d+|new)`,
+        name: 'webx.catalog.exchange.profile',
+        component: ExchangeProfilePage,
+        props,
+      },
     ],
     types: {
       'wx-catalog-category': { component: CategoryField, kind: 'field' },

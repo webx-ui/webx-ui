@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import {
   createModal,
@@ -12,8 +13,10 @@ import {
   WxText,
 } from '@webx-ui/core'
 import BulkParamsDialog from './BulkParamsDialog.vue'
+import ExchangeExportDialog from './ExchangeExportDialog.vue'
 import { createCatalogApi } from './api'
 import { useCatalogMessages } from './i18n'
+import type { ExchangeRun } from './exchange'
 import type { BulkActionInfo, BulkRun, BulkSelection } from './types'
 
 /**
@@ -24,8 +27,14 @@ import type { BulkActionInfo, BulkRun, BulkSelection } from './types'
  * once; a large one is a run in the background, polled here with its progress, and its refusals
  * are listed by product when it ends. The list reloads either way, and `finished` carries the ids
  * that refused — what the list leaves picked, so they can be put right and tried again.
+ *
+ * «Export» heads the menu (§8.1 of the exchange spec): the same selection, written to a file. It
+ * is the exchange's run rather than a bulk one, and is followed in «Exchange».
  */
-const props = defineProps<{ count: number; selection: BulkSelection }>()
+const props = withDefaults(
+  defineProps<{ count: number; selection: BulkSelection; base?: string }>(),
+  { base: '/catalog' },
+)
 const emit = defineEmits<{ finished: [refused: number[]] }>()
 
 /** Often enough to look alive, rarely enough that a run of forty thousand is not a request storm. */
@@ -41,6 +50,19 @@ const message = useErrorText()
 const params = createModal<Record<string, unknown>, { action: BulkActionInfo; count: number }>(
   BulkParamsDialog,
 )
+const exporter = createModal<ExchangeRun, { selection: BulkSelection; count: number }>(
+  ExchangeExportDialog,
+)
+const router = useRouter()
+
+async function exportSelected(): Promise<void> {
+  const started = await exporter({ selection: props.selection, count: props.count })
+
+  if (!started) return
+
+  toast.success(t('panel.exchange-export-started'))
+  void router.push({ path: `${props.base}/exchange`, query: { run: String(started.id) } })
+}
 
 const actions = ref<BulkActionInfo[]>([])
 const run = ref<BulkRun | null>(null)
@@ -127,7 +149,7 @@ function finish(answer: BulkRun): void {
 
 <template>
   <div class="wx-catalog-bulk">
-    <wx-dropdown v-if="actions.length > 0 && !running" align="start">
+    <wx-dropdown v-if="!running" align="start">
       <template #trigger>
         <wx-button size="sm" variant="outline" :loading="starting">
           {{ t('panel.bulk-actions') }}
@@ -135,6 +157,9 @@ function finish(answer: BulkRun): void {
         </wx-button>
       </template>
 
+      <wx-dropdown-item @click="exportSelected">
+        {{ t('panel.exchange-export') }}
+      </wx-dropdown-item>
       <wx-dropdown-item
         v-for="action in actions"
         :key="action.key"

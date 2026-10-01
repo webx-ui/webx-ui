@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto'
  */
 
 interface Purpose {
+  /** Empty — any type: the exchange decides by the extension, and its reader refuses the rest. */
   types: string[]
   maxBytes: number
 }
@@ -28,6 +29,7 @@ interface Session {
 /* What the catalogue registers (V2): the same types and the default limit as its config. */
 const PURPOSES: Record<string, Purpose> = {
   'catalog.video': { types: ['video/mp4', 'video/webm'], maxBytes: 2048 * 1048576 },
+  'catalog.exchange': { types: [], maxBytes: 200 * 1048576 },
 }
 
 const CHUNK = 256 * 1024
@@ -49,6 +51,19 @@ export function claimUpload(id: string, purpose: string): Claimed | 'missing' | 
   if (session.purpose !== purpose || session.offset < session.size) return 'refused'
 
   sessions.delete(id)
+
+  return { name: session.name, type: session.type, bytes: Buffer.concat(session.pieces) }
+}
+
+/**
+ * The finished file read where it lies, without taking it (`ExchangeFiles::peek`): the exchange
+ * looks at a file before the import claims it.
+ */
+export function peekUpload(id: string, purpose: string): Claimed | 'missing' | 'refused' {
+  const session = sessions.get(id)
+
+  if (session === undefined) return 'missing'
+  if (session.purpose !== purpose || session.offset < session.size) return 'refused'
 
   return { name: session.name, type: session.type, bytes: Buffer.concat(session.pieces) }
 }
@@ -118,7 +133,7 @@ async function create(request: IncomingMessage, response: ServerResponse): Promi
     return refuse(response, 'purpose', 'Nothing takes uploads for this purpose.')
   }
 
-  if (!purpose.types.includes(type)) {
+  if (purpose.types.length > 0 && !purpose.types.includes(type)) {
     return refuse(response, 'type', 'This kind of file is not taken here.')
   }
 

@@ -244,6 +244,7 @@ import { historyOf, historyRun } from './history'
 import {
   catalogBytes,
   catalogHistory,
+  catalogHistoryRun,
   catalogUpload,
   categoryLookup,
   liveProductIds,
@@ -253,6 +254,7 @@ import { brandHistory, registerDictionaries } from './catalog-dictionaries'
 import { propertyHistory, registerProperties } from './catalog-properties'
 import { Reply } from './reply'
 import { handleUploads } from './uploads'
+import { handleExchangeFiles } from './catalog-exchange'
 import {
   PREFIX as SERVICES_PREFIX,
   categoryIds as serviceCategoryIds,
@@ -1953,11 +1955,10 @@ const notes = new Map<
  */
 on('GET', '/history/runs/(\\d+)', ({ params, query }) => {
   const search = query.get('search')
-  const found = historyRun(
-    Number(params[0]),
-    Number(query.get('page') ?? '1'),
-    search !== null && /^\d+$/.test(search) ? Number(search) : null,
-  )
+  const wanted = search !== null && /^\d+$/.test(search) ? Number(search) : null
+  const found =
+    historyRun(Number(params[0]), Number(query.get('page') ?? '1'), wanted) ??
+    catalogHistoryRun(Number(params[0]), Number(query.get('page') ?? '1'), wanted)
 
   if (found === null) throw new HttpFailure(404, 'That run no longer exists.')
 
@@ -5910,6 +5911,9 @@ export function panelServer(): Plugin {
 
         /* The chunked uploads of module-admin: pieces of bytes, and offsets in the headers. */
         if (handleUploads(request, response, url)) return
+
+        /* The exchange's files: errors as CSV and finished exports, not JSON. */
+        if (handleExchangeFiles(request, response, url)) return
 
         if (url.pathname.startsWith('/api/cms/')) {
           void answer(request, response, url)

@@ -552,6 +552,16 @@ const actions = computed<ScreenAction[]>(() => {
     })
   }
 
+  // After «Deleted» (§8.1 of the exchange spec): reading and exporting is anybody's who sees
+  // the catalogue; the import inside asks for the right to write it.
+  leads.push({
+    key: 'exchange',
+    label: t('panel.exchange-title'),
+    icon: 'file-csv',
+    menu: true,
+    run: () => void router.push(`${props.base}/exchange`),
+  })
+
   return leads
 })
 </script>
@@ -583,6 +593,7 @@ const actions = computed<ScreenAction[]>(() => {
           v-if="canManage || canDelete"
           :count="everything ? found : selected.length"
           :selection="bulkSelection"
+          :base="props.base"
           @finished="onBulkFinished"
         />
       </div>

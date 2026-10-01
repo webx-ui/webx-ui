@@ -24,6 +24,27 @@ export {
   type VideoJobStage,
 } from './galleryVideo'
 export { useCategoryTree, useFacetRegistry, type CategoryTree, type FacetRegistry } from './store'
+export {
+  columnCode,
+  createExchangeApi,
+  EXCHANGE_POLL,
+  EXCHANGE_PURPOSE,
+  IMPORT_DEFAULTS,
+  isRunning,
+  useRunPolling,
+  type ExchangeApi,
+  type ExchangeColumnInfo,
+  type ExchangeDirection,
+  type ExchangeFormat,
+  type ExchangeInspection,
+  type ExchangeProfile,
+  type ExchangeProfileInput,
+  type ExchangeRun,
+  type ExchangeRunError,
+  type ExchangeSource,
+  type ExchangeStatus,
+  type ImportOptions,
+} from './exchange'
 export { default as WxCatalogProductsPage } from './ProductsPage.vue'
 export { default as WxCatalogProductEditor } from './ProductEditorPage.vue'
 export { default as WxCatalogProductCreateDialog } from './ProductCreateDialog.vue'
@@ -31,6 +52,11 @@ export { default as WxCatalogCategoriesPage } from './CategoriesPage.vue'
 export { default as WxCatalogCategoryEditor } from './CategoryEditorPage.vue'
 export { default as WxCatalogCategoryCreateDialog } from './CategoryCreateDialog.vue'
 export { default as WxCatalogDeletedPage } from './DeletedPage.vue'
+export { default as WxCatalogExchangePage } from './ExchangePage.vue'
+export { default as WxCatalogExchangeImport } from './ExchangeImportPage.vue'
+export { default as WxCatalogExchangeExportDialog } from './ExchangeExportDialog.vue'
+export { default as WxCatalogExchangeProfiles } from './ExchangeProfilesPage.vue'
+export { default as WxCatalogExchangeProfile } from './ExchangeProfilePage.vue'
 export { default as WxCatalogCategoryField } from './CategoryField.vue'
 export { default as WxCatalogFacetsField } from './FacetsField.vue'
 export { default as WxCatalogGallery } from './GalleryField.vue'
