@@ -74,6 +74,23 @@ $this->app->make(AuditChecks::class)->register(new MyCheck);
 `MyCheck` implements `WebxUi\Audit\Contracts\AuditCheck` — `id()`, `group()`, `severity()`,
 `needs()` and `run(AuditContext)`, yielding `Finding`s. Register it from your provider behind
 `class_exists(AuditChecks::class)`, so your package does not need the audit installed.
+Extending `WebxUi\Audit\Checks\ModuleCheck` saves the bookkeeping: constants for the id, group,
+severity and needs, and `NAMESPACE` — the dictionary with `checks.<id>.title|found|why|fix` and
+the summary lines under `audit.*`.
+
+## A fix of your own
+
+```php
+use WebxUi\Audit\Fixes\AuditFixes;
+
+$this->app->make(AuditFixes::class)->register(new MyFix);
+```
+
+`MyFix` implements `WebxUi\Audit\Contracts\AuditFix`: `fixes()` names the checks it closes,
+`preview(Finding)` says what would change and `apply(Finding)` changes it — through your own
+models, so the history journal sees it. An empty preview means there is nothing left to change,
+and the button is not offered. The panel shows the preview before «Apply»; an agent gets the
+same through `audit_fix` with `dry_run`.
 
 The full design is in
 [`WEBX_UI_MODULE_AUDIT.md`](https://github.com/webx-ui/webx-ui/blob/main/docs/architecture/WEBX_UI_MODULE_AUDIT.md).

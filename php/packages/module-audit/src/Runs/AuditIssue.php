@@ -6,6 +6,8 @@ namespace WebxUi\Audit\Runs;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+use WebxUi\Audit\Checks\Finding;
 
 /**
  * One finding of one run, as stored.
@@ -19,7 +21,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property array<string, mixed>|null $details
  * @property string $fingerprint
  * @property string $state
+ * @property string $key
  * @property int|null $ignored_by
+ * @property string|null $fixed_with
+ * @property Carbon|null $fixed_at
  */
 class AuditIssue extends Model
 {
@@ -37,7 +42,22 @@ class AuditIssue extends Model
             'details' => 'array',
             'page_id' => 'integer',
             'ignored_by' => 'integer',
+            'fixed_at' => 'datetime',
         ];
+    }
+
+    /** The finding as its check yielded it, with its run — what a fix is given. */
+    public function finding(): Finding
+    {
+        return new Finding(
+            $this->check,
+            $this->severity,
+            $this->url,
+            $this->details ?? [],
+            (string) ($this->key ?? ''),
+            $this->page_id,
+            $this->run_id,
+        );
     }
 
     /** @return BelongsTo<AuditRun, $this> */

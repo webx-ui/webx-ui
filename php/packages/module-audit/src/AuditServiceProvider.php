@@ -22,6 +22,8 @@ use WebxUi\Audit\Checks\Redirects;
 use WebxUi\Audit\Checks\Resources;
 use WebxUi\Audit\Console\RunCommand;
 use WebxUi\Audit\Content\AuditContentSources;
+use WebxUi\Audit\Fixes\AuditFixes;
+use WebxUi\Audit\Fixes\ReplaceHost;
 use WebxUi\Audit\Panel\AuditModule;
 use WebxUi\Audit\Probes\CertificateReader;
 use WebxUi\Settings\Settings;
@@ -144,6 +146,7 @@ class AuditServiceProvider extends ServiceProvider
 
         $this->app->singleton(AuditChecks::class);
         $this->app->singleton(AuditContentSources::class);
+        $this->app->singleton(AuditFixes::class);
         $this->app->singleton(CertificateReader::class);
     }
 
@@ -158,6 +161,8 @@ class AuditServiceProvider extends ServiceProvider
         foreach (self::CHECKS as $check) {
             $checks->register($this->app->make($check));
         }
+
+        $this->app->make(AuditFixes::class)->register($this->app->make(ReplaceHost::class));
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(AuditModule::class));
 

@@ -32,6 +32,8 @@ final class IssueResource extends JsonResource
             'url' => $issue->url,
             'state' => $issue->state,
             'ignored' => $issue->ignored_by !== null,
+            'fixed_with' => $issue->fixed_with,
+            'fixed_at' => $issue->fixed_at?->toIso8601String(),
             'details' => self::details($issue->details ?? []),
         ];
     }

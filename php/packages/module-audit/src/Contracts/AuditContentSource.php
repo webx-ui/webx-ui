@@ -27,6 +27,9 @@ interface AuditContentSource
      */
     public function records(): iterable;
 
+    /** One record by the id `records()` gave it — what a fix reaches for — or null when it is gone. */
+    public function find(string $id): ?ContentRecord;
+
     /**
      * The text-bearing fields of one record — plain text, HTML, block JSON, URL fields — one per
      * locale where the field is translated.

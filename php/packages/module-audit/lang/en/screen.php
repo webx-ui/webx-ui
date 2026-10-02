@@ -10,4 +10,5 @@ return [
     'resolve-to-help' => 'An IP address or host to open the connection to, with the public name kept in the request. Empty means what DNS says. For Docker and servers behind NAT.',
     'other-hosts' => 'Other addresses of this site',
     'other-hosts-help' => 'Development stands, staging and old domains, one per line. A link to any of them is an error wherever it is found.',
+    'fix-unavailable' => 'This fix cannot close this finding any more. Run the audit again.',
 ];

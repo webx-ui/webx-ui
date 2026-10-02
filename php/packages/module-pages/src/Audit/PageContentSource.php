@@ -26,16 +26,28 @@ final class PageContentSource implements AuditContentSource
     public function records(): iterable
     {
         foreach (Page::query()->lazyById(100) as $page) {
-            $title = $page->getTranslation('title');
-
-            yield new ContentRecord(
-                (string) $page->getKey(),
-                is_string($title) && $title !== '' ? $title : '#'.$page->getKey(),
-                $page->isVisible(),
-                '/pages/'.$page->getKey(),
-                $page,
-            );
+            yield $this->record($page);
         }
+    }
+
+    public function find(string $id): ?ContentRecord
+    {
+        $page = ctype_digit($id) ? Page::query()->find((int) $id) : null;
+
+        return $page instanceof Page ? $this->record($page) : null;
+    }
+
+    private function record(Page $page): ContentRecord
+    {
+        $title = $page->getTranslation('title');
+
+        return new ContentRecord(
+            (string) $page->getKey(),
+            is_string($title) && $title !== '' ? $title : '#'.$page->getKey(),
+            $page->isVisible(),
+            '/pages/'.$page->getKey(),
+            $page,
+        );
     }
 
     public function fields(ContentRecord $record): iterable

@@ -29,6 +29,13 @@ final class FakeContentSource implements AuditContentSource
         }
     }
 
+    public function find(string $id): ?ContentRecord
+    {
+        $record = $this->records[$id] ?? null;
+
+        return $record === null ? null : new ContentRecord($id, $record['label'], $record['published'], '/posts/'.$id);
+    }
+
     public function fields(ContentRecord $record): iterable
     {
         foreach ($this->records[$record->id]['fields'] as $name => $value) {

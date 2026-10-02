@@ -185,7 +185,12 @@ onMounted(load)
       </template>
 
       <template #expanded="{ row }">
-        <audit-issue-list v-if="run !== null" :run="run" :query="{ ...query, check: row.id }" />
+        <audit-issue-list
+          v-if="run !== null"
+          :run="run"
+          :query="{ ...query, check: row.id }"
+          :fixable="(row.fixes ?? []).length > 0"
+        />
       </template>
     </wx-table>
   </audit-layout>

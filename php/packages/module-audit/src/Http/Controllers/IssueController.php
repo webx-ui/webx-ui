@@ -12,6 +12,7 @@ use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Checks\CheckTexts;
 use WebxUi\Audit\Checks\Severity;
+use WebxUi\Audit\Fixes\AuditFixes;
 use WebxUi\Audit\Http\Resources\IssueResource;
 use WebxUi\Audit\Runs\AuditIssue;
 use WebxUi\Audit\Runs\AuditRun;
@@ -21,7 +22,10 @@ use WebxUi\Audit\Runs\AuditRun;
  */
 final class IssueController
 {
-    public function __construct(private readonly AuditChecks $checks) {}
+    public function __construct(
+        private readonly AuditChecks $checks,
+        private readonly AuditFixes $fixes,
+    ) {}
 
     /**
      * One row per check with findings, worst first, with its three texts and its counts.
@@ -65,6 +69,9 @@ final class IssueController
             $data[] = [
                 'id' => $id,
                 'group' => $check?->group() ?? 'other',
+                // The fixes that can close this check: the screen asks for a finding's offers
+                // only when there are any.
+                'fixes' => $this->fixes->forCheck($id),
                 ...$counts,
                 ...($check === null ? ['title' => $id, 'found' => '', 'why' => '', 'fix' => ''] : CheckTexts::of($check)),
             ];

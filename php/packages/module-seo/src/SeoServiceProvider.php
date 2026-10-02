@@ -13,9 +13,17 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Audit\Checks\AuditChecks;
+use WebxUi\Audit\Fixes\AuditFixes;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\Models\Route as RouteRow;
+use WebxUi\Seo\Audit\CollapseChainFix;
+use WebxUi\Seo\Audit\NormaliseFix;
+use WebxUi\Seo\Audit\RedirectChains;
+use WebxUi\Seo\Audit\RobotsSitemapFix;
+use WebxUi\Seo\Audit\SeoChecks;
 use WebxUi\Seo\Console\SitemapCommand;
+use WebxUi\Seo\Http\Middleware\NormaliseAddress;
 use WebxUi\Seo\Http\Middleware\RedirectRequests;
 use WebxUi\Seo\Models\SeoMeta;
 use WebxUi\Seo\Models\SeoUrl;
@@ -74,6 +82,7 @@ class SeoServiceProvider extends ServiceProvider
         $this->registerRedirects();
         $this->registerFieldType();
         $this->registerSitemap();
+        $this->registerAudit();
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(SeoModule::class));
 
@@ -183,6 +192,33 @@ class SeoServiceProvider extends ServiceProvider
     }
 
     /**
+     * What SEO brings to the site audit (audit spec §7): checks of its own tables and the fixes
+     * for what the audit finds in addresses, redirects and robots.txt — only when
+     * `webx-ui/module-audit` is installed, which this package merely suggests.
+     */
+    private function registerAudit(): void
+    {
+        if (! class_exists(AuditChecks::class) || ! class_exists(AuditFixes::class)) {
+            return;
+        }
+
+        $checks = $this->app->make(AuditChecks::class);
+
+        foreach (array_keys(SeoChecks::CHECKS) as $id) {
+            $checks->register(new SeoChecks($id, $this->app->make(RedirectChains::class)));
+        }
+
+        $fixes = $this->app->make(AuditFixes::class);
+
+        foreach (array_keys(NormaliseFix::FIXES) as $id) {
+            $fixes->register(new NormaliseFix($id, $this->app->make(Normalisation::class)));
+        }
+
+        $fixes->register($this->app->make(CollapseChainFix::class));
+        $fixes->register($this->app->make(RobotsSitemapFix::class));
+    }
+
+    /**
      * `@webxSeo` and `<x-webx-seo::head />` are the same call written two ways: a template that
      * has an entity to name wants the tag, one that does not wants the directive.
      *
@@ -225,11 +261,15 @@ class SeoServiceProvider extends ServiceProvider
         /** @var Router $router */
         $router = $this->app->make('router');
         $router->aliasMiddleware('webx.redirects', RedirectRequests::class);
+        $router->aliasMiddleware('webx.normalise', NormaliseAddress::class);
 
         $this->app->booted(function (): void {
             $kernel = $this->app->make(HttpKernel::class);
 
+            // The address is normalised first, so the table is matched against the address a
+            // redirect was written for, and a visitor gets one 301 rather than two.
             if ($kernel instanceof Kernel) {
+                $kernel->pushMiddleware(NormaliseAddress::class);
                 $kernel->pushMiddleware(RedirectRequests::class);
             }
         });

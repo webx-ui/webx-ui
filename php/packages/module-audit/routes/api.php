@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use WebxUi\Audit\Http\Controllers\FixController;
 use WebxUi\Audit\Http\Controllers\IssueController;
 use WebxUi\Audit\Http\Controllers\PageController;
 use WebxUi\Audit\Http\Controllers\RunController;
@@ -21,11 +22,16 @@ Route::prefix((string) config('webx-admin.api_path').'/audit')
             Route::get('runs/{run}/pages/export', [PageController::class, 'export'])->whereNumber('run')->name('runs.pages.export');
             Route::get('runs/{run}/pages/{page}', [PageController::class, 'show'])->whereNumber(['run', 'page'])->name('runs.pages.show');
             Route::get('runs/{run}/pages/{page}/links', [PageController::class, 'links'])->whereNumber(['run', 'page'])->name('runs.pages.links');
+            Route::get('runs/{run}/issues/{issue}/fixes', [FixController::class, 'index'])->whereNumber(['run', 'issue'])->name('runs.issues.fixes');
             Route::get('runs/{run}/pages/{page}/resources', [PageController::class, 'resources'])->whereNumber(['run', 'page'])->name('runs.pages.resources');
         });
 
         Route::middleware('cms.can:audit.run,audit.manage')->group(function (): void {
             Route::post('runs', [RunController::class, 'store'])->name('runs.store');
             Route::post('runs/{run}/cancel', [RunController::class, 'cancel'])->whereNumber('run')->name('runs.cancel');
+        });
+
+        Route::middleware('cms.can:audit.manage')->group(function (): void {
+            Route::post('runs/{run}/issues/{issue}/fixes/{fix}', [FixController::class, 'store'])->whereNumber(['run', 'issue'])->name('runs.issues.fixes.store');
         });
     });
