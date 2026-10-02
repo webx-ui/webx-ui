@@ -72,8 +72,17 @@ jobs:
           git diff --exit-code -- packages/tokens/src/generated \
             || (echo "::error::packages/tokens/src/generated is stale — run 'pnpm --filter @webx-ui/tokens generate' and commit the result" && exit 1)
 
-      - run: pnpm lint
-      - run: pnpm format:check
+      # Both caches key a file by its content, so a fresh checkout reuses them: an unchanged file
+      # is not linted or formatted again. Neither linter reads types across files, so a file that
+      # did not change cannot have changed its verdict either.
+      - name: Restore the lint caches
+        uses: actions/cache@v4
+        with:
+          path: .cache/lint
+          key: lint-${{ github.sha }}
+          restore-keys: lint-
+      - run: pnpm lint --cache --cache-strategy content --cache-location .cache/lint/eslint
+      - run: pnpm format:check --cache --cache-strategy content --cache-location .cache/lint/prettier
 
   typecheck:
     name: Typecheck
@@ -88,11 +97,17 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - if: needs.changes.outputs.node == 'all'
-        run: pnpm typecheck
-      - if: needs.changes.outputs.node == 'some'
-        run: pnpm ${{ needs.changes.outputs.node_filters }} typecheck
+      # One pass instead of `pnpm build` and then `pnpm typecheck`: a package is checked as soon as
+      # it is built, while its dependents are still building, so the four cores stay busy through
+      # the long chain core → schema → module-admin. Every package is built, because a checked
+      # one reads its dependencies' declarations; only those the change reaches are checked.
+      - name: Build and typecheck
+        env:
+          REACHED: ${{ needs.changes.outputs.node == 'all' && 'all' || needs.changes.outputs.node_filters }}
+        run: |
+          check='case "$REACHED " in all*|*"--filter $PNPM_PACKAGE_NAME "*) pnpm run typecheck ;; esac'
+          pnpm --filter "./packages/*" -r exec sh -c "pnpm run build && $check"
+          pnpm --filter "./apps/*" -r exec sh -c "$check"
 
   # Three shards for the whole suite; the few packages a change reaches fit in one.
   test:
@@ -112,7 +127,10 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The JS alone: declarations are two thirds of the build and nothing here reads them.
       - run: pnpm build
+        env:
+          WEBX_SKIP_DTS: 1
       - if: needs.changes.outputs.node == 'all'
         run: pnpm test --shard=${{ matrix.shard }}/3
       # Vitest path filters; empty when only an app changed, and the apps have no unit tests.
@@ -132,7 +150,10 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The JS alone: declarations are two thirds of the build and nothing here reads them.
       - run: pnpm build
+        env:
+          WEBX_SKIP_DTS: 1
       - run: pnpm docs:build
 
   release-pr:
