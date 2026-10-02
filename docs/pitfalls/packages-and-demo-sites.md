@@ -106,6 +106,15 @@
   пакеты самого worktree. Проверка — `ls -la packages/<пакет>/node_modules/@webx-ui` показывает
   путь worktree. Сборку пакета из worktree `npx vite build` делает в его каталоге; без junction'а
   на `node_modules` пакета она падает «Cannot find package 'vite-plugin-dts'».
+- **Удалять отработавший worktree — сначала ссылки, потом каталог.** В нём junction'ы
+  `node_modules` на основной чекаут, симлинки `php/vendor/webx-ui/*` и тысячи ссылок pnpm, и
+  удаление, которое пойдёт за ссылку, снесёт чужое. Порядок: обойти дерево, не заходя в точки
+  повторной обработки (`FileAttributes.ReparsePoint`), и снять каждую ссылку
+  (`[IO.Directory]::Delete(path, $false)` для каталога), потом `git worktree remove --force` и
+  `git branch -D`. Проверка — `node_modules/vue` и `php/packages/*/src` основного чекаута на месте.
+  Пустая папка, которая не удаляется «Device or resource busy», — чей-то процесс держит её текущим
+  каталогом; оставить до освобождения. Для `vitepress build` из worktree нужны ещё junction'ы
+  `packages/*/dist`: доки резолвят `@webx-ui/*` из `dist`.
 - **На пустом `php/vendor` первый `analyse` — гонка за манифест Testbench.** В worktree своего
   `php/vendor` нет, `composer install` манифест не пишет (он пишется при первой загрузке
   приложения), и первым приложение поднимает phpstan — сразу в несколько процессов. Дальше либо
