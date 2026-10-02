@@ -186,6 +186,18 @@ const resourceColumns = computed<TableColumn<AuditResourceRow>[]>(() => [
       ]),
 ])
 
+/*
+ * The block indented, the way a person reads JSON. One the server cut at its length limit does not
+ * parse, and is shown as the page printed it rather than not at all.
+ */
+function pretty(source: string): string {
+  try {
+    return JSON.stringify(JSON.parse(source), null, 2)
+  } catch {
+    return source
+  }
+}
+
 function size(row: AuditResourceRow): string {
   if (row.bytes === null) return ''
 
@@ -492,7 +504,7 @@ watch(tab, () => {
                 >{{ item.type }} — {{ t('page.jsonld-complete') }}</wx-text
               >
             </template>
-            <pre v-if="block.source" class="wx-audit-card__source">{{ block.source }}</pre>
+            <pre v-if="block.source" class="wx-audit-card__source">{{ pretty(block.source) }}</pre>
           </div>
         </div>
 
@@ -589,7 +601,7 @@ watch(tab, () => {
 }
 
 .wx-audit-card__source {
-  max-height: 240px;
+  max-height: 480px;
   margin: 0;
   padding: var(--wx-space-8);
   overflow: auto;
