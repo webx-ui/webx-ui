@@ -53,6 +53,8 @@ const props = withDefaults(defineProps<TableProps<T>>(), {
   filtersWidth: 300,
   loading: false,
   emptyText: 'Nothing to show',
+  selectRowLabel: 'Select row',
+  selectAllLabel: 'Select every row on this page',
   stripe: false,
   bordered: false,
   hover: true,
@@ -944,7 +946,7 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
             v-if="selectable"
             :model-value="isSelected(row, index)"
             :disabled="!canSelect(row)"
-            aria-label="Select row"
+            :aria-label="selectRowLabel"
             @update:model-value="(checked: boolean) => toggleRow(row, index, checked)"
           />
           <div class="wx-table__card-tools">
@@ -1023,7 +1025,7 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
                 :model-value="allSelected"
                 :indeterminate="someSelected"
                 :disabled="!selectableKeys.length"
-                aria-label="Select every row on this page"
+                :aria-label="selectAllLabel"
                 @update:model-value="toggleAll"
               />
             </th>
@@ -1116,7 +1118,7 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
                 <wx-checkbox
                   :model-value="isSelected(row, index)"
                   :disabled="!canSelect(row)"
-                  aria-label="Select row"
+                  :aria-label="selectRowLabel"
                   @update:model-value="(checked: boolean) => toggleRow(row, index, checked)"
                 />
               </td>

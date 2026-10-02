@@ -1006,6 +1006,59 @@ export function categoryLookup(
     : undefined
 }
 
+/* What the landings ask of the catalogue (WEBX_UI_CATALOG_LANDINGS.md §8): the products' list
+   answering as the panel's list does, the facets of the registry, a category's words. Set when
+   the catalogue registers its routes. */
+let listing: Handler | null = null
+let registry: ((locale: string) => FacetInfo[]) | null = null
+
+/** The products' list for a question in its own words — `facets[brand][]=3`, `per_page=1`. */
+export function searchProducts(
+  query: URLSearchParams,
+  locale: string,
+): {
+  total: number
+  data: { id: number; name: string; sku: string | null }[]
+  facets: Record<string, unknown>
+} {
+  if (listing === null) throw new Error('The catalogue is not registered.')
+
+  return listing({ params: [], query, body: {}, locale }) as ReturnType<typeof searchProducts>
+}
+
+/** Every facet the products can be filtered by, the category's included. */
+export function catalogFacets(locale: string): FacetInfo[] {
+  return registry?.(locale) ?? []
+}
+
+/** A category's name and slug in a language, for a landing's base. */
+export function categoryWords(
+  id: number,
+  locale: string,
+): { name: string; slug: string; deleted: boolean } | undefined {
+  const found = categoryById(id, true)
+
+  return found
+    ? {
+        name: word(found.name, locale),
+        slug: word(found.slug, locale),
+        deleted: found.deleted_at !== null,
+      }
+    : undefined
+}
+
+/** A product's name and SKU, the bin included — what a landing's recommended strip shows. */
+export function productWords(
+  id: number,
+  locale: string,
+): { id: number; name: string; sku: string | null; deleted: boolean } | undefined {
+  const found = products.find((one) => one.id === id)
+
+  return found
+    ? { id, name: word(found.name, locale), sku: found.sku, deleted: found.deleted_at !== null }
+    : undefined
+}
+
 export function registerCatalog(
   on: (method: string, pattern: string, handler: Handler) => void,
   fail: Fail,
@@ -1056,6 +1109,12 @@ export function registerCatalog(
     ['name', { ru: 'По названию', en: 'By name' }],
   ]
 
+  registry = (locale) => [
+    ...facets(locale),
+    ...(dictionaryFacets(locale, line) as FacetInfo[]),
+    ...(propertyFacets(locale) as FacetInfo[]),
+  ]
+
   on('GET', '/catalog/facets', ({ locale }) => ({
     data: [
       ...facets(locale).map((facet) => ({ ...facet, indexable: facet.kind !== 'range' })),
@@ -1067,7 +1126,7 @@ export function registerCatalog(
     meta: { sorts: SORTS.map(([key, label]) => ({ key, label: word(label, locale) })) },
   }))
 
-  on('GET', '/catalog/products', ({ query, locale }) => {
+  const listProducts: Handler = ({ query, locale }) => {
     const term = query.get('q') ?? ''
     const wanted = query.getAll('facets[category][]').map(Number)
     const inside = new Set(wanted.flatMap((id) => subtree(id)))
@@ -1206,7 +1265,10 @@ export function registerCatalog(
       // The search index does not answer: the list is the database's (decision 13 of the Manticore spec).
       fell_back: manticoreDown(),
     }
-  })
+  }
+
+  listing = listProducts
+  on('GET', '/catalog/products', listProducts)
 
   on('GET', '/catalog/products/(\\d+)', ({ params, locale }) => ({
     data: productDetail(findProduct(params[0]!), locale),

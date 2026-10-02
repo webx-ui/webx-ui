@@ -12,7 +12,7 @@ recipe and its page.
 
 ## Requirements
 
-- PHP 8.3+, Laravel 13
+- PHP 8.4+, Laravel 13
 - `webx-ui/module-admin`, `webx-ui/module-media`, `webx-ui/module-seo`, `webx-ui/routing`,
   `webx-ui/localization`, `webx-ui/mcp`
 - Optional: `webx-ui/module-blocks` (the block, and the preview of a draft),

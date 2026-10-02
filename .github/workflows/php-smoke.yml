@@ -9,7 +9,13 @@ name: PHP smoke
 on:
   push:
     branches: [main]
+  # Not a required check, so a path filter is safe here: a pull request that leaves the Composer
+  # half alone has nothing to install. A push to main still runs it every time.
   pull_request:
+    paths:
+      - 'php/**'
+      - 'scripts/php-smoke.sh'
+      - '.github/workflows/php-smoke.yml'
 
 concurrency:
   group: php-smoke-${{ github.ref }}

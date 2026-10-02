@@ -60,6 +60,7 @@ const router = useRouter()
 useBlogMessages()
 
 const t = useTranslate('webx-blog')
+const panel = useTranslate('webx-admin')
 /* Not the server's `message`: the panel says how a request failed in its own words. */
 const message = useErrorText()
 
@@ -443,6 +444,8 @@ const actions = computed<ScreenAction[]>(() =>
         layout="fixed"
         :loading="loading"
         :selectable="canManage"
+        :select-row-label="panel('filters.select-row')"
+        :select-all-label="panel('filters.select-all')"
         :cards-below="0"
         :search-placeholder="t('tag.search')"
         :empty-text="rows.length === 0 && !loading ? t('tag.empty') : undefined"

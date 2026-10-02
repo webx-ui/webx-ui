@@ -11,6 +11,7 @@
             <directory>packages/module-admin/tests</directory>
             <directory>packages/localization/tests</directory>
             <directory>packages/mcp/tests</directory>
+            <directory>packages/module-audit/tests</directory>
             <directory>packages/module-auth/tests</directory>
             <directory>packages/module-blocks/tests</directory>
             <directory>packages/module-blog/tests</directory>
@@ -18,6 +19,7 @@
             <directory>packages/module-catalog-brands/tests</directory>
             <directory>packages/module-catalog-labels/tests</directory>
             <directory>packages/module-catalog-manticore/tests</directory>
+            <directory>packages/module-catalog-landings/tests</directory>
             <directory>packages/module-catalog-properties/tests</directory>
             <directory>packages/module-catalog-stock/tests</directory>
             <directory>packages/module-events/tests</directory>
@@ -45,6 +47,7 @@
             <directory>packages/module-admin/src</directory>
             <directory>packages/localization/src</directory>
             <directory>packages/mcp/src</directory>
+            <directory>packages/module-audit/src</directory>
             <directory>packages/module-auth/src</directory>
             <directory>packages/module-blocks/src</directory>
             <directory>packages/module-blog/src</directory>
@@ -52,6 +55,7 @@
             <directory>packages/module-catalog-brands/src</directory>
             <directory>packages/module-catalog-labels/src</directory>
             <directory>packages/module-catalog-manticore/src</directory>
+            <directory>packages/module-catalog-landings/src</directory>
             <directory>packages/module-catalog-properties/src</directory>
             <directory>packages/module-catalog-stock/src</directory>
             <directory>packages/module-events/src</directory>

@@ -1,0 +1,654 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'config' => [
+        'debug' => [
+            'title' => 'Modo de depuração num domínio em produção',
+            'found' => 'APP_DEBUG=true num domínio que não é um ambiente de desenvolvimento.',
+            'why' => 'Cada página de erro mostra o código, as consultas e o ambiente, palavras-passe incluídas, a quem quer que encontre uma.',
+            'fix' => 'Defina APP_DEBUG=false em .env e execute php artisan config:cache.',
+        ],
+        'env' => [
+            'title' => 'O ambiente não é production',
+            'found' => 'APP_ENV não é production num domínio em produção.',
+            'why' => 'Fora de production os pacotes comportam-se de forma diferente: caches, páginas de erro, correio e ferramentas de depuração.',
+            'fix' => 'Defina APP_ENV=production em .env e execute php artisan config:cache.',
+        ],
+        'app_url' => [
+            'title' => 'APP_URL não corresponde ao site',
+            'found' => 'APP_URL difere do esquema e do host em que o site responde.',
+            'why' => 'Todos os endereços absolutos que o site imprime — o sitemap, os links canónicos, os e-mails, os links de ficheiros — apontam para outro lado.',
+            'fix' => 'Defina APP_URL com o endereço que os visitantes usam, com https se o site o tiver, e execute php artisan config:cache.',
+        ],
+        'queue' => [
+            'title' => 'A fila executa-se dentro do pedido',
+            'found' => 'O driver da fila é sync.',
+            'why' => 'Os e-mails e os envios são tratados enquanto o visitante espera, um servidor de correio lento torna os formulários lentos, e as tarefas longas, como a auditoria, não podem ser executadas a partir do painel.',
+            'fix' => 'Use a fila database ou redis e mantenha um worker em execução (php artisan queue:work sob um supervisor).',
+        ],
+        'mail' => [
+            'title' => 'O correio não vai a lado nenhum',
+            'found' => 'O mailer escreve os e-mails no registo ou na memória.',
+            'why' => 'Cada formulário diz “enviado” e ninguém recebe nunca um e-mail.',
+            'fix' => 'Configure um mailer real (SMTP ou uma API) em .env: MAIL_MAILER e as suas definições.',
+        ],
+        'schedule' => [
+            'title' => 'O agendador não está a ser executado',
+            'found' => 'O agendador não é executado há mais de uma hora.',
+            'why' => 'As cópias de segurança, a limpeza do registo e tudo o resto agendado param em silêncio.',
+            'fix' => 'Adicione “* * * * * php artisan schedule:run” ao crontab do utilizador do site.',
+        ],
+        'storage_link' => [
+            'title' => 'Sem link public/storage',
+            'found' => 'public/storage não existe.',
+            'why' => 'Cada imagem e ficheiro carregado no site responde 404.',
+            'fix' => 'Execute php artisan storage:link no servidor.',
+        ],
+        'site_gate' => [
+            'title' => 'O site está fechado com palavra-passe',
+            'found' => 'A barreira do site está ativa.',
+            'why' => 'Os motores de busca não veem nada atrás da palavra-passe — certo enquanto o site está em testes, errado depois do lançamento.',
+            'fix' => 'Defina WEBX_SITE_GATE=false quando o site abrir.',
+        ],
+    ],
+    'host' => [
+        'mirror' => [
+            'title' => 'Respondem dois espelhos',
+            'found' => 'Tanto o www como o nome sem ele respondem 200.',
+            'why' => 'Cada página existe duas vezes e os motores de busca dividem o seu peso entre as cópias.',
+            'fix' => 'Redirecione o segundo nome para o principal com um único 301 no servidor web.',
+        ],
+        'https' => [
+            'title' => 'http não leva a https num só passo',
+            'found' => 'http:// responde por si, leva a outro lado ou chega a https através de uma cadeia.',
+            'why' => 'Os visitantes aterram numa cópia insegura e cada passo extra custa tempo e peso de links.',
+            'fix' => 'Um único 301 de http:// para https:// do host principal, no servidor web.',
+        ],
+        'tls' => [
+            'title' => 'Problema de certificado',
+            'found' => 'O certificado expira em breve, nomeia outro host ou não é de confiança.',
+            'why' => 'Os navegadores mostram um aviso em ecrã inteiro e a maioria dos visitantes sai.',
+            'fix' => 'Renove o certificado (verifique que a renovação automática funciona) e sirva a cadeia completa para este host.',
+        ],
+        'hsts' => [
+            'title' => 'Sem HSTS',
+            'found' => 'Sem cabeçalho Strict-Transport-Security.',
+            'why' => 'A primeira visita ainda pode ir por http simples e ser intercetada.',
+            'fix' => 'Adicione Strict-Transport-Security: max-age=31536000 no servidor web quando o https estiver estável.',
+        ],
+        'index_files' => [
+            'title' => 'Os ficheiros index respondem',
+            'found' => '/index.php ou outro ficheiro index responde 200.',
+            'why' => 'A página está disponível num segundo endereço — um duplicado para os motores de busca.',
+            'fix' => 'Redirecione os ficheiros index para o endereço sem eles com um 301.',
+        ],
+        'slashes' => [
+            'title' => 'As barras duplas não são reduzidas',
+            'found' => 'Um endereço com // responde 200.',
+            'why' => 'Qualquer link mal escrito cria outra cópia da página.',
+            'fix' => 'Redirecione os endereços com barras repetidas para o reduzido com um 301.',
+        ],
+        'trailing_slash' => [
+            'title' => 'Com e sem barra final',
+            'found' => 'A mesma página responde com e sem barra final.',
+            'why' => 'Dois endereços para uma página dividem o seu peso.',
+            'fix' => 'Escolha uma forma e redirecione a outra com um 301.',
+        ],
+        'case' => [
+            'title' => 'As maiúsculas não são normalizadas',
+            'found' => 'Um endereço com letras maiúsculas responde 200.',
+            'why' => 'Um link escrito com outras maiúsculas cria um duplicado.',
+            'fix' => 'Redirecione os endereços com maiúsculas para o de minúsculas com um 301.',
+        ],
+        'soft_404' => [
+            'title' => 'As páginas inexistentes não respondem 404',
+            'found' => 'Um endereço que não pode existir responde 200 ou redireciona.',
+            'why' => 'Os motores de busca indexam erros de escrita e páginas eliminadas como páginas reais.',
+            'fix' => 'Responda 404 para endereços desconhecidos; não os redirecione para a página inicial.',
+        ],
+        '404_page' => [
+            'title' => 'A página 404 não leva a lado nenhum',
+            'found' => 'A página 404 não tem link para a página inicial.',
+            'why' => 'Um visitante que seguiu um link quebrado não tem para onde ir.',
+            'fix' => 'Adicione ao modelo 404 um link para a página inicial, a pesquisa ou as secções principais.',
+        ],
+        'compression' => [
+            'title' => 'HTML sem compressão',
+            'found' => 'As páginas são enviadas sem gzip ou brotli.',
+            'why' => 'As páginas pesam várias vezes mais e abrem mais devagar, sobretudo no telemóvel.',
+            'fix' => 'Ative gzip ou brotli para text/html no servidor web.',
+        ],
+        'security_headers' => [
+            'title' => 'Faltam cabeçalhos de segurança',
+            'found' => 'Faltam alguns de X-Content-Type-Options, Referrer-Policy e a proteção contra incorporação em frames.',
+            'why' => 'Fecham ataques fáceis: MIME sniffing, fuga de endereços, clickjacking.',
+            'fix' => 'Adicione os cabeçalhos no servidor web: nosniff, strict-origin-when-cross-origin, SAMEORIGIN.',
+        ],
+        'server_leak' => [
+            'title' => 'O servidor revela as suas versões',
+            'found' => 'X-Powered-By, ou Server com um número de versão.',
+            'why' => 'Um mapa pronto para quem procura uma falha conhecida nessa versão.',
+            'fix' => 'Desative expose_php e server_tokens (ou os seus equivalentes).',
+        ],
+        'static_cache' => [
+            'title' => 'Os ficheiros estáticos não estão em cache',
+            'found' => 'CSS, JS ou imagens sem Cache-Control ou com cache inferior a uma semana.',
+            'why' => 'Cada página volta a descarregá-los.',
+            'fix' => 'Dê aos ficheiros estáticos versionados um Cache-Control longo (um ano, immutable) no servidor web.',
+        ],
+    ],
+    'hosts' => [
+        'dev_content' => [
+            'title' => 'Links para um ambiente de desenvolvimento no conteúdo',
+            'found' => 'Um endereço de um ambiente de desenvolvimento num registo — publicado, em rascunho ou num campo que o modelo não imprime.',
+            'why' => 'O conteúdo preenchido num ambiente de desenvolvimento entra em produção com links e imagens que apontam de volta para esse ambiente; os visitantes recebem erros e o ambiente é indexado.',
+            'fix' => 'Abra o registo e substitua o endereço do ambiente pelo do próprio site ou por um link relativo. Liste os ambientes nas definições da auditoria para que sejam todos detetados.',
+        ],
+        'dev_page' => [
+            'title' => 'Links para um ambiente de desenvolvimento na página',
+            'found' => 'Um link ou um recurso da página — uma imagem, um script, um estilo, og:image, o canonical — leva a um ambiente de desenvolvimento.',
+            'why' => 'Os visitantes seguem links para um site que não é para eles, as imagens deixam de aparecer quando o ambiente é desligado e os motores de busca encontram o ambiente através do site.',
+            'fix' => 'Encontre o endereço no conteúdo ou no modelo da página e substitua o ambiente pelo host do próprio site ou por um link relativo.',
+        ],
+        'similar' => [
+            'title' => 'Um host parecido com este site',
+            'found' => 'Um link para um host com a mesma primeira palavra do site noutra zona, como shop.local ao lado de shop.com.',
+            'why' => 'É muito provável que seja um ambiente ou uma cópia antiga do site que a auditoria não conhece.',
+            'fix' => 'Se for um ambiente ou um domínio antigo, adicione-o a «Outros endereços deste site» nas definições da auditoria e corrija os links; se for o site de outra pessoa, não é preciso fazer nada.',
+        ],
+        'wrong_mirror' => [
+            'title' => 'Links através de outro espelho',
+            'found' => 'Um link para o site através do seu outro espelho (www ou o nome sem ele) ou por http num site https.',
+            'why' => 'Cada clique passa por um redirecionamento: mais lento para os visitantes, e os motores de busca veem links para um endereço que não é a página.',
+            'fix' => 'Faça o link para o espelho principal por https, ou use links relativos.',
+        ],
+        'absolute_own' => [
+            'title' => 'Links absolutos para o próprio site',
+            'found' => 'Um link ou uma imagem no conteúdo está escrito com o host do próprio site em vez de um caminho.',
+            'why' => 'Hoje funciona e deixa de funcionar na próxima mudança de domínio ou de protocolo; e copiado para um ambiente de desenvolvimento, leva de volta ao site real.',
+            'fix' => 'Escreva os links para as páginas do próprio site como caminhos: /about em vez de https://shop.com/about.',
+        ],
+        'new_domain' => [
+            'title' => 'Um novo domínio externo',
+            'found' => 'O site tem um link para um domínio para o qual não tinha na execução completa anterior.',
+            'why' => 'Um domínio novo costuma ser um link novo que alguém adicionou — e às vezes um erro de digitação, ou links de spam deixados por alguém que entrou no site.',
+            'fix' => 'Abra as páginas listadas e confirme que o link deve estar lá.',
+        ],
+        'external_many' => [
+            'title' => 'Muitos links externos numa página',
+            'found' => 'A página tem mais links externos do que o limite.',
+            'why' => 'Uma página que é sobretudo links para outros sites parece uma rede de links aos motores de busca e é muitas vezes sinal de spam.',
+            'fix' => 'Remova os links que não ajudam o visitante ou divida a página.',
+        ],
+        'blank_opener' => [
+            'title' => 'Novo separador sem noopener',
+            'found' => 'Um link para outro site abre num novo separador sem rel="noopener".',
+            'why' => 'Em navegadores mais antigos, a página aberta pode redirecionar o separador do site para uma página à sua escolha.',
+            'fix' => 'Adicione rel="noopener" (ou noreferrer) aos links com target="_blank".',
+        ],
+        'external_redirect' => [
+            'title' => 'Links externos através de um redirecionamento',
+            'found' => 'Um link para outro site responde com um redirecionamento.',
+            'why' => 'Funciona com um desvio, e normalmente significa que a página mudou de sítio e o link nunca foi atualizado.',
+            'fix' => 'Substitua o link pelo endereço para onde ele leva.',
+        ],
+    ],
+    'indexing' => [
+        'home_noindex' => [
+            'title' => 'A página inicial está fechada aos motores de busca',
+            'found' => 'A página inicial tem noindex na meta tag robots ou no cabeçalho X-Robots-Tag.',
+            'why' => 'A página mais importante do site desaparece da pesquisa, e muitas vezes o site inteiro vai atrás.',
+            'fix' => 'Remova o noindex da página inicial: verifique as definições de SEO da página, o layout e os cabeçalhos do servidor web.',
+        ],
+        'noindex' => [
+            'title' => 'Páginas fechadas com noindex',
+            'found' => 'A página tem noindex na meta tag robots ou no cabeçalho X-Robots-Tag.',
+            'why' => 'Os motores de busca descartam a página. Certo para resultados de pesquisa e páginas de serviço, errado para conteúdo fechado por engano.',
+            'fix' => 'Percorra a lista; abra as páginas que deviam ser encontradas nas suas definições de SEO e remova o noindex.',
+        ],
+    ],
+    'robots' => [
+        'missing' => [
+            'title' => 'Sem robots.txt',
+            'found' => '/robots.txt não responde 200, ou responde com algo que não é texto simples.',
+            'why' => 'Os motores de busca leem um ficheiro em falta como «tudo é permitido», e um que dá erro como «volte mais tarde» — as regras que o site queria dar perdem-se.',
+            'fix' => 'Sirva o robots.txt como text/plain. Com o module-seo é a definição «robots.txt»; remova um public/robots.txt estático que a sobreponha.',
+        ],
+        'disallow_all' => [
+            'title' => 'O robots.txt fecha o site inteiro',
+            'found' => 'O robots.txt tem Disallow: / para todos os robots num domínio em produção.',
+            'why' => 'Os motores de busca deixam de rastrear o site e retiram-no dos resultados. Normalmente é o ficheiro do ambiente de desenvolvimento que foi para produção com o deploy.',
+            'fix' => 'Remova Disallow: / do grupo *, ou mantenha-o apenas para os robots que não devem vir.',
+        ],
+        'no_sitemap' => [
+            'title' => 'O robots.txt não indica o sitemap',
+            'found' => 'O robots.txt não tem uma linha Sitemap:.',
+            'why' => 'Os motores de busca só encontram o sitemap onde lhes é indicado à mão, e os motores de busca novos nem isso.',
+            'fix' => 'Adicione Sitemap: https://…/sitemap.xml ao robots.txt.',
+        ],
+        'blocks_assets' => [
+            'title' => 'O robots.txt fecha CSS ou JS',
+            'found' => 'Uma folha de estilos ou um script que a página inicial carrega está fechado no robots.txt.',
+            'why' => 'Os motores de busca desenham a página sem eles, veem um layout partido e podem considerar a página não adaptada a telemóveis.',
+            'fix' => 'Permita as pastas com CSS e JS, ou remova a regra que as fecha.',
+        ],
+        'syntax' => [
+            'title' => 'Linhas que o robots.txt não entende',
+            'found' => 'O robots.txt tem diretivas desconhecidas, regras antes de qualquer User-agent, ou linhas que não são «campo: valor».',
+            'why' => 'Os motores de busca ignoram essas linhas em silêncio: um erro em Disalow não fecha nada, e ninguém repara durante anos.',
+            'fix' => 'Corrija a ortografia e comece cada grupo de regras com uma linha User-agent.',
+        ],
+    ],
+    'sitemap' => [
+        'missing' => [
+            'title' => 'Sem sitemap',
+            'found' => 'O sitemap não responde ou não pode ser analisado — ou um ficheiro indicado pelo robots.txt ou pelo índice não o faz.',
+            'why' => 'Os motores de busca só encontram as páginas novas e profundas rastreando, devagar, e as páginas para as quais nada tem link, nunca.',
+            'fix' => 'Sirva um sitemap válido no endereço que o robots.txt indica. Com o module-seo é gerado a partir do registo de endereços.',
+        ],
+        'limits' => [
+            'title' => 'Um ficheiro de sitemap acima dos limites',
+            'found' => 'Um ficheiro de sitemap tem mais de 50 000 endereços ou mais de 50 MB sem compressão.',
+            'why' => 'Os motores de busca descartam esse ficheiro inteiro, não só o final.',
+            'fix' => 'Divida o sitemap em vários ficheiros sob um índice de sitemaps.',
+        ],
+        'bad_url' => [
+            'title' => 'Endereços no sitemap que não são páginas a indexar',
+            'found' => 'Um endereço do sitemap responde com um erro ou um redirecionamento, está fechado com noindex, ou o seu canonical indica outra página.',
+            'why' => 'O sitemap é uma lista de originais; cada endereço assim gasta a visita do motor de busca em algo que vai deitar fora, e demasiados fazem-no confiar menos no sitemap.',
+            'fix' => 'Liste apenas páginas a funcionar que devam ser encontradas, no seu endereço final.',
+        ],
+        'lastmod' => [
+            'title' => 'O lastmod no sitemap não diz nada',
+            'found' => 'O lastmod está no futuro, ou é igual em todos os endereços de um ficheiro.',
+            'why' => 'Os motores de busca percebem que a data é impressa em vez de mantida e deixam de a usar para decidir o que voltar a rastrear.',
+            'fix' => 'Imprima a data da última alteração do conteúdo da página, ou omita o lastmod.',
+        ],
+        'missing_page' => [
+            'title' => 'Páginas em falta no sitemap',
+            'found' => 'Uma página indexável a que o rastreio chegou não está no sitemap.',
+            'why' => 'Os motores de busca só a encontram através de links, mais tarde — e uma página que perde o último link desaparece.',
+            'fix' => 'Confirme que o módulo da página a adiciona ao sitemap (com o module-seo — através do registo de endereços), ou feche-a com noindex se não deve ser encontrada.',
+        ],
+    ],
+    'redirects' => [
+        'chain' => [
+            'title' => 'Cadeias de redirecionamentos',
+            'found' => 'Um endereço redireciona mais de uma vez antes de chegar à página.',
+            'why' => 'Cada passo é uma ida e volta para o visitante, e os motores de busca podem deixar de seguir antes do fim.',
+            'fix' => 'Aponte o primeiro redirecionamento diretamente para o endereço final.',
+        ],
+        'loop' => [
+            'title' => 'Ciclos de redirecionamentos',
+            'found' => 'Os redirecionamentos voltam a um endereço por onde já passaram.',
+            'why' => 'O navegador desiste com «demasiados redirecionamentos» — a página não existe para ninguém.',
+            'fix' => 'Encontre as duas regras que enviam o endereço de um lado para o outro e remova uma delas.',
+        ],
+        'to_error' => [
+            'title' => 'Redirecionamentos para um erro',
+            'found' => 'Um redirecionamento termina em 4xx, 5xx ou sem resposta.',
+            'why' => 'O endereço antigo é mantido vivo só para levar a um morto: visitantes e motores de busca caem num erro.',
+            'fix' => 'Aponte o redirecionamento para uma página a funcionar, ou remova-o.',
+        ],
+        'temporary' => [
+            'title' => 'Redirecionamentos temporários',
+            'found' => 'Um endereço responde 302 ou 307.',
+            'why' => 'Os motores de busca mantêm o endereço antigo no índice e não dão ao novo nada do seu peso. Certo para um redirecionamento que vai ser retirado, errado para uma mudança.',
+            'fix' => 'Percorra a lista; torne 301 os redirecionamentos dos endereços que mudaram de vez.',
+        ],
+    ],
+    'title' => [
+        'missing' => [
+            'title' => 'Sem title',
+            'found' => 'A página não tem <title>, ou está vazio.',
+            'why' => 'O title é a linha que os motores de busca mostram como link para a página; sem ele, inventam uma.',
+            'fix' => 'Dê à página um title nas suas definições de SEO, ou verifique se o layout o imprime.',
+        ],
+        'duplicate' => [
+            'title' => 'Titles duplicados',
+            'found' => 'Várias páginas indexáveis têm o mesmo title.',
+            'why' => 'Os motores de busca não distinguem as páginas e mostram uma delas, não necessariamente a certa.',
+            'fix' => 'Dê a cada página um title próprio que diga o que lá está.',
+        ],
+        'length' => [
+            'title' => 'Title demasiado curto ou demasiado longo',
+            'found' => 'O title é mais curto ou mais longo do que os limites, em carateres.',
+            'why' => 'Um title longo é cortado nos resultados de pesquisa (o limite é de cerca de 600 píxeis, aproximadamente 60 carateres); um curto diz muito pouco.',
+            'fix' => 'Reescreva o title para caber no intervalo dos limites da auditoria.',
+        ],
+        'multiple' => [
+            'title' => 'Mais do que um title',
+            'found' => 'A página tem mais do que uma tag <title>.',
+            'why' => 'Os motores de busca escolhem um deles, não necessariamente o escrito para a página.',
+            'fix' => 'Descubra que modelo ou bloco imprime o segundo title e remova-o.',
+        ],
+    ],
+    'description' => [
+        'missing' => [
+            'title' => 'Sem meta description',
+            'found' => 'A página não tem meta description, ou está vazia.',
+            'why' => 'Os motores de busca compõem o excerto abaixo do link com o texto que encontrarem.',
+            'fix' => 'Escreva uma description nas definições de SEO da página: o que a página oferece, numa ou duas frases.',
+        ],
+        'duplicate' => [
+            'title' => 'Descriptions duplicadas',
+            'found' => 'Várias páginas indexáveis têm a mesma meta description.',
+            'why' => 'O mesmo excerto abaixo de links diferentes não diz nada a quem pesquisa, e os motores de busca substituem-no pelo seu.',
+            'fix' => 'Escreva uma description própria para cada página.',
+        ],
+        'length' => [
+            'title' => 'Description demasiado curta ou demasiado longa',
+            'found' => 'A description é mais curta ou mais longa do que os limites, em carateres.',
+            'why' => 'Uma description longa é cortada nos resultados de pesquisa (cerca de 920 píxeis, aproximadamente 160 carateres); uma curta é muitas vezes substituída.',
+            'fix' => 'Reescreva a description para caber no intervalo dos limites da auditoria.',
+        ],
+    ],
+    'h1' => [
+        'missing' => [
+            'title' => 'Sem H1',
+            'found' => 'A página não tem título H1.',
+            'why' => 'O H1 diz aos visitantes e aos motores de busca do que trata a página; os leitores de ecrã usam-no para encontrar o início do conteúdo.',
+            'fix' => 'Dê à página um H1 — normalmente o seu nome — no modelo ou no conteúdo.',
+        ],
+        'multiple' => [
+            'title' => 'Mais do que um H1',
+            'found' => 'A página tem mais do que um título H1.',
+            'why' => 'Não é um erro em si, mas costuma indicar que um bloco ou o logótipo usa H1 onde se pretendia um nível inferior.',
+            'fix' => 'Deixe um H1 para o nome da página e passe os outros a H2 ou inferior.',
+        ],
+        'equals_title' => [
+            'title' => 'H1 igual ao title',
+            'found' => 'O H1 repete o title palavra por palavra.',
+            'why' => 'Dois lugares para descrever a página dizem o mesmo; um deles podia acrescentar uma palavra que as pessoas pesquisam.',
+            'fix' => 'Mantenha o H1 curto e legível, e deixe o title levar as palavras-chave e o nome do site.',
+        ],
+    ],
+    'headings' => [
+        'skipped' => [
+            'title' => 'Nível de título saltado',
+            'found' => 'Um nível de título é saltado ao descer, como um H2 seguido de um H4.',
+            'why' => 'Os leitores de ecrã navegam pelos títulos, e um salto lê-se como conteúdo em falta.',
+            'fix' => 'Use os níveis por ordem; escolha o aspeto com estilos, não com o nível.',
+        ],
+    ],
+    'canonical' => [
+        'missing' => [
+            'title' => 'Sem canonical',
+            'found' => 'Uma página indexável não tem link canonical, nem na tag nem no cabeçalho.',
+            'why' => 'Sem ele, cada cópia da página com parâmetros de rastreio ou de ordenação pode competir com a própria página.',
+            'fix' => 'Faça o layout imprimir <link rel="canonical"> com o endereço próprio da página.',
+        ],
+        'relative' => [
+            'title' => 'Canonical relativo',
+            'found' => 'O canonical está escrito como um caminho, não como um endereço completo.',
+            'why' => 'Os motores de busca interpretam-no conforme o endereço por onde chegaram, incluindo outro espelho ou protocolo.',
+            'fix' => 'Imprima o canonical como um endereço completo, com o esquema e o host principal.',
+        ],
+        'multiple' => [
+            'title' => 'Canonicals em conflito',
+            'found' => 'A página tem mais do que um canonical, ou a tag e o cabeçalho Link não coincidem.',
+            'why' => 'Com canonicals em conflito, os motores de busca ignoram-nos todos.',
+            'fix' => 'Deixe um só canonical: encontre o modelo, o bloco ou a regra do servidor que adiciona o segundo e remova-o.',
+        ],
+        'broken' => [
+            'title' => 'Canonical para uma página quebrada ou fechada',
+            'found' => 'O canonical leva a um redirecionamento, a um erro ou a uma página com noindex.',
+            'why' => 'A página indica um original que não pode ser indexado, e os motores de busca podem descartar ambas.',
+            'fix' => 'Aponte o canonical para o endereço próprio e funcional da página, ou para o original ativo.',
+        ],
+        'other' => [
+            'title' => 'Canonical para outra página',
+            'found' => 'O canonical aponta para um endereço diferente do próprio da página.',
+            'why' => 'A página pede para não ser indexada em favor de outra — certo para filtros e cópias, errado para uma página que deve ser encontrada.',
+            'fix' => 'Percorra a lista; nas páginas que devem ser encontradas, faça do canonical o seu próprio endereço.',
+        ],
+    ],
+    'html' => [
+        'lang' => [
+            'title' => 'Sem idioma da página, ou com o idioma errado',
+            'found' => 'A tag <html> não tem o atributo lang, ou indica um idioma diferente da própria linha hreflang da página.',
+            'why' => 'Os leitores de ecrã escolhem a voz por ele, os navegadores oferecem tradução por ele e os motores de busca usam-no como pista.',
+            'fix' => 'Imprima <html lang="…"> com o idioma da página no layout — o idioma da página, não o predefinido do site.',
+        ],
+        'viewport' => [
+            'title' => 'Sem meta viewport',
+            'found' => 'A página não tem <meta name="viewport">.',
+            'why' => 'Os telemóveis desenham a página com a largura de desktop, reduzida; os motores de busca consideram que essa página não é adequada a dispositivos móveis.',
+            'fix' => 'Adicione <meta name="viewport" content="width=device-width, initial-scale=1"> ao layout.',
+        ],
+        'favicon' => [
+            'title' => 'Sem ícone, ou não abre',
+            'found' => 'A página não tem link para nenhum ícone, ou o ícone indicado não abre.',
+            'why' => 'Os separadores do navegador, os marcadores e os resultados de pesquisa em telemóveis mostram um quadrado vazio em vez da marca do site.',
+            'fix' => 'Adicione <link rel="icon"> com um endereço a funcionar ao layout.',
+        ],
+    ],
+    'og' => [
+        'missing' => [
+            'title' => 'Faltam as tags Open Graph',
+            'found' => 'A página não tem og:title, og:image nem og:url.',
+            'why' => 'Um link partilhado num mensageiro ou numa rede social aparece como um endereço simples, sem imagem nem título.',
+            'fix' => 'Preencha a pré-visualização social nas definições de SEO da página, ou faça o layout imprimir as tags.',
+        ],
+        'image_broken' => [
+            'title' => 'A imagem Open Graph está partida ou é pequena',
+            'found' => 'O og:image não abre, ou é menor que 1200×630.',
+            'why' => 'Um link partilhado não mostra imagem, ou mostra um pequeno quadrado ao lado do texto em vez de um cartão grande.',
+            'fix' => 'Defina uma imagem a funcionar de pelo menos 1200×630 na pré-visualização social da página.',
+        ],
+    ],
+    'hreflang' => [
+        'not_reciprocal' => [
+            'title' => 'hreflang sem link de volta',
+            'found' => 'A página indica outra versão de idioma, e essa versão não indica a página de volta.',
+            'why' => 'Os motores de busca ignoram um par de versões de idioma que não está confirmado dos dois lados, e mostram aos visitantes o idioma errado.',
+            'fix' => 'Imprima o mesmo conjunto de links hreflang em todas as versões de idioma da página, cada uma indicando todas as outras e a si mesma.',
+        ],
+        'no_x_default' => [
+            'title' => 'Sem x-default',
+            'found' => 'A página indica várias versões de idioma e nenhum x-default.',
+            'why' => 'Um visitante cujo idioma não é nenhum deles recebe a versão que o motor de busca adivinhar.',
+            'fix' => 'Adicione hreflang="x-default" a apontar para a versão para todos os outros, normalmente o seletor de idioma ou o idioma principal.',
+        ],
+        'broken' => [
+            'title' => 'hreflang partido',
+            'found' => 'Uma versão de idioma responde com um erro ou um redirecionamento, ou o seu código de idioma não é um que os motores de busca leiam.',
+            'why' => 'O par é descartado. Erros comuns: en-UK em vez de en-GB, jp em vez de ja.',
+            'fix' => 'Aponte o hreflang para o endereço a funcionar de cada versão e use códigos de idioma ISO 639-1 e de região ISO 3166-1.',
+        ],
+    ],
+    'jsonld' => [
+        'invalid' => [
+            'title' => 'Dados estruturados que não podem ser analisados',
+            'found' => 'Um bloco JSON-LD não é JSON válido.',
+            'why' => 'Perde-se o bloco inteiro, não só o campo partido: sem resultados avançados, sem breadcrumbs, sem ficha de produto na pesquisa.',
+            'fix' => 'Procure uma vírgula final ou umas aspas sem escape no modelo que imprime o bloco; construa-o com json_encode em vez de à mão.',
+        ],
+        'required' => [
+            'title' => 'Dados estruturados sem campos obrigatórios',
+            'found' => 'Falta a um Product, Article, Event, JobPosting, FAQPage ou BreadcrumbList um campo que os motores de busca exigem.',
+            'why' => 'A página perde o seu resultado avançado, e a consola de pesquisa assinala a marcação como inválida.',
+            'fix' => 'Preencha os campos indicados — no conteúdo da página ou no modelo que imprime a marcação.',
+        ],
+        'recommended' => [
+            'title' => 'Dados estruturados sem campos recomendados',
+            'found' => 'Faltam a um Product, Article, Event ou JobPosting campos que tornam o seu resultado avançado mais rico.',
+            'why' => 'A marcação é válida; o snippet é mais pobre — sem imagem, sem marca, sem descrição.',
+            'fix' => 'Adicione os campos indicados onde o conteúdo os tiver.',
+        ],
+    ],
+    'content' => [
+        'thin' => [
+            'title' => 'Pouco texto',
+            'found' => 'Uma página indexável tem menos palavras do que o limite.',
+            'why' => 'Os motores de busca classificam pior as páginas com pouco para ler e podem tratar muitas páginas assim como de baixa qualidade.',
+            'fix' => 'Acrescente texto que ajude o visitante, junte as páginas escassas ou feche-as com noindex.',
+        ],
+        'text_ratio' => [
+            'title' => 'Pouco texto para o código',
+            'found' => 'O texto visível é uma parte do HTML menor do que o limite.',
+            'why' => 'A página é pesada para o que diz: lenta no telemóvel, e os motores de busca encontram pouco conteúdo em muito código.',
+            'fix' => 'Mova os scripts e estilos inline para ficheiros, remova o código que não se usa e acrescente conteúdo.',
+        ],
+        'duplicate' => [
+            'title' => 'Texto duplicado',
+            'found' => 'Várias páginas indexáveis têm o mesmo texto visível.',
+            'why' => 'Os motores de busca escolhem uma cópia para mostrar e ignoram as restantes.',
+            'fix' => 'Torne as páginas diferentes, junte-as, ou aponte o canonical das cópias para o original.',
+        ],
+    ],
+    'url' => [
+        'length' => [
+            'title' => 'Endereço longo',
+            'found' => 'O endereço é mais longo do que o limite.',
+            'why' => 'Os endereços longos são cortados nos resultados de pesquisa e são difíceis de partilhar e de ler.',
+            'fix' => 'Encurte o slug da página; o redirecionamento a partir do endereço antigo é adicionado automaticamente.',
+        ],
+        'format' => [
+            'title' => 'Formato do endereço',
+            'found' => 'O caminho tem maiúsculas, sublinhados ou carateres fora do ASCII.',
+            'why' => 'As maiúsculas fazem de /About e /about duas páginas, os sublinhados não separam palavras para os motores de busca e outros carateres transformam-se em %D0%B0 ao copiar.',
+            'fix' => 'Use letras latinas minúsculas, dígitos e hífenes nos slugs.',
+        ],
+        'params' => [
+            'title' => 'Parâmetros sem canonical',
+            'found' => 'Um endereço indexável tem parâmetros de consulta e não tem canonical.',
+            'why' => 'Cada combinação de filtros e de ordenação torna-se uma página própria nos motores de busca, e eles dividem o peso da verdadeira.',
+            'fix' => 'Imprima um canonical para o endereço sem parâmetros, ou feche esses endereços com noindex.',
+        ],
+    ],
+    'perf' => [
+        'ttfb' => [
+            'title' => 'Resposta lenta',
+            'found' => 'A página demorou a responder mais do que o limite.',
+            'why' => 'Os visitantes esperam antes de aparecer alguma coisa, e os motores de busca rastreiam menos um site lento.',
+            'fix' => 'Ative as caches (configuração, rotas, vistas, páginas), verifique as consultas lentas e passe o trabalho pesado para a fila.',
+        ],
+        'html_size' => [
+            'title' => 'HTML pesado',
+            'found' => 'O HTML da página é maior do que o limite.',
+            'why' => 'Os telemóveis descarregam-no e processam-no devagar; os motores de busca podem parar de ler antes do fim.',
+            'fix' => 'Pagine as listas longas, mova os dados inline e os SVG para ficheiros, remova as cópias ocultas do conteúdo.',
+        ],
+    ],
+    'links' => [
+        'broken' => [
+            'title' => 'Links internos quebrados',
+            'found' => 'Um link para uma página do próprio site responde 4xx, 5xx ou nada.',
+            'why' => 'Os visitantes caem num erro, e os motores de busca desperdiçam a visita nele.',
+            'fix' => 'Corrija ou remova o link, ou adicione um redirecionamento do endereço em falta para a página certa.',
+        ],
+        'empty' => [
+            'title' => 'Links sem texto',
+            'found' => 'Um link não tem texto nem aria-label, e um link de imagem não tem alt.',
+            'why' => 'Os leitores de ecrã leem o endereço ou apenas «link», e os motores de busca não ficam a saber nada sobre a página para onde leva.',
+            'fix' => 'Dê ao link um texto, um aria-label, ou um alt à sua imagem.',
+        ],
+        'nofollow_internal' => [
+            'title' => 'nofollow em links internos',
+            'found' => 'Um link para uma página do próprio site tem rel="nofollow".',
+            'why' => 'O site pede aos motores de busca que não sigam os seus próprios links, e a página recebe menos peso.',
+            'fix' => 'Remova o nofollow dos links para as páginas do próprio site.',
+        ],
+        'to_redirect' => [
+            'title' => 'Links internos para redirecionamentos',
+            'found' => 'Um link para uma página do próprio site leva a um endereço que redireciona.',
+            'why' => 'Cada clique é mais uma ida e volta, e a página passa o seu peso através de um redirecionamento em vez de diretamente.',
+            'fix' => 'Faça o link para o endereço para onde o redirecionamento leva.',
+        ],
+        'external_broken' => [
+            'title' => 'Links externos quebrados',
+            'found' => 'Um link para outro site responde 4xx, 5xx, ou o host não responde.',
+            'why' => 'Os visitantes caem num erro no site de outra pessoa, e a página parece abandonada. O 429 não é contado — é um servidor a pedir a um robot que abrande.',
+            'fix' => 'Atualize o link para o novo endereço da página, ou remova-o.',
+        ],
+    ],
+    'mixed_content' => [
+        'title' => 'Conteúdo misto',
+        'found' => 'Uma página https carrega um recurso por http.',
+        'why' => 'Os navegadores bloqueiam esses scripts e estilos e avisam sobre as imagens; o cadeado desaparece.',
+        'fix' => 'Carregue o recurso por https, ou use um caminho sem o esquema.',
+    ],
+    'forms' => [
+        'insecure' => [
+            'title' => 'Formulário enviado por http',
+            'found' => 'Um formulário é enviado para um endereço http.',
+            'why' => 'O que os visitantes escrevem viaja sem cifra, e os navegadores avisam antes de enviar.',
+            'fix' => 'Aponte o formulário para um endereço https ou para um caminho.',
+        ],
+    ],
+    'images' => [
+        'alt' => [
+            'title' => 'Imagens sem alt',
+            'found' => 'Uma <img> não tem o atributo alt.',
+            'why' => 'Os leitores de ecrã leem o nome do ficheiro, e os motores de busca não sabem o que a imagem mostra. Um alt vazio numa imagem decorativa está certo.',
+            'fix' => 'Descreva a imagem no seu alt, ou ponha alt="" se for decoração.',
+        ],
+        'dimensions' => [
+            'title' => 'Imagens sem tamanho',
+            'found' => 'Uma <img> não tem width nem height.',
+            'why' => 'A página salta enquanto as imagens carregam, e os visitantes clicam no que não queriam.',
+            'fix' => 'Imprima width e height das imagens no modelo; o CSS ainda pode torná-las responsivas.',
+        ],
+        'broken' => [
+            'title' => 'Imagens partidas',
+            'found' => 'Uma imagem da página responde 4xx, 5xx ou nada.',
+            'why' => 'Os visitantes veem um ícone partido ou uma caixa vazia onde estava a imagem.',
+            'fix' => 'Carregue a imagem de novo ou corrija o seu endereço no conteúdo ou no modelo.',
+        ],
+        'heavy' => [
+            'title' => 'Imagens pesadas',
+            'found' => 'Uma imagem pesa mais do que o limite.',
+            'why' => 'Num telemóvel são segundos de espera, e a velocidade da página na pesquisa desce.',
+            'fix' => 'Redimensione a imagem para o tamanho em que é mostrada e comprima-a; sirva WebP ou AVIF.',
+        ],
+        'format' => [
+            'title' => 'Imagens num formato antigo',
+            'found' => 'Um JPEG ou PNG do próprio site acima do limite é enviado a um navegador que aceita WebP e AVIF, sem uma fonte moderna num <picture>.',
+            'why' => 'A mesma imagem em WebP ou AVIF costuma pesar entre um terço e metade.',
+            'fix' => 'Sirva WebP ou AVIF — através de <picture> com uma fonte moderna, ou convertendo as imagens no carregamento.',
+        ],
+    ],
+    'a11y' => [
+        'button_name' => [
+            'title' => 'Botões sem nome',
+            'found' => 'Um botão não tem texto, aria-label nem title.',
+            'why' => 'Um leitor de ecrã só pode dizer «botão», e quem o usa não sabe o que ele faz.',
+            'fix' => 'Dê ao botão um texto, ou um aria-label se for um ícone.',
+        ],
+        'form_label' => [
+            'title' => 'Campos sem rótulo',
+            'found' => 'Um campo de formulário não tem label nem aria-label.',
+            'why' => 'Um leitor de ecrã não consegue dizer o que escrever; um placeholder desaparece assim que se começa a escrever.',
+            'fix' => 'Adicione um <label for="…"> a cada campo, ou um aria-label.',
+        ],
+        'iframe_title' => [
+            'title' => 'Frames sem title',
+            'found' => 'Um iframe não tem title.',
+            'why' => 'Os leitores de ecrã anunciam um frame sem nome, e quem os usa não distingue um mapa de um vídeo.',
+            'fix' => 'Adicione um title que diga o que o frame mostra.',
+        ],
+    ],
+    'structure' => [
+        'depth' => [
+            'title' => 'Páginas profundas',
+            'found' => 'Uma página indexável está mais longe da página inicial do que o limite, em cliques.',
+            'why' => 'Os motores de busca visitam menos as páginas profundas e valorizam-nas menos; os visitantes raramente chegam lá.',
+            'fix' => 'Faça um link para a página a partir de uma categoria, do menu ou de páginas relacionadas.',
+        ],
+        'orphan' => [
+            'title' => 'Páginas órfãs',
+            'found' => 'A página está no sitemap ou no registo de endereços, mas nenhuma página do site tem um link para ela.',
+            'why' => 'Os visitantes não conseguem chegar a ela, e os motores de busca tratam como pouco importante uma página para a qual nada aponta.',
+            'fix' => 'Faça um link para a página de onde ela pertence, ou despublique-a se não for necessária.',
+        ],
+        'dead_end' => [
+            'title' => 'Becos sem saída',
+            'found' => 'A página não tem links para nenhuma outra página do site.',
+            'why' => 'Um visitante que chega a ela não tem para onde ir senão voltar.',
+            'fix' => 'Verifique se o layout com o seu menu é usado e adicione links para páginas relacionadas.',
+        ],
+    ],
+];

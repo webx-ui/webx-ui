@@ -438,8 +438,11 @@ article({
 })
 
 article({
-  title: ['«Эталонный магазин»: магазин за одиннадцать недель', 'Reference shop: a shop in eleven weeks'],
-  slug: 'case-shop',
+  title: [
+    '«Северный склад»: магазин за одиннадцать недель',
+    'Northwind Supply: a shop in eleven weeks',
+  ],
+  slug: 'case-northwind',
   lead: [
     'Каталог на девятнадцать тысяч позиций, обмен с 1С и панель, в которой работают четыре человека.',
     'Nineteen thousand items, an ERP exchange and a panel four people work in.',
@@ -448,7 +451,7 @@ article({
   author: 2,
   rubrics: ['cases'],
   tags: ['migration', 'laravel'],
-  cover: 'blog/2026/08/case-shop.svg',
+  cover: 'blog/2026/08/case-northwind.svg',
   versions: 2,
 })
 

@@ -8,8 +8,11 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Contracts\SiteUrls;
 use WebxUi\Admin\Links\LinkSources;
+use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Blocks\BlockOffers;
+use WebxUi\Menu\Audit\MenuLinks;
 use WebxUi\Menu\Models\Menu;
 use WebxUi\Menu\Panel\MenuModule;
 use WebxUi\Menu\Rendering\Builder;
@@ -46,6 +49,14 @@ class MenuServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-menu');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-menu');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+
+        // Which menu item leads to an error or a redirect, for the site audit when it is
+        // installed (§7 of its spec).
+        if (class_exists(AuditChecks::class)) {
+            foreach ([MenuLinks::BROKEN, MenuLinks::REDIRECT] as $id) {
+                $this->app->make(AuditChecks::class)->register(new MenuLinks($id, $this->app->make(LinkUrls::class)));
+            }
+        }
 
         Blade::componentNamespace('WebxUi\\Menu\\View\\Components', 'webx-menu');
 

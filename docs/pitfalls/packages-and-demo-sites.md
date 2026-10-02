@@ -89,7 +89,11 @@
   какой-то Prettier и форматирует им, а `npx vue-tsc` в пакете падает «Cannot find type definition
   file for 'node'» — похоже на сломанный `tsconfig`. Лечится junction'ами на основной чекаут, корень
   и каждый пакет: `cmd //c mklink //J node_modules <основной>\node_modules`, то же для
-  `packages/*/node_modules` и `apps/*/node_modules` (они в `.gitignore`); pnpm после этого из
+  `packages/*/node_modules` и `apps/*/node_modules` (они в `.gitignore`). Пакетные junction'ы
+  циклом — из PowerShell (`New-Item -ItemType Junction`), не из Bash: собранный в Bash путь теряет
+  обратные слэши, `mklink` молча делает ссылку в никуда, и vitest падает «Failed to resolve import
+  "vue-router"» на каждом файле пакета. Битая ссылка видна по пустому `Target` у `Get-Item`;
+  снимать её `cmd /c rmdir`, а не `Remove-Item -Recurse`, который уходит за ссылку. pnpm после этого из
   worktree по-прежнему не звать. Проверка — `ls node_modules/.bin/prettier` перед первым
   форматированием; отформатированное до неё — прогнать ещё раз.
 - **Сайт, слинкованный с worktree, собирается из двух чекаутов сразу.** Junction
@@ -102,6 +106,21 @@
   пакеты самого worktree. Проверка — `ls -la packages/<пакет>/node_modules/@webx-ui` показывает
   путь worktree. Сборку пакета из worktree `npx vite build` делает в его каталоге; без junction'а
   на `node_modules` пакета она падает «Cannot find package 'vite-plugin-dts'».
+- **Удалять отработавший worktree — сначала ссылки, потом каталог.** В нём junction'ы
+  `node_modules` на основной чекаут, симлинки `php/vendor/webx-ui/*` и тысячи ссылок pnpm, и
+  удаление, которое пойдёт за ссылку, снесёт чужое. Порядок: обойти дерево, не заходя в точки
+  повторной обработки (`FileAttributes.ReparsePoint`), и снять каждую ссылку
+  (`[IO.Directory]::Delete(path, $false)` для каталога), потом `git worktree remove --force` и
+  `git branch -D`. Проверка — `node_modules/vue` и `php/packages/*/src` основного чекаута на месте.
+  Пустая папка, которая не удаляется «Device or resource busy», — чей-то процесс держит её текущим
+  каталогом; оставить до освобождения. Для `vitepress build` из worktree нужны ещё junction'ы
+  `packages/*/dist`: доки резолвят `@webx-ui/*` из `dist`.
+- **Рукописная правка `pnpm-lock.yaml` из worktree проверяется в отдельном worktree без
+  `node_modules`.** Зависимость, вписанная не в тот `importers`, роняет каждую джобу CI на
+  `ERR_PNPM_OUTDATED_LOCKFILE` («1 dependency was removed»), а локально этого не видно — pnpm из
+  worktree звать нельзя. Проверка без риска: закоммитить, `git worktree add --detach <скретчпад>
+HEAD`, там `pnpm install --frozen-lockfile --lockfile-only --ignore-scripts` (симлинков нет,
+  `node_modules` не создаётся, секунды), потом `git worktree remove --force`.
 - **На пустом `php/vendor` первый `analyse` — гонка за манифест Testbench.** В worktree своего
   `php/vendor` нет, `composer install` манифест не пишет (он пишется при первой загрузке
   приложения), и первым приложение поднимает phpstan — сразу в несколько процессов. Дальше либо
@@ -111,7 +130,9 @@
   что читается как права на каталог. После `composer install` в свежем `php/` прогреть манифест
   **один раз и последовательно**:
   `TESTBENCH_WORKING_PATH="$(cygpath -m $PWD)" php vendor/bin/testbench package:discover` из
-  `php/`, убрать `bootstrap/cache/*.tmp`, потом `analyse`. Голый
+  `php/`, убрать `bootstrap/cache/*.tmp`, потом `analyse`. Если `analyse` уже успел упасть,
+  прогрева мало: те же ошибки приезжают из `php/.phpstan.cache` — сначала
+  `php vendor/bin/phpstan clear-result-cache -c phpstan.neon.dist`. Голый
   `php vendor/orchestra/testbench-core/laravel/artisan` не годится: без рабочего пути он ищет
   `vendor/autoload.php` внутри testbench и падает на `require`. **Новый пакет в `php/` — это
   `composer update webx-ui/<пакет>`**, после которого манифест прогревается заново (снести
@@ -152,11 +173,8 @@
   recognized» и вопросом про `allow-plugins` — похоже на сломанный `composer.json`. Либо каталог
   `php.exe` в PATH, либо сами бинарники: `php.exe vendor/bin/pint --test`, `… phpstan analyse`,
   `… phpunit`.
-- **Нижнюю версию матрицы проверяет CI, а не dev-корень.** Тулинг живёт быстрее пакета: PHPUnit 13
-  требует PHP 8.4.1 и на 8.3 не ставится, хотя пакет заявляет `^8.3`. Сам `php/` с тех пор на 8.3
-  не запускается: его `vendor` разрешён под 8.4.1, и `php.exe` из `PHP-8.3` падает в
-  `platform_check.php` ещё до первой строки phpstan — выглядит как сломанный `vendor`. Гейт гонять
-  на 8.4.
+- Было: dev-корень `php/` не запускался на 8.3 при пакетах на `^8.3` (PHPUnit 13 требует 8.4.1).
+  Нижняя версия пакетов поднята до `^8.4`, матрица CI — 8.4 и 8.5.
 
 ## Гейт и проверки локально
 

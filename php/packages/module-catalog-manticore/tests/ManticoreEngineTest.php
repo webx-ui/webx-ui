@@ -99,10 +99,17 @@ final class ManticoreEngineTest extends EngineScenarios
         $this->assertStringContainsString('morphology', (string) $status['reason']);
         $this->assertSame([$product->id], $this->ask('thinkpad', 'en')->ids);
 
-        $this->app->make(Indexer::class)->rebuild();
+        // A rebuild shows how far it has got by the table it fills, whoever started it.
+        $filled = [];
+        $this->app->make(Indexer::class)->rebuild(progress: function () use (&$filled): void {
+            $status = $this->engine()->status()['en'];
+            $filled[] = [$status['rebuilding'], $status['filled']];
+        });
+        $this->assertSame([[true, 0], [true, 1]], $filled);
 
         $status = $this->engine()->status()['en'];
         $this->assertSame('ready', $status['state']);
+        $this->assertNull($status['filled']);
         $this->assertSame(1, $status['documents']);
         $this->assertSame([$product->id], $this->ask('thinkpad', 'en')->ids);
 

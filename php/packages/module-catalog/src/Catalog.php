@@ -45,6 +45,26 @@ final class Catalog
     }
 
     /**
+     * The live products and the limit of the database engine, while it is the engine and the
+     * catalogue is past `sql_engine_limit` (§8.2); otherwise null. `webx:doctor` says it on a
+     * deploy and the list of products in the panel says it to whoever fills the catalogue — the
+     * person who will feel it first.
+     *
+     * @return array{live: int, limit: int}|null
+     */
+    public function outgrown(): ?array
+    {
+        if ($this->needsIndex()) {
+            return null;
+        }
+
+        $limit = (int) $this->config->get('webx-catalog.sql_engine_limit', 2000);
+        $live = Product::query()->count();
+
+        return $live > $limit ? ['live' => $live, 'limit' => $limit] : null;
+    }
+
+    /**
      * @param  iterable<int|string>  $ids
      */
     public function touch(iterable $ids): void

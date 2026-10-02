@@ -56,6 +56,25 @@ final class ApiTest extends TestCase
     }
 
     #[Test]
+    public function the_list_says_when_the_catalogue_has_outgrown_the_database_engine(): void
+    {
+        $this->product('Alpha');
+        $editor = $this->editor(['catalog.view']);
+
+        $this->actingAs($editor, 'cms')->getJson($this->api('products'))
+            ->assertOk()
+            ->assertJsonPath('outgrown', null);
+
+        $this->product('Beta');
+        config(['webx-catalog.sql_engine_limit' => 1]);
+
+        $this->actingAs($editor, 'cms')->getJson($this->api('products'))
+            ->assertOk()
+            ->assertJsonPath('outgrown.live', 2)
+            ->assertJsonPath('outgrown.limit', 1);
+    }
+
+    #[Test]
     public function sorting_and_filtering_are_a_white_list(): void
     {
         $editor = $this->editor(['catalog.view']);

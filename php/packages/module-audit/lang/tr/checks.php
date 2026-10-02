@@ -1,0 +1,654 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'config' => [
+        'debug' => [
+            'title' => 'Canlı alan adında hata ayıklama modu açık',
+            'found' => 'Geliştirme ortamı olmayan bir alan adında APP_DEBUG=true.',
+            'why' => 'Her hata sayfası, kodu, sorguları ve parolalar dahil ortamı, bir sayfaya rastlayan herkese gösterir.',
+            'fix' => '.env içinde APP_DEBUG=false yapın ve php artisan config:cache çalıştırın.',
+        ],
+        'env' => [
+            'title' => 'Ortam production değil',
+            'found' => 'Canlı bir alan adında APP_ENV production değil.',
+            'why' => 'production dışında paketler farklı davranır: önbellekler, hata sayfaları, posta ve hata ayıklama araçları.',
+            'fix' => '.env içinde APP_ENV=production yapın ve php artisan config:cache çalıştırın.',
+        ],
+        'app_url' => [
+            'title' => 'APP_URL siteyle eşleşmiyor',
+            'found' => 'APP_URL, sitenin yanıt verdiği şema ve ana makineden farklı.',
+            'why' => 'Sitenin yazdırdığı tüm mutlak adresler — site haritası, canonical bağlantılar, e-postalar, dosya bağlantıları — başka bir yeri gösterir.',
+            'fix' => 'APP_URL değerini ziyaretçilerin kullandığı adrese ayarlayın (sitede varsa https ile) ve php artisan config:cache çalıştırın.',
+        ],
+        'queue' => [
+            'title' => 'Kuyruk istek içinde çalışıyor',
+            'found' => 'Kuyruk sürücüsü sync.',
+            'why' => 'E-postalar ve gönderimler ziyaretçi beklerken işlenir, yavaş bir posta sunucusu formları yavaşlatır ve denetim gibi uzun işler panelden çalıştırılamaz.',
+            'fix' => 'database veya redis kuyruğunu kullanın ve bir worker çalışır durumda tutun (bir supervisor altında php artisan queue:work).',
+        ],
+        'mail' => [
+            'title' => 'Posta hiçbir yere gitmiyor',
+            'found' => 'Posta sürücüsü e-postaları günlüğe veya belleğe yazıyor.',
+            'why' => 'Her form “gönderildi” der ve kimse hiçbir zaman e-posta almaz.',
+            'fix' => '.env içinde gerçek bir posta sürücüsü (SMTP veya bir API) yapılandırın: MAIL_MAILER ve ayarları.',
+        ],
+        'schedule' => [
+            'title' => 'Zamanlayıcı çalışmıyor',
+            'found' => 'Zamanlayıcı bir saatten uzun süredir çalışmadı.',
+            'why' => 'Yedekler, günlük temizliği ve zamanlanmış diğer her şey sessizce durur.',
+            'fix' => 'Site kullanıcısının crontab dosyasına “* * * * * php artisan schedule:run” satırını ekleyin.',
+        ],
+        'storage_link' => [
+            'title' => 'public/storage bağlantısı yok',
+            'found' => 'public/storage mevcut değil.',
+            'why' => 'Sitede yüklenen her görsel ve dosya 404 yanıtı verir.',
+            'fix' => 'Sunucuda php artisan storage:link çalıştırın.',
+        ],
+        'site_gate' => [
+            'title' => 'Site parola ile kapatılmış',
+            'found' => 'Site kapısı açık.',
+            'why' => 'Arama motorları parolanın arkasında hiçbir şey görmez — site test aşamasındayken doğru, yayına girdikten sonra yanlış.',
+            'fix' => 'Site açıldığında WEBX_SITE_GATE=false yapın.',
+        ],
+    ],
+    'host' => [
+        'mirror' => [
+            'title' => 'İki ayna yanıt veriyor',
+            'found' => 'Hem www hem de www’siz ad 200 yanıtı veriyor.',
+            'why' => 'Her sayfa iki kez bulunur ve arama motorları ağırlığını kopyalar arasında böler.',
+            'fix' => 'Web sunucusunda ikinci adı tek bir 301 ile ana ada yönlendirin.',
+        ],
+        'https' => [
+            'title' => 'http, https’e tek adımda gitmiyor',
+            'found' => 'http:// kendisi yanıt veriyor, başka yere gidiyor veya https’e bir zincirle ulaşıyor.',
+            'why' => 'Ziyaretçiler güvenli olmayan bir kopyaya düşer ve her ek adım zamana ve bağlantı ağırlığına mal olur.',
+            'fix' => 'Web sunucusunda ana ana makinenin http:// adresinden https:// adresine tek bir 301.',
+        ],
+        'tls' => [
+            'title' => 'Sertifika sorunu',
+            'found' => 'Sertifikanın süresi yakında doluyor, başka bir ana makineyi adlandırıyor veya güvenilir değil.',
+            'why' => 'Tarayıcılar tam sayfa uyarı gösterir ve ziyaretçilerin çoğu ayrılır.',
+            'fix' => 'Sertifikayı yenileyin (otomatik yenilemenin çalıştığını kontrol edin) ve bu ana makine için tam zinciri sunun.',
+        ],
+        'hsts' => [
+            'title' => 'HSTS yok',
+            'found' => 'Strict-Transport-Security başlığı yok.',
+            'why' => 'İlk ziyaret yine de düz http üzerinden gidebilir ve yakalanabilir.',
+            'fix' => 'https kararlı hale geldiğinde web sunucusuna Strict-Transport-Security: max-age=31536000 ekleyin.',
+        ],
+        'index_files' => [
+            'title' => 'Index dosyaları yanıt veriyor',
+            'found' => '/index.php veya başka bir index dosyası 200 yanıtı veriyor.',
+            'why' => 'Sayfa ikinci bir adreste de erişilebilir — arama motorları için bir kopya.',
+            'fix' => 'Index dosyalarını, onlarsız adrese 301 ile yönlendirin.',
+        ],
+        'slashes' => [
+            'title' => 'Çift eğik çizgiler birleştirilmiyor',
+            'found' => '// içeren bir adres 200 yanıtı veriyor.',
+            'why' => 'Yanlış yazılmış her bağlantı sayfanın bir kopyasını daha oluşturur.',
+            'fix' => 'Tekrarlanan eğik çizgili adresleri birleştirilmiş adrese 301 ile yönlendirin.',
+        ],
+        'trailing_slash' => [
+            'title' => 'Sondaki eğik çizgiyle ve çizgisiz',
+            'found' => 'Aynı sayfa sondaki eğik çizgiyle de çizgisiz de yanıt veriyor.',
+            'why' => 'Bir sayfa için iki adres, sayfanın ağırlığını böler.',
+            'fix' => 'Bir biçim seçin ve diğerini 301 ile yönlendirin.',
+        ],
+        'case' => [
+            'title' => 'Büyük/küçük harf normalleştirilmiyor',
+            'found' => 'Büyük harf içeren bir adres 200 yanıtı veriyor.',
+            'why' => 'Başka harf biçimiyle yazılmış bir bağlantı kopya oluşturur.',
+            'fix' => 'Büyük harfli adresleri küçük harfli adrese 301 ile yönlendirin.',
+        ],
+        'soft_404' => [
+            'title' => 'Olmayan sayfalar 404 yanıtı vermiyor',
+            'found' => 'Var olamayacak bir adres 200 yanıtı veriyor veya yönlendiriyor.',
+            'why' => 'Arama motorları yazım hatalarını ve silinmiş sayfaları gerçek sayfa olarak dizine ekler.',
+            'fix' => 'Bilinmeyen adresler için 404 yanıtı verin; onları ana sayfaya yönlendirmeyin.',
+        ],
+        '404_page' => [
+            'title' => '404 sayfası hiçbir yere götürmüyor',
+            'found' => '404 sayfasında ana sayfaya bağlantı yok.',
+            'why' => 'Bozuk bir bağlantıyı izleyen ziyaretçinin gidecek yeri kalmaz.',
+            'fix' => '404 şablonuna ana sayfaya, aramaya veya ana bölümlere bir bağlantı ekleyin.',
+        ],
+        'compression' => [
+            'title' => 'HTML sıkıştırılmıyor',
+            'found' => 'Sayfalar gzip veya brotli olmadan gönderiliyor.',
+            'why' => 'Sayfalar birkaç kat daha ağır olur ve özellikle mobilde daha yavaş açılır.',
+            'fix' => 'Web sunucusunda text/html için gzip veya brotli’yi açın.',
+        ],
+        'security_headers' => [
+            'title' => 'Güvenlik başlıkları eksik',
+            'found' => 'X-Content-Type-Options, Referrer-Policy ve çerçeveye gömme korumasından bazıları eksik.',
+            'why' => 'Ucuz saldırıları kapatırlar: MIME sniffing, adres sızdırma, clickjacking.',
+            'fix' => 'Başlıkları web sunucusuna ekleyin: nosniff, strict-origin-when-cross-origin, SAMEORIGIN.',
+        ],
+        'server_leak' => [
+            'title' => 'Sunucu sürümlerini açıklıyor',
+            'found' => 'X-Powered-By veya sürüm numaralı Server.',
+            'why' => 'O sürümdeki bilinen bir açığı arayan herkes için hazır bir harita.',
+            'fix' => 'expose_php ve server_tokens ayarlarını (veya karşılıklarını) kapatın.',
+        ],
+        'static_cache' => [
+            'title' => 'Statik dosyalar önbelleğe alınmıyor',
+            'found' => 'Cache-Control olmayan veya bir haftadan kısa önbelleğe alınan CSS, JS ya da görseller.',
+            'why' => 'Her sayfa bunları yeniden indirir.',
+            'fix' => 'Web sunucusunda sürümlü statik dosyalara uzun bir Cache-Control verin (bir yıl, immutable).',
+        ],
+    ],
+    'hosts' => [
+        'dev_content' => [
+            'title' => 'İçerikte geliştirme ortamına bağlantılar',
+            'found' => 'Bir kayıtta geliştirme ortamı adresi — yayınlanmış, taslakta veya şablonun yazdırmadığı bir alanda.',
+            'why' => 'Geliştirme ortamında doldurulan içerik, o ortama geri işaret eden bağlantı ve görsellerle canlıya çıkar; ziyaretçiler hata alır ve geliştirme ortamı dizine eklenir.',
+            'fix' => 'Kaydı açın ve ortam adresini sitenin kendi adresiyle veya göreli bir bağlantıyla değiştirin. Hepsinin yakalanması için ortamları denetim ayarlarında listeleyin.',
+        ],
+        'dev_page' => [
+            'title' => 'Sayfada geliştirme ortamına bağlantılar',
+            'found' => 'Sayfanın bir bağlantısı veya kaynağı — bir görsel, bir betik, bir stil, og:image, canonical — bir geliştirme ortamına gidiyor.',
+            'why' => 'Ziyaretçiler kendileri için olmayan bir siteye giden bağlantıları izler, ortam kapandığında görseller bozulur ve arama motorları ortamı site üzerinden bulur.',
+            'fix' => 'Adresi sayfanın içeriğinde veya şablonunda bulun ve ortamı sitenin kendi ana makinesiyle veya göreli bir bağlantıyla değiştirin.',
+        ],
+        'similar' => [
+            'title' => 'Bu siteye benzeyen bir ana makine',
+            'found' => 'Sitenin başka bir uzantıdaki ilk kelimesiyle aynı olan bir ana makineye bağlantı; örneğin shop.com yanında shop.local.',
+            'why' => 'Büyük olasılıkla denetimin bilmediği bir geliştirme ortamı veya sitenin eski bir kopyasıdır.',
+            'fix' => 'Bir ortam veya eski bir alan adıysa, denetim ayarlarında “Bu sitenin diğer adresleri” listesine ekleyin ve bağlantıları düzeltin; başkasının sitesiyse yapılacak bir şey yok.',
+        ],
+        'wrong_mirror' => [
+            'title' => 'Başka bir ayna üzerinden bağlantılar',
+            'found' => 'Siteye diğer aynası (www veya www’siz ad) üzerinden ya da https sitesinde http üzerinden verilmiş bir bağlantı.',
+            'why' => 'Her tıklama bir yönlendirmeden geçer: ziyaretçiler için daha yavaştır ve arama motorları sayfa olmayan bir adrese giden bağlantılar görür.',
+            'fix' => 'Ana aynaya https üzerinden bağlayın veya göreli bağlantılar kullanın.',
+        ],
+        'absolute_own' => [
+            'title' => 'Siteye kendisine mutlak bağlantılar',
+            'found' => 'İçerikteki bir bağlantı veya görsel, yol yerine sitenin kendi ana makinesiyle yazılmış.',
+            'why' => 'Bugün çalışır, başka bir alan adına veya protokole geçildiğinde bozulur; bir geliştirme ortamına kopyalandığında da canlı siteye geri götürür.',
+            'fix' => 'Sitenin kendi sayfalarına bağlantıları yol olarak yazın: https://shop.com/about yerine /about.',
+        ],
+        'new_domain' => [
+            'title' => 'Yeni bir dış alan adı',
+            'found' => 'Site, önceki tam çalıştırmada bağlantı vermediği bir alan adına bağlantı veriyor.',
+            'why' => 'Yeni bir alan adı genellikle birinin eklediği yeni bir bağlantıdır — bazen de bir yazım hatası ya da siteye giren birinin bıraktığı spam bağlantılardır.',
+            'fix' => 'Listelenen sayfaları açın ve bağlantının orada olması gerektiğinden emin olun.',
+        ],
+        'external_many' => [
+            'title' => 'Bir sayfada çok sayıda dış bağlantı',
+            'found' => 'Sayfada eşikten fazla dış bağlantı var.',
+            'why' => 'Çoğunlukla başka sitelere bağlantılardan oluşan bir sayfa arama motorlarına bağlantı çiftliği gibi görünür ve çoğu zaman spam işaretidir.',
+            'fix' => 'Ziyaretçiye yardımı olmayan bağlantıları kaldırın veya sayfayı bölün.',
+        ],
+        'blank_opener' => [
+            'title' => 'noopener olmadan yeni sekme',
+            'found' => 'Başka bir siteye giden bir bağlantı, rel="noopener" olmadan yeni sekmede açılıyor.',
+            'why' => 'Eski tarayıcılarda açılan sayfa, sitenin sekmesini kendi seçtiği bir sayfaya yönlendirebilir.',
+            'fix' => 'target="_blank" olan bağlantılara rel="noopener" (veya noreferrer) ekleyin.',
+        ],
+        'external_redirect' => [
+            'title' => 'Yönlendirme üzerinden giden dış bağlantılar',
+            'found' => 'Başka bir siteye giden bir bağlantı yönlendirmeyle yanıt veriyor.',
+            'why' => 'Bağlantı dolambaçlı yoldan çalışır ve bu genellikle sayfanın taşındığı, bağlantının ise hiç güncellenmediği anlamına gelir.',
+            'fix' => 'Bağlantıyı, yönlendirdiği adresle değiştirin.',
+        ],
+    ],
+    'indexing' => [
+        'home_noindex' => [
+            'title' => 'Ana sayfa arama motorlarına kapalı',
+            'found' => 'Ana sayfada robots meta etiketinde veya X-Robots-Tag başlığında noindex var.',
+            'why' => 'Sitenin en önemli sayfası aramadan düşer ve çoğu zaman tüm site de onu izler.',
+            'fix' => 'Ana sayfadan noindex’i kaldırın: sayfanın SEO ayarlarını, ana şablonu ve web sunucusu başlıklarını kontrol edin.',
+        ],
+        'noindex' => [
+            'title' => 'noindex ile kapatılmış sayfalar',
+            'found' => 'Sayfada robots meta etiketinde veya X-Robots-Tag başlığında noindex var.',
+            'why' => 'Arama motorları sayfayı düşürür. Arama sonuçları ve hizmet sayfaları için doğru, yanlışlıkla kapatılmış içerik için yanlıştır.',
+            'fix' => 'Listeye göz atın; bulunması gereken sayfaları SEO ayarlarında açın ve noindex’i kaldırın.',
+        ],
+    ],
+    'robots' => [
+        'missing' => [
+            'title' => 'robots.txt yok',
+            'found' => '/robots.txt 200 yanıtı vermiyor veya düz metin dışında bir şeyle yanıt veriyor.',
+            'why' => 'Arama motorları eksik bir dosyayı “her şeye izin var”, hata veren bir dosyayı ise “sonra tekrar gel” olarak okur — sitenin vermek istediği kurallar kaybolur.',
+            'fix' => 'robots.txt’yi text/plain olarak sunun. module-seo ile bu “robots.txt” ayarıdır; onu gölgeleyen statik public/robots.txt dosyasını kaldırın.',
+        ],
+        'disallow_all' => [
+            'title' => 'robots.txt tüm siteyi kapatıyor',
+            'found' => 'Canlı bir alan adında robots.txt tüm robotlar için Disallow: / içeriyor.',
+            'why' => 'Arama motorları siteyi taramayı bırakır ve onu sonuçlardan çıkarır. Bu genellikle dağıtımla birlikte canlıya çıkan geliştirme ortamı dosyasıdır.',
+            'fix' => '* grubundan Disallow: / satırını kaldırın veya yalnızca gelmemesi gereken robotlar için bırakın.',
+        ],
+        'no_sitemap' => [
+            'title' => 'robots.txt site haritasını belirtmiyor',
+            'found' => 'robots.txt’de Sitemap: satırı yok.',
+            'why' => 'Arama motorları site haritasını yalnızca elle gösterildiği yerde bulur, yeni arama motorları ise hiç bulamaz.',
+            'fix' => 'robots.txt’ye Sitemap: https://…/sitemap.xml satırını ekleyin.',
+        ],
+        'blocks_assets' => [
+            'title' => 'robots.txt CSS veya JS’yi kapatıyor',
+            'found' => 'Ana sayfanın yüklediği bir stil dosyası veya betik robots.txt’de kapatılmış.',
+            'why' => 'Arama motorları sayfayı onlarsız çizer, bozuk bir düzen görür ve sayfayı mobil uyumlu saymayabilir.',
+            'fix' => 'CSS ve JS klasörlerine izin verin veya onları kapatan kuralı kaldırın.',
+        ],
+        'syntax' => [
+            'title' => 'robots.txt’nin anlamadığı satırlar',
+            'found' => 'robots.txt’de bilinmeyen yönergeler, herhangi bir User-agent’tan önce gelen kurallar veya “alan: değer” biçiminde olmayan satırlar var.',
+            'why' => 'Arama motorları bu satırları sessizce atlar: Disalow’daki bir yazım hatası hiçbir şeyi kapatmaz ve kimse yıllarca fark etmez.',
+            'fix' => 'Yazımı düzeltin ve her kural grubunu bir User-agent satırıyla başlatın.',
+        ],
+    ],
+    'sitemap' => [
+        'missing' => [
+            'title' => 'Site haritası yok',
+            'found' => 'Site haritası yanıt vermiyor veya ayrıştırılamıyor — ya da robots.txt’nin veya dizinin belirttiği bir dosya öyle.',
+            'why' => 'Arama motorları yeni ve derin sayfaları yalnızca tarayarak, yavaşça bulur; hiçbir şeyin bağlantı vermediği sayfaları ise hiç bulamaz.',
+            'fix' => 'robots.txt’nin belirttiği adreste geçerli bir site haritası sunun. module-seo ile adres kaydından oluşturulur.',
+        ],
+        'limits' => [
+            'title' => 'Sınırları aşan bir site haritası dosyası',
+            'found' => 'Bir site haritası dosyasında 50 000’den fazla adres var veya sıkıştırılmamış hâli 50 MB’tan büyük.',
+            'why' => 'Arama motorları böyle bir dosyayı yalnızca sonunu değil, tamamen düşürür.',
+            'fix' => 'Site haritasını bir site haritası dizini altında birkaç dosyaya bölün.',
+        ],
+        'bad_url' => [
+            'title' => 'Site haritasında dizinlenecek sayfa olmayan adresler',
+            'found' => 'Site haritasındaki bir adres hata veya yönlendirmeyle yanıt veriyor, noindex ile kapatılmış ya da canonical’ı başka bir sayfayı gösteriyor.',
+            'why' => 'Site haritası bir orijinaller listesidir; böyle her adres, arama motorunun ziyaretini atacağı bir şeye harcar ve bunların çok olması site haritasına daha az güvenmesine yol açar.',
+            'fix' => 'Yalnızca bulunması gereken çalışan sayfaları, son adresleriyle listeleyin.',
+        ],
+        'lastmod' => [
+            'title' => 'Site haritasındaki lastmod hiçbir şey söylemiyor',
+            'found' => 'lastmod gelecekte veya bir dosyanın tüm adreslerinde aynı.',
+            'why' => 'Arama motorları tarihin tutulmak yerine öylesine yazdırıldığını öğrenir ve neyi yeniden tarayacağına karar verirken onu kullanmayı bırakır.',
+            'fix' => 'Sayfa içeriğinin son değiştiği tarihi yazdırın veya lastmod’u hiç koymayın.',
+        ],
+        'missing_page' => [
+            'title' => 'Site haritasında eksik sayfalar',
+            'found' => 'Taramanın ulaştığı dizinlenebilir bir sayfa site haritasında yok.',
+            'why' => 'Arama motorları onu yalnızca bağlantılar üzerinden, daha sonra bulur — ve son bağlantısını kaybeden bir sayfa düşer.',
+            'fix' => 'Sayfanın modülünün onu site haritasına eklediğinden emin olun (module-seo ile — adres kaydı üzerinden) veya bulunmaması gerekiyorsa noindex ile kapatın.',
+        ],
+    ],
+    'redirects' => [
+        'chain' => [
+            'title' => 'Yönlendirme zincirleri',
+            'found' => 'Bir adres sayfaya ulaşmadan önce birden fazla kez yönlendiriyor.',
+            'why' => 'Her adım ziyaretçi için bir gidiş-dönüştür ve arama motorları sona varmadan izlemeyi bırakabilir.',
+            'fix' => 'İlk yönlendirmeyi doğrudan son adrese yöneltin.',
+        ],
+        'loop' => [
+            'title' => 'Yönlendirme döngüleri',
+            'found' => 'Yönlendirmeler daha önce geçtikleri bir adrese geri dönüyor.',
+            'why' => 'Tarayıcı “çok fazla yönlendirme” diyerek pes eder — sayfa kimse için var olmaz.',
+            'fix' => 'Adresi ileri geri gönderen iki kuralı bulun ve birini kaldırın.',
+        ],
+        'to_error' => [
+            'title' => 'Hataya giden yönlendirmeler',
+            'found' => 'Bir yönlendirme 4xx, 5xx veya yanıtsızlıkla sona eriyor.',
+            'why' => 'Eski adres yalnızca ölü bir adrese götürmek için yaşatılıyor: ziyaretçiler ve arama motorları bir hataya düşer.',
+            'fix' => 'Yönlendirmeyi çalışan bir sayfaya yöneltin veya kaldırın.',
+        ],
+        'temporary' => [
+            'title' => 'Geçici yönlendirmeler',
+            'found' => 'Bir adres 302 veya 307 yanıtı veriyor.',
+            'why' => 'Arama motorları eski adresi dizinde tutar ve yeni adrese ağırlığından hiçbir şey vermez. Geri alınacak bir yönlendirme için doğru, kalıcı bir taşınma için yanlıştır.',
+            'fix' => 'Listeye göz atın; kalıcı olarak taşınan adreslerin yönlendirmelerini 301 yapın.',
+        ],
+    ],
+    'title' => [
+        'missing' => [
+            'title' => 'Title yok',
+            'found' => 'Sayfada <title> yok veya boş.',
+            'why' => 'Title, arama motorlarının sayfaya bağlantı olarak gösterdiği satırdır; olmazsa kendileri uydurur.',
+            'fix' => 'Sayfaya SEO ayarlarında bir title verin veya ana şablonun bunu yazdırdığını kontrol edin.',
+        ],
+        'duplicate' => [
+            'title' => 'Yinelenen title’lar',
+            'found' => 'Birkaç dizinlenebilir sayfa aynı title’a sahip.',
+            'why' => 'Arama motorları sayfaları ayırt edemez ve birini gösterir; bu her zaman doğru olanı olmaz.',
+            'fix' => 'Her sayfaya, içinde ne olduğunu söyleyen kendi title’ını verin.',
+        ],
+        'length' => [
+            'title' => 'Title çok kısa veya çok uzun',
+            'found' => 'Title, karakter cinsinden eşiklerden daha kısa veya daha uzun.',
+            'why' => 'Uzun bir title arama sonuçlarında kesilir (sınır yaklaşık 600 piksel, kabaca 60 karakterdir); kısa olan çok az şey söyler.',
+            'fix' => 'Title’ı denetim eşiklerindeki aralığa sığacak şekilde yeniden yazın.',
+        ],
+        'multiple' => [
+            'title' => 'Birden fazla title',
+            'found' => 'Sayfada birden fazla <title> etiketi var.',
+            'why' => 'Arama motorları bunlardan birini alır; bu her zaman sayfa için yazılmış olan olmaz.',
+            'fix' => 'İkinci title’ı hangi şablonun veya bloğun yazdırdığını bulun ve kaldırın.',
+        ],
+    ],
+    'description' => [
+        'missing' => [
+            'title' => 'Meta description yok',
+            'found' => 'Sayfada meta description yok veya boş.',
+            'why' => 'Arama motorları bağlantının altındaki özeti buldukları herhangi bir metinden oluşturur.',
+            'fix' => 'Sayfanın SEO ayarlarında bir description yazın: sayfanın ne sunduğunu bir iki cümleyle anlatın.',
+        ],
+        'duplicate' => [
+            'title' => 'Yinelenen description’lar',
+            'found' => 'Birkaç dizinlenebilir sayfa aynı meta description’a sahip.',
+            'why' => 'Farklı bağlantıların altındaki aynı özet arayan kişiye hiçbir şey söylemez ve arama motorları onu kendi özetleriyle değiştirir.',
+            'fix' => 'Her sayfa için kendi description’ını yazın.',
+        ],
+        'length' => [
+            'title' => 'Description çok kısa veya çok uzun',
+            'found' => 'Description, karakter cinsinden eşiklerden daha kısa veya daha uzun.',
+            'why' => 'Uzun bir description arama sonuçlarında kesilir (yaklaşık 920 piksel, kabaca 160 karakter); kısa olan çoğu zaman değiştirilir.',
+            'fix' => 'Description’ı denetim eşiklerindeki aralığa sığacak şekilde yeniden yazın.',
+        ],
+    ],
+    'h1' => [
+        'missing' => [
+            'title' => 'H1 yok',
+            'found' => 'Sayfada H1 başlığı yok.',
+            'why' => 'H1, ziyaretçilere ve arama motorlarına sayfanın ne hakkında olduğunu söyler; ekran okuyucular içeriğin başlangıcını bulmak için onu kullanır.',
+            'fix' => 'Sayfaya şablonda veya içerikte bir H1 verin — genellikle sayfanın adı.',
+        ],
+        'multiple' => [
+            'title' => 'Birden fazla H1',
+            'found' => 'Sayfada birden fazla H1 başlığı var.',
+            'why' => 'Kendi başına bir hata değildir, ancak genellikle bir bloğun veya logonun daha alt bir seviye yerine H1 kullandığını gösterir.',
+            'fix' => 'Sayfanın adı için tek bir H1 bırakın ve diğerlerini H2 veya daha alt yapın.',
+        ],
+        'equals_title' => [
+            'title' => 'H1, title ile aynı',
+            'found' => 'H1, title’ı kelimesi kelimesine tekrar ediyor.',
+            'why' => 'Sayfayı anlatan iki yer aynı şeyi söylüyor; biri, insanların aradığı bir kelimeyi ekleyebilirdi.',
+            'fix' => 'H1’i kısa ve okunaklı tutun, anahtar kelimeleri ve sitenin adını title taşısın.',
+        ],
+    ],
+    'headings' => [
+        'skipped' => [
+            'title' => 'Atlanan başlık seviyesi',
+            'found' => 'Aşağı inerken bir başlık seviyesi atlanıyor; örneğin H2’den sonra H4 geliyor.',
+            'why' => 'Ekran okuyucular başlıklara göre gezinir ve bir boşluk eksik içerik gibi okunur.',
+            'fix' => 'Seviyeleri sırayla kullanın; görünümü seviyeyle değil stillerle seçin.',
+        ],
+    ],
+    'canonical' => [
+        'missing' => [
+            'title' => 'Canonical yok',
+            'found' => 'Dizinlenebilir bir sayfada etikette veya başlıkta canonical bağlantısı yok.',
+            'why' => 'Olmazsa, sayfanın izleme veya sıralama parametreli her kopyası sayfanın kendisiyle yarışabilir.',
+            'fix' => 'Ana şablonun sayfanın kendi adresiyle <link rel="canonical"> yazdırmasını sağlayın.',
+        ],
+        'relative' => [
+            'title' => 'Göreli canonical',
+            'found' => 'Canonical tam adres olarak değil, yol olarak yazılmış.',
+            'why' => 'Arama motorları onu, geldikleri adrese göre yorumlar; buna başka bir ayna veya protokol de dahildir.',
+            'fix' => 'Canonical’ı şema ve ana makineyle birlikte tam adres olarak yazdırın.',
+        ],
+        'multiple' => [
+            'title' => 'Çelişen canonical’lar',
+            'found' => 'Sayfada birden fazla canonical var veya etiket ile Link başlığı uyuşmuyor.',
+            'why' => 'Canonical’lar çeliştiğinde arama motorları hepsini yok sayar.',
+            'fix' => 'Tek bir canonical bırakın: ikincisini ekleyen şablonu, bloğu veya sunucu kuralını bulun ve kaldırın.',
+        ],
+        'broken' => [
+            'title' => 'Bozuk veya kapalı bir sayfaya canonical',
+            'found' => 'Canonical bir yönlendirmeye, bir hataya veya noindex olan bir sayfaya gidiyor.',
+            'why' => 'Sayfa, dizinlenemeyen bir orijinali işaret ediyor ve arama motorları ikisini de düşürebilir.',
+            'fix' => 'Canonical’ı sayfanın kendi çalışan adresine veya canlı orijinale yöneltin.',
+        ],
+        'other' => [
+            'title' => 'Başka bir sayfaya canonical',
+            'found' => 'Canonical, sayfanın kendi adresinden farklı bir adresi gösteriyor.',
+            'why' => 'Sayfa, başka biri lehine dizinlenmemeyi istiyor — filtreler ve kopyalar için doğru, bulunması gereken bir sayfa için yanlış.',
+            'fix' => 'Listeye göz atın; bulunması gereken sayfalarda canonical’ı kendi adresleri yapın.',
+        ],
+    ],
+    'html' => [
+        'lang' => [
+            'title' => 'Sayfa dili yok veya yanlış',
+            'found' => '<html> etiketinde lang özniteliği yok veya sayfanın kendi hreflang satırından farklı bir dili belirtiyor.',
+            'why' => 'Ekran okuyucular sesi ona göre seçer, tarayıcılar çeviriyi ona göre önerir ve arama motorları onu bir ipucu olarak kullanır.',
+            'fix' => 'Ana şablonda sayfanın diliyle <html lang="…"> yazdırın — sitenin varsayılan dilini değil, sayfanın dilini.',
+        ],
+        'viewport' => [
+            'title' => 'Meta viewport yok',
+            'found' => 'Sayfada <meta name="viewport"> yok.',
+            'why' => 'Telefonlar sayfayı masaüstü genişliğinde, küçültülmüş çizer; arama motorları böyle bir sayfayı mobil uyumlu saymaz.',
+            'fix' => 'Ana şablona <meta name="viewport" content="width=device-width, initial-scale=1"> ekleyin.',
+        ],
+        'favicon' => [
+            'title' => 'Simge yok veya açılmıyor',
+            'found' => 'Sayfa hiçbir simgeye bağlantı vermiyor veya bağlantı verdiği simge açılmıyor.',
+            'why' => 'Tarayıcı sekmeleri, yer imleri ve telefonlardaki arama sonuçları sitenin işareti yerine boş bir kare gösterir.',
+            'fix' => 'Ana şablona çalışan bir adresle <link rel="icon"> ekleyin.',
+        ],
+    ],
+    'og' => [
+        'missing' => [
+            'title' => 'Open Graph etiketleri eksik',
+            'found' => 'Sayfada og:title, og:image veya og:url yok.',
+            'why' => 'Bir mesajlaşma uygulamasında veya sosyal ağda paylaşılan bağlantı, görselsiz ve başlıksız çıplak bir adres olarak görünür.',
+            'fix' => 'Sayfanın SEO ayarlarında sosyal önizlemeyi doldurun veya ana şablonun etiketleri yazdırmasını sağlayın.',
+        ],
+        'image_broken' => [
+            'title' => 'Open Graph görseli bozuk veya küçük',
+            'found' => 'og:image açılmıyor veya 1200×630’dan küçük.',
+            'why' => 'Paylaşılan bir bağlantı görsel göstermez ya da büyük bir kart yerine metnin yanında küçük bir kare gösterir.',
+            'fix' => 'Sayfanın sosyal önizlemesinde en az 1200×630 boyutunda çalışan bir görsel ayarlayın.',
+        ],
+    ],
+    'hreflang' => [
+        'not_reciprocal' => [
+            'title' => 'Geri bağlantısız hreflang',
+            'found' => 'Sayfa başka bir dil sürümünü belirtiyor, o sürüm ise sayfayı geri belirtmiyor.',
+            'why' => 'Arama motorları iki taraftan onaylanmamış bir dil sürümü çiftini yok sayar ve ziyaretçilere yanlış dili gösterir.',
+            'fix' => 'Sayfanın her dil sürümünde aynı hreflang bağlantı kümesini yazdırın; her biri diğerlerinin hepsini ve kendisini belirtsin.',
+        ],
+        'no_x_default' => [
+            'title' => 'x-default yok',
+            'found' => 'Sayfa birkaç dil sürümü belirtiyor ama x-default belirtmiyor.',
+            'why' => 'Dili bunların hiçbiri olmayan bir ziyaretçi, arama motorunun tahmin ettiği sürümü alır.',
+            'fix' => 'Geri kalan herkes için olan sürümü gösteren hreflang="x-default" ekleyin; genellikle dil seçici veya ana dil.',
+        ],
+        'broken' => [
+            'title' => 'Bozuk hreflang',
+            'found' => 'Bir dil sürümü hata veya yönlendirmeyle yanıt veriyor ya da dil kodu arama motorlarının okuduğu bir kod değil.',
+            'why' => 'Çift düşürülür. Yaygın hatalar: en-GB yerine en-UK, ja yerine jp.',
+            'fix' => 'hreflang’i her sürümün çalışan adresine yöneltin ve ISO 639-1 dil ile ISO 3166-1 bölge kodlarını kullanın.',
+        ],
+    ],
+    'jsonld' => [
+        'invalid' => [
+            'title' => 'Ayrıştırılamayan yapılandırılmış veriler',
+            'found' => 'Bir JSON-LD bloğu geçerli JSON değil.',
+            'why' => 'Yalnızca bozuk alan değil, bloğun tamamı kaybolur: zengin sonuç yok, içerik haritası yok, aramada ürün kartı yok.',
+            'fix' => 'Bloğu yazdıran şablonda sondaki virgülü veya kaçışsız tırnağı arayın; bloğu elle değil json_encode ile oluşturun.',
+        ],
+        'required' => [
+            'title' => 'Zorunlu alanları eksik yapılandırılmış veriler',
+            'found' => 'Bir Product, Article, Event, JobPosting, FAQPage veya BreadcrumbList öğesinde arama motorlarının zorunlu tuttuğu bir alan eksik.',
+            'why' => 'Sayfa zengin sonucunu kaybeder ve arama konsolu işaretlemeyi geçersiz olarak bildirir.',
+            'fix' => 'Listelenen alanları doldurun — sayfanın içeriğinde veya işaretlemeyi yazdıran şablonda.',
+        ],
+        'recommended' => [
+            'title' => 'Önerilen alanları eksik yapılandırılmış veriler',
+            'found' => 'Bir Product, Article, Event veya JobPosting öğesinde zengin sonucunu daha zengin yapan alanlar eksik.',
+            'why' => 'İşaretleme geçerlidir; snippet daha sadedir — görsel yok, marka yok, açıklama yok.',
+            'fix' => 'Listelenen alanları, içerikte bulundukları yerde ekleyin.',
+        ],
+    ],
+    'content' => [
+        'thin' => [
+            'title' => 'Az metin',
+            'found' => 'Dizinlenebilir bir sayfada eşikten az kelime var.',
+            'why' => 'Arama motorları okunacak şeyi az olan sayfaları daha aşağı sıralar ve bunlardan çoğunu düşük kaliteli sayabilir.',
+            'fix' => 'Ziyaretçiye yardımcı olan metin ekleyin, zayıf sayfaları birleştirin veya noindex ile kapatın.',
+        ],
+        'text_ratio' => [
+            'title' => 'İşaretlemeye göre az metin',
+            'found' => 'Görünen metin, HTML içindeki payı eşikten küçük.',
+            'why' => 'Sayfa söylediğine göre ağır: telefonda yavaş, ve arama motorları çok kodun içinde az içerik bulur.',
+            'fix' => 'Satır içi betikleri ve stilleri dosyalara taşıyın, kullanılmayan işaretlemeyi kaldırın ve içerik ekleyin.',
+        ],
+        'duplicate' => [
+            'title' => 'Yinelenen metin',
+            'found' => 'Birkaç dizinlenebilir sayfada aynı görünen metin var.',
+            'why' => 'Arama motorları gösterecekleri bir kopyayı seçer ve gerisini yok sayar.',
+            'fix' => 'Sayfaları birbirinden farklı kılın, birleştirin veya kopyaların canonical’ını orijinale yöneltin.',
+        ],
+    ],
+    'url' => [
+        'length' => [
+            'title' => 'Uzun adres',
+            'found' => 'Adres eşikten uzun.',
+            'why' => 'Uzun adresler arama sonuçlarında kesilir, paylaşması ve okuması zordur.',
+            'fix' => 'Sayfanın slug’ını kısaltın; eski adresten yönlendirme otomatik eklenir.',
+        ],
+        'format' => [
+            'title' => 'Adres biçimi',
+            'found' => 'Yolda büyük harfler, alt çizgiler veya ASCII dışı karakterler var.',
+            'why' => 'Büyük harfler /About ile /about’u iki sayfa yapar, alt çizgiler arama motorları için kelimeleri ayırmaz ve diğer karakterler kopyalanınca %D0%B0 olur.',
+            'fix' => 'Slug’larda küçük Latin harfleri, rakamlar ve tire kullanın.',
+        ],
+        'params' => [
+            'title' => 'Canonical olmadan parametreler',
+            'found' => 'Dizinlenebilir bir adreste sorgu parametreleri var ve canonical yok.',
+            'why' => 'Filtre ve sıralamanın her birleşimi arama motorlarında ayrı bir sayfa olur ve gerçek sayfanın ağırlığını bölüşürler.',
+            'fix' => 'Parametresiz adrese canonical yazdırın veya bu tür adresleri noindex ile kapatın.',
+        ],
+    ],
+    'perf' => [
+        'ttfb' => [
+            'title' => 'Yavaş yanıt',
+            'found' => 'Sayfa yanıt vermek için eşikten uzun sürdü.',
+            'why' => 'Ziyaretçiler bir şey görünmeden önce bekler ve arama motorları yavaş bir siteyi daha az tarar.',
+            'fix' => 'Önbellekleri açın (yapılandırma, rotalar, görünümler, sayfalar), yavaş sorguları kontrol edin ve ağır işleri kuyruğa taşıyın.',
+        ],
+        'html_size' => [
+            'title' => 'Ağır HTML',
+            'found' => 'Sayfanın HTML’i eşikten büyük.',
+            'why' => 'Telefonlar onu yavaş indirir ve işler; arama motorları sona varmadan okumayı bırakabilir.',
+            'fix' => 'Uzun listeleri sayfalayın, satır içi veriyi ve SVG’leri dosyalara taşıyın, içeriğin gizli kopyalarını kaldırın.',
+        ],
+    ],
+    'links' => [
+        'broken' => [
+            'title' => 'Bozuk iç bağlantılar',
+            'found' => 'Sitenin kendi sayfasına giden bir bağlantı 4xx, 5xx veya hiç yanıt vermiyor.',
+            'why' => 'Ziyaretçiler bir hataya düşer ve arama motorları ziyaretini bunun üzerinde boşa harcar.',
+            'fix' => 'Bağlantıyı düzeltin veya kaldırın ya da eksik adresten doğru sayfaya bir yönlendirme ekleyin.',
+        ],
+        'empty' => [
+            'title' => 'Metinsiz bağlantılar',
+            'found' => 'Bir bağlantıda metin ve aria-label yok, görsel bağlantıda ise alt yok.',
+            'why' => 'Ekran okuyucular adresi veya sadece “bağlantı” diye okur ve arama motorları gittiği sayfa hakkında hiçbir şey öğrenmez.',
+            'fix' => 'Bağlantıya bir metin, aria-label veya görseline bir alt verin.',
+        ],
+        'nofollow_internal' => [
+            'title' => 'İç bağlantılarda nofollow',
+            'found' => 'Sitenin kendi sayfasına giden bir bağlantıda rel="nofollow" var.',
+            'why' => 'Site, arama motorlarından kendi bağlantılarını izlememelerini istiyor ve sayfa daha az ağırlık alıyor.',
+            'fix' => 'Sitenin kendi sayfalarına giden bağlantılardan nofollow’u kaldırın.',
+        ],
+        'to_redirect' => [
+            'title' => 'Yönlendirmelere giden iç bağlantılar',
+            'found' => 'Sitenin kendi sayfasına giden bir bağlantı, yönlendiren bir adrese gidiyor.',
+            'why' => 'Her tıklama fazladan bir gidiş-dönüştür ve sayfa ağırlığını doğrudan değil, bir yönlendirme üzerinden aktarır.',
+            'fix' => 'Yönlendirmenin götürdüğü adrese bağlantı verin.',
+        ],
+        'external_broken' => [
+            'title' => 'Bozuk dış bağlantılar',
+            'found' => 'Başka bir siteye giden bir bağlantı 4xx, 5xx yanıtı veriyor veya ana makine yanıt vermiyor.',
+            'why' => 'Ziyaretçiler başkasının sitesinde bir hataya düşer ve sayfa terk edilmiş görünür. 429 sayılmaz — bu, bir sunucunun bir robottan yavaşlamasını istemesidir.',
+            'fix' => 'Bağlantıyı sayfanın yeni adresine güncelleyin veya kaldırın.',
+        ],
+    ],
+    'mixed_content' => [
+        'title' => 'Karışık içerik',
+        'found' => 'Bir https sayfası bir kaynağı http üzerinden yüklüyor.',
+        'why' => 'Tarayıcılar bu tür betikleri ve stilleri engeller, görseller için uyarır; kilit simgesi kaybolur.',
+        'fix' => 'Kaynağı https üzerinden yükleyin veya şemasız bir yol kullanın.',
+    ],
+    'forms' => [
+        'insecure' => [
+            'title' => 'http üzerinden gönderilen form',
+            'found' => 'Bir form bir http adresine gönderiliyor.',
+            'why' => 'Ziyaretçilerin yazdıkları şifrelenmeden gider ve tarayıcılar göndermeden önce uyarır.',
+            'fix' => 'Formu bir https adresine veya bir yola yöneltin.',
+        ],
+    ],
+    'images' => [
+        'alt' => [
+            'title' => 'alt’sız görseller',
+            'found' => 'Bir <img> öğesinde alt özniteliği yok.',
+            'why' => 'Ekran okuyucular dosya adını okur ve arama motorları görselin ne gösterdiğini bilmez. Süs amaçlı bir görselde boş alt uygundur.',
+            'fix' => 'Görseli alt içinde tanımlayın veya süs ise alt="" yazın.',
+        ],
+        'dimensions' => [
+            'title' => 'Boyutsuz görseller',
+            'found' => 'Bir <img> öğesinde width ve height yok.',
+            'why' => 'Görseller yüklenirken sayfa zıplar ve ziyaretçiler yanlış yere tıklar.',
+            'fix' => 'Şablonda görsellerin width ve height değerlerini yazdırın; CSS yine de onları duyarlı yapabilir.',
+        ],
+        'broken' => [
+            'title' => 'Bozuk görseller',
+            'found' => 'Sayfanın bir görseli 4xx, 5xx veya hiç yanıt vermiyor.',
+            'why' => 'Ziyaretçiler görselin yerinde bozuk bir simge veya boş bir kutu görür.',
+            'fix' => 'Görseli yeniden yükleyin veya içerikte ya da şablonda adresini düzeltin.',
+        ],
+        'heavy' => [
+            'title' => 'Ağır görseller',
+            'found' => 'Bir görsel eşikten daha ağır.',
+            'why' => 'Telefonda bu saniyelerce beklemek demektir ve sayfanın aramadaki hız değerlendirmesi düşer.',
+            'fix' => 'Görseli gösterildiği boyuta küçültün ve sıkıştırın; WebP veya AVIF sunun.',
+        ],
+        'format' => [
+            'title' => 'Eski biçimde görseller',
+            'found' => 'Sitenin eşiği aşan kendi JPEG veya PNG görseli, <picture> içinde modern bir kaynak olmadan WebP ve AVIF destekleyen bir tarayıcıya gönderiliyor.',
+            'why' => 'Aynı görsel WebP veya AVIF olarak genellikle üçte bir ile yarısı kadar tutar.',
+            'fix' => 'WebP veya AVIF sunun — modern bir kaynakla <picture> üzerinden ya da görselleri yüklerken dönüştürerek.',
+        ],
+    ],
+    'a11y' => [
+        'button_name' => [
+            'title' => 'Adsız düğmeler',
+            'found' => 'Bir düğmede metin, aria-label veya title yok.',
+            'why' => 'Bir ekran okuyucu yalnızca “düğme” diyebilir ve kullanıcısı ne yaptığını bilemez.',
+            'fix' => 'Düğmeye bir metin verin; simgeyse aria-label verin.',
+        ],
+        'form_label' => [
+            'title' => 'Etiketsiz alanlar',
+            'found' => 'Bir form alanında label ve aria-label yok.',
+            'why' => 'Bir ekran okuyucu ne yazılacağını söyleyemez; placeholder yazmaya başlar başlamaz kaybolur.',
+            'fix' => 'Her alana bir <label for="…"> veya bir aria-label ekleyin.',
+        ],
+        'iframe_title' => [
+            'title' => 'Title’sız çerçeveler',
+            'found' => 'Bir iframe’in title’ı yok.',
+            'why' => 'Ekran okuyucular adsız bir çerçeve duyurur ve kullanıcıları bir haritayı bir videodan ayıramaz.',
+            'fix' => 'Çerçevenin ne gösterdiğini söyleyen bir title ekleyin.',
+        ],
+    ],
+    'structure' => [
+        'depth' => [
+            'title' => 'Derin sayfalar',
+            'found' => 'Dizinlenebilir bir sayfa, ana sayfadan tıklama cinsinden eşikten daha uzakta.',
+            'why' => 'Arama motorları derin sayfaları daha seyrek ziyaret eder ve daha az değer verir; ziyaretçiler nadiren oraya ulaşır.',
+            'fix' => 'Sayfaya bir kategoriden, menüden veya ilgili sayfalardan bağlantı verin.',
+        ],
+        'orphan' => [
+            'title' => 'Yetim sayfalar',
+            'found' => 'Sayfa site haritasında veya adres kayıt defterinde var, ancak sitenin hiçbir sayfası ona bağlantı vermiyor.',
+            'why' => 'Ziyaretçiler ona ulaşamaz ve arama motorları hiçbir şeyin bağlanmadığı bir sayfayı önemsiz sayar.',
+            'fix' => 'Sayfaya ait olduğu yerden bağlantı verin veya gerekmiyorsa yayından kaldırın.',
+        ],
+        'dead_end' => [
+            'title' => 'Çıkmaz sayfalar',
+            'found' => 'Sayfa, sitenin başka hiçbir sayfasına bağlantı vermiyor.',
+            'why' => 'Ona gelen ziyaretçinin geri dönmekten başka gidecek yeri yok.',
+            'fix' => 'Menüsüyle birlikte ana şablonun kullanıldığını kontrol edin ve ilgili sayfalara bağlantılar ekleyin.',
+        ],
+    ],
+];

@@ -18,7 +18,10 @@
               "label": "trans::webx-seo::screen.default-og",
               "help": "trans::webx-seo::screen.default-og-help",
               "slot": "sidebar",
-              "props": { "aspect": "16/9", "accept": "image" }
+              "props": {
+                "aspect": "16/9",
+                "accept": "image"
+              }
             },
             {
               "id": "title-template",
@@ -26,7 +29,9 @@
               "name": "seo.title-template",
               "label": "trans::webx-seo::screen.title-template",
               "help": "trans::webx-seo::screen.title-template-help",
-              "props": { "placeholder": "{title} — {site}" }
+              "props": {
+                "placeholder": "{title} — {site}"
+              }
             },
             {
               "id": "home-crumb",
@@ -42,7 +47,9 @@
               "name": "seo.robots-txt",
               "label": "trans::webx-seo::screen.robots-txt",
               "help": "trans::webx-seo::screen.robots-txt-help",
-              "props": { "rows": 10 }
+              "props": {
+                "rows": 10
+              }
             },
             {
               "id": "org-name",
@@ -58,7 +65,9 @@
               "name": "seo.org-logo",
               "label": "trans::webx-seo::screen.org-logo",
               "slot": "sidebar",
-              "props": { "accept": "image" }
+              "props": {
+                "accept": "image"
+              }
             },
             {
               "id": "org-socials",
@@ -74,6 +83,84 @@
                   "label": "trans::webx-seo::screen.org-social-url"
                 }
               ]
+            }
+          ]
+        },
+        {
+          "id": "seo-addresses",
+          "type": "wx-card",
+          "label": "trans::webx-seo::screen.addresses",
+          "help": "trans::webx-seo::screen.addresses-help",
+          "children": [
+            {
+              "id": "normalise-host",
+              "type": "wx-select",
+              "name": "seo.normalise-host",
+              "label": "trans::webx-seo::screen.normalise-host",
+              "help": "trans::webx-seo::screen.normalise-host-help",
+              "props": {
+                "clearable": true,
+                "placeholder": "trans::webx-seo::screen.normalise-off",
+                "options": [
+                  {
+                    "label": "trans::webx-seo::screen.normalise-host-bare",
+                    "value": "bare"
+                  },
+                  {
+                    "label": "trans::webx-seo::screen.normalise-host-www",
+                    "value": "www"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "normalise-https",
+              "type": "wx-switch",
+              "name": "seo.normalise-https",
+              "label": "trans::webx-seo::screen.normalise-https",
+              "help": "trans::webx-seo::screen.normalise-https-help"
+            },
+            {
+              "id": "normalise-slashes",
+              "type": "wx-switch",
+              "name": "seo.normalise-slashes",
+              "label": "trans::webx-seo::screen.normalise-slashes",
+              "help": "trans::webx-seo::screen.normalise-slashes-help"
+            },
+            {
+              "id": "normalise-index",
+              "type": "wx-switch",
+              "name": "seo.normalise-index",
+              "label": "trans::webx-seo::screen.normalise-index",
+              "help": "trans::webx-seo::screen.normalise-index-help"
+            },
+            {
+              "id": "normalise-trailing",
+              "type": "wx-select",
+              "name": "seo.normalise-trailing",
+              "label": "trans::webx-seo::screen.normalise-trailing",
+              "help": "trans::webx-seo::screen.normalise-trailing-help",
+              "props": {
+                "clearable": true,
+                "placeholder": "trans::webx-seo::screen.normalise-off",
+                "options": [
+                  {
+                    "label": "trans::webx-seo::screen.normalise-trailing-strip",
+                    "value": "strip"
+                  },
+                  {
+                    "label": "trans::webx-seo::screen.normalise-trailing-add",
+                    "value": "add"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "normalise-case",
+              "type": "wx-switch",
+              "name": "seo.normalise-case",
+              "label": "trans::webx-seo::screen.normalise-case",
+              "help": "trans::webx-seo::screen.normalise-case-help"
             }
           ]
         }

@@ -11,7 +11,9 @@ use WebxUi\Seo\Rendering\SeoSource;
 /**
  * What a page of the storefront's list says about itself (§10.3).
  *
- * - Nothing chosen, first page, default order: the category's own SEO card, as on any entity.
+ * - Nothing chosen, first page, default order: the owner's own SEO card, as on any entity — the
+ *   category's, a brand's, a landing's. On a landing "nothing" is nothing over its set, and its
+ *   card is the page's whatever the set holds (§10.7 of the landings spec).
  * - One value of an indexable facet: open, titled by the template «{category} {value}»
  *   (decision 17 of the architecture); the category's card is not this page's.
  * - Any other choice, any `?sort=`, any `?page=` past the first, any search: `noindex, follow`,
@@ -36,12 +38,13 @@ final class ListingSource implements SeoSource
             return null;
         }
 
-        // A brand's page is a category's page in every respect that matters here.
+        // A brand's page, or a landing's, is a category's page in every respect that matters here.
         $owner = $subject->owner();
-        $base = $subject->state->isEmpty() && $owner !== null ? ($owner->seoData($locale) ?? SeoData::empty()) : SeoData::empty();
+        $bare = ! $subject->isFiltered() && $owner !== null;
+        $base = $bare ? ($owner->seoData($locale) ?? SeoData::empty()) : SeoData::empty();
 
         $own = SeoData::make([
-            'title' => $subject->state->isEmpty() && $owner !== null ? null : ($subject->filterTitle ?? $subject->heading),
+            'title' => $bare ? null : ($subject->filterTitle ?? $subject->heading),
             'h1' => $subject->filterTitle,
             'robots' => $subject->indexable ? null : 'noindex, follow',
             // Only where a query makes the address another page; otherwise the page names itself.

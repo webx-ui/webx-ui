@@ -12,6 +12,7 @@
   "dependencies": {
     "@webx-ui/core": "workspace:*",
     "@webx-ui/module-admin": "workspace:*",
+    "@webx-ui/module-audit": "workspace:*",
     "@webx-ui/module-auth": "workspace:*",
     "@webx-ui/module-banners": "workspace:*",
     "@webx-ui/module-blocks": "workspace:*",
@@ -19,6 +20,7 @@
     "@webx-ui/module-catalog": "workspace:*",
     "@webx-ui/module-catalog-brands": "workspace:*",
     "@webx-ui/module-catalog-labels": "workspace:*",
+    "@webx-ui/module-catalog-landings": "workspace:*",
     "@webx-ui/module-catalog-manticore": "workspace:*",
     "@webx-ui/module-catalog-properties": "workspace:*",
     "@webx-ui/module-catalog-stock": "workspace:*",

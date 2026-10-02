@@ -1,0 +1,654 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'config' => [
+        'debug' => [
+            'title' => 'Tryb debugowania na działającej domenie',
+            'found' => 'APP_DEBUG=true na domenie, która nie jest środowiskiem deweloperskim.',
+            'why' => 'Każda strona błędu pokazuje kod, zapytania i środowisko, w tym hasła, każdemu, kto na nią trafi.',
+            'fix' => 'Ustaw APP_DEBUG=false w .env i uruchom php artisan config:cache.',
+        ],
+        'env' => [
+            'title' => 'Środowisko nie jest production',
+            'found' => 'APP_ENV nie jest production na działającej domenie.',
+            'why' => 'Poza production pakiety zachowują się inaczej: cache, strony błędów, poczta i narzędzia debugowania.',
+            'fix' => 'Ustaw APP_ENV=production w .env i uruchom php artisan config:cache.',
+        ],
+        'app_url' => [
+            'title' => 'APP_URL nie pasuje do witryny',
+            'found' => 'APP_URL różni się od schematu i hosta, pod którymi odpowiada witryna.',
+            'why' => 'Każdy bezwzględny adres, który drukuje witryna — mapa witryny, linki canonical, wiadomości, linki do plików — wskazuje gdzie indziej.',
+            'fix' => 'Ustaw APP_URL na adres, którego używają użytkownicy, z https, jeśli witryna go ma, i uruchom php artisan config:cache.',
+        ],
+        'queue' => [
+            'title' => 'Kolejka działa wewnątrz żądania',
+            'found' => 'Sterownik kolejki to sync.',
+            'why' => 'Wiadomości i zgłoszenia są obsługiwane, gdy użytkownik czeka, wolny serwer poczty spowalnia formularze, a długich zadań, takich jak audyt, nie da się uruchomić z panelu.',
+            'fix' => 'Użyj kolejki database lub redis i utrzymuj działający worker (php artisan queue:work pod supervisorem).',
+        ],
+        'mail' => [
+            'title' => 'Poczta idzie donikąd',
+            'found' => 'Mailer zapisuje wiadomości do logu lub do pamięci.',
+            'why' => 'Każdy formularz mówi „wysłano”, a nikt nigdy nie dostaje wiadomości.',
+            'fix' => 'Skonfiguruj prawdziwy mailer (SMTP lub API) w .env: MAIL_MAILER i jego ustawienia.',
+        ],
+        'schedule' => [
+            'title' => 'Harmonogram nie działa',
+            'found' => 'Harmonogram nie był uruchomiony od ponad godziny.',
+            'why' => 'Kopie zapasowe, przycinanie dziennika i wszystko inne z harmonogramu po cichu przestaje działać.',
+            'fix' => 'Dodaj „* * * * * php artisan schedule:run” do crontaba użytkownika witryny.',
+        ],
+        'storage_link' => [
+            'title' => 'Brak linku public/storage',
+            'found' => 'public/storage nie istnieje.',
+            'why' => 'Każdy wgrany obraz i plik w witrynie odpowiada 404.',
+            'fix' => 'Uruchom php artisan storage:link na serwerze.',
+        ],
+        'site_gate' => [
+            'title' => 'Witryna jest zamknięta hasłem',
+            'found' => 'Bramka witryny jest włączona.',
+            'why' => 'Wyszukiwarki nic nie widzą za hasłem — dobrze, gdy witryna jest testowana, źle po starcie.',
+            'fix' => 'Ustaw WEBX_SITE_GATE=false, gdy witryna zostanie otwarta.',
+        ],
+    ],
+    'host' => [
+        'mirror' => [
+            'title' => 'Odpowiadają dwa lustra',
+            'found' => 'Zarówno www, jak i nazwa bez niego odpowiadają 200.',
+            'why' => 'Każda strona istnieje w dwóch kopiach, a wyszukiwarki dzielą jej wagę między nie.',
+            'fix' => 'Przekieruj drugą nazwę na główną jednym przekierowaniem 301 w serwerze WWW.',
+        ],
+        'https' => [
+            'title' => 'http nie prowadzi do https w jednym kroku',
+            'found' => 'http:// odpowiada samo, prowadzi gdzie indziej albo dociera do https przez łańcuch.',
+            'why' => 'Użytkownicy trafiają na niezabezpieczoną kopię, a każdy dodatkowy krok kosztuje czas i wagę linków.',
+            'fix' => 'Jedno przekierowanie 301 z http:// na https:// głównego hosta, w serwerze WWW.',
+        ],
+        'tls' => [
+            'title' => 'Problem z certyfikatem',
+            'found' => 'Certyfikat wkrótce wygasa, dotyczy innego hosta albo nie jest zaufany.',
+            'why' => 'Przeglądarki pokazują ostrzeżenie na całą stronę i większość użytkowników odchodzi.',
+            'fix' => 'Odnów certyfikat (sprawdź, czy automatyczne odnawianie działa) i serwuj pełny łańcuch dla tego hosta.',
+        ],
+        'hsts' => [
+            'title' => 'Brak HSTS',
+            'found' => 'Brak nagłówka Strict-Transport-Security.',
+            'why' => 'Pierwsza wizyta może nadal przejść przez zwykłe http i zostać przechwycona.',
+            'fix' => 'Dodaj Strict-Transport-Security: max-age=31536000 w serwerze WWW, gdy https będzie stabilne.',
+        ],
+        'index_files' => [
+            'title' => 'Pliki index odpowiadają',
+            'found' => '/index.php lub inny plik index odpowiada 200.',
+            'why' => 'Strona jest dostępna pod drugim adresem — duplikat dla wyszukiwarek.',
+            'fix' => 'Przekieruj pliki index na adres bez nich przekierowaniem 301.',
+        ],
+        'slashes' => [
+            'title' => 'Podwójne ukośniki nie są scalane',
+            'found' => 'Adres z // odpowiada 200.',
+            'why' => 'Każdy błędnie wpisany link tworzy kolejną kopię strony.',
+            'fix' => 'Przekieruj adresy z powtórzonymi ukośnikami na scalony adres przekierowaniem 301.',
+        ],
+        'trailing_slash' => [
+            'title' => 'Z ukośnikiem na końcu i bez niego',
+            'found' => 'Ta sama strona odpowiada z ukośnikiem na końcu i bez niego.',
+            'why' => 'Dwa adresy jednej strony dzielą jej wagę.',
+            'fix' => 'Wybierz jedną formę i przekieruj drugą przekierowaniem 301.',
+        ],
+        'case' => [
+            'title' => 'Wielkość liter nie jest normalizowana',
+            'found' => 'Adres z wielkimi literami odpowiada 200.',
+            'why' => 'Link wpisany inną wielkością liter tworzy duplikat.',
+            'fix' => 'Przekieruj adresy z wielkimi literami na adres z małymi przekierowaniem 301.',
+        ],
+        'soft_404' => [
+            'title' => 'Brakujące strony nie odpowiadają 404',
+            'found' => 'Adres, który nie może istnieć, odpowiada 200 lub przekierowuje.',
+            'why' => 'Wyszukiwarki indeksują literówki i usunięte strony jako prawdziwe.',
+            'fix' => 'Odpowiadaj 404 dla nieznanych adresów; nie przekierowuj ich na stronę główną.',
+        ],
+        '404_page' => [
+            'title' => 'Strona 404 donikąd nie prowadzi',
+            'found' => 'Strona 404 nie zawiera linku do strony głównej.',
+            'why' => 'Użytkownik, który kliknął zepsuty link, nie ma dokąd pójść.',
+            'fix' => 'Dodaj do szablonu 404 link do strony głównej, wyszukiwarki lub głównych działów.',
+        ],
+        'compression' => [
+            'title' => 'HTML bez kompresji',
+            'found' => 'Strony są wysyłane bez gzip lub brotli.',
+            'why' => 'Strony ważą kilkakrotnie więcej i otwierają się wolniej, zwłaszcza na urządzeniach mobilnych.',
+            'fix' => 'Włącz gzip lub brotli dla text/html w serwerze WWW.',
+        ],
+        'security_headers' => [
+            'title' => 'Brakuje nagłówków bezpieczeństwa',
+            'found' => 'Brakuje niektórych z X-Content-Type-Options, Referrer-Policy i ochrony przed osadzaniem w ramkach.',
+            'why' => 'Zamykają tanie ataki: MIME sniffing, wyciek adresów, clickjacking.',
+            'fix' => 'Dodaj nagłówki w serwerze WWW: nosniff, strict-origin-when-cross-origin, SAMEORIGIN.',
+        ],
+        'server_leak' => [
+            'title' => 'Serwer ujawnia swoje wersje',
+            'found' => 'X-Powered-By lub Server z numerem wersji.',
+            'why' => 'Gotowa mapa dla każdego, kto szuka znanej luki w tej wersji.',
+            'fix' => 'Wyłącz expose_php i server_tokens (lub ich odpowiedniki).',
+        ],
+        'static_cache' => [
+            'title' => 'Pliki statyczne nie są cache’owane',
+            'found' => 'CSS, JS lub obrazy bez Cache-Control albo z cache krótszym niż tydzień.',
+            'why' => 'Każda strona pobiera je ponownie.',
+            'fix' => 'Nadaj wersjonowanym plikom statycznym długi Cache-Control (rok, immutable) w serwerze WWW.',
+        ],
+    ],
+    'hosts' => [
+        'dev_content' => [
+            'title' => 'Linki do środowiska deweloperskiego w treści',
+            'found' => 'Adres środowiska deweloperskiego we wpisie — opublikowanym, w wersji roboczej lub w polu, którego szablon nie drukuje.',
+            'why' => 'Treść wypełniona w środowisku deweloperskim trafia na produkcję z linkami i obrazami wskazującymi z powrotem na to środowisko; użytkownicy dostają błędy, a środowisko zostaje zaindeksowane.',
+            'fix' => 'Otwórz wpis i zamień adres środowiska deweloperskiego na adres samej witryny lub link względny. Wypisz środowiska w ustawieniach audytu, aby wszystkie zostały wychwycone.',
+        ],
+        'dev_page' => [
+            'title' => 'Linki do środowiska deweloperskiego na stronie',
+            'found' => 'Link lub zasób strony — obraz, skrypt, styl, og:image, canonical — prowadzi do środowiska deweloperskiego.',
+            'why' => 'Użytkownicy trafiają na witrynę, która nie jest dla nich przeznaczona, obrazy przestają działać po wyłączeniu środowiska, a wyszukiwarki znajdują je przez witrynę.',
+            'fix' => 'Znajdź adres w treści lub szablonie strony i zamień środowisko na adres samej witryny lub link względny.',
+        ],
+        'similar' => [
+            'title' => 'Host podobny do tej witryny',
+            'found' => 'Link do hosta z tym samym pierwszym słowem co witryna, ale w innej strefie, na przykład shop.local obok shop.com.',
+            'why' => 'Najpewniej to środowisko deweloperskie lub stara kopia witryny, o której audyt nie wie.',
+            'fix' => 'Jeśli to środowisko deweloperskie lub stara domena, dodaj ją do „Innych adresów tej witryny” w ustawieniach audytu i popraw linki; jeśli to cudza witryna, nie trzeba nic robić.',
+        ],
+        'wrong_mirror' => [
+            'title' => 'Linki przez inne lustro',
+            'found' => 'Link do witryny przez jej inne lustro (www lub bez niego) albo przez http w witrynie z https.',
+            'why' => 'Każde kliknięcie przechodzi przez przekierowanie: użytkownicy czekają dłużej, a wyszukiwarki widzą linki do adresu, który nie jest stroną.',
+            'fix' => 'Linkuj do głównego lustra przez https albo używaj linków względnych.',
+        ],
+        'absolute_own' => [
+            'title' => 'Bezwzględne linki do samej witryny',
+            'found' => 'Link lub obraz w treści jest zapisany z adresem samej witryny zamiast ścieżki.',
+            'why' => 'Dziś działa, a przy przeprowadzce na inną domenę lub protokół przestanie; skopiowany do środowiska deweloperskiego prowadzi z powrotem na działającą witrynę.',
+            'fix' => 'Zapisuj linki do stron samej witryny jako ścieżki: /about zamiast https://shop.com/about.',
+        ],
+        'new_domain' => [
+            'title' => 'Nowa domena zewnętrzna',
+            'found' => 'Witryna linkuje do domeny, do której nie linkowała w poprzednim pełnym uruchomieniu.',
+            'why' => 'Nowa domena to zwykle nowy link, który ktoś dodał — a czasem literówka albo spamowe linki zostawione przez kogoś, kto włamał się na witrynę.',
+            'fix' => 'Otwórz wymienione strony i upewnij się, że link ma tam być.',
+        ],
+        'external_many' => [
+            'title' => 'Dużo linków zewnętrznych na stronie',
+            'found' => 'Strona ma więcej linków zewnętrznych niż próg.',
+            'why' => 'Strona złożona głównie z linków do innych witryn wygląda dla wyszukiwarek jak farma linków i często jest oznaką spamu.',
+            'fix' => 'Usuń linki, które nie pomagają użytkownikowi, albo podziel stronę.',
+        ],
+        'blank_opener' => [
+            'title' => 'Nowa karta bez noopener',
+            'found' => 'Link do innej witryny otwiera się w nowej karcie bez rel="noopener".',
+            'why' => 'W starszych przeglądarkach otwarta strona może przekierować kartę witryny na dowolną stronę.',
+            'fix' => 'Dodaj rel="noopener" (lub noreferrer) do linków z target="_blank".',
+        ],
+        'external_redirect' => [
+            'title' => 'Linki zewnętrzne przez przekierowanie',
+            'found' => 'Link do innej witryny odpowiada przekierowaniem.',
+            'why' => 'Działa okrężną drogą i zwykle oznacza, że strona się przeniosła, a linku nigdy nie zaktualizowano.',
+            'fix' => 'Zamień link na adres, do którego prowadzi.',
+        ],
+    ],
+    'indexing' => [
+        'home_noindex' => [
+            'title' => 'Strona główna jest zamknięta dla wyszukiwarek',
+            'found' => 'Strona główna ma noindex w znaczniku meta robots lub w nagłówku X-Robots-Tag.',
+            'why' => 'Najważniejsza strona witryny znika z wyszukiwania, a często cała witryna razem z nią.',
+            'fix' => 'Usuń noindex ze strony głównej: sprawdź ustawienia SEO strony, szablon i nagłówki serwera WWW.',
+        ],
+        'noindex' => [
+            'title' => 'Strony zamknięte przez noindex',
+            'found' => 'Strona ma noindex w znaczniku meta robots lub w nagłówku X-Robots-Tag.',
+            'why' => 'Wyszukiwarki pomijają stronę. To dobrze dla wyników wyszukiwania i stron technicznych, a źle dla treści zamkniętej przez pomyłkę.',
+            'fix' => 'Przejrzyj listę; strony, które powinny być znajdowane, otwórz w ich ustawieniach SEO i usuń noindex.',
+        ],
+    ],
+    'robots' => [
+        'missing' => [
+            'title' => 'Brak robots.txt',
+            'found' => '/robots.txt nie odpowiada 200 albo odpowiada czymś innym niż zwykły tekst.',
+            'why' => 'Wyszukiwarki czytają brak pliku jako „wszystko wolno”, a plik z błędem jako „wróć później” — reguły, które witryna chciała przekazać, przepadają.',
+            'fix' => 'Serwuj robots.txt jako text/plain. W module-seo to ustawienie „robots.txt”; usuń statyczny public/robots.txt, który je przesłania.',
+        ],
+        'disallow_all' => [
+            'title' => 'robots.txt zamyka całą witrynę',
+            'found' => 'robots.txt ma Disallow: / dla wszystkich robotów w działającej domenie.',
+            'why' => 'Wyszukiwarki przestają indeksować witrynę i usuwają ją z wyników. Zwykle to plik ze środowiska deweloperskiego, który trafił na produkcję razem z wdrożeniem.',
+            'fix' => 'Usuń Disallow: / z grupy * albo zostaw go tylko dla robotów, które nie powinny przychodzić.',
+        ],
+        'no_sitemap' => [
+            'title' => 'robots.txt nie wskazuje mapy witryny',
+            'found' => 'robots.txt nie ma wiersza Sitemap:.',
+            'why' => 'Wyszukiwarki znajdują mapę witryny tylko tam, gdzie wskazano ją ręcznie, a nowe wyszukiwarki wcale.',
+            'fix' => 'Dodaj do robots.txt wiersz Sitemap: https://…/sitemap.xml.',
+        ],
+        'blocks_assets' => [
+            'title' => 'robots.txt zamyka CSS lub JS',
+            'found' => 'Arkusz stylów lub skrypt, który ładuje strona główna, jest zamknięty w robots.txt.',
+            'why' => 'Wyszukiwarki renderują stronę bez nich, widzą rozsypany układ i mogą uznać stronę za niedostosowaną do urządzeń mobilnych.',
+            'fix' => 'Zezwól na foldery z CSS i JS albo usuń regułę, która je zamyka.',
+        ],
+        'syntax' => [
+            'title' => 'Wiersze, których robots.txt nie rozumie',
+            'found' => 'robots.txt ma nieznane dyrektywy, reguły przed pierwszym User-agent albo wiersze, które nie mają postaci „pole: wartość”.',
+            'why' => 'Wyszukiwarki po cichu pomijają takie wiersze: literówka w Disalow niczego nie zamyka i nikt tego nie zauważa latami.',
+            'fix' => 'Popraw pisownię i zaczynaj każdą grupę reguł od wiersza User-agent.',
+        ],
+    ],
+    'sitemap' => [
+        'missing' => [
+            'title' => 'Brak mapy witryny',
+            'found' => 'Mapa witryny nie odpowiada lub nie daje się sparsować — albo nie odpowiada plik wskazany przez robots.txt lub indeks.',
+            'why' => 'Wyszukiwarki znajdują nowe i głęboko położone strony tylko przez przeszukiwanie, powoli, a strony, do których nic nie linkuje, wcale.',
+            'fix' => 'Serwuj poprawną mapę witryny pod adresem wskazanym w robots.txt. W module-seo jest budowana z rejestru adresów.',
+        ],
+        'limits' => [
+            'title' => 'Plik mapy witryny ponad limity',
+            'found' => 'Plik mapy witryny ma ponad 50 000 adresów lub ponad 50 MB bez kompresji.',
+            'why' => 'Wyszukiwarki odrzucają taki plik w całości, a nie tylko jego koniec.',
+            'fix' => 'Podziel mapę witryny na kilka plików pod indeksem map witryny.',
+        ],
+        'bad_url' => [
+            'title' => 'Adresy w mapie witryny, które nie są stronami do indeksowania',
+            'found' => 'Adres z mapy witryny odpowiada błędem lub przekierowaniem, jest zamknięty przez noindex albo jego canonical wskazuje inną stronę.',
+            'why' => 'Mapa witryny to lista oryginałów; każdy taki adres marnuje wizytę wyszukiwarki na coś, co ona odrzuci, a gdy jest ich dużo, ufa mapie mniej.',
+            'fix' => 'Wymieniaj tylko działające strony, które mają być znajdowane, pod ich ostatecznym adresem.',
+        ],
+        'lastmod' => [
+            'title' => 'lastmod w mapie witryny nic nie mówi',
+            'found' => 'lastmod jest w przyszłości albo taki sam dla każdego adresu w pliku.',
+            'why' => 'Wyszukiwarki uczą się, że data jest drukowana, a nie przechowywana, i przestają według niej decydować, co przeszukać ponownie.',
+            'fix' => 'Drukuj datę ostatniej zmiany treści strony albo pomiń lastmod.',
+        ],
+        'missing_page' => [
+            'title' => 'Strony, których brak w mapie witryny',
+            'found' => 'Indeksowalnej strony, do której dotarło przeszukiwanie, nie ma w mapie witryny.',
+            'why' => 'Wyszukiwarki znajdują ją tylko przez linki, później — a strona, która straci ostatni link, wypada.',
+            'fix' => 'Upewnij się, że moduł strony dodaje ją do mapy witryny (w module-seo — przez rejestr adresów), albo zamknij ją przez noindex, jeśli nie ma być znajdowana.',
+        ],
+    ],
+    'redirects' => [
+        'chain' => [
+            'title' => 'Łańcuchy przekierowań',
+            'found' => 'Adres przekierowuje więcej niż raz, zanim dotrze do strony.',
+            'why' => 'Każdy krok to dodatkowa droga w obie strony dla użytkownika, a wyszukiwarki mogą przestać podążać przed końcem.',
+            'fix' => 'Skieruj pierwsze przekierowanie od razu na adres docelowy.',
+        ],
+        'loop' => [
+            'title' => 'Pętle przekierowań',
+            'found' => 'Przekierowania prowadzą z powrotem do adresu, przez który już przeszły.',
+            'why' => 'Przeglądarka poddaje się z komunikatem „zbyt wiele przekierowań” — strona nie istnieje dla nikogo.',
+            'fix' => 'Znajdź dwie reguły, które odsyłają adres tam i z powrotem, i usuń jedną z nich.',
+        ],
+        'to_error' => [
+            'title' => 'Przekierowania do błędu',
+            'found' => 'Przekierowanie kończy się na 4xx, 5xx lub braku odpowiedzi.',
+            'why' => 'Stary adres jest utrzymywany tylko po to, by prowadzić do martwego: użytkownicy i wyszukiwarki trafiają na błąd.',
+            'fix' => 'Skieruj przekierowanie na działającą stronę albo je usuń.',
+        ],
+        'temporary' => [
+            'title' => 'Tymczasowe przekierowania',
+            'found' => 'Adres odpowiada 302 lub 307.',
+            'why' => 'Wyszukiwarki zatrzymują stary adres w indeksie i nie przekazują nowemu jego wagi. Dobre dla przekierowania, które zostanie cofnięte, złe dla przeprowadzki.',
+            'fix' => 'Przejrzyj listę; przekierowania adresów, które przeniosły się na stałe, zmień na 301.',
+        ],
+    ],
+    'title' => [
+        'missing' => [
+            'title' => 'Brak title',
+            'found' => 'Strona nie ma <title> albo jest on pusty.',
+            'why' => 'Title to wiersz, który wyszukiwarki pokazują jako link do strony; bez niego wymyślają własny.',
+            'fix' => 'Nadaj stronie title w jej ustawieniach SEO lub sprawdź, czy szablon go drukuje.',
+        ],
+        'duplicate' => [
+            'title' => 'Powtórzone title',
+            'found' => 'Kilka indeksowalnych stron ma ten sam title.',
+            'why' => 'Wyszukiwarki nie odróżniają stron i pokazują jedną z nich, niekoniecznie właściwą.',
+            'fix' => 'Nadaj każdej stronie własny title, który mówi, co na niej jest.',
+        ],
+        'length' => [
+            'title' => 'Title za krótki lub za długi',
+            'found' => 'Title jest krótszy lub dłuższy niż progi, w znakach.',
+            'why' => 'Długi title jest ucinany w wynikach wyszukiwania (granica to około 600 pikseli, mniej więcej 60 znaków); krótki mówi za mało.',
+            'fix' => 'Przepisz title tak, by mieścił się w zakresie z progów audytu.',
+        ],
+        'multiple' => [
+            'title' => 'Więcej niż jeden title',
+            'found' => 'Strona ma więcej niż jeden znacznik <title>.',
+            'why' => 'Wyszukiwarki biorą jeden z nich, niekoniecznie ten napisany dla strony.',
+            'fix' => 'Znajdź szablon lub blok, który drukuje drugi title, i usuń go.',
+        ],
+    ],
+    'description' => [
+        'missing' => [
+            'title' => 'Brak meta description',
+            'found' => 'Strona nie ma meta description albo jest on pusty.',
+            'why' => 'Wyszukiwarki układają fragment pod linkiem z dowolnego znalezionego tekstu.',
+            'fix' => 'Napisz description w ustawieniach SEO strony: co strona oferuje, w jednym lub dwóch zdaniach.',
+        ],
+        'duplicate' => [
+            'title' => 'Powtórzone description',
+            'found' => 'Kilka indeksowalnych stron ma ten sam meta description.',
+            'why' => 'Ten sam fragment pod różnymi linkami nic nie mówi szukającemu, a wyszukiwarki zastępują go własnym.',
+            'fix' => 'Napisz dla każdej strony własny description.',
+        ],
+        'length' => [
+            'title' => 'Description za krótki lub za długi',
+            'found' => 'Description jest krótszy lub dłuższy niż progi, w znakach.',
+            'why' => 'Długi description jest ucinany w wynikach wyszukiwania (około 920 pikseli, mniej więcej 160 znaków); krótki jest często zastępowany.',
+            'fix' => 'Przepisz description tak, by mieścił się w zakresie z progów audytu.',
+        ],
+    ],
+    'h1' => [
+        'missing' => [
+            'title' => 'Brak H1',
+            'found' => 'Strona nie ma nagłówka H1.',
+            'why' => 'H1 mówi użytkownikom i wyszukiwarkom, o czym jest strona; czytniki ekranu używają go do znalezienia początku treści.',
+            'fix' => 'Nadaj stronie jeden H1 — zwykle jej nazwę — w szablonie lub treści.',
+        ],
+        'multiple' => [
+            'title' => 'Więcej niż jeden H1',
+            'found' => 'Strona ma więcej niż jeden nagłówek H1.',
+            'why' => 'Samo w sobie nie jest błędem, ale zwykle oznacza, że blok lub logo używa H1 tam, gdzie chodziło o niższy poziom.',
+            'fix' => 'Zostaw jeden H1 na nazwę strony, a pozostałe zmień na H2 lub niższe.',
+        ],
+        'equals_title' => [
+            'title' => 'H1 taki sam jak title',
+            'found' => 'H1 powtarza title słowo w słowo.',
+            'why' => 'Dwa miejsca opisujące stronę mówią to samo; jedno z nich mogłoby dodać słowo, którego szukają ludzie.',
+            'fix' => 'Niech H1 będzie krótki i czytelny, a słowa kluczowe i nazwę witryny zostaw dla title.',
+        ],
+    ],
+    'headings' => [
+        'skipped' => [
+            'title' => 'Pominięty poziom nagłówka',
+            'found' => 'Przy schodzeniu w dół pominięto poziom nagłówka, na przykład H2, a po nim H4.',
+            'why' => 'Czytniki ekranu nawigują po nagłówkach, a luka brzmi jak brakująca treść.',
+            'fix' => 'Używaj poziomów po kolei; wygląd wybieraj stylami, a nie poziomem.',
+        ],
+    ],
+    'canonical' => [
+        'missing' => [
+            'title' => 'Brak canonical',
+            'found' => 'Indeksowalna strona nie ma linku canonical — ani w znaczniku, ani w nagłówku.',
+            'why' => 'Bez niego każda kopia strony z parametrami śledzenia lub sortowania może konkurować z samą stroną.',
+            'fix' => 'Niech szablon drukuje <link rel="canonical"> z własnym adresem strony.',
+        ],
+        'relative' => [
+            'title' => 'Względny canonical',
+            'found' => 'Canonical jest zapisany jako ścieżka, a nie pełny adres.',
+            'why' => 'Wyszukiwarki odczytują go względem adresu, którym przyszły, w tym innego lustra lub protokołu.',
+            'fix' => 'Drukuj canonical jako pełny adres ze schematem i głównym hostem.',
+        ],
+        'multiple' => [
+            'title' => 'Sprzeczne canonical',
+            'found' => 'Strona ma więcej niż jeden canonical albo znacznik i nagłówek Link się różnią.',
+            'why' => 'Przy sprzecznych canonical wyszukiwarki ignorują wszystkie.',
+            'fix' => 'Zostaw jeden canonical: znajdź szablon, blok lub regułę serwera, która dodaje drugi, i usuń ją.',
+        ],
+        'broken' => [
+            'title' => 'Canonical do uszkodzonej lub zamkniętej strony',
+            'found' => 'Canonical prowadzi do przekierowania, błędu lub strony z noindex.',
+            'why' => 'Strona wskazuje jako oryginał coś, czego nie da się zaindeksować, i wyszukiwarki mogą pominąć obie.',
+            'fix' => 'Wskaż w canonical własny działający adres strony lub działający oryginał.',
+        ],
+        'other' => [
+            'title' => 'Canonical do innej strony',
+            'found' => 'Canonical wskazuje inny adres niż adres samej strony.',
+            'why' => 'Strona prosi, by jej nie indeksować na rzecz innej — dobrze dla filtrów i kopii, źle dla strony, która ma być znajdowana.',
+            'fix' => 'Przejrzyj listę; dla stron, które powinny być znajdowane, ustaw canonical na ich własny adres.',
+        ],
+    ],
+    'html' => [
+        'lang' => [
+            'title' => 'Brak języka strony lub niewłaściwy język',
+            'found' => 'Znacznik <html> nie ma atrybutu lang albo podaje inny język niż własny wiersz hreflang strony.',
+            'why' => 'Czytniki ekranu wybierają po nim głos, przeglądarki proponują tłumaczenie, a wyszukiwarki używają go jako wskazówki.',
+            'fix' => 'Drukuj w szablonie <html lang="…"> z językiem strony — językiem tej strony, a nie domyślnym językiem witryny.',
+        ],
+        'viewport' => [
+            'title' => 'Brak meta viewport',
+            'found' => 'Strona nie ma <meta name="viewport">.',
+            'why' => 'Telefony rysują stronę w szerokości pulpitu, pomniejszoną; wyszukiwarki uznają taką stronę za niedostosowaną do urządzeń mobilnych.',
+            'fix' => 'Dodaj do szablonu <meta name="viewport" content="width=device-width, initial-scale=1">.',
+        ],
+        'favicon' => [
+            'title' => 'Brak ikony lub ikona się nie otwiera',
+            'found' => 'Strona nie podpina żadnej ikony albo podpięta ikona się nie otwiera.',
+            'why' => 'Karty przeglądarki, zakładki i wyniki wyszukiwania na telefonach pokazują pusty kwadrat zamiast znaku witryny.',
+            'fix' => 'Dodaj do szablonu <link rel="icon"> z działającym adresem.',
+        ],
+    ],
+    'og' => [
+        'missing' => [
+            'title' => 'Brak znaczników Open Graph',
+            'found' => 'Strona nie ma og:title, og:image ani og:url.',
+            'why' => 'Link udostępniony w komunikatorze lub sieci społecznościowej wygląda jak goły adres bez obrazu i tytułu.',
+            'fix' => 'Wypełnij podgląd dla sieci społecznościowych w ustawieniach SEO strony lub niech szablon drukuje znaczniki.',
+        ],
+        'image_broken' => [
+            'title' => 'Obraz Open Graph jest uszkodzony lub mały',
+            'found' => 'og:image się nie otwiera albo jest mniejszy niż 1200×630.',
+            'why' => 'Udostępniony link nie pokazuje obrazu albo pokazuje mały kwadrat obok tekstu zamiast dużej karty.',
+            'fix' => 'Ustaw w podglądzie dla sieci społecznościowych strony działający obraz o rozmiarze co najmniej 1200×630.',
+        ],
+    ],
+    'hreflang' => [
+        'not_reciprocal' => [
+            'title' => 'hreflang bez linku zwrotnego',
+            'found' => 'Strona wskazuje inną wersję językową, a ta nie wskazuje strony z powrotem.',
+            'why' => 'Wyszukiwarki ignorują parę wersji językowych, która nie jest potwierdzona z obu stron, i pokazują użytkownikom niewłaściwy język.',
+            'fix' => 'Drukuj ten sam zestaw linków hreflang na każdej wersji językowej strony, tak by każda wskazywała wszystkie pozostałe i samą siebie.',
+        ],
+        'no_x_default' => [
+            'title' => 'Brak x-default',
+            'found' => 'Strona wskazuje kilka wersji językowych i nie ma x-default.',
+            'why' => 'Użytkownik, którego języka nie ma wśród nich, dostaje wersję, jaką zgadnie wyszukiwarka.',
+            'fix' => 'Dodaj hreflang="x-default" wskazujący wersję dla wszystkich pozostałych, zwykle wybór języka lub język główny.',
+        ],
+        'broken' => [
+            'title' => 'Uszkodzony hreflang',
+            'found' => 'Wersja językowa odpowiada błędem lub przekierowaniem albo jej kod języka nie jest takim, który czytają wyszukiwarki.',
+            'why' => 'Para zostaje odrzucona. Częste błędy: en-UK zamiast en-GB, jp zamiast ja.',
+            'fix' => 'Kieruj hreflang na działający adres każdej wersji i używaj kodów języków ISO 639-1 oraz regionów ISO 3166-1.',
+        ],
+    ],
+    'jsonld' => [
+        'invalid' => [
+            'title' => 'Dane strukturalne, których nie da się sparsować',
+            'found' => 'Blok JSON-LD nie jest poprawnym JSON.',
+            'why' => 'Przepada cały blok, a nie tylko uszkodzone pole: żadnych wyników rozszerzonych, okruszków ani karty produktu w wyszukiwarce.',
+            'fix' => 'Szukaj końcowego przecinka lub nieescapowanego cudzysłowu w szablonie, który drukuje blok; buduj go przez json_encode, a nie ręcznie.',
+        ],
+        'required' => [
+            'title' => 'Dane strukturalne bez wymaganych pól',
+            'found' => 'Product, Article, Event, JobPosting, FAQPage lub BreadcrumbList nie ma pola, którego wymagają wyszukiwarki.',
+            'why' => 'Strona traci wynik rozszerzony, a konsola wyszukiwarki zgłasza znaczniki jako nieprawidłowe.',
+            'fix' => 'Uzupełnij wymienione pola — w treści strony lub w szablonie, który drukuje znaczniki.',
+        ],
+        'recommended' => [
+            'title' => 'Dane strukturalne bez zalecanych pól',
+            'found' => 'Product, Article, Event lub JobPosting nie ma pól, które wzbogacają wynik rozszerzony.',
+            'why' => 'Znaczniki są poprawne, ale fragment w wynikach jest uboższy — bez obrazu, marki, opisu.',
+            'fix' => 'Dodaj wymienione pola tam, gdzie treść je ma.',
+        ],
+    ],
+    'content' => [
+        'thin' => [
+            'title' => 'Mało tekstu',
+            'found' => 'Indeksowalna strona ma mniej słów niż próg.',
+            'why' => 'Wyszukiwarki oceniają niżej strony, na których jest mało do czytania, i mogą uznać wiele takich stron za niskiej jakości.',
+            'fix' => 'Dodaj tekst, który pomaga użytkownikowi, połącz cienkie strony albo zamknij je przez noindex.',
+        ],
+        'text_ratio' => [
+            'title' => 'Mało tekstu w stosunku do znaczników',
+            'found' => 'Widoczny tekst stanowi mniejszą część HTML niż próg.',
+            'why' => 'Strona jest ciężka jak na to, co mówi: wolna na telefonie, a wyszukiwarki znajdują mało treści w dużej ilości kodu.',
+            'fix' => 'Przenieś skrypty i style z kodu strony do plików, usuń nieużywane znaczniki i dodaj treść.',
+        ],
+        'duplicate' => [
+            'title' => 'Powtórzony tekst',
+            'found' => 'Kilka indeksowalnych stron ma ten sam widoczny tekst.',
+            'why' => 'Wyszukiwarki wybierają jedną kopię do pokazania, a resztę ignorują.',
+            'fix' => 'Zróżnicuj strony, połącz je albo wskaż w canonical kopii oryginał.',
+        ],
+    ],
+    'url' => [
+        'length' => [
+            'title' => 'Długi adres',
+            'found' => 'Adres jest dłuższy niż próg.',
+            'why' => 'Długie adresy są ucinane w wynikach wyszukiwania i trudno je udostępniać i czytać.',
+            'fix' => 'Skróć slug strony; przekierowanie ze starego adresu zostanie dodane automatycznie.',
+        ],
+        'format' => [
+            'title' => 'Format adresu',
+            'found' => 'Ścieżka ma wielkie litery, podkreślenia lub znaki spoza ASCII.',
+            'why' => 'Wielkie litery robią z /About i /about dwie strony, podkreślenia nie rozdzielają słów dla wyszukiwarek, a inne znaki po skopiowaniu zamieniają się w %D0%B0.',
+            'fix' => 'Używaj w slugach małych liter łacińskich, cyfr i myślników.',
+        ],
+        'params' => [
+            'title' => 'Parametry bez canonical',
+            'found' => 'Indeksowalny adres ma parametry zapytania i nie ma canonical.',
+            'why' => 'Każda kombinacja filtrów i sortowania staje się w wyszukiwarkach osobną stroną i dzieli wagę prawdziwej.',
+            'fix' => 'Drukuj canonical na adres bez parametrów albo zamknij takie adresy przez noindex.',
+        ],
+    ],
+    'perf' => [
+        'ttfb' => [
+            'title' => 'Wolna odpowiedź',
+            'found' => 'Strona odpowiadała dłużej niż próg.',
+            'why' => 'Użytkownicy czekają, zanim cokolwiek się pojawi, a wyszukiwarki rzadziej odwiedzają wolną witrynę.',
+            'fix' => 'Włącz cache (konfiguracji, tras, widoków, stron), sprawdź wolne zapytania i przenieś ciężką pracę do kolejki.',
+        ],
+        'html_size' => [
+            'title' => 'Ciężki HTML',
+            'found' => 'HTML strony jest większy niż próg.',
+            'why' => 'Telefony pobierają i przetwarzają go wolno; wyszukiwarki mogą przestać czytać przed końcem.',
+            'fix' => 'Podziel długie listy na strony, przenieś dane i SVG z kodu strony do plików, usuń ukryte kopie treści.',
+        ],
+    ],
+    'links' => [
+        'broken' => [
+            'title' => 'Uszkodzone linki wewnętrzne',
+            'found' => 'Link do strony samej witryny odpowiada 4xx, 5xx albo wcale.',
+            'why' => 'Użytkownicy trafiają na błąd, a wyszukiwarki marnują na niego swoją wizytę.',
+            'fix' => 'Popraw lub usuń link albo dodaj przekierowanie z brakującego adresu na właściwą stronę.',
+        ],
+        'empty' => [
+            'title' => 'Linki bez tekstu',
+            'found' => 'Link nie ma tekstu ani aria-label, a link z obrazem nie ma alt.',
+            'why' => 'Czytniki ekranu odczytują adres albo samo „link”, a wyszukiwarki nie dowiadują się nic o stronie, do której prowadzi.',
+            'fix' => 'Nadaj linkowi tekst, aria-label albo alt jego obrazowi.',
+        ],
+        'nofollow_internal' => [
+            'title' => 'nofollow w linkach wewnętrznych',
+            'found' => 'Link do strony samej witryny ma rel="nofollow".',
+            'why' => 'Witryna prosi wyszukiwarki, by nie podążały za jej własnymi linkami, i strona dostaje mniej wagi.',
+            'fix' => 'Usuń nofollow z linków do stron samej witryny.',
+        ],
+        'to_redirect' => [
+            'title' => 'Linki wewnętrzne do przekierowań',
+            'found' => 'Link do strony samej witryny prowadzi do adresu, który przekierowuje.',
+            'why' => 'Każde kliknięcie to dodatkowa droga w obie strony, a strona przekazuje wagę przez przekierowanie zamiast bezpośrednio.',
+            'fix' => 'Linkuj do adresu, do którego prowadzi przekierowanie.',
+        ],
+        'external_broken' => [
+            'title' => 'Uszkodzone linki zewnętrzne',
+            'found' => 'Link do innej witryny odpowiada 4xx, 5xx albo host nie odpowiada.',
+            'why' => 'Użytkownicy trafiają na błąd na cudzej witrynie, a strona wygląda na porzuconą. 429 nie jest liczone — to serwer prosi robota, by zwolnił.',
+            'fix' => 'Zaktualizuj link do nowego adresu strony albo go usuń.',
+        ],
+    ],
+    'mixed_content' => [
+        'title' => 'Treść mieszana',
+        'found' => 'Strona przez https ładuje zasób przez http.',
+        'why' => 'Przeglądarki blokują takie skrypty i style oraz ostrzegają przed obrazami; kłódka znika.',
+        'fix' => 'Ładuj zasób przez https albo użyj ścieżki bez schematu.',
+    ],
+    'forms' => [
+        'insecure' => [
+            'title' => 'Formularz wysyłany przez http',
+            'found' => 'Formularz jest wysyłany na adres z http.',
+            'why' => 'To, co wpisują użytkownicy, jest przesyłane bez szyfrowania, a przeglądarki ostrzegają przed wysłaniem.',
+            'fix' => 'Wskaż formularzowi adres z https albo ścieżkę.',
+        ],
+    ],
+    'images' => [
+        'alt' => [
+            'title' => 'Obrazy bez alt',
+            'found' => 'Element <img> nie ma atrybutu alt.',
+            'why' => 'Czytniki ekranu odczytują nazwę pliku, a wyszukiwarki nie wiedzą, co jest na obrazie. Pusty alt przy obrazie ozdobnym jest w porządku.',
+            'fix' => 'Opisz obraz w jego alt albo ustaw alt="", jeśli to ozdoba.',
+        ],
+        'dimensions' => [
+            'title' => 'Obrazy bez rozmiaru',
+            'found' => 'Element <img> nie ma width i height.',
+            'why' => 'Strona skacze podczas ładowania obrazów, a użytkownicy klikają nie to, co trzeba.',
+            'fix' => 'Drukuj width i height obrazów w szablonie; CSS nadal może uczynić je elastycznymi.',
+        ],
+        'broken' => [
+            'title' => 'Uszkodzone obrazy',
+            'found' => 'Obraz strony odpowiada 4xx, 5xx albo wcale.',
+            'why' => 'Użytkownicy widzą ikonę uszkodzonego obrazu albo puste pole tam, gdzie był obraz.',
+            'fix' => 'Prześlij obraz ponownie albo popraw jego adres w treści lub szablonie.',
+        ],
+        'heavy' => [
+            'title' => 'Ciężkie obrazy',
+            'found' => 'Obraz waży więcej niż próg.',
+            'why' => 'Na telefonie to sekundy czekania, a szybkość strony w wyszukiwarce spada.',
+            'fix' => 'Zmniejsz obraz do rozmiaru, w jakim jest wyświetlany, i skompresuj go; serwuj WebP lub AVIF.',
+        ],
+        'format' => [
+            'title' => 'Obrazy w starym formacie',
+            'found' => 'Własny JPEG lub PNG witryny powyżej progu jest wysyłany do przeglądarki, która przyjmuje WebP i AVIF, bez nowoczesnego źródła w <picture>.',
+            'why' => 'Ten sam obraz w WebP lub AVIF waży zwykle dwa-trzy razy mniej.',
+            'fix' => 'Serwuj WebP lub AVIF — przez <picture> z nowoczesnym źródłem albo konwertując obrazy przy przesyłaniu.',
+        ],
+    ],
+    'a11y' => [
+        'button_name' => [
+            'title' => 'Przyciski bez nazwy',
+            'found' => 'Przycisk nie ma tekstu, aria-label ani title.',
+            'why' => 'Czytnik ekranu może powiedzieć tylko „przycisk”, a jego użytkownik nie wie, co on robi.',
+            'fix' => 'Nadaj przyciskowi tekst albo aria-label, jeśli to ikona.',
+        ],
+        'form_label' => [
+            'title' => 'Pola bez etykiety',
+            'found' => 'Pole formularza nie ma label ani aria-label.',
+            'why' => 'Czytnik ekranu nie może powiedzieć, co wpisać; placeholder znika, gdy tylko zaczyna się pisanie.',
+            'fix' => 'Dodaj każdemu polu <label for="…"> albo aria-label.',
+        ],
+        'iframe_title' => [
+            'title' => 'Ramki bez tytułu',
+            'found' => 'Element iframe nie ma title.',
+            'why' => 'Czytniki ekranu zapowiadają ramkę bez nazwy, a ich użytkownicy nie odróżnią mapy od wideo.',
+            'fix' => 'Dodaj title, który mówi, co ramka pokazuje.',
+        ],
+    ],
+    'structure' => [
+        'depth' => [
+            'title' => 'Głębokie strony',
+            'found' => 'Indeksowalna strona jest dalej od strony głównej niż próg, w kliknięciach.',
+            'why' => 'Wyszukiwarki odwiedzają głębokie strony rzadziej i cenią je niżej; użytkownicy rzadko tam docierają.',
+            'fix' => 'Zlinkuj stronę z kategorii, menu lub powiązanych stron.',
+        ],
+        'orphan' => [
+            'title' => 'Strony-sieroty',
+            'found' => 'Strona jest w mapie witryny lub rejestrze adresów, ale żadna strona witryny do niej nie linkuje.',
+            'why' => 'Użytkownicy nie mogą do niej dotrzeć, a wyszukiwarki uznają stronę, do której nic nie linkuje, za nieważną.',
+            'fix' => 'Zlinkuj stronę stamtąd, gdzie jej miejsce, albo cofnij jej publikację, jeśli nie jest potrzebna.',
+        ],
+        'dead_end' => [
+            'title' => 'Ślepe uliczki',
+            'found' => 'Strona nie linkuje do żadnej innej strony witryny.',
+            'why' => 'Użytkownik, który na nią trafi, nie ma dokąd iść poza powrotem.',
+            'fix' => 'Sprawdź, czy używany jest szablon z menu, i dodaj linki do powiązanych stron.',
+        ],
+    ],
+];

@@ -19,6 +19,8 @@ use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\Types\OptionType;
 use WebxUi\Admin\Uploads\UploadPurposes;
+use WebxUi\Audit\Checks\AuditChecks;
+use WebxUi\Catalog\Audit\CatalogChecks;
 use WebxUi\Catalog\Bulk\Actions\ExtraCategoryAction;
 use WebxUi\Catalog\Bulk\Actions\PublicationAction;
 use WebxUi\Catalog\Bulk\Actions\SetCategoryAction;
@@ -31,6 +33,7 @@ use WebxUi\Catalog\Console\IndexCommand;
 use WebxUi\Catalog\Console\PopularityCommand;
 use WebxUi\Catalog\Doctor\EngineCheck;
 use WebxUi\Catalog\Doctor\ExchangeCheck;
+use WebxUi\Catalog\Doctor\RootCheck;
 use WebxUi\Catalog\Documents\CoreDocument;
 use WebxUi\Catalog\Documents\Documents;
 use WebxUi\Catalog\Engine\CatalogEngines;
@@ -141,6 +144,14 @@ class CatalogServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-catalog');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webx-catalog');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+
+        // The catalogue's own checks of the site audit, when the audit is installed (§7 of its
+        // spec): what a shop forgets to fill in.
+        if (class_exists(AuditChecks::class)) {
+            foreach (array_keys(CatalogChecks::CHECKS) as $id) {
+                $this->app->make(AuditChecks::class)->register(new CatalogChecks($id));
+            }
+        }
 
         $this->registerAddresses();
         $this->registerScreens();
@@ -366,6 +377,7 @@ class CatalogServiceProvider extends ServiceProvider
 
         $this->app->make(DoctorChecks::class)->register(EngineCheck::class);
         $this->app->make(DoctorChecks::class)->register(ExchangeCheck::class);
+        $this->app->make(DoctorChecks::class)->register(RootCheck::class);
 
         // A category moved to another branch inherits another branch's facets; nested-set moves
         // without an `updated`, and says so with an event of its own.

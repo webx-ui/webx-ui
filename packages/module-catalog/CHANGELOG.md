@@ -1,5 +1,26 @@
 # @webx-ui/module-catalog
 
+## 0.8.0
+
+### Minor Changes
+
+- 41f2059: `WxTable` takes `selectRowLabel` and `selectAllLabel` for its checkboxes, and every selectable list of the panel passes them translated (`filters.select-row`, `filters.select-all` in `module-admin`). The history shows a list of names as the names, comma-separated, instead of JSON. The catalogue's list of products warns when the database engine is past `sql_engine_limit`; the tree of categories shows an address without the trailing slash; the category picker of a bulk action says «Choose a category».
+
+### Patch Changes
+
+- 6743abb: The list of products sizes its columns by what they hold, so a 1440px window shows three satellite columns instead of one: a satellite 120, the price 120, the state 130, the category 140, the name from 180.
+- Updated dependencies [41f2059]
+  - @webx-ui/core@0.35.0
+  - @webx-ui/module-admin@0.23.0
+  - @webx-ui/schema@0.7.1
+
+## 0.7.0
+
+### Minor Changes
+
+- 64a5353: The catalogue search on Manticore (M2): the codes of a product — article number, barcode, external id — searched as written and by any part of their letters and digits, the product whose code the search is first, and the storefront going straight to its card; a search that finds nothing tried with the other keyboard layout of the site's languages, then corrected word by word, with «Showing results for …, search instead for …» on the storefront and in the panel; and 503 with `Retry-After` on the site's own page when the catalogue is too large to fall back on the database. The tables gain `codes`, `codes_flat`, `code_keys` and `min_infix_len`: `webx:doctor` reports them out of date, `webx:catalog:index --rebuild` makes them anew.
+- 92c75c1: The search index in the panel (M3 of the Manticore engine): «System → Search index» — on the Manticore engine only — shows the server, each language's table against the products in the database, and the queue, and rebuilds an out-of-date table as a job on the queue with its progress (`search-index.view`, `search-index.manage`); `catalog_index_status` tells an agent the same, and why one product is or is not found. The list of products says so when the index does not answer and the database does (`fell_back`). A table of an older schema is asked and written by the columns it has until it is rebuilt, instead of failing the list and the queue. New npm package `@webx-ui/module-catalog-manticore`; `Indexer::rebuild()` reports its progress.
+
 ## 0.6.0
 
 ### Minor Changes

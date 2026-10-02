@@ -37,12 +37,16 @@ final class EngineCheck implements Check
         $engine = (string) $this->config->get('webx-catalog.engine', 'sql');
 
         if (! $this->catalog->needsIndex()) {
+            $outgrown = $this->catalog->outgrown();
+
+            if ($outgrown !== null) {
+                return [Diagnosis::warn('Catalogue engine', "{$outgrown['live']} live products on the database engine, past its limit of {$outgrown['limit']} — install webx-ui/module-catalog-manticore and set WEBX_CATALOG_ENGINE=manticore.")];
+            }
+
             $limit = (int) $this->config->get('webx-catalog.sql_engine_limit', 2000);
             $live = Product::query()->count();
 
-            return [$live > $limit
-                ? Diagnosis::warn('Catalogue engine', "{$live} live products on the database engine, past its limit of {$limit} — install webx-ui/module-catalog-manticore and set WEBX_CATALOG_ENGINE=manticore.")
-                : Diagnosis::ok('Catalogue engine', "the database, with {$live} live products of the {$limit} it is meant for.")];
+            return [Diagnosis::ok('Catalogue engine', "the database, with {$live} live products of the {$limit} it is meant for.")];
         }
 
         $queue = $this->catalog->queue();

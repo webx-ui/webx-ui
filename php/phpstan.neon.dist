@@ -10,6 +10,8 @@ parameters:
         - packages/localization/tests
         - packages/mcp/src
         - packages/mcp/tests
+        - packages/module-audit/src
+        - packages/module-audit/tests
         - packages/module-auth/src
         - packages/module-auth/tests
         - packages/module-blocks/src
@@ -24,6 +26,8 @@ parameters:
         - packages/module-catalog-labels/tests
         - packages/module-catalog-manticore/src
         - packages/module-catalog-manticore/tests
+        - packages/module-catalog-landings/src
+        - packages/module-catalog-landings/tests
         - packages/module-catalog-properties/src
         - packages/module-catalog-properties/tests
         - packages/module-catalog-stock/src

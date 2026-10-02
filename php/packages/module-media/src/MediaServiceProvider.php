@@ -11,6 +11,9 @@ use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldType;
 use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Audit\Checks\AuditChecks;
+use WebxUi\Media\Audit\HeavyImages;
+use WebxUi\Media\Audit\MissingFiles;
 use WebxUi\Media\Screens\FileFieldType;
 use WebxUi\Media\Screens\FilesFieldType;
 use WebxUi\Media\Screens\GalleryFieldType;
@@ -53,6 +56,14 @@ class MediaServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(MediaModule::class));
+
+        // The library's own checks of the site audit, when the audit is installed (§7 of its
+        // spec): files the disk lost and images too heavy for a page.
+        if (class_exists(AuditChecks::class)) {
+            $checks = $this->app->make(AuditChecks::class);
+            $checks->register($this->app->make(MissingFiles::class));
+            $checks->register($this->app->make(HeavyImages::class));
+        }
 
         // What a screen means by these names, on the server: the keys the fields store and the
         // addresses the site reads. The front end registers the same names for the components.

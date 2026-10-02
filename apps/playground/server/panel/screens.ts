@@ -71,7 +71,7 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
   },
   'recipes.form': {
     base: 'php/packages/module-recipes/resources/screens/form.json',
-    // The author's note is the project's field, as client-site has one: into `extra`.
+    // The author's note is the project's field, as a client site has one: into `extra`.
     patches: [
       'php/packages/module-seo/resources/screens/recipes.form.json',
       'apps/playground/server/panel/project/recipes.form.json',
@@ -158,6 +158,11 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
   },
   'catalog.brand-form': {
     base: 'php/packages/module-catalog-brands/resources/screens/brand-form.json',
+    patches: [],
+  },
+  // A landing's form (WEBX_UI_CATALOG_LANDINGS.md §8.2).
+  'catalog.landing-form': {
+    base: 'php/packages/module-catalog-landings/resources/screens/landing-form.json',
     patches: [],
   },
   // The properties and their groups (WEBX_UI_CATALOG_PROPERTIES.md §7.1).

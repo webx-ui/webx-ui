@@ -1,4 +1,5 @@
 import { createAdmin, type Admin, type AdminPlugin } from '@webx-ui/module-admin'
+import { audit } from '@webx-ui/module-audit'
 import { admins, connect } from '@webx-ui/module-auth'
 import { banners } from '@webx-ui/module-banners'
 import { blocks, regions } from '@webx-ui/module-blocks'
@@ -6,6 +7,7 @@ import { blog } from '@webx-ui/module-blog'
 import { catalog } from '@webx-ui/module-catalog'
 import { catalogBrands } from '@webx-ui/module-catalog-brands'
 import { catalogLabels } from '@webx-ui/module-catalog-labels'
+import { catalogLandings } from '@webx-ui/module-catalog-landings'
 import { catalogManticore } from '@webx-ui/module-catalog-manticore'
 import { catalogProperties } from '@webx-ui/module-catalog-properties'
 import { catalogStock } from '@webx-ui/module-catalog-stock'
@@ -74,6 +76,7 @@ const admin = createAdmin({
     ...services(),
     ...catalog(),
     ...catalogBrands(),
+    ...catalogLandings(),
     ...catalogLabels(),
     ...catalogProperties(),
     ...catalogStock(),
@@ -91,6 +94,7 @@ const admin = createAdmin({
     media(),
     blocks(),
     seo(),
+    audit(),
     ...catalogManticore(),
     admins(),
     connect(),

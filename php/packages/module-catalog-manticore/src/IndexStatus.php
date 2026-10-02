@@ -40,7 +40,7 @@ final class IndexStatus
      * @return array{
      *     connection: array{address: string, prefix: string|null, version: string|null, available: bool, error: string|null},
      *     products: int,
-     *     tables: list<array{locale: string, table: string, state: string, reason: string|null, documents: int|null, rebuilding: bool}>,
+     *     tables: list<array{locale: string, table: string, state: string, reason: string|null, documents: int|null, rebuilding: bool, filled: int|null}>,
      *     queue: array{waiting: int, oldest: string|null},
      *     rebuild: array{state: string, done: int, total: int, queued_at: string|null, started_at: string|null, finished_at: string|null, error: string|null, stalled: bool},
      *     outdated: bool,

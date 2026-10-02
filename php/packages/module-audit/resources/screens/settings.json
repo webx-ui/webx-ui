@@ -1,0 +1,43 @@
+[
+  {
+    "op": "add",
+    "target": "tabs",
+    "node": {
+      "id": "audit",
+      "type": "wx-tab",
+      "label": "trans::webx-audit::screen.tab",
+      "children": [
+        {
+          "id": "audit-card",
+          "type": "wx-card",
+          "children": [
+            {
+              "id": "audit-base-url",
+              "type": "wx-input",
+              "name": "audit.base-url",
+              "label": "trans::webx-audit::screen.base-url",
+              "help": "trans::webx-audit::screen.base-url-help",
+              "props": { "placeholder": "https://example.com" }
+            },
+            {
+              "id": "audit-resolve-to",
+              "type": "wx-input",
+              "name": "audit.resolve-to",
+              "label": "trans::webx-audit::screen.resolve-to",
+              "help": "trans::webx-audit::screen.resolve-to-help",
+              "props": { "placeholder": "127.0.0.1" }
+            },
+            {
+              "id": "audit-other-hosts",
+              "type": "wx-textarea",
+              "name": "audit.other-hosts",
+              "label": "trans::webx-audit::screen.other-hosts",
+              "help": "trans::webx-audit::screen.other-hosts-help",
+              "props": { "rows": 4, "placeholder": "dev.example.com" }
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

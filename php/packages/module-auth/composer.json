@@ -22,7 +22,7 @@
         "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-auth"
     },
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "illuminate/auth": "^13.0",
         "illuminate/console": "^13.0",
         "illuminate/contracts": "^13.0",
@@ -32,9 +32,9 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "laravel/passport": "^13.8",
-        "webx-ui/module-admin": "^0.55.0",
-        "webx-ui/localization": "^0.55.0",
-        "webx-ui/mcp": "^0.55.0"
+        "webx-ui/module-admin": "^0.57.0",
+        "webx-ui/localization": "^0.57.0",
+        "webx-ui/mcp": "^0.57.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
@@ -59,7 +59,7 @@
         "webx": {
             "module": "auth",
             "npm": {
-                "@webx-ui/module-auth": "^0.8.12"
+                "@webx-ui/module-auth": "^0.8.13"
             },
             "panel": {
                 "import": "import { admins, connect } from '@webx-ui/module-auth'",

@@ -251,9 +251,11 @@ import {
   productCount,
   registerCatalog,
 } from './catalog'
+import { registerAudit } from './audit'
 import { registerManticore } from './catalog-manticore'
 import { brandHistory, registerDictionaries } from './catalog-dictionaries'
 import { propertyHistory, registerProperties } from './catalog-properties'
+import { landingHistory, registerLandings } from './catalog-landings'
 import { Reply } from './reply'
 import { handleUploads } from './uploads'
 import { handleExchangeFiles } from './catalog-exchange'
@@ -604,6 +606,17 @@ on('GET', '/manifest', ({ locale }) => ({
         permissions: [],
         meta: {},
       },
+      /* Landings: pages of the storefront of their own, after the brands (§8.1 of the landings
+         spec). No permissions of their own (decision 13). */
+      {
+        id: 'catalog-landings',
+        title: line(locale, 'webx-catalog-landings', 'module.title'),
+        icon: 'filter',
+        order: 303,
+        group: 'catalog',
+        permissions: [],
+        meta: {},
+      },
       {
         id: 'catalog-labels',
         title: line(locale, 'webx-catalog-labels', 'module.title'),
@@ -804,6 +817,15 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 700,
         group: 'system',
         permissions: ['seo.view', 'seo.manage'],
+        meta: {},
+      },
+      {
+        id: 'audit',
+        title: line(locale, 'webx-audit', 'module.title'),
+        icon: 'check-circle',
+        order: 710,
+        group: 'system',
+        permissions: ['audit.view', 'audit.run', 'audit.manage'],
         meta: {},
       },
       {
@@ -1983,7 +2005,8 @@ on('GET', '/history/([\\w.-]+)/(\\d+)', ({ params, query }) => {
     historyOf(params[0]!, Number(params[1]), page) ??
     catalogHistory(params[0]!, Number(params[1]), page) ??
     brandHistory(params[0]!, Number(params[1]), page) ??
-    propertyHistory(params[0]!)
+    propertyHistory(params[0]!) ??
+    landingHistory(params[0]!)
 
   if (found === null) throw new HttpFailure(404, 'That kind of record keeps no history.')
 
@@ -1999,6 +2022,7 @@ registerCatalog(
 
 /* Its search index on Manticore (WEBX_UI_CATALOG_MANTICORE.md): «System → Search index». */
 registerManticore(on, (status, message) => new HttpFailure(status, message), productCount)
+registerAudit(on, (status, message) => new HttpFailure(status, message), line)
 
 /* Its reference books (WEBX_UI_CATALOG_DICTIONARIES.md): labels, stock statuses, brands. */
 registerDictionaries(
@@ -2012,6 +2036,14 @@ registerDictionaries(
 registerProperties(
   on,
   (status, message, errors, extra) => new HttpFailure(status, message, undefined, errors, extra),
+  line,
+  categoryLookup,
+)
+
+/* Its landings (WEBX_UI_CATALOG_LANDINGS.md): the list, the form, the count, «Create in bulk». */
+registerLandings(
+  on,
+  (status, message, errors) => new HttpFailure(status, message, undefined, errors),
   line,
   categoryLookup,
 )
