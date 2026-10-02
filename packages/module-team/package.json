@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-team",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "The team for the WebX UI admin panel: people with a photo, a job title, a short text and their social links, ordered by hand, shown on the site by a block.",
   "license": "MIT",
   "type": "module",

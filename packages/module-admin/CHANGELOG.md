@@ -1,5 +1,14 @@
 # @webx-ui/admin
 
+## 0.23.1
+
+### Patch Changes
+
+- Updated dependencies [62497fc]
+  - @webx-ui/core@0.36.0
+  - @webx-ui/tokens@0.5.0
+  - @webx-ui/schema@0.7.2
+
 ## 0.23.0
 
 ### Minor Changes

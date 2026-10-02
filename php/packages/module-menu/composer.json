@@ -30,17 +30,17 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "illuminate/view": "^13.0",
-        "webx-ui/localization": "^0.57.0",
-        "webx-ui/mcp": "^0.57.0",
-        "webx-ui/module-admin": "^0.57.0",
-        "webx-ui/nested-set": "^0.57.0",
-        "webx-ui/routing": "^0.57.0"
+        "webx-ui/localization": "^0.58.0",
+        "webx-ui/mcp": "^0.58.0",
+        "webx-ui/module-admin": "^0.58.0",
+        "webx-ui/nested-set": "^0.58.0",
+        "webx-ui/routing": "^0.58.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/module-audit": "^0.57.0",
-        "webx-ui/module-blocks": "^0.57.0"
+        "webx-ui/module-audit": "^0.58.0",
+        "webx-ui/module-blocks": "^0.58.0"
     },
     "suggest": {
         "webx-ui/module-audit": "The site audit says which menu item leads to an error page or to a redirect.",
@@ -68,7 +68,7 @@
         "webx": {
             "module": "menu",
             "npm": {
-                "@webx-ui/module-menu": "^0.1.12"
+                "@webx-ui/module-menu": "^0.1.13"
             },
             "panel": {
                 "import": "import { menu } from '@webx-ui/module-menu'",

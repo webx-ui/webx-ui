@@ -35,18 +35,18 @@
         "illuminate/validation": "^13.0",
         "illuminate/view": "^13.0",
         "openspout/openspout": "^4.32",
-        "webx-ui/localization": "^0.57.0",
-        "webx-ui/mcp": "^0.57.0",
-        "webx-ui/module-admin": "^0.57.0",
-        "webx-ui/module-media": "^0.57.0",
-        "webx-ui/module-seo": "^0.57.0",
-        "webx-ui/nested-set": "^0.57.0",
-        "webx-ui/routing": "^0.57.0"
+        "webx-ui/localization": "^0.58.0",
+        "webx-ui/mcp": "^0.58.0",
+        "webx-ui/module-admin": "^0.58.0",
+        "webx-ui/module-media": "^0.58.0",
+        "webx-ui/module-seo": "^0.58.0",
+        "webx-ui/nested-set": "^0.58.0",
+        "webx-ui/routing": "^0.58.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/module-audit": "^0.57.0"
+        "webx-ui/module-audit": "^0.58.0"
     },
     "suggest": {
         "webx-ui/module-audit": "The site audit reports published categories without a description and published products without a picture or a price."
@@ -73,7 +73,7 @@
         "webx": {
             "module": "catalog",
             "npm": {
-                "@webx-ui/module-catalog": "^0.8.0"
+                "@webx-ui/module-catalog": "^0.8.1"
             },
             "panel": {
                 "import": "import { catalog } from '@webx-ui/module-catalog'",
