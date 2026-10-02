@@ -240,7 +240,7 @@ final class ExchangeTest extends TestCase
     #[Test]
     public function a_name_repeated_down_the_tree_gets_a_numbered_slug_rather_than_an_error(): void
     {
-        // Found by the reference-shop run: «Gaskets» under two branches, and every row of the second
+        // Found by a real shop's run: «Gaskets» under two branches, and every row of the second
         // one refused because the flat slug was taken.
         $run = $this->import("sku,name,category\nG-1,One,Engine/Gaskets\nG-2,Two,Hydraulics/Gaskets\nG-3,Three,Pumps/Gaskets\n", ['create_missing' => true]);
 
