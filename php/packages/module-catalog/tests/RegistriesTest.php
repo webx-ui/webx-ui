@@ -65,7 +65,9 @@ final class RegistriesTest extends TestCase
             ]))
             ->assertOk()
             ->assertJsonPath('total', 2)
-            ->assertJsonPath('facets.colour.values.0.label', 'Black');
+            ->assertJsonPath('facets.colour.values.0.label', 'Black')
+            // Every facet keeps its counts, not only the last of its kind.
+            ->assertJsonPath('facets.category.key', 'category');
 
         $this->assertEqualsCanonicalizing([$black->id, $hidden->id], array_column($response->json('data'), 'id'));
         // A facet's own choice aside: white is still counted in laptops.
