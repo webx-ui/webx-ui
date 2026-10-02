@@ -148,21 +148,23 @@ final class ProductController
                 continue;
             }
 
-            $counted = array_map('strval', array_keys($result->counts));
-            $labels = $facet->labels($counted, $locale);
+            // Its own name: `$counted` is the answer being built, and reusing it dropped every facet
+            // before the last one of terms.
+            $present = array_map('strval', array_keys($result->counts));
+            $labels = $facet->labels($present, $locale);
 
             if ($facet instanceof OrderedFacet) {
                 // The order an editor gave the values (labels, stock), as the site's filter keeps it,
                 // and whatever the facet has no words for after it.
-                $counted = array_values(array_unique([
-                    ...array_intersect(array_map('strval', array_keys($labels)), $counted),
-                    ...$counted,
+                $present = array_values(array_unique([
+                    ...array_intersect(array_map('strval', array_keys($labels)), $present),
+                    ...$present,
                 ]));
             }
 
             $values = [];
 
-            foreach ($counted as $value) {
+            foreach ($present as $value) {
                 $values[] = ['value' => $value, 'label' => $labels[$value] ?? $value, 'count' => $result->counts[$value]];
             }
 
