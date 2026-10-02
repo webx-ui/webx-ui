@@ -166,9 +166,6 @@ importers:
       '@webx-ui/module-admin':
         specifier: workspace:*
         version: link:../../packages/module-admin
-      '@webx-ui/module-audit':
-        specifier: workspace:*
-        version: link:../../packages/module-audit
       '@webx-ui/module-auth':
         specifier: workspace:*
         version: link:../../packages/module-auth
@@ -234,6 +231,9 @@ importers:
       '@webx-ui/module-admin':
         specifier: workspace:*
         version: link:../../packages/module-admin
+      '@webx-ui/module-audit':
+        specifier: workspace:*
+        version: link:../../packages/module-audit
       '@webx-ui/module-auth':
         specifier: workspace:*
         version: link:../../packages/module-auth
