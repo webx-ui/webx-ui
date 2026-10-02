@@ -84,11 +84,19 @@ jobs:
       - run: pnpm lint --cache --cache-strategy content --cache-location .cache/lint/eslint
       - run: pnpm format:check --cache --cache-strategy content --cache-location .cache/lint/prettier
 
+  # Two shards for the whole workspace, one for the few projects a change reaches. Each shard
+  # builds everything — a checked project reads its dependencies' declarations — and checks every
+  # other project; the projects cost about the same, so alternating splits them evenly. A
+  # single pass that checked each package as soon as it was built was tried and saved nothing.
   typecheck:
-    name: Typecheck
+    name: Typecheck ${{ matrix.shard }}/${{ strategy.job-total }}
     needs: changes
     if: github.head_ref != 'changeset-release/main' && needs.changes.outputs.node != 'none'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.changes.outputs.node == 'all' && '[1, 2]' || '[1]') }}
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -97,17 +105,21 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # One pass instead of `pnpm build` and then `pnpm typecheck`: a package is checked as soon as
-      # it is built, while its dependents are still building, so the four cores stay busy through
-      # the long chain core → schema → module-admin. Every package is built, because a checked
-      # one reads its dependencies' declarations; only those the change reaches are checked.
-      - name: Build and typecheck
+      - run: pnpm build
+      - name: Typecheck this shard's projects
         env:
-          REACHED: ${{ needs.changes.outputs.node == 'all' && 'all' || needs.changes.outputs.node_filters }}
+          FILTERS: ${{ needs.changes.outputs.node == 'some' && needs.changes.outputs.node_filters || '' }}
+          SHARD: ${{ matrix.shard }}
+          TOTAL: ${{ strategy.job-total }}
         run: |
-          check='case "$REACHED " in all*|*"--filter $PNPM_PACKAGE_NAME "*) pnpm run typecheck ;; esac'
-          pnpm --filter "./packages/*" -r exec sh -c "pnpm run build && $check"
-          pnpm --filter "./apps/*" -r exec sh -c "$check"
+          pick='
+            const projects = JSON.parse(require("fs").readFileSync(0, "utf8"))
+              .filter((project) => project.name.startsWith("@webx-ui/") && project.name !== "@webx-ui/php")
+            const mine = projects.filter((_, index) => index % process.env.TOTAL === process.env.SHARD - 1)
+            console.log(mine.map((project) => `--filter ${project.name}`).join(" "))'
+          # $FILTERS and the answer are lists of flags: word splitting is the point.
+          filters=$(pnpm ls -r --depth -1 --json $FILTERS | node -e "$pick")
+          pnpm $filters typecheck
 
   # Three shards for the whole suite; the few packages a change reaches fit in one.
   test:
