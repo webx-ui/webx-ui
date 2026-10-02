@@ -62,6 +62,7 @@ export default defineConfig({
             { text: 'Menus', link: '/guide/menu' },
             { text: 'Settings', link: '/guide/settings' },
             { text: 'SEO', link: '/guide/seo' },
+            { text: 'Site audit', link: '/guide/audit' },
             { text: 'Inbox', link: '/guide/inbox' },
             { text: 'Database backups', link: '/guide/backups' },
           ],

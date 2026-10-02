@@ -7,6 +7,7 @@ namespace WebxUi\Audit\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use WebxUi\Audit\Checks\CheckTexts;
+use WebxUi\Audit\Runs\AuditIgnore;
 use WebxUi\Audit\Runs\AuditIssue;
 
 /**
@@ -25,6 +26,8 @@ final class IssueResource extends JsonResource
         /** @var AuditIssue $issue */
         $issue = $this->resource;
 
+        $rule = $issue->ignored_by !== null && $issue->relationLoaded('ignore') ? $issue->getRelation('ignore') : null;
+
         return [
             'id' => $issue->id,
             'check' => $issue->check,
@@ -32,6 +35,8 @@ final class IssueResource extends JsonResource
             'url' => $issue->url,
             'state' => $issue->state,
             'ignored' => $issue->ignored_by !== null,
+            // The rule, when it was loaded with the finding — the hidden list shows why.
+            'ignore' => $rule instanceof AuditIgnore ? $rule->toPanel() : null,
             'fixed_with' => $issue->fixed_with,
             'fixed_at' => $issue->fixed_at?->toIso8601String(),
             'details' => self::details($issue->details ?? []),

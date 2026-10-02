@@ -9,20 +9,24 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
-use Illuminate\Support\Facades\DB;
+use WebxUi\Audit\AuditSettings;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Checks\CheckTexts;
 use WebxUi\Audit\Contracts\AuditCheck;
 use WebxUi\Audit\Fixes\AuditFixes;
 use WebxUi\Audit\Fixes\FixRunner;
 use WebxUi\Audit\Hosts\HostClassifier;
+use WebxUi\Audit\Http\Controllers\HostController;
 use WebxUi\Audit\Http\Controllers\IssueController;
 use WebxUi\Audit\Http\Controllers\PageController;
+use WebxUi\Audit\Http\Controllers\RunController;
 use WebxUi\Audit\Http\Resources\IssueResource;
 use WebxUi\Audit\Http\Resources\RunResource;
+use WebxUi\Audit\Runs\AuditIgnore;
 use WebxUi\Audit\Runs\AuditIssue;
 use WebxUi\Audit\Runs\AuditPage;
 use WebxUi\Audit\Runs\AuditRun;
+use WebxUi\Audit\Runs\Ignores;
 use WebxUi\Audit\Runs\RunAuditStage;
 use WebxUi\Audit\Runs\Runner;
 use WebxUi\Mcp\Exceptions\ToolFailure;
@@ -53,10 +57,13 @@ final class AuditTools
         return [
             Tool::mutating(
                 'run',
-                'Start an audit run in the queue. "quick" checks the config, the host and the database in seconds; "full" also crawls the site and checks every page. Follow it with audit_status.',
+                'Start an audit run in the queue. "quick" checks the config, the host and the database in seconds; "full" also crawls the site and checks every page; "urls" rechecks the pages given in "urls" after an edit and says which of their findings the last full run had are fixed. Follow it with audit_status.',
                 static fn (array $arguments): array => self::start($arguments),
                 [
-                    'properties' => ['scope' => ['type' => 'string', 'enum' => AuditRun::SCOPES, 'default' => AuditRun::QUICK]],
+                    'properties' => [
+                        'scope' => ['type' => 'string', 'enum' => AuditRun::SCOPES, 'default' => AuditRun::QUICK],
+                        'urls' => ['type' => 'array', 'items' => ['type' => 'string'], 'maxItems' => AuditRun::URLS_LIMIT, 'description' => 'Absolute addresses on the audited site, for the "urls" scope'],
+                    ],
                 ],
                 scope: self::SCOPE_WRITE,
                 permission: ['audit.run', 'audit.manage'],
@@ -79,7 +86,7 @@ final class AuditTools
                         'check' => ['type' => 'string', 'description' => 'A check id, e.g. title.duplicate'],
                         'severity' => ['type' => 'string', 'enum' => ['error', 'warning', 'notice']],
                         'group' => ['type' => 'string'],
-                        'state' => ['type' => 'string', 'enum' => [AuditIssue::NEW, AuditIssue::PERSISTING]],
+                        'state' => ['type' => 'string', 'enum' => [AuditIssue::NEW, AuditIssue::PERSISTING, IssueController::HIDDEN]],
                         'page' => ['type' => 'integer', 'minimum' => 1],
                     ],
                 ],
@@ -127,6 +134,7 @@ final class AuditTools
                     'properties' => [
                         'class' => ['type' => 'string', 'enum' => [HostClassifier::OWN, HostClassifier::OWN_MIRROR, HostClassifier::DEV, HostClassifier::EXTERNAL]],
                         'host' => ['type' => 'string', 'description' => 'One host: its places in pages and in the database'],
+                        'search' => ['type' => 'string', 'description' => 'Part of a host name'],
                     ],
                 ],
                 scope: self::SCOPE_READ,
@@ -142,6 +150,22 @@ final class AuditTools
                         'fix' => ['type' => 'string', 'description' => 'A fix id, e.g. audit.replace-host'],
                     ],
                     'required' => ['issue'],
+                ],
+                scope: self::SCOPE_WRITE,
+                permission: 'audit.manage',
+            ),
+
+            Tool::mutating(
+                'ignore',
+                'Hide findings on purpose — noindex on the search page, a long title on a landing — with the reason: a check, an address or a mask (`*` a stretch without a slash, `**` with them; empty for every finding of the check). Hidden findings stop counting in this and every later run. Without "check" and "remove": the rules. With dry_run: how many findings of the last run it would hide. "remove": a rule id, shown again.',
+                static fn (array $arguments): array => self::ignore($arguments),
+                [
+                    'properties' => [
+                        'check' => ['type' => 'string', 'description' => 'A check id, e.g. indexing.noindex'],
+                        'pattern' => ['type' => 'string', 'description' => 'An address or a path mask, e.g. /search/**; empty hides the whole check'],
+                        'reason' => ['type' => 'string', 'description' => 'Why it is all right — required'],
+                        'remove' => ['type' => 'integer', 'description' => 'The id of a rule to remove'],
+                    ],
                 ],
                 scope: self::SCOPE_WRITE,
                 permission: 'audit.manage',
@@ -190,7 +214,7 @@ final class AuditTools
         $scope = is_string($arguments['scope'] ?? null) ? $arguments['scope'] : AuditRun::QUICK;
 
         if (! in_array($scope, AuditRun::SCOPES, true)) {
-            throw new ToolFailure('The scope is "quick" or "full".');
+            throw new ToolFailure('The scope is "quick", "full" or "urls".');
         }
 
         $config = app(Config::class);
@@ -204,11 +228,21 @@ final class AuditTools
             throw new ToolFailure((string) __('webx-audit::page.already-running'));
         }
 
-        if ($arguments[Tool::DRY_RUN] ?? false) {
-            return ['started' => false, 'scope' => $scope];
+        $urls = [];
+
+        if ($scope === AuditRun::URLS) {
+            $urls = RunController::ownUrls((array) ($arguments['urls'] ?? []), app(AuditSettings::class)->baseUrl());
+
+            if ($urls === []) {
+                throw new ToolFailure((string) __('webx-audit::page.urls-foreign'));
+            }
         }
 
-        $run = app(Runner::class)->start($scope, 'mcp');
+        if ($arguments[Tool::DRY_RUN] ?? false) {
+            return ['started' => false, 'scope' => $scope, 'urls' => $urls];
+        }
+
+        $run = app(Runner::class)->start($scope, 'mcp', $urls);
         app(Dispatcher::class)->dispatch(new RunAuditStage($run->id));
 
         return ['started' => true, 'run' => self::json(new RunResource($run->refresh()))];
@@ -220,7 +254,7 @@ final class AuditTools
     private static function status(): array
     {
         $active = AuditRun::query()->active()->orderByDesc('id')->first();
-        $done = AuditRun::query()->where('status', AuditRun::DONE)->orderByDesc('id')->first();
+        $done = AuditRun::query()->siteWide()->where('status', AuditRun::DONE)->orderByDesc('id')->first();
 
         return [
             'active' => $active === null ? null : self::json(new RunResource($active)),
@@ -287,57 +321,68 @@ final class AuditTools
      */
     private static function hosts(array $arguments): array
     {
-        $class = is_string($arguments['class'] ?? null) ? $arguments['class'] : null;
-        $host = is_string($arguments['host'] ?? null) ? strtolower($arguments['host']) : null;
-        $crawled = AuditRun::query()->where('status', AuditRun::DONE)->where('scope', AuditRun::FULL)->orderByDesc('id')->first();
-        $done = AuditRun::query()->where('status', AuditRun::DONE)->orderByDesc('id')->first();
-        $hosts = [];
+        $query = array_intersect_key($arguments, array_flip(['class', 'host', 'search']));
 
-        if ($crawled !== null) {
-            $links = DB::table('audit_links')->where('run_id', $crawled->id)->whereNotNull('host')
-                ->when($class !== null, static fn ($query) => $query->where('host_class', $class))
-                ->when($host !== null, static fn ($query) => $query->where('host', $host))
-                ->groupBy('host', 'host_class')
-                ->selectRaw('host, host_class, count(*) as links, count(distinct from_page_id) as pages')
-                ->get();
-
-            foreach ($links as $row) {
-                $hosts[(string) $row->host] = ['host' => (string) $row->host, 'class' => (string) $row->host_class, 'links' => (int) $row->links, 'pages' => (int) $row->pages, 'fields' => 0];
-            }
+        // One host means its places, and the list narrowed to it — what the screen's row opens.
+        if (is_string($query['host'] ?? null)) {
+            $query['search'] = $query['host'];
         }
 
-        if ($done !== null) {
-            $fields = DB::table('audit_content_urls')->where('run_id', $done->id)
-                ->when($class !== null, static fn ($query) => $query->where('host_class', $class))
-                ->when($host !== null, static fn ($query) => $query->where('host', $host))
-                ->groupBy('host', 'host_class')
-                ->selectRaw('host, host_class, count(*) as fields')
-                ->get();
+        $answer = self::data(app(HostController::class)->index(Request::create('/', 'GET', $query)));
 
-            foreach ($fields as $row) {
-                $hosts[(string) $row->host] ??= ['host' => (string) $row->host, 'class' => (string) $row->host_class, 'links' => 0, 'pages' => 0, 'fields' => 0];
-                $hosts[(string) $row->host]['fields'] = (int) $row->fields;
-            }
-        }
-
-        $order = [HostClassifier::DEV => 0, HostClassifier::OWN_MIRROR => 1, HostClassifier::EXTERNAL => 2, HostClassifier::OWN => 3];
-        usort($hosts, static fn (array $a, array $b): int => [$order[$a['class']] ?? 9, -$a['links'] - $a['fields']] <=> [$order[$b['class']] ?? 9, -$b['links'] - $b['fields']]);
-
-        $answer = ['crawled_run' => $crawled?->id, 'database_run' => $done?->id, 'hosts' => array_slice($hosts, 0, 200)];
-
-        if ($host !== null) {
-            $answer['pages'] = $crawled === null ? [] : DB::table('audit_links')
-                ->join('audit_pages', 'audit_pages.id', '=', 'audit_links.from_page_id')
-                ->where('audit_links.run_id', $crawled->id)->where('audit_links.host', $host)
-                ->limit(50)->get(['audit_pages.url as page', 'audit_links.to_url as url', 'audit_links.kind', 'audit_links.anchor'])
-                ->map(static fn (object $row): array => (array) $row)->all();
-            $answer['fields'] = $done === null ? [] : DB::table('audit_content_urls')
-                ->where('run_id', $done->id)->where('host', $host)
-                ->limit(50)->get(['source', 'record_id', 'record_label', 'field', 'locale', 'url', 'published', 'edit_url'])
-                ->map(static fn (object $row): array => (array) $row)->all();
+        if (is_string($query['host'] ?? null)) {
+            $answer['hosts'] = array_values(array_filter(
+                (array) ($answer['hosts'] ?? []),
+                static fn (mixed $row): bool => is_array($row) && ($row['host'] ?? null) === strtolower((string) $query['host']),
+            ));
         }
 
         return $answer;
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private static function ignore(array $arguments): array
+    {
+        $ignores = app(Ignores::class);
+
+        if (is_numeric($arguments['remove'] ?? null)) {
+            $rule = AuditIgnore::query()->find((int) $arguments['remove']);
+
+            if (! $rule instanceof AuditIgnore) {
+                throw new ToolFailure('No hiding rule with that id.');
+            }
+
+            if (! ($arguments[Tool::DRY_RUN] ?? false)) {
+                $ignores->remove($rule);
+            }
+
+            return ['removed' => $rule->toPanel(), 'applied' => ! ($arguments[Tool::DRY_RUN] ?? false)];
+        }
+
+        if (! is_string($arguments['check'] ?? null)) {
+            return ['rules' => AuditIgnore::query()->orderByDesc('id')->get()->map(static fn (AuditIgnore $rule): array => $rule->toPanel())->all()];
+        }
+
+        $check = $arguments['check'];
+        $pattern = is_string($arguments['pattern'] ?? null) ? trim($arguments['pattern']) : '';
+        $reason = is_string($arguments['reason'] ?? null) ? trim($arguments['reason']) : '';
+
+        if (app(AuditChecks::class)->get($check) === null) {
+            throw new ToolFailure('No check with that id. The catalogue is the audit://checks resource.');
+        }
+
+        if ($reason === '') {
+            throw new ToolFailure('Say why in "reason": the next person to open the findings will want to know.');
+        }
+
+        if ($arguments[Tool::DRY_RUN] ?? false) {
+            return ['applied' => false, 'hidden' => $ignores->preview($check, $pattern)];
+        }
+
+        return ['applied' => true, 'rule' => $ignores->add($check, $pattern, $reason, 'mcp')->toPanel()];
     }
 
     /**
@@ -378,7 +423,7 @@ final class AuditTools
 
         $run = is_numeric($arguments['run'] ?? null)
             ? $query->find((int) $arguments['run'])
-            : $query->where('status', AuditRun::DONE)->when($full, static fn ($q) => $q->where('scope', AuditRun::FULL))->orderByDesc('id')->first();
+            : $query->siteWide()->where('status', AuditRun::DONE)->when($full, static fn ($q) => $q->where('scope', AuditRun::FULL))->orderByDesc('id')->first();
 
         if (! $run instanceof AuditRun) {
             throw new ToolFailure($full ? 'There is no finished full run yet. Start one with audit_run scope "full".' : 'There is no finished run yet. Start one with audit_run.');

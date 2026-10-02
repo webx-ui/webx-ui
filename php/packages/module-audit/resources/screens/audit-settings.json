@@ -1,0 +1,304 @@
+{
+  "$schema": "https://webx-ui.github.io/webx-ui/schema/screen.json",
+  "screen": "audit.settings",
+  "root": [
+    {
+      "id": "site",
+      "type": "wx-card",
+      "label": "trans::webx-audit::screen.site",
+      "children": [
+        {
+          "id": "base-url",
+          "type": "wx-input",
+          "name": "audit.base-url",
+          "label": "trans::webx-audit::screen.base-url",
+          "help": "trans::webx-audit::screen.base-url-help",
+          "props": {
+            "placeholder": "https://example.com"
+          }
+        },
+        {
+          "id": "resolve-to",
+          "type": "wx-input",
+          "name": "audit.resolve-to",
+          "label": "trans::webx-audit::screen.resolve-to",
+          "help": "trans::webx-audit::screen.resolve-to-help",
+          "props": {
+            "placeholder": "127.0.0.1"
+          }
+        },
+        {
+          "id": "other-hosts",
+          "type": "wx-textarea",
+          "name": "audit.other-hosts",
+          "label": "trans::webx-audit::screen.other-hosts",
+          "help": "trans::webx-audit::screen.other-hosts-help",
+          "props": {
+            "rows": 4,
+            "placeholder": "dev.example.com"
+          }
+        }
+      ]
+    },
+    {
+      "id": "crawl",
+      "type": "wx-card",
+      "label": "trans::webx-audit::screen.crawl",
+      "children": [
+        {
+          "id": "pages-limit",
+          "type": "wx-input-number",
+          "name": "audit.pages-limit",
+          "label": "trans::webx-audit::screen.pages-limit",
+          "help": "trans::webx-audit::screen.pages-limit-help",
+          "props": {
+            "min": 1,
+            "max": 100000,
+            "placeholder": "1000"
+          }
+        },
+        {
+          "id": "concurrency",
+          "type": "wx-input-number",
+          "name": "audit.concurrency",
+          "label": "trans::webx-audit::screen.concurrency",
+          "help": "trans::webx-audit::screen.concurrency-help",
+          "props": {
+            "min": 1,
+            "max": 16,
+            "placeholder": "2"
+          }
+        },
+        {
+          "id": "resources-limit",
+          "type": "wx-input-number",
+          "name": "audit.resources-limit",
+          "label": "trans::webx-audit::screen.resources-limit",
+          "help": "trans::webx-audit::screen.resources-limit-help",
+          "props": {
+            "min": 0,
+            "max": 100000,
+            "placeholder": "2000"
+          }
+        },
+        {
+          "id": "exclude",
+          "type": "wx-textarea",
+          "name": "audit.exclude",
+          "label": "trans::webx-audit::screen.exclude",
+          "help": "trans::webx-audit::screen.exclude-help",
+          "props": {
+            "rows": 4,
+            "placeholder": "/search/**"
+          }
+        }
+      ]
+    },
+    {
+      "id": "thresholds",
+      "type": "wx-card",
+      "label": "trans::webx-audit::screen.thresholds",
+      "children": [
+        {
+          "id": "title-min",
+          "type": "wx-input-number",
+          "name": "audit.title-min",
+          "label": "trans::webx-audit::screen.title-min",
+          "props": {
+            "min": 0,
+            "max": 1000,
+            "placeholder": "30"
+          },
+          "help": "trans::webx-audit::screen.thresholds-help"
+        },
+        {
+          "id": "title-max",
+          "type": "wx-input-number",
+          "name": "audit.title-max",
+          "label": "trans::webx-audit::screen.title-max",
+          "props": {
+            "min": 1,
+            "max": 1000,
+            "placeholder": "60"
+          }
+        },
+        {
+          "id": "description-min",
+          "type": "wx-input-number",
+          "name": "audit.description-min",
+          "label": "trans::webx-audit::screen.description-min",
+          "props": {
+            "min": 0,
+            "max": 1000,
+            "placeholder": "70"
+          }
+        },
+        {
+          "id": "description-max",
+          "type": "wx-input-number",
+          "name": "audit.description-max",
+          "label": "trans::webx-audit::screen.description-max",
+          "props": {
+            "min": 1,
+            "max": 1000,
+            "placeholder": "160"
+          }
+        },
+        {
+          "id": "thin-words",
+          "type": "wx-input-number",
+          "name": "audit.thin-words",
+          "label": "trans::webx-audit::screen.thin-words",
+          "props": {
+            "min": 0,
+            "max": 100000,
+            "placeholder": "250"
+          }
+        },
+        {
+          "id": "text-ratio",
+          "type": "wx-input-number",
+          "name": "audit.text-ratio",
+          "label": "trans::webx-audit::screen.text-ratio",
+          "props": {
+            "min": 0,
+            "max": 100,
+            "placeholder": "10"
+          }
+        },
+        {
+          "id": "url-length",
+          "type": "wx-input-number",
+          "name": "audit.url-length",
+          "label": "trans::webx-audit::screen.url-length",
+          "props": {
+            "min": 1,
+            "max": 2048,
+            "placeholder": "115"
+          }
+        },
+        {
+          "id": "ttfb-ms",
+          "type": "wx-input-number",
+          "name": "audit.ttfb-ms",
+          "label": "trans::webx-audit::screen.ttfb-ms",
+          "props": {
+            "min": 1,
+            "max": 60000,
+            "placeholder": "600"
+          }
+        },
+        {
+          "id": "depth",
+          "type": "wx-input-number",
+          "name": "audit.depth",
+          "label": "trans::webx-audit::screen.depth",
+          "props": {
+            "min": 1,
+            "max": 50,
+            "placeholder": "3"
+          }
+        },
+        {
+          "id": "image-kb",
+          "type": "wx-input-number",
+          "name": "audit.image-kb",
+          "label": "trans::webx-audit::screen.image-kb",
+          "props": {
+            "min": 1,
+            "max": 100000,
+            "placeholder": "300"
+          }
+        },
+        {
+          "id": "external-links",
+          "type": "wx-input-number",
+          "name": "audit.external-links",
+          "label": "trans::webx-audit::screen.external-links",
+          "props": {
+            "min": 1,
+            "max": 100000,
+            "placeholder": "100"
+          }
+        }
+      ]
+    },
+    {
+      "id": "schedule",
+      "type": "wx-card",
+      "label": "trans::webx-audit::screen.schedule",
+      "children": [
+        {
+          "id": "schedule-on",
+          "type": "wx-switch",
+          "name": "audit.schedule",
+          "label": "trans::webx-audit::screen.schedule-on",
+          "help": "trans::webx-audit::screen.schedule-on-help"
+        },
+        {
+          "id": "schedule-scope",
+          "type": "wx-select",
+          "name": "audit.schedule-scope",
+          "label": "trans::webx-audit::screen.schedule-scope",
+          "props": {
+            "placeholder": "trans::webx-audit::screen.schedule-scope-full",
+            "clearable": true,
+            "options": [
+              {
+                "label": "trans::webx-audit::screen.schedule-scope-full",
+                "value": "full"
+              },
+              {
+                "label": "trans::webx-audit::screen.schedule-scope-quick",
+                "value": "quick"
+              }
+            ]
+          }
+        },
+        {
+          "id": "schedule-hour",
+          "type": "wx-input-number",
+          "name": "audit.schedule-hour",
+          "label": "trans::webx-audit::screen.schedule-hour",
+          "help": "trans::webx-audit::screen.schedule-hour-help",
+          "props": {
+            "min": 0,
+            "max": 23,
+            "placeholder": "3"
+          }
+        }
+      ]
+    },
+    {
+      "id": "history",
+      "type": "wx-card",
+      "label": "trans::webx-audit::screen.history",
+      "children": [
+        {
+          "id": "keep-runs",
+          "type": "wx-input-number",
+          "name": "audit.keep-runs",
+          "label": "trans::webx-audit::screen.keep-runs",
+          "help": "trans::webx-audit::screen.keep-runs-help",
+          "props": {
+            "min": 1,
+            "max": 1000,
+            "placeholder": "50"
+          }
+        },
+        {
+          "id": "keep-snapshots",
+          "type": "wx-input-number",
+          "name": "audit.keep-snapshots",
+          "label": "trans::webx-audit::screen.keep-snapshots",
+          "help": "trans::webx-audit::screen.keep-snapshots-help",
+          "props": {
+            "min": 1,
+            "max": 100,
+            "placeholder": "5"
+          }
+        }
+      ]
+    }
+  ]
+}

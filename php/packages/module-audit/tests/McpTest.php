@@ -47,7 +47,7 @@ final class McpTest extends TestCase
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['audit_run', 'audit_status', 'audit_issues', 'audit_pages', 'audit_page_get', 'audit_hosts', 'audit_fix'],
+            ['audit_run', 'audit_status', 'audit_issues', 'audit_pages', 'audit_page_get', 'audit_hosts', 'audit_fix', 'audit_ignore'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('audit')),
         );
 
@@ -98,7 +98,37 @@ final class McpTest extends TestCase
 
         $hosts = $this->content($this->agent('hosts', [], $this->admin(['audit.view'])))['hosts'] ?? [];
 
-        $this->assertSame(['host' => 'dev.shop.example.com', 'class' => 'dev', 'links' => 0, 'pages' => 0, 'fields' => 1], $hosts[0] ?? null);
+        $this->assertSame(
+            ['host' => 'dev.shop.example.com', 'class' => 'dev', 'links' => 0, 'pages' => 0, 'broken' => 0, 'nofollow' => 0, 'fields' => 1, 'first_seen' => null],
+            $hosts[0] ?? null,
+        );
+
+        $one = $this->content($this->agent('hosts', ['host' => 'dev.shop.example.com'], $this->admin(['audit.view'])));
+        $this->assertCount(1, $one['hosts'] ?? []);
+        $this->assertSame('Delivery', $one['fields'][0]['record_label'] ?? null);
+    }
+
+    #[Test]
+    public function an_agent_hides_a_finding_with_a_reason_and_shows_it_again(): void
+    {
+        $admin = $this->admin(['audit.view', 'audit.run', 'audit.manage']);
+        $this->artisan('webx:audit:run', ['--quick' => true]);
+
+        $dry = $this->content($this->agent('ignore', ['check' => 'hosts.dev_content', 'reason' => 'A demo record.', 'dry_run' => true], $admin));
+        $this->assertSame(1, $dry['hidden'] ?? null);
+        $this->assertSame(0, AuditIssue::query()->whereNotNull('ignored_by')->count());
+
+        $this->agent('ignore', ['check' => 'hosts.dev_content'], $admin)->assertHasErrors();
+
+        $rule = $this->content($this->agent('ignore', ['check' => 'hosts.dev_content', 'reason' => 'A demo record.'], $admin))['rule'] ?? [];
+        $this->assertSame('mcp', $rule['created_by'] ?? null);
+        $this->assertSame(1, AuditIssue::query()->whereNotNull('ignored_by')->count());
+
+        $checks = $this->content($this->agent('issues', [], $admin))['checks'] ?? [];
+        $this->assertNotContains('hosts.dev_content', array_column($checks, 'id'));
+
+        $this->agent('ignore', ['remove' => $rule['id'] ?? 0], $admin)->assertOk();
+        $this->assertSame(0, AuditIssue::query()->whereNotNull('ignored_by')->count());
     }
 
     /**

@@ -6,16 +6,22 @@ import type { TabItem, TabValue } from '@webx-ui/core'
 import { useAuditMessages } from './i18n'
 
 /**
- * The head of the section: its name, the overview and the findings as two views, and the way
- * to the settings, which live on the «Audit» tab of the site's settings.
+ * The head of the section: its name, its views — the overview, the findings, the pages, the
+ * hosts the site points at and the runs — and the way to the section's own settings.
  */
-const props = defineProps<{
-  base: string
-  settingsPath: string
-  current: 'overview' | 'issues' | 'pages'
-  /** A card around the slot — the findings' table wants one, the overview draws its own. */
-  card?: boolean
-}>()
+/*
+ * `card` has its default here and not as `?? true` below: Vue turns a Boolean prop nobody passed
+ * into `false`, so the coalescing never fired and every table stood without its card.
+ */
+const props = withDefaults(
+  defineProps<{
+    base: string
+    current: 'overview' | 'issues' | 'pages' | 'hosts' | 'runs' | 'settings'
+    /** A card around the slot — the tables want one, the overview draws its own. */
+    card?: boolean
+  }>(),
+  { card: true },
+)
 
 defineSlots<{ default?: () => unknown }>()
 
@@ -37,24 +43,27 @@ const views = computed<TabItem[]>(() => [
   { value: 'overview', label: t('page.overview') },
   { value: 'issues', label: t('page.issues') },
   { value: 'pages', label: t('page.pages') },
+  { value: 'hosts', label: t('page.hosts') },
+  { value: 'runs', label: t('page.runs') },
 ])
 
+/* The settings are a view of their own, out of the tabs: opened now and then, not every day. */
 const actions = computed<ScreenAction[]>(() =>
-  /* Only where the settings section is installed and opens for this administrator. */
-  context.state.manifest?.modules.some((module) => module.id === 'settings')
-    ? [
+  props.current === 'settings'
+    ? []
+    : [
         {
           key: 'settings',
           label: t('page.settings'),
           icon: 'settings',
-          run: () => void router.push(props.settingsPath),
+          run: () => void router.push(`${props.base}/settings`),
         },
-      ]
-    : [],
+      ],
 )
 
 const where = computed<TabValue>({
-  get: () => props.current,
+  /* The settings belong to no tab; the overview's stays lit as the way back. */
+  get: () => (props.current === 'settings' ? 'overview' : props.current),
   set: (next) => {
     const path = next === 'overview' ? props.base : `${props.base}/${String(next)}`
 
@@ -69,7 +78,7 @@ const where = computed<TabValue>({
     :title="title"
     :views="views"
     :actions="actions"
-    :card="props.card ?? true"
+    :card="props.card"
   >
     <slot />
   </wx-list-screen>

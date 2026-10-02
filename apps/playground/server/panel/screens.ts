@@ -40,6 +40,10 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
     ],
   },
   'faq.form': { base: 'php/packages/module-faq/resources/screens/form.json', patches: [] },
+  'audit.settings': {
+    base: 'php/packages/module-audit/resources/screens/audit-settings.json',
+    patches: [],
+  },
   'catalog.exchange-import': {
     base: 'php/packages/module-catalog/resources/screens/exchange-import.json',
     patches: [],

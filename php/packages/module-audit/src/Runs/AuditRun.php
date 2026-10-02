@@ -46,7 +46,17 @@ class AuditRun extends Model
     /** The probes, the config and the database: seconds, and what a deploy runs. */
     public const QUICK = 'quick';
 
-    public const SCOPES = [self::FULL, self::QUICK];
+    /**
+     * A few addresses, crawled and checked page by page (§3): after an edit, "recheck" on the
+     * card. No probes, no database, no link is followed — and the checks that judge the whole
+     * site (duplicates, orphans, depth, the sitemap) do not run on five pages.
+     */
+    public const URLS = 'urls';
+
+    public const SCOPES = [self::FULL, self::QUICK, self::URLS];
+
+    /** At most this many addresses in a run of the `urls` scope. */
+    public const URLS_LIMIT = 50;
 
     protected $table = 'audit_runs';
 
@@ -82,18 +92,54 @@ class AuditRun extends Model
         return in_array($this->status, [self::QUEUED, self::RUNNING], true);
     }
 
-    /** The finished run of the same scope before this one — what "new" and "fixed" are against. */
+    /**
+     * The finished run of the same scope before this one — what "new" and "fixed" are against.
+     * A recheck of a few addresses is measured against the last full run: that is the one whose
+     * findings the edit was meant to close.
+     */
     public function previous(): ?self
     {
         /** @var self|null $previous */
         $previous = self::query()
             ->where('status', self::DONE)
-            ->where('scope', $this->scope)
+            ->where('scope', $this->scope === self::URLS ? self::FULL : $this->scope)
             ->where('id', '<', $this->id)
             ->orderByDesc('id')
             ->first();
 
         return $previous;
+    }
+
+    /**
+     * The addresses of a `urls` run, as given.
+     *
+     * @return list<string>
+     */
+    public function urls(): array
+    {
+        return array_values(array_filter((array) ($this->progress['urls'] ?? []), 'is_string'));
+    }
+
+    /**
+     * The paths the crawl leaves out, as they were when the run started.
+     *
+     * @return list<string>
+     */
+    public function excluded(): array
+    {
+        return array_values(array_filter((array) ($this->progress['exclude'] ?? []), 'is_string'));
+    }
+
+    /**
+     * Runs that speak for the whole site — not a recheck of a few addresses, which the overview,
+     * the findings and the hosts must not take for "the last run".
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeSiteWide(Builder $query): Builder
+    {
+        return $query->whereIn('scope', [self::FULL, self::QUICK]);
     }
 
     /**

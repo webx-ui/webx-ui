@@ -42,7 +42,7 @@ import type {
  * Every address the last full run crawled (§8, «Pages»): any field of the snapshot as a column,
  * a filter on any of them, the list as CSV, and a row that opens the page's card.
  */
-const props = defineProps<{ base: string; settingsPath: string }>()
+const props = defineProps<{ base: string }>()
 
 const api = createAuditApi(useAdmin())
 useAuditMessages()
@@ -263,7 +263,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <audit-layout :base="props.base" :settings-path="props.settingsPath" current="pages">
+  <audit-layout :base="props.base" current="pages">
     <wx-text v-if="ready && run === null" tone="muted" class="wx-audit-pages__none">{{
       t('page.pages-none')
     }}</wx-text>
@@ -407,6 +407,7 @@ onMounted(async () => {
     <audit-page-card
       v-if="run"
       :run="run.id"
+      :base="props.base"
       :page-id="opened"
       :titles="titles"
       @close="opened = null"

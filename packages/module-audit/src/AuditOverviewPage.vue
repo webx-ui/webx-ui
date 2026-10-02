@@ -25,7 +25,7 @@ import type { AuditLatest, AuditRun, AuditScope, AuditSeverity } from './types'
  * what got fixed since the run before, and the button that starts the next one. While a run is
  * going the page asks for it every couple of seconds and shows the stage it is in.
  */
-const props = defineProps<{ base: string; settingsPath: string }>()
+const props = defineProps<{ base: string }>()
 
 const context = useAdmin()
 const api = createAuditApi(context)
@@ -137,12 +137,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 </script>
 
 <template>
-  <audit-layout
-    :base="props.base"
-    :settings-path="props.settingsPath"
-    current="overview"
-    :card="false"
-  >
+  <audit-layout :base="props.base" current="overview" :card="false">
     <div class="wx-audit-overview">
       <wx-card v-if="!latest"><wx-skeleton :rows="4" /></wx-card>
 

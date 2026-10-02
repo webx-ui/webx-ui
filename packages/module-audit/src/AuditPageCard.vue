@@ -1,8 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import {
+  toast,
+  WxAlert,
   WxBadge,
+  WxButton,
   WxDrawer,
   WxLink,
   WxSkeleton,
@@ -24,6 +28,7 @@ import type {
   AuditPageCard,
   AuditResourceRow,
   AuditResourceTab,
+  AuditRun,
   AuditSeverity,
 } from './types'
 
@@ -32,9 +37,14 @@ import type {
  * says, its findings, the links that lead in and out of it — with the answer of each own page
  * and the class of each host — what it loads (pictures, CSS, JS) with what each answered, and
  * its structured data with what the types lack.
+ *
+ * «Recheck» asks this one address again (a run of the `urls` scope) and says what of its findings
+ * in the last full run are fixed; «Export» downloads the page — snapshot, findings and links.
  */
 const props = defineProps<{
   run: number
+  /** Where the section lives — the recheck's comparison opens on its runs. */
+  base?: string
   /** The page to show; null keeps the card closed. */
   pageId: number | null
   /** Check ids and their titles in the reader's language, for the findings tab. */
@@ -43,8 +53,60 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [] }>()
 
-const api = createAuditApi(useAdmin())
+const context = useAdmin()
+const api = createAuditApi(context)
+const router = useRouter()
 useAuditMessages()
+
+const canRun = context.can('audit.run') || context.can('audit.manage')
+const recheck = ref<AuditRun | null>(null)
+const rechecking = ref(false)
+let timer: ReturnType<typeof setTimeout> | undefined
+
+const POLL_MS = 2000
+
+/* The page in its own words: the run it was crawled in, then one more, of just this address. */
+async function startRecheck(): Promise<void> {
+  if (!card.value) return
+
+  rechecking.value = true
+  recheck.value = null
+
+  try {
+    follow(await api.start('urls', [card.value.page.url]))
+  } catch (error) {
+    rechecking.value = false
+    toast.danger(message(error))
+  }
+}
+
+function follow(run: AuditRun): void {
+  clearTimeout(timer)
+
+  if (run.status === 'queued' || run.status === 'running') {
+    timer = setTimeout(async () => {
+      try {
+        follow(await api.run(run.id))
+      } catch (error) {
+        rechecking.value = false
+        toast.danger(message(error))
+      }
+    }, POLL_MS)
+
+    return
+  }
+
+  rechecking.value = false
+  recheck.value = run
+}
+
+function compareRecheck(): void {
+  if (recheck.value && props.base) {
+    void router.push({ path: `${props.base}/runs`, query: { to: String(recheck.value.id) } })
+  }
+}
+
+onBeforeUnmount(() => clearTimeout(timer))
 
 const t = useTranslate('webx-audit')
 const message = useErrorText()
@@ -192,6 +254,9 @@ function statusType(value: number | null): BadgeType {
 }
 
 async function load(id: number): Promise<void> {
+  clearTimeout(timer)
+  rechecking.value = false
+  recheck.value = null
   card.value = null
   failure.value = null
   links.value = null
@@ -269,13 +334,48 @@ watch(tab, () => {
     </template>
 
     <template #extra>
-      <wx-link v-if="card" :href="card.page.url" target="_blank">{{ t('page.open-page') }}</wx-link>
+      <span v-if="card" class="wx-audit-card__extra">
+        <wx-button
+          v-if="canRun"
+          size="sm"
+          icon="refresh"
+          :loading="rechecking"
+          @click="startRecheck"
+          >{{ t('page.recheck') }}</wx-button
+        >
+        <wx-button
+          size="sm"
+          variant="text"
+          icon="download"
+          :href="api.pageFile(props.run, card.page.id)"
+          >{{ t('page.export-page') }}</wx-button
+        >
+        <wx-link :href="card.page.url" target="_blank">{{ t('page.open-page') }}</wx-link>
+      </span>
     </template>
 
     <wx-text v-if="failure" tone="danger">{{ failure }}</wx-text>
     <wx-skeleton v-else-if="!card" :rows="6" />
 
     <div v-else class="wx-audit-card">
+      <wx-alert v-if="rechecking" type="info" :description="t('page.recheck-running')" />
+      <wx-alert
+        v-else-if="recheck && recheck.status === 'done' && recheck.counts"
+        :type="recheck.counts.new > 0 ? 'warning' : 'success'"
+      >
+        <div class="wx-audit-card__recheck">
+          <span>{{ t('page.recheck-fixed', { count: recheck.counts.fixed }) }}</span>
+          <span>{{ t('page.recheck-new', { count: recheck.counts.new }) }}</span>
+          <wx-button v-if="props.base" size="sm" variant="text" @click="compareRecheck">{{
+            t('page.recheck-compare')
+          }}</wx-button>
+        </div>
+      </wx-alert>
+      <wx-alert
+        v-else-if="recheck"
+        type="danger"
+        :description="recheck.error ?? t(`page.status-${recheck.status}`)"
+      />
       <wx-text v-if="card.page.title" weight="semibold">{{ card.page.title }}</wx-text>
 
       <wx-tabs v-model="tab" :items="tabs">
@@ -495,5 +595,19 @@ watch(tab, () => {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wx-space-8);
+}
+
+.wx-audit-card__extra {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-8);
+}
+
+.wx-audit-card__recheck {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-4) var(--wx-space-12);
 }
 </style>

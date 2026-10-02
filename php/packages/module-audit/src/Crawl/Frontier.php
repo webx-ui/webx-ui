@@ -7,6 +7,7 @@ namespace WebxUi\Audit\Crawl;
 use Illuminate\Support\Carbon;
 use WebxUi\Audit\Runs\AuditPage;
 use WebxUi\Audit\Runs\AuditRun;
+use WebxUi\Audit\Runs\Mask;
 
 /**
  * The queue of the crawl, kept in `audit_pages` itself: a row without `fetched_at` is an
@@ -20,9 +21,30 @@ final class Frontier
 {
     private int $count;
 
+    /** @var list<string> */
+    private array $excluded;
+
+    /** @var array<string, true>|null The only addresses a `urls` run may hold. */
+    private ?array $only = null;
+
     public function __construct(private readonly AuditRun $run)
     {
         $this->count = AuditPage::query()->where('run_id', $run->id)->count();
+        $this->excluded = $run->excluded();
+
+        if ($run->scope === AuditRun::URLS) {
+            $this->only = array_fill_keys($run->urls(), true);
+        }
+    }
+
+    /** Whether the run may hold this address at all: not an excluded path, on the list if there is one. */
+    public function allows(string $url): bool
+    {
+        if ($this->only !== null) {
+            return isset($this->only[$url]);
+        }
+
+        return ! Mask::any($this->excluded, $url);
     }
 
     public function full(): bool
@@ -43,7 +65,9 @@ final class Frontier
         $byHash = [];
 
         foreach ($urls as $url) {
-            $byHash[AuditPage::hash($url)] = $url;
+            if ($this->allows($url)) {
+                $byHash[AuditPage::hash($url)] = $url;
+            }
         }
 
         if ($byHash === []) {

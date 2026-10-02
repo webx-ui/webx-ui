@@ -52,6 +52,48 @@ const FIXES: Record<string, string[]> = {
 
 /* What was pressed, by finding: the finding stays until a run says it is gone, as on the server. */
 const pressed = new Map<string, string>()
+
+/* The hiding rules (decision 9) and the section's settings, kept as long as the dev server runs. */
+interface Rule {
+  id: number
+  check: string
+  pattern: string
+  reason: string
+  created_by: string | null
+  created_at: string
+}
+
+const rules: Rule[] = []
+const settings: Record<string, unknown> = { 'audit.other-hosts': 'dev.shop.example.com' }
+
+/* `*` a stretch without a slash, `**` one with them; the path unless the mask names a scheme. */
+function masked(pattern: string, url: string | null): boolean {
+  if (pattern.trim() === '' || pattern === '**') return true
+  if (!url) return false
+
+  let subject = url
+
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(pattern)) {
+    try {
+      subject = new URL(url).pathname
+    } catch {
+      return false
+    }
+  }
+
+  const quote = (text: string) => text.replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+  const body = pattern
+    .split('**')
+    .map((part) => part.split('*').map(quote).join('[^/]*'))
+    .join('.*')
+
+  return new RegExp(`^${body}$`).test(subject)
+}
+
+const ruleOf = (finding: Finding) =>
+  rules.find((rule) => rule.check === finding.check && masked(rule.pattern, finding.url))
+
+const shown = (run: Run) => run.findings.filter((finding) => !ruleOf(finding))
 const STAGE_MS = 1500
 const STAGES = ['probes', 'database', 'analyse'] as const
 
@@ -314,7 +356,9 @@ const FINDINGS: Finding[] = [
 interface Run {
   id: number
   status: 'queued' | 'running' | 'done' | 'failed' | 'cancelled'
-  scope: 'full' | 'quick'
+  scope: 'full' | 'quick' | 'urls'
+  /** The addresses of a recheck. */
+  urls?: string[]
   startedAt: number
   findings: Finding[]
   createdAt: string
@@ -390,8 +434,16 @@ const CHECKS: Record<string, Severity> = {
   'jsonld.required': 'warning',
 }
 
+/* A recheck is measured against the last full run; the others against the run before them. */
 function previous(run: Run): Run | undefined {
-  return runs.filter((other) => other.status === 'done' && other.id < run.id).at(-1)
+  return runs
+    .filter(
+      (other) =>
+        other.status === 'done' &&
+        other.id < run.id &&
+        (run.scope === 'urls' ? other.scope === 'full' : other.scope !== 'urls'),
+    )
+    .at(-1)
 }
 
 function state(run: Run, finding: Finding): 'new' | 'persisting' {
@@ -407,7 +459,7 @@ function counts(run: Run) {
   const groups: Record<string, Record<Severity, number>> = {}
   const failed: Record<string, Severity> = {}
 
-  for (const finding of run.findings) {
+  for (const finding of shown(run)) {
     severity[finding.severity]++
     groups[finding.group] ??= { error: 0, warning: 0, notice: 0 }
     groups[finding.group]![finding.severity]++
@@ -431,8 +483,14 @@ function counts(run: Run) {
     checks: Object.keys(CHECKS),
     failed,
     health: Math.round((100 * (total - lost)) / total),
-    new: run.findings.filter((finding) => state(run, finding) === 'new').length,
-    fixed: before ? before.findings.filter((finding) => !now.has(fingerprint(finding))).length : 0,
+    new: shown(run).filter((finding) => state(run, finding) === 'new').length,
+    fixed: before
+      ? shown(before).filter(
+          (finding) =>
+            !now.has(fingerprint(finding)) &&
+            (run.scope !== 'urls' || (run.urls ?? []).includes(finding.url ?? '')),
+        ).length
+      : 0,
     previous_id: before?.id ?? null,
     sources: { searched: ['pages', 'regions'], missing: ['articles'] },
   }
@@ -471,6 +529,7 @@ function resource(run: Run) {
     scope: run.scope,
     base_url: BASE,
     resolve_to: null,
+    urls: run.urls ?? [],
     progress: {
       stage: run.status === 'done' ? 'analyse' : stage(run),
       done: [],
@@ -880,7 +939,7 @@ export function registerAudit(on: On, fail: Fail, line: Line): void {
   on('GET', '/audit/runs/latest', () => {
     runs.forEach(advance)
     const active = runs.filter((run) => run.status === 'queued' || run.status === 'running').at(-1)
-    const done = runs.filter((run) => run.status === 'done').at(-1)
+    const done = runs.filter((run) => run.status === 'done' && run.scope !== 'urls').at(-1)
     const crawled = runs.filter((run) => run.status === 'done' && run.scope === 'full').at(-1)
 
     return {
@@ -901,18 +960,39 @@ export function registerAudit(on: On, fail: Fail, line: Line): void {
       throw fail(409, 'An audit is already running.')
     }
 
-    const run: Run = {
-      id: runs.length + 1,
-      status: 'queued',
-      scope: body.scope === 'full' ? 'full' : 'quick',
-      startedAt: Date.now(),
-      // Somebody replaced the stand address in the header's draft.
-      findings: FINDINGS.filter(
-        (finding) => finding.url !== 'http://localhost:8000/storage/logo.svg',
-      ),
-      createdAt: new Date().toISOString(),
-      finishedAt: null,
+    const urls = Array.isArray(body.urls) ? body.urls.map(String) : []
+
+    if (body.scope === 'urls' && !urls.some((url) => url.startsWith(`${BASE}/`))) {
+      throw fail(422, line('en', 'webx-audit', 'page.urls-foreign'))
     }
+
+    const run: Run =
+      body.scope === 'urls'
+        ? {
+            id: runs.length + 1,
+            status: 'queued',
+            scope: 'urls',
+            urls,
+            startedAt: Date.now(),
+            // The edit worked: what the page had in the last full run, but its title is there now.
+            findings: FINDINGS.filter(
+              (finding) => urls.includes(finding.url ?? '') && finding.check !== 'title.missing',
+            ),
+            createdAt: new Date().toISOString(),
+            finishedAt: null,
+          }
+        : {
+            id: runs.length + 1,
+            status: 'queued',
+            scope: body.scope === 'full' ? 'full' : 'quick',
+            startedAt: Date.now(),
+            // Somebody replaced the stand address in the header's draft.
+            findings: FINDINGS.filter(
+              (finding) => finding.url !== 'http://localhost:8000/storage/logo.svg',
+            ),
+            createdAt: new Date().toISOString(),
+            finishedAt: null,
+          }
 
     runs.push(run)
 
@@ -930,12 +1010,16 @@ export function registerAudit(on: On, fail: Fail, line: Line): void {
     return { data: resource(run) }
   })
 
+  /* Hidden findings are a state of their own: out of every list, until asked for. */
   const filtered = (run: Run, query: URLSearchParams) =>
     run.findings.filter(
       (finding) =>
+        (query.get('state') === 'hidden' ? Boolean(ruleOf(finding)) : !ruleOf(finding)) &&
         (!query.get('severity') || finding.severity === query.get('severity')) &&
         (!query.get('group') || finding.group === query.get('group')) &&
-        (!query.get('state') || state(run, finding) === query.get('state')) &&
+        (!query.get('state') ||
+          query.get('state') === 'hidden' ||
+          state(run, finding) === query.get('state')) &&
         (!query.get('check') || finding.check === query.get('check')),
     )
 
@@ -987,7 +1071,8 @@ export function registerAudit(on: On, fail: Fail, line: Line): void {
         severity: finding.severity,
         url: finding.url,
         state: state(run, finding),
-        ignored: false,
+        ignored: Boolean(ruleOf(finding)),
+        ignore: ruleOf(finding) ?? null,
         fixed_with: pressed.get(fingerprint(finding)) ?? null,
         fixed_at: null,
         details: {
@@ -1106,7 +1191,12 @@ export function registerAudit(on: On, fail: Fail, line: Line): void {
     return { data: { ...offer(finding, id, locale), applied: !dryRun } }
   })
 
-  const pagesOf = (run: Run) => (run.scope === 'full' ? PAGES : [])
+  const pagesOf = (run: Run) =>
+    run.scope === 'full'
+      ? PAGES
+      : run.scope === 'urls'
+        ? PAGES.filter((page) => run.urls?.includes(page.url))
+        : []
 
   const paginate = <T>(rows: T[], query: URLSearchParams) => {
     const perPage = Number(query.get('per_page') ?? 50)
@@ -1279,5 +1369,281 @@ export function registerAudit(on: On, fail: Fail, line: Line): void {
       rows.map((link, index) => ({ id: index + 1, ...link })),
       query,
     )
+  })
+
+  /* One page as a file: the browser downloads what the card shows, plus its links. */
+  on('GET', '/audit/runs/(\\d+)/pages/(\\d+)/export', ({ params }) => {
+    const run = find(params[0]!)
+    const page = pagesOf(run).find((candidate) => candidate.id === Number(params[1]))
+
+    if (!page) throw fail(404, 'Not found.')
+
+    return {
+      run: { id: run.id, scope: run.scope, base_url: BASE, finished_at: run.finishedAt },
+      page: pageRow(run, page),
+      issues: run.findings.filter((finding) => finding.page === page.id),
+      links: linksOf(page),
+    }
+  })
+
+  const issueJson = (run: Run, finding: Finding, locale: string) => ({
+    id: run.findings.indexOf(finding) + 1,
+    check: finding.check,
+    severity: finding.severity,
+    url: finding.url,
+    state: state(run, finding),
+    ignored: Boolean(ruleOf(finding)),
+    ignore: ruleOf(finding) ?? null,
+    fixed_with: null,
+    fixed_at: null,
+    details: {
+      summary: fill(
+        line(locale, 'webx-audit', `details.${finding.summary[0]}`),
+        finding.summary[1],
+      ),
+      table: finding.table
+        ? {
+            columns: finding.table.columns.map((column) => ({
+              ...column,
+              label: line(locale, 'webx-audit', `details.column-${column.key}`),
+            })),
+            rows: finding.table.rows,
+          }
+        : null,
+    },
+  })
+
+  on('GET', '/audit/runs', ({ query }) => {
+    runs.forEach(advance)
+
+    return paginate([...runs].reverse().map(resource), query)
+  })
+
+  /* Two runs by fingerprint: new in `to`, in both, gone from `from` (decision 8). */
+  const comparison = (query: URLSearchParams) => {
+    const to = find(query.get('to') ?? '')
+    const from = query.get('from') ? find(query.get('from')!) : previous(to)
+
+    if (!from) throw fail(404, 'Not found.')
+
+    const before = new Set(shown(from).map(fingerprint))
+    const after = new Set(to.findings.map(fingerprint))
+    const kinds = {
+      new: shown(to).filter((finding) => !before.has(fingerprint(finding))),
+      persisting: shown(to).filter((finding) => before.has(fingerprint(finding))),
+      // A recheck answers for its own addresses, not for every other page of the run.
+      fixed: shown(from).filter(
+        (finding) =>
+          !after.has(fingerprint(finding)) &&
+          (to.scope !== 'urls' || (to.urls ?? []).includes(finding.url ?? '')),
+      ),
+    }
+
+    return { from, to, kinds }
+  }
+
+  on('GET', '/audit/runs/compare', ({ query, locale }) => {
+    const { from, to, kinds } = comparison(query)
+    const rows = new Map<
+      string,
+      {
+        check: string
+        title: string
+        severity: Severity
+        new: number
+        persisting: number
+        fixed: number
+      }
+    >()
+
+    for (const [kind, findings] of Object.entries(kinds) as [keyof typeof kinds, Finding[]][]) {
+      for (const finding of findings) {
+        const row = rows.get(finding.check) ?? {
+          check: finding.check,
+          title: line(locale, 'webx-audit', `checks.${finding.check}.title`),
+          severity: finding.severity,
+          new: 0,
+          persisting: 0,
+          fixed: 0,
+        }
+        row[kind]++
+        rows.set(finding.check, row)
+      }
+    }
+
+    return {
+      data: {
+        from: resource(from),
+        to: resource(to),
+        checks: [...rows.values()].sort(
+          (a, b) => WEIGHTS[b.severity] - WEIGHTS[a.severity] || b.new + b.fixed - a.new - a.fixed,
+        ),
+      },
+    }
+  })
+
+  on('GET', '/audit/runs/compare/issues', ({ query, locale }) => {
+    const { from, to, kinds } = comparison(query)
+    const kind = query.get('kind') as keyof typeof kinds
+
+    if (!(kind in kinds)) throw fail(422, 'The kind is new, persisting or fixed.')
+
+    const run = kind === 'fixed' ? from : to
+
+    return paginate(
+      kinds[kind]
+        .filter((finding) => !query.get('check') || finding.check === query.get('check'))
+        .map((finding) => issueJson(run, finding, locale)),
+      query,
+    )
+  })
+
+  /* «Outgoing»: the hosts of the full run's links and of the stand addresses in the content. */
+  on('GET', '/audit/hosts', ({ query }) => {
+    const full = runs.filter((run) => run.status === 'done' && run.scope === 'full').at(-1)
+    const links = (full ? PAGES : []).flatMap((page) =>
+      linksOf(page)
+        .filter((link) => link.host_class !== 'own')
+        .map((link) => ({ ...link, page })),
+    )
+    const fields = FINDINGS.filter((finding) => finding.check === 'hosts.dev_content').flatMap(
+      (finding) => finding.table?.rows ?? [],
+    )
+    const hosts = new Map<string, Record<string, unknown> & { host: string; class: string }>()
+    const row = (host: string, kind: string) =>
+      hosts.get(host) ??
+      hosts
+        .set(host, {
+          host,
+          class: kind,
+          links: 0,
+          pages: 0,
+          broken: 0,
+          nofollow: 0,
+          fields: 0,
+          first_seen: ago(3 * 1440),
+        })
+        .get(host)!
+
+    for (const link of links) {
+      const entry = row(link.host, link.host_class)
+      entry.links = Number(entry.links) + 1
+      entry.pages = Number(entry.pages) + 1
+    }
+
+    for (const field of fields) {
+      const entry = row(hostOf(field.url), 'dev')
+      entry.fields = Number(entry.fields) + 1
+    }
+
+    const own = row('shop.example.com', 'own')
+    own.links = PAGES.reduce((sum, page) => sum + linksOf(page).length, 0) - links.length
+    own.pages = PAGES.length
+
+    const order: Record<string, number> = { dev: 0, own_mirror: 1, external: 2, own: 3 }
+    const search = (query.get('search') ?? query.get('host') ?? '').toLowerCase()
+    const list = [...hosts.values()]
+      .filter((entry) => !query.get('class') || entry.class === query.get('class'))
+      .filter((entry) => !search || entry.host.includes(search))
+      .sort((a, b) => (order[a.class] ?? 9) - (order[b.class] ?? 9))
+    const host = query.get('host')
+
+    return {
+      data: {
+        crawled_run: full?.id ?? null,
+        database_run: runs.at(-1)?.id ?? null,
+        classes: list.reduce<Record<string, number>>(
+          (sum, entry) => ({ ...sum, [entry.class]: (sum[entry.class] ?? 0) + 1 }),
+          {},
+        ),
+        hosts: list,
+        ...(host
+          ? {
+              pages: links
+                .filter((link) => link.host === host)
+                .map((link) => ({
+                  page_id: link.page.id,
+                  page: link.page.url,
+                  url: link.url,
+                  kind: link.kind,
+                  anchor: link.anchor,
+                  rel: link.rel,
+                  status: link.status,
+                })),
+              fields: fields
+                .filter((field) => hostOf(field.url) === host)
+                .map((field) => ({
+                  source: String(field.field).includes('draft') ? 'regions' : 'pages',
+                  record_id: '2',
+                  record_label: String(field.record),
+                  field: String(field.field),
+                  locale: null,
+                  url: String(field.url),
+                  published: Boolean(field.published),
+                  edit_url: String(field.edit),
+                })),
+            }
+          : {}),
+      },
+    }
+  })
+
+  on('GET', '/audit/ignores', ({ locale }) => ({
+    data: [...rules].reverse().map((rule) => ({
+      ...rule,
+      title: line(locale, 'webx-audit', `checks.${rule.check}.title`),
+      hidden: runs.flatMap((run) => run.findings).filter((finding) => ruleOf(finding) === rule)
+        .length,
+    })),
+  }))
+
+  on('POST', '/audit/ignores', ({ body, locale }) => {
+    const check = String(body.check ?? '')
+    const pattern = String(body.pattern ?? '').trim()
+    const last = runs.filter((run) => run.status === 'done' && run.scope !== 'urls').at(-1)
+
+    if (body.dry_run) {
+      return {
+        data: {
+          hidden: (last ? shown(last) : []).filter(
+            (finding) => finding.check === check && masked(pattern, finding.url),
+          ).length,
+        },
+      }
+    }
+
+    if (!String(body.reason ?? '').trim()) {
+      throw fail(422, line(locale, 'webx-audit', 'page.hide-reason'))
+    }
+
+    const rule: Rule = {
+      id: rules.length + 1,
+      check,
+      pattern,
+      reason: String(body.reason).trim(),
+      created_by: 'Admin',
+      created_at: new Date().toISOString(),
+    }
+    rules.push(rule)
+
+    return { data: rule }
+  })
+
+  on('DELETE', '/audit/ignores/(\\d+)', ({ params }) => {
+    const index = rules.findIndex((rule) => rule.id === Number(params[0]))
+
+    if (index === -1) throw fail(404, 'Not found.')
+
+    rules.splice(index, 1)
+
+    return { data: { id: Number(params[0]) } }
+  })
+
+  on('GET', '/audit/settings', () => ({ data: { values: { ...settings } } }))
+
+  on('PUT', '/audit/settings', ({ body }) => {
+    Object.assign(settings, (body.values ?? {}) as Record<string, unknown>)
+
+    return { data: { values: { ...settings } } }
   })
 }

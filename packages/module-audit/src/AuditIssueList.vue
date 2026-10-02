@@ -1,19 +1,29 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
-import { WxBadge, WxButton, WxLink, WxSkeleton, WxText } from '@webx-ui/core'
+import { toast, WxBadge, WxButton, WxLink, WxSkeleton, WxText } from '@webx-ui/core'
 import AuditDetails from './AuditDetails.vue'
 import AuditFixDialog from './AuditFixDialog.vue'
+import AuditHideDialog from './AuditHideDialog.vue'
 import { createAuditApi } from './api'
 import { useAuditMessages } from './i18n'
-import type { AuditIssue, AuditIssueQuery } from './types'
+import type { AuditIgnoreRule, AuditIssue, AuditIssueQuery } from './types'
 
 /**
  * The addresses of one check, under its row in the findings table: loaded when the row opens,
  * fifty at a time. A check that has fixes gets a button on each address; the dialog shows what
- * it would change before anything does.
+ * it would change before anything does. «Hide» asks for the reason; on the list of hidden ones
+ * each says why, and «Show again» removes the rule.
  */
-const props = defineProps<{ run: number; query: AuditIssueQuery; fixable?: boolean }>()
+const props = defineProps<{
+  run: number
+  query: AuditIssueQuery
+  fixable?: boolean
+  /** The check's title, for the hiding dialog. */
+  title?: string
+}>()
+
+const emit = defineEmits<{ changed: [] }>()
 
 const context = useAdmin()
 const api = createAuditApi(context)
@@ -30,6 +40,44 @@ const page = ref(1)
 const failure = ref<string | null>(null)
 const fixing = ref<AuditIssue | null>(null)
 const dialog = ref(false)
+const hiding = ref<AuditIssue | null>(null)
+const hideDialog = ref(false)
+
+function hide(issue: AuditIssue): void {
+  hiding.value = issue
+  hideDialog.value = true
+}
+
+/* What the rule hid leaves this list at once; the table above counts again. */
+function hidden(rule: AuditIgnoreRule): void {
+  if (issues.value && !rule.pattern) issues.value = []
+  else if (issues.value && hiding.value)
+    issues.value = issues.value.filter((one) => one.id !== hiding.value?.id)
+
+  emit('changed')
+}
+
+async function unhide(issue: AuditIssue): Promise<void> {
+  if (!issue.ignore) return
+
+  try {
+    await api.unhide(issue.ignore.id)
+    toast.success(t('page.unhidden'))
+    emit('changed')
+  } catch (error) {
+    toast.danger(message(error))
+  }
+}
+
+function why(issue: AuditIssue): string {
+  const rule = issue.ignore
+
+  if (!rule) return ''
+
+  return rule.created_by
+    ? t('page.hidden-by', { who: rule.created_by, reason: rule.reason })
+    : t('page.hidden-reason', { reason: rule.reason })
+}
 
 function fix(issue: AuditIssue): void {
   fixing.value = issue
@@ -77,7 +125,7 @@ onMounted(() => load())
             t('page.fix-pressed')
           }}</wx-badge>
           <wx-button
-            v-else-if="fixable && can"
+            v-else-if="fixable && can && !issue.ignored"
             size="sm"
             variant="outline"
             icon="check"
@@ -85,7 +133,26 @@ onMounted(() => load())
             @click="fix(issue)"
             >{{ t('page.fix-button') }}</wx-button
           >
+          <wx-button
+            v-if="can && issue.ignored && issue.ignore"
+            size="sm"
+            variant="text"
+            icon="eye"
+            class="wx-audit-issues__end"
+            @click="unhide(issue)"
+            >{{ t('page.unhide') }}</wx-button
+          >
+          <wx-button
+            v-else-if="can && !issue.ignored"
+            size="sm"
+            variant="text"
+            icon="eye-off"
+            :class="{ 'wx-audit-issues__end': !fixable || issue.fixed_with }"
+            @click="hide(issue)"
+            >{{ t('page.hide') }}</wx-button
+          >
         </div>
+        <wx-text v-if="issue.ignore" size="sm" tone="muted">{{ why(issue) }}</wx-text>
         <audit-details :details="issue.details" />
       </div>
 
@@ -98,6 +165,14 @@ onMounted(() => load())
       :run="run"
       :issue="fixing"
       @fixed="fixed"
+    />
+
+    <audit-hide-dialog
+      v-if="hiding"
+      v-model:open="hideDialog"
+      :issue="hiding"
+      :title="props.title ?? hiding.check"
+      @hidden="hidden"
     />
   </div>
 </template>
@@ -125,7 +200,8 @@ onMounted(() => load())
   min-width: 0;
 }
 
-.wx-audit-issues__fix {
+.wx-audit-issues__fix,
+.wx-audit-issues__end {
   margin-inline-start: auto;
 }
 

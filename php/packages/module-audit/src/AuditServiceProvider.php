@@ -8,6 +8,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\ServiceProvider;
+use Throwable;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Audit\Checks\AuditChecks;
@@ -26,7 +27,7 @@ use WebxUi\Audit\Fixes\AuditFixes;
 use WebxUi\Audit\Fixes\ReplaceHost;
 use WebxUi\Audit\Panel\AuditModule;
 use WebxUi\Audit\Probes\CertificateReader;
-use WebxUi\Settings\Settings;
+use WebxUi\Audit\Runs\Nightly;
 
 /**
  * The audit: its registries, its own checks, the section, the settings tab and the command.
@@ -166,11 +167,12 @@ class AuditServiceProvider extends ServiceProvider
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(AuditModule::class));
 
-        // The «Audit» tab of the site's settings: where the site is, where to connect, which
-        // hosts are its stands. A patch, like the SEO tab, so the order of providers is moot.
-        $this->app->make(ScreenRegistry::class)->extend(Settings::SCREEN, __DIR__.'/../resources/screens/settings.json');
+        // The section's own settings: where the site is, its stands, the limits, the thresholds,
+        // the nightly run and the history — a screen, so a project can patch a field in.
+        $this->app->make(ScreenRegistry::class)->register(AuditSettings::SCREEN, __DIR__.'/../resources/screens/audit-settings.json');
 
         $this->registerHeartbeat();
+        $this->registerNightly();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -198,6 +200,31 @@ class AuditServiceProvider extends ServiceProvider
             $schedule->call(function (): void {
                 $this->app->make(Cache::class)->forever(Config\Schedule::HEARTBEAT, Carbon::now()->getTimestamp());
             })->everyMinute()->name('webx-audit:heartbeat');
+        });
+    }
+
+    /**
+     * The nightly run (§8): off until an administrator switches it on, then at the hour and of
+     * the scope the settings say. The settings are read when the scheduler builds its list —
+     * every minute, in a fresh process — so a change is on the schedule a minute later.
+     */
+    private function registerNightly(): void
+    {
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            try {
+                $nightly = $this->app->make(AuditSettings::class)->schedule();
+            } catch (Throwable) {
+                // No settings table yet — a fresh install before its migrations.
+                return;
+            }
+
+            if ($nightly === null) {
+                return;
+            }
+
+            $schedule->call(function () use ($nightly): void {
+                $this->app->make(Nightly::class)->run($nightly['scope']);
+            })->dailyAt(sprintf('%02d:00', $nightly['hour']))->name('webx-audit:nightly');
         });
     }
 }

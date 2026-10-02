@@ -22,6 +22,9 @@ use WebxUi\Audit\Runs\AuditRun;
  */
 final class IssueController
 {
+    /** The `state` filter that lists what rules hide (decision 9). */
+    public const HIDDEN = 'hidden';
+
     public function __construct(
         private readonly AuditChecks $checks,
         private readonly AuditFixes $fixes,
@@ -29,7 +32,7 @@ final class IssueController
 
     /**
      * One row per check with findings, worst first, with its three texts and its counts.
-     * Filters: `severity`, `group`, `state` (`new`, `persisting`).
+     * Filters: `severity`, `group`, `state` (`new`, `persisting`, `hidden`).
      */
     public function checks(Request $request, AuditRun $run): JsonResponse
     {
@@ -85,7 +88,7 @@ final class IssueController
     /** The addresses of one check, or of all of them, paginated. */
     public function index(Request $request, AuditRun $run): AnonymousResourceCollection
     {
-        $query = $this->filtered($request, $run)->orderBy('id');
+        $query = $this->filtered($request, $run)->with('ignore')->orderBy('id');
 
         if ($request->filled('check')) {
             $query->where('check', $request->string('check')->toString());
@@ -99,14 +102,23 @@ final class IssueController
      */
     private function filtered(Request $request, AuditRun $run): Builder
     {
-        $query = AuditIssue::query()->where('run_id', $run->id)->whereNull('ignored_by');
+        $state = $request->string('state')->toString();
+
+        // Hidden findings are a state of their own: out of every count and list, until asked for.
+        $query = AuditIssue::query()
+            ->where('run_id', $run->id)
+            ->when($state === self::HIDDEN, static fn (Builder $hidden) => $hidden->whereNotNull('ignored_by'), static fn (Builder $shown) => $shown->whereNull('ignored_by'));
 
         if ($request->filled('severity') && Severity::valid($request->string('severity')->toString())) {
             $query->where('severity', $request->string('severity')->toString());
         }
 
-        if (in_array($request->string('state')->toString(), [AuditIssue::NEW, AuditIssue::PERSISTING], true)) {
-            $query->where('state', $request->string('state')->toString());
+        if (in_array($state, [AuditIssue::NEW, AuditIssue::PERSISTING], true)) {
+            $query->where('state', $state);
+        }
+
+        if ($request->filled('page_id')) {
+            $query->where('page_id', $request->integer('page_id'));
         }
 
         return $query;
