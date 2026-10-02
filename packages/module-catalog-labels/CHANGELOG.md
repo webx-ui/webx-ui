@@ -1,5 +1,15 @@
 # @webx-ui/module-catalog-labels
 
+## 0.1.5
+
+### Patch Changes
+
+- Updated dependencies [62497fc]
+  - @webx-ui/core@0.36.0
+  - @webx-ui/module-admin@0.23.1
+  - @webx-ui/module-catalog@0.8.1
+  - @webx-ui/schema@0.7.2
+
 ## 0.1.4
 
 ### Patch Changes

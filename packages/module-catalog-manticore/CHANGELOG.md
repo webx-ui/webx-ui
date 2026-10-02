@@ -1,5 +1,13 @@
 # @webx-ui/module-catalog-manticore
 
+## 0.1.2
+
+### Patch Changes
+
+- Updated dependencies [62497fc]
+  - @webx-ui/core@0.36.0
+  - @webx-ui/module-admin@0.23.1
+
 ## 0.1.1
 
 ### Patch Changes

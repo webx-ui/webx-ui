@@ -1,6 +1,0 @@
----
-'@webx-ui/module-audit': minor
-'@webx-ui/php': minor
----
-
-A site audit, A3: robots.txt and the sitemap are read by every run, the quick one too — a file that closes the whole site or its CSS and JS, lines search engines skip, a sitemap that does not answer or parse, files over the protocol's limits, a `lastmod` that says nothing. A full run adds what needs the crawl: addresses of the sitemap that are redirects, errors or closed pages, indexable pages missing from it, chains, loops and temporary redirects, internal links to redirects, hreflang without a link back, without `x-default` or with a code search engines do not read, a `lang` that disagrees with hreflang, and JSON-LD that does not parse or lacks what Product, Article, Event, JobPosting, FAQPage and BreadcrumbList need. A new stage asks what the pages load and where their external links lead — `HEAD`, `GET` when the server does not do `HEAD`, once per run under a limit of its own — for broken, heavy and old-format pictures, a broken or small Open Graph picture, an icon that does not open, and external links that are broken or redirect. The page's card gets four tabs: pictures, CSS and JS with what each answered, and the structured data with what its types lack.
