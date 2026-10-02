@@ -209,7 +209,13 @@ function size(row: AuditResourceRow): string {
 }
 
 /** The answer, the markup and where the page came from — label and value, in reading order. */
-const facts = computed<[string, string][]>(() => {
+/*
+ * A fact is a line, or a list: hreflang and Open Graph are key and value per row, the key set apart
+ * as a tag so the eye does not run it into the address after it; JSON-LD is the types as tags.
+ */
+type Fact = string | { pairs: [string, string][] } | { tags: string[]; error?: string | null }
+
+const facts = computed<[string, Fact][]>(() => {
   const page = card.value?.page
 
   if (!page) return []
@@ -237,17 +243,35 @@ const facts = computed<[string, string][]>(() => {
     [t('page.field-lang'), page.lang],
     [
       'hreflang',
-      page.hreflang.map((alternate) => `${alternate.lang} ${alternate.url}`).join('\n') || null,
+      page.hreflang.length
+        ? { pairs: page.hreflang.map((alternate) => [alternate.lang, alternate.url]) }
+        : null,
     ],
     [
-      'og',
-      Object.entries(page.og)
-        .map(([key, value]) => `og:${key} ${value}`)
-        .join('\n') || null,
+      'Open Graph',
+      Object.keys(page.og).length
+        ? { pairs: Object.entries(page.og).map(([key, value]) => [`og:${key}`, String(value)]) }
+        : null,
+    ],
+    [
+      'Twitter',
+      Object.keys(page.twitter).length
+        ? {
+            pairs: Object.entries(page.twitter).map(([key, value]) => [
+              `twitter:${key}`,
+              String(value),
+            ]),
+          }
+        : null,
     ],
     [
       'JSON-LD',
-      page.json_ld.map((block) => block.error ?? block.types.join(', ')).join('\n') || null,
+      page.json_ld.length
+        ? {
+            tags: page.json_ld.flatMap((block) => block.types),
+            error: page.json_ld.find((block) => block.error)?.error ?? null,
+          }
+        : null,
     ],
     [t('page.field-word_count'), page.word_count],
     [t('page.field-links_in'), page.links_in],
@@ -259,7 +283,7 @@ const facts = computed<[string, string][]>(() => {
 
   return rows
     .filter(([, value]) => value !== null && value !== undefined && value !== '')
-    .map(([label, value]) => [label, String(value)])
+    .map(([label, value]) => [label, typeof value === 'object' ? (value as Fact) : String(value)])
 })
 
 function statusType(value: number | null): BadgeType {
@@ -406,7 +430,19 @@ watch(tab, () => {
         <dl v-if="tab === 'overview'" class="wx-audit-card__facts">
           <template v-for="[label, value] in facts" :key="label">
             <dt>{{ label }}</dt>
-            <dd>{{ value }}</dd>
+            <dd v-if="typeof value === 'string'">{{ value }}</dd>
+            <dd v-else-if="'pairs' in value" class="wx-audit-card__pairs">
+              <template v-for="([key, text], index) in value.pairs" :key="index">
+                <wx-badge size="sm" class="wx-audit-card__key">{{ key }}</wx-badge>
+                <span>{{ text }}</span>
+              </template>
+            </dd>
+            <dd v-else class="wx-audit-card__tags">
+              <wx-badge v-for="(tag, index) in value.tags" :key="index" type="info" size="sm">{{
+                tag
+              }}</wx-badge>
+              <wx-text v-if="value.error" size="sm" tone="danger">{{ value.error }}</wx-text>
+            </dd>
           </template>
           <template v-if="Object.keys(card.page.headers).length">
             <dt class="wx-audit-card__section">{{ t('page.headers') }}</dt>
@@ -590,6 +626,26 @@ watch(tab, () => {
   margin: 0;
   overflow-wrap: anywhere;
   white-space: pre-line;
+}
+
+/* Key and value in two columns of their own, a row apart from the next pair. */
+.wx-audit-card__pairs {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--wx-space-6) var(--wx-space-8);
+  align-items: baseline;
+}
+
+.wx-audit-card__key {
+  justify-self: start;
+  font-family: var(--wx-font-family-mono);
+}
+
+.wx-audit-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-6);
 }
 
 .wx-audit-card__section {
