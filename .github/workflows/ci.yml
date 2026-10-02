@@ -72,14 +72,31 @@ jobs:
           git diff --exit-code -- packages/tokens/src/generated \
             || (echo "::error::packages/tokens/src/generated is stale — run 'pnpm --filter @webx-ui/tokens generate' and commit the result" && exit 1)
 
-      - run: pnpm lint
-      - run: pnpm format:check
+      # Both caches key a file by its content, so a fresh checkout reuses them: an unchanged file
+      # is not linted or formatted again. Neither linter reads types across files, so a file that
+      # did not change cannot have changed its verdict either.
+      - name: Restore the lint caches
+        uses: actions/cache@v4
+        with:
+          path: .cache/lint
+          key: lint-${{ github.sha }}
+          restore-keys: lint-
+      - run: pnpm lint --cache --cache-strategy content --cache-location .cache/lint/eslint
+      - run: pnpm format:check --cache --cache-strategy content --cache-location .cache/lint/prettier
 
+  # Two shards for the whole workspace, one for the few projects a change reaches. Each shard
+  # builds everything — a checked project reads its dependencies' declarations — and checks every
+  # other project; the projects cost about the same, so alternating splits them evenly. A
+  # single pass that checked each package as soon as it was built was tried and saved nothing.
   typecheck:
-    name: Typecheck
+    name: Typecheck ${{ matrix.shard }}/${{ strategy.job-total }}
     needs: changes
     if: github.head_ref != 'changeset-release/main' && needs.changes.outputs.node != 'none'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.changes.outputs.node == 'all' && '[1, 2]' || '[1]') }}
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -89,10 +106,20 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - if: needs.changes.outputs.node == 'all'
-        run: pnpm typecheck
-      - if: needs.changes.outputs.node == 'some'
-        run: pnpm ${{ needs.changes.outputs.node_filters }} typecheck
+      - name: Typecheck this shard's projects
+        env:
+          FILTERS: ${{ needs.changes.outputs.node == 'some' && needs.changes.outputs.node_filters || '' }}
+          SHARD: ${{ matrix.shard }}
+          TOTAL: ${{ strategy.job-total }}
+        run: |
+          pick='
+            const projects = JSON.parse(require("fs").readFileSync(0, "utf8"))
+              .filter((project) => project.name.startsWith("@webx-ui/") && project.name !== "@webx-ui/php")
+            const mine = projects.filter((_, index) => index % process.env.TOTAL === process.env.SHARD - 1)
+            console.log(mine.map((project) => `--filter ${project.name}`).join(" "))'
+          # $FILTERS and the answer are lists of flags: word splitting is the point.
+          filters=$(pnpm ls -r --depth -1 --json $FILTERS | node -e "$pick")
+          pnpm $filters typecheck
 
   # Three shards for the whole suite; the few packages a change reaches fit in one.
   test:
@@ -112,7 +139,10 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The JS alone: declarations are two thirds of the build and nothing here reads them.
       - run: pnpm build
+        env:
+          WEBX_SKIP_DTS: 1
       - if: needs.changes.outputs.node == 'all'
         run: pnpm test --shard=${{ matrix.shard }}/3
       # Vitest path filters; empty when only an app changed, and the apps have no unit tests.
@@ -132,7 +162,10 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The JS alone: declarations are two thirds of the build and nothing here reads them.
       - run: pnpm build
+        env:
+          WEBX_SKIP_DTS: 1
       - run: pnpm docs:build
 
   release-pr:
