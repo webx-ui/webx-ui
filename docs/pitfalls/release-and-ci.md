@@ -119,6 +119,17 @@ already exists` — гонка на самом GitHub, теги при этом 
   (`Cache-Control: max-age=900`), и `composer clear-cache` не помогает — дело не в локальном кеше.
   Удалить `%LOCALAPPDATA%\Composer\repo\https---repo.packagist.org\provider-webx-ui~*` и повторять
   раз в минуту.
+- **Переписанная история монорепы не доходит до зеркал `webx-ui/<пакет>`, и php-split её не
+  исправит.** Экшен сплита не выводит историю зеркала из монорепы, а коммитит копию папки пакета
+  со своим сообщением, поэтому старые коммиты зеркала переживают и `filter-repo` монорепы, и
+  повторный сплит. Каждое зеркало сканировать и переписывать отдельно той же картой
+  (`git clone --mirror`, `filter-repo`, force-push веток и тегов). Ruleset в зеркалах нет, но
+  SSH-ключ монорепы туда не пускает (`Permission denied`) — пушить по HTTPS через
+  `gh auth git-credential`. Packagist перечитывает force-push'нутые теги по вебхуку за несколько
+  минут, после этого `composer update "webx-ui/*"` на сайтах в режиме registry. Сам `filter-repo`
+  требует Python, которого на Windows нет: гонять на Linux-машине и клонировать результат обратно
+  для проверки. Длинный путь скретчпада ломает `git clone --mirror` («fetch-pack: invalid
+  index-pack output») — клонировать в `/tmp`.
 
 ## После релиза: демо
 
