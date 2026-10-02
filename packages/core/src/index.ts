@@ -51,6 +51,13 @@ export {
 } from './composables/useModal'
 export { confirm, type ConfirmOptions } from './composables/confirm'
 export { openImageEditor } from './composables/imageEditor'
+export { openLightbox } from './composables/lightbox'
+export {
+  useImageGroup,
+  imageGroupKey,
+  type ImageGroupContext,
+  type ImageGroupEntry,
+} from './composables/useImageGroup'
 export {
   useResponsiveShell,
   shellLayoutFor,

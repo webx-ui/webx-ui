@@ -87,12 +87,15 @@ error handler rather than leave the caller awaiting for ever.
 | emits one named by `dismissOn`           | settles it with `undefined`            |
 | calls `resolve(value)` from `useModal()` | the same, without an event             |
 | calls `dismiss()`                        | the same as a dismissal                |
-| sets `open` from `useModal()` to `false` | the same as a dismissal                |
 | declares an `open` prop                  | it is passed, and `v-model:open` works |
 
 The defaults are `resolveOn: 'resolve'` and `dismissOn: ['cancel', 'close']` — and `close` is what
 `WxDialog` emits when it is dismissed, so a component whose root is a dialog needs nothing at all
 for the ✕ and escape to work.
+
+Setting `open` from `useModal()` to `false` by itself settles nothing: the opener listens to the
+component's events and its `update:open`, not to that ref. A wrapper around something that only
+emits `update:open` — `WxLightbox` is one — calls `dismiss()` on it.
 
 ## Closing, and then going away
 

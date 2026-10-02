@@ -120,6 +120,7 @@ export default defineConfig({
             { text: 'Avatar', link: '/components/avatar' },
             { text: 'Image', link: '/components/image' },
             { text: 'ImageEditor', link: '/components/image-editor' },
+            { text: 'Lightbox', link: '/components/lightbox' },
             { text: 'Segmented', link: '/components/segmented' },
             { text: 'ThemeSwitch', link: '/components/theme-switch' },
           ],

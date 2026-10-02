@@ -165,6 +165,13 @@ that is already in a library. Everything on screen is geometry, and the picture 
 once — at the end, under one transform — because a chain of canvases softens a photograph at every
 link.
 
+Lightbox ✅ — a gallery over the whole screen: arrows, keys, a swipe, a counter, a strip of
+thumbnails, zoom and pan, and videos (YouTube, MP4, WebM) behind their posters. See
+[Lightbox](/components/lightbox). It opens three ways — from a `WxImageGroup` of previewed
+pictures, from one cover with a `preview-list`, and from code with `openLightbox()` — for the
+product galleries, the media library and the audit's pictures. Its dimming is a token of its own,
+`--wx-bg-lightbox`, dark in both themes.
+
 ThemeSwitch ✅ — light, dark, or whatever the machine says: see
 [ThemeSwitch](/components/theme-switch). Three states rather than two, because a toggle cannot
 say _I have not decided_, which is the state most people are in — and following the machine is

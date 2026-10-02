@@ -40,7 +40,21 @@ Turn it off for anything above the fold: a lazy hero image is a hero image that 
 ## Preview
 
 `preview` puts the picture behind a click and opens it full size in a
-[Dialog](/components/dialog).
+[Lightbox](/components/lightbox), with zoom and a link to the original.
+
+Inside a `<wx-image-group>` every previewed picture opens one gallery of the whole group. A
+`preview-list` puts a gallery behind one picture instead — the cover of a product opening all of
+its photographs — starting on the item whose address is `src`, or on `preview-start`.
+
+```vue
+<template>
+  <wx-image-group>
+    <wx-image v-for="image in images" :key="image.id" :src="image.url" preview />
+  </wx-image-group>
+
+  <wx-image :src="product.cover" preview :preview-list="product.images" />
+</template>
+```
 
 ## Props
 
@@ -55,6 +69,8 @@ Turn it off for anything above the fold: a lazy hero image is a hero image that 
 | `lazy`         | `boolean`                                                  | `true`             | Wait until it is near the screen |
 | `placeholder`  | `string`                                                   | —                  | A tiny picture shown behind it   |
 | `preview`      | `boolean`                                                  | `false`            | Opens full size when clicked     |
+| `previewList`  | `(string                                                   | LightboxItem)[]`   | —                                | A gallery behind the picture |
+| `previewStart` | `number`                                                   | the item of `src`  | Where that gallery opens         |
 | `previewLabel` | `string`                                                   | `'View full size'` | Name of that button              |
 
 **Events:** `load` (`Event`), `error` (`Event`).
