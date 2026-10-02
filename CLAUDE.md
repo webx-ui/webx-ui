@@ -242,10 +242,10 @@ docs/
 1. Остаток волны 3 ядра: Carousel, Anchor, Splitter, Watermark, Marquee.
 2. **Gantt** — решено делать своим, не начинали (обоснование в roadmap).
 3. CMS-блоки: из списка открыт только Markdown.
-4. **Каталог для магазинов** — ядро `module-catalog` и журнал изменений `module-admin`
-   выпущены 29.09.2026 (v0.50.0); дальше спутники `module-catalog-*` по порядку §10
-   `docs/architecture/WEBX_UI_CATALOG.md`, первым `module-catalog-properties` — без него фасетам
-   нечего показывать. Открытое по ядру — «Открыто» в §19 `WEBX_UI_MODULE_CATALOG.md`.
+4. **Каталог для магазинов** — волна A выпущена (v0.56.0): ядро, свойства, справочники, видео,
+   обмен, Manticore, посадочные. Что выпущено и что не начато — таблица §10
+   `docs/architecture/WEBX_UI_CATALOG.md`, гайд — `apps/docs/guide/catalog.md`. Открытое по
+   ядру — «Открыто» в §19 `WEBX_UI_MODULE_CATALOG.md`. Следующим — `module-audit`, не каталог.
 5. **Документация для агентов** — после каталога. `AGENTS.md` в каждом composer-пакете и корневой
    файл сайта, который собирают `webx:setup` / `webx:panel --sync`; правила контента сайта — в
    базе, ресурсом MCP. Цель — 100% охвата: человек без опыта с агентом разворачивает сайт в Docker
