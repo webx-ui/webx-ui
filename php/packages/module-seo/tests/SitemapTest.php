@@ -125,6 +125,23 @@ final class SitemapTest extends TestCase
     }
 
     #[Test]
+    public function a_type_with_a_dot_in_its_name_is_a_file_the_index_can_reach(): void
+    {
+        // A module's types are namespaced (`catalog.category`), and the file is named after it.
+        app(RouteTypes::class)->forget();
+        app(RouteTypes::class)->register(new RouteType(type: 'catalog.mapped', model: MappedEntity::class, formatter: Slug::class));
+        $this->entity('shoes');
+
+        $this->get('/sitemap.xml')
+            ->assertOk()
+            ->assertSee('<loc>http://localhost/sitemap-catalog.mapped.xml</loc>', false);
+
+        $file = (string) $this->get('/sitemap-catalog.mapped.xml')->assertOk()->getContent();
+
+        $this->assertStringContainsString('<loc>http://localhost/shoes</loc>', $file);
+    }
+
+    #[Test]
     public function a_type_past_the_limit_is_cut_into_numbered_files(): void
     {
         config()->set('webx-seo.sitemap.per_file', 2);
