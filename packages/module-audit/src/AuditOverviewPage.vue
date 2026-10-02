@@ -67,10 +67,24 @@ const healthStatus = computed<ProgressStatus>(() => {
   return 'danger'
 })
 
+/* The groups this package has words for; a module's own group reads as «Other». */
+const GROUPS = [
+  'config',
+  'host',
+  'hosts',
+  'indexing',
+  'page',
+  'content',
+  'links',
+  'images',
+  'a11y',
+  'structure',
+]
+
 const groups = computed(() =>
   Object.entries(counts.value?.groups ?? {}).map(([id, bySeverity]) => ({
     id,
-    label: t(`page.group-${['config', 'host', 'hosts'].includes(id) ? id : 'other'}`),
+    label: t(`page.group-${GROUPS.includes(id) ? id : 'other'}`),
     bySeverity,
   })),
 )
@@ -156,6 +170,12 @@ onBeforeUnmount(() => clearTimeout(timer))
             >
           </div>
           <wx-progress indeterminate :aria-label="stageLabel(active)" />
+          <wx-text v-if="active.progress.stage === 'crawl'" size="sm" tone="muted">{{
+            t('page.pages-progress', {
+              crawled: active.progress.pages.crawled,
+              limit: active.progress.pages.limit,
+            })
+          }}</wx-text>
         </wx-card>
 
         <wx-card v-else-if="canRun && !latest.queue.sync">

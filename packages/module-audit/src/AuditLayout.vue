@@ -12,7 +12,7 @@ import { useAuditMessages } from './i18n'
 const props = defineProps<{
   base: string
   settingsPath: string
-  current: 'overview' | 'issues'
+  current: 'overview' | 'issues' | 'pages'
   /** A card around the slot — the findings' table wants one, the overview draws its own. */
   card?: boolean
 }>()
@@ -36,6 +36,7 @@ const title = computed(
 const views = computed<TabItem[]>(() => [
   { value: 'overview', label: t('page.overview') },
   { value: 'issues', label: t('page.issues') },
+  { value: 'pages', label: t('page.pages') },
 ])
 
 const actions = computed<ScreenAction[]>(() =>

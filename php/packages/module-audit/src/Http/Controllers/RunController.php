@@ -47,10 +47,14 @@ final class RunController
         $done = AuditRun::query()->where('status', AuditRun::DONE)->orderByDesc('id')->first();
         /** @var AuditRun|null $last */
         $last = AuditRun::query()->orderByDesc('id')->first();
+        /** @var AuditRun|null $crawled */
+        $crawled = AuditRun::query()->where('status', AuditRun::DONE)->where('scope', AuditRun::FULL)->orderByDesc('id')->first();
 
         return ApiResponse::data([
             'active' => $active === null ? null : new RunResource($active),
             'done' => $done === null ? null : new RunResource($done),
+            // The pages screen reads the last full run: a quick one has no pages.
+            'crawled' => $crawled === null ? null : new RunResource($crawled),
             // A run that failed or was cancelled after the last good one — said, not hidden.
             'last' => $last === null || $last->is($done) || $last->is($active) ? null : new RunResource($last),
             'queue' => ['sync' => $this->syncQueue()],

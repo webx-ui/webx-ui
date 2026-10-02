@@ -2,7 +2,8 @@
  * «System → Audit» (WEBX_UI_MODULE_AUDIT.md) without a site to audit: one finished run with the
  * findings a freshly deployed project usually has — the case the module exists for first, a
  * development stand left in the content, published and in a draft — and a «Run the audit» that
- * walks through the stages on the clock and finishes with one of them fixed.
+ * walks through the stages on the clock and finishes with one of them fixed. The last run is a
+ * full one: a dozen crawled pages with their links, for the pages screen and the page's card.
  *
  * The words come out of the PHP package's dictionary, the way the real API translates them.
  */
@@ -32,6 +33,8 @@ interface Finding {
   group: string
   severity: Severity
   url: string | null
+  /** The crawled page it was found on. */
+  page?: number
   summary: [string, Record<string, string | number>]
   table?: { columns: Cell[]; rows: Record<string, unknown>[] }
 }
@@ -153,6 +156,69 @@ const FINDINGS: Finding[] = [
     },
   },
   {
+    check: 'hosts.dev_page',
+    group: 'hosts',
+    severity: 'error',
+    url: `${BASE}/`,
+    page: 1,
+    summary: ['dev-page', { count: 1 }],
+    table: {
+      columns: [
+        { key: 'url', type: 'url' },
+        { key: 'kind', type: 'text' },
+        { key: 'anchor', type: 'text' },
+      ],
+      rows: [{ url: 'https://dev.shop.example.com/storage/hero.jpg', kind: 'img', anchor: null }],
+    },
+  },
+  {
+    check: 'links.broken',
+    group: 'links',
+    severity: 'error',
+    url: `${BASE}/`,
+    page: 1,
+    summary: ['links-broken', { count: 1 }],
+    table: {
+      columns: [
+        { key: 'url', type: 'url' },
+        { key: 'status', type: 'status' },
+        { key: 'anchor', type: 'text' },
+      ],
+      rows: [{ url: `${BASE}/spring-sale`, status: 404, anchor: 'Spring sale' }],
+    },
+  },
+  {
+    check: 'title.missing',
+    group: 'page',
+    severity: 'error',
+    url: `${BASE}/delivery/regions`,
+    page: 9,
+    summary: ['title-missing', {}],
+  },
+  {
+    check: 'structure.orphan',
+    group: 'structure',
+    severity: 'warning',
+    url: `${BASE}/delivery/regions`,
+    page: 9,
+    summary: ['orphan', {}],
+  },
+  {
+    check: 'description.duplicate',
+    group: 'page',
+    severity: 'warning',
+    url: `${BASE}/catalog/spades`,
+    page: 5,
+    summary: ['duplicate-description', { count: 1, value: 'Garden tools and plants, delivered.' }],
+    table: {
+      columns: [
+        { key: 'url', type: 'url' },
+        { key: 'title', type: 'text' },
+      ],
+      rows: [{ url: `${BASE}/catalog/rakes`, title: 'Rakes' }],
+    },
+  },
+  {
     check: 'config.queue',
     group: 'config',
     severity: 'warning',
@@ -191,7 +257,7 @@ const runs: Run[] = [
   {
     id: 2,
     status: 'done',
-    scope: 'quick',
+    scope: 'full',
     startedAt: Date.now() - 3_600_000,
     findings: FINDINGS,
     createdAt: ago(61),
@@ -229,6 +295,11 @@ const CHECKS: Record<string, Severity> = {
   'host.server_leak': 'notice',
   'host.static_cache': 'warning',
   'hosts.dev_content': 'error',
+  'hosts.dev_page': 'error',
+  'links.broken': 'error',
+  'title.missing': 'error',
+  'structure.orphan': 'warning',
+  'description.duplicate': 'warning',
 }
 
 function previous(run: Run): Run | undefined {
@@ -312,7 +383,12 @@ function resource(run: Run) {
     scope: run.scope,
     base_url: BASE,
     resolve_to: null,
-    progress: { stage: run.status === 'done' ? 'analyse' : stage(run), done: [], checks: 23 },
+    progress: {
+      stage: run.status === 'done' ? 'analyse' : stage(run),
+      done: [],
+      checks: 23,
+      pages: { crawled: run.scope === 'full' ? PAGES.length : 0, limit: 1000 },
+    },
     counts: run.status === 'done' ? counts(run) : null,
     started_by: '1',
     created_at: run.createdAt,
@@ -329,6 +405,268 @@ function fill(text: string, params: Record<string, string | number>): string {
   )
 }
 
+/* One crawled page of the snapshot, the way the API lists it. */
+interface PageRow {
+  id: number
+  url: string
+  status: number | null
+  final_status: number | null
+  redirect_to: string | null
+  source: 'home' | 'sitemap' | 'registry' | 'link'
+  depth: number | null
+  indexable: boolean
+  title: string | null
+  description: string | null
+  h1: string | null
+  canonical: string | null
+  robots_meta: string | null
+  x_robots_tag: string | null
+  lang: string | null
+  content_type: string | null
+  bytes: number | null
+  ttfb_ms: number | null
+  total_ms: number | null
+  compression: string | null
+  word_count: number | null
+  links_in: number
+  links_out_internal: number
+  links_out_external: number
+  images: number
+  images_without_alt: number
+  in_sitemap: boolean
+  in_registry: boolean
+  blocked_by_robots: boolean
+}
+
+const html = 'text/html; charset=utf-8'
+const description = 'Garden tools and plants, delivered to the door within a day.'
+
+function crawled(
+  id: number,
+  path: string,
+  fields: Partial<PageRow> & Pick<PageRow, 'depth' | 'title'>,
+): PageRow {
+  return {
+    id,
+    url: `${BASE}${path}`,
+    status: 200,
+    final_status: 200,
+    redirect_to: null,
+    source: 'link',
+    indexable: true,
+    description,
+    h1: fields.title,
+    canonical: `${BASE}${path}`,
+    robots_meta: null,
+    x_robots_tag: null,
+    lang: 'en',
+    content_type: html,
+    bytes: 38_000 + id * 1_731,
+    ttfb_ms: 90 + id * 23,
+    total_ms: 120 + id * 31,
+    compression: 'br',
+    word_count: 300 + id * 47,
+    links_in: 3,
+    links_out_internal: 24,
+    links_out_external: 2,
+    images: 6,
+    images_without_alt: 0,
+    in_sitemap: true,
+    in_registry: true,
+    blocked_by_robots: false,
+    ...fields,
+  }
+}
+
+const PAGES: PageRow[] = [
+  crawled(1, '/', {
+    depth: 0,
+    source: 'home',
+    title: 'Garden shop — tools and plants',
+    images_without_alt: 2,
+    links_in: 11,
+  }),
+  crawled(2, '/about', { depth: 1, title: 'About the shop and the people who run it' }),
+  crawled(3, '/delivery', { depth: 1, title: 'Delivery and payment' }),
+  crawled(4, '/catalog', { depth: 1, title: 'Catalog', word_count: 140 }),
+  crawled(5, '/catalog/spades', {
+    depth: 2,
+    title: 'Spades',
+    description: 'Garden tools and plants, delivered.',
+  }),
+  crawled(6, '/catalog/rakes', {
+    depth: 2,
+    title: 'Rakes',
+    description: 'Garden tools and plants, delivered.',
+  }),
+  crawled(7, '/blog', {
+    depth: 1,
+    status: 301,
+    final_status: 200,
+    redirect_to: `${BASE}/blog/`,
+    indexable: false,
+    title: null,
+    description: null,
+    h1: null,
+    canonical: null,
+    lang: null,
+    content_type: null,
+    bytes: 0,
+    word_count: null,
+    links_out_internal: 0,
+    links_out_external: 0,
+    images: 0,
+    in_sitemap: false,
+  }),
+  crawled(8, '/blog/', {
+    depth: 1,
+    title: 'The garden blog',
+    robots_meta: 'noindex, follow',
+    indexable: false,
+  }),
+  crawled(9, '/delivery/regions', {
+    depth: null,
+    source: 'sitemap',
+    title: null,
+    h1: 'Regions',
+    links_in: 0,
+    in_registry: false,
+  }),
+  crawled(10, '/spring-sale', {
+    depth: 1,
+    status: 404,
+    final_status: 404,
+    indexable: false,
+    title: 'Not found',
+    description: null,
+    canonical: null,
+    word_count: 12,
+    in_sitemap: false,
+    in_registry: false,
+  }),
+  crawled(11, '/catalog/seeds?sort=price', {
+    depth: 2,
+    title: 'Seeds',
+    canonical: `${BASE}/catalog/seeds`,
+    indexable: false,
+    in_sitemap: false,
+    in_registry: false,
+  }),
+  crawled(12, '/private/drafts', {
+    depth: 2,
+    title: 'Drafts',
+    blocked_by_robots: true,
+    in_sitemap: false,
+    in_registry: false,
+  }),
+]
+
+/* Outgoing links of the home page; the other pages link home and to the catalog. */
+function linksOf(page: PageRow) {
+  const own = (id: number, anchor: string, kind = 'a') => {
+    const target = PAGES.find((other) => other.id === id)!
+
+    return {
+      url: target.url,
+      page_id: id,
+      status: target.status,
+      kind,
+      anchor,
+      rel: null,
+      target: null,
+      host: 'shop.example.com',
+      host_class: 'own',
+      absolute: false,
+    }
+  }
+
+  if (page.id === 1) {
+    return [
+      own(2, 'About us'),
+      own(3, 'Delivery'),
+      own(4, 'Catalog'),
+      own(7, 'Blog'),
+      own(10, 'Spring sale'),
+      {
+        url: 'https://dev.shop.example.com/storage/hero.jpg',
+        page_id: null,
+        status: null,
+        kind: 'img',
+        anchor: null,
+        rel: null,
+        target: null,
+        host: 'dev.shop.example.com',
+        host_class: 'dev',
+        absolute: true,
+      },
+      {
+        url: 'https://www.youtube.com/@gardenshop',
+        page_id: null,
+        status: null,
+        kind: 'a',
+        anchor: 'Our channel',
+        rel: 'noopener',
+        target: '_blank',
+        host: 'www.youtube.com',
+        host_class: 'external',
+        absolute: true,
+      },
+    ]
+  }
+
+  return [own(1, 'Home'), own(4, 'Catalog')]
+}
+
+function pageRow(run: Run, page: PageRow) {
+  return { ...page, issues: run.findings.filter((finding) => finding.page === page.id).length }
+}
+
+const FIELD_TYPES: Record<string, string> = {
+  status: 'number',
+  final_status: 'number',
+  depth: 'number',
+  bytes: 'number',
+  ttfb_ms: 'number',
+  total_ms: 'number',
+  word_count: 'number',
+  links_in: 'number',
+  links_out_internal: 'number',
+  links_out_external: 'number',
+  images: 'number',
+  images_without_alt: 'number',
+  issues: 'number',
+}
+
+/* `f[field]=op:value`, the way PageQuery reads it on the server. */
+function matches(row: Record<string, unknown>, field: string, condition: string): boolean {
+  const [op, value = ''] = condition.split(/:(.*)/s)
+  const cell = row[field]
+  const number = FIELD_TYPES[field] === 'number'
+
+  switch (op) {
+    case 'empty':
+      return cell === null || cell === '' || cell === undefined
+    case 'filled':
+      return cell !== null && cell !== '' && cell !== undefined
+    case 'yes':
+      return cell === true
+    case 'no':
+      return cell === false
+    case 'contains':
+      return String(cell ?? '')
+        .toLowerCase()
+        .includes(value.toLowerCase())
+    case 'eq':
+      return String(cell ?? '') === value
+    case 'gt':
+      return number ? Number(cell ?? 0) > Number(value) : String(cell ?? '') > value
+    case 'lt':
+      return number ? cell === null || Number(cell) < Number(value) : String(cell ?? '') < value
+    default:
+      return true
+  }
+}
+
 export function registerAudit(on: On, fail: Fail, line: Line): void {
   const find = (id: string) => {
     const run = runs.find((candidate) => candidate.id === Number(id))
@@ -342,11 +680,13 @@ export function registerAudit(on: On, fail: Fail, line: Line): void {
     runs.forEach(advance)
     const active = runs.filter((run) => run.status === 'queued' || run.status === 'running').at(-1)
     const done = runs.filter((run) => run.status === 'done').at(-1)
+    const crawled = runs.filter((run) => run.status === 'done' && run.scope === 'full').at(-1)
 
     return {
       data: {
         active: active ? resource(active) : null,
         done: done ? resource(done) : null,
+        crawled: crawled ? resource(crawled) : null,
         last: null,
         queue: { sync: false },
       },
@@ -470,5 +810,162 @@ export function registerAudit(on: On, fail: Fail, line: Line): void {
         to: rows.length,
       },
     }
+  })
+
+  const pagesOf = (run: Run) => (run.scope === 'full' ? PAGES : [])
+
+  const paginate = <T>(rows: T[], query: URLSearchParams) => {
+    const perPage = Number(query.get('per_page') ?? 50)
+    const current = Math.max(1, Number(query.get('page') ?? 1))
+    const last = Math.max(1, Math.ceil(rows.length / perPage))
+    const slice = rows.slice((current - 1) * perPage, current * perPage)
+
+    return {
+      data: slice,
+      meta: {
+        current_page: current,
+        last_page: last,
+        per_page: perPage,
+        total: rows.length,
+        from: slice.length ? (current - 1) * perPage + 1 : null,
+        to: slice.length ? (current - 1) * perPage + slice.length : null,
+      },
+    }
+  }
+
+  on('GET', '/audit/runs/(\\d+)/pages', ({ params, query }) => {
+    const run = find(params[0]!)
+    const status = query.get('status')
+    const search = (query.get('search') ?? '').toLowerCase()
+    const check = query.get('check')
+    let rows: Record<string, unknown>[] = pagesOf(run).map((page) => pageRow(run, page))
+
+    rows = rows.filter((row) => {
+      const code = row.status as number | null
+
+      return (
+        (!search || String(row.url).toLowerCase().includes(search)) &&
+        (!status ||
+          (status === 'none' ? code === null : String(code ?? '').startsWith(status[0]!))) &&
+        (!query.get('indexable') || row.indexable === (query.get('indexable') === '1')) &&
+        (!check ||
+          run.findings.some((finding) => finding.check === check && finding.page === row.id)) &&
+        [...query.entries()].every(([key, condition]) => {
+          const field = /^f\[(.+)\]$/.exec(key)?.[1]
+
+          return !field || matches(row, field, condition)
+        })
+      )
+    })
+
+    const sort = query.get('sort')
+
+    if (sort) {
+      const key = sort.replace(/^-/, '')
+      const sign = sort.startsWith('-') ? -1 : 1
+
+      rows = [...rows].sort((a, b) => {
+        const x = a[key] ?? ''
+        const y = b[key] ?? ''
+
+        return (x > y ? 1 : x < y ? -1 : 0) * sign
+      })
+    }
+
+    return paginate(rows, query)
+  })
+
+  on('GET', '/audit/runs/(\\d+)/pages/(\\d+)', ({ params, locale }) => {
+    const run = find(params[0]!)
+    const page = pagesOf(run).find((candidate) => candidate.id === Number(params[1]))
+
+    if (!page) throw fail(404, 'Not found.')
+
+    const issues = run.findings
+      .map((finding, index) => ({ finding, index }))
+      .filter(({ finding }) => finding.page === page.id)
+      .map(({ finding, index }) => ({
+        id: index + 1,
+        check: finding.check,
+        severity: finding.severity,
+        url: finding.url,
+        state: state(run, finding),
+        ignored: false,
+        details: {
+          summary: fill(
+            line(locale, 'webx-audit', `details.${finding.summary[0]}`),
+            finding.summary[1],
+          ),
+          table: finding.table
+            ? {
+                columns: finding.table.columns.map((column) => ({
+                  ...column,
+                  label: line(locale, 'webx-audit', `details.column-${column.key}`),
+                })),
+                rows: finding.table.rows,
+              }
+            : null,
+        },
+      }))
+    const incoming = PAGES.filter((other) =>
+      linksOf(other).some((link) => link.page_id === page.id),
+    )
+
+    return {
+      data: {
+        page: {
+          ...pageRow(run, page),
+          headers: page.content_type
+            ? {
+                'content-type': page.content_type,
+                'cache-control': 'no-cache, private',
+                'content-encoding': 'br',
+                server: 'nginx',
+              }
+            : { location: page.redirect_to ?? '' },
+          h1: page.h1 ? [page.h1] : [],
+          headings: { h1: page.h1 ? 1 : 0, h2: 4, h3: 2, h4: 0, h5: 0, h6: 0 },
+          hreflang: [],
+          og: page.title ? { title: page.title, type: 'website' } : {},
+          twitter: {},
+          json_ld: page.id === 1 ? [{ types: ['Organization', 'WebSite'], error: null }] : [],
+          error: null,
+          facts: {},
+          fetched_at: ago(60),
+        },
+        issues,
+        counts: {
+          issues: issues.length,
+          incoming: incoming.length,
+          outgoing: linksOf(page).length,
+        },
+      },
+    }
+  })
+
+  on('GET', '/audit/runs/(\\d+)/pages/(\\d+)/links', ({ params, query }) => {
+    const run = find(params[0]!)
+    const page = pagesOf(run).find((candidate) => candidate.id === Number(params[1]))
+
+    if (!page) throw fail(404, 'Not found.')
+
+    const rows =
+      query.get('direction') === 'in'
+        ? PAGES.flatMap((other) =>
+            linksOf(other)
+              .filter((link) => link.page_id === page.id)
+              .map((link) => ({
+                ...link,
+                url: other.url,
+                page_id: other.id,
+                status: other.status,
+              })),
+          )
+        : linksOf(page)
+
+    return paginate(
+      rows.map((link, index) => ({ id: index + 1, ...link })),
+      query,
+    )
   })
 }

@@ -1,6 +1,7 @@
 import type { AdminModule } from '@webx-ui/module-admin'
 import AuditIssuesPage from './AuditIssuesPage.vue'
 import AuditOverviewPage from './AuditOverviewPage.vue'
+import AuditPagesPage from './AuditPagesPage.vue'
 
 export interface AuditOptions {
   /** Where the section lives inside the panel. */
@@ -10,7 +11,8 @@ export interface AuditOptions {
 }
 
 /**
- * «System → Audit» as a section of the panel: the overview of the last run and its findings.
+ * «System → Audit» as a section of the panel: the overview of the last run, its findings and the
+ * pages the last full run crawled.
  *
  * The id matches the module the server reports, which is what makes the entry appear in the
  * navigation: the section shows up when both halves are installed.
@@ -33,6 +35,12 @@ export function audit(options: AuditOptions = {}): AdminModule {
         path: `${path}/issues`,
         name: 'webx.audit.issues',
         component: AuditIssuesPage,
+        props: { base: path, settingsPath },
+      },
+      {
+        path: `${path}/pages`,
+        name: 'webx.audit.pages',
+        component: AuditPagesPage,
         props: { base: path, settingsPath },
       },
     ],

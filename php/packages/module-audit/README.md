@@ -16,7 +16,16 @@ What it checks today:
   somebody else's. Content modules hand their fields over with `AuditContentSource`
   (`webx-ui/module-pages` and `webx-ui/module-blocks` do).
 
-The crawler, the page checks, the sitemap, redirects, hreflang and structured data follow.
+- **Every page** — a full run crawls the site from the home page, the sitemap and the address
+  registry (`webx-ui/routing`), two requests at a time and a thousand pages at most, and keeps a
+  snapshot of each: the answer, the head, the headings, the text, every link and resource. The
+  page checks read it — title, description, H1, canonical, viewport, Open Graph, thin and
+  duplicate content, address format, speed, broken and empty links, mixed content, pictures
+  without `alt`, accessibility, depth, orphans — and so do the outgoing hosts: a stand linked
+  from a page, another mirror, a host that looks like the site's own, a new outside domain.
+
+The sitemap and robots.txt checks, redirects, hreflang, structured data and external links
+follow.
 
 ## Requirements
 

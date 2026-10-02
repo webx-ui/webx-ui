@@ -36,6 +36,23 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | The crawl
+    |---------------------------------------------------------------------------
+    |
+    | Polite by default (decision 7): two requests at a time and a thousand
+    | pages at most. Snapshots of pages are kept for the last few full runs —
+    | the findings outlive them.
+    |
+    */
+
+    'pages_limit' => 1000,
+
+    'concurrency' => 2,
+
+    'keep_snapshots' => 5,
+
+    /*
+    |---------------------------------------------------------------------------
     | Thresholds
     |---------------------------------------------------------------------------
     |
@@ -52,6 +69,18 @@ return [
         'static_cache_seconds' => 7 * 24 * 3600,
         // The scheduler is expected to have run within this many minutes.
         'schedule_minutes' => 60,
+        // The page (§5.5): lengths in characters, the share of text in percent.
+        'title_min' => 30,
+        'title_max' => 60,
+        'description_min' => 70,
+        'description_max' => 160,
+        'thin_words' => 250,
+        'text_ratio' => 10,
+        'url_length' => 115,
+        'ttfb_ms' => 600,
+        'html_bytes' => 1024 * 1024,
+        'depth' => 3,
+        'external_links' => 100,
     ],
 
     /*

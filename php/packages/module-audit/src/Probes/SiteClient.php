@@ -6,6 +6,8 @@ namespace WebxUi\Audit\Probes;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Http\Client\Factory;
+use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Pool;
 use Illuminate\Http\Client\Response;
 use Throwable;
 
@@ -56,27 +58,79 @@ final class SiteClient
         return in_array($answer->status, [405, 501], true) ? $this->send('GET', $url) : $answer;
     }
 
+    /**
+     * Several requests at once — the crawler's pool (decision 7: two at a time by default, so the
+     * caller hands over as many as it means to run together).
+     *
+     * @param  array<array-key, array{0: string, 1: string}>  $requests  key => [method, url]
+     * @return array<array-key, ProbeResponse>
+     */
+    public function many(array $requests): array
+    {
+        if ($requests === []) {
+            return [];
+        }
+
+        $started = microtime(true);
+
+        $responses = $this->http->pool(function (Pool $pool) use ($requests): array {
+            $pending = [];
+
+            foreach ($requests as $key => [$method, $url]) {
+                $pending[] = $this->configure($pool->as((string) $key), $url)->send($method, $url);
+            }
+
+            return $pending;
+        });
+
+        $answers = [];
+
+        foreach ($requests as $key => [$method, $url]) {
+            $response = $responses[(string) $key] ?? null;
+
+            $answers[(string) $key] = $response instanceof Response
+                ? $this->answer($response, $method, $url, $started)
+                : new ProbeResponse($url, null, ms: $this->since($started), error: $response instanceof Throwable ? $response->getMessage() : 'No answer.');
+        }
+
+        return $answers;
+    }
+
     private function send(string $method, string $url): ProbeResponse
     {
         $started = microtime(true);
 
         try {
-            $response = $this->http
-                ->withHeaders(['User-Agent' => (string) $this->config->get('webx-audit.user_agent', 'WebxAudit/1.0')])
-                ->timeout(max(1, (int) $this->config->get('webx-audit.timeout', 15)))
-                ->withoutRedirecting()
-                ->withOptions($this->options($url))
-                ->send($method, $url);
+            $response = $this->configure($this->http->createPendingRequest(), $url)->send($method, $url);
         } catch (Throwable $failure) {
             return new ProbeResponse($url, null, ms: $this->since($started), error: $failure->getMessage());
         }
+
+        return $this->answer($response, $method, $url, $started);
+    }
+
+    private function configure(PendingRequest $request, string $url): PendingRequest
+    {
+        return $request
+            ->withHeaders(['User-Agent' => (string) $this->config->get('webx-audit.user_agent', 'WebxAudit/1.0')])
+            ->timeout(max(1, (int) $this->config->get('webx-audit.timeout', 15)))
+            ->withoutRedirecting()
+            ->withOptions($this->options($url));
+    }
+
+    private function answer(Response $response, string $method, string $url, float $started): ProbeResponse
+    {
+        $stats = $response->handlerStats();
+        $ttfb = $stats['starttransfer_time'] ?? null;
+        $total = $stats['total_time'] ?? null;
 
         return new ProbeResponse(
             $url,
             $response->status(),
             $this->headers($response),
             $method === 'HEAD' ? '' : substr($response->body(), 0, self::BODY_LIMIT),
-            $this->since($started),
+            is_numeric($total) ? (int) round((float) $total * 1000) : $this->since($started),
+            ttfb: is_numeric($ttfb) && (float) $ttfb > 0 ? (int) round((float) $ttfb * 1000) : null,
         );
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use WebxUi\Audit\Http\Controllers\IssueController;
+use WebxUi\Audit\Http\Controllers\PageController;
 use WebxUi\Audit\Http\Controllers\RunController;
 
 Route::prefix((string) config('webx-admin.api_path').'/audit')
@@ -16,6 +17,10 @@ Route::prefix((string) config('webx-admin.api_path').'/audit')
             Route::get('runs/{run}', [RunController::class, 'show'])->whereNumber('run')->name('runs.show');
             Route::get('runs/{run}/checks', [IssueController::class, 'checks'])->whereNumber('run')->name('runs.checks');
             Route::get('runs/{run}/issues', [IssueController::class, 'index'])->whereNumber('run')->name('runs.issues');
+            Route::get('runs/{run}/pages', [PageController::class, 'index'])->whereNumber('run')->name('runs.pages');
+            Route::get('runs/{run}/pages/export', [PageController::class, 'export'])->whereNumber('run')->name('runs.pages.export');
+            Route::get('runs/{run}/pages/{page}', [PageController::class, 'show'])->whereNumber(['run', 'page'])->name('runs.pages.show');
+            Route::get('runs/{run}/pages/{page}/links', [PageController::class, 'links'])->whereNumber(['run', 'page'])->name('runs.pages.links');
         });
 
         Route::middleware('cms.can:audit.run,audit.manage')->group(function (): void {
