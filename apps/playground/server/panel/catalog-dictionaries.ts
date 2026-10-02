@@ -968,6 +968,11 @@ const brandBook: Book<BrandRecord> = {
 let lineOf: Line = (_locale, _namespace, path) => path
 
 /** A brand's values before and after, as the journal lists them: every field but the order. */
+/** `extra` as the json column holds it: nothing written is `null`, not an empty object. */
+function extraOf(record: Common): Record<string, unknown> | null {
+  return Object.keys(record.extra).length > 0 ? { ...record.extra } : null
+}
+
 function brandChanges(
   before: Record<string, unknown>,
   after: Record<string, unknown>,
@@ -977,7 +982,7 @@ function brandChanges(
   const said = (field: string) => {
     const words = lineOf(locale, 'webx-catalog-brands', `brand.${field}`)
 
-    // A field of the project's (`extra`) has no words of the package: it is named by its key.
+    // The project's fields (`extra`) have no words of the package: the row is named by its key.
     return words === `brand.${field}` ? field : words
   }
 
@@ -1088,7 +1093,8 @@ function mount<T extends Common>(on: On, fail: Fail, book: Book<T>): void {
 
   on('PUT', `/${book.path}/(\\d+)`, ({ params, body, locale }) => {
     const record = find(params[0])
-    const before = { ...record.extra, ...book.values(record) }
+    // The project's fields as the server journals them: one `extra` row holding the object.
+    const before = { extra: extraOf(record), ...book.values(record) }
     const draft = structuredClone(record)
     const errors: Record<string, string[]> = {}
 
@@ -1115,7 +1121,11 @@ function mount<T extends Common>(on: On, fail: Fail, book: Book<T>): void {
     Object.assign(record, draft)
 
     if (book === (brandBook as unknown as Book<T>)) {
-      const changes = brandChanges(before, { ...record.extra, ...book.values(record) }, locale)
+      const changes = brandChanges(
+        before,
+        { extra: extraOf(record), ...book.values(record) },
+        locale,
+      )
 
       if (changes.length > 0) {
         journal.unshift({
