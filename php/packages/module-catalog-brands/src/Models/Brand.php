@@ -145,6 +145,15 @@ class Brand extends Model implements Category, ListingSubject, Visible
             }
         });
 
+        // The link has no cascade, so that a soft delete cannot leave products pointing nowhere — it
+        // is refused while the brand has any. A forced one is meant: `webx:demo --remove` takes its
+        // brands out before the products they are on, and the products keep no brand.
+        static::forceDeleting(static function (self $brand): void {
+            // Marked first: the query reads the links that are about to go.
+            Container::getInstance()->make(Catalog::class)->touchQuery($brand->affectedProducts());
+            DB::table(self::LINKS)->where('brand_id', $brand->getKey())->delete();
+        });
+
         // Gone as a value of the filter, the way a deleted property value is: whoever keeps the
         // brand by id — a landing's set — hears it from the one event the aliases fire.
         static::deleted(static function (self $brand): void {
