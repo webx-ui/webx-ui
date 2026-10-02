@@ -1289,6 +1289,46 @@ if [ -n "$PLATFORM_REASON" ]; then
     exit 0
 fi
 
+# The scenario installs the npm halves from the registry, so it can only judge a checkout whose
+# versions are published. A feature branch never bumps them; the release PR and its merge commit
+# do, minutes before CI publishes them — there the lock cannot be written and the failure says
+# nothing about the code. That is a release in flight, not a missing tool, so it skips even
+# under SMOKE_PLATFORM=1. A name npm has never heard of is a new package on its way to its first
+# release, not a release in flight, and does not count.
+UNPUBLISHED="$(
+    cd "$MONOREPO" && node -e '
+        const fs = require("fs")
+        const { execFileSync } = require("child_process")
+        for (const dir of fs.readdirSync("packages")) {
+            const file = `packages/${dir}/package.json`
+            if (!fs.existsSync(file)) continue
+            const pkg = JSON.parse(fs.readFileSync(file, "utf8"))
+            if (pkg.private) continue
+            let versions
+            try {
+                const out = execFileSync("npm", ["view", pkg.name, "versions", "--json"], {
+                    encoding: "utf8",
+                    stdio: ["ignore", "pipe", "ignore"],
+                    shell: process.platform === "win32",
+                })
+                versions = [].concat(JSON.parse(out))
+            } catch {
+                continue
+            }
+            if (!versions.includes(pkg.version)) console.log(`${pkg.name}@${pkg.version}`)
+        }
+    '
+)"
+
+if [ -n "$UNPUBLISHED" ]; then
+    step "A site made by a program — skipped"
+    note "these versions are not on npm yet, so this is a release in flight:"
+    for spec in $UNPUBLISHED; do
+        note "  $spec"
+    done
+    exit 0
+fi
+
 PLATFORM="$WORKDIR/platform"
 PLATFORM_PORT="$((PORT + 2))"
 PLATFORM_BASE="http://127.0.0.1:${PLATFORM_PORT}"
