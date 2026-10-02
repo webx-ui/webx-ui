@@ -12,6 +12,7 @@ use Laravel\Passport\Passport;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Auth\Consent\ConsentScreen;
 use WebxUi\Auth\Console\CreateAdminCommand;
+use WebxUi\Auth\Console\McpTokenCommand;
 use WebxUi\Auth\Events\AdminLoggedIn;
 use WebxUi\Auth\Events\AdminLoginFailed;
 use WebxUi\Auth\Http\Middleware\Authenticate;
@@ -74,7 +75,7 @@ class AuthServiceProvider extends ServiceProvider
             __DIR__.'/../resources/views' => resource_path('views/vendor/webx-auth'),
         ], 'webx-auth-views');
 
-        $this->commands([CreateAdminCommand::class]);
+        $this->commands([CreateAdminCommand::class, McpTokenCommand::class]);
     }
 
     /**

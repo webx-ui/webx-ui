@@ -122,6 +122,11 @@ not know — the site's own, a third party's — is listed by what its package s
 still gets the rest, which is also how a run that stopped at npm is finished. Every step that
 fails is a non-zero exit — nothing is a warning a script could miss.
 
+A script that made the site usually wants into its MCP server next, and there is nobody to press
+Allow on the consent screen. `webx:mcp:token --name=… [--scopes=…] [--admin=…] [--json]` prints a
+token for it — what it acts as and what it reaches is in
+[AI agents](./agents#a-key-for-a-program).
+
 ### Existing sites
 
 A site that was not made from the skeleton runs the same command. What it needs first is the

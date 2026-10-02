@@ -208,6 +208,13 @@ HEAD`, там `pnpm install --frozen-lockfile --lockfile-only --ignore-scripts` 
 
 ## Docker и хомлаб
 
+- **Контейнер скелета не поднимается: «The database did not answer within 120s … Access denied»,
+  хотя в `.env` пользователь и пароль верные.** Compose подставляет `${DB_USERNAME}` и остальное в
+  `docker-compose.yml` сначала из окружения shell, а `.env` — только для того, чего там нет. В CI
+  и в смоуке окружение несёт `DB_USERNAME=root` для хоста, и MariaDB в контейнере заводится не под
+  тем пользователем, которым приложение потом входит по `.env`. Звать `docker compose` с
+  `env -u DB_USERNAME -u DB_PASSWORD …` (так делает `platform_compose` в `scripts/php-smoke.sh`);
+  проверка — `docker compose config` показывает `MARIADB_USER` из `.env`.
 - **`mysql-client` в Alpine — это клиент MariaDB, и против MySQL 8 он падает дважды.** Сначала на
   TLS: клиент сам предлагает шифрование и отказывается от самоподписанного сертификата
   («self-signed certificate in certificate chain») — лечится `--ssl-verify-server-cert=0`, не

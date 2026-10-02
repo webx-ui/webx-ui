@@ -7,6 +7,11 @@
 
 ## Мерж и очередь
 
+- **Два зелёных PR давали красный `main`**, пока очередь требовала только `Lint, typecheck, test,
+build`: PHP-ошибка от соседа проходила в `main`. Починено в #398 — PHP CI идёт в очереди, оба PHP-чека обязательны. Симптом, если вернётся: одинаковый крестик PHP у PR, которые PHP не трогали; смотреть `main`.
+- **`actions/setup-node@v5` падает «Unable to locate executable file: pnpm» в джобе без pnpm.**
+  Пятая версия сама включает кеш по полю `packageManager` корневого `package.json` (у нас pnpm).
+  Джобе, которой pnpm не нужен (смоук ставит сайт через npm), — `package-manager-cache: false`.
 - **`gh pr merge` в очередь мержа не ставит — ни с `--squash`, ни без флага.** Он отвечает «The
   merge strategy for main is set by the merge queue» и пытается включить auto-merge, которого у
   репозитория нет: «Auto merge is not allowed for this repository». PR остаётся `OPEN` и `CLEAN`,
