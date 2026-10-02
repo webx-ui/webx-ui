@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-catalog",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "The catalogue of the WebX UI admin panel: products with a gallery, a tree of categories with their filters, and the deleted ones waiting to come back.",
   "license": "MIT",
   "type": "module",
