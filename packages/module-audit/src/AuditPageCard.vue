@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import {
+  toast,
+  WxAlert,
   WxBadge,
+  WxButton,
   WxDrawer,
+  WxImage,
   WxLink,
   WxSkeleton,
   WxTable,
@@ -24,6 +29,7 @@ import type {
   AuditPageCard,
   AuditResourceRow,
   AuditResourceTab,
+  AuditRun,
   AuditSeverity,
 } from './types'
 
@@ -32,9 +38,14 @@ import type {
  * says, its findings, the links that lead in and out of it — with the answer of each own page
  * and the class of each host — what it loads (pictures, CSS, JS) with what each answered, and
  * its structured data with what the types lack.
+ *
+ * «Recheck» asks this one address again (a run of the `urls` scope) and says what of its findings
+ * in the last full run are fixed; «Export» downloads the page — snapshot, findings and links.
  */
 const props = defineProps<{
   run: number
+  /** Where the section lives — the recheck's comparison opens on its runs. */
+  base?: string
   /** The page to show; null keeps the card closed. */
   pageId: number | null
   /** Check ids and their titles in the reader's language, for the findings tab. */
@@ -43,8 +54,65 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [] }>()
 
-const api = createAuditApi(useAdmin())
+/*
+ * The card is wide: a page has long addresses, headers and hreflang lists. Its width is kept under
+ * a key of its own, so one remembered from the narrow card of before does not keep it narrow.
+ */
+
+const context = useAdmin()
+const api = createAuditApi(context)
+const router = useRouter()
 useAuditMessages()
+
+const canRun = context.can('audit.run') || context.can('audit.manage')
+const recheck = ref<AuditRun | null>(null)
+const rechecking = ref(false)
+let timer: ReturnType<typeof setTimeout> | undefined
+
+const POLL_MS = 2000
+
+/* The page in its own words: the run it was crawled in, then one more, of just this address. */
+async function startRecheck(): Promise<void> {
+  if (!card.value) return
+
+  rechecking.value = true
+  recheck.value = null
+
+  try {
+    follow(await api.start('urls', [card.value.page.url]))
+  } catch (error) {
+    rechecking.value = false
+    toast.danger(message(error))
+  }
+}
+
+function follow(run: AuditRun): void {
+  clearTimeout(timer)
+
+  if (run.status === 'queued' || run.status === 'running') {
+    timer = setTimeout(async () => {
+      try {
+        follow(await api.run(run.id))
+      } catch (error) {
+        rechecking.value = false
+        toast.danger(message(error))
+      }
+    }, POLL_MS)
+
+    return
+  }
+
+  rechecking.value = false
+  recheck.value = run
+}
+
+function compareRecheck(): void {
+  if (recheck.value && props.base) {
+    void router.push({ path: `${props.base}/runs`, query: { to: String(recheck.value.id) } })
+  }
+}
+
+onBeforeUnmount(() => clearTimeout(timer))
 
 const t = useTranslate('webx-audit')
 const message = useErrorText()
@@ -119,6 +187,18 @@ const resourceColumns = computed<TableColumn<AuditResourceRow>[]>(() => [
       ]),
 ])
 
+/*
+ * The block indented, the way a person reads JSON. One the server cut at its length limit does not
+ * parse, and is shown as the page printed it rather than not at all.
+ */
+function pretty(source: string): string {
+  try {
+    return JSON.stringify(JSON.parse(source), null, 2)
+  } catch {
+    return source
+  }
+}
+
 function size(row: AuditResourceRow): string {
   if (row.bytes === null) return ''
 
@@ -129,7 +209,13 @@ function size(row: AuditResourceRow): string {
 }
 
 /** The answer, the markup and where the page came from — label and value, in reading order. */
-const facts = computed<[string, string][]>(() => {
+/*
+ * A fact is a line, or a list: hreflang and Open Graph are key and value per row, the key set apart
+ * as a tag so the eye does not run it into the address after it; JSON-LD is the types as tags.
+ */
+type Fact = string | { pairs: [string, string][] } | { tags: string[]; error?: string | null }
+
+const facts = computed<[string, Fact][]>(() => {
   const page = card.value?.page
 
   if (!page) return []
@@ -157,17 +243,35 @@ const facts = computed<[string, string][]>(() => {
     [t('page.field-lang'), page.lang],
     [
       'hreflang',
-      page.hreflang.map((alternate) => `${alternate.lang} ${alternate.url}`).join('\n') || null,
+      page.hreflang.length
+        ? { pairs: page.hreflang.map((alternate) => [alternate.lang, alternate.url]) }
+        : null,
     ],
     [
-      'og',
-      Object.entries(page.og)
-        .map(([key, value]) => `og:${key} ${value}`)
-        .join('\n') || null,
+      'Open Graph',
+      Object.keys(page.og).length
+        ? { pairs: Object.entries(page.og).map(([key, value]) => [`og:${key}`, String(value)]) }
+        : null,
+    ],
+    [
+      'Twitter',
+      Object.keys(page.twitter).length
+        ? {
+            pairs: Object.entries(page.twitter).map(([key, value]) => [
+              `twitter:${key}`,
+              String(value),
+            ]),
+          }
+        : null,
     ],
     [
       'JSON-LD',
-      page.json_ld.map((block) => block.error ?? block.types.join(', ')).join('\n') || null,
+      page.json_ld.length
+        ? {
+            tags: page.json_ld.flatMap((block) => block.types),
+            error: page.json_ld.find((block) => block.error)?.error ?? null,
+          }
+        : null,
     ],
     [t('page.field-word_count'), page.word_count],
     [t('page.field-links_in'), page.links_in],
@@ -179,7 +283,7 @@ const facts = computed<[string, string][]>(() => {
 
   return rows
     .filter(([, value]) => value !== null && value !== undefined && value !== '')
-    .map(([label, value]) => [label, String(value)])
+    .map(([label, value]) => [label, typeof value === 'object' ? (value as Fact) : String(value)])
 })
 
 function statusType(value: number | null): BadgeType {
@@ -192,6 +296,9 @@ function statusType(value: number | null): BadgeType {
 }
 
 async function load(id: number): Promise<void> {
+  clearTimeout(timer)
+  rechecking.value = false
+  recheck.value = null
   card.value = null
   failure.value = null
   links.value = null
@@ -258,7 +365,13 @@ watch(tab, () => {
 </script>
 
 <template>
-  <wx-drawer v-model:open="open" :size="640" resizable persist="webx-audit.page-card">
+  <wx-drawer
+    v-model:open="open"
+    size="min(1100px, 75vw)"
+    :min-size="480"
+    resizable
+    persist="webx-audit.page-card-wide"
+  >
     <template #title>
       <span class="wx-audit-card__title">
         <wx-badge v-if="card" :type="statusType(card.page.status)" size="sm">{{
@@ -269,20 +382,67 @@ watch(tab, () => {
     </template>
 
     <template #extra>
-      <wx-link v-if="card" :href="card.page.url" target="_blank">{{ t('page.open-page') }}</wx-link>
+      <span v-if="card" class="wx-audit-card__extra">
+        <wx-button
+          v-if="canRun"
+          size="sm"
+          icon="refresh"
+          :loading="rechecking"
+          @click="startRecheck"
+          >{{ t('page.recheck') }}</wx-button
+        >
+        <wx-button
+          size="sm"
+          variant="text"
+          icon="download"
+          :href="api.pageFile(props.run, card.page.id)"
+          >{{ t('page.export-page') }}</wx-button
+        >
+        <wx-link :href="card.page.url" target="_blank">{{ t('page.open-page') }}</wx-link>
+      </span>
     </template>
 
     <wx-text v-if="failure" tone="danger">{{ failure }}</wx-text>
     <wx-skeleton v-else-if="!card" :rows="6" />
 
     <div v-else class="wx-audit-card">
+      <wx-alert v-if="rechecking" type="info" :description="t('page.recheck-running')" />
+      <wx-alert
+        v-else-if="recheck && recheck.status === 'done' && recheck.counts"
+        :type="recheck.counts.new > 0 ? 'warning' : 'success'"
+      >
+        <div class="wx-audit-card__recheck">
+          <span>{{ t('page.recheck-fixed', { count: recheck.counts.fixed }) }}</span>
+          <span>{{ t('page.recheck-new', { count: recheck.counts.new }) }}</span>
+          <wx-button v-if="props.base" size="sm" variant="text" @click="compareRecheck">{{
+            t('page.recheck-compare')
+          }}</wx-button>
+        </div>
+      </wx-alert>
+      <wx-alert
+        v-else-if="recheck"
+        type="danger"
+        :description="recheck.error ?? t(`page.status-${recheck.status}`)"
+      />
       <wx-text v-if="card.page.title" weight="semibold">{{ card.page.title }}</wx-text>
 
       <wx-tabs v-model="tab" :items="tabs">
         <dl v-if="tab === 'overview'" class="wx-audit-card__facts">
           <template v-for="[label, value] in facts" :key="label">
             <dt>{{ label }}</dt>
-            <dd>{{ value }}</dd>
+            <dd v-if="typeof value === 'string'">{{ value }}</dd>
+            <dd v-else-if="'pairs' in value" class="wx-audit-card__pairs">
+              <template v-for="([key, text], index) in value.pairs" :key="index">
+                <wx-badge size="sm" class="wx-audit-card__key">{{ key }}</wx-badge>
+                <span>{{ text }}</span>
+              </template>
+            </dd>
+            <dd v-else class="wx-audit-card__tags">
+              <wx-badge v-for="(tag, index) in value.tags" :key="index" type="info" size="sm">{{
+                tag
+              }}</wx-badge>
+              <wx-text v-if="value.error" size="sm" tone="danger">{{ value.error }}</wx-text>
+            </dd>
           </template>
           <template v-if="Object.keys(card.page.headers).length">
             <dt class="wx-audit-card__section">{{ t('page.headers') }}</dt>
@@ -325,7 +485,21 @@ watch(tab, () => {
           @state-change="loadResources"
         >
           <template #cell-url="{ row }">
-            <span class="wx-audit-card__url">{{ row.url }}</span>
+            <span v-if="resourceTab === 'images'" class="wx-audit-card__picture">
+              <wx-image
+                :src="row.url"
+                :alt="row.alt ?? ''"
+                :width="48"
+                :height="48"
+                fit="cover"
+                radius="var(--wx-radius-sm)"
+                preview
+                :preview-label="t('page.view-full')"
+                class="wx-audit-card__thumb"
+              />
+              <span class="wx-audit-card__url">{{ row.url }}</span>
+            </span>
+            <span v-else class="wx-audit-card__url">{{ row.url }}</span>
             <wx-text v-if="row.location" size="sm" tone="muted" class="wx-audit-card__url">
               → {{ row.location }}</wx-text
             >
@@ -381,7 +555,7 @@ watch(tab, () => {
                 >{{ item.type }} — {{ t('page.jsonld-complete') }}</wx-text
               >
             </template>
-            <pre v-if="block.source" class="wx-audit-card__source">{{ block.source }}</pre>
+            <pre v-if="block.source" class="wx-audit-card__source">{{ pretty(block.source) }}</pre>
           </div>
         </div>
 
@@ -454,6 +628,26 @@ watch(tab, () => {
   white-space: pre-line;
 }
 
+/* Key and value in two columns of their own, the key against its value, a row apart from the next pair. */
+.wx-audit-card__pairs {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--wx-space-6) var(--wx-space-8);
+  align-items: baseline;
+}
+
+.wx-audit-card__key {
+  justify-self: end;
+  font-family: var(--wx-font-family-mono);
+}
+
+.wx-audit-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-6);
+}
+
 .wx-audit-card__section {
   margin-top: var(--wx-space-12);
   font-weight: var(--wx-font-weight-semibold);
@@ -477,8 +671,20 @@ watch(tab, () => {
   min-width: 0;
 }
 
+/* A picture is recognised by sight faster than by its hashed file name. */
+.wx-audit-card__picture {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-12);
+  min-width: 0;
+}
+
+.wx-audit-card__thumb {
+  flex: none;
+}
+
 .wx-audit-card__source {
-  max-height: 240px;
+  max-height: 480px;
   margin: 0;
   padding: var(--wx-space-8);
   overflow: auto;
@@ -495,5 +701,19 @@ watch(tab, () => {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wx-space-8);
+}
+
+.wx-audit-card__extra {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-8);
+}
+
+.wx-audit-card__recheck {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-4) var(--wx-space-12);
 }
 </style>

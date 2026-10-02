@@ -29,6 +29,8 @@ final class RunResource extends JsonResource
             'scope' => $run->scope,
             'base_url' => $run->base_url,
             'resolve_to' => $run->resolve_to,
+            // The addresses of a recheck; empty for the other scopes.
+            'urls' => $run->urls(),
             'progress' => [
                 'stage' => $run->progress['stage'] ?? null,
                 'done' => $run->progress['done'] ?? [],

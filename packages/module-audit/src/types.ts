@@ -1,6 +1,7 @@
 export type AuditSeverity = 'error' | 'warning' | 'notice'
 
-export type AuditScope = 'full' | 'quick'
+/** `urls` is a recheck of a few addresses, started from the page's card. */
+export type AuditScope = 'full' | 'quick' | 'urls'
 
 export type AuditRunStatus = 'queued' | 'running' | 'done' | 'failed' | 'cancelled'
 
@@ -28,6 +29,8 @@ export interface AuditRun {
   scope: AuditScope
   base_url: string
   resolve_to: string | null
+  /** The addresses of a recheck; empty for the other scopes. */
+  urls: string[]
   progress: {
     stage: AuditStage | null
     done: AuditStage[]
@@ -93,6 +96,8 @@ export interface AuditIssue {
   url: string | null
   state: 'new' | 'persisting'
   ignored: boolean
+  /** The rule that hides it, on the list of hidden findings. */
+  ignore?: AuditIgnoreRule | null
   /** The fix pressed on it; the finding stays until the next run says it is gone. */
   fixed_with: string | null
   fixed_at: string | null
@@ -131,7 +136,8 @@ export interface AuditIssueQuery {
   check?: string
   severity?: AuditSeverity | null
   group?: string | null
-  state?: 'new' | 'persisting' | null
+  /** `hidden` lists what the rules hide instead of what counts. */
+  state?: 'new' | 'persisting' | 'hidden' | null
   page?: number
   per_page?: number
 }
@@ -146,7 +152,7 @@ export interface AuditPage<T> {
   to: number | null
 }
 
-export type AuditPageSource = 'home' | 'sitemap' | 'registry' | 'link'
+export type AuditPageSource = 'home' | 'sitemap' | 'registry' | 'link' | 'list'
 
 export type AuditHostClass = 'own' | 'own_mirror' | 'dev' | 'external'
 
@@ -282,4 +288,85 @@ export interface AuditLinkRow {
   host: string | null
   host_class: AuditHostClass | null
   absolute: boolean
+}
+
+/** A rule that hides findings on purpose (decision 9): a check, an address or a mask, and why. */
+export interface AuditIgnoreRule {
+  id: number
+  check: string
+  /** An address, a mask (`/search/**`), or empty for every finding of the check. */
+  pattern: string
+  reason: string
+  created_by: string | null
+  created_at: string | null
+  /** The check's title in the reader's language — in the list of rules. */
+  title?: string
+  /** How many stored findings it hides — in the list of rules. */
+  hidden?: number
+}
+
+export type AuditComparisonKind = 'new' | 'persisting' | 'fixed'
+
+/** One check of two runs compared by fingerprint. */
+export interface AuditComparisonRow {
+  check: string
+  title: string
+  severity: AuditSeverity
+  new: number
+  persisting: number
+  fixed: number
+}
+
+export interface AuditComparison {
+  from: AuditRun
+  to: AuditRun
+  checks: AuditComparisonRow[]
+}
+
+/** One host the site points at, on the «Outgoing» screen. */
+export interface AuditHostRow {
+  host: string
+  class: AuditHostClass
+  links: number
+  pages: number
+  /** Links that answered 4xx, 5xx or nothing. */
+  broken: number
+  nofollow: number
+  /** Fields in the database that hold an address on it. */
+  fields: number
+  /** The earliest run among the snapshots kept that saw it. */
+  first_seen: string | null
+}
+
+/** A link to a host from a crawled page. */
+export interface AuditHostPage {
+  page_id: number
+  page: string
+  url: string
+  kind: string
+  anchor: string | null
+  rel: string | null
+  status: number | null
+}
+
+/** A field of the database that holds an address on a host. */
+export interface AuditHostField {
+  source: string
+  record_id: string
+  record_label: string
+  field: string
+  locale: string | null
+  url: string
+  published: boolean | number
+  edit_url: string | null
+}
+
+export interface AuditHosts {
+  crawled_run: number | null
+  database_run: number | null
+  classes: Partial<Record<AuditHostClass, number>>
+  hosts: AuditHostRow[]
+  /** With `host`: where it stands. */
+  pages?: AuditHostPage[]
+  fields?: AuditHostField[]
 }

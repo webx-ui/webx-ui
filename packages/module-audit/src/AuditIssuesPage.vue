@@ -21,10 +21,10 @@ import type { AuditCheckRow, AuditSeverity } from './types'
 
 /**
  * The findings of the last finished run (§8): one row per check, worst first; a row opens into
- * its addresses. The «?» beside a check says what was found, why it matters and how to fix it —
+ * its addresses. «Hidden» in the state filter lists what the rules hide, each with its reason. The «?» beside a check says what was found, why it matters and how to fix it —
  * the three texts every check carries.
  */
-const props = defineProps<{ base: string; settingsPath: string }>()
+const props = defineProps<{ base: string }>()
 
 const api = createAuditApi(useAdmin())
 useAuditMessages()
@@ -40,7 +40,9 @@ const expanded = ref<(string | number)[]>([])
 
 const severity = ref<AuditSeverity | null>(null)
 const group = ref<string | null>(null)
-const state = ref<'new' | 'persisting' | null>(null)
+type State = 'new' | 'persisting' | 'hidden'
+
+const state = ref<State | null>(null)
 
 const query = computed(() => ({ severity: severity.value, group: group.value, state: state.value }))
 const filtersCount = computed(
@@ -82,7 +84,10 @@ const groupOptions = computed(() =>
 )
 
 const stateOptions = computed(() =>
-  (['new', 'persisting'] as const).map((value) => ({ value, label: t(`page.state-${value}`) })),
+  (['new', 'persisting', 'hidden'] as const).map((value) => ({
+    value,
+    label: t(`page.state-${value}`),
+  })),
 )
 
 /* The selects hand back `string | number`; the filters only ever hold the values offered. */
@@ -113,7 +118,7 @@ onMounted(load)
 </script>
 
 <template>
-  <audit-layout :base="props.base" :settings-path="props.settingsPath" current="issues">
+  <audit-layout :base="props.base" current="issues">
     <wx-table
       v-model:expanded="expanded"
       :data="checks ?? []"
@@ -147,7 +152,7 @@ onMounted(load)
             :options="stateOptions"
             :placeholder="t('page.any-state')"
             clearable
-            @update:model-value="state = pick<'new' | 'persisting'>($event)"
+            @update:model-value="state = pick<State>($event)"
           />
         </div>
       </template>
@@ -190,6 +195,8 @@ onMounted(load)
           :run="run"
           :query="{ ...query, check: row.id }"
           :fixable="(row.fixes ?? []).length > 0"
+          :title="row.title"
+          @changed="load"
         />
       </template>
     </wx-table>

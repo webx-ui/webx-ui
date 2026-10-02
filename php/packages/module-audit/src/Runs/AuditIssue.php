@@ -65,4 +65,14 @@ class AuditIssue extends Model
     {
         return $this->belongsTo(AuditRun::class, 'run_id');
     }
+
+    /**
+     * The rule that hides it, if one does.
+     *
+     * @return BelongsTo<AuditIgnore, $this>
+     */
+    public function ignore(): BelongsTo
+    {
+        return $this->belongsTo(AuditIgnore::class, 'ignored_by');
+    }
 }

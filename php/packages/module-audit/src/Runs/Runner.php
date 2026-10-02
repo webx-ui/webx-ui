@@ -12,6 +12,12 @@ use WebxUi\Audit\AuditSettings;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Checks\AuditContext;
 use WebxUi\Audit\Checks\Finding;
+use WebxUi\Audit\Checks\Hosts\AbsoluteOwn;
+use WebxUi\Audit\Checks\Hreflang\HreflangCheck;
+use WebxUi\Audit\Checks\Indexing;
+use WebxUi\Audit\Checks\Page;
+use WebxUi\Audit\Checks\Page\LinkCheck;
+use WebxUi\Audit\Checks\Page\PageCheck;
 use WebxUi\Audit\Checks\Severity;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Audit\Content\ContentScanner;
@@ -20,6 +26,7 @@ use WebxUi\Audit\Crawl\Crawler;
 use WebxUi\Audit\Crawl\Resources;
 use WebxUi\Audit\Crawl\RobotsRules;
 use WebxUi\Audit\Crawl\Seeder;
+use WebxUi\Audit\Crawl\Urls;
 use WebxUi\Audit\Probes\Prober;
 use WebxUi\Audit\Probes\ProbeSet;
 use WebxUi\Audit\Probes\SiteClient;
@@ -45,6 +52,22 @@ final class Runner
     private const STAGES = ['probes', 'database', 'crawl', 'analyse'];
 
     /**
+     * Checks of a page that need the rest of the snapshot to be fair: on a recheck of five
+     * addresses every page is an orphan, every link leads outside the snapshot, and a link that
+     * stands on every page stands on more than half of them.
+     */
+    private const WHOLE_SITE = [
+        Page\Orphan::class,
+        Page\Depth::class,
+        Page\CanonicalBroken::class,
+        Page\BrokenLinks::class,
+        Page\LinksToRedirect::class,
+        Indexing\SitemapBadUrl::class,
+        Indexing\SitemapMissingPage::class,
+        AbsoluteOwn::class,
+    ];
+
+    /**
      * Panel modules that keep text in the database: installed without a content source, they are
      * what the overview lists as not searched (§7).
      */
@@ -65,10 +88,19 @@ final class Runner
         private readonly Seeder $seeder,
         private readonly Crawler $crawler,
         private readonly Resources $resources,
+        private readonly Ignores $ignores,
     ) {}
 
-    public function start(string $scope, ?string $startedBy = null): AuditRun
+    /**
+     * @param  list<string>  $urls  The addresses of a `urls` run — absolute, on the audited host.
+     */
+    public function start(string $scope, ?string $startedBy = null, array $urls = []): AuditRun
     {
+        $this->settings->apply();
+
+        $urls = array_values(array_unique(array_filter(array_map(Urls::normalise(...), $urls))));
+        $list = $scope === AuditRun::URLS;
+
         /** @var AuditRun $run */
         $run = AuditRun::query()->create([
             'status' => AuditRun::QUEUED,
@@ -76,8 +108,14 @@ final class Runner
             'base_url' => $this->settings->baseUrl(),
             'resolve_to' => $this->settings->resolveTo(),
             'started_by' => $startedBy,
-            'pages_limit' => max(1, (int) $this->config->get('webx-audit.pages_limit', 1000)),
-            'progress' => ['stage' => 'probes', 'done' => []],
+            'pages_limit' => $list ? max(1, count($urls)) : max(1, (int) $this->config->get('webx-audit.pages_limit', 1000)),
+            // A recheck has nothing to probe and no database to read: straight to its pages.
+            'progress' => [
+                'stage' => $list ? 'crawl' : 'probes',
+                'done' => [],
+                'exclude' => $list ? [] : array_values((array) $this->config->get('webx-audit.excluded', [])),
+                ...($list ? ['urls' => array_slice($urls, 0, AuditRun::URLS_LIMIT)] : []),
+            ],
         ]);
 
         return $run;
@@ -103,6 +141,9 @@ final class Runner
         if ($run->status === AuditRun::QUEUED) {
             $run->update(['status' => AuditRun::RUNNING, 'started_at' => Carbon::now()]);
         }
+
+        // Every piece reads the settings again: a queue worker outlives the save that changed them.
+        $this->settings->apply();
 
         try {
             $stage = (string) ($run->progress['stage'] ?? 'probes');
@@ -238,6 +279,10 @@ final class Runner
 
         $collected = ['config', 'probes', 'database', 'crawl'];
         $checks = $this->checks->runnable($collected, 'crawl');
+
+        if ($run->scope === AuditRun::URLS) {
+            $checks = array_values(array_filter($checks, self::judgesOnePage(...)));
+        }
         $context = new AuditContext($run, $hosts, $client, new ProbeSet, $this->config);
         $first = $state['check'] ?? 0;
 
@@ -271,7 +316,15 @@ final class Runner
         $previous = $run->previous();
         $before = $previous === null
             ? []
-            : AuditIssue::query()->where('run_id', $previous->id)->pluck('check', 'fingerprint')->all();
+            : AuditIssue::query()
+                ->where('run_id', $previous->id)
+                ->whereNull('ignored_by')
+                // A recheck answers for its own addresses, not for the rest of the full run.
+                ->when($run->scope === AuditRun::URLS, static fn ($query) => $query->whereIn('url', $run->urls()))
+                ->pluck('check', 'fingerprint')
+                ->all();
+
+        $this->ignores->apply($run);
 
         if ($before !== []) {
             AuditIssue::query()
@@ -282,6 +335,7 @@ final class Runner
 
         /** @var list<string> $ran */
         $ran = $run->progress['checks'] ?? [];
+        // Hidden or not, a finding that is still there is not fixed.
         $now = AuditIssue::query()->where('run_id', $run->id)->pluck('fingerprint')->flip()->all();
         $fixed = 0;
 
@@ -298,32 +352,89 @@ final class Runner
         ]);
 
         $this->pruneSnapshots();
+        $this->pruneRuns();
 
         return true;
     }
 
     /**
+     * The counts of a finished run again — after a rule hid some of its findings or showed them
+     * again. "Fixed" and the run before stay as the analysis found them.
+     */
+    public function recount(AuditRun $run): void
+    {
+        /** @var list<string> $ran */
+        $ran = $run->progress['checks'] ?? [];
+
+        $run->update(['counts' => [...($run->counts ?? []), ...$this->counts($run, $ran)]]);
+    }
+
+    /**
      * Page snapshots for the last few full runs only (decision 8) — they are the bulk of the
-     * module's tables. The findings stay: "fixed" and the history read those.
+     * module's tables. The findings stay: "fixed" and the history read those. Rechecks keep as
+     * many of their own, so a busy day of rechecks does not push the full run's pages out.
      */
     private function pruneSnapshots(): void
     {
         $keep = max(1, (int) $this->config->get('webx-audit.keep_snapshots', 5));
 
+        foreach ([AuditRun::FULL, AuditRun::URLS] as $scope) {
+            $old = AuditRun::query()
+                ->where('scope', $scope)
+                ->whereIn('status', [AuditRun::DONE, AuditRun::FAILED, AuditRun::CANCELLED])
+                ->orderByDesc('id')
+                ->skip($keep)
+                ->take(PHP_INT_MAX)
+                ->pluck('id')
+                ->all();
+
+            if ($old !== []) {
+                AuditLink::query()->whereIn('run_id', $old)->delete();
+                AuditResource::query()->whereIn('run_id', $old)->delete();
+                AuditPage::query()->whereIn('run_id', $old)->delete();
+            }
+        }
+    }
+
+    /**
+     * Runs past the number the settings keep, with everything they found (§8). The newest
+     * finished full run is never among them, whatever the number: the pages screen reads it.
+     */
+    private function pruneRuns(): void
+    {
+        $keep = max(1, (int) $this->config->get('webx-audit.keep_runs', 50));
+        $crawled = AuditRun::query()->where('status', AuditRun::DONE)->where('scope', AuditRun::FULL)->max('id');
+
         $old = AuditRun::query()
-            ->where('scope', AuditRun::FULL)
             ->whereIn('status', [AuditRun::DONE, AuditRun::FAILED, AuditRun::CANCELLED])
+            ->when($crawled !== null, static fn ($query) => $query->where('id', '<>', $crawled))
             ->orderByDesc('id')
             ->skip($keep)
             ->take(PHP_INT_MAX)
             ->pluck('id')
             ->all();
 
-        if ($old !== []) {
-            AuditLink::query()->whereIn('run_id', $old)->delete();
-            AuditResource::query()->whereIn('run_id', $old)->delete();
-            AuditPage::query()->whereIn('run_id', $old)->delete();
+        foreach (array_chunk($old, 100) as $chunk) {
+            // One by one table rather than trusting the cascade: SQLite keeps foreign keys off
+            // unless asked, and a run's rows outlived it there.
+            AuditLink::query()->whereIn('run_id', $chunk)->delete();
+            AuditResource::query()->whereIn('run_id', $chunk)->delete();
+            AuditPage::query()->whereIn('run_id', $chunk)->delete();
+            AuditIssue::query()->whereIn('run_id', $chunk)->delete();
+            ContentUrl::query()->whereIn('run_id', $chunk)->delete();
+            AuditRun::query()->whereIn('id', $chunk)->delete();
         }
+    }
+
+    /** Whether a check of the crawl can judge a page on its own — what a recheck runs. */
+    private static function judgesOnePage(AuditCheck $check): bool
+    {
+        if (! $check instanceof PageCheck && ! $check instanceof LinkCheck) {
+            return false;
+        }
+
+        // These measure a page against the rest of the site, which a recheck did not crawl.
+        return ! $check instanceof HreflangCheck && ! in_array($check::class, self::WHOLE_SITE, true);
     }
 
     /**

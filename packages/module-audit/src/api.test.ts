@@ -128,4 +128,59 @@ describe('createAuditApi', () => {
       '/api/cms/audit/runs/7/pages/export?search=blog&status=4xx&columns=url%2Cstatus',
     )
   })
+
+  it('rechecks a list of addresses and compares two runs', async () => {
+    const post = vi.fn().mockResolvedValue({ data: { id: 5, scope: 'urls' } })
+    const get = vi.fn().mockResolvedValue({ data: { from: { id: 3 }, to: { id: 5 }, checks: [] } })
+    const api = createAuditApi(context({ get, post }))
+
+    await api.start('urls', ['https://shop.com/about'])
+    expect(post).toHaveBeenCalledWith('/api/cms/audit/runs', {
+      scope: 'urls',
+      urls: ['https://shop.com/about'],
+    })
+
+    await api.compare(5)
+    expect(get).toHaveBeenCalledWith('/api/cms/audit/runs/compare', {
+      query: { to: 5, from: undefined },
+    })
+    expect(api.pageFile(7, 12)).toBe('/api/cms/audit/runs/7/pages/12/export')
+  })
+
+  it('hides with a reason, counts first with a dry run, and shows again', async () => {
+    const post = vi
+      .fn()
+      .mockResolvedValueOnce({ data: { hidden: 3 } })
+      .mockResolvedValueOnce({ data: { id: 2, check: 'indexing.noindex' } })
+    const del = vi.fn().mockResolvedValue({ data: { id: 2 } })
+    const api = createAuditApi(context({ post, delete: del }))
+
+    await expect(
+      api.hidePreview({ check: 'indexing.noindex', pattern: '/search/**' }),
+    ).resolves.toBe(3)
+    expect(post).toHaveBeenNthCalledWith(1, '/api/cms/audit/ignores', {
+      check: 'indexing.noindex',
+      pattern: '/search/**',
+      dry_run: true,
+    })
+
+    await api.hide({ check: 'indexing.noindex', pattern: '/search/**', reason: 'The search.' })
+    expect(post).toHaveBeenLastCalledWith('/api/cms/audit/ignores', {
+      check: 'indexing.noindex',
+      pattern: '/search/**',
+      reason: 'The search.',
+    })
+
+    await api.unhide(2)
+    expect(del).toHaveBeenCalledWith('/api/cms/audit/ignores/2')
+  })
+
+  it('asks for one host with the filters it was given, and nothing it was not', async () => {
+    const get = vi.fn().mockResolvedValue({ data: { hosts: [] } })
+
+    await createAuditApi(context({ get })).hosts({ host: 'dev.shop.com' })
+    expect(get).toHaveBeenCalledWith('/api/cms/audit/hosts', {
+      query: { class: undefined, search: undefined, host: 'dev.shop.com' },
+    })
+  })
 })

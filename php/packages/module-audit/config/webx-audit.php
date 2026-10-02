@@ -41,7 +41,10 @@ return [
     |
     | Polite by default (decision 7): two requests at a time and a thousand
     | pages at most. Snapshots of pages are kept for the last few full runs —
-    | the findings outlive them.
+    | the findings outlive them, for as many runs as `keep_runs` says.
+    |
+    | Each of these, the thresholds below and the excluded paths can be set on
+    | the section's settings screen; what is set there wins over this file.
     |
     */
 
@@ -50,6 +53,12 @@ return [
     'concurrency' => 2,
 
     'keep_snapshots' => 5,
+
+    'keep_runs' => 50,
+
+    // Paths the crawl does not ask, as masks: `*` is a stretch without a slash,
+    // `**` one with them — `/search/**`, `/cart`. The settings screen adds its own.
+    'exclude' => [],
 
     // What the pages load and where their external links lead, asked once
     // per run however many pages share it (§3, stage 5): pictures first,
@@ -61,8 +70,8 @@ return [
     | Thresholds
     |---------------------------------------------------------------------------
     |
-    | The defaults of §5. They move to the section's settings in A5; until then
-    | a project that disagrees publishes this file.
+    | The defaults of §5. The ones people tune — lengths, words, depth, the
+    | weight of a picture — are on the settings screen; the rest live here.
     |
     */
 

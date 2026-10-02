@@ -86,6 +86,37 @@ final class PageController
         ]);
     }
 
+    /**
+     * One page as a file (§8, «Export» on the card): the whole snapshot, its findings with their
+     * details, and its links out with what each answered — what someone fixing the page by hand
+     * wants on their desk, in a form a script can read too.
+     */
+    public function exportOne(AuditRun $run, AuditPage $page): JsonResponse
+    {
+        $card = $this->show($run, $page)->getData(true);
+        $links = AuditLink::query()->where('from_page_id', $page->id)->with('resource')->orderBy('id')->limit(5000)->get();
+
+        $body = [
+            'run' => ['id' => $run->id, 'scope' => $run->scope, 'base_url' => $run->base_url, 'finished_at' => $run->finished_at?->toAtomString()],
+            ...(is_array($card['data'] ?? null) ? $card['data'] : []),
+            'links' => $links->map(static fn (AuditLink $link): array => [
+                'url' => $link->to_url,
+                'kind' => $link->kind,
+                'anchor' => $link->anchor,
+                'rel' => $link->rel,
+                'host_class' => $link->host_class,
+                'status' => $link->resource->status ?? $link->status,
+            ])->all(),
+        ];
+
+        $name = 'audit-'.$run->id.'-page-'.$page->id.'.json';
+
+        return response()->json($body, 200, [
+            'Content-Disposition' => 'attachment; filename="'.$name.'"',
+            'Cache-Control' => 'private, no-store',
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    }
+
     /** One page: the whole snapshot, its findings, and how many links lead in and out. */
     public function show(AuditRun $run, AuditPage $page): JsonResponse
     {

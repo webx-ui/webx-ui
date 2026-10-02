@@ -33,10 +33,18 @@ final class Seeder
         $base = rtrim($run->base_url, '/');
         $frontier = new Frontier($run);
 
-        $frontier->add([Urls::normalise($base.'/') ?? $base.'/'], AuditPage::HOME, 0);
-
         $robotsAnswer = $client->get($base.'/robots.txt');
         $robots = $robotsAnswer->ok() ? RobotsRules::parse($robotsAnswer->body) : new RobotsRules;
+
+        // A recheck asks its addresses and nothing else; robots.txt is still read, for the
+        // "closed in robots.txt" mark on each of them.
+        if ($run->scope === AuditRun::URLS) {
+            $frontier->add($run->urls(), AuditPage::LIST, null);
+
+            return $robots;
+        }
+
+        $frontier->add([Urls::normalise($base.'/') ?? $base.'/'], AuditPage::HOME, 0);
 
         $this->sitemaps($base, $robots, $client, $hosts, $frontier);
         $this->registry($base, $frontier);

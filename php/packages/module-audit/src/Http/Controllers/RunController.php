@@ -11,19 +11,27 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Validation\Rule;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Audit\AuditSettings;
+use WebxUi\Audit\Checks\AuditChecks;
+use WebxUi\Audit\Checks\CheckTexts;
+use WebxUi\Audit\Http\Resources\IssueResource;
 use WebxUi\Audit\Http\Resources\RunResource;
 use WebxUi\Audit\Runs\AuditRun;
+use WebxUi\Audit\Runs\Comparison;
 use WebxUi\Audit\Runs\RunAuditStage;
 use WebxUi\Audit\Runs\Runner;
 
 /**
- * The runs: the list, the latest one for the overview, starting one and cancelling it.
+ * The runs: the list, the latest one for the overview, starting one and cancelling it, and two
+ * of them compared.
  */
 final class RunController
 {
     public function __construct(
         private readonly Runner $runner,
         private readonly Config $config,
+        private readonly AuditChecks $checks,
+        private readonly AuditSettings $settings,
     ) {}
 
     public function index(Request $request): AnonymousResourceCollection
@@ -44,7 +52,7 @@ final class RunController
         /** @var AuditRun|null $active */
         $active = AuditRun::query()->active()->orderByDesc('id')->first();
         /** @var AuditRun|null $done */
-        $done = AuditRun::query()->where('status', AuditRun::DONE)->orderByDesc('id')->first();
+        $done = AuditRun::query()->siteWide()->where('status', AuditRun::DONE)->orderByDesc('id')->first();
         /** @var AuditRun|null $last */
         $last = AuditRun::query()->orderByDesc('id')->first();
         /** @var AuditRun|null $crawled */
@@ -74,6 +82,8 @@ final class RunController
     {
         $validated = $request->validate([
             'scope' => ['required', 'string', Rule::in(AuditRun::SCOPES)],
+            'urls' => ['required_if:scope,'.AuditRun::URLS, 'array', 'max:'.AuditRun::URLS_LIMIT],
+            'urls.*' => ['string', 'max:2048'],
         ]);
 
         if ($this->syncQueue()) {
@@ -84,12 +94,97 @@ final class RunController
             return ApiResponse::message((string) __('webx-audit::page.already-running'), 409);
         }
 
+        $scope = (string) $validated['scope'];
+        $urls = $scope === AuditRun::URLS ? self::ownUrls((array) $validated['urls'], $this->settings->baseUrl()) : [];
+
+        if ($scope === AuditRun::URLS && $urls === []) {
+            return ApiResponse::message((string) __('webx-audit::page.urls-foreign'), 422);
+        }
+
         $user = $request->user('cms') ?? $request->user();
-        $run = $this->runner->start((string) $validated['scope'], $user === null ? null : (string) $user->getAuthIdentifier());
+        $run = $this->runner->start($scope, $user === null ? null : (string) $user->getAuthIdentifier(), $urls);
 
         $bus->dispatch(new RunAuditStage($run->id));
 
         return ApiResponse::data(new RunResource($run->refresh()), 201);
+    }
+
+    /**
+     * Two runs compared by fingerprint: one row per check with what is new in `to`, what both
+     * have and what `from` had that `to` no longer has. Without `from`, `to` is compared with the
+     * run it was analysed against.
+     */
+    public function compare(Request $request): JsonResponse
+    {
+        [$from, $to] = $this->pair($request);
+        $rows = (new Comparison($from, $to))->summary();
+
+        return ApiResponse::data([
+            'from' => new RunResource($from),
+            'to' => new RunResource($to),
+            'checks' => array_map(function (array $row): array {
+                $check = $this->checks->get($row['check']);
+
+                return [...$row, 'title' => $check === null ? $row['check'] : CheckTexts::of($check)['title']];
+            }, $rows),
+        ]);
+    }
+
+    /** The findings of one check and one kind (`new`, `persisting`, `fixed`) of a comparison. */
+    public function compareIssues(Request $request): AnonymousResourceCollection
+    {
+        $request->validate([
+            'kind' => ['required', Rule::in(Comparison::KINDS)],
+            'check' => ['nullable', 'string', 'max:64'],
+        ]);
+
+        [$from, $to] = $this->pair($request);
+
+        $query = (new Comparison($from, $to))
+            ->issues($request->string('kind')->toString())
+            ->when($request->filled('check'), static fn ($query) => $query->where('check', $request->string('check')->toString()))
+            ->orderBy('id');
+
+        return IssueResource::collection($query->paginate(min(200, max(1, $request->integer('per_page', 50)))));
+    }
+
+    /**
+     * @return array{0: AuditRun, 1: AuditRun}
+     */
+    private function pair(Request $request): array
+    {
+        $request->validate([
+            'to' => ['required', 'integer'],
+            'from' => ['nullable', 'integer'],
+        ]);
+
+        $to = AuditRun::query()->findOrFail($request->integer('to'));
+        $from = $request->filled('from') ? AuditRun::query()->findOrFail($request->integer('from')) : $to->previous();
+
+        abort_if($from === null, 404);
+
+        return [$from, $to];
+    }
+
+    /**
+     * The addresses of a recheck that belong to the audited site — a recheck does not knock on
+     * somebody else's door.
+     *
+     * @param  array<mixed>  $urls
+     * @return list<string>
+     */
+    public static function ownUrls(array $urls, string $base): array
+    {
+        $host = strtolower((string) parse_url($base, PHP_URL_HOST));
+        $own = [];
+
+        foreach ($urls as $url) {
+            if (is_string($url) && $host !== '' && strtolower((string) parse_url(trim($url), PHP_URL_HOST)) === $host) {
+                $own[] = trim($url);
+            }
+        }
+
+        return array_slice(array_values(array_unique($own)), 0, AuditRun::URLS_LIMIT);
     }
 
     public function cancel(AuditRun $run): JsonResponse

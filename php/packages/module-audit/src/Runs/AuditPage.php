@@ -66,6 +66,9 @@ class AuditPage extends Model
 
     public const LINK = 'link';
 
+    /** Named by whoever started a recheck of a few addresses. */
+    public const LIST = 'list';
+
     protected $table = 'audit_pages';
 
     protected $guarded = ['id'];

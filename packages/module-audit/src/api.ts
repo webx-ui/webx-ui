@@ -1,8 +1,13 @@
 import type { AdminContext } from '@webx-ui/module-admin'
 import type {
   AuditCheckRow,
+  AuditComparison,
+  AuditComparisonKind,
   AuditFixOffer,
   AuditFixResult,
+  AuditHosts,
+  AuditHostClass,
+  AuditIgnoreRule,
   AuditIssue,
   AuditIssueQuery,
   AuditLatest,
@@ -21,8 +26,13 @@ export interface AuditApi {
   /** The run that is going, the last one that finished, and whether the queue can take one. */
   latest(): Promise<AuditLatest>
   run(id: number): Promise<AuditRun>
-  /** Queues a run; refused with 409 on a `sync` queue or while another one is going. */
-  start(scope: AuditScope): Promise<AuditRun>
+  /** Every run, newest first — the history. */
+  runs(query?: { page?: number; per_page?: number }): Promise<AuditPage<AuditRun>>
+  /**
+   * Queues a run; refused with 409 on a `sync` queue or while another one is going. A `urls` run
+   * is a recheck of the addresses given.
+   */
+  start(scope: AuditScope, urls?: string[]): Promise<AuditRun>
   cancel(id: number): Promise<AuditRun>
   /** The checks of a run that found something, worst first. */
   checks(run: number, query?: AuditIssueQuery): Promise<AuditCheckRow[]>
@@ -49,6 +59,36 @@ export interface AuditApi {
   fixes(run: number, issue: number): Promise<AuditFixOffer[]>
   /** Presses a fix — or, with `dryRun`, only asks again what it would change. */
   fix(run: number, issue: number, fix: string, dryRun?: boolean): Promise<AuditFixResult>
+  /** Where the browser downloads one page of a run — its snapshot, findings and links. */
+  pageFile(run: number, id: number): string
+  /** Two runs by fingerprint; without `from`, `to` against the run it was analysed against. */
+  compare(to: number, from?: number | null): Promise<AuditComparison>
+  /** The findings of one kind of a comparison, of one check when given. */
+  compareIssues(query: {
+    to: number
+    from?: number | null
+    kind: AuditComparisonKind
+    check?: string
+    page?: number
+    per_page?: number
+  }): Promise<AuditPage<AuditIssue>>
+  /** Every host the site points at, by class — stands first; with `host`, where it stands. */
+  hosts(query?: {
+    class?: AuditHostClass | null
+    search?: string
+    host?: string
+  }): Promise<AuditHosts>
+  /** The hiding rules. */
+  ignores(): Promise<AuditIgnoreRule[]>
+  /** Hides what a rule matches, with the reason. */
+  hide(rule: { check: string; pattern: string; reason: string }): Promise<AuditIgnoreRule>
+  /** How many findings of the last run a rule would hide — nothing is hidden. */
+  hidePreview(rule: { check: string; pattern: string }): Promise<number>
+  /** Removes a rule: its findings count again. */
+  unhide(id: number): Promise<void>
+  /** The section's settings, keyed as the screen names them. */
+  settings(): Promise<Record<string, unknown>>
+  saveSettings(values: Record<string, unknown>): Promise<Record<string, unknown>>
 }
 
 /** The query of the pages screen as the API reads it: `f[field]=op:value` for each filter. */
@@ -96,7 +136,18 @@ export function createAuditApi(admin: AdminContext): AuditApi {
 
     run: (id) => admin.http.get<{ data: AuditRun }>(`${base}/runs/${id}`).then(data),
 
-    start: (scope) => admin.http.post<{ data: AuditRun }>(`${base}/runs`, { scope }).then(data),
+    runs: (query = {}) =>
+      admin.http
+        .get<{
+          data: AuditRun[]
+          meta: Omit<AuditPage<AuditRun>, 'data'>
+        }>(`${base}/runs`, { query })
+        .then((body) => ({ ...body.meta, data: body.data })),
+
+    start: (scope, urls) =>
+      admin.http
+        .post<{ data: AuditRun }>(`${base}/runs`, scope === 'urls' ? { scope, urls } : { scope })
+        .then(data),
 
     cancel: (id) => admin.http.post<{ data: AuditRun }>(`${base}/runs/${id}/cancel`, {}).then(data),
 
@@ -169,5 +220,56 @@ export function createAuditApi(admin: AdminContext): AuditApi {
           dry_run: dryRun,
         })
         .then(data),
+
+    pageFile: (run, id) => `${base}/runs/${run}/pages/${id}/export`,
+
+    compare: (to, from) =>
+      admin.http
+        .get<{
+          data: AuditComparison
+        }>(`${base}/runs/compare`, { query: { to, from: from ?? undefined } })
+        .then(data),
+
+    compareIssues: (query) =>
+      admin.http
+        .get<{
+          data: AuditIssue[]
+          meta: Omit<AuditPage<AuditIssue>, 'data'>
+        }>(`${base}/runs/compare/issues`, {
+          query: { ...query, from: query.from ?? undefined, check: query.check || undefined },
+        })
+        .then((body) => ({ ...body.meta, data: body.data })),
+
+    hosts: (query = {}) =>
+      admin.http
+        .get<{ data: AuditHosts }>(`${base}/hosts`, {
+          query: {
+            class: query.class || undefined,
+            search: query.search || undefined,
+            host: query.host || undefined,
+          },
+        })
+        .then(data),
+
+    ignores: () => admin.http.get<{ data: AuditIgnoreRule[] }>(`${base}/ignores`).then(data),
+
+    hide: (rule) => admin.http.post<{ data: AuditIgnoreRule }>(`${base}/ignores`, rule).then(data),
+
+    hidePreview: (rule) =>
+      admin.http
+        .post<{ data: { hidden: number } }>(`${base}/ignores`, { ...rule, dry_run: true })
+        .then((body) => body.data.hidden),
+
+    unhide: (id) => admin.http.delete(`${base}/ignores/${id}`).then(() => undefined),
+
+    settings: () =>
+      admin.http
+        .get<{ data: { values: Record<string, unknown> } }>(`${base}/settings`)
+        .then((body) => body.data.values),
+
+    saveSettings: (values) =>
+      admin.http
+        .put<{ data: { values: Record<string, unknown> } }>(`${base}/settings`, { values })
+        .then((body) => body.data.values),
   }
 }
