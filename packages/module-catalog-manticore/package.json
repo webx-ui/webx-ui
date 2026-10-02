@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-catalog-manticore",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "The search index of the WebX UI catalogue on Manticore, in the admin panel: the server, each language's table against the database, the queue, and the rebuild as a job with its progress.",
   "license": "MIT",
   "type": "module",

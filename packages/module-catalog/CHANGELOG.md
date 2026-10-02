@@ -1,5 +1,19 @@
 # @webx-ui/module-catalog
 
+## 0.8.0
+
+### Minor Changes
+
+- 41f2059: `WxTable` takes `selectRowLabel` and `selectAllLabel` for its checkboxes, and every selectable list of the panel passes them translated (`filters.select-row`, `filters.select-all` in `module-admin`). The history shows a list of names as the names, comma-separated, instead of JSON. The catalogue's list of products warns when the database engine is past `sql_engine_limit`; the tree of categories shows an address without the trailing slash; the category picker of a bulk action says «Choose a category».
+
+### Patch Changes
+
+- 6743abb: The list of products sizes its columns by what they hold, so a 1440px window shows three satellite columns instead of one: a satellite 120, the price 120, the state 130, the category 140, the name from 180.
+- Updated dependencies [41f2059]
+  - @webx-ui/core@0.35.0
+  - @webx-ui/module-admin@0.23.0
+  - @webx-ui/schema@0.7.1
+
 ## 0.7.0
 
 ### Minor Changes

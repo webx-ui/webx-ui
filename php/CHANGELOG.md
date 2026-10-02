@@ -1,5 +1,17 @@
 # @webx-ui/php
 
+## 0.57.0
+
+### Minor Changes
+
+- 41f2059: `module-catalog`: `Catalog::outgrown()` — the list of products answers `outgrown` while the database engine is past `sql_engine_limit`, and `webx:doctor` reads the same; `RootCheck` in `webx:doctor` names the pages a switched-on root of the catalogue hides. `module-admin`: `filters.select-row` and `filters.select-all` in every language. `module-catalog-landings` requires PHP 8.4, like the rest.
+- 6743abb: `webx:demo` seeds the catalogue's satellites on the core's demo products: labels, stock, brands, properties (with groups, values, intervals and sets on the demo tree) and landings, each removable with `webx:demo --remove`. `catalog-landings` asks for the brands, labels and properties demos first when they are installed. A brand forced out of the trash takes its links to products with it.
+
+### Patch Changes
+
+- 3f91512: The panel's list of products answers with the counts of every facet again: `facets` lost every facet with values (terms, the category tree) but the last one, which a variable reused under the same name overwrote.
+- 4b414c5: The events demo and the tests describe their sample data in neutral words.
+
 ## 0.56.0
 
 ### Minor Changes
