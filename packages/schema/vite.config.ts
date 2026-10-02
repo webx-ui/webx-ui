@@ -6,10 +6,14 @@ import dts from 'vite-plugin-dts'
 export default defineConfig({
   plugins: [
     vue(),
-    dts({
-      tsconfigPath: './tsconfig.build.json',
-      cleanVueFileName: true,
-    }),
+    // Declarations are most of the build and only typecheck reads them; CI's test and docs
+    // jobs set WEBX_SKIP_DTS.
+    process.env.WEBX_SKIP_DTS
+      ? null
+      : dts({
+          tsconfigPath: './tsconfig.build.json',
+          cleanVueFileName: true,
+        }),
   ],
   build: {
     target: 'es2022',

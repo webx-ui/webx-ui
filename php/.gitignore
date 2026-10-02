@@ -3,3 +3,4 @@
 /.phpstan.cache/
 composer.lock
 .phpunit.result.cache
+/.pint.cache

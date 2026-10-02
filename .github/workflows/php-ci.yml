@@ -59,8 +59,9 @@ jobs:
           coverage: none
           tools: composer:v2
 
+      # The manifests read the same on every PHP.
       - name: Validate manifests
-        if: steps.affected.outputs.php != 'none'
+        if: steps.affected.outputs.php != 'none' && matrix.php == '8.4'
         run: |
           composer validate --no-check-all --no-check-publish
           for manifest in packages/*/composer.json; do
@@ -79,12 +80,26 @@ jobs:
         if: steps.affected.outputs.php != 'none'
         run: composer install --no-interaction --no-progress
 
+      # Style and static analysis do not depend on the runtime the tests run on, so they run once,
+      # on the lowest PHP the packages support — the version PHPStan should reason about. Both
+      # keep a cache keyed by file content: a fresh checkout reuses it and only what changed is
+      # looked at again (a cold Pint takes over a minute, a warm one seconds; PHPStan alike).
+      - name: Restore the lint and analysis caches
+        if: steps.affected.outputs.php != 'none' && matrix.php == '8.4'
+        uses: actions/cache@v4
+        with:
+          path: |
+            php/.pint.cache
+            php/.phpstan.cache
+          key: php-lint-${{ matrix.php }}-${{ github.sha }}
+          restore-keys: php-lint-${{ matrix.php }}-
+
       - name: Lint
-        if: steps.affected.outputs.php != 'none'
-        run: vendor/bin/pint --test
+        if: steps.affected.outputs.php != 'none' && matrix.php == '8.4'
+        run: vendor/bin/pint --test --parallel --cache-file=.pint.cache
 
       - name: Analyse
-        if: steps.affected.outputs.php != 'none'
+        if: steps.affected.outputs.php != 'none' && matrix.php == '8.4'
         run: vendor/bin/phpstan analyse --no-progress
 
       - name: Test
