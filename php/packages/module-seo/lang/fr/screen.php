@@ -37,4 +37,6 @@ return [
     'normalise-trailing-add' => 'Avec : /about/',
     'normalise-case' => 'Minuscules',
     'normalise-case-help' => '/About redirige vers /about. Les fichiers gardent leur nom.',
+    'links-heading' => 'Titre du maillage interne',
+    'links-heading-help' => 'Affiché au-dessus d\'un bloc de liens sans titre propre.',
 ];

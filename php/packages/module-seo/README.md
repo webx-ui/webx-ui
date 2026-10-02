@@ -93,6 +93,31 @@ Rules are tried exact first, then mask, then regex; inside a group by `priority`
 first match wins. The active ones are kept as one compiled list in the cache, thrown away
 whenever any of them is saved or deleted.
 
+An exact rule remembers the entity behind its address when it is saved (an old address of a
+page binds to that page; an address a redirect catches is replaced by its target), and matches
+wherever the entity is now — renaming a category does not lose its rule. Masks, regular
+expressions and addresses with a query stay plain patterns.
+
+## Interlinking
+
+Off until a project turns it on: `WEBX_SEO_LINKS=true` (`webx-seo.links.enabled`). Off, there is
+no API, no MCP tools and no view in the panel; the tables are there either way.
+
+A donor page owns a block — a heading and an ordered list of acceptor and anchor. Put the
+component where the block belongs; it prints nothing on a page without one:
+
+```blade
+<x-webx-seo::links />
+```
+
+The markup is the `webx-seo::links` view (`<nav aria-labelledby>`, publish `webx-seo-views` to
+restyle). Links whose page is gone or hidden are left out. A block without a heading takes the
+`seo.links-heading` setting, then the module's own "See also".
+
+A brief comes in as CSV or XLSX — columns `donor`, `acceptor`, `anchor` and an optional
+`heading` (Russian headers work too) — previewed first, with errors per row, then replacing the
+blocks of the donors in the file or appending to them. The export writes the same file.
+
 ## `robots` and `robots.txt` are different things
 
 - `robots` on a rule is that page's own meta directives — `noindex, nofollow` — printed into
@@ -124,14 +149,18 @@ The dot in `seo.default-og` is part of the name, not a path.
 
 Under `config('webx-admin.api_path').'/seo'`:
 
-| Method and address                     | What it does                                                |
-| -------------------------------------- | ----------------------------------------------------------- |
-| `GET /urls`                            | the rules, in the order the site tries them                 |
-| `POST /urls`                           | add one                                                     |
-| `GET`, `PUT`, `DELETE` on `/urls/{id}` | one rule                                                    |
-| `GET /redirects` …                     | the same for redirects                                      |
-| `GET /aliases`                         | the addresses renames left behind; read only                |
-| `POST /test-url`                       | what an address ends up saying, and where each part is from |
+| Method and address                        | What it does                                                |
+| ----------------------------------------- | ----------------------------------------------------------- |
+| `GET /urls`                               | the rules, in the order the site tries them                 |
+| `POST /urls`                              | add one                                                     |
+| `GET`, `PUT`, `DELETE` on `/urls/{id}`    | one rule                                                    |
+| `GET /redirects` …                        | the same for redirects                                      |
+| `GET /aliases`                            | the addresses renames left behind; read only                |
+| `POST /test-url`                          | what an address ends up saying, and where each part is from |
+| `GET`, `POST /links`                      | interlinking donors (only with the feature on)              |
+| `GET`, `PUT`, `DELETE` on `/links/{id}`   | one donor's block                                           |
+| `POST /links/import`, `GET /links/export` | the brief in and out; import previews unless `dry_run=0`    |
+| `POST /links/heading`                     | one heading on picked donors or on an address prefix        |
 
 `test-url` is the one worth remembering: it answers "why does this page have the wrong title" in
 one call — and says what `webx-ui/routing` holds at the address, which is how the panel warns that

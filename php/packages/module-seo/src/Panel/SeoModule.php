@@ -11,6 +11,7 @@ use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\ProvidesMcpDefaults;
 use WebxUi\Mcp\Tool;
 use WebxUi\Seo\Demo\SeoDemo;
+use WebxUi\Seo\Features;
 use WebxUi\Seo\Mcp\SeoTools;
 
 /**
@@ -68,6 +69,20 @@ final class SeoModule extends AbstractModule implements ProvidesDemo, ProvidesMc
     public function requires(): array
     {
         return ['articles'];
+    }
+
+    /**
+     * Which of the optional tools this site has (§18.3), so the npm half hides the views of the
+     * ones it does not — the same way `module-blocks` reads its own `meta`.
+     *
+     * @return array<string, mixed>
+     */
+    public function manifest(): array
+    {
+        return [
+            'links' => Features::links(),
+            'faq' => Features::faq(),
+        ];
     }
 
     public function seed(DemoLedger $ledger): void

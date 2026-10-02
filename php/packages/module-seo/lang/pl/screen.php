@@ -37,4 +37,6 @@ return [
     'normalise-trailing-add' => 'Z: /about/',
     'normalise-case' => 'Małe litery',
     'normalise-case-help' => '/About przekierowuje na /about. Pliki zachowują swoje nazwy.',
+    'links-heading' => 'Nagłówek linkowania wewnętrznego',
+    'links-heading-help' => 'Wyświetlany nad blokiem linków, który nie ma własnego nagłówka.',
 ];

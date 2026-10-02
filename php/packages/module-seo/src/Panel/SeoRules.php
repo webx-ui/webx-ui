@@ -38,11 +38,14 @@ final class SeoRules
             SeoUrl::query()
                 ->active()
                 ->orderBy('id')
-                ->get(['id', 'match_type', 'pattern', 'priority'])
+                ->get(['id', 'match_type', 'pattern', 'entity_type', 'entity_id', 'priority'])
                 ->map(static fn (SeoUrl $rule): array => [
                     'id' => $rule->id,
                     'match_type' => $rule->match_type,
-                    'pattern' => $rule->pattern,
+                    // A rule bound to an entity matches where the entity is now (§18.2): the list
+                    // is thrown away whenever a row of the registry is saved, so a new slug is a
+                    // new compiled pattern on the next request.
+                    'pattern' => $rule->currentPattern(),
                     'priority' => $rule->priority,
                 ])
                 ->all(),

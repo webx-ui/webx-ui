@@ -30,6 +30,7 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "illuminate/view": "^13.0",
+        "openspout/openspout": "^4.32",
         "webx-ui/localization": "^0.58.0",
         "webx-ui/mcp": "^0.58.0",
         "webx-ui/module-admin": "^0.58.0",

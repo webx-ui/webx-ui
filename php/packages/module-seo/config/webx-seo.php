@@ -174,6 +174,27 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Interlinking and page FAQ
+    |---------------------------------------------------------------------------
+    |
+    | Two tools of an SEO brief, both off until a developer turns them on for a
+    | project — a decision of the brief, not a button for an administrator. Off,
+    | a feature is gone entirely: no view in the panel, no API, no MCP tools, and
+    | its Blade component prints nothing. Its tables migrate either way, so
+    | turning it off never loses what was written.
+    |
+    */
+
+    'links' => [
+        'enabled' => env('WEBX_SEO_LINKS', false),
+    ],
+
+    'faq' => [
+        'enabled' => env('WEBX_SEO_FAQ', false),
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
     | Cache
     |---------------------------------------------------------------------------
     |

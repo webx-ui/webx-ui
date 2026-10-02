@@ -37,4 +37,6 @@ return [
     'normalise-trailing-add' => 'With: /about/',
     'normalise-case' => 'Lower case',
     'normalise-case-help' => '/About redirects to /about. Files keep their names.',
+    'links-heading' => 'Interlinking heading',
+    'links-heading-help' => 'Shown above an interlinking block whose own heading is empty.',
 ];

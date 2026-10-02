@@ -25,7 +25,11 @@ use WebxUi\Seo\Audit\SeoChecks;
 use WebxUi\Seo\Console\SitemapCommand;
 use WebxUi\Seo\Http\Middleware\NormaliseAddress;
 use WebxUi\Seo\Http\Middleware\RedirectRequests;
+use WebxUi\Seo\Links\LinkBlocks;
+use WebxUi\Seo\Models\SeoLinkBlock;
+use WebxUi\Seo\Models\SeoLinkItem;
 use WebxUi\Seo\Models\SeoMeta;
+use WebxUi\Seo\Models\SeoRedirect;
 use WebxUi\Seo\Models\SeoUrl;
 use WebxUi\Seo\Panel\DefaultsSource;
 use WebxUi\Seo\Panel\SeoModule;
@@ -41,6 +45,7 @@ use WebxUi\Seo\Screens\SeoFieldType;
 use WebxUi\Seo\Sitemap\Sitemap;
 use WebxUi\Seo\Sitemap\SitemapRoutes;
 use WebxUi\Seo\Sitemap\SitemapSources;
+use WebxUi\Seo\Targets\UrlTargets;
 use WebxUi\Settings\Events\SettingsSaved;
 use WebxUi\Settings\Settings;
 
@@ -67,6 +72,8 @@ class SeoServiceProvider extends ServiceProvider
         $this->app->singleton(Sitemap::class);
         $this->app->singleton(SitemapRoutes::class);
         $this->app->singleton(SitemapSources::class);
+        $this->app->singleton(UrlTargets::class);
+        $this->app->singleton(LinkBlocks::class);
     }
 
     public function boot(): void
@@ -92,6 +99,11 @@ class SeoServiceProvider extends ServiceProvider
         $screens = $this->app->make(ScreenRegistry::class);
 
         $screens->extend(Settings::SCREEN, __DIR__.'/../resources/screens/settings.json');
+
+        // The default heading of interlinking blocks, only where interlinking exists (§18.1, 2).
+        if (Features::links()) {
+            $screens->extend(Settings::SCREEN, __DIR__.'/../resources/screens/settings.links.json');
+        }
 
         // The card on the page editor, for the same reason and by the same mechanism: a
         // content module describes its screen, and whoever has something to add to it adds it
@@ -177,6 +189,18 @@ class SeoServiceProvider extends ServiceProvider
                 if ($model instanceof RouteRow || $model instanceof SeoMeta || $model instanceof SeoUrl || $model instanceof Visible) {
                     $this->app->make(Sitemap::class)->refresh();
                 }
+
+                // A rule bound to an entity is compiled with the entity's current address (§18.2),
+                // so a new slug in the registry is a new compiled list.
+                if ($model instanceof RouteRow) {
+                    $this->app->make(SeoRules::class)->forget();
+                }
+
+                // Whether a link is broken depends on the registry and on visibility, and what it
+                // prints on its own rows and on redirects that replace addresses.
+                if ($model instanceof RouteRow || $model instanceof Visible || $model instanceof SeoLinkBlock || $model instanceof SeoLinkItem || $model instanceof SeoRedirect) {
+                    $this->app->make(LinkBlocks::class)->refresh();
+                }
             },
         );
 
@@ -184,6 +208,7 @@ class SeoServiceProvider extends ServiceProvider
             foreach ($saved->keys as $key) {
                 if (str_starts_with($key, 'seo.')) {
                     $this->app->make(Sitemap::class)->refresh();
+                    $this->app->make(LinkBlocks::class)->refresh();
 
                     return;
                 }

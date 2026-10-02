@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use WebxUi\Seo\Features;
 use WebxUi\Seo\Http\Controllers\RouteAliasController;
+use WebxUi\Seo\Http\Controllers\SeoLinkController;
 use WebxUi\Seo\Http\Controllers\SeoRedirectController;
 use WebxUi\Seo\Http\Controllers\SeoUrlController;
 use WebxUi\Seo\Http\Controllers\SitemapStatusController;
@@ -43,3 +45,27 @@ Route::prefix((string) config('webx-admin.api_path').'/seo')
             Route::post('sitemap', [SitemapStatusController::class, 'rebuild'])->name('sitemap.rebuild');
         });
     });
+
+// Interlinking (§18.4) exists only where a developer turned it on: off, these addresses were
+// never registered and answer 404, so the panel and an agent have nothing to find.
+if (Features::links()) {
+    Route::prefix((string) config('webx-admin.api_path').'/seo/links')
+        ->middleware('webx.panel')
+        ->name('webx.seo.links.')
+        ->group(function (): void {
+            Route::middleware('cms.can:seo.view,seo.manage')->group(function (): void {
+                Route::get('/', [SeoLinkController::class, 'index'])->name('index');
+                Route::get('addresses', [SeoLinkController::class, 'addresses'])->name('addresses');
+                Route::get('export', [SeoLinkController::class, 'export'])->name('export');
+                Route::get('{block}', [SeoLinkController::class, 'show'])->whereNumber('block')->name('show');
+            });
+
+            Route::middleware('cms.can:seo.manage')->group(function (): void {
+                Route::post('/', [SeoLinkController::class, 'store'])->name('store');
+                Route::post('import', [SeoLinkController::class, 'import'])->name('import');
+                Route::post('heading', [SeoLinkController::class, 'heading'])->name('heading');
+                Route::put('{block}', [SeoLinkController::class, 'update'])->whereNumber('block')->name('update');
+                Route::delete('{block}', [SeoLinkController::class, 'destroy'])->whereNumber('block')->name('destroy');
+            });
+        });
+}
