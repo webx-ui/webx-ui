@@ -106,14 +106,23 @@ export function useHistorySubject(): HistorySubject | null {
 }
 
 /**
- * A value as a line of text. Words for "nothing" are the caller's; a list or an object is shown
- * as JSON, cut, because a repeater row printed whole is a paragraph in a feed of one-liners.
+ * A value as a line of text. Words for "nothing" are the caller's. A list of names — the extra
+ * categories of a product, the tags of an article — reads as the names, comma-separated; any
+ * other list or object is shown as JSON, cut, because a repeater row printed whole is a
+ * paragraph in a feed of one-liners.
  */
 export function historyValue(value: unknown, empty: string, max = 120): string {
   if (value === null || value === undefined || value === '') return empty
   if (typeof value === 'boolean') return value ? '✓' : '✗'
   if (typeof value === 'string') return cut(value, max)
   if (typeof value === 'number') return String(value)
+
+  if (
+    Array.isArray(value) &&
+    value.every((item) => typeof item === 'string' || typeof item === 'number')
+  ) {
+    return value.length === 0 ? empty : cut(value.join(', '), max)
+  }
 
   return cut(JSON.stringify(value), max)
 }
