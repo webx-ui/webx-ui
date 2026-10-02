@@ -53,6 +53,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [] }>()
 
+/*
+ * The card is wide: a page has long addresses, headers and hreflang lists. Its width is kept under
+ * a key of its own, so one remembered from the narrow card of before does not keep it narrow.
+ */
+
 const context = useAdmin()
 const api = createAuditApi(context)
 const router = useRouter()
@@ -323,7 +328,13 @@ watch(tab, () => {
 </script>
 
 <template>
-  <wx-drawer v-model:open="open" :size="640" resizable persist="webx-audit.page-card">
+  <wx-drawer
+    v-model:open="open"
+    size="min(1100px, 75vw)"
+    :min-size="480"
+    resizable
+    persist="webx-audit.page-card-wide"
+  >
     <template #title>
       <span class="wx-audit-card__title">
         <wx-badge v-if="card" :type="statusType(card.page.status)" size="sm">{{
