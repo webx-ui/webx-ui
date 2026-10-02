@@ -8,6 +8,7 @@
         "webx-ui/localization": "*",
         "webx-ui/mcp": "*",
         "webx-ui/module-admin": "*",
+        "webx-ui/module-audit": "*",
         "webx-ui/module-auth": "*",
         "webx-ui/module-banners": "*",
         "webx-ui/module-blocks": "*",
@@ -54,6 +55,7 @@
                     "webx-ui/localization": "0.57.0",
                     "webx-ui/mcp": "0.57.0",
                     "webx-ui/module-admin": "0.57.0",
+                    "webx-ui/module-audit": "0.57.0",
                     "webx-ui/module-auth": "0.57.0",
                     "webx-ui/module-banners": "0.57.0",
                     "webx-ui/module-blocks": "0.57.0",
@@ -89,6 +91,7 @@
     "autoload-dev": {
         "psr-4": {
             "WebxUi\\Admin\\Tests\\": "packages/module-admin/tests/",
+            "WebxUi\\Audit\\Tests\\": "packages/module-audit/tests/",
             "WebxUi\\Auth\\Tests\\": "packages/module-auth/tests/",
             "WebxUi\\Banners\\Tests\\": "packages/module-banners/tests/",
             "WebxUi\\Blocks\\Tests\\": "packages/module-blocks/tests/",

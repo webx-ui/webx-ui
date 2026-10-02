@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url'
 const NAMESPACES: Record<string, string> = {
   'module-admin': 'webx-admin',
   'module-auth': 'webx-auth',
+  'module-audit': 'webx-audit',
   'module-banners': 'webx-banners',
   'module-blocks': 'webx-blocks',
   'module-blog': 'webx-blog',

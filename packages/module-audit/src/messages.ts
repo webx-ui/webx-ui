@@ -1,0 +1,81 @@
+import type { Messages } from '@webx-ui/module-admin'
+
+/**
+ * What this package says, in English — the same keys `webx-ui/module-audit` ships as
+ * `lang/en/*.php`, so a key never reaches the screen while the dictionary is on its way. The
+ * server's dictionary wins; the check texts and the details arrive translated from the server and
+ * are not repeated here.
+ */
+export const auditMessages: Record<string, Messages> = {
+  module: {
+    title: 'Audit',
+  },
+
+  page: {
+    overview: 'Overview',
+    issues: 'Findings',
+    settings: 'Settings',
+    run: 'Run the audit',
+    scope: 'Scope',
+    'scope-full': 'Full',
+    'scope-full-help': 'Everything the audit can check.',
+    'scope-quick': 'Quick',
+    'scope-quick-help': 'The config, the host and the database — takes seconds.',
+    start: 'Start',
+    started: 'The audit has started.',
+    cancel: 'Cancel the run',
+    never: 'No audit has been run yet.',
+    'never-help':
+      'Run the first one to see how the site looks to a visitor and to a search engine.',
+    health: 'Health',
+    errors: 'Errors',
+    warnings: 'Warnings',
+    notices: 'Notices',
+    new: 'New',
+    fixed: 'Fixed',
+    'last-run': 'Last run',
+    'base-url': 'Address',
+    'status-queued': 'Waiting in the queue',
+    'status-running': 'Running',
+    'status-done': 'Done',
+    'status-failed': 'Failed',
+    'status-cancelled': 'Cancelled',
+    'stage-probes': 'Config and host',
+    'stage-database': 'Database',
+    'stage-crawl': 'Pages',
+    'stage-analyse': 'Analysis',
+    'last-failed': 'The last run did not finish: :error',
+    'by-group': 'By group',
+    'group-config': 'Configuration',
+    'group-host': 'Host and addresses',
+    'group-hosts': 'Outgoing addresses',
+    'group-other': 'Other',
+    sources: 'Content searched',
+    'sources-missing': 'Installed, but not searched:',
+    'sync-queue':
+      'The queue runs jobs inside the request (sync), so the panel cannot start a run. Run php artisan webx:audit:run from the terminal or cron.',
+    'already-running': 'An audit is already running.',
+    check: 'Check',
+    count: 'Found',
+    severity: 'Severity',
+    'severity-error': 'Error',
+    'severity-warning': 'Warning',
+    'severity-notice': 'Notice',
+    'any-severity': 'Any severity',
+    'any-group': 'Any group',
+    'any-state': 'New and persisting',
+    'state-new': 'New',
+    'state-persisting': 'Persisting',
+    address: 'Address',
+    empty: 'Nothing found.',
+    clean: 'The last run found nothing.',
+    found: 'What was found',
+    why: 'Why it matters',
+    fix: 'How to fix it',
+    explain: 'What this check means',
+    'open-editor': 'Open in the editor',
+    yes: 'Yes',
+    no: 'No',
+    missing: 'Missing',
+  },
+}

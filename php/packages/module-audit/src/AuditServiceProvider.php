@@ -1,0 +1,115 @@
+<?php
+
+declare(strict_types=1);
+
+namespace WebxUi\Audit;
+
+use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Cache\Repository as Cache;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\ServiceProvider;
+use WebxUi\Admin\ModuleRegistry;
+use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Audit\Checks\AuditChecks;
+use WebxUi\Audit\Checks\Config;
+use WebxUi\Audit\Checks\Host;
+use WebxUi\Audit\Checks\Hosts;
+use WebxUi\Audit\Console\RunCommand;
+use WebxUi\Audit\Content\AuditContentSources;
+use WebxUi\Audit\Panel\AuditModule;
+use WebxUi\Audit\Probes\CertificateReader;
+use WebxUi\Settings\Settings;
+
+/**
+ * The audit: its registries, its own checks, the section, the settings tab and the command.
+ *
+ * The registries are bound in `register()` so that a content module can add its source or its
+ * checks from its own `boot()` whatever order the providers boot in (§7).
+ */
+class AuditServiceProvider extends ServiceProvider
+{
+    /** The checks that ship with the module, in the order the catalogue lists them. */
+    private const CHECKS = [
+        Config\Debug::class,
+        Config\Environment::class,
+        Config\AppUrl::class,
+        Config\Queue::class,
+        Config\Mail::class,
+        Config\Schedule::class,
+        Config\StorageLink::class,
+        Config\SiteGate::class,
+        Host\Mirror::class,
+        Host\Https::class,
+        Host\Tls::class,
+        Host\Hsts::class,
+        Host\IndexFiles::class,
+        Host\Slashes::class,
+        Host\TrailingSlash::class,
+        Host\LetterCase::class,
+        Host\Soft404::class,
+        Host\NotFoundPage::class,
+        Host\Compression::class,
+        Host\SecurityHeaders::class,
+        Host\ServerLeak::class,
+        Host\StaticCache::class,
+        Hosts\DevContent::class,
+    ];
+
+    public function register(): void
+    {
+        $this->mergeConfigFrom(__DIR__.'/../config/webx-audit.php', 'webx-audit');
+
+        $this->app->singleton(AuditChecks::class);
+        $this->app->singleton(AuditContentSources::class);
+        $this->app->singleton(CertificateReader::class);
+    }
+
+    public function boot(): void
+    {
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-audit');
+        $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+
+        $checks = $this->app->make(AuditChecks::class);
+
+        foreach (self::CHECKS as $check) {
+            $checks->register($this->app->make($check));
+        }
+
+        $this->app->make(ModuleRegistry::class)->register($this->app->make(AuditModule::class));
+
+        // The «Audit» tab of the site's settings: where the site is, where to connect, which
+        // hosts are its stands. A patch, like the SEO tab, so the order of providers is moot.
+        $this->app->make(ScreenRegistry::class)->extend(Settings::SCREEN, __DIR__.'/../resources/screens/settings.json');
+
+        $this->registerHeartbeat();
+
+        if (! $this->app->runningInConsole()) {
+            return;
+        }
+
+        $this->commands([RunCommand::class]);
+
+        $this->publishes([
+            __DIR__.'/../config/webx-audit.php' => config_path('webx-audit.php'),
+        ], 'webx-audit-config');
+
+        $this->publishes([
+            __DIR__.'/../lang' => lang_path('vendor/webx-audit'),
+        ], 'webx-audit-lang');
+    }
+
+    /**
+     * A beat on the schedule every minute, so `config.schedule` can tell a scheduler that runs
+     * from one that was never put in cron. Put there by the package, like the backup: a site has
+     * nothing to remember.
+     */
+    private function registerHeartbeat(): void
+    {
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            $schedule->call(function (): void {
+                $this->app->make(Cache::class)->forever(Config\Schedule::HEARTBEAT, Carbon::now()->getTimestamp());
+            })->everyMinute()->name('webx-audit:heartbeat');
+        });
+    }
+}

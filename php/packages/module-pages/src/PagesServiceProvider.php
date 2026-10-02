@@ -9,6 +9,8 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Audit\Content\AuditContentSources;
+use WebxUi\Pages\Audit\PageContentSource;
 use WebxUi\Pages\Links\PageLinkSource;
 use WebxUi\Pages\Models\Page;
 use WebxUi\Pages\Panel\PageForm;
@@ -41,6 +43,7 @@ class PagesServiceProvider extends ServiceProvider
         $this->registerBlockEntity();
         $this->registerScreens();
         $this->registerLinkSource();
+        $this->registerAuditSource();
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(PagesModule::class));
 
@@ -98,6 +101,17 @@ class PagesServiceProvider extends ServiceProvider
      * A page is the ordinary thing to link to, so the picker in every link field offers them —
      * the menu is only the first of those fields (§3 of the menu spec).
      */
+    /**
+     * The pages' blocks and drafts, searched by the site audit for addresses of a development
+     * stand — only when `webx-ui/module-audit` is installed, which this package merely suggests.
+     */
+    private function registerAuditSource(): void
+    {
+        if (class_exists(AuditContentSources::class)) {
+            $this->app->make(AuditContentSources::class)->register(new PageContentSource);
+        }
+    }
+
     private function registerLinkSource(): void
     {
         $this->app->make(LinkSources::class)->register($this->app->make(PageLinkSource::class));

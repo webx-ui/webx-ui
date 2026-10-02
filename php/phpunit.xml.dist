@@ -11,6 +11,7 @@
             <directory>packages/module-admin/tests</directory>
             <directory>packages/localization/tests</directory>
             <directory>packages/mcp/tests</directory>
+            <directory>packages/module-audit/tests</directory>
             <directory>packages/module-auth/tests</directory>
             <directory>packages/module-blocks/tests</directory>
             <directory>packages/module-blog/tests</directory>
@@ -46,6 +47,7 @@
             <directory>packages/module-admin/src</directory>
             <directory>packages/localization/src</directory>
             <directory>packages/mcp/src</directory>
+            <directory>packages/module-audit/src</directory>
             <directory>packages/module-auth/src</directory>
             <directory>packages/module-blocks/src</directory>
             <directory>packages/module-blog/src</directory>

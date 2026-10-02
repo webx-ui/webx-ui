@@ -12,6 +12,7 @@
   "dependencies": {
     "@webx-ui/core": "workspace:*",
     "@webx-ui/module-admin": "workspace:*",
+    "@webx-ui/module-audit": "workspace:*",
     "@webx-ui/module-auth": "workspace:*",
     "@webx-ui/module-banners": "workspace:*",
     "@webx-ui/module-blocks": "workspace:*",

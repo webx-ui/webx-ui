@@ -251,6 +251,7 @@ import {
   productCount,
   registerCatalog,
 } from './catalog'
+import { registerAudit } from './audit'
 import { registerManticore } from './catalog-manticore'
 import { brandHistory, registerDictionaries } from './catalog-dictionaries'
 import { propertyHistory, registerProperties } from './catalog-properties'
@@ -816,6 +817,15 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 700,
         group: 'system',
         permissions: ['seo.view', 'seo.manage'],
+        meta: {},
+      },
+      {
+        id: 'audit',
+        title: line(locale, 'webx-audit', 'module.title'),
+        icon: 'check-circle',
+        order: 710,
+        group: 'system',
+        permissions: ['audit.view', 'audit.run', 'audit.manage'],
         meta: {},
       },
       {
@@ -2012,6 +2022,7 @@ registerCatalog(
 
 /* Its search index on Manticore (WEBX_UI_CATALOG_MANTICORE.md): «System → Search index». */
 registerManticore(on, (status, message) => new HttpFailure(status, message), productCount)
+registerAudit(on, (status, message) => new HttpFailure(status, message), line)
 
 /* Its reference books (WEBX_UI_CATALOG_DICTIONARIES.md): labels, stock statuses, brands. */
 registerDictionaries(
