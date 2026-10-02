@@ -31,6 +31,12 @@ final class SeoUrlResource extends JsonResource
             'id' => $rule->id,
             'match_type' => $rule->match_type,
             'pattern' => $rule->pattern,
+            // Bound to an entity (§18.2): the address it matches now, with the saved one as the
+            // hint beside it, and the redirect that replaced what was typed, once, on saving.
+            'entity_type' => $rule->entity_type,
+            'entity_id' => $rule->entity_id,
+            'current_pattern' => $rule->currentPattern(),
+            'redirected_from' => $rule->redirectedFrom,
             'priority' => $rule->priority,
             'og_image' => $this->image($rule),
             'canonical' => $rule->canonical,

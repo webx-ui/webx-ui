@@ -6,6 +6,7 @@ namespace WebxUi\Seo\Mcp;
 
 use WebxUi\Mcp\Tool;
 use WebxUi\Routing\UrlNormaliser;
+use WebxUi\Seo\Features;
 use WebxUi\Seo\Models\SeoRedirect;
 use WebxUi\Seo\Models\SeoUrl;
 use WebxUi\Seo\Panel\UrlMatcher;
@@ -26,6 +27,19 @@ final class SeoTools
      * @return list<Tool>
      */
     public static function all(): array
+    {
+        // The first module whose tools depend on configuration (§18.3): a feature that is off
+        // has no tools, so an agent is never offered something the site does not have.
+        return [
+            ...self::core(),
+            ...(Features::links() ? LinkTools::all() : []),
+        ];
+    }
+
+    /**
+     * @return list<Tool>
+     */
+    private static function core(): array
     {
         return [
             Tool::read(

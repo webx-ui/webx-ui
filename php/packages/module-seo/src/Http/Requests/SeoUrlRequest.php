@@ -10,6 +10,7 @@ use WebxUi\Localization\Locales;
 use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Fields;
 use WebxUi\Seo\Panel\UrlMatcher;
+use WebxUi\Seo\Rules\OwnAddress;
 use WebxUi\Seo\Rules\ValidJsonLd;
 use WebxUi\Seo\Rules\ValidRegex;
 use WebxUi\Seo\Screens\SeoFieldType;
@@ -48,6 +49,11 @@ final class SeoUrlRequest extends FormRequest
 
         if ($this->input('match_type') === UrlMatcher::REGEX) {
             $rules['pattern'][] = new ValidRegex;
+        }
+
+        if ($this->input('match_type') !== UrlMatcher::REGEX) {
+            // An address on another site is not one this site can say anything about.
+            $rules['pattern'][] = new OwnAddress;
         }
 
         foreach (self::TRANSLATED as $field) {

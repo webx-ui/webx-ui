@@ -1,0 +1,14 @@
+[
+  {
+    "op": "add",
+    "target": "seo-card",
+    "node": {
+      "id": "links-heading",
+      "type": "wx-input",
+      "name": "seo.links-heading",
+      "label": "trans::webx-seo::screen.links-heading",
+      "help": "trans::webx-seo::screen.links-heading-help",
+      "localized": true
+    }
+  }
+]

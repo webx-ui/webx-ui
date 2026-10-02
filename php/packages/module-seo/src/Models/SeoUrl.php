@@ -11,6 +11,8 @@ use WebxUi\Localization\HasTranslations;
 use WebxUi\Seo\Fields;
 use WebxUi\Seo\Panel\SeoRules;
 use WebxUi\Seo\Panel\UrlMatcher;
+use WebxUi\Seo\Targets\ForeignHost;
+use WebxUi\Seo\Targets\UrlTargets;
 
 /**
  * What the site should say about one address, or about every address of one shape.
@@ -22,6 +24,8 @@ use WebxUi\Seo\Panel\UrlMatcher;
  * @property int $id
  * @property string $match_type
  * @property string $pattern
+ * @property string|null $entity_type
+ * @property int|null $entity_id
  * @property int $priority
  * @property mixed $title
  * @property mixed $h1
@@ -44,9 +48,14 @@ class SeoUrl extends Model
 
     protected $table = 'seo_urls';
 
+    /** Set by {@see bind()} when the saved address was replaced by the target of its redirect. */
+    public ?string $redirectedFrom = null;
+
     protected $fillable = [
         'match_type',
         'pattern',
+        'entity_type',
+        'entity_id',
         'priority',
         'title',
         'h1',
@@ -76,6 +85,7 @@ class SeoUrl extends Model
     {
         return $this->seoCasts() + [
             'priority' => 'integer',
+            'entity_id' => 'integer',
             'is_active' => 'boolean',
         ];
     }
@@ -88,8 +98,53 @@ class SeoUrl extends Model
             app(SeoRules::class)->forget();
         };
 
+        static::saving(static function (SeoUrl $rule): void {
+            if ($rule->isDirty(['match_type', 'pattern']) || ! $rule->exists) {
+                $rule->bind();
+            }
+        });
+
         static::saved($forget);
         static::deleted($forget);
+    }
+
+    /**
+     * An exact address remembers its entity (§18.2), so a renamed page keeps its rule. An
+     * address a redirect catches becomes where it leads — the rule was meant for the page the
+     * visitor ends up on — and {@see $redirectedFrom} says so to whoever saved it.
+     */
+    public function bind(): void
+    {
+        $this->entity_type = null;
+        $this->entity_id = null;
+
+        if ($this->match_type !== UrlMatcher::EXACT || str_contains($this->pattern, '?')) {
+            return;
+        }
+
+        $targets = app(UrlTargets::class);
+
+        try {
+            $binding = $targets->resolve($this->pattern);
+        } catch (ForeignHost) {
+            // Refused by the request before it gets here; a rule written some other way keeps
+            // what it said, unbound, the way rules were before binding existed.
+            return;
+        }
+
+        if ($binding->redirectedFrom !== null) {
+            $this->redirectedFrom = $binding->redirectedFrom;
+            $this->pattern = $targets->address($binding->target);
+        }
+
+        $this->entity_type = $binding->target->entityType;
+        $this->entity_id = $binding->target->entityId;
+    }
+
+    /** The address as it is now: the entity's own for a bound rule, the pattern otherwise. */
+    public function currentPattern(): string
+    {
+        return app(UrlTargets::class)->ruleAddress($this->pattern, $this->entity_type, $this->entity_id);
     }
 
     /**

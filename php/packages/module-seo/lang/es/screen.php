@@ -37,4 +37,6 @@ return [
     'normalise-trailing-add' => 'Con barra: /about/',
     'normalise-case' => 'Minúsculas',
     'normalise-case-help' => '/About redirige a /about. Los archivos conservan sus nombres.',
+    'links-heading' => 'Título del enlazado interno',
+    'links-heading-help' => 'Se muestra sobre un bloque de enlaces sin título propio.',
 ];

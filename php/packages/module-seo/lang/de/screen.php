@@ -37,4 +37,6 @@ return [
     'normalise-trailing-add' => 'Mit: /about/',
     'normalise-case' => 'Kleinschreibung',
     'normalise-case-help' => '/About leitet auf /about weiter. Dateien behalten ihre Namen.',
+    'links-heading' => 'Überschrift der internen Verlinkung',
+    'links-heading-help' => 'Erscheint über einem Verlinkungsblock ohne eigene Überschrift.',
 ];

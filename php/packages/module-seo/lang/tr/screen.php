@@ -37,4 +37,6 @@ return [
     'normalise-trailing-add' => 'İle: /about/',
     'normalise-case' => 'Küçük harf',
     'normalise-case-help' => '/About, /about adresine yönlendirilir. Dosyalar adlarını korur.',
+    'links-heading' => 'İç bağlantı başlığı',
+    'links-heading-help' => 'Kendi başlığı boş olan bir bağlantı bloğunun üstünde gösterilir.',
 ];

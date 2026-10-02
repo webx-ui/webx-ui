@@ -37,4 +37,6 @@ return [
     'normalise-trailing-add' => 'Зі слешем: /about/',
     'normalise-case' => 'Нижній регістр',
     'normalise-case-help' => '/About перенаправляє на /about. Файли зберігають свої імена.',
+    'links-heading' => 'Заголовок перелінковки',
+    'links-heading-help' => 'Показується над блоком перелінковки, у якого власний заголовок порожній.',
 ];
