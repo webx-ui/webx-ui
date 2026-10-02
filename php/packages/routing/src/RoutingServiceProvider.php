@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace WebxUi\Routing;
 
+use ArrayObject;
 use Illuminate\Support\Facades\Route as Router;
 use Illuminate\Support\ServiceProvider;
+use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Routing\Aliases\DatabaseAliases;
 use WebxUi\Routing\Aliases\RouteAliases;
+use WebxUi\Routing\Audit\RegistryCheck;
 use WebxUi\Routing\Console\CheckRoutesCommand;
 use WebxUi\Routing\Console\RebuildRoutesCommand;
 use WebxUi\Routing\Http\Controllers\ResolveController;
@@ -42,8 +45,10 @@ class RoutingServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-routing');
 
         $this->registerFallback();
+        $this->registerAudit();
 
         if (! $this->app->runningInConsole()) {
             return;
@@ -54,6 +59,24 @@ class RoutingServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../config/webx-routing.php' => config_path('webx-routing.php'),
         ], 'webx-routing-config');
+    }
+
+    /**
+     * The registry's own check, as findings of the site audit — only when `webx-ui/module-audit`
+     * is installed, which this package merely suggests.
+     */
+    private function registerAudit(): void
+    {
+        if (! class_exists(AuditChecks::class)) {
+            return;
+        }
+
+        $checks = $this->app->make(AuditChecks::class);
+        $memo = new ArrayObject;
+
+        foreach (array_keys(RegistryCheck::KINDS) as $kind) {
+            $checks->register(new RegistryCheck($kind, $this->app->make(RegistryHealth::class), $memo));
+        }
     }
 
     /**

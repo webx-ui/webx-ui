@@ -1,6 +1,8 @@
 import type { AdminContext } from '@webx-ui/module-admin'
 import type {
   AuditCheckRow,
+  AuditFixOffer,
+  AuditFixResult,
   AuditIssue,
   AuditIssueQuery,
   AuditLatest,
@@ -43,6 +45,10 @@ export interface AuditApi {
     id: number,
     query: { tab: AuditResourceTab; page?: number; per_page?: number },
   ): Promise<AuditPage<AuditResourceRow>>
+  /** The fixes that can close a finding now, each with what it would change. */
+  fixes(run: number, issue: number): Promise<AuditFixOffer[]>
+  /** Presses a fix — or, with `dryRun`, only asks again what it would change. */
+  fix(run: number, issue: number, fix: string, dryRun?: boolean): Promise<AuditFixResult>
 }
 
 /** The query of the pages screen as the API reads it: `f[field]=op:value` for each filter. */
@@ -149,5 +155,19 @@ export function createAuditApi(admin: AdminContext): AuditApi {
           meta: Omit<AuditPage<AuditResourceRow>, 'data'>
         }>(`${base}/runs/${run}/pages/${id}/resources`, { query })
         .then((body) => ({ ...body.meta, data: body.data })),
+
+    fixes: (run, issue) =>
+      admin.http
+        .get<{ data: AuditFixOffer[] }>(`${base}/runs/${run}/issues/${issue}/fixes`)
+        .then(data),
+
+    fix: (run, issue, fix, dryRun = false) =>
+      admin.http
+        .post<{
+          data: AuditFixResult
+        }>(`${base}/runs/${run}/issues/${issue}/fixes/${encodeURIComponent(fix)}`, {
+          dry_run: dryRun,
+        })
+        .then(data),
   }
 }

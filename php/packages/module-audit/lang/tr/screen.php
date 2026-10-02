@@ -10,4 +10,5 @@ return [
     'resolve-to-help' => 'Bağlantının açılacağı bir IP adresi veya ana makine; genel ad istekte korunur. Boş bırakılırsa DNS’in döndürdüğü kullanılır. Docker ve NAT arkasındaki sunucular için.',
     'other-hosts' => 'Bu sitenin diğer adresleri',
     'other-hosts-help' => 'Geliştirme ortamları, test ortamları ve eski alan adları, her satıra bir tane. Bunlardan herhangi birine verilen bağlantı, nerede bulunursa bulunsun bir hatadır.',
+    'fix-unavailable' => 'Bu düzeltme artık bu bulguyu kapatamıyor. Denetimi yeniden çalıştırın.',
 ];

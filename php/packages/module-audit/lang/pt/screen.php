@@ -10,4 +10,5 @@ return [
     'resolve-to-help' => 'Um endereço IP ou um host ao qual abrir a ligação, mantendo o nome público no pedido. Vazio significa o que o DNS responder. Para Docker e servidores atrás de NAT.',
     'other-hosts' => 'Outros endereços deste site',
     'other-hosts-help' => 'Ambientes de desenvolvimento, de testes e domínios antigos, um por linha. Um link para qualquer um deles é um erro onde quer que seja encontrado.',
+    'fix-unavailable' => 'Esta correção já não consegue fechar esta deteção. Execute a auditoria de novo.',
 ];

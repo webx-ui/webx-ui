@@ -68,6 +68,8 @@ export interface AuditCheckRow {
   found: string
   why: string
   fix: string
+  /** The fixes that can close this check — the screen offers a button when there are any. */
+  fixes: string[]
 }
 
 export type AuditCellType = 'url' | 'status' | 'bool' | 'text' | 'missing' | 'edit'
@@ -91,7 +93,38 @@ export interface AuditIssue {
   url: string | null
   state: 'new' | 'persisting'
   ignored: boolean
+  /** The fix pressed on it; the finding stays until the next run says it is gone. */
+  fixed_with: string | null
+  fixed_at: string | null
   details: AuditDetails
+}
+
+/** One thing a fix changes: a field with its count of replacements, or a setting before and after. */
+export interface AuditFixChange {
+  label: string
+  field?: string | null
+  count?: number
+  before?: string | null
+  after?: string | null
+  edit_url?: string | null
+}
+
+/** A fix that can close a finding, with what it would change. */
+export interface AuditFixOffer {
+  id: string
+  title: string
+  description: string
+  changes: AuditFixChange[]
+  total: number
+  note: string | null
+}
+
+export interface AuditFixResult {
+  id: string
+  applied: boolean
+  changes: AuditFixChange[]
+  total: number
+  note: string | null
 }
 
 export interface AuditIssueQuery {

@@ -42,6 +42,32 @@ describe('createAuditApi', () => {
     })
   })
 
+  it('asks a finding for its fixes, then presses one — a dry run only when told', async () => {
+    const get = vi.fn().mockResolvedValue({ data: [{ id: 'audit.replace-host', total: 2 }] })
+    const post = vi.fn().mockResolvedValue({ data: { id: 'audit.replace-host', applied: true } })
+    const api = createAuditApi(context({ get, post }))
+
+    await expect(api.fixes(3, 17)).resolves.toEqual([{ id: 'audit.replace-host', total: 2 }])
+    expect(get).toHaveBeenCalledWith('/api/cms/audit/runs/3/issues/17/fixes')
+
+    await api.fix(3, 17, 'audit.replace-host')
+    await api.fix(3, 17, 'seo.normalise-host', true)
+    expect(post).toHaveBeenNthCalledWith(
+      1,
+      '/api/cms/audit/runs/3/issues/17/fixes/audit.replace-host',
+      {
+        dry_run: false,
+      },
+    )
+    expect(post).toHaveBeenNthCalledWith(
+      2,
+      '/api/cms/audit/runs/3/issues/17/fixes/seo.normalise-host',
+      {
+        dry_run: true,
+      },
+    )
+  })
+
   it('reads the checks of a run as they come', async () => {
     const get = vi.fn().mockResolvedValue({ data: [{ id: 'config.debug', count: 1 }] })
 

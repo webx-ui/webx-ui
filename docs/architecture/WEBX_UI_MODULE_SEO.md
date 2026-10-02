@@ -356,7 +356,8 @@ packages/module-seo/src/
 - ~~`sitemap.xml` — нужны сущности.~~ — сделано в v0.33.0, §17.
 - ~~Плагины `SeoExtension`: breadcrumbs, schema.org для сущностей, hreflang, twitter-cards.~~ —
   сделано в v0.33.0 контрактами, а не плагинами, §17.
-- Схлопывание цепочек редиректов.
+- ~~Схлопывание цепочек редиректов.~~ — исправление аудита `seo.collapse-chain` (`Audit\RedirectChains`),
+  кнопкой на находке `redirects.chain` или `seo.redirect_chain`; `WEBX_UI_MODULE_AUDIT.md` §14 A4.
 - Форма правила как экран (`seo.rule`) — после того, как механизм экранов обкатается на
   `admins.form`.
 

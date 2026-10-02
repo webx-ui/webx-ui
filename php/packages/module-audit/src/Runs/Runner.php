@@ -434,6 +434,7 @@ final class Runner
             'url' => $finding->url === null ? null : mb_substr($finding->url, 0, 2048),
             'details' => json_encode($finding->details, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE),
             'fingerprint' => $finding->fingerprint(),
+            'key' => mb_substr($finding->key, 0, 512),
             'state' => AuditIssue::NEW,
             'created_at' => $now,
             'updated_at' => $now,

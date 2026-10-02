@@ -40,6 +40,18 @@ interface Finding {
 }
 
 const BASE = 'https://shop.example.com'
+
+/* The fixes the modules register on the server, by the check they close (§7). */
+const FIXES: Record<string, string[]> = {
+  'hosts.dev_content': ['audit.replace-host'],
+  'host.mirror': ['seo.normalise-host'],
+  'host.https': ['seo.normalise-https'],
+  'host.index_files': ['seo.normalise-index'],
+  'redirects.chain': ['seo.collapse-chain'],
+}
+
+/* What was pressed, by finding: the finding stays until a run says it is gone, as on the server. */
+const pressed = new Map<string, string>()
 const STAGE_MS = 1500
 const STAGES = ['probes', 'database', 'analyse'] as const
 
@@ -953,6 +965,7 @@ export function registerAudit(on: On, fail: Fail, line: Line): void {
       data: [...rows.values()]
         .map((row) => ({
           ...row,
+          fixes: FIXES[row.id] ?? [],
           title: line(locale, 'webx-audit', `checks.${row.id}.title`),
           found: line(locale, 'webx-audit', `checks.${row.id}.found`),
           why: line(locale, 'webx-audit', `checks.${row.id}.why`),
@@ -967,13 +980,16 @@ export function registerAudit(on: On, fail: Fail, line: Line): void {
     const rows = filtered(run, query)
 
     return {
-      data: rows.map((finding, index) => ({
-        id: index + 1,
+      data: rows.map((finding) => ({
+        // The place in the run, not in the filtered list: the fix dialog asks by it.
+        id: run.findings.indexOf(finding) + 1,
         check: finding.check,
         severity: finding.severity,
         url: finding.url,
         state: state(run, finding),
         ignored: false,
+        fixed_with: pressed.get(fingerprint(finding)) ?? null,
+        fixed_at: null,
         details: {
           summary: fill(
             line(locale, 'webx-audit', `details.${finding.summary[0]}`),
@@ -999,6 +1015,95 @@ export function registerAudit(on: On, fail: Fail, line: Line): void {
         to: rows.length,
       },
     }
+  })
+
+  const issueOf = (run: Run, id: string): Finding => {
+    const finding = run.findings[Number(id) - 1]
+
+    if (!finding) throw fail(404, 'No such finding.')
+
+    return finding
+  }
+
+  const hostOf = (url: unknown) => {
+    try {
+      return new URL(String(url)).host
+    } catch {
+      return ''
+    }
+  }
+
+  /* What a fix would change, the way the server's previews say it. */
+  const offer = (finding: Finding, id: string, locale: string) => {
+    const seo = (key: string) => line(locale, 'webx-seo', key)
+    const setting = (name: string, after: string) => [
+      {
+        label: seo(`screen.${name}`),
+        before: seo('screen.normalise-off'),
+        after,
+        edit_url: '/settings',
+      },
+    ]
+
+    const changes =
+      id === 'audit.replace-host'
+        ? [
+            {
+              label: String(finding.table?.rows[0]?.record ?? ''),
+              field: String(finding.table?.rows[0]?.field ?? ''),
+              count: finding.table?.rows.length ?? 0,
+              before: [...new Set(finding.table?.rows.map((row) => hostOf(row.url)))].join(', '),
+              after: hostOf(BASE),
+              edit_url: String(finding.table?.rows[0]?.edit ?? ''),
+            },
+          ]
+        : id === 'seo.normalise-host'
+          ? setting('normalise-host', seo('screen.normalise-host-bare'))
+          : id === 'seo.normalise-https'
+            ? setting('normalise-https', seo('audit.on'))
+            : id === 'seo.normalise-index'
+              ? setting('normalise-index', seo('audit.on'))
+              : (finding.table?.rows ?? []).slice(0, -2).map((row) => ({
+                  label: new URL(String(row.url)).pathname,
+                  before: new URL(String(finding.table?.rows.at(-2)?.url)).pathname,
+                  after: new URL(String(finding.table?.rows.at(-1)?.url)).pathname,
+                  edit_url: '/seo/redirects',
+                }))
+    const namespace = id.startsWith('seo.') ? 'webx-seo' : 'webx-audit'
+
+    return {
+      id,
+      title: line(locale, namespace, `fixes.${id}.title`),
+      description: line(locale, namespace, `fixes.${id}.description`),
+      changes,
+      total: changes.reduce((sum, change) => sum + ('count' in change ? change.count : 1), 0),
+      note: id.startsWith('seo.normalise') ? seo('audit.normalise-note') : null,
+    }
+  }
+
+  on('GET', '/audit/runs/(\\d+)/issues/(\\d+)/fixes', ({ params, locale }) => {
+    const finding = issueOf(find(params[0]!), params[1]!)
+
+    return {
+      data: pressed.has(fingerprint(finding))
+        ? []
+        : (FIXES[finding.check] ?? []).map((id) => offer(finding, id, locale)),
+    }
+  })
+
+  on('POST', '/audit/runs/(\\d+)/issues/(\\d+)/fixes/([^/]+)', ({ params, body, locale }) => {
+    const finding = issueOf(find(params[0]!), params[1]!)
+    const id = decodeURIComponent(params[2]!)
+
+    if (!(FIXES[finding.check] ?? []).includes(id) || pressed.has(fingerprint(finding))) {
+      throw fail(422, 'This fix cannot close this finding any more. Run the audit again.')
+    }
+
+    const dryRun = Boolean((body as { dry_run?: boolean } | null)?.dry_run)
+
+    if (!dryRun) pressed.set(fingerprint(finding), id)
+
+    return { data: { ...offer(finding, id, locale), applied: !dryRun } }
   })
 
   const pagesOf = (run: Run) => (run.scope === 'full' ? PAGES : [])

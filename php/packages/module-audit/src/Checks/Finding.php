@@ -12,6 +12,9 @@ namespace WebxUi\Audit\Checks;
  * panel draws every check's expansion with one component from that shape, and the words are
  * translated for whoever reads them rather than for whoever ran the audit.
  *
+ * `runId` is set on a finding read back from the database — what a fix needs to reach the
+ * run's snapshot; a check that yields findings leaves it out.
+ *
  * `key` tells two findings of one check at one address apart — the field of a record, the asset
  * of a page — and goes into the fingerprint, so the same problem is recognised in the next run.
  */
@@ -27,6 +30,7 @@ final readonly class Finding
         public array $details = [],
         public string $key = '',
         public ?int $pageId = null,
+        public ?int $runId = null,
     ) {}
 
     public function fingerprint(): string

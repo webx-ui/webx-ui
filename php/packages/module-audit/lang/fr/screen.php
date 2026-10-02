@@ -10,4 +10,5 @@ return [
     'resolve-to-help' => 'Une adresse IP ou un hôte vers lequel ouvrir la connexion, le nom public restant dans la requête. Vide signifie ce que répond le DNS. Pour Docker et les serveurs derrière un NAT.',
     'other-hosts' => 'Autres adresses de ce site',
     'other-hosts-help' => 'Environnements de développement, de préproduction et anciens domaines, un par ligne. Un lien vers l’un d’eux est une erreur, où qu’il soit trouvé.',
+    'fix-unavailable' => 'Cette correction ne peut plus résoudre ce constat. Relancez l’audit.',
 ];

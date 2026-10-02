@@ -29,16 +29,28 @@ final class RegionContentSource implements AuditContentSource
     public function records(): iterable
     {
         foreach (Region::query()->lazyById(100) as $region) {
-            $name = (string) $region->getAttribute('name');
-
-            yield new ContentRecord(
-                $name,
-                $this->regions->has($name) ? $this->regions->title($name) : $name,
-                $region->isPublished(),
-                '/regions/'.$name,
-                $region,
-            );
+            yield $this->record($region);
         }
+    }
+
+    public function find(string $id): ?ContentRecord
+    {
+        $region = Region::query()->where('name', $id)->first();
+
+        return $region instanceof Region ? $this->record($region) : null;
+    }
+
+    private function record(Region $region): ContentRecord
+    {
+        $name = (string) $region->getAttribute('name');
+
+        return new ContentRecord(
+            $name,
+            $this->regions->has($name) ? $this->regions->title($name) : $name,
+            $region->isPublished(),
+            '/regions/'.$name,
+            $region,
+        );
     }
 
     public function fields(ContentRecord $record): iterable
