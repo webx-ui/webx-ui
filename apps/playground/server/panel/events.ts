@@ -15,7 +15,7 @@ import { find as findService, row as serviceRow, services } from './services'
  * are filed under, with pages of their own.
  *
  * The dates are the point of this fixture. The "server" keeps every moment in its own zone —
- * Hong Kong, +08:00, as omnivitality does — and answers with the offset (`toAtomString()`), so a
+ * Hong Kong, +08:00, as a client site does — and answers with the offset (`toAtomString()`), so a
  * browser in any other zone has to show the hour it picked and get the same hour back after a
  * save and a reload. Every seeded date is counted from the moment the server started, or the demo
  * would drift into the past by itself.
@@ -194,7 +194,7 @@ function term(title: [string, string], slug: string, lead = ''): void {
   })
 }
 
-/* Omnivitality's formats (§4.12): each one a category with a page of its own. */
+/* A client site's formats (§4.12): each one a category with a page of its own. */
 term(
   ['Завтраки-встречи', 'Breakfast meetings'],
   'breakfast-meetings',

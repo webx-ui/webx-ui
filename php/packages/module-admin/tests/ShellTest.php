@@ -38,12 +38,12 @@ final class ShellTest extends TestCase
         $this->assertSame('image/png', $icon->headers->get('Content-Type'));
         $this->assertStringContainsString('max-age=86400', (string) $icon->headers->get('Cache-Control'));
 
-        config()->set('webx-admin.title', 'Omni Panel');
+        config()->set('webx-admin.title', 'Acme Panel');
 
         $this->get('/cms/site.webmanifest')
             ->assertOk()
             ->assertHeader('Content-Type', 'application/manifest+json')
-            ->assertJsonPath('name', 'Omni Panel')
+            ->assertJsonPath('name', 'Acme Panel')
             ->assertJsonPath('start_url', '/cms/')
             ->assertJsonPath('icons.1.src', '/cms/web-app-manifest-512x512.png');
     }

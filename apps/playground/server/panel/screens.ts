@@ -71,7 +71,7 @@ const SCREENS: Record<string, { base: string; patches: (string | Patch)[] }> = {
   },
   'recipes.form': {
     base: 'php/packages/module-recipes/resources/screens/form.json',
-    // The author's note is the project's field, as omnivitality has one: into `extra`.
+    // The author's note is the project's field, as a client site has one: into `extra`.
     patches: [
       'php/packages/module-seo/resources/screens/recipes.form.json',
       'apps/playground/server/panel/project/recipes.form.json',

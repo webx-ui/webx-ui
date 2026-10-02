@@ -445,7 +445,7 @@ add(
 /*
  * The index of the press (decision 12 of its spec): not a route of the module but a page with its
  * blocks — the logo strip of the featured outlets, the catalogue in a section for each kind the
- * way omnivitality has it, and the latest articles. Last, for the same reason as the ones above.
+ * way a client site has it, and the latest articles. Last, for the same reason as the ones above.
  */
 add(
   {

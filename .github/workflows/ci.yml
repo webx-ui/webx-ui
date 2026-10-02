@@ -229,13 +229,39 @@ jobs:
           MANTICORE_TEST_PORT: 9308
         run: vendor/bin/phpunit --fail-on-skipped packages/module-catalog-manticore/tests
 
+  # Names of client projects never go public. The list is the leak, so it lives in the
+  # FORBIDDEN_NAMES secret and nowhere in the code; a fork has no secret and the script passes.
+  # The tree is checked always, the messages of what the run brings in — when it brings any.
+  names:
+    name: No client names
+    runs-on: ubuntu-latest
+    env:
+      WEBX_FORBIDDEN_NAMES: ${{ secrets.FORBIDDEN_NAMES }}
+      RANGE_FROM: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
+      RANGE_TO: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
+      PR_TEXT: ${{ github.event.pull_request.title }} ${{ github.event.pull_request.body }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: The tree
+        run: node scripts/check-names.mjs
+      - name: The commit messages
+        if: env.RANGE_FROM != '' && env.RANGE_FROM != '0000000000000000000000000000000000000000'
+        run: node scripts/check-names.mjs --commits "$RANGE_FROM..$RANGE_TO"
+      - name: The pull request's title and body
+        if: github.event_name == 'pull_request'
+        run: |
+          printf '%s' "$PR_TEXT" > "$RUNNER_TEMP/pr.txt"
+          node scripts/check-names.mjs --message "$RUNNER_TEMP/pr.txt"
+
   # The ruleset requires a check by this name, so it stays the one name the rest report into.
   # `always()` is the point: without it a failed job makes this one skipped, and GitHub counts
   # a skipped required check as passed. Skipped jobs are fine — that is the version PR's path and
   # the path of everything a change does not reach.
   verify:
     name: Lint, typecheck, test, build
-    needs: [changes, lint, typecheck, test, docs, manticore, release-pr]
+    needs: [changes, names, lint, typecheck, test, docs, manticore, release-pr]
     if: always()
     runs-on: ubuntu-latest
     steps:
