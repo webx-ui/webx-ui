@@ -18,12 +18,20 @@ import {
 import AuditDetails from './AuditDetails.vue'
 import { createAuditApi } from './api'
 import { useAuditMessages } from './i18n'
-import type { AuditLinkRow, AuditPage, AuditPageCard, AuditSeverity } from './types'
+import type {
+  AuditLinkRow,
+  AuditPage,
+  AuditPageCard,
+  AuditResourceRow,
+  AuditResourceTab,
+  AuditSeverity,
+} from './types'
 
 /**
  * One page of the snapshot, sliding in from the right (§8): what it answered and what its head
- * says, its findings, and the links that lead in and out of it — with the answer of each own page
- * and the class of each host.
+ * says, its findings, the links that lead in and out of it — with the answer of each own page
+ * and the class of each host — what it loads (pictures, CSS, JS) with what each answered, and
+ * its structured data with what the types lack.
  */
 const props = defineProps<{
   run: number
@@ -46,6 +54,10 @@ const failure = ref<string | null>(null)
 const tab = ref<TabValue>('overview')
 const links = ref<AuditPage<AuditLinkRow> | null>(null)
 const linksLoading = ref(false)
+const resources = ref<AuditPage<AuditResourceRow> | null>(null)
+const resourcesLoading = ref(false)
+
+const resourceTabs: AuditResourceTab[] = ['images', 'css', 'js']
 
 const open = computed({
   get: () => props.pageId !== null,
@@ -59,7 +71,19 @@ const tabs = computed<TabItem[]>(() => [
   { value: 'issues', label: t('page.card-issues'), badge: card.value?.counts.issues || undefined },
   { value: 'in', label: t('page.card-incoming'), badge: card.value?.counts.incoming || undefined },
   { value: 'out', label: t('page.card-outgoing'), badge: card.value?.counts.outgoing || undefined },
+  { value: 'images', label: t('page.card-images'), badge: card.value?.counts.images || undefined },
+  { value: 'css', label: t('page.card-css'), badge: card.value?.counts.css || undefined },
+  { value: 'js', label: t('page.card-js'), badge: card.value?.counts.js || undefined },
+  {
+    value: 'microdata',
+    label: t('page.card-microdata'),
+    badge: card.value?.counts.microdata || undefined,
+  },
 ])
+
+const resourceTab = computed<AuditResourceTab | null>(() =>
+  resourceTabs.includes(tab.value as AuditResourceTab) ? (tab.value as AuditResourceTab) : null,
+)
 
 const severities: Record<AuditSeverity, BadgeType> = {
   error: 'danger',
@@ -81,6 +105,28 @@ const linkColumns = computed<TableColumn<AuditLinkRow>[]>(() => [
   { key: 'anchor', label: t('page.anchor'), minWidth: 140 },
   { key: 'host_class', label: t('page.host'), width: 120 },
 ])
+
+/** Pictures show their alt; stylesheets and scripts how they are cached and compressed. */
+const resourceColumns = computed<TableColumn<AuditResourceRow>[]>(() => [
+  { key: 'url', label: t('page.address'), minWidth: 220 },
+  { key: 'status', label: t('page.field-status'), width: 80 },
+  { key: 'bytes', label: t('page.size'), width: 110 },
+  ...(resourceTab.value === 'images'
+    ? [{ key: 'alt', label: t('page.alt'), minWidth: 120 }]
+    : [
+        { key: 'cache_control', label: t('page.cache'), minWidth: 120 },
+        { key: 'compression', label: t('page.field-compression'), width: 100 },
+      ]),
+])
+
+function size(row: AuditResourceRow): string {
+  if (row.bytes === null) return ''
+
+  const kb = row.bytes / 1024
+  const text = kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${Math.round(kb)} KB`
+
+  return row.width && row.height ? `${text} · ${row.width}×${row.height}` : text
+}
 
 /** The answer, the markup and where the page came from — label and value, in reading order. */
 const facts = computed<[string, string][]>(() => {
@@ -149,6 +195,7 @@ async function load(id: number): Promise<void> {
   card.value = null
   failure.value = null
   links.value = null
+  resources.value = null
   tab.value = 'overview'
 
   try {
@@ -176,6 +223,26 @@ async function loadLinks(state: TableState): Promise<void> {
   }
 }
 
+async function loadResources(state: TableState): Promise<void> {
+  const current = resourceTab.value
+
+  if (props.pageId === null || current === null) return
+
+  resourcesLoading.value = true
+
+  try {
+    resources.value = await api.resources(props.run, props.pageId, {
+      tab: current,
+      page: state.page,
+      per_page: state.perPage,
+    })
+  } catch (error) {
+    failure.value = message(error)
+  } finally {
+    resourcesLoading.value = false
+  }
+}
+
 watch(
   () => props.pageId,
   (id) => {
@@ -184,7 +251,10 @@ watch(
   { immediate: true },
 )
 
-watch(tab, () => (links.value = null))
+watch(tab, () => {
+  links.value = null
+  resources.value = null
+})
 </script>
 
 <template>
@@ -239,6 +309,79 @@ watch(tab, () => (links.value = null))
               }}</wx-badge>
             </div>
             <audit-details :details="issue.details" />
+          </div>
+        </div>
+
+        <wx-table
+          v-else-if="resourceTab"
+          :key="`resources-${String(tab)}`"
+          :data="resources"
+          :columns="resourceColumns"
+          row-key="id"
+          flush
+          :loading="resourcesLoading"
+          :per-page-options="[]"
+          :empty-text="t('page.no-resources')"
+          @state-change="loadResources"
+        >
+          <template #cell-url="{ row }">
+            <span class="wx-audit-card__url">{{ row.url }}</span>
+            <wx-text v-if="row.location" size="sm" tone="muted" class="wx-audit-card__url">
+              → {{ row.location }}</wx-text
+            >
+            <wx-text v-if="row.error" size="sm" tone="danger">{{ row.error }}</wx-text>
+          </template>
+          <template #cell-status="{ row }">
+            <wx-badge v-if="row.status !== null" :type="statusType(row.status)" size="sm">{{
+              row.status
+            }}</wx-badge>
+            <wx-badge v-else-if="row.checked" type="danger" size="sm">—</wx-badge>
+            <wx-text v-else size="sm" tone="muted">{{ t('page.not-checked') }}</wx-text>
+          </template>
+          <template #cell-bytes="{ row }">{{ size(row) }}</template>
+          <template #cell-alt="{ row }">
+            <wx-text v-if="row.alt === null && row.kind === 'img'" size="sm" tone="danger">{{
+              t('page.missing')
+            }}</wx-text>
+            <template v-else>{{ row.alt ?? '' }}</template>
+          </template>
+        </wx-table>
+
+        <div v-else-if="tab === 'microdata'" class="wx-audit-card__issues">
+          <wx-text v-if="!card.page.json_ld.length" tone="muted">{{
+            t('page.no-json-ld')
+          }}</wx-text>
+          <div
+            v-for="(block, index) in card.page.json_ld"
+            :key="index"
+            class="wx-audit-card__issue"
+          >
+            <div class="wx-audit-card__issue-head">
+              <wx-text size="sm" weight="semibold">{{
+                t('page.jsonld-block', { number: index + 1 })
+              }}</wx-text>
+              <wx-badge v-for="type in block.types" :key="type" size="sm">{{ type }}</wx-badge>
+            </div>
+            <wx-text v-if="block.error" size="sm" tone="danger"
+              >{{ t('page.jsonld-error') }} {{ block.error }}</wx-text
+            >
+            <template v-for="(item, position) in block.items ?? []" :key="position">
+              <wx-text v-if="item.missing.length" size="sm" tone="danger"
+                >{{ item.type }} — {{ t('page.jsonld-required') }}
+                {{ item.missing.join(', ') }}</wx-text
+              >
+              <wx-text v-if="item.recommended.length" size="sm" tone="muted"
+                >{{ item.type }} — {{ t('page.jsonld-recommended') }}
+                {{ item.recommended.join(', ') }}</wx-text
+              >
+              <wx-text
+                v-if="!item.missing.length && !item.recommended.length"
+                size="sm"
+                tone="success"
+                >{{ item.type }} — {{ t('page.jsonld-complete') }}</wx-text
+              >
+            </template>
+            <pre v-if="block.source" class="wx-audit-card__source">{{ block.source }}</pre>
           </div>
         </div>
 
@@ -332,6 +475,19 @@ watch(tab, () => (links.value = null))
   flex-direction: column;
   gap: var(--wx-space-6);
   min-width: 0;
+}
+
+.wx-audit-card__source {
+  max-height: 240px;
+  margin: 0;
+  padding: var(--wx-space-8);
+  overflow: auto;
+  border-radius: var(--wx-radius-sm);
+  background: var(--wx-bg-muted);
+  font-family: var(--wx-font-family-mono);
+  font-size: var(--wx-font-size-xs);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .wx-audit-card__issue-head {

@@ -188,6 +188,12 @@ return [
             'why' => 'Eski tarayıcılarda açılan sayfa, sitenin sekmesini kendi seçtiği bir sayfaya yönlendirebilir.',
             'fix' => 'target="_blank" olan bağlantılara rel="noopener" (veya noreferrer) ekleyin.',
         ],
+        'external_redirect' => [
+            'title' => 'Yönlendirme üzerinden giden dış bağlantılar',
+            'found' => 'Başka bir siteye giden bir bağlantı yönlendirmeyle yanıt veriyor.',
+            'why' => 'Bağlantı dolambaçlı yoldan çalışır ve bu genellikle sayfanın taşındığı, bağlantının ise hiç güncellenmediği anlamına gelir.',
+            'fix' => 'Bağlantıyı, yönlendirdiği adresle değiştirin.',
+        ],
     ],
     'indexing' => [
         'home_noindex' => [
@@ -201,6 +207,96 @@ return [
             'found' => 'Sayfada robots meta etiketinde veya X-Robots-Tag başlığında noindex var.',
             'why' => 'Arama motorları sayfayı düşürür. Arama sonuçları ve hizmet sayfaları için doğru, yanlışlıkla kapatılmış içerik için yanlıştır.',
             'fix' => 'Listeye göz atın; bulunması gereken sayfaları SEO ayarlarında açın ve noindex’i kaldırın.',
+        ],
+    ],
+    'robots' => [
+        'missing' => [
+            'title' => 'robots.txt yok',
+            'found' => '/robots.txt 200 yanıtı vermiyor veya düz metin dışında bir şeyle yanıt veriyor.',
+            'why' => 'Arama motorları eksik bir dosyayı “her şeye izin var”, hata veren bir dosyayı ise “sonra tekrar gel” olarak okur — sitenin vermek istediği kurallar kaybolur.',
+            'fix' => 'robots.txt’yi text/plain olarak sunun. module-seo ile bu “robots.txt” ayarıdır; onu gölgeleyen statik public/robots.txt dosyasını kaldırın.',
+        ],
+        'disallow_all' => [
+            'title' => 'robots.txt tüm siteyi kapatıyor',
+            'found' => 'Canlı bir alan adında robots.txt tüm robotlar için Disallow: / içeriyor.',
+            'why' => 'Arama motorları siteyi taramayı bırakır ve onu sonuçlardan çıkarır. Bu genellikle dağıtımla birlikte canlıya çıkan geliştirme ortamı dosyasıdır.',
+            'fix' => '* grubundan Disallow: / satırını kaldırın veya yalnızca gelmemesi gereken robotlar için bırakın.',
+        ],
+        'no_sitemap' => [
+            'title' => 'robots.txt site haritasını belirtmiyor',
+            'found' => 'robots.txt’de Sitemap: satırı yok.',
+            'why' => 'Arama motorları site haritasını yalnızca elle gösterildiği yerde bulur, yeni arama motorları ise hiç bulamaz.',
+            'fix' => 'robots.txt’ye Sitemap: https://…/sitemap.xml satırını ekleyin.',
+        ],
+        'blocks_assets' => [
+            'title' => 'robots.txt CSS veya JS’yi kapatıyor',
+            'found' => 'Ana sayfanın yüklediği bir stil dosyası veya betik robots.txt’de kapatılmış.',
+            'why' => 'Arama motorları sayfayı onlarsız çizer, bozuk bir düzen görür ve sayfayı mobil uyumlu saymayabilir.',
+            'fix' => 'CSS ve JS klasörlerine izin verin veya onları kapatan kuralı kaldırın.',
+        ],
+        'syntax' => [
+            'title' => 'robots.txt’nin anlamadığı satırlar',
+            'found' => 'robots.txt’de bilinmeyen yönergeler, herhangi bir User-agent’tan önce gelen kurallar veya “alan: değer” biçiminde olmayan satırlar var.',
+            'why' => 'Arama motorları bu satırları sessizce atlar: Disalow’daki bir yazım hatası hiçbir şeyi kapatmaz ve kimse yıllarca fark etmez.',
+            'fix' => 'Yazımı düzeltin ve her kural grubunu bir User-agent satırıyla başlatın.',
+        ],
+    ],
+    'sitemap' => [
+        'missing' => [
+            'title' => 'Site haritası yok',
+            'found' => 'Site haritası yanıt vermiyor veya ayrıştırılamıyor — ya da robots.txt’nin veya dizinin belirttiği bir dosya öyle.',
+            'why' => 'Arama motorları yeni ve derin sayfaları yalnızca tarayarak, yavaşça bulur; hiçbir şeyin bağlantı vermediği sayfaları ise hiç bulamaz.',
+            'fix' => 'robots.txt’nin belirttiği adreste geçerli bir site haritası sunun. module-seo ile adres kaydından oluşturulur.',
+        ],
+        'limits' => [
+            'title' => 'Sınırları aşan bir site haritası dosyası',
+            'found' => 'Bir site haritası dosyasında 50 000’den fazla adres var veya sıkıştırılmamış hâli 50 MB’tan büyük.',
+            'why' => 'Arama motorları böyle bir dosyayı yalnızca sonunu değil, tamamen düşürür.',
+            'fix' => 'Site haritasını bir site haritası dizini altında birkaç dosyaya bölün.',
+        ],
+        'bad_url' => [
+            'title' => 'Site haritasında dizinlenecek sayfa olmayan adresler',
+            'found' => 'Site haritasındaki bir adres hata veya yönlendirmeyle yanıt veriyor, noindex ile kapatılmış ya da canonical’ı başka bir sayfayı gösteriyor.',
+            'why' => 'Site haritası bir orijinaller listesidir; böyle her adres, arama motorunun ziyaretini atacağı bir şeye harcar ve bunların çok olması site haritasına daha az güvenmesine yol açar.',
+            'fix' => 'Yalnızca bulunması gereken çalışan sayfaları, son adresleriyle listeleyin.',
+        ],
+        'lastmod' => [
+            'title' => 'Site haritasındaki lastmod hiçbir şey söylemiyor',
+            'found' => 'lastmod gelecekte veya bir dosyanın tüm adreslerinde aynı.',
+            'why' => 'Arama motorları tarihin tutulmak yerine öylesine yazdırıldığını öğrenir ve neyi yeniden tarayacağına karar verirken onu kullanmayı bırakır.',
+            'fix' => 'Sayfa içeriğinin son değiştiği tarihi yazdırın veya lastmod’u hiç koymayın.',
+        ],
+        'missing_page' => [
+            'title' => 'Site haritasında eksik sayfalar',
+            'found' => 'Taramanın ulaştığı dizinlenebilir bir sayfa site haritasında yok.',
+            'why' => 'Arama motorları onu yalnızca bağlantılar üzerinden, daha sonra bulur — ve son bağlantısını kaybeden bir sayfa düşer.',
+            'fix' => 'Sayfanın modülünün onu site haritasına eklediğinden emin olun (module-seo ile — adres kaydı üzerinden) veya bulunmaması gerekiyorsa noindex ile kapatın.',
+        ],
+    ],
+    'redirects' => [
+        'chain' => [
+            'title' => 'Yönlendirme zincirleri',
+            'found' => 'Bir adres sayfaya ulaşmadan önce birden fazla kez yönlendiriyor.',
+            'why' => 'Her adım ziyaretçi için bir gidiş-dönüştür ve arama motorları sona varmadan izlemeyi bırakabilir.',
+            'fix' => 'İlk yönlendirmeyi doğrudan son adrese yöneltin.',
+        ],
+        'loop' => [
+            'title' => 'Yönlendirme döngüleri',
+            'found' => 'Yönlendirmeler daha önce geçtikleri bir adrese geri dönüyor.',
+            'why' => 'Tarayıcı “çok fazla yönlendirme” diyerek pes eder — sayfa kimse için var olmaz.',
+            'fix' => 'Adresi ileri geri gönderen iki kuralı bulun ve birini kaldırın.',
+        ],
+        'to_error' => [
+            'title' => 'Hataya giden yönlendirmeler',
+            'found' => 'Bir yönlendirme 4xx, 5xx veya yanıtsızlıkla sona eriyor.',
+            'why' => 'Eski adres yalnızca ölü bir adrese götürmek için yaşatılıyor: ziyaretçiler ve arama motorları bir hataya düşer.',
+            'fix' => 'Yönlendirmeyi çalışan bir sayfaya yöneltin veya kaldırın.',
+        ],
+        'temporary' => [
+            'title' => 'Geçici yönlendirmeler',
+            'found' => 'Bir adres 302 veya 307 yanıtı veriyor.',
+            'why' => 'Arama motorları eski adresi dizinde tutar ve yeni adrese ağırlığından hiçbir şey vermez. Geri alınacak bir yönlendirme için doğru, kalıcı bir taşınma için yanlıştır.',
+            'fix' => 'Listeye göz atın; kalıcı olarak taşınan adreslerin yönlendirmelerini 301 yapın.',
         ],
     ],
     'title' => [
@@ -311,10 +407,10 @@ return [
     ],
     'html' => [
         'lang' => [
-            'title' => 'Sayfa dili yok',
-            'found' => '<html> etiketinde lang özniteliği yok.',
+            'title' => 'Sayfa dili yok veya yanlış',
+            'found' => '<html> etiketinde lang özniteliği yok veya sayfanın kendi hreflang satırından farklı bir dili belirtiyor.',
             'why' => 'Ekran okuyucular sesi ona göre seçer, tarayıcılar çeviriyi ona göre önerir ve arama motorları onu bir ipucu olarak kullanır.',
-            'fix' => 'Ana şablonda sayfanın diliyle <html lang="…"> yazdırın.',
+            'fix' => 'Ana şablonda sayfanın diliyle <html lang="…"> yazdırın — sitenin varsayılan dilini değil, sayfanın dilini.',
         ],
         'viewport' => [
             'title' => 'Meta viewport yok',
@@ -323,10 +419,10 @@ return [
             'fix' => 'Ana şablona <meta name="viewport" content="width=device-width, initial-scale=1"> ekleyin.',
         ],
         'favicon' => [
-            'title' => 'Simge yok',
-            'found' => 'Sayfa hiçbir simgeye bağlantı vermiyor.',
+            'title' => 'Simge yok veya açılmıyor',
+            'found' => 'Sayfa hiçbir simgeye bağlantı vermiyor veya bağlantı verdiği simge açılmıyor.',
             'why' => 'Tarayıcı sekmeleri, yer imleri ve telefonlardaki arama sonuçları sitenin işareti yerine boş bir kare gösterir.',
-            'fix' => 'Ana şablona <link rel="icon"> ekleyin.',
+            'fix' => 'Ana şablona çalışan bir adresle <link rel="icon"> ekleyin.',
         ],
     ],
     'og' => [
@@ -335,6 +431,52 @@ return [
             'found' => 'Sayfada og:title, og:image veya og:url yok.',
             'why' => 'Bir mesajlaşma uygulamasında veya sosyal ağda paylaşılan bağlantı, görselsiz ve başlıksız çıplak bir adres olarak görünür.',
             'fix' => 'Sayfanın SEO ayarlarında sosyal önizlemeyi doldurun veya ana şablonun etiketleri yazdırmasını sağlayın.',
+        ],
+        'image_broken' => [
+            'title' => 'Open Graph görseli bozuk veya küçük',
+            'found' => 'og:image açılmıyor veya 1200×630’dan küçük.',
+            'why' => 'Paylaşılan bir bağlantı görsel göstermez ya da büyük bir kart yerine metnin yanında küçük bir kare gösterir.',
+            'fix' => 'Sayfanın sosyal önizlemesinde en az 1200×630 boyutunda çalışan bir görsel ayarlayın.',
+        ],
+    ],
+    'hreflang' => [
+        'not_reciprocal' => [
+            'title' => 'Geri bağlantısız hreflang',
+            'found' => 'Sayfa başka bir dil sürümünü belirtiyor, o sürüm ise sayfayı geri belirtmiyor.',
+            'why' => 'Arama motorları iki taraftan onaylanmamış bir dil sürümü çiftini yok sayar ve ziyaretçilere yanlış dili gösterir.',
+            'fix' => 'Sayfanın her dil sürümünde aynı hreflang bağlantı kümesini yazdırın; her biri diğerlerinin hepsini ve kendisini belirtsin.',
+        ],
+        'no_x_default' => [
+            'title' => 'x-default yok',
+            'found' => 'Sayfa birkaç dil sürümü belirtiyor ama x-default belirtmiyor.',
+            'why' => 'Dili bunların hiçbiri olmayan bir ziyaretçi, arama motorunun tahmin ettiği sürümü alır.',
+            'fix' => 'Geri kalan herkes için olan sürümü gösteren hreflang="x-default" ekleyin; genellikle dil seçici veya ana dil.',
+        ],
+        'broken' => [
+            'title' => 'Bozuk hreflang',
+            'found' => 'Bir dil sürümü hata veya yönlendirmeyle yanıt veriyor ya da dil kodu arama motorlarının okuduğu bir kod değil.',
+            'why' => 'Çift düşürülür. Yaygın hatalar: en-GB yerine en-UK, ja yerine jp.',
+            'fix' => 'hreflang’i her sürümün çalışan adresine yöneltin ve ISO 639-1 dil ile ISO 3166-1 bölge kodlarını kullanın.',
+        ],
+    ],
+    'jsonld' => [
+        'invalid' => [
+            'title' => 'Ayrıştırılamayan yapılandırılmış veriler',
+            'found' => 'Bir JSON-LD bloğu geçerli JSON değil.',
+            'why' => 'Yalnızca bozuk alan değil, bloğun tamamı kaybolur: zengin sonuç yok, içerik haritası yok, aramada ürün kartı yok.',
+            'fix' => 'Bloğu yazdıran şablonda sondaki virgülü veya kaçışsız tırnağı arayın; bloğu elle değil json_encode ile oluşturun.',
+        ],
+        'required' => [
+            'title' => 'Zorunlu alanları eksik yapılandırılmış veriler',
+            'found' => 'Bir Product, Article, Event, JobPosting, FAQPage veya BreadcrumbList öğesinde arama motorlarının zorunlu tuttuğu bir alan eksik.',
+            'why' => 'Sayfa zengin sonucunu kaybeder ve arama konsolu işaretlemeyi geçersiz olarak bildirir.',
+            'fix' => 'Listelenen alanları doldurun — sayfanın içeriğinde veya işaretlemeyi yazdıran şablonda.',
+        ],
+        'recommended' => [
+            'title' => 'Önerilen alanları eksik yapılandırılmış veriler',
+            'found' => 'Bir Product, Article, Event veya JobPosting öğesinde zengin sonucunu daha zengin yapan alanlar eksik.',
+            'why' => 'İşaretleme geçerlidir; snippet daha sadedir — görsel yok, marka yok, açıklama yok.',
+            'fix' => 'Listelenen alanları, içerikte bulundukları yerde ekleyin.',
         ],
     ],
     'content' => [
@@ -410,6 +552,18 @@ return [
             'why' => 'Site, arama motorlarından kendi bağlantılarını izlememelerini istiyor ve sayfa daha az ağırlık alıyor.',
             'fix' => 'Sitenin kendi sayfalarına giden bağlantılardan nofollow’u kaldırın.',
         ],
+        'to_redirect' => [
+            'title' => 'Yönlendirmelere giden iç bağlantılar',
+            'found' => 'Sitenin kendi sayfasına giden bir bağlantı, yönlendiren bir adrese gidiyor.',
+            'why' => 'Her tıklama fazladan bir gidiş-dönüştür ve sayfa ağırlığını doğrudan değil, bir yönlendirme üzerinden aktarır.',
+            'fix' => 'Yönlendirmenin götürdüğü adrese bağlantı verin.',
+        ],
+        'external_broken' => [
+            'title' => 'Bozuk dış bağlantılar',
+            'found' => 'Başka bir siteye giden bir bağlantı 4xx, 5xx yanıtı veriyor veya ana makine yanıt vermiyor.',
+            'why' => 'Ziyaretçiler başkasının sitesinde bir hataya düşer ve sayfa terk edilmiş görünür. 429 sayılmaz — bu, bir sunucunun bir robottan yavaşlamasını istemesidir.',
+            'fix' => 'Bağlantıyı sayfanın yeni adresine güncelleyin veya kaldırın.',
+        ],
     ],
     'mixed_content' => [
         'title' => 'Karışık içerik',
@@ -437,6 +591,24 @@ return [
             'found' => 'Bir <img> öğesinde width ve height yok.',
             'why' => 'Görseller yüklenirken sayfa zıplar ve ziyaretçiler yanlış yere tıklar.',
             'fix' => 'Şablonda görsellerin width ve height değerlerini yazdırın; CSS yine de onları duyarlı yapabilir.',
+        ],
+        'broken' => [
+            'title' => 'Bozuk görseller',
+            'found' => 'Sayfanın bir görseli 4xx, 5xx veya hiç yanıt vermiyor.',
+            'why' => 'Ziyaretçiler görselin yerinde bozuk bir simge veya boş bir kutu görür.',
+            'fix' => 'Görseli yeniden yükleyin veya içerikte ya da şablonda adresini düzeltin.',
+        ],
+        'heavy' => [
+            'title' => 'Ağır görseller',
+            'found' => 'Bir görsel eşikten daha ağır.',
+            'why' => 'Telefonda bu saniyelerce beklemek demektir ve sayfanın aramadaki hız değerlendirmesi düşer.',
+            'fix' => 'Görseli gösterildiği boyuta küçültün ve sıkıştırın; WebP veya AVIF sunun.',
+        ],
+        'format' => [
+            'title' => 'Eski biçimde görseller',
+            'found' => 'Sitenin eşiği aşan kendi JPEG veya PNG görseli, <picture> içinde modern bir kaynak olmadan WebP ve AVIF destekleyen bir tarayıcıya gönderiliyor.',
+            'why' => 'Aynı görsel WebP veya AVIF olarak genellikle üçte bir ile yarısı kadar tutar.',
+            'fix' => 'WebP veya AVIF sunun — modern bir kaynakla <picture> üzerinden ya da görselleri yüklerken dönüştürerek.',
         ],
     ],
     'a11y' => [

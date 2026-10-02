@@ -6,6 +6,7 @@ namespace WebxUi\Audit\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use WebxUi\Audit\Runs\AuditResource;
 use WebxUi\Audit\Runs\AuditRun;
 
 /**
@@ -20,6 +21,7 @@ final class RunResource extends JsonResource
     {
         /** @var AuditRun $run */
         $run = $this->resource;
+        $phase = $run->progress['crawl']['phase'] ?? null;
 
         return [
             'id' => $run->id,
@@ -32,6 +34,12 @@ final class RunResource extends JsonResource
                 'done' => $run->progress['done'] ?? [],
                 'checks' => count($run->progress['checks'] ?? []),
                 'pages' => ['crawled' => $run->pages_crawled, 'limit' => $run->pages_limit],
+                'phase' => $phase,
+                // Counted only while the stage runs: the overview polls this.
+                'resources' => $phase === 'resources' && $run->active() ? [
+                    'checked' => AuditResource::query()->where('run_id', $run->id)->whereNotNull('checked_at')->count(),
+                    'total' => AuditResource::query()->where('run_id', $run->id)->count(),
+                ] : null,
             ],
             'counts' => $run->counts,
             'started_by' => $run->started_by,

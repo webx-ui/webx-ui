@@ -32,6 +32,13 @@ function cell(row: Record<string, unknown>, column: AuditDetailsColumn): unknown
   return row[column.key]
 }
 
+/** Yes, no — or nothing, when the check could not tell (the other page was not crawled). */
+function yesNo(value: unknown): string {
+  if (value === null || value === undefined) return ''
+
+  return value ? t('page.yes') : t('page.no')
+}
+
 function text(value: unknown): string {
   return value === null || value === undefined ? '' : String(value)
 }
@@ -71,7 +78,7 @@ function text(value: unknown): string {
                 >{{ text(cell(row, column)) }}</wx-badge
               >
               <template v-else-if="column.type === 'bool'">
-                {{ cell(row, column) ? t('page.yes') : t('page.no') }}
+                {{ yesNo(cell(row, column)) }}
               </template>
               <wx-text
                 v-else-if="column.type === 'missing' && !text(cell(row, column))"

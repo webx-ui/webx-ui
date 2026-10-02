@@ -7,9 +7,11 @@ namespace WebxUi\Audit\Checks\Page;
 use WebxUi\Audit\Checks\AuditContext;
 use WebxUi\Audit\Checks\Severity;
 use WebxUi\Audit\Runs\AuditPage;
+use WebxUi\Audit\Runs\AuditResource;
 
 /**
- * No icon linked from the page. Whether it opens is checked with the other pictures (A3).
+ * No icon linked from the page, or the one linked does not open (asked with the other things
+ * the page loads, §3 stage 5).
  */
 final class Favicon extends PageCheck
 {
@@ -19,8 +21,18 @@ final class Favicon extends PageCheck
 
     protected function inspect(AuditPage $page, AuditContext $context): iterable
     {
-        if ($page->fact('favicon') === null) {
+        $icon = $page->fact('favicon');
+
+        if (! is_string($icon)) {
             yield $this->on($page, 'favicon');
+
+            return;
+        }
+
+        $resource = AuditResource::query()->where('run_id', $page->run_id)->where('url_hash', sha1($icon))->first();
+
+        if ($resource !== null && $resource->broken()) {
+            yield $this->on($page, 'favicon-broken', ['url' => $icon, 'status' => $resource->status ?? '—']);
         }
     }
 }

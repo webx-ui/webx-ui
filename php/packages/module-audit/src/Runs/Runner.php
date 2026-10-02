@@ -17,6 +17,7 @@ use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Audit\Content\ContentScanner;
 use WebxUi\Audit\Contracts\AuditCheck;
 use WebxUi\Audit\Crawl\Crawler;
+use WebxUi\Audit\Crawl\Resources;
 use WebxUi\Audit\Crawl\RobotsRules;
 use WebxUi\Audit\Crawl\Seeder;
 use WebxUi\Audit\Probes\Prober;
@@ -34,9 +35,10 @@ use WebxUi\Audit\Probes\SiteClient;
  * requests), `database`, `crawl` (the full scope only) and `analyse`. A check runs once, in the
  * last stage of the ones it needs.
  *
- * The crawl is three phases in `progress.crawl`: `seed` (home, sitemap, registry, robots.txt),
- * `fetch` (the queue, a few pages at a time, piece after piece) and `checks` (the snapshot is
- * finished, then the checks of the crawl run one after another, as many as a piece has time for).
+ * The crawl is four phases in `progress.crawl`: `seed` (home, sitemap, registry, robots.txt),
+ * `fetch` (the queue, a few pages at a time, piece after piece), `resources` (the snapshot is
+ * finished, then what the pages load and their external links are asked, the same way) and
+ * `checks` (the checks of the crawl, one after another, as many as a piece has time for).
  */
 final class Runner
 {
@@ -62,6 +64,7 @@ final class Runner
         private readonly Config $config,
         private readonly Seeder $seeder,
         private readonly Crawler $crawler,
+        private readonly Resources $resources,
     ) {}
 
     public function start(string $scope, ?string $startedBy = null): AuditRun
@@ -216,6 +219,18 @@ final class Runner
             }
 
             $this->crawler->finish($run);
+            $this->resources->collect($run);
+            $this->crawlState($run, ['phase' => 'resources']);
+
+            return false;
+        }
+
+        if ($phase === 'resources') {
+            if (! $this->resources->check($run, $client, $deadline)) {
+                return false;
+            }
+
+            $this->resources->finish($run);
             $this->crawlState($run, ['phase' => 'checks', 'check' => 0]);
 
             return false;
@@ -306,6 +321,7 @@ final class Runner
 
         if ($old !== []) {
             AuditLink::query()->whereIn('run_id', $old)->delete();
+            AuditResource::query()->whereIn('run_id', $old)->delete();
             AuditPage::query()->whereIn('run_id', $old)->delete();
         }
     }

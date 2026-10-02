@@ -85,6 +85,8 @@ final class ProbesTest extends TestCase
             'https://shop.example.com/about/' => [301, '', ['Location' => 'https://shop.example.com/about']],
             'https://shop.example.com/css/app.css' => [200, 'body{}', $cached],
             'https://shop.example.com/img/a.png' => [200, 'png', $cached],
+            'https://shop.example.com/robots.txt' => [200, "User-agent: *\nDisallow: /cms\n\nSitemap: https://shop.example.com/sitemap.xml\n", ['Content-Type' => 'text/plain; charset=utf-8']],
+            'https://shop.example.com/sitemap.xml' => [200, '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://shop.example.com/</loc><lastmod>2026-09-01</lastmod></url><url><loc>https://shop.example.com/about</loc><lastmod>2026-09-20</lastmod></url></urlset>', ['Content-Type' => 'application/xml']],
         ]);
         $this->certificate(90);
 

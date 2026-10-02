@@ -188,6 +188,12 @@ return [
             'why' => 'Em navegadores mais antigos, a página aberta pode redirecionar o separador do site para uma página à sua escolha.',
             'fix' => 'Adicione rel="noopener" (ou noreferrer) aos links com target="_blank".',
         ],
+        'external_redirect' => [
+            'title' => 'Links externos através de um redirecionamento',
+            'found' => 'Um link para outro site responde com um redirecionamento.',
+            'why' => 'Funciona com um desvio, e normalmente significa que a página mudou de sítio e o link nunca foi atualizado.',
+            'fix' => 'Substitua o link pelo endereço para onde ele leva.',
+        ],
     ],
     'indexing' => [
         'home_noindex' => [
@@ -201,6 +207,96 @@ return [
             'found' => 'A página tem noindex na meta tag robots ou no cabeçalho X-Robots-Tag.',
             'why' => 'Os motores de busca descartam a página. Certo para resultados de pesquisa e páginas de serviço, errado para conteúdo fechado por engano.',
             'fix' => 'Percorra a lista; abra as páginas que deviam ser encontradas nas suas definições de SEO e remova o noindex.',
+        ],
+    ],
+    'robots' => [
+        'missing' => [
+            'title' => 'Sem robots.txt',
+            'found' => '/robots.txt não responde 200, ou responde com algo que não é texto simples.',
+            'why' => 'Os motores de busca leem um ficheiro em falta como «tudo é permitido», e um que dá erro como «volte mais tarde» — as regras que o site queria dar perdem-se.',
+            'fix' => 'Sirva o robots.txt como text/plain. Com o module-seo é a definição «robots.txt»; remova um public/robots.txt estático que a sobreponha.',
+        ],
+        'disallow_all' => [
+            'title' => 'O robots.txt fecha o site inteiro',
+            'found' => 'O robots.txt tem Disallow: / para todos os robots num domínio em produção.',
+            'why' => 'Os motores de busca deixam de rastrear o site e retiram-no dos resultados. Normalmente é o ficheiro do ambiente de desenvolvimento que foi para produção com o deploy.',
+            'fix' => 'Remova Disallow: / do grupo *, ou mantenha-o apenas para os robots que não devem vir.',
+        ],
+        'no_sitemap' => [
+            'title' => 'O robots.txt não indica o sitemap',
+            'found' => 'O robots.txt não tem uma linha Sitemap:.',
+            'why' => 'Os motores de busca só encontram o sitemap onde lhes é indicado à mão, e os motores de busca novos nem isso.',
+            'fix' => 'Adicione Sitemap: https://…/sitemap.xml ao robots.txt.',
+        ],
+        'blocks_assets' => [
+            'title' => 'O robots.txt fecha CSS ou JS',
+            'found' => 'Uma folha de estilos ou um script que a página inicial carrega está fechado no robots.txt.',
+            'why' => 'Os motores de busca desenham a página sem eles, veem um layout partido e podem considerar a página não adaptada a telemóveis.',
+            'fix' => 'Permita as pastas com CSS e JS, ou remova a regra que as fecha.',
+        ],
+        'syntax' => [
+            'title' => 'Linhas que o robots.txt não entende',
+            'found' => 'O robots.txt tem diretivas desconhecidas, regras antes de qualquer User-agent, ou linhas que não são «campo: valor».',
+            'why' => 'Os motores de busca ignoram essas linhas em silêncio: um erro em Disalow não fecha nada, e ninguém repara durante anos.',
+            'fix' => 'Corrija a ortografia e comece cada grupo de regras com uma linha User-agent.',
+        ],
+    ],
+    'sitemap' => [
+        'missing' => [
+            'title' => 'Sem sitemap',
+            'found' => 'O sitemap não responde ou não pode ser analisado — ou um ficheiro indicado pelo robots.txt ou pelo índice não o faz.',
+            'why' => 'Os motores de busca só encontram as páginas novas e profundas rastreando, devagar, e as páginas para as quais nada tem link, nunca.',
+            'fix' => 'Sirva um sitemap válido no endereço que o robots.txt indica. Com o module-seo é gerado a partir do registo de endereços.',
+        ],
+        'limits' => [
+            'title' => 'Um ficheiro de sitemap acima dos limites',
+            'found' => 'Um ficheiro de sitemap tem mais de 50 000 endereços ou mais de 50 MB sem compressão.',
+            'why' => 'Os motores de busca descartam esse ficheiro inteiro, não só o final.',
+            'fix' => 'Divida o sitemap em vários ficheiros sob um índice de sitemaps.',
+        ],
+        'bad_url' => [
+            'title' => 'Endereços no sitemap que não são páginas a indexar',
+            'found' => 'Um endereço do sitemap responde com um erro ou um redirecionamento, está fechado com noindex, ou o seu canonical indica outra página.',
+            'why' => 'O sitemap é uma lista de originais; cada endereço assim gasta a visita do motor de busca em algo que vai deitar fora, e demasiados fazem-no confiar menos no sitemap.',
+            'fix' => 'Liste apenas páginas a funcionar que devam ser encontradas, no seu endereço final.',
+        ],
+        'lastmod' => [
+            'title' => 'O lastmod no sitemap não diz nada',
+            'found' => 'O lastmod está no futuro, ou é igual em todos os endereços de um ficheiro.',
+            'why' => 'Os motores de busca percebem que a data é impressa em vez de mantida e deixam de a usar para decidir o que voltar a rastrear.',
+            'fix' => 'Imprima a data da última alteração do conteúdo da página, ou omita o lastmod.',
+        ],
+        'missing_page' => [
+            'title' => 'Páginas em falta no sitemap',
+            'found' => 'Uma página indexável a que o rastreio chegou não está no sitemap.',
+            'why' => 'Os motores de busca só a encontram através de links, mais tarde — e uma página que perde o último link desaparece.',
+            'fix' => 'Confirme que o módulo da página a adiciona ao sitemap (com o module-seo — através do registo de endereços), ou feche-a com noindex se não deve ser encontrada.',
+        ],
+    ],
+    'redirects' => [
+        'chain' => [
+            'title' => 'Cadeias de redirecionamentos',
+            'found' => 'Um endereço redireciona mais de uma vez antes de chegar à página.',
+            'why' => 'Cada passo é uma ida e volta para o visitante, e os motores de busca podem deixar de seguir antes do fim.',
+            'fix' => 'Aponte o primeiro redirecionamento diretamente para o endereço final.',
+        ],
+        'loop' => [
+            'title' => 'Ciclos de redirecionamentos',
+            'found' => 'Os redirecionamentos voltam a um endereço por onde já passaram.',
+            'why' => 'O navegador desiste com «demasiados redirecionamentos» — a página não existe para ninguém.',
+            'fix' => 'Encontre as duas regras que enviam o endereço de um lado para o outro e remova uma delas.',
+        ],
+        'to_error' => [
+            'title' => 'Redirecionamentos para um erro',
+            'found' => 'Um redirecionamento termina em 4xx, 5xx ou sem resposta.',
+            'why' => 'O endereço antigo é mantido vivo só para levar a um morto: visitantes e motores de busca caem num erro.',
+            'fix' => 'Aponte o redirecionamento para uma página a funcionar, ou remova-o.',
+        ],
+        'temporary' => [
+            'title' => 'Redirecionamentos temporários',
+            'found' => 'Um endereço responde 302 ou 307.',
+            'why' => 'Os motores de busca mantêm o endereço antigo no índice e não dão ao novo nada do seu peso. Certo para um redirecionamento que vai ser retirado, errado para uma mudança.',
+            'fix' => 'Percorra a lista; torne 301 os redirecionamentos dos endereços que mudaram de vez.',
         ],
     ],
     'title' => [
@@ -311,10 +407,10 @@ return [
     ],
     'html' => [
         'lang' => [
-            'title' => 'Sem idioma da página',
-            'found' => 'A tag <html> não tem o atributo lang.',
+            'title' => 'Sem idioma da página, ou com o idioma errado',
+            'found' => 'A tag <html> não tem o atributo lang, ou indica um idioma diferente da própria linha hreflang da página.',
             'why' => 'Os leitores de ecrã escolhem a voz por ele, os navegadores oferecem tradução por ele e os motores de busca usam-no como pista.',
-            'fix' => 'Imprima <html lang="…"> com o idioma da página no layout.',
+            'fix' => 'Imprima <html lang="…"> com o idioma da página no layout — o idioma da página, não o predefinido do site.',
         ],
         'viewport' => [
             'title' => 'Sem meta viewport',
@@ -323,10 +419,10 @@ return [
             'fix' => 'Adicione <meta name="viewport" content="width=device-width, initial-scale=1"> ao layout.',
         ],
         'favicon' => [
-            'title' => 'Sem ícone',
-            'found' => 'A página não tem link para nenhum ícone.',
+            'title' => 'Sem ícone, ou não abre',
+            'found' => 'A página não tem link para nenhum ícone, ou o ícone indicado não abre.',
             'why' => 'Os separadores do navegador, os marcadores e os resultados de pesquisa em telemóveis mostram um quadrado vazio em vez da marca do site.',
-            'fix' => 'Adicione <link rel="icon"> ao layout.',
+            'fix' => 'Adicione <link rel="icon"> com um endereço a funcionar ao layout.',
         ],
     ],
     'og' => [
@@ -335,6 +431,52 @@ return [
             'found' => 'A página não tem og:title, og:image nem og:url.',
             'why' => 'Um link partilhado num mensageiro ou numa rede social aparece como um endereço simples, sem imagem nem título.',
             'fix' => 'Preencha a pré-visualização social nas definições de SEO da página, ou faça o layout imprimir as tags.',
+        ],
+        'image_broken' => [
+            'title' => 'A imagem Open Graph está partida ou é pequena',
+            'found' => 'O og:image não abre, ou é menor que 1200×630.',
+            'why' => 'Um link partilhado não mostra imagem, ou mostra um pequeno quadrado ao lado do texto em vez de um cartão grande.',
+            'fix' => 'Defina uma imagem a funcionar de pelo menos 1200×630 na pré-visualização social da página.',
+        ],
+    ],
+    'hreflang' => [
+        'not_reciprocal' => [
+            'title' => 'hreflang sem link de volta',
+            'found' => 'A página indica outra versão de idioma, e essa versão não indica a página de volta.',
+            'why' => 'Os motores de busca ignoram um par de versões de idioma que não está confirmado dos dois lados, e mostram aos visitantes o idioma errado.',
+            'fix' => 'Imprima o mesmo conjunto de links hreflang em todas as versões de idioma da página, cada uma indicando todas as outras e a si mesma.',
+        ],
+        'no_x_default' => [
+            'title' => 'Sem x-default',
+            'found' => 'A página indica várias versões de idioma e nenhum x-default.',
+            'why' => 'Um visitante cujo idioma não é nenhum deles recebe a versão que o motor de busca adivinhar.',
+            'fix' => 'Adicione hreflang="x-default" a apontar para a versão para todos os outros, normalmente o seletor de idioma ou o idioma principal.',
+        ],
+        'broken' => [
+            'title' => 'hreflang partido',
+            'found' => 'Uma versão de idioma responde com um erro ou um redirecionamento, ou o seu código de idioma não é um que os motores de busca leiam.',
+            'why' => 'O par é descartado. Erros comuns: en-UK em vez de en-GB, jp em vez de ja.',
+            'fix' => 'Aponte o hreflang para o endereço a funcionar de cada versão e use códigos de idioma ISO 639-1 e de região ISO 3166-1.',
+        ],
+    ],
+    'jsonld' => [
+        'invalid' => [
+            'title' => 'Dados estruturados que não podem ser analisados',
+            'found' => 'Um bloco JSON-LD não é JSON válido.',
+            'why' => 'Perde-se o bloco inteiro, não só o campo partido: sem resultados avançados, sem breadcrumbs, sem ficha de produto na pesquisa.',
+            'fix' => 'Procure uma vírgula final ou umas aspas sem escape no modelo que imprime o bloco; construa-o com json_encode em vez de à mão.',
+        ],
+        'required' => [
+            'title' => 'Dados estruturados sem campos obrigatórios',
+            'found' => 'Falta a um Product, Article, Event, JobPosting, FAQPage ou BreadcrumbList um campo que os motores de busca exigem.',
+            'why' => 'A página perde o seu resultado avançado, e a consola de pesquisa assinala a marcação como inválida.',
+            'fix' => 'Preencha os campos indicados — no conteúdo da página ou no modelo que imprime a marcação.',
+        ],
+        'recommended' => [
+            'title' => 'Dados estruturados sem campos recomendados',
+            'found' => 'Faltam a um Product, Article, Event ou JobPosting campos que tornam o seu resultado avançado mais rico.',
+            'why' => 'A marcação é válida; o snippet é mais pobre — sem imagem, sem marca, sem descrição.',
+            'fix' => 'Adicione os campos indicados onde o conteúdo os tiver.',
         ],
     ],
     'content' => [
@@ -410,6 +552,18 @@ return [
             'why' => 'O site pede aos motores de busca que não sigam os seus próprios links, e a página recebe menos peso.',
             'fix' => 'Remova o nofollow dos links para as páginas do próprio site.',
         ],
+        'to_redirect' => [
+            'title' => 'Links internos para redirecionamentos',
+            'found' => 'Um link para uma página do próprio site leva a um endereço que redireciona.',
+            'why' => 'Cada clique é mais uma ida e volta, e a página passa o seu peso através de um redirecionamento em vez de diretamente.',
+            'fix' => 'Faça o link para o endereço para onde o redirecionamento leva.',
+        ],
+        'external_broken' => [
+            'title' => 'Links externos quebrados',
+            'found' => 'Um link para outro site responde 4xx, 5xx, ou o host não responde.',
+            'why' => 'Os visitantes caem num erro no site de outra pessoa, e a página parece abandonada. O 429 não é contado — é um servidor a pedir a um robot que abrande.',
+            'fix' => 'Atualize o link para o novo endereço da página, ou remova-o.',
+        ],
     ],
     'mixed_content' => [
         'title' => 'Conteúdo misto',
@@ -437,6 +591,24 @@ return [
             'found' => 'Uma <img> não tem width nem height.',
             'why' => 'A página salta enquanto as imagens carregam, e os visitantes clicam no que não queriam.',
             'fix' => 'Imprima width e height das imagens no modelo; o CSS ainda pode torná-las responsivas.',
+        ],
+        'broken' => [
+            'title' => 'Imagens partidas',
+            'found' => 'Uma imagem da página responde 4xx, 5xx ou nada.',
+            'why' => 'Os visitantes veem um ícone partido ou uma caixa vazia onde estava a imagem.',
+            'fix' => 'Carregue a imagem de novo ou corrija o seu endereço no conteúdo ou no modelo.',
+        ],
+        'heavy' => [
+            'title' => 'Imagens pesadas',
+            'found' => 'Uma imagem pesa mais do que o limite.',
+            'why' => 'Num telemóvel são segundos de espera, e a velocidade da página na pesquisa desce.',
+            'fix' => 'Redimensione a imagem para o tamanho em que é mostrada e comprima-a; sirva WebP ou AVIF.',
+        ],
+        'format' => [
+            'title' => 'Imagens num formato antigo',
+            'found' => 'Um JPEG ou PNG do próprio site acima do limite é enviado a um navegador que aceita WebP e AVIF, sem uma fonte moderna num <picture>.',
+            'why' => 'A mesma imagem em WebP ou AVIF costuma pesar entre um terço e metade.',
+            'fix' => 'Sirva WebP ou AVIF — através de <picture> com uma fonte moderna, ou convertendo as imagens no carregamento.',
         ],
     ],
     'a11y' => [

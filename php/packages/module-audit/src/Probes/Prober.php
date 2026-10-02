@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace WebxUi\Audit\Probes;
 
 use Illuminate\Support\Str;
+use WebxUi\Audit\Crawl\RobotsRules;
+use WebxUi\Audit\Crawl\SitemapReader;
 use WebxUi\Audit\Hosts\HostClassifier;
 
 /**
  * The few dozen requests of stage 2 (§3): mirrors, scheme, index files, slashes, case, a
- * random address, the page's own static files, the certificate.
+ * random address, the page's own static files, the certificate, robots.txt and the sitemap files.
  *
  * Slashes, case and the trailing slash need an address that exists below the home page; the
  * first internal link of the home page is taken, and without one those probes are skipped
@@ -20,7 +22,10 @@ final class Prober
     /** The page's own static files asked for their caching — enough to see the rule. */
     private const ASSETS = 6;
 
-    public function __construct(private readonly CertificateReader $certificates) {}
+    public function __construct(
+        private readonly CertificateReader $certificates,
+        private readonly SitemapReader $sitemaps,
+    ) {}
 
     public function collect(string $baseUrl, SiteClient $client, HostClassifier $hosts): ProbeSet
     {
@@ -44,6 +49,7 @@ final class Prober
         }
 
         $answers['random'] = $client->get($base.'/webx-audit-'.Str::lower(Str::random(12)));
+        $answers['robots'] = $robots = $client->get($base.'/robots.txt');
 
         $inner = $this->innerPath($home->body, $base, $hosts);
 
@@ -65,7 +71,10 @@ final class Prober
             ? $this->certificates->read($host, $client->address(), is_int($port) ? $port : 443)
             : null;
 
-        return new ProbeSet($answers, $certificate, $inner, $assets);
+        $declared = $robots->ok() ? RobotsRules::parse($robots->body)->sitemaps : [];
+        $sitemaps = $this->sitemaps->read($base, $declared, $client, $hosts);
+
+        return new ProbeSet($answers, $certificate, $inner, $assets, $sitemaps);
     }
 
     /** `/blog/post` → `/blog//post`; `/about` → `//about`. */

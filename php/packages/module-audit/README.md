@@ -24,8 +24,16 @@ What it checks today:
   without `alt`, accessibility, depth, orphans — and so do the outgoing hosts: a stand linked
   from a page, another mirror, a host that looks like the site's own, a new outside domain.
 
-The sitemap and robots.txt checks, redirects, hreflang, structured data and external links
-follow.
+- **Indexing** — robots.txt (missing, closing the site or its CSS and JS, lines search engines
+  skip) and the sitemap (missing, over the limits, a `lastmod` that says nothing, addresses that
+  are redirects or errors, pages it leaves out), redirect chains, loops and temporary
+  redirects, hreflang that is not confirmed back or has no `x-default`, and JSON-LD that does
+  not parse or lacks the fields rich results need.
+- **What the pages load** — every picture, stylesheet, script and icon and every external link,
+  asked `HEAD` once per run: broken, heavy and old-format pictures, a small Open Graph picture,
+  external links that are broken or redirect.
+
+History, hiding findings, the schedule and the fixes modules bring follow.
 
 ## Requirements
 

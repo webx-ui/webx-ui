@@ -14,7 +14,12 @@ use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Checks\Config;
 use WebxUi\Audit\Checks\Host;
 use WebxUi\Audit\Checks\Hosts;
+use WebxUi\Audit\Checks\Hreflang;
+use WebxUi\Audit\Checks\Indexing;
+use WebxUi\Audit\Checks\JsonLd;
 use WebxUi\Audit\Checks\Page;
+use WebxUi\Audit\Checks\Redirects;
+use WebxUi\Audit\Checks\Resources;
 use WebxUi\Audit\Console\RunCommand;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Audit\Panel\AuditModule;
@@ -53,9 +58,24 @@ class AuditServiceProvider extends ServiceProvider
         Host\SecurityHeaders::class,
         Host\ServerLeak::class,
         Host\StaticCache::class,
+        Indexing\RobotsMissing::class,
+        Indexing\RobotsDisallowAll::class,
+        Indexing\RobotsNoSitemap::class,
+        Indexing\RobotsBlocksAssets::class,
+        Indexing\RobotsSyntax::class,
+        Indexing\SitemapMissing::class,
+        Indexing\SitemapLimits::class,
+        Indexing\SitemapLastmod::class,
         Hosts\DevContent::class,
         Page\HomeNoindex::class,
         Page\Noindex::class,
+        Indexing\SitemapBadUrl::class,
+        Indexing\SitemapMissingPage::class,
+        Redirects\Chain::class,
+        Redirects\Loop::class,
+        Redirects\ToError::class,
+        Redirects\Temporary::class,
+        Page\LinksToRedirect::class,
         Page\TitleMissing::class,
         Page\TitleDuplicate::class,
         Page\TitleLength::class,
@@ -72,10 +92,17 @@ class AuditServiceProvider extends ServiceProvider
         Page\CanonicalMultiple::class,
         Page\CanonicalBroken::class,
         Page\CanonicalOther::class,
+        Hreflang\NotReciprocal::class,
+        Hreflang\NoXDefault::class,
+        Hreflang\Broken::class,
         Page\HtmlLang::class,
         Page\Viewport::class,
         Page\Favicon::class,
         Page\OpenGraph::class,
+        Resources\OgImage::class,
+        JsonLd\Invalid::class,
+        JsonLd\Required::class,
+        JsonLd\Recommended::class,
         Page\Thin::class,
         Page\TextRatio::class,
         Page\ContentDuplicate::class,
@@ -85,11 +112,15 @@ class AuditServiceProvider extends ServiceProvider
         Page\Ttfb::class,
         Page\HtmlSize::class,
         Page\BrokenLinks::class,
+        Resources\ExternalBroken::class,
         Page\EmptyLinks::class,
         Page\NofollowInternal::class,
         Page\MixedContent::class,
         Page\InsecureForms::class,
         Page\ImagesAlt::class,
+        Resources\ImagesBroken::class,
+        Resources\ImagesHeavy::class,
+        Resources\ImagesFormat::class,
         Page\ImagesDimensions::class,
         Page\ButtonName::class,
         Page\FormLabel::class,
@@ -103,6 +134,7 @@ class AuditServiceProvider extends ServiceProvider
         Hosts\NewDomain::class,
         Hosts\AbsoluteOwn::class,
         Hosts\BlankOpener::class,
+        Resources\ExternalRedirect::class,
         Page\ExternalMany::class,
     ];
 

@@ -76,6 +76,21 @@ describe('createAuditApi', () => {
     })
   })
 
+  it('asks what a page loads a tab at a time', async () => {
+    const get = vi.fn().mockResolvedValue({
+      data: [{ id: 4, url: 'https://shop.com/logo.svg', status: 200 }],
+      meta: { current_page: 1, last_page: 1, per_page: 50, total: 1, from: 1, to: 1 },
+    })
+
+    const page = await createAuditApi(context({ get })).resources(7, 12, { tab: 'images' })
+
+    expect(get).toHaveBeenCalledWith('/api/cms/audit/runs/7/pages/12/resources', {
+      query: { tab: 'images' },
+    })
+    expect(page.total).toBe(1)
+    expect(page.data[0]?.url).toBe('https://shop.com/logo.svg')
+  })
+
   it('builds the CSV address with the same filters and the columns on screen', () => {
     const file = createAuditApi(context({})).pagesFile(
       7,

@@ -44,7 +44,7 @@ use Illuminate\Support\Carbon;
  * @property list<array{lang: string, url: string}>|null $hreflang
  * @property array<string, string>|null $og
  * @property array<string, string>|null $twitter
- * @property list<array{types: list<string>, error: string|null}>|null $json_ld
+ * @property list<array{types: list<string>, error: string|null, items?: list<array{type: string, missing: list<string>, recommended: list<string>}>, source?: string}>|null $json_ld
  * @property int|null $word_count
  * @property string|null $text_hash
  * @property int $links_in

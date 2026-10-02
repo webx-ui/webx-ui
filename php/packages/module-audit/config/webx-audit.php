@@ -51,6 +51,11 @@ return [
 
     'keep_snapshots' => 5,
 
+    // What the pages load and where their external links lead, asked once
+    // per run however many pages share it (§3, stage 5): pictures first,
+    // external pages last, this many addresses at most.
+    'resources_limit' => 2000,
+
     /*
     |---------------------------------------------------------------------------
     | Thresholds
@@ -81,6 +86,13 @@ return [
         'html_bytes' => 1024 * 1024,
         'depth' => 3,
         'external_links' => 100,
+        // Pictures: heavier than this (KB) is a warning; a JPEG or PNG heavier
+        // than the second to a browser that takes WebP and AVIF is a notice.
+        'image_kb' => 300,
+        'image_format_kb' => 100,
+        // The size an Open Graph picture should be at least.
+        'og_width' => 1200,
+        'og_height' => 630,
     ],
 
     /*

@@ -45,9 +45,21 @@ final class SiteClient
         return $this->resolveTo;
     }
 
-    public function get(string $url): ProbeResponse
+    /**
+     * @param  int  $limit  The most of the body kept — a sitemap may be read whole, a page is not.
+     */
+    public function get(string $url, int $limit = self::BODY_LIMIT): ProbeResponse
     {
-        return $this->send('GET', $url);
+        return $this->send('GET', $url, $limit);
+    }
+
+    /**
+     * The same client for somebody else's host: `resolve_to` is where the site lives, and an
+     * external picture asked there would be asked of the wrong server.
+     */
+    public function direct(): self
+    {
+        return $this->resolvingTo(null);
     }
 
     /** `HEAD`, and `GET` when the server does not do `HEAD` (§3, stage 5). */
@@ -62,7 +74,7 @@ final class SiteClient
      * Several requests at once — the crawler's pool (decision 7: two at a time by default, so the
      * caller hands over as many as it means to run together).
      *
-     * @param  array<array-key, array{0: string, 1: string}>  $requests  key => [method, url]
+     * @param  array<array-key, array{0: string, 1: string, 2?: array<string, string>}>  $requests  key => [method, url, headers]
      * @return array<array-key, ProbeResponse>
      */
     public function many(array $requests): array
@@ -76,8 +88,9 @@ final class SiteClient
         $responses = $this->http->pool(function (Pool $pool) use ($requests): array {
             $pending = [];
 
-            foreach ($requests as $key => [$method, $url]) {
-                $pending[] = $this->configure($pool->as((string) $key), $url)->send($method, $url);
+            foreach ($requests as $key => $request) {
+                [$method, $url] = $request;
+                $pending[] = $this->configure($pool->as((string) $key), $url)->withHeaders($request[2] ?? [])->send($method, $url);
             }
 
             return $pending;
@@ -85,7 +98,8 @@ final class SiteClient
 
         $answers = [];
 
-        foreach ($requests as $key => [$method, $url]) {
+        foreach ($requests as $key => $request) {
+            [$method, $url] = $request;
             $response = $responses[(string) $key] ?? null;
 
             $answers[(string) $key] = $response instanceof Response
@@ -96,7 +110,7 @@ final class SiteClient
         return $answers;
     }
 
-    private function send(string $method, string $url): ProbeResponse
+    private function send(string $method, string $url, int $limit = self::BODY_LIMIT): ProbeResponse
     {
         $started = microtime(true);
 
@@ -106,7 +120,7 @@ final class SiteClient
             return new ProbeResponse($url, null, ms: $this->since($started), error: $failure->getMessage());
         }
 
-        return $this->answer($response, $method, $url, $started);
+        return $this->answer($response, $method, $url, $started, $limit);
     }
 
     private function configure(PendingRequest $request, string $url): PendingRequest
@@ -118,7 +132,7 @@ final class SiteClient
             ->withOptions($this->options($url));
     }
 
-    private function answer(Response $response, string $method, string $url, float $started): ProbeResponse
+    private function answer(Response $response, string $method, string $url, float $started, int $limit = self::BODY_LIMIT): ProbeResponse
     {
         $stats = $response->handlerStats();
         $ttfb = $stats['starttransfer_time'] ?? null;
@@ -128,7 +142,7 @@ final class SiteClient
             $url,
             $response->status(),
             $this->headers($response),
-            $method === 'HEAD' ? '' : substr($response->body(), 0, self::BODY_LIMIT),
+            $method === 'HEAD' ? '' : substr($response->body(), 0, $limit),
             is_numeric($total) ? (int) round((float) $total * 1000) : $this->since($started),
             ttfb: is_numeric($ttfb) && (float) $ttfb > 0 ? (int) round((float) $ttfb * 1000) : null,
         );
