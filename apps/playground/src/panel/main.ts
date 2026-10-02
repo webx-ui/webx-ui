@@ -1,4 +1,5 @@
 import { createAdmin, type Admin, type AdminPlugin } from '@webx-ui/module-admin'
+import { audit } from '@webx-ui/module-audit'
 import { admins, connect } from '@webx-ui/module-auth'
 import { banners } from '@webx-ui/module-banners'
 import { blocks, regions } from '@webx-ui/module-blocks'
@@ -93,6 +94,7 @@ const admin = createAdmin({
     media(),
     blocks(),
     seo(),
+    audit(),
     ...catalogManticore(),
     admins(),
     connect(),

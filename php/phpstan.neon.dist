@@ -10,6 +10,8 @@ parameters:
         - packages/localization/tests
         - packages/mcp/src
         - packages/mcp/tests
+        - packages/module-audit/src
+        - packages/module-audit/tests
         - packages/module-auth/src
         - packages/module-auth/tests
         - packages/module-blocks/src

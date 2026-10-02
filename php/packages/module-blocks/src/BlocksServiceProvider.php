@@ -16,6 +16,8 @@ use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Audit\Content\AuditContentSources;
+use WebxUi\Blocks\Audit\RegionContentSource;
 use WebxUi\Blocks\Console\BundlesCommand;
 use WebxUi\Blocks\Console\ClearCommand;
 use WebxUi\Blocks\Console\ExportCommand;
@@ -121,6 +123,7 @@ class BlocksServiceProvider extends ServiceProvider
         $this->app->make(ScreenRegistry::class)->register(RegionForm::SCREEN, __DIR__.'/../resources/screens/regions.form.json');
 
         $this->registerGateOpenings();
+        $this->registerAuditSource();
 
         // What a response printed is what its bundle is glued from, and no more than that: in a
         // process that serves many requests the list would otherwise grow across them.
@@ -152,6 +155,17 @@ class BlocksServiceProvider extends ServiceProvider
      * block editor's stage checks the panel's session itself, and the bundles are what every
      * preview pulls in: stylesheets and scripts the published site hands out anyway.
      */
+    /**
+     * The regions' published trees and drafts, searched by the site audit for addresses of a
+     * development stand — only when `webx-ui/module-audit` is installed.
+     */
+    private function registerAuditSource(): void
+    {
+        if (class_exists(AuditContentSources::class)) {
+            $this->app->make(AuditContentSources::class)->register($this->app->make(RegionContentSource::class));
+        }
+    }
+
     private function registerGateOpenings(): void
     {
         $config = $this->app->make('config');
