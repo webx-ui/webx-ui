@@ -30,6 +30,7 @@ const api = createAuditApi(useAdmin())
 useAuditMessages()
 
 const t = useTranslate('webx-audit')
+const panel = useTranslate('webx-admin')
 const message = useErrorText()
 
 const run = ref<number | null>(null)
@@ -66,7 +67,18 @@ const severityOptions = computed(() =>
 )
 
 const groupOptions = computed(() =>
-  ['config', 'host', 'hosts'].map((value) => ({ value, label: t(`page.group-${value}`) })),
+  [
+    'config',
+    'host',
+    'hosts',
+    'indexing',
+    'page',
+    'content',
+    'links',
+    'images',
+    'a11y',
+    'structure',
+  ].map((value) => ({ value, label: t(`page.group-${value}`) })),
 )
 
 const stateOptions = computed(() =>
@@ -111,6 +123,7 @@ onMounted(load)
       flush
       :loading="loading"
       :filters-count="filtersCount"
+      :filters-label="panel('filters.title')"
       :empty-text="run === null ? t('page.never') : t('page.empty')"
     >
       <template #filters>

@@ -31,6 +31,7 @@ final class RunResource extends JsonResource
                 'stage' => $run->progress['stage'] ?? null,
                 'done' => $run->progress['done'] ?? [],
                 'checks' => count($run->progress['checks'] ?? []),
+                'pages' => ['crawled' => $run->pages_crawled, 'limit' => $run->pages_limit],
             ],
             'counts' => $run->counts,
             'started_by' => $run->started_by,

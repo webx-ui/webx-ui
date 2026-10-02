@@ -28,7 +28,12 @@ export interface AuditRun {
   scope: AuditScope
   base_url: string
   resolve_to: string | null
-  progress: { stage: AuditStage | null; done: AuditStage[]; checks: number }
+  progress: {
+    stage: AuditStage | null
+    done: AuditStage[]
+    checks: number
+    pages: { crawled: number; limit: number }
+  }
   counts: AuditCounts | null
   started_by: string | null
   created_at: string | null
@@ -41,6 +46,8 @@ export interface AuditRun {
 export interface AuditLatest {
   active: AuditRun | null
   done: AuditRun | null
+  /** The last full run — the one with pages to list. */
+  crawled: AuditRun | null
   /** A run that failed or was cancelled after the last good one. */
   last: AuditRun | null
   queue: { sync: boolean }
@@ -100,4 +107,102 @@ export interface AuditPage<T> {
   total: number
   from: number | null
   to: number | null
+}
+
+export type AuditPageSource = 'home' | 'sitemap' | 'registry' | 'link'
+
+export type AuditHostClass = 'own' | 'own_mirror' | 'dev' | 'external'
+
+/** One crawled address as the pages screen lists it — every field of the snapshot it can show. */
+export interface AuditPageRow {
+  id: number
+  url: string
+  status: number | null
+  final_status: number | null
+  redirect_to: string | null
+  source: AuditPageSource
+  depth: number | null
+  indexable: boolean
+  issues: number
+  title: string | null
+  description: string | null
+  h1: string | null
+  canonical: string | null
+  robots_meta: string | null
+  x_robots_tag: string | null
+  lang: string | null
+  content_type: string | null
+  bytes: number | null
+  ttfb_ms: number | null
+  total_ms: number | null
+  compression: string | null
+  word_count: number | null
+  links_in: number
+  links_out_internal: number
+  links_out_external: number
+  images: number
+  images_without_alt: number
+  in_sitemap: boolean
+  in_registry: boolean
+  blocked_by_robots: boolean
+}
+
+export type AuditPageField = Exclude<keyof AuditPageRow, 'id'>
+
+/** How a field is drawn, filtered and compared. */
+export type AuditFieldType = 'url' | 'text' | 'number' | 'bool' | 'status' | 'source'
+
+export type AuditFilterOp = 'contains' | 'eq' | 'empty' | 'filled' | 'gt' | 'lt' | 'yes' | 'no'
+
+export interface AuditFieldFilter {
+  field: AuditPageField
+  op: AuditFilterOp
+  value?: string
+}
+
+export interface AuditPageQuery {
+  search?: string
+  /** `2xx`, `3xx`, `4xx`, `5xx` or `none` — nothing answered. */
+  status?: string | null
+  indexable?: boolean | null
+  /** Pages with a finding of this check. */
+  check?: string | null
+  filters?: AuditFieldFilter[]
+  /** A field, `-field` for descending. */
+  sort?: string | null
+  page?: number
+  per_page?: number
+}
+
+/** The page's card: the whole snapshot, its findings and how many links lead in and out. */
+export interface AuditPageCard {
+  page: AuditPageRow & {
+    headers: Record<string, string>
+    h1: string[]
+    headings: Record<string, number>
+    hreflang: { lang: string; url: string }[]
+    og: Record<string, string>
+    twitter: Record<string, string>
+    json_ld: { types: string[]; error: string | null }[]
+    error: string | null
+    facts: Record<string, unknown>
+    fetched_at: string | null
+  }
+  issues: AuditIssue[]
+  counts: { issues: number; incoming: number; outgoing: number }
+}
+
+/** A link of a page: where it leads (out) or where it comes from (in). */
+export interface AuditLinkRow {
+  id: number
+  url: string | null
+  page_id: number | null
+  status: number | null
+  kind: string
+  anchor: string | null
+  rel: string | null
+  target: string | null
+  host: string | null
+  host_class: AuditHostClass | null
+  absolute: boolean
 }

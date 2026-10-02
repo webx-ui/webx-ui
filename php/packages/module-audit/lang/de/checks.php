@@ -146,5 +146,337 @@ return [
             'why' => 'Auf einer Entwicklungsumgebung erfasste Inhalte gehen live, mit Links und Bildern, die zurück auf die Entwicklungsumgebung zeigen; Besucher erhalten Fehler, und die Entwicklungsumgebung wird indexiert.',
             'fix' => 'Öffnen Sie den Eintrag und ersetzen Sie die Adresse der Entwicklungsumgebung durch die der Website selbst oder durch einen relativen Link. Tragen Sie die Entwicklungsumgebungen in den Audit-Einstellungen ein, damit alle erfasst werden.',
         ],
+        'dev_page' => [
+            'title' => 'Links auf eine Entwicklungsumgebung auf der Seite',
+            'found' => 'Ein Link oder eine Ressource der Seite — ein Bild, ein Skript, ein Stylesheet, og:image, das Canonical — führt zu einer Entwicklungsumgebung.',
+            'why' => 'Besucher folgen Links zu einer Website, die nicht für sie gedacht ist, Bilder brechen weg, wenn die Entwicklungsumgebung abgeschaltet wird, und Suchmaschinen finden die Entwicklungsumgebung über die Website.',
+            'fix' => 'Suchen Sie die Adresse im Inhalt oder im Template der Seite und ersetzen Sie die Entwicklungsumgebung durch den eigenen Host der Website oder durch einen relativen Link.',
+        ],
+        'similar' => [
+            'title' => 'Ein Host, der dieser Website ähnelt',
+            'found' => 'Ein Link auf einen Host mit demselben ersten Wort wie die Website in einer anderen Zone, etwa shop.local neben shop.com.',
+            'why' => 'Höchstwahrscheinlich ist es eine Entwicklungsumgebung oder eine alte Kopie der Website, die das Audit nicht kennt.',
+            'fix' => 'Handelt es sich um eine Entwicklungsumgebung oder eine alte Domain, tragen Sie sie in den Audit-Einstellungen unter „Weitere Adressen dieser Website“ ein und korrigieren Sie die Links; gehört die Website jemand anderem, ist nichts zu tun.',
+        ],
+        'wrong_mirror' => [
+            'title' => 'Links über einen anderen Spiegel',
+            'found' => 'Ein Link auf die Website über ihren anderen Spiegel (www oder der Name ohne www) oder über http auf einer https-Website.',
+            'why' => 'Jeder Klick läuft über eine Weiterleitung: langsamer für Besucher, und Suchmaschinen sehen Links auf eine Adresse, die nicht die Seite ist.',
+            'fix' => 'Verlinken Sie über https auf den Hauptspiegel oder verwenden Sie relative Links.',
+        ],
+        'absolute_own' => [
+            'title' => 'Absolute Links auf die Website selbst',
+            'found' => 'Ein Link oder ein Bild im Inhalt ist mit dem eigenen Host der Website statt mit einem Pfad geschrieben.',
+            'why' => 'Es funktioniert heute und bricht beim nächsten Umzug auf eine andere Domain oder ein anderes Protokoll; auf eine Entwicklungsumgebung kopiert, führt es zurück auf die Live-Website.',
+            'fix' => 'Schreiben Sie Links auf die eigenen Seiten der Website als Pfade: /about statt https://shop.com/about.',
+        ],
+        'new_domain' => [
+            'title' => 'Eine neue externe Domain',
+            'found' => 'Die Website verlinkt auf eine Domain, die sie im vorherigen vollständigen Lauf nicht verlinkt hat.',
+            'why' => 'Eine neue Domain ist meist ein neuer Link, den jemand hinzugefügt hat — und manchmal ein Tippfehler oder Spam-Links von jemandem, der in die Website eingedrungen ist.',
+            'fix' => 'Öffnen Sie die aufgeführten Seiten und stellen Sie sicher, dass der Link dort gewollt ist.',
+        ],
+        'external_many' => [
+            'title' => 'Viele externe Links auf einer Seite',
+            'found' => 'Die Seite hat mehr externe Links als der Schwellenwert.',
+            'why' => 'Eine Seite, die hauptsächlich aus Links auf andere Websites besteht, wirkt auf Suchmaschinen wie eine Linkfarm und ist oft ein Zeichen für Spam.',
+            'fix' => 'Entfernen Sie Links, die dem Besucher nicht helfen, oder teilen Sie die Seite auf.',
+        ],
+        'blank_opener' => [
+            'title' => 'Neuer Tab ohne noopener',
+            'found' => 'Ein Link auf eine andere Website öffnet sich in einem neuen Tab ohne rel="noopener".',
+            'why' => 'In älteren Browsern kann die geöffnete Seite den Tab der Website auf eine Seite ihrer Wahl umleiten.',
+            'fix' => 'Fügen Sie rel="noopener" (oder noreferrer) zu Links mit target="_blank" hinzu.',
+        ],
+    ],
+    'indexing' => [
+        'home_noindex' => [
+            'title' => 'Die Startseite ist für Suchmaschinen gesperrt',
+            'found' => 'Die Startseite hat noindex im Robots-Meta-Tag oder im X-Robots-Tag-Header.',
+            'why' => 'Die wichtigste Seite der Website fällt aus der Suche, und oft folgt die ganze Website.',
+            'fix' => 'Entfernen Sie noindex von der Startseite: prüfen Sie die SEO-Einstellungen der Seite, das Layout und die Header des Webservers.',
+        ],
+        'noindex' => [
+            'title' => 'Mit noindex gesperrte Seiten',
+            'found' => 'Die Seite hat noindex im Robots-Meta-Tag oder im X-Robots-Tag-Header.',
+            'why' => 'Suchmaschinen entfernen die Seite. Richtig für Suchergebnisse und Dienstseiten, falsch für Inhalte, die versehentlich gesperrt wurden.',
+            'fix' => 'Gehen Sie die Liste durch; öffnen Sie Seiten, die gefunden werden sollen, in ihren SEO-Einstellungen und entfernen Sie noindex.',
+        ],
+    ],
+    'title' => [
+        'missing' => [
+            'title' => 'Kein Title',
+            'found' => 'Die Seite hat keinen <title> oder er ist leer.',
+            'why' => 'Der Title ist die Zeile, die Suchmaschinen als Link zur Seite anzeigen; ohne ihn denken sie sich einen aus.',
+            'fix' => 'Geben Sie der Seite in ihren SEO-Einstellungen einen Title oder prüfen Sie, ob das Layout einen ausgibt.',
+        ],
+        'duplicate' => [
+            'title' => 'Doppelte Titles',
+            'found' => 'Mehrere indexierbare Seiten haben denselben Title.',
+            'why' => 'Suchmaschinen können die Seiten nicht unterscheiden und zeigen eine davon an, nicht unbedingt die richtige.',
+            'fix' => 'Geben Sie jeder Seite einen eigenen Title, der sagt, was auf ihr steht.',
+        ],
+        'length' => [
+            'title' => 'Title zu kurz oder zu lang',
+            'found' => 'Der Title ist kürzer oder länger als die Schwellenwerte, in Zeichen.',
+            'why' => 'Ein langer Title wird in den Suchergebnissen abgeschnitten (die Grenze liegt bei etwa 600 Pixeln, grob 60 Zeichen); ein kurzer sagt zu wenig.',
+            'fix' => 'Formulieren Sie den Title so um, dass er in den Bereich der Audit-Schwellenwerte passt.',
+        ],
+        'multiple' => [
+            'title' => 'Mehr als ein Title',
+            'found' => 'Die Seite hat mehr als einen <title>-Tag.',
+            'why' => 'Suchmaschinen nehmen einen davon, nicht unbedingt den für die Seite geschriebenen.',
+            'fix' => 'Finden Sie heraus, welches Template oder welcher Block den zweiten Title ausgibt, und entfernen Sie ihn.',
+        ],
+    ],
+    'description' => [
+        'missing' => [
+            'title' => 'Keine Meta-Description',
+            'found' => 'Die Seite hat keine Meta-Description oder sie ist leer.',
+            'why' => 'Suchmaschinen stellen den Textauszug unter dem Link aus beliebigem gefundenem Text zusammen.',
+            'fix' => 'Schreiben Sie in den SEO-Einstellungen der Seite eine Description: was die Seite bietet, in ein bis zwei Sätzen.',
+        ],
+        'duplicate' => [
+            'title' => 'Doppelte Descriptions',
+            'found' => 'Mehrere indexierbare Seiten haben dieselbe Meta-Description.',
+            'why' => 'Derselbe Textauszug unter verschiedenen Links sagt dem Suchenden nichts, und Suchmaschinen ersetzen ihn durch einen eigenen.',
+            'fix' => 'Schreiben Sie für jede Seite eine eigene Description.',
+        ],
+        'length' => [
+            'title' => 'Description zu kurz oder zu lang',
+            'found' => 'Die Description ist kürzer oder länger als die Schwellenwerte, in Zeichen.',
+            'why' => 'Eine lange Description wird in den Suchergebnissen abgeschnitten (etwa 920 Pixel, grob 160 Zeichen); eine kurze wird oft ersetzt.',
+            'fix' => 'Formulieren Sie die Description so um, dass sie in den Bereich der Audit-Schwellenwerte passt.',
+        ],
+    ],
+    'h1' => [
+        'missing' => [
+            'title' => 'Keine H1',
+            'found' => 'Die Seite hat keine H1-Überschrift.',
+            'why' => 'Die H1 sagt Besuchern und Suchmaschinen, worum es auf der Seite geht; Screenreader nutzen sie, um den Anfang des Inhalts zu finden.',
+            'fix' => 'Geben Sie der Seite eine H1 — meist ihren Namen — im Template oder im Inhalt.',
+        ],
+        'multiple' => [
+            'title' => 'Mehr als eine H1',
+            'found' => 'Die Seite hat mehr als eine H1-Überschrift.',
+            'why' => 'An sich kein Fehler, aber meist ein Zeichen dafür, dass ein Block oder das Logo H1 verwendet, wo eine niedrigere Ebene gemeint war.',
+            'fix' => 'Behalten Sie eine H1 für den Namen der Seite und machen Sie die anderen zu H2 oder niedriger.',
+        ],
+        'equals_title' => [
+            'title' => 'H1 gleich dem Title',
+            'found' => 'Die H1 wiederholt den Title Wort für Wort.',
+            'why' => 'Zwei Stellen, die die Seite beschreiben, sagen dasselbe; eine davon könnte ein Wort ergänzen, nach dem Menschen suchen.',
+            'fix' => 'Halten Sie die H1 kurz und gut lesbar und lassen Sie den Title die Schlüsselwörter und den Namen der Website tragen.',
+        ],
+    ],
+    'headings' => [
+        'skipped' => [
+            'title' => 'Übersprungene Überschriftenebene',
+            'found' => 'Eine Überschriftenebene wird beim Absteigen übersprungen, etwa H2 gefolgt von H4.',
+            'why' => 'Screenreader navigieren über Überschriften, und eine Lücke wirkt wie fehlender Inhalt.',
+            'fix' => 'Verwenden Sie die Ebenen der Reihe nach; das Aussehen bestimmen Sie über Styles, nicht über die Ebene.',
+        ],
+    ],
+    'canonical' => [
+        'missing' => [
+            'title' => 'Kein Canonical',
+            'found' => 'Eine indexierbare Seite hat keinen Canonical-Link, weder im Tag noch im Header.',
+            'why' => 'Ohne ihn kann jede Kopie der Seite mit Tracking- oder Sortierparametern mit der Seite selbst konkurrieren.',
+            'fix' => 'Lassen Sie das Layout <link rel="canonical"> mit der eigenen Adresse der Seite ausgeben.',
+        ],
+        'relative' => [
+            'title' => 'Relatives Canonical',
+            'found' => 'Das Canonical ist als Pfad statt als vollständige Adresse geschrieben.',
+            'why' => 'Suchmaschinen lesen es relativ zu der Adresse, über die sie gekommen sind, auch über einen anderen Spiegel oder ein anderes Protokoll.',
+            'fix' => 'Geben Sie das Canonical als vollständige Adresse mit Schema und Haupt-Host aus.',
+        ],
+        'multiple' => [
+            'title' => 'Widersprüchliche Canonicals',
+            'found' => 'Die Seite hat mehr als ein Canonical, oder Tag und Link-Header widersprechen sich.',
+            'why' => 'Bei widersprüchlichen Canonicals ignorieren Suchmaschinen alle.',
+            'fix' => 'Lassen Sie ein Canonical übrig: finden Sie das Template, den Block oder die Server-Regel, die das zweite hinzufügt, und entfernen Sie sie.',
+        ],
+        'broken' => [
+            'title' => 'Canonical auf eine defekte oder gesperrte Seite',
+            'found' => 'Das Canonical führt zu einer Weiterleitung, einem Fehler oder einer Seite mit noindex.',
+            'why' => 'Die Seite nennt ein Original, das sich nicht indexieren lässt, und Suchmaschinen können beide verwerfen.',
+            'fix' => 'Richten Sie das Canonical auf die eigene funktionierende Adresse der Seite oder auf das aktive Original.',
+        ],
+        'other' => [
+            'title' => 'Canonical auf eine andere Seite',
+            'found' => 'Das Canonical zeigt auf eine andere Adresse als die der Seite selbst.',
+            'why' => 'Die Seite bittet darum, zugunsten einer anderen nicht indexiert zu werden — richtig für Filter und Kopien, falsch für eine Seite, die gefunden werden soll.',
+            'fix' => 'Gehen Sie die Liste durch; bei Seiten, die gefunden werden sollen, machen Sie das Canonical zu ihrer eigenen Adresse.',
+        ],
+    ],
+    'html' => [
+        'lang' => [
+            'title' => 'Keine Seitensprache',
+            'found' => 'Der <html>-Tag hat kein lang-Attribut.',
+            'why' => 'Screenreader wählen danach die Stimme, Browser bieten danach die Übersetzung an, und Suchmaschinen nutzen es als Hinweis.',
+            'fix' => 'Geben Sie im Layout <html lang="…"> mit der Sprache der Seite aus.',
+        ],
+        'viewport' => [
+            'title' => 'Kein Meta-Viewport',
+            'found' => 'Die Seite hat kein <meta name="viewport">.',
+            'why' => 'Smartphones zeichnen die Seite in Desktop-Breite, verkleinert; Suchmaschinen behandeln eine solche Seite als nicht mobilfreundlich.',
+            'fix' => 'Fügen Sie dem Layout <meta name="viewport" content="width=device-width, initial-scale=1"> hinzu.',
+        ],
+        'favicon' => [
+            'title' => 'Kein Icon',
+            'found' => 'Die Seite verlinkt kein Icon.',
+            'why' => 'Browser-Tabs, Lesezeichen und Suchergebnisse auf Smartphones zeigen ein leeres Quadrat statt des Zeichens der Website.',
+            'fix' => 'Fügen Sie dem Layout <link rel="icon"> hinzu.',
+        ],
+    ],
+    'og' => [
+        'missing' => [
+            'title' => 'Open-Graph-Tags fehlen',
+            'found' => 'Die Seite hat kein og:title, og:image oder og:url.',
+            'why' => 'Ein in einem Messenger oder sozialen Netzwerk geteilter Link erscheint als bloße Adresse ohne Bild oder Titel.',
+            'fix' => 'Füllen Sie die Social-Vorschau in den SEO-Einstellungen der Seite aus oder lassen Sie das Layout die Tags ausgeben.',
+        ],
+    ],
+    'content' => [
+        'thin' => [
+            'title' => 'Wenig Text',
+            'found' => 'Eine indexierbare Seite hat weniger Wörter als der Schwellenwert.',
+            'why' => 'Suchmaschinen ranken Seiten mit wenig Lesestoff niedriger und können viele solche Seiten als minderwertig einstufen.',
+            'fix' => 'Ergänzen Sie Text, der dem Besucher hilft, führen Sie dünne Seiten zusammen oder sperren Sie sie mit noindex.',
+        ],
+        'text_ratio' => [
+            'title' => 'Wenig Text im Verhältnis zum Markup',
+            'found' => 'Der sichtbare Text macht einen kleineren Anteil des HTML aus als der Schwellenwert.',
+            'why' => 'Die Seite ist schwer für das, was sie sagt: langsam auf dem Smartphone, und Suchmaschinen finden in viel Code wenig Inhalt.',
+            'fix' => 'Verschieben Sie Inline-Skripte und -Styles in Dateien, entfernen Sie ungenutztes Markup und ergänzen Sie Inhalt.',
+        ],
+        'duplicate' => [
+            'title' => 'Doppelter Text',
+            'found' => 'Mehrere indexierbare Seiten haben denselben sichtbaren Text.',
+            'why' => 'Suchmaschinen wählen eine Kopie zur Anzeige aus und ignorieren den Rest.',
+            'fix' => 'Machen Sie die Seiten unterschiedlich, führen Sie sie zusammen oder richten Sie das Canonical der Kopien auf das Original.',
+        ],
+    ],
+    'url' => [
+        'length' => [
+            'title' => 'Lange Adresse',
+            'found' => 'Die Adresse ist länger als der Schwellenwert.',
+            'why' => 'Lange Adressen werden in den Suchergebnissen abgeschnitten und sind schwer zu teilen und zu lesen.',
+            'fix' => 'Kürzen Sie den Slug der Seite; eine Weiterleitung von der alten Adresse wird automatisch hinzugefügt.',
+        ],
+        'format' => [
+            'title' => 'Adressformat',
+            'found' => 'Der Pfad enthält Großbuchstaben, Unterstriche oder Zeichen außerhalb von ASCII.',
+            'why' => 'Großbuchstaben machen /About und /about zu zwei Seiten, Unterstriche trennen Wörter für Suchmaschinen nicht, und andere Zeichen werden beim Kopieren zu %D0%B0.',
+            'fix' => 'Verwenden Sie in Slugs kleine lateinische Buchstaben, Ziffern und Bindestriche.',
+        ],
+        'params' => [
+            'title' => 'Parameter ohne Canonical',
+            'found' => 'Eine indexierbare Adresse hat Query-Parameter und kein Canonical.',
+            'why' => 'Jede Kombination aus Filtern und Sortierung wird in Suchmaschinen zu einer eigenen Seite und verteilt das Gewicht der echten.',
+            'fix' => 'Geben Sie ein Canonical auf die Adresse ohne Parameter aus oder sperren Sie solche Adressen mit noindex.',
+        ],
+    ],
+    'perf' => [
+        'ttfb' => [
+            'title' => 'Langsame Antwort',
+            'found' => 'Die Seite hat länger als der Schwellenwert zum Antworten gebraucht.',
+            'why' => 'Besucher warten, bevor etwas erscheint, und Suchmaschinen crawlen eine langsame Website seltener.',
+            'fix' => 'Schalten Sie die Caches ein (Config, Routen, Views, Seiten), prüfen Sie langsame Abfragen und verlagern Sie schwere Arbeit in die Queue.',
+        ],
+        'html_size' => [
+            'title' => 'Schweres HTML',
+            'found' => 'Das HTML der Seite ist größer als der Schwellenwert.',
+            'why' => 'Smartphones laden und verarbeiten es langsam; Suchmaschinen hören möglicherweise vor dem Ende auf zu lesen.',
+            'fix' => 'Paginieren Sie lange Listen, verlagern Sie Inline-Daten und SVG in Dateien, entfernen Sie versteckte Kopien des Inhalts.',
+        ],
+    ],
+    'links' => [
+        'broken' => [
+            'title' => 'Defekte interne Links',
+            'found' => 'Ein Link auf eine eigene Seite der Website antwortet mit 4xx, 5xx oder gar nicht.',
+            'why' => 'Besucher landen auf einem Fehler, und Suchmaschinen verschwenden ihren Besuch darauf.',
+            'fix' => 'Korrigieren oder entfernen Sie den Link oder richten Sie eine Weiterleitung von der fehlenden Adresse auf die richtige Seite ein.',
+        ],
+        'empty' => [
+            'title' => 'Links ohne Text',
+            'found' => 'Ein Link hat keinen Text und kein aria-label, und ein Bildlink hat kein alt.',
+            'why' => 'Screenreader lesen die Adresse oder nur „Link“ vor, und Suchmaschinen erfahren nichts über die Seite, zu der er führt.',
+            'fix' => 'Geben Sie dem Link einen Text, ein aria-label oder seinem Bild ein alt.',
+        ],
+        'nofollow_internal' => [
+            'title' => 'nofollow auf internen Links',
+            'found' => 'Ein Link auf eine eigene Seite der Website hat rel="nofollow".',
+            'why' => 'Die Website bittet Suchmaschinen, ihren eigenen Links nicht zu folgen, und die Seite erhält weniger Gewicht.',
+            'fix' => 'Entfernen Sie nofollow von Links auf die eigenen Seiten der Website.',
+        ],
+    ],
+    'mixed_content' => [
+        'title' => 'Gemischte Inhalte',
+        'found' => 'Eine https-Seite lädt eine Ressource über http.',
+        'why' => 'Browser blockieren solche Skripte und Styles und warnen vor Bildern; das Schloss verschwindet.',
+        'fix' => 'Laden Sie die Ressource über https oder verwenden Sie einen Pfad ohne Schema.',
+    ],
+    'forms' => [
+        'insecure' => [
+            'title' => 'Formular über http gesendet',
+            'found' => 'Ein Formular wird an eine http-Adresse gesendet.',
+            'why' => 'Was Besucher eingeben, wird unverschlüsselt übertragen, und Browser warnen vor dem Absenden.',
+            'fix' => 'Richten Sie das Formular auf eine https-Adresse oder auf einen Pfad.',
+        ],
+    ],
+    'images' => [
+        'alt' => [
+            'title' => 'Bilder ohne alt',
+            'found' => 'Ein <img> hat kein alt-Attribut.',
+            'why' => 'Screenreader lesen den Dateinamen vor, und Suchmaschinen wissen nicht, was das Bild zeigt. Ein leeres alt bei einem dekorativen Bild ist in Ordnung.',
+            'fix' => 'Beschreiben Sie das Bild in seinem alt oder setzen Sie alt="", wenn es Dekoration ist.',
+        ],
+        'dimensions' => [
+            'title' => 'Bilder ohne Größe',
+            'found' => 'Ein <img> hat keine width und height.',
+            'why' => 'Die Seite springt, während Bilder laden, und Besucher klicken auf das Falsche.',
+            'fix' => 'Geben Sie width und height der Bilder im Template aus; CSS kann sie trotzdem responsiv machen.',
+        ],
+    ],
+    'a11y' => [
+        'button_name' => [
+            'title' => 'Buttons ohne Namen',
+            'found' => 'Ein Button hat keinen Text, kein aria-label und keinen title.',
+            'why' => 'Ein Screenreader kann nur „Button“ sagen, und sein Nutzer weiß nicht, was er tut.',
+            'fix' => 'Geben Sie dem Button einen Text oder ein aria-label, wenn es ein Icon ist.',
+        ],
+        'form_label' => [
+            'title' => 'Felder ohne Beschriftung',
+            'found' => 'Ein Formularfeld hat weder ein label noch ein aria-label.',
+            'why' => 'Ein Screenreader kann nicht sagen, was einzugeben ist; ein Platzhalter verschwindet, sobald die Eingabe beginnt.',
+            'fix' => 'Fügen Sie jedem Feld ein <label for="…"> oder ein aria-label hinzu.',
+        ],
+        'iframe_title' => [
+            'title' => 'Frames ohne Titel',
+            'found' => 'Ein iframe hat keinen title.',
+            'why' => 'Screenreader kündigen einen unbenannten Frame an, und ihre Nutzer können eine Karte nicht von einem Video unterscheiden.',
+            'fix' => 'Fügen Sie einen title hinzu, der sagt, was der Frame zeigt.',
+        ],
+    ],
+    'structure' => [
+        'depth' => [
+            'title' => 'Tief liegende Seiten',
+            'found' => 'Eine indexierbare Seite ist weiter von der Startseite entfernt als der Schwellenwert, in Klicks.',
+            'why' => 'Suchmaschinen besuchen tief liegende Seiten seltener und bewerten sie geringer; Besucher gelangen selten dorthin.',
+            'fix' => 'Verlinken Sie die Seite aus einer Kategorie, dem Menü oder verwandten Seiten.',
+        ],
+        'orphan' => [
+            'title' => 'Verwaiste Seiten',
+            'found' => 'Die Seite steht in der Sitemap oder im Adressregister, aber keine Seite der Website verlinkt auf sie.',
+            'why' => 'Besucher erreichen sie nicht, und Suchmaschinen behandeln eine Seite, auf die nichts verlinkt, als unwichtig.',
+            'fix' => 'Verlinken Sie die Seite von dort, wo sie hingehört, oder heben Sie die Veröffentlichung auf, wenn sie nicht gebraucht wird.',
+        ],
+        'dead_end' => [
+            'title' => 'Sackgassen',
+            'found' => 'Die Seite verlinkt auf keine andere Seite der Website.',
+            'why' => 'Ein Besucher, der dort landet, kann nur zurück.',
+            'fix' => 'Prüfen Sie, ob das Layout mit seinem Menü verwendet wird, und ergänzen Sie Links auf verwandte Seiten.',
+        ],
     ],
 ];

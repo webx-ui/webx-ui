@@ -43,7 +43,8 @@
     },
     "suggest": {
         "webx-ui/module-pages": "Its pages, drafts included, are searched for addresses of a development stand.",
-        "webx-ui/module-blocks": "Its regions, drafts included, are searched for addresses of a development stand."
+        "webx-ui/module-blocks": "Its regions, drafts included, are searched for addresses of a development stand.",
+        "webx-ui/routing": "The canonical addresses of its registry seed the crawl, so a page no link reaches is still found."
     },
     "autoload": {
         "psr-4": {

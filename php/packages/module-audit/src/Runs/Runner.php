@@ -16,6 +16,9 @@ use WebxUi\Audit\Checks\Severity;
 use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Audit\Content\ContentScanner;
 use WebxUi\Audit\Contracts\AuditCheck;
+use WebxUi\Audit\Crawl\Crawler;
+use WebxUi\Audit\Crawl\RobotsRules;
+use WebxUi\Audit\Crawl\Seeder;
 use WebxUi\Audit\Probes\Prober;
 use WebxUi\Audit\Probes\ProbeSet;
 use WebxUi\Audit\Probes\SiteClient;
@@ -28,8 +31,12 @@ use WebxUi\Audit\Probes\SiteClient;
  * in `progress`, so a worker that dies between pieces costs one piece, not the run.
  *
  * Stages, in order: `probes` (the config is read in the same piece — its checks need no
- * requests), `database`, `crawl` (the full scope only; the crawler arrives in A2) and `analyse`.
- * A check runs once, in the last stage of the ones it needs.
+ * requests), `database`, `crawl` (the full scope only) and `analyse`. A check runs once, in the
+ * last stage of the ones it needs.
+ *
+ * The crawl is three phases in `progress.crawl`: `seed` (home, sitemap, registry, robots.txt),
+ * `fetch` (the queue, a few pages at a time, piece after piece) and `checks` (the snapshot is
+ * finished, then the checks of the crawl run one after another, as many as a piece has time for).
  */
 final class Runner
 {
@@ -53,6 +60,8 @@ final class Runner
         private readonly AuditContentSources $sources,
         private readonly ModuleRegistry $modules,
         private readonly Config $config,
+        private readonly Seeder $seeder,
+        private readonly Crawler $crawler,
     ) {}
 
     public function start(string $scope, ?string $startedBy = null): AuditRun
@@ -64,6 +73,7 @@ final class Runner
             'base_url' => $this->settings->baseUrl(),
             'resolve_to' => $this->settings->resolveTo(),
             'started_by' => $startedBy,
+            'pages_limit' => max(1, (int) $this->config->get('webx-audit.pages_limit', 1000)),
             'progress' => ['stage' => 'probes', 'done' => []],
         ]);
 
@@ -97,7 +107,7 @@ final class Runner
             $finished = match ($stage) {
                 'probes' => $this->probes($run),
                 'database' => $this->database($run, $budget),
-                'crawl' => $this->crawl($run),
+                'crawl' => $this->crawl($run, $budget),
                 default => $this->analyse($run),
             };
         } catch (Throwable $failure) {
@@ -184,12 +194,58 @@ final class Runner
         return true;
     }
 
-    private function crawl(AuditRun $run): bool
+    private function crawl(AuditRun $run, float $budget): bool
     {
-        $context = new AuditContext($run, $this->settings->classifier($run->base_url), $this->client->resolvingTo($run->resolve_to), new ProbeSet, $this->config);
-        $this->runChecks($run, 'crawl', $context, ['config', 'probes', 'database', 'crawl']);
+        $deadline = microtime(true) + $budget;
+        $hosts = $this->settings->classifier($run->base_url);
+        $client = $this->client->resolvingTo($run->resolve_to);
+        /** @var array{phase?: string, robots?: array{rules?: list<array{0: bool, 1: string}>, sitemaps?: list<string>}, check?: int} $state */
+        $state = (array) ($run->progress['crawl'] ?? []);
+        $phase = $state['phase'] ?? 'seed';
+
+        if ($phase === 'seed') {
+            $robots = $this->seeder->seed($run, $client, $hosts);
+            $this->crawlState($run, ['phase' => 'fetch', 'robots' => $robots->toArray()]);
+
+            return false;
+        }
+
+        if ($phase === 'fetch') {
+            if (! $this->crawler->fetch($run, $client, $hosts, RobotsRules::fromArray($state['robots'] ?? []), $deadline)) {
+                return false;
+            }
+
+            $this->crawler->finish($run);
+            $this->crawlState($run, ['phase' => 'checks', 'check' => 0]);
+
+            return false;
+        }
+
+        $collected = ['config', 'probes', 'database', 'crawl'];
+        $checks = $this->checks->runnable($collected, 'crawl');
+        $context = new AuditContext($run, $hosts, $client, new ProbeSet, $this->config);
+        $first = $state['check'] ?? 0;
+
+        for ($index = $first; $index < count($checks); $index++) {
+            // At least one check a piece, however slow, so a run always moves.
+            if ($index > $first && microtime(true) >= $deadline) {
+                $this->crawlState($run, ['check' => $index]);
+
+                return false;
+            }
+
+            $this->runChecks($run, 'crawl', $context, $collected, [$checks[$index]]);
+        }
 
         return true;
+    }
+
+    /**
+     * @param  array<string, mixed>  $changes
+     */
+    private function crawlState(AuditRun $run, array $changes): void
+    {
+        $run->update(['progress' => [...($run->progress ?? []), 'crawl' => [...(array) ($run->progress['crawl'] ?? []), ...$changes]]]);
     }
 
     /**
@@ -226,7 +282,32 @@ final class Runner
             'counts' => [...$this->counts($run, $ran), 'fixed' => $fixed, 'previous_id' => $previous?->id],
         ]);
 
+        $this->pruneSnapshots();
+
         return true;
+    }
+
+    /**
+     * Page snapshots for the last few full runs only (decision 8) — they are the bulk of the
+     * module's tables. The findings stay: "fixed" and the history read those.
+     */
+    private function pruneSnapshots(): void
+    {
+        $keep = max(1, (int) $this->config->get('webx-audit.keep_snapshots', 5));
+
+        $old = AuditRun::query()
+            ->where('scope', AuditRun::FULL)
+            ->whereIn('status', [AuditRun::DONE, AuditRun::FAILED, AuditRun::CANCELLED])
+            ->orderByDesc('id')
+            ->skip($keep)
+            ->take(PHP_INT_MAX)
+            ->pluck('id')
+            ->all();
+
+        if ($old !== []) {
+            AuditLink::query()->whereIn('run_id', $old)->delete();
+            AuditPage::query()->whereIn('run_id', $old)->delete();
+        }
     }
 
     /**
@@ -294,10 +375,11 @@ final class Runner
      * stored in this run before, so a piece the queue retries does not count twice.
      *
      * @param  list<string>  $collected
+     * @param  list<AuditCheck>|null  $only  Some of the stage's checks, when a piece cannot run them all.
      */
-    private function runChecks(AuditRun $run, string $stage, AuditContext $context, array $collected): void
+    private function runChecks(AuditRun $run, string $stage, AuditContext $context, array $collected, ?array $only = null): void
     {
-        $checks = $this->checks->runnable($collected, $stage);
+        $checks = $only ?? $this->checks->runnable($collected, $stage);
         $ids = array_map(static fn (AuditCheck $check): string => $check->id(), $checks);
 
         if ($ids === []) {

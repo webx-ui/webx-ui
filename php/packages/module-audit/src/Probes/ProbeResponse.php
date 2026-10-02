@@ -21,6 +21,8 @@ final readonly class ProbeResponse
         public string $body = '',
         public int $ms = 0,
         public ?string $error = null,
+        /** Until the first byte, when the transport says; null under a fake. */
+        public ?int $ttfb = null,
     ) {}
 
     public function ok(): bool

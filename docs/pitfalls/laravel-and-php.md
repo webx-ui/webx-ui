@@ -575,6 +575,11 @@ php vendor/bin/testbench package:discover` из `php/`, убрать `bootstrap/
 - **`Illuminate\Contracts\Translation\Loader` в контейнере не связан** — загрузчик лежит под
   строкой `translation.loader`. Инъекция по интерфейсу падает с «Target … is not instantiable»
   только в рантайме, тесты на конструкторе этого не видят.
+- **`$document->body` у `Dom\HTMLDocument` пуст, хотя `<body>` на странице есть.** С флагом
+  `Dom\HTML_NO_DEFAULT_NS` (он нужен, чтобы `querySelectorAll('title')` и XPath писались без
+  пространства имён) элементы лежат вне HTML-пространства, а `body`, `head` и `title` документа
+  ищут именно в нём — и молча отдают `null`. Выглядит как «на странице ноль слов». Брать
+  `querySelector('body')`. Проверка — тест с настоящим текстом в `<body>` и счётом слов.
 - **`tinker <файл>` открывает REPL, а не выполняет файл.** Команда виснет до таймаута. Скрипт
   запускается как `artisan tinker --execute="require '<путь>';"`.
 - **Rich Results Test не показывает FAQ, даже когда разметка верна.** FAQ-сниппеты Google даёт

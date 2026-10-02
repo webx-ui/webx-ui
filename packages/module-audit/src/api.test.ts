@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { AdminContext } from '@webx-ui/module-admin'
-import { createAuditApi } from './api'
+import { createAuditApi, pageParams } from './api'
 
 function context(http: Record<string, unknown>): AdminContext {
   return { apiPath: '/api/cms', http } as unknown as AdminContext
@@ -51,5 +51,40 @@ describe('createAuditApi', () => {
     expect(get).toHaveBeenCalledWith('/api/cms/audit/runs/3/checks', {
       query: expect.objectContaining({ group: 'config' }),
     })
+  })
+
+  it('sends the field filters of the pages screen as f[field]=op:value', () => {
+    expect(
+      pageParams({
+        indexable: false,
+        filters: [
+          { field: 'title', op: 'empty' },
+          { field: 'word_count', op: 'lt', value: '250' },
+        ],
+        sort: '-word_count',
+      }),
+    ).toEqual({
+      search: undefined,
+      status: undefined,
+      indexable: 0,
+      check: undefined,
+      sort: '-word_count',
+      page: undefined,
+      per_page: undefined,
+      'f[title]': 'empty',
+      'f[word_count]': 'lt:250',
+    })
+  })
+
+  it('builds the CSV address with the same filters and the columns on screen', () => {
+    const file = createAuditApi(context({})).pagesFile(
+      7,
+      { status: '4xx', search: 'blog', page: 3 },
+      ['url', 'status'],
+    )
+
+    expect(file).toBe(
+      '/api/cms/audit/runs/7/pages/export?search=blog&status=4xx&columns=url%2Cstatus',
+    )
   })
 })

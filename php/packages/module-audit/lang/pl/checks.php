@@ -146,5 +146,337 @@ return [
             'why' => 'Treść wypełniona w środowisku deweloperskim trafia na produkcję z linkami i obrazami wskazującymi z powrotem na to środowisko; użytkownicy dostają błędy, a środowisko zostaje zaindeksowane.',
             'fix' => 'Otwórz wpis i zamień adres środowiska deweloperskiego na adres samej witryny lub link względny. Wypisz środowiska w ustawieniach audytu, aby wszystkie zostały wychwycone.',
         ],
+        'dev_page' => [
+            'title' => 'Linki do środowiska deweloperskiego na stronie',
+            'found' => 'Link lub zasób strony — obraz, skrypt, styl, og:image, canonical — prowadzi do środowiska deweloperskiego.',
+            'why' => 'Użytkownicy trafiają na witrynę, która nie jest dla nich przeznaczona, obrazy przestają działać po wyłączeniu środowiska, a wyszukiwarki znajdują je przez witrynę.',
+            'fix' => 'Znajdź adres w treści lub szablonie strony i zamień środowisko na adres samej witryny lub link względny.',
+        ],
+        'similar' => [
+            'title' => 'Host podobny do tej witryny',
+            'found' => 'Link do hosta z tym samym pierwszym słowem co witryna, ale w innej strefie, na przykład shop.local obok shop.com.',
+            'why' => 'Najpewniej to środowisko deweloperskie lub stara kopia witryny, o której audyt nie wie.',
+            'fix' => 'Jeśli to środowisko deweloperskie lub stara domena, dodaj ją do „Innych adresów tej witryny” w ustawieniach audytu i popraw linki; jeśli to cudza witryna, nie trzeba nic robić.',
+        ],
+        'wrong_mirror' => [
+            'title' => 'Linki przez inne lustro',
+            'found' => 'Link do witryny przez jej inne lustro (www lub bez niego) albo przez http w witrynie z https.',
+            'why' => 'Każde kliknięcie przechodzi przez przekierowanie: użytkownicy czekają dłużej, a wyszukiwarki widzą linki do adresu, który nie jest stroną.',
+            'fix' => 'Linkuj do głównego lustra przez https albo używaj linków względnych.',
+        ],
+        'absolute_own' => [
+            'title' => 'Bezwzględne linki do samej witryny',
+            'found' => 'Link lub obraz w treści jest zapisany z adresem samej witryny zamiast ścieżki.',
+            'why' => 'Dziś działa, a przy przeprowadzce na inną domenę lub protokół przestanie; skopiowany do środowiska deweloperskiego prowadzi z powrotem na działającą witrynę.',
+            'fix' => 'Zapisuj linki do stron samej witryny jako ścieżki: /about zamiast https://shop.com/about.',
+        ],
+        'new_domain' => [
+            'title' => 'Nowa domena zewnętrzna',
+            'found' => 'Witryna linkuje do domeny, do której nie linkowała w poprzednim pełnym uruchomieniu.',
+            'why' => 'Nowa domena to zwykle nowy link, który ktoś dodał — a czasem literówka albo spamowe linki zostawione przez kogoś, kto włamał się na witrynę.',
+            'fix' => 'Otwórz wymienione strony i upewnij się, że link ma tam być.',
+        ],
+        'external_many' => [
+            'title' => 'Dużo linków zewnętrznych na stronie',
+            'found' => 'Strona ma więcej linków zewnętrznych niż próg.',
+            'why' => 'Strona złożona głównie z linków do innych witryn wygląda dla wyszukiwarek jak farma linków i często jest oznaką spamu.',
+            'fix' => 'Usuń linki, które nie pomagają użytkownikowi, albo podziel stronę.',
+        ],
+        'blank_opener' => [
+            'title' => 'Nowa karta bez noopener',
+            'found' => 'Link do innej witryny otwiera się w nowej karcie bez rel="noopener".',
+            'why' => 'W starszych przeglądarkach otwarta strona może przekierować kartę witryny na dowolną stronę.',
+            'fix' => 'Dodaj rel="noopener" (lub noreferrer) do linków z target="_blank".',
+        ],
+    ],
+    'indexing' => [
+        'home_noindex' => [
+            'title' => 'Strona główna jest zamknięta dla wyszukiwarek',
+            'found' => 'Strona główna ma noindex w znaczniku meta robots lub w nagłówku X-Robots-Tag.',
+            'why' => 'Najważniejsza strona witryny znika z wyszukiwania, a często cała witryna razem z nią.',
+            'fix' => 'Usuń noindex ze strony głównej: sprawdź ustawienia SEO strony, szablon i nagłówki serwera WWW.',
+        ],
+        'noindex' => [
+            'title' => 'Strony zamknięte przez noindex',
+            'found' => 'Strona ma noindex w znaczniku meta robots lub w nagłówku X-Robots-Tag.',
+            'why' => 'Wyszukiwarki pomijają stronę. To dobrze dla wyników wyszukiwania i stron technicznych, a źle dla treści zamkniętej przez pomyłkę.',
+            'fix' => 'Przejrzyj listę; strony, które powinny być znajdowane, otwórz w ich ustawieniach SEO i usuń noindex.',
+        ],
+    ],
+    'title' => [
+        'missing' => [
+            'title' => 'Brak title',
+            'found' => 'Strona nie ma <title> albo jest on pusty.',
+            'why' => 'Title to wiersz, który wyszukiwarki pokazują jako link do strony; bez niego wymyślają własny.',
+            'fix' => 'Nadaj stronie title w jej ustawieniach SEO lub sprawdź, czy szablon go drukuje.',
+        ],
+        'duplicate' => [
+            'title' => 'Powtórzone title',
+            'found' => 'Kilka indeksowalnych stron ma ten sam title.',
+            'why' => 'Wyszukiwarki nie odróżniają stron i pokazują jedną z nich, niekoniecznie właściwą.',
+            'fix' => 'Nadaj każdej stronie własny title, który mówi, co na niej jest.',
+        ],
+        'length' => [
+            'title' => 'Title za krótki lub za długi',
+            'found' => 'Title jest krótszy lub dłuższy niż progi, w znakach.',
+            'why' => 'Długi title jest ucinany w wynikach wyszukiwania (granica to około 600 pikseli, mniej więcej 60 znaków); krótki mówi za mało.',
+            'fix' => 'Przepisz title tak, by mieścił się w zakresie z progów audytu.',
+        ],
+        'multiple' => [
+            'title' => 'Więcej niż jeden title',
+            'found' => 'Strona ma więcej niż jeden znacznik <title>.',
+            'why' => 'Wyszukiwarki biorą jeden z nich, niekoniecznie ten napisany dla strony.',
+            'fix' => 'Znajdź szablon lub blok, który drukuje drugi title, i usuń go.',
+        ],
+    ],
+    'description' => [
+        'missing' => [
+            'title' => 'Brak meta description',
+            'found' => 'Strona nie ma meta description albo jest on pusty.',
+            'why' => 'Wyszukiwarki układają fragment pod linkiem z dowolnego znalezionego tekstu.',
+            'fix' => 'Napisz description w ustawieniach SEO strony: co strona oferuje, w jednym lub dwóch zdaniach.',
+        ],
+        'duplicate' => [
+            'title' => 'Powtórzone description',
+            'found' => 'Kilka indeksowalnych stron ma ten sam meta description.',
+            'why' => 'Ten sam fragment pod różnymi linkami nic nie mówi szukającemu, a wyszukiwarki zastępują go własnym.',
+            'fix' => 'Napisz dla każdej strony własny description.',
+        ],
+        'length' => [
+            'title' => 'Description za krótki lub za długi',
+            'found' => 'Description jest krótszy lub dłuższy niż progi, w znakach.',
+            'why' => 'Długi description jest ucinany w wynikach wyszukiwania (około 920 pikseli, mniej więcej 160 znaków); krótki jest często zastępowany.',
+            'fix' => 'Przepisz description tak, by mieścił się w zakresie z progów audytu.',
+        ],
+    ],
+    'h1' => [
+        'missing' => [
+            'title' => 'Brak H1',
+            'found' => 'Strona nie ma nagłówka H1.',
+            'why' => 'H1 mówi użytkownikom i wyszukiwarkom, o czym jest strona; czytniki ekranu używają go do znalezienia początku treści.',
+            'fix' => 'Nadaj stronie jeden H1 — zwykle jej nazwę — w szablonie lub treści.',
+        ],
+        'multiple' => [
+            'title' => 'Więcej niż jeden H1',
+            'found' => 'Strona ma więcej niż jeden nagłówek H1.',
+            'why' => 'Samo w sobie nie jest błędem, ale zwykle oznacza, że blok lub logo używa H1 tam, gdzie chodziło o niższy poziom.',
+            'fix' => 'Zostaw jeden H1 na nazwę strony, a pozostałe zmień na H2 lub niższe.',
+        ],
+        'equals_title' => [
+            'title' => 'H1 taki sam jak title',
+            'found' => 'H1 powtarza title słowo w słowo.',
+            'why' => 'Dwa miejsca opisujące stronę mówią to samo; jedno z nich mogłoby dodać słowo, którego szukają ludzie.',
+            'fix' => 'Niech H1 będzie krótki i czytelny, a słowa kluczowe i nazwę witryny zostaw dla title.',
+        ],
+    ],
+    'headings' => [
+        'skipped' => [
+            'title' => 'Pominięty poziom nagłówka',
+            'found' => 'Przy schodzeniu w dół pominięto poziom nagłówka, na przykład H2, a po nim H4.',
+            'why' => 'Czytniki ekranu nawigują po nagłówkach, a luka brzmi jak brakująca treść.',
+            'fix' => 'Używaj poziomów po kolei; wygląd wybieraj stylami, a nie poziomem.',
+        ],
+    ],
+    'canonical' => [
+        'missing' => [
+            'title' => 'Brak canonical',
+            'found' => 'Indeksowalna strona nie ma linku canonical — ani w znaczniku, ani w nagłówku.',
+            'why' => 'Bez niego każda kopia strony z parametrami śledzenia lub sortowania może konkurować z samą stroną.',
+            'fix' => 'Niech szablon drukuje <link rel="canonical"> z własnym adresem strony.',
+        ],
+        'relative' => [
+            'title' => 'Względny canonical',
+            'found' => 'Canonical jest zapisany jako ścieżka, a nie pełny adres.',
+            'why' => 'Wyszukiwarki odczytują go względem adresu, którym przyszły, w tym innego lustra lub protokołu.',
+            'fix' => 'Drukuj canonical jako pełny adres ze schematem i głównym hostem.',
+        ],
+        'multiple' => [
+            'title' => 'Sprzeczne canonical',
+            'found' => 'Strona ma więcej niż jeden canonical albo znacznik i nagłówek Link się różnią.',
+            'why' => 'Przy sprzecznych canonical wyszukiwarki ignorują wszystkie.',
+            'fix' => 'Zostaw jeden canonical: znajdź szablon, blok lub regułę serwera, która dodaje drugi, i usuń ją.',
+        ],
+        'broken' => [
+            'title' => 'Canonical do uszkodzonej lub zamkniętej strony',
+            'found' => 'Canonical prowadzi do przekierowania, błędu lub strony z noindex.',
+            'why' => 'Strona wskazuje jako oryginał coś, czego nie da się zaindeksować, i wyszukiwarki mogą pominąć obie.',
+            'fix' => 'Wskaż w canonical własny działający adres strony lub działający oryginał.',
+        ],
+        'other' => [
+            'title' => 'Canonical do innej strony',
+            'found' => 'Canonical wskazuje inny adres niż adres samej strony.',
+            'why' => 'Strona prosi, by jej nie indeksować na rzecz innej — dobrze dla filtrów i kopii, źle dla strony, która ma być znajdowana.',
+            'fix' => 'Przejrzyj listę; dla stron, które powinny być znajdowane, ustaw canonical na ich własny adres.',
+        ],
+    ],
+    'html' => [
+        'lang' => [
+            'title' => 'Brak języka strony',
+            'found' => 'Znacznik <html> nie ma atrybutu lang.',
+            'why' => 'Czytniki ekranu wybierają po nim głos, przeglądarki proponują tłumaczenie, a wyszukiwarki używają go jako wskazówki.',
+            'fix' => 'Drukuj w szablonie <html lang="…"> z językiem strony.',
+        ],
+        'viewport' => [
+            'title' => 'Brak meta viewport',
+            'found' => 'Strona nie ma <meta name="viewport">.',
+            'why' => 'Telefony rysują stronę w szerokości pulpitu, pomniejszoną; wyszukiwarki uznają taką stronę za niedostosowaną do urządzeń mobilnych.',
+            'fix' => 'Dodaj do szablonu <meta name="viewport" content="width=device-width, initial-scale=1">.',
+        ],
+        'favicon' => [
+            'title' => 'Brak ikony',
+            'found' => 'Strona nie podpina żadnej ikony.',
+            'why' => 'Karty przeglądarki, zakładki i wyniki wyszukiwania na telefonach pokazują pusty kwadrat zamiast znaku witryny.',
+            'fix' => 'Dodaj do szablonu <link rel="icon">.',
+        ],
+    ],
+    'og' => [
+        'missing' => [
+            'title' => 'Brak znaczników Open Graph',
+            'found' => 'Strona nie ma og:title, og:image ani og:url.',
+            'why' => 'Link udostępniony w komunikatorze lub sieci społecznościowej wygląda jak goły adres bez obrazu i tytułu.',
+            'fix' => 'Wypełnij podgląd dla sieci społecznościowych w ustawieniach SEO strony lub niech szablon drukuje znaczniki.',
+        ],
+    ],
+    'content' => [
+        'thin' => [
+            'title' => 'Mało tekstu',
+            'found' => 'Indeksowalna strona ma mniej słów niż próg.',
+            'why' => 'Wyszukiwarki oceniają niżej strony, na których jest mało do czytania, i mogą uznać wiele takich stron za niskiej jakości.',
+            'fix' => 'Dodaj tekst, który pomaga użytkownikowi, połącz cienkie strony albo zamknij je przez noindex.',
+        ],
+        'text_ratio' => [
+            'title' => 'Mało tekstu w stosunku do znaczników',
+            'found' => 'Widoczny tekst stanowi mniejszą część HTML niż próg.',
+            'why' => 'Strona jest ciężka jak na to, co mówi: wolna na telefonie, a wyszukiwarki znajdują mało treści w dużej ilości kodu.',
+            'fix' => 'Przenieś skrypty i style z kodu strony do plików, usuń nieużywane znaczniki i dodaj treść.',
+        ],
+        'duplicate' => [
+            'title' => 'Powtórzony tekst',
+            'found' => 'Kilka indeksowalnych stron ma ten sam widoczny tekst.',
+            'why' => 'Wyszukiwarki wybierają jedną kopię do pokazania, a resztę ignorują.',
+            'fix' => 'Zróżnicuj strony, połącz je albo wskaż w canonical kopii oryginał.',
+        ],
+    ],
+    'url' => [
+        'length' => [
+            'title' => 'Długi adres',
+            'found' => 'Adres jest dłuższy niż próg.',
+            'why' => 'Długie adresy są ucinane w wynikach wyszukiwania i trudno je udostępniać i czytać.',
+            'fix' => 'Skróć slug strony; przekierowanie ze starego adresu zostanie dodane automatycznie.',
+        ],
+        'format' => [
+            'title' => 'Format adresu',
+            'found' => 'Ścieżka ma wielkie litery, podkreślenia lub znaki spoza ASCII.',
+            'why' => 'Wielkie litery robią z /About i /about dwie strony, podkreślenia nie rozdzielają słów dla wyszukiwarek, a inne znaki po skopiowaniu zamieniają się w %D0%B0.',
+            'fix' => 'Używaj w slugach małych liter łacińskich, cyfr i myślników.',
+        ],
+        'params' => [
+            'title' => 'Parametry bez canonical',
+            'found' => 'Indeksowalny adres ma parametry zapytania i nie ma canonical.',
+            'why' => 'Każda kombinacja filtrów i sortowania staje się w wyszukiwarkach osobną stroną i dzieli wagę prawdziwej.',
+            'fix' => 'Drukuj canonical na adres bez parametrów albo zamknij takie adresy przez noindex.',
+        ],
+    ],
+    'perf' => [
+        'ttfb' => [
+            'title' => 'Wolna odpowiedź',
+            'found' => 'Strona odpowiadała dłużej niż próg.',
+            'why' => 'Użytkownicy czekają, zanim cokolwiek się pojawi, a wyszukiwarki rzadziej odwiedzają wolną witrynę.',
+            'fix' => 'Włącz cache (konfiguracji, tras, widoków, stron), sprawdź wolne zapytania i przenieś ciężką pracę do kolejki.',
+        ],
+        'html_size' => [
+            'title' => 'Ciężki HTML',
+            'found' => 'HTML strony jest większy niż próg.',
+            'why' => 'Telefony pobierają i przetwarzają go wolno; wyszukiwarki mogą przestać czytać przed końcem.',
+            'fix' => 'Podziel długie listy na strony, przenieś dane i SVG z kodu strony do plików, usuń ukryte kopie treści.',
+        ],
+    ],
+    'links' => [
+        'broken' => [
+            'title' => 'Uszkodzone linki wewnętrzne',
+            'found' => 'Link do strony samej witryny odpowiada 4xx, 5xx albo wcale.',
+            'why' => 'Użytkownicy trafiają na błąd, a wyszukiwarki marnują na niego swoją wizytę.',
+            'fix' => 'Popraw lub usuń link albo dodaj przekierowanie z brakującego adresu na właściwą stronę.',
+        ],
+        'empty' => [
+            'title' => 'Linki bez tekstu',
+            'found' => 'Link nie ma tekstu ani aria-label, a link z obrazem nie ma alt.',
+            'why' => 'Czytniki ekranu odczytują adres albo samo „link”, a wyszukiwarki nie dowiadują się nic o stronie, do której prowadzi.',
+            'fix' => 'Nadaj linkowi tekst, aria-label albo alt jego obrazowi.',
+        ],
+        'nofollow_internal' => [
+            'title' => 'nofollow w linkach wewnętrznych',
+            'found' => 'Link do strony samej witryny ma rel="nofollow".',
+            'why' => 'Witryna prosi wyszukiwarki, by nie podążały za jej własnymi linkami, i strona dostaje mniej wagi.',
+            'fix' => 'Usuń nofollow z linków do stron samej witryny.',
+        ],
+    ],
+    'mixed_content' => [
+        'title' => 'Treść mieszana',
+        'found' => 'Strona przez https ładuje zasób przez http.',
+        'why' => 'Przeglądarki blokują takie skrypty i style oraz ostrzegają przed obrazami; kłódka znika.',
+        'fix' => 'Ładuj zasób przez https albo użyj ścieżki bez schematu.',
+    ],
+    'forms' => [
+        'insecure' => [
+            'title' => 'Formularz wysyłany przez http',
+            'found' => 'Formularz jest wysyłany na adres z http.',
+            'why' => 'To, co wpisują użytkownicy, jest przesyłane bez szyfrowania, a przeglądarki ostrzegają przed wysłaniem.',
+            'fix' => 'Wskaż formularzowi adres z https albo ścieżkę.',
+        ],
+    ],
+    'images' => [
+        'alt' => [
+            'title' => 'Obrazy bez alt',
+            'found' => 'Element <img> nie ma atrybutu alt.',
+            'why' => 'Czytniki ekranu odczytują nazwę pliku, a wyszukiwarki nie wiedzą, co jest na obrazie. Pusty alt przy obrazie ozdobnym jest w porządku.',
+            'fix' => 'Opisz obraz w jego alt albo ustaw alt="", jeśli to ozdoba.',
+        ],
+        'dimensions' => [
+            'title' => 'Obrazy bez rozmiaru',
+            'found' => 'Element <img> nie ma width i height.',
+            'why' => 'Strona skacze podczas ładowania obrazów, a użytkownicy klikają nie to, co trzeba.',
+            'fix' => 'Drukuj width i height obrazów w szablonie; CSS nadal może uczynić je elastycznymi.',
+        ],
+    ],
+    'a11y' => [
+        'button_name' => [
+            'title' => 'Przyciski bez nazwy',
+            'found' => 'Przycisk nie ma tekstu, aria-label ani title.',
+            'why' => 'Czytnik ekranu może powiedzieć tylko „przycisk”, a jego użytkownik nie wie, co on robi.',
+            'fix' => 'Nadaj przyciskowi tekst albo aria-label, jeśli to ikona.',
+        ],
+        'form_label' => [
+            'title' => 'Pola bez etykiety',
+            'found' => 'Pole formularza nie ma label ani aria-label.',
+            'why' => 'Czytnik ekranu nie może powiedzieć, co wpisać; placeholder znika, gdy tylko zaczyna się pisanie.',
+            'fix' => 'Dodaj każdemu polu <label for="…"> albo aria-label.',
+        ],
+        'iframe_title' => [
+            'title' => 'Ramki bez tytułu',
+            'found' => 'Element iframe nie ma title.',
+            'why' => 'Czytniki ekranu zapowiadają ramkę bez nazwy, a ich użytkownicy nie odróżnią mapy od wideo.',
+            'fix' => 'Dodaj title, który mówi, co ramka pokazuje.',
+        ],
+    ],
+    'structure' => [
+        'depth' => [
+            'title' => 'Głębokie strony',
+            'found' => 'Indeksowalna strona jest dalej od strony głównej niż próg, w kliknięciach.',
+            'why' => 'Wyszukiwarki odwiedzają głębokie strony rzadziej i cenią je niżej; użytkownicy rzadko tam docierają.',
+            'fix' => 'Zlinkuj stronę z kategorii, menu lub powiązanych stron.',
+        ],
+        'orphan' => [
+            'title' => 'Strony-sieroty',
+            'found' => 'Strona jest w mapie witryny lub rejestrze adresów, ale żadna strona witryny do niej nie linkuje.',
+            'why' => 'Użytkownicy nie mogą do niej dotrzeć, a wyszukiwarki uznają stronę, do której nic nie linkuje, za nieważną.',
+            'fix' => 'Zlinkuj stronę stamtąd, gdzie jej miejsce, albo cofnij jej publikację, jeśli nie jest potrzebna.',
+        ],
+        'dead_end' => [
+            'title' => 'Ślepe uliczki',
+            'found' => 'Strona nie linkuje do żadnej innej strony witryny.',
+            'why' => 'Użytkownik, który na nią trafi, nie ma dokąd iść poza powrotem.',
+            'fix' => 'Sprawdź, czy używany jest szablon z menu, i dodaj linki do powiązanych stron.',
+        ],
     ],
 ];

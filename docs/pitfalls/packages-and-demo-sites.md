@@ -115,6 +115,12 @@
   Пустая папка, которая не удаляется «Device or resource busy», — чей-то процесс держит её текущим
   каталогом; оставить до освобождения. Для `vitepress build` из worktree нужны ещё junction'ы
   `packages/*/dist`: доки резолвят `@webx-ui/*` из `dist`.
+- **Рукописная правка `pnpm-lock.yaml` из worktree проверяется в отдельном worktree без
+  `node_modules`.** Зависимость, вписанная не в тот `importers`, роняет каждую джобу CI на
+  `ERR_PNPM_OUTDATED_LOCKFILE` («1 dependency was removed»), а локально этого не видно — pnpm из
+  worktree звать нельзя. Проверка без риска: закоммитить, `git worktree add --detach <скретчпад>
+HEAD`, там `pnpm install --frozen-lockfile --lockfile-only --ignore-scripts` (симлинков нет,
+  `node_modules` не создаётся, секунды), потом `git worktree remove --force`.
 - **На пустом `php/vendor` первый `analyse` — гонка за манифест Testbench.** В worktree своего
   `php/vendor` нет, `composer install` манифест не пишет (он пишется при первой загрузке
   приложения), и первым приложение поднимает phpstan — сразу в несколько процессов. Дальше либо
