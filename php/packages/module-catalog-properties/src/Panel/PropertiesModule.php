@@ -6,7 +6,10 @@ namespace WebxUi\CatalogProperties\Panel;
 
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Contracts\HasNavSection;
+use WebxUi\Admin\Contracts\ProvidesDemo;
+use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Catalog\Panel\CatalogModule;
+use WebxUi\CatalogProperties\Demo\PropertiesDemo;
 use WebxUi\CatalogProperties\Mcp\PropertyTools;
 
 /**
@@ -18,8 +21,10 @@ use WebxUi\CatalogProperties\Mcp\PropertyTools;
  * writes. The agent's tools are not this module's: they are served under the catalogue
  * ({@see PropertyTools}), where their names belong.
  */
-final class PropertiesModule extends AbstractModule implements HasNavSection
+final class PropertiesModule extends AbstractModule implements HasNavSection, ProvidesDemo
 {
+    public function __construct(private readonly PropertiesDemo $demo) {}
+
     public function id(): string
     {
         return 'catalog-properties';
@@ -56,5 +61,18 @@ final class PropertiesModule extends AbstractModule implements HasNavSection
     public function permissions(): array
     {
         return [];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return ['catalog'];
+    }
+
+    public function seed(DemoLedger $ledger): void
+    {
+        $this->demo->seed($ledger);
     }
 }
