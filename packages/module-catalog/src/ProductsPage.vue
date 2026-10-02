@@ -181,8 +181,23 @@ const categoryNames = computed(
  * when it changed, then the satellites', then the category — what is left is the picture, the
  * name and the state, which is what identifies a product and what somebody is looking for.
  */
-const EXTRA = 140
-const CATEGORY_FROM = 860
+const NAME = 180
+const EXTRA = 120
+const CATEGORY = 140
+const PRICE = 120
+const STATE = 130
+
+/*
+ * Each width is what its content takes, measured, plus 32 of the cell's padding: the badges
+ * «Out of stock» and «Unpublished» about 90px with their dot, a price with its old one 80. A name
+ * and a category end in an ellipsis, so they are the ones that give. Wider, the columns cost
+ * the satellites — at 140, 180, 150 and 150 a 1440px window held one satellite of three; now it
+ * holds all three.
+ *
+ * The category is drawn once the name keeps its width beside the checkbox, the picture, the price,
+ * the state and the menu.
+ */
+const CATEGORY_FROM = 44 + 64 + NAME + CATEGORY + PRICE + STATE + rowMenuWidth
 
 /*
  * The width each satellite's column is drawn from on: one after another after the category's, so
@@ -201,10 +216,10 @@ const columns = computed<TableColumn<ProductRow>[]>(() => {
 
   return [
     { key: 'image', label: '', width: 64 },
-    { key: 'name', label: t('panel.column-product'), minWidth: 200 },
-    { key: 'category', label: t('product.category'), width: 180, hideBelow: CATEGORY_FROM },
+    { key: 'name', label: t('panel.column-product'), minWidth: NAME },
+    { key: 'category', label: t('product.category'), width: CATEGORY, hideBelow: CATEGORY_FROM },
     ...(priced.value
-      ? [{ key: 'price', label: t('product.price'), width: 150, align: 'right' as const }]
+      ? [{ key: 'price', label: t('product.price'), width: PRICE, align: 'right' as const }]
       : []),
     ...extra.value.map((column, index) => ({
       key: `x.${column.key}`,
@@ -212,7 +227,7 @@ const columns = computed<TableColumn<ProductRow>[]>(() => {
       width: EXTRA,
       hideBelow: extraFrom(index),
     })),
-    { key: 'state', label: t('panel.column-state'), width: 150, hideBelow: 720 },
+    { key: 'state', label: t('panel.column-state'), width: STATE, hideBelow: 720 },
     {
       key: 'updated_at',
       label: t('panel.column-updated'),

@@ -445,9 +445,12 @@ npm-пакет `@webx-ui/module-catalog-landings` (`catalogLandings()`): спи�
 
 MCP — `LandingTools` и `LandingsResource` в `WebxUi\CatalogLandings\Mcp`, отданные каталогу через
 `SatelliteTools` (имена `catalog_landings_*`, скоупы и права каталога); тест — `McpTest`. Демо —
-сидер сайта `CatalogLandingsSeeder` в `webx-cms.local` (подборки на «Одежде» и «Обуви», «Новинки» на
+`webx:demo` пакета (`LandingsDemo`, C2) и сидер сайта `CatalogLandingsSeeder` в `webx-cms.local` (подборки на «Одежде» и «Обуви», «Новинки» на
 весь каталог, пустая «Обувь класса люкс», «Чёрная одежда» с текстом и рекомендуемыми; шаг в
-`docker/entrypoint.sh`, молчит без пакета). Регистрации: `catalog-landings` в `Setup\Catalogue`
+`docker/entrypoint.sh`, молчит без пакета). У `LandingsModule::requires()` — `catalog` плюс те из
+`catalog-brands`, `catalog-labels`, `catalog-properties`, что установлены: требование, которого
+нет, пропустило бы всё демо, а порядок нужен — наборы собраны из их фасетов. Посадочная без своего
+фасета пропускается с заметкой. Регистрации: `catalog-landings` в `Setup\Catalogue`
 (нужны `catalog` и `seo`), `extra.webx.npm` и `extra.webx.panel` в composer.json пакета, пакет в
 `scripts/packages.mjs` сайта; список модулей плейграунда и четыре места в `php/` сделаны в L2–L3.
 

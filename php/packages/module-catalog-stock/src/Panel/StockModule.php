@@ -8,7 +8,10 @@ use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Categories\CategoryForm;
 use WebxUi\Admin\Categories\Mcp\CategoryTools;
 use WebxUi\Admin\Contracts\HasNavSection;
+use WebxUi\Admin\Contracts\ProvidesDemo;
+use WebxUi\Admin\Demo\DemoLedger;
 use WebxUi\Catalog\Panel\CatalogModule;
+use WebxUi\CatalogStock\Demo\StockDemo;
 use WebxUi\CatalogStock\Models\StockStatus;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\ProvidesMcpDefaults;
@@ -22,11 +25,14 @@ use WebxUi\Mcp\Tool;
  * `catalog_stock_list`, `_create`, `_update`, `_delete`, `_reorder`; putting a product into a
  * status is `catalog_products_update` with `stock.status`, or `catalog_bulk` with `set-stock`.
  */
-final class StockModule extends AbstractModule implements HasNavSection, ProvidesMcpTools
+final class StockModule extends AbstractModule implements HasNavSection, ProvidesDemo, ProvidesMcpTools
 {
     use ProvidesMcpDefaults;
 
-    public function __construct(private readonly CategoryForm $form) {}
+    public function __construct(
+        private readonly CategoryForm $form,
+        private readonly StockDemo $demo,
+    ) {}
 
     public function id(): string
     {
@@ -64,6 +70,19 @@ final class StockModule extends AbstractModule implements HasNavSection, Provide
     public function permissions(): array
     {
         return [];
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function requires(): array
+    {
+        return ['catalog'];
+    }
+
+    public function seed(DemoLedger $ledger): void
+    {
+        $this->demo->seed($ledger);
     }
 
     /**
