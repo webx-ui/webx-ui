@@ -628,7 +628,7 @@ watch(tab, () => {
   white-space: pre-line;
 }
 
-/* Key and value in two columns of their own, a row apart from the next pair. */
+/* Key and value in two columns of their own, the key against its value, a row apart from the next pair. */
 .wx-audit-card__pairs {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
@@ -637,7 +637,7 @@ watch(tab, () => {
 }
 
 .wx-audit-card__key {
-  justify-self: start;
+  justify-self: end;
   font-family: var(--wx-font-family-mono);
 }
 
