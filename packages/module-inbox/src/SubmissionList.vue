@@ -101,6 +101,7 @@ const asCards = computed(() => width.value > 0 && width.value < CARDS)
 const cardsBelow = computed(() => (asCards.value ? Number.POSITIVE_INFINITY : 0))
 
 const t = useTranslate('webx-inbox')
+const panel = useTranslate('webx-admin')
 /* Not the server's `message`: the panel says how a request failed in its own words. */
 const message = useErrorText()
 
@@ -492,6 +493,8 @@ defineExpose({ create: byHand })
         flush
         :loading="loading"
         :selectable="canUpdate"
+        :select-row-label="panel('filters.select-row')"
+        :select-all-label="panel('filters.select-all')"
         :row-class="(row: SubmissionRow) => (row.is_read ? undefined : 'is-unread')"
         :search-placeholder="t('panel.search-submissions')"
         :empty-text="emptyText"

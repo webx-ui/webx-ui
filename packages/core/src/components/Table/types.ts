@@ -190,6 +190,10 @@ export interface TableProps<T = TableRow> {
   loading?: boolean
   /** Shown in place of the rows when there are none. */
   emptyText?: string
+  /** Accessible name of each row's checkbox. */
+  selectRowLabel?: string
+  /** Accessible name of the checkbox in the header, the one that takes the whole page. */
+  selectAllLabel?: string
   stripe?: boolean
   bordered?: boolean
   /** Highlight the row under the pointer. */

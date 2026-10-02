@@ -289,12 +289,23 @@ describe('WxCatalogProductsPage', () => {
   it('says over the list when the search index did not answer and the database did', async () => {
     const quiet = await panel('/catalog/products', page([row(1)]))
 
-    expect(quiet.wrapper.find('.wx-catalog-products__fell-back').exists()).toBe(false)
+    expect(quiet.wrapper.find('.wx-catalog-products__notice').exists()).toBe(false)
 
     const { wrapper } = await panel('/catalog/products', page([row(1)], { fell_back: true }))
 
-    expect(wrapper.find('.wx-catalog-products__fell-back').text()).toContain(
+    expect(wrapper.find('.wx-catalog-products__notice').text()).toContain(
       'The search index is not answering',
+    )
+  })
+
+  it('says over the list when the catalogue has outgrown the database engine', async () => {
+    const { wrapper } = await panel(
+      '/catalog/products',
+      page([row(1)], { outgrown: { live: 2400, limit: 2000 } }),
+    )
+
+    expect(wrapper.find('.wx-catalog-products__notice').text()).toContain(
+      'Live products: 2400, the engine is meant for 2000',
     )
   })
 

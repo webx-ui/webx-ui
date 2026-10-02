@@ -99,6 +99,8 @@ export interface ProductsPage extends Paginated<ProductRow> {
   corrected?: string | null
   /** The engine did not answer and the database did: no corrections, words as typed. */
   fell_back?: boolean
+  /** The database engine is past `sql_engine_limit` (§8.2): the products and the limit. */
+  outgrown?: { live: number; limit: number } | null
 }
 
 /** A key of the `Sorts` registry: `default`, `new`, `popular`, `price_asc` — whatever it holds. */

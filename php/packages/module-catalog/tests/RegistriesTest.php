@@ -21,6 +21,7 @@ use WebxUi\Catalog\Purchase\Verdict;
 use WebxUi\Catalog\Sorts\Sort;
 use WebxUi\Catalog\Sorts\Sorts;
 use WebxUi\Catalog\Tests\Fixtures\ColourFacet;
+use WebxUi\Routing\Models\Route;
 
 /**
  * §7 and §16: the registries as the panel and the satellites meet them — the facets endpoint,
@@ -175,6 +176,17 @@ final class RegistriesTest extends TestCase
         $this->product('Two', $laptops);
 
         $this->artisan('webx:doctor')->expectsOutputToContain('past its limit of 1');
+    }
+
+    #[Test]
+    public function doctor_names_the_pages_the_root_of_the_catalogue_hides(): void
+    {
+        // Saved before the root was switched on: `Reserved` had nothing to refuse yet.
+        Route::query()->create(['locale' => 'en', 'path' => 'catalog', 'kind' => Route::CANONICAL, 'entity_type' => 'page', 'entity_id' => 1]);
+
+        $this->app['config']->set('webx-catalog.root.enabled', true);
+
+        $this->artisan('webx:doctor')->expectsOutputToContain('these addresses never open: /catalog');
     }
 
     #[Test]
