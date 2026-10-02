@@ -100,6 +100,7 @@ function apply(): void {
         children-key="children"
         check-strictly
         filterable
+        :placeholder="t('panel.pick-category')"
         :filter-placeholder="t('panel.search-categories')"
         :aria-label="param.label"
         @update:model-value="(value: TreeSelectValue) => onCategory(param, value)"

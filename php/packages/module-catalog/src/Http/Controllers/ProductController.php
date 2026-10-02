@@ -120,6 +120,7 @@ final class ProductController
             'columns' => $columns->describe(),
             'corrected' => $result->corrected,
             'fell_back' => $result->fellBack,
+            'outgrown' => $catalog->outgrown(),
         ]);
     }
 

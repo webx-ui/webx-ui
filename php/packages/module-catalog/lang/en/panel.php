@@ -26,6 +26,7 @@ return [
     'empty-search' => 'Nothing matches that.',
     'search-corrected' => 'Showing results for :corrected.',
     'search-instead' => 'Search instead for :q',
+    'outgrown' => 'The catalogue has outgrown the database engine, and filters and search will slow down. Live products: :live, the engine is meant for :limit. Install module-catalog-manticore.',
     'fell-back' => 'The search index is not answering: the list comes from the database, and the search finds words as typed.',
     'view-all' => 'All',
     'view-published' => 'Published',

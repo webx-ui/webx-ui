@@ -24,7 +24,7 @@
         "source": "https://github.com/webx-ui/webx-ui/tree/main/php/packages/module-catalog-landings"
     },
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "illuminate/bus": "^13.0",
         "illuminate/console": "^13.0",
         "illuminate/contracts": "^13.0",

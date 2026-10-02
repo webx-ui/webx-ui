@@ -105,6 +105,8 @@ const corrected = computed(() => page.value?.corrected ?? null)
 
 /* The search index did not answer and the database did (decision 13 of the Manticore spec). */
 const fellBack = computed(() => page.value?.fell_back === true)
+/* The database engine past its limit: `webx:doctor` says it too, but nobody reads that daily. */
+const outgrown = computed(() => page.value?.outgrown ?? null)
 /* The page size the table last asked for: a reload after a filter has to page the same way. */
 let perPage: number | undefined
 
@@ -614,8 +616,12 @@ const actions = computed<ScreenAction[]>(() => {
       </div>
 
       <!-- Work goes on without the index, but the search is cruder: say so over the list. -->
-      <wx-alert v-if="fellBack" class="wx-catalog-products__fell-back" type="warning">
+      <wx-alert v-if="fellBack" class="wx-catalog-products__notice" type="warning">
         {{ t('panel.fell-back') }}
+      </wx-alert>
+
+      <wx-alert v-if="outgrown" class="wx-catalog-products__notice" type="warning">
+        {{ t('panel.outgrown', { live: outgrown.live, limit: outgrown.limit }) }}
       </wx-alert>
 
       <!-- Found for other words than the ones typed: said, with the way back to them. -->
@@ -643,6 +649,8 @@ const actions = computed<ScreenAction[]>(() => {
         :cards-below="CARDS"
         :filters-count="applied.length"
         :filters-label="admin('filters.title')"
+        :select-row-label="admin('filters.select-row')"
+        :select-all-label="admin('filters.select-all')"
         :search-placeholder="t('panel.search-products')"
         :empty-text="emptyText"
         :aria-label="title"
@@ -841,7 +849,7 @@ const actions = computed<ScreenAction[]>(() => {
   background: var(--wx-bg-subtle);
 }
 
-.wx-catalog-products__fell-back {
+.wx-catalog-products__notice {
   /* The card already pads the table: the notice keeps to the same edges. */
   margin-bottom: var(--wx-space-12);
 }

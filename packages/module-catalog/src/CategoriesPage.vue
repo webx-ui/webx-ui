@@ -311,7 +311,7 @@ const actions = computed<ScreenAction[]>(() => {
 
         <template #cell-slug="{ row }">
           <wx-text v-if="row.slug" mono size="sm" tone="muted" truncate>
-            /{{ lastSegment(row.url) ?? row.slug }}/
+            /{{ lastSegment(row.url) ?? row.slug }}
           </wx-text>
         </template>
 
