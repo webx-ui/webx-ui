@@ -33,6 +33,10 @@ export interface AuditRun {
     done: AuditStage[]
     checks: number
     pages: { crawled: number; limit: number }
+    /** The phase of the crawl: `seed`, `fetch`, `resources`, `checks`. */
+    phase?: string | null
+    /** While what the pages load is being asked. */
+    resources?: { checked: number; total: number } | null
   }
   counts: AuditCounts | null
   started_by: string | null
@@ -183,13 +187,53 @@ export interface AuditPageCard {
     hreflang: { lang: string; url: string }[]
     og: Record<string, string>
     twitter: Record<string, string>
-    json_ld: { types: string[]; error: string | null }[]
+    json_ld: AuditJsonLdBlock[]
     error: string | null
     facts: Record<string, unknown>
     fetched_at: string | null
   }
   issues: AuditIssue[]
-  counts: { issues: number; incoming: number; outgoing: number }
+  counts: {
+    issues: number
+    incoming: number
+    outgoing: number
+    images?: number
+    css?: number
+    js?: number
+    microdata?: number
+  }
+}
+
+/** One JSON-LD block of a page: what it is, and what the types search engines show lack. */
+export interface AuditJsonLdBlock {
+  types: string[]
+  error: string | null
+  items?: { type: string; missing: string[]; recommended: string[] }[]
+  /** The block as the page printed it, cut. */
+  source?: string
+}
+
+/** The tabs of the card that list what the page loads. */
+export type AuditResourceTab = 'images' | 'css' | 'js'
+
+/** Something a page loads, with what it answered when the run asked. */
+export interface AuditResourceRow {
+  id: number
+  url: string
+  kind: string
+  alt: string | null
+  host_class: AuditHostClass | null
+  /** False past the run's limit, and for a stand's address — it is not asked. */
+  checked: boolean
+  status: number | null
+  error: string | null
+  location: string | null
+  content_type: string | null
+  bytes: number | null
+  cache_control: string | null
+  compression: string | null
+  width: number | null
+  height: number | null
 }
 
 /** A link of a page: where it leads (out) or where it comes from (in). */

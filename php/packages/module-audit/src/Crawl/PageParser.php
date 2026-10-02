@@ -25,6 +25,9 @@ final class PageParser
     /** The most H1 texts kept. */
     private const H1 = 10;
 
+    /** Characters of a JSON-LD block kept for the card — enough to see what is wrong. */
+    private const JSON_LD_SOURCE = 4000;
+
     public function __construct(private readonly UrlFinder $finder) {}
 
     /**
@@ -265,7 +268,14 @@ final class PageParser
             $withoutSize += $element->hasAttribute('width') && $element->hasAttribute('height') ? 0 : 1;
 
             if ($element->hasAttribute('src')) {
-                $links->add((string) $element->getAttribute('src'), AuditLink::IMG, anchor: self::cut(self::clean($element->getAttribute('alt')), 255) ?: null);
+                // A JPEG inside a <picture> that offers WebP or AVIF is the fallback for old
+                // browsers, not the format visitors get — `images.format` leaves it alone.
+                $links->add(
+                    (string) $element->getAttribute('src'),
+                    AuditLink::IMG,
+                    anchor: self::cut(self::clean($element->getAttribute('alt')), 255) ?: null,
+                    rel: self::modern($element) ? AuditLink::MODERN : null,
+                );
             }
         }
 
@@ -280,6 +290,27 @@ final class PageParser
         }
 
         return ['images' => $count, 'images_without_alt' => $withoutAlt, 'images_without_size' => $withoutSize];
+    }
+
+    /** Whether the picture's `<picture>` has a WebP or AVIF source. */
+    private static function modern(Element $image): bool
+    {
+        $picture = $image->closest('picture');
+
+        if ($picture === null) {
+            return false;
+        }
+
+        foreach ($picture->querySelectorAll('source') as $source) {
+            $type = strtolower((string) $source->getAttribute('type'));
+            $srcset = strtolower((string) $source->getAttribute('srcset'));
+
+            if (str_contains($type, 'webp') || str_contains($type, 'avif') || preg_match('~\.(webp|avif)(\?|\s|,|$)~', $srcset) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -349,11 +380,12 @@ final class PageParser
     }
 
     /**
-     * The JSON-LD blocks: their types and whether they parse at all. The rules of each type are
-     * A3's; the addresses inside are classified now, because a stand's address in the structured
-     * data is as wrong as one in a link.
+     * The JSON-LD blocks: their types, whether they parse at all, what the types search engines
+     * show lack ({@see JsonLdRules}), and the source, cut, for the card's structured-data tab.
+     * The addresses inside are classified too: a stand's address in the structured data is as
+     * wrong as one in a link.
      *
-     * @return list<array{types: list<string>, error: string|null}>
+     * @return list<array{types: list<string>, error: string|null, items: list<array{type: string, missing: list<string>, recommended: list<string>}>, source: string}>
      */
     private function jsonLd(HTMLDocument $document, LinkList $links): array
     {
@@ -363,13 +395,15 @@ final class PageParser
             $source = trim($element->textContent);
             $data = json_decode($source, true);
 
+            $kept = self::cut($source, self::JSON_LD_SOURCE);
+
             if (! is_array($data)) {
-                $blocks[] = ['types' => [], 'error' => json_last_error() === JSON_ERROR_NONE ? 'Not an object.' : json_last_error_msg()];
+                $blocks[] = ['types' => [], 'error' => json_last_error() === JSON_ERROR_NONE ? 'Not an object.' : json_last_error_msg(), 'items' => [], 'source' => $kept];
 
                 continue;
             }
 
-            $blocks[] = ['types' => self::types($data), 'error' => null];
+            $blocks[] = ['types' => self::types($data), 'error' => null, 'items' => JsonLdRules::inspect($data), 'source' => $kept];
 
             foreach ($this->finder->find($source) as $address) {
                 $links->add($address, AuditLink::JSON_LD);

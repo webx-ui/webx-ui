@@ -28,6 +28,9 @@ abstract class LinkCheck extends Check
     /** The summary line, with `:count`. */
     protected const SUMMARY = '';
 
+    /** What of the linked page a row shows. */
+    protected const TO = 'to:id,status';
+
     public function run(AuditContext $context): iterable
     {
         $page = null;
@@ -35,7 +38,7 @@ abstract class LinkCheck extends Check
         $count = 0;
 
         $links = $this->links($context)
-            ->with('to:id,status')
+            ->with(static::TO)
             ->orderBy('from_page_id')
             ->orderBy('id');
 

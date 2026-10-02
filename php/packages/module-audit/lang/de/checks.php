@@ -188,6 +188,12 @@ return [
             'why' => 'In älteren Browsern kann die geöffnete Seite den Tab der Website auf eine Seite ihrer Wahl umleiten.',
             'fix' => 'Fügen Sie rel="noopener" (oder noreferrer) zu Links mit target="_blank" hinzu.',
         ],
+        'external_redirect' => [
+            'title' => 'Externe Links über eine Weiterleitung',
+            'found' => 'Ein Link auf eine andere Website antwortet mit einer Weiterleitung.',
+            'why' => 'Er funktioniert nur über einen Umweg und bedeutet meist, dass die Seite umgezogen ist und der Link nie aktualisiert wurde.',
+            'fix' => 'Ersetzen Sie den Link durch die Adresse, zu der er führt.',
+        ],
     ],
     'indexing' => [
         'home_noindex' => [
@@ -201,6 +207,96 @@ return [
             'found' => 'Die Seite hat noindex im Robots-Meta-Tag oder im X-Robots-Tag-Header.',
             'why' => 'Suchmaschinen entfernen die Seite. Richtig für Suchergebnisse und Dienstseiten, falsch für Inhalte, die versehentlich gesperrt wurden.',
             'fix' => 'Gehen Sie die Liste durch; öffnen Sie Seiten, die gefunden werden sollen, in ihren SEO-Einstellungen und entfernen Sie noindex.',
+        ],
+    ],
+    'robots' => [
+        'missing' => [
+            'title' => 'Keine robots.txt',
+            'found' => '/robots.txt antwortet nicht mit 200 oder antwortet mit etwas anderem als reinem Text.',
+            'why' => 'Suchmaschinen lesen eine fehlende Datei als „alles ist erlaubt“ und eine fehlerhafte als „später wiederkommen“ — die Regeln, die die Website geben wollte, gehen verloren.',
+            'fix' => 'Liefern Sie robots.txt als text/plain aus. Mit module-seo ist es die Einstellung „robots.txt“; entfernen Sie eine statische public/robots.txt, die sie überdeckt.',
+        ],
+        'disallow_all' => [
+            'title' => 'robots.txt sperrt die ganze Website',
+            'found' => 'robots.txt enthält Disallow: / für alle Robots auf einer Live-Domain.',
+            'why' => 'Suchmaschinen hören auf, die Website zu crawlen, und entfernen sie aus den Ergebnissen. Meist ist es die Datei der Entwicklungsumgebung, die mit dem Deployment live gegangen ist.',
+            'fix' => 'Entfernen Sie Disallow: / aus der Gruppe * oder behalten Sie es nur für die Robots, die nicht kommen sollen.',
+        ],
+        'no_sitemap' => [
+            'title' => 'robots.txt nennt die Sitemap nicht',
+            'found' => 'robots.txt hat keine Sitemap:-Zeile.',
+            'why' => 'Suchmaschinen finden die Sitemap nur dort, wo man sie ihnen von Hand mitteilt, und neue Suchmaschinen gar nicht.',
+            'fix' => 'Fügen Sie robots.txt die Zeile Sitemap: https://…/sitemap.xml hinzu.',
+        ],
+        'blocks_assets' => [
+            'title' => 'robots.txt sperrt CSS oder JS',
+            'found' => 'Ein Stylesheet oder ein Skript, das die Startseite lädt, ist in robots.txt gesperrt.',
+            'why' => 'Suchmaschinen rendern die Seite ohne sie, sehen ein kaputtes Layout und können die Seite als nicht mobilfreundlich einstufen.',
+            'fix' => 'Erlauben Sie die Ordner mit CSS und JS oder entfernen Sie die Regel, die sie sperrt.',
+        ],
+        'syntax' => [
+            'title' => 'Zeilen, die robots.txt nicht versteht',
+            'found' => 'robots.txt enthält unbekannte Direktiven, Regeln vor dem ersten User-agent oder Zeilen, die nicht dem Format „Feld: Wert“ folgen.',
+            'why' => 'Suchmaschinen überspringen solche Zeilen stillschweigend: Ein Tippfehler in Disalow sperrt nichts, und jahrelang bemerkt es niemand.',
+            'fix' => 'Korrigieren Sie die Schreibweise und beginnen Sie jede Regelgruppe mit einer User-agent-Zeile.',
+        ],
+    ],
+    'sitemap' => [
+        'missing' => [
+            'title' => 'Keine Sitemap',
+            'found' => 'Die Sitemap antwortet nicht oder lässt sich nicht parsen — oder eine Datei, die robots.txt oder der Index nennt, tut es nicht.',
+            'why' => 'Suchmaschinen finden neue und tief liegende Seiten nur durch Crawlen, langsam, und Seiten, auf die nichts verlinkt, gar nicht.',
+            'fix' => 'Liefern Sie eine gültige Sitemap unter der Adresse aus, die robots.txt nennt. Mit module-seo wird sie aus dem Adressregister erstellt.',
+        ],
+        'limits' => [
+            'title' => 'Eine Sitemap-Datei über den Grenzwerten',
+            'found' => 'Eine Sitemap-Datei enthält mehr als 50 000 Adressen oder ist unkomprimiert größer als 50 MB.',
+            'why' => 'Suchmaschinen verwerfen eine solche Datei ganz, nicht nur ihr Ende.',
+            'fix' => 'Teilen Sie die Sitemap in mehrere Dateien unter einem Sitemap-Index auf.',
+        ],
+        'bad_url' => [
+            'title' => 'Adressen in der Sitemap, die keine zu indexierenden Seiten sind',
+            'found' => 'Eine Adresse der Sitemap antwortet mit einem Fehler oder einer Weiterleitung, ist mit noindex gesperrt, oder ihr Canonical nennt eine andere Seite.',
+            'why' => 'Die Sitemap ist eine Liste von Originalen; jede solche Adresse verbraucht den Besuch der Suchmaschine für etwas, das sie verwirft, und zu viele davon lassen sie der Sitemap weniger vertrauen.',
+            'fix' => 'Führen Sie nur funktionierende Seiten auf, die gefunden werden sollen, unter ihrer endgültigen Adresse.',
+        ],
+        'lastmod' => [
+            'title' => 'lastmod in der Sitemap sagt nichts aus',
+            'found' => 'lastmod liegt in der Zukunft oder ist bei jeder Adresse einer Datei gleich.',
+            'why' => 'Suchmaschinen lernen, dass das Datum einfach ausgegeben statt gepflegt wird, und nutzen es nicht mehr, um zu entscheiden, was erneut gecrawlt wird.',
+            'fix' => 'Geben Sie das Datum aus, an dem sich der Inhalt der Seite zuletzt geändert hat, oder lassen Sie lastmod weg.',
+        ],
+        'missing_page' => [
+            'title' => 'Seiten, die in der Sitemap fehlen',
+            'found' => 'Eine indexierbare Seite, die der Crawl erreicht hat, steht nicht in der Sitemap.',
+            'why' => 'Suchmaschinen finden sie nur über Links, später — und eine Seite, die ihren letzten Link verliert, fällt heraus.',
+            'fix' => 'Stellen Sie sicher, dass das Modul der Seite sie zur Sitemap hinzufügt (mit module-seo — über das Adressregister), oder sperren Sie sie mit noindex, wenn sie nicht gefunden werden soll.',
+        ],
+    ],
+    'redirects' => [
+        'chain' => [
+            'title' => 'Weiterleitungsketten',
+            'found' => 'Eine Adresse leitet mehr als einmal weiter, bevor sie die Seite erreicht.',
+            'why' => 'Jeder Schritt ist ein Umweg für den Besucher, und Suchmaschinen hören möglicherweise vor dem Ende auf zu folgen.',
+            'fix' => 'Richten Sie die erste Weiterleitung direkt auf die endgültige Adresse.',
+        ],
+        'loop' => [
+            'title' => 'Weiterleitungsschleifen',
+            'found' => 'Weiterleitungen führen zurück zu einer Adresse, die sie bereits durchlaufen haben.',
+            'why' => 'Der Browser gibt mit „zu viele Weiterleitungen“ auf — die Seite existiert für niemanden.',
+            'fix' => 'Finden Sie die zwei Regeln, die die Adresse hin und her schicken, und entfernen Sie eine davon.',
+        ],
+        'to_error' => [
+            'title' => 'Weiterleitungen auf einen Fehler',
+            'found' => 'Eine Weiterleitung endet bei 4xx, 5xx oder ohne Antwort.',
+            'why' => 'Die alte Adresse wird nur am Leben gehalten, um auf eine tote zu führen: Besucher und Suchmaschinen landen auf einem Fehler.',
+            'fix' => 'Richten Sie die Weiterleitung auf eine funktionierende Seite oder entfernen Sie sie.',
+        ],
+        'temporary' => [
+            'title' => 'Temporäre Weiterleitungen',
+            'found' => 'Eine Adresse antwortet mit 302 oder 307.',
+            'why' => 'Suchmaschinen behalten die alte Adresse im Index und geben der neuen nichts von ihrem Gewicht. Richtig für eine Weiterleitung, die zurückgenommen wird, falsch für einen Umzug.',
+            'fix' => 'Gehen Sie die Liste durch; machen Sie die Weiterleitungen dauerhaft umgezogener Adressen zu 301.',
         ],
     ],
     'title' => [
@@ -311,10 +407,10 @@ return [
     ],
     'html' => [
         'lang' => [
-            'title' => 'Keine Seitensprache',
-            'found' => 'Der <html>-Tag hat kein lang-Attribut.',
+            'title' => 'Keine oder falsche Seitensprache',
+            'found' => 'Der <html>-Tag hat kein lang-Attribut, oder es nennt eine andere Sprache als die eigene hreflang-Zeile der Seite.',
             'why' => 'Screenreader wählen danach die Stimme, Browser bieten danach die Übersetzung an, und Suchmaschinen nutzen es als Hinweis.',
-            'fix' => 'Geben Sie im Layout <html lang="…"> mit der Sprache der Seite aus.',
+            'fix' => 'Geben Sie im Layout <html lang="…"> mit der Sprache der Seite aus — der Sprache der Seite, nicht der Standardsprache der Website.',
         ],
         'viewport' => [
             'title' => 'Kein Meta-Viewport',
@@ -323,10 +419,10 @@ return [
             'fix' => 'Fügen Sie dem Layout <meta name="viewport" content="width=device-width, initial-scale=1"> hinzu.',
         ],
         'favicon' => [
-            'title' => 'Kein Icon',
-            'found' => 'Die Seite verlinkt kein Icon.',
+            'title' => 'Kein Icon, oder es öffnet sich nicht',
+            'found' => 'Die Seite verlinkt kein Icon, oder das verlinkte Icon öffnet sich nicht.',
             'why' => 'Browser-Tabs, Lesezeichen und Suchergebnisse auf Smartphones zeigen ein leeres Quadrat statt des Zeichens der Website.',
-            'fix' => 'Fügen Sie dem Layout <link rel="icon"> hinzu.',
+            'fix' => 'Fügen Sie dem Layout <link rel="icon"> mit einer funktionierenden Adresse hinzu.',
         ],
     ],
     'og' => [
@@ -335,6 +431,52 @@ return [
             'found' => 'Die Seite hat kein og:title, og:image oder og:url.',
             'why' => 'Ein in einem Messenger oder sozialen Netzwerk geteilter Link erscheint als bloße Adresse ohne Bild oder Titel.',
             'fix' => 'Füllen Sie die Social-Vorschau in den SEO-Einstellungen der Seite aus oder lassen Sie das Layout die Tags ausgeben.',
+        ],
+        'image_broken' => [
+            'title' => 'Das Open-Graph-Bild ist defekt oder zu klein',
+            'found' => 'og:image öffnet sich nicht oder ist kleiner als 1200×630.',
+            'why' => 'Ein geteilter Link zeigt kein Bild oder ein kleines Quadrat neben dem Text statt einer großen Karte.',
+            'fix' => 'Setzen Sie in der Social-Vorschau der Seite ein funktionierendes Bild von mindestens 1200×630.',
+        ],
+    ],
+    'hreflang' => [
+        'not_reciprocal' => [
+            'title' => 'hreflang ohne Rückverweis',
+            'found' => 'Die Seite nennt eine andere Sprachversion, und diese Version nennt die Seite nicht zurück.',
+            'why' => 'Suchmaschinen ignorieren ein Paar von Sprachversionen, das nicht von beiden Seiten bestätigt ist, und zeigen Besuchern die falsche Sprache.',
+            'fix' => 'Geben Sie auf jeder Sprachversion der Seite denselben Satz hreflang-Links aus, wobei jede alle anderen und sich selbst nennt.',
+        ],
+        'no_x_default' => [
+            'title' => 'Kein x-default',
+            'found' => 'Die Seite nennt mehrere Sprachversionen und kein x-default.',
+            'why' => 'Ein Besucher, dessen Sprache keine davon ist, erhält die Version, die die Suchmaschine errät.',
+            'fix' => 'Fügen Sie hreflang="x-default" hinzu, das auf die Version für alle anderen zeigt, meist die Sprachauswahl oder die Hauptsprache.',
+        ],
+        'broken' => [
+            'title' => 'Defektes hreflang',
+            'found' => 'Eine Sprachversion antwortet mit einem Fehler oder einer Weiterleitung, oder ihr Sprachcode ist keiner, den Suchmaschinen lesen.',
+            'why' => 'Das Paar wird verworfen. Häufige Fehler: en-UK statt en-GB, jp statt ja.',
+            'fix' => 'Richten Sie hreflang auf die funktionierende Adresse jeder Version und verwenden Sie Sprachcodes nach ISO 639-1 und Regionscodes nach ISO 3166-1.',
+        ],
+    ],
+    'jsonld' => [
+        'invalid' => [
+            'title' => 'Strukturierte Daten, die sich nicht parsen lassen',
+            'found' => 'Ein JSON-LD-Block ist kein gültiges JSON.',
+            'why' => 'Der ganze Block geht verloren, nicht nur das defekte Feld: keine Rich Results, keine Breadcrumbs, keine Produktkarte in der Suche.',
+            'fix' => 'Suchen Sie im Template, das den Block ausgibt, nach einem überzähligen Komma am Ende oder einem nicht maskierten Anführungszeichen; erzeugen Sie ihn mit json_encode statt von Hand.',
+        ],
+        'required' => [
+            'title' => 'Strukturierte Daten ohne Pflichtfelder',
+            'found' => 'Einem Product, Article, Event, JobPosting, FAQPage oder BreadcrumbList fehlt ein Feld, das Suchmaschinen verlangen.',
+            'why' => 'Die Seite verliert ihr Rich Result, und die Search Console meldet das Markup als ungültig.',
+            'fix' => 'Füllen Sie die aufgeführten Felder aus — im Inhalt der Seite oder im Template, das das Markup ausgibt.',
+        ],
+        'recommended' => [
+            'title' => 'Strukturierte Daten ohne empfohlene Felder',
+            'found' => 'Einem Product, Article, Event oder JobPosting fehlen Felder, die sein Rich Result reichhaltiger machen.',
+            'why' => 'Das Markup ist gültig; das Snippet ist schlichter — kein Bild, keine Marke, keine Beschreibung.',
+            'fix' => 'Ergänzen Sie die aufgeführten Felder, wo der Inhalt sie hat.',
         ],
     ],
     'content' => [
@@ -410,6 +552,18 @@ return [
             'why' => 'Die Website bittet Suchmaschinen, ihren eigenen Links nicht zu folgen, und die Seite erhält weniger Gewicht.',
             'fix' => 'Entfernen Sie nofollow von Links auf die eigenen Seiten der Website.',
         ],
+        'to_redirect' => [
+            'title' => 'Interne Links auf Weiterleitungen',
+            'found' => 'Ein Link auf eine eigene Seite der Website führt zu einer Adresse, die weiterleitet.',
+            'why' => 'Jeder Klick ist ein zusätzlicher Umweg, und die Seite gibt ihr Gewicht über eine Weiterleitung statt direkt weiter.',
+            'fix' => 'Verlinken Sie auf die Adresse, zu der die Weiterleitung führt.',
+        ],
+        'external_broken' => [
+            'title' => 'Defekte externe Links',
+            'found' => 'Ein Link auf eine andere Website antwortet mit 4xx, 5xx, oder der Host antwortet nicht.',
+            'why' => 'Besucher landen auf einem Fehler auf einer fremden Website, und die Seite wirkt verwaist. 429 wird nicht gezählt — damit bittet ein Server einen Robot, langsamer zu werden.',
+            'fix' => 'Aktualisieren Sie den Link auf die neue Adresse der Seite oder entfernen Sie ihn.',
+        ],
     ],
     'mixed_content' => [
         'title' => 'Gemischte Inhalte',
@@ -437,6 +591,24 @@ return [
             'found' => 'Ein <img> hat keine width und height.',
             'why' => 'Die Seite springt, während Bilder laden, und Besucher klicken auf das Falsche.',
             'fix' => 'Geben Sie width und height der Bilder im Template aus; CSS kann sie trotzdem responsiv machen.',
+        ],
+        'broken' => [
+            'title' => 'Defekte Bilder',
+            'found' => 'Ein Bild der Seite antwortet mit 4xx, 5xx oder gar nicht.',
+            'why' => 'Besucher sehen ein defektes Symbol oder ein leeres Feld, wo das Bild war.',
+            'fix' => 'Laden Sie das Bild erneut hoch oder korrigieren Sie seine Adresse im Inhalt oder im Template.',
+        ],
+        'heavy' => [
+            'title' => 'Schwere Bilder',
+            'found' => 'Ein Bild ist schwerer als der Schwellenwert.',
+            'why' => 'Auf dem Smartphone sind das Sekunden des Wartens, und die Geschwindigkeit der Seite in der Suche sinkt.',
+            'fix' => 'Skalieren Sie das Bild auf die Größe, in der es angezeigt wird, und komprimieren Sie es; liefern Sie WebP oder AVIF aus.',
+        ],
+        'format' => [
+            'title' => 'Bilder in einem alten Format',
+            'found' => 'Ein eigenes JPEG oder PNG der Website über dem Schwellenwert wird an einen Browser gesendet, der WebP und AVIF annimmt, ohne moderne Quelle in einem <picture>.',
+            'why' => 'Dasselbe Bild in WebP oder AVIF wiegt meist ein Drittel bis die Hälfte.',
+            'fix' => 'Liefern Sie WebP oder AVIF aus — über <picture> mit einer modernen Quelle oder indem Sie die Bilder beim Hochladen konvertieren.',
         ],
     ],
     'a11y' => [

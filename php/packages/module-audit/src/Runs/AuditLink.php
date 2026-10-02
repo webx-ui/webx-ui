@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $from_page_id
  * @property string $to_url
  * @property int|null $to_page_id
+ * @property int|null $resource_id
  * @property string $kind
  * @property string|null $anchor
  * @property string|null $rel
@@ -48,6 +49,9 @@ class AuditLink extends Model
 
     public const JSON_LD = 'json_ld';
 
+    /** The `rel` of a picture whose <picture> already offers WebP or AVIF. */
+    public const MODERN = 'modern';
+
     /** What a visitor's browser loads with the page — mixed content is about these. */
     public const RESOURCES = [self::IMG, self::SRCSET, self::SCRIPT, self::LINK, self::IFRAME, self::STYLE];
 
@@ -59,6 +63,7 @@ class AuditLink extends Model
     {
         return [
             'to_page_id' => 'integer',
+            'resource_id' => 'integer',
             'absolute' => 'boolean',
             'status' => 'integer',
         ];
@@ -74,6 +79,12 @@ class AuditLink extends Model
     public function to(): BelongsTo
     {
         return $this->belongsTo(AuditPage::class, 'to_page_id');
+    }
+
+    /** @return BelongsTo<AuditResource, $this> */
+    public function resource(): BelongsTo
+    {
+        return $this->belongsTo(AuditResource::class, 'resource_id');
     }
 
     /** A `<link>` that names another address rather than loading one: canonical, hreflang. */

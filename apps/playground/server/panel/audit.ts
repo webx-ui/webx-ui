@@ -225,6 +225,78 @@ const FINDINGS: Finding[] = [
     url: null,
     summary: ['queue-sync', { connection: 'sync' }],
   },
+  {
+    check: 'images.broken',
+    group: 'images',
+    severity: 'error',
+    url: `${BASE}/`,
+    page: 1,
+    summary: ['images-broken', { count: 1 }],
+    table: {
+      columns: [
+        { key: 'url', type: 'url' },
+        { key: 'status', type: 'status' },
+        { key: 'error', type: 'text' },
+      ],
+      rows: [{ url: `${BASE}/storage/banners/spring.jpg`, status: 404, error: null }],
+    },
+  },
+  {
+    check: 'redirects.chain',
+    group: 'redirects',
+    severity: 'warning',
+    url: `${BASE}/blog`,
+    summary: ['redirect-chain', { steps: 2 }],
+    table: {
+      columns: [
+        { key: 'url', type: 'url' },
+        { key: 'status', type: 'status' },
+      ],
+      rows: [
+        { url: `${BASE}/blog`, status: 301 },
+        { url: `${BASE}/journal`, status: 302 },
+        { url: `${BASE}/journal/`, status: 200 },
+      ],
+    },
+  },
+  {
+    check: 'hreflang.not_reciprocal',
+    group: 'page',
+    severity: 'warning',
+    url: `${BASE}/`,
+    page: 1,
+    summary: ['hreflang-not-reciprocal', { count: 1 }],
+    table: {
+      columns: [
+        { key: 'lang', type: 'text' },
+        { key: 'url', type: 'url' },
+        { key: 'status', type: 'status' },
+        { key: 'back', type: 'bool' },
+        { key: 'indexable', type: 'bool' },
+      ],
+      rows: [
+        { lang: 'en', url: `${BASE}/`, status: 200, back: true, indexable: true },
+        { lang: 'de', url: `${BASE}/de/`, status: 200, back: false, indexable: true },
+        { lang: 'fr', url: `${BASE}/fr/`, status: null, back: null, indexable: null },
+      ],
+    },
+  },
+  {
+    check: 'jsonld.required',
+    group: 'page',
+    severity: 'warning',
+    url: `${BASE}/`,
+    page: 1,
+    summary: ['jsonld-required', { count: 1 }],
+    table: {
+      columns: [
+        { key: 'block', type: 'text' },
+        { key: 'type', type: 'text' },
+        { key: 'fields', type: 'text' },
+      ],
+      rows: [{ block: 2, type: 'Product', fields: 'offers | review | aggregateRating' }],
+    },
+  },
 ]
 
 interface Run {
@@ -300,6 +372,10 @@ const CHECKS: Record<string, Severity> = {
   'title.missing': 'error',
   'structure.orphan': 'warning',
   'description.duplicate': 'warning',
+  'images.broken': 'error',
+  'redirects.chain': 'warning',
+  'hreflang.not_reciprocal': 'warning',
+  'jsonld.required': 'warning',
 }
 
 function previous(run: Run): Run | undefined {
@@ -560,6 +636,119 @@ const PAGES: PageRow[] = [
     in_registry: false,
   }),
 ]
+
+/* The home page's structured data: one block that does not parse, one product without a price. */
+const HOME_JSON_LD = [
+  {
+    types: ['Organization', 'WebSite'],
+    error: null,
+    items: [],
+    source:
+      '{"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"Garden shop"},{"@type":"WebSite","url":"https://shop.example.com/"}]}',
+  },
+  {
+    types: ['Product'],
+    error: null,
+    items: [
+      {
+        type: 'Product',
+        missing: ['offers | review | aggregateRating'],
+        recommended: ['brand', 'sku'],
+      },
+    ],
+    source:
+      '{\n  "@context": "https://schema.org",\n  "@type": "Product",\n  "name": "Spade",\n  "image": "https://shop.example.com/storage/spade.jpg",\n  "description": "A spade for every garden."\n}',
+  },
+  { types: [], error: 'Syntax error', items: [], source: '{"@type": "BreadcrumbList",}' },
+]
+
+/* What a page loads, as stage 5 answered: the home page has a little of everything. */
+function resourcesOf(page: PageRow, tab: 'images' | 'css' | 'js') {
+  const row = (url: string, extra: Record<string, unknown>) => ({
+    url,
+    kind: 'img',
+    alt: null,
+    host_class: 'own',
+    checked: true,
+    status: 200,
+    error: null,
+    location: null,
+    content_type: null,
+    bytes: null,
+    cache_control: 'public, max-age=31536000, immutable',
+    compression: null,
+    width: null,
+    height: null,
+    ...extra,
+  })
+
+  if (tab === 'css') {
+    return [
+      row(`${BASE}/build/app.css`, {
+        kind: 'link',
+        content_type: 'text/css',
+        bytes: 48_210,
+        compression: 'br',
+      }),
+    ]
+  }
+
+  if (tab === 'js') {
+    return [
+      row(`${BASE}/build/app.js`, {
+        kind: 'script',
+        content_type: 'text/javascript',
+        bytes: 91_400,
+        compression: 'br',
+      }),
+      row('https://analytics.example.org/tag.js', {
+        kind: 'script',
+        host_class: 'external',
+        content_type: 'text/javascript',
+        bytes: 31_000,
+        cache_control: 'max-age=300',
+      }),
+    ]
+  }
+
+  if (page.id !== 1) {
+    return [
+      row(`${BASE}/storage/logo.svg`, {
+        alt: 'Garden shop',
+        content_type: 'image/svg+xml',
+        bytes: 3_100,
+      }),
+    ]
+  }
+
+  return [
+    row(`${BASE}/storage/logo.svg`, {
+      alt: 'Garden shop',
+      content_type: 'image/svg+xml',
+      bytes: 3_100,
+    }),
+    row(`${BASE}/storage/spade.jpg`, { content_type: 'image/jpeg', bytes: 421_000 }),
+    row(`${BASE}/storage/banners/spring.jpg`, {
+      alt: 'Spring sale',
+      status: 404,
+      cache_control: null,
+    }),
+    row(`${BASE}/storage/og.png`, {
+      kind: 'meta',
+      content_type: 'image/png',
+      bytes: 88_000,
+      width: 600,
+      height: 315,
+    }),
+    row('https://dev.shop.example.com/storage/hero.jpg', {
+      alt: 'Hero',
+      host_class: 'dev',
+      checked: false,
+      status: null,
+      cache_control: null,
+    }),
+  ]
+}
 
 /* Outgoing links of the home page; the other pages link home and to the catalog. */
 function linksOf(page: PageRow) {
@@ -928,7 +1117,7 @@ export function registerAudit(on: On, fail: Fail, line: Line): void {
           hreflang: [],
           og: page.title ? { title: page.title, type: 'website' } : {},
           twitter: {},
-          json_ld: page.id === 1 ? [{ types: ['Organization', 'WebSite'], error: null }] : [],
+          json_ld: page.id === 1 ? HOME_JSON_LD : [],
           error: null,
           facts: {},
           fetched_at: ago(60),
@@ -938,9 +1127,27 @@ export function registerAudit(on: On, fail: Fail, line: Line): void {
           issues: issues.length,
           incoming: incoming.length,
           outgoing: linksOf(page).length,
+          images: resourcesOf(page, 'images').length,
+          css: resourcesOf(page, 'css').length,
+          js: resourcesOf(page, 'js').length,
+          microdata: page.id === 1 ? HOME_JSON_LD.length : 0,
         },
       },
     }
+  })
+
+  on('GET', '/audit/runs/(\\d+)/pages/(\\d+)/resources', ({ params, query }) => {
+    const run = find(params[0]!)
+    const page = pagesOf(run).find((candidate) => candidate.id === Number(params[1]))
+    const tab = query.get('tab')
+
+    if (!page) throw fail(404, 'Not found.')
+    if (tab !== 'images' && tab !== 'css' && tab !== 'js') throw fail(422, 'Unknown tab.')
+
+    return paginate(
+      resourcesOf(page, tab).map((row, index) => ({ id: index + 1, ...row })),
+      query,
+    )
   })
 
   on('GET', '/audit/runs/(\\d+)/pages/(\\d+)/links', ({ params, query }) => {

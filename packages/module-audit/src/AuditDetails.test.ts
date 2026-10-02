@@ -40,6 +40,28 @@ describe('AuditDetails', () => {
     expect(cells).toEqual(['https://dev.shop.com/sale', '301', 'page.yes', 'page.missing', 'body'])
   })
 
+  it('leaves a yes-or-no cell empty when the check could not tell', () => {
+    const wrapper = mount(AuditDetails, {
+      props: {
+        details: {
+          summary: null,
+          table: {
+            columns: [
+              { key: 'lang', label: 'Language', type: 'text' },
+              { key: 'back', label: 'Links back', type: 'bool' },
+            ],
+            rows: [
+              { lang: 'de', back: false },
+              { lang: 'fr', back: null },
+            ],
+          },
+        },
+      },
+    })
+
+    expect(wrapper.findAll('td').map((cell) => cell.text())).toEqual(['de', 'page.no', 'fr', ''])
+  })
+
   it('is only a line when the check gave no table', () => {
     const wrapper = mount(AuditDetails, {
       props: { details: { summary: 'APP_DEBUG is on.', table: null } },

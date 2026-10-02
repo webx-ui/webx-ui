@@ -170,7 +170,13 @@ onBeforeUnmount(() => clearTimeout(timer))
             >
           </div>
           <wx-progress indeterminate :aria-label="stageLabel(active)" />
-          <wx-text v-if="active.progress.stage === 'crawl'" size="sm" tone="muted">{{
+          <wx-text v-if="active.progress.resources" size="sm" tone="muted">{{
+            t('page.resources-progress', {
+              checked: active.progress.resources.checked,
+              total: active.progress.resources.total,
+            })
+          }}</wx-text>
+          <wx-text v-else-if="active.progress.stage === 'crawl'" size="sm" tone="muted">{{
             t('page.pages-progress', {
               crawled: active.progress.pages.crawled,
               limit: active.progress.pages.limit,

@@ -21,6 +21,7 @@ Route::prefix((string) config('webx-admin.api_path').'/audit')
             Route::get('runs/{run}/pages/export', [PageController::class, 'export'])->whereNumber('run')->name('runs.pages.export');
             Route::get('runs/{run}/pages/{page}', [PageController::class, 'show'])->whereNumber(['run', 'page'])->name('runs.pages.show');
             Route::get('runs/{run}/pages/{page}/links', [PageController::class, 'links'])->whereNumber(['run', 'page'])->name('runs.pages.links');
+            Route::get('runs/{run}/pages/{page}/resources', [PageController::class, 'resources'])->whereNumber(['run', 'page'])->name('runs.pages.resources');
         });
 
         Route::middleware('cms.can:audit.run,audit.manage')->group(function (): void {

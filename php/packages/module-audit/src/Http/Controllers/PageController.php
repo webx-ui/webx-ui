@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Audit\Http\Controllers;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -15,6 +16,7 @@ use WebxUi\Audit\Pages\PageQuery;
 use WebxUi\Audit\Runs\AuditIssue;
 use WebxUi\Audit\Runs\AuditLink;
 use WebxUi\Audit\Runs\AuditPage;
+use WebxUi\Audit\Runs\AuditResource;
 use WebxUi\Audit\Runs\AuditRun;
 
 /**
@@ -110,6 +112,10 @@ final class PageController
                 'issues' => $issues->count(),
                 'incoming' => AuditLink::query()->where('to_page_id', $page->id)->count(),
                 'outgoing' => AuditLink::query()->where('from_page_id', $page->id)->count(),
+                'images' => self::ofTab($page, 'images')->count(),
+                'css' => self::ofTab($page, 'css')->count(),
+                'js' => self::ofTab($page, 'js')->count(),
+                'microdata' => count($page->json_ld ?? []),
             ],
         ]);
     }
@@ -154,6 +160,74 @@ final class PageController
                 'to' => $links->lastItem(),
             ],
         ]);
+    }
+
+    /**
+     * What a page loads, a tab of the card at a time: `tab=images` (pictures, the Open Graph
+     * picture and the icon), `css` or `js` — each with what it answered when stage 5 asked.
+     */
+    public function resources(Request $request, AuditRun $run, AuditPage $page): JsonResponse
+    {
+        abort_unless($page->run_id === $run->id, 404);
+
+        $tab = $request->string('tab')->toString();
+        abort_unless(in_array($tab, ['images', 'css', 'js'], true), 422);
+
+        $links = self::ofTab($page, $tab)
+            ->with('resource')
+            ->orderBy('id')
+            ->paginate(min(200, max(1, $request->integer('per_page', 50))));
+
+        return response()->json([
+            'data' => array_map(static fn (AuditLink $link): array => [
+                'id' => $link->id,
+                'url' => $link->to_url,
+                'kind' => $link->kind,
+                'alt' => $link->anchor,
+                'host_class' => $link->host_class,
+                'checked' => $link->resource?->checked_at !== null,
+                'status' => $link->resource?->status,
+                'error' => $link->resource?->error,
+                'location' => $link->resource?->location,
+                'content_type' => $link->resource?->content_type,
+                'bytes' => $link->resource?->bytes,
+                'cache_control' => $link->resource?->cache_control,
+                'compression' => $link->resource?->compression,
+                'width' => $link->resource?->width,
+                'height' => $link->resource?->height,
+            ], $links->items()),
+            'meta' => [
+                'current_page' => $links->currentPage(),
+                'last_page' => $links->lastPage(),
+                'per_page' => $links->perPage(),
+                'total' => $links->total(),
+                'from' => $links->firstItem(),
+                'to' => $links->lastItem(),
+            ],
+        ]);
+    }
+
+    /**
+     * The links of a page that belong to a tab. A picture is one by its tag or by what stage 5
+     * made of it (an icon, a `url()` in a style); a stylesheet the same way.
+     *
+     * @return Builder<AuditLink>
+     */
+    private static function ofTab(AuditPage $page, string $tab): Builder
+    {
+        $query = AuditLink::query()->where('from_page_id', $page->id);
+
+        return match ($tab) {
+            'images' => $query->where(static fn (Builder $images) => $images
+                ->whereIn('kind', [AuditLink::IMG, AuditLink::SRCSET])
+                ->orWhereHas('resource', static fn (Builder $resource) => $resource->whereIn('kind', AuditResource::PICTURES))),
+            'css' => $query->where(static fn (Builder $css) => $css
+                ->where(static fn (Builder $link) => $link->where('kind', AuditLink::LINK)->where('rel', 'like', '%stylesheet%'))
+                ->orWhereHas('resource', static fn (Builder $resource) => $resource->where('kind', AuditResource::CSS))),
+            default => $query->where(static fn (Builder $js) => $js
+                ->where('kind', AuditLink::SCRIPT)
+                ->orWhereHas('resource', static fn (Builder $resource) => $resource->where('kind', AuditResource::JS))),
+        };
     }
 
     /**

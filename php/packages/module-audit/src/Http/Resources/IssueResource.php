@@ -46,14 +46,24 @@ final class IssueResource extends JsonResource
         $table = $details['table'] ?? null;
 
         $columns = [];
+        $words = [];
 
         if (is_array($table)) {
             foreach ((array) ($table['columns'] ?? []) as $column) {
                 if (is_array($column)) {
+                    $type = (string) ($column['type'] ?? 'text');
+
+                    // A `word` cell holds a key of the dictionary: said in the reader's language,
+                    // then shown as text.
+                    if ($type === 'word') {
+                        $words[] = (string) ($column['key'] ?? '');
+                        $type = 'text';
+                    }
+
                     $columns[] = [
                         'key' => (string) ($column['key'] ?? ''),
                         'label' => CheckTexts::line((string) ($column['label'] ?? '')),
-                        'type' => (string) ($column['type'] ?? 'text'),
+                        'type' => $type,
                     ];
                 }
             }
@@ -61,6 +71,14 @@ final class IssueResource extends JsonResource
 
         /** @var list<array<string, mixed>> $rows */
         $rows = is_array($table) ? array_values(array_filter((array) ($table['rows'] ?? []), 'is_array')) : [];
+
+        foreach ($rows as $index => $row) {
+            foreach ($words as $key) {
+                if (is_string($row[$key] ?? null) && $row[$key] !== '') {
+                    $rows[$index][$key] = CheckTexts::line('webx-audit::details.'.$row[$key]);
+                }
+            }
+        }
 
         return [
             'summary' => is_array($summary) && is_string($summary['key'] ?? null)

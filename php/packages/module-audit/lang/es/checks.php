@@ -188,6 +188,12 @@ return [
             'why' => 'En navegadores antiguos, la página abierta puede redirigir la pestaña del sitio a una página de su elección.',
             'fix' => 'Añade rel="noopener" (o noreferrer) a los enlaces con target="_blank".',
         ],
+        'external_redirect' => [
+            'title' => 'Enlaces externos a través de una redirección',
+            'found' => 'Un enlace a otro sitio responde con una redirección.',
+            'why' => 'Funciona dando un rodeo, y normalmente significa que la página se movió y el enlace nunca se actualizó.',
+            'fix' => 'Sustituye el enlace por la dirección a la que lleva.',
+        ],
     ],
     'indexing' => [
         'home_noindex' => [
@@ -201,6 +207,96 @@ return [
             'found' => 'La página tiene noindex en la metaetiqueta robots o en la cabecera X-Robots-Tag.',
             'why' => 'Los buscadores descartan la página. Correcto para resultados de búsqueda y páginas de servicio, incorrecto para contenido cerrado por error.',
             'fix' => 'Revisa la lista; abre las páginas que deberían encontrarse en sus ajustes SEO y quita noindex.',
+        ],
+    ],
+    'robots' => [
+        'missing' => [
+            'title' => 'Sin robots.txt',
+            'found' => '/robots.txt no responde 200, o responde con algo que no es texto plano.',
+            'why' => 'Los buscadores leen un archivo ausente como «todo está permitido», y uno que da error como «vuelve más tarde»: las reglas que el sitio quería dar se pierden.',
+            'fix' => 'Sirve robots.txt como text/plain. Con module-seo es el ajuste «robots.txt»; quita el public/robots.txt estático que lo tapa.',
+        ],
+        'disallow_all' => [
+            'title' => 'robots.txt cierra todo el sitio',
+            'found' => 'robots.txt tiene Disallow: / para todos los robots en un dominio en producción.',
+            'why' => 'Los buscadores dejan de rastrear el sitio y lo retiran de los resultados. Suele ser el archivo del entorno de desarrollo que salió a producción con el despliegue.',
+            'fix' => 'Quita Disallow: / del grupo *, o déjalo solo para los robots que no deben venir.',
+        ],
+        'no_sitemap' => [
+            'title' => 'robots.txt no indica el sitemap',
+            'found' => 'robots.txt no tiene una línea Sitemap:.',
+            'why' => 'Los buscadores encuentran el sitemap solo donde se les indica a mano, y los buscadores nuevos, en absoluto.',
+            'fix' => 'Añade Sitemap: https://…/sitemap.xml a robots.txt.',
+        ],
+        'blocks_assets' => [
+            'title' => 'robots.txt cierra CSS o JS',
+            'found' => 'Una hoja de estilos o un script que carga la página de inicio está cerrado en robots.txt.',
+            'why' => 'Los buscadores dibujan la página sin ellos, ven un diseño roto y pueden considerar que la página no es apta para móviles.',
+            'fix' => 'Permite las carpetas con CSS y JS, o quita la regla que las cierra.',
+        ],
+        'syntax' => [
+            'title' => 'Líneas que robots.txt no entiende',
+            'found' => 'robots.txt tiene directivas desconocidas, reglas antes de cualquier User-agent o líneas que no son «campo: valor».',
+            'why' => 'Los buscadores omiten esas líneas en silencio: una errata en Disalow no cierra nada, y nadie lo nota durante años.',
+            'fix' => 'Corrige la ortografía y empieza cada grupo de reglas con una línea User-agent.',
+        ],
+    ],
+    'sitemap' => [
+        'missing' => [
+            'title' => 'Sin sitemap',
+            'found' => 'El sitemap no responde o no se puede analizar, o no lo hace un archivo que indican robots.txt o el índice.',
+            'why' => 'Los buscadores encuentran las páginas nuevas y profundas solo rastreando, despacio, y las páginas a las que nada enlaza, nunca.',
+            'fix' => 'Sirve un sitemap válido en la dirección que indica robots.txt. Con module-seo se genera a partir del registro de direcciones.',
+        ],
+        'limits' => [
+            'title' => 'Un archivo de sitemap por encima de los límites',
+            'found' => 'Un archivo de sitemap tiene más de 50 000 direcciones o pesa más de 50 MB sin comprimir.',
+            'why' => 'Los buscadores descartan ese archivo entero, no solo su final.',
+            'fix' => 'Divide el sitemap en varios archivos bajo un índice de sitemaps.',
+        ],
+        'bad_url' => [
+            'title' => 'Direcciones del sitemap que no son páginas para indexar',
+            'found' => 'Una dirección del sitemap responde con un error o una redirección, está cerrada con noindex o su canonical indica otra página.',
+            'why' => 'El sitemap es una lista de originales; cada dirección así gasta la visita del buscador en algo que descartará, y demasiadas hacen que confíe menos en el sitemap.',
+            'fix' => 'Incluye solo páginas operativas que deban encontrarse, en su dirección final.',
+        ],
+        'lastmod' => [
+            'title' => 'lastmod en el sitemap no dice nada',
+            'found' => 'lastmod está en el futuro, o es el mismo en todas las direcciones de un archivo.',
+            'why' => 'Los buscadores aprenden que la fecha se imprime en lugar de mantenerse y dejan de usarla para decidir qué volver a rastrear.',
+            'fix' => 'Imprime la fecha del último cambio del contenido de la página, o no incluyas lastmod.',
+        ],
+        'missing_page' => [
+            'title' => 'Páginas que faltan en el sitemap',
+            'found' => 'Una página indexable a la que llegó el rastreo no está en el sitemap.',
+            'why' => 'Los buscadores la encuentran solo a través de enlaces, más tarde, y una página que pierde su último enlace desaparece.',
+            'fix' => 'Comprueba que el módulo de la página la añade al sitemap (con module-seo, a través del registro de direcciones), o ciérrala con noindex si no debe encontrarse.',
+        ],
+    ],
+    'redirects' => [
+        'chain' => [
+            'title' => 'Cadenas de redirecciones',
+            'found' => 'Una dirección redirige más de una vez antes de llegar a la página.',
+            'why' => 'Cada paso es un viaje de ida y vuelta para el visitante, y los buscadores pueden dejar de seguirlas antes del final.',
+            'fix' => 'Apunta la primera redirección directamente a la dirección final.',
+        ],
+        'loop' => [
+            'title' => 'Bucles de redirecciones',
+            'found' => 'Las redirecciones vuelven a una dirección por la que ya han pasado.',
+            'why' => 'El navegador se rinde con «demasiadas redirecciones»: la página no existe para nadie.',
+            'fix' => 'Busca las dos reglas que envían la dirección de un lado a otro y quita una de ellas.',
+        ],
+        'to_error' => [
+            'title' => 'Redirecciones a un error',
+            'found' => 'Una redirección termina en 4xx, 5xx o sin respuesta.',
+            'why' => 'La dirección antigua se mantiene viva solo para llevar a una muerta: los visitantes y los buscadores acaban en un error.',
+            'fix' => 'Apunta la redirección a una página operativa, o quítala.',
+        ],
+        'temporary' => [
+            'title' => 'Redirecciones temporales',
+            'found' => 'Una dirección responde 302 o 307.',
+            'why' => 'Los buscadores mantienen la dirección antigua en el índice y no dan a la nueva nada de su peso. Correcto para una redirección que se retirará, incorrecto para un traslado.',
+            'fix' => 'Revisa la lista; haz 301 las redirecciones de las direcciones que se movieron para siempre.',
         ],
     ],
     'title' => [
@@ -311,10 +407,10 @@ return [
     ],
     'html' => [
         'lang' => [
-            'title' => 'Sin idioma de la página',
-            'found' => 'La etiqueta <html> no tiene el atributo lang.',
+            'title' => 'Sin idioma de la página, o con uno incorrecto',
+            'found' => 'La etiqueta <html> no tiene el atributo lang, o indica un idioma distinto del de la propia línea hreflang de la página.',
             'why' => 'Los lectores de pantalla eligen la voz según él, los navegadores ofrecen traducir según él y los buscadores lo usan como indicio.',
-            'fix' => 'Imprime <html lang="…"> con el idioma de la página en la plantilla base.',
+            'fix' => 'Imprime <html lang="…"> con el idioma de la página en la plantilla base: el idioma de la página, no el predeterminado del sitio.',
         ],
         'viewport' => [
             'title' => 'Sin meta viewport',
@@ -323,10 +419,10 @@ return [
             'fix' => 'Añade <meta name="viewport" content="width=device-width, initial-scale=1"> a la plantilla base.',
         ],
         'favicon' => [
-            'title' => 'Sin icono',
-            'found' => 'La página no enlaza ningún icono.',
+            'title' => 'Sin icono, o no se abre',
+            'found' => 'La página no enlaza ningún icono, o el icono que enlaza no se abre.',
             'why' => 'Las pestañas del navegador, los marcadores y los resultados de búsqueda en móviles muestran un cuadrado vacío en lugar de la marca del sitio.',
-            'fix' => 'Añade <link rel="icon"> a la plantilla base.',
+            'fix' => 'Añade <link rel="icon"> con una dirección operativa a la plantilla base.',
         ],
     ],
     'og' => [
@@ -335,6 +431,52 @@ return [
             'found' => 'La página no tiene og:title, og:image u og:url.',
             'why' => 'Un enlace compartido en un mensajero o una red social aparece como una dirección sin imagen ni título.',
             'fix' => 'Rellena la vista previa social en los ajustes SEO de la página o haz que la plantilla base imprima las etiquetas.',
+        ],
+        'image_broken' => [
+            'title' => 'La imagen de Open Graph está rota o es pequeña',
+            'found' => 'og:image no se abre, o es menor de 1200×630.',
+            'why' => 'Un enlace compartido no muestra imagen, o muestra un cuadrado pequeño junto al texto en lugar de una tarjeta grande.',
+            'fix' => 'Pon una imagen operativa de al menos 1200×630 en la vista previa social de la página.',
+        ],
+    ],
+    'hreflang' => [
+        'not_reciprocal' => [
+            'title' => 'hreflang sin enlace de vuelta',
+            'found' => 'La página indica otra versión de idioma, y esa versión no indica la página de vuelta.',
+            'why' => 'Los buscadores ignoran un par de versiones de idioma que no está confirmado por ambos lados, y muestran a los visitantes el idioma equivocado.',
+            'fix' => 'Imprime el mismo conjunto de enlaces hreflang en cada versión de idioma de la página, cada uno indicando todas las demás y a sí misma.',
+        ],
+        'no_x_default' => [
+            'title' => 'Sin x-default',
+            'found' => 'La página indica varias versiones de idioma y ningún x-default.',
+            'why' => 'Un visitante cuyo idioma no es ninguno de ellos recibe la versión que adivine el buscador.',
+            'fix' => 'Añade hreflang="x-default" apuntando a la versión para todos los demás, normalmente el selector de idioma o el idioma principal.',
+        ],
+        'broken' => [
+            'title' => 'hreflang roto',
+            'found' => 'Una versión de idioma responde con un error o una redirección, o su código de idioma no es uno que lean los buscadores.',
+            'why' => 'El par se descarta. Errores habituales: en-UK en lugar de en-GB, jp en lugar de ja.',
+            'fix' => 'Apunta hreflang a la dirección operativa de cada versión y usa códigos de idioma ISO 639-1 y de región ISO 3166-1.',
+        ],
+    ],
+    'jsonld' => [
+        'invalid' => [
+            'title' => 'Datos estructurados que no se pueden analizar',
+            'found' => 'Un bloque JSON-LD no es JSON válido.',
+            'why' => 'Se pierde el bloque entero, no solo el campo roto: sin resultados enriquecidos, sin migas de pan, sin ficha de producto en la búsqueda.',
+            'fix' => 'Busca una coma final o una comilla sin escapar en la plantilla que imprime el bloque; constrúyelo con json_encode en lugar de a mano.',
+        ],
+        'required' => [
+            'title' => 'Datos estructurados sin campos obligatorios',
+            'found' => 'A un Product, Article, Event, JobPosting, FAQPage o BreadcrumbList le falta un campo que exigen los buscadores.',
+            'why' => 'La página pierde su resultado enriquecido, y la consola de búsqueda marca el marcado como no válido.',
+            'fix' => 'Rellena los campos indicados, en el contenido de la página o en la plantilla que imprime el marcado.',
+        ],
+        'recommended' => [
+            'title' => 'Datos estructurados sin campos recomendados',
+            'found' => 'A un Product, Article, Event o JobPosting le faltan campos que hacen más completo su resultado enriquecido.',
+            'why' => 'El marcado es válido; el fragmento es más pobre: sin imagen, sin marca, sin descripción.',
+            'fix' => 'Añade los campos indicados donde el contenido los tenga.',
         ],
     ],
     'content' => [
@@ -410,6 +552,18 @@ return [
             'why' => 'El sitio pide a los buscadores que no sigan sus propios enlaces, y la página recibe menos peso.',
             'fix' => 'Quita nofollow de los enlaces a las páginas del propio sitio.',
         ],
+        'to_redirect' => [
+            'title' => 'Enlaces internos a redirecciones',
+            'found' => 'Un enlace a una página del propio sitio lleva a una dirección que redirige.',
+            'why' => 'Cada clic es un viaje de ida y vuelta más, y la página transmite su peso a través de una redirección en lugar de directamente.',
+            'fix' => 'Enlaza a la dirección a la que lleva la redirección.',
+        ],
+        'external_broken' => [
+            'title' => 'Enlaces externos rotos',
+            'found' => 'Un enlace a otro sitio responde 4xx, 5xx, o el host no responde.',
+            'why' => 'Los visitantes acaban en un error en el sitio de otro, y la página parece abandonada. El 429 no se cuenta: es un servidor que pide a un robot que vaya más despacio.',
+            'fix' => 'Actualiza el enlace a la nueva dirección de la página, o quítalo.',
+        ],
     ],
     'mixed_content' => [
         'title' => 'Contenido mixto',
@@ -437,6 +591,24 @@ return [
             'found' => 'Una <img> no tiene width ni height.',
             'why' => 'La página salta mientras se cargan las imágenes, y los visitantes pulsan lo que no querían.',
             'fix' => 'Imprime width y height de las imágenes en la plantilla; el CSS aún puede hacerlas adaptables.',
+        ],
+        'broken' => [
+            'title' => 'Imágenes rotas',
+            'found' => 'Una imagen de la página responde 4xx, 5xx o nada.',
+            'why' => 'Los visitantes ven un icono roto o un recuadro vacío donde estaba la imagen.',
+            'fix' => 'Vuelve a subir la imagen o corrige su dirección en el contenido o en la plantilla.',
+        ],
+        'heavy' => [
+            'title' => 'Imágenes pesadas',
+            'found' => 'Una imagen pesa más que el umbral.',
+            'why' => 'En un móvil son segundos de espera, y la velocidad de la página en la búsqueda baja.',
+            'fix' => 'Redimensiona la imagen al tamaño en que se muestra y comprímela; sirve WebP o AVIF.',
+        ],
+        'format' => [
+            'title' => 'Imágenes en un formato antiguo',
+            'found' => 'Un JPEG o PNG propio del sitio por encima del umbral se envía a un navegador que acepta WebP y AVIF, sin una fuente moderna en un <picture>.',
+            'why' => 'La misma imagen en WebP o AVIF suele pesar entre un tercio y la mitad.',
+            'fix' => 'Sirve WebP o AVIF: mediante <picture> con una fuente moderna, o convirtiendo las imágenes al subirlas.',
         ],
     ],
     'a11y' => [

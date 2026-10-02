@@ -79,14 +79,15 @@ final class PanelTest extends TestCase
         $this->getJson(route('webx.audit.runs.latest'))
             ->assertOk()
             ->assertJsonPath('data.done.id', $run->id)
-            ->assertJsonPath('data.done.counts.severity.error', 7);
+            ->assertJsonPath('data.done.counts.severity.error', 8);
 
         /** @var list<array<string, mixed>> $checks */
         $checks = $this->getJson(route('webx.audit.runs.checks', ['run' => $run->id, 'severity' => 'error']))
             ->assertOk()
             ->json('data');
 
-        $this->assertSame(['config.debug', 'host.https', 'host.index_files', 'host.mirror', 'host.soft_404'], collect($checks)->pluck('id')->sort()->values()->all());
+        // The sitemap answers the same HTML as everything else, so it does not parse.
+        $this->assertSame(['config.debug', 'host.https', 'host.index_files', 'host.mirror', 'host.soft_404', 'sitemap.missing'], collect($checks)->pluck('id')->sort()->values()->all());
 
         $debug = collect($checks)->firstWhere('id', 'config.debug');
         $this->assertIsArray($debug);

@@ -23,10 +23,10 @@ use WebxUi\Routing\UrlNormaliser;
  */
 final class Seeder
 {
-    /** Sitemap files read at most — an index of indexes is followed, not explored forever. */
-    private const SITEMAP_FILES = 50;
-
-    public function __construct(private readonly Container $container) {}
+    public function __construct(
+        private readonly Container $container,
+        private readonly SitemapReader $sitemaps,
+    ) {}
 
     public function seed(AuditRun $run, SiteClient $client, HostClassifier $hosts): RobotsRules
     {
@@ -46,72 +46,13 @@ final class Seeder
 
     private function sitemaps(string $base, RobotsRules $robots, SiteClient $client, HostClassifier $hosts, Frontier $frontier): void
     {
-        $queue = [];
+        $own = $this->sitemaps->read($base, $robots->sitemaps, $client, $hosts)->urls;
 
-        foreach ([...$robots->sitemaps, $base.'/sitemap.xml'] as $address) {
-            $url = Urls::normalise($address);
-
-            if ($url !== null && $hosts->classify($url) === HostClassifier::OWN) {
-                $queue[$url] = true;
-            }
+        // Past the page limit nothing new is added, but what is already there still learns that
+        // the sitemap lists it — `sitemap.missing_page` reads that flag.
+        foreach (array_chunk($own, 500) as $chunk) {
+            $frontier->add($chunk, AuditPage::SITEMAP, null, ['in_sitemap' => true]);
         }
-
-        $read = [];
-
-        while ($queue !== [] && count($read) < self::SITEMAP_FILES && ! $frontier->full()) {
-            $file = (string) array_key_first($queue);
-            unset($queue[$file]);
-            $read[$file] = true;
-
-            $answer = $client->get($file);
-
-            if (! $answer->ok()) {
-                continue;
-            }
-
-            $xml = str_starts_with($answer->body, "\x1f\x8b") ? (string) @gzdecode($answer->body) : $answer->body;
-            $locations = self::locations($xml);
-
-            if (str_contains($xml, '<sitemapindex')) {
-                foreach ($locations as $location) {
-                    if (! isset($read[$location]) && $hosts->classify($location) === HostClassifier::OWN) {
-                        $queue[$location] = true;
-                    }
-                }
-
-                continue;
-            }
-
-            $own = array_values(array_filter($locations, static fn (string $url): bool => $hosts->classify($url) === HostClassifier::OWN));
-
-            foreach (array_chunk($own, 500) as $chunk) {
-                $frontier->add($chunk, AuditPage::SITEMAP, null, ['in_sitemap' => true]);
-            }
-        }
-    }
-
-    /**
-     * Every `<loc>`, normalised.
-     *
-     * @return list<string>
-     */
-    private static function locations(string $xml): array
-    {
-        if (preg_match_all('~<loc>\s*(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?\s*</loc>~is', $xml, $matches) === 0) {
-            return [];
-        }
-
-        $found = [];
-
-        foreach ($matches[1] as $value) {
-            $url = Urls::normalise(html_entity_decode(trim($value), ENT_QUOTES | ENT_XML1));
-
-            if ($url !== null) {
-                $found[$url] = true;
-            }
-        }
-
-        return array_keys($found);
     }
 
     /**

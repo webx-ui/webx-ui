@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Audit\Probes;
 
+use WebxUi\Audit\Crawl\SitemapSet;
+
 /**
  * What the probes stage saw: the answers by name, the certificate, and the inner address the
  * address-shape probes were made on. Empty for the stages after it — the bodies are not stored,
@@ -20,6 +22,7 @@ final class ProbeSet
         public readonly ?Certificate $certificate = null,
         public readonly ?string $innerPath = null,
         public readonly array $assets = [],
+        public readonly ?SitemapSet $sitemaps = null,
     ) {}
 
     public function get(string $key): ?ProbeResponse
@@ -59,6 +62,7 @@ final class ProbeSet
             'answers' => array_map(static fn (ProbeResponse $answer): array => $answer->toArray(), $this->answers),
             'certificate' => $this->certificate?->toArray(),
             'inner_path' => $this->innerPath,
+            'sitemaps' => $this->sitemaps?->toArray(),
         ];
     }
 }

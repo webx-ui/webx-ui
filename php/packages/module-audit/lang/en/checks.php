@@ -188,6 +188,12 @@ return [
             'why' => 'In older browsers the opened page can redirect the site’s tab to a page of its choosing.',
             'fix' => 'Add rel="noopener" (or noreferrer) to links with target="_blank".',
         ],
+        'external_redirect' => [
+            'title' => 'External links through a redirect',
+            'found' => 'A link to another site answers with a redirect.',
+            'why' => 'It works through a round trip, and usually means the page moved and the link was never updated.',
+            'fix' => 'Replace the link with the address it leads to.',
+        ],
     ],
     'indexing' => [
         'home_noindex' => [
@@ -201,6 +207,96 @@ return [
             'found' => 'The page has noindex in the robots meta tag or in the X-Robots-Tag header.',
             'why' => 'Search engines drop the page. Right for search results and service pages, wrong for content that was closed by mistake.',
             'fix' => 'Look through the list; open the pages that should be found in their SEO settings and remove noindex.',
+        ],
+    ],
+    'robots' => [
+        'missing' => [
+            'title' => 'No robots.txt',
+            'found' => '/robots.txt does not answer 200, or answers with something other than plain text.',
+            'why' => 'Search engines read a missing file as “everything is allowed”, and a file that errors as “come back later” — the rules the site meant to give are lost.',
+            'fix' => 'Serve robots.txt as text/plain. With module-seo it is the “robots.txt” setting; remove a static public/robots.txt that shadows it.',
+        ],
+        'disallow_all' => [
+            'title' => 'robots.txt closes the whole site',
+            'found' => 'robots.txt has Disallow: / for every robot on a working domain.',
+            'why' => 'Search engines stop crawling the site and drop it from results. It is usually the stand’s file that went live with the deploy.',
+            'fix' => 'Remove Disallow: / from the * group, or keep it only for the robots that should not come.',
+        ],
+        'no_sitemap' => [
+            'title' => 'robots.txt does not name the sitemap',
+            'found' => 'robots.txt has no Sitemap: line.',
+            'why' => 'Search engines find the sitemap only where they are told by hand, and new search engines not at all.',
+            'fix' => 'Add Sitemap: https://…/sitemap.xml to robots.txt.',
+        ],
+        'blocks_assets' => [
+            'title' => 'robots.txt closes CSS or JS',
+            'found' => 'A stylesheet or a script the home page loads is closed in robots.txt.',
+            'why' => 'Search engines render the page without them, see a broken layout and may treat the page as not mobile-friendly.',
+            'fix' => 'Allow the folders with CSS and JS, or remove the rule that closes them.',
+        ],
+        'syntax' => [
+            'title' => 'Lines robots.txt does not understand',
+            'found' => 'robots.txt has unknown directives, rules before any User-agent, or lines that are not “field: value”.',
+            'why' => 'Search engines skip such lines silently: a typo in Disalow closes nothing, and nobody notices for years.',
+            'fix' => 'Fix the spelling, and start every group of rules with a User-agent line.',
+        ],
+    ],
+    'sitemap' => [
+        'missing' => [
+            'title' => 'No sitemap',
+            'found' => 'The sitemap does not answer or does not parse — or a file robots.txt or the index names does not.',
+            'why' => 'Search engines find new and deep pages only by crawling, slowly, and pages nothing links to not at all.',
+            'fix' => 'Serve a valid sitemap at the address robots.txt names. With module-seo it is built from the address registry.',
+        ],
+        'limits' => [
+            'title' => 'A sitemap file over the limits',
+            'found' => 'A sitemap file has more than 50 000 addresses or is bigger than 50 MB uncompressed.',
+            'why' => 'Search engines drop such a file whole, not just its tail.',
+            'fix' => 'Split the sitemap into several files under a sitemap index.',
+        ],
+        'bad_url' => [
+            'title' => 'Addresses in the sitemap that are not pages to index',
+            'found' => 'An address of the sitemap answers an error or a redirect, is closed with noindex, or its canonical names another page.',
+            'why' => 'The sitemap is a list of originals; every such address spends the search engine’s visit on something it will throw away, and too many make it trust the sitemap less.',
+            'fix' => 'List only working pages that should be found, at their final address.',
+        ],
+        'lastmod' => [
+            'title' => 'lastmod in the sitemap says nothing',
+            'found' => 'lastmod is in the future, or the same on every address of a file.',
+            'why' => 'Search engines learn that the date is printed rather than kept and stop using it to decide what to crawl again.',
+            'fix' => 'Print the date the page’s content last changed, or leave lastmod out.',
+        ],
+        'missing_page' => [
+            'title' => 'Pages missing from the sitemap',
+            'found' => 'An indexable page the crawl reached is not in the sitemap.',
+            'why' => 'Search engines find it only through links, later — and a page that loses its last link drops out.',
+            'fix' => 'Make sure the page’s module adds it to the sitemap (with module-seo — through the address registry), or close it with noindex if it should not be found.',
+        ],
+    ],
+    'redirects' => [
+        'chain' => [
+            'title' => 'Chains of redirects',
+            'found' => 'An address redirects more than once before it reaches the page.',
+            'why' => 'Every step is a round trip for a visitor, and search engines may stop following before the end.',
+            'fix' => 'Point the first redirect straight at the final address.',
+        ],
+        'loop' => [
+            'title' => 'Redirect loops',
+            'found' => 'Redirects lead back to an address they have already been through.',
+            'why' => 'The browser gives up with “too many redirects” — the page does not exist for anyone.',
+            'fix' => 'Find the two rules that send the address back and forth and remove one of them.',
+        ],
+        'to_error' => [
+            'title' => 'Redirects to an error',
+            'found' => 'A redirect ends on 4xx, 5xx or no answer.',
+            'why' => 'The old address is kept alive only to lead to a dead one: visitors and search engines land on an error.',
+            'fix' => 'Point the redirect at a working page, or remove it.',
+        ],
+        'temporary' => [
+            'title' => 'Temporary redirects',
+            'found' => 'An address answers 302 or 307.',
+            'why' => 'Search engines keep the old address in the index and give the new one none of its weight. Right for a redirect that will be taken back, wrong for a move.',
+            'fix' => 'Look through the list; make the redirects of addresses that moved for good 301.',
         ],
     ],
     'title' => [
@@ -311,10 +407,10 @@ return [
     ],
     'html' => [
         'lang' => [
-            'title' => 'No page language',
-            'found' => 'The <html> tag has no lang attribute.',
+            'title' => 'No page language, or the wrong one',
+            'found' => 'The <html> tag has no lang attribute, or it names another language than the page’s own hreflang line.',
             'why' => 'Screen readers pick the voice by it, browsers offer translation by it, and search engines use it as a hint.',
-            'fix' => 'Print <html lang="…"> with the language of the page in the layout.',
+            'fix' => 'Print <html lang="…"> with the language of the page in the layout — the page’s language, not the site’s default.',
         ],
         'viewport' => [
             'title' => 'No meta viewport',
@@ -323,10 +419,10 @@ return [
             'fix' => 'Add <meta name="viewport" content="width=device-width, initial-scale=1"> to the layout.',
         ],
         'favicon' => [
-            'title' => 'No icon',
-            'found' => 'The page links no icon.',
+            'title' => 'No icon, or it does not open',
+            'found' => 'The page links no icon, or the icon it links does not open.',
             'why' => 'Browser tabs, bookmarks and search results on phones show an empty square instead of the site’s mark.',
-            'fix' => 'Add <link rel="icon"> to the layout.',
+            'fix' => 'Add <link rel="icon"> with a working address to the layout.',
         ],
     ],
     'og' => [
@@ -335,6 +431,52 @@ return [
             'found' => 'The page has no og:title, og:image or og:url.',
             'why' => 'A link shared in a messenger or a social network shows as a bare address without a picture or a title.',
             'fix' => 'Fill in the social preview in the page’s SEO settings, or have the layout print the tags.',
+        ],
+        'image_broken' => [
+            'title' => 'The Open Graph picture is broken or small',
+            'found' => 'og:image does not open, or is smaller than 1200×630.',
+            'why' => 'A shared link shows no picture, or a small square beside the text instead of a large card.',
+            'fix' => 'Set a working picture of at least 1200×630 in the page’s social preview.',
+        ],
+    ],
+    'hreflang' => [
+        'not_reciprocal' => [
+            'title' => 'hreflang without a link back',
+            'found' => 'The page names another language version, and that version does not name the page back.',
+            'why' => 'Search engines ignore a pair of language versions that is not confirmed from both sides, and show visitors the wrong language.',
+            'fix' => 'Print the same set of hreflang links on every language version of the page, each naming all the others and itself.',
+        ],
+        'no_x_default' => [
+            'title' => 'No x-default',
+            'found' => 'The page names several language versions and no x-default.',
+            'why' => 'A visitor whose language is none of them gets whichever version the search engine guesses.',
+            'fix' => 'Add hreflang="x-default" pointing at the version for everyone else, usually the language chooser or the main language.',
+        ],
+        'broken' => [
+            'title' => 'Broken hreflang',
+            'found' => 'A language version answers an error or a redirect, or its language code is not one search engines read.',
+            'why' => 'The pair is dropped. Common mistakes: en-UK instead of en-GB, jp instead of ja.',
+            'fix' => 'Point hreflang at the working address of each version and use ISO 639-1 language and ISO 3166-1 region codes.',
+        ],
+    ],
+    'jsonld' => [
+        'invalid' => [
+            'title' => 'Structured data that does not parse',
+            'found' => 'A JSON-LD block is not valid JSON.',
+            'why' => 'The whole block is lost, not only the broken field: no rich results, no breadcrumbs, no product card in search.',
+            'fix' => 'Look for a trailing comma or an unescaped quote in the template that prints the block; build it with json_encode rather than by hand.',
+        ],
+        'required' => [
+            'title' => 'Structured data without required fields',
+            'found' => 'A Product, Article, Event, JobPosting, FAQPage or BreadcrumbList lacks a field search engines require.',
+            'why' => 'The page loses its rich result, and the search console reports the markup as invalid.',
+            'fix' => 'Fill in the fields listed — in the content of the page or in the template that prints the markup.',
+        ],
+        'recommended' => [
+            'title' => 'Structured data without recommended fields',
+            'found' => 'A Product, Article, Event or JobPosting lacks fields that make its rich result richer.',
+            'why' => 'The markup is valid; the snippet is plainer — no picture, no brand, no description.',
+            'fix' => 'Add the fields listed where the content has them.',
         ],
     ],
     'content' => [
@@ -410,6 +552,18 @@ return [
             'why' => 'The site asks search engines not to follow its own links, and the page gets less weight.',
             'fix' => 'Remove nofollow from links to the site’s own pages.',
         ],
+        'to_redirect' => [
+            'title' => 'Internal links to redirects',
+            'found' => 'A link to the site’s own page leads to an address that redirects.',
+            'why' => 'Every click is a round trip more, and the page passes its weight through a redirect rather than straight on.',
+            'fix' => 'Link to the address the redirect leads to.',
+        ],
+        'external_broken' => [
+            'title' => 'Broken external links',
+            'found' => 'A link to another site answers 4xx, 5xx, or the host does not answer.',
+            'why' => 'Visitors land on an error on somebody else’s site, and the page looks abandoned. 429 is not counted — that is a server asking a robot to slow down.',
+            'fix' => 'Update the link to the page’s new address, or remove it.',
+        ],
     ],
     'mixed_content' => [
         'title' => 'Mixed content',
@@ -437,6 +591,24 @@ return [
             'found' => 'An <img> has no width and height.',
             'why' => 'The page jumps while pictures load, and visitors click the wrong thing.',
             'fix' => 'Print width and height of pictures in the template; CSS can still make them responsive.',
+        ],
+        'broken' => [
+            'title' => 'Broken pictures',
+            'found' => 'A picture of the page answers 4xx, 5xx or nothing.',
+            'why' => 'Visitors see a broken icon or an empty box where the picture was.',
+            'fix' => 'Upload the picture again or fix its address in the content or the template.',
+        ],
+        'heavy' => [
+            'title' => 'Heavy pictures',
+            'found' => 'A picture is heavier than the threshold.',
+            'why' => 'On a phone that is seconds of waiting, and the page’s speed in search drops.',
+            'fix' => 'Resize the picture to the size it is shown at and compress it; serve WebP or AVIF.',
+        ],
+        'format' => [
+            'title' => 'Pictures in an old format',
+            'found' => 'The site’s own JPEG or PNG over the threshold is sent to a browser that takes WebP and AVIF, with no modern source in a <picture>.',
+            'why' => 'The same picture in WebP or AVIF usually weighs a third to a half as much.',
+            'fix' => 'Serve WebP or AVIF — through <picture> with a modern source, or by converting the pictures on upload.',
         ],
     ],
     'a11y' => [
