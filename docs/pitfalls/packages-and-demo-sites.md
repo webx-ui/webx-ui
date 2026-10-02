@@ -89,7 +89,11 @@
   какой-то Prettier и форматирует им, а `npx vue-tsc` в пакете падает «Cannot find type definition
   file for 'node'» — похоже на сломанный `tsconfig`. Лечится junction'ами на основной чекаут, корень
   и каждый пакет: `cmd //c mklink //J node_modules <основной>\node_modules`, то же для
-  `packages/*/node_modules` и `apps/*/node_modules` (они в `.gitignore`); pnpm после этого из
+  `packages/*/node_modules` и `apps/*/node_modules` (они в `.gitignore`). Пакетные junction'ы
+  циклом — из PowerShell (`New-Item -ItemType Junction`), не из Bash: собранный в Bash путь теряет
+  обратные слэши, `mklink` молча делает ссылку в никуда, и vitest падает «Failed to resolve import
+  "vue-router"» на каждом файле пакета. Битая ссылка видна по пустому `Target` у `Get-Item`;
+  снимать её `cmd /c rmdir`, а не `Remove-Item -Recurse`, который уходит за ссылку. pnpm после этого из
   worktree по-прежнему не звать. Проверка — `ls node_modules/.bin/prettier` перед первым
   форматированием; отформатированное до неё — прогнать ещё раз.
 - **Сайт, слинкованный с worktree, собирается из двух чекаутов сразу.** Junction
@@ -111,7 +115,9 @@
   что читается как права на каталог. После `composer install` в свежем `php/` прогреть манифест
   **один раз и последовательно**:
   `TESTBENCH_WORKING_PATH="$(cygpath -m $PWD)" php vendor/bin/testbench package:discover` из
-  `php/`, убрать `bootstrap/cache/*.tmp`, потом `analyse`. Голый
+  `php/`, убрать `bootstrap/cache/*.tmp`, потом `analyse`. Если `analyse` уже успел упасть,
+  прогрева мало: те же ошибки приезжают из `php/.phpstan.cache` — сначала
+  `php vendor/bin/phpstan clear-result-cache -c phpstan.neon.dist`. Голый
   `php vendor/orchestra/testbench-core/laravel/artisan` не годится: без рабочего пути он ищет
   `vendor/autoload.php` внутри testbench и падает на `require`. **Новый пакет в `php/` — это
   `composer update webx-ui/<пакет>`**, после которого манифест прогревается заново (снести

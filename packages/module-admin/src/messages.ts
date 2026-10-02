@@ -54,10 +54,13 @@ export const adminMessages: Record<string, Messages> = {
   // the parts come from `Intl` — only the words that no formatter knows are here.
   // The two words every list needs the moment it has filters: what the funnel is called,
   // and the way out of all of them at once. The names of the filters themselves belong to
-  // whatever is being filtered, and travel with that module's own words.
+  // whatever is being filtered, and travel with that module's own words. The checkboxes of a
+  // list that can be selected say what they do to a screen reader, and do it here too.
   filters: {
     title: 'Filters',
     reset: 'Reset all',
+    'select-row': 'Select row',
+    'select-all': 'Select every row on this page',
   },
   dates: {
     today: 'today at :time',

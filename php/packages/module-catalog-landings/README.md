@@ -9,7 +9,7 @@ Specification: `docs/architecture/WEBX_UI_CATALOG_LANDINGS.md` in the monorepo.
 
 ## Requirements
 
-- PHP 8.3+, Laravel 13
+- PHP 8.4+, Laravel 13
 - `webx-ui/module-catalog` and what it requires (`module-admin`, `module-seo`, `routing`)
 
 ## Install

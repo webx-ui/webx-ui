@@ -284,6 +284,8 @@ defineExpose({ reload: () => load(last), chosen: () => selected.value })
       :search-placeholder="t('admins.search')"
       :empty-text="t('admins.empty')"
       :selectable="picking && multiple"
+      :select-row-label="panel('filters.select-row')"
+      :select-all-label="panel('filters.select-all')"
       :cards-below="CARDS"
       :filters-count="applied.length"
       :filters-label="panel('filters.title')"
