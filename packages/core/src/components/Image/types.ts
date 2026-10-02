@@ -1,3 +1,5 @@
+import type { LightboxSource } from '../Lightbox/types'
+
 export type ImageFit = 'cover' | 'contain' | 'fill' | 'none' | 'scale-down'
 
 export interface ImageProps {
@@ -16,8 +18,15 @@ export interface ImageProps {
   lazy?: boolean
   /** A tiny picture — or a colour — shown while the real one arrives. */
   placeholder?: string
-  /** Opens the picture full size when it is clicked. */
+  /**
+   * Opens the picture full size, in a lightbox, when it is clicked. Inside a `WxImageGroup`
+   * the lightbox is the whole group's.
+   */
   preview?: boolean
+  /** What the lightbox shows instead of this one picture: the cover of a gallery opens all of it. */
+  previewList?: LightboxSource[]
+  /** The item of `previewList` to open on. Default: the one whose address is `src`, or the first. */
+  previewStart?: number
   /** Accessible name of the button that opens the preview. */
   previewLabel?: string
 }

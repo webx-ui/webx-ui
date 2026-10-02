@@ -93,6 +93,12 @@ RouteLocationRaw | boolean` компилировался в `{ type: Boolean }`:
   висит, навигация тоже. Ни ошибки, ни предупреждения; из обработчика клика тот же код работает.
   У нас: `useModal` берёт ручку из `parent.provides` сам.
 
+- **Модалка из кода закрылась, а `await` висит.** `open` из `useModal()` — ручка, а не
+  сигнал: `openModal` слушает события компонента (`close`, `cancel`, `resolveOn`) и его
+  `update:open`, а не этот ref. Обёртка над `WxDialog` этого не замечает — диалог при закрытии
+  шлёт `close`; обёртка над тем, что шлёт только `update:open` (`WxLightbox`), молча гасит панель
+  и оставляет промис неразрешённым. В тесте — таймаут на `await`. Лечится `dismiss()` в
+  обработчике `update:open` обёртки (`LightboxModal.vue`).
 - **В тесте пункт `WxDropdown` не находится, хотя меню «открыто».** С `stubs: { teleport: true }`
   панель Reka не рисует пункты там, где их ищут, и `document.querySelectorAll('.wx-dropdown-item')`
   пуст. Без заглушки, с `attachTo: document.body`: клик по кнопке-триггеру, `flushPromises()`,

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import WxDialog from '../Dialog/Dialog.vue'
 import WxIcon from '../Icon/Icon.vue'
+import WxLightbox from '../Lightbox/Lightbox.vue'
+import { useImageGroup, type ImageGroupEntry } from '../../composables/useImageGroup'
 import type { ImageEmits, ImageProps } from './types'
 
 defineOptions({ name: 'WxImage' })
@@ -16,6 +17,8 @@ const props = withDefaults(defineProps<ImageProps>(), {
   lazy: true,
   placeholder: undefined,
   preview: false,
+  previewList: undefined,
+  previewStart: undefined,
   previewLabel: 'View full size',
 })
 
@@ -51,6 +54,51 @@ function onError(event: Event) {
   emit('error', event)
 }
 
+const root = ref<HTMLElement | null>(null)
+
+/*
+ * Inside a `WxImageGroup` the picture is one item of the group's gallery, unless it brings a
+ * gallery of its own. The group reads `src` and `alt` when it opens, so a picture that
+ * changed since it joined is shown as it is now.
+ */
+const group = useImageGroup()
+const entry: ImageGroupEntry = {
+  el: () => root.value,
+  item: () => ({ src: props.src, alt: props.alt }),
+}
+
+watch(
+  () => Boolean(group && props.preview && !props.previewList),
+  (joined, _, onCleanup) => {
+    if (joined && group) onCleanup(group.register(entry))
+  },
+  { immediate: true },
+)
+
+const previewItems = computed(() => props.previewList ?? [{ src: props.src, alt: props.alt }])
+
+function startIndex() {
+  if (props.previewStart !== undefined) return props.previewStart
+  const found = previewItems.value.findIndex(
+    (item) => (typeof item === 'string' ? item : item.src) === props.src,
+  )
+  return Math.max(0, found)
+}
+
+/* The lightbox is made on the first click: a library of a hundred pictures needs none of them until then. */
+const lightboxMade = ref(false)
+const lightboxIndex = ref(0)
+
+function openPreview() {
+  if (group && !props.previewList) {
+    group.open(entry)
+    return
+  }
+  lightboxIndex.value = startIndex()
+  lightboxMade.value = true
+  previewing.value = true
+}
+
 function length(value: number | string | undefined) {
   if (value === undefined) return undefined
   return typeof value === 'number' ? `${value}px` : value
@@ -64,7 +112,12 @@ const style = computed(() => ({
 </script>
 
 <template>
-  <div class="wx-image" :class="{ 'is-loaded': loaded, 'is-failed': failed }" :style="style">
+  <div
+    ref="root"
+    class="wx-image"
+    :class="{ 'is-loaded': loaded, 'is-failed': failed }"
+    :style="style"
+  >
     <!--
       The placeholder is underneath rather than instead of: the picture lands on top
       of it when it arrives, so nothing in the layout moves and there is no frame in
@@ -105,14 +158,17 @@ const style = computed(() => ({
       type="button"
       class="wx-image__preview"
       :aria-label="previewLabel"
-      @click="previewing = true"
+      @click="openPreview"
     >
       <wx-icon name="search" />
     </button>
 
-    <wx-dialog v-if="preview" v-model:open="previewing" :width="880" :title="alt" closable>
-      <img class="wx-image__full" :src="src" :alt="alt ?? ''" />
-    </wx-dialog>
+    <wx-lightbox
+      v-if="lightboxMade"
+      v-model:open="previewing"
+      v-model:index="lightboxIndex"
+      :items="previewItems"
+    />
   </div>
 </template>
 
@@ -182,13 +238,6 @@ const style = computed(() => ({
 .wx-image__preview:focus-visible {
   outline: none;
   opacity: 1;
-}
-
-.wx-image__full {
-  display: block;
-  max-width: 100%;
-  max-height: 70vh;
-  margin-inline: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
