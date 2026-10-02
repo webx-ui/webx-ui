@@ -18,7 +18,7 @@ use WebxUi\Media\Models\MediaFile;
 use WebxUi\Services\Models\Service;
 
 /**
- * Three categories and six events (§4.12), as client-site's formats are: breakfast meetups,
+ * Three categories and six events (§4.12), as a client site's formats are: breakfast meetups,
  * cooking classes, private events.
  *
  * Each event is there to show one rule: one next week with its hours and a price as a number, one
