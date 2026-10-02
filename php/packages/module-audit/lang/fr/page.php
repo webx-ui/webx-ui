@@ -230,4 +230,5 @@ return [
     'save' => 'Enregistrer',
     'saved' => 'Enregistré.',
     'dismiss' => 'Annuler',
+    'view-full' => 'Voir en taille réelle',
 ];

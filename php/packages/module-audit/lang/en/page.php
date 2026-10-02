@@ -230,4 +230,5 @@ return [
     'save' => 'Save',
     'saved' => 'Saved.',
     'dismiss' => 'Cancel',
+    'view-full' => 'View full size',
 ];

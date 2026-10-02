@@ -230,4 +230,5 @@ return [
     'save' => 'Salva',
     'saved' => 'Salvato.',
     'dismiss' => 'Annulla',
+    'view-full' => 'Vedi a grandezza intera',
 ];

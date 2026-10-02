@@ -8,6 +8,7 @@ import {
   WxBadge,
   WxButton,
   WxDrawer,
+  WxImage,
   WxLink,
   WxSkeleton,
   WxTable,
@@ -448,7 +449,21 @@ watch(tab, () => {
           @state-change="loadResources"
         >
           <template #cell-url="{ row }">
-            <span class="wx-audit-card__url">{{ row.url }}</span>
+            <span v-if="resourceTab === 'images'" class="wx-audit-card__picture">
+              <wx-image
+                :src="row.url"
+                :alt="row.alt ?? ''"
+                :width="48"
+                :height="48"
+                fit="cover"
+                radius="var(--wx-radius-sm)"
+                preview
+                :preview-label="t('page.view-full')"
+                class="wx-audit-card__thumb"
+              />
+              <span class="wx-audit-card__url">{{ row.url }}</span>
+            </span>
+            <span v-else class="wx-audit-card__url">{{ row.url }}</span>
             <wx-text v-if="row.location" size="sm" tone="muted" class="wx-audit-card__url">
               → {{ row.location }}</wx-text
             >
@@ -598,6 +613,18 @@ watch(tab, () => {
   flex-direction: column;
   gap: var(--wx-space-6);
   min-width: 0;
+}
+
+/* A picture is recognised by sight faster than by its hashed file name. */
+.wx-audit-card__picture {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-12);
+  min-width: 0;
+}
+
+.wx-audit-card__thumb {
+  flex: none;
 }
 
 .wx-audit-card__source {

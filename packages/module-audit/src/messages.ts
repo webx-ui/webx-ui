@@ -246,5 +246,6 @@ export const auditMessages: Record<string, Messages> = {
     save: 'Save',
     saved: 'Saved.',
     dismiss: 'Cancel',
+    'view-full': 'View full size',
   },
 }

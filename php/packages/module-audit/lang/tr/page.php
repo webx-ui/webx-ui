@@ -230,4 +230,5 @@ return [
     'save' => 'Kaydet',
     'saved' => 'Kaydedildi.',
     'dismiss' => 'İptal',
+    'view-full' => 'Tam boyutta göster',
 ];
