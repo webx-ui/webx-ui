@@ -33,6 +33,11 @@ export const auditMessages: Record<string, Messages> = {
     notices: 'Notices',
     new: 'New',
     fixed: 'Fixed',
+    'health-pages': 'Pages without errors: :clean of :pages',
+    'health-site': 'Errors of the whole site: :count',
+    'health-warnings': 'Checks with warnings: :count',
+    'health-help':
+      'The share of pages without errors, minus 10 points for each error of the whole site and 2 for each check with warnings — the warnings take 20 at most.',
     'last-run': 'Last run',
     'base-url': 'Address',
     'status-queued': 'Waiting in the queue',

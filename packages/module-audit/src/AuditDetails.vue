@@ -8,7 +8,8 @@ import type { AuditDetails, AuditDetailsColumn } from './types'
 /**
  * The expansion of a finding, for every check alike (§4 of the spec): a summary line and, when
  * the check gave one, a table whose cells are drawn by their type — an address opens, a code is
- * coloured, a missing value is said in red, an editor link goes to the record in the panel.
+ * coloured, a missing value is said in red, an editor link goes to the record in the panel, and
+ * markup quoted from the page is shown as code.
  */
 const props = defineProps<{ details: AuditDetails }>()
 
@@ -94,6 +95,9 @@ function text(value: unknown): string {
                 @click="router.push(text(cell(row, column)))"
                 >{{ t('page.open-editor') }}</wx-button
               >
+              <code v-else-if="column.type === 'code'" class="wx-audit-details__code">{{
+                text(cell(row, column))
+              }}</code>
               <template v-else>{{ text(cell(row, column)) }}</template>
             </td>
           </tr>
@@ -134,6 +138,14 @@ function text(value: unknown): string {
   padding: var(--wx-space-4) var(--wx-space-8);
   border-bottom: 1px solid var(--wx-border-muted);
   vertical-align: top;
+}
+
+/* Quoted markup is one long line more often than not; it wraps anywhere rather than scrolling. */
+.wx-audit-details__code {
+  font-family: var(--wx-font-family-mono);
+  font-size: var(--wx-font-size-xs);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 .wx-audit-details__url {

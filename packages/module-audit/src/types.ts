@@ -15,12 +15,28 @@ export interface AuditCounts {
   checks: string[]
   /** The worst severity of every check that found something. */
   failed: Record<string, AuditSeverity>
-  /** 0–100, each check weighed once by its severity. */
+  /**
+   * 0–100: the share of crawled pages without errors, minus 10 for each error of the whole site
+   * and 2 for each check with warnings (20 at most).
+   */
   health: number
+  /** What the health was made of; absent on runs counted before it was kept. */
+  health_parts?: AuditHealthParts
   new: number
   fixed: number
   previous_id: number | null
   sources: { searched: string[]; missing: string[] }
+}
+
+export interface AuditHealthParts {
+  /** Pages crawled; 0 for a quick run. */
+  pages: number
+  /** Of them, without an error. */
+  clean: number
+  /** Checks with an error that belongs to no page. */
+  site_errors: number
+  /** Checks with a warning, each counted once. */
+  warnings: number
 }
 
 export interface AuditRun {
@@ -75,7 +91,8 @@ export interface AuditCheckRow {
   fixes: string[]
 }
 
-export type AuditCellType = 'url' | 'status' | 'bool' | 'text' | 'missing' | 'edit'
+/** `code` is markup quoted from the page — the page's HTML itself is not kept. */
+export type AuditCellType = 'url' | 'status' | 'bool' | 'text' | 'missing' | 'edit' | 'code'
 
 export interface AuditDetailsColumn {
   key: string

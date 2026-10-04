@@ -141,6 +141,7 @@ return [
     'column-edit' => 'Editor',
     'column-kind' => 'Tipo',
     'column-anchor' => 'Texto do link',
+    'column-markup' => 'Marcação',
     'column-page' => 'Página',
     'column-title' => 'Title',
     'column-line' => 'Linha',

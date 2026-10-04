@@ -24,7 +24,7 @@ final class ButtonName extends PageCheck
         $count = (int) $page->fact('buttons_unnamed', 0);
 
         if ($count > 0) {
-            yield $this->on($page, 'button-name', ['count' => $count]);
+            yield $this->on($page, 'button-name', ['count' => $count], $this->markup($page, 'buttons_unnamed_markup'));
         }
     }
 }

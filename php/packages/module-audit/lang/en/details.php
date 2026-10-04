@@ -141,6 +141,7 @@ return [
     'column-edit' => 'Editor',
     'column-kind' => 'Kind',
     'column-anchor' => 'Anchor',
+    'column-markup' => 'Markup',
     'column-page' => 'Page',
     'column-title' => 'Title',
     'column-line' => 'Line',

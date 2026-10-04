@@ -12,6 +12,7 @@ use WebxUi\Audit\Runs\AuditLink;
 use WebxUi\Audit\Runs\AuditPage;
 use WebxUi\Audit\Runs\AuditRun;
 use WebxUi\Audit\Runs\Runner;
+use WebxUi\Localization\Locales;
 
 /**
  * The crawl on a small site with the usual mistakes: a stand's picture on the home page, a
@@ -163,6 +164,70 @@ final class CrawlTest extends TestCase
             ->getJson('/api/cms/audit/runs/latest')
             ->assertOk()
             ->assertJsonPath('data.crawled.id', $run->id);
+    }
+
+    #[Test]
+    public function every_language_is_crawled_from_its_own_home_as_pages_of_their_own(): void
+    {
+        $this->app['config']->set('webx-localization.locales', [['code' => 'en', 'default' => true], ['code' => 'de']]);
+        $this->app->make(Locales::class)->forget();
+
+        $html = ['Content-Type' => 'text/html; charset=utf-8'];
+        $page = static fn (string $lang, string $title, string $body): string => '<!doctype html><html lang="'.$lang.'"><head><title>'.$title.'</title></head><body>'.$body.'</body></html>';
+        // Nothing on the English side leads to German, and there is no sitemap: only the seed can find /de.
+        $site = [
+            '/' => $page('en', 'Garden shop', '<h1>Garden shop</h1><a href="/about">About</a>'),
+            '/about' => $page('en', 'About', '<h1>About</h1><a href="/">Home</a>'),
+            '/de' => $page('de', 'Gartenladen', '<h1>Gartenladen</h1><a href="/de/ueber-uns">Über uns</a>'),
+            '/de/ueber-uns' => $page('de', 'Über uns', '<h1>Über uns</h1><a href="/de">Start</a>'),
+        ];
+
+        Http::fake(static function (Request $request) use ($site, $html) {
+            $path = substr($request->url(), strlen(self::BASE));
+
+            return isset($site[$path]) ? Http::response($site[$path], 200, $html) : Http::response('Not found', 404);
+        });
+
+        $this->artisan('webx:audit:run')->assertSuccessful();
+
+        $german = $this->page('/de');
+        $this->assertSame(AuditPage::HOME, $german->source);
+        $this->assertSame(0, $german->depth);
+        $this->assertSame('de', $german->lang);
+        $this->assertSame(1, $this->page('/de/ueber-uns')->depth, 'Depth counts from the home of its language.');
+
+        $run = AuditRun::query()->sole();
+        $this->assertSame(4, $run->pages_crawled, 'Each language version is a page of its own, under the one limit.');
+        $this->assertSame(4, $run->counts['health_parts']['pages'] ?? null);
+        $this->assertSame(0, AuditIssue::query()->where('check', 'structure.orphan')->count(), 'A language home is a home, not an orphan.');
+    }
+
+    #[Test]
+    public function a_finding_that_counts_elements_quotes_them(): void
+    {
+        $html = ['Content-Type' => 'text/html; charset=utf-8'];
+        $body = '<!doctype html><html lang="en"><head><title>Garden shop</title></head><body><h1>Shop</h1>'
+            .'<img src="/a.jpg"><img src="/b.jpg" alt="">'
+            .'<button class="cart"><svg></svg></button>'
+            .'<input type="email" name="email" placeholder="Your email">'
+            .str_repeat('<img src="/c.jpg">', 6)
+            .'</body></html>';
+
+        Http::fake(static fn (Request $request) => $request->url() === self::BASE.'/'
+            ? Http::response($body, 200, $html)
+            : Http::response('Not found', 404));
+
+        $this->artisan('webx:audit:run')->assertSuccessful();
+
+        $markup = static fn (string $check): array => array_column(
+            AuditIssue::query()->where('check', $check)->sole()->details['table']['rows'] ?? [],
+            'markup',
+        );
+
+        $this->assertSame(['<img src="/a.jpg">', ...array_fill(0, 4, '<img src="/c.jpg">')], $markup('images.alt'), 'Five at most; an empty alt is a decision.');
+        $this->assertSame(['<button class="cart"><svg></svg></button>'], $markup('a11y.button_name'));
+        $this->assertSame(['<input type="email" name="email" placeholder="Your email">'], $markup('a11y.form_label'));
+        $this->assertSame('code', AuditIssue::query()->where('check', 'images.alt')->sole()->details['table']['columns'][0]['type'] ?? null);
     }
 
     private function page(string $path): AuditPage

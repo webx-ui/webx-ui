@@ -24,7 +24,7 @@ final class FormLabel extends PageCheck
         $count = (int) $page->fact('fields_unlabeled', 0);
 
         if ($count > 0) {
-            yield $this->on($page, 'form-label', ['count' => $count]);
+            yield $this->on($page, 'form-label', ['count' => $count], $this->markup($page, 'fields_unlabeled_markup'));
         }
     }
 }

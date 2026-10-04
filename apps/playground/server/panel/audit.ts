@@ -226,6 +226,21 @@ const FINDINGS: Finding[] = [
     },
   },
   {
+    check: 'images.alt',
+    group: 'images',
+    severity: 'warning',
+    url: `${BASE}/`,
+    page: 1,
+    summary: ['images-alt', { count: 2 }],
+    table: {
+      columns: [{ key: 'markup', type: 'code' }],
+      rows: [
+        { markup: '<img src="/storage/banners/spring.jpg" class="hero__picture" loading="lazy">' },
+        { markup: '<img src="/storage/brands/acme.svg" width="120" height="40">' },
+      ],
+    },
+  },
+  {
     check: 'links.broken',
     group: 'links',
     severity: 'error',
@@ -426,6 +441,7 @@ const CHECKS: Record<string, Severity> = {
   'hosts.dev_page': 'error',
   'links.broken': 'error',
   'title.missing': 'error',
+  'images.alt': 'warning',
   'structure.orphan': 'warning',
   'description.duplicate': 'warning',
   'images.broken': 'error',
@@ -454,6 +470,36 @@ function state(run: Run, finding: Finding): 'new' | 'persisting' {
     : 'new'
 }
 
+/*
+ * The health as `Runs\Health` counts it (§12): the share of crawled pages without errors, minus
+ * 10 for each error of the whole site and 2 for each check with warnings, 20 at most.
+ */
+function health(run: Run, findings: Finding[]) {
+  const pages =
+    run.scope === 'quick' ? 0 : run.scope === 'urls' ? (run.urls ?? []).length : PAGES.length
+  const broken = new Set<number>()
+  const site = new Set<string>()
+  const warnings = new Set<string>()
+
+  for (const finding of findings) {
+    if (finding.severity === 'error') {
+      if (finding.page === undefined) site.add(finding.check)
+      else broken.add(finding.page)
+    } else if (finding.severity === 'warning') {
+      warnings.add(finding.check)
+    }
+  }
+
+  const clean = Math.max(0, pages - broken.size)
+  const share = pages === 0 ? 100 : (100 * clean) / pages
+  const penalty = 10 * site.size + Math.min(20, 2 * warnings.size)
+
+  return {
+    score: Math.max(0, Math.round(share - penalty)),
+    parts: { pages, clean, site_errors: site.size, warnings: warnings.size },
+  }
+}
+
 function counts(run: Run) {
   const severity: Record<Severity, number> = { error: 0, warning: 0, notice: 0 }
   const groups: Record<string, Record<Severity, number>> = {}
@@ -472,8 +518,7 @@ function counts(run: Run) {
     }
   }
 
-  const total = Object.values(CHECKS).reduce((sum, worst) => sum + WEIGHTS[worst], 0)
-  const lost = Object.values(failed).reduce((sum, worst) => sum + WEIGHTS[worst], 0)
+  const { score, parts } = health(run, shown(run))
   const before = previous(run)
   const now = new Set(run.findings.map(fingerprint))
 
@@ -482,7 +527,8 @@ function counts(run: Run) {
     groups,
     checks: Object.keys(CHECKS),
     failed,
-    health: Math.round((100 * (total - lost)) / total),
+    health: score,
+    health_parts: parts,
     new: shown(run).filter((finding) => state(run, finding) === 'new').length,
     fixed: before
       ? shown(before).filter(

@@ -57,4 +57,24 @@ abstract class PageCheck extends Check
 
         return new Finding(static::ID, $severity ?? static::SEVERITY, $page->url, $details, $key, $page->id);
     }
+
+    /**
+     * The elements the parser quoted for a fact — the excerpt that says where on the page the
+     * problem is, since the page's HTML is not kept. Null for a snapshot made before quoting.
+     *
+     * @return array{columns: list<array{key: string, label: string, type: string}>, rows: list<array<string, mixed>>}|null
+     */
+    protected function markup(AuditPage $page, string $fact): ?array
+    {
+        $quoted = $page->fact($fact, []);
+
+        if (! is_array($quoted) || $quoted === []) {
+            return null;
+        }
+
+        return [
+            'columns' => [Finding::column('markup', 'code')],
+            'rows' => array_values(array_map(static fn (mixed $html): array => ['markup' => (string) $html], $quoted)),
+        ];
+    }
 }

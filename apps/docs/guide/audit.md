@@ -29,8 +29,8 @@ change the settings.
 
 The section has five views and its settings:
 
-- **Overview** — the last run: health in percent, errors, warnings and notices, what is new and
-  what got fixed since the run before, and «Run the audit» with the scope.
+- **Overview** — the last run: health in percent and what it is made of, errors, warnings and
+  notices, what is new and what got fixed since the run before, and «Run the audit» with the scope.
 - **Findings** — one row per check, worst first; a row opens into its addresses, each with the
   details the check left (a summary line and a table). «?» beside a check says what was found, why
   it matters and how to fix it.
@@ -52,11 +52,31 @@ A run is a job in the queue, done a piece at a time, so a host that limits a wor
 still finishes it. Scopes:
 
 - **Quick** — the config, the host and the database: seconds. What a deploy runs.
-- **Full** — the same, then the crawl: the home page, the sitemap and the address registry first,
-  then every link, a couple of requests at a time, up to the page limit.
+- **Full** — the same, then the crawl: the home page and the home of every other language
+  (`/de`, `/fr`), the sitemap and the address registry first, then every link and hreflang, a
+  couple of requests at a time, up to the page limit. Each language version is a page of its own
+  under that one limit — there is no separate crawl per language.
 - **Recheck** — «Recheck» on a page's card asks that one address again and says which of its
   findings in the last full run are fixed. Checks that judge the whole site (duplicates, orphans,
   depth, the sitemap) do not run on one page.
+
+### Health
+
+The percentage on the Overview is the share of crawled pages without an error, then:
+
+- minus **10** for each check with an error that belongs to no page — a mirror that does not
+  redirect, `APP_DEBUG` in production, a stand's address in the database: those touch every page;
+- minus **2** for each check with warnings, counted once however many addresses it found, and
+  **20 at most** for all of them — a hundred pictures without `alt` are one warning.
+
+A page with three errors is lost once. Notices and hidden findings weigh nothing; a quick run,
+which crawls no pages, starts from 100. Beside the circle the Overview says how many pages are
+clean and how many site errors and warning checks took points.
+
+The audit keeps no page HTML — only what it extracted (titles, meta, headings, links, counters).
+Where a check counts elements (pictures without `alt`, buttons without a name, fields without a
+label), its finding quotes up to five of them as the page wrote them, so the template that makes
+them is easy to find.
 
 On a `sync` queue the panel does not start a run — it would run inside the request — and says so.
 The command works everywhere:

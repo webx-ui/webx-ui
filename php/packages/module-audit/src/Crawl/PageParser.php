@@ -20,6 +20,11 @@ use WebxUi\Audit\Runs\AuditLink;
 final class PageParser
 {
     /** The most addresses kept of one page: a mega-menu is a few hundred, a spam page is not. */
+    /** How many elements a finding quotes, and how much of each. */
+    private const EXCERPTS = 5;
+
+    private const EXCERPT_LENGTH = 200;
+
     private const LINKS = 2000;
 
     /** The most H1 texts kept. */
@@ -254,17 +259,22 @@ final class PageParser
     }
 
     /**
-     * @return array{images: int, images_without_alt: int, images_without_size: int}
+     * @return array{images: int, images_without_alt: int, images_without_size: int, images_without_alt_markup: list<string>}
      */
     private function images(HTMLDocument $document, LinkList $links): array
     {
         $count = 0;
         $withoutAlt = 0;
         $withoutSize = 0;
+        $markup = [];
 
         foreach ($document->querySelectorAll('img') as $element) {
             $count++;
-            $withoutAlt += $element->hasAttribute('alt') ? 0 : 1;
+            if (! $element->hasAttribute('alt')) {
+                $withoutAlt++;
+                self::excerpt($document, $element, $markup);
+            }
+
             $withoutSize += $element->hasAttribute('width') && $element->hasAttribute('height') ? 0 : 1;
 
             if ($element->hasAttribute('src')) {
@@ -289,7 +299,7 @@ final class PageParser
             }
         }
 
-        return ['images' => $count, 'images_without_alt' => $withoutAlt, 'images_without_size' => $withoutSize];
+        return ['images' => $count, 'images_without_alt' => $withoutAlt, 'images_without_size' => $withoutSize, 'images_without_alt_markup' => $markup];
     }
 
     /** Whether the picture's `<picture>` has a WebP or AVIF source. */
@@ -316,11 +326,12 @@ final class PageParser
     /**
      * Buttons without a name and fields without a label (§5.5, `a11y.*`).
      *
-     * @return array{buttons_unnamed: int, fields_unlabeled: int}
+     * @return array{buttons_unnamed: int, fields_unlabeled: int, buttons_unnamed_markup: list<string>, fields_unlabeled_markup: list<string>}
      */
     private function controls(HTMLDocument $document): array
     {
         $buttons = 0;
+        $buttonsMarkup = [];
 
         foreach ($document->querySelectorAll('button, input[type="button"], input[type="image"]') as $element) {
             $name = $element->localName === 'input'
@@ -329,6 +340,7 @@ final class PageParser
 
             if ($name === '' && self::clean($element->getAttribute('aria-label') ?? $element->getAttribute('title')) === '' && ! $element->hasAttribute('aria-labelledby')) {
                 $buttons++;
+                self::excerpt($document, $element, $buttonsMarkup);
             }
         }
 
@@ -339,6 +351,7 @@ final class PageParser
         }
 
         $fields = 0;
+        $fieldsMarkup = [];
 
         foreach ($document->querySelectorAll('input, select, textarea') as $element) {
             $type = strtolower((string) ($element->getAttribute('type') ?? 'text'));
@@ -353,10 +366,18 @@ final class PageParser
                 || $element->closest('label') !== null
                 || isset($labelled[(string) $element->getAttribute('id')]);
 
-            $fields += $named ? 0 : 1;
+            if (! $named) {
+                $fields++;
+                self::excerpt($document, $element, $fieldsMarkup);
+            }
         }
 
-        return ['buttons_unnamed' => $buttons, 'fields_unlabeled' => $fields];
+        return [
+            'buttons_unnamed' => $buttons,
+            'fields_unlabeled' => $fields,
+            'buttons_unnamed_markup' => $buttonsMarkup,
+            'fields_unlabeled_markup' => $fieldsMarkup,
+        ];
     }
 
     /** `url()` in `style` attributes and `<style>` blocks. */
@@ -474,6 +495,23 @@ final class PageParser
     private static function clean(?string $value): string
     {
         return trim((string) preg_replace('/\s+/u', ' ', (string) $value));
+    }
+
+    /**
+     * The element as the page wrote it, cut short — "where exactly" for a finding that counts
+     * elements (§12, decided: no stored HTML, an excerpt in the finding instead). A few per page
+     * are enough to find the template that makes them.
+     *
+     * @param  list<string>  $into
+     */
+    private static function excerpt(HTMLDocument $document, Element $element, array &$into): void
+    {
+        if (count($into) < self::EXCERPTS) {
+            // Parsed without the HTML namespace, a void element comes back with a closing tag the
+            // page never wrote: `<img src="…"></img>`.
+            $html = (string) preg_replace('~></(?:area|base|br|col|embed|hr|img|input|link|meta|source|track|wbr)>~i', '>', $document->saveHtml($element));
+            $into[] = self::cut(self::clean($html), self::EXCERPT_LENGTH);
+        }
     }
 
     private static function cut(string $value, int $length): string

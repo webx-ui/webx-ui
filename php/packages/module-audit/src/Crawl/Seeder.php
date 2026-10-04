@@ -11,15 +11,17 @@ use WebxUi\Audit\Hosts\HostClassifier;
 use WebxUi\Audit\Probes\SiteClient;
 use WebxUi\Audit\Runs\AuditPage;
 use WebxUi\Audit\Runs\AuditRun;
+use WebxUi\Localization\Locales;
 use WebxUi\Routing\Models\Route;
 use WebxUi\Routing\SiteUrl;
 use WebxUi\Routing\UrlNormaliser;
 
 /**
- * Stage 3 of a full run (§3): the home page, every address of the sitemap (through its index),
- * and the canonical rows of the `routing` registry. Where a page came from is remembered — an
- * address in the sitemap or the registry that no link leads to is an orphan, and one the crawl
- * found that the sitemap never named is a gap in the sitemap.
+ * Stage 3 of a full run (§3): the home page and the home of every other language the site puts
+ * in its addresses, every address of the sitemap (through its index), and the canonical rows of
+ * the `routing` registry. Where a page came from is remembered — an address in the sitemap or the
+ * registry that no link leads to is an orphan, and one the crawl found that the sitemap never
+ * named is a gap in the sitemap.
  */
 final class Seeder
 {
@@ -45,11 +47,46 @@ final class Seeder
         }
 
         $frontier->add([Urls::normalise($base.'/') ?? $base.'/'], AuditPage::HOME, 0);
+        $frontier->add($this->languageHomes($base), AuditPage::HOME, 0);
 
         $this->sitemaps($base, $robots, $client, $hosts, $frontier);
         $this->registry($base, $frontier);
 
         return $robots;
+    }
+
+    /**
+     * `/de`, `/fr` — the home of each language with a prefix (§12, decided). Every language
+     * version is a page of its own under the same page limit, found from its own home even when
+     * the sitemap and the registry say nothing about it; hreflang and links bring the rest.
+     * Depth counts from that home, as it does for the main one.
+     *
+     * @return list<string>
+     */
+    private function languageHomes(string $base): array
+    {
+        if (! class_exists(SiteUrl::class)) {
+            return [];
+        }
+
+        try {
+            $locales = $this->container->make(Locales::class);
+            $site = $this->container->make(SiteUrl::class);
+            $urls = [];
+
+            foreach ($locales->codes() as $code) {
+                $prefix = $site->prefix($code);
+                $url = $prefix === '' ? null : Urls::normalise($base.'/'.$prefix);
+
+                if ($url !== null) {
+                    $urls[] = $url;
+                }
+            }
+
+            return array_values(array_unique($urls));
+        } catch (Throwable) {
+            return [];
+        }
     }
 
     private function sitemaps(string $base, RobotsRules $robots, SiteClient $client, HostClassifier $hosts, Frontier $frontier): void

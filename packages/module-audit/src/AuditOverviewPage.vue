@@ -21,8 +21,8 @@ import { useAuditMessages } from './i18n'
 import type { AuditLatest, AuditRun, AuditScope, AuditSeverity } from './types'
 
 /**
- * The last run at a glance (§8): health, the counts by severity and by group, what is new and
- * what got fixed since the run before, and the button that starts the next one. While a run is
+ * The last run at a glance (§8): health and what it is made of, the counts by severity and by
+ * group, what is new and what got fixed since the run before, and the button that starts the next one. While a run is
  * going the page asks for it every couple of seconds and shows the stage it is in.
  */
 const props = defineProps<{ base: string }>()
@@ -57,6 +57,8 @@ const severities: { key: AuditSeverity; label: string; tone: 'danger' | 'warning
   { key: 'warning', label: 'page.warnings', tone: 'warning' },
   { key: 'notice', label: 'page.notices', tone: 'info' },
 ]
+
+const parts = computed(() => counts.value?.health_parts ?? null)
 
 const healthStatus = computed<ProgressStatus>(() => {
   const health = counts.value?.health ?? 0
@@ -207,14 +209,28 @@ onBeforeUnmount(() => clearTimeout(timer))
         <template v-if="done && counts">
           <wx-card>
             <div class="wx-audit-overview__summary">
-              <wx-progress
-                type="circle"
-                :value="counts.health"
-                :status="healthStatus"
-                show-value
-                :formatter="(value: number) => `${value}%`"
-                :aria-label="t('page.health')"
-              />
+              <div class="wx-audit-overview__health">
+                <wx-progress
+                  type="circle"
+                  :value="counts.health"
+                  :status="healthStatus"
+                  show-value
+                  :formatter="(value: number) => `${value}%`"
+                  :aria-label="t('page.health')"
+                />
+                <div v-if="parts" class="wx-audit-overview__parts">
+                  <wx-text v-if="parts.pages > 0" size="sm">{{
+                    t('page.health-pages', { clean: parts.clean, pages: parts.pages })
+                  }}</wx-text>
+                  <wx-text v-if="parts.site_errors > 0" size="sm" tone="danger">{{
+                    t('page.health-site', { count: parts.site_errors })
+                  }}</wx-text>
+                  <wx-text v-if="parts.warnings > 0" size="sm" tone="warning">{{
+                    t('page.health-warnings', { count: parts.warnings })
+                  }}</wx-text>
+                  <wx-text size="xs" tone="muted">{{ t('page.health-help') }}</wx-text>
+                </div>
+              </div>
               <div class="wx-audit-overview__stats">
                 <wx-statistic
                   v-for="severity in severities"
@@ -304,6 +320,23 @@ onBeforeUnmount(() => clearTimeout(timer))
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wx-space-24);
+}
+
+.wx-audit-overview__health {
+  display: flex;
+  flex: 1 1 20rem;
+  align-items: center;
+  gap: var(--wx-space-16);
+  min-width: 0;
+}
+
+/* The help is a sentence; it wraps beside the circle rather than stretching the card. */
+.wx-audit-overview__parts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-4);
+  max-width: 36ch;
+  min-width: 0;
 }
 
 .wx-audit-overview__stats {
