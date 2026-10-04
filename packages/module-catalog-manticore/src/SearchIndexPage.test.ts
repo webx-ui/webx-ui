@@ -122,6 +122,17 @@ describe('WxSearchIndexPage', () => {
     expect(wrapper.text()).toContain('A rebuild is filling the table beside it: 80 of 120')
   })
 
+  it('holds the button back while the console rebuilds under the shared lock', async () => {
+    const { wrapper } = panel([report({ locked: true })])
+
+    await flushPromises()
+
+    // The console's `--rebuild` writes no progress, but it holds the lock the panel's job takes.
+    expect(wrapper.text()).toContain('A rebuild started from the console is running')
+    expect(wrapper.text()).not.toContain('The index is not of the schema the catalogue writes now')
+    expect(button(wrapper, 'Rebuild')!.attributes('disabled')).toBeDefined()
+  })
+
   it('queues the rebuild and follows it until it is done', async () => {
     vi.useFakeTimers()
     const running = report({ rebuild: { ...idle, state: 'running', done: 40, total: 120 } })

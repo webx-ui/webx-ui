@@ -7,10 +7,11 @@ namespace WebxUi\Catalog\Console;
 use Illuminate\Console\Command;
 use WebxUi\Catalog\Catalog;
 use WebxUi\Catalog\Engine\Indexer;
+use WebxUi\Catalog\Engine\RebuildRunning;
 
 /**
  * Hand the engine what the queue holds (§8.3); `--rebuild` writes the whole catalogue from
- * scratch, schema and all.
+ * scratch, schema and all — one at a time with the panel's rebuild, under the same lock.
  *
  * On the schedule every minute, and only where the engine keeps an index: under `SqlEngine` the
  * database is the index and there is nothing to hand over.
@@ -30,7 +31,14 @@ class IndexCommand extends Command
             return self::SUCCESS;
         }
 
-        $written = $this->option('rebuild') ? $indexer->rebuild() : $indexer->run();
+        try {
+            $written = $this->option('rebuild') ? $indexer->rebuild() : $indexer->run();
+        } catch (RebuildRunning $running) {
+            // The panel's «Rebuild» takes the same lock: whichever came second waits for the first.
+            $this->error($running->getMessage().' It may have been started from the panel, «System → Search index».');
+
+            return self::FAILURE;
+        }
 
         $this->info(sprintf('Wrote %d product%s to the engine.', $written, $written === 1 ? '' : 's'));
 

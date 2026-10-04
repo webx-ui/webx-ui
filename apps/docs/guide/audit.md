@@ -36,7 +36,9 @@ The section has five views and its settings:
   it matters and how to fix it.
 - **Pages** — every address the last full run crawled, with any field of its snapshot as a
   column, filters on any field and CSV export. A row opens the page's card: answer, headers,
-  markup, findings, links in and out, pictures, CSS, JS and structured data.
+  markup, findings, links in and out, pictures, CSS, JS and structured data. A picture that
+  answered the run shows its thumbnail and opens full size; one on a stand, past the run's limit
+  or broken keeps a placeholder and is not fetched.
 - **Outgoing** — every host the site points at, in its pages and in its database, by class:
   development stands on top in red, then other mirrors of the site, external hosts and the site
   itself. A row opens into the pages that link there and the records that hold the address, with

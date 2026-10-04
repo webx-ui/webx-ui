@@ -8,6 +8,7 @@ import {
   WxBadge,
   WxButton,
   WxDrawer,
+  WxIcon,
   WxImage,
   WxLink,
   WxSkeleton,
@@ -22,6 +23,7 @@ import {
 } from '@webx-ui/core'
 import AuditDetails from './AuditDetails.vue'
 import { createAuditApi } from './api'
+import { viewable } from './resources'
 import { useAuditMessages } from './i18n'
 import type {
   AuditLinkRow,
@@ -486,8 +488,10 @@ watch(tab, () => {
         >
           <template #cell-url="{ row }">
             <span v-if="resourceTab === 'images'" class="wx-audit-card__picture">
+              <!-- Only a picture that answered is fetched: the stand's and a broken one keep the
+                   placeholder rather than a request the browser is sure to lose. -->
               <wx-image
-                :src="row.url"
+                :src="viewable(row) ? row.url : undefined"
                 :alt="row.alt ?? ''"
                 :width="48"
                 :height="48"
@@ -496,7 +500,12 @@ watch(tab, () => {
                 preview
                 :preview-label="t('page.view-full')"
                 class="wx-audit-card__thumb"
-              />
+                :class="{ 'is-unviewable': !viewable(row) }"
+              >
+                <template v-if="!viewable(row)" #placeholder>
+                  <wx-icon name="image" />
+                </template>
+              </wx-image>
               <span class="wx-audit-card__url">{{ row.url }}</span>
             </span>
             <span v-else class="wx-audit-card__url">{{ row.url }}</span>
@@ -681,6 +690,12 @@ watch(tab, () => {
 
 .wx-audit-card__thumb {
   flex: none;
+}
+
+/* The same box as a picture that would not load, with the same mark — nothing here to open. */
+.wx-audit-card__thumb.is-unviewable :deep(.wx-image__placeholder .wx-icon) {
+  width: 32px;
+  height: 32px;
 }
 
 .wx-audit-card__source {
