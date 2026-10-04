@@ -67,7 +67,6 @@ const faqOn = computed(() => faqEnabled(context))
 const faq = ref<FaqRow[]>([])
 const faqLoading = ref(false)
 const tab = ref<'meta' | 'faq'>('meta')
-let next = 0
 
 /* Shown for an exact rule; for one that is no longer exact only while it still has questions,
    so they can be taken away before the kind changes — the server refuses it otherwise. */
@@ -103,7 +102,7 @@ watch(
 )
 
 function rowsOf(items: SeoFaqItem[]): FaqRow[] {
-  return items.map((item) => ({ key: next++, question: item.question, answer: item.answer }))
+  return items.map((item) => ({ question: item.question, answer: item.answer }))
 }
 
 /* The list carries a count, not the questions: a rule is read whole before they are shown. */
@@ -119,10 +118,6 @@ async function loadFaq(rule: SeoUrlRule | null): Promise<void> {
   } finally {
     faqLoading.value = false
   }
-}
-
-function addQuestion(): void {
-  faq.value.push({ key: next++, question: {}, answer: {} })
 }
 
 /** Whether a language map has words in any language; a site with no languages sends a string. */
@@ -211,7 +206,6 @@ async function save(): Promise<void> {
             :errors="errors"
             :locked="form.match_type !== 'exact'"
             :disabled="faqLoading"
-            @add="addQuestion"
           />
         </wx-tab>
       </wx-tabs>
