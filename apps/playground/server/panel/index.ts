@@ -252,6 +252,7 @@ import {
   registerCatalog,
 } from './catalog'
 import { registerAudit } from './audit'
+import { handleSeoFaqFiles, registerSeoFaq } from './seo-faq'
 import { handleSeoLinkFiles, registerSeoLinks } from './seo-links'
 import { registerManticore } from './catalog-manticore'
 import { brandHistory, registerDictionaries } from './catalog-dictionaries'
@@ -819,7 +820,7 @@ on('GET', '/manifest', ({ locale }) => ({
         group: 'system',
         permissions: ['seo.view', 'seo.manage'],
         /* Both optional tools on (§18.3), so their views are here to be looked at. */
-        meta: { links: true, faq: false },
+        meta: { links: true, faq: true },
       },
       {
         id: 'audit',
@@ -2030,6 +2031,12 @@ registerSeoLinks(
   (status, message, errors) => new HttpFailure(status, message, undefined, errors),
   line,
 )
+/* The rules, with the FAQ of a page on the exact ones (§18.5). */
+registerSeoFaq(
+  on,
+  (status, message, errors) => new HttpFailure(status, message, undefined, errors),
+  line,
+)
 
 /* Its reference books (WEBX_UI_CATALOG_DICTIONARIES.md): labels, stock statuses, brands. */
 registerDictionaries(
@@ -3094,7 +3101,6 @@ function sitemapStatus(): unknown {
   }
 }
 
-on('GET', '/seo/urls', () => emptyPage)
 on('GET', '/seo/redirects', () => emptyPage)
 on('GET', '/seo/aliases', () => emptyPage)
 on('GET', '/seo/sitemap', () => sitemapStatus())
@@ -5971,6 +5977,9 @@ export function panelServer(): Plugin {
 
         /* Interlinking's import and export: a file in, a file out. */
         if (handleSeoLinkFiles(request, response, url, line)) return
+
+        /* The page FAQ's import and export, the same way. */
+        if (handleSeoFaqFiles(request, response, url, line)) return
 
         if (url.pathname.startsWith('/api/cms/')) {
           void answer(request, response, url)

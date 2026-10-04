@@ -118,13 +118,13 @@ seed('/catalog/tech/vacuums', 'Similar appliances', [
 ])
 
 /** `/en/…` is English; everything else is the site's default language. */
-const localeOf = (path: string): string => (/^\/en(\/|$)/.test(path) ? 'en' : 'ru')
+export const localeOf = (path: string): string => (/^\/en(\/|$)/.test(path) ? 'en' : 'ru')
 
 /**
  * An address as the server keeps it: no host of ours, a slash in front, none behind. `null` for
  * another site's host — interlinking is internal.
  */
-function normalise(raw: string): string | null {
+export function normalise(raw: string): string | null {
   let value = raw.trim()
   const absolute = /^https?:\/\/([^/]+)(.*)$/i.exec(value)
 
@@ -483,7 +483,7 @@ const HEADERS: Record<string, 'donor' | 'acceptor' | 'anchor' | 'heading'> = {
 }
 
 /** CSV the way `LinkSpreadsheet` reads it: a BOM dropped, the separator of the first line, quotes. */
-function parseCsv(text: string): string[][] {
+export function parseCsv(text: string): string[][] {
   const source = text.replace(/^\uFEFF/, '')
   const first = source.split(/\r?\n/, 1)[0] ?? ''
   const separator = [';', '\t', ','].reduce((best, candidate) =>
@@ -617,7 +617,7 @@ function runImport(line: Line, locale: string, text: string, mode: string, dryRu
   }
 }
 
-function json(response: ServerResponse, status: number, body: unknown): true {
+export function json(response: ServerResponse, status: number, body: unknown): true {
   response.statusCode = status
   response.setHeader('Content-Type', 'application/json; charset=utf-8')
   response.end(JSON.stringify(body))
@@ -625,7 +625,7 @@ function json(response: ServerResponse, status: number, body: unknown): true {
   return true
 }
 
-async function raw(request: IncomingMessage): Promise<Buffer> {
+export async function raw(request: IncomingMessage): Promise<Buffer> {
   const chunks: Buffer[] = []
 
   for await (const chunk of request) chunks.push(chunk as Buffer)
@@ -634,7 +634,7 @@ async function raw(request: IncomingMessage): Promise<Buffer> {
 }
 
 /** The parts of a multipart body by name: text for fields, the file's name and bytes for a file. */
-function multipart(
+export function multipart(
   body: Buffer,
   boundary: string,
 ): Map<string, { filename: string | null; data: Buffer }> {

@@ -119,6 +119,28 @@ describe('createSeoApi', () => {
     expect(body.get('dry_run')).toBe('1')
   })
 
+  it('uploads a FAQ file to its own address and asks the list for pages with a FAQ', async () => {
+    const send = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ data: { addresses: 1 } }), { status: 200 }))
+    const get = vi.fn().mockResolvedValue({ data: [], meta: {} })
+    const api = createSeoApi(context({ send, get }))
+
+    await expect(api.importFaq(new Blob(['x']), 'replace', false)).resolves.toEqual({
+      addresses: 1,
+    })
+
+    const [method, path, options] = send.mock.calls[0]!
+
+    expect([method, path]).toEqual(['POST', '/api/cms/seo/faq/import'])
+    expect((options.body as FormData).get('dry_run')).toBe('0')
+    expect(api.exportFaqUrl('xlsx')).toBe('/api/cms/seo/faq/export?format=xlsx')
+
+    await api.urls({ has_faq: true })
+
+    expect(get.mock.calls[0]![1].query.has_faq).toBe(1)
+  })
+
   it('throws a refused upload with its errors, the way a form reads a 422', async () => {
     const send = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ message: 'Invalid.', errors: { file: ['Unreadable.'] } }), {

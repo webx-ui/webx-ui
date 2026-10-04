@@ -2,6 +2,8 @@ import { HttpError, type AdminContext } from '@webx-ui/module-admin'
 import type {
   SeoAlias,
   SeoAliasQuery,
+  SeoFaqImportMode,
+  SeoFaqImportResult,
   SeoLinkAddress,
   SeoLinkBlock,
   SeoLinkHeadingInput,
@@ -60,6 +62,11 @@ export interface SeoApi {
   linksHeading(input: SeoLinkHeadingInput): Promise<SeoLinkHeadingResult>
   /** Addresses from the registry for an acceptor field to suggest. */
   linkAddresses(q: string, locale?: string | null): Promise<SeoLinkAddress[]>
+
+  /** Page FAQs from a file (§18.5); a preview unless `dryRun` is false. */
+  importFaq(file: Blob, mode: SeoFaqImportMode, dryRun: boolean): Promise<SeoFaqImportResult>
+  /** Where every page FAQ downloads from, in the format the import reads. */
+  exportFaqUrl(format: 'csv' | 'xlsx'): string
 }
 
 /** Everything under `/seo`, below the panel's API path. */
@@ -81,6 +88,7 @@ export function createSeoApi(admin: AdminContext): SeoApi {
     query: SeoRedirectQuery,
   ): Record<string, string | number | boolean | null | undefined> => ({
     q: query.q || undefined,
+    has_faq: query.has_faq ? 1 : undefined,
     match_type: query.match_type ?? undefined,
     is_active: query.is_active ?? undefined,
     sort: query.sort || undefined,
@@ -167,22 +175,8 @@ export function createSeoApi(admin: AdminContext): SeoApi {
 
     removeLink: (id) => admin.http.delete<void>(`${base}/links/${id}`),
 
-    // Multipart rather than JSON, so it goes through `send`: the panel's cookie, token and
-    // language, and the body as it is.
-    importLinks: async (file, mode, dryRun) => {
-      const body = new FormData()
-      body.append('file', file, file instanceof File ? file.name : 'links.csv')
-      body.append('mode', mode)
-      body.append('dry_run', dryRun ? '1' : '0')
-
-      if (admin.http.send === undefined) throw new Error('This client cannot send a file.')
-
-      const response = await admin.http.send('POST', `${base}/links/import`, { body })
-
-      if (!response.ok) throw await failure(response)
-
-      return data(await (response.json() as Promise<{ data: SeoLinkImportResult }>))
-    },
+    importLinks: (file, mode, dryRun) =>
+      upload<SeoLinkImportResult>(`${base}/links/import`, file, mode, dryRun, 'links.csv'),
 
     exportLinksUrl: (format) => `${base}/links/export?format=${format}`,
 
@@ -195,6 +189,34 @@ export function createSeoApi(admin: AdminContext): SeoApi {
           query: { q: q || undefined, locale: locale ?? undefined },
         })
         .then(data),
+
+    importFaq: (file, mode, dryRun) =>
+      upload<SeoFaqImportResult>(`${base}/faq/import`, file, mode, dryRun, 'faq.csv'),
+
+    exportFaqUrl: (format) => `${base}/faq/export?format=${format}`,
+  }
+
+  // Multipart rather than JSON, so it goes through `send`: the panel's cookie, token and
+  // language, and the body as it is.
+  async function upload<T>(
+    url: string,
+    file: Blob,
+    mode: string,
+    dryRun: boolean,
+    name: string,
+  ): Promise<T> {
+    const body = new FormData()
+    body.append('file', file, file instanceof File ? file.name : name)
+    body.append('mode', mode)
+    body.append('dry_run', dryRun ? '1' : '0')
+
+    if (admin.http.send === undefined) throw new Error('This client cannot send a file.')
+
+    const response = await admin.http.send('POST', url, { body })
+
+    if (!response.ok) throw await failure(response)
+
+    return data(await (response.json() as Promise<{ data: T }>))
   }
 }
 

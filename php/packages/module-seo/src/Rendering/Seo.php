@@ -13,6 +13,7 @@ use WebxUi\Localization\Locales;
 use WebxUi\Routing\Resolution;
 use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Contracts\HasStructuredData;
+use WebxUi\Seo\Faq\PageFaq;
 use WebxUi\Settings\Settings;
 
 /**
@@ -325,7 +326,9 @@ final class Seo
             array_push($blocks, ...$this->pushed(), ...array_values($this->putBlocks()));
         }
 
-        return array_values(array_filter($blocks, static fn (array $block): bool => $block !== []));
+        // One `FAQPage` a page (§18.5): the rule's questions and the ones `module-faq` put are
+        // folded together, a question repeated by its text kept once.
+        return PageFaq::fold(array_values(array_filter($blocks, static fn (array $block): bool => $block !== [])));
     }
 
     private function pointsElsewhere(?string $canonical, string $path): bool

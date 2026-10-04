@@ -18,16 +18,19 @@ import {
   WxBadge,
   WxFormItem,
   WxSelect,
+  WxSwitch,
   WxTable,
   WxText,
   type TableColumn,
   type TableState,
 } from '@webx-ui/core'
 import SeoSitemapCard from './SeoSitemapCard.vue'
+import SeoImportDialog from './SeoImportDialog.vue'
 import SeoUrlDialog from './SeoUrlDialog.vue'
 import TestUrlDialog from './TestUrlDialog.vue'
 import SeoLayout from './SeoLayout.vue'
 import { createSeoApi } from './api'
+import { faqEnabled } from './features'
 import { useSeoMessages } from './i18n'
 import { ruleTitle } from './rule'
 import type { SeoPage, SeoUrlRule } from './types'
@@ -59,6 +62,9 @@ const loading = ref(false)
 /* A word rather than an empty string: a select reads "" as nothing chosen and shows a blank
    control where the option said "any kind". */
 const kind = ref('any')
+/* Page FAQs (§18.5) are only there where a developer turned them on. */
+const faqOn = computed(() => faqEnabled(context))
+const withFaq = ref(false)
 
 let last: TableState = { page: 1, perPage: 20, sort: null, search: '' }
 
@@ -68,6 +74,7 @@ const edit = createModal<SeoUrlRule, { rule: SeoUrlRule | null; mediaField?: Com
   SeoUrlDialog,
 )
 const test = createModal<void, Record<string, never>>(TestUrlDialog)
+const importing = createModal<boolean, { kind?: 'links' | 'faq' }>(SeoImportDialog)
 
 const kindOptions = computed(() => [
   { value: 'any', label: t('page.any-kind') },
@@ -77,8 +84,8 @@ const kindOptions = computed(() => [
 ])
 
 /** The one dropdown, said in the reader's words while the panel it lives in is shut. */
-const applied = computed<AppliedFilter[]>(() =>
-  kind.value === 'any'
+const applied = computed<AppliedFilter[]>(() => [
+  ...(kind.value === 'any'
     ? []
     : [
         {
@@ -88,14 +95,24 @@ const applied = computed<AppliedFilter[]>(() =>
           }`,
           clear: () => (kind.value = 'any'),
         },
-      ],
-)
+      ]),
+  ...(faqOn.value && withFaq.value
+    ? [{ key: 'faq', label: t('faq.with-faq'), clear: () => (withFaq.value = false) }]
+    : []),
+])
 
 const columns = computed<TableColumn<SeoUrlRule>[]>(() => [
   { key: 'pattern', label: t('page.address') },
   { key: 'match_type', label: t('page.kind'), hideBelow: 560 },
   { key: 'title', label: t('page.title'), hideBelow: 900 },
   { key: 'priority', label: t('page.priority'), align: 'center', hideBelow: 760 },
+  {
+    key: 'faq_count',
+    label: t('faq.column'),
+    align: 'center',
+    hideBelow: 620,
+    hidden: !faqOn.value,
+  },
   { key: 'is_active', label: t('page.state'), align: 'center', hideBelow: 660 },
   {
     key: 'actions',
@@ -133,6 +150,7 @@ async function load(state: TableState): Promise<void> {
     page.value = await api.urls({
       q: state.search,
       match_type: kind.value === 'any' ? null : (kind.value as 'exact' | 'mask' | 'regex'),
+      has_faq: faqOn.value && withFaq.value,
       page: state.page,
       per_page: state.perPage,
     })
@@ -172,9 +190,46 @@ async function remove(rule: SeoUrlRule): Promise<void> {
   }
 }
 
+async function importFaq(): Promise<void> {
+  if (await importing({ kind: 'faq' })) void load({ ...last, page: 1 })
+}
+
+/* The FAQ files, in the ···: they are about the pages these rules are written for. */
+const faqActions = computed<ScreenAction[]>(() => {
+  if (!faqOn.value) return []
+
+  return [
+    ...(canManage
+      ? [
+          {
+            key: 'faq-import',
+            label: t('faq.import'),
+            icon: 'upload',
+            menu: true,
+            run: () => void importFaq(),
+          } satisfies ScreenAction,
+        ]
+      : []),
+    {
+      key: 'faq-export-csv',
+      label: t('faq.export-csv'),
+      icon: 'download',
+      menu: true,
+      href: api.exportFaqUrl('csv'),
+    },
+    {
+      key: 'faq-export-xlsx',
+      label: t('faq.export-xlsx'),
+      icon: 'download',
+      menu: true,
+      href: api.exportFaqUrl('xlsx'),
+    },
+  ]
+})
+
 /* What the section offers. Declared, because on a phone the head folds it into the ···. */
-const actions = computed<ScreenAction[]>(() =>
-  canManage
+const actions = computed<ScreenAction[]>(() => [
+  ...(canManage
     ? [
         {
           key: 'rule',
@@ -182,10 +237,15 @@ const actions = computed<ScreenAction[]>(() =>
           icon: 'plus',
           primary: true,
           run: () => void open(null),
-        },
+        } satisfies ScreenAction,
       ]
-    : [],
-)
+    : []),
+  ...faqActions.value,
+])
+
+function onFaqFilter(): void {
+  void load({ ...last, page: 1 })
+}
 </script>
 
 <template>
@@ -215,6 +275,13 @@ const actions = computed<ScreenAction[]>(() =>
         <wx-form-item :label="t('page.filter-kind')">
           <wx-select v-model="kind" :options="kindOptions" size="sm" />
         </wx-form-item>
+
+        <wx-switch
+          v-if="faqOn"
+          v-model="withFaq"
+          :label="t('faq.with-faq')"
+          @change="onFaqFilter"
+        />
       </template>
 
       <template #applied>
@@ -231,6 +298,11 @@ const actions = computed<ScreenAction[]>(() =>
 
       <template #cell-title="{ row }">
         <wx-text v-if="ruleTitle(row)" size="sm">{{ ruleTitle(row) }}</wx-text>
+        <wx-text v-else size="sm" tone="muted">—</wx-text>
+      </template>
+
+      <template #cell-faq_count="{ row }">
+        <wx-text v-if="row.faq_count" size="sm">{{ row.faq_count }}</wx-text>
         <wx-text v-else size="sm" tone="muted">—</wx-text>
       </template>
 

@@ -49,6 +49,10 @@ export interface SeoUrlRule extends SeoFields {
   is_active: boolean
   created_at: string | null
   updated_at: string | null
+  /** How many questions the page's FAQ has — there only where the FAQ is turned on (§18.5). */
+  faq_count?: number
+  /** The questions themselves, on a rule read one at a time. */
+  faq?: SeoFaqItem[]
   /**
    * What a table row is, as far as `WxTable` is concerned. Without it this type does not
    * extend `TableRow` and every cell slot hands back `unknown`.
@@ -62,6 +66,8 @@ export interface SeoUrlInput extends SeoValue {
   pattern: string
   priority?: number
   is_active?: boolean
+  /** The page's FAQ, whole; left out, the questions the rule has stay as they are. */
+  faq?: SeoFaqInput[]
 }
 
 export interface SeoRedirect {
@@ -154,6 +160,8 @@ export interface SeoUrlQuery {
   q?: string
   match_type?: MatchType | null
   is_active?: boolean | null
+  /** Only rules whose page has a FAQ (§18.5). */
+  has_faq?: boolean
   page?: number
   per_page?: number
 }
@@ -338,4 +346,31 @@ export interface SeoLinkAddress {
   locale: string
   entity_type: string | null
   entity_id: number | null
+}
+
+/** One question of a page's FAQ (§18.5), in every language written. The answer is HTML. */
+export interface SeoFaqItem {
+  id: number
+  question: LocalizedValue
+  answer: LocalizedValue
+}
+
+export type SeoFaqInput = Pick<SeoFaqItem, 'question' | 'answer'>
+
+export type SeoFaqImportMode = SeoLinkImportMode
+
+/** A preview of a FAQ import, or the report of one that was applied. */
+export interface SeoFaqImportResult {
+  ok: boolean
+  applied: boolean
+  mode: SeoFaqImportMode
+  addresses: number
+  questions: number
+  /** Addresses that had no exact rule and get one with empty meta tags. */
+  created: number
+  replaced: number
+  appended: number
+  errors: number
+  problems: SeoLinkProblem[]
+  pages: { address: string; questions: number; action: 'create' | 'replace' | 'append' }[]
 }

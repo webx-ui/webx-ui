@@ -6,4 +6,5 @@ return [
     'home' => 'Головна',
     'breadcrumbs' => 'Хлібні крихти',
     'links-heading' => 'Дивіться також',
+    'faq-heading' => 'Часті питання',
 ];

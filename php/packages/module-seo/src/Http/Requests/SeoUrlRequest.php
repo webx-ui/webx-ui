@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace WebxUi\Seo\Http\Requests;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\UrlNormaliser;
+use WebxUi\Seo\Features;
 use WebxUi\Seo\Fields;
+use WebxUi\Seo\Models\SeoUrl;
 use WebxUi\Seo\Panel\UrlMatcher;
 use WebxUi\Seo\Rules\OwnAddress;
 use WebxUi\Seo\Rules\ValidJsonLd;
@@ -61,7 +64,81 @@ final class SeoUrlRequest extends FormRequest
             $rules[$field.'.*'] = ['nullable', 'string', 'max:'.self::length($field)];
         }
 
+        if (Features::faq()) {
+            // The page's FAQ travels with its rule (§18.5): one form, one save.
+            $rules['faq'] = ['nullable', 'array', 'max:100'];
+            $rules['faq.*.question'] = ['nullable', 'array'];
+            $rules['faq.*.question.*'] = ['nullable', 'string', 'max:1000'];
+            $rules['faq.*.answer'] = ['nullable', 'array'];
+            $rules['faq.*.answer.*'] = ['nullable', 'string', 'max:20000'];
+        }
+
         return $rules;
+    }
+
+    /**
+     * Only an exact rule has a FAQ (§18.5, decision 7). A rule that keeps its questions cannot
+     * turn into a mask — every page under it would claim them — whether or not the panel that
+     * sent this can see the FAQ: the questions are there with the feature off too.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            // A question needs its answer and the other way round, in some language at least;
+            // a row with neither is a row the editor added and left, and is dropped.
+            foreach (Features::faq() ? (array) $this->input('faq', []) : [] as $index => $item) {
+                $question = $this->kept(is_array($item) ? ($item['question'] ?? null) : null);
+                $answer = $this->kept(is_array($item) ? ($item['answer'] ?? null) : null);
+
+                if ($question === [] && $answer !== []) {
+                    $validator->errors()->add("faq.{$index}.question", (string) __('webx-seo::faq.question-missing'));
+                } elseif ($answer === [] && $question !== []) {
+                    $validator->errors()->add("faq.{$index}.answer", (string) __('webx-seo::faq.answer-missing'));
+                }
+            }
+
+            if ($this->input('match_type') === UrlMatcher::EXACT || $validator->errors()->has('match_type')) {
+                return;
+            }
+
+            $sent = $this->faq();
+            $rule = $this->route('url');
+            $keeps = $sent !== null ? $sent !== [] : ($rule instanceof SeoUrl && $rule->hasFaq());
+
+            if ($keeps) {
+                $validator->errors()->add('match_type', (string) __('webx-seo::faq.has-faq'));
+            }
+        });
+    }
+
+    /**
+     * The questions as sent, or null when they were not — the feature is off, or the sender
+     * is not one that edits them — so the ones the rule has stay as they are.
+     *
+     * @return list<array{question: array<string, string>, answer: array<string, string>}>|null
+     */
+    public function faq(): ?array
+    {
+        if (! Features::faq() || ! is_array($this->input('faq'))) {
+            return null;
+        }
+
+        $items = [];
+
+        foreach ((array) $this->input('faq') as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $question = $this->kept($item['question'] ?? null);
+            $answer = $this->kept($item['answer'] ?? null);
+
+            if ($question !== [] || $answer !== []) {
+                $items[] = ['question' => $question, 'answer' => $answer];
+            }
+        }
+
+        return $items;
     }
 
     /**
@@ -102,8 +179,14 @@ final class SeoUrlRequest extends FormRequest
      */
     private function translations(string $field): array
     {
-        $value = $this->input($field);
+        return $this->kept($this->input($field));
+    }
 
+    /**
+     * @return array<string, string>
+     */
+    private function kept(mixed $value): array
+    {
         if (! is_array($value)) {
             return [];
         }

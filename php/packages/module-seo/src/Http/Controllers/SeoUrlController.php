@@ -7,8 +7,11 @@ namespace WebxUi\Seo\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Seo\Faq\PageFaq;
+use WebxUi\Seo\Features;
 use WebxUi\Seo\Http\Requests\SeoUrlRequest;
 use WebxUi\Seo\Http\Resources\SeoUrlResource;
 use WebxUi\Seo\Models\SeoUrl;
@@ -29,10 +32,15 @@ final class SeoUrlController
             'q' => ['nullable', 'string', 'max:2048'],
             'match_type' => ['nullable', Rule::in(UrlMatcher::types())],
             'is_active' => ['nullable', 'boolean'],
+            'has_faq' => ['nullable', 'boolean'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
+        $faq = Features::faq();
+
         $rules = SeoUrl::query()
+            ->when($faq, fn ($query) => $query->withCount('faqItems'))
+            ->when($faq && $request->boolean('has_faq'), fn ($query) => $query->whereHas('faqItems'))
             ->when($request->filled('q'), fn ($query) => $query->where(
                 'pattern',
                 'like',
@@ -51,21 +59,29 @@ final class SeoUrlController
 
     public function show(SeoUrl $url): JsonResponse
     {
-        return ApiResponse::data(new SeoUrlResource($url));
+        return ApiResponse::data(new SeoUrlResource(self::withFaq($url)));
     }
 
-    public function store(SeoUrlRequest $request): JsonResponse
+    public function store(SeoUrlRequest $request, PageFaq $faq): JsonResponse
     {
-        $rule = SeoUrl::query()->create($request->values());
+        $rule = DB::transaction(static function () use ($request, $faq): SeoUrl {
+            $rule = SeoUrl::query()->create($request->values());
+            self::writeFaq($rule, $request, $faq);
 
-        return ApiResponse::data(new SeoUrlResource($rule), 201);
+            return $rule;
+        });
+
+        return ApiResponse::data(new SeoUrlResource(self::withFaq($rule)), 201);
     }
 
-    public function update(SeoUrlRequest $request, SeoUrl $url): JsonResponse
+    public function update(SeoUrlRequest $request, SeoUrl $url, PageFaq $faq): JsonResponse
     {
-        $url->update($request->values());
+        DB::transaction(static function () use ($request, $url, $faq): void {
+            $url->update($request->values());
+            self::writeFaq($url, $request, $faq);
+        });
 
-        return ApiResponse::data(new SeoUrlResource($url->refresh()));
+        return ApiResponse::data(new SeoUrlResource(self::withFaq($url->refresh())));
     }
 
     public function destroy(SeoUrl $url): JsonResponse
@@ -73,5 +89,21 @@ final class SeoUrlController
         $url->delete();
 
         return ApiResponse::noContent();
+    }
+
+    /** The questions sent with the rule replace the ones it had; none sent, none touched. */
+    private static function writeFaq(SeoUrl $rule, SeoUrlRequest $request, PageFaq $faq): void
+    {
+        $items = $request->faq();
+
+        // Emptied in the save that turns the rule into a mask: the request let it through for that.
+        if ($items !== null && ($rule->match_type === UrlMatcher::EXACT || $items === [])) {
+            $faq->write($rule, $items);
+        }
+    }
+
+    private static function withFaq(SeoUrl $rule): SeoUrl
+    {
+        return Features::faq() ? $rule->load('faqItems') : $rule;
     }
 }

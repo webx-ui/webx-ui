@@ -6,4 +6,5 @@ return [
     'home' => 'Home',
     'breadcrumbs' => 'Briciole di pane',
     'links-heading' => 'Vedi anche',
+    'faq-heading' => 'Domande frequenti',
 ];

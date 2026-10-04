@@ -12,12 +12,17 @@ import {
   WxSelect,
   WxSpace,
   WxSwitch,
+  WxTab,
+  WxTabs,
+  type LocalizedValue,
 } from '@webx-ui/core'
 import SeoCard from './SeoCard.vue'
+import SeoFaqList, { type FaqRow } from './SeoFaqList.vue'
 import { createSeoApi } from './api'
+import { faqEnabled } from './features'
 import { useSeoMessages } from './i18n'
 import { ruleInput, seoOf } from './rule'
-import type { MatchType, SeoUrlRule, SeoValue } from './types'
+import type { MatchType, SeoFaqItem, SeoUrlRule, SeoValue } from './types'
 
 /**
  * One rule: which addresses it covers, and what it says about them.
@@ -54,6 +59,22 @@ const form = ref({
 
 const seo = ref<SeoValue>({})
 
+/*
+ * The page's FAQ (§18.5) sits beside the meta tags, on a tab of the rule rather than in
+ * `SeoCard`: the card is shared with every entity, and only an exact rule has questions.
+ */
+const faqOn = computed(() => faqEnabled(context))
+const faq = ref<FaqRow[]>([])
+const faqLoading = ref(false)
+const tab = ref<'meta' | 'faq'>('meta')
+let next = 0
+
+/* Shown for an exact rule; for one that is no longer exact only while it still has questions,
+   so they can be taken away before the kind changes — the server refuses it otherwise. */
+const showFaq = computed(
+  () => faqOn.value && (form.value.match_type === 'exact' || faq.value.length > 0),
+)
+
 const editing = computed(() => props.rule !== null)
 
 const kindOptions = computed(() => [
@@ -73,9 +94,43 @@ watch(
     }
     seo.value = seoOf(rule)
     errors.value = {}
+    tab.value = 'meta'
+    faq.value = rowsOf(rule?.faq ?? [])
+
+    void loadFaq(rule)
   },
   { immediate: true },
 )
+
+function rowsOf(items: SeoFaqItem[]): FaqRow[] {
+  return items.map((item) => ({ key: next++, question: item.question, answer: item.answer }))
+}
+
+/* The list carries a count, not the questions: a rule is read whole before they are shown. */
+async function loadFaq(rule: SeoUrlRule | null): Promise<void> {
+  if (!faqOn.value || rule === null || rule.faq !== undefined) return
+
+  faqLoading.value = true
+
+  try {
+    faq.value = rowsOf((await api.url(rule.id)).faq ?? [])
+  } catch (error) {
+    toast.danger(message(error))
+  } finally {
+    faqLoading.value = false
+  }
+}
+
+function addQuestion(): void {
+  faq.value.push({ key: next++, question: {}, answer: {} })
+}
+
+/** Whether a language map has words in any language; a site with no languages sends a string. */
+function written(value: LocalizedValue | string): boolean {
+  return typeof value === 'string'
+    ? value.trim() !== ''
+    : Object.values(value ?? {}).some((text) => typeof text === 'string' && text.trim() !== '')
+}
 
 function errorOf(field: string): string | undefined {
   return errors.value[field]?.[0]
@@ -86,6 +141,14 @@ async function save(): Promise<void> {
   errors.value = {}
 
   const input = ruleInput(form.value, seo.value)
+
+  // Sent only where the feature is on — otherwise the server would not read it, and the rows
+  // a form never loaded must not look like an emptied FAQ. Untouched new rows are left out.
+  if (faqOn.value && !faqLoading.value) {
+    input.faq = faq.value
+      .filter((row) => written(row.question) || written(row.answer))
+      .map((row) => ({ question: row.question, answer: row.answer }))
+  }
 
   try {
     const saved = props.rule
@@ -100,6 +163,8 @@ async function save(): Promise<void> {
     if (body?.errors) {
       errors.value = body.errors
       toast.danger(t('page.failed'))
+
+      if (Object.keys(body.errors).some((key) => key.startsWith('faq.'))) tab.value = 'faq'
     } else {
       toast.danger(message(error, t('page.failed')))
     }
@@ -113,7 +178,7 @@ async function save(): Promise<void> {
   <wx-dialog v-model:open="open" :title="t('page.rule')" :width="860">
     <div class="wx-seo-rule">
       <div class="wx-seo-rule__where">
-        <wx-form-item :label="t('page.kind')">
+        <wx-form-item :label="t('page.kind')" :error="errorOf('match_type')">
           <wx-select v-model="form.match_type" :options="kindOptions" />
         </wx-form-item>
 
@@ -135,7 +200,23 @@ async function save(): Promise<void> {
         </wx-form-item>
       </div>
 
-      <seo-card v-model="seo" :media-field="props.mediaField" />
+      <wx-tabs v-if="showFaq" v-model="tab" keep-alive>
+        <wx-tab value="meta" :label="t('faq.meta')">
+          <seo-card v-model="seo" :media-field="props.mediaField" />
+        </wx-tab>
+
+        <wx-tab value="faq" :label="t('faq.tab')" :badge="faq.length || undefined">
+          <seo-faq-list
+            v-model="faq"
+            :errors="errors"
+            :locked="form.match_type !== 'exact'"
+            :disabled="faqLoading"
+            @add="addQuestion"
+          />
+        </wx-tab>
+      </wx-tabs>
+
+      <seo-card v-else v-model="seo" :media-field="props.mediaField" />
     </div>
 
     <template #footer>
