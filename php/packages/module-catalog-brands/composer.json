@@ -31,13 +31,13 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "illuminate/view": "^13.0",
-        "webx-ui/localization": "^0.58.0",
-        "webx-ui/mcp": "^0.58.0",
-        "webx-ui/module-admin": "^0.58.0",
-        "webx-ui/module-catalog": "^0.58.0",
-        "webx-ui/module-media": "^0.58.0",
-        "webx-ui/module-seo": "^0.58.0",
-        "webx-ui/routing": "^0.58.0"
+        "webx-ui/localization": "^0.59.0",
+        "webx-ui/mcp": "^0.59.0",
+        "webx-ui/module-admin": "^0.59.0",
+        "webx-ui/module-catalog": "^0.59.0",
+        "webx-ui/module-media": "^0.59.0",
+        "webx-ui/module-seo": "^0.59.0",
+        "webx-ui/routing": "^0.59.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
