@@ -40,6 +40,8 @@ return [
     'rebuild-title' => 'Rebuild the search index?',
     'rebuild-text' => 'Every product is written again into new tables, which then replace the live ones. The storefront keeps working on the old tables meanwhile.',
     'rebuild-busy' => 'A rebuild is already under way.',
+    'rebuild-locked' => 'Another rebuild is running — it was started from the console. Start this one once it ends.',
+    'rebuild-console' => 'A rebuild started from the console is running: the button comes back when it ends.',
     'rebuild-queued' => 'Waiting for the queue worker',
     'rebuild-running' => 'Rebuilding: :done of :total',
     'rebuild-done' => 'Rebuilt: :done products',

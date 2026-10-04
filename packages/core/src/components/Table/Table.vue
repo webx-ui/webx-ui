@@ -72,6 +72,7 @@ const props = withDefaults(defineProps<TableProps<T>>(), {
   perPageOptions: () => [],
   persist: undefined,
   maxHeight: undefined,
+  stickyHeader: true,
   rowClass: undefined,
   layout: 'auto',
   ariaLabel: undefined,
@@ -436,12 +437,18 @@ const classes = computed(() => [
     'wx-table--bordered': props.bordered,
     'wx-table--hover': props.hover,
     'wx-table--sticky': props.maxHeight !== undefined,
+    'is-head-shifted': headShift.value > 0,
     'wx-table--has-header': hasHeader.value,
     'has-more-left': moreLeft.value,
     'has-more-right': moreRight.value,
     'is-loading': props.loading,
   },
 ])
+
+/* Set only while it is moved: the cells keep no transform of their own at rest. */
+const headShiftStyle = computed(() =>
+  headShift.value > 0 ? { '--wx-table-head-shift': `${headShift.value}px` } : undefined,
+)
 
 const scrollStyle = computed(() =>
   props.maxHeight === undefined ? undefined : { maxHeight: length(props.maxHeight) },
@@ -521,11 +528,71 @@ function readScroll() {
 function remeasure() {
   measureColumns()
   readScroll()
+  followPage()
+}
+
+/* ------------------------------------------------------------ header on the page --- */
+
+/**
+ * How far the heading row is moved down to stay in sight while the page — not the table —
+ * scrolls past the rows.
+ *
+ * `position: sticky` cannot do it here: the box that scrolls the columns sideways is a scroll
+ * container on both axes (`overflow-x: auto` turns `overflow-y` into `auto` as well), so a sticky
+ * heading sticks to that box, which never scrolls up and down, and leaves with the rows. Making
+ * the box not scroll would take sideways scrolling and the pinned columns away. So the cells are
+ * moved instead, by exactly as far as the top of whatever scrolls the page has passed the top of
+ * the table, and no further than the last row.
+ */
+const headShift = ref(0)
+const tableEl = ref<HTMLElement | null>(null)
+let scrollBoundary: HTMLElement | null = null
+
+/** The nearest ancestor that scrolls up and down — a drawer, a pane; null is the window. */
+function findScrollBoundary(from: HTMLElement): HTMLElement | null {
+  for (let el = from.parentElement; el && el !== document.body; el = el.parentElement) {
+    const overflow = getComputedStyle(el).overflowY
+    if (overflow === 'auto' || overflow === 'scroll' || overflow === 'overlay') return el
+  }
+  return null
+}
+
+function followPage() {
+  const table = tableEl.value
+  const box = scroller.value
+  const head = headRow.value?.parentElement
+  const offset = typeof props.stickyHeader === 'number' ? props.stickyHeader : 0
+
+  // With a height of its own the table scrolls its rows under a heading that sticks by CSS.
+  const off =
+    props.stickyHeader === false ||
+    props.maxHeight !== undefined ||
+    !table ||
+    !box ||
+    !head ||
+    box.scrollHeight > box.clientHeight + 1
+
+  if (off) {
+    headShift.value = 0
+    return
+  }
+
+  const top = (scrollBoundary?.getBoundingClientRect().top ?? 0) + offset
+  const rect = table.getBoundingClientRect()
+  const foot = table.querySelector<HTMLElement>(':scope > tfoot')
+  const room = rect.height - head.offsetHeight - (foot?.offsetHeight ?? 0)
+  const shift = Math.min(Math.max(top - rect.top, 0), Math.max(room, 0))
+
+  if (shift !== headShift.value) headShift.value = shift
 }
 
 let observer: ResizeObserver | null = null
 
 onMounted(() => {
+  if (root.value) scrollBoundary = findScrollBoundary(root.value)
+  // Capture: a scroll does not bubble, and the one that matters is an ancestor's.
+  window.addEventListener('scroll', followPage, { capture: true, passive: true })
+  window.addEventListener('resize', followPage, { passive: true })
   remeasure()
   if (typeof ResizeObserver === 'undefined' || !scroller.value) return
   observer = new ResizeObserver(remeasure)
@@ -533,6 +600,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('scroll', followPage, { capture: true })
+  window.removeEventListener('resize', followPage)
   observer?.disconnect()
   observer = null
 })
@@ -863,7 +932,7 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 </script>
 
 <template>
-  <div ref="root" :class="classes">
+  <div ref="root" :class="classes" :style="headShiftStyle">
     <header v-if="hasHeader" class="wx-table__header">
       <!--
         Only when there is one. An empty box is still a flex item: it took the first line of the
@@ -990,6 +1059,7 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 
     <div v-else ref="scroller" class="wx-table__scroll" :style="scrollStyle" @scroll="readScroll">
       <table
+        ref="tableEl"
         class="wx-table__table"
         :class="{ 'wx-table__table--fixed': layout === 'fixed' }"
         :aria-label="ariaLabel"
@@ -1576,6 +1646,23 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 .wx-table--sticky .wx-table__head .wx-table__cell {
   position: sticky;
   top: 0;
+  z-index: 2;
+}
+
+/*
+ * The heading row following the page (`followPage`): moved, not stuck, and painted over the rows
+ * it now lies on — later in the document, they would otherwise cover it. A pinned heading keeps
+ * its `sticky` for the sideways scroll and the higher layer it already has.
+ */
+.wx-table.is-head-shifted .wx-table__head .wx-table__cell {
+  transform: translateY(var(--wx-table-head-shift, 0px));
+  /* Lying on a row now, not above the first one: lifted, so it reads as over the rows. A line
+     would not do — in the dark theme the border and the heading share one grey. */
+  box-shadow: var(--wx-shadow-sm);
+}
+
+.wx-table.is-head-shifted .wx-table__head .wx-table__cell:not(.is-fixed-left, .is-fixed-right) {
+  position: relative;
   z-index: 2;
 }
 

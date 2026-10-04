@@ -6,6 +6,7 @@ namespace WebxUi\Catalog\Manticore\Http;
 
 use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Http\JsonResponse;
+use WebxUi\Catalog\Engine\Indexer;
 use WebxUi\Catalog\Manticore\IndexStatus;
 use WebxUi\Catalog\Manticore\Rebuild\RebuildIndex;
 use WebxUi\Catalog\Manticore\Rebuild\RebuildProgress;
@@ -27,15 +28,16 @@ final class SearchIndexController
 
     /**
      * The rebuild queued, or 409 while one is waiting or running: two would race for one swap.
-     * A rebuild unheard of for a quarter of an hour does not count — its worker is gone.
+     * A rebuild unheard of for a quarter of an hour does not count — its worker is gone. One
+     * started from the console counts while it holds the shared lock ({@see Indexer::LOCK}).
      */
-    public function rebuild(RebuildProgress $progress, Dispatcher $bus): JsonResponse
+    public function rebuild(RebuildProgress $progress, Indexer $indexer, Dispatcher $bus): JsonResponse
     {
         abort_unless($this->status->active(), 404);
 
-        if ($progress->busy()) {
+        if ($progress->busy() || $indexer->rebuilding()) {
             return new JsonResponse([
-                'message' => (string) __('webx-catalog-manticore::panel.rebuild-busy'),
+                'message' => (string) __($progress->busy() ? 'webx-catalog-manticore::panel.rebuild-busy' : 'webx-catalog-manticore::panel.rebuild-locked'),
                 'data' => $progress->get(),
             ], 409);
         }

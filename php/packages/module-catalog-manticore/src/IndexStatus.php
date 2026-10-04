@@ -9,6 +9,7 @@ use Illuminate\Contracts\Container\Container;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 use WebxUi\Catalog\Catalog;
+use WebxUi\Catalog\Engine\Indexer;
 use WebxUi\Catalog\Manticore\Rebuild\RebuildProgress;
 use WebxUi\Catalog\Models\Product;
 
@@ -44,6 +45,7 @@ final class IndexStatus
      *     queue: array{waiting: int, oldest: string|null},
      *     rebuild: array{state: string, done: int, total: int, queued_at: string|null, started_at: string|null, finished_at: string|null, error: string|null, stalled: bool},
      *     outdated: bool,
+     *     locked: bool,
      * }
      */
     public function report(): array
@@ -76,6 +78,8 @@ final class IndexStatus
             'queue' => ['waiting' => $queue['waiting'], 'oldest' => $queue['oldest']?->toIso8601String()],
             'rebuild' => $this->progress->get(),
             'outdated' => array_filter($tables, static fn (array $table): bool => $table['state'] !== 'ready') !== [],
+            // A rebuild holds the lock shared with the console: the page offers no second one.
+            'locked' => $this->container->make(Indexer::class)->rebuilding(),
         ];
     }
 

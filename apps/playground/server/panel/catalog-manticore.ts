@@ -131,6 +131,8 @@ export function registerManticore(on: On, fail: Fail, productCount: () => number
         queue: rebuilt ? { waiting: 0, oldest: null } : { waiting: 3, oldest: minutesAgo(4) },
         rebuild: state,
         outdated: tables.some((table) => table.state !== 'ready'),
+        // The panel's own rebuild holds the shared lock too; the page tells the console's apart.
+        locked: filling,
       },
     }
   })

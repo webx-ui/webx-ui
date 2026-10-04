@@ -8,6 +8,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Throwable;
 use WebxUi\Catalog\Engine\Indexer;
+use WebxUi\Catalog\Engine\RebuildRunning;
 
 /**
  * `webx:catalog:index --rebuild` started from «System → Search index» (decision 27): on the queue,
@@ -17,7 +18,8 @@ use WebxUi\Catalog\Engine\Indexer;
  * One job for the whole rebuild rather than a job per batch: the new tables are filled beside the
  * live ones and swapped in at the end (decision 8), and a rebuild cut half-way never reaches the
  * swap — the storefront keeps the old tables, and a person starts it again. Once: a rebuild that
- * failed will fail the same way on a retry, and two of them at once would race for one swap.
+ * failed will fail the same way on a retry, and two of them at once would race for one swap — the
+ * rebuild takes the lock the console's `--rebuild` takes too ({@see Indexer::LOCK}).
  */
 final class RebuildIndex implements ShouldQueue
 {
@@ -44,7 +46,13 @@ final class RebuildIndex implements ShouldQueue
         try {
             $written = $indexer->rebuild(progress: static function (int $done, int $total) use ($progress): void {
                 $progress->advance($done, $total);
-            });
+            }, lockFor: $this->timeout);
+        } catch (RebuildRunning) {
+            // Queued while nothing ran, and the console's `--rebuild` took the lock meanwhile: that
+            // one does the work. Said, not thrown — retrying would only meet the same lock.
+            $progress->fail((string) __('webx-catalog-manticore::panel.rebuild-locked'));
+
+            return;
         } catch (Throwable $failure) {
             $progress->fail($failure->getMessage());
 

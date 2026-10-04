@@ -520,6 +520,20 @@ step the next time.
 from «Actions», or the whole catalogue from «Exchange», with the columns of a profile or chosen on
 the spot.
 
+### The queue's `retry_after`
+
+A large import is a chain of jobs: each does chunks for `exchange.job_seconds` (60) and hands the
+rest to the next. The site's queue connection has a `retry_after` of its own (`config/queue.php`) —
+how long a worker may hold a job before the queue decides it was lost and gives it to another
+worker. Shorter than a job runs, it makes a second worker start the same job while the first is
+still inside a chunk. Nothing is written wrong — a chunk is one transaction, and a row written again
+writes itself — but the work is done twice and the run takes longer.
+
+Keep `retry_after` above `job_seconds` with room for the last chunk: the default 90 of the
+`database` and `redis` connections covers the default 60. Raise them together — `job_seconds` 300
+wants `retry_after` around 360 — and keep the worker's `--timeout` below `retry_after`, as Laravel
+asks of every job. On SQS the same number is the queue's visibility timeout.
+
 The settings of an import and the head of a profile are the described screens
 `catalog.exchange-import` and `catalog.exchange-profile`: a project takes a setting away or fixes it
 with a patch. The design is `docs/architecture/WEBX_UI_MODULE_CATALOG_EXCHANGE.md`.
@@ -563,6 +577,17 @@ language's table against the database, and the queue. A table whose schema is ou
 «Rebuild» — a job that fills new tables beside the live ones and swaps them in; it needs a queue
 worker. Looking needs `search-index.view`, rebuilding `search-index.manage`. Until the rebuild, an
 old table is asked by what it has, and the list does not break.
+
+**One rebuild at a time, wherever it starts.** `--rebuild` from the console and «Rebuild» in the
+panel take the same lock: the second one is refused — the command exits with an error, the button
+answers `409` — and while the console rebuilds, the page says so and holds the button back. The
+lock lives in the cache, so web, worker and console need one store (`file`, `database`, `redis`;
+not `array`). A process killed mid-rebuild leaves it for an hour at most.
+
+The panel's rebuild is one job of up to `rebuild.timeout` (3600) seconds. Give it a queue of its
+own (`MANTICORE_REBUILD_QUEUE`) on a connection whose `retry_after` is longer than that: with the
+default 90 the queue hands the running rebuild to a second worker, which marks it failed while the
+first is still writing.
 
 **When the server does not answer**, the panel's list says so and answers from the database. The
 storefront does the same up to `sql_engine_limit` products and answers `503` past it. The design is

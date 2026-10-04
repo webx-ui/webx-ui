@@ -779,6 +779,15 @@ const HOME_JSON_LD = [
   { types: [], error: 'Syntax error', items: [], source: '{"@type": "BreadcrumbList",}' },
 ]
 
+/*
+ * Pictures the browser can actually show: the shop's addresses lead nowhere from here, so the
+ * ones meant to load come off the playground's own media fixtures — the card's thumbnail and
+ * its lightbox have something to show. The spade stays on the shop: answered to the run, it does
+ * not load here, which is the case of a picture behind hotlink protection.
+ */
+const LOGO = '/fixtures/media/logo.svg'
+const OG = '/fixtures/media/og-default.svg'
+
 /* What a page loads, as stage 5 answered: the home page has a little of everything. */
 function resourcesOf(page: PageRow, tab: 'images' | 'css' | 'js') {
   const row = (url: string, extra: Record<string, unknown>) => ({
@@ -830,7 +839,7 @@ function resourcesOf(page: PageRow, tab: 'images' | 'css' | 'js') {
 
   if (page.id !== 1) {
     return [
-      row(`${BASE}/storage/logo.svg`, {
+      row(LOGO, {
         alt: 'Garden shop',
         content_type: 'image/svg+xml',
         bytes: 3_100,
@@ -839,7 +848,7 @@ function resourcesOf(page: PageRow, tab: 'images' | 'css' | 'js') {
   }
 
   return [
-    row(`${BASE}/storage/logo.svg`, {
+    row(LOGO, {
       alt: 'Garden shop',
       content_type: 'image/svg+xml',
       bytes: 3_100,
@@ -850,9 +859,9 @@ function resourcesOf(page: PageRow, tab: 'images' | 'css' | 'js') {
       status: 404,
       cache_control: null,
     }),
-    row(`${BASE}/storage/og.png`, {
+    row(OG, {
       kind: 'meta',
-      content_type: 'image/png',
+      content_type: 'image/svg+xml',
       bytes: 88_000,
       width: 600,
       height: 315,
