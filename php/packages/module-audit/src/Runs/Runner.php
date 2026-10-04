@@ -443,7 +443,7 @@ final class Runner
      */
     private function counts(AuditRun $run, array $ran): array
     {
-        $issues = AuditIssue::query()->where('run_id', $run->id)->whereNull('ignored_by')->get(['check', 'severity', 'state']);
+        $issues = AuditIssue::query()->where('run_id', $run->id)->whereNull('ignored_by')->get(['check', 'severity', 'state', 'page_id']);
 
         $severity = array_fill_keys(Severity::ALL, 0);
         $groups = [];
@@ -461,21 +461,22 @@ final class Runner
             }
         }
 
-        $total = 0;
-        $lost = 0;
-
-        foreach ($ran as $id) {
-            $check = $this->checks->get($id);
-            $total += Severity::weight($check?->severity() ?? Severity::NOTICE);
-            $lost += isset($worst[$id]) ? Severity::weight($worst[$id]) : 0;
-        }
+        $health = Health::measure(
+            AuditPage::query()->where('run_id', $run->id)->whereNotNull('fetched_at')->count(),
+            $issues->map(static fn (AuditIssue $issue): array => [
+                'check' => $issue->check,
+                'severity' => $issue->severity,
+                'page_id' => $issue->page_id,
+            ]),
+        );
 
         return [
             'severity' => $severity,
             'groups' => $groups,
             'checks' => $ran,
             'failed' => $worst,
-            'health' => $total === 0 ? 100 : (int) round(100 * max(0, $total - $lost) / $total),
+            'health' => $health['score'],
+            'health_parts' => array_diff_key($health, ['score' => true]),
             'new' => $issues->where('state', AuditIssue::NEW)->count(),
             'sources' => $this->sourcesSummary(),
         ];

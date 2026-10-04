@@ -141,6 +141,7 @@ return [
     'column-edit' => 'Edytor',
     'column-kind' => 'Rodzaj',
     'column-anchor' => 'Anchor',
+    'column-markup' => 'Znaczniki',
     'column-page' => 'Strona',
     'column-title' => 'Tytuł',
     'column-line' => 'Wiersz',

@@ -40,6 +40,25 @@ describe('AuditDetails', () => {
     expect(cells).toEqual(['https://dev.shop.com/sale', '301', 'page.yes', 'page.missing', 'body'])
   })
 
+  it('quotes markup from the page as code, not as markup', () => {
+    const wrapper = mount(AuditDetails, {
+      props: {
+        details: {
+          summary: 'Pictures without alt: 1',
+          table: {
+            columns: [{ key: 'markup', label: 'Markup', type: 'code' }],
+            rows: [{ markup: '<img src="/hero.jpg" onerror="alert(1)">' }],
+          },
+        },
+      },
+    })
+
+    const code = wrapper.get('td code')
+
+    expect(code.text()).toBe('<img src="/hero.jpg" onerror="alert(1)">')
+    expect(wrapper.find('td img').exists()).toBe(false)
+  })
+
   it('leaves a yes-or-no cell empty when the check could not tell', () => {
     const wrapper = mount(AuditDetails, {
       props: {

@@ -141,6 +141,7 @@ return [
     'column-edit' => 'Editor',
     'column-kind' => 'Tipo',
     'column-anchor' => 'Testo del link',
+    'column-markup' => 'Markup',
     'column-page' => 'Pagina',
     'column-title' => 'Title',
     'column-line' => 'Riga',

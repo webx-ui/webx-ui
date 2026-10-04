@@ -22,7 +22,7 @@ final class ImagesAlt extends PageCheck
     protected function inspect(AuditPage $page, AuditContext $context): iterable
     {
         if ($page->images_without_alt > 0) {
-            yield $this->on($page, 'images-alt', ['count' => $page->images_without_alt]);
+            yield $this->on($page, 'images-alt', ['count' => $page->images_without_alt], $this->markup($page, 'images_without_alt_markup'));
         }
     }
 }

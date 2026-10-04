@@ -5,11 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Audit\Checks;
 
 /**
- * The three levels of §5, and what each weighs.
- *
- * The weights answer the open question of §12 the way the spec proposes: a check counts once,
- * not once per address, so a hundred pictures without `alt` cannot outweigh a `noindex` on the
- * home page.
+ * The three levels of §5, and their order. The weights only rank them — which is the worst a
+ * check found, which reaches `--fail-on`; the health in percent is `Runs\Health`.
  */
 final class Severity
 {

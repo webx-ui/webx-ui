@@ -141,6 +141,7 @@ return [
     'column-edit' => 'Редактор',
     'column-kind' => 'Вид',
     'column-anchor' => 'Анкор',
+    'column-markup' => 'Розмітка',
     'column-page' => 'Сторінка',
     'column-title' => 'Заголовок',
     'column-line' => 'Рядок',

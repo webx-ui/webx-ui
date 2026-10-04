@@ -141,6 +141,7 @@ return [
     'column-edit' => 'Düzenleyici',
     'column-kind' => 'Tür',
     'column-anchor' => 'Bağlantı metni',
+    'column-markup' => 'İşaretleme',
     'column-page' => 'Sayfa',
     'column-title' => 'Title',
     'column-line' => 'Satır',

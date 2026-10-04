@@ -141,6 +141,7 @@ return [
     'column-edit' => 'Editor',
     'column-kind' => 'Art',
     'column-anchor' => 'Ankertext',
+    'column-markup' => 'Markup',
     'column-page' => 'Seite',
     'column-title' => 'Title',
     'column-line' => 'Zeile',

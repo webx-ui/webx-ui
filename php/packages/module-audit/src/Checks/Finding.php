@@ -51,6 +51,7 @@ final readonly class Finding
 
     /**
      * A column of a details table. `type` is `url`, `status`, `bool`, `text`, `missing`, `edit`,
+     * `code` (markup quoted from the page),
      * or `word` — a key of `webx-audit::details`, said in the reader's language.
      *
      * @return array{key: string, label: string, type: string}

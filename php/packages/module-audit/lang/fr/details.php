@@ -141,6 +141,7 @@ return [
     'column-edit' => 'Éditeur',
     'column-kind' => 'Type',
     'column-anchor' => 'Ancre',
+    'column-markup' => 'Balisage',
     'column-page' => 'Page',
     'column-title' => 'Title',
     'column-line' => 'Ligne',

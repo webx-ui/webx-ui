@@ -71,7 +71,7 @@ final class AuditTools
 
             Tool::read(
                 'status',
-                'The run that is going, if any, and the last finished one: stage, progress, health and counts by severity and group.',
+                'The run that is going, if any, and the last finished one: stage, progress, counts by severity and group, and the health in percent — the share of crawled pages without errors, minus 10 per site-wide error check and 2 per warning check (at most 20); health_parts has the pieces.',
                 static fn (array $arguments): array => self::status(),
                 scope: self::SCOPE_READ,
             ),

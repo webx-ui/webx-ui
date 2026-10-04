@@ -25,8 +25,7 @@ interface AuditCheck
 
     /**
      * The worst it reports: `error`, `warning` or `notice`. A finding may be milder (a mirror
-     * whose second name does not resolve is a notice of an error check); the health weighs the
-     * check by this.
+     * whose second name does not resolve is a notice of an error check).
      */
     public function severity(): string;
 
