@@ -180,7 +180,9 @@ The links go into `vendor`, so the text matches the version installed. That bloc
 on every run; everything outside it is yours — write the site's own notes under
 `## This project`. A file you wrote before the first run keeps every word, with the block put
 on top. `CLAUDE.md` is written once as the single line `@AGENTS.md`, and a `CLAUDE.md` of your
-own is left alone.
+own is left alone. Commit both with the site. The block also points at
+[Where the styles live](./styles.md), the page for changing the site's design without touching
+a package.
 
 ## The layout
 
@@ -356,7 +358,9 @@ demo page on `/` behind a marker of its own, and takes the line back out the day
 ## Containers
 
 The skeleton carries a `Dockerfile`, two compose files and a `docker/` directory, and they are
-yours like everything else here — delete them on a site that deploys some other way.
+yours like everything else here — delete them on a site that deploys some other way. A machine
+with nothing but Docker on it — no PHP to run `create-project` and `webx:setup` — starts from
+[Docker from zero](./docker.md), which does both inside containers.
 
 ```bash
 docker compose up -d --build                                        # the production shape
@@ -458,6 +462,8 @@ When the site opens, remove the two lines or set `WEBX_SITE_GATE=false`.
 
 ## Where to go next
 
+- [Docker from zero](./docker.md) and [Where the styles live](./styles.md) — the path for
+  somebody without experience, working with an agent.
 - [Extending](./extending.md) — publishing a module's views, replacing its services, the
   registries to add your own things to.
 - [Addresses](./routing.md) — the registry every public URL comes from.
