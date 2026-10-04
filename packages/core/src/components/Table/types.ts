@@ -254,6 +254,13 @@ export interface TableProps<T = TableRow> {
    * A number is pixels; a string is any CSS length, so `60vh` follows the window.
    */
   maxHeight?: string | number
+  /**
+   * Keeps the heading row in sight while the page — or the drawer, the pane that scrolls the
+   * table — is scrolled past a long table. A number is the gap in pixels left above it for a bar
+   * that covers the top of that area. On by default; with `maxHeight` the table scrolls its own
+   * rows and the heading sticks there instead.
+   */
+  stickyHeader?: boolean | number
   /** Extra class per row, for status colouring and the like. */
   rowClass?: (row: T, index: number) => string | undefined
   /** Draws the rows as a tree. See {@link TableTreeOptions}. */

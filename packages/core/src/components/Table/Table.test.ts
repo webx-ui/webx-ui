@@ -670,3 +670,51 @@ describe('WxTable filters', () => {
     expect(wrapper.find('.wx-table__header').exists()).toBe(true)
   })
 })
+
+describe('WxTable header on the page', () => {
+  /** jsdom lays nothing out: the table is told where it stands, as the browser would say. */
+  function placed(props: Record<string, unknown>, top: number) {
+    const wrapper = mountTable(props, { attachTo: document.body })
+    const table = wrapper.find('table').element as HTMLElement
+
+    table.getBoundingClientRect = () => ({ top, height: 600 }) as DOMRect
+    window.dispatchEvent(new Event('scroll'))
+
+    return wrapper
+  }
+
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
+  it('moves the heading down as far as the page has scrolled past the top of the table', async () => {
+    const wrapper = placed({}, -120)
+    await nextTick()
+
+    expect(wrapper.classes()).toContain('is-head-shifted')
+    expect(wrapper.attributes('style')).toContain('--wx-table-head-shift: 120px')
+    wrapper.unmount()
+  })
+
+  it('leaves a gap for a bar laid over the top when given one', async () => {
+    const wrapper = placed({ stickyHeader: 56 }, -120)
+    await nextTick()
+
+    expect(wrapper.attributes('style')).toContain('--wx-table-head-shift: 176px')
+    wrapper.unmount()
+  })
+
+  it('stays put while the table is in sight, when switched off, and under its own height', async () => {
+    for (const [props, top] of [
+      [{}, 40],
+      [{ stickyHeader: false }, -120],
+      [{ maxHeight: 300 }, -120],
+    ] as const) {
+      const wrapper = placed(props, top)
+      await nextTick()
+
+      expect(wrapper.classes()).not.toContain('is-head-shifted')
+      wrapper.unmount()
+    }
+  })
+})

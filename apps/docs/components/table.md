@@ -365,8 +365,25 @@ length as a string.
 <wx-table :data="rows" :columns="columns" max-height="60vh" />
 ```
 
-Setting it turns the header and the footer sticky and scrolls the rows between them, which is why
-there is no separate `sticky` prop — a stuck header with nothing scrolling under it is decoration.
+Setting it turns the header and the footer sticky and scrolls the rows between them.
+
+### The header follows the page
+
+Without `max-height` the table is as tall as its rows and the page scrolls. Scrolled past the top
+of a long table, the heading row stays in sight at the top of whatever scrolls — the window, a
+drawer, a pane — and leaves with the last row. Nothing to switch on: `stickyHeader` is on by
+default. A number keeps that many pixels free above it, for a bar laid over the top of the page.
+
+```vue
+<!-- Under a fixed bar 56px tall. -->
+<wx-table :data="rows" :columns="columns" :sticky-header="56" />
+<!-- The heading leaves with the rows. -->
+<wx-table :data="rows" :columns="columns" :sticky-header="false" />
+```
+
+The heading is moved rather than made `sticky`: the box that scrolls the columns sideways is a
+scroll container in both directions, and a sticky heading would stick to it — a box that never
+scrolls up or down. Moving it keeps sideways scrolling and pinned columns as they are.
 
 There is deliberately no `height`. A fixed height pads a short result with blank space and tells
 the user the table failed to load; a maximum leaves three rows looking like three rows and only
@@ -487,6 +504,7 @@ key of `actions` and fill it from `#cell-actions`.
 | `perPageOptions`    | `number[]`                            | `[]`                              | Page sizes it offers                              |
 | `persist`           | `string`                              | —                                 | Storage key for the state                         |
 | `maxHeight`         | `string \| number`                    | —                                 | Scrolls rows under a stuck header                 |
+| `stickyHeader`      | `boolean \| number`                   | `true`                            | Header follows the page; a number is a top gap    |
 | `rowClass`          | `(row, index) => string \| undefined` | —                                 | Extra class per row                               |
 | `layout`            | `'auto' \| 'fixed'`                   | `'auto'`                          | Let the content size columns or not               |
 | `size`              | `'sm' \| 'md' \| 'lg'`                | `'md'`                            | Row height                                        |
