@@ -54,4 +54,9 @@ export interface IndexReport {
   rebuild: RebuildProgress
   /** Some table is missing or of an older schema. */
   outdated: boolean
+  /**
+   * A rebuild holds the lock it shares with the console's `--rebuild` — the console's too, which
+   * writes no progress of its own. No second one is offered meanwhile.
+   */
+  locked?: boolean
 }

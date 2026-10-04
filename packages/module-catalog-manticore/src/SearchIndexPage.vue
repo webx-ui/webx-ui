@@ -62,12 +62,21 @@ const underway = computed(
 )
 
 /**
+ * The console's `--rebuild` holds the lock the panel's rebuild takes too, and writes no progress
+ * of its own: while it runs, the button is held back and the page says why. A lock outlives a
+ * killed process by an hour at most, unlike a table left beside, which would hold it forever.
+ */
+const fromConsole = computed(() => (report.value?.locked ?? false) && !underway.value)
+
+/**
  * The page keeps asking while a rebuild is underway — or while a table is filled beside a live
- * one: a rebuild started from the console writes no progress, only the table. That alone does
- * not hold the button back, since a table left by a rebuild that was killed would hold it forever.
+ * one: a rebuild started from the console writes no progress, only the table.
  */
 const filling = computed(
-  () => underway.value || (report.value?.tables.some((table) => table.rebuilding) ?? false),
+  () =>
+    underway.value ||
+    fromConsole.value ||
+    (report.value?.tables.some((table) => table.rebuilding) ?? false),
 )
 
 const actions = computed<ScreenAction[]>(() => {
@@ -81,7 +90,7 @@ const actions = computed<ScreenAction[]>(() => {
       // The section exists for it only when a table is out of date; otherwise it is a rare act.
       primary: report.value.outdated,
       menu: !report.value.outdated,
-      disabled: underway.value || !report.value.connection.available,
+      disabled: underway.value || fromConsole.value || !report.value.connection.available,
       loading: starting.value,
       run: () => void start(),
     })
@@ -194,12 +203,14 @@ onBeforeUnmount(() => clearTimeout(timer))
         </wx-alert>
 
         <wx-alert
-          v-else-if="report.outdated && !underway"
+          v-else-if="report.outdated && !underway && !fromConsole"
           type="warning"
           :title="t('panel.outdated')"
         >
           {{ t('panel.outdated-text') }}
         </wx-alert>
+
+        <wx-alert v-if="fromConsole" type="info">{{ t('panel.rebuild-console') }}</wx-alert>
 
         <!-- The rebuild started from here: what it is doing, or how it ended. -->
         <wx-card

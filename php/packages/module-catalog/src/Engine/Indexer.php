@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace WebxUi\Catalog\Engine;
 
 use Closure;
+use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Throwable;
@@ -32,6 +34,19 @@ use WebxUi\Localization\Locales;
 final class Indexer
 {
     public const CHUNK = 500;
+
+    /**
+     * The one lock every rebuild takes, wherever it was started: `--rebuild` from the console and
+     * the panel's job alike. Two at once would both recreate the table beside the live one, and
+     * the first would fail writing into a table the second had dropped.
+     */
+    public const LOCK = 'webx-catalog.rebuild';
+
+    /**
+     * Seconds the lock outlives a process killed before it could release it — the panel's job
+     * passes its own timeout. A rebuild that ends, well or not, releases it at once.
+     */
+    public const LOCK_FOR = 3600;
 
     public function __construct(
         private readonly Catalog $catalog,
@@ -88,9 +103,54 @@ final class Indexer
      * `$progress` is told after every batch how many are written of how many — the panel's bar
      * while a rebuild runs as a job.
      *
+     * One rebuild at a time ({@see self::LOCK}): a second one, from the console or the panel, is
+     * refused with {@see RebuildRunning} before it touches anything.
+     *
      * @param  (Closure(int, int): void)|null  $progress  written, of all
+     *
+     * @throws RebuildRunning
      */
-    public function rebuild(int $chunk = self::CHUNK, ?Closure $progress = null): int
+    public function rebuild(int $chunk = self::CHUNK, ?Closure $progress = null, int $lockFor = self::LOCK_FOR): int
+    {
+        $lock = $this->lock($lockFor);
+
+        if (! $lock->get()) {
+            throw new RebuildRunning;
+        }
+
+        try {
+            return $this->rebuildLocked($chunk, $progress);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * Whether a rebuild holds the lock right now, wherever it was started: the panel asks before
+     * it queues its own, and the page holds its button back while the console rebuilds.
+     */
+    public function rebuilding(): bool
+    {
+        $lock = $this->lock(1);
+
+        if ($lock->get()) {
+            $lock->release();
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function lock(int $seconds): Lock
+    {
+        return Cache::lock(self::LOCK, max(1, $seconds));
+    }
+
+    /**
+     * @param  (Closure(int, int): void)|null  $progress
+     */
+    private function rebuildLocked(int $chunk, ?Closure $progress): int
     {
         $engine = $this->catalog->engine();
         $started = Carbon::now()->subSecond();
