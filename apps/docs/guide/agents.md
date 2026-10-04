@@ -117,6 +117,14 @@ Everything else follows from the agent being a person: an article it writes is s
 switching their account off ends the agent's access in the same instant, and changing their
 password does too.
 
+### The site's house rules
+
+An agent that writes content needs to know what a person learns in their first week: which
+languages the site speaks and which comes first, the voice it speaks in, what it never says.
+Editors keep that in **Settings → Content**, and the agent reads it as the resource
+`settings://content-rules`; the server's instructions tell it to, before it writes anything a
+visitor will read. See [Settings](./settings#content-rules) for what the resource holds.
+
 ### Do not connect a super administrator
 
 `is_super` answers yes to every permission there is, including ones added by a module

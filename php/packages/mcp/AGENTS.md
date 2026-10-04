@@ -13,7 +13,9 @@ read their guides for those.
   `webx.mcp`, middleware alias `webx.mcp-auth`) and locally as `php artisan mcp:start webx`.
   Its `instructions` tell the agent: tools are `<module>_<tool>`, a mutating tool takes
   `dry_run: true`, writing needs `<module>:write`, it acts as the connecting administrator, read
-  a module's resources before writing. `tools/list` pages by 100.
+  a module's resources before writing; and, when a module serves `settings://content-rules`
+  (`WebxServer::CONTENT_RULES`, from `webx-ui/module-settings`), read the site's content rules
+  before writing anything a visitor will read. `tools/list` pages by 100.
 - **Contract** `ProvidesMcpTools` (`mcpTools()`, `mcpResources()`, `mcpPrompts()`), with the
   trait `ProvidesMcpDefaults` for the parts a module leaves empty. A module class that implements
   it is picked up by `ToolRegistry` from the module registry; there is no other list.

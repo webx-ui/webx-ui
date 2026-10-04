@@ -12,6 +12,7 @@ use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Screens\Tree;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
+use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\ProvidesMcpDefaults;
 use WebxUi\Mcp\Tool;
 use WebxUi\Settings\Demo\SettingsDemo;
@@ -138,6 +139,16 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
                 scope: 'settings:write',
             ),
         ];
+    }
+
+    /**
+     * The house rules for writing content — see {@see ContentRules}.
+     *
+     * @return list<McpResource>
+     */
+    public function mcpResources(): array
+    {
+        return [ContentRules::resource()];
     }
 
     /**

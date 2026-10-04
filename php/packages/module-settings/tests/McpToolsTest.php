@@ -28,6 +28,9 @@ final class McpToolsTest extends TestCase
             ['key' => 'general.project-name', 'label' => 'Project name', 'type' => 'wx-input', 'localized' => true],
             ['key' => 'branding.logo', 'label' => 'Logo', 'type' => 'wx-media', 'localized' => false],
             ['key' => 'branding.mark', 'label' => 'Mark', 'type' => 'wx-media', 'localized' => false],
+            ['key' => 'content.tone', 'label' => 'Tone of voice', 'type' => 'wx-textarea', 'localized' => false],
+            ['key' => 'content.donts', 'label' => "Don'ts", 'type' => 'wx-textarea', 'localized' => false],
+            ['key' => 'content.notes', 'label' => 'Notes for the agent', 'type' => 'wx-textarea', 'localized' => false],
         ], $this->invoke('list'));
     }
 
