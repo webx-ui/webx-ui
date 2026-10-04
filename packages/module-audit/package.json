@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-audit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A site audit for the WebX UI admin panel: the production config, the host, and links to a development stand in the content.",
   "license": "MIT",
   "type": "module",
