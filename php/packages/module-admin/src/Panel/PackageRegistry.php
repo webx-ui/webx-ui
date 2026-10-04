@@ -30,7 +30,7 @@ final class PackageRegistry
      */
     public function packages(): array
     {
-        $path = $this->installed ??= $this->locate();
+        $path = $this->installed ??= self::locate();
 
         if ($path === null || ! $this->files->exists($path)) {
             return [];
@@ -84,7 +84,8 @@ final class PackageRegistry
         return $npm;
     }
 
-    private function locate(): ?string
+    /** Composer's list of what is installed, wherever `vendor` is. */
+    public static function locate(): ?string
     {
         // vendor/composer/ClassLoader.php sits beside installed.json, wherever vendor is.
         $file = (new ReflectionClass(ClassLoader::class))->getFileName();
