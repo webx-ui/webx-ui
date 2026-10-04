@@ -1,5 +1,11 @@
 # @webx-ui/core
 
+## 0.36.1
+
+### Patch Changes
+
+- 84f6043: `WxIcon`: a `factory` icon, for a manufacturers section in the panel's sidebar.
+
 ## 0.36.0
 
 ### Minor Changes

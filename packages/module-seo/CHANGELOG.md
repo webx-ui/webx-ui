@@ -1,5 +1,18 @@
 # @webx-ui/module-seo
 
+## 0.6.0
+
+### Minor Changes
+
+- 30d64d7: `module-seo`: the FAQ of a page, behind `webx-seo.faq.enabled` (`WEBX_SEO_FAQ`). Questions and answers live on an exact rule (`seo_faq_items`: per-language question and rich-text answer, in order) and travel with it: `faq` in the rule's `PUT`/`POST`, `faq` and `faq_count` in its resource, `has_faq` on the list. Only an exact rule has a FAQ — a rule that keeps questions cannot become a mask or a pattern (422 on `match_type`). The rule puts a `FAQPage` into the page's JSON-LD by itself, answers without tags; `Seo::blocks()` folds every `FAQPage` of the page into one, so the questions `module-faq` puts via `put('faq')` join the rule's and a question repeated by its text is kept once. `<x-webx-seo::faq />` prints the questions on `<details>`/`<summary>` through the overridable `webx-seo::faq` view, and nothing when there are none. CSV/XLSX import (address, question, answer — finds the active exact rule or creates one with empty meta; replace or append; preview with per-row errors) and export under `/seo/faq`; MCP tools `seo_faq_get`, `seo_faq_set` and `seo_faq_import`, and `seo_urls_get` gives the question count. Off, there are no routes, no tools and no markup, and the questions wait in their table. In the panel: a FAQ tab beside the meta tags in the rule dialog with a sortable list of question and answer (`wx-rich-text`), a FAQ column and a "with FAQ" filter on the rules, and the FAQ import and export in the ···; new API calls `importFaq` and `exportFaqUrl`, and `faqEnabled()`. The interlinking import dialog is now `SeoImportDialog`, shared by both. Words in the module's `faq` group, in all ten languages.
+- b5d549a: `module-seo`: the Interlinking view of the SEO section, shown where the manifest says `meta.links` is on. Donors with their links and broken ones counted, search by donor address or anchor and a "with broken links" filter; a donor's block as one dialog — heading, state and the links "acceptor + anchor" in a sortable list, the acceptor suggested from the address registry, broken ones marked, 422 errors under the field they belong to, and the addresses a save replaced by their redirect targets said after it. Import of a CSV/XLSX brief with a preview (counts and per-row errors and warnings) before it is applied, export as CSV or XLSX, and one heading for the ticked donors or for every donor under an address prefix, previewed first. New API calls `links`, `link`, `createLink`, `updateLink`, `removeLink`, `importLinks`, `exportLinksUrl`, `linksHeading`, `linkAddresses`; `WxSeoLinksPage` and `seoFeature()` are exported. The panel words are the `links` group of the module's dictionary, in all ten languages.
+
+### Patch Changes
+
+- 84f6043: `module-seo`: the FAQ tab of a rule is a `WxRepeater`, like the other lists of records in panel forms. Rows fold to `#N · question`, a refused row unfolds, and a question is removed with the panel's usual red action.
+- Updated dependencies [84f6043]
+  - @webx-ui/core@0.36.1
+
 ## 0.5.11
 
 ### Patch Changes
