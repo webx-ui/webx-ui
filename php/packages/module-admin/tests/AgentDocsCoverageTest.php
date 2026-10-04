@@ -17,42 +17,10 @@ use PHPUnit\Framework\TestCase as PlainTestCase;
 final class AgentDocsCoverageTest extends PlainTestCase
 {
     /**
-     * The packages still allowed to go without a guide; every other one must carry it.
-     * Empty it once the last package has one, and every package is required from then on.
+     * The packages still allowed to go without a guide; every other one must carry it. Empty since
+     * AG2: every package, and every new one, is required.
      */
-    private const array PENDING = [
-        'localization',
-        'mcp',
-        'module-admin',
-        'module-audit',
-        'module-auth',
-        'module-banners',
-        'module-blocks',
-        'module-blog',
-        'module-catalog',
-        'module-catalog-brands',
-        'module-catalog-labels',
-        'module-catalog-landings',
-        'module-catalog-manticore',
-        'module-catalog-properties',
-        'module-catalog-stock',
-        'module-events',
-        'module-faq',
-        'module-inbox',
-        'module-media',
-        'module-menu',
-        'module-press',
-        'module-recipes',
-        'module-reviews',
-        'module-seo',
-        'module-services',
-        'module-settings',
-        'module-tariffs',
-        'module-team',
-        'module-vacancies',
-        'nested-set',
-        'routing',
-    ];
+    private const array PENDING = [];
 
     /** The sections every guide has, in this order. */
     public const array SECTIONS = [
