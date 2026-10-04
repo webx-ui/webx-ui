@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAdmin, useTranslate, WxListScreen, type ScreenAction } from '@webx-ui/module-admin'
 import type { TabItem, TabValue } from '@webx-ui/core'
 import { useSeoMessages } from './i18n'
+import { linksEnabled } from './features'
 
 /**
  * The head of the section: its name, the views of what it holds, and the one tool that belongs
@@ -16,7 +17,7 @@ import { useSeoMessages } from './i18n'
  */
 const props = defineProps<{
   base: string
-  current: 'rules' | 'redirects' | 'aliases'
+  current: 'rules' | 'redirects' | 'aliases' | 'links'
   /** The view's own main action — `New rule`. The section's own tool is added after it. */
   actions?: ScreenAction[]
 }>()
@@ -47,6 +48,8 @@ const views = computed<TabItem[]>(() => [
   { value: 'rules', label: t('page.rules') },
   { value: 'redirects', label: t('page.redirects') },
   { value: 'aliases', label: t('page.automatic') },
+  // Only where a developer turned interlinking on (§18.3): off, the server has no such routes.
+  ...(linksEnabled(context) ? [{ value: 'links', label: t('links.tab') }] : []),
 ])
 
 /* The one tool that belongs to the whole section, after whatever the view itself offers. */

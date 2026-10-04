@@ -6,6 +6,8 @@ export { default as WxSeo } from './SeoCard.vue'
 export { default as WxSeoUrlsPage } from './SeoUrlsPage.vue'
 export { default as WxSeoRedirectsPage } from './SeoRedirectsPage.vue'
 export { default as WxSeoAliasesPage } from './SeoAliasesPage.vue'
+export { default as WxSeoLinksPage } from './SeoLinksPage.vue'
+export { seoFeature } from './features'
 export type {
   MatchType,
   RobotsDirective,
@@ -14,6 +16,18 @@ export type {
   SeoChainStep,
   SeoFields,
   SeoImage,
+  SeoLinkAddress,
+  SeoLinkBlock,
+  SeoLinkHeadingInput,
+  SeoLinkHeadingResult,
+  SeoLinkImportMode,
+  SeoLinkImportResult,
+  SeoLinkInput,
+  SeoLinkItem,
+  SeoLinkProblem,
+  SeoLinkQuery,
+  SeoLinkSaved,
+  SeoLinkTarget,
   SeoPage,
   SeoRedirect,
   SeoRedirectInput,

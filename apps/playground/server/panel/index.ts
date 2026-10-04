@@ -252,6 +252,7 @@ import {
   registerCatalog,
 } from './catalog'
 import { registerAudit } from './audit'
+import { handleSeoLinkFiles, registerSeoLinks } from './seo-links'
 import { registerManticore } from './catalog-manticore'
 import { brandHistory, registerDictionaries } from './catalog-dictionaries'
 import { propertyHistory, registerProperties } from './catalog-properties'
@@ -817,7 +818,8 @@ on('GET', '/manifest', ({ locale }) => ({
         order: 700,
         group: 'system',
         permissions: ['seo.view', 'seo.manage'],
-        meta: {},
+        /* Both optional tools on (§18.3), so their views are here to be looked at. */
+        meta: { links: true, faq: false },
       },
       {
         id: 'audit',
@@ -2023,6 +2025,11 @@ registerCatalog(
 /* Its search index on Manticore (WEBX_UI_CATALOG_MANTICORE.md): «System → Search index». */
 registerManticore(on, (status, message) => new HttpFailure(status, message), productCount)
 registerAudit(on, (status, message) => new HttpFailure(status, message), line)
+registerSeoLinks(
+  on,
+  (status, message, errors) => new HttpFailure(status, message, undefined, errors),
+  line,
+)
 
 /* Its reference books (WEBX_UI_CATALOG_DICTIONARIES.md): labels, stock statuses, brands. */
 registerDictionaries(
@@ -5961,6 +5968,9 @@ export function panelServer(): Plugin {
 
         /* The exchange's files: errors as CSV and finished exports, not JSON. */
         if (handleExchangeFiles(request, response, url)) return
+
+        /* Interlinking's import and export: a file in, a file out. */
+        if (handleSeoLinkFiles(request, response, url, line)) return
 
         if (url.pathname.startsWith('/api/cms/')) {
           void answer(request, response, url)

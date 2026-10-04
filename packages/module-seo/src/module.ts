@@ -1,6 +1,7 @@
 import { markRaw, type Component } from 'vue'
 import type { AdminModule } from '@webx-ui/module-admin'
 import SeoAliasesPage from './SeoAliasesPage.vue'
+import SeoLinksPage from './SeoLinksPage.vue'
 import SeoCard from './SeoCard.vue'
 import SeoRedirectsPage from './SeoRedirectsPage.vue'
 import SeoUrlsPage from './SeoUrlsPage.vue'
@@ -55,6 +56,15 @@ export function seo(options: SeoOptions = {}): AdminModule {
         path: `${path}/aliases`,
         name: 'webx.seo.aliases',
         component: SeoAliasesPage,
+        props: { base: path },
+      },
+      // Interlinking (§18.4). Registered on every site, shown in the strip of views only where the
+      // manifest says it is on: an address typed by hand on a site without it says so instead of
+      // failing on a 404.
+      {
+        path: `${path}/links`,
+        name: 'webx.seo.links',
+        component: SeoLinksPage,
         props: { base: path },
       },
     ],
