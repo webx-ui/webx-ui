@@ -33,6 +33,7 @@ final class SeoTools
         return [
             ...self::core(),
             ...(Features::links() ? LinkTools::all() : []),
+            ...(Features::faq() ? FaqTools::all() : []),
         ];
     }
 
@@ -280,6 +281,10 @@ final class SeoTools
             return ['ok' => false, 'reason' => 'That regular expression will not compile.'];
         }
 
+        if ($matchType !== UrlMatcher::EXACT && $rule->hasFaq()) {
+            return ['ok' => false, 'reason' => (string) __('webx-seo::faq.has-faq')];
+        }
+
         $values = [
             'match_type' => $matchType,
             'pattern' => $matchType === UrlMatcher::REGEX ? $pattern : UrlNormaliser::normalise($pattern),
@@ -435,6 +440,6 @@ final class SeoTools
             'robots' => $rule->robots,
             'og_image' => $rule->og_image,
             'json_ld' => $rule->json_ld,
-        ];
+        ] + (Features::faq() ? ['faq_count' => $rule->faqItems()->count()] : []);
     }
 }

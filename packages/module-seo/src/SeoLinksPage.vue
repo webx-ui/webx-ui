@@ -30,7 +30,7 @@ import {
 import SeoLayout from './SeoLayout.vue'
 import SeoLinkDialog from './SeoLinkDialog.vue'
 import SeoLinkHeadingDialog from './SeoLinkHeadingDialog.vue'
-import SeoLinkImportDialog from './SeoLinkImportDialog.vue'
+import SeoImportDialog from './SeoImportDialog.vue'
 import TestUrlDialog from './TestUrlDialog.vue'
 import { createSeoApi } from './api'
 import { linksEnabled } from './features'
@@ -68,7 +68,7 @@ const canManage = context.can('seo.manage')
 const enabled = computed(() => linksEnabled(context))
 
 const edit = createModal<SeoLinkBlock, { block: SeoLinkBlock | null }>(SeoLinkDialog)
-const importing = createModal<boolean, Record<string, never>>(SeoLinkImportDialog)
+const importing = createModal<boolean, { kind?: 'links' | 'faq' }>(SeoImportDialog)
 const heading = createModal<boolean, { ids: number[] }>(SeoLinkHeadingDialog)
 const test = createModal<void, Record<string, never>>(TestUrlDialog)
 

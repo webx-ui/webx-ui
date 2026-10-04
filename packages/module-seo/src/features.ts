@@ -13,3 +13,5 @@ export function seoFeature(context: AdminContext, name: 'links' | 'faq'): boolea
 }
 
 export const linksEnabled = (context: AdminContext): boolean => seoFeature(context, 'links')
+
+export const faqEnabled = (context: AdminContext): boolean => seoFeature(context, 'faq')

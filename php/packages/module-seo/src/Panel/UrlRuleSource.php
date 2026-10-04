@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Panel;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use WebxUi\Localization\Locales;
+use WebxUi\Seo\Faq\PageFaq;
+use WebxUi\Seo\Features;
 use WebxUi\Seo\Models\SeoUrl;
 use WebxUi\Seo\Rendering\SeoData;
 use WebxUi\Seo\Rendering\SeoSource;
@@ -32,7 +35,22 @@ final class UrlRuleSource implements SeoSource
     {
         $rule = $this->matching($url);
 
-        return $rule?->toSeoData($locale);
+        if ($rule === null) {
+            return null;
+        }
+
+        $data = $rule->toSeoData($locale);
+
+        if (! Features::faq()) {
+            return $data;
+        }
+
+        // The rule's own markup rather than the component's (§18.5): the page says it has a
+        // FAQ whether or not the template got round to printing the questions.
+        $faq = app(PageFaq::class);
+        $markup = $faq->markup($faq->questions($rule, $locale ?? app(Locales::class)->current()));
+
+        return $markup === null ? $data : $data->with(jsonLd: [...$data->jsonLd, $markup]);
     }
 
     /**

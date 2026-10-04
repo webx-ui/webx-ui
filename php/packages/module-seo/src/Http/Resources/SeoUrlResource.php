@@ -6,6 +6,8 @@ namespace WebxUi\Seo\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use WebxUi\Seo\Faq\PageFaq;
+use WebxUi\Seo\Features;
 use WebxUi\Seo\Http\Requests\SeoUrlRequest;
 use WebxUi\Seo\Models\SeoUrl;
 
@@ -49,6 +51,20 @@ final class SeoUrlResource extends JsonResource
 
         foreach (SeoUrlRequest::TRANSLATED as $field) {
             $payload[$field] = (object) $rule->getTranslations($field);
+        }
+
+        // The page's FAQ (§18.5), only on a site that has the feature: the count for the list,
+        // the questions themselves for the form, which loads them.
+        if (Features::faq()) {
+            $payload['faq_count'] = match (true) {
+                $rule->relationLoaded('faqItems') => $rule->faqItems->count(),
+                isset($rule->faq_items_count) => (int) $rule->faq_items_count,
+                default => $rule->faqItems()->count(),
+            };
+
+            if ($rule->relationLoaded('faqItems')) {
+                $payload['faq'] = app(PageFaq::class)->describe($rule);
+            }
         }
 
         return $payload;

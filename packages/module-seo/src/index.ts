@@ -7,13 +7,17 @@ export { default as WxSeoUrlsPage } from './SeoUrlsPage.vue'
 export { default as WxSeoRedirectsPage } from './SeoRedirectsPage.vue'
 export { default as WxSeoAliasesPage } from './SeoAliasesPage.vue'
 export { default as WxSeoLinksPage } from './SeoLinksPage.vue'
-export { seoFeature } from './features'
+export { faqEnabled, seoFeature } from './features'
 export type {
   MatchType,
   RobotsDirective,
   SeoAlias,
   SeoAliasQuery,
   SeoChainStep,
+  SeoFaqImportMode,
+  SeoFaqImportResult,
+  SeoFaqInput,
+  SeoFaqItem,
   SeoFields,
   SeoImage,
   SeoLinkAddress,

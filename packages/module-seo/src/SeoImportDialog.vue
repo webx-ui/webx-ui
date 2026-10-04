@@ -18,13 +18,16 @@ import {
 } from '@webx-ui/core'
 import { createSeoApi } from './api'
 import { useSeoMessages } from './i18n'
-import type { SeoLinkImportMode, SeoLinkImportResult } from './types'
+import type { SeoFaqImportResult, SeoLinkImportMode, SeoLinkImportResult } from './types'
 
 /**
- * A brief in its own format (§18.4): a file is read and checked first, and only what the
- * preview showed is written. The preview is the same request with `dry_run`, so what it counts
- * is exactly what applying will do — and a row it marks as an error is a row applying skips.
+ * A brief in its own format — interlinking (§18.4) or page FAQs (§18.5): a file is read and
+ * checked first, and only what the preview showed is written. The preview is the same request
+ * with `dry_run`, so what it counts is exactly what applying will do — and a row it marks as an
+ * error is a row applying skips.
  */
+const props = withDefaults(defineProps<{ kind?: 'links' | 'faq' }>(), { kind: 'links' })
+
 const { resolve, dismiss, open } = useModal<boolean>()
 
 const context = useAdmin()
@@ -36,16 +39,30 @@ const message = useErrorText()
 
 const files = ref<UploadFile[]>([])
 const mode = ref<SeoLinkImportMode>('replace')
-const preview = ref<SeoLinkImportResult | null>(null)
+const preview = ref<SeoLinkImportResult | SeoFaqImportResult | null>(null)
 const fileError = ref<string | undefined>()
 const working = ref(false)
 
 const file = computed(() => files.value[0]?.raw ?? null)
 
+/* The words that name what is imported are the kind's; the rest of the dialog says the same
+   thing for both, in the interlinking group where it was first written. */
+const own = (key: string, replace?: Record<string, string | number>): string =>
+  t(`${props.kind}.${key}`, replace)
+
 const modes = computed(() => [
-  { value: 'replace', label: t('links.mode-replace') },
-  { value: 'append', label: t('links.mode-append') },
+  { value: 'replace', label: own('mode-replace') },
+  { value: 'append', label: own('mode-append') },
 ])
+
+/** How many pages the file reaches — donors or addresses. */
+const reach = computed(() => {
+  const result = preview.value
+
+  if (result === null) return 0
+
+  return 'donors' in result ? result.donors : result.addresses
+})
 
 /* A preview belongs to one file and one mode; either changing makes it a preview of something
    else, and "Apply" must not stand under numbers that are no longer true. */
@@ -59,14 +76,24 @@ const numbers = computed(() => {
 
   if (result === null) return []
 
+  const counted =
+    'donors' in result
+      ? [
+          { key: 'donors', label: t('links.result-donors'), value: result.donors },
+          { key: 'links', label: t('links.result-links'), value: result.links },
+        ]
+      : [
+          { key: 'addresses', label: t('faq.result-addresses'), value: result.addresses },
+          { key: 'questions', label: t('faq.result-questions'), value: result.questions },
+        ]
+
   return [
-    { key: 'donors', label: t('links.result-donors'), value: result.donors },
-    { key: 'links', label: t('links.result-links'), value: result.links },
-    { key: 'created', label: t('links.result-created'), value: result.created },
+    ...counted,
+    { key: 'created', label: own('result-created'), value: result.created },
     result.mode === 'append'
-      ? { key: 'appended', label: t('links.result-appended'), value: result.appended }
-      : { key: 'replaced', label: t('links.result-replaced'), value: result.replaced },
-    { key: 'errors', label: t('links.result-errors'), value: result.errors },
+      ? { key: 'appended', label: own('result-appended'), value: result.appended }
+      : { key: 'replaced', label: own('result-replaced'), value: result.replaced },
+    { key: 'errors', label: own('result-errors'), value: result.errors },
   ]
 })
 
@@ -77,10 +104,15 @@ async function run(dryRun: boolean): Promise<void> {
   fileError.value = undefined
 
   try {
-    const result = await api.importLinks(file.value, mode.value, dryRun)
+    const result =
+      props.kind === 'faq'
+        ? await api.importFaq(file.value, mode.value, dryRun)
+        : await api.importLinks(file.value, mode.value, dryRun)
 
     if (!dryRun) {
-      toast.success(t('links.imported', { count: result.donors }))
+      toast.success(
+        own('imported', { count: 'donors' in result ? result.donors : result.addresses }),
+      )
       resolve(true)
 
       return
@@ -99,9 +131,9 @@ async function run(dryRun: boolean): Promise<void> {
 </script>
 
 <template>
-  <wx-dialog v-model:open="open" :title="t('links.import-title')" :width="720">
+  <wx-dialog v-model:open="open" :title="own('import-title')" :width="720">
     <div class="wx-seo-import">
-      <wx-text size="sm" tone="muted">{{ t('links.import-help') }}</wx-text>
+      <wx-text size="sm" tone="muted">{{ own('import-help') }}</wx-text>
 
       <wx-form-item :label="t('links.file')" :error="fileError">
         <wx-upload
@@ -127,7 +159,7 @@ async function run(dryRun: boolean): Promise<void> {
         </div>
 
         <wx-alert
-          v-if="preview.donors === 0"
+          v-if="reach === 0"
           type="warning"
           variant="soft"
           :description="t('links.nothing')"
@@ -175,7 +207,7 @@ async function run(dryRun: boolean): Promise<void> {
         <wx-button
           v-else
           type="primary"
-          :disabled="preview.donors === 0"
+          :disabled="reach === 0"
           :loading="working"
           @click="run(false)"
         >

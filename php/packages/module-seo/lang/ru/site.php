@@ -6,4 +6,5 @@ return [
     'home' => 'Главная',
     'breadcrumbs' => 'Хлебные крошки',
     'links-heading' => 'Смотрите также',
+    'faq-heading' => 'Частые вопросы',
 ];

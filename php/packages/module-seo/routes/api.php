@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use WebxUi\Seo\Features;
 use WebxUi\Seo\Http\Controllers\RouteAliasController;
+use WebxUi\Seo\Http\Controllers\SeoFaqController;
 use WebxUi\Seo\Http\Controllers\SeoLinkController;
 use WebxUi\Seo\Http\Controllers\SeoRedirectController;
 use WebxUi\Seo\Http\Controllers\SeoUrlController;
@@ -66,6 +67,23 @@ if (Features::links()) {
                 Route::post('heading', [SeoLinkController::class, 'heading'])->name('heading');
                 Route::put('{block}', [SeoLinkController::class, 'update'])->whereNumber('block')->name('update');
                 Route::delete('{block}', [SeoLinkController::class, 'destroy'])->whereNumber('block')->name('destroy');
+            });
+        });
+}
+
+// Page FAQs (§18.5), the same way: off, the bulk addresses were never registered. The questions
+// of one page travel with its rule on `/seo/urls/{id}`, and are left alone while this is off.
+if (Features::faq()) {
+    Route::prefix((string) config('webx-admin.api_path').'/seo/faq')
+        ->middleware('webx.panel')
+        ->name('webx.seo.faq.')
+        ->group(function (): void {
+            Route::middleware('cms.can:seo.view,seo.manage')->group(function (): void {
+                Route::get('export', [SeoFaqController::class, 'export'])->name('export');
+            });
+
+            Route::middleware('cms.can:seo.manage')->group(function (): void {
+                Route::post('import', [SeoFaqController::class, 'import'])->name('import');
             });
         });
 }

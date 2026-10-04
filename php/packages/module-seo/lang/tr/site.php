@@ -6,4 +6,5 @@ return [
     'home' => 'Ana sayfa',
     'breadcrumbs' => 'İçerik yolu',
     'links-heading' => 'Ayrıca bakın',
+    'faq-heading' => 'Sıkça sorulan sorular',
 ];

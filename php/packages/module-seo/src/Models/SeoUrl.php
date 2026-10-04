@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Seo\Fields;
@@ -40,6 +42,7 @@ use WebxUi\Seo\Targets\UrlTargets;
  * @property bool $is_active
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read Collection<int, SeoFaqItem> $faqItems
  */
 class SeoUrl extends Model
 {
@@ -139,6 +142,23 @@ class SeoUrl extends Model
 
         $this->entity_type = $binding->target->entityType;
         $this->entity_id = $binding->target->entityId;
+    }
+
+    /**
+     * The FAQ of the page (§18.5), in order. Only an exact rule has one: the same `FAQPage` on
+     * every page a mask covers is what search engines ask sites not to do.
+     *
+     * @return HasMany<SeoFaqItem, $this>
+     */
+    public function faqItems(): HasMany
+    {
+        return $this->hasMany(SeoFaqItem::class, 'seo_url_id')->orderBy('position')->orderBy('id');
+    }
+
+    /** Would turning this rule into a mask or a pattern leave questions with no page? */
+    public function hasFaq(): bool
+    {
+        return $this->exists && $this->faqItems()->exists();
     }
 
     /** The address as it is now: the entity's own for a bound rule, the pattern otherwise. */

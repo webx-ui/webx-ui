@@ -6,4 +6,5 @@ return [
     'home' => 'Início',
     'breadcrumbs' => 'Migalhas',
     'links-heading' => 'Veja também',
+    'faq-heading' => 'Perguntas frequentes',
 ];

@@ -6,4 +6,5 @@ return [
     'home' => 'Accueil',
     'breadcrumbs' => 'Fil d’Ariane',
     'links-heading' => 'Voir aussi',
+    'faq-heading' => 'Questions fréquentes',
 ];
