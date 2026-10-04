@@ -1,0 +1,20 @@
+{
+  "packages": [
+    {
+      "name": "webx-ui/module-seo",
+      "description": "SEO for the WebX UI admin panel.",
+      "install-path": "../webx-ui/module-seo"
+    },
+    {
+      "name": "laravel/framework",
+      "description": "The Laravel Framework.",
+      "install-path": "../laravel/framework"
+    },
+    {
+      "name": "webx-ui/module-pages",
+      "description": "Pages for the WebX UI admin panel.",
+      "install-path": "../webx-ui/module-pages"
+    }
+  ],
+  "dev": true
+}

@@ -41,6 +41,8 @@ final class PanelCommandTest extends TestCase
 
         $this->files->deleteDirectory($this->app->basePath('resources/js'));
 
+        $this->files->delete([$this->app->basePath('AGENTS.md'), $this->app->basePath('CLAUDE.md')]);
+
         parent::tearDown();
     }
 

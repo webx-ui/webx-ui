@@ -45,6 +45,8 @@ final class PanelSyncTest extends TestCase
         $this->files->deleteDirectory($this->app->basePath('resources/js'));
         $this->files->deleteDirectory($this->app->basePath('resources/views/components'));
 
+        $this->files->delete([$this->app->basePath('AGENTS.md'), $this->app->basePath('CLAUDE.md')]);
+
         parent::tearDown();
     }
 

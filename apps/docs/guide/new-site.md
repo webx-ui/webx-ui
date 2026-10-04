@@ -141,7 +141,7 @@ php artisan webx:setup
 
 A module of the panel is two packages — a Composer one on the server, an npm one in the build —
 and each Composer package names its own npm half, under `extra.webx` in its `composer.json`. The
-installer walks what is installed and tops up four things:
+installer walks what is installed and tops up five things:
 
 | file                    | what it does                                                  | if you have already changed it |
 | ----------------------- | ------------------------------------------------------------- | ------------------------------ |
@@ -149,6 +149,7 @@ installer walks what is installed and tops up four things:
 | `package.json`          | adds the npm halves that are missing                          | never moves a version          |
 | `vite.config.js`        | adds the entry to the `laravel()` plugin's input              | says so instead                |
 | `config/webx-*.php`     | the `vite` key, and `layout` for modules with public pages    | never over a value you chose   |
+| `AGENTS.md`             | the guide for code agents, see [below](#agent-guide)          | only its marked block          |
 
 The entry file is yours. Only the three marked regions are written into:
 
@@ -162,6 +163,24 @@ Everything outside them — `resolveAvatar`, the `WxMediaField` you hand to `seo
 is read by nobody and rewritten by nothing. Delete the markers and the command tells you the
 four lines to add by hand and exits successfully; it is your file, and erasing them is a fair way
 of saying so.
+
+### Agent guide
+
+The same run keeps `AGENTS.md` in the site root — the file Claude Code, Codex and Cursor read
+first. Between `<!-- webx:agents -->` and `<!-- /webx:agents -->` it says what the site is
+built on, the first rule (never fork a module or edit `vendor/`; configure, publish a view,
+patch a screen, register or replace a service instead) and links every installed package that
+explains itself:
+
+```md
+- [webx-ui/module-pages](vendor/webx-ui/module-pages/AGENTS.md) — Pages for the WebX UI admin panel: …
+```
+
+The links go into `vendor`, so the text matches the version installed. That block is rewritten
+on every run; everything outside it is yours — write the site's own notes under
+`## This project`. A file you wrote before the first run keeps every word, with the block put
+on top. `CLAUDE.md` is written once as the single line `@AGENTS.md`, and a `CLAUDE.md` of your
+own is left alone.
 
 ## The layout
 

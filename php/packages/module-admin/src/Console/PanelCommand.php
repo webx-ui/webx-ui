@@ -6,6 +6,8 @@ namespace WebxUi\Admin\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
+use WebxUi\Admin\Agents\AgentDocs;
+use WebxUi\Admin\Agents\RootFile;
 use WebxUi\Admin\Panel\EntryFile;
 use WebxUi\Admin\Panel\PackageRegistry;
 use WebxUi\Admin\Panel\PanelPackage;
@@ -17,8 +19,8 @@ use WebxUi\Auth\AuthServiceProvider;
  * The panel is built by the site, not shipped prebuilt, because which modules it contains is a
  * decision only the site can make. Which modules those are, though, the server already knows:
  * every Composer package names its npm half under `extra.webx`. So this walks what is
- * installed and tops up the entry file, the dependencies, the Vite input and the config key —
- * or says plainly which one it could not.
+ * installed and tops up the entry file, the dependencies, the Vite input, the config key and
+ * the agent guide in `AGENTS.md` — or says plainly which one it could not.
  *
  * Run it again after installing a module and it adds four lines; run it twice in a row and the
  * second run changes nothing.
@@ -32,7 +34,7 @@ final class PanelCommand extends Command
 
     protected $description = 'Set up the admin panel front end in this application';
 
-    public function handle(Filesystem $files, PackageRegistry $registry): int
+    public function handle(Filesystem $files, PackageRegistry $registry, AgentDocs $agents): int
     {
         $entry = trim((string) $this->option('entry'), '/');
         $path = $this->laravel->basePath($entry);
@@ -58,6 +60,7 @@ final class PanelCommand extends Command
         $this->pointConfigAtEntry($files, $entry);
         $this->addViteInput($files, $entry);
         $this->syncLayouts($files, $packages);
+        $this->syncAgentGuide($files, $agents);
 
         $this->newLine();
         $this->components->twoColumnDetail('Then', 'npm install && npm run build — or npm run dev while working');
@@ -461,6 +464,41 @@ final class PanelCommand extends Command
 
         $files->put($path, $updated);
         $this->components->info("{$name} now stands in <x-{$layout}>.");
+    }
+
+    /**
+     * Keep the site's AGENTS.md pointing at the guides of what is installed.
+     *
+     * Only the block between the `webx:agents` markers is ours; the rest of the file is the
+     * project's. `CLAUDE.md` is written once, as the one line that sends Claude Code to the same
+     * file, and never touched again: a site that has its own has decided.
+     */
+    private function syncAgentGuide(Filesystem $files, AgentDocs $agents): void
+    {
+        $path = $this->laravel->basePath(AgentDocs::FILE);
+        $current = $files->exists($path) ? (string) $files->get($path) : null;
+        $file = new RootFile($current);
+        $updated = $file->with(RootFile::block($agents->packages(), (string) config('webx-admin.path')));
+
+        if ($updated === $current) {
+            $this->components->twoColumnDetail(AgentDocs::FILE, 'already lists what is installed');
+        } else {
+            $files->put($path, $updated);
+            $this->components->twoColumnDetail(AgentDocs::FILE, match (true) {
+                $current === null => 'written',
+                $file->hasBlock() => 'updated to what is installed',
+                default => 'guide added above your text',
+            });
+        }
+
+        $claude = $this->laravel->basePath('CLAUDE.md');
+
+        if (! $files->exists($claude)) {
+            $files->put($claude, "@AGENTS.md\n");
+            $this->components->twoColumnDetail('CLAUDE.md', 'written, it points at AGENTS.md');
+        } elseif (! str_contains((string) $files->get($claude), '@AGENTS.md')) {
+            $this->tell('CLAUDE.md', 'add a line `@AGENTS.md` so Claude Code reads the same guide');
+        }
     }
 
     private function tell(string $file, string $instruction): void

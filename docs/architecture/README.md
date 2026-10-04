@@ -24,6 +24,7 @@
 | [WEBX_UI_LAYOUT_REGIONS.md](WEBX_UI_LAYOUT_REGIONS.md)       | Шапка и подвал сайта деревьями блоков                 | выпущен 28.09.2026, v0.49.0          |
 | [WEBX_UI_CATALOG.md](WEBX_UI_CATALOG.md)                     | Каталог товаров: ядро и спутники, контракты           | волна A выпущена в v0.56.0           |
 | [WEBX_UI_HISTORY.md](WEBX_UI_HISTORY.md)                     | Журнал изменений в module-admin, узел `wx-history`    | сделано 29.09.2026 (H1), ждёт релиза |
+| [WEBX_UI_AGENT_DOCS.md](WEBX_UI_AGENT_DOCS.md)               | `AGENTS.md` в пакетах и корневой файл сайта           | AG1 04.10.2026, AG2–AG5 впереди      |
 
 ## Модули
 
