@@ -36,6 +36,8 @@ final class DemoTest extends TestCase
         $this->artisan('webx:demo')->assertSuccessful();
 
         $this->assertSame('Demo site', $settings->get('general.project-name'));
+        // The house rules a content agent reads come filled in, so the resource is worth reading.
+        $this->assertStringStartsWith('Plain and warm', (string) $settings->get('content.tone'));
 
         $this->artisan('webx:demo', ['--remove' => true])->assertSuccessful();
 

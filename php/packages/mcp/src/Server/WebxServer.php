@@ -38,6 +38,12 @@ final class WebxServer extends Server
 
     public int $maxPaginationLength = 200;
 
+    /**
+     * The site's house rules for content, served by `webx-ui/module-settings`. Named here
+     * because the instructions point at it, and the module takes the address from here.
+     */
+    public const CONTENT_RULES = 'settings://content-rules';
+
     protected string $instructions = <<<'MARKDOWN'
         This is the admin panel of a site built on WebX UI. Every tool belongs to a module of
         the panel and is named `<module>_<tool>`.
@@ -74,6 +80,20 @@ final class WebxServer extends Server
             static fn (Prompt $prompt): RegistryPrompt => new RegistryPrompt($prompt),
             $registry->prompts(),
         );
+
+        // Said whenever the rules are served, filled in or not: the resource always carries the
+        // site's languages, and the instructions are read once, on connect, so they cannot
+        // know whether an editor has written the rest yet. Without the settings module the
+        // line would point at nothing, so it is left out.
+        foreach ($registry->resources() as $resource) {
+            if ($resource->uri === self::CONTENT_RULES && ! str_contains($this->instructions, self::CONTENT_RULES)) {
+                $this->instructions .= "\n\nBefore you write or edit anything a visitor will read, read `".self::CONTENT_RULES.'`: '
+                    .'the languages of the site and which one is primary, the tone of voice, and what never to say. '
+                    .'Follow them in every language you write.';
+
+                break;
+            }
+        }
     }
 
     private static function packageVersion(): string

@@ -28,20 +28,25 @@ button of its own: Save. A 422 from the server lands under the field it names.
 
 ## The screen, and what to patch
 
-Out of the box the screen is two tabs — what the panel is called and what it wears. That is
-deliberately little: the rest of a site's settings are the site's own, and a module cannot
+Out of the box the screen is three tabs — what the panel is called, what it wears, and the house
+rules for whoever writes the content. That is deliberately little: the rest of a site's settings are the site's own, and a module cannot
 guess them.
 
-| id              | type       | name                   | what it is                       |
-| --------------- | ---------- | ---------------------- | -------------------------------- |
-| `tabs`          | `wx-tabs`  |                        | The tab strip                    |
-| `general`       | `wx-tab`   |                        | "General"                        |
-| `general-card`  | `wx-card`  |                        | The card inside it               |
-| `project-name`  | `wx-input` | `general.project-name` | The project's name, per language |
-| `branding`      | `wx-tab`   |                        | "Branding"                       |
-| `branding-card` | `wx-card`  |                        | The card inside it               |
-| `logo`          | `wx-media` | `branding.logo`        | The logo for the open sidebar    |
-| `mark`          | `wx-media` | `branding.mark`        | The square mark for the rail     |
+| id              | type          | name                   | what it is                         |
+| --------------- | ------------- | ---------------------- | ---------------------------------- |
+| `tabs`          | `wx-tabs`     |                        | The tab strip                      |
+| `general`       | `wx-tab`      |                        | "General"                          |
+| `general-card`  | `wx-card`     |                        | The card inside it                 |
+| `project-name`  | `wx-input`    | `general.project-name` | The project's name, per language   |
+| `branding`      | `wx-tab`      |                        | "Branding"                         |
+| `branding-card` | `wx-card`     |                        | The card inside it                 |
+| `logo`          | `wx-media`    | `branding.logo`        | The logo for the open sidebar      |
+| `mark`          | `wx-media`    | `branding.mark`        | The square mark for the rail       |
+| `content`       | `wx-tab`      |                        | "Content"                          |
+| `content-card`  | `wx-card`     |                        | The card inside it                 |
+| `tone`          | `wx-textarea` | `content.tone`         | The tone of voice                  |
+| `donts`         | `wx-textarea` | `content.donts`        | What never to say, one per line    |
+| `notes`         | `wx-textarea` | `content.notes`        | Anything else an agent should know |
 
 ## Whose panel this is
 
@@ -150,6 +155,31 @@ carries the keys that changed, for a site that builds something out of them.
 `settings_list`, `settings_get` and `settings_set` (mutating, honours `dry_run`) come with the
 module. The keys and the rules are read from the screen, so an agent can change exactly what an
 administrator can — patched fields included — and nothing else.
+
+### Content rules
+
+The «Content» tab is for an AI agent that writes the site's content through MCP rather than a
+person reading the panel. The module serves it as the resource `settings://content-rules`:
+
+```json
+{
+  "languages": [{ "code": "en", "name": "English", "native_name": "English", "primary": true }],
+  "primary": "en",
+  "tone": "Plain and warm, addressed to the reader as \"you\".",
+  "donts": ["No prices or discounts unless the page is about them"],
+  "notes": null,
+  "more": [],
+  "empty": false
+}
+```
+
+The languages are not typed into the tab: they come from the site's language settings, so the
+rules never disagree with the site about them. `donts` is the field split into lines; a field a
+project patches into `content-card` under `content.<name>` comes out in `more` with its label.
+The MCP server's instructions tell every agent to read the resource before writing anything a
+visitor will read — said whenever the module is installed, since the languages are always
+there. Editing the rules takes `settings.manage`, like any setting; an agent changes them with
+`settings_set`.
 
 ## Talking to it directly
 

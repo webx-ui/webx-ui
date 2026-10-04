@@ -11,6 +11,7 @@ use RuntimeException;
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\Exceptions\ToolFailure;
+use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\ProvidesMcpDefaults;
 use WebxUi\Mcp\Server\RegistryPrompt;
 use WebxUi\Mcp\Server\RegistryResource;
@@ -52,6 +53,47 @@ final class WebxServerTest extends TestCase
 
         $this->assertSame(['seo://audit/missing-title'], $context->resources()->map(static fn ($resource): string => $resource->uri())->values()->all());
         $this->assertSame(['suggest_titles'], $context->prompts()->map(static fn ($prompt): string => $prompt->name())->values()->all());
+    }
+
+    #[Test]
+    public function the_instructions_point_at_the_content_rules_only_when_they_are_served(): void
+    {
+        $this->register(new SeoModule);
+
+        $this->assertStringNotContainsString(WebxServer::CONTENT_RULES, $this->server()->createContext()->instructions);
+
+        $this->register(new class extends AbstractModule implements ProvidesMcpTools
+        {
+            use ProvidesMcpDefaults;
+
+            public function id(): string
+            {
+                return 'settings';
+            }
+
+            /**
+             * @return list<Tool>
+             */
+            public function mcpTools(): array
+            {
+                return [];
+            }
+
+            /**
+             * @return list<McpResource>
+             */
+            public function mcpResources(): array
+            {
+                return [new McpResource(WebxServer::CONTENT_RULES, 'Content rules', 'The house rules.', static fn (): array => [])];
+            }
+        });
+
+        $server = $this->server();
+        $server->start();
+
+        $instructions = $server->createContext()->instructions;
+        $this->assertStringContainsString('read `settings://content-rules`', $instructions);
+        $this->assertSame(1, substr_count($instructions, WebxServer::CONTENT_RULES), 'Started twice, said once.');
     }
 
     #[Test]

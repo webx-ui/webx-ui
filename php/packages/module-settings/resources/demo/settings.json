@@ -1,3 +1,6 @@
 {
-  "general.project-name": "Demo site"
+  "general.project-name": "Demo site",
+  "content.tone": "Plain and warm, addressed to the reader as \"you\". Short sentences, one idea each; a fact before an adjective.",
+  "content.donts": "No prices or discounts unless the page is about them\nNo superlatives (\"the best\", \"number one\")\nNo promises of results",
+  "content.notes": "Write the site's name the way it is in the General tab. Every picture gets alt text that says what is in it."
 }
