@@ -1,5 +1,14 @@
 # @webx-ui/module-auth
 
+## 0.8.15
+
+### Patch Changes
+
+- b450474: `webx:setup` offers the site audit by default (`module-audit` is ticked like pages, media and SEO). `module-catalog-properties`: a value's number of products in the list of a reference book counts its subtree, as the filter and the delete refusal already did — a branch no longer shows 0 and then refuses to go. `WxUserMenu`: where the shell has room for a name, the row shows the email under it and a chevron.
+- Updated dependencies [3dfe40a]
+  - @webx-ui/core@0.37.0
+  - @webx-ui/module-admin@0.23.2
+
 ## 0.8.14
 
 ### Patch Changes

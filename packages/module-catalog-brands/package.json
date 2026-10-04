@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-catalog-brands",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Brands for the catalogue of the WebX UI admin panel: a reference book with logos, descriptions and pages of their own, a field of the product form, a column and a filter of the list.",
   "license": "MIT",
   "type": "module",

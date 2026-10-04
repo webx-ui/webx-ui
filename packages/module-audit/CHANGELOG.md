@@ -1,5 +1,23 @@
 # @webx-ui/module-audit
 
+## 0.2.0
+
+### Minor Changes
+
+- f54ac14: Audit: the health is now the share of pages without errors, minus 10 per site-wide error check and 2 per warning check (20 at most), with its parts in `counts.health_parts` and on the Overview; a full run seeds the home of every prefixed language; findings that count elements (`images.alt`, `a11y.button_name`, `a11y.form_label`) quote up to five of them as a `code` cell.
+- 3dfe40a: The console's `webx:catalog:index --rebuild` and the panel's «Rebuild» share one lock: the second
+  one is refused, and the search index page holds its button back while the console rebuilds.
+  `WxTable` keeps its heading row in sight while the page scrolls past a long table (`stickyHeader`,
+  on by default). In the audit's page card, a picture that answered shows its thumbnail and opens
+  full size; the stand's, unchecked and broken ones keep the placeholder and are not fetched.
+
+### Patch Changes
+
+- Updated dependencies [3dfe40a]
+  - @webx-ui/core@0.37.0
+  - @webx-ui/module-admin@0.23.2
+  - @webx-ui/schema@0.7.3
+
 ## 0.1.0
 
 ### Minor Changes

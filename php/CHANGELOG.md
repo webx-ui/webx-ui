@@ -1,5 +1,26 @@
 # @webx-ui/php
 
+## 0.60.0
+
+### Minor Changes
+
+- 2b73128: `webx:panel` (and so `webx:setup`) keeps the site's `AGENTS.md`: a marked block with the first rule — never fork a module or edit `vendor/` — and links to the guide of every installed `webx-ui/*` package, the project's own text left alone; `CLAUDE.md` is written once as `@AGENTS.md`. `webx-ui/module-pages` ships the first package guide.
+- a7e2eae: Every `webx-ui/*` Composer package now ships its `AGENTS.md`: what the package owns, how to change it from the site without forking (config, published views, screen patches, registries), what not to do and why, and how to check the result. The site's root `AGENTS.md` links to each of them inside `vendor/`.
+- 2ed4f9d: The site's root `AGENTS.md` names where the site's look lives: a section «The site's look» links the new
+  styles guide (`RootFile::STYLES_GUIDE`). New guides «Docker from zero» and «Where the styles live»; the
+  skeleton's README starts with the two ways to run the site and links both guides and `AGENTS.md`.
+- f54ac14: Audit: the health is now the share of pages without errors, minus 10 per site-wide error check and 2 per warning check (20 at most), with its parts in `counts.health_parts` and on the Overview; a full run seeds the home of every prefixed language; findings that count elements (`images.alt`, `a11y.button_name`, `a11y.form_label`) quote up to five of them as a `code` cell.
+- 3d24661: Content house rules for MCP agents. `webx-ui/module-settings` gets a «Content» tab in Settings — tone of voice, don'ts, notes for the agent (`content.tone`, `content.donts`, `content.notes`) — and serves them, together with the site's languages from `webx-ui/localization`, as the MCP resource `settings://content-rules`. The MCP server's instructions (`webx-ui/mcp`) tell every agent to read it before writing anything a visitor will read, whenever the resource is served. The demo fills the rules in; `AGENTS.md` of both packages names the resource and the keys.
+- 3dfe40a: The console's `webx:catalog:index --rebuild` and the panel's «Rebuild» share one lock: the second
+  one is refused, and the search index page holds its button back while the console rebuilds.
+  `WxTable` keeps its heading row in sight while the page scrolls past a long table (`stickyHeader`,
+  on by default). In the audit's page card, a picture that answered shows its thumbnail and opens
+  full size; the stand's, unchecked and broken ones keep the placeholder and are not fetched.
+
+### Patch Changes
+
+- b450474: `webx:setup` offers the site audit by default (`module-audit` is ticked like pages, media and SEO). `module-catalog-properties`: a value's number of products in the list of a reference book counts its subtree, as the filter and the delete refusal already did — a branch no longer shows 0 and then refuses to go. `WxUserMenu`: where the shell has room for a name, the row shows the email under it and a chevron.
+
 ## 0.59.0
 
 ### Minor Changes
