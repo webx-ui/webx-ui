@@ -226,3 +226,116 @@ export const robotsDirectives = [
 ] as const
 
 export type RobotsDirective = (typeof robotsDirectives)[number]
+
+/* ------------------------------------------------------------------ interlinking (§18.4) -- */
+
+/**
+ * An address of the site as interlinking keeps it: bound to an entity when the registry knew
+ * one, a path when it did not. `url` is where it leads now, `saved_url` what was written — the
+ * two differ once a bound page has been renamed.
+ */
+export interface SeoLinkTarget {
+  url: string
+  saved_url: string
+  locale: string
+  entity_type: string | null
+  entity_id: number | null
+  /** The entity is gone or hidden, or nothing on the site answers the path. */
+  broken: boolean
+}
+
+export interface SeoLinkItem {
+  id: number
+  acceptor: SeoLinkTarget
+  anchor: string
+  position: number
+}
+
+/** One donor and its block. The list leaves `items` out; a single block carries them. */
+export interface SeoLinkBlock {
+  id: number
+  donor: SeoLinkTarget
+  heading: string | null
+  is_active: boolean
+  links_count: number
+  broken_count: number
+  updated_at: string | null
+  items?: SeoLinkItem[]
+}
+
+/** A problem with one line of a file or one link of a form. */
+export interface SeoLinkProblem {
+  /** The line of the file (the header is the first), or the index of the link in a form. */
+  line: number
+  field: 'donor' | 'acceptor' | 'anchor' | string
+  code: string
+  level: 'error' | 'warning'
+  message: string
+}
+
+/** What a save answers with: the block, and what was replaced on the way (`redirected`). */
+export interface SeoLinkSaved extends SeoLinkBlock {
+  warnings: SeoLinkProblem[]
+}
+
+export interface SeoLinkInput {
+  donor: string
+  locale?: string | null
+  heading: string | null
+  is_active: boolean
+  items: { acceptor: string; anchor: string }[]
+}
+
+export interface SeoLinkQuery {
+  q?: string
+  /** Only donors with at least one broken link. */
+  broken?: boolean
+  page?: number
+  per_page?: number
+}
+
+export type SeoLinkImportMode = 'replace' | 'append'
+
+/** A preview of an import, or the report of one that was applied. */
+export interface SeoLinkImportResult {
+  ok: boolean
+  applied: boolean
+  mode: SeoLinkImportMode
+  donors: number
+  links: number
+  created: number
+  replaced: number
+  appended: number
+  errors: number
+  problems: SeoLinkProblem[]
+  blocks: {
+    donor: string
+    links: number
+    action: 'create' | 'replace' | 'append'
+    heading: string | null
+  }[]
+}
+
+/** One heading for many donors: the ticked ones, or every one under a prefix. */
+export interface SeoLinkHeadingInput {
+  ids?: number[]
+  prefix?: string
+  heading: string | null
+  dry_run: boolean
+}
+
+export interface SeoLinkHeadingResult {
+  ok: boolean
+  applied: boolean
+  count: number
+  heading: string | null
+  donors: string[]
+}
+
+/** An address the registry suggests for an acceptor. */
+export interface SeoLinkAddress {
+  url: string
+  locale: string
+  entity_type: string | null
+  entity_id: number | null
+}

@@ -1,7 +1,16 @@
-import type { AdminContext } from '@webx-ui/module-admin'
+import { HttpError, type AdminContext } from '@webx-ui/module-admin'
 import type {
   SeoAlias,
   SeoAliasQuery,
+  SeoLinkAddress,
+  SeoLinkBlock,
+  SeoLinkHeadingInput,
+  SeoLinkHeadingResult,
+  SeoLinkImportMode,
+  SeoLinkImportResult,
+  SeoLinkInput,
+  SeoLinkQuery,
+  SeoLinkSaved,
   SeoPage,
   SeoRedirect,
   SeoRedirectInput,
@@ -36,6 +45,21 @@ export interface SeoApi {
   sitemap(): Promise<SeoSitemapStatus>
   /** Build it again now; answers with the new numbers. */
   rebuildSitemap(): Promise<SeoSitemapStatus>
+
+  /** Donors with blocks of links, there only where interlinking is turned on (§18.4). */
+  links(query?: SeoLinkQuery): Promise<SeoPage<SeoLinkBlock>>
+  link(id: number): Promise<SeoLinkBlock>
+  createLink(input: SeoLinkInput): Promise<SeoLinkSaved>
+  updateLink(id: number, input: SeoLinkInput): Promise<SeoLinkSaved>
+  removeLink(id: number): Promise<void>
+  /** A file in the brief's own format; a preview unless `dryRun` is false. */
+  importLinks(file: Blob, mode: SeoLinkImportMode, dryRun: boolean): Promise<SeoLinkImportResult>
+  /** Where the whole list downloads from, in the same flat format the import reads. */
+  exportLinksUrl(format: 'csv' | 'xlsx'): string
+  /** One heading on many donors; a count of them unless `dry_run` is false. */
+  linksHeading(input: SeoLinkHeadingInput): Promise<SeoLinkHeadingResult>
+  /** Addresses from the registry for an acceptor field to suggest. */
+  linkAddresses(q: string, locale?: string | null): Promise<SeoLinkAddress[]>
 }
 
 /** Everything under `/seo`, below the panel's API path. */
@@ -120,5 +144,78 @@ export function createSeoApi(admin: AdminContext): SeoApi {
 
     rebuildSitemap: () =>
       admin.http.post<{ data: SeoSitemapStatus }>(`${base}/sitemap`, {}).then(data),
+
+    links: (query = {}) =>
+      admin.http
+        .get<{ data: SeoLinkBlock[]; meta: Omit<SeoPage<SeoLinkBlock>, 'data'> }>(`${base}/links`, {
+          query: {
+            q: query.q || undefined,
+            broken: query.broken ? 1 : undefined,
+            page: query.page,
+            per_page: query.per_page,
+          },
+        })
+        .then(page),
+
+    link: (id) => admin.http.get<{ data: SeoLinkBlock }>(`${base}/links/${id}`).then(data),
+
+    createLink: (input) =>
+      admin.http.post<{ data: SeoLinkSaved }>(`${base}/links`, input).then(data),
+
+    updateLink: (id, input) =>
+      admin.http.put<{ data: SeoLinkSaved }>(`${base}/links/${id}`, input).then(data),
+
+    removeLink: (id) => admin.http.delete<void>(`${base}/links/${id}`),
+
+    // Multipart rather than JSON, so it goes through `send`: the panel's cookie, token and
+    // language, and the body as it is.
+    importLinks: async (file, mode, dryRun) => {
+      const body = new FormData()
+      body.append('file', file, file instanceof File ? file.name : 'links.csv')
+      body.append('mode', mode)
+      body.append('dry_run', dryRun ? '1' : '0')
+
+      if (admin.http.send === undefined) throw new Error('This client cannot send a file.')
+
+      const response = await admin.http.send('POST', `${base}/links/import`, { body })
+
+      if (!response.ok) throw await failure(response)
+
+      return data(await (response.json() as Promise<{ data: SeoLinkImportResult }>))
+    },
+
+    exportLinksUrl: (format) => `${base}/links/export?format=${format}`,
+
+    linksHeading: (input) =>
+      admin.http.post<{ data: SeoLinkHeadingResult }>(`${base}/links/heading`, input).then(data),
+
+    linkAddresses: (q, locale = null) =>
+      admin.http
+        .get<{ data: SeoLinkAddress[] }>(`${base}/links/addresses`, {
+          query: { q: q || undefined, locale: locale ?? undefined },
+        })
+        .then(data),
   }
+}
+
+/** A refused upload in the shape the JSON calls throw, so a form reads its 422 the same way. */
+async function failure(response: Response): Promise<HttpError> {
+  type Body = { message?: unknown; errors?: unknown }
+  let body = null as Body | null
+
+  try {
+    body = (await response.json()) as Body
+  } catch {
+    // A gateway answers with HTML; there is nothing to read out of it.
+  }
+
+  return new HttpError(
+    typeof body?.message === 'string' ? body.message : `Request failed with ${response.status}`,
+    response.status,
+    body?.errors !== null && typeof body?.errors === 'object'
+      ? (body.errors as Record<string, string[]>)
+      : {},
+    null,
+    body,
+  )
 }

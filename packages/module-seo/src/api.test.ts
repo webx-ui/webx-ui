@@ -84,4 +84,66 @@ describe('createSeoApi', () => {
     expect(get).toHaveBeenCalledWith('/api/cms/seo/sitemap')
     expect(post).toHaveBeenCalledWith('/api/cms/seo/sitemap', {})
   })
+
+  it('sends the broken-only filter as a number and leaves it out when off', async () => {
+    const get = vi.fn().mockResolvedValue({ data: [], meta: {} })
+    const api = createSeoApi(context({ get }))
+
+    await api.links({ q: 'phones', broken: true })
+    await api.links({ broken: false })
+
+    expect(get).toHaveBeenNthCalledWith(1, '/api/cms/seo/links', {
+      query: { q: 'phones', broken: 1, page: undefined, per_page: undefined },
+    })
+    expect(get).toHaveBeenNthCalledWith(2, '/api/cms/seo/links', {
+      query: { q: undefined, broken: undefined, page: undefined, per_page: undefined },
+    })
+  })
+
+  it('uploads a brief as multipart, a preview unless told otherwise', async () => {
+    const send = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ data: { donors: 2 } }), { status: 200 }))
+    const file = new File(['donor,acceptor,anchor'], 'brief.csv')
+
+    await expect(
+      createSeoApi(context({ send })).importLinks(file, 'append', true),
+    ).resolves.toEqual({ donors: 2 })
+
+    const [method, path, options] = send.mock.calls[0]!
+    const body = options.body as FormData
+
+    expect([method, path]).toEqual(['POST', '/api/cms/seo/links/import'])
+    expect((body.get('file') as File).name).toBe('brief.csv')
+    expect(body.get('mode')).toBe('append')
+    expect(body.get('dry_run')).toBe('1')
+  })
+
+  it('throws a refused upload with its errors, the way a form reads a 422', async () => {
+    const send = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ message: 'Invalid.', errors: { file: ['Unreadable.'] } }), {
+        status: 422,
+      }),
+    )
+
+    await expect(
+      createSeoApi(context({ send })).importLinks(new Blob(['x']), 'replace', false),
+    ).rejects.toMatchObject({ status: 422, errors: { file: ['Unreadable.'] } })
+  })
+
+  it('sets one heading on the ticked donors or on a prefix', async () => {
+    const post = vi.fn().mockResolvedValue({ data: { count: 3 } })
+
+    await createSeoApi(context({ post })).linksHeading({
+      prefix: '/catalog/tech/',
+      heading: 'Similar',
+      dry_run: true,
+    })
+
+    expect(post).toHaveBeenCalledWith('/api/cms/seo/links/heading', {
+      prefix: '/catalog/tech/',
+      heading: 'Similar',
+      dry_run: true,
+    })
+  })
 })
