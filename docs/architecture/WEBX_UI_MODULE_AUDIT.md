@@ -444,8 +444,8 @@ composer.json, регистрация под `class_exists`).
 ### A1 (02.10.2026)
 
 - **Пакеты.** `php/packages/module-audit` (namespace `WebxUi\Audit`) и `packages/module-audit`
-  (`audit()` — экраны «Обзор» и «Находки»). Раздел — в `Setup\Catalogue` (`default: false`, пока
-  первая версия npm-пакета не опубликована), в плейграунде — с фикстурами
+  (`audit()` — экраны «Обзор» и «Находки»). Раздел — в `Setup\Catalogue` (с 04.10.2026 `default: true`;
+  до первой публикации npm-пакета был `false`), в плейграунде — с фикстурами
   `apps/playground/server/panel/audit.ts`. В `scripts/packages.mjs` сайта `webx-cms.local` —
   после первой публикации: в режиме `registry` неопубликованный пакет ломает установку.
 - **Таблицы A1:** `audit_runs`, `audit_issues`, `audit_content_urls`. `audit_pages` и

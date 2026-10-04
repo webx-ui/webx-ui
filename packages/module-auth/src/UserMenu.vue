@@ -141,7 +141,15 @@ async function choose(code: string): Promise<void> {
           Initials are a way of telling two people apart, not of saying who somebody is. Where
           the corner is wide enough, it says it.
         -->
-        <span v-if="expanded" class="wx-user-menu__name">{{ user.name }}</span>
+        <template v-if="expanded">
+          <span class="wx-user-menu__who">
+            <span class="wx-user-menu__name">{{ user.name }}</span>
+            <span class="wx-user-menu__email">{{ user.email }}</span>
+          </span>
+
+          <!-- Says the row opens something, which a name alone does not. -->
+          <wx-icon name="chevron-up" size="sm" class="wx-user-menu__chevron" />
+        </template>
       </button>
     </template>
 
@@ -251,15 +259,35 @@ async function choose(code: string): Promise<void> {
   background: var(--wx-bg-subtle);
 }
 
-.wx-user-menu__name {
+.wx-user-menu__who {
+  display: flex;
   flex: 1 1 auto;
+  flex-direction: column;
   min-width: 0;
-  overflow: hidden;
-  color: var(--wx-text-default);
   font-family: var(--wx-font-family-sans);
-  font-size: var(--wx-font-size-sm);
-  font-weight: var(--wx-font-weight-medium);
+  line-height: 1.3;
+}
+
+.wx-user-menu__name,
+.wx-user-menu__email {
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.wx-user-menu__name {
+  color: var(--wx-text-default);
+  font-size: var(--wx-font-size-sm);
+  font-weight: var(--wx-font-weight-medium);
+}
+
+.wx-user-menu__email {
+  color: var(--wx-text-muted);
+  font-size: var(--wx-font-size-xs);
+}
+
+.wx-user-menu__chevron {
+  flex: none;
+  color: var(--wx-text-muted);
 }
 </style>

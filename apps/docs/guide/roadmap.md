@@ -243,4 +243,7 @@ of components:
    database rather than generated into files; see [Blocks](/guide/blocks).
 5. Many sites from one install ⬜ — one panel, many domains, a design per domain. Designed, not
    started.
-6. A catalogue for shops ⬜ — a core plus satellite modules. Being designed.
+6. A catalogue for shops ✅ — a core plus satellites: properties, stock, brands, labels, landing
+   pages, a gallery with video, CSV/XLSX exchange and Manticore search; see
+   [Catalogue](/guide/catalog). Wave B (linked products, groups, configurable products, sizes, more
+   exchange formats) is not started.

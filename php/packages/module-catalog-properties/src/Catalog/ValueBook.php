@@ -55,14 +55,21 @@ final class ValueBook
      * The values of a property with the number of products each holds, in the book's order:
      * «alphabetical» in the alphabet of the current language, «by hand» in the tree's.
      *
+     * A branch counts its subtree, as the filter and the delete refusal do
+     * ({@see PropertyValue::productCount()}): a branch that shows 0 and then refuses to go would
+     * read as a lie.
+     *
      * @return Builder<PropertyValue>
      */
     public function listing(Property $owner): Builder
     {
         $query = PropertyValue::query()->where('property_id', $owner->id)->with('image');
-        $query->addSelect(['catalog_property_values.*', 'products_count' => DB::table(ProductValues::TABLE)
-            ->selectRaw('count(distinct product_id)')
-            ->whereColumn('value_id', 'catalog_property_values.id')]);
+        $query->addSelect(['catalog_property_values.*', 'products_count' => DB::table(ProductValues::TABLE.' as held')
+            ->join('catalog_property_values as below', 'below.id', '=', 'held.value_id')
+            ->selectRaw('count(distinct held.product_id)')
+            ->whereColumn('below.property_id', 'catalog_property_values.property_id')
+            ->whereColumn('below.lft', '>=', 'catalog_property_values.lft')
+            ->whereColumn('below.rgt', '<=', 'catalog_property_values.rgt')]);
 
         return $owner->value_order === Property::MANUAL
             ? $query->orderBy('lft')

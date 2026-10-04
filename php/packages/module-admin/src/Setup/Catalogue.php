@@ -77,7 +77,7 @@ final class Catalogue
             'package' => 'webx-ui/module-audit',
             'npm' => '@webx-ui/module-audit',
             'label' => 'Audit — the production config, the host, and links to a development stand in the content',
-            'default' => false,
+            'default' => true,
             'requires' => ['admins', 'settings'],
         ],
         'inbox' => [

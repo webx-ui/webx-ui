@@ -127,5 +127,7 @@ describe('WxUserMenu', () => {
     const wide = draw(alexx, null, true)
 
     expect(wide.find('.wx-user-menu__name').text()).toBe('Alexx')
+    expect(wide.find('.wx-user-menu__email').text()).toBe('alexx@example.test')
+    expect(wide.find('.wx-user-menu__chevron').exists()).toBe(true)
   })
 })

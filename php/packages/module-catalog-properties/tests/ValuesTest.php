@@ -158,6 +158,31 @@ final class ValuesTest extends TestCase
     }
 
     #[Test]
+    public function a_branch_counts_its_subtree_in_the_list_as_the_delete_refusal_does(): void
+    {
+        $laptops = $this->category('laptops');
+        $material = $this->property('Material', attributes: ['is_tree' => true, 'value_order' => Property::MANUAL]);
+        $metal = $this->value($material, 'Metal');
+        $steel = $this->value($material, 'Steel', $metal);
+        $this->value($material, 'Wood');
+        $this->set($laptops, [$material]);
+        $this->product('Steel one', $laptops, [$material->id => $steel]);
+        $this->product('Steel two', $laptops, [$material->id => $steel]);
+        $editor = $this->editor();
+
+        $this->actingAs($editor, 'cms')->getJson($this->api("properties/{$material->id}/values"))->assertOk()
+            ->assertJsonPath('data.0.id', $metal->id)
+            ->assertJsonPath('data.0.products_count', 2)
+            ->assertJsonPath('data.1.products_count', 0);
+
+        $this->actingAs($editor, 'cms')->getJson($this->api("properties/{$material->id}/values?parent_id={$metal->id}"))->assertOk()
+            ->assertJsonPath('data.0.products_count', 2);
+
+        $this->actingAs($editor, 'cms')->deleteJson($this->api("properties/{$material->id}/values/{$metal->id}"))
+            ->assertStatus(422)->assertJsonPath('meta.products', 2);
+    }
+
+    #[Test]
     public function a_property_in_the_bin_takes_its_facet_and_segment_away_and_keeps_the_values(): void
     {
         $laptops = $this->category('laptops');

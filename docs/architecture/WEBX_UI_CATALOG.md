@@ -1,6 +1,6 @@
 # Каталог товаров — семейство модулей, архитектура
 
-Волна A выпущена (v0.50.0–v0.56.0, §10); спека — справочник того, что есть. Ядро —
+Волна A выпущена (v0.50.0–v0.56.0, хвосты — v0.57.0, §10); спека — справочник того, что есть. Ядро —
 [`WEBX_UI_MODULE_CATALOG.md`](WEBX_UI_MODULE_CATALOG.md). Этот документ — про семейство целиком:
 границы, решения, контракты ядра, раскладку по пакетам и анатомию спутника; спеки модулей —
 в таблице §10.
@@ -334,7 +334,7 @@ PHP.
 
 | Пакет                                          | Состояние                                        | Спека                                                                                                            |
 | ---------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `module-catalog`                               | v0.50.0; видео галереи — v0.52.0                 | [`WEBX_UI_MODULE_CATALOG.md`](WEBX_UI_MODULE_CATALOG.md), [`WEBX_UI_CATALOG_VIDEO.md`](WEBX_UI_CATALOG_VIDEO.md) |
+| `module-catalog`                               | v0.50.0; видео — v0.52.0; хвосты A — v0.57.0     | [`WEBX_UI_MODULE_CATALOG.md`](WEBX_UI_MODULE_CATALOG.md), [`WEBX_UI_CATALOG_VIDEO.md`](WEBX_UI_CATALOG_VIDEO.md) |
 | `module-catalog-labels`, `-stock`, `-brands`   | v0.53.0                                          | [`WEBX_UI_CATALOG_DICTIONARIES.md`](WEBX_UI_CATALOG_DICTIONARIES.md)                                             |
 | `module-catalog-properties`                    | v0.54.0                                          | [`WEBX_UI_CATALOG_PROPERTIES.md`](WEBX_UI_CATALOG_PROPERTIES.md)                                                 |
 | обмен ядра (CSV, XLSX)                         | v0.55.0                                          | [`WEBX_UI_MODULE_CATALOG_EXCHANGE.md`](WEBX_UI_MODULE_CATALOG_EXCHANGE.md)                                       |

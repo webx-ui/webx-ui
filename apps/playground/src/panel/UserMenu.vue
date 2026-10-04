@@ -6,6 +6,7 @@ import {
   WxDivider,
   WxDropdown,
   WxDropdownItem,
+  WxIcon,
   WxText,
   WxThemeSwitch,
 } from '@webx-ui/core'
@@ -40,7 +41,13 @@ const preference = computed({
     <template #trigger>
       <button class="account" type="button">
         <wx-avatar size="sm" name="Анна Ковальчук" />
-        <span v-if="expanded" class="account__name">Анна Ковальчук</span>
+        <template v-if="expanded">
+          <span class="account__who">
+            <span class="account__name">Анна Ковальчук</span>
+            <span class="account__email">anna@example.test</span>
+          </span>
+          <wx-icon name="chevron-up" size="sm" class="account__chevron" />
+        </template>
       </button>
     </template>
 
@@ -95,10 +102,35 @@ const preference = computed({
   background: var(--wx-bg-subtle);
 }
 
-.account__name {
+.account__who {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+  text-align: start;
+}
+
+.account__name,
+.account__email {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.account__name {
+  font-size: var(--wx-font-size-sm);
+  font-weight: var(--wx-font-weight-medium);
+}
+
+.account__email {
+  color: var(--wx-text-muted);
+  font-size: var(--wx-font-size-xs);
+}
+
+.account__chevron {
+  flex: none;
+  color: var(--wx-text-muted);
 }
 
 .theme {
