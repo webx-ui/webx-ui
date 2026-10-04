@@ -1,6 +1,17 @@
 # A WebX UI site
 
-A Laravel application with the [WebX UI](https://github.com/webx-ui/webx-ui) admin panel on it.
+A Laravel website with the [WebX UI](https://github.com/webx-ui/webx-ui) admin panel on it: the
+public pages are this site's own views and styles, the content — pages, articles, products,
+menus, forms — is edited in the panel at `/cms`, and the modules that do the work are Composer
+packages `webx-ui/*` in `vendor/`.
+
+## Two ways to run it
+
+**With Docker only** — nothing else installed, no experience needed. Follow
+[Docker from zero](https://webx-ui.github.io/webx-ui/guide/docker) step by step; it ends with the
+site on `http://localhost:8080` and the panel on `http://localhost:8080/cms`.
+
+**On a machine with PHP 8.4, Composer, Node and MySQL or MariaDB:**
 
 ```bash
 composer create-project webx-ui/site example.local
@@ -11,6 +22,18 @@ The questions that follow — name, domain, database, languages, modules, the fi
 run it again after installing a module and it wires in what is new and leaves the rest alone.
 
 At the end it prints the panel's address, the login and a generated password.
+
+## Changing it, with an agent or without
+
+- [Where the styles live](https://webx-ui.github.io/webx-ui/guide/styles) — which files hold the
+  design, what is safe to change and what is not, how to see a change.
+- `AGENTS.md` — what an AI agent (Claude Code, Codex, Cursor) reads first. `webx:setup` writes
+  it and `php artisan webx:panel --sync` keeps its block current; your own notes about this site
+  go under `## This project`, and both it and `CLAUDE.md` belong in git.
+- [A new site](https://webx-ui.github.io/webx-ui/guide/new-site) — everything below, in full.
+
+The first rule, for people and agents alike: **never edit `vendor/` and never copy a module into
+the site.** Configure it, publish its views, patch its screens — the seams are below.
 
 ## What to delete first
 
@@ -59,7 +82,8 @@ usual answer.
 ## Containers
 
 Optional, and yours to delete like everything else here: `Dockerfile`, the two compose files
-and `docker/`.
+and `docker/`. With nothing but Docker on the machine, start from
+[Docker from zero](https://webx-ui.github.io/webx-ui/guide/docker).
 
 ```bash
 docker compose up -d --build                                        # the production shape

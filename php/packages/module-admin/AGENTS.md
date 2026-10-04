@@ -52,8 +52,9 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
 ### The site's root `AGENTS.md`
 
 `webx:panel` (and so `--sync`) writes a block between `<!-- webx:agents -->` and
-`<!-- /webx:agents -->`: what the site is, the first rule, a link to `vendor/webx-ui/<pkg>/AGENTS.md`
-for every installed `webx-ui/*` package that has one, what to run after updating. The block is
+`<!-- /webx:agents -->`: what the site is, the first rule, where its look lives (a link to the
+styles guide, `RootFile::STYLES_GUIDE`), a link to `vendor/webx-ui/<pkg>/AGENTS.md` for every
+installed `webx-ui/*` package that has one, what to run after updating. The block is
 replaced whole on each run; everything outside it — the `## This project` section — is never
 touched. A hand-written file without markers keeps every word, with the block put on top.
 `CLAUDE.md` is written once as `@AGENTS.md`; an existing one without that line only gets a warning.

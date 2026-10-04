@@ -72,6 +72,7 @@
 <!-- Written by `php artisan webx:panel --sync`; … replaced on the next run. -->
 # This site                  ← что за сайт, где панель (config('webx-admin.path'))
 ## The first rule            ← не форкать, не править vendor; порядок способов расширения
+## The site's look           ← три места вида и ссылка на гайд по стилям (AG4, §6)
 ## Installed packages        ← - [webx-ui/x](vendor/webx-ui/x/AGENTS.md) — description из composer
                                «Without a guide yet …» — установленные webx-ui/* без AGENTS.md
 ## After changing packages   ← composer update "webx-ui/*" -W, webx:panel --sync, npm build, migrate, doctor
@@ -150,10 +151,50 @@
 6. **Не в корневом `AGENTS.md`.** Агент по коду правила контента не применяет; ресурс и ключи
    называет `AGENTS.md` модулей `module-settings` и `mcp`.
 
-Путь человека без опыта — Docker с нуля и «где живут стили и что безопасно менять» — AG4;
-корневой блок тогда получит ссылку на этот гайд.
+Путь человека без опыта — Docker с нуля и «где живут стили и что безопасно менять» — AG4, §6.
 
-## 6. Этапы
+## 6. Путь человека без опыта (AG4)
+
+**Кто читает.** Человек, который сайтов не разворачивал: на машине нет PHP, Composer, Node и
+базы, терминал он открывает по инструкции. Рядом с ним агент (Claude Code, Codex, Cursor), и
+читают они вдвоём: человек — в браузере, агент — по ссылке или из файла сайта. Отсюда форма
+текстов: шаги по номерам, каждая команда копируется как есть, у каждого шага строка
+**Check** — что увидеть, чтобы идти дальше, — и таблица «что видишь → что это и что делать»
+вместо «если не вышло, разберитесь».
+
+**Три текста и где каждый живёт.**
+
+| Текст           | Где                                                                            | Почему там                                                                                                           |
+| --------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Docker с нуля   | `apps/docs/guide/docker.md` → `https://webx-ui.github.io/webx-ui/guide/docker` | читают **до** того, как у человека есть сайт, — в `vendor` его ещё нет                                               |
+| Где живут стили | `apps/docs/guide/styles.md` → `https://webx-ui.github.io/webx-ui/guide/styles` | говорит о файлах самого сайта, а их версия пакета не меняет; читает и человек, не только агент                       |
+| README скелета  | `php/site/README.md` → `README.md` в корне каждого нового сайта                | первое, что человек видит в папке сайта: что это, два пути (Docker / локально), ссылки на оба гайда и на `AGENTS.md` |
+
+Оба гайда — английские, как вся документация сайта; полными URL их называют README скелета и
+корневой блок, относительными — гайды доков между собой.
+
+**Docker с нуля** строится на том, что скелет уже несёт (`Dockerfile`, `docker-compose.yml`,
+`docker-compose.dev.yml`, `docker/entrypoint.sh`), и добавляет то, чего не хватало: как получить
+скелет и пройти `webx:setup` без PHP на машине. `create-project` — контейнером `composer:2` с
+`--no-scripts --no-install`; `package-lock.json` — контейнером `node:22-alpine` (стадия `assets`
+образа копирует его, без файла сборка падает); `composer install`, `key:generate` и
+`webx:setup --no-build` — в `docker compose … run --rm --entrypoint sh app`, мимо entrypoint, чтобы
+`webx:boot` не шёл раньше установщика; фронт собирает контейнер `vite` из dev-стопки. Дальше —
+повседневные команды, где лежат данные (папка, `storage/`, том `<папка>_database-data`, `.env`)
+и таблица отказов.
+
+**Где живут стили** делит вид сайта на три места: публичный сайт (`resources/css/app.css`,
+`resources/views/`, `public/` — сайта), блоки (типы в базе, правятся в панели или через MCP,
+`.b-<slug>` и `@container`) и панель (пакеты библиотеки; ребрендинг — своим CSS с `--wx-*`,
+импортом в `resources/js/admin.ts` вне маркеров `// webx:`). Таблица «безопасно / никогда»,
+как увидеть правку и чек-лист для агента.
+
+**Строка корневого блока.** `RootFile::block()` получает раздел `## The site's look` между
+«The first rule» и «Installed packages»: три места вида одной фразой и ссылка
+`RootFile::STYLES_GUIDE`. Ссылки на Docker в блоке нет: агент, который читает `AGENTS.md`, уже
+стоит в работающем сайте.
+
+## 7. Этапы
 
 | Этап | Что                                                                            |
 | ---- | ------------------------------------------------------------------------------ |
@@ -163,7 +204,7 @@
 | AG4  | Docker с нуля, гайд по стилям, README скелета                                  |
 | AG5  | релиз, живой сайт на нём, проверка сгенерированного `AGENTS.md`                |
 
-## 7. Как легло в код
+## 8. Как легло в код
 
 ### AG1 (04.10.2026)
 
@@ -215,3 +256,16 @@
   `WebxServerTest` в `mcp` (без ресурса строки нет, с ним — одна).
 - Гайды: раздел «Content rules» в `apps/docs/guide/settings.md`, «The site's house rules» в
   `apps/docs/guide/agents.md`; `AGENTS.md` у `module-settings` и `mcp`.
+
+### AG4 (04.10.2026)
+
+- Гайды `apps/docs/guide/docker.md` («Docker from zero») и `apps/docs/guide/styles.md` («Where
+  the styles live»), в сайдбаре доков после «A new site»; ссылки на них — из `new-site.md`
+  (раздел «Containers», «Agent guide», «Where to go next») и из README скелета.
+- `php/site/README.md` начинается с того, что это за сайт, двух путей и раздела «Changing it, with
+  an agent or without».
+- `RootFile::STYLES_GUIDE` и раздел `## The site's look` в `RootFile::block()`;
+  `AgentGuideTest` проверяет раздел, ссылку и что она стоит до списка пакетов. `AGENTS.md`
+  `module-admin` называет её среди содержимого блока.
+- Путь Docker сверен с файлами скелета и кодом `webx:setup` / `webx:boot`, но **не прогнан**: на
+  машине, где писался этап, Docker нет. Прогон с нуля — пункт чек-листа готовности в AG5.

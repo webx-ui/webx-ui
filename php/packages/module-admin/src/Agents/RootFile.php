@@ -18,6 +18,14 @@ final class RootFile
 
     public const END = '<!-- /webx:agents -->';
 
+    /**
+     * Where the site's own look lives and what is safe to change in it.
+     *
+     * A page of the documentation rather than a file in `vendor`: it is about the site's files,
+     * which no package version changes, and it is written for the person beside the agent too.
+     */
+    public const STYLES_GUIDE = 'https://webx-ui.github.io/webx-ui/guide/styles';
+
     /** What a new file carries below the block, for the project to fill in. */
     public const PROJECT = <<<'MD'
         ## This project
@@ -59,6 +67,12 @@ final class RootFile
             '',
             'If none of these reaches what is needed, the module is missing a seam: say so and propose it at',
             'https://github.com/webx-ui/webx-ui/issues rather than working around it.',
+            '',
+            '## The site\'s look',
+            '',
+            'The public pages are the site\'s own `resources/css/app.css` and `resources/views/`; block types are made',
+            'in the panel; the panel itself is rebranded through `--wx-*` variables, never edited. Which file holds',
+            'what, what is safe to change and how to see a change: '.self::STYLES_GUIDE,
             '',
             '## Installed packages',
             '',

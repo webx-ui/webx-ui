@@ -80,6 +80,13 @@ final class AgentGuideTest extends TestCase
         $this->assertStringContainsString('Without a guide yet, read their README.md: `webx-ui/module-seo`.', $guide);
         $this->assertStringNotContainsString('laravel/framework', $guide);
         $this->assertStringContainsString('`/cms`', $guide);
+        $this->assertStringContainsString("## The site's look", $guide);
+        $this->assertStringContainsString('how to see a change: '.RootFile::STYLES_GUIDE, $guide);
+        $this->assertLessThan(
+            strpos($guide, '## Installed packages'),
+            strpos($guide, RootFile::STYLES_GUIDE),
+            'The styles guide is named before the package list, where it is read.',
+        );
         $this->assertStringEndsWith(RootFile::PROJECT."\n", $guide);
 
         $this->assertSame("@AGENTS.md\n", $this->files->get($this->app->basePath('CLAUDE.md')));
