@@ -204,7 +204,8 @@ export interface SeoTestResult {
 }
 
 /** Why an address is not in the sitemap. `null` when it is. */
-export type SeoSitemapReason = 'disabled' | 'unknown' | 'alias' | 'hidden' | 'noindex' | 'canonical'
+export type SeoSitemapReason =
+  'disabled' | 'unknown' | 'alias' | 'not-a-page' | 'hidden' | 'noindex' | 'canonical'
 
 export interface SeoSitemapVerdict {
   included: boolean
@@ -213,7 +214,8 @@ export interface SeoSitemapVerdict {
 
 /**
  * The sitemap as a crawler gets it: the card above the rules. `files` counts the addresses in
- * each file of the map; `excluded` counts the visible ones the resolver closed, by why.
+ * each file of the map; `excluded` counts the visible ones the resolver closed, by why;
+ * `excluded_types` names the address types left out whole because their handler redirects.
  */
 export interface SeoSitemapStatus {
   enabled: boolean
@@ -222,6 +224,17 @@ export interface SeoSitemapStatus {
   files: Record<string, number>
   total: number
   excluded: { noindex: number; canonical: number }
+  excluded_types: SeoSitemapSkippedType[]
+}
+
+/** An address type whose handler is not a page (`NotAPage`): none of its addresses is in the map. */
+export interface SeoSitemapSkippedType {
+  type: string
+  reason: 'not-a-page'
+  /** The class the site bound, which is what said so. */
+  handler: string
+  /** Canonical addresses of the type the map leaves out. */
+  addresses: number
 }
 
 /** The meta directives the card offers as checkboxes. Anything else is kept as written. */

@@ -61,6 +61,7 @@ their guides when the question is about one of those.
 | JSON-LD for one response (a list on this page)  | `app(Seo::class)->push([...])` in the handler before the view renders                            |
 | SEO values from somewhere else                  | implement `SeoSource`, `app(SeoSources::class)->register(...)` in a provider                     |
 | Sitemap addresses no registry row stands behind | implement `SitemapSource`, `app(SitemapSources::class)->register(...)`                           |
+| A redirecting type out of the sitemap           | implement `WebxUi\Routing\Contracts\NotAPage` on the handler you bound over the module's         |
 | A field on the SEO tab                          | a patch: `Screens::extend('settings.index', [...])` against the ids above                        |
 
 ## Do not
@@ -80,6 +81,9 @@ their guides when the question is about one of those.
 - Do not write `seo_urls` or `seo_redirects` with SQL: the compiled rules in the cache are
   thrown away by the models' save and delete, and a raw write leaves the site matching the old
   list. Go through the panel, the API or `seo_urls_set` / `seo_redirects_set`.
+- Do not mark every address of a redirecting type `noindex` to get it out of the sitemap: the
+  handler that redirects implements `NotAPage`, and the whole type goes. A list of types in config
+  is not offered on purpose — it would drift from the binding.
 - Do not add a redirect over a live address to "fix" it: it shadows the page. `seo_test_url`
   says what `webx-ui/routing` holds there; a renamed entity already left a 301 alias.
 
@@ -89,7 +93,8 @@ their guides when the question is about one of those.
   saying and which source each part came from. The first question for "why is this title wrong".
 - View the page source: one `<title>`, one canonical, the JSON-LD blocks you expect.
 - `php artisan webx:seo:sitemap` builds the map and prints the count per file; `seo_sitemap_status`
-  says the same plus how many addresses were left out for noindex or a foreign canonical.
+  says the same plus how many addresses were left out for noindex or a foreign canonical, and
+  under `excluded_types` the address types left out whole because their handler is `NotAPage`.
 - Open an old address in the browser and check it answers 301 to the new one, in one hop.
 - With MCP: every `*_set` and `*_import` tool takes `dry_run: true` first.
 

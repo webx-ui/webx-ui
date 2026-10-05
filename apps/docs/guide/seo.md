@@ -299,6 +299,40 @@ to tell the map. On a multilingual site each line carries the same `hreflang` se
 - `/robots.txt` gets a `Sitemap:` line by itself if the setting does not have one.
 - `WEBX_SEO_SITEMAP=false` turns the whole thing off for a site with a map of its own.
 
+### A type that is not a page
+
+A site may bind its own handler over a module's so that a type never shows a page: events that go
+straight to an external booking page, categories that are only a filter on the list. Those
+addresses answer 301, and a redirect does not belong in a sitemap. The handler says so by
+implementing `NotAPage` from `webx-ui/routing`:
+
+```php
+use WebxUi\Routing\Contracts\NotAPage;
+use WebxUi\Routing\RouteHandler;
+
+final class EventRedirect implements RouteHandler, NotAPage
+{
+    public function handle(Request $request, object $entity, string $tail): Response
+    {
+        return redirect()->away($entity->booking_url, 301);
+    }
+}
+
+// in the site's provider
+$this->app->bind(EventHandler::class, EventRedirect::class);
+```
+
+The type then has no file and is left out of the index. The card and `seo_sitemap_status` list it
+under `excluded_types` with the reason `not-a-page`, the class that said so and how many addresses
+it covers; `test-url` answers `not-a-page` for each of them. Nobody has to mark every new event
+`noindex`. The built map is kept under the set of such types, so a deploy that adds or removes the
+binding is picked up on the next request without a rebuild.
+
+There is deliberately no config list of types to leave out. The binding is what makes the addresses
+redirect, and a second list would have to be kept in step with it. A type that does show pages but
+should stay out of the index is closed with a `noindex` rule (`/events/**`), and then the head and
+the map agree.
+
 A route that is not an entity — a feed, an index page — is added from the module's provider:
 
 ```php
@@ -308,7 +342,7 @@ app(SitemapRoutes::class)->register('blog.feed');
 In the panel, the card **Sitemap** above the rules shows the address, the number of addresses in
 each file, when it was built, and how many visible pages were **left out** and why — `noindex` or
 another canonical. That last line is the first thing to read when a page is missing from a search
-engine.
+engine. Types that are not pages are named on a line of their own, with their number of addresses.
 
 ## Contracts for module authors
 

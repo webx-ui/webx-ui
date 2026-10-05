@@ -169,6 +169,12 @@ What the resolver decides, in this order:
 4. **The handler decides publication.** The entity already carries that state; a draft is a 404 from
    the handler and a preview is a 200 from the same place.
 
+The handler is resolved through the container, so a site changes what a module's addresses do by
+binding its own class over the module's: `$this->app->bind(EventHandler::class, EventRedirect::class)`.
+When the site's class never shows a page (every address redirects or answers 410), it implements
+the marker `WebxUi\Routing\Contracts\NotAPage`. `RouteType::servesPages()` then answers false, and
+whatever lists the site's pages leaves the type out: the sitemap of `module-seo` does.
+
 Whatever runs after the handler can read what was found without asking again:
 
 ```php

@@ -316,6 +316,7 @@ final class EntityHeadTest extends TestCase
             ->assertJsonPath('data.total', 2)
             ->assertJsonPath('data.excluded.noindex', 1)
             ->assertJsonPath('data.excluded.canonical', 1)
+            ->assertJsonPath('data.excluded_types', [])
             ->assertJson(static fn (AssertableJson $json) => $json->whereType('data.built_at', 'string')->etc());
 
         // Rebuilding is a change, and reading is not permission to make one.

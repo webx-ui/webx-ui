@@ -93,6 +93,17 @@ async function rebuild(): Promise<void> {
             })
           }}
         </wx-text>
+
+        <!-- Not a warning: a site said these redirect, and the map agreeing is the point. -->
+        <wx-text v-if="status.excluded_types?.length" size="sm" tone="muted">
+          {{
+            t('page.sitemap-not-pages', {
+              types: status.excluded_types
+                .map((skipped) => `${skipped.type} (${skipped.addresses})`)
+                .join(', '),
+            })
+          }}
+        </wx-text>
       </div>
 
       <wx-button

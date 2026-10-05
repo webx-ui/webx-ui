@@ -13,6 +13,7 @@ use Illuminate\Routing\Router;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\URL;
 use WebxUi\Localization\Locales;
+use WebxUi\Routing\Contracts\NotAPage;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\Models\Route as RouteRow;
 use WebxUi\Routing\Resolver;
@@ -39,8 +40,14 @@ use WebxUi\Seo\Rendering\Seo;
  * setting. The time-to-live is for the one change nothing announces: an article dated for
  * tomorrow becomes visible without anything being written.
  *
+ * A type whose handler is not a page at all ({@see NotAPage}) is left out before those three are
+ * asked: its addresses answer with a redirect, and a map that lists a redirect sends the crawler on
+ * an errand. That is a fact about the address, not an opinion about the page, so it does not break
+ * decision 2.
+ *
  * @phpstan-type Entry array{loc: string, lastmod: CarbonInterface|null, locale: string, group: string}
- * @phpstan-type Status array{enabled: bool, url: string, built_at: string|null, files: array<string, int>, total: int, excluded: array{noindex: int, canonical: int}}
+ * @phpstan-type Skipped array{type: string, reason: 'not-a-page', handler: string, addresses: int}
+ * @phpstan-type Status array{enabled: bool, url: string, built_at: string|null, files: array<string, int>, total: int, excluded: array{noindex: int, canonical: int}, excluded_types: list<Skipped>}
  */
 final class Sitemap
 {
@@ -101,9 +108,9 @@ final class Sitemap
 
     /**
      * What the panel's card and `seo_sitemap_status` say: how many addresses in which file, when
-     * it was built, and how many visible addresses were left out and why (§17.6). The current
-     * build if there is one, a fresh one if there is not — the question is asked about the map a
-     * crawler would get.
+     * it was built, how many visible addresses were left out and why (§17.6), and which address
+     * types are not in it at all because they are not pages. The current build if there is one, a
+     * fresh one if there is not — the question is asked about the map a crawler would get.
      *
      * @return Status
      */
@@ -131,6 +138,7 @@ final class Sitemap
             'files' => $files,
             'total' => array_sum($files),
             'excluded' => $stats['excluded'] ?? ['noindex' => 0, 'canonical' => 0],
+            'excluded_types' => $this->enabled() ? $this->skippedTypes() : [],
         ];
     }
 
@@ -141,7 +149,7 @@ final class Sitemap
      * entity's own answer, the resolver. The query does not count: the map lists addresses, and
      * `?page=2` of a feed is found through the feed.
      *
-     * @return array{included: bool, reason: 'disabled'|'unknown'|'alias'|'hidden'|'noindex'|'canonical'|null}
+     * @return array{included: bool, reason: 'disabled'|'unknown'|'alias'|'not-a-page'|'hidden'|'noindex'|'canonical'|null}
      */
     public function verdict(string $url, ?string $locale = null): array
     {
@@ -227,7 +235,7 @@ final class Sitemap
         $all = [];
 
         foreach ($this->types->all() as $type) {
-            if (! is_subclass_of($type->model, Visible::class)) {
+            if (! is_subclass_of($type->model, Visible::class) || ! $type->servesPages()) {
                 continue;
             }
 
@@ -389,7 +397,7 @@ final class Sitemap
      * The entity behind an address and the language of its row — or why the map has nothing
      * to say about it.
      *
-     * @return array{0: object|null, 1: string|null, 2: 'unknown'|'alias'|'hidden'|null}
+     * @return array{0: object|null, 1: string|null, 2: 'unknown'|'alias'|'not-a-page'|'hidden'|null}
      */
     private function find(string $path, ?string $locale): array
     {
@@ -406,6 +414,10 @@ final class Sitemap
 
             if ($type === null || ! is_subclass_of($type->model, Visible::class)) {
                 return [null, null, 'unknown'];
+            }
+
+            if (! $type->servesPages()) {
+                return [null, null, 'not-a-page'];
             }
 
             /** @var (Model&Visible)|null $entity */
@@ -435,6 +447,40 @@ final class Sitemap
         }
 
         return [null, null, 'unknown'];
+    }
+
+    /**
+     * The types the map leaves out whole because their handler is not a page, with the handler
+     * that said so and how many canonical addresses it covers — so the panel can say why `event`
+     * has no file rather than leave somebody to wonder. Asked live, not from the build: it is a
+     * question about the code that runs now.
+     *
+     * @return list<Skipped>
+     */
+    private function skippedTypes(): array
+    {
+        $skipped = [];
+
+        foreach ($this->types->all() as $type) {
+            if ($type->handler === null || ! is_subclass_of($type->model, Visible::class)) {
+                continue;
+            }
+
+            $handler = app($type->handler);
+
+            if (! $handler instanceof NotAPage) {
+                continue;
+            }
+
+            $skipped[] = [
+                'type' => $type->type,
+                'reason' => 'not-a-page',
+                'handler' => $handler::class,
+                'addresses' => RouteRow::query()->where('entity_type', $type->type)->where('kind', RouteRow::CANONICAL)->count(),
+            ];
+        }
+
+        return $skipped;
     }
 
     /**
@@ -614,9 +660,25 @@ final class Sitemap
         return (string) $this->cache->get($this->generationKey(), '0');
     }
 
+    /**
+     * The generation, and which types are not pages. Those change with a deploy rather than a
+     * save, so no event moves the generation for them; naming them in the key instead means a
+     * map built before a site bound its redirecting handler is simply never read again. Empty for
+     * a site where every type is a page, so its keys are what they always were.
+     */
     private function key(string $generation, string $what): string
     {
-        return $this->prefix().'.'.$generation.'.'.$what;
+        $skipped = [];
+
+        foreach ($this->types->all() as $type) {
+            if (! $type->servesPages()) {
+                $skipped[] = $type->type;
+            }
+        }
+
+        $skipped = $skipped === [] ? '' : '.'.substr(sha1(implode(',', $skipped)), 0, 8);
+
+        return $this->prefix().'.'.$generation.$skipped.'.'.$what;
     }
 
     private function generationKey(): string

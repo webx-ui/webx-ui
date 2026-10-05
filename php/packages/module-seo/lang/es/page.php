@@ -65,6 +65,7 @@ return [
     'sitemap-built' => 'Generado',
     'sitemap-total' => 'Direcciones: :count',
     'sitemap-excluded' => 'Fuera — noindex: :noindex, otro canónico: :canonical',
+    'sitemap-not-pages' => 'No incluidos — tipos de dirección que redirigen en lugar de mostrar una página: :types',
     'sitemap-empty' => 'Está vacío: ninguna dirección está publicada y abierta al índice.',
     'sitemap-off' => 'El mapa del sitio está desactivado en este sitio.',
     'sitemap-rebuild' => 'Regenerar',
@@ -78,4 +79,5 @@ return [
     'sitemap-reason-hidden' => 'la página no está publicada',
     'sitemap-reason-noindex' => 'la página dice noindex',
     'sitemap-reason-canonical' => 'la página indica otra dirección como canónica',
+    'sitemap-reason-not-a-page' => 'este tipo de dirección redirige en lugar de mostrar una página',
 ];

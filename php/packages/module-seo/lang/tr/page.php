@@ -65,6 +65,7 @@ return [
     'sitemap-built' => 'Oluşturuldu',
     'sitemap-total' => 'Adres: :count',
     'sitemap-excluded' => 'Dışarıda — noindex: :noindex, başka canonical: :canonical',
+    'sitemap-not-pages' => 'Dahil edilmedi — sayfa göstermek yerine yönlendiren adres türleri: :types',
     'sitemap-empty' => 'Boş: hiçbir adres yayımlanmış ve dizine açık değil.',
     'sitemap-off' => 'Site haritası bu sitede kapalı.',
     'sitemap-rebuild' => 'Yeniden oluştur',
@@ -78,4 +79,5 @@ return [
     'sitemap-reason-hidden' => 'sayfa yayımlanmamış',
     'sitemap-reason-noindex' => 'sayfa noindex diyor',
     'sitemap-reason-canonical' => 'sayfa başka bir adresi canonical olarak gösteriyor',
+    'sitemap-reason-not-a-page' => 'bu adres türü bir sayfa göstermek yerine yönlendirir',
 ];
