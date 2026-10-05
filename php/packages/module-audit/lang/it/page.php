@@ -46,6 +46,8 @@ return [
     'group-other' => 'Altro',
     'sources' => 'Contenuti analizzati',
     'sources-missing' => 'Installato, ma non analizzato:',
+    'sources-help' => 'Oltre a esplorare il sito, l’audit legge i testi che i moduli conservano nel database — bozze, record nascosti e campi che il template non mostra mai — e vi cerca indirizzi assoluti, come link a un ambiente di sviluppo. Verde: moduli che consegnano i propri testi. Arancione: moduli installati qui che non lo fanno ancora. Le loro pagine pubblicate vengono comunque esplorate, ma bozze e campi nascosti non vengono analizzati e un pulsante di correzione non può raggiungerli.',
+    'sources-help-label' => 'Cosa significa',
     'sync-queue' => 'La coda esegue i job all’interno della richiesta (sync), quindi il pannello non può avviare un’esecuzione. Esegui php artisan webx:audit:run dal terminale o da cron.',
     'already-running' => 'Un audit è già in corso.',
     'check' => 'Controllo',

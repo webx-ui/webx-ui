@@ -46,6 +46,8 @@ return [
     'group-other' => 'Sonstiges',
     'sources' => 'Durchsuchte Inhalte',
     'sources-missing' => 'Installiert, aber nicht durchsucht:',
+    'sources-help' => 'Neben dem Crawlen der Website liest das Audit die Texte, die Module in der Datenbank speichern — Entwürfe, versteckte Einträge und Felder, die das Template nie ausgibt — und sucht darin nach absoluten Adressen, etwa Links auf eine Entwicklungsumgebung. Grün: Module, die ihre Texte übergeben. Orange: hier installierte Module, die das noch nicht können. Ihre veröffentlichten Seiten werden trotzdem gecrawlt, aber Entwürfe und versteckte Felder werden nicht durchsucht, und eine Korrektur-Schaltfläche erreicht sie nicht.',
+    'sources-help-label' => 'Was das bedeutet',
     'sync-queue' => 'Die Warteschlange führt Jobs innerhalb der Anfrage aus (sync), daher kann das Panel keinen Lauf starten. Führen Sie php artisan webx:audit:run im Terminal oder per Cron aus.',
     'already-running' => 'Ein Audit läuft bereits.',
     'check' => 'Prüfung',
