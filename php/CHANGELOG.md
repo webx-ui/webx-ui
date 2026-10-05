@@ -1,5 +1,72 @@
 # @webx-ui/php
 
+## 0.62.0
+
+### Minor Changes
+
+- 1d9ca51: A submission now says whether its notification left, not only whether it was handed to the queue.
+  On a site with a queue the letter is marked `queued` until a worker has sent it (`notified_at`, a
+  `notified` line with the count) or given up on it (`notify_error` with the reason, a
+  `notify_failed` line with the address); each recipient is listed with how its letter went. On
+  `sync` nothing changes. The panel's submission screen, `inbox_get` and `inbox_list` show the state
+  (`none`, `queued`, `delivered`, `failed`); an administrator can send the notification again from
+  the submission's menu, through `POST …/submissions/{id}/notify` or with the new MCP tool
+  `inbox_notify` (`dry_run` first). With the site audit installed, the check `inbox.notification`
+  lists letters that failed or have been queued for long — a sign the mail settings are wrong or no
+  queue worker runs. Run the migrations: two nullable columns are added to `inbox_submissions`.
+- 1d9ca51: A form that would notify nobody now says so instead of looking like a queue that has not run.
+  `module-inbox` reports, beside the stored `options.recipients`, who a submission would actually
+  be written to: `recipients` (each with `receives` and a `problem` — `admin_deleted`,
+  `admin_inactive`, `invalid_email`) and `notifies`, in the panel API and in the MCP tools
+  `inbox_forms_list` / `inbox_form_get`. A submission of such a form logs `no_recipients`. The
+  panel warns in the form editor and marks the form in the column; the editor opens on the tab
+  named by `?tab=`. With `webx-ui/module-audit` installed, the check `inbox.no_recipients`
+  (warning) lists switched-on forms that would notify nobody, with a link to their Notifications
+  tab. The stored option shape is unchanged.
+- 1d9ca51: A site can act on a stored submission without forking `module-inbox`. `SubmissionStored` is
+  dispatched once the submission, its answers and its files are written (after commit), for the
+  site's form and one typed in by hand, never for what the antispam stopped. For the common case,
+  `handlers` in `config/webx-inbox.php` names `SubmissionHandler` classes by form slug or `*`: each
+  runs as a queued job of its own, and its outcome shows in the submission's log in the panel and
+  in `inbox_get` as "Handed to …" or "… failed: reason". A failing handler never reaches the
+  visitor or stops the others.
+- 17c2dfd: `webx:panel --sync` (and so `webx:setup`) writes `.mcp.json` in the site: one server, named after
+  the site's address and pointing at its own MCP endpoint, so that Claude Code opened in a site's
+  folder connects to that site and no other. Other servers in the file, and a key renamed by hand
+  over the same address, are kept; a file that is not JSON is left alone with a warning.
+- 17c2dfd: The MCP server is named after its site — `example.com`, the host of `app.url`, or
+  `WEBX_MCP_NAME` — instead of "WebX UI", and the first line of its instructions gives the address
+  and the environment. A new tool, `site_info`, answers which site the connection is to and as
+  whom, so that an agent with several WebX UI sites connected at once checks before it writes.
+- 17c2dfd: Pictures are optimized on the way into the library: a JPEG, PNG or still WebP is turned the right
+  way up, stripped of its metadata, scaled down to 2560px on its long side and saved as a WebP at
+  quality 82, unless that comes out no smaller. The steps are `webx-media.optimize` and a project
+  adds its own. **Optimize**, beside Upload, runs the pictures already there through the same steps
+  over the same key and in the same format, ten per request with a count and a stop; MCP
+  `optimize_images` does the same for an agent. Needs the new migration (`media_files.optimized`).
+- d772b6c: A route handler can now say it never shows a page: `WebxUi\Routing\Contracts\NotAPage`, a marker for
+  the class a site binds over a module's handler when every address of that type redirects (events
+  sent to an external booking page, categories that are only a filter). The sitemap leaves such a type
+  out whole: no file, no line in the index, `test-url` answers `not-a-page`, and the status (the panel
+  card and `seo_sitemap_status`) lists it under `excluded_types` with the handler and its number of
+  addresses. The cached map is keyed by the set of those types, so a deploy that changes the binding is
+  picked up without a rebuild. `RouteType::servesPages()` answers the same question for anything else
+  that lists pages. Types without the marker behave as before.
+
+### Patch Changes
+
+- 17c2dfd: Under a host on «Outgoing», the broken links come first and carry their badge, «No answer»
+  included. The row counted them, but the fifty links shown were the first fifty found, so a broken
+  picture deep in the site never came into view.
+- 17c2dfd: «Content searched» on the audit overview has a «What this means» popover: besides the crawl, the
+  audit reads the text modules keep in the database; green modules hand it over, orange ones are
+  installed but not searched yet — their pages are still crawled, their drafts and hidden fields are
+  not, and a fix cannot reach them.
+- 7434be4: module-inbox: the agent guide fits the 150-line format again.
+- 17c2dfd: A library picture's `thumb` on the site is now the address of its preview on the disk, cut on first
+  use. It used to be the panel's preview route, which needs the panel's sign-in, so the recipe and
+  event galleries showed every visitor a 401 in place of each picture.
+
 ## 0.61.1
 
 ### Patch Changes

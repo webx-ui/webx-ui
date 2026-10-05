@@ -1,5 +1,36 @@
 # @webx-ui/module-inbox
 
+## 0.6.0
+
+### Minor Changes
+
+- 1d9ca51: A submission now says whether its notification left, not only whether it was handed to the queue.
+  On a site with a queue the letter is marked `queued` until a worker has sent it (`notified_at`, a
+  `notified` line with the count) or given up on it (`notify_error` with the reason, a
+  `notify_failed` line with the address); each recipient is listed with how its letter went. On
+  `sync` nothing changes. The panel's submission screen, `inbox_get` and `inbox_list` show the state
+  (`none`, `queued`, `delivered`, `failed`); an administrator can send the notification again from
+  the submission's menu, through `POST …/submissions/{id}/notify` or with the new MCP tool
+  `inbox_notify` (`dry_run` first). With the site audit installed, the check `inbox.notification`
+  lists letters that failed or have been queued for long — a sign the mail settings are wrong or no
+  queue worker runs. Run the migrations: two nullable columns are added to `inbox_submissions`.
+- 1d9ca51: A form that would notify nobody now says so instead of looking like a queue that has not run.
+  `module-inbox` reports, beside the stored `options.recipients`, who a submission would actually
+  be written to: `recipients` (each with `receives` and a `problem` — `admin_deleted`,
+  `admin_inactive`, `invalid_email`) and `notifies`, in the panel API and in the MCP tools
+  `inbox_forms_list` / `inbox_form_get`. A submission of such a form logs `no_recipients`. The
+  panel warns in the form editor and marks the form in the column; the editor opens on the tab
+  named by `?tab=`. With `webx-ui/module-audit` installed, the check `inbox.no_recipients`
+  (warning) lists switched-on forms that would notify nobody, with a link to their Notifications
+  tab. The stored option shape is unchanged.
+- 1d9ca51: A site can act on a stored submission without forking `module-inbox`. `SubmissionStored` is
+  dispatched once the submission, its answers and its files are written (after commit), for the
+  site's form and one typed in by hand, never for what the antispam stopped. For the common case,
+  `handlers` in `config/webx-inbox.php` names `SubmissionHandler` classes by form slug or `*`: each
+  runs as a queued job of its own, and its outcome shows in the submission's log in the panel and
+  in `inbox_get` as "Handed to …" or "… failed: reason". A failing handler never reaches the
+  visitor or stops the others.
+
 ## 0.5.7
 
 ### Patch Changes

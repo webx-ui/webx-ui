@@ -1,5 +1,19 @@
 # @webx-ui/module-auth
 
+## 0.9.0
+
+### Minor Changes
+
+- 17c2dfd: Administrators' photographs come from the media library on their own: the form, the list and the
+  corner menu take the library's `wx-media` field and its `assetUrls`, so a panel with `media()`
+  needs no `avatarField` / `resolveAvatar` in `admin.ts` — which `webx:panel --sync` never wrote,
+  leaving every site without photographs. Handing either in still wins.
+
+### Patch Changes
+
+- 17c2dfd: The administrator form takes the dialog's whole width when there is no photograph field: the column
+  kept for the photograph held the fields instead, 200px wide.
+
 ## 0.8.15
 
 ### Patch Changes
