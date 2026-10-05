@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Inbox;
 
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
@@ -13,10 +14,12 @@ use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Notes\NoteTypes;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Inbox\Console\PruneSubmissionsCommand;
+use WebxUi\Inbox\Events\SubmissionStored;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Panel\InboxModule;
 use WebxUi\Inbox\Relations\FormTarget;
 use WebxUi\Inbox\Rendering\Assets;
+use WebxUi\Inbox\Submissions\Handlers;
 use WebxUi\Inbox\Support\Forms;
 
 class InboxServiceProvider extends ServiceProvider
@@ -63,6 +66,10 @@ class InboxServiceProvider extends ServiceProvider
         // only that submissions are one of the things that carry them — under an alias, so
         // the address reads `entities/inbox_submission/17/notes` and never a class name.
         $this->app->make(NoteTypes::class)->register(Submission::MORPH, Submission::class);
+
+        // The handlers of `webx-inbox.handlers` (§2.19). A site that wants something else listens
+        // to the same event itself; this one only reads the config.
+        $this->app->make(Dispatcher::class)->listen(SubmissionStored::class, Handlers::class);
 
         if (! $this->app->runningInConsole()) {
             return;

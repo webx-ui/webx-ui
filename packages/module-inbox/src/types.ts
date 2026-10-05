@@ -240,7 +240,8 @@ export interface SubmissionAttachment {
 /** One line of what has happened to a submission. Never edited, never deleted. */
 export interface SubmissionEvent {
   id: number
-  type: 'created' | 'status' | 'assignee' | 'note' | 'notified' | string
+  type:
+    'created' | 'status' | 'assignee' | 'note' | 'notified' | 'handled' | 'handler_error' | string
   from: string | null
   to: string | null
   /** Null is the system — the submission arriving, the notification going out. */

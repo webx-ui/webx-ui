@@ -136,6 +136,8 @@ return [
     'event-unassigned' => 'Sem responsável',
     'event-note' => 'Foi adicionada uma nota',
     'event-notified' => 'O aviso saiu',
+    'event-handled' => 'Entregue a :name',
+    'event-handler-error' => ':name falhou: :error',
     'system' => 'Sistema',
     'no-answers' => 'Não foi preenchido nada.',
     'download' => 'Descarregar',

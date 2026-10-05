@@ -136,6 +136,8 @@ return [
     'event-unassigned' => 'Niemandem mehr zugeordnet',
     'event-note' => 'Eine Notiz wurde hinzugefügt',
     'event-notified' => 'Die Benachrichtigung ist rausgegangen',
+    'event-handled' => 'An :name übergeben',
+    'event-handler-error' => ':name ist fehlgeschlagen: :error',
     'system' => 'System',
     'no-answers' => 'Nichts ausgefüllt.',
     'download' => 'Herunterladen',

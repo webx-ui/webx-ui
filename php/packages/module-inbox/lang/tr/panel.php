@@ -136,6 +136,8 @@ return [
     'event-unassigned' => 'Sorumlusu kaldırıldı',
     'event-note' => 'Bir not eklendi',
     'event-notified' => 'Bildirim gitti',
+    'event-handled' => ':name işledi',
+    'event-handler-error' => ':name başarısız oldu: :error',
     'system' => 'Sistem',
     'no-answers' => 'Hiçbir şey doldurulmadı.',
     'download' => 'İndir',

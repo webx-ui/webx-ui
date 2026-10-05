@@ -136,6 +136,8 @@ return [
     'event-unassigned' => 'Знято з відповідального',
     'event-note' => 'Додано нотатку',
     'event-notified' => 'Лист надіслано',
+    'event-handled' => 'Передана в :name',
+    'event-handler-error' => ':name — помилка: :error',
     'system' => 'Система',
     'no-answers' => 'Нічого не заповнено.',
     'download' => 'Завантажити',

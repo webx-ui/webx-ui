@@ -284,9 +284,21 @@ function line(event: SubmissionEvent): string {
       return t('panel.event-note')
     case 'notified':
       return t('panel.event-notified')
+    // A handler of `webx-inbox.handlers`: `from` is its class, shown by its own short name.
+    case 'handled':
+      return t('panel.event-handled', { name: handlerName(event.from) })
+    case 'handler_error':
+      return t('panel.event-handler-error', {
+        name: handlerName(event.from),
+        error: event.to ?? '',
+      })
     default:
       return event.type
   }
+}
+
+function handlerName(name: string | null): string {
+  return (name ?? '').split('\\').pop() ?? ''
 }
 
 function kilobytes(size: number): string {

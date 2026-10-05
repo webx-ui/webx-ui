@@ -136,6 +136,8 @@ return [
     'event-unassigned' => 'Left to nobody',
     'event-note' => 'A note was added',
     'event-notified' => 'The notification went out',
+    'event-handled' => 'Handed to :name',
+    'event-handler-error' => ':name failed: :error',
     'system' => 'System',
     'no-answers' => 'Nothing was filled in.',
     'download' => 'Download',

@@ -136,6 +136,8 @@ return [
     'event-unassigned' => 'Bez odpowiedzialnego',
     'event-note' => 'Dodano notatkę',
     'event-notified' => 'Powiadomienie poszło',
+    'event-handled' => 'Przekazane do :name',
+    'event-handler-error' => ':name nie powiodło się: :error',
     'system' => 'System',
     'no-answers' => 'Nic nie wypełniono.',
     'download' => 'Pobierz',

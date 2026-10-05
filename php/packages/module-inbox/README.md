@@ -220,6 +220,92 @@ The letter is a published view:
 php artisan vendor:publish --tag=webx-inbox-views
 ```
 
+## After a submission is stored
+
+Sending a submission to a CRM, adding the address to a mailing list, writing back to the visitor
+with a gift — these belong to the site, and the module gives them a seam instead of a fork.
+
+**The event.** `WebxUi\Inbox\Events\SubmissionStored` is dispatched once the submission, its
+answers and its files are written, after the commit, for every source — the form on the site and
+one typed in by hand alike (`$submission->source`). What the antispam trapped or refused is never
+written and never announced. The submission comes with `form`, `values` and `files` loaded.
+`$event->repeated` is the same answers again inside the duplicate window — a double click.
+
+It is not an Eloquent `created`: the row is written before its answers, so a listener of
+`created` would find none of them.
+
+A listener is an ordinary Laravel listener; one that talks to the network is `ShouldQueue`:
+
+```php
+namespace App\Listeners;
+
+use Illuminate\Contracts\Queue\ShouldQueue;
+use WebxUi\Inbox\Events\SubmissionStored;
+
+final class TellTheSalesChannel implements ShouldQueue
+{
+    public function handle(SubmissionStored $event): void
+    {
+        if ($event->repeated || $event->submission->form->slug !== 'contact') {
+            return;
+        }
+
+        // ...
+    }
+}
+```
+
+**The handlers.** For the common case — "this form goes to that service" — name classes in
+`config/webx-inbox.php`, by the form's slug or by `*` for every form:
+
+```php
+'handlers' => [
+    '*' => [App\Inbox\SyncToMailingList::class],
+    'gift' => [App\Inbox\SendGift::class],
+],
+```
+
+A handler implements `WebxUi\Inbox\Contracts\SubmissionHandler` and is built by the container, so
+it asks for what it needs in its constructor:
+
+```php
+namespace App\Inbox;
+
+use Illuminate\Support\Facades\Http;
+use WebxUi\Inbox\Contracts\SubmissionHandler;
+use WebxUi\Inbox\Models\Submission;
+
+final class SyncToMailingList implements SubmissionHandler
+{
+    public function handle(Submission $submission): void
+    {
+        $email = $submission->value('email')?->value;
+
+        if ($email === null) {
+            return;
+        }
+
+        Http::withToken(config('services.mailing_list.token'))
+            ->post('https://api.mailing-list.example/subscribers', [
+                'email' => $email,
+                'fields' => ['name' => $submission->value('name')?->value],
+                'groups' => [config('services.mailing_list.groups.'.$submission->form->slug)],
+            ])
+            ->throw();
+    }
+}
+```
+
+Each handler runs as a queued job of its own, `*` first, each class once. Throwing is failing: it
+becomes a `handler_error` line in the submission's log with the message, the others run all the
+same, and the visitor never hears of it. Success is a `handled` line. Both show in the card in the
+panel and in `inbox_get`. A handler is tried once — one that wants retries queues a job of its own
+with them — and a double click does not run the handlers again.
+
+Handlers come from the config only, never from a form's options: those are edited in the panel and
+over MCP, and the panel does not choose which code runs. On the `sync` queue they run inside the
+visitor's request, so a site that calls slow services runs a queue worker.
+
 ## For an agent
 
 The section is also six MCP tools, served by `webx-ui/mcp` at `/api/cms/mcp` under the scopes

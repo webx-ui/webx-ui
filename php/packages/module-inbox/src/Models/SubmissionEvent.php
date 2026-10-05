@@ -38,6 +38,12 @@ class SubmissionEvent extends Model
 
     public const NOTIFIED = 'notified';
 
+    /** A handler of `webx-inbox.handlers` ran; `from` is its class (§2.19). */
+    public const HANDLED = 'handled';
+
+    /** A handler failed or could not be queued; `from` is its class, `to` what went wrong. */
+    public const HANDLER_ERROR = 'handler_error';
+
     protected $table = 'inbox_submission_events';
 
     protected $guarded = [];

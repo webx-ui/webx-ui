@@ -156,6 +156,37 @@ describe('WxInboxSubmissionPage', () => {
     expect(wrapper.text()).toMatch(/Placement\s*footer/)
   })
 
+  it('names a handler by its short name and says why it failed', async () => {
+    const { wrapper } = await open(
+      submission({
+        events: [
+          {
+            id: 1,
+            type: 'handled',
+            from: 'App\\Inbox\\SyncToCrm',
+            to: null,
+            author: null,
+            created_at: null,
+          },
+          {
+            id: 2,
+            type: 'handler_error',
+            from: 'App\\Inbox\\SendGift',
+            to: 'The CRM answered 503.',
+            author: null,
+            created_at: null,
+          },
+        ],
+      }),
+    )
+
+    await wrapper.findAll('.wx-tabs__tab')[1]!.trigger('mousedown')
+    await nextTick()
+
+    expect(wrapper.text()).toContain('Handed to SyncToCrm')
+    expect(wrapper.text()).toContain('SendGift failed: The CRM answered 503.')
+  })
+
   it('answers by mail to whoever wrote in', async () => {
     const { wrapper } = await open(submission())
 

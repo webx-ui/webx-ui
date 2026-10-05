@@ -27,6 +27,8 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
   the panel API to `inbox.view`.
 - **Letters**: `SubmissionReceived`, queued, `Reply-To` from the form's e-mail field. The
   submission is saved first; a failed letter is recorded as `notify_error`.
+- **Event** `SubmissionStored` and the contract `SubmissionHandler` (config `handlers`) for what
+  a site does with a submission next.
 - **Panel**: one section with its own editor (no described screen); API under `/api/cms/inbox`;
   permissions `inbox.view`, `inbox.update`, `inbox.manage`.
 - **MCP** tools `inbox_forms_list`, `inbox_form_get`, `inbox_form_save`, `inbox_list`,
@@ -53,6 +55,36 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
 | Forget old submissions                    | `prune.days`, `prune.spam_days`, and schedule `webx:inbox:prune` in the site           |
 | A different letter                        | publish the views and rewrite `mail/submission.blade.php`                              |
 | Other words                               | `php artisan vendor:publish --tag=webx-inbox-lang`                                     |
+| Send submissions to a CRM or mailing list | a `SubmissionHandler` in `handlers` of the config, by slug or `*` — below              |
+| Write back to the visitor (a gift, a PDF) | the same: a handler on that form's slug that sends a mailable to its e-mail field      |
+| Anything else once a submission is stored | a listener of `WebxUi\Inbox\Events\SubmissionStored`, `ShouldQueue` if it calls out    |
+
+### Send submissions to a CRM
+
+`SubmissionStored` comes once the submission, its answers and files are written (after commit),
+for the site's form and one typed in by hand; never for what the antispam stopped. `repeated` is
+a double click inside the duplicate window. For "this form goes to that service", name handlers:
+
+```php
+// config/webx-inbox.php
+'handlers' => ['*' => [App\Inbox\SyncToCrm::class], 'gift' => [App\Inbox\SendGift::class]],
+
+// app/Inbox/SyncToCrm.php — uses Http, WebxUi\Inbox\Contracts\SubmissionHandler, Models\Submission
+final class SyncToCrm implements SubmissionHandler
+{
+    public function handle(Submission $submission): void
+    {
+        Http::withToken(config('services.crm.token'))->post('https://crm.example/api/subscribers', [
+            'email' => $submission->value('email')?->value,
+            'group' => config('services.crm.groups.'.$submission->form->slug),
+        ])->throw();
+    }
+}
+```
+
+Each handler is a queued job of its own, tried once; throwing is failing and becomes a
+`handler_error` line in the submission's log (`handled` on success) — the visitor and the other
+handlers never notice. Not run again for `repeated`.
 
 ## Do not
 
@@ -71,11 +103,18 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
   on purpose. Send the form on the site, so the antispam and the letter are tested too.
 - Do not ask a form for a captcha the site has no keys for: it refuses every submission and only
   the log says why. Set the keys first.
+- Do not hook a CRM into a fork of `SubmitController` or an Eloquent `created` listener: the
+  first is the vendor directory, and the second fires before any answer is written. Use the
+  handlers or the event.
+- Do not run handlers that call slow services on the `sync` queue: they run inside the visitor's
+  request. Run a queue worker.
 
 ## Check your work
 
 - Send the form on the site, with and without JavaScript: the thank-you appears, the submission is
   in the panel, the letter arrives (or `notify_error` says why).
+- With handlers configured: the submission's log (panel card or `inbox_get`) has a `handled` line
+  per handler, or `handler_error` with the reason.
 - `php artisan webx:inbox:prune --dry-run` — what the configured ages would remove.
 - With MCP: `inbox_forms_list`, then `inbox_form_get` for the fields; `inbox_form_save` and
   `inbox_set_status` take `dry_run: true`.
