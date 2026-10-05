@@ -12,3 +12,5 @@ php/pint.json
 php/packages/*/composer.json
 # The project skeleton is a Laravel application, formatted the way Laravel formats one.
 php/site
+# Written by the tokens generator: a byte-for-byte copy of packages/tokens/dist/tokens.css.
+php/packages/module-admin/resources/css/tokens.css

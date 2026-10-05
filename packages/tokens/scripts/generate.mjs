@@ -1,6 +1,6 @@
 // Generates dist/tokens.css and src/generated/tokens.ts from src/tokens.json.
 // Run via `pnpm --filter @webx-ui/tokens generate` (also part of `build`).
-import { mkdirSync, readFileSync, copyFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, copyFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -128,6 +128,17 @@ writeFileSync(resolve(root, 'dist/tokens.css'), css)
 /* The opt-in Inter stylesheet ships as it is written — see src/fonts.css. */
 copyFileSync(resolve(root, 'src/fonts.css'), resolve(root, 'dist/fonts.css'))
 writeFileSync(resolve(root, 'src/generated/tokens.ts'), ts)
+
+/*
+ * The panel's Blade pages that stand outside the Vue app — the consent screen an agent sends a
+ * person to — cannot import this package, so module-admin carries a copy and inlines it. Kept in
+ * step here, and checked by src/phpCopy.test.ts; a checkout without the php half skips it.
+ */
+const phpCopy = resolve(root, '../../php/packages/module-admin/resources/css')
+if (existsSync(resolve(phpCopy, '..'))) {
+  mkdirSync(phpCopy, { recursive: true })
+  writeFileSync(resolve(phpCopy, 'tokens.css'), css)
+}
 
 console.log(
   `tokens: ${primitives.length} primitives, ${light.length} semantic, ${compact.length} compact -> dist/tokens.css`,
