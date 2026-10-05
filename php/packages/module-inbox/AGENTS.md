@@ -44,11 +44,9 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
 - **MCP** tools `inbox_forms_list`, `inbox_form_get`, `inbox_form_save`, `inbox_list`,
   `inbox_get`, `inbox_set_status`, `inbox_notify`; scopes `inbox:read`, `inbox:write`.
 - **Command** `webx:inbox:prune` (`--days`, `--spam-days`, `--dry-run`) — not scheduled by default.
-- **Audit**: the check `inbox.no_recipients` (warning) when `webx-ui/module-audit` is installed —
-  switched-on forms that would notify nobody, each with a link to `/inbox/forms/{id}?tab=notifications`.
-- **Audit check** `inbox.notification`, only with `webx-ui/module-audit`: letters that failed in
-  the last 30 days or have been queued for over 30 minutes (`webx-audit.thresholds`
-  `inbox_failed_days`, `inbox_queued_minutes`).
+- **Audit**, only with `webx-ui/module-audit`: `inbox.no_recipients` — switched-on forms that notify
+  nobody; `inbox.notification` — letters failed in 30 days or queued over 30 minutes
+  (`webx-audit.thresholds` `inbox_failed_days`, `inbox_queued_minutes`).
 - Also registered: a relation target for forms, notes on submissions, demo content (`resources/demo`).
 
 ## Change it without forking
@@ -119,9 +117,6 @@ handlers never notice. Not run again for `repeated`.
   `webx:inbox:prune`. Run it with `--dry-run` first.
 - Do not create submissions through MCP or the database to "test" a form: there is no such tool
   on purpose. Send the form on the site, so the antispam and the letter are tested too.
-- Do not read a submission with an empty `notified_at` as "the queue has not run" before looking
-  at the form: `notifies: false` (or a `no_recipients` line in the submission's log) means no
-  letter was ever going to go out.
 - Do not ask a form for a captcha the site has no keys for: it refuses every submission and only
   the log says why. Set the keys first.
 - Do not hook a CRM into a fork of `SubmitController` or an Eloquent `created` listener: the
@@ -129,10 +124,10 @@ handlers never notice. Not run again for `repeated`.
   handlers or the event.
 - Do not run handlers that call slow services on the `sync` queue: they run inside the visitor's
   request. Run a queue worker.
-- Do not read `notified_at` alone as "the letter arrived": read `notification.state`. `queued` for
-  long means no queue worker runs; `failed` right after a mail settings change usually means a
-  worker still holds the old ones — `php artisan queue:restart`. Fix the cause before
-  `inbox_notify`, or the letter fails the same way again.
+- Do not read `notified_at` alone: read `notification.state`. Empty with `notifies: false` (or a
+  `no_recipients` log line) — no letter was ever going out; `queued` for long — no worker runs;
+  `failed` after a mail settings change — a worker holds the old ones, `php artisan queue:restart`.
+  Fix the cause before `inbox_notify`, or the letter fails the same way again.
 
 ## Check your work
 
