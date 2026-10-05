@@ -143,4 +143,12 @@ return [
     'download' => 'Descargar',
     'no-files-by-hand' => 'Un archivo no se puede adjuntar a mano: los adjuntos son lo que llegó con el envío.',
     'submissions-none' => 'Nada coincide con este filtro.',
+    'notifies-nobody' => 'Nadie recibe aviso de este formulario',
+    'notifies-nobody-text' => 'Cada envío se guarda aquí, pero no sale ningún correo. Añade un destinatario en la pestaña Avisos.',
+    'notifies-nobody-short' => 'No avisa a nadie',
+    'recipient-admin_deleted' => 'Este administrador ya no existe y no recibe ningún correo.',
+    'recipient-admin_inactive' => 'Este administrador está desactivado y no recibe ningún correo.',
+    'recipient-invalid_email' => 'Esto no es una dirección de correo.',
+    'event-no-recipients' => 'No se avisó a nadie: el formulario no tiene destinatarios',
+    'notified-nobody' => 'Sin aviso: el formulario no nombra a nadie',
 ];

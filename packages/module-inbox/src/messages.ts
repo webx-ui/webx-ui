@@ -164,6 +164,15 @@ export const inboxMessages: Record<string, Messages> = {
     'no-files-by-hand':
       'A file cannot be attached by hand: the files a submission carries are what was posted with it.',
     'submissions-none': 'Nothing here under this filter.',
+    'notifies-nobody': 'Nobody is told about this form',
+    'notifies-nobody-text':
+      'Every submission is kept here, but no letter goes out. Add a recipient on the Notifications tab.',
+    'notifies-nobody-short': 'Nobody is told',
+    'recipient-admin_deleted': 'This administrator no longer exists and gets no letter.',
+    'recipient-admin_inactive': 'This administrator is switched off and gets no letter.',
+    'recipient-invalid_email': 'This is not an e-mail address.',
+    'event-no-recipients': 'Nobody was told: the form names no recipients',
+    'notified-nobody': 'No notification: the form names nobody to tell',
   },
 
   fields: {

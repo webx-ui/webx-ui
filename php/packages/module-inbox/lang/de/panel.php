@@ -143,4 +143,12 @@ return [
     'download' => 'Herunterladen',
     'no-files-by-hand' => 'Eine Datei lässt sich nicht von Hand anhängen: die Anhänge sind das, was mitgeschickt wurde.',
     'submissions-none' => 'Unter diesem Filter ist nichts da.',
+    'notifies-nobody' => 'Über dieses Formular wird niemand benachrichtigt',
+    'notifies-nobody-text' => 'Jede Einsendung wird hier gespeichert, aber es geht keine E-Mail hinaus. Fügen Sie im Tab „Benachrichtigungen“ einen Empfänger hinzu.',
+    'notifies-nobody-short' => 'Niemand wird benachrichtigt',
+    'recipient-admin_deleted' => 'Diesen Administrator gibt es nicht mehr; er bekommt keine E-Mail.',
+    'recipient-admin_inactive' => 'Dieser Administrator ist deaktiviert und bekommt keine E-Mail.',
+    'recipient-invalid_email' => 'Das ist keine E-Mail-Adresse.',
+    'event-no-recipients' => 'Niemand benachrichtigt: Das Formular nennt keine Empfänger',
+    'notified-nobody' => 'Keine Benachrichtigung: Das Formular nennt niemanden',
 ];

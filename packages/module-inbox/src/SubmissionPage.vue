@@ -269,6 +269,10 @@ function statusName(key: string): string {
   return status === undefined ? key : name(status)
 }
 
+const namesNobody = computed(
+  () => submission.value?.events?.some((event) => event.type === 'no_recipients') ?? false,
+)
+
 /** One line of the log, in words rather than as a pair of columns. */
 function line(event: SubmissionEvent): string {
   switch (event.type) {
@@ -292,6 +296,8 @@ function line(event: SubmissionEvent): string {
         name: handlerName(event.from),
         error: event.to ?? '',
       })
+    case 'no_recipients':
+      return t('panel.event-no-recipients')
     default:
       return event.type
   }
@@ -484,6 +490,10 @@ const details = computed(() => {
                 </wx-alert>
                 <wx-text v-else-if="submission.notified_at" size="sm" tone="muted">
                   {{ t('panel.notified') }}
+                </wx-text>
+                <!-- Nobody named is not a letter waiting in the queue, and says so. -->
+                <wx-text v-else-if="namesNobody" size="sm" tone="muted">
+                  {{ t('panel.notified-nobody') }}
                 </wx-text>
                 <wx-text v-else size="sm" tone="muted">{{ t('panel.not-notified') }}</wx-text>
               </div>

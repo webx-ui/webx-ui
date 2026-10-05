@@ -7,6 +7,7 @@ import {
   toast,
   useLocales,
   WxActionBar,
+  WxAlert,
   WxBadge,
   WxButton,
   WxCard,
@@ -21,8 +22,9 @@ import FormEmbed from './FormEmbed.vue'
 import FormGeneral from './FormGeneral.vue'
 import FormNotifications from './FormNotifications.vue'
 import { createInboxApi } from './api'
+import { reachesAnybody } from './recipients'
 import { useInboxMessages } from './i18n'
-import type { FormOptions, InboxField, InboxForm } from './types'
+import type { FormOptions, InboxField, InboxForm, Recipient } from './types'
 
 /**
  * One form: what it is called, what it asks, who hears about it, and how it is put on a page.
@@ -57,6 +59,22 @@ const settings = reactive<{ slug: string; title: LocalizedValue; is_enabled: boo
 })
 
 const options = ref<FormOptions>({})
+
+const TABS = ['general', 'fields', 'notifications', 'antispam', 'embed']
+
+/* Opened on the tab the address names, so the audit's "open" lands on the recipients. */
+const tab = ref(TABS.includes(String(route.query.tab)) ? String(route.query.tab) : 'general')
+
+/*
+ * Said above the tabs and not only inside Notifications: a form that tells nobody works in
+ * every way somebody can see — the site thanks the visitor, the panel keeps the enquiry — so
+ * the only place the gap shows is a line nobody went looking for.
+ */
+const silent = computed(
+  () =>
+    settings.is_enabled &&
+    !reachesAnybody(options.value.recipients as Recipient[] | undefined, form.value?.recipients),
+)
 
 const canManage = computed(() => context.can('inbox.manage'))
 
@@ -154,7 +172,17 @@ async function save(): Promise<void> {
         Every tab is mounted at once and the hidden ones keep their state: somebody who wrote
         a thank-you, went to look at the fields and came back should find it still written.
       -->
-      <wx-tabs class="wx-inbox-editor__tabs" keep-alive>
+      <wx-alert
+        v-if="silent"
+        class="wx-inbox-editor__silent"
+        type="warning"
+        variant="soft"
+        :closable="false"
+        :title="t('panel.notifies-nobody')"
+        :description="t('panel.notifies-nobody-text')"
+      />
+
+      <wx-tabs v-model="tab" class="wx-inbox-editor__tabs" keep-alive>
         <wx-tab value="general" :label="t('panel.tab-general')">
           <form-general v-model:settings="settings" v-model:options="options" :errors="errors" />
         </wx-tab>
@@ -164,7 +192,12 @@ async function save(): Promise<void> {
         </wx-tab>
 
         <wx-tab value="notifications" :label="t('panel.tab-notifications')">
-          <form-notifications v-model="options" :fields="fields" :errors="errors" />
+          <form-notifications
+            v-model="options"
+            :fields="fields"
+            :errors="errors"
+            :reported="form.recipients"
+          />
         </wx-tab>
 
         <wx-tab value="antispam" :label="t('panel.tab-antispam')">

@@ -13,6 +13,8 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Notes\NoteTypes;
 use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Audit\Checks\AuditChecks;
+use WebxUi\Inbox\Audit\NoRecipients;
 use WebxUi\Inbox\Console\PruneSubmissionsCommand;
 use WebxUi\Inbox\Events\SubmissionStored;
 use WebxUi\Inbox\Models\Submission;
@@ -60,6 +62,12 @@ class InboxServiceProvider extends ServiceProvider
         // A form is something another record can choose — a vacancy its application form. A
         // form deleted takes the rows pointing at it along; one with submissions is not deleted.
         $this->app->make(RelationTargets::class)->register(new FormTarget);
+
+        // The site audit's check of the forms, when the audit is installed: a switched-on form
+        // that would write to nobody saves every enquiry and tells nobody about any of them.
+        if (class_exists(AuditChecks::class)) {
+            $this->app->make(AuditChecks::class)->register($this->app->make(NoRecipients::class));
+        }
 
         // Notes on a submission are the panel's own feature, not this module's (§2.17): the
         // table, the trait and the endpoint live in `module-admin`, and what is said here is

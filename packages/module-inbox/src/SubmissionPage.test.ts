@@ -187,6 +187,29 @@ describe('WxInboxSubmissionPage', () => {
     expect(wrapper.text()).toContain('SendGift failed: The CRM answered 503.')
   })
 
+  it('says the form named nobody, rather than that a letter is still on its way', async () => {
+    const { wrapper } = await open(
+      submission({
+        notified_at: null,
+        events: [
+          { id: 1, type: 'created', from: null, to: 'new', author: null, created_at: null },
+          { id: 2, type: 'no_recipients', from: null, to: null, author: null, created_at: null },
+        ],
+      }),
+    )
+
+    await wrapper.findAll('.wx-tabs__tab')[1]!.trigger('mousedown')
+    await nextTick()
+
+    expect(wrapper.text()).toContain('Nobody was told: the form names no recipients')
+
+    await wrapper.findAll('.wx-tabs__tab')[2]!.trigger('mousedown')
+    await nextTick()
+
+    expect(wrapper.text()).toContain('No notification: the form names nobody to tell')
+    expect(wrapper.text()).not.toContain('No notification was sent')
+  })
+
   it('answers by mail to whoever wrote in', async () => {
     const { wrapper } = await open(submission())
 

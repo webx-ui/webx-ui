@@ -37,6 +37,25 @@ final class PanelFormsTest extends TestCase
     }
 
     #[Test]
+    public function it_says_which_forms_would_write_to_nobody(): void
+    {
+        $admin = $this->editor();
+
+        $this->form('contact');
+        $this->form('callback', [], ['recipients' => [['admin_id' => $admin->getKey()]]]);
+
+        $forms = $this->actingAs($admin, 'cms')->getJson($this->api('forms'))->assertOk()->json('data');
+
+        $this->assertSame([], $forms[0]['recipients']);
+        $this->assertFalse($forms[0]['notifies']);
+        $this->assertTrue($forms[1]['notifies']);
+        $this->assertSame(
+            [['type' => 'admin', 'admin_id' => $admin->getKey(), 'name' => $admin->name, 'email' => $admin->email, 'receives' => true, 'problem' => null]],
+            $forms[1]['recipients'],
+        );
+    }
+
+    #[Test]
     public function it_creates_a_form_at_the_end_of_the_column(): void
     {
         $first = $this->form('contact');

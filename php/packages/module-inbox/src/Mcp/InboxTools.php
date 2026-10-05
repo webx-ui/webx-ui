@@ -19,6 +19,7 @@ use WebxUi\Inbox\Http\Resources\FormResource;
 use WebxUi\Inbox\Http\Resources\StatusResource;
 use WebxUi\Inbox\Http\Resources\SubmissionResource;
 use WebxUi\Inbox\Http\Resources\SubmissionRowResource;
+use WebxUi\Inbox\Mail\Recipients;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Status;
@@ -70,7 +71,10 @@ final class InboxTools
                 'forms_list',
                 'Every form this site has: what it is called in each language, the slug it answers at, whether '
                 .'it is switched on, how many submissions have come through it and how many nobody has read. '
-                .'Read this first — a form is named by its slug everywhere else.',
+                .'Each form also says who a submission would be written to: `recipients` lists everybody the form '
+                .'names with `receives` and, when false, the `problem` (admin_deleted, admin_inactive, '
+                .'invalid_email); `notifies: false` means nobody is told at all. Read this first — a form is '
+                .'named by its slug everywhere else.',
                 fn (array $arguments): array => $this->formsList($arguments),
                 ['properties' => [
                     'disabled' => ['type' => 'boolean', 'description' => 'Include the forms that are switched off; true when omitted.'],
@@ -82,7 +86,9 @@ final class InboxTools
                 'form_get',
                 'One form with its questions: the type of each, whether it is required, the answers a list field '
                 .'allows, and the name it travels under. This is the shape of the data the public intake expects '
-                .'— the answer says where that door is and what a submission has to carry.',
+                .'— the answer says where that door is and what a submission has to carry. `form.recipients` '
+                .'and `form.notifies` say who a submission would be written to; an empty list and '
+                .'`notifies: false` mean nobody is.',
                 fn (array $arguments): array => $this->formGet($arguments),
                 ['properties' => ['form' => $form], 'required' => ['form']],
                 permission: 'inbox.manage',
@@ -187,6 +193,7 @@ final class InboxTools
         }
 
         $forms = $query->orderBy('position')->orderBy('id')->limit(self::FORM_LIMIT)->get();
+        Recipients::load($forms);
 
         return [
             'count' => $forms->count(),

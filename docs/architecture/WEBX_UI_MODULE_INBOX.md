@@ -207,7 +207,7 @@ Spam (`is_spam`, `is_closed`).
 ### `inbox_submission_events`
 
 `submission_id`, `admin_id` (null — система), `type` (`created`, `status`, `assignee`, `note`,
-`notified`, `handled`, `handler_error` — §2.19), `from`, `to` (string, null), `created_at`. Лог только на добавление: события не
+`notified`, `handled`, `handler_error` — §2.19, `no_recipients`), `from`, `to` (string, null), `created_at`. Лог только на добавление: события не
 правятся и не удаляются.
 
 ## 4. Типы полей
@@ -317,6 +317,12 @@ GET {api}/inbox/submissions/{submission}/files/{file}      cms.can:inbox.view
 
 - Получатели — из `options.recipients`: выбранные администраторы (адрес берётся из учётной
   записи, и меняется вместе с ней) и произвольные адреса.
+- Кому письмо дойдёт на самом деле, читает `Recipients`: форма в API панели и в MCP несёт рядом с
+  хранимым списком `recipients` (у каждого `receives` и `problem` — `admin_deleted`,
+  `admin_inactive`, `invalid_email`) и `notifies`. Форма, которая не дойдёт ни до кого, ничего не
+  шлёт, `notified_at` оставляет пустым и пишет в лог заявки `no_recipients` — чтобы заявка не
+  выглядела письмом, застрявшим в очереди. Панель предупреждает в редакторе и в колонке форм,
+  аудит — проверкой `inbox.no_recipients`.
 - Письмо — mailable пакета с публикуемым шаблоном: заголовок формы, таблица значений, файлы
   ссылками, метаданные (страница, язык, ip) и кнопка «Открыть в панели».
 - `Reply-To` — значение поля, названного в `options.email_field`, если оно похоже на адрес.

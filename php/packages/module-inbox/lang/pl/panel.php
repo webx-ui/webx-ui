@@ -143,4 +143,12 @@ return [
     'download' => 'Pobierz',
     'no-files-by-hand' => 'Pliku nie da się dołączyć ręcznie: załączniki to to, co przyszło razem ze zgłoszeniem.',
     'submissions-none' => 'Nic nie pasuje do tego filtra.',
+    'notifies-nobody' => 'Nikt nie dostaje powiadomień z tego formularza',
+    'notifies-nobody-text' => 'Każde zgłoszenie jest tu zapisywane, ale żaden e-mail nie wychodzi. Dodaj odbiorcę na karcie Powiadomienia.',
+    'notifies-nobody-short' => 'Nikogo nie powiadamia',
+    'recipient-admin_deleted' => 'Tego administratora już nie ma i nie dostanie e-maila.',
+    'recipient-admin_inactive' => 'Ten administrator jest wyłączony i nie dostanie e-maila.',
+    'recipient-invalid_email' => 'To nie jest adres e-mail.',
+    'event-no-recipients' => 'Nikogo nie powiadomiono: formularz nie ma odbiorców',
+    'notified-nobody' => 'Bez powiadomienia: formularz nie wskazuje nikogo',
 ];

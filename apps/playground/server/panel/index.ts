@@ -6,6 +6,7 @@ import type {
   InboxField,
   InboxForm,
   InboxStatus,
+  RecipientState,
   SubmissionCounts,
 } from '../../../../packages/module-inbox/src/types'
 import type { BlockType, BlockUsage } from '../../../../packages/module-blocks/src/types'
@@ -1569,10 +1570,42 @@ function next(type: BlockType): number {
 
 /* ------------------------------------------------------------------------------ inbox ----- */
 
+/*
+ * Who a form would write to, as the server says it beside the stored list: the playground has
+ * no deleted or switched-off accounts, so an id it does not know stands for a deleted one.
+ */
+function withRecipients(item: InboxForm): InboxForm {
+  const recipients: RecipientState[] = (item.options.recipients ?? []).map((one) => {
+    if ('admin_id' in one) {
+      const admin = admins.find((each) => each.id === one.admin_id)
+
+      return {
+        type: 'admin',
+        admin_id: one.admin_id,
+        name: admin?.name ?? null,
+        email: admin?.email ?? null,
+        receives: admin !== undefined,
+        problem: admin === undefined ? 'admin_deleted' : null,
+      }
+    }
+
+    const valid = /^[^\s@]+@[^\s@]+$/.test(one.email)
+
+    return {
+      type: 'email',
+      email: one.email,
+      receives: valid,
+      problem: valid ? null : 'invalid_email',
+    }
+  })
+
+  return { ...item, recipients, notifies: recipients.some((one) => one.receives) }
+}
+
 on('GET', '/inbox/forms', () => {
   countForms()
 
-  return { data: forms }
+  return { data: forms.map(withRecipients) }
 })
 
 on('POST', '/inbox/forms', ({ body }) => {
@@ -1591,7 +1624,7 @@ on('POST', '/inbox/forms', ({ body }) => {
 
   forms.push(form)
 
-  return { data: form }
+  return { data: withRecipients(form) }
 })
 
 on('POST', '/inbox/forms/sorting', ({ body }) => {
@@ -1603,16 +1636,20 @@ on('POST', '/inbox/forms/sorting', ({ body }) => {
 on('GET', '/inbox/forms/(\\d+)', ({ params }) => {
   const item = form(params[0])
 
-  return { data: { ...item, fields: fields.filter((field) => field.form_id === item.id) } }
+  return {
+    data: { ...withRecipients(item), fields: fields.filter((field) => field.form_id === item.id) },
+  }
 })
 
 on('PUT', '/inbox/forms/(\\d+)', ({ params, body }) => {
   const item = form(params[0])
 
-  Object.assign(item, omit(body, []))
+  Object.assign(item, omit(body, ['recipients', 'notifies']))
   item.updated_at = new Date().toISOString()
 
-  return { data: { ...item, fields: fields.filter((field) => field.form_id === item.id) } }
+  return {
+    data: { ...withRecipients(item), fields: fields.filter((field) => field.form_id === item.id) },
+  }
 })
 
 on('DELETE', '/inbox/forms/(\\d+)', ({ params }) => {

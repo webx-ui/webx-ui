@@ -16,7 +16,8 @@ import {
 } from '@webx-ui/core'
 import { createInboxApi } from './api'
 import { option } from './options'
-import type { FormOptions, InboxField, InboxRecipient, Recipient } from './types'
+import { isAdmin, problemOf } from './recipients'
+import type { FormOptions, InboxField, InboxRecipient, Recipient, RecipientState } from './types'
 
 /**
  * Who hears that something arrived (§9).
@@ -28,7 +29,12 @@ import type { FormOptions, InboxField, InboxRecipient, Recipient } from './types
  * notification is a link, and sending one to somebody who gets a 403 looks like the panel is
  * broken rather than like the form is.
  */
-const props = defineProps<{ fields: InboxField[]; errors: Record<string, string[]> }>()
+const props = defineProps<{
+  fields: InboxField[]
+  errors: Record<string, string[]>
+  /** What the server said about the saved list: who is deleted or switched off. */
+  reported?: RecipientState[]
+}>()
 
 const options = defineModel<FormOptions>({ required: true })
 
@@ -62,8 +68,16 @@ const emailOptions = computed(() => [
     .map((field) => ({ value: field.key, label: field.key })),
 ])
 
-function isAdmin(recipient: Recipient): recipient is { admin_id: number } {
-  return 'admin_id' in recipient
+/*
+ * Only the administrators' problems are said beside the row: an address being typed is not
+ * wrong yet, and the server refuses a bad one on save in words of its own.
+ */
+function adminProblem(recipient: Recipient): string | null {
+  if (!isAdmin(recipient)) return null
+
+  const problem = problemOf(recipient, props.reported)
+
+  return problem === null ? null : t(`panel.recipient-${problem}`)
 }
 
 function add(recipient: Recipient): void {
@@ -122,24 +136,29 @@ function setEmail(index: number, email: string): void {
         {{ t('panel.no-recipients') }}
       </wx-text>
 
-      <div v-for="(recipient, index) in recipients" :key="index" class="wx-inbox-recipients__row">
-        <wx-select
-          v-if="isAdmin(recipient)"
-          :model-value="recipient.admin_id"
-          :options="adminOptions"
-          @update:model-value="(id) => setAdmin(index, Number(id))"
-        />
-        <wx-input
-          v-else
-          :model-value="recipient.email"
-          type="email"
-          placeholder="sales@example.com"
-          @update:model-value="(email) => setEmail(index, String(email))"
-        />
+      <div v-for="(recipient, index) in recipients" :key="index" class="wx-inbox-recipients__item">
+        <div class="wx-inbox-recipients__row">
+          <wx-select
+            v-if="isAdmin(recipient)"
+            :model-value="recipient.admin_id"
+            :options="adminOptions"
+            @update:model-value="(id) => setAdmin(index, Number(id))"
+          />
+          <wx-input
+            v-else
+            :model-value="recipient.email"
+            type="email"
+            placeholder="sales@example.com"
+            @update:model-value="(email) => setEmail(index, String(email))"
+          />
 
-        <!-- Red, like every other way of taking something away in the panel: the colour is
+          <!-- Red, like every other way of taking something away in the panel: the colour is
              what tells the two buttons of a row apart before either is read. -->
-        <wx-action icon="trash" tone="danger" :title="t('panel.remove')" @click="remove(index)" />
+          <wx-action icon="trash" tone="danger" :title="t('panel.remove')" @click="remove(index)" />
+        </div>
+        <wx-text v-if="adminProblem(recipient)" size="sm" tone="danger">
+          {{ adminProblem(recipient) }}
+        </wx-text>
       </div>
     </div>
 
@@ -176,6 +195,12 @@ function setEmail(index: number, email: string): void {
   gap: var(--wx-space-8);
   margin-block: var(--wx-space-12);
   max-width: var(--wx-field-max-width, 640px);
+}
+
+.wx-inbox-recipients__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-4);
 }
 
 .wx-inbox-recipients__row {

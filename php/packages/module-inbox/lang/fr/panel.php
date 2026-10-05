@@ -143,4 +143,12 @@ return [
     'download' => 'Télécharger',
     'no-files-by-hand' => 'Un fichier ne s’ajoute pas à la main : les pièces jointes sont ce qui est arrivé avec l’envoi.',
     'submissions-none' => 'Rien ne correspond à ce filtre.',
+    'notifies-nobody' => 'Personne n’est prévenu de ce formulaire',
+    'notifies-nobody-text' => 'Chaque envoi est conservé ici, mais aucun e-mail ne part. Ajoutez un destinataire dans l’onglet Notifications.',
+    'notifies-nobody-short' => 'Ne prévient personne',
+    'recipient-admin_deleted' => 'Cet administrateur n’existe plus et ne reçoit aucun e-mail.',
+    'recipient-admin_inactive' => 'Cet administrateur est désactivé et ne reçoit aucun e-mail.',
+    'recipient-invalid_email' => 'Ce n’est pas une adresse e-mail.',
+    'event-no-recipients' => 'Personne n’a été prévenu : le formulaire n’a aucun destinataire',
+    'notified-nobody' => 'Aucune notification : le formulaire ne nomme personne',
 ];

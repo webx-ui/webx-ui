@@ -143,4 +143,12 @@ return [
     'download' => 'İndir',
     'no-files-by-hand' => 'Dosya elle eklenemez: ekler, kayıtla birlikte gelenlerdir.',
     'submissions-none' => 'Bu süzgece uyan bir şey yok.',
+    'notifies-nobody' => 'Bu form için kimseye haber verilmiyor',
+    'notifies-nobody-text' => 'Her gönderim burada saklanır ama hiç e-posta gitmez. Bildirimler sekmesinden bir alıcı ekleyin.',
+    'notifies-nobody-short' => 'Kimseye haber vermiyor',
+    'recipient-admin_deleted' => 'Bu yönetici artık yok ve e-posta almaz.',
+    'recipient-admin_inactive' => 'Bu yönetici kapalı ve e-posta almaz.',
+    'recipient-invalid_email' => 'Bu bir e-posta adresi değil.',
+    'event-no-recipients' => 'Kimseye haber verilmedi: formda alıcı yok',
+    'notified-nobody' => 'Bildirim yok: form kimseyi belirtmiyor',
 ];

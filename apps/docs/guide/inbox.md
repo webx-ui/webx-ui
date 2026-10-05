@@ -273,6 +273,12 @@ is how a domain loses its reputation.
 notification, recorded on the submission as `notify_error` and shown on its screen, and not an
 enquiry.
 
+**A form that names nobody says so.** No recipients — or only administrators deleted or switched
+off since — sends nothing and logs `no_recipients` on the submission, so it does not look like a
+letter waiting in the queue. Every form in the panel API and in MCP carries `recipients` (each
+with `receives` and a `problem`) and `notifies`; the editor warns above its tabs, the column of
+forms marks the form, and the site audit reports it as `inbox.no_recipients`.
+
 ## After a submission is stored
 
 Sending a submission to a CRM, adding the address to a mailing list, writing back to the visitor

@@ -97,6 +97,45 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function the_list_of_forms_says_who_each_one_would_write_to(): void
+    {
+        $admin = $this->editor();
+        $retired = $this->editor();
+        $retired->update(['is_active' => false]);
+
+        $this->form('contact');
+        $this->form('callback', [], ['recipients' => [['admin_id' => $admin->getKey()], ['email' => 'sales@example.test']]]);
+        $this->form('careers', [], ['recipients' => [['admin_id' => $retired->getKey()], ['admin_id' => 999]]]);
+
+        $bySlug = array_column($this->content($this->agent('forms_list')->assertOk())['forms'], null, 'slug');
+
+        // No recipients is said out loud — an empty list, not a missing key an agent could
+        // read as "not exposed".
+        $this->assertSame([], $bySlug['contact']['recipients']);
+        $this->assertFalse($bySlug['contact']['notifies']);
+        $this->assertArrayNotHasKey('recipients', $bySlug['contact']['options'], 'The stored settings are shown as stored.');
+
+        $this->assertTrue($bySlug['callback']['notifies']);
+        $this->assertSame([$admin->email, 'sales@example.test'], array_column($bySlug['callback']['recipients'], 'email'));
+        $this->assertSame([true, true], array_column($bySlug['callback']['recipients'], 'receives'));
+
+        // Named, and still nobody: one switched off, one deleted.
+        $this->assertFalse($bySlug['careers']['notifies']);
+        $this->assertSame(['admin_inactive', 'admin_deleted'], array_column($bySlug['careers']['recipients'], 'problem'));
+    }
+
+    #[Test]
+    public function one_form_says_who_it_would_write_to(): void
+    {
+        $this->form();
+
+        $content = $this->content($this->agent('form_get', ['form' => 'contact'])->assertOk());
+
+        $this->assertSame([], $content['form']['recipients']);
+        $this->assertFalse($content['form']['notifies']);
+    }
+
+    #[Test]
     public function one_form_answers_with_the_shape_the_intake_expects(): void
     {
         $form = $this->form('contact', [

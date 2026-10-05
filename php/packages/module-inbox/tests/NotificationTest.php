@@ -114,7 +114,13 @@ final class NotificationTest extends TestCase
         ])->assertOk();
 
         Mail::assertNothingOutgoing();
-        $this->assertNull(Submission::query()->sole()->notified_at);
+
+        $submission = Submission::query()->sole();
+
+        $this->assertNull($submission->notified_at);
+        // Named, but nobody a letter reaches: the log says so, the same as for a form that
+        // names nobody at all.
+        $this->assertTrue($submission->events->contains('type', SubmissionEvent::NO_RECIPIENTS));
     }
 
     #[Test]
@@ -150,9 +156,30 @@ final class NotificationTest extends TestCase
 
         Mail::assertNothingOutgoing();
 
+        $submission = Submission::query()->sole();
+
         // Not an error either: a form whose submissions are only read in the panel is a form
         // that works.
-        $this->assertNull(Submission::query()->sole()->notify_error);
+        $this->assertNull($submission->notify_error);
+        $this->assertNull($submission->notified_at);
+        // But not silence: without this line the submission looks exactly like one whose
+        // letter is still waiting in the queue.
+        $this->assertTrue($submission->events->contains('type', SubmissionEvent::NO_RECIPIENTS));
+        $this->assertFalse($submission->events->contains('type', SubmissionEvent::NOTIFIED));
+    }
+
+    #[Test]
+    public function a_form_that_writes_to_somebody_logs_no_such_line(): void
+    {
+        Mail::fake();
+
+        $this->form('contact', [], ['recipients' => [['email' => 'sales@example.test']]]);
+
+        $this->postJson($this->intake(), [
+            'fields' => ['name' => 'Ada', 'email' => 'ada@example.test'],
+        ])->assertOk();
+
+        $this->assertFalse(Submission::query()->sole()->events->contains('type', SubmissionEvent::NO_RECIPIENTS));
     }
 
     #[Test]

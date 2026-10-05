@@ -38,6 +38,12 @@ final class Notifier
         $recipients = $this->recipients($submission);
 
         if ($recipients === []) {
+            // Nothing to send is not a failure — a form read only in the panel works — but it
+            // must not look like a letter still waiting in the queue either: the log says the
+            // form names nobody who would receive one, and `notified_at` stays empty because
+            // nobody was.
+            $submission->log(SubmissionEvent::NO_RECIPIENTS);
+
             return;
         }
 
@@ -80,7 +86,8 @@ final class Notifier
      *
      * An administrator's address comes from their account rather than from the form, so
      * changing it in one place changes it everywhere; a form that names somebody who has since
-     * been deleted simply has one recipient fewer.
+     * been deleted or switched off simply has one recipient fewer — {@see Recipients} says
+     * which, for the panel, MCP and the audit to show.
      *
      * @return list<array{0: string, 1: string}>
      */
@@ -89,24 +96,17 @@ final class Notifier
         $recipients = [];
         $siteLocale = $this->siteLocale($submission);
 
-        foreach ($submission->form->recipients() as $recipient) {
-            if (isset($recipient['admin_id'])) {
-                $admin = CmsUser::query()->find($recipient['admin_id']);
-
-                if ($admin === null || ! $admin->is_active) {
-                    continue;
-                }
-
-                $recipients[] = [$admin->email, $this->locales->resolvePanel($admin->panelLocale())];
-
+        foreach (Recipients::resolve($submission->form) as $recipient) {
+            if (! $recipient['receives'] || $recipient['email'] === null) {
                 continue;
             }
 
-            $email = $recipient['email'] ?? null;
+            $admin = $recipient['admin'] ?? null;
 
-            if (is_string($email) && filter_var($email, FILTER_VALIDATE_EMAIL) !== false) {
-                $recipients[] = [$email, $siteLocale];
-            }
+            $recipients[] = [
+                $recipient['email'],
+                $admin instanceof CmsUser ? $this->locales->resolvePanel($admin->panelLocale()) : $siteLocale,
+            ];
         }
 
         return $recipients;

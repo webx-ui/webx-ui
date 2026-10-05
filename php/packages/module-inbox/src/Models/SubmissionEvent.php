@@ -44,6 +44,9 @@ class SubmissionEvent extends Model
     /** A handler failed or could not be queued; `from` is its class, `to` what went wrong. */
     public const HANDLER_ERROR = 'handler_error';
 
+    /** Nobody was written to because the form names nobody a letter would reach. */
+    public const NO_RECIPIENTS = 'no_recipients';
+
     protected $table = 'inbox_submission_events';
 
     protected $guarded = [];

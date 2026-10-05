@@ -103,6 +103,24 @@ describe('WxInboxPage', () => {
     expect(wrapper.text()).not.toContain('Off')
   })
 
+  it('marks a switched-on form that would tell nobody, and leaves a switched-off one alone', async () => {
+    const { wrapper } = panel([
+      form({ id: 1, notifies: false }),
+      form({ id: 2, slug: 'callback', notifies: true }),
+      form({ id: 3, slug: 'old', is_enabled: false, notifies: false }),
+    ])
+
+    await flushPromises()
+
+    const rows = wrapper.findAll('.wx-inbox-form')
+
+    expect(rows.map((row) => row.find('.wx-inbox-form__silent').exists())).toEqual([
+      true,
+      false,
+      false,
+    ])
+  })
+
   it('opens the first form by itself, so the section opens on the submissions', async () => {
     // The reader came to see what has come in; a list of three form names is not that.
     const { wrapper, router } = panel([form({ id: 7 }), form({ id: 9, slug: 'callback' })])

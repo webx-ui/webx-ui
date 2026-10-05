@@ -143,4 +143,12 @@ return [
     'download' => 'Scarica',
     'no-files-by-hand' => 'Un file non si allega a mano: gli allegati sono quello che è arrivato con l’invio.',
     'submissions-none' => 'Niente corrisponde a questo filtro.',
+    'notifies-nobody' => 'Nessuno viene avvisato di questo modulo',
+    'notifies-nobody-text' => 'Ogni invio viene conservato qui, ma non parte nessuna e-mail. Aggiungi un destinatario nella scheda Notifiche.',
+    'notifies-nobody-short' => 'Non avvisa nessuno',
+    'recipient-admin_deleted' => 'Questo amministratore non esiste più e non riceve e-mail.',
+    'recipient-admin_inactive' => 'Questo amministratore è disattivato e non riceve e-mail.',
+    'recipient-invalid_email' => 'Questo non è un indirizzo e-mail.',
+    'event-no-recipients' => 'Nessuno è stato avvisato: il modulo non ha destinatari',
+    'notified-nobody' => 'Nessuna notifica: il modulo non nomina nessuno',
 ];
