@@ -37,6 +37,11 @@ export interface AdminContext {
    * none does — and a field that needs one then does not offer to.
    */
   readonly pickImage: (() => Promise<PickedImage | null>) | null
+  /**
+   * Where library keys live now, when a module installed here has a library; `null` when none
+   * does, and a document is then shown with the addresses it was saved with.
+   */
+  readonly assetUrls: ((paths: string[]) => Promise<Record<string, string | null>>) | null
   /** Ask the server what the panel is and who is signed in again. */
   reload(): Promise<void>
   /**
@@ -212,6 +217,7 @@ export function createAdminContext(options: {
   // The first module that has a library wins. Two of them is not a case worth a setting: a
   // panel with two file managers has a bigger question to answer than which one this opens.
   const pickImage = options.modules.find((module) => module.pickImage !== undefined)?.pickImage
+  const assetUrls = options.modules.find((module) => module.assetUrls !== undefined)?.assetUrls
 
   const screens = new Map<string, Promise<ScreenNode[]>>()
 
@@ -330,7 +336,7 @@ export function createAdminContext(options: {
     await refreshManifest()
   }
 
-  return {
+  const context: AdminContext = {
     http: options.http,
     basePath: options.basePath,
     apiPath: options.apiPath,
@@ -341,6 +347,7 @@ export function createAdminContext(options: {
     groups,
     types,
     pickImage: pickImage ?? null,
+    assetUrls: assetUrls ? (paths) => assetUrls(paths, context) : null,
     reload,
     refreshManifest,
     setLocale,
@@ -365,6 +372,8 @@ export function createAdminContext(options: {
       return options.screens?.[name] ?? []
     },
   }
+
+  return context
 }
 
 export function provideAdmin(app: App, admin: AdminContext): void {

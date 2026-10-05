@@ -2,6 +2,7 @@ import type { RouteRecordRaw } from 'vue-router'
 import type { ButtonVariant, IconName } from '@webx-ui/core'
 import type { TypeRegistry } from '@webx-ui/schema'
 import type { ThemePreference } from '@webx-ui/tokens'
+import type { AdminContext } from './admin'
 import type { LocaleDescriptor } from './i18n'
 
 /**
@@ -160,6 +161,16 @@ export interface AdminModule {
    * simply does not offer the button.
    */
   pickImage?: () => Promise<PickedImage | null>
+  /**
+   * Where library keys live now, by key; `null` for a key the library no longer has.
+   *
+   * The other half of {@link pickImage}. A document keeps the key of every picture beside an
+   * address, and the address is only true on the day it was written: the site's domain, the
+   * disk and the version stamp all move under it. The site works the address out again on
+   * every read; the panel asks this before handing a document to an editor, so a paragraph
+   * written on another host does not open with pictures pointing there.
+   */
+  assetUrls?: (paths: string[], admin: AdminContext) => Promise<Record<string, string | null>>
 }
 
 /**

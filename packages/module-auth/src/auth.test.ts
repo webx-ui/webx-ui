@@ -23,6 +23,7 @@ function panel(status: 'unauthenticated' | 'ready' = 'unauthenticated'): Admin {
     groups: computed(() => ({ top: [], groups: [] })),
     types: {},
     pickImage: null,
+    assetUrls: null,
     loadScreen: () => Promise.resolve([]),
     screenPatch: () => [],
     reload: () => Promise.resolve(),

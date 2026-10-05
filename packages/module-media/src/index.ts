@@ -5,6 +5,7 @@ import GalleryField from './GalleryField.vue'
 import MediaField from './MediaField.vue'
 import MediaPage from './MediaPage.vue'
 import { mediaMessages } from './messages'
+import { createMediaApi } from './api'
 import { openMediaPicker } from './openMediaPicker'
 
 export interface MediaOptions {
@@ -54,6 +55,17 @@ export function media(options: MediaOptions = {}): AdminModule {
       // The key travels with the address, and it is the key that is kept: a document written
       // today has to still find its pictures after the library moves disks.
       return file ? { url: file.url, path: file.path } : null
+    },
+    /**
+     * Where those keys live now. One request per key, the way a media field resolves its own:
+     * a document holds a handful of pictures, and the answer is the library's current one
+     * rather than whatever host the paragraph was written on.
+     */
+    assetUrls: async (paths, admin) => {
+      const api = createMediaApi(admin)
+      const files = await Promise.all(paths.map((path) => api.fileByPath(path)))
+
+      return Object.fromEntries(paths.map((path, index) => [path, files[index]?.url ?? null]))
     },
   }
 }

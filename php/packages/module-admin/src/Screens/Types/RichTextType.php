@@ -53,9 +53,10 @@ final class RichTextType implements FieldType
      *
      * The `src` of a picture from the library is kept as it came, and it is a cache and not the
      * record: {@see Html::KEY} beside it is the record, and {@see self::resolve()} works the
-     * address out again. Kept rather than dropped because the panel reads values raw — it edits
-     * what is stored, not what a site would print — so a document with no addresses in it would
-     * open in the editor with a hole where every picture was.
+     * address out again. The panel reads values raw — it edits what is stored, not what a site
+     * would print — and its editor field refreshes the cache through the library before showing
+     * the document (`assetUrls` of the npm half), so a paragraph written on another host does
+     * not open with pictures pointing there.
      *
      * An emptied editor leaves `<p></p>` behind; nothing is what that means, and a column
      * holding it would make "did anybody write anything" a parse rather than a check.
