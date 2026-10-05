@@ -99,7 +99,7 @@ final class ConsentScreenTest extends TestCase
         $page = $this->actingAs($admin, 'cms')->get($this->authorizeUrl($this->client()))->assertOk();
 
         $page->assertSee('Claude');
-        $page->assertSee('(localhost)');
+        $page->assertSee('<span class="return-to">localhost</span>', false);
         $page->assertSee('asks for access to the panel of localhost');
         $page->assertSee('You are signed in as Admin');
         // In the words of the module, not in scopes.
