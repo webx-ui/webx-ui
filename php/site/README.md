@@ -29,7 +29,8 @@ At the end it prints the panel's address, the login and a generated password.
   design, what is safe to change and what is not, how to see a change.
 - `AGENTS.md` — what an AI agent (Claude Code, Codex, Cursor) reads first. `webx:setup` writes
   it and `php artisan webx:panel --sync` keeps its block current; your own notes about this site
-  go under `## This project`, and both it and `CLAUDE.md` belong in git.
+  go under `## This project`, and both it and `CLAUDE.md` belong in git. Beside them, `.mcp.json`
+  connects Claude Code opened in this folder to this site's own panel.
 - [A new site](https://webx-ui.github.io/webx-ui/guide/new-site) — everything below, in full.
 
 The first rule, for people and agents alike: **never edit `vendor/` and never copy a module into

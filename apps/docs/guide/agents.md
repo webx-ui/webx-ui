@@ -67,6 +67,14 @@ environment (`production`, `staging`, `local`), and `site_info` answers the same
 with the administrator it acts as. It is asked to call that before its first change. A site whose
 address says nothing — a bare IP, a tunnel — sets `WEBX_MCP_NAME`.
 
+Claude Code needs no command at all in a site's own checkout: `webx:panel --sync` writes
+`.mcp.json` there with one server, named after the site and pointing at its `APP_URL`, so a
+session opened in that folder sees that site and no other. Its tools are named after the key —
+`mcp__example.com__pages_create`. The file follows the checkout, so a local one points at the
+local site; to work on the live panel from the same folder, add it beside, under a key of its
+own (`"example.com (live)"`). Other entries are never touched, and neither is a key you renamed,
+as long as its address is the site's.
+
 The page in the panel says all of this in the language the panel is in, which is the point of
 it: somebody who has never heard of MCP should not have to read this guide.
 

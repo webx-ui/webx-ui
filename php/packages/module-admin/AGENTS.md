@@ -58,6 +58,9 @@ installed `webx-ui/*` package that has one, what to run after updating. The bloc
 replaced whole on each run; everything outside it — the `## This project` section — is never
 touched. A hand-written file without markers keeps every word, with the block put on top.
 `CLAUDE.md` is written once as `@AGENTS.md`; an existing one without that line only gets a warning.
+Where `webx-ui/mcp` serves its HTTP endpoint (route `webx.mcp`), `.mcp.json` gets one server named
+after the site (`Site::name()`), at `app.url` + the route; other servers, and a key renamed over the
+same address, are kept; a file that is not JSON is left alone with a warning (`Agents\McpConfig`).
 
 ## Change it without forking
 
