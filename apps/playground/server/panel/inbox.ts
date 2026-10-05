@@ -130,7 +130,7 @@ export const forms: InboxForm[] = [
     is_enabled: true,
     options: {
       'thank-you.heading': { ru: 'Перезвоним', en: 'We will call' },
-      recipients: [{ admin_id: 2 }],
+      recipients: [{ admin_id: 99 }],
       'antispam.honeypot': true,
       'antispam.captcha': 'turnstile',
     },

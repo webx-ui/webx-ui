@@ -24,6 +24,8 @@ export type {
   InboxStatus,
   InboxSubmission,
   Recipient,
+  RecipientProblem,
+  RecipientState,
   StatusColor,
   StatusInput,
   SubmissionAttachment,

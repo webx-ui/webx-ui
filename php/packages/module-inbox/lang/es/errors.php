@@ -12,4 +12,5 @@ return [
     'slug-shape' => 'Una dirección se escribe con minúsculas, cifras y guiones: «contact-us».',
     'field-name-shape' => 'Un nombre empieza por una letra; después, letras, cifras, guiones y guiones bajos.',
     'recipient-shape' => 'Un destinatario es un administrador o una dirección de correo.',
+    'nobody-to-notify' => 'El formulario «:form» no indica a quién escribir.',
 ];

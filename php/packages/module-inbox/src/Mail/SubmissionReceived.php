@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace WebxUi\Inbox\Mail;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Mail\Factory as MailFactory;
+use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\SentMessage;
 use Illuminate\Queue\SerializesModels;
+use Throwable;
 use WebxUi\Inbox\Models\Submission;
 
 /**
@@ -20,6 +24,10 @@ use WebxUi\Inbox\Models\Submission;
  * every fresh Laravel — sends it inline and notices nothing but the wait. Either way the
  * submission is already in the database by the time this exists (§2.10).
  *
+ * Through a real queue, pushing the job is not sending the letter: the SMTP server is asked
+ * later, in a worker, and only the letter itself is there to say how that went. Hence
+ * `send()` and `failed()` below report to {@see Delivery}.
+ *
  * The view is published like any other, so a site that wants its own letterhead has one
  * without this package knowing.
  */
@@ -28,7 +36,53 @@ class SubmissionReceived extends Mailable implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
+    /**
+     * Who this letter is for, when it went through a real queue and has to say how it went.
+     *
+     * Null on `sync`, where {@see Notifier} hears the outcome from the mailer itself — reporting
+     * from here too would write every letter down twice.
+     */
+    public ?string $reportFor = null;
+
     public function __construct(public readonly Submission $submission) {}
+
+    /** Ask the letter to tell {@see Delivery} how it went, once a worker has tried it. */
+    public function reportingFor(string $address): static
+    {
+        $this->reportFor = $address;
+
+        return $this;
+    }
+
+    /**
+     * Sent: the worker got this far without the transport throwing.
+     *
+     * @param  MailFactory|Mailer  $mailer
+     */
+    public function send($mailer): ?SentMessage
+    {
+        $sent = parent::send($mailer);
+
+        if ($this->reportFor !== null) {
+            // A `MessageSending` listener may stop a letter; that is not one that left.
+            $sent === null
+                ? app(Delivery::class)->failed((int) $this->submission->getKey(), $this->reportFor, 'The letter was stopped before it was sent.')
+                : app(Delivery::class)->delivered((int) $this->submission->getKey(), $this->reportFor);
+        }
+
+        return $sent;
+    }
+
+    /**
+     * The queue has given up on it: every try is spent. Called by the queued job, and never
+     * between two tries — a letter that fails once and goes out on the second try is delivered.
+     */
+    public function failed(Throwable $exception): void
+    {
+        if ($this->reportFor !== null) {
+            app(Delivery::class)->failed((int) $this->submission->getKey(), $this->reportFor, $exception->getMessage());
+        }
+    }
 
     public function envelope(): Envelope
     {

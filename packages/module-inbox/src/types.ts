@@ -84,6 +84,19 @@ export interface FieldInput {
 /** Who a notification goes to: somebody with an account, or an address typed in. */
 export type Recipient = { admin_id: number } | { email: string }
 
+/** Why a recipient the form names would not get a letter. */
+export type RecipientProblem = 'admin_deleted' | 'admin_inactive' | 'invalid_email'
+
+/** A recipient as the server reads it today: who it is, and whether a letter would reach it. */
+export interface RecipientState {
+  type: 'admin' | 'email'
+  admin_id?: number
+  name?: string | null
+  email: string | null
+  receives: boolean
+  problem: RecipientProblem | null
+}
+
 /** The settings of a form (§5). Every key is literal, dots included. */
 export interface FormOptions {
   'thank-you.heading'?: LocalizedValue
@@ -105,6 +118,13 @@ export interface InboxForm {
   title: LocalizedValue
   is_enabled: boolean
   options: FormOptions
+  /**
+   * Who a submission would be written to, read from `options.recipients` as saved. Optional
+   * only because a server older than this field does not send it.
+   */
+  recipients?: RecipientState[]
+  /** False when a submission would be written to nobody at all. */
+  notifies?: boolean
   position: number
   /** Only where the query counted them — null on a form loaded on its own. */
   submissions_count: number | null
@@ -240,12 +260,43 @@ export interface SubmissionAttachment {
 /** One line of what has happened to a submission. Never edited, never deleted. */
 export interface SubmissionEvent {
   id: number
-  type: 'created' | 'status' | 'assignee' | 'note' | 'notified' | string
+  type:
+    | 'created'
+    | 'status'
+    | 'assignee'
+    | 'note'
+    | 'notified'
+    | 'handled'
+    | 'handler_error'
+    | 'no_recipients'
+    | 'notify_queued'
+    | 'notify_failed'
+    | string
   from: string | null
   to: string | null
   /** Null is the system — the submission arriving, the notification going out. */
   author: { id: number; name: string | null } | null
   created_at: string | null
+}
+
+/**
+ * Whether the letter about a submission left (§9). `queued` is handed to the site's queue and
+ * not sent yet — on a site with a queue, sending is a worker's job, and a worker can be missing.
+ */
+export type NotifyState = 'none' | 'queued' | 'delivered' | 'failed'
+
+export interface SubmissionNotification {
+  state: NotifyState
+  error: string | null
+  queued_at: string | null
+  delivered_at: string | null
+  /** Empty on a submission from before the letters were watched one by one. */
+  recipients: {
+    address: string
+    state: 'queued' | 'delivered' | 'failed'
+    error: string | null
+    at: string
+  }[]
 }
 
 /** What the intake saw around the submission: the page, the language, the campaign. */
@@ -274,6 +325,8 @@ export interface InboxSubmission {
   placement: string | null
   notified_at: string | null
   notify_error: string | null
+  /** The same two read as a state, with how each letter went. */
+  notification: SubmissionNotification
   /** The neighbours in the list this was opened from, so the arrows walk the same pile. */
   previous_id: number | null
   next_id: number | null

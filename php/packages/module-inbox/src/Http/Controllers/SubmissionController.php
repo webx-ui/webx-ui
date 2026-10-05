@@ -10,8 +10,10 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Support\Authors;
+use WebxUi\Inbox\Exceptions\NobodyToNotify;
 use WebxUi\Inbox\Http\Resources\SubmissionResource;
 use WebxUi\Inbox\Http\Resources\SubmissionRowResource;
+use WebxUi\Inbox\Mail\Notifier;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Status;
@@ -106,6 +108,23 @@ final class SubmissionController
         $submission->markRead();
 
         return ApiResponse::data($this->one($request, $submission), 201);
+    }
+
+    /**
+     * The notification once more, to whoever the form names now (§9).
+     *
+     * For a letter that failed, one stuck in a queue nobody works, or one that went to a spam
+     * folder. A form that names nobody is refused out loud rather than answered "done".
+     */
+    public function notify(Request $request, Submission $submission, Notifier $notifier): JsonResponse
+    {
+        $submission->loadMissing('form');
+
+        if ($notifier->send($submission, $this->adminId($request)) === 0) {
+            throw new NobodyToNotify((string) $submission->form->slug);
+        }
+
+        return ApiResponse::data($this->one($request, $submission->refresh()));
     }
 
     /** The status, the assignee, and a typo in an answer. */

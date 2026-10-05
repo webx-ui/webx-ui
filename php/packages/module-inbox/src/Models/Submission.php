@@ -28,6 +28,8 @@ use WebxUi\Auth\Models\CmsUser;
  * @property array<string, mixed> $meta
  * @property Carbon|null $notified_at
  * @property string|null $notify_error
+ * @property Carbon|null $notify_queued_at
+ * @property list<array{address: string, state: string, error: string|null, at: string}>|null $notify_recipients
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -38,6 +40,18 @@ class Submission extends Model implements Notable
     public const SOURCE_WEB = 'web';
 
     public const SOURCE_PANEL = 'panel';
+
+    /** Nobody was written to: the form names nobody, or nobody it names is left. */
+    public const NOTIFY_NONE = 'none';
+
+    /** A letter is waiting for a queue worker, and none has failed. */
+    public const NOTIFY_QUEUED = 'queued';
+
+    /** Every letter left. */
+    public const NOTIFY_DELIVERED = 'delivered';
+
+    /** A letter could not be sent; `notify_error` says why. */
+    public const NOTIFY_FAILED = 'failed';
 
     /**
      * What a submission is called in the morph map, and therefore in the address of its
@@ -59,6 +73,36 @@ class Submission extends Model implements Notable
             'meta' => 'array',
             'read_at' => 'datetime',
             'notified_at' => 'datetime',
+            'notify_queued_at' => 'datetime',
+            'notify_recipients' => 'array',
+        ];
+    }
+
+    /**
+     * How the notification went, in one word and the detail behind it (§9).
+     *
+     * Read off the columns rather than stored as a word of its own, so a submission written
+     * before the queue was watched reads as it did: `notified_at` without an error is
+     * delivered, an error is failed. A failure wins over letters still waiting — the one thing
+     * an administrator has to act on is said first.
+     *
+     * @return array{state: string, error: string|null, queued_at: string|null, delivered_at: string|null, recipients: list<array{address: string, state: string, error: string|null, at: string}>}
+     */
+    public function notification(): array
+    {
+        $state = match (true) {
+            $this->notify_error !== null => self::NOTIFY_FAILED,
+            $this->notify_queued_at !== null => self::NOTIFY_QUEUED,
+            $this->notified_at !== null => self::NOTIFY_DELIVERED,
+            default => self::NOTIFY_NONE,
+        };
+
+        return [
+            'state' => $state,
+            'error' => $this->notify_error,
+            'queued_at' => $this->notify_queued_at?->toAtomString(),
+            'delivered_at' => $this->notified_at?->toAtomString(),
+            'recipients' => array_values($this->notify_recipients ?? []),
         ];
     }
 

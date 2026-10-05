@@ -174,4 +174,28 @@ return [
 
     'anonymise_ip' => (bool) env('WEBX_INBOX_ANONYMISE_IP', false),
 
+    /*
+    |---------------------------------------------------------------------------
+    | What happens to a submission next
+    |---------------------------------------------------------------------------
+    |
+    | Classes implementing `WebxUi\Inbox\Contracts\SubmissionHandler`, keyed by
+    | the form's slug, or by `*` for every form (§2.19). Each runs as a queued
+    | job of its own once the submission and its answers are stored: one that
+    | fails is a `handler_error` line in the submission's log, and the visitor
+    | and the other handlers never hear of it. A double click inside the
+    | duplicate window does not run them again.
+    |
+    | Here and not in a form's options on purpose: those are edited in the panel
+    | and over MCP, and the panel does not choose which code runs.
+    |
+    |     'handlers' => [
+    |         '*' => [App\Inbox\SyncToCrm::class],
+    |         'subscribe' => [App\Inbox\SendGift::class],
+    |     ],
+    |
+    */
+
+    'handlers' => [],
+
 ];

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Inbox;
 
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
@@ -12,11 +13,16 @@ use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Notes\NoteTypes;
 use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Audit\Checks\AuditChecks;
+use WebxUi\Inbox\Audit\NoRecipients;
+use WebxUi\Inbox\Audit\NotificationTrouble;
 use WebxUi\Inbox\Console\PruneSubmissionsCommand;
+use WebxUi\Inbox\Events\SubmissionStored;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Panel\InboxModule;
 use WebxUi\Inbox\Relations\FormTarget;
 use WebxUi\Inbox\Rendering\Assets;
+use WebxUi\Inbox\Submissions\Handlers;
 use WebxUi\Inbox\Support\Forms;
 
 class InboxServiceProvider extends ServiceProvider
@@ -58,11 +64,27 @@ class InboxServiceProvider extends ServiceProvider
         // form deleted takes the rows pointing at it along; one with submissions is not deleted.
         $this->app->make(RelationTargets::class)->register(new FormTarget);
 
+        // The site audit's check of the forms, when the audit is installed: a switched-on form
+        // that would write to nobody saves every enquiry and tells nobody about any of them.
+        if (class_exists(AuditChecks::class)) {
+            $this->app->make(AuditChecks::class)->register($this->app->make(NoRecipients::class));
+        }
+
         // Notes on a submission are the panel's own feature, not this module's (§2.17): the
         // table, the trait and the endpoint live in `module-admin`, and what is said here is
         // only that submissions are one of the things that carry them — under an alias, so
         // the address reads `entities/inbox_submission/17/notes` and never a class name.
         $this->app->make(NoteTypes::class)->register(Submission::MORPH, Submission::class);
+
+        // The handlers of `webx-inbox.handlers` (§2.19). A site that wants something else listens
+        // to the same event itself; this one only reads the config.
+        $this->app->make(Dispatcher::class)->listen(SubmissionStored::class, Handlers::class);
+
+        // Letters that failed or wait for a worker nobody runs — only when
+        // `webx-ui/module-audit` is installed.
+        if (class_exists(AuditChecks::class)) {
+            $this->app->make(AuditChecks::class)->register($this->app->make(NotificationTrouble::class));
+        }
 
         if (! $this->app->runningInConsole()) {
             return;

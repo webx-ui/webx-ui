@@ -373,6 +373,15 @@ const actions = computed<ScreenAction[]>(() => {
                       the row grew by a line to say a single digit. Unread first and in colour;
                       the total behind it, quietly, because it is context rather than work.
                     -->
+                    <!-- Only on a form that is switched on: one that is off tells nobody
+                         because nobody can send it. -->
+                    <wx-icon
+                      v-if="item.is_enabled && item.notifies === false"
+                      class="wx-inbox-form__silent"
+                      name="warning"
+                      :label="t('panel.notifies-nobody-short')"
+                      :title="t('panel.notifies-nobody-short')"
+                    />
                     <wx-indicator
                       v-if="item.unread_count"
                       class="wx-inbox-form__count"
@@ -542,6 +551,11 @@ const actions = computed<ScreenAction[]>(() => {
 
 .wx-inbox-form.is-current {
   color: var(--wx-color-primary);
+}
+
+.wx-inbox-form__silent {
+  flex: none;
+  color: var(--wx-color-warning);
 }
 
 .wx-inbox-form__count {

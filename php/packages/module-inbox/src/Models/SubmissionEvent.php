@@ -36,7 +36,23 @@ class SubmissionEvent extends Model
 
     public const NOTE = 'note';
 
+    /** The letters of one attempt have all been sent or have failed; `to` is how many left. */
     public const NOTIFIED = 'notified';
+
+    /** A handler of `webx-inbox.handlers` ran; `from` is its class (§2.19). */
+    public const HANDLED = 'handled';
+
+    /** A handler failed or could not be queued; `from` is its class, `to` what went wrong. */
+    public const HANDLER_ERROR = 'handler_error';
+
+    /** Nobody was written to because the form names nobody a letter would reach. */
+    public const NO_RECIPIENTS = 'no_recipients';
+
+    /** Letters handed to a queue worker; `to` is how many. */
+    public const NOTIFY_QUEUED = 'notify_queued';
+
+    /** A letter that could not be sent; `to` is the address it was for. */
+    public const NOTIFY_FAILED = 'notify_failed';
 
     protected $table = 'inbox_submission_events';
 

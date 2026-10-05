@@ -273,6 +273,107 @@ is how a domain loses its reputation.
 notification, recorded on the submission as `notify_error` and shown on its screen, and not an
 enquiry.
 
+**A form that names nobody says so.** No recipients — or only administrators deleted or switched
+off since — sends nothing and logs `no_recipients` on the submission, so it does not look like a
+letter waiting in the queue. Every form in the panel API and in MCP carries `recipients` (each
+with `receives` and a `problem`) and `notifies`; the editor warns above its tabs, the column of
+forms marks the form, and the site audit reports it as `inbox.no_recipients`.
+
+**Queued is not sent.** On a site with a queue, sending a letter only pushes a job, and a worker
+talks to the SMTP server later. The submission therefore carries a state — `none`, `queued`,
+`delivered` or `failed` with the reason — and the list of recipients with how each letter went;
+the screen shows both, and so do `inbox_get` and `inbox_list`. A letter that stays `queued` means
+no queue worker runs. One that failed right after the mail settings changed usually means a
+worker still holds the old ones: `php artisan queue:restart`. Then send it again from the
+submission's menu, or with the MCP tool `inbox_notify` (`dry_run` first). With the site audit
+installed, the check «Notifications about submissions that did not leave» lists both cases.
+
+## After a submission is stored
+
+Sending a submission to a CRM, adding the address to a mailing list, writing back to the visitor
+with a gift — these belong to the site, and the module gives them a seam instead of a fork.
+
+**The event.** `WebxUi\Inbox\Events\SubmissionStored` is dispatched once the submission, its
+answers and its files are written, after the commit, for every source — the form on the site and
+one typed in by hand alike (`$submission->source`). What the antispam trapped or refused is never
+written and never announced. The submission comes with `form`, `values` and `files` loaded.
+`$event->repeated` is the same answers again inside the duplicate window — a double click.
+
+It is not an Eloquent `created`: the row is written before its answers, so a listener of
+`created` would find none of them.
+
+A listener is an ordinary Laravel listener; one that talks to the network is `ShouldQueue`:
+
+```php
+namespace App\Listeners;
+
+use Illuminate\Contracts\Queue\ShouldQueue;
+use WebxUi\Inbox\Events\SubmissionStored;
+
+final class TellTheSalesChannel implements ShouldQueue
+{
+    public function handle(SubmissionStored $event): void
+    {
+        if ($event->repeated || $event->submission->form->slug !== 'contact') {
+            return;
+        }
+
+        // ...
+    }
+}
+```
+
+**The handlers.** For the common case — "this form goes to that service" — name classes in
+`config/webx-inbox.php`, by the form's slug or by `*` for every form:
+
+```php
+'handlers' => [
+    '*' => [App\Inbox\SyncToMailingList::class],
+    'gift' => [App\Inbox\SendGift::class],
+],
+```
+
+A handler implements `WebxUi\Inbox\Contracts\SubmissionHandler` and is built by the container, so
+it asks for what it needs in its constructor:
+
+```php
+namespace App\Inbox;
+
+use Illuminate\Support\Facades\Http;
+use WebxUi\Inbox\Contracts\SubmissionHandler;
+use WebxUi\Inbox\Models\Submission;
+
+final class SyncToMailingList implements SubmissionHandler
+{
+    public function handle(Submission $submission): void
+    {
+        $email = $submission->value('email')?->value;
+
+        if ($email === null) {
+            return;
+        }
+
+        Http::withToken(config('services.mailing_list.token'))
+            ->post('https://api.mailing-list.example/subscribers', [
+                'email' => $email,
+                'fields' => ['name' => $submission->value('name')?->value],
+                'groups' => [config('services.mailing_list.groups.'.$submission->form->slug)],
+            ])
+            ->throw();
+    }
+}
+```
+
+Each handler runs as a queued job of its own, `*` first, each class once. Throwing is failing: it
+becomes a `handler_error` line in the submission's log with the message, the others run all the
+same, and the visitor never hears of it. Success is a `handled` line. Both show in the card in the
+panel and in `inbox_get`. A handler is tried once — one that wants retries queues a job of its own
+with them — and a double click does not run the handlers again.
+
+Handlers come from the config only, never from a form's options: those are edited in the panel and
+over MCP, and the panel does not choose which code runs. On the `sync` queue they run inside the
+visitor's request, so a site that calls slow services runs a queue worker.
+
 ## The panel's API
 
 ```
@@ -284,6 +385,7 @@ GET    /api/cms/inbox/forms/{form}/submissions          filters, search, the col
 POST   /api/cms/inbox/forms/{form}/submissions          one typed in by hand
 GET    /api/cms/inbox/forms/{form}/submissions/export   CSV
 GET    /api/cms/inbox/submissions/{submission}          PUT: status, assignee, a corrected answer
+POST   /api/cms/inbox/submissions/{submission}/notify   the notification again (inbox.update)
 POST   /api/cms/inbox/submissions/mass                  a status or a delete over a selection
 GET    /api/cms/inbox/statuses                          POST · PUT · DELETE · /sorting
 POST   /api/cms/entities/inbox_submission/{id}/notes    the shared notes route of module-admin
@@ -319,6 +421,7 @@ way tinker is.
 | `inbox_list`       | The submissions of a form: status, unread, assignee, dates, search              |
 | `inbox_get`        | One submission: the answers, the files, the metadata, the notes, the log        |
 | `inbox_set_status` | The status, the assignee and a note, in one call                                |
+| `inbox_notify`     | The notification again, for a letter that failed or is stuck; `dry_run` first   |
 
 A form is named by its id or by its slug, and the tools go through the same rules the panel's
 editor does: a slug that is not an address and a recipient nobody can be written to are refused
@@ -369,14 +472,15 @@ to tell which flat they are in.
 | `duplicate_window` | `900`             | Seconds in which the same answers are the same thing |
 | `prune`            | 30 · 0            | Days for spam, days for everything; 0 means never    |
 | `anonymise_ip`     | `false`           | Drop the last octet before writing the address       |
+| `handlers`         | `[]`              | Handlers by form slug or `*`, run once it is stored  |
 
 A form may lower or raise its own antispam settings; everything else here is the site's.
 
 ## What is deferred
 
 - **A kanban of submissions.** `WxKanban` exists and the data is ready; it needs a screen.
-- **An auto-reply to the sender**, and answering a client from the panel at all — that is a
-  conversation, with IMAP behind it.
+- **Answering a client from the panel** — that is a conversation, with IMAP behind it. A letter
+  back to the visitor on arrival is already possible: a handler on that form's slug.
 - **Visitors' comments** are a different module: different readers, different permissions, a
   different life. Administrators' notes are not a public thread.
 - **Telegram and webhooks** as channels beside mail.

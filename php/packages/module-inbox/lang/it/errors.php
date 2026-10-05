@@ -12,4 +12,5 @@ return [
     'slug-shape' => 'Un indirizzo si scrive con minuscole, cifre e trattini: «contact-us».',
     'field-name-shape' => 'Un nome inizia con una lettera; poi lettere, cifre, trattini e trattini bassi.',
     'recipient-shape' => 'Un destinatario è un amministratore o un indirizzo e-mail.',
+    'nobody-to-notify' => 'Il modulo «:form» non indica a chi scrivere.',
 ];

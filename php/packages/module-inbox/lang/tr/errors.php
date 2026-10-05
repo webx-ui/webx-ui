@@ -12,4 +12,5 @@ return [
     'slug-shape' => 'Adres küçük harfler, rakamlar ve kısa çizgilerden oluşur: “contact-us”.',
     'field-name-shape' => 'Ad bir harfle başlar; sonrasında harf, rakam, kısa çizgi ve alt çizgi gelebilir.',
     'recipient-shape' => 'Alıcı bir yönetici ya da bir e-posta adresidir.',
+    'nobody-to-notify' => '“:form” formu kime yazılacağını belirtmiyor.',
 ];

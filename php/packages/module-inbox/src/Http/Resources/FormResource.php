@@ -6,6 +6,7 @@ namespace WebxUi\Inbox\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use WebxUi\Inbox\Mail\Recipients;
 use WebxUi\Inbox\Models\Form;
 
 /**
@@ -16,6 +17,12 @@ use WebxUi\Inbox\Models\Form;
  * query that lists the forms, so a panel with thirty of them still costs two queries rather
  * than sixty-one; a form loaded on its own has neither, and says so with a null rather than
  * with a zero that would be a claim.
+ *
+ * `recipients` and `notifies` are read, never written: who a letter would reach today, with the
+ * reason beside anybody it would not (deleted, switched off, not an address). The stored list
+ * stays in `options.recipients` as it was; these two are what a form with nobody to write to
+ * shows instead of looking like a queue that has not run. A list of forms looks the people up
+ * once ({@see Recipients::load()}).
  *
  * `fields` is here only when they were loaded: the column does not need them and the editor
  * cannot do without them.
@@ -31,6 +38,7 @@ final class FormResource extends JsonResource
     {
         /** @var Form $form */
         $form = $this->resource;
+        $recipients = Recipients::describe($form);
 
         return [
             'id' => (int) $form->getKey(),
@@ -38,6 +46,8 @@ final class FormResource extends JsonResource
             'title' => $form->getTranslations('title'),
             'is_enabled' => $form->is_enabled,
             'options' => $form->options ?? [],
+            'recipients' => $recipients,
+            'notifies' => in_array(true, array_column($recipients, 'receives'), true),
             'position' => $form->position,
             'submissions_count' => $this->count($form, 'submissions_count'),
             'unread_count' => $this->count($form, 'unread_count'),

@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace WebxUi\Inbox\Submissions;
 
 use Illuminate\Contracts\Config\Repository as Config;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Psr\Log\LoggerInterface;
+use Throwable;
+use WebxUi\Inbox\Events\SubmissionStored;
 use WebxUi\Inbox\Exceptions\NoStatuses;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Field;
@@ -31,6 +35,8 @@ final class Intake
         private readonly FileStore $files,
         private readonly Config $config,
         private readonly Meta $meta,
+        private readonly Dispatcher $events,
+        private readonly LoggerInterface $log,
     ) {}
 
     /**
@@ -40,6 +46,7 @@ final class Intake
     {
         $hash = $this->hash($form, $values);
         $submission = $this->find($form, $hash);
+        $repeated = $submission !== null;
 
         if ($submission === null) {
             $submission = $this->create($form, $hash, $request, $source);
@@ -57,7 +64,31 @@ final class Intake
 
         $this->write($submission, $form, $values, $request);
 
-        return $submission->refresh();
+        $submission->refresh();
+
+        $this->announce($submission, $repeated);
+
+        return $submission;
+    }
+
+    /**
+     * `SubmissionStored`, once the answers and files are there (§2.19).
+     *
+     * A listener that throws is the site's bug, and it lands in the log rather than in the
+     * visitor's answer: the submission is written, and that is what the visitor was promised.
+     */
+    private function announce(Submission $submission, bool $repeated): void
+    {
+        $submission->load(['form', 'values', 'files']);
+
+        try {
+            $this->events->dispatch(new SubmissionStored($submission, $repeated));
+        } catch (Throwable $exception) {
+            $this->log->error('webx-inbox: a listener of SubmissionStored failed on submission {id}.', [
+                'id' => $submission->getKey(),
+                'error' => $exception->getMessage(),
+            ]);
+        }
     }
 
     /**

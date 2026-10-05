@@ -12,4 +12,5 @@ return [
     'slug-shape' => 'Une adresse s’écrit en minuscules, chiffres et traits d’union : « contact-us ».',
     'field-name-shape' => 'Un nom commence par une lettre, puis lettres, chiffres, tirets et tirets bas.',
     'recipient-shape' => 'Un destinataire est un administrateur ou une adresse e-mail.',
+    'nobody-to-notify' => 'Le formulaire « :form » ne désigne personne à qui écrire.',
 ];

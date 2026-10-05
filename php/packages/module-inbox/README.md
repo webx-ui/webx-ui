@@ -214,11 +214,119 @@ is how a domain loses its reputation.
 **The submission is written before anything is sent.** A mail server that is down costs a
 notification, recorded on the submission as `notify_error`, and not an enquiry.
 
+**Queued is not sent.** On a site with a queue, sending only pushes a job; the SMTP server is
+asked later by a worker. So the submission says where its letters are — `notification.state` in
+the panel's API and in MCP:
+
+| state       | means                                                                          |
+| ----------- | ------------------------------------------------------------------------------ |
+| `none`      | nobody to write to                                                             |
+| `queued`    | handed to the queue, not sent yet (`notify_queued_at` — since when)            |
+| `delivered` | every letter left (`notified_at`)                                              |
+| `failed`    | a letter could not be sent; `notify_error` says why, per recipient in the list |
+
+A worker reports each letter as it settles (`SubmissionReceived::send()` / `failed()` →
+`Mail\Delivery`); the log gets `notify_queued`, then `notified` with the count, and
+`notify_failed` with the address. On `sync` nothing changed: the outcome is written at once.
+A letter stuck as `queued` means no worker runs; one that failed after a settings change often
+means a worker still holds the old ones — `php artisan queue:restart`. Then send it again: the
+panel's «Send the notification again», `POST /api/cms/inbox/submissions/{id}/notify`
+(`inbox.update`), or the MCP tool `inbox_notify` (with `dry_run`). With `webx-ui/module-audit`
+installed, the check `inbox.notification` lists letters that failed in the last
+`thresholds.inbox_failed_days` (30) days or have been queued for over
+`thresholds.inbox_queued_minutes` (30).
+
 The letter is a published view:
 
 ```bash
 php artisan vendor:publish --tag=webx-inbox-views
 ```
+
+## After a submission is stored
+
+Sending a submission to a CRM, adding the address to a mailing list, writing back to the visitor
+with a gift — these belong to the site, and the module gives them a seam instead of a fork.
+
+**The event.** `WebxUi\Inbox\Events\SubmissionStored` is dispatched once the submission, its
+answers and its files are written, after the commit, for every source — the form on the site and
+one typed in by hand alike (`$submission->source`). What the antispam trapped or refused is never
+written and never announced. The submission comes with `form`, `values` and `files` loaded.
+`$event->repeated` is the same answers again inside the duplicate window — a double click.
+
+It is not an Eloquent `created`: the row is written before its answers, so a listener of
+`created` would find none of them.
+
+A listener is an ordinary Laravel listener; one that talks to the network is `ShouldQueue`:
+
+```php
+namespace App\Listeners;
+
+use Illuminate\Contracts\Queue\ShouldQueue;
+use WebxUi\Inbox\Events\SubmissionStored;
+
+final class TellTheSalesChannel implements ShouldQueue
+{
+    public function handle(SubmissionStored $event): void
+    {
+        if ($event->repeated || $event->submission->form->slug !== 'contact') {
+            return;
+        }
+
+        // ...
+    }
+}
+```
+
+**The handlers.** For the common case — "this form goes to that service" — name classes in
+`config/webx-inbox.php`, by the form's slug or by `*` for every form:
+
+```php
+'handlers' => [
+    '*' => [App\Inbox\SyncToMailingList::class],
+    'gift' => [App\Inbox\SendGift::class],
+],
+```
+
+A handler implements `WebxUi\Inbox\Contracts\SubmissionHandler` and is built by the container, so
+it asks for what it needs in its constructor:
+
+```php
+namespace App\Inbox;
+
+use Illuminate\Support\Facades\Http;
+use WebxUi\Inbox\Contracts\SubmissionHandler;
+use WebxUi\Inbox\Models\Submission;
+
+final class SyncToMailingList implements SubmissionHandler
+{
+    public function handle(Submission $submission): void
+    {
+        $email = $submission->value('email')?->value;
+
+        if ($email === null) {
+            return;
+        }
+
+        Http::withToken(config('services.mailing_list.token'))
+            ->post('https://api.mailing-list.example/subscribers', [
+                'email' => $email,
+                'fields' => ['name' => $submission->value('name')?->value],
+                'groups' => [config('services.mailing_list.groups.'.$submission->form->slug)],
+            ])
+            ->throw();
+    }
+}
+```
+
+Each handler runs as a queued job of its own, `*` first, each class once. Throwing is failing: it
+becomes a `handler_error` line in the submission's log with the message, the others run all the
+same, and the visitor never hears of it. Success is a `handled` line. Both show in the card in the
+panel and in `inbox_get`. A handler is tried once — one that wants retries queues a job of its own
+with them — and a double click does not run the handlers again.
+
+Handlers come from the config only, never from a form's options: those are edited in the panel and
+over MCP, and the panel does not choose which code runs. On the `sync` queue they run inside the
+visitor's request, so a site that calls slow services runs a queue worker.
 
 ## For an agent
 

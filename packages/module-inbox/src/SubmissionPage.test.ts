@@ -55,6 +55,13 @@ function submission(over: Partial<InboxSubmission> = {}): InboxSubmission {
     placement: null,
     notified_at: '2026-09-18T08:10:00Z',
     notify_error: null,
+    notification: {
+      state: 'delivered',
+      error: null,
+      queued_at: null,
+      delivered_at: '2026-09-18T08:10:00Z',
+      recipients: [],
+    },
     previous_id: 6,
     next_id: null,
     created_at: '2026-09-18T08:10:00Z',
@@ -156,6 +163,67 @@ describe('WxInboxSubmissionPage', () => {
     expect(wrapper.text()).toMatch(/Placement\s*footer/)
   })
 
+  it('names a handler by its short name and says why it failed', async () => {
+    const { wrapper } = await open(
+      submission({
+        events: [
+          {
+            id: 1,
+            type: 'handled',
+            from: 'App\\Inbox\\SyncToCrm',
+            to: null,
+            author: null,
+            created_at: null,
+          },
+          {
+            id: 2,
+            type: 'handler_error',
+            from: 'App\\Inbox\\SendGift',
+            to: 'The CRM answered 503.',
+            author: null,
+            created_at: null,
+          },
+        ],
+      }),
+    )
+
+    await wrapper.findAll('.wx-tabs__tab')[1]!.trigger('mousedown')
+    await nextTick()
+
+    expect(wrapper.text()).toContain('Handed to SyncToCrm')
+    expect(wrapper.text()).toContain('SendGift failed: The CRM answered 503.')
+  })
+
+  it('says the form named nobody, rather than that a letter is still on its way', async () => {
+    const { wrapper } = await open(
+      submission({
+        notified_at: null,
+        notification: {
+          state: 'none',
+          error: null,
+          queued_at: null,
+          delivered_at: null,
+          recipients: [],
+        },
+        events: [
+          { id: 1, type: 'created', from: null, to: 'new', author: null, created_at: null },
+          { id: 2, type: 'no_recipients', from: null, to: null, author: null, created_at: null },
+        ],
+      }),
+    )
+
+    await wrapper.findAll('.wx-tabs__tab')[1]!.trigger('mousedown')
+    await nextTick()
+
+    expect(wrapper.text()).toContain('Nobody was told: the form names no recipients')
+
+    await wrapper.findAll('.wx-tabs__tab')[2]!.trigger('mousedown')
+    await nextTick()
+
+    expect(wrapper.text()).toContain('No notification: the form names nobody to tell')
+    expect(wrapper.text()).not.toContain('No notification was sent')
+  })
+
   it('answers by mail to whoever wrote in', async () => {
     const { wrapper } = await open(submission())
 
@@ -201,5 +269,66 @@ describe('WxInboxSubmissionPage', () => {
     expect(wrapper.text()).toContain('Ada')
     // No menu at all rather than a menu of greyed lines: a menu is a list of what is possible.
     expect(wrapper.find('.wx-actions').exists()).toBe(false)
+  })
+
+  it('says a letter that never left, why, and sends it again', async () => {
+    const failed = submission({
+      notify_error: 'Connection could not be established with host "127.0.0.1:1025"',
+      notification: {
+        state: 'failed',
+        error: 'Connection could not be established with host "127.0.0.1:1025"',
+        queued_at: null,
+        delivered_at: null,
+        recipients: [
+          {
+            address: 'sales@example.test',
+            state: 'failed',
+            error: 'Connection could not be established with host "127.0.0.1:1025"',
+            at: '2026-09-18T08:10:00Z',
+          },
+        ],
+      },
+    })
+    const { wrapper, post } = await open(failed)
+
+    await wrapper.findAll('.wx-tabs__tab')[2]!.trigger('mousedown')
+    await nextTick()
+
+    expect(wrapper.text()).toContain('The notification could not be sent')
+    expect(wrapper.text()).toContain('127.0.0.1:1025')
+    expect(wrapper.text()).toMatch(/sales@example\.test\s*failed/)
+
+    post.mockResolvedValueOnce({ data: submission() })
+
+    const again = wrapper
+      .findAll('button')
+      .find((button) => button.text() === 'Send the notification again')
+
+    await again!.trigger('click')
+    await flushPromises()
+
+    expect(post).toHaveBeenCalledWith('/api/cms/inbox/submissions/5/notify')
+    expect(wrapper.text()).toContain('The notification went out')
+  })
+
+  it('does not call a letter waiting in the queue sent', async () => {
+    const { wrapper } = await open(
+      submission({
+        notified_at: null,
+        notification: {
+          state: 'queued',
+          error: null,
+          queued_at: '2026-09-18T08:10:00Z',
+          delivered_at: null,
+          recipients: [],
+        },
+      }),
+    )
+
+    await wrapper.findAll('.wx-tabs__tab')[2]!.trigger('mousedown')
+    await nextTick()
+
+    expect(wrapper.text()).toContain('The notification is waiting in the queue')
+    expect(wrapper.text()).not.toContain('The notification went out')
   })
 })

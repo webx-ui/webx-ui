@@ -12,4 +12,5 @@ return [
     'slug-shape' => 'An address is made of lower-case letters, digits and hyphens: “contact-us”.',
     'field-name-shape' => 'A name starts with a letter and may hold letters, digits, hyphens and underscores.',
     'recipient-shape' => 'A recipient is either an administrator or an e-mail address.',
+    'nobody-to-notify' => 'The form “:form” names nobody to write to.',
 ];

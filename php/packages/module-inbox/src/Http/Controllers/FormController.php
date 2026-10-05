@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Inbox\Http\Requests\SaveFormRequest;
 use WebxUi\Inbox\Http\Resources\FormResource;
+use WebxUi\Inbox\Mail\Recipients;
 use WebxUi\Inbox\Models\Form;
 
 /**
@@ -23,6 +24,7 @@ final class FormController
     public function index(): JsonResponse
     {
         $forms = self::counted(Form::query())->orderBy('position')->orderBy('id')->get();
+        Recipients::load($forms);
 
         return ApiResponse::data(FormResource::collection($forms));
     }

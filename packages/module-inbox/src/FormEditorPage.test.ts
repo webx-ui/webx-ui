@@ -48,11 +48,11 @@ const form: InboxForm = {
   updated_at: null,
 }
 
-async function panel() {
+async function panel(loaded: InboxForm = form, at = '/inbox/forms/1') {
   const get = vi
     .fn()
     .mockImplementation((url: string) =>
-      Promise.resolve({ data: url.endsWith('/recipients') ? [] : form }),
+      Promise.resolve({ data: url.endsWith('/recipients') ? [] : loaded }),
     )
   const put = vi.fn().mockResolvedValue({ data: form })
   const post = vi.fn().mockResolvedValue({ data: field({ id: 12, key: 'budget' }) })
@@ -77,7 +77,7 @@ async function panel() {
     ],
   })
 
-  await router.push('/inbox/forms/1')
+  await router.push(at)
 
   const wrapper = mount(FormEditorPage, {
     global: {
@@ -113,6 +113,52 @@ describe('WxInboxFormEditor', () => {
     const written = wrapper.findAll('input').map((input) => input.element.value)
     expect(written).toContain('Thank you')
     expect(wrapper.text()).toContain('fields[email]')
+  })
+
+  it('warns above the tabs when a switched-on form would tell nobody', async () => {
+    const { wrapper } = await panel({ ...form, recipients: [], notifies: false })
+
+    expect(wrapper.find('.wx-inbox-editor__silent').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Nobody is told about this form')
+  })
+
+  it('says why a named administrator gets nothing, and still warns', async () => {
+    const { wrapper } = await panel({
+      ...form,
+      options: { ...form.options, recipients: [{ admin_id: 7 }] },
+      recipients: [
+        {
+          type: 'admin',
+          admin_id: 7,
+          name: null,
+          email: null,
+          receives: false,
+          problem: 'admin_deleted',
+        },
+      ],
+      notifies: false,
+    })
+
+    expect(wrapper.find('.wx-inbox-editor__silent').exists()).toBe(true)
+    expect(wrapper.text()).toContain('This administrator no longer exists')
+  })
+
+  it('says nothing when somebody would be written to, or when the form is off', async () => {
+    const reached = await panel({
+      ...form,
+      options: { ...form.options, recipients: [{ email: 'sales@example.test' }] },
+    })
+    expect(reached.wrapper.find('.wx-inbox-editor__silent').exists()).toBe(false)
+
+    const off = await panel({ ...form, is_enabled: false })
+    expect(off.wrapper.find('.wx-inbox-editor__silent').exists()).toBe(false)
+  })
+
+  it('opens on the tab the address names, which is where the audit sends somebody', async () => {
+    const { wrapper } = await panel(form, '/inbox/forms/1?tab=notifications')
+
+    const active = wrapper.find('[role="tab"][data-state="active"]')
+    expect(active.text()).toBe('Notifications')
   })
 
   it('sends the settings back with their keys whole', async () => {

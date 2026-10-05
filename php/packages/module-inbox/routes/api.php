@@ -68,6 +68,9 @@ Route::prefix((string) config('webx-admin.api_path').'/inbox')
 
             Route::delete('submissions/{submission}', [SubmissionController::class, 'destroy'])
                 ->whereNumber('submission')->name('submissions.destroy');
+
+            Route::post('submissions/{submission}/notify', [SubmissionController::class, 'notify'])
+                ->whereNumber('submission')->name('submissions.notify');
         });
 
         Route::middleware('cms.can:inbox.manage')->group(function (): void {

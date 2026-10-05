@@ -12,4 +12,5 @@ return [
     'slug-shape' => 'Adres to małe litery, cyfry i myślniki: „contact-us”.',
     'field-name-shape' => 'Nazwa zaczyna się od litery, dalej litery, cyfry, myślniki i podkreślenia.',
     'recipient-shape' => 'Odbiorca to administrator albo adres e-mail.',
+    'nobody-to-notify' => 'Formularz „:form” nie wskazuje nikogo, do kogo pisać.',
 ];
