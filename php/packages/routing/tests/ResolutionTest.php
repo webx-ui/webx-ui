@@ -10,9 +10,11 @@ use Illuminate\Support\Facades\Route as Router;
 use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Routing\Resolver;
+use WebxUi\Routing\RouteTypes;
 use WebxUi\Routing\Tests\Fixtures\Category;
 use WebxUi\Routing\Tests\Fixtures\Page;
 use WebxUi\Routing\Tests\Fixtures\PageHandler;
+use WebxUi\Routing\Tests\Fixtures\RedirectingHandler;
 
 /**
  * Turning a request into an answer (§8).
@@ -160,6 +162,25 @@ class ResolutionTest extends TestCase
         Category::create(['name' => 'Ремни', 'slug' => 'ремни']);
 
         $this->get('/'.rawurlencode('ремни'))->assertOk()->assertJsonPath('tail', '');
+    }
+
+    #[Test]
+    public function a_handler_a_site_binds_over_a_module_says_whether_its_type_is_a_page(): void
+    {
+        $types = $this->app->make(RouteTypes::class);
+
+        $this->assertTrue($types->get('category')->servesPages());
+        // Not served yet is not the same as not a page.
+        $this->assertTrue($types->get('article')->servesPages());
+
+        // The site's class, bound over the module's: the registration is not touched, and the
+        // resolver hands out the site's class — so the answer has to come from the same place.
+        $this->app->bind(PageHandler::class, RedirectingHandler::class);
+        Category::create(['name' => 'Parts', 'slug' => 'parts']);
+
+        $this->assertFalse($types->get('category')->servesPages());
+        $this->assertFalse($types->get('page')->servesPages());
+        $this->get('/parts')->assertStatus(301);
     }
 
     /** @param  TestResponse<Response>  $response */

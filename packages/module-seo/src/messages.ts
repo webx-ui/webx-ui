@@ -89,6 +89,8 @@ export const seoMessages: Record<string, Messages> = {
     'sitemap-built': 'Built',
     'sitemap-total': 'Addresses: :count',
     'sitemap-excluded': 'Left out — noindex: :noindex, another canonical: :canonical',
+    'sitemap-not-pages':
+      'Not listed — address types that redirect instead of showing a page: :types',
     'sitemap-empty': 'Nothing is in it: no address is published and open to the index.',
     'sitemap-off': 'The sitemap is turned off on this site.',
     'sitemap-rebuild': 'Rebuild',
@@ -102,6 +104,7 @@ export const seoMessages: Record<string, Messages> = {
     'sitemap-reason-hidden': 'the page is not published',
     'sitemap-reason-noindex': 'the page says noindex',
     'sitemap-reason-canonical': 'the page names another address as canonical',
+    'sitemap-reason-not-a-page': 'the address type redirects instead of showing a page',
   },
 
   card: {

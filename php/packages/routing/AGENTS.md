@@ -32,18 +32,19 @@ behind `TreePath` `webx-ui/nested-set` — read their guides for those.
 
 ## Change it without forking
 
-| You want                                    | Do this                                                                                                                                               |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Another address shape for a module's type   | `'types' => ['article' => ['formatter' => YourFormatter::class]]` in `config/webx-routing.php`, then `php artisan webx:routes:rebuild --type=article` |
-| Addresses for a model of your own           | `use HasUrl` on the model, `app(RouteTypes::class)->register(new RouteType(...))` in a provider                                                       |
-| A segment in front of a type's addresses    | `new Prefixed('segment', Slug::class)` as the formatter                                                                                               |
-| Keep an address from ever being handed out  | add it to `'reserved'`; any route the application declares is reserved already                                                                        |
-| Answer a miss (old spelling, deleted item)  | a `MissHandler` class, `app(Misses::class)->register(YourHandler::class)`                                                                             |
-| Serve the registry from a route of your own | `'fallback' => false`, then call the resolver yourself                                                                                                |
-| Other middleware on public pages            | `'middleware'` (default `['web', 'webx.locale']`)                                                                                                     |
-| Import thousands of rows                    | `app(RouteSync::class)->bulk($query->lazy())` — one upsert per chunk                                                                                  |
-| A redirect an editor writes by hand         | a rule in `webx-ui/module-seo`, not an alias                                                                                                          |
-| Publish the config                          | `php artisan vendor:publish --tag=webx-routing-config`                                                                                                |
+| You want                                        | Do this                                                                                                                                               |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Another address shape for a module's type       | `'types' => ['article' => ['formatter' => YourFormatter::class]]` in `config/webx-routing.php`, then `php artisan webx:routes:rebuild --type=article` |
+| Addresses for a model of your own               | `use HasUrl` on the model, `app(RouteTypes::class)->register(new RouteType(...))` in a provider                                                       |
+| A segment in front of a type's addresses        | `new Prefixed('segment', Slug::class)` as the formatter                                                                                               |
+| Keep an address from ever being handed out      | add it to `'reserved'`; any route the application declares is reserved already                                                                        |
+| Answer a miss (old spelling, deleted item)      | a `MissHandler` class, `app(Misses::class)->register(YourHandler::class)`                                                                             |
+| Serve the registry from a route of your own     | `'fallback' => false`, then call the resolver yourself                                                                                                |
+| Other middleware on public pages                | `'middleware'` (default `['web', 'webx.locale']`)                                                                                                     |
+| Import thousands of rows                        | `app(RouteSync::class)->bulk($query->lazy())` — one upsert per chunk                                                                                  |
+| A type's addresses to redirect, not show a page | bind your `RouteHandler` over the module's (`$this->app->bind(EventHandler::class, Yours::class)`) and implement `Contracts\NotAPage` on it           |
+| A redirect an editor writes by hand             | a rule in `webx-ui/module-seo`, not an alias                                                                                                          |
+| Publish the config                              | `php artisan vendor:publish --tag=webx-routing-config`                                                                                                |
 
 ## Do not
 

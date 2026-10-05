@@ -135,6 +135,11 @@ What it does not decide is **publication**: the entity already carries that stat
 copy of it in `routes` would be a copy that drifts. A draft answers 404 from the handler, and a
 preview answers 200 from the same place.
 
+The handler comes from the container, so a site binds its own class over a module's to change what
+that type's addresses do. A class that never shows a page (every address is a redirect or a 410)
+implements the marker `Contracts\NotAPage`; `RouteType::servesPages()` answers false for its type,
+and the sitemap of `webx-ui/module-seo` leaves the type out.
+
 Whatever runs afterwards can read what was found without asking again:
 
 ```php

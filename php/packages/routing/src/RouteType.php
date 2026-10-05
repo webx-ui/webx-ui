@@ -6,6 +6,7 @@ namespace WebxUi\Routing;
 
 use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
+use WebxUi\Routing\Contracts\NotAPage;
 use WebxUi\Routing\Formatters\PathFormatter;
 
 /**
@@ -61,5 +62,21 @@ class RouteType
         $formatter = $configured ?? $this->formatter;
 
         return $formatter instanceof PathFormatter ? $formatter : $container->make($formatter);
+    }
+
+    /**
+     * Whether the addresses of this type show a page, or only send the reader somewhere else.
+     *
+     * Asked of the handler the container would hand the resolver, so a site that binds its own
+     * class over a module's answers here without touching the registration. A type with no
+     * handler is not served yet, which is not the same as not being a page: it says yes.
+     */
+    public function servesPages(): bool
+    {
+        if ($this->handler === null) {
+            return true;
+        }
+
+        return ! Container::getInstance()->make($this->handler) instanceof NotAPage;
     }
 }

@@ -13,8 +13,11 @@ use WebxUi\Routing\Formatters\Slug;
 use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
 use WebxUi\Seo\Models\SeoUrl;
+use WebxUi\Seo\Sitemap\Sitemap;
 use WebxUi\Seo\Sitemap\SitemapRoutes;
 use WebxUi\Seo\Tests\Fixtures\MappedEntity;
+use WebxUi\Seo\Tests\Fixtures\MappedPage;
+use WebxUi\Seo\Tests\Fixtures\MappedRedirect;
 use WebxUi\Settings\Settings;
 
 /**
@@ -238,6 +241,40 @@ final class SitemapTest extends TestCase
         $this->assertStringNotContainsString('<loc>http://localhost/closed-news</loc>', $file);
         // A route with parameters is a family of addresses, not one.
         $this->assertStringNotContainsString('{slug}', $file);
+    }
+
+    #[Test]
+    public function a_type_whose_handler_redirects_has_no_file_and_the_status_says_why(): void
+    {
+        app(RouteTypes::class)->register(new RouteType(type: 'mapped', model: MappedEntity::class, formatter: Slug::class, handler: MappedPage::class));
+        $this->entity('about');
+        $sitemap = app(Sitemap::class);
+
+        // The module's own handler shows a page: nothing changes for a site that did nothing.
+        $this->get('/sitemap.xml')->assertSee('sitemap-mapped.xml', false);
+        $this->assertSame([], $sitemap->status()['excluded_types']);
+        $this->assertSame(['included' => true, 'reason' => null], $sitemap->verdict('/about'));
+
+        // The site binds its own class over the module's. That is a deploy, not a save — no
+        // event moves the generation — and the map built a moment ago must not be served.
+        $this->app->bind(MappedPage::class, MappedRedirect::class);
+
+        $this->get('/sitemap.xml')->assertOk()->assertDontSee('sitemap-mapped', false);
+        $this->get('/sitemap-mapped.xml')->assertNotFound();
+        $this->assertSame(['included' => false, 'reason' => 'not-a-page'], $sitemap->verdict('/about'));
+
+        $status = $sitemap->status();
+        $this->assertSame([], $status['files']);
+        $this->assertSame(
+            [['type' => 'mapped', 'reason' => 'not-a-page', 'handler' => MappedRedirect::class, 'addresses' => 1]],
+            $status['excluded_types'],
+        );
+
+        // Taken back: the type is a page again, with no rebuild asked for.
+        $this->app->bind(MappedPage::class, MappedPage::class);
+
+        $this->get('/sitemap.xml')->assertSee('sitemap-mapped.xml', false);
+        $this->assertStringContainsString('/about<', $this->file());
     }
 
     #[Test]

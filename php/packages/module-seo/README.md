@@ -118,6 +118,39 @@ A brief comes in as CSV or XLSX — columns `donor`, `acceptor`, `anchor` and an
 `heading` (Russian headers work too) — previewed first, with errors per row, then replacing the
 blocks of the donors in the file or appending to them. The export writes the same file.
 
+## The sitemap
+
+`/sitemap.xml` is an index with a file per type of the address registry, plus `sitemap-routes.xml`
+for named routes a module registered (`SitemapRoutes`) and a file per `SitemapSource`. It has no
+rules of its own: an address is in it when the registry has a canonical row, the entity is
+`Visible`, and the `<head>` would print neither `noindex` nor a foreign canonical. Settings are
+under `sitemap` in `config/webx-seo.php`; `php artisan webx:seo:sitemap` builds it ahead of time.
+
+A type whose handler never shows a page is left out whole. A site that binds its own handler over a
+module's (one that redirects every event to its booking page, say) marks the class with
+`WebxUi\Routing\Contracts\NotAPage`:
+
+```php
+use WebxUi\Routing\Contracts\NotAPage;
+use WebxUi\Routing\RouteHandler;
+
+final class EventRedirect implements RouteHandler, NotAPage
+{
+    public function handle(Request $request, object $entity, string $tail): Response
+    {
+        return redirect()->away($entity->booking_url, 301);
+    }
+}
+
+// in the site's provider
+$this->app->bind(EventHandler::class, EventRedirect::class);
+```
+
+The type gets no file and is not in the index. `GET /sitemap` and `seo_sitemap_status` list it
+under `excluded_types` (`type`, `reason: not-a-page`, `handler`, `addresses`), and `test-url` says
+`not-a-page` for its addresses. The built map is cached under the set of such types, so a deploy
+that changes the binding needs no rebuild. A type without the marker behaves as before.
+
 ## `robots` and `robots.txt` are different things
 
 - `robots` on a rule is that page's own meta directives — `noindex, nofollow` — printed into

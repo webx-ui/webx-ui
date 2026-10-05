@@ -65,6 +65,7 @@ return [
     'sitemap-built' => 'Собрана',
     'sitemap-total' => 'Адресов: :count',
     'sitemap-excluded' => 'Не вошли — noindex: :noindex, чужой canonical: :canonical',
+    'sitemap-not-pages' => 'Не включены — типы адресов, которые перенаправляют, а не показывают страницу: :types',
     'sitemap-empty' => 'В ней пусто: ни один адрес не опубликован и не открыт для индекса.',
     'sitemap-off' => 'Карта сайта на этом сайте выключена.',
     'sitemap-rebuild' => 'Пересобрать',
@@ -78,4 +79,5 @@ return [
     'sitemap-reason-hidden' => 'страница не опубликована',
     'sitemap-reason-noindex' => 'страница закрыта noindex',
     'sitemap-reason-canonical' => 'страница называет каноническим другой адрес',
+    'sitemap-reason-not-a-page' => 'этот тип адресов перенаправляет, а не показывает страницу',
 ];

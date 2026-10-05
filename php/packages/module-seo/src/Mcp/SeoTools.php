@@ -113,7 +113,7 @@ final class SeoTools
 
             Tool::read(
                 'sitemap_status',
-                'The sitemap as a crawler gets it: its address, how many addresses are in each file, when it was built, and how many visible addresses were left out because their page says noindex or names another canonical. It rebuilds itself on every save; use test_url to ask about one address.',
+                'The sitemap as a crawler gets it: its address, how many addresses are in each file, when it was built, and how many visible addresses were left out because their page says noindex or names another canonical, and which address types are not in it at all because their handler redirects instead of showing a page (excluded_types). It rebuilds itself on every save; use test_url to ask about one address.',
                 static fn (array $arguments): array => app(Sitemap::class)->status(),
                 [],
                 scope: 'seo:read',

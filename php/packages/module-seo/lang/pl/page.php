@@ -65,6 +65,7 @@ return [
     'sitemap-built' => 'Zbudowana',
     'sitemap-total' => 'Adresów: :count',
     'sitemap-excluded' => 'Pominięte — noindex: :noindex, inny canonical: :canonical',
+    'sitemap-not-pages' => 'Pominięte — typy adresów, które przekierowują zamiast pokazywać stronę: :types',
     'sitemap-empty' => 'Jest pusta: żaden adres nie jest opublikowany i otwarty dla indeksu.',
     'sitemap-off' => 'Mapa strony jest na tej witrynie wyłączona.',
     'sitemap-rebuild' => 'Zbuduj ponownie',
@@ -78,4 +79,5 @@ return [
     'sitemap-reason-hidden' => 'strona nie jest opublikowana',
     'sitemap-reason-noindex' => 'strona ma noindex',
     'sitemap-reason-canonical' => 'strona wskazuje inny adres jako kanoniczny',
+    'sitemap-reason-not-a-page' => 'ten typ adresu przekierowuje zamiast pokazywać stronę',
 ];

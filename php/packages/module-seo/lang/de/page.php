@@ -65,6 +65,7 @@ return [
     'sitemap-built' => 'Erstellt',
     'sitemap-total' => 'Adressen: :count',
     'sitemap-excluded' => 'Ausgelassen — noindex: :noindex, anderer Canonical: :canonical',
+    'sitemap-not-pages' => 'Nicht enthalten — Adresstypen, die weiterleiten, statt eine Seite zu zeigen: :types',
     'sitemap-empty' => 'Sie ist leer: Keine Adresse ist veröffentlicht und für den Index offen.',
     'sitemap-off' => 'Die Sitemap ist auf dieser Website ausgeschaltet.',
     'sitemap-rebuild' => 'Neu erstellen',
@@ -78,4 +79,5 @@ return [
     'sitemap-reason-hidden' => 'die Seite ist nicht veröffentlicht',
     'sitemap-reason-noindex' => 'die Seite sagt noindex',
     'sitemap-reason-canonical' => 'die Seite nennt eine andere Adresse als Canonical',
+    'sitemap-reason-not-a-page' => 'dieser Adresstyp leitet weiter, statt eine Seite zu zeigen',
 ];
