@@ -198,6 +198,13 @@ describe('WxInboxSubmissionPage', () => {
     const { wrapper } = await open(
       submission({
         notified_at: null,
+        notification: {
+          state: 'none',
+          error: null,
+          queued_at: null,
+          delivered_at: null,
+          recipients: [],
+        },
         events: [
           { id: 1, type: 'created', from: null, to: 'new', author: null, created_at: null },
           { id: 2, type: 'no_recipients', from: null, to: null, author: null, created_at: null },
