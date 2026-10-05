@@ -75,6 +75,19 @@ final class FieldTypeTest extends TestCase
     }
 
     #[Test]
+    public function the_site_is_not_handed_the_panels_preview_route(): void
+    {
+        // The route is behind the panel's sign-in: a gallery that printed it showed every visitor
+        // a 401 in place of each picture.
+        $file = $this->file();
+
+        $resolved = $this->field()->resolve(['path' => $file->path], ['type' => 'wx-media']);
+
+        $this->assertIsArray($resolved);
+        $this->assertStringNotContainsString('/thumb', (string) $resolved['thumb']);
+    }
+
+    #[Test]
     public function a_document_has_no_preview_to_show(): void
     {
         $file = $this->file(['path' => 'media/ab/cd/terms.pdf', 'mime' => 'application/pdf', 'extension' => 'pdf']);
