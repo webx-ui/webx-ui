@@ -39,6 +39,7 @@ final class McpToolsTest extends TestCase
             'rename_file',
             'move_files',
             'upload_from_url',
+            'optimize_images',
             'delete_files',
         ], $names);
     }

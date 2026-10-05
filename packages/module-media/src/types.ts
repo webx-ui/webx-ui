@@ -61,6 +61,14 @@ export interface FileQuery {
   per_page?: number
 }
 
+/** What «Optimize» did to one file; `before` and `after` are its size in bytes. */
+export interface OptimizeResult {
+  id: number
+  status: 'optimized' | 'unchanged' | 'skipped' | 'missing'
+  before: number
+  after: number
+}
+
 export interface EditOperations {
   crop?: { x: number; y: number; width: number; height: number }
   rotate?: 0 | 90 | 180 | 270

@@ -162,6 +162,38 @@ const page = await api.files({ directory_id: 1, q: 'oslo', per_page: 40 })
 Listing, upload, rename, move, delete, the image edit and the folder tree — the same calls the
 manager itself is built on.
 
+## Pictures are optimized on the way in
+
+A JPEG, PNG or still WebP is not stored as it arrived. It is turned the right way up, stripped of
+its metadata, scaled down to no more than 2560px on its long side, and saved as a WebP at quality
+82 — unless that comes out no smaller, and then the original bytes are kept. A GIF, an animated
+WebP, an SVG and everything that is not a picture go in untouched. Every way into the library goes
+through it: the panel's upload, the agent's `upload_from_url`, the demo content.
+
+The steps live in `config/webx-media.php` under `optimize`, and a project adds its own by
+naming a class that implements `WebxUi\Media\Images\Optimizing\OptimizeStep`:
+
+```php
+'optimize' => [
+    'enabled' => env('WEBX_MEDIA_OPTIMIZE', true),
+    'max_side' => 2560,
+    'quality' => 82,
+    'format' => 'webp',        // what an upload becomes; null keeps its own
+    'steps' => [
+        WebxUi\Media\Images\Optimizing\ScaleDown::class,
+        App\Media\Watermark::class,
+    ],
+],
+```
+
+**Optimize**, beside Upload, runs the pictures already in the library through the same pipeline:
+the selection, or else the folder that is open. A picture keeps its format and its key — the key
+ends in its extension, and every page that shows it names that key — so a JPEG uploaded before
+the pipeline stays a JPEG, only lighter. Each file remembers which settings it went through, so
+pressing it twice does nothing the second time, and changing a setting brings everything back
+into the list. The panel sends ten at a time and shows the count; there is no queue to keep
+running. Behind `media.manage`; for an agent, `optimize_images`.
+
 ## What the addresses mean
 
 A `MediaFile` carries three, and they are not interchangeable:

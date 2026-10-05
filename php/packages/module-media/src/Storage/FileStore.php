@@ -9,6 +9,7 @@ use Illuminate\Contracts\Filesystem\Factory as FilesystemFactory;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
+use WebxUi\Media\Images\Optimizing\ImageOptimizer;
 use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Models\MediaFile;
 
@@ -25,19 +26,31 @@ final class FileStore
     public function __construct(
         private readonly FilesystemFactory $filesystems,
         private readonly Config $config,
+        private readonly ImageOptimizer $optimizer,
     ) {}
 
     /**
      * Put an upload into a folder.
      *
-     * The same bytes already in that folder are the same file: the existing row comes back
-     * untouched, and `wasRecentlyCreated` tells the caller which of the two happened.
+     * A picture the pipeline takes goes in as what it made of it ({@see ImageOptimizer}) — a
+     * WebP no larger than it needs to be — and everything else as it came. The same bytes
+     * already in that folder are the same file: the existing row comes back untouched, and
+     * `wasRecentlyCreated` tells the caller which of the two happened.
      */
     public function store(UploadedFile $upload, MediaDirectory $directory): MediaFile
     {
+        $extension = $this->extension($upload);
+        $mime = (string) $upload->getClientMimeType();
+
         // A path of the filesystem, deliberately: this is PHP's own temporary file, the one
         // place in the module where there is nothing remote to speak to.
-        $hash = (string) md5_file($upload->getRealPath());
+        $optimized = $this->optimizer->handles($extension, $mime)
+            ? $this->optimizer->optimize((string) file_get_contents($upload->getRealPath()), $extension, convert: true)
+            : null;
+
+        // Of what is kept, not of what arrived, so a second upload of the same photograph finds
+        // the first — the pipeline makes the same bytes of it both times.
+        $hash = $optimized !== null ? md5($optimized->contents) : (string) md5_file($upload->getRealPath());
 
         $existing = MediaFile::query()
             ->where('directory_id', $directory->getKey())
@@ -48,14 +61,22 @@ final class FileStore
             return $existing;
         }
 
-        $extension = $this->extension($upload);
-        $path = $this->key($hash, $extension);
-        [$width, $height] = $this->dimensions($upload);
-
-        $disk = $this->disk();
-        $disk->putFileAs(dirname($path), $upload, basename($path));
-
         $original = $upload->getClientOriginalName();
+
+        if ($optimized !== null) {
+            [$extension, $mime, $width, $height] = [$optimized->extension, $optimized->mime, $optimized->width, $optimized->height];
+        } else {
+            [$width, $height] = $this->dimensions($upload);
+        }
+
+        $path = $this->key($hash, $extension);
+        $disk = $this->disk();
+
+        if ($optimized !== null) {
+            $disk->put($path, $optimized->contents);
+        } else {
+            $disk->putFileAs(dirname($path), $upload, basename($path));
+        }
 
         return MediaFile::query()->create([
             'directory_id' => $directory->getKey(),
@@ -65,12 +86,14 @@ final class FileStore
             // Without the extension: it is on screen in a grid of names, and the type is already
             // said by the preview and the glyph.
             'name' => Str::limit(pathinfo($original, PATHINFO_FILENAME), 200, ''),
-            'file_name' => Str::limit($original, 250, ''),
+            // A download of a converted picture is named for what it now is.
+            'file_name' => Str::limit($this->named($original, $extension), 250, ''),
             'extension' => $extension,
-            'mime' => $upload->getClientMimeType(),
-            'size' => (int) $upload->getSize(),
+            'mime' => $mime,
+            'size' => $optimized !== null ? strlen($optimized->contents) : (int) $upload->getSize(),
             'width' => $width,
             'height' => $height,
+            'optimized' => $optimized !== null ? $this->optimizer->signature() : null,
         ]);
     }
 
@@ -135,6 +158,17 @@ final class FileStore
         $name = (string) Str::uuid();
 
         return "{$prefix}/".substr($hash, 0, 2).'/'.substr($hash, 2, 2)."/{$name}.{$extension}";
+    }
+
+    private function named(string $original, string $extension): string
+    {
+        $own = strtolower(pathinfo($original, PATHINFO_EXTENSION));
+
+        if ($own === $extension || ($own === 'jpeg' && $extension === 'jpg') || ($own === 'jpg' && $extension === 'jpeg')) {
+            return $original;
+        }
+
+        return pathinfo($original, PATHINFO_FILENAME).'.'.$extension;
     }
 
     private function extension(UploadedFile $upload): string

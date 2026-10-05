@@ -41,4 +41,12 @@ return [
     'save' => 'Kaydet',
     'pick' => 'Seç (:count)',
     'chosen' => ':max dosyadan :count seçildi',
+    'optimize' => 'Optimize et',
+    'optimize-title' => 'Görselleri optimize et',
+    'optimize-text' => 'Her görsel boyut sınırına küçültülür, meta verilerinden arındırılır ve daha sıkı biçimde yeniden kaydedilir — aynı adreste ve aynı biçimde. Önceki sürüm saklanmaz.',
+    'optimize-waiting' => 'Optimize edilecek görseller: :count, toplam :size',
+    'optimize-saved' => 'Kazanılan alan: :size',
+    'optimize-none' => 'Buradaki tüm görseller zaten optimize edilmiş.',
+    'optimize-stop' => 'Durdur',
+    'optimize-close' => 'Kapat',
 ];

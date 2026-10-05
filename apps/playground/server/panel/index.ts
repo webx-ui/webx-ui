@@ -5018,6 +5018,45 @@ on('POST', '/media/files/delete', ({ body }) => {
   return { data: { deleted: gone.length } }
 })
 
+// «Optimize»: which pictures have not been through the pipeline, then a batch of them. The
+// fixtures have no bytes, so a picture simply comes out a third lighter, once.
+const optimizedMedia = new Set<number>()
+
+on('POST', '/media/files/optimize/pending', ({ body }) => {
+  const ids = Array.isArray(body.ids) ? (body.ids as number[]) : []
+  const inside = typeof body.directory_id === 'number' ? body.directory_id : null
+
+  const found = mediaFiles.filter(
+    (file) =>
+      file.type === 'image' &&
+      !optimizedMedia.has(file.id) &&
+      (ids.length > 0 ? ids.includes(file.id) : inside === null || file.directory_id === inside),
+  )
+
+  return {
+    data: {
+      ids: found.map((file) => file.id),
+      size: found.reduce((sum, file) => sum + file.size, 0),
+    },
+  }
+})
+
+on('POST', '/media/files/optimize', ({ body }) => {
+  const ids = Array.isArray(body.ids) ? (body.ids as number[]) : []
+
+  return {
+    data: mediaFiles
+      .filter((file) => ids.includes(file.id))
+      .map((file) => {
+        const before = file.size
+        file.size = Math.round(before * 0.66)
+        optimizedMedia.add(file.id)
+
+        return { id: file.id, status: 'optimized', before, after: file.size }
+      }),
+  }
+})
+
 on('DELETE', '/media/files/(\\d+)', ({ params }) => {
   const file = mediaFile(params[0])
 

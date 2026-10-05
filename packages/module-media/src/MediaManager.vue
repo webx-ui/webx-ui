@@ -17,6 +17,7 @@ import FileGrid from './FileGrid.vue'
 import MediaToolbar from './MediaToolbar.vue'
 import MoveDialog from './MoveDialog.vue'
 import NameDialog from './NameDialog.vue'
+import OptimizeDialog from './OptimizeDialog.vue'
 import { createMediaApi } from './api'
 import { readable } from './format'
 import { useMediaMessages } from './i18n'
@@ -458,8 +459,34 @@ function countsOf(error: unknown): { files: number; directories: number } | null
   return body?.code === 'directory_not_empty' ? (body.counts ?? null) : null
 }
 
-/* The page's own upload button opens the same file dialog the toolbar's icon does. */
-defineExpose({ upload: choose })
+const askToOptimize = createModal<true, { ids: number[]; size: number }>(OptimizeDialog)
+
+/**
+ * «Optimize» for what is selected, or else for the folder that is open — the same thing every
+ * other action of the toolbar takes, so nobody has to wonder which pictures it meant.
+ */
+async function optimize(): Promise<void> {
+  try {
+    const pending = await api.optimizePending({
+      ids: [...selected.value],
+      directoryId: current.value,
+    })
+
+    if (pending.ids.length === 0) {
+      toast.info(t('manager.optimize-none'))
+
+      return
+    }
+
+    await askToOptimize(pending)
+    await loadFiles()
+  } catch (error) {
+    toast.danger(message(error))
+  }
+}
+
+/* The page's own buttons open the same things the toolbar's icons do. */
+defineExpose({ upload: choose, optimize })
 
 function debounce(run: () => void, wait: number): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined

@@ -31,6 +31,7 @@ use Illuminate\Support\Facades\Storage;
  * @property int $size
  * @property int|null $width
  * @property int|null $height
+ * @property string|null $optimized
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -49,6 +50,7 @@ class MediaFile extends Model
         'size',
         'width',
         'height',
+        'optimized',
     ];
 
     /**
