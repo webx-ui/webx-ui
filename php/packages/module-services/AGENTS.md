@@ -11,7 +11,7 @@ about one of those.
 ## What it owns
 
 - **Tables** `services` (`WebxUi\Services\Models\Service`), `service_categories`
-  (`WebxUi\Services\Models\ServiceCategory`) and the link `service_category`. `position` is the
+  (`WebxUi\Services\Models\ServiceCategory`) and the link `service_category_service`. `position` is the
   order of the whole list, `item_position` the order inside one category.
 - **Address types** `service` and `service-category` in the routing registry, both on one level
   under `config('webx-services.prefix')` (default `services`), `OnConflict::Fail` — a category

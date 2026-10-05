@@ -74,7 +74,7 @@ PATCH  /api/cms/uploads/{id}  тело — байты, Upload-Offset: n → 204,
 DELETE /api/cms/uploads/{id}  → 204 (отмена, файл удаляется)
 ```
 
-- **Сессия** — строка `admin_uploads` (`id` uuid, `admin_id`, `purpose`, `name`, `size`, `type`,
+- **Сессия** — строка `cms_uploads` (`id` uuid, `admin_id`, `purpose`, `name`, `size`, `type`,
   `fingerprint` — sha1 строки клиента, `offset`, `expires_at`) и файл
   `storage/app/uploads/{id}.part`. Куски всегда на локальном диске, независимо от диска
   потребителя: в облачный дописывать нельзя.

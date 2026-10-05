@@ -90,7 +90,7 @@ Namespace: `webx-ui/*`, размещение: `php/packages/*` в монореп
 слоем для всех разделов: экраны как описание ([`WEBX_UI_SCREENS.md`](WEBX_UI_SCREENS.md)),
 черновики и версии сущностей (`HasDraft`, `HasVersions`), типы полей (`wx-rich-text`, `wx-link`,
 `wx-slug`, `wx-collection`, `wx-relations`), общие категории, контракт ссылок (`LinkSource`),
-«вставить блоком» (`CollectionSource`), связи между записями (`webx_relations`), `RecordQuery` для
+«вставить блоком» (`CollectionSource`), связи между записями (`cms_relations`), `RecordQuery` для
 хелперов шаблона, ночные дампы ([`WEBX_UI_BACKUPS.md`](WEBX_UI_BACKUPS.md)), `webx:setup`,
 `webx:doctor`, `webx:boot` и `webx:demo` ([`WEBX_UI_NEW_SITE.md`](WEBX_UI_NEW_SITE.md)), журнал изменений
 (`RecordsHistory`, `History::record/run`, узел `wx-history`, инструменты `history_*` —
@@ -407,7 +407,7 @@ v0.42.0 — [`WEBX_UI_BLOCK_COMPONENTS.md`](WEBX_UI_BLOCK_COMPONENTS.md); зон
   фрейма в панели, кнопки «Открыть на сайте» и телефона.
 
 Черновики и версии сущностей — общий механизм каркаса (`HasDraft`, `HasVersions`,
-`entity_versions`), он появляется здесь же, потому что без него не работает предпросмотр. Туда же
+`cms_versions`), он появляется здесь же, потому что без него не работает предпросмотр. Туда же
 правка в `nested-set`: узел, ещё не вставленный в дерево.
 
 npm-пара: `@webx-ui/module-blocks` — узел `wx-blocks` для описанных экранов, конструктор на экране
@@ -646,7 +646,7 @@ MCP: `reviews_*` и `review_categories_*` через тот же код форм
   услуги» (`related.current`).
 - SEO-карточка патчем `module-seo`, sitemap, крошки, разметка `Recipe` с ингредиентами и шагами
   из `<li>`.
-- Вместе с модулем в `module-admin` приехали **связи между записями** (`webx_relations`,
+- Вместе с модулем в `module-admin` приехали **связи между записями** (`cms_relations`,
   `RelationTargets`, `HasRelations`, поле `wx-relations`, фильтр по связи в `wx-collection`);
   `module-services` регистрирует цель `service`.
 

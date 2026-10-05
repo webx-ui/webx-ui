@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Schema;
  * title is `job_title` rather than `position`, because `position` is the order column of all the
  * shared ordering code. The photo is the value of a `wx-media` field rather than a key into
  * `media_files`, which keeps this table on the first day (CLAUDE.md §4 on how the migrations of
- * all packages are sorted together). The services a person provides live in `webx_relations`.
+ * all packages are sorted together). The services a person provides live in `cms_relations`.
  */
 return new class extends Migration
 {

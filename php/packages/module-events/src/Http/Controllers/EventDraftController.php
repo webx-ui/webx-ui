@@ -14,7 +14,7 @@ use WebxUi\Events\Panel\EventForm;
  * Throw away what is waiting and go back to what the site is showing.
  *
  * What is dropped is not lost: `saveDraft()` keeps a ring of autosaves, so the last few minutes of
- * writing are still in `entity_versions`, even though no screen lists them.
+ * writing are still in `cms_versions`, even though no screen lists them.
  */
 final class EventDraftController
 {

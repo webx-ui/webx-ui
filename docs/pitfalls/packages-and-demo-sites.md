@@ -200,6 +200,13 @@ HEAD`, там `pnpm install --frozen-lockfile --lockfile-only --ignore-scripts` 
   `npx vitest run <файл> --pool=forks --poolOptions.forks.singleFork` **из корня репозитория**:
   `vitest.config.ts` один, в корне; из каталога пакета jsdom не поднимается, и падает всё подряд с
   «document is not defined», что читается как сломанная ветка.
+- **`composer test` локально обрывается на 93% с «The process "phpunit" exceeded the timeout of
+  300 seconds».** Похоже на зависший тест, а это таймаут процесса у самого composer: весь набор
+  на Windows идёт дольше пяти минут. `composer analyse` из той же сессии падает «Result is
+  incomplete because of severe errors» — ему не хватило памяти. Запускать напрямую:
+  `php -d memory_limit=-1 vendor/bin/phpunit --colors=never` и
+  `php -d memory_limit=-1 vendor/bin/phpstan analyse --no-progress --error-format=raw`
+  (`--colors=never`, иначе `grep` по итогу не находит ничего — строки обёрнуты в коды цвета).
 - **`docs:preview` (sirv) строит список файлов при старте.** После `docs:build` сервер надо
   перезапустить: свежий HTML тянет новые хеши, их нет в списке → 404, страница без стилей и без
   гидрации. Выглядит как «правка не помогла».

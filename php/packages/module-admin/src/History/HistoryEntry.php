@@ -50,7 +50,7 @@ final class HistoryEntry extends Model
     // A journal is written, never edited: there is no `updated_at` to keep.
     public const UPDATED_AT = null;
 
-    protected $table = 'admin_history';
+    protected $table = 'cms_history';
 
     protected $fillable = [
         'parent_id', 'subject_type', 'subject_id', 'event', 'source',

@@ -19,7 +19,7 @@ use WebxUi\Blog\Panel\ArticleForm;
  * title.
  *
  * What is dropped is not lost: `saveDraft()` keeps a ring of autosaves, so the last few minutes
- * of writing are still in `entity_versions` even though no screen lists them.
+ * of writing are still in `cms_versions` even though no screen lists them.
  */
 final class ArticleDraftController
 {

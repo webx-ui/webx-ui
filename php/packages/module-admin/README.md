@@ -220,7 +220,7 @@ php artisan vendor:publish --tag=webx-admin-views
 ## Drafts and versions
 
 Three places, and one rule that keeps them apart: an entity's columns are what is on the site
-now, its `draft` column is what is being prepared, and `entity_versions` is the site's past.
+now, its `draft` column is what is being prepared, and `cms_versions` is the site's past.
 
 ```php
 Schema::table('pages', fn (Blueprint $table) => $table->draft());   // `draft` json, `published_at`

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Schema;
  *
  * `valid_through` and `posted_at` are days, not moments — a vacancy is open the whole of its last
  * day in the application's timezone, and a day has no offset to get wrong. The three lists hold
- * one row per line with the languages inside it. The application form is a `webx_relations` row,
+ * one row per line with the languages inside it. The application form is a `cms_relations` row,
  * not a column: nothing here points at another package's table, and every migration of the
  * module stays on the first day (CLAUDE.md §4 on how migrations are sorted together).
  *

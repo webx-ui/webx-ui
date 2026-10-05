@@ -73,9 +73,11 @@
 
 ## 3. Схема
 
-Своих колонок мало — остальное привозят макросы соседей.
+Своих колонок мало — остальное привозят макросы соседей. Таблицы — под префиксом модуля
+(`blog_*`, как у остальных разделов); до v0.61 они назывались `articles`, `rubrics`, `tags` и
+`article_*`, переименовывает миграция `prefix_the_blog_tables`.
 
-### `articles`
+### `blog_articles`
 
 ```
 id            bigint
@@ -97,7 +99,7 @@ index (pinned)
 Уникального индекса на слаг тут нет: уникальность адреса живёт в `routes (locale, path)` и знает
 про страницы тоже. Вторая копия правила — копия, которая разъедется.
 
-### `rubrics`
+### `blog_rubrics`
 
 ```
 id            bigint
@@ -114,7 +116,7 @@ timestamps
 Черновика и версий у рубрики нет — есть `is_visible`. Скрытая рубрика пропадает из меню и отвечает
 404, её статьи остаются доступными по своим адресам: они не её собственность.
 
-### `tags`
+### `blog_tags`
 
 ```
 id            bigint
@@ -127,13 +129,13 @@ timestamps
 ### Связи
 
 ```
-article_rubric   article_id · rubric_id · position     unique(article_id,rubric_id), index(rubric_id)
-article_tag      article_id · tag_id                   unique(article_id,tag_id),    index(tag_id)
-article_related  article_id · related_id · position    unique(article_id,related_id)
+blog_article_rubric   article_id · rubric_id · position     unique(article_id,rubric_id), index(rubric_id)
+blog_article_tag      article_id · tag_id                   unique(article_id,tag_id),    index(tag_id)
+blog_article_related  article_id · related_id · position    unique(article_id,related_id)
 ```
 
 Внешние ключи каскадные по `article_id`: мягкое удаление строки pivot не трогает, а окончательное
-уносит. `article_related.related_id` — тоже каскад: прибитая статья, удалённая совсем, исчезает из
+уносит. `blog_article_related.related_id` — тоже каскад: прибитая статья, удалённая совсем, исчезает из
 списков, а не остаётся висеть.
 
 ## 4. Адреса
@@ -222,7 +224,7 @@ public function scopePublished(Builder $q): Builder
 
 ## 8. Похожие статьи
 
-Ручной список (`article_related`, порядок перетаскиванием) плюс автоподбор: сначала статьи с
+Ручной список (`blog_article_related`, порядок перетаскиванием) плюс автоподбор: сначала статьи с
 наибольшим числом общих тегов, потом по главной рубрике, всё — только опубликованные, минус сама
 статья и минус уже прибитые. Число — `webx-blog.related`, по умолчанию 3.
 

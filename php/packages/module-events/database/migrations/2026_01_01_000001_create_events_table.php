@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Schema;
  * The moments are in the application's timezone, and an event without a start is one whose date
  * is still to be settled — it never becomes a past one (decision 3). `highlights` is one list with
  * the languages inside each row, not a list per language: the cards are the same in every
- * language, only their words differ. The services are `webx_relations` rows, not a table here.
+ * language, only their words differ. The services are `cms_relations` rows, not a table here.
  *
  * No unique index on the slug: an address is unique in `routes`, which also knows the categories.
  */

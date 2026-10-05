@@ -101,7 +101,7 @@
 трейтами, что и записи. Отдельный пакет `webx-ui/categories` был бы библиотекой, которая без панели
 ничего не делает, — по правилу именования это не библиотека.
 
-Блог остаётся модулем со словом «рубрика», адресами API `blog/rubrics` и таблицей `rubrics`:
+Блог остаётся модулем со словом «рубрика», адресами API `blog/rubrics` и таблицей `blog_rubrics`:
 меняется только то, откуда берётся код.
 
 ### 3.2. Схема
@@ -270,7 +270,7 @@ service_categories
   cover_id    bigint nullable
   blocks()                       -- содержимое страницы категории, если сайт его рисует
 
-service_category
+service_category_service
   categoryLinks('service', 'service_categories')
 ```
 

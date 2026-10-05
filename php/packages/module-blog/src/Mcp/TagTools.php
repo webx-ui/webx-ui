@@ -174,10 +174,10 @@ final class TagTools
      */
     private function wouldCarry(Tag $keep, array $going): int
     {
-        $ids = $keep->articles()->pluck('articles.id')->all();
+        $ids = $keep->articles()->pluck('blog_articles.id')->all();
 
         foreach ($going as $tag) {
-            $ids = [...$ids, ...$tag->articles()->pluck('articles.id')->all()];
+            $ids = [...$ids, ...$tag->articles()->pluck('blog_articles.id')->all()];
         }
 
         return count(array_unique($ids));

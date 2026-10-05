@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Schema;
  * rather than a key into the library, so nothing here points at another package's table.
  * `nutrition` is one map with the languages on each key, not a map of keys per language: the form
  * draws one field per key with its own language chip. The services and the similar recipes are
- * `webx_relations` rows (§3), not tables of this module.
+ * `cms_relations` rows (§3), not tables of this module.
  *
  * No unique index on the slug: an address is unique in `routes`, which also knows the categories.
  */

@@ -23,12 +23,12 @@ here: that is `webx-ui/module-auth`; languages are `webx-ui/localization`; the M
 - **Screens** — `ScreenRegistry` behind the `Screens` facade; field types in `FieldTypes`
   (`wx-input`, `wx-link`, `wx-repeater`, `wx-relations`, …), which check and cast what a screen saves.
 - **Drafts and versions** — traits `HasDraft` (the `$table->draft()` macro: `draft`,
-  `published_at`) and `HasVersions` (table `entity_versions`; `publish()` writes a version,
+  `published_at`) and `HasVersions` (table `cms_versions`; `publish()` writes a version,
   `restoreVersion()` puts one back into the draft). `HasExtra` stores fields a patch adds in `extra`.
-- **History** — table `admin_history`, trait `RecordsHistory`, facade `History`, types in
+- **History** — table `cms_history`, trait `RecordsHistory`, facade `History`, types in
   `HistoryTypes`. With `webx-ui/mcp` installed and a type registered: MCP tools `history_get`,
   `history_runs`, resource `history://types`, scope `history:read`.
-- **Also** — tables `entity_notes` (`HasNotes`), `webx_relations` (`HasRelations`), `admin_uploads`
+- **Also** — tables `cms_notes` (`HasNotes`), `cms_relations` (`HasRelations`), `cms_uploads`
   (chunked uploads, `UploadPurposes`); Blueprint macros `category()`, `categoryLinks()`; the
   `@webxPart` / `@webxPartAssets` directives; the site password (`CloseSite`, `Openings`).
 - **Front end entry** — `resources/js/admin.ts` in the site, written from `stubs/panel.stub` (or
@@ -100,7 +100,7 @@ Patches apply in the order they were registered.
   stores it in `extra`, and the next module release will not fight your migration.
 - Do not put a site live without `webx-ui/module-auth`: without it `webx-admin.middleware` is only
   `web` and the panel is open to anyone.
-- Do not write `entity_versions` or `admin_history` with SQL: use `publish()`, `restoreVersion()`
+- Do not write `cms_versions` or `cms_history` with SQL: use `publish()`, `restoreVersion()`
   then `publish()`, and `History::record()` — a raw row has no number, no author, no source.
 
 ## Check your work

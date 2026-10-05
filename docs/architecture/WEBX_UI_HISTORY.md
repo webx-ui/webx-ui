@@ -28,7 +28,7 @@
 
 ## 3. Схема
 
-`admin_history`:
+`cms_history`:
 
 | Колонка        | Тип                     | Примечание                                                                                 |
 | -------------- | ----------------------- | ------------------------------------------------------------------------------------------ |
@@ -38,7 +38,7 @@
 | `subject_id`   | bigint, null            | null у записи прогона                                                                      |
 | `event`        | string(32)              | `created`, `updated`, `deleted`, `restored`, `published`, `unpublished`, `run`             |
 | `source`       | string(16)              | §2, п. 2                                                                                   |
-| `admin_id`     | bigint, null            | без внешнего ключа, как `entity_notes.admin_id`: каркас не знает таблицу админов           |
+| `admin_id`     | bigint, null            | без внешнего ключа, как `cms_notes.admin_id`: каркас не знает таблицу админов              |
 | `admin_name`   | string, `''`            | снимок имени — удалённый админ не обезличивает журнал                                      |
 | `grant_id`     | bigint, null            | подключение агента при `source = mcp` — тот же id, что в `mcp_calls.grant_id`              |
 | `changes`      | json, null              | `[{ field, label?, from, to }]`; длинное — `{ field, long: true, from_length, to_length }` |
@@ -184,7 +184,7 @@ docs/pitfalls/laravel-and-php.md и vue-and-tests.md. Образцы в module-a
 Console/PruneVersionsCommand (чистка пачками по расписанию), Versions (запись в транзакции
 сохранения), Notes (лента под сущностью), Doctor.
 
-Сделать: миграция admin_history §3; RecordsHistory, History::record и History::run §4;
+Сделать: миграция cms_history §3; RecordsHistory, History::record и History::run §4;
 HistoryContext и его установка в middleware панели, в MCP и в консоли; реестр типов сущностей с
 подписями полей и правом на просмотр §5; API §5; MCP-инструменты history_get и history_runs и
 ресурс типов §6; конфиг и webx:history:prune §7; узел экрана history в npm (лента, «было →
@@ -200,7 +200,7 @@ php-гейт.
 
 Сделано 29.09.2026 одним PR (php + npm + changeset на `@webx-ui/php` и `@webx-ui/module-admin`).
 
-- **php, `module-admin`:** миграция `admin_history` (§3, с `grant_id` и без внешнего ключа на
+- **php, `module-admin`:** миграция `cms_history` (§3, с `grant_id` и без внешнего ключа на
   администратора); `History\HistoryEntry`, `HistoryContext`, `HistoryTypes`/`HistoryType`,
   `Journal` за фасадом `Facades\History`, трейт `RecordsHistory`, `Changes`, `HistoryReader`,
   `HistoryPresenter`, `HistoryPruner`; middleware `webx.history`; `HistoryController` на двух

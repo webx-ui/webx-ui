@@ -229,7 +229,7 @@ final class PanelTest extends TestCase
         $this->assertSame('Seven signs of wear', $article->withDraft()->title);
 
         // The rubric is not in the draft and could not be: a pivot row is not a column (§11).
-        $this->assertSame([$repairs->getKey()], $article->rubrics()->pluck('rubrics.id')->all());
+        $this->assertSame([$repairs->getKey()], $article->rubrics()->pluck('blog_rubrics.id')->all());
     }
 
     #[Test]

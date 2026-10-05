@@ -25,7 +25,7 @@ use Illuminate\Support\Carbon;
  */
 class Note extends Model
 {
-    protected $table = 'entity_notes';
+    protected $table = 'cms_notes';
 
     protected $guarded = [];
 

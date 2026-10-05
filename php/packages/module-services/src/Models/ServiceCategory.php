@@ -126,7 +126,7 @@ class ServiceCategory extends Model implements Category, HasBreadcrumbs, Visible
      */
     public function services(): BelongsToMany
     {
-        return $this->belongsToMany(Service::class, 'service_category', 'category_id', 'service_id')
+        return $this->belongsToMany(Service::class, 'service_category_service', 'category_id', 'service_id')
             ->withPivot(['position', 'item_position']);
     }
 

@@ -165,7 +165,7 @@ class Service extends Model implements HasBreadcrumbs, HasStructuredData, Visibl
     public function categories(): BelongsToMany
     {
         /** @var BelongsToMany<ServiceCategory, $this> $relation */
-        $relation = $this->belongsToCategories(ServiceCategory::class, 'service_category', 'service_id', 'category_id');
+        $relation = $this->belongsToCategories(ServiceCategory::class, 'service_category_service', 'service_id', 'category_id');
 
         return $relation;
     }

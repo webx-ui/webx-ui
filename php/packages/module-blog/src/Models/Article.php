@@ -69,6 +69,8 @@ class Article extends Model implements HasBreadcrumbs, HasStructuredData, Visibl
     }
     use SoftDeletes;
 
+    protected $table = 'blog_articles';
+
     /** Never on the site. */
     public const STATUS_DRAFT = 'draft';
 
@@ -319,7 +321,7 @@ class Article extends Model implements HasBreadcrumbs, HasStructuredData, Visibl
     public function rubrics(): BelongsToMany
     {
         /** @var BelongsToMany<Rubric, $this> $relation */
-        $relation = $this->belongsToCategories(Rubric::class, 'article_rubric');
+        $relation = $this->belongsToCategories(Rubric::class, 'blog_article_rubric');
 
         return $relation;
     }
@@ -351,7 +353,7 @@ class Article extends Model implements HasBreadcrumbs, HasStructuredData, Visibl
      */
     public function tags(): BelongsToMany
     {
-        return $this->belongsToMany(Tag::class, 'article_tag')->orderBy('tags.id');
+        return $this->belongsToMany(Tag::class, 'blog_article_tag')->orderBy('blog_tags.id');
     }
 
     /**
@@ -361,10 +363,10 @@ class Article extends Model implements HasBreadcrumbs, HasStructuredData, Visibl
      */
     public function related(): BelongsToMany
     {
-        return $this->belongsToMany(static::class, 'article_related', 'article_id', 'related_id')
+        return $this->belongsToMany(static::class, 'blog_article_related', 'article_id', 'related_id')
             ->withPivot('position')
-            ->orderBy('article_related.position')
-            ->orderBy('articles.id');
+            ->orderBy('blog_article_related.position')
+            ->orderBy('blog_articles.id');
     }
 
     /**

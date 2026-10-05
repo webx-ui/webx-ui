@@ -113,7 +113,7 @@ final class OrderTest extends TestCase
     private function placesIn(int $category): array
     {
         /** @var array<int, int> $places */
-        $places = DB::table('service_category')->where('category_id', $category)->orderBy('service_id')->pluck('item_position', 'service_id')->all();
+        $places = DB::table('service_category_service')->where('category_id', $category)->orderBy('service_id')->pluck('item_position', 'service_id')->all();
 
         return $places;
     }

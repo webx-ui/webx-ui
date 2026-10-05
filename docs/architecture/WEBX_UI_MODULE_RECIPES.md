@@ -94,7 +94,7 @@
 ### 3.2. Схема
 
 ```
-webx_relations                       -- миграция module-admin, 2026_01_01_*: ссылок на чужое нет
+cms_relations                       -- миграция module-admin, 2026_01_01_*: ссылок на чужое нет
   id
   owner_type   string(64)            -- ключ владельца в реестре (§3.3): 'recipe'
   owner_id     bigint unsigned
@@ -277,7 +277,7 @@ recipe_category_recipe    categoryLinks('recipe', 'recipe_categories')
 recipe_nutrients          category(); slug остаётся пустым
 recipe_nutrient_recipe    categoryLinks('recipe', 'recipe_nutrients')
 
--- услуги и похожие рецепты — webx_relations (§3), своих таблиц нет
+-- услуги и похожие рецепты — cms_relations (§3), своих таблиц нет
 ```
 
 - `gallery` и `cover` — json, а не внешний ключ: ссылок на чужие таблицы нет, все миграции на

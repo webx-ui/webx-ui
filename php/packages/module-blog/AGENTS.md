@@ -9,9 +9,9 @@ categories `webx-ui/module-admin`, the SEO card and redirects `webx-ui/module-se
 
 ## What it owns
 
-- **Tables** `articles`, `rubrics`, `tags` and the links `article_rubric`, `article_tag`,
-  `article_related` (`WebxUi\Blog\Models\Article`, `Rubric`, `Tag`). Rubrics are the blog's
-  categories of the panel's shared kind. `title` and `slug` are translatable.
+- **Tables** `blog_articles`, `blog_rubrics`, `blog_tags` and the links `blog_article_rubric`,
+  `blog_article_tag`, `blog_article_related` (`WebxUi\Blog\Models\Article`, `Rubric`, `Tag`).
+  Rubrics are the blog's categories of the panel's shared kind. `title` and `slug` are translatable.
 - **Address types** `article`, `rubric` (`blog/repairs`) and `tag` (`blog/tag/belts`), all under
   `config('webx-blog.prefix')` in one flat namespace, `OnConflict::Fail` on all three — a taken
   address is an error on the slug field. The rubric is not part of an article's address.

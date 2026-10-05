@@ -179,7 +179,7 @@ Spam (`is_spam`, `is_closed`).
 ### Заметки — не своя таблица
 
 Заметки к заявке — это общая возможность панели (§2.17), а не собственность модуля: таблица
-`entity_notes`, трейт `HasNotes` и лента приезжают из `module-admin`, `Submission` просто берёт
+`cms_notes`, трейт `HasNotes` и лента приезжают из `module-admin`, `Submission` просто берёт
 трейт. Форма таблицы там: морф `entity_type` (алиас карты, не имя класса) + `entity_id`,
 `admin_id`, `body`, `created_at` `updated_at`, индекс по `(entity_type, entity_id, id)`.
 
@@ -522,7 +522,7 @@ Smoke (`scripts/php-smoke.sh`): миграции на настоящей СУБ�
 в «···» строки (§§11–12). В v0.49.0 у формы появился `placement` (зоны лейаута). Что решилось при
 реализации сверх написанного выше:
 
-- **Заметки — в `module-admin`:** `entity_notes`, трейт `HasNotes` **и интерфейс `Notable`** — тип
+- **Заметки — в `module-admin`:** `cms_notes`, трейт `HasNotes` **и интерфейс `Notable`** — тип
   из адреса на веру не берётся; `NoteTypes` — белый список алиасов (одной морф-карты мало). Право
   называет модель (`Submission` → `inbox.update`), правит только автор (`is_mine` от сервера).
   Лента — `WxNotes`, слова — `lang/*/notes.php`.
