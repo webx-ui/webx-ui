@@ -19,6 +19,21 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Name
+    |---------------------------------------------------------------------------
+    |
+    | What the server calls itself to a client: the name shown in its list of
+    | connectors and the first thing an agent reads. Every panel offers the same
+    | tools, so this is what tells two sites apart. Null is the host of
+    | `app.url` — `example.com` — and only a site whose address says nothing
+    | needs another.
+    |
+    */
+
+    'name' => env('WEBX_MCP_NAME'),
+
+    /*
+    |---------------------------------------------------------------------------
     | Middleware and guard
     |---------------------------------------------------------------------------
     |

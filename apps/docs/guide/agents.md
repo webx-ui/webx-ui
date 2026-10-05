@@ -54,6 +54,19 @@ worth on the first day.
 - **Cursor and VS Code** — the connect page has a button each. They take the whole server from
   a link: the editor opens, asks once, and it is there.
 
+### Several sites at once
+
+Every site built on WebX UI offers the very same tools under the very same names, so what tells
+two connections apart is only their name. The server calls itself by the site's address —
+`example.com`, taken from `APP_URL` — and that is what a client shows in its list. Name the
+connector the same way when the client asks (`claude mcp add … example.com …`, a custom
+connector called `example.com`), and a session working on one site can be given that one alone.
+
+An agent is told the address in the first line of what it reads on connecting, along with the
+environment (`production`, `staging`, `local`), and `site_info` answers the same at any moment,
+with the administrator it acts as. It is asked to call that before its first change. A site whose
+address says nothing — a bare IP, a tunnel — sets `WEBX_MCP_NAME`.
+
 The page in the panel says all of this in the language the panel is in, which is the point of
 it: somebody who has never heard of MCP should not have to read this guide.
 

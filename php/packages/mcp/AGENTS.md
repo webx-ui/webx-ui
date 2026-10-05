@@ -37,6 +37,7 @@ read their guides for those.
 | Tools for a module of your own               | the module class implements `ProvidesMcpTools`; `Tool::read()` / `Tool::mutating()`         |
 | A tool behind another permission or scope    | `permission:` (one name or a list, any of them) / `scope:` on `Tool::read()` / `mutating()` |
 | Serve the HTTP server elsewhere / not at all | `WEBX_MCP_PATH=...` / `'path' => false` in `config/webx-mcp.php`                            |
+| Another name than the site's host            | `WEBX_MCP_NAME=...`                                                                         |
 | Other middleware or guard on the door        | `'middleware'` / `WEBX_MCP_GUARD`                                                           |
 | No stdio server                              | `'local' => null`                                                                           |
 | A client that cannot connect                 | add its callback to `'oauth' => ['redirect_domains' / 'custom_schemes']`                    |
