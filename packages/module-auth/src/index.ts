@@ -1,6 +1,7 @@
 import { h, watch, type Component } from 'vue'
 import type { Admin, AdminPlugin } from '@webx-ui/module-admin'
 import LoginCard from './LoginCard.vue'
+import { libraryAvatarField, libraryAvatarResolver } from './avatars'
 import { authMessages } from './messages'
 import { createAuthSession, provideAuth, type AvatarResolver } from './session'
 
@@ -42,7 +43,13 @@ export function auth(options: AuthOptions = {}): AdminPlugin {
       // a panel assembled without a server has to fall back on.
       admin.i18n.defaults('webx-auth', authMessages)
 
-      provideAuth(admin.app, session, options.resolveAvatar ?? null, options.avatarField ?? null)
+      // Handed in, they win; otherwise the panel's library, when it has one.
+      provideAuth(
+        admin.app,
+        session,
+        options.resolveAvatar ?? libraryAvatarResolver(admin.context),
+        options.avatarField ?? libraryAvatarField(admin.context),
+      )
       admin.context.useSessionLoader(() => session.me())
 
       admin.router.addRoute({

@@ -28,28 +28,26 @@ to end up with a panel nobody can get into.
 ## The photograph
 
 An administrator's photo is a picture like any other, so it lives in the media library — but
-`module-auth` does not depend on `module-media`. The panel, which is the only place that knows
-both are installed, hands the pieces in:
+`module-auth` does not depend on `module-media`. It does not need to: the library registers its
+field as the screen type `wx-media` and tells the panel where a key lives now (`assetUrls`), and
+the administrators' form, their list and the menu in the corner of the header take both from
+there. With `media()` installed the photographs simply work; without it the form has no photo
+field and rows show initials — which is what they showed anyway for everybody who never uploaded
+one. What is stored is the library's key.
+
+Something other than the library can still be handed in, and then it wins:
 
 ```ts
 import { admins, auth } from '@webx-ui/module-auth'
-import { createMediaApi, WxMediaField } from '@webx-ui/module-media'
-
-const resolveAvatar = async (key: string) =>
-  (await createMediaApi(panel.context).fileByPath(key))?.url ?? null
 
 const panel = createAdmin({
-  modules: [media(), admins({ avatarField: WxMediaField, resolveAvatar })],
-  plugins: [auth({ resolveAvatar })],
+  modules: [admins({ avatarField: MyPhotoField, resolveAvatar })],
+  plugins: [auth({ avatarField: MyPhotoField, resolveAvatar })],
 })
 ```
 
-Without them the form simply has no photo field and rows show initials — which is what they
-showed anyway for everybody who never uploaded one. What is stored is the library's key.
-
-The same function goes to `auth()`, which is how the menu in the corner of the header shows
-the signed-in person's own photograph: the session carries the key, and the plugin hands the
-resolver to `WxUserMenu`.
+`auth()` is how the menu in the corner shows the signed-in person's own photograph: the session
+carries the key, and the plugin hands the field and the resolver to `WxUserMenu`.
 
 ## Choosing somebody, from code
 
