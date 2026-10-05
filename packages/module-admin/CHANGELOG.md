@@ -1,5 +1,14 @@
 # @webx-ui/admin
 
+## 0.23.3
+
+### Patch Changes
+
+- dc37c7c: The rich text editor of the panel opens a document with its library pictures pointing at where
+  they live now, not at the host the paragraph was written on: `WxRichTextField` asks the library
+  through a new `assetUrls` seam of a module (offered by `media()`) before handing the document to
+  the editor.
+
 ## 0.23.2
 
 ### Patch Changes
