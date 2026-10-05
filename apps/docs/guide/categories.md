@@ -1,7 +1,7 @@
 # Categories
 
 The categories of a module — the rubrics of the blog, the sections of a list of services — are
-shared code and separate data. Every module keeps its own table (`rubrics`, `service_categories`)
+shared code and separate data. Every module keeps its own table (`blog_rubrics`, `service_categories`)
 and its own link table, and borrows everything else from `webx-ui/module-admin` and
 `@webx-ui/module-admin`: the model traits, the API, the list, the page of one category and the
 field that files a record under them.
@@ -33,7 +33,7 @@ Schema::create('service_categories', function (Blueprint $table) {
     $table->string('cover_id')->nullable(); // anything else is the module's own
 });
 
-Schema::create('service_category', function (Blueprint $table) {
+Schema::create('service_category_service', function (Blueprint $table) {
     $table->categoryLinks('service', 'service_categories'); // position, item_position
 });
 ```

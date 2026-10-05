@@ -23,7 +23,7 @@ use InvalidArgumentException;
  */
 final class Relations
 {
-    public const TABLE = 'webx_relations';
+    public const TABLE = 'cms_relations';
 
     /**
      * The key a record's draft keeps its relations under, role by role — here rather than on

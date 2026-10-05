@@ -142,11 +142,11 @@ index(position), index(valid_through)
 vacancy_categories          category()      -- title, slug, position, is_visible, extra, …
 vacancy_category_vacancy    categoryLinks('vacancy', 'vacancy_categories')
 
--- форма отклика — webx_relations (роль form, цель inbox-form), своей колонки нет
+-- форма отклика — cms_relations (роль form, цель inbox-form), своей колонки нет
 ```
 
 - Все три миграции — `2026_01_01_*`: на чужие таблицы модуль не ссылается (CLAUDE.md §4 о
-  сортировке миграций), форма — строка `webx_relations`, а не внешний ключ.
+  сортировке миграций), форма — строка `cms_relations`, а не внешний ключ.
 - `workplace` — `string(8)` при самом длинном значении в шесть символов; `salary_unit` — пять
   (`MONTH`), дефолта у него нет: единица без чисел ничего не значит. Дефолт длиннее колонки
   MariaDB не создаёт (CLAUDE.md §4) — считать символы.

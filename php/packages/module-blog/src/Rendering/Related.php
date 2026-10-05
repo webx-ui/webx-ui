@@ -59,7 +59,7 @@ final class Related
      */
     private function suggest(Article $article, array $exclude, int $wanted): Collection
     {
-        $tagIds = $article->tags()->pluck('tags.id')->all();
+        $tagIds = $article->tags()->pluck('blog_tags.id')->all();
         $rubric = $article->mainRubric();
 
         if ($tagIds === [] && $rubric === null) {
@@ -73,7 +73,7 @@ final class Related
         // database, but a subquery built by concatenation is not a place to take that on trust.
         $shared = $tagIds === []
             ? '0 as shared_tags'
-            : '(select count(*) from article_tag where article_tag.article_id = articles.id and article_tag.tag_id in ('
+            : '(select count(*) from blog_article_tag where blog_article_tag.article_id = blog_articles.id and blog_article_tag.tag_id in ('
                 .implode(',', array_map(intval(...), $tagIds))
                 .')) as shared_tags';
 
@@ -86,11 +86,11 @@ final class Related
                 fn ($query) => $query->where(
                     fn ($inner) => $inner
                         ->whereHas('rubrics', fn ($r) => $r->whereKey($rubric?->getKey()))
-                        ->orWhereHas('tags', fn ($t) => $t->whereIn('tags.id', $tagIds)),
+                        ->orWhereHas('tags', fn ($t) => $t->whereIn('blog_tags.id', $tagIds)),
                 ),
-                fn ($query) => $query->whereHas('tags', fn ($t) => $t->whereIn('tags.id', $tagIds)),
+                fn ($query) => $query->whereHas('tags', fn ($t) => $t->whereIn('blog_tags.id', $tagIds)),
             )
-            ->select('articles.*')
+            ->select('blog_articles.*')
             ->selectRaw($shared)
             ->with(['cover', 'rubrics'])
             ->orderByDesc('shared_tags')

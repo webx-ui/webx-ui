@@ -50,7 +50,7 @@ return new class extends Migration
             $table->json('errors')->nullable();
             // The last product id a chunk finished; the next chunk starts after it.
             $table->unsignedBigInteger('cursor')->default(0);
-            // The run's row in the journal (`admin_history`), which every chunk writes under.
+            // The run's row in the journal (`cms_history`), which every chunk writes under.
             $table->unsignedBigInteger('history_id')->nullable();
             $table->string('status', 16)->default('queued')->index();
             $table->timestamp('finished_at')->nullable();

@@ -126,10 +126,10 @@ npm-половины у пакета нет: переключатель сайт
 | `inbox_forms`  | `slug`           | `(site_id, slug)`                            |
 | `blocks`       | `slug`           | остаётся глобальным: схемы — библиотека (§8) |
 
-`site_id` получают без уникальных ключей: `pages` (плюс скоуп дерева), `articles`, `rubrics`,
-`tags`, `services`, `service_categories` (через макрос `category()` — одно место на все
+`site_id` получают без уникальных ключей: `pages` (плюс скоуп дерева), `blog_articles`, `blog_rubrics`,
+`blog_tags`, `services`, `service_categories` (через макрос `category()` — одно место на все
 категории), `seo_urls`, `seo_redirects`, `mcp_calls`. Дочерние таблицы (`menu_items`,
-`block_versions`, `seo_meta`, пивоты, `entity_versions`, заявки) сайт наследуют от владельца и
+`block_versions`, `seo_meta`, пивоты, `cms_versions`, заявки) сайт наследуют от владельца и
 колонки не получают.
 
 **Грабля с `NULL` в уникальном ключе.** Настройки бывают общими (§9), и естественно хранить их с

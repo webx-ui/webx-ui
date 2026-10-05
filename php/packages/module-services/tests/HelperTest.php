@@ -63,7 +63,7 @@ final class HelperTest extends TestCase
         $bridges->syncCategories([$implants->getKey()]);
 
         // The editor drags bridges to the top of the category, not of the whole list.
-        DB::table('service_category')->where('service_id', $bridges->getKey())->update(['item_position' => -1]);
+        DB::table('service_category_service')->where('service_id', $bridges->getKey())->update(['item_position' => -1]);
 
         $this->assertSame(['Bridges', 'Crowns'], $this->titles(services()->in('implants')));
         $this->assertSame(['Bridges', 'Crowns'], $this->titles(services()->in($implants->getKey())));

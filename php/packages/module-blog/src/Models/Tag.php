@@ -39,6 +39,8 @@ class Tag extends Model implements HasBreadcrumbs, Visible
     use HasTranslations;
     use HasUrl;
 
+    protected $table = 'blog_tags';
+
     /** In the index, because the tag says so. */
     public const INDEXING_OPEN = 'open';
 
@@ -112,7 +114,7 @@ class Tag extends Model implements HasBreadcrumbs, Visible
      */
     public function articles(): BelongsToMany
     {
-        return $this->belongsToMany(Article::class, 'article_tag');
+        return $this->belongsToMany(Article::class, 'blog_article_tag');
     }
 
     /**

@@ -60,7 +60,7 @@ final class TagMerge
                 // `syncWithoutDetaching` rather than an `update` on the pivot: an article that
                 // carried both tags would otherwise break `unique(article_id, tag_id)`, and
                 // that index is exactly the guarantee this operation is built on (§6).
-                $keep->articles()->syncWithoutDetaching($tag->articles()->pluck('articles.id')->all());
+                $keep->articles()->syncWithoutDetaching($tag->articles()->pluck('blog_articles.id')->all());
 
                 // Detached by hand as well as by the cascade: sqlite ignores foreign keys
                 // unless it is asked to, so the cascade is a promise that does not hold in

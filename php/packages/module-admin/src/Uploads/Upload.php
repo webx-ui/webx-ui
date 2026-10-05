@@ -27,7 +27,7 @@ class Upload extends Model
 {
     use HasUuids;
 
-    protected $table = 'admin_uploads';
+    protected $table = 'cms_uploads';
 
     protected $guarded = [];
 

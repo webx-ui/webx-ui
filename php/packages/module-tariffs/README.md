@@ -51,7 +51,7 @@ the panel's menu, **Tariffs**, with two entries: **Tariffs** and **Groups**.
 | `button_variant` | a key of `webx-tariffs.variants`                                               |
 | `featured`       | the "recommended" mark                                                         |
 | `published`      | a new tariff is not — the first save of a half-written card is not on the site |
-| groups, services | groups through the shared category code; services through `webx_relations`     |
+| groups, services | groups through the shared category code; services through `cms_relations`      |
 
 No draft and no history: a save is what the site shows, at once. Deleting puts a tariff in the
 bin, and it comes back to its places.

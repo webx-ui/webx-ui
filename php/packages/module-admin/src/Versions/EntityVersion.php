@@ -44,7 +44,7 @@ class EntityVersion extends Model
 
     public const UPDATED_AT = null;
 
-    protected $table = 'entity_versions';
+    protected $table = 'cms_versions';
 
     protected $fillable = [
         'versionable_type', 'versionable_id', 'number', 'kind', 'payload',

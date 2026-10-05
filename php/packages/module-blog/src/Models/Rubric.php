@@ -63,6 +63,8 @@ class Rubric extends Model implements Category, HasBreadcrumbs, Visible
     }
     use SoftDeletes;
 
+    protected $table = 'blog_rubrics';
+
     /** The screen a rubric is edited on, and the one a project patches its own fields onto. */
     public const SCREEN = 'blog.category-form';
 
@@ -147,7 +149,7 @@ class Rubric extends Model implements Category, HasBreadcrumbs, Visible
      */
     public function articles(): BelongsToMany
     {
-        return $this->belongsToMany(Article::class, 'article_rubric')->withPivot(['position', 'item_position']);
+        return $this->belongsToMany(Article::class, 'blog_article_rubric')->withPivot(['position', 'item_position']);
     }
 
     /**

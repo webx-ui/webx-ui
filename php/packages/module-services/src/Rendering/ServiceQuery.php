@@ -86,7 +86,7 @@ final class ServiceQuery extends RecordQuery
                         $services->whereIn('services.id', $only === [] ? [0] : $only);
                     }
 
-                    $services->orderBy('service_category.item_position')
+                    $services->orderBy('service_category_service.item_position')
                         ->orderBy('services.position')
                         ->orderBy('services.id');
                 },

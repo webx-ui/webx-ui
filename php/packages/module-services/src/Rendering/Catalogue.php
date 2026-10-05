@@ -38,7 +38,7 @@ final class Catalogue
             ->with([
                 'services' => static function (Relation $services): void {
                     $services->whereNotNull('services.published_at')
-                        ->orderBy('service_category.item_position')
+                        ->orderBy('service_category_service.item_position')
                         ->orderBy('services.position')
                         ->orderBy('services.id');
                 },
