@@ -162,7 +162,7 @@ async function save(): Promise<void> {
       phone.
     -->
     <div class="wx-admin-form">
-      <div class="wx-admin-form__grid">
+      <div class="wx-admin-form__grid" :class="{ 'has-aside': avatarField }">
         <div v-if="avatarField" class="wx-admin-form__aside">
           <component
             :is="avatarField"
@@ -232,8 +232,13 @@ async function save(): Promise<void> {
 
 .wx-admin-form__grid {
   display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--wx-space-24);
+}
+
+/* Only beside a photograph: without one the first column would be the fields, 200px wide. */
+.wx-admin-form__grid.has-aside {
+  grid-template-columns: 200px minmax(0, 1fr);
 }
 
 .wx-admin-form__fields {
@@ -245,7 +250,7 @@ async function save(): Promise<void> {
 
 /* The dialog's own width decides this, not the window's. */
 @container (max-width: 520px) {
-  .wx-admin-form__grid {
+  .wx-admin-form__grid.has-aside {
     grid-template-columns: minmax(0, 1fr);
   }
 
