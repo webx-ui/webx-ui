@@ -99,6 +99,9 @@ final class HostController
             'pages' => $crawled === null ? [] : DB::table('audit_links')
                 ->join('audit_pages', 'audit_pages.id', '=', 'audit_links.from_page_id')
                 ->where('audit_links.run_id', $crawled->id)->where('audit_links.host', $host)
+                // Broken first: the row's count says how many, and the fifty shown are the ones to
+                // fix — otherwise they sit behind the menu of every page and never come into view.
+                ->orderByRaw('case when audit_links.status >= 400 or audit_links.status = 0 then 0 else 1 end')
                 ->orderBy('audit_links.id')
                 ->limit(50)->get(['audit_pages.id as page_id', 'audit_pages.url as page', 'audit_links.to_url as url', 'audit_links.kind', 'audit_links.anchor', 'audit_links.rel', 'audit_links.status'])
                 ->map(static fn (object $row): array => (array) $row)->all(),

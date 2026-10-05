@@ -10,7 +10,7 @@ import type { AuditHosts } from './types'
 /**
  * Where one host stands, under its row on «Outgoing»: the pages that link to it with the anchor
  * and what it answered, and the fields of the database that hold it, with «Open in the editor».
- * Fifty of each — enough to see the pattern, and the findings list the rest.
+ * Fifty of each, broken links first — enough to see the pattern, and the findings list the rest.
  */
 const props = defineProps<{ host: string }>()
 
@@ -23,6 +23,10 @@ const router = useRouter()
 
 const places = ref<AuditHosts | null>(null)
 const failure = ref<string | null>(null)
+
+/** What the row's «Broken» counts: an error, or no answer at all (0). */
+const broken = (status: number | null | undefined) =>
+  status !== null && status !== undefined && (status >= 400 || status === 0)
 
 onMounted(async () => {
   try {
@@ -49,8 +53,8 @@ onMounted(async () => {
             >{{ place.kind }} → {{ place.url }}</wx-text
           >
           <wx-text v-if="place.anchor" size="sm">«{{ place.anchor }}»</wx-text>
-          <wx-badge v-if="place.status && place.status >= 400" type="danger" size="sm">{{
-            place.status
+          <wx-badge v-if="broken(place.status)" type="danger" size="sm">{{
+            place.status || t('page.status-none')
           }}</wx-badge>
         </div>
       </section>
