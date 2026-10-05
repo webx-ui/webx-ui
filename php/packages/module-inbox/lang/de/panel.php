@@ -151,4 +151,12 @@ return [
     'recipient-invalid_email' => 'Das ist keine E-Mail-Adresse.',
     'event-no-recipients' => 'Niemand benachrichtigt: Das Formular nennt keine Empfänger',
     'notified-nobody' => 'Keine Benachrichtigung: Das Formular nennt niemanden',
+    'notify-queued' => 'Die Benachrichtigung wartet in der Warteschlange',
+    'notify-again' => 'Benachrichtigung erneut senden',
+    'notify-sent-again' => 'Die Benachrichtigung wurde erneut gesendet',
+    'notify-recipient-queued' => 'wartet',
+    'notify-recipient-delivered' => 'gesendet',
+    'notify-recipient-failed' => 'fehlgeschlagen',
+    'event-notify-queued' => 'Die Benachrichtigung wurde in die Warteschlange gestellt',
+    'event-notify-failed' => 'Die Benachrichtigung an :to ist fehlgeschlagen',
 ];

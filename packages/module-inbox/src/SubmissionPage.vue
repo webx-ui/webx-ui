@@ -18,6 +18,7 @@ import {
   WxAction,
   WxAlert,
   WxBadge,
+  WxButton,
   WxCard,
   WxDescriptions,
   WxDescriptionsItem,
@@ -206,6 +207,13 @@ const actions = computed<ScreenAction[]>(() => {
         run: () => void unread(),
       },
       {
+        key: 'notify',
+        icon: 'mail',
+        label: t('panel.notify-again'),
+        menu: true,
+        run: () => void notifyAgain(),
+      },
+      {
         key: 'delete',
         icon: 'trash',
         label: t('panel.delete'),
@@ -217,6 +225,25 @@ const actions = computed<ScreenAction[]>(() => {
 
   return list
 })
+
+/*
+ * The letter once more — after the mail settings were fixed, or for one stuck in a queue that
+ * no worker reads. A form that names nobody is refused by the server, and that is said here.
+ */
+async function notifyAgain(): Promise<void> {
+  try {
+    submission.value = await api.notifySubmission(id.value)
+    toast.success(t('panel.notify-sent-again'))
+  } catch (error) {
+    toast.danger(message(error))
+  }
+}
+
+const notification = computed(() => submission.value?.notification ?? null)
+
+function recipientState(state: string): string {
+  return t(`panel.notify-recipient-${state}`)
+}
 
 async function unread(): Promise<void> {
   try {
@@ -298,6 +325,10 @@ function line(event: SubmissionEvent): string {
       })
     case 'no_recipients':
       return t('panel.event-no-recipients')
+    case 'notify_queued':
+      return t('panel.event-notify-queued')
+    case 'notify_failed':
+      return t('panel.event-notify-failed', { to: event.to ?? '' })
     default:
       return event.type
   }
@@ -484,11 +515,20 @@ const details = computed(() => {
                 </wx-descriptions>
 
                 <!-- An unsent notification is a mark on the submission, not a lost one
-                     (§2.10), and the only place it is ever said out loud is here. -->
-                <wx-alert v-if="submission.notify_error" type="warning" :closable="false">
-                  {{ t('panel.notify-failed') }}
+                     (§2.10). Queued is not sent: on a site with a queue a worker sends it,
+                     and a worker can be missing or hold old mail settings (§9). -->
+                <wx-alert
+                  v-if="notification?.state === 'failed'"
+                  type="warning"
+                  :closable="false"
+                  :title="t('panel.notify-failed')"
+                >
+                  <span class="wx-submission__detail">{{ notification.error }}</span>
                 </wx-alert>
-                <wx-text v-else-if="submission.notified_at" size="sm" tone="muted">
+                <wx-text v-else-if="notification?.state === 'queued'" size="sm" tone="muted">
+                  {{ t('panel.notify-queued') }}
+                </wx-text>
+                <wx-text v-else-if="notification?.state === 'delivered'" size="sm" tone="muted">
                   {{ t('panel.notified') }}
                 </wx-text>
                 <!-- Nobody named is not a letter waiting in the queue, and says so. -->
@@ -496,6 +536,37 @@ const details = computed(() => {
                   {{ t('panel.notified-nobody') }}
                 </wx-text>
                 <wx-text v-else size="sm" tone="muted">{{ t('panel.not-notified') }}</wx-text>
+
+                <ul
+                  v-if="notification && notification.recipients.length > 0"
+                  class="wx-submission__recipients"
+                >
+                  <li v-for="one in notification.recipients" :key="one.address">
+                    <wx-text size="sm">{{ one.address }}</wx-text>
+                    <wx-badge
+                      :type="
+                        one.state === 'failed'
+                          ? 'danger'
+                          : one.state === 'delivered'
+                            ? 'success'
+                            : 'default'
+                      "
+                    >
+                      {{ recipientState(one.state) }}
+                    </wx-badge>
+                  </li>
+                </ul>
+
+                <div
+                  v-if="
+                    canUpdate &&
+                    (notification?.state === 'failed' || notification?.state === 'queued')
+                  "
+                >
+                  <wx-button size="sm" @click="notifyAgain">{{
+                    t('panel.notify-again')
+                  }}</wx-button>
+                </div>
               </div>
             </wx-tab>
           </wx-tabs>
@@ -587,6 +658,23 @@ const details = computed(() => {
 }
 
 .wx-submission__detail {
+  overflow-wrap: anywhere;
+}
+
+.wx-submission__recipients {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wx-submission__recipients li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wx-space-8);
   overflow-wrap: anywhere;
 }
 

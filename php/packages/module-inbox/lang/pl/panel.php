@@ -151,4 +151,12 @@ return [
     'recipient-invalid_email' => 'To nie jest adres e-mail.',
     'event-no-recipients' => 'Nikogo nie powiadomiono: formularz nie ma odbiorców',
     'notified-nobody' => 'Bez powiadomienia: formularz nie wskazuje nikogo',
+    'notify-queued' => 'Powiadomienie czeka w kolejce',
+    'notify-again' => 'Wyślij powiadomienie ponownie',
+    'notify-sent-again' => 'Powiadomienie wysłano ponownie',
+    'notify-recipient-queued' => 'czeka',
+    'notify-recipient-delivered' => 'wysłane',
+    'notify-recipient-failed' => 'nieudane',
+    'event-notify-queued' => 'Powiadomienie trafiło do kolejki',
+    'event-notify-failed' => 'Powiadomienie do :to nie zostało wysłane',
 ];

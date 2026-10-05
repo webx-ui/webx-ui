@@ -62,6 +62,9 @@ final class SubmissionResource extends JsonResource
             'placement' => $submission->placement,
             'notified_at' => $submission->notified_at?->toAtomString(),
             'notify_error' => $submission->notify_error,
+            // The same two read as a state — none, queued, delivered, failed — with who was
+            // written to and how each letter went. A queued letter has not left yet (§9).
+            'notification' => $submission->notification(),
             // Which submission is before and after this one *in the list it was opened from*,
             // so the arrows in its head walk the same filter the reader was looking at.
             'previous_id' => $this->around['previous'] ?? null,

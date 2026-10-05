@@ -159,18 +159,20 @@ Spam (`is_spam`, `is_closed`).
 
 ### `inbox_submissions`
 
-| Колонка                   | Тип          | Смысл                                               |
-| ------------------------- | ------------ | --------------------------------------------------- |
-| `form_id`                 | bigint       |                                                     |
-| `status_id`               | bigint       | `restrictOnDelete` — статус с заявками не удаляют   |
-| `assignee_id`             | bigint, null | администратор                                       |
-| `hash`                    | string 32    | md5 значений, индекс; §2.7                          |
-| `read_at`                 | timestamp    | null — непрочитанная                                |
-| `source`                  | string 8     | `web` — с сайта, `panel` — заведена руками          |
-| `meta`                    | json         | ip, user agent, адрес страницы, referrer, utm, язык |
-| `notified_at`             | timestamp    | когда ушли письма                                   |
-| `notify_error`            | text, null   | текст последней ошибки отправки                     |
-| `created_at` `updated_at` |              |                                                     |
+| Колонка                   | Тип          | Смысл                                                |
+| ------------------------- | ------------ | ---------------------------------------------------- |
+| `form_id`                 | bigint       |                                                      |
+| `status_id`               | bigint       | `restrictOnDelete` — статус с заявками не удаляют    |
+| `assignee_id`             | bigint, null | администратор                                        |
+| `hash`                    | string 32    | md5 значений, индекс; §2.7                           |
+| `read_at`                 | timestamp    | null — непрочитанная                                 |
+| `source`                  | string 8     | `web` — с сайта, `panel` — заведена руками           |
+| `meta`                    | json         | ip, user agent, адрес страницы, referrer, utm, язык  |
+| `notified_at`             | timestamp    | когда ушли письма (в очереди — когда ушло последнее) |
+| `notify_error`            | text, null   | текст последней ошибки отправки                      |
+| `notify_queued_at`        | timestamp    | письма ждут воркера очереди с этого момента          |
+| `notify_recipients`       | json, null   | кому писали и как ушло каждое письмо                 |
+| `created_at` `updated_at` |              |                                                      |
 
 ### `inbox_submission_values`
 
@@ -274,7 +276,10 @@ POST {prefix}/{slug}          prefix = config('webx-inbox.path'), по умол�
 4. Хеш значений, поиск заявки с тем же хешем за последние 15 минут — нашлась, обновляем её, не
    нашлась, создаём.
 5. Значения и файлы, затем `SubmissionStored` и обработчики из конфига (§2.19).
-6. Уведомления (§9) — в `try`, ошибка пишется в `notify_error`.
+6. Уведомления (§9) — на `sync` в `try`, ошибка пишется в `notify_error`. В настоящей очереди
+   отправка — только задание: заявка помечается `queued`, а исход каждого письма сообщает само
+   письмо из воркера (`send()`/`failed()` → `Mail\Delivery`): `notified_at` и событие `notified`
+   с числом, либо `notify_error` и событие `notify_failed` с адресом (решение 05.10.2026).
 7. Ответ.
 
 Ответ — JSON, если запрос его просит (`expectsJson`), иначе `back()` или редирект:
@@ -463,6 +468,7 @@ GET    {api}/inbox/forms/{form}/submissions/export   CSV
 GET    {api}/inbox/submissions/{submission}
 PUT    {api}/inbox/submissions/{submission}          статус, ответственный, значения
 DELETE {api}/inbox/submissions/{submission}
+POST   {api}/inbox/submissions/{submission}/notify   письмо ещё раз (inbox.update)
 POST   {api}/inbox/submissions/mass                  статус или удаление пачкой
 POST   {api}/entities/{type}/{id}/notes             общий маршрут module-admin
 GET    {api}/inbox/submissions/{submission}/files/{file}
@@ -496,6 +502,7 @@ POST   {api}/inbox/statuses/sorting
 | `inbox_list`       | заявки формы с фильтрами (статус, период, поиск)  |
 | `inbox_get`        | заявка целиком: значения, мета, заметки, лог      |
 | `inbox_set_status` | статус и ответственный, с заметкой одним вызовом  |
+| `inbox_notify`     | письмо ещё раз (не ушло или застряло), с dry_run  |
 
 Приём заявок агенту не отдаётся: дверь публичная, и класть её ещё и в MCP незачем.
 

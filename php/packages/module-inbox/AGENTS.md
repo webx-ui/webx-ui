@@ -26,9 +26,12 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
 - **Attachments** on `config('webx-inbox.disk')`, never in the media library, served only through
   the panel API to `inbox.view`.
 - **Letters**: `SubmissionReceived`, queued, `Reply-To` from the form's e-mail field. The
-  submission is saved first; a failed letter is recorded as `notify_error`. A form that names
-  nobody a letter would reach (no recipients, or only deleted or switched-off administrators)
-  sends nothing, leaves `notified_at` empty and logs `no_recipients` on the submission.
+  submission is saved first; a failed letter is recorded as `notify_error`. Through a real queue,
+  pushing is not sending: the submission stays `queued` (`notify_queued_at`) until the worker's
+  letter reports to `Mail\Delivery` — delivered or failed, per recipient in `notify_recipients`.
+  `Submission::notification()` reads it as one state: `none`, `queued`, `delivered`, `failed`.
+  A form that names nobody a letter would reach (no recipients, or only deleted or switched-off
+  administrators) sends nothing, leaves `notified_at` empty and logs `no_recipients` on the submission.
 - **Who a form writes to** is read by `WebxUi\Inbox\Mail\Recipients` from `options.recipients`
   (stored as `{ admin_id }` / `{ email }`, never rewritten). Every form the panel API and MCP
   return carries `recipients` — each with `receives` and a `problem` (`admin_deleted`,
@@ -39,10 +42,13 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
 - **Panel**: one section with its own editor (no described screen); API under `/api/cms/inbox`;
   permissions `inbox.view`, `inbox.update`, `inbox.manage`.
 - **MCP** tools `inbox_forms_list`, `inbox_form_get`, `inbox_form_save`, `inbox_list`,
-  `inbox_get`, `inbox_set_status`; scopes `inbox:read`, `inbox:write`.
+  `inbox_get`, `inbox_set_status`, `inbox_notify`; scopes `inbox:read`, `inbox:write`.
 - **Command** `webx:inbox:prune` (`--days`, `--spam-days`, `--dry-run`) — not scheduled by default.
 - **Audit**: the check `inbox.no_recipients` (warning) when `webx-ui/module-audit` is installed —
   switched-on forms that would notify nobody, each with a link to `/inbox/forms/{id}?tab=notifications`.
+- **Audit check** `inbox.notification`, only with `webx-ui/module-audit`: letters that failed in
+  the last 30 days or have been queued for over 30 minutes (`webx-audit.thresholds`
+  `inbox_failed_days`, `inbox_queued_minutes`).
 - Also registered: a relation target for forms, notes on submissions, demo content (`resources/demo`).
 
 ## Change it without forking
@@ -69,6 +75,7 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
 | Send submissions to a CRM or mailing list | a `SubmissionHandler` in `handlers` of the config, by slug or `*` — below              |
 | Write back to the visitor (a gift, a PDF) | the same: a handler on that form's slug that sends a mailable to its e-mail field      |
 | Anything else once a submission is stored | a listener of `WebxUi\Inbox\Events\SubmissionStored`, `ShouldQueue` if it calls out    |
+| A letter sent again                       | the submission's menu in the panel; MCP `inbox_notify` (`dry_run` first)               |
 
 ### Send submissions to a CRM
 
@@ -122,17 +129,22 @@ handlers never notice. Not run again for `repeated`.
   handlers or the event.
 - Do not run handlers that call slow services on the `sync` queue: they run inside the visitor's
   request. Run a queue worker.
+- Do not read `notified_at` alone as "the letter arrived": read `notification.state`. `queued` for
+  long means no queue worker runs; `failed` right after a mail settings change usually means a
+  worker still holds the old ones — `php artisan queue:restart`. Fix the cause before
+  `inbox_notify`, or the letter fails the same way again.
 
 ## Check your work
 
 - Send the form on the site, with and without JavaScript: the thank-you appears, the submission is
-  in the panel, the letter arrives (or `notify_error` says why).
+  in the panel, the letter arrives (or `notify_error` says why). On a site with a queue the
+  submission says `queued`, then `delivered` once a worker has sent it.
 - With handlers configured: the submission's log (panel card or `inbox_get`) has a `handled` line
   per handler, or `handler_error` with the reason.
 - `php artisan webx:inbox:prune --dry-run` — what the configured ages would remove.
 - With MCP: `inbox_forms_list` — every switched-on form should say `notifies: true` unless it is
-  meant to be read only in the panel —, then `inbox_form_get` for the fields; `inbox_form_save` and
-  `inbox_set_status` take `dry_run: true`.
+  meant to be read only in the panel —, then `inbox_form_get` for the fields; `inbox_form_save`,
+  `inbox_set_status` and `inbox_notify` take `dry_run: true`.
 
 ## Read more
 

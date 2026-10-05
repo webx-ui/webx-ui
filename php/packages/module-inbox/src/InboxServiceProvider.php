@@ -15,6 +15,7 @@ use WebxUi\Admin\Notes\NoteTypes;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Inbox\Audit\NoRecipients;
+use WebxUi\Inbox\Audit\NotificationTrouble;
 use WebxUi\Inbox\Console\PruneSubmissionsCommand;
 use WebxUi\Inbox\Events\SubmissionStored;
 use WebxUi\Inbox\Models\Submission;
@@ -78,6 +79,12 @@ class InboxServiceProvider extends ServiceProvider
         // The handlers of `webx-inbox.handlers` (§2.19). A site that wants something else listens
         // to the same event itself; this one only reads the config.
         $this->app->make(Dispatcher::class)->listen(SubmissionStored::class, Handlers::class);
+
+        // Letters that failed or wait for a worker nobody runs — only when
+        // `webx-ui/module-audit` is installed.
+        if (class_exists(AuditChecks::class)) {
+            $this->app->make(AuditChecks::class)->register($this->app->make(NotificationTrouble::class));
+        }
 
         if (! $this->app->runningInConsole()) {
             return;

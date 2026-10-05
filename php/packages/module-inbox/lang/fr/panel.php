@@ -151,4 +151,12 @@ return [
     'recipient-invalid_email' => 'Ce n’est pas une adresse e-mail.',
     'event-no-recipients' => 'Personne n’a été prévenu : le formulaire n’a aucun destinataire',
     'notified-nobody' => 'Aucune notification : le formulaire ne nomme personne',
+    'notify-queued' => 'La notification attend dans la file',
+    'notify-again' => 'Renvoyer la notification',
+    'notify-sent-again' => 'La notification a été renvoyée',
+    'notify-recipient-queued' => 'en attente',
+    'notify-recipient-delivered' => 'envoyée',
+    'notify-recipient-failed' => 'échouée',
+    'event-notify-queued' => 'La notification a été mise en file',
+    'event-notify-failed' => 'La notification à :to a échoué',
 ];

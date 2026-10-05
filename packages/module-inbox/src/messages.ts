@@ -173,6 +173,14 @@ export const inboxMessages: Record<string, Messages> = {
     'recipient-invalid_email': 'This is not an e-mail address.',
     'event-no-recipients': 'Nobody was told: the form names no recipients',
     'notified-nobody': 'No notification: the form names nobody to tell',
+    'notify-queued': 'The notification is waiting in the queue',
+    'notify-again': 'Send the notification again',
+    'notify-sent-again': 'The notification has been sent again',
+    'notify-recipient-queued': 'waiting',
+    'notify-recipient-delivered': 'sent',
+    'notify-recipient-failed': 'failed',
+    'event-notify-queued': 'The notification was queued',
+    'event-notify-failed': 'The notification to :to failed',
   },
 
   fields: {

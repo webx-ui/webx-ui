@@ -214,6 +214,28 @@ is how a domain loses its reputation.
 **The submission is written before anything is sent.** A mail server that is down costs a
 notification, recorded on the submission as `notify_error`, and not an enquiry.
 
+**Queued is not sent.** On a site with a queue, sending only pushes a job; the SMTP server is
+asked later by a worker. So the submission says where its letters are — `notification.state` in
+the panel's API and in MCP:
+
+| state       | means                                                                          |
+| ----------- | ------------------------------------------------------------------------------ |
+| `none`      | nobody to write to                                                             |
+| `queued`    | handed to the queue, not sent yet (`notify_queued_at` — since when)            |
+| `delivered` | every letter left (`notified_at`)                                              |
+| `failed`    | a letter could not be sent; `notify_error` says why, per recipient in the list |
+
+A worker reports each letter as it settles (`SubmissionReceived::send()` / `failed()` →
+`Mail\Delivery`); the log gets `notify_queued`, then `notified` with the count, and
+`notify_failed` with the address. On `sync` nothing changed: the outcome is written at once.
+A letter stuck as `queued` means no worker runs; one that failed after a settings change often
+means a worker still holds the old ones — `php artisan queue:restart`. Then send it again: the
+panel's «Send the notification again», `POST /api/cms/inbox/submissions/{id}/notify`
+(`inbox.update`), or the MCP tool `inbox_notify` (with `dry_run`). With `webx-ui/module-audit`
+installed, the check `inbox.notification` lists letters that failed in the last
+`thresholds.inbox_failed_days` (30) days or have been queued for over
+`thresholds.inbox_queued_minutes` (30).
+
 The letter is a published view:
 
 ```bash

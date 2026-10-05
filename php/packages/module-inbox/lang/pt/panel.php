@@ -151,4 +151,12 @@ return [
     'recipient-invalid_email' => 'Isto não é um endereço de e-mail.',
     'event-no-recipients' => 'Ninguém foi avisado: o formulário não tem destinatários',
     'notified-nobody' => 'Sem notificação: o formulário não indica ninguém',
+    'notify-queued' => 'A notificação aguarda na fila',
+    'notify-again' => 'Enviar a notificação novamente',
+    'notify-sent-again' => 'A notificação foi enviada novamente',
+    'notify-recipient-queued' => 'aguardando',
+    'notify-recipient-delivered' => 'enviada',
+    'notify-recipient-failed' => 'falhou',
+    'event-notify-queued' => 'A notificação foi colocada na fila',
+    'event-notify-failed' => 'A notificação para :to falhou',
 ];

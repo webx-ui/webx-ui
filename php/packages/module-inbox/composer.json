@@ -43,7 +43,7 @@
         "webx-ui/module-audit": "^0.61.1"
     },
     "suggest": {
-        "webx-ui/module-audit": "The site audit reports switched-on forms that would notify nobody."
+        "webx-ui/module-audit": "The site audit reports switched-on forms that would notify nobody, and notifications that failed or have waited in the queue for long."
     },
     "autoload": {
         "psr-4": {

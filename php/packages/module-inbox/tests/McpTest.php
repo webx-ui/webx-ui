@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Inbox\Tests;
 
+use Illuminate\Mail\SendQueuedMailable;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Laravel\Mcp\Server\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
@@ -25,12 +27,12 @@ use WebxUi\Mcp\Server\WebxServer;
 final class McpTest extends TestCase
 {
     #[Test]
-    public function the_module_offers_six_tools_under_two_scopes(): void
+    public function the_module_offers_seven_tools_under_two_scopes(): void
     {
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['inbox_forms_list', 'inbox_form_get', 'inbox_form_save', 'inbox_list', 'inbox_get', 'inbox_set_status'],
+            ['inbox_forms_list', 'inbox_form_get', 'inbox_form_save', 'inbox_list', 'inbox_get', 'inbox_set_status', 'inbox_notify'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('inbox')),
         );
 
@@ -55,6 +57,7 @@ final class McpTest extends TestCase
         $this->assertSame(['inbox.view', 'inbox.manage'], $registry->tool('inbox_forms_list')->permissions());
         $this->assertSame(['inbox.view'], $registry->tool('inbox_list')->permissions());
         $this->assertSame(['inbox.update'], $registry->tool('inbox_set_status')->permissions());
+        $this->assertSame(['inbox.update'], $registry->tool('inbox_notify')->permissions());
         $this->assertSame(['inbox.manage'], $registry->tool('inbox_form_save')->permissions());
 
         $form = $this->form();
@@ -388,6 +391,44 @@ final class McpTest extends TestCase
         $this->agent('set_status', ['submission' => (int) $submission->getKey()])->assertHasErrors();
 
         $this->assertSame('new', $submission->refresh()->status?->key);
+    }
+
+    #[Test]
+    public function a_notification_that_did_not_leave_is_read_and_sent_again(): void
+    {
+        Queue::fake();
+
+        $form = $this->form('contact', [], ['recipients' => [['email' => 'sales@example.test']]]);
+        $submission = $this->filled($form, ['name' => 'Ada'], [
+            'notify_error' => 'Connection refused',
+            'notified_at' => now(),
+        ]);
+
+        $this->assertSame('failed', $this->content($this->agent('get', ['submission' => (int) $submission->getKey()])->assertOk())['notification']['state']);
+        $this->assertSame('failed', $this->content($this->agent('list', ['form' => 'contact'])->assertOk())['submissions'][0]['notify_state']);
+
+        $plan = $this->content($this->agent('notify', ['submission' => (int) $submission->getKey(), 'dry_run' => true])->assertOk());
+
+        $this->assertSame('queue', $plan['would']);
+        $this->assertSame(['sales@example.test'], $plan['recipients']);
+        Queue::assertNothingPushed();
+        $this->assertSame('Connection refused', $submission->refresh()->notify_error);
+
+        $sent = $this->content($this->agent('notify', ['submission' => (int) $submission->getKey()])->assertOk());
+
+        // Pushed, and said to be pushed — not yet sent.
+        $this->assertSame('queued', $sent['notification']['state']);
+        $this->assertNull($sent['notify_error']);
+        Queue::assertPushed(SendQueuedMailable::class, 1);
+    }
+
+    #[Test]
+    public function a_notification_for_a_form_that_names_nobody_is_refused(): void
+    {
+        $submission = $this->filled($this->form(), ['name' => 'Ada']);
+
+        $this->agent('notify', ['submission' => (int) $submission->getKey(), 'dry_run' => true])
+            ->assertHasErrors(['names nobody']);
     }
 
     /**

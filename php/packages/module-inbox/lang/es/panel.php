@@ -151,4 +151,12 @@ return [
     'recipient-invalid_email' => 'Esto no es una dirección de correo.',
     'event-no-recipients' => 'No se avisó a nadie: el formulario no tiene destinatarios',
     'notified-nobody' => 'Sin aviso: el formulario no nombra a nadie',
+    'notify-queued' => 'La notificación espera en la cola',
+    'notify-again' => 'Enviar la notificación de nuevo',
+    'notify-sent-again' => 'La notificación se ha enviado de nuevo',
+    'notify-recipient-queued' => 'en espera',
+    'notify-recipient-delivered' => 'enviada',
+    'notify-recipient-failed' => 'fallida',
+    'event-notify-queued' => 'La notificación se puso en cola',
+    'event-notify-failed' => 'Falló la notificación a :to',
 ];

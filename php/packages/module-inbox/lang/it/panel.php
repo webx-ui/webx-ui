@@ -151,4 +151,12 @@ return [
     'recipient-invalid_email' => 'Questo non è un indirizzo e-mail.',
     'event-no-recipients' => 'Nessuno è stato avvisato: il modulo non ha destinatari',
     'notified-nobody' => 'Nessuna notifica: il modulo non nomina nessuno',
+    'notify-queued' => 'La notifica attende in coda',
+    'notify-again' => 'Invia di nuovo la notifica',
+    'notify-sent-again' => 'La notifica è stata inviata di nuovo',
+    'notify-recipient-queued' => 'in attesa',
+    'notify-recipient-delivered' => 'inviata',
+    'notify-recipient-failed' => 'non riuscita',
+    'event-notify-queued' => 'La notifica è stata messa in coda',
+    'event-notify-failed' => 'La notifica a :to non è riuscita',
 ];

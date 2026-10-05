@@ -151,4 +151,12 @@ return [
     'recipient-invalid_email' => 'Це не адреса електронної пошти.',
     'event-no-recipients' => 'Нікого не сповіщено: у формі немає отримувачів',
     'notified-nobody' => 'Сповіщення не було: у формі нікого не вказано',
+    'notify-queued' => 'Лист чекає в черзі',
+    'notify-again' => 'Надіслати лист ще раз',
+    'notify-sent-again' => 'Лист надіслано ще раз',
+    'notify-recipient-queued' => 'чекає',
+    'notify-recipient-delivered' => 'надіслано',
+    'notify-recipient-failed' => 'не пішов',
+    'event-notify-queued' => 'Лист поставлено в чергу',
+    'event-notify-failed' => 'Лист на :to не пішов',
 ];

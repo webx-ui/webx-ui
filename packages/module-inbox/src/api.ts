@@ -57,6 +57,8 @@ export interface InboxApi {
   createSubmission(formId: number, fields: Record<string, unknown>): Promise<InboxSubmission>
   saveSubmission(id: number, input: SubmissionInput): Promise<InboxSubmission>
   removeSubmission(id: number): Promise<void>
+  /** The notification once more, to whoever the form names now. Refused for a form naming nobody. */
+  notifySubmission(id: number): Promise<InboxSubmission>
   /** A pile moved, marked or thrown away at once. */
   massSubmissions(input: SubmissionMassInput): Promise<{ count: number }>
   /**
@@ -136,6 +138,9 @@ export function createInboxApi(admin: AdminContext): InboxApi {
       admin.http.put<{ data: InboxSubmission }>(`${base}/submissions/${id}`, input).then(data),
 
     removeSubmission: (id) => admin.http.delete(`${base}/submissions/${id}`).then(nothing),
+
+    notifySubmission: (id) =>
+      admin.http.post<{ data: InboxSubmission }>(`${base}/submissions/${id}/notify`).then(data),
 
     massSubmissions: (input) =>
       admin.http.post<{ data: { count: number } }>(`${base}/submissions/mass`, input).then(data),

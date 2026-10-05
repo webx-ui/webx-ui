@@ -13,6 +13,7 @@ use WebxUi\Admin\Notes\Note;
 use WebxUi\Admin\Support\Authors;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Inbox\Exceptions\InboxException;
+use WebxUi\Inbox\Exceptions\NobodyToNotify;
 use WebxUi\Inbox\Http\Controllers\FormController;
 use WebxUi\Inbox\Http\Resources\FieldResource;
 use WebxUi\Inbox\Http\Resources\FormResource;
@@ -20,6 +21,8 @@ use WebxUi\Inbox\Http\Resources\StatusResource;
 use WebxUi\Inbox\Http\Resources\SubmissionResource;
 use WebxUi\Inbox\Http\Resources\SubmissionRowResource;
 use WebxUi\Inbox\Mail\Recipients;
+use WebxUi\Inbox\Mail\Notifier;
+use WebxUi\Inbox\Mail\SubmissionReceived;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Status;
@@ -153,8 +156,11 @@ final class InboxTools
                 'get',
                 'One submission in full: every answer with the label and the type it was asked under, the files '
                 .'with them, what was around it when it arrived — the page, the language, the address — the notes '
-                .'administrators have left on it, and the log of everything that has happened to it. Reading it '
-                .'does not mark it read: that is a person having looked.',
+                .'administrators have left on it, and the log of everything that has happened to it. '
+                .'`notification` says whether the letter about it left: none, queued (handed to the queue and '
+                .'not yet sent — long in this state means no queue worker runs), delivered, or failed with the '
+                .'reason, and how it went for each recipient. Reading it does not mark it read: that is a '
+                .'person having looked.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->get($arguments, $user),
                 ['properties' => [
                     'submission' => ['type' => 'integer', 'description' => 'The id, as inbox_list reports it.'],
@@ -177,7 +183,50 @@ final class InboxTools
                 ], 'required' => ['submission']],
                 permission: 'inbox.update',
             ),
+
+            Tool::mutating(
+                'notify',
+                'Send the notification about a submission again, to whoever the form names now — for a letter '
+                .'that failed or has been queued for long. Fix what made it fail first (the mail settings, a '
+                .'queue worker that holds old settings and needs a restart): otherwise it fails the same way. '
+                .'On a site with a queue the answer is "queued"; inbox_get a little later says whether it left. '
+                .'A form that names nobody is refused.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->notify($arguments, $user)),
+                ['properties' => [
+                    'submission' => ['type' => 'integer'],
+                ], 'required' => ['submission']],
+                permission: 'inbox.update',
+            ),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function notify(array $arguments, ?Authenticatable $user): array
+    {
+        $submission = $this->submission($arguments['submission'] ?? null);
+        $notifier = $this->container->make(Notifier::class);
+        $recipients = $notifier->recipients($submission);
+
+        if ($recipients === []) {
+            throw new NobodyToNotify((string) $submission->form->slug);
+        }
+
+        if ($this->dryRun($arguments)) {
+            return [
+                'dry_run' => true,
+                'submission' => (int) $submission->getKey(),
+                'would' => $notifier->queued(new SubmissionReceived($submission)) ? 'queue' : 'send',
+                'recipients' => array_map(static fn (array $one): string => $one[0], $recipients),
+                'notification' => $submission->notification(),
+            ];
+        }
+
+        $notifier->send($submission, $this->adminId($user));
+
+        return $this->get(['submission' => (int) $submission->getKey()], $user);
     }
 
     /**

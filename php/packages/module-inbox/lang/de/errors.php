@@ -12,4 +12,5 @@ return [
     'slug-shape' => 'Eine Adresse besteht aus Kleinbuchstaben, Ziffern und Bindestrichen: „contact-us“.',
     'field-name-shape' => 'Ein Name beginnt mit einem Buchstaben; danach Buchstaben, Ziffern, Bindestrich und Unterstrich.',
     'recipient-shape' => 'Ein Empfänger ist entweder ein Administrator oder eine E-Mail-Adresse.',
+    'nobody-to-notify' => 'Das Formular „:form“ nennt niemanden, dem geschrieben wird.',
 ];

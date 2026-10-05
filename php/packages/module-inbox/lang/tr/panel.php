@@ -151,4 +151,12 @@ return [
     'recipient-invalid_email' => 'Bu bir e-posta adresi değil.',
     'event-no-recipients' => 'Kimseye haber verilmedi: formda alıcı yok',
     'notified-nobody' => 'Bildirim yok: form kimseyi belirtmiyor',
+    'notify-queued' => 'Bildirim kuyrukta bekliyor',
+    'notify-again' => 'Bildirimi yeniden gönder',
+    'notify-sent-again' => 'Bildirim yeniden gönderildi',
+    'notify-recipient-queued' => 'bekliyor',
+    'notify-recipient-delivered' => 'gönderildi',
+    'notify-recipient-failed' => 'gönderilemedi',
+    'event-notify-queued' => 'Bildirim kuyruğa alındı',
+    'event-notify-failed' => ':to adresine bildirim gönderilemedi',
 ];

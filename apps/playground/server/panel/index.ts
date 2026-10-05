@@ -2007,6 +2007,16 @@ on('PUT', '/inbox/submissions/(\\d+)', ({ params, body }) => {
   return { data: detail(record) }
 })
 
+/* Sent again: the playground has no mail, so it simply went. */
+on('POST', '/inbox/submissions/(\\d+)/notify', ({ params }) => {
+  const record = submission(params[0])
+
+  record.notified_at = new Date().toISOString()
+  record.notify_error = null
+
+  return { data: detail(record) }
+})
+
 on('DELETE', '/inbox/submissions/(\\d+)', ({ params }) => {
   const record = submission(params[0])
 
@@ -5278,6 +5288,20 @@ function detail(record: SubmissionRecord, query?: URLSearchParams) {
     placement: record.placement ?? null,
     notified_at: record.notified_at,
     notify_error: record.notify_error,
+    /* Read off the two columns, as the server reads a submission from before the queue was
+       watched: an error is failed, a time without one is delivered. */
+    notification: {
+      state:
+        record.notify_error !== null
+          ? 'failed'
+          : record.notified_at !== null
+            ? 'delivered'
+            : 'none',
+      error: record.notify_error,
+      queued_at: null,
+      delivered_at: record.notified_at,
+      recipients: [],
+    },
     previous_id: index > 0 ? siblings[index - 1].id : null,
     next_id: index >= 0 && index < siblings.length - 1 ? siblings[index + 1].id : null,
     created_at: record.created_at,

@@ -669,6 +669,9 @@ composer.json, регистрация под `class_exists`).
 - **`module-inbox`:** `inbox.no_recipients` (warning) — включённая форма, письмо которой не дойдёт
   ни до кого: получателей нет, или это удалённые и отключённые администраторы, или не адреса.
   Находка на форму, ссылка — на вкладку «Уведомления» её редактора (`?tab=notifications`).
+- **`module-inbox`:** `inbox.notification` — письма о заявках, которые не ушли: находка `failed`
+  (ошибка за `thresholds.inbox_failed_days`, 30 дней) и `queued` (в очереди дольше
+  `thresholds.inbox_queued_minutes`, 30 минут — воркер не запущен), по двадцать заявок в таблице.
 - **`module-catalog`:** `catalog.category_description`, `catalog.product_image`,
   `catalog.product_price` — опубликованное, одной находкой на проверку с первыми 50 записями.
 - **`module-menu`:** `menu.broken` (пункт ведёт на 4xx/5xx — или на запись без адреса: такой

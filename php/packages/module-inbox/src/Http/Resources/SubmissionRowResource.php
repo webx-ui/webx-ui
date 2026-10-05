@@ -53,6 +53,9 @@ final class SubmissionRowResource extends JsonResource
             // Where on the site the form stood (`footer`, `article`), or null.
             'placement' => $submission->placement,
             'files_count' => (int) ($submission->getAttribute('files_count') ?? 0),
+            // none · queued · delivered · failed — a letter that never left shows in the list,
+            // not only once somebody opens the submission.
+            'notify_state' => $submission->notification()['state'],
             'created_at' => $submission->created_at?->toAtomString(),
         ];
     }

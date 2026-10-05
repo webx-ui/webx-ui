@@ -261,12 +261,42 @@ export interface SubmissionAttachment {
 export interface SubmissionEvent {
   id: number
   type:
-    'created' | 'status' | 'assignee' | 'note' | 'notified' | 'handled' | 'handler_error' | string
+    | 'created'
+    | 'status'
+    | 'assignee'
+    | 'note'
+    | 'notified'
+    | 'handled'
+    | 'handler_error'
+    | 'no_recipients'
+    | 'notify_queued'
+    | 'notify_failed'
+    | string
   from: string | null
   to: string | null
   /** Null is the system — the submission arriving, the notification going out. */
   author: { id: number; name: string | null } | null
   created_at: string | null
+}
+
+/**
+ * Whether the letter about a submission left (§9). `queued` is handed to the site's queue and
+ * not sent yet — on a site with a queue, sending is a worker's job, and a worker can be missing.
+ */
+export type NotifyState = 'none' | 'queued' | 'delivered' | 'failed'
+
+export interface SubmissionNotification {
+  state: NotifyState
+  error: string | null
+  queued_at: string | null
+  delivered_at: string | null
+  /** Empty on a submission from before the letters were watched one by one. */
+  recipients: {
+    address: string
+    state: 'queued' | 'delivered' | 'failed'
+    error: string | null
+    at: string
+  }[]
 }
 
 /** What the intake saw around the submission: the page, the language, the campaign. */
@@ -295,6 +325,8 @@ export interface InboxSubmission {
   placement: string | null
   notified_at: string | null
   notify_error: string | null
+  /** The same two read as a state, with how each letter went. */
+  notification: SubmissionNotification
   /** The neighbours in the list this was opened from, so the arrows walk the same pile. */
   previous_id: number | null
   next_id: number | null

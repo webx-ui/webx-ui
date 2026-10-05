@@ -279,6 +279,15 @@ letter waiting in the queue. Every form in the panel API and in MCP carries `rec
 with `receives` and a `problem`) and `notifies`; the editor warns above its tabs, the column of
 forms marks the form, and the site audit reports it as `inbox.no_recipients`.
 
+**Queued is not sent.** On a site with a queue, sending a letter only pushes a job, and a worker
+talks to the SMTP server later. The submission therefore carries a state — `none`, `queued`,
+`delivered` or `failed` with the reason — and the list of recipients with how each letter went;
+the screen shows both, and so do `inbox_get` and `inbox_list`. A letter that stays `queued` means
+no queue worker runs. One that failed right after the mail settings changed usually means a
+worker still holds the old ones: `php artisan queue:restart`. Then send it again from the
+submission's menu, or with the MCP tool `inbox_notify` (`dry_run` first). With the site audit
+installed, the check «Notifications about submissions that did not leave» lists both cases.
+
 ## After a submission is stored
 
 Sending a submission to a CRM, adding the address to a mailing list, writing back to the visitor
@@ -376,6 +385,7 @@ GET    /api/cms/inbox/forms/{form}/submissions          filters, search, the col
 POST   /api/cms/inbox/forms/{form}/submissions          one typed in by hand
 GET    /api/cms/inbox/forms/{form}/submissions/export   CSV
 GET    /api/cms/inbox/submissions/{submission}          PUT: status, assignee, a corrected answer
+POST   /api/cms/inbox/submissions/{submission}/notify   the notification again (inbox.update)
 POST   /api/cms/inbox/submissions/mass                  a status or a delete over a selection
 GET    /api/cms/inbox/statuses                          POST · PUT · DELETE · /sorting
 POST   /api/cms/entities/inbox_submission/{id}/notes    the shared notes route of module-admin
@@ -411,6 +421,7 @@ way tinker is.
 | `inbox_list`       | The submissions of a form: status, unread, assignee, dates, search              |
 | `inbox_get`        | One submission: the answers, the files, the metadata, the notes, the log        |
 | `inbox_set_status` | The status, the assignee and a note, in one call                                |
+| `inbox_notify`     | The notification again, for a letter that failed or is stuck; `dry_run` first   |
 
 A form is named by its id or by its slug, and the tools go through the same rules the panel's
 editor does: a slug that is not an address and a recipient nobody can be written to are refused
