@@ -53,6 +53,11 @@ const touchesAllNode = (file) =>
   file === 'pnpm-workspace.yaml' ||
   /^(vitest|tsconfig|eslint)\b/.test(file)
 
+// A package's AGENTS.md and the .gitattributes that ships it are text, but module-admin's
+// AgentDocsCoverageTest holds every guide to one format and length — the package itself never
+// notices a guide that grew too long, so the change has to reach the test that does.
+const isAgentGuide = (file) => /^php\/packages\/[^/]+\/(AGENTS\.md|\.gitattributes)$/.test(file)
+
 const touchesAllPhp = (file) =>
   file.startsWith('php/') && !file.startsWith('php/packages/') && file !== 'php/package.json'
 
@@ -62,7 +67,7 @@ function decide() {
   const changed = git('diff', '--name-only', '--no-renames', base, 'HEAD')
     .split('\n')
     .filter(Boolean)
-    .filter((file) => !isDocumentation(file))
+    .filter((file) => !isDocumentation(file) || isAgentGuide(file))
 
   // The workflows and this script decide what the others run, so a change to them proves
   // itself on everything. So does any file outside the places sorted below — a new tool at the
@@ -75,12 +80,15 @@ function decide() {
   if (changed.some((file) => !sorted(file))) return { node: 'all', php: 'all' }
 
   const npmFiles = changed.filter((file) => !file.startsWith('php/'))
-  const phpFiles = changed.filter((file) => file.startsWith('php/packages/'))
+  const phpFiles = changed.filter((file) => file.startsWith('php/packages/') && !isAgentGuide(file))
+  const guides = changed.some(isAgentGuide)
 
   return {
     node: npmFiles.length === 0 ? 'none' : npmFiles.some(touchesAllNode) ? 'all' : 'some',
-    php: changed.some(touchesAllPhp) ? 'all' : phpFiles.length === 0 ? 'none' : 'some',
+    php: changed.some(touchesAllPhp) ? 'all' : phpFiles.length === 0 && !guides ? 'none' : 'some',
     phpChanged: new Set(phpFiles.map((file) => file.split('/')[2])),
+    // Only the test, not module-admin's dependents: a guide changes nothing they run.
+    phpAlso: guides ? ['module-admin'] : [],
   }
 }
 
@@ -150,7 +158,7 @@ output.php = decision.php
 output.php_tests = ''
 output.manticore = String(decision.php === 'all')
 if (decision.php === 'some') {
-  const reached = phpDependents(decision.phpChanged)
+  const reached = [...new Set([...phpDependents(decision.phpChanged), ...decision.phpAlso])].sort()
   if (reached.length === 0) output.php = 'none'
   output.php_tests = reached.map((name) => `packages/${name}/tests`).join(' ')
   output.manticore = String(reached.includes('module-catalog-manticore'))
