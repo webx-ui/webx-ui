@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use WebxUi\Media\Images\Optimizing\ScaleDown;
 
 return [
 
@@ -82,6 +83,31 @@ return [
         'driver' => env('WEBX_MEDIA_IMAGE_DRIVER', 'gd'),
         'max_pixels' => 50_000_000,
         'quality' => 85,
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Optimizing
+    |---------------------------------------------------------------------------
+    |
+    | What a JPEG, PNG or still WebP goes through on its way into the library:
+    | turned the right way up and stripped of its metadata, then `steps` in
+    | order, then encoded at `quality`. An upload becomes `format` (null keeps
+    | its own); a picture already in the library keeps its format and its key
+    | when «Optimize» runs it through again. A result that is not smaller is
+    | thrown away. A step is any class implementing
+    | WebxUi\Media\Images\Optimizing\OptimizeStep.
+    |
+    */
+
+    'optimize' => [
+        'enabled' => env('WEBX_MEDIA_OPTIMIZE', true),
+        'max_side' => 2560,
+        'quality' => 82,
+        'format' => 'webp',
+        'steps' => [
+            ScaleDown::class,
+        ],
     ],
 
     /*

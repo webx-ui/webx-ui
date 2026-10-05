@@ -41,4 +41,12 @@ return [
     'save' => 'Guardar',
     'pick' => 'Elegir (:count)',
     'chosen' => 'Elegidos :count de :max',
+    'optimize' => 'Optimizar',
+    'optimize-title' => 'Optimizar imágenes',
+    'optimize-text' => 'Cada imagen se reduce al tamaño máximo, se le quitan los metadatos y se vuelve a guardar de forma más compacta, con la misma dirección y el mismo formato. La versión anterior no se conserva.',
+    'optimize-waiting' => 'Imágenes por optimizar: :count, :size en total',
+    'optimize-saved' => 'Espacio liberado: :size',
+    'optimize-none' => 'Todas las imágenes de aquí ya están optimizadas.',
+    'optimize-stop' => 'Detener',
+    'optimize-close' => 'Cerrar',
 ];

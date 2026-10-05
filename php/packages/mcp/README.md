@@ -165,6 +165,12 @@ it starts it reads the registry and wraps every tool, resource and prompt in the
 transport expects. The module's JSON Schema goes out as written; a read tool is announced with
 `readOnlyHint`, so a client may skip its confirmation for it.
 
+Every panel serves the same tools under the same names, so the server is named after the site —
+`example.com`, the host of `app.url` without `www.` — and the first line of its instructions
+says the same with the environment. `site_info`, the one tool that is not a module's, answers
+the address, the environment, the version and the administrator the agent acts as; it is behind
+no permission and no scope, and only a disconnected connection is refused it.
+
 `tools/list` answers with a hundred at a time rather than the default fifteen. A panel with six
 modules offers more than forty tools, and a client that does not follow the cursor would see a
 third of them and conclude the rest do not exist.
@@ -174,6 +180,7 @@ third of them and conclude the rest do not exist.
 | Key          | Default             | What it is                                                       |
 | ------------ | ------------------- | ---------------------------------------------------------------- |
 | `path`       | `{api_path}/mcp`    | Where the HTTP server answers; `false` for none                  |
+| `name`       | host of `app.url`   | What the server calls itself; `WEBX_MCP_NAME`                    |
 | `middleware` | `['webx.mcp-auth']` | What guards it                                                   |
 | `guard`      | `api`               | The guard `webx.mcp-auth` asks for a user                        |
 | `oauth`      | see below           | How a person connects their agent; ignored without Passport      |

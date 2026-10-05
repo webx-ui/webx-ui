@@ -46,6 +46,8 @@ return [
     'group-other' => 'Inne',
     'sources' => 'Przeszukana treść',
     'sources-missing' => 'Zainstalowane, ale nieprzeszukane:',
+    'sources-help' => 'Oprócz przeszukiwania witryny audyt czyta teksty, które moduły trzymają w bazie — szkice, ukryte rekordy i pola, których szablon nigdy nie wyświetla — i szuka w nich adresów bezwzględnych, na przykład linków do środowiska deweloperskiego. Zielone: moduły, które przekazują swoje teksty. Pomarańczowe: moduły zainstalowane tutaj, które jeszcze tego nie potrafią. Ich opublikowane strony i tak są przeszukiwane, ale szkice i ukryte pola nie są sprawdzane, a przycisk naprawy do nich nie sięga.',
+    'sources-help-label' => 'Co to oznacza',
     'sync-queue' => 'Kolejka wykonuje zadania wewnątrz żądania (sync), więc panel nie może uruchomić audytu. Uruchom php artisan webx:audit:run z terminala lub crona.',
     'already-running' => 'Audyt już trwa.',
     'check' => 'Kontrola',

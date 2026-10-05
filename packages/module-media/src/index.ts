@@ -96,4 +96,5 @@ export type {
   MediaKind,
   MediaPage,
   MediaValue,
+  OptimizeResult,
 } from './types'

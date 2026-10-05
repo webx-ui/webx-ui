@@ -8,6 +8,7 @@ import {
   WxButton,
   WxCard,
   WxEmpty,
+  WxPopover,
   WxProgress,
   WxSegmented,
   WxSkeleton,
@@ -276,7 +277,23 @@ onBeforeUnmount(() => clearTimeout(timer))
             <wx-empty icon="check-circle" :title="t('page.clean')" size="sm" />
           </wx-card>
 
-          <wx-card :title="t('page.sources')">
+          <wx-card>
+            <template #header>
+              <span class="wx-audit-overview__title">
+                {{ t('page.sources') }}
+                <wx-popover :title="t('page.sources')" :width="360" teleport>
+                  <template #trigger>
+                    <wx-button
+                      variant="text"
+                      size="sm"
+                      icon="question"
+                      :aria-label="t('page.sources-help-label')"
+                    />
+                  </template>
+                  <wx-text size="sm">{{ t('page.sources-help') }}</wx-text>
+                </wx-popover>
+              </span>
+            </template>
             <div class="wx-audit-overview__badges">
               <wx-badge v-for="source in counts.sources.searched" :key="source" type="success">{{
                 source
@@ -386,5 +403,11 @@ onBeforeUnmount(() => clearTimeout(timer))
 
 .wx-audit-overview__missing {
   margin-top: var(--wx-space-12);
+}
+
+.wx-audit-overview__title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wx-space-4);
 }
 </style>

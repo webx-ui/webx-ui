@@ -23,7 +23,7 @@ useMediaMessages()
 
 const t = useTranslate('webx-media')
 
-const manager = useTemplateRef<{ upload: () => void }>('manager')
+const manager = useTemplateRef<{ upload: () => void; optimize: () => void }>('manager')
 const kind = ref<TabValue>('all')
 /* The tabs speak in tab values; the manager speaks in kinds of file. */
 const fileKind = computed(() => kind.value as MediaKind | 'all')
@@ -46,8 +46,23 @@ const views = computed<TabItem[]>(() => [
 ])
 
 /* What the section offers. Declared, because on a phone the head folds it into the ···. */
-const actions = computed<ScreenAction[]>(() =>
-  canUpload.value
+const actions = computed<ScreenAction[]>(() => [
+  /*
+   * Beside upload rather than among the toolbar's icons: it is about the library as a whole —
+   * the pictures uploaded before the pipeline, or before its settings changed — not about the
+   * file under the cursor. It rewrites files, so it is behind managing, not uploading.
+   */
+  ...(context.can('media.manage')
+    ? [
+        {
+          key: 'optimize',
+          // A word and no glyph: no icon says "make the files lighter" without being misread.
+          label: t('manager.optimize'),
+          run: () => manager.value?.optimize(),
+        },
+      ]
+    : []),
+  ...(canUpload.value
     ? [
         {
           key: 'upload',
@@ -57,8 +72,8 @@ const actions = computed<ScreenAction[]>(() =>
           run: () => manager.value?.upload(),
         },
       ]
-    : [],
-)
+    : []),
+])
 </script>
 
 <template>

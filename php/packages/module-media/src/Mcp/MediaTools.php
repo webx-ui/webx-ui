@@ -8,6 +8,8 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use WebxUi\Mcp\Tool;
+use WebxUi\Media\Http\Controllers\OptimizeController;
+use WebxUi\Media\Images\Optimizing\LibraryOptimizing;
 use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Storage\FileStore;
@@ -201,6 +203,44 @@ final class MediaTools
                 ],
                 scope: 'media:write',
                 permission: ['media.upload', 'media.manage'],
+            ),
+
+            Tool::mutating(
+                'optimize_images',
+                'Run pictures already in the library through the upload pipeline again: no side longer than the configured limit, metadata stripped, re-encoded at the configured quality. Each keeps its format and its address. Without ids, the pictures of the folder (or of the whole library) that the current settings have not been through. At most '.OptimizeController::BATCH.' per call; `remaining` says how many are left.',
+                static function (array $arguments): array {
+                    $optimizing = app(LibraryOptimizing::class);
+                    $query = $optimizing->pending()->orderBy('id');
+
+                    if (! empty($arguments['ids'])) {
+                        $query->whereIn('id', array_map('intval', (array) $arguments['ids']));
+                    } elseif (isset($arguments['directory_id'])) {
+                        $query->where('directory_id', (int) $arguments['directory_id']);
+                    }
+
+                    $total = (clone $query)->count();
+
+                    if ($arguments['dry_run'] ?? false) {
+                        return ['ok' => true, 'would' => "optimize {$total} picture(s)"];
+                    }
+
+                    $results = $query->limit(OptimizeController::BATCH)->get()
+                        ->map(static fn (MediaFile $file): array => $optimizing->run($file))->values()->all();
+
+                    return [
+                        'ok' => true,
+                        'results' => $results,
+                        'saved_bytes' => array_sum(array_map(static fn (array $one): int => $one['before'] - $one['after'], $results)),
+                        'remaining' => max(0, $total - count($results)),
+                    ];
+                },
+                [
+                    'properties' => [
+                        'ids' => ['type' => 'array', 'items' => ['type' => 'integer']],
+                        'directory_id' => ['type' => 'integer'],
+                    ],
+                ],
+                scope: 'media:write',
             ),
 
             Tool::mutating(

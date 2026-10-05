@@ -23,6 +23,7 @@ use WebxUi\Mcp\Registry\ToolRegistry;
  */
 final class WebxServer extends Server
 {
+    /** Replaced on boot by the site's address — see Site — so that two panels can be told apart. */
     protected string $name = 'WebX UI';
 
     /**
@@ -48,6 +49,10 @@ final class WebxServer extends Server
         This is the admin panel of a site built on WebX UI. Every tool belongs to a module of
         the panel and is named `<module>_<tool>`.
 
+        Other sites built on WebX UI offer the very same tools, and more than one may be connected
+        at once: before the first change, call `site_info` and check that this is the site the
+        person meant.
+
         A tool that changes something accepts `dry_run: true` and then reports what it would do
         without doing it — use that before a change you are not sure about. Writing needs a token
         with the `<module>:write` scope; a refusal says which scope was missing.
@@ -65,11 +70,22 @@ final class WebxServer extends Server
         $registry = Container::getInstance()->make(ToolRegistry::class);
 
         $this->version = self::packageVersion();
+        $this->name = Site::name();
 
-        $this->tools = array_map(
-            static fn (BoundTool $tool): RegistryTool => new RegistryTool($tool),
-            $registry->tools(),
+        // Said in the first sentence, because the instructions are what an agent reads first.
+        $this->instructions = str_replace(
+            'the admin panel of a site built on WebX UI.',
+            'the admin panel of '.Site::name().', a site built on WebX UI, running as `'.Site::environment().'`.',
+            $this->instructions,
         );
+
+        $this->tools = [
+            new SiteInfoTool,
+            ...array_map(
+                static fn (BoundTool $tool): RegistryTool => new RegistryTool($tool),
+                $registry->tools(),
+            ),
+        ];
 
         $this->resources = array_map(
             static fn (McpResource $resource): RegistryResource => new RegistryResource($resource),
@@ -96,7 +112,7 @@ final class WebxServer extends Server
         }
     }
 
-    private static function packageVersion(): string
+    public static function packageVersion(): string
     {
         try {
             return InstalledVersions::getPrettyVersion('webx-ui/mcp') ?? 'dev';

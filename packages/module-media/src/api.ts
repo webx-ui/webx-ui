@@ -1,5 +1,12 @@
 import type { AdminContext } from '@webx-ui/module-admin'
-import type { EditOperations, FileQuery, MediaDirectory, MediaFile, MediaPage } from './types'
+import type {
+  EditOperations,
+  FileQuery,
+  MediaDirectory,
+  MediaFile,
+  MediaPage,
+  OptimizeResult,
+} from './types'
 
 export interface MediaApi {
   directories(): Promise<MediaDirectory[]>
@@ -31,6 +38,17 @@ export interface MediaApi {
   edit(id: number, operations: EditOperations): Promise<MediaFile>
   copy(id: number): Promise<MediaFile>
   restoreOriginal(id: number): Promise<MediaFile>
+
+  /**
+   * The pictures of a selection — or else of a folder — that the current optimize settings have
+   * not been through, and what they weigh now.
+   */
+  optimizePending(query: { ids?: number[]; directoryId?: number | null }): Promise<{
+    ids: number[]
+    size: number
+  }>
+  /** Up to ten of them through the pipeline again, each over its own key. */
+  optimize(ids: number[]): Promise<OptimizeResult[]>
 
   /** The address of a preview at a size the server allows. */
   thumb(file: MediaFile, width: number, height?: number, fit?: 'cover' | 'contain'): string | null
@@ -157,6 +175,17 @@ export function createMediaApi(admin: AdminContext): MediaApi {
 
     restoreOriginal: (id) =>
       admin.http.post<{ data: MediaFile }>(`${base}/files/${id}/restore-original`).then(data),
+
+    optimizePending: ({ ids, directoryId }) =>
+      admin.http
+        .post<{ data: { ids: number[]; size: number } }>(`${base}/files/optimize/pending`, {
+          ids: ids?.length ? ids : undefined,
+          directory_id: ids?.length ? undefined : (directoryId ?? undefined),
+        })
+        .then(data),
+
+    optimize: (ids) =>
+      admin.http.post<{ data: OptimizeResult[] }>(`${base}/files/optimize`, { ids }).then(data),
 
     thumb(file, width, height, fit = 'cover') {
       if (!file.thumb) {

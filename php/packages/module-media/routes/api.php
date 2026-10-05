@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use WebxUi\Media\Http\Controllers\DirectoryController;
 use WebxUi\Media\Http\Controllers\FileController;
 use WebxUi\Media\Http\Controllers\ImageController;
+use WebxUi\Media\Http\Controllers\OptimizeController;
 use WebxUi\Media\Http\Controllers\SourceController;
 use WebxUi\Media\Http\Controllers\ThumbController;
 
@@ -36,6 +37,8 @@ Route::prefix((string) config('webx-admin.api_path').'/media')
             // that browsers, clients and proxies treat inconsistently — including the panel's
             // own client, which sends no body on DELETE at all.
             Route::post('files/delete', [FileController::class, 'destroy'])->name('files.destroy');
+            Route::post('files/optimize/pending', [OptimizeController::class, 'pending'])->name('files.optimize.pending');
+            Route::post('files/optimize', [OptimizeController::class, 'run'])->name('files.optimize');
             Route::delete('files/{file}', [FileController::class, 'destroyOne'])->name('files.destroy-one');
             Route::post('files/{file}/edit', [ImageController::class, 'edit'])->name('files.edit');
             Route::post('files/{file}/copy', [ImageController::class, 'copy'])->name('files.copy');

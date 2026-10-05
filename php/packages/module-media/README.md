@@ -84,10 +84,18 @@ Everything lives under the panel's API path, behind the panel session and a perm
 The editor takes **operations rather than a finished picture**: the canvas in the browser works
 on a preview, and what it could send back is smaller than the original.
 
+## Optimizing
+
+A JPEG, PNG or still WebP is turned the right way up, stripped of its metadata, scaled down to
+`max_side` and saved as a WebP on its way in; **Optimize** in the panel (and `optimize_images`)
+runs the pictures already there through the same steps, over the same key and in the same format.
+The steps are `webx-media.optimize.steps` — add a class implementing
+`WebxUi\Media\Images\Optimizing\OptimizeStep` to add your own.
+
 ## MCP
 
 `list_directories`, `list_files`, `search_files`, `get_file`, `create_directory`,
-`rename_file`, `move_files`, `upload_from_url`, `delete_files`. Every mutating tool takes
+`rename_file`, `move_files`, `upload_from_url`, `optimize_images`, `delete_files`. Every mutating tool takes
 `dry_run`.
 
 Deleting a folder is deliberately not among them: recursive deletion is the one operation here

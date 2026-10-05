@@ -57,6 +57,9 @@ export const auditMessages: Record<string, Messages> = {
     'group-other': 'Other',
     sources: 'Content searched',
     'sources-missing': 'Installed, but not searched:',
+    'sources-help':
+      'Besides crawling the site, the audit reads the text modules keep in the database — drafts, hidden records and fields the template never prints — and looks there for absolute addresses, such as links to a development stand. Green: modules that hand their text over. Orange: modules installed here that do not yet. Their published pages are still crawled, but their drafts and hidden fields are not searched, and a fix button cannot reach them.',
+    'sources-help-label': 'What this means',
     'sync-queue':
       'The queue runs jobs inside the request (sync), so the panel cannot start a run. Run php artisan webx:audit:run from the terminal or cron.',
     'already-running': 'An audit is already running.',

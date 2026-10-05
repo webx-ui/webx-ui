@@ -14,6 +14,7 @@ import AdminList from './AdminList.vue'
 import CallList from './CallList.vue'
 import ConnectionList from './ConnectionList.vue'
 import { createAdminsApi } from './admins'
+import { libraryAvatarField, libraryAvatarResolver } from './avatars'
 import type { AdminsView } from './module'
 import { useAuthMessages } from './i18n'
 import type { Admin } from './types'
@@ -52,6 +53,9 @@ const props = withDefaults(
 
 const context = useAdmin()
 const api = createAdminsApi(context)
+// Handed in, they win; otherwise the panel's library, when it has one.
+const avatarField = props.avatarField ?? libraryAvatarField(context) ?? undefined
+const resolveAvatar = props.resolveAvatar ?? libraryAvatarResolver(context) ?? undefined
 const router = useRouter()
 const route = useRoute()
 useAuthMessages()
@@ -119,7 +123,7 @@ const actions = computed<ScreenAction[]>(() =>
 async function open(admin: Admin | null): Promise<void> {
   editing.value = admin
 
-  const saved = await edit({ admin, avatarField: props.avatarField })
+  const saved = await edit({ admin, avatarField })
 
   if (saved) {
     list.value?.reload()
@@ -155,7 +159,7 @@ async function remove(admin: Admin): Promise<void> {
       v-else
       ref="list"
       :removable="canManage"
-      :resolve-avatar="props.resolveAvatar"
+      :resolve-avatar="resolveAvatar"
       @open="open"
       @remove="remove"
     />

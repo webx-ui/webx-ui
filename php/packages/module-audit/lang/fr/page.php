@@ -46,6 +46,8 @@ return [
     'group-other' => 'Autre',
     'sources' => 'Contenu analysé',
     'sources-missing' => 'Installé, mais non analysé :',
+    'sources-help' => 'En plus d’explorer le site, l’audit lit les textes que les modules gardent en base — brouillons, enregistrements masqués et champs que le gabarit n’affiche jamais — et y cherche des adresses absolues, comme des liens vers un environnement de développement. En vert : les modules qui livrent leurs textes. En orange : les modules installés ici qui ne le font pas encore. Leurs pages publiées sont tout de même explorées, mais leurs brouillons et champs masqués ne sont pas analysés, et un bouton de correction ne peut pas les atteindre.',
+    'sources-help-label' => 'Ce que cela signifie',
     'sync-queue' => 'La file exécute les tâches dans la requête (sync), le panneau ne peut donc pas lancer d’exécution. Lancez php artisan webx:audit:run depuis le terminal ou cron.',
     'already-running' => 'Un audit est déjà en cours.',
     'check' => 'Contrôle',

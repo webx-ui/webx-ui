@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace WebxUi\Media\Screens;
 
 use Closure;
+use Intervention\Image\Exceptions\RuntimeException as ImageException;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Localization\Locales;
+use WebxUi\Media\Images\MissingSource;
+use WebxUi\Media\Images\Thumbnails;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Storage\FileUrls;
 use WebxUi\Media\Support\MediaType;
@@ -28,6 +31,7 @@ final class MediaValues
         private readonly MediaFiles $files,
         private readonly FileUrls $urls,
         private readonly Locales $locales,
+        private readonly Thumbnails $thumbnails,
     ) {}
 
     /**
@@ -339,7 +343,7 @@ final class MediaValues
 
         return [
             'url' => $this->urls->url($file),
-            'thumb' => $this->urls->thumbUrl($file),
+            'thumb' => $this->thumb($file),
             'name' => $file->name,
             'extension' => $file->extension,
             'mime' => $file->mime,
@@ -347,6 +351,30 @@ final class MediaValues
             'width' => $file->width,
             'height' => $file->height,
         ];
+    }
+
+    /**
+     * The preview a template prints, as an address of the disk.
+     *
+     * Not the panel's preview route ({@see FileUrls::thumbUrl()}): that one is behind the panel's
+     * sign-in, so on the site every gallery printed it and every visitor got a 401 in place of the
+     * picture. The variant is cut here on first use and then served by the disk, the way a
+     * product photo's is; a picture that cannot be cut is shown whole rather than not at all.
+     */
+    private function thumb(MediaFile $file): ?string
+    {
+        if (! $file->isImage()) {
+            return null;
+        }
+
+        try {
+            // The size the panel's own preview has, so both read the same variant from the disk.
+            $path = $this->thumbnails->variant($file, 320, 320, 'cover');
+        } catch (MissingSource|ImageException) {
+            return $this->urls->url($file);
+        }
+
+        return $this->urls->variantUrl($file, $path);
     }
 
     /**

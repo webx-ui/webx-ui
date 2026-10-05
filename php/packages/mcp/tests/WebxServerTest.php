@@ -16,6 +16,7 @@ use WebxUi\Mcp\ProvidesMcpDefaults;
 use WebxUi\Mcp\Server\RegistryPrompt;
 use WebxUi\Mcp\Server\RegistryResource;
 use WebxUi\Mcp\Server\RegistryTool;
+use WebxUi\Mcp\Server\SiteInfoTool;
 use WebxUi\Mcp\Server\WebxServer;
 use WebxUi\Mcp\Tests\Fixtures\Administrator;
 use WebxUi\Mcp\Tests\Fixtures\MediaLibraryModule;
@@ -36,7 +37,7 @@ final class WebxServerTest extends TestCase
         $context = $this->server()->createContext();
 
         $this->assertSame(
-            ['media_library_find_unused', 'seo_get_seo', 'seo_bulk_update_seo'],
+            ['site_info', 'media_library_find_unused', 'seo_get_seo', 'seo_bulk_update_seo'],
             $context->tools()->map(static fn ($tool): string => $tool->name())->values()->all(),
         );
 
@@ -101,7 +102,7 @@ final class WebxServerTest extends TestCase
     {
         $this->register(new MediaLibraryModule);
 
-        $tool = $this->server()->createContext()->tools()->first();
+        $tool = $this->server()->createContext()->tools()->first(static fn ($tool): bool => $tool->name() === 'media_library_find_unused');
         $json = json_encode($tool->toArray(), JSON_THROW_ON_ERROR);
 
         $this->assertStringContainsString('"properties":{}', $json);
@@ -253,10 +254,10 @@ final class WebxServerTest extends TestCase
             ->assertOk()
             ->json('result.tools.*.name');
 
-        $this->assertSame(['seo_get_seo'], $names(new Administrator(['seo.view'])));
-        $this->assertSame(['seo_get_seo', 'seo_bulk_update_seo'], $names(new Administrator(['seo.manage'])));
-        $this->assertSame(['media_library_find_unused'], $names(new Administrator(['media-library.view'])));
-        $this->assertSame([], $names(new Administrator([])));
+        $this->assertSame(['site_info', 'seo_get_seo'], $names(new Administrator(['seo.view'])));
+        $this->assertSame(['site_info', 'seo_get_seo', 'seo_bulk_update_seo'], $names(new Administrator(['seo.manage'])));
+        $this->assertSame(['site_info', 'media_library_find_unused'], $names(new Administrator(['media-library.view'])));
+        $this->assertSame(['site_info'], $names(new Administrator([])), 'Where it is connected is never a secret.');
 
         // A tool the list left out is not there to call either: `laravel/mcp` looks the name
         // up in the same filtered list, so the handler is never reached by name.
@@ -278,11 +279,11 @@ final class WebxServerTest extends TestCase
         $this->actingAs(new GenericUser(['id' => 1]), 'web')
             ->postJson('/api/cms/mcp', $this->rpc('tools/list'))
             ->assertOk()
-            ->assertJsonCount(3, 'result.tools');
+            ->assertJsonCount(4, 'result.tools');
 
         // The local stdio server, where there is no request: the tests above build the
         // context the same way, so the full list is the one they already assert.
-        $this->assertCount(3, $this->server()->createContext()->tools());
+        $this->assertCount(4, $this->server()->createContext()->tools());
     }
 
     #[Test]
@@ -339,12 +340,44 @@ final class WebxServerTest extends TestCase
         $this->actingAs(new GenericUser(['id' => 1]), 'web')
             ->postJson('/api/cms/mcp', $this->rpc('tools/list'))
             ->assertOk()
-            ->assertJsonPath('result.tools.0.name', 'seo_get_seo');
+            ->assertJsonPath('result.tools.1.name', 'seo_get_seo');
 
         $this->actingAs(new GenericUser(['id' => 1]), 'web')
             ->postJson('/api/cms/mcp', $this->rpc('tools/call', ['name' => 'seo_get_seo', 'arguments' => ['id' => '3']]))
             ->assertOk()
             ->assertJsonPath('result.structuredContent.for', '3');
+    }
+
+    #[Test]
+    public function the_server_is_named_after_the_site_it_is_the_panel_of(): void
+    {
+        config(['app.url' => 'https://www.example.com:8443', 'app.env' => 'production']);
+
+        $context = $this->server()->createContext();
+
+        $this->assertSame('example.com', $context->implementation->name);
+        $this->assertStringContainsString('the admin panel of example.com, a site built on WebX UI, running as `production`.', $context->instructions);
+
+        config(['webx-mcp.name' => 'Staging shop']);
+
+        $this->assertSame('Staging shop', $this->server()->createContext()->implementation->name);
+    }
+
+    #[Test]
+    public function site_info_says_where_the_agent_is_and_as_whom(): void
+    {
+        config(['app.url' => 'https://example.com/', 'app.env' => 'staging']);
+        $this->actingAs(new GenericUser(['id' => 7, 'name' => 'Ada', 'email' => 'ada@example.com']));
+
+        WebxServer::tool(SiteInfoTool::class)
+            ->assertOk()
+            ->assertStructuredContent([
+                'site' => 'example.com',
+                'url' => 'https://example.com',
+                'environment' => 'staging',
+                'webx_version' => WebxServer::packageVersion(),
+                'acting_as' => ['id' => 7, 'name' => 'Ada', 'email' => 'ada@example.com'],
+            ]);
     }
 
     private function server(): WebxServer

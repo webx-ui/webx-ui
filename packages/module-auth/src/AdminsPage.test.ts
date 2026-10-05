@@ -24,6 +24,8 @@ function panel(permissions: string[], current: 'admins' | 'calls' = 'admins') {
     apiPath: '/api/cms',
     basePath: '/cms',
     http: { get },
+    types: {},
+    assetUrls: null,
     i18n,
     state: { manifest: null, user: null, status: 'ready', error: null },
     can: (permission: string) => permissions.includes(permission),

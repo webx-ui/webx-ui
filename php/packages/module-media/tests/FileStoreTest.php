@@ -34,8 +34,10 @@ final class FileStoreTest extends TestCase
         Storage::disk('public')->assertExists($file->path);
 
         $this->assertSame('Sofa Oslo', $file->name);
-        $this->assertSame('Sofa Oslo.jpg', $file->file_name);
-        $this->assertSame('jpg', $file->extension);
+        // A photograph goes in as a WebP, and a download of it is named for what it now is.
+        $this->assertSame('Sofa Oslo.webp', $file->file_name);
+        $this->assertSame('webp', $file->extension);
+        $this->assertSame('image/webp', $file->mime);
         $this->assertSame(800, $file->width);
         $this->assertSame(600, $file->height);
         $this->assertSame('public', $file->disk);

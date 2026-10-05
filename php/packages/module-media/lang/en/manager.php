@@ -41,4 +41,12 @@ return [
     'save' => 'Save',
     'pick' => 'Choose (:count)',
     'chosen' => 'Chosen :count of :max',
+    'optimize' => 'Optimize',
+    'optimize-title' => 'Optimize pictures',
+    'optimize-text' => 'Each picture is scaled down to the size limit, stripped of its metadata and saved again more compactly — under the same address and in the same format. The previous version is not kept.',
+    'optimize-waiting' => 'Pictures to optimize: :count, :size in all',
+    'optimize-saved' => 'Space saved: :size',
+    'optimize-none' => 'Every picture here is already optimized.',
+    'optimize-stop' => 'Stop',
+    'optimize-close' => 'Close',
 ];

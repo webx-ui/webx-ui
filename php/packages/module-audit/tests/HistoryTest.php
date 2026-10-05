@@ -6,6 +6,7 @@ namespace WebxUi\Audit\Tests;
 
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Audit\AuditSettings;
@@ -256,6 +257,27 @@ final class HistoryTest extends TestCase
         $this->assertSame(self::BASE.'/', $response->json('page.url'));
         $this->assertContains('hosts.dev_page', array_column((array) $response->json('issues'), 'check'));
         $this->assertNotEmpty($response->json('links'));
+    }
+
+    #[Test]
+    public function a_hosts_broken_links_come_first(): void
+    {
+        // The row counts them; the fifty under it have to show them, or a broken picture on the
+        // tenth page sits behind the menu links of the first nine and is never in view.
+        $this->fakeSite();
+        $runner = $this->app->make(Runner::class);
+        $run = $runner->complete($runner->start(AuditRun::FULL));
+
+        $last = DB::table('audit_links')->where('run_id', $run->id)->where('host', 'shop.example.com')->orderByDesc('id')->first();
+        $this->assertNotNull($last);
+        DB::table('audit_links')->where('id', $last->id)->update(['status' => 401]);
+
+        $this->actingAs($this->admin(['audit.view']), 'cms');
+
+        $this->getJson(route('webx.audit.hosts.index', ['host' => 'shop.example.com']))
+            ->assertOk()
+            ->assertJsonPath('data.pages.0.url', $last->to_url)
+            ->assertJsonPath('data.pages.0.status', 401);
     }
 
     private function html(string $title): string

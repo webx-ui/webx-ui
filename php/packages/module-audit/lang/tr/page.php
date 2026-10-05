@@ -46,6 +46,8 @@ return [
     'group-other' => 'Diğer',
     'sources' => 'Taranan içerik',
     'sources-missing' => 'Kurulu, ancak taranmadı:',
+    'sources-help' => 'Denetim siteyi taramanın yanı sıra modüllerin veritabanında tuttuğu metinleri de okur — taslaklar, gizli kayıtlar ve şablonun hiç göstermediği alanlar — ve bunlarda mutlak adresler arar, örneğin bir geliştirme ortamına bağlantılar. Yeşil: metinlerini teslim eden modüller. Turuncu: burada kurulu olup henüz bunu yapmayan modüller. Yayımlanmış sayfaları yine de taranır, ancak taslakları ve gizli alanları aranmaz ve bir düzeltme düğmesi onlara ulaşamaz.',
+    'sources-help-label' => 'Bu ne anlama geliyor',
     'sync-queue' => 'Kuyruk işleri istek içinde çalıştırıyor (sync), bu yüzden panel bir çalıştırma başlatamaz. php artisan webx:audit:run komutunu terminalden veya cron ile çalıştırın.',
     'already-running' => 'Bir denetim zaten çalışıyor.',
     'check' => 'Kontrol',

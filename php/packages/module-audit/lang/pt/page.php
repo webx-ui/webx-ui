@@ -46,6 +46,8 @@ return [
     'group-other' => 'Outros',
     'sources' => 'Conteúdo analisado',
     'sources-missing' => 'Instalado, mas não analisado:',
+    'sources-help' => 'Além de rastrear o site, a auditoria lê os textos que os módulos guardam no banco de dados — rascunhos, registros ocultos e campos que o template nunca exibe — e procura neles endereços absolutos, como links para um ambiente de desenvolvimento. Verde: módulos que entregam os seus textos. Laranja: módulos instalados aqui que ainda não o fazem. As suas páginas publicadas continuam a ser rastreadas, mas rascunhos e campos ocultos não são analisados, e um botão de correção não os alcança.',
+    'sources-help-label' => 'O que significa',
     'sync-queue' => 'A fila executa as tarefas dentro do pedido (sync), por isso o painel não consegue iniciar uma execução. Execute php artisan webx:audit:run a partir do terminal ou do cron.',
     'already-running' => 'Já está a decorrer uma auditoria.',
     'check' => 'Verificação',

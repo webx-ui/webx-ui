@@ -180,7 +180,9 @@ The links go into `vendor`, so the text matches the version installed. That bloc
 on every run; everything outside it is yours — write the site's own notes under
 `## This project`. A file you wrote before the first run keeps every word, with the block put
 on top. `CLAUDE.md` is written once as the single line `@AGENTS.md`, and a `CLAUDE.md` of your
-own is left alone. Commit both with the site. The block also points at
+own is left alone. Commit both with the site. Where `webx-ui/mcp` is installed, the same run
+puts the site's own panel into `.mcp.json` under the site's address, so that Claude Code opened
+in this folder connects to this site and no other (see [AI agents](./agents.md#several-sites-at-once)). The block also points at
 [Where the styles live](./styles.md), the page for changing the site's design without touching
 a package.
 

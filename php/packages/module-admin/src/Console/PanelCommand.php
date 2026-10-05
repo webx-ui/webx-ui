@@ -7,11 +7,13 @@ namespace WebxUi\Admin\Console;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use WebxUi\Admin\Agents\AgentDocs;
+use WebxUi\Admin\Agents\McpConfig;
 use WebxUi\Admin\Agents\RootFile;
 use WebxUi\Admin\Panel\EntryFile;
 use WebxUi\Admin\Panel\PackageRegistry;
 use WebxUi\Admin\Panel\PanelPackage;
 use WebxUi\Auth\AuthServiceProvider;
+use WebxUi\Mcp\Server\Site;
 
 /**
  * Wire the panel's front end into the application that hosts it.
@@ -61,6 +63,7 @@ final class PanelCommand extends Command
         $this->addViteInput($files, $entry);
         $this->syncLayouts($files, $packages);
         $this->syncAgentGuide($files, $agents);
+        $this->syncMcpConfig($files);
 
         $this->newLine();
         $this->components->twoColumnDetail('Then', 'npm install && npm run build — or npm run dev while working');
@@ -498,6 +501,38 @@ final class PanelCommand extends Command
             $this->components->twoColumnDetail('CLAUDE.md', 'written, it points at AGENTS.md');
         } elseif (! str_contains((string) $files->get($claude), '@AGENTS.md')) {
             $this->tell('CLAUDE.md', 'add a line `@AGENTS.md` so Claude Code reads the same guide');
+        }
+    }
+
+    /**
+     * Point Claude Code, opened in this checkout, at this site's panel and no other's.
+     *
+     * Only where `webx-ui/mcp` serves an HTTP endpoint: without one there is nothing to point at.
+     * The address is the one this checkout runs as — `app.url` — so a local checkout points at
+     * the local site, and the production panel goes beside it by hand, under a key of its own.
+     */
+    private function syncMcpConfig(Filesystem $files): void
+    {
+        $route = $this->laravel->make('router')->getRoutes()->getByName('webx.mcp');
+        $base = rtrim((string) config('app.url'), '/');
+        $host = parse_url($base, PHP_URL_HOST);
+
+        if ($route === null || ! is_string($host) || $host === '') {
+            return;
+        }
+
+        $name = class_exists(Site::class) ? Site::name() : $host;
+        $path = $this->laravel->basePath(McpConfig::FILE);
+        $current = $files->exists($path) ? (string) $files->get($path) : null;
+        $updated = (new McpConfig($current))->with($name, $base.'/'.ltrim($route->uri(), '/'));
+
+        if ($updated === null) {
+            $this->tell(McpConfig::FILE, "not JSON this can read; add the server \"{$name}\" by hand");
+        } elseif ($updated === $current) {
+            $this->components->twoColumnDetail(McpConfig::FILE, 'already points at this site');
+        } else {
+            $files->put($path, $updated);
+            $this->components->twoColumnDetail(McpConfig::FILE, $current === null ? "written, the server is \"{$name}\"" : "the server \"{$name}\" is in place");
         }
     }
 

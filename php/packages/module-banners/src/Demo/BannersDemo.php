@@ -51,7 +51,7 @@ final class BannersDemo
 
         $media = $this->media($ledger);
 
-        if (! isset($media['demo-wide.jpg'])) {
+        if (! isset($media['demo-wide'])) {
             $ledger->note('no banners were made: the library demo added no pictures to put on them.');
 
             return;
@@ -105,13 +105,13 @@ final class BannersDemo
      */
     private function banner(Place $place, array $input, array $media, ?int $page, ?MediaFile $video, DemoLedger $ledger): void
     {
-        $image = $media[(string) ($input['image'] ?? '')] ?? null;
+        $image = $media[pathinfo((string) ($input['image'] ?? ''), PATHINFO_FILENAME)] ?? null;
 
         if (! $image instanceof MediaFile) {
             return;
         }
 
-        $mobile = $media[(string) ($input['image_mobile'] ?? '')] ?? null;
+        $mobile = $media[pathinfo((string) ($input['image_mobile'] ?? ''), PATHINFO_FILENAME)] ?? null;
         $buttons = [];
 
         foreach ((array) ($input['buttons'] ?? []) as $row) {
@@ -162,7 +162,9 @@ final class BannersDemo
     }
 
     /**
-     * The pictures the library demo made a moment ago, by file name.
+     * The pictures the library demo made a moment ago, by name without the extension: the
+     * library turns a JPEG into a WebP on the way in, so `demo-wide.jpg` is stored as
+     * `demo-wide.webp`.
      *
      * @return array<string, MediaFile>
      */
@@ -172,9 +174,7 @@ final class BannersDemo
         $files = [];
 
         foreach ($ids === [] ? [] : MediaFile::query()->whereKey($ids)->get() as $file) {
-            foreach ([$file->file_name, $file->name, $file->name.'.'.$file->extension] as $name) {
-                $files[$name] ??= $file;
-            }
+            $files[$file->name] ??= $file;
         }
 
         return $files;

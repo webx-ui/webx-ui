@@ -17,6 +17,7 @@ import FileGrid from './FileGrid.vue'
 import MediaToolbar from './MediaToolbar.vue'
 import MoveDialog from './MoveDialog.vue'
 import NameDialog from './NameDialog.vue'
+import OptimizeDialog from './OptimizeDialog.vue'
 import { createMediaApi } from './api'
 import { readable } from './format'
 import { useMediaMessages } from './i18n'
@@ -127,6 +128,19 @@ const foldersOpen = ref(false)
 const picker = useTemplateRef<HTMLInputElement>('picker')
 
 const rows = computed(() => page.value?.data ?? [])
+
+/*
+ * The size beside "selected" is the selection's, not the folder's: read next to a count of
+ * five, the folder's total looks like what those five weigh. Remembered per id from every page
+ * seen, because a selection can outlive the page it was made on.
+ */
+const sizes = new Map<number, number>()
+watch(rows, (files) => files.forEach((file) => sizes.set(file.id, file.size)), { immediate: true })
+const shownSize = computed(() =>
+  selected.value.length > 0
+    ? selected.value.reduce((sum, id) => sum + (sizes.get(id) ?? 0), 0)
+    : (page.value?.stats.size ?? 0),
+)
 const canManage = computed(() => admin.can('media.manage'))
 const canUpload = computed(() => admin.can('media.upload') || canManage.value)
 const folder = computed(() => find(current.value))
@@ -458,8 +472,34 @@ function countsOf(error: unknown): { files: number; directories: number } | null
   return body?.code === 'directory_not_empty' ? (body.counts ?? null) : null
 }
 
-/* The page's own upload button opens the same file dialog the toolbar's icon does. */
-defineExpose({ upload: choose })
+const askToOptimize = createModal<true, { ids: number[]; size: number }>(OptimizeDialog)
+
+/**
+ * «Optimize» for what is selected, or else for the folder that is open — the same thing every
+ * other action of the toolbar takes, so nobody has to wonder which pictures it meant.
+ */
+async function optimize(): Promise<void> {
+  try {
+    const pending = await api.optimizePending({
+      ids: [...selected.value],
+      directoryId: current.value,
+    })
+
+    if (pending.ids.length === 0) {
+      toast.info(t('manager.optimize-none'))
+
+      return
+    }
+
+    await askToOptimize(pending)
+    await loadFiles()
+  } catch (error) {
+    toast.danger(message(error))
+  }
+}
+
+/* The page's own buttons open the same things the toolbar's icons do. */
+defineExpose({ upload: choose, optimize })
 
 function debounce(run: () => void, wait: number): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined
@@ -545,7 +585,7 @@ function debounce(run: () => void, wait: number): () => void {
         <span v-if="selected.length > 0">
           {{ t('manager.status-selected', { count: selected.length }) }}
         </span>
-        <span>{{ t('manager.status-size', { size: readable(page?.stats.size ?? 0) }) }}</span>
+        <span>{{ t('manager.status-size', { size: readable(shownSize) }) }}</span>
       </footer>
 
       <wx-pagination
