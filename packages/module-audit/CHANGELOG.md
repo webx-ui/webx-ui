@@ -1,5 +1,17 @@
 # @webx-ui/module-audit
 
+## 0.2.1
+
+### Patch Changes
+
+- 17c2dfd: Under a host on «Outgoing», the broken links come first and carry their badge, «No answer»
+  included. The row counted them, but the fifty links shown were the first fifty found, so a broken
+  picture deep in the site never came into view.
+- 17c2dfd: «Content searched» on the audit overview has a «What this means» popover: besides the crawl, the
+  audit reads the text modules keep in the database; green modules hand it over, orange ones are
+  installed but not searched yet — their pages are still crawled, their drafts and hidden fields are
+  not, and a fix cannot reach them.
+
 ## 0.2.0
 
 ### Minor Changes

@@ -31,17 +31,17 @@
         "illuminate/support": "^13.0",
         "illuminate/validation": "^13.0",
         "intervention/image": "^3.11",
-        "webx-ui/module-admin": "^0.61.1",
-        "webx-ui/localization": "^0.61.1",
-        "webx-ui/mcp": "^0.61.1",
-        "webx-ui/module-auth": "^0.61.1",
-        "webx-ui/nested-set": "^0.61.1"
+        "webx-ui/module-admin": "^0.62.0",
+        "webx-ui/localization": "^0.62.0",
+        "webx-ui/mcp": "^0.62.0",
+        "webx-ui/module-auth": "^0.62.0",
+        "webx-ui/nested-set": "^0.62.0"
     },
     "require-dev": {
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0",
-        "webx-ui/module-audit": "^0.61.1",
-        "webx-ui/module-blocks": "^0.61.1"
+        "webx-ui/module-audit": "^0.62.0",
+        "webx-ui/module-blocks": "^0.62.0"
     },
     "suggest": {
         "webx-ui/module-audit": "The site audit reports library files missing on the disk and images too heavy for a page."
@@ -65,7 +65,7 @@
         "webx": {
             "module": "media",
             "npm": {
-                "@webx-ui/module-media": "^0.8.24"
+                "@webx-ui/module-media": "^0.9.0"
             },
             "panel": {
                 "import": "import { media } from '@webx-ui/module-media'",

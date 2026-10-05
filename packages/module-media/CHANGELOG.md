@@ -1,5 +1,21 @@
 # @webx-ui/module-media
 
+## 0.9.0
+
+### Minor Changes
+
+- 17c2dfd: Pictures are optimized on the way into the library: a JPEG, PNG or still WebP is turned the right
+  way up, stripped of its metadata, scaled down to 2560px on its long side and saved as a WebP at
+  quality 82, unless that comes out no smaller. The steps are `webx-media.optimize` and a project
+  adds its own. **Optimize**, beside Upload, runs the pictures already there through the same steps
+  over the same key and in the same format, ten per request with a count and a stop; MCP
+  `optimize_images` does the same for an agent. Needs the new migration (`media_files.optimized`).
+
+### Patch Changes
+
+- 17c2dfd: The library's status line gives the size of the selection while something is selected, rather than
+  the folder's total beside a count of five.
+
 ## 0.8.24
 
 ### Patch Changes
