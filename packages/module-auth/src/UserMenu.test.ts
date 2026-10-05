@@ -28,6 +28,7 @@ function panel(user: AdminUser): AdminContext {
     groups: computed(() => ({ top: [], groups: [] })),
     types: {},
     pickImage: null,
+    assetUrls: null,
     loadScreen: () => Promise.resolve([]),
     screenPatch: () => [],
     reload: () => Promise.resolve(),

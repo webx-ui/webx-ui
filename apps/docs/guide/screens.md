@@ -327,9 +327,20 @@ whatever address it had — a file deleted out from under a page shows one broke
 than refusing to render the page. A picture with no key is somebody else's and is left alone.
 
 The `src` that was stored is kept beside the key as a **cache**, and it is the key that is the
-record. It is kept rather than dropped because the panel reads values raw — it edits what is
-stored, not what a site would print — and a document with no addresses in it would open in the
-editor with a hole where every picture was.
+record. The panel reads values raw — it edits what is stored, not what a site would print — so
+the editor field refreshes the cache itself before the document reaches the editor: the module
+that has the library offers `assetUrls` beside `pickImage`, and a paragraph written on another
+host opens with its pictures pointing at this one. Opening it does not make the form dirty;
+saving it writes the fresh addresses back.
+
+```ts
+assetUrls: async (paths, admin) => {
+  const api = createMediaApi(admin)
+  const files = await Promise.all(paths.map((path) => api.fileByPath(path)))
+
+  return Object.fromEntries(paths.map((path, index) => [path, files[index]?.url ?? null]))
+},
+```
 
 The seam is a contract in `module-admin` that `module-media` binds
 (`WebxUiAdminContractsAssetUrls`), for the same reason as `pickImage`: the panel cannot
