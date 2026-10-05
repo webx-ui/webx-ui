@@ -1,5 +1,13 @@
 # @webx-ui/php
 
+## 0.62.1
+
+### Patch Changes
+
+- c29d2cc: The agent's consent screen looks like the panel: the panel's own tokens, inlined from a copy
+  module-admin now carries (`WebxUi\Admin\Support\Tokens`), its card, warning alert, checkbox and
+  buttons, and the theme the panel last used in this browser.
+
 ## 0.62.0
 
 ### Minor Changes
