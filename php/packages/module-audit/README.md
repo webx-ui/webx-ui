@@ -14,7 +14,9 @@ What it checks today:
 - **Links to a development stand in the content** — every absolute address in the database,
   drafts and hidden records included, classified as the site's own, its other mirror, a stand or
   somebody else's. Content modules hand their fields over with `AuditContentSource`
-  (`webx-ui/module-pages` and `webx-ui/module-blocks` do).
+  (`webx-ui/module-pages` and `webx-ui/module-blocks` do). The address beside a library key
+  (`src` or `href` of a tag with `data-wx-path`) is left out: the site prints the picture from the
+  key, so a site moved off its stand is not told about links that are on none of its pages.
 
 - **Every page** — a full run crawls the site from the home page, the sitemap and the address
   registry (`webx-ui/routing`), two requests at a time and a thousand pages at most, and keeps a

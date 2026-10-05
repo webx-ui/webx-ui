@@ -78,6 +78,32 @@ final class DevContentTest extends TestCase
     }
 
     #[Test]
+    public function a_library_picture_written_on_the_stand_is_not_a_stand_link(): void
+    {
+        // The site prints these pictures from the key, so the stand's host is in the column and
+        // on no page; the link beside them has no key and is printed as written.
+        $this->source->records = [
+            '4' => [
+                'label' => 'Moved',
+                'published' => true,
+                'fields' => [
+                    'body' => '<p><img src="https://dev.shop.example.com/storage/a.webp?v=1" data-wx-path="media/a.webp" alt="">'
+                        .'<a data-wx-path="docs/price.pdf" href="https://dev.shop.example.com/storage/price.pdf">Prices</a>'
+                        .'<a href="https://dev.shop.example.com/sale">sale</a></p>',
+                    'blocks' => '[{"type":"text","values":{"body":"<img src=\"https:\/\/dev.shop.example.com\/storage\/b.webp\" data-wx-path=\"media\/b.webp\">"}}]',
+                ],
+            ],
+        ];
+
+        $this->artisan('webx:audit:run', ['--quick' => true])->assertSuccessful();
+
+        $this->assertSame(
+            ['https://dev.shop.example.com/sale'],
+            ContentUrl::query()->where('host', 'dev.shop.example.com')->pluck('url')->all(),
+        );
+    }
+
+    #[Test]
     public function the_database_stage_is_done_a_piece_at_a_time(): void
     {
         $runner = $this->app->make(Runner::class);

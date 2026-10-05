@@ -68,7 +68,8 @@ final class ContentScanner
         $now = Carbon::now();
 
         foreach ($fields as $field) {
-            foreach ($this->finder->find($field->value) as $url) {
+            // What the site prints, not what the panel keeps beside a library key ({@see LibraryAddresses}).
+            foreach ($this->finder->find(LibraryAddresses::strip($field->value)) as $url) {
                 $host = HostClassifier::hostOf($url);
 
                 if ($host === null) {
