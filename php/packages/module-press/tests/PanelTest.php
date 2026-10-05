@@ -61,7 +61,10 @@ final class PanelTest extends TestCase
         );
         $this->assertSame(['en', 'ru'], $rows[0]['locales']);
         $this->assertSame(2, $rows[0]['articles_count']);
-        $this->assertStringContainsString('/thumb', $rows[0]['logo']['thumb']);
+        // An address of the disk, not the panel's preview route: the same value reaches the site,
+        // where that route answers every visitor with a 401.
+        $this->assertStringNotContainsString('/thumb', $rows[0]['logo']['thumb']);
+        $this->assertStringContainsString('tatler', $rows[0]['logo']['thumb']);
         $this->assertTrue($rows[0]['featured']);
 
         // Published, with an article, and seen in no language: what the list warns about.
