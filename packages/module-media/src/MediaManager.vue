@@ -128,6 +128,19 @@ const foldersOpen = ref(false)
 const picker = useTemplateRef<HTMLInputElement>('picker')
 
 const rows = computed(() => page.value?.data ?? [])
+
+/*
+ * The size beside "selected" is the selection's, not the folder's: read next to a count of
+ * five, the folder's total looks like what those five weigh. Remembered per id from every page
+ * seen, because a selection can outlive the page it was made on.
+ */
+const sizes = new Map<number, number>()
+watch(rows, (files) => files.forEach((file) => sizes.set(file.id, file.size)), { immediate: true })
+const shownSize = computed(() =>
+  selected.value.length > 0
+    ? selected.value.reduce((sum, id) => sum + (sizes.get(id) ?? 0), 0)
+    : (page.value?.stats.size ?? 0),
+)
 const canManage = computed(() => admin.can('media.manage'))
 const canUpload = computed(() => admin.can('media.upload') || canManage.value)
 const folder = computed(() => find(current.value))
@@ -572,7 +585,7 @@ function debounce(run: () => void, wait: number): () => void {
         <span v-if="selected.length > 0">
           {{ t('manager.status-selected', { count: selected.length }) }}
         </span>
-        <span>{{ t('manager.status-size', { size: readable(page?.stats.size ?? 0) }) }}</span>
+        <span>{{ t('manager.status-size', { size: readable(shownSize) }) }}</span>
       </footer>
 
       <wx-pagination
