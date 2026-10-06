@@ -27,6 +27,8 @@ return [
     'only-dry' => 'Yalnızca denemeler',
     'arguments' => 'Argümanlar',
     'no-arguments' => 'Argümansız çağrıldı',
+    'request' => 'Ajanın isteği',
+    'request-hint' => 'Ajanın araca gönderdikleri. Yanıt saklanmaz.',
     'error' => 'Ret nedeni',
     'empty' => 'Eşleşen çağrı yok',
 ];

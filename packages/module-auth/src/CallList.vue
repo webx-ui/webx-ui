@@ -257,6 +257,11 @@ defineExpose({ reload: () => load(last) })
             <strong>{{ t('calls.error') }}:</strong> {{ row.error }}
           </wx-text>
 
+          <!-- Said what it is: a block of JSON reads as the answer as easily as the request. -->
+          <div class="wx-call-list__label">
+            <wx-text size="sm" weight="semibold">{{ t('calls.request') }}</wx-text>
+            <wx-text size="xs" tone="muted">{{ t('calls.request-hint') }}</wx-text>
+          </div>
           <pre v-if="row.arguments" class="wx-call-list__arguments">{{ row.arguments }}</pre>
           <wx-text v-else size="sm" tone="muted">{{ t('calls.no-arguments') }}</wx-text>
         </div>
@@ -289,6 +294,7 @@ defineExpose({ reload: () => load(last) })
             class="wx-call-list__card-details"
           >
             <wx-text v-if="row.error" tone="danger" size="sm">{{ row.error }}</wx-text>
+            <wx-text v-if="row.arguments" size="xs" tone="muted">{{ t('calls.request') }}</wx-text>
             <pre v-if="row.arguments" class="wx-call-list__arguments">{{ row.arguments }}</pre>
           </wx-space>
         </wx-entity-card>
@@ -323,13 +329,21 @@ defineExpose({ reload: () => load(last) })
   background: var(--wx-bg-subtle);
 }
 
+.wx-call-list__label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wx-space-4) var(--wx-space-8);
+}
+
 .wx-call-list__arguments {
   margin: 0;
   padding: var(--wx-space-8) var(--wx-space-12);
   max-height: 320px;
   overflow: auto;
+  border: 1px solid var(--wx-border-muted);
   border-radius: var(--wx-radius-sm);
-  background: var(--wx-bg-subtle);
+  background: var(--wx-bg-surface);
   color: var(--wx-text-default);
   font-family: var(--wx-font-family-mono);
   font-size: var(--wx-font-size-xs);

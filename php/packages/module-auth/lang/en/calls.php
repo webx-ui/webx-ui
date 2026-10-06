@@ -28,6 +28,8 @@ return [
     'only-dry' => 'Dry runs only',
     'arguments' => 'Arguments',
     'no-arguments' => 'Called with no arguments',
+    'request' => 'The agent\'s request',
+    'request-hint' => 'What the agent passed to the tool. The answer is not kept.',
     'error' => 'Refused with',
     'empty' => 'No calls match',
 ];

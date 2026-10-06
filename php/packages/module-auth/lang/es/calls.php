@@ -27,6 +27,8 @@ return [
     'only-dry' => 'Solo simulaciones',
     'arguments' => 'Argumentos',
     'no-arguments' => 'Llamada sin argumentos',
+    'request' => 'Solicitud del agente',
+    'request-hint' => 'Lo que el agente pasó a la herramienta. La respuesta no se guarda.',
     'error' => 'Rechazada con',
     'empty' => 'Ninguna llamada coincide',
 ];
