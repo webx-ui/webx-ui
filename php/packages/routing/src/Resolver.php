@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Localization\Locales;
+use WebxUi\Routing\Contracts\Spelling;
 use WebxUi\Routing\Models\Route;
 
 /**
@@ -45,6 +46,7 @@ class Resolver
         private readonly Config $config,
         private readonly Container $container,
         private readonly Misses $misses,
+        private readonly Spelling $spelling,
     ) {}
 
     public function resolve(Request $request): Response
@@ -57,8 +59,10 @@ class Resolver
 
         // One spelling per address, decided before anything is looked up (§8.2). A trailing
         // slash, a capital letter or a doubled slash is the same address said differently, and
-        // saying it one way keeps it out of the analytics twice and out of the index twice.
-        $spelling = $this->spelling($prefix, $path);
+        // saying it one way keeps it out of the analytics twice and out of the index twice. How
+        // it is said is the contract's — the registry's own, or the SEO settings' when the site
+        // has them — so that their redirect and this one never disagree.
+        $spelling = $this->spelling->of($incoming);
 
         if ($spelling !== $incoming) {
             return $this->redirect($request, $spelling);
@@ -145,7 +149,9 @@ class Resolver
         $prefix = $this->prefixFor($route->locale);
         $path = $tail === '' ? $route->path : $route->path.'/'.$tail;
 
-        return URL::to($this->encode($this->spelling($prefix, UrlNormaliser::key($path))));
+        $key = UrlNormaliser::key($path);
+
+        return URL::to($this->encode('/'.trim($prefix === '' ? $key : $prefix.'/'.$key, '/')));
     }
 
     /**
@@ -278,13 +284,6 @@ class Resolver
     }
 
     /** The one spelling of an address, with a leading slash because that is what a request has. */
-    private function spelling(string $prefix, string $path): string
-    {
-        $spelling = trim($prefix === '' ? $path : $prefix.'/'.$path, '/');
-
-        return '/'.$spelling;
-    }
-
     private function encode(string $path): string
     {
         return implode('/', array_map(rawurlencode(...), explode('/', $path)));

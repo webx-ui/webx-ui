@@ -75,6 +75,9 @@ final class AuditTest extends TestCase
             'fingerprint' => sha1('x'),
         ]);
 
+        // A site that chose to keep the slash as it is: the finding is what changes its mind.
+        $this->app->make(Settings::class)->save([Normalisation::TRAILING => null]);
+
         $runner = $this->app->make(FixRunner::class);
 
         $this->assertSame('seo.normalise-trailing', $runner->offers($issue)[0]['id'] ?? null);

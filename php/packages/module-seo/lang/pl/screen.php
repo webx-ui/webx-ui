@@ -34,7 +34,6 @@ return [
     'normalise-trailing' => 'Ukośnik na końcu',
     'normalise-trailing-help' => 'Adres w drugiej formie przekierowuje. Pliki są pomijane.',
     'normalise-trailing-strip' => 'Bez: /about',
-    'normalise-trailing-add' => 'Z: /about/',
     'normalise-case' => 'Małe litery',
     'normalise-case-help' => '/About przekierowuje na /about. Pliki zachowują swoje nazwy.',
     'links-heading' => 'Nagłówek linkowania wewnętrznego',

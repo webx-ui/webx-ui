@@ -34,7 +34,6 @@ return [
     'normalise-trailing' => 'Sondaki eğik çizgi',
     'normalise-trailing-help' => 'Diğer biçimdeki adres yönlendirilir. Dosyalara dokunulmaz.',
     'normalise-trailing-strip' => 'Olmadan: /about',
-    'normalise-trailing-add' => 'İle: /about/',
     'normalise-case' => 'Küçük harf',
     'normalise-case-help' => '/About, /about adresine yönlendirilir. Dosyalar adlarını korur.',
     'links-heading' => 'İç bağlantı başlığı',

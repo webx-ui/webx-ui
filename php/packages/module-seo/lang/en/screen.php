@@ -34,7 +34,6 @@ return [
     'normalise-trailing' => 'Slash at the end',
     'normalise-trailing-help' => 'The address the other way redirects. Files are left alone.',
     'normalise-trailing-strip' => 'Without: /about',
-    'normalise-trailing-add' => 'With: /about/',
     'normalise-case' => 'Lower case',
     'normalise-case-help' => '/About redirects to /about. Files keep their names.',
     'links-heading' => 'Interlinking heading',

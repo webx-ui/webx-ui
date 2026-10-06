@@ -15,6 +15,7 @@ use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Fixes\AuditFixes;
+use WebxUi\Routing\Contracts\Spelling;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\Models\Route as RouteRow;
 use WebxUi\Seo\Audit\CollapseChainFix;
@@ -74,6 +75,8 @@ class SeoServiceProvider extends ServiceProvider
         $this->app->singleton(SitemapSources::class);
         $this->app->singleton(UrlTargets::class);
         $this->app->singleton(LinkBlocks::class);
+        // How the resolver spells an address: by the settings of the SEO tab, never against them.
+        $this->app->singleton(Spelling::class, SeoSpelling::class);
     }
 
     public function boot(): void

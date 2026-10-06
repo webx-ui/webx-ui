@@ -45,6 +45,7 @@ behind `TreePath` `webx-ui/nested-set` — read their guides for those.
 | Other middleware on public pages                | `'middleware'` (default `['web', 'webx.locale']`)                                                                                                     |
 | Import thousands of rows                        | `app(RouteSync::class)->bulk($query->lazy())` — one upsert per chunk                                                                                  |
 | A type's addresses to redirect, not show a page | bind your `RouteHandler` over the module's (`$this->app->bind(EventHandler::class, Yours::class)`) and implement `Contracts\NotAPage` on it           |
+| Another spelling policy (slash, case)           | bind `Contracts\Spelling`; `webx-ui/module-seo` binds it to its settings, so its 301 and the resolver's agree                                         |
 | A redirect an editor writes by hand             | a rule in `webx-ui/module-seo`, not an alias                                                                                                          |
 | Publish the config                              | `php artisan vendor:publish --tag=webx-routing-config`                                                                                                |
 

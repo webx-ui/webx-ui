@@ -120,9 +120,8 @@ final readonly class NormaliseFix implements AuditFix
             return null;
         }
 
-        $path = (string) parse_url($inner, PHP_URL_PATH);
-
-        return $path !== '/' && str_ends_with($path, '/') ? Normalisation::ADD : Normalisation::STRIP;
+        // One policy: the registry's addresses carry no slash at the end, so neither will this.
+        return Normalisation::STRIP;
     }
 
     private function say(mixed $value): string
@@ -131,7 +130,7 @@ final readonly class NormaliseFix implements AuditFix
             $value === true => (string) __('webx-seo::audit.on'),
             $value === null, $value === false, $value === '' => (string) __('webx-seo::screen.normalise-off'),
             $value === Normalisation::WWW, $value === Normalisation::BARE => (string) __('webx-seo::screen.normalise-host-'.$value),
-            $value === Normalisation::STRIP, $value === Normalisation::ADD => (string) __('webx-seo::screen.normalise-trailing-'.$value),
+            $value === Normalisation::STRIP => (string) __('webx-seo::screen.normalise-trailing-'.$value),
             default => is_scalar($value) ? (string) $value : '',
         };
     }

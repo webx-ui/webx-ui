@@ -8,7 +8,9 @@ use Closure;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Router;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 use WebxUi\Seo\Normalisation;
 
 /**
@@ -32,11 +34,12 @@ final class NormaliseAddress
     public function __construct(
         private readonly Normalisation $settings,
         private readonly Config $config,
+        private readonly Router $router,
     ) {}
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->isMethodCacheable() || ! $this->settings->any()) {
+        if (! $request->isMethodCacheable()) {
             return $next($request);
         }
 
@@ -65,9 +68,9 @@ final class NormaliseAddress
         $prefix = preg_match(self::INDEX, $base) === 1 ? (string) preg_replace(self::INDEX, '', $base) : $base;
         $path = $path === '' ? '/' : $path;
 
-        if ($this->isPanel($path)) {
-            return null;
-        }
+        // The panel keeps its own path, but not another host or plain http: a panel answering on
+        // the www mirror is a second session cookie and a second place to be signed in.
+        $panel = $this->isPanel($path);
 
         $scheme = $request->getScheme();
         $host = $request->getHost();
@@ -79,8 +82,12 @@ final class NormaliseAddress
         }
 
         $host = $this->mirror($host);
-        // The root of a site in a subdirectory is `/sub`, and that is left as it is written.
-        $path = $prefix !== '' && $uri === $prefix ? '' : $this->path($path);
+        if ($prefix !== '' && $uri === $prefix) {
+            // The root of a site in a subdirectory is `/sub`, and that is left as it is written.
+            $path = '';
+        } elseif (! $panel) {
+            $path = $this->path($path, $request);
+        }
 
         if ([$scheme, $host, $prefix.$path] === [$request->getScheme(), $request->getHost(), $uri]) {
             return null;
@@ -105,7 +112,13 @@ final class NormaliseAddress
         return $policy === Normalisation::WWW ? 'www.'.$bare : $bare;
     }
 
-    private function path(string $path): string
+    /**
+     * The index file by its setting; the rest — slashes, case, the slash at the end — is the
+     * registry's spelling, and only for an address the registry answers. A route of the
+     * application keeps the path it was declared with: `/oauth/authorize` is not this tab's to
+     * spell, and the resolver would otherwise send its own 301 right after this one.
+     */
+    private function path(string $path, Request $request): string
     {
         if ($this->settings->slashes()) {
             $path = (string) preg_replace('~/{2,}~', '/', $path);
@@ -115,25 +128,19 @@ final class NormaliseAddress
             $path = (string) preg_replace(self::INDEX, '/', $path);
         }
 
-        // A file keeps its case and its name: `/files/Report.PDF` is somebody's upload.
-        $file = preg_match('~/[^/]+\.[a-z0-9]{1,5}$~i', $path) === 1;
+        $spelled = $this->settings->path($path);
 
-        if ($this->settings->lowercase() && ! $file) {
-            // Only the letters a–z: an encoded `%D0%9F` stays the byte it names.
-            $path = (string) preg_replace_callback('~(%[0-9A-Fa-f]{2})|[A-Z]+~', static fn (array $match): string => ($match[1] ?? '') !== '' ? $match[1] : strtolower($match[0]), $path);
+        return $spelled !== $path && $this->registryAnswers($request) ? $spelled : $path;
+    }
+
+    /** Whether the request ends at the registry's fallback rather than at a route of its own. */
+    private function registryAnswers(Request $request): bool
+    {
+        try {
+            return $this->router->getRoutes()->match($request)->isFallback;
+        } catch (Throwable) {
+            return false;
         }
-
-        $trailing = $this->settings->trailing();
-
-        if ($path !== '/' && ! $file) {
-            if ($trailing === Normalisation::STRIP) {
-                $path = rtrim($path, '/');
-            } elseif ($trailing === Normalisation::ADD && ! str_ends_with($path, '/')) {
-                $path .= '/';
-            }
-        }
-
-        return $path === '' ? '/' : $path;
     }
 
     /** The panel and its API keep their own addresses, as with the redirects. */
