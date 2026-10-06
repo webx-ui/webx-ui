@@ -192,8 +192,11 @@ export interface SeoChainStep {
 /** The answer to "why does this page say that". */
 export interface SeoTestResult {
   url: string
-  /** Said first because it happens first: a redirected address never reaches the rules. */
-  redirect: SeoRedirect | null
+  /**
+   * Said first because it happens first: a redirected address never reaches the rules.
+   * `leads_to` is where it sends this very address, with what a mask caught put back.
+   */
+  redirect: (SeoRedirect & { leads_to?: string }) | null
   /** What the address registry has here — a live page, or the trail of one that moved. */
   route: SeoRoute | null
   matched: SeoUrlRule | null

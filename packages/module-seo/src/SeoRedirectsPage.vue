@@ -57,16 +57,26 @@ const test = createModal<void, Record<string, never>>(TestUrlDialog)
 const columns = computed<TableColumn<SeoRedirect>[]>(() => [
   { key: 'pattern', label: t('page.address'), sortable: true },
   { key: 'target', label: t('page.target') },
-  { key: 'status', label: t('page.status'), align: 'center', hideBelow: 560 },
-  { key: 'hits', label: t('page.hits'), align: 'center', sortable: true, hideBelow: 760 },
+  // Widths on everything but the two addresses: the table is fixed, so the addresses share what
+  // is left and an address with nowhere to break is cut rather than pushing the row menu out.
+  { key: 'status', label: t('page.status'), align: 'center', width: 80, hideBelow: 560 },
+  {
+    key: 'hits',
+    label: t('page.hits'),
+    align: 'center',
+    width: 160,
+    sortable: true,
+    hideBelow: 760,
+  },
   {
     key: 'last_hit_at',
     label: t('page.last-hit'),
+    width: 170,
     sortable: true,
     hideBelow: 900,
     hideOnCards: true,
   },
-  { key: 'is_active', label: t('page.state'), align: 'center', hideBelow: 660 },
+  { key: 'is_active', label: t('page.state'), align: 'center', width: 130, hideBelow: 660 },
   {
     key: 'actions',
     label: '',
@@ -159,6 +169,7 @@ const actions = computed<ScreenAction[]>(() =>
       :data="page"
       :columns="columns"
       row-key="id"
+      layout="fixed"
       searchable
       :clickable="canManage"
       :hover="canManage"
@@ -170,14 +181,14 @@ const actions = computed<ScreenAction[]>(() =>
       @state-change="load"
     >
       <template #cell-pattern="{ row }">
-        <wx-text mono size="sm">{{ row.pattern }}</wx-text>
+        <wx-text mono size="sm" truncate :title="row.pattern">{{ row.pattern }}</wx-text>
         <!-- Said out loud rather than refused on save: the middleware steps over it, and a
                row that quietly does nothing is a row nobody ever fixes. -->
         <wx-badge v-if="row.is_loop" type="warning">{{ t('page.loop') }}</wx-badge>
       </template>
 
       <template #cell-target="{ row }">
-        <wx-text mono size="sm">{{ row.target }}</wx-text>
+        <wx-text mono size="sm" truncate :title="row.target">{{ row.target }}</wx-text>
       </template>
 
       <template #cell-status="{ row }">

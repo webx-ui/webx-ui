@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace WebxUi\Seo\Tests;
 
+use Illuminate\Testing\Fluent\AssertableJson;
+use Laravel\Mcp\Server\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Mcp\Registry\ToolRegistry;
+use WebxUi\Mcp\Server\RegistryTool;
+use WebxUi\Mcp\Server\WebxServer;
 use WebxUi\Seo\Models\SeoRedirect;
 use WebxUi\Seo\Models\SeoUrl;
 use WebxUi\Seo\Panel\SeoModule;
@@ -100,7 +105,53 @@ final class SeoEndpointsTest extends TestCase
         $this->actingAs($this->editor(), 'cms')
             ->postJson($this->api('test-url'), ['url' => '/old'])
             ->assertOk()
-            ->assertJsonPath('data.redirect.target', '/new');
+            ->assertJsonPath('data.redirect.target', '/new')
+            ->assertJsonPath('data.redirect.leads_to', '/new');
+    }
+
+    #[Test]
+    public function the_agent_hears_about_an_exact_redirect_as_the_panel_does(): void
+    {
+        SeoRedirect::query()->create(['match_type' => 'exact', 'pattern' => '/about-us', 'target' => '/about', 'status' => 302]);
+
+        $this->askAgent('/about-us')->assertStructuredContent(static function (AssertableJson $json): void {
+            $json->where('redirect.pattern', '/about-us')
+                ->where('redirect.status', 302)
+                ->where('redirect.leads_to', '/about')
+                ->has('route')
+                ->etc();
+        });
+    }
+
+    #[Test]
+    public function the_agent_hears_where_a_mask_redirect_sends_this_very_address(): void
+    {
+        SeoRedirect::query()->create(['match_type' => 'mask', 'pattern' => '/catalog/*', 'target' => '/shop/$1']);
+
+        $this->askAgent('/catalog/shoes')->assertStructuredContent(static function (AssertableJson $json): void {
+            $json->where('redirect.target', '/shop/$1')->where('redirect.leads_to', '/shop/shoes')->etc();
+        });
+    }
+
+    #[Test]
+    public function the_agent_hears_no_redirect_where_there_is_none(): void
+    {
+        SeoRedirect::query()->create(['match_type' => 'exact', 'pattern' => '/old', 'target' => '/new']);
+
+        $this->askAgent('/elsewhere')->assertStructuredContent(static function (AssertableJson $json): void {
+            $json->where('redirect', null)->where('route', null)->where('url', '/elsewhere')->etc();
+        });
+    }
+
+    private function askAgent(string $url): TestResponse
+    {
+        $registry = $this->app->make(ToolRegistry::class);
+        $response = WebxServer::actingAs($this->editor(['seo.view']), 'cms')
+            ->tool(new RegistryTool($registry->tool('seo_test_url')), ['url' => $url]);
+
+        $this->assertInstanceOf(TestResponse::class, $response);
+
+        return $response;
     }
 
     #[Test]

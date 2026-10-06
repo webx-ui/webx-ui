@@ -9,10 +9,8 @@ use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Features;
 use WebxUi\Seo\Models\SeoRedirect;
 use WebxUi\Seo\Models\SeoUrl;
-use WebxUi\Seo\Panel\AddressSubject;
+use WebxUi\Seo\Panel\AddressReport;
 use WebxUi\Seo\Panel\UrlMatcher;
-use WebxUi\Seo\Panel\UrlRuleSource;
-use WebxUi\Seo\Rendering\Seo;
 use WebxUi\Seo\Sitemap\Sitemap;
 
 /**
@@ -111,7 +109,7 @@ final class SeoTools
 
             Tool::read(
                 'test_url',
-                'What an address ends up saying about itself, and where every part of it came from: the redirect that catches it, the rule that matched, each source in turn, and whether it is in the sitemap and why not.',
+                'What an address ends up saying about itself, and where every part of it came from: the redirect that catches it (redirect, with leads_to — where it sends this very address, $1 filled in), what the address registry holds there (route: a live page or an alias of one that moved), the rule that matched, each source in turn, and whether it is in the sitemap and why not.',
                 static fn (array $arguments): array => self::test($arguments),
                 [
                     'properties' => [
@@ -266,22 +264,11 @@ final class SeoTools
      */
     private static function test(array $arguments): array
     {
-        $url = UrlNormaliser::normalise((string) ($arguments['url'] ?? '/'));
-        $locale = is_string($arguments['locale'] ?? null) ? $arguments['locale'] : null;
-
-        $seo = app(Seo::class);
-        $matched = app(UrlRuleSource::class)->matching($url);
-        // The same subject the panel's test-url resolves, so both answer as the public page does.
-        [$subject, $rowLocale] = app(AddressSubject::class)->at($url, $locale);
-        $seoLocale = $locale ?? $rowLocale;
-
-        return [
-            'url' => $url,
-            'matched' => $matched === null ? null : self::summarise($matched),
-            'chain' => $seo->chain($url, $subject, $seoLocale),
-            'seo' => $seo->for($url, $subject, $seoLocale)->toArray(),
-            'sitemap' => app(Sitemap::class)->verdict($url, $locale),
-        ];
+        // The panel's test-url answers with the same report, so the two cannot drift apart.
+        return app(AddressReport::class)->for(
+            (string) ($arguments['url'] ?? '/'),
+            is_string($arguments['locale'] ?? null) ? $arguments['locale'] : null,
+        );
     }
 
     /**

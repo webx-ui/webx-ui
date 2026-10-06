@@ -3114,15 +3114,84 @@ function checkMenuKey(key: string, current: string | null): void {
 }
 
 /*
- * The SEO section, as far as the screens need it to be drawn: no rules, no redirects, no moves,
+ * The SEO section, as far as the screens need it to be drawn: no rules, a few redirects and moves,
  * and a sitemap counted from what the fixtures have published. The map's own verdicts — noindex,
  * a canonical elsewhere — live on the server and are tested there; here the card only has to
- * have numbers to show.
+ * have numbers to show. The redirects and moves are long on purpose: a long address is what
+ * pushes a row menu off the edge, and an empty table cannot show that.
  */
-const emptyPage = {
-  data: [],
-  meta: { current_page: 1, last_page: 1, per_page: 20, total: 0, from: null, to: null },
+const lastHit = '2026-10-05T10:00:00+00:00'
+const redirectRows = [
+  ['exact', '/about-us', '/about', 302, 12, false],
+  [
+    'mask',
+    '/catalog/old-collection/*',
+    '/shop/collections/new-collection-2026/$1',
+    301,
+    340,
+    false,
+  ],
+  [
+    'exact',
+    '/blog/2019/how-to-choose-the-right-supplement-for-your-morning-routine',
+    '/articles/choosing-a-morning-supplement-a-complete-guide',
+    301,
+    5,
+    false,
+  ],
+  [
+    'regex',
+    '#^/products/([0-9]+)-(.*)$#',
+    'https://www.example.com/catalog/item/$2?from=oldsite&utm_source=migration2026',
+    301,
+    0,
+    false,
+  ],
+  ['exact', '/contacts/', '/contacts', 301, 0, true],
+] as const
+
+const redirectsPage = {
+  data: redirectRows.map(([match_type, pattern, target, status, hits, is_loop], index) => ({
+    id: index + 1,
+    match_type,
+    pattern,
+    target,
+    status,
+    is_active: true,
+    hits,
+    last_hit_at: hits > 0 ? lastHit : null,
+    is_loop,
+    created_at: lastHit,
+    updated_at: lastHit,
+  })),
+  meta: {
+    current_page: 1,
+    last_page: 1,
+    per_page: 20,
+    total: redirectRows.length,
+    from: 1,
+    to: redirectRows.length,
+  },
 }
+
+const aliasesPage = {
+  data: [
+    {
+      id: 1,
+      pattern: '/blog/how-to-choose-the-right-supplement-for-your-morning-routine',
+      target: '/blog/choosing-a-morning-supplement-a-complete-guide-for-beginners',
+      locale: 'en',
+      url: 'http://localhost:5174/blog/how-to-choose-the-right-supplement-for-your-morning-routine',
+      target_url:
+        'http://localhost:5174/blog/choosing-a-morning-supplement-a-complete-guide-for-beginners',
+      entity_type: 'article',
+      entity_id: 1,
+      created_at: lastHit,
+    },
+  ],
+  meta: { current_page: 1, last_page: 1, per_page: 20, total: 1, from: 1, to: 1 },
+}
+
 let sitemapBuiltAt = new Date().toISOString()
 
 function sitemapStatus(): unknown {
@@ -3147,8 +3216,8 @@ function sitemapStatus(): unknown {
   }
 }
 
-on('GET', '/seo/redirects', () => emptyPage)
-on('GET', '/seo/aliases', () => emptyPage)
+on('GET', '/seo/redirects', () => redirectsPage)
+on('GET', '/seo/aliases', () => aliasesPage)
 on('GET', '/seo/sitemap', () => sitemapStatus())
 on('POST', '/seo/sitemap', () => {
   sitemapBuiltAt = new Date().toISOString()
