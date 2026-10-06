@@ -56,6 +56,7 @@ const dates = useDates()
 useRecipesMessages()
 
 const t = useTranslate('webx-recipes')
+const panel = useTranslate('webx-admin')
 /* Not the server's `message`: the panel says how a request failed in its own words. */
 const message = useErrorText()
 
@@ -325,6 +326,37 @@ async function publish(): Promise<void> {
   }
 }
 
+/**
+ * Taking it off the site is asked about, as publishing is: visitors are who notice. Nothing
+ * written is lost, and «Publish» brings it back at the same address.
+ */
+async function unpublish(): Promise<void> {
+  const row = recipe.value
+
+  if (!row) return
+
+  const agreed = await confirm({
+    title: panel('editor.unpublish-title'),
+    message: panel('editor.unpublish-text'),
+    confirmText: panel('editor.unpublish'),
+    cancelText: panel('editor.keep-published'),
+  })
+
+  if (!agreed) return
+
+  working.value = true
+
+  try {
+    await api.unpublish(row.id)
+    await load(true)
+    toast.success(panel('editor.unpublished'))
+  } catch (error) {
+    toast.danger(message(error))
+  } finally {
+    working.value = false
+  }
+}
+
 function badge(): 'default' | 'success' {
   const status = recipe.value?.status
 
@@ -383,6 +415,20 @@ const actions = computed<ScreenAction[]>(() => {
       label: t('panel.open-on-site'),
       icon: 'link',
       href: recipe.value.url,
+    })
+  }
+
+  // On the site now: the way off it is a button of its own beside «Open on the site», not a
+  // line in the ···. Hiding loses nothing and is undone by «Publish».
+  if (
+    canManage.value &&
+    (recipe.value?.status === 'published' || recipe.value?.status === 'modified')
+  ) {
+    leads.push({
+      key: 'unpublish',
+      label: panel('editor.unpublish'),
+      icon: 'eye-off',
+      run: () => void unpublish(),
     })
   }
 

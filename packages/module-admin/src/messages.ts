@@ -47,6 +47,12 @@ export const adminMessages: Record<string, Messages> = {
     // Said out loud to a screen reader while the little wheel turns, and after it stops.
     saving: 'Saving…',
     saved: 'Saved',
+    unpublish: 'Take off the site',
+    'unpublish-title': 'Take it off the site?',
+    'unpublish-text':
+      'Visitors will no longer see it: its page will answer «not found» and leave the sitemap and search. Everything written stays in the panel, and «Publish» brings it back at the same address.',
+    'keep-published': 'Keep it on the site',
+    unpublished: 'Taken off the site.',
   },
   // The page behind a '?'. Only the heading is the panel's: what the page says belongs to
   // whatever is being explained, and travels with that module's own words.

@@ -54,6 +54,7 @@ const locales = useLocales()
 usePagesMessages()
 
 const t = useTranslate('webx-pages')
+const panel = useTranslate('webx-admin')
 /* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
 const message = useErrorText()
 
@@ -316,6 +317,37 @@ async function publish(): Promise<void> {
   }
 }
 
+/**
+ * Taking it off the site is asked about, as publishing is: visitors are who notice. Nothing
+ * written is lost, and «Publish» brings it back at the same address.
+ */
+async function unpublish(): Promise<void> {
+  const row = page.value
+
+  if (!row) return
+
+  const agreed = await confirm({
+    title: panel('editor.unpublish-title'),
+    message: panel('editor.unpublish-text'),
+    confirmText: panel('editor.unpublish'),
+    cancelText: panel('editor.keep-published'),
+  })
+
+  if (!agreed) return
+
+  working.value = true
+
+  try {
+    await api.unpublish(row.id)
+    await load(true)
+    toast.success(panel('editor.unpublished'))
+  } catch (error) {
+    toast.danger(message(error))
+  } finally {
+    working.value = false
+  }
+}
+
 function badge(): 'default' | 'success' | 'warning' {
   if (page.value?.status === 'published') return 'success'
 
@@ -371,6 +403,20 @@ const actions = computed<ScreenAction[]>(() => {
 
   if (page.value?.url && page.value.status !== 'draft') {
     list.push({ key: 'site', label: t('page.open-on-site'), icon: 'link', href: page.value.url })
+  }
+
+  // On the site now: the way off it is a button of its own beside «Open on the site», not a
+  // line in the ···. Hiding loses nothing and is undone by «Publish».
+  if (
+    canManage.value &&
+    (page.value?.status === 'published' || page.value?.status === 'modified')
+  ) {
+    list.push({
+      key: 'unpublish',
+      label: panel('editor.unpublish'),
+      icon: 'eye-off',
+      run: () => void unpublish(),
+    })
   }
 
   return list

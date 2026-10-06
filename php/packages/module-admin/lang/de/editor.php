@@ -9,4 +9,9 @@ return [
     'saving' => 'Wird gespeichert…',
     'saved' => 'Gespeichert',
     'more' => 'Mehr',
+    'unpublish' => 'Von der Website nehmen',
+    'unpublish-title' => 'Von der Website nehmen?',
+    'unpublish-text' => 'Besucher sehen es nicht mehr: Die Seite antwortet mit «nicht gefunden» und verschwindet aus Sitemap und Suche. Alles Geschriebene bleibt im Panel, und «Veröffentlichen» bringt es unter derselben Adresse zurück.',
+    'keep-published' => 'Auf der Website lassen',
+    'unpublished' => 'Von der Website genommen.',
 ];
