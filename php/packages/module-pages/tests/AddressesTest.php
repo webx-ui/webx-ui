@@ -87,22 +87,38 @@ class AddressesTest extends TestCase
         $about->publish();
 
         // Read in Ukrainian, which the page has no address in: the English one, said to be English.
-        $uk = collect($this->actingAs($this->editor(), 'cms')
-            ->getJson($this->api(), ['X-Webx-Locale' => 'uk'])
-            ->assertOk()
-            ->json('data.items'))->firstWhere('id', $about->id);
+        $uk = $this->listed('uk', $about->id);
 
         $this->assertSame('about', $uk['path']);
         $this->assertSame('en', $uk['address_locale']);
 
         // Read in a language the site does not have at all: the site's own, with nothing to say.
-        $ru = collect($this->actingAs($this->editor(), 'cms')
-            ->getJson($this->api(), ['X-Webx-Locale' => 'ru'])
-            ->assertOk()
-            ->json('data.items'))->firstWhere('id', $about->id);
+        $ru = $this->listed('ru', $about->id);
 
         $this->assertSame('about', $ru['path']);
         $this->assertNull($ru['address_locale']);
+    }
+
+    /**
+     * The row of the list for one page, read in the given language.
+     *
+     * @return array<string, mixed>
+     */
+    private function listed(string $locale, int $id): array
+    {
+        $items = $this->actingAs($this->editor(), 'cms')
+            ->getJson($this->api(), ['X-Webx-Locale' => $locale])
+            ->assertOk()
+            ->json('data.items');
+        $this->assertIsArray($items);
+
+        foreach ($items as $item) {
+            if (is_array($item) && ($item['id'] ?? null) === $id) {
+                return $item;
+            }
+        }
+
+        $this->fail("Page {$id} is not in the list.");
     }
 
     #[Test]
