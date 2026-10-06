@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Versions;
 
+use BackedEnum;
 use Carbon\CarbonInterface;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -218,17 +220,49 @@ trait HasDraft
         return $changed;
     }
 
-    /** An attribute as stored, decoded and with its maps sorted, for comparing. */
+    /**
+     * An attribute as the model reads it, in one spelling, for comparing.
+     *
+     * Through the casts rather than as stored: a draft holds what the form sent — `false`, an ISO
+     * date with an offset, `12.5` — and the column what the database gave back — `0`, a datetime
+     * string, `"12.50"`. Compared raw, an event's untouched `all_day` read as a change. A
+     * translatable attribute is the exception, since reading it gives one language: it is
+     * compared as its whole map.
+     */
     private static function comparable(Model $model, string $attribute): string
     {
-        $raw = $model->getAttributes()[$attribute] ?? null;
+        if (method_exists($model, 'isTranslatableAttribute') && $model->isTranslatableAttribute($attribute)) {
+            $value = $model->getAttributes()[$attribute] ?? null;
 
-        if (is_string($raw)) {
-            $decoded = json_decode($raw, true);
-            $raw = json_last_error() === JSON_ERROR_NONE && is_array($decoded) ? $decoded : $raw;
+            if (is_string($value)) {
+                $decoded = json_decode($value, true);
+                $value = json_last_error() === JSON_ERROR_NONE && is_array($decoded) ? $decoded : $value;
+            }
+        } else {
+            $value = $model->getAttribute($attribute);
         }
 
-        $sort = static function (mixed $value) use (&$sort): mixed {
+        $normal = static function (mixed $value) use (&$normal): mixed {
+            if ($value instanceof CarbonInterface) {
+                return $value->getTimestamp();
+            }
+
+            if ($value instanceof BackedEnum) {
+                return $value->value;
+            }
+
+            if ($value instanceof Arrayable) {
+                $value = $value->toArray();
+            }
+
+            if (is_bool($value)) {
+                return $value ? '1' : '0';
+            }
+
+            if (is_int($value) || is_float($value)) {
+                return (string) $value;
+            }
+
             if (! is_array($value)) {
                 return $value;
             }
@@ -237,16 +271,16 @@ trait HasDraft
                 ksort($value);
             }
 
-            return array_map($sort, $value);
+            return array_map($normal, $value);
         };
 
         // Empty is empty however it was written: a page with no blocks stores null, and the form
         // sends that back as an empty list.
-        if ($raw === [] || $raw === '') {
-            $raw = null;
+        if ($value === [] || $value === '') {
+            $value = null;
         }
 
-        return (string) json_encode($sort($raw), JSON_UNESCAPED_UNICODE);
+        return (string) json_encode($normal($value), JSON_UNESCAPED_UNICODE);
     }
 
     /** Whether the model keeps a history too. Asked of the class, not of a method, on purpose. */
