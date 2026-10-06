@@ -63,10 +63,11 @@ const actions = computed<ScreenAction[]>(() =>
 
 const where = computed<TabValue>({
   /*
-   * The settings belong to no tab, so none is lit: a lit «Overview» looked like the way back but
-   * was already the value, and a click on it changed nothing — the page could not be left.
+   * The settings belong to no tab, but the tabs need a value of theirs — given one they do not
+   * have, they correct it to the first and lead away at once. So «Overview» stays lit, and the
+   * settings page has a «Back» of its own beside «Save».
    */
-  get: () => props.current,
+  get: () => (props.current === 'settings' ? 'overview' : props.current),
   set: (next) => {
     const path = next === 'overview' ? props.base : `${props.base}/${String(next)}`
 
