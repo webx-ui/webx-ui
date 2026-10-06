@@ -412,7 +412,19 @@ final class McpTest extends TestCase
         ]);
         $this->publish('quote', '<blockquote data-wx-block="quote">{{ $words }}</blockquote>');
 
-        $page = Page::query()->create(['title' => 'About', 'slug' => 'about']);
+        // A field the schema no longer names, already in the page: written back as it was read, it
+        // is let through — a new one would be refused at the door.
+        $page = Page::query()->create(['title' => 'About', 'slug' => 'about', 'blocks' => [[
+            'key' => 'k-one',
+            'type' => 'article',
+            'values' => ['gone' => '<p>A field the schema no longer names<script>steal()</script></p>'],
+        ]]]);
+
+        $this->agent('set_content', [
+            'entity' => 'note',
+            'id' => $page->id,
+            'blocks' => [['key' => 'k-one', 'type' => 'article', 'values' => ['fresh' => 'x']]],
+        ], $this->editor())->assertHasErrors(['article has no field [fresh]']);
 
         $this->agent('set_content', [
             'entity' => 'note',

@@ -42,9 +42,9 @@ final class StrayValuesCheck extends ModuleCheck
         $records = null;
 
         foreach ($this->strays->entities() as $entity) {
-            $found = $this->strays->find($entity);
+            $report = $this->strays->find($entity);
 
-            if ($found === []) {
+            if ($report->isEmpty()) {
                 continue;
             }
 
@@ -56,17 +56,15 @@ final class StrayValuesCheck extends ModuleCheck
             $rows = [];
             $count = 0;
 
-            foreach ($found as $where => $dropped) {
-                foreach ($dropped as $one) {
-                    $count++;
-                    $rows[] = [
-                        'block' => $one['type'].' · '.($one['key'] ?? '—'),
-                        'fields' => implode(', ', $one['fields']),
-                        // What the site shows, or only the draft.
-                        'published' => $where === 'site',
-                        'edit' => $edit,
-                    ];
-                }
+            foreach ($report->rows() as $one) {
+                $count++;
+                $rows[] = [
+                    'block' => $one['type'].' · '.($one['key'] ?? '—'),
+                    'fields' => implode(', ', $one['fields']),
+                    // What the site shows, or only the draft.
+                    'published' => $one['where'] === 'site',
+                    'edit' => $edit,
+                ];
             }
 
             yield $this->found(

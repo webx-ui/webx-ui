@@ -42,6 +42,7 @@ use WebxUi\Blocks\Regions;
 use WebxUi\Blocks\Rendering\Bundles;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\Schema;
+use WebxUi\Blocks\StrayValues;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
 
@@ -621,6 +622,16 @@ final class BlockTools
         $before = is_string($op['before'] ?? null) && $op['before'] !== '' ? $op['before'] : null;
         $after = is_string($op['after'] ?? null) && $op['after'] !== '' ? $op['after'] : null;
 
+        // A value for a field the type does not have is refused at the door: this is how stray
+        // values got into pages, and once in, nothing but a prune takes them out.
+        if ($name === 'set' && is_array($op['values'] ?? null) && ($node = ContentEdit::find($tree, $key)) !== null) {
+            $this->refuseStray((string) $node['type'], $op['values'], is_array($node['values'] ?? null) ? $node['values'] : [], self::held($tree));
+        }
+
+        if ($name === 'add' && is_string($op['type'] ?? null) && is_array($op['values'] ?? null)) {
+            $this->refuseStray($op['type'], $op['values'], [], self::held($tree));
+        }
+
         return match ($name) {
             'set' => ContentEdit::set(
                 $tree,
@@ -655,6 +666,73 @@ final class BlockTools
             'show' => ContentEdit::visibility($tree, $this->opKey($key), false),
             default => throw new ToolFailure('Unknown operation ['.(is_string($name) ? $name : '?').']: set, unset, add, move, remove, hide or show.'),
         };
+    }
+
+    /**
+     * Refuse values for fields a block type does not define — the block's own and those of every
+     * block nested in it. A field the block already holds may keep its value or be emptied; a
+     * value of a field the type no longer has goes with `unset`.
+     *
+     * @param  array<string, mixed>  $values
+     * @param  array<string, mixed>  $current
+     * @param  array<string, array<string, mixed>>  $held  Key → the values of every node the entity holds now.
+     *
+     * @throws BlocksException
+     */
+    private function refuseStray(string $type, array $values, array $current, array $held): void
+    {
+        $strays = $this->container->make(StrayValues::class);
+        $unknown = $strays->unknown($type, $values, $current);
+
+        if ($unknown !== []) {
+            throw new BlocksException(
+                "{$type} has no field [".implode('], [', $unknown).']. Its fields: '.implode(', ', $strays->fieldsOf($type)).'.'
+            );
+        }
+
+        foreach ($values as $value) {
+            if (! Content::isNodeList($value)) {
+                continue;
+            }
+
+            foreach ($value as $node) {
+                if (Content::isNode($node)) {
+                    $key = is_string($node['key'] ?? null) ? $node['key'] : null;
+                    $this->refuseStray((string) $node['type'], is_array($node['values'] ?? null) ? $node['values'] : [], $key === null ? [] : ($held[$key] ?? []), $held);
+                }
+            }
+        }
+    }
+
+    /**
+     * Every node of a tree by key, with its values: what a write may hand back as it was.
+     *
+     * @param  list<mixed>  $tree
+     * @return array<string, array<string, mixed>>
+     */
+    private static function held(array $tree): array
+    {
+        $held = [];
+
+        foreach ($tree as $node) {
+            if (! Content::isNode($node)) {
+                continue;
+            }
+
+            $values = is_array($node['values'] ?? null) ? $node['values'] : [];
+
+            if (is_string($node['key'] ?? null)) {
+                $held[$node['key']] = $values;
+            }
+
+            foreach ($values as $value) {
+                if (Content::isNodeList($value)) {
+                    $held += self::held(array_values($value));
+                }
+            }
+        }
+
+        return $held;
     }
 
     private function opKey(string $key): string
@@ -789,7 +867,21 @@ final class BlockTools
             throw new ToolFailure('`blocks` must be a list of { type, values } nodes.');
         }
 
-        $this->sameRevision($arguments, $this->editing($entity));
+        $editing = $this->editing($entity);
+        $this->sameRevision($arguments, $editing);
+
+        try {
+            $held = self::held($editing);
+
+            foreach ($blocks as $node) {
+                if (Content::isNode($node)) {
+                    $key = is_string($node['key'] ?? null) ? $node['key'] : null;
+                    $this->refuseStray((string) $node['type'], is_array($node['values'] ?? null) ? $node['values'] : [], $key === null ? [] : ($held[$key] ?? []), $held);
+                }
+            }
+        } catch (BlocksException $refused) {
+            throw new ToolFailure($refused->getMessage());
+        }
 
         return $this->writeContent($entity, $blocks, $user, $this->dryRun($arguments));
     }

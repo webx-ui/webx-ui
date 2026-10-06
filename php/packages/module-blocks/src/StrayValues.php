@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\Tree;
+use WebxUi\Admin\Versions\HasDraft;
 use WebxUi\Blocks\Models\Region;
 
 /**
@@ -66,24 +67,84 @@ final class StrayValues
     }
 
     /**
-     * What an entity holds that its types do not define, in what the site shows and in the draft.
-     *
-     * @return array{site?: list<Dropped>, draft?: list<Dropped>}
+     * What an entity holds that its types do not define, in what the site shows and in the draft
+     * — and whether taking it out would leave the draft saying what the site says.
      */
-    public function find(Model $entity): array
+    public function find(Model $entity): StrayReport
     {
         return $this->walk($entity, false);
     }
 
     /**
      * The same, taken out — straight to the columns: nothing changes for a visitor, so there is
-     * nothing to publish and no version to write.
-     *
-     * @return array{site?: list<Dropped>, draft?: list<Dropped>}
+     * nothing to publish and no version to write. A draft left equal to what the site shows is
+     * dropped rather than kept, as a save would drop it.
      */
-    public function prune(Model $entity): array
+    public function prune(Model $entity): StrayReport
     {
         return $this->walk($entity, true);
+    }
+
+    /**
+     * The fields of these values a block of this type does not define — what a write is refused
+     * for, so that a stray value cannot be put in, only taken out.
+     *
+     * A key the block already holds may keep its value or be emptied with null: a page that came
+     * with stray values can still be written back as it was read. Nested blocks are not looked
+     * into here; the caller walks the tree. Empty for a type nobody knows.
+     *
+     * @param  array<string, mixed>  $values
+     * @param  array<string, mixed>  $current  What the block holds now; empty for a new one.
+     * @return list<string>
+     */
+    public function unknown(string $type, array $values, array $current = []): array
+    {
+        $allowed = $this->allowed($type);
+
+        if ($allowed === null) {
+            return [];
+        }
+
+        $unknown = [];
+
+        foreach ($values as $field => $value) {
+            $field = (string) $field;
+            $held = array_key_exists($field, $current);
+
+            if (! array_key_exists($field, $allowed)) {
+                if (! $held || ($value !== null && $value !== $current[$field])) {
+                    $unknown[] = $field;
+                }
+
+                continue;
+            }
+
+            $items = $allowed[$field];
+
+            if ($items === null || ! is_array($value) || ! array_is_list($value) || ($held && $value === $current[$field])) {
+                continue;
+            }
+
+            foreach ($value as $item) {
+                foreach (is_array($item) ? array_keys($item) : [] as $name) {
+                    if (! in_array((string) $name, $items, true)) {
+                        $unknown[] = $field.'.*.'.$name;
+                    }
+                }
+            }
+        }
+
+        return array_values(array_unique($unknown));
+    }
+
+    /**
+     * The fields a type defines, for an answer that refuses a stray one.
+     *
+     * @return list<string>
+     */
+    public function fieldsOf(string $type): array
+    {
+        return array_keys($this->allowed($type) ?? []);
     }
 
     /**
@@ -113,38 +174,35 @@ final class StrayValues
         }
     }
 
-    /**
-     * @return array{site?: list<Dropped>, draft?: list<Dropped>}
-     */
-    private function walk(Model $entity, bool $write): array
+    private function walk(Model $entity, bool $write): StrayReport
     {
         $column = method_exists($entity, 'blocksColumn') ? (string) $entity->blocksColumn() : 'blocks';
         $allowed = $this->allowed(...);
-        $found = [];
+        $site = [];
+        $drafted = [];
         $writes = [];
+        $prunedLive = null;
 
         $live = $entity->getAttribute($column);
 
         if (is_array($live)) {
-            $dropped = [];
-            $pruned = ContentEdit::prune(array_values($live), $allowed, $dropped);
+            $prunedLive = ContentEdit::prune(array_values($live), $allowed, $site);
 
-            if ($dropped !== []) {
-                $found['site'] = $dropped;
-                $writes[$column] = json_encode($pruned, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            if ($site !== []) {
+                $writes[$column] = json_encode($prunedLive, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             }
         }
 
         $draftColumn = method_exists($entity, 'draftColumn') ? (string) $entity->draftColumn() : null;
         $draft = $draftColumn === null ? null : $entity->getAttribute($draftColumn);
+        $draftDropped = false;
 
         if ($draftColumn !== null && is_array($draft) && is_array($draft[$column] ?? null)) {
-            $dropped = [];
-            $draft[$column] = ContentEdit::prune(array_values($draft[$column]), $allowed, $dropped);
+            $draft[$column] = ContentEdit::prune(array_values($draft[$column]), $allowed, $drafted);
 
-            if ($dropped !== []) {
-                $found['draft'] = $dropped;
-                $writes[$draftColumn] = json_encode($draft, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            if ($drafted !== []) {
+                $draftDropped = $this->draftMatchesLive($entity, $column, $prunedLive, $draft);
+                $writes[$draftColumn] = $draftDropped ? null : json_encode($draft, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             }
         }
 
@@ -152,6 +210,29 @@ final class StrayValues
             $entity->newQueryWithoutScopes()->whereKey($entity->getKey())->update($writes);
         }
 
-        return $found;
+        return new StrayReport($site, $drafted, $draftDropped);
+    }
+
+    /**
+     * Whether the cleaned draft says exactly what the site will show once its own stray values
+     * are gone too — the comparison a save makes ({@see HasDraft::matchesLive()}),
+     * on a copy that carries the cleaned live tree.
+     *
+     * @param  list<mixed>|null  $prunedLive
+     * @param  array<string, mixed>  $draft
+     */
+    private function draftMatchesLive(Model $entity, string $column, ?array $prunedLive, array $draft): bool
+    {
+        if (! method_exists($entity, 'matchesLive') || ! method_exists($entity, 'isPublished') || ! $entity->isPublished()) {
+            return false;
+        }
+
+        $live = clone $entity;
+
+        if ($prunedLive !== null) {
+            $live->setAttribute($column, $prunedLive);
+        }
+
+        return (bool) $live->matchesLive($draft);
     }
 }

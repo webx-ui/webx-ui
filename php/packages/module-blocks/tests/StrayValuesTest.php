@@ -15,6 +15,7 @@ use WebxUi\Audit\Probes\SiteClient;
 use WebxUi\Audit\Runs\AuditRun;
 use WebxUi\Blocks\Audit\PruneStrayValuesFix;
 use WebxUi\Blocks\Audit\StrayValuesCheck;
+use WebxUi\Blocks\StrayValues;
 use WebxUi\Blocks\Tests\Fixtures\Page;
 use WebxUi\Mcp\Registry\ToolRegistry;
 use WebxUi\Mcp\Server\RegistryTool;
@@ -141,6 +142,54 @@ final class StrayValuesTest extends TestCase
         $this->assertFalse($fix->available($findings[0]));
         $this->assertSame([], $this->audit());
         $this->assertSame(['heading' => ['en' => 'Fine']], $clean->refresh()->blocks[0]['values']);
+    }
+
+    #[Test]
+    public function a_field_the_type_does_not_have_is_refused_at_the_door(): void
+    {
+        $this->publish('faq', '<section data-wx-block="faq"></section>', [], ['schema' => [
+            ['id' => 'items', 'type' => 'wx-repeater', 'children' => [['id' => 'question', 'type' => 'wx-input']]],
+        ]]);
+        $page = $this->page([
+            $this->node('hero', ['legacy' => 'from an import', 'heading' => ['en' => 'Kept']], 'k-hero'),
+            $this->node('faq', ['items' => [['question' => 'Why?']]], 'k-faq'),
+        ]);
+        $edit = fn (array $op, bool $dry = false): TestResponse => $this->agent('edit_content', ['entity' => 'note', 'id' => $page->id, 'ops' => [$op], 'dry_run' => $dry]);
+
+        foreach ([true, false] as $dry) {
+            $edit(['op' => 'set', 'key' => 'k-hero', 'values' => ['audit_test_stray' => 'x']], $dry)
+                ->assertHasErrors(['hero has no field [audit_test_stray]. Its fields: image, button_url, heading.']);
+        }
+
+        $edit(['op' => 'set', 'key' => 'k-faq', 'values' => ['items' => [['question' => 'Why?', 'extra' => 'x']]]])
+            ->assertHasErrors(['faq has no field [items.*.extra]']);
+        $edit(['op' => 'add', 'type' => 'hero', 'values' => ['subtitle' => 'x']])
+            ->assertHasErrors(['hero has no field [subtitle]']);
+        $this->assertFalse($page->refresh()->hasDraft(), 'nothing of it was written');
+
+        // A stray value the block already holds may still be emptied.
+        $edit(['op' => 'set', 'key' => 'k-hero', 'values' => ['legacy' => null, 'heading' => ['en' => 'New']]])->assertOk();
+    }
+
+    #[Test]
+    public function a_draft_that_differed_only_by_stray_values_is_dropped_by_the_prune(): void
+    {
+        $page = $this->page([$this->node('hero', ['heading' => ['en' => 'Live']], 'k-hero')]);
+        $page->publish();
+        $page->saveDraft(['blocks' => [$this->node('hero', ['heading' => ['en' => 'Live'], 'audit_test_stray' => 'x'], 'k-hero')]]);
+        $this->assertTrue($page->refresh()->hasDraft());
+
+        $report = $this->app->make(StrayValues::class)->find($page);
+        $this->assertTrue($report->draftDropped, 'the dry run says so');
+        $this->assertTrue($page->refresh()->hasDraft(), 'and changes nothing');
+
+        $this->artisan('webx:blocks:prune')->expectsOutputToContain('Drafts dropped')->assertSuccessful();
+        $this->assertFalse($page->refresh()->hasDraft());
+
+        // A draft with a real edit in it stays, cleaned.
+        $page->saveDraft(['blocks' => [$this->node('hero', ['heading' => ['en' => 'Next'], 'audit_test_stray' => 'x'], 'k-hero')]]);
+        $this->app->make(StrayValues::class)->prune($page);
+        $this->assertSame(['heading' => ['en' => 'Next']], $this->values($page));
     }
 
     /**

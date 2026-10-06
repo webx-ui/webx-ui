@@ -42,25 +42,27 @@ final readonly class PruneStrayValuesFix implements AuditFix
     {
         $entity = $this->entity($finding);
 
-        return $entity !== null && $this->strays->find($entity) !== [];
+        return $entity !== null && ! $this->strays->find($entity)->isEmpty();
     }
 
     public function preview(Finding $finding): FixPreview
     {
         $entity = $this->entity($finding);
+        $report = $entity === null ? null : $this->strays->find($entity);
         $changes = [];
 
-        foreach ($entity === null ? [] : $this->strays->find($entity) as $where => $dropped) {
-            foreach ($dropped as $one) {
-                $changes[] = [
-                    'label' => $one['type'].' · '.($one['key'] ?? '—').' ('.$where.')',
-                    'before' => implode(', ', $one['fields']),
-                    'after' => null,
-                ];
-            }
+        foreach ($report?->rows() ?? [] as $one) {
+            $changes[] = [
+                'label' => $one['type'].' · '.($one['key'] ?? '—').' ('.$one['where'].')',
+                'before' => implode(', ', $one['fields']),
+                'after' => null,
+            ];
         }
 
-        return new FixPreview($changes);
+        return new FixPreview(
+            $changes,
+            $report?->draftDropped === true ? (string) __('webx-blocks::audit.draft-dropped') : null,
+        );
     }
 
     public function apply(Finding $finding): void

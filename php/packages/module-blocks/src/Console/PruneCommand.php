@@ -29,14 +29,14 @@ final class PruneCommand extends Command
     {
         $dry = (bool) $this->option('dry-run');
         $rows = [];
+        $drafts = 0;
 
         foreach ($strays->entities(withTrashed: true) as $entity) {
-            $found = $dry ? $strays->find($entity) : $strays->prune($entity);
+            $report = $dry ? $strays->find($entity) : $strays->prune($entity);
+            $drafts += $report->draftDropped ? 1 : 0;
 
-            foreach ($found as $where => $dropped) {
-                foreach ($dropped as $one) {
-                    $rows[] = [class_basename($entity).' #'.$entity->getKey(), $where, $one['type'], $one['key'] ?? '—', implode(', ', $one['fields'])];
-                }
+            foreach ($report->rows() as $one) {
+                $rows[] = [class_basename($entity).' #'.$entity->getKey(), $one['where'], $one['type'], $one['key'] ?? '—', implode(', ', $one['fields'])];
             }
         }
 
@@ -50,6 +50,11 @@ final class PruneCommand extends Command
         $this->components->info($dry
             ? 'Blocks with values to remove: '.count($rows).'. Run without --dry-run to remove them.'
             : 'Blocks cleaned: '.count($rows).'.');
+
+        // A draft that differed from the site only by stray values has nothing left waiting.
+        if ($drafts > 0) {
+            $this->components->info(($dry ? 'Drafts that would be dropped' : 'Drafts dropped').', nothing else was waiting in them: '.$drafts.'.');
+        }
 
         return self::SUCCESS;
     }
