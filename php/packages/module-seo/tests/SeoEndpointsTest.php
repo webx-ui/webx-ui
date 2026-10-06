@@ -7,6 +7,8 @@ namespace WebxUi\Seo\Tests;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Seo\Models\SeoRedirect;
 use WebxUi\Seo\Models\SeoUrl;
+use WebxUi\Seo\Panel\SeoModule;
+use WebxUi\Seo\Panel\SeoRules;
 
 final class SeoEndpointsTest extends TestCase
 {
@@ -151,5 +153,57 @@ final class SeoEndpointsTest extends TestCase
         }
 
         return $ids;
+    }
+
+    #[Test]
+    public function an_agent_deletes_a_rule_and_the_site_stops_matching_it(): void
+    {
+        $rule = SeoUrl::query()->create(['match_type' => 'exact', 'pattern' => '/about', 'title' => ['ru' => 'О нас']]);
+        // Compiled before the delete, so the test shows the cache being dropped, not never filled.
+        $this->assertCount(1, app(SeoRules::class)->urls());
+
+        $preview = ($this->tool('urls_delete'))(['id' => $rule->id, 'dry_run' => true]);
+
+        $this->assertFalse($preview['applied']);
+        $this->assertSame('/about', $preview['would_delete']['pattern']);
+        $this->assertSame('exact', $preview['would_delete']['match_type']);
+        $this->assertTrue(SeoUrl::query()->whereKey($rule->id)->exists());
+
+        $done = ($this->tool('urls_delete'))(['id' => $rule->id]);
+
+        $this->assertTrue($done['applied']);
+        $this->assertFalse(SeoUrl::query()->whereKey($rule->id)->exists());
+        $this->assertSame([], app(SeoRules::class)->urls());
+        $this->assertFalse(($this->tool('urls_delete'))(['id' => $rule->id])['ok']);
+    }
+
+    #[Test]
+    public function an_agent_deletes_a_redirect_and_the_old_address_stops_moving(): void
+    {
+        $redirect = SeoRedirect::query()->create(['match_type' => 'exact', 'pattern' => '/old', 'target' => '/new']);
+        $this->assertCount(1, app(SeoRules::class)->redirects());
+
+        $preview = ($this->tool('redirects_delete'))(['id' => $redirect->id, 'dry_run' => true]);
+
+        $this->assertFalse($preview['applied']);
+        $this->assertSame(['/old', '/new'], [$preview['would_delete']['from'], $preview['would_delete']['to']]);
+        $this->assertTrue(SeoRedirect::query()->whereKey($redirect->id)->exists());
+
+        $done = ($this->tool('redirects_delete'))(['id' => $redirect->id]);
+
+        $this->assertTrue($done['applied']);
+        $this->assertSame([], app(SeoRules::class)->redirects());
+        $this->assertFalse(($this->tool('redirects_delete'))(['id' => $redirect->id])['ok']);
+    }
+
+    private function tool(string $name): callable
+    {
+        foreach (app(SeoModule::class)->mcpTools() as $tool) {
+            if ($tool->name === $name) {
+                return $tool->handler;
+            }
+        }
+
+        $this->fail("No tool {$name}.");
     }
 }

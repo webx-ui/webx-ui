@@ -460,7 +460,8 @@ const answer = await api.test('/catalog/shoes?page=2')
 ```
 
 Or, from an agent: `seo_test_url`, beside `seo_urls_list`, `seo_urls_get`, `seo_urls_set`,
-`seo_redirects_list`, `seo_redirects_set` and `seo_import_redirects` — which turns the list of old
+`seo_urls_delete`, `seo_redirects_list`, `seo_redirects_set`, `seo_redirects_delete` and
+`seo_import_redirects` — which turns the list of old
 and new addresses that comes out of every site migration into rows in one call — and
 `seo_sitemap_status`, the numbers of the card. There is no tool to rebuild the map: it rebuilds
 itself.

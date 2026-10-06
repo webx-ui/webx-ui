@@ -12,6 +12,7 @@ use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Http\Resources\SeoRedirectResource;
 use WebxUi\Seo\Http\Resources\SeoUrlResource;
 use WebxUi\Seo\Models\SeoRedirect;
+use WebxUi\Seo\Panel\AddressSubject;
 use WebxUi\Seo\Panel\SeoRules;
 use WebxUi\Seo\Panel\UrlMatcher;
 use WebxUi\Seo\Panel\UrlRuleSource;
@@ -34,6 +35,7 @@ final class TestUrlController
         private readonly UrlMatcher $matcher,
         private readonly Resolver $resolver,
         private readonly Sitemap $sitemap,
+        private readonly AddressSubject $subjects,
     ) {}
 
     public function __invoke(Request $request): JsonResponse
@@ -48,6 +50,10 @@ final class TestUrlController
 
         $matched = $this->rules->matching($url);
         $redirect = $this->redirect($url);
+        // The entity the public page would be about, in the language of its row, so the chain
+        // has the page's own card in it — the public page has it, and the answer is about that.
+        [$subject, $rowLocale] = $this->subjects->at($url, $locale);
+        $seoLocale = $locale ?? $rowLocale;
 
         return ApiResponse::data([
             'url' => $url,
@@ -58,8 +64,8 @@ final class TestUrlController
             // and to "why is this address answering at all" comes from the same call.
             'route' => $this->route($url, $locale),
             'matched' => $matched === null ? null : new SeoUrlResource($matched),
-            'chain' => $this->seo->chain($url, null, $locale),
-            'seo' => $this->seo->for($url, null, $locale)->toArray(),
+            'chain' => $this->seo->chain($url, $subject, $seoLocale),
+            'seo' => $this->seo->for($url, $subject, $seoLocale)->toArray(),
             // The first question when a page is missing from a search engine (§17.6).
             'sitemap' => $this->sitemap->verdict($url, $locale),
         ]);

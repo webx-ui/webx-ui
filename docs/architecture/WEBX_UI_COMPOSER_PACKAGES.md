@@ -349,8 +349,8 @@ MCP: пока нет. Кандидаты на потом — `list_locales`, `fi
   модуля, а не от сайта.
 - `wx-seo` — тип поля на обеих половинах: всё, что страница говорит о себе, одним объектом.
 
-MCP: `seo_urls_list`, `seo_urls_get`, `seo_urls_set`, `seo_test_url`, `seo_redirects_list`,
-`seo_redirects_set`, `seo_import_redirects`. Скоупы `seo:read` / `seo:write`.
+MCP: `seo_urls_list`, `seo_urls_get`, `seo_urls_set`, `seo_urls_delete`, `seo_test_url`,
+`seo_redirects_list`, `seo_redirects_set`, `seo_redirects_delete`, `seo_import_redirects`. Скоупы `seo:read` / `seo:write`.
 
 Сделано 16.09.2026 (сессия D `module-pages`): трейт `HasSeo`, `seo_meta`, `EntitySource` и тип
 поля `wx-seo` на сервере. Сопровождение сущностей (§17 спецификации) выпущено в v0.33.0 —

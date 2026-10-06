@@ -6,6 +6,7 @@ namespace WebxUi\Seo\Rendering;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Panel\AddressSubject;
 
 /**
  * What the entity on this page says about itself.
@@ -16,9 +17,10 @@ use WebxUi\Seo\HasSeo;
  * lose. A page's own fields are the ordinary case in between.
  *
  * The subject is whatever the template named or the address registry resolved — this source
- * never looks a page up by its address. Two reasons: the same entity can be reachable at more
- * than one address, and `POST /test-url` asks about somebody else's page, where guessing an
- * entity would answer a question nobody asked.
+ * never looks a page up by its address, because the same entity can be reachable at more than
+ * one address. `POST /test-url` asks about somebody else's page, so it resolves the subject the
+ * way the resolver would for that address ({@see AddressSubject}) and hands it in like any
+ * template does.
  */
 final class EntitySource implements SeoSource
 {
