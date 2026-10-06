@@ -23,6 +23,7 @@ use WebxUi\Blocks\Console\ClearCommand;
 use WebxUi\Blocks\Console\ExportCommand;
 use WebxUi\Blocks\Console\ImportCommand;
 use WebxUi\Blocks\Console\OfferedCommand;
+use WebxUi\Blocks\Console\PruneCommand;
 use WebxUi\Blocks\Console\RegionsCommand;
 use WebxUi\Blocks\Fields\DataType;
 use WebxUi\Blocks\Fields\SlotType;
@@ -135,7 +136,7 @@ class BlocksServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->commands([BundlesCommand::class, ClearCommand::class, ExportCommand::class, ImportCommand::class, OfferedCommand::class, RegionsCommand::class]);
+        $this->commands([BundlesCommand::class, ClearCommand::class, ExportCommand::class, ImportCommand::class, OfferedCommand::class, PruneCommand::class, RegionsCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-blocks.php' => config_path('webx-blocks.php'),

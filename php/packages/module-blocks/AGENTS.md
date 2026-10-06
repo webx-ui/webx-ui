@@ -30,7 +30,7 @@ their guides when the question is about one of those.
   resources `blocks://guidelines`, `blocks://schema`, `blocks://catalog`, `blocks://fields`,
   `blocks://site`; prompt `design_block`. Scopes `blocks:read`, `blocks:write`.
 - **Commands** `webx:blocks:export`, `webx:blocks:import`, `webx:blocks:offered`,
-  `webx:blocks:bundles`, `webx:blocks:clear`, `webx:blocks:regions`.
+  `webx:blocks:bundles`, `webx:blocks:clear`, `webx:blocks:regions`, `webx:blocks:prune`.
 - Also registered: field types `wx-data` and `wx-slot`, the registries `BlockOffers`,
   `BlockShapes`, `BlockComponents`, an audit content source for regions when
   `webx-ui/module-audit` is installed, demo content (`resources/demo`).
@@ -50,14 +50,15 @@ their guides when the question is about one of those.
 | A module's partial replaced by a block     | «Customise» in the panel, or `blocks_create` on the declared slug; deleting the type brings the partial back            |
 | Types read-only on production              | `WEBX_BLOCKS_EDITING=false`; types then arrive by `webx:blocks:import`                                                  |
 | Bundles written before the first visitor   | list the models in `entities`, run `webx:blocks:bundles --warm`                                                         |
+| Values of fields no type defines any more  | `php artisan webx:blocks:prune --dry-run`, then without the flag: live and draft, every listed model and the regions    |
 | Other words in the panel                   | `php artisan vendor:publish --tag=webx-blocks-lang`                                                                     |
 | All config keys                            | `php artisan vendor:publish --tag=webx-blocks-config`                                                                   |
 
 ### Editing content through MCP
 
 Read `blocks_get_content` (entity and id; for a region, entity `region` and its name), then send
-`blocks_edit_content` with the `revision` it returned and `ops`: `set`, `add`, `move`, `remove`,
-`hide`, `show`, each by `key`. Nodes not named stay as they are; a stale revision is refused.
+`blocks_edit_content` with the `revision` it returned and `ops`: `set`, `unset`, `add`, `move`,
+`remove`, `hide`, `show`, each by `key`. `set` with null keeps the key; `unset` with `fields` takes it out. Nodes not named stay as they are; a stale revision is refused.
 `blocks_set_content` replaces the whole draft tree: anything left out is gone. Both write the
 draft; the site changes when a person publishes the entity (a region: `blocks_region_publish`).
 
