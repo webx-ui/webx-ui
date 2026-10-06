@@ -88,6 +88,13 @@ trait HasDraft
      */
     public function saveDraft(array $values, ?int $authorId = null, string $source = EntityVersion::SOURCE_PANEL): static
     {
+        // A draft that says what the site already says is no draft: a letter typed and taken back
+        // between two autosaves left the page «modified» with nothing to publish, and publishing
+        // it wrote a version identical to the one before.
+        if ($values !== [] && $this->isPublished() && $this->matchesLive($values)) {
+            $values = [];
+        }
+
         $this->setAttribute($this->draftColumn(), $values === [] ? null : $values);
         $this->save();
 
@@ -136,6 +143,17 @@ trait HasDraft
      */
     public function publish(?int $authorId = null, string $source = EntityVersion::SOURCE_PANEL, ?string $comment = null, ?CarbonInterface $at = null): static
     {
+        // Already on the site as it is, and no new date asked for: nothing to publish, and a
+        // version identical to the last one would only make the history longer.
+        if ($at === null && $this->isPublished() && $this->matchesLive($this->draftValues())) {
+            if ($this->getAttribute($this->draftColumn()) !== null) {
+                $this->setAttribute($this->draftColumn(), null);
+                $this->save();
+            }
+
+            return $this;
+        }
+
         $this->getConnection()->transaction(function () use ($authorId, $source, $comment, $at): void {
             $this->applyDraft($this->draftValues());
             $this->setAttribute($this->draftColumn(), null);
@@ -158,6 +176,64 @@ trait HasDraft
         $this->save();
 
         return $this;
+    }
+
+    /**
+     * Whether these draft values are what the columns already hold — each attribute compared as
+     * stored, with maps compared regardless of key order, so a translation map written in another
+     * order is still the same text.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    public function matchesLive(array $values): bool
+    {
+        $drafted = clone $this;
+        $drafted->applyDraft($values);
+
+        foreach (array_keys($values) as $attribute) {
+            // A key that is not a column — relations, a choice another table keeps — is applied by
+            // whoever put it there on publication, and this cannot tell whether it changed.
+            if (! array_key_exists((string) $attribute, $this->getAttributes())) {
+                return false;
+            }
+
+            if (self::comparable($drafted, (string) $attribute) !== self::comparable($this, (string) $attribute)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** An attribute as stored, decoded and with its maps sorted, for comparing. */
+    private static function comparable(Model $model, string $attribute): string
+    {
+        $raw = $model->getAttributes()[$attribute] ?? null;
+
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            $raw = json_last_error() === JSON_ERROR_NONE && is_array($decoded) ? $decoded : $raw;
+        }
+
+        $sort = static function (mixed $value) use (&$sort): mixed {
+            if (! is_array($value)) {
+                return $value;
+            }
+
+            if (! array_is_list($value)) {
+                ksort($value);
+            }
+
+            return array_map($sort, $value);
+        };
+
+        // Empty is empty however it was written: a page with no blocks stores null, and the form
+        // sends that back as an empty list.
+        if ($raw === [] || $raw === '') {
+            $raw = null;
+        }
+
+        return (string) json_encode($sort($raw), JSON_UNESCAPED_UNICODE);
     }
 
     /** Whether the model keeps a history too. Asked of the class, not of a method, on purpose. */

@@ -99,6 +99,25 @@ final class EditorTest extends TestCase
     }
 
     #[Test]
+    public function a_save_that_takes_the_edit_back_leaves_no_draft(): void
+    {
+        $page = $this->page('about');
+        $values = $this->actingAs($this->editor(), 'cms')->getJson($this->api($page->getKey()))->json('data.values');
+
+        // One letter typed into the address, autosaved, and taken back.
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson($this->api($page->getKey()), ['values' => [...$values, 'slug' => ['en' => 'aboutx']]])
+            ->assertJsonPath('data.page.status', Page::STATUS_MODIFIED);
+
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson($this->api($page->getKey()), ['values' => $values])
+            ->assertOk()
+            ->assertJsonPath('data.page.status', Page::STATUS_PUBLISHED);
+
+        $this->assertFalse($page->refresh()->hasDraft());
+    }
+
+    #[Test]
     public function a_save_keeps_a_block_value_the_way_its_field_type_keeps_it(): void
     {
         // `wx-blocks` is the one field on this screen the server does not register, so its
