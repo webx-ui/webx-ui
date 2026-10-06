@@ -20,6 +20,7 @@ return [
     'title' => 'Titolo',
     'target' => 'Destinazione',
     'status' => 'Codice',
+    'status-help' => '301 — spostato per sempre: i motori trasferiscono il peso del vecchio indirizzo al nuovo. 302 — per un po\': il vecchio resta quello principale.',
     'hits' => 'Utilizzi',
     'last-hit' => 'Ultima volta',
     'loop' => 'Punta a se stessa',

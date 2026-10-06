@@ -20,6 +20,7 @@ return [
     'title' => 'Título',
     'target' => 'Destino',
     'status' => 'Código',
+    'status-help' => '301 — se mudó para siempre: los buscadores pasan el peso de la dirección antigua a la nueva. 302 — por un tiempo: la antigua sigue siendo la principal.',
     'hits' => 'Usos',
     'last-hit' => 'Último uso',
     'loop' => 'Apunta a sí misma',

@@ -9,6 +9,7 @@ import {
   WxDialog,
   WxFormItem,
   WxInput,
+  WxSegmented,
   WxSelect,
   WxSpace,
   WxSwitch,
@@ -174,11 +175,14 @@ async function save(): Promise<void> {
         <wx-switch v-model="form.is_active" :label="t('page.active')" />
       </wx-form-item>
 
-      <div class="wx-seo-redirect__row">
-        <wx-form-item :label="t('page.status')">
-          <wx-select v-model="form.status" :options="statusOptions" />
-        </wx-form-item>
-      </div>
+      <!-- Two answers, both in sight: a list hid the one choice there is behind a click. -->
+      <wx-form-item :label="t('page.status')" :help="t('page.status-help')">
+        <wx-segmented
+          v-model="form.status"
+          :options="statusOptions"
+          class="wx-seo-redirect__code"
+        />
+      </wx-form-item>
     </div>
 
     <template #footer>
@@ -199,10 +203,8 @@ async function save(): Promise<void> {
   gap: var(--wx-space-12);
 }
 
-.wx-seo-redirect__row {
-  display: grid;
-  grid-template-columns: 140px 1fr;
-  gap: var(--wx-space-12);
-  align-items: start;
+/* As wide as its two answers, not as the dialog: a bar of empty grey read as a field to fill. */
+.wx-seo-redirect__code {
+  width: fit-content;
 }
 </style>

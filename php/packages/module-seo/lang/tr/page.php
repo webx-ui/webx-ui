@@ -20,6 +20,7 @@ return [
     'title' => 'Başlık',
     'target' => 'Hedef',
     'status' => 'Kod',
+    'status-help' => '301 — kalıcı taşındı: arama motorları eski adresin değerini yenisine aktarır. 302 — geçici: asıl adres eskisi kalır.',
     'hits' => 'Kullanım',
     'last-hit' => 'Son kullanım',
     'loop' => 'Kendini gösteriyor',

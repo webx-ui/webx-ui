@@ -20,6 +20,7 @@ return [
     'title' => 'Titel',
     'target' => 'Ziel',
     'status' => 'Code',
+    'status-help' => '301 — dauerhaft umgezogen: Suchmaschinen übertragen das Gewicht der alten Adresse auf die neue. 302 — vorübergehend: Die alte Adresse bleibt die Hauptadresse.',
     'hits' => 'Treffer',
     'last-hit' => 'Zuletzt',
     'loop' => 'Zeigt auf sich selbst',

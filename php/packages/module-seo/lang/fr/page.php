@@ -20,6 +20,7 @@ return [
     'title' => 'Titre',
     'target' => 'Destination',
     'status' => 'Code',
+    'status-help' => '301 — déménagé pour de bon : les moteurs reportent le poids de l\'ancienne adresse sur la nouvelle. 302 — pour un temps : l\'ancienne reste la principale.',
     'hits' => 'Déclenchements',
     'last-hit' => 'Dernière fois',
     'loop' => 'Pointe sur elle-même',

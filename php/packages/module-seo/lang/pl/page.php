@@ -20,6 +20,7 @@ return [
     'title' => 'Tytuł',
     'target' => 'Cel',
     'status' => 'Kod',
+    'status-help' => '301 — przeniesiony na stałe: wyszukiwarki przeniosą wagę starego adresu na nowy. 302 — tymczasowo: głównym zostaje stary adres.',
     'hits' => 'Użycia',
     'last-hit' => 'Ostatnio',
     'loop' => 'Wskazuje na siebie',

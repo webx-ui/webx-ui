@@ -22,6 +22,7 @@ return [
     'title' => 'Title',
     'target' => 'Destination',
     'status' => 'Code',
+    'status-help' => '301 — moved for good: search engines carry the old address\'s weight to the new one. 302 — for a while: the old address stays the main one.',
     'hits' => 'Hits',
     'last-hit' => 'Last used',
     'loop' => 'Points at itself',
