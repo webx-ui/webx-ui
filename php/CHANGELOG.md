@@ -1,5 +1,118 @@
 # @webx-ui/php
 
+## 0.63.0
+
+### Minor Changes
+
+- a814314: The audit keeps every heading of a page in order, and the page card shows them as a tree on a «Headings» tab: indented by level, a skipped level drawn where it should have been, and above the tree what breaks the usual order (no H1, several, not first, skipped levels, empty headings).
+
+  Two new page checks join the findings: `headings.h1_not_first` (another heading comes before the H1) and `headings.empty` (a heading with no text).
+
+  The overview of a page has a «Headings» line: whether the order is fine, how many there are, what breaks the rules, and a link to the map.
+
+- a814314: The site audit reports block values for fields their type does not define (`blocks.stray_values`, a notice): one finding per entity, a row per block with its type, key, the stray keys and whether they are on the site or only in the draft, and a link to the editor. The fix `blocks.prune-stray` takes them out of that one entity, dry run first. Repeater items are measured against the repeater's own fields. The check, the fix and `webx:blocks:prune` share one `StrayValues`; a block of an unknown type is never touched.
+- a814314: Block values for fields a type does not have can be taken out: `blocks_edit_content` has an `unset` op (`{ op: "unset", key, fields }`, dry run included), and `webx:blocks:prune [--dry-run]` removes them from every listed entity and the regions, live and draft. The outline names a block by what its fields mean (`BlockLabel`): a heading-like field, then the first text field of the schema, in the content language — never a picture, a choice, an address or a stray key; the type's title when nothing fits.
+- a814314: «Discard changes» asks one plain question in every drafted editor — «Discard changes? The published version comes back. Everything changed since publishing is lost…» — with «Keep» beside it instead of «Cancel». Agents get `articles_discard`, `events_discard`, `services_discard`, `recipes_discard` and `vacancies_discard` beside `pages_discard`; a dry run names only the fields that differ from the published ones (`HasDraft::changedFields()`).
+- a814314: One place decides how an address is written: routing's resolver asks a `Spelling` contract (the registry's own by default — one slash, none at the end, lower case, a file keeps its case), and `module-seo` binds it to the «One address per page» settings, the same function its middleware uses. An address takes at most one 301 for every difference at once — the mirror, https, slashes, the index file, case, the trailing slash — never a chain and never a loop; «keep as it is» is obeyed instead of the registry imposing its own spelling; the panel follows the mirror and https too. «With a slash» is no longer offered (a saved one reads as «keep»). A migration writes the registry's spelling into the SEO tab where nobody had saved it, so the tab shows what the site does.
+- a814314: The page editor can throw a draft away: «Discard changes» in the ··· while the page is published with edits waiting, behind a confirmation; API `POST /pages/{id}/discard`; MCP `pages_discard` with a dry run that names the fields it would drop.
+- a814314: Pages can be deleted for good from the bin: «Delete for good» in a bin row's menu and «Empty the bin» above it; API `DELETE /pages/{id}/purge` and `DELETE /pages/bin`; MCP `pages_purge` (bin only, by id, dry run lists the pages). The branch goes node by node, so each page's addresses, former addresses, SEO card and history go with it. `HasVersions` now drops an entity's history when the entity is deleted for good.
+
+### Patch Changes
+
+- a814314: An agent call says what its block of JSON is: «The agent's request» — what the agent passed to the
+  tool — and that the answer is not kept. The block stands out of the tinted row on the surface.
+- a814314: An agent's `*_update` (pages, blog, events, services, recipes, vacancies, FAQ, press, reviews, tariffs, team, banners) and `settings_set` change a translated field only in the languages they name: `{"slug": {"de": …}}` leaves the other languages alone, `null` empties one, a plain string is the main language. A language the site is not published in is refused — dry run included — instead of being dropped and emptying the field (`ScreenValues::patch`).
+- a814314: The audit shows how an external link is written: its `target` and `rel` (`_blank`, `nofollow`,
+  `noopener`…) as badges — an «Attributes» column in the external redirect and broken link findings,
+  and beside the address on «Outgoing». When the pages write one link differently, each page says
+  its own. `_blank` without `noopener` or `noreferrer` is marked, with why in the tooltip.
+- a814314: Services, events, recipes, FAQ, press and reviews hand their text to the site audit: drafts, hidden
+  records and fields a template never prints are searched for addresses of a development stand, and
+  a fix writes back through the model, one language at a time. A module of Eloquent rows needs only
+  a short `ModelContentSource` from `module-audit` — the models, the columns, the editor's address.
+- a814314: The audit's page card reads at a glance. «Overview» opens with the page's numbers as tiles — code,
+  size in KB, first byte, answer, words, links, pictures — then sections with an edge each: server
+  answer, crawl, markup, preview and structured data, headers; the Open Graph and Twitter keys line
+  up in a column of their own. «Findings» are cards with the count in the head, like the findings
+  list, and short columns (kind, KB, type) keep narrow.
+- a814314: The audit's address lists read at a glance. A finding is a card: its page, the «New» badge and the
+  count as a counter on one line, the table under it. Columns take their width from their type, so
+  the tables of one check line up. A redirect row reads from → to, the target emphasised and a
+  trailing slash, `www.` or `http → https` named; 302 is coloured apart from 301. Long addresses
+  keep to one line, losing their middle, with the whole in the panel's tooltip. A redirect check
+  can be read by link — one card per link with the pages it is on. On «Outgoing» a host's links are
+  grouped by where they lead, every page counted (`targets` in the hosts answer), and a card's
+  «Show all» folds back with «Collapse».
+- a814314: Every answer code in the audit says what it means: hover a 403, a 301 or «No answer» for its name
+  and what to do about it — in the findings, on «Outgoing», in the page list and the page card. A
+  code without a line of its own is explained by its class.
+- a814314: The pages bin shows the address each page had before it went in (`former_path`), greyed, instead of «—» and «no address in this language» on every row.
+- a814314: A block type's rows, columns, cards and tabs are not fields: the «has no field» refusal lists only the fields that hold a value, and a value stored under a layout id counts as a stray one (`Schema::valueFields()`).
+- a814314: Agents cannot put stray block values in: `blocks_edit_content` (`set`, `add`) and `blocks_set_content` refuse a value for a field the block's type does not define — repeater items included, dry run included — naming it and the type's fields; a stray value the block already holds may be written back as it was or emptied. A prune (`webx:blocks:prune`, the audit fix `blocks.prune-stray`) now drops a draft that differed from the site only by stray values, and says so.
+- a814314: A new page, article, event, service, recipe, vacancy, tag or menu is named in the site's main
+  language, never in the panel's: a Russian panel over an English-only site used to store the title
+  and slug under `ru`, leaving a page with no address in any language the site has. A plain string
+  written to a translated attribute now lands in the content language (`Locales::content()`), and
+  an agent's text keyed by a language the site is not published in is refused with the list of the
+  site's languages.
+- a814314: The rules for agents moved from the settings to «Connect an agent»: tone, what never to say and
+  notes are a card there, with «Save» in its footer, shown when `module-settings` is installed and
+  to whoever may see the settings. They are the screen `settings.content` now, with
+  `GET` / `PUT /api/cms/settings/content`; stored and read as before, the MCP resource unchanged.
+  A project that patched `content-card` on `settings.index` patches it on `settings.content`.
+- a814314: The panel's cached dictionary follows its lang files: the cache key carries how many there are and when the newest changed, so new words reach the panel on the next load instead of after a day or `webx:locales:clear`.
+- a814314: A draft is compared with the published record through the model's casts: an event's untouched `all_day` (`false` in the form, `0` in the column), a date sent as ISO with an offset, a decimal written `12.5` no longer count as changes — in `*_discard` dry runs, and when deciding that an update changing nothing leaves no draft.
+- a814314: A draft that says what the site already says is not kept: a letter typed and taken back between two autosaves no longer leaves a page «modified», in the panel or through an agent's update. Publishing with nothing changed and no new date writes no version (`HasDraft::matchesLive()`).
+- a814314: The editors of pages, services, events, recipes, vacancies and articles have «Take off the site»
+  as a button of its own in the head while the record is on the site — before, only the list's ···
+  had it. It asks first, saying what happens and that «Publish» brings it back at the same address.
+  The words are the panel's (`editor.unpublish*`), shared by every module.
+- a814314: Panel lists show an address instead of «No address in this language». They are read in the site's
+  content language, not the panel's, so an English-only site in a Russian panel shows its addresses
+  plainly; and a record with no address in the language a multilingual list is read in shows its
+  address in the site's main language, with an info mark whose tooltip says so (`address_locale` in
+  the rows, `PanelAddress` in `routing`, `WxAddressNote` in `module-admin`). Pages, articles,
+  events, recipes, services, vacancies and every module's categories.
+- a814314: A menu read in a panel whose language the site does not have shows where its items lead again:
+  the tree is worked out in the site's content language — the one asked for, the request's, or the
+  site's main one — instead of the panel's. An English-only site in a Russian panel listed every
+  item as leading nowhere and «not on the site», and an item titled only in English as untitled.
+- a814314: «Menu» moves under «System», right after «Regions»: a menu is set up once and printed in the header
+  and the footer, so it stands beside the regions rather than among the sections opened every day.
+- a814314: The page editor's address is the panel's shared slug field (`wx-slug`), as on a catalog product: the address of the page above stands inside the field in front of the slug, in the language being edited, and a changed slug on a page that has an address says that the old one will lead to the new one. The separate read-only «Address» line under it is gone. `GET /pages/{id}` also answers `addresses` — the page's current address by language. `RecordAddress` takes an optional `missing()`: with it, a `null` prefix means the record has no address in this language, and the field says so instead of printing `/`.
+- a814314: «Empty the bin» says how many pages it will delete before asking — every page in the bin, those that went in with a parent included, counted by the server (`GET /pages/bin`), with the plural forms of each panel language.
+- a814314: `Locales::content()` — the site's content language for a panel request: the one asked for, the
+  request's, or the site's main one, whichever the site has. The link picker and the relation fields
+  work in it too, so a panel read in a language the site lacks no longer finds nothing to link to.
+- a814314: The publish question names the address the record will have after publishing. A slug renamed in
+  the draft moved the address only on publishing, while the question still named the old one; rows
+  now carry `next_path` (`PanelAddress::afterPublishing()`), and the question adds that the old
+  address will lead to the new one.
+- a814314: The redirects table shows the code as the audit does: a badge, 301 calm and 302 orange, with what
+  it means on hover. In a form's field dialog a number — the answer's length, a size, a count of
+  choices — is 200px wide instead of stretching across the dialog, and the field's ··· says «Edit»
+  rather than «Field».
+- a814314: A redirect's code is a two-way switch, 301 | 302, instead of a list to open, with a line under it
+  on what each means: moved for good, carrying the old address's weight, or for a while, the old
+  address staying the main one.
+- a814314: Restoring from the bin brings back the old addresses too. Into the bin, an entity's aliases are
+  kept aside in `routes_trashed` (a new migration in `webx-ui/routing`) instead of being lost; a
+  restore puts back each one nobody took meanwhile, and a force delete removes them. A page restore
+  answers `aliases_restored` and `aliases_dropped`, and the panel warns about the dropped ones.
+- a814314: An agent deletes SEO rules and redirects: `seo_urls_delete` and `seo_redirects_delete`, by id, with
+  `dry_run` saying what would go. `seo_test_url` and `POST /test-url` ask the sources with the entity
+  the address registry finds at the address, so the chain shows the page's own card (`EntitySource`)
+  the way the public page renders it.
+- a814314: `seo_test_url` over MCP answers what the panel's test-url does: `redirect` (the one that catches the
+  address, with `leads_to` — where it sends this very address, `$1` filled in) and `route` (what the
+  address registry holds there). Both now come from one `AddressReport`, and the redirect is found by
+  the same `RedirectFinder` the middleware uses, so a looping redirect the site steps over is not
+  reported as the one that catches the address.
+- a814314: «System» is split under captions: the settings on top, then «Site» (files, blocks, regions,
+  menus), «Search and checks» (SEO, the audit, a search index) and «Access» (administrators,
+  connecting an agent). The captions are added to the config at boot, so a site with its own
+  `webx-admin.php` gets them too; a module joins one with `HasNavSection` and `SystemSections`.
+
 ## 0.62.1
 
 ### Patch Changes

@@ -1,5 +1,29 @@
 # @webx-ui/module-auth
 
+## 0.9.1
+
+### Patch Changes
+
+- a814314: An agent call says what its block of JSON is: «The agent's request» — what the agent passed to the
+  tool — and that the answer is not kept. The block stands out of the tinted row on the surface.
+- a814314: The rules for agents moved from the settings to «Connect an agent»: tone, what never to say and
+  notes are a card there, with «Save» in its footer, shown when `module-settings` is installed and
+  to whoever may see the settings. They are the screen `settings.content` now, with
+  `GET` / `PUT /api/cms/settings/content`; stored and read as before, the MCP resource unchanged.
+  A project that patched `content-card` on `settings.index` patches it on `settings.content`.
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+  - @webx-ui/core@0.37.1
+  - @webx-ui/module-admin@0.23.4
+
 ## 0.9.0
 
 ### Minor Changes

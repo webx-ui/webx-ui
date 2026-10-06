@@ -1,5 +1,34 @@
 # @webx-ui/module-inbox
 
+## 0.6.1
+
+### Patch Changes
+
+- a814314: `WxInputNumber` in a form item is at most 240px wide everywhere, not only in screens: in a
+  hand-written form a number stretched across the card with its − and + a line apart. Bare — in a
+  filter row or a table cell — it keeps the width it is given. The screens' own cap and the field
+  dialog's are gone, the core's covers both.
+- a814314: The redirects table shows the code as the audit does: a badge, 301 calm and 302 orange, with what
+  it means on hover. In a form's field dialog a number — the answer's length, a size, a count of
+  choices — is 200px wide instead of stretching across the dialog, and the field's ··· says «Edit»
+  rather than «Field».
+- a814314: A switch says what it turns beside itself, not in a heading above it. In screens a `wx-switch` or
+  `wx-checkbox` node hands its label to the control (`labelProp` on a field type), and the form
+  item keeps the help and the error; the hand-written forms of SEO, the inbox and the landings'
+  filters follow.
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+  - @webx-ui/core@0.37.1
+  - @webx-ui/module-admin@0.23.4
+
 ## 0.6.0
 
 ### Minor Changes

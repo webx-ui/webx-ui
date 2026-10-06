@@ -1,5 +1,52 @@
 # @webx-ui/module-pages
 
+## 0.4.0
+
+### Minor Changes
+
+- a814314: The page editor can throw a draft away: «Discard changes» in the ··· while the page is published with edits waiting, behind a confirmation; API `POST /pages/{id}/discard`; MCP `pages_discard` with a dry run that names the fields it would drop.
+- a814314: Pages can be deleted for good from the bin: «Delete for good» in a bin row's menu and «Empty the bin» above it; API `DELETE /pages/{id}/purge` and `DELETE /pages/bin`; MCP `pages_purge` (bin only, by id, dry run lists the pages). The branch goes node by node, so each page's addresses, former addresses, SEO card and history go with it. `HasVersions` now drops an entity's history when the entity is deleted for good.
+
+### Patch Changes
+
+- a814314: The pages bin shows the address each page had before it went in (`former_path`), greyed, instead of «—» and «no address in this language» on every row.
+- a814314: «Discard changes» asks one plain question in every drafted editor — «Discard changes? The published version comes back. Everything changed since publishing is lost…» — with «Keep» beside it instead of «Cancel». Agents get `articles_discard`, `events_discard`, `services_discard`, `recipes_discard` and `vacancies_discard` beside `pages_discard`; a dry run names only the fields that differ from the published ones (`HasDraft::changedFields()`).
+- a814314: The editors of pages, services, events, recipes, vacancies and articles have «Take off the site»
+  as a button of its own in the head while the record is on the site — before, only the list's ···
+  had it. It asks first, saying what happens and that «Publish» brings it back at the same address.
+  The words are the panel's (`editor.unpublish*`), shared by every module.
+- a814314: Panel lists show an address instead of «No address in this language». They are read in the site's
+  content language, not the panel's, so an English-only site in a Russian panel shows its addresses
+  plainly; and a record with no address in the language a multilingual list is read in shows its
+  address in the site's main language, with an info mark whose tooltip says so (`address_locale` in
+  the rows, `PanelAddress` in `routing`, `WxAddressNote` in `module-admin`). Pages, articles,
+  events, recipes, services, vacancies and every module's categories.
+- a814314: The page editor's address is the panel's shared slug field (`wx-slug`), as on a catalog product: the address of the page above stands inside the field in front of the slug, in the language being edited, and a changed slug on a page that has an address says that the old one will lead to the new one. The separate read-only «Address» line under it is gone. `GET /pages/{id}` also answers `addresses` — the page's current address by language. `RecordAddress` takes an optional `missing()`: with it, a `null` prefix means the record has no address in this language, and the field says so instead of printing `/`.
+- a814314: «Empty the bin» says how many pages it will delete before asking — every page in the bin, those that went in with a parent included, counted by the server (`GET /pages/bin`), with the plural forms of each panel language.
+- a814314: The publish question names the address the record will have after publishing. A slug renamed in
+  the draft moved the address only on publishing, while the question still named the old one; rows
+  now carry `next_path` (`PanelAddress::afterPublishing()`), and the question adds that the old
+  address will lead to the new one.
+- a814314: «Publish» with an unsaved edit saves first and then asks, so the question names the address the page will publish at rather than the one it had before the edit.
+- a814314: Restoring from the bin brings back the old addresses too. Into the bin, an entity's aliases are
+  kept aside in `routes_trashed` (a new migration in `webx-ui/routing`) instead of being lost; a
+  restore puts back each one nobody took meanwhile, and a force delete removes them. A page restore
+  answers `aliases_restored` and `aliases_dropped`, and the panel warns about the dropped ones.
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+  - @webx-ui/core@0.37.1
+  - @webx-ui/module-admin@0.23.4
+  - @webx-ui/schema@0.7.4
+
 ## 0.3.32
 
 ### Patch Changes

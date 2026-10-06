@@ -1,5 +1,42 @@
 # @webx-ui/module-seo
 
+## 0.7.1
+
+### Patch Changes
+
+- a814314: The redirects table shows the code as the audit does: a badge, 301 calm and 302 orange, with what
+  it means on hover. In a form's field dialog a number — the answer's length, a size, a count of
+  choices — is 200px wide instead of stretching across the dialog, and the field's ··· says «Edit»
+  rather than «Field».
+- a814314: A redirect's code is a two-way switch, 301 | 302, instead of a list to open, with a line under it
+  on what each means: moved for good, carrying the old address's weight, or for a while, the old
+  address staying the main one.
+- a814314: In the rule and redirect dialogs «On» stands on a line of its own under the address it turns on
+  and off — under «Address» in a rule, under «Where to» in a redirect — instead of a column of its
+  own beside the priority or the code.
+- a814314: The redirects and automatic-redirects tables keep their row menu in view: a fixed layout with widths
+  on the narrow columns, and the two addresses cut with an ellipsis (the whole address in the tooltip)
+  instead of widening the table past its edge. The address tester names where a mask redirect sends
+  the address it was given.
+- a814314: A switch says what it turns beside itself, not in a heading above it. In screens a `wx-switch` or
+  `wx-checkbox` node hands its label to the control (`labelProp` on a field type), and the form
+  item keeps the help and the error; the hand-written forms of SEO, the inbox and the landings'
+  filters follow.
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+  - @webx-ui/core@0.37.1
+  - @webx-ui/module-admin@0.23.4
+  - @webx-ui/schema@0.7.4
+
 ## 0.7.0
 
 ### Minor Changes

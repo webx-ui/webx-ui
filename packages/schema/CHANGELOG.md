@@ -1,5 +1,23 @@
 # @webx-ui/schema
 
+## 0.7.4
+
+### Patch Changes
+
+- a814314: `WxInputNumber` in a form item is at most 240px wide everywhere, not only in screens: in a
+  hand-written form a number stretched across the card with its − and + a line apart. Bare — in a
+  filter row or a table cell — it keeps the width it is given. The screens' own cap and the field
+  dialog's are gone, the core's covers both.
+- a814314: A switch says what it turns beside itself, not in a heading above it. In screens a `wx-switch` or
+  `wx-checkbox` node hands its label to the control (`labelProp` on a field type), and the form
+  item keeps the help and the error; the hand-written forms of SEO, the inbox and the landings'
+  filters follow.
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+  - @webx-ui/core@0.37.1
+
 ## 0.7.3
 
 ### Patch Changes
