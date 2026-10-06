@@ -32,4 +32,6 @@ return [
     'hash-length' => 'Une ancre ne peut pas dépasser :max caractères.',
     'hash-shape' => 'Une ancre est un nom sur la page : sans espaces.',
     'not-localized' => 'Un lien est le même dans toutes les langues et ne se traduit pas.',
+    'address-fallback' => 'Pas encore d\'adresse dans cette langue : voici l\'adresse en :locale, la langue principale du site.',
+    'address-fallback-label' => 'Adresse dans la langue principale',
 ];

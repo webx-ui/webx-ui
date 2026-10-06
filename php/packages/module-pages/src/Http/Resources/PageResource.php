@@ -9,6 +9,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use WebxUi\Localization\Locales;
 use WebxUi\Pages\Models\Page;
 use WebxUi\Routing\Models\Route;
+use WebxUi\Routing\PanelAddress;
 
 /**
  * One row of the section: what a page is called, where it is, what state it is in, and what may
@@ -41,7 +42,7 @@ final class PageResource extends JsonResource
 
         $locale = $this->locale();
         $shown = $page->hasDraft() ? $page->withDraft() : $page;
-        $canonical = $this->canonical($page, $locale);
+        [$canonical, $addressLocale, $fallback] = PanelAddress::pick(fn (string $code): ?Route => $this->canonical($page, $code), $locale);
         $id = (int) $page->getKey();
 
         return [
@@ -54,7 +55,10 @@ final class PageResource extends JsonResource
             // Null rather than an empty string when the page names no slug in this language:
             // the two mean different things, and only the home page is legitimately at `''`.
             'path' => $canonical?->path,
-            'url' => $canonical === null ? null : $page->url($locale),
+            'url' => $canonical === null ? null : $page->url($addressLocale),
+            // The language of the address when it is the site's main one, shown because this
+            // language has none: the row says so in a tooltip rather than instead of the address.
+            'address_locale' => $fallback,
             'status' => $page->status(),
             'published_at' => $page->published_at?->toAtomString(),
             'updated_at' => $page->updated_at?->toAtomString(),
@@ -109,6 +113,6 @@ final class PageResource extends JsonResource
     /** The language the panel is asking in, normalised the way the registry stores it. */
     private function locale(): string
     {
-        return app(Locales::class)->current();
+        return app(Locales::class)->content();
     }
 }

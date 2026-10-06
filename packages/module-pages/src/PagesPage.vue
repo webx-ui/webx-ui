@@ -9,6 +9,7 @@ import {
   WxDate,
   WxListScreen,
   type ScreenAction,
+  WxAddressNote,
 } from '@webx-ui/module-admin'
 import {
   confirm,
@@ -415,6 +416,7 @@ const actions = computed<ScreenAction[]>(() =>
           <wx-text v-else-if="row.path !== null" mono size="sm" tone="muted"
             >/{{ row.path }}</wx-text
           >
+          <wx-address-note v-if="!inBin && row.path !== null" :locale="row.address_locale" />
           <wx-text v-else size="sm" tone="muted">{{ t('page.no-address') }}</wx-text>
         </template>
 

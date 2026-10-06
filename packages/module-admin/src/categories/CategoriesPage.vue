@@ -13,6 +13,7 @@ import {
   WxText,
   WxTooltip,
 } from '@webx-ui/core'
+import WxAddressNote from '../AddressNote.vue'
 import { useAdmin } from '../admin'
 import { useErrorText } from '../errors'
 import { useTranslate } from '../i18n'
@@ -228,6 +229,7 @@ async function reorder(): Promise<void> {
             </span>
             <wx-text v-if="addressed" size="sm" tone="muted" truncate>
               {{ item.path === null ? w('no-address') : `/${item.path}` }}
+              <wx-address-note v-if="item.path !== null" :locale="item.address_locale" />
             </wx-text>
           </router-link>
         </template>

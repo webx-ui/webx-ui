@@ -27,6 +27,8 @@ export interface PageRow {
   slug: string
   /** `null` — this page names no address in the language the panel is open in. */
   path: string | null
+  /** The language of `path` when it is the site's main one, shown because this language has none. */
+  address_locale?: string | null
   url: string | null
   status: PageStatus
   published_at: string | null

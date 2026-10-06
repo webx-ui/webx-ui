@@ -32,4 +32,6 @@ return [
     'hash-length' => 'Un ancla puede tener como máximo :max caracteres.',
     'hash-shape' => 'Un ancla es un nombre en la página: sin espacios.',
     'not-localized' => 'Un enlace es el mismo en todos los idiomas y no se traduce.',
+    'address-fallback' => 'Aún no hay dirección en este idioma: es la dirección en :locale, el idioma principal del sitio.',
+    'address-fallback-label' => 'Dirección en el idioma principal',
 ];

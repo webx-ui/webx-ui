@@ -23,6 +23,8 @@ export interface RecipeRow {
   slug: string
   /** `null` — no address in the language the panel is open in. */
   path: string | null
+  /** The language of `path` when it is the site's main one, shown because this language has none. */
+  address_locale?: string | null
   url: string | null
   /** The first picture of the gallery, which is what every card of the site shows. */
   cover: { thumb: string | null } | null

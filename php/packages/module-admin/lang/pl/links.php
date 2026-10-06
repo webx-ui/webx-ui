@@ -32,4 +32,6 @@ return [
     'hash-length' => 'Kotwica może mieć najwyżej :max znaków.',
     'hash-shape' => 'Kotwica to nazwa na stronie: bez spacji.',
     'not-localized' => 'Odnośnik jest ten sam we wszystkich językach i nie podlega tłumaczeniu.',
+    'address-fallback' => 'W tym języku nie ma jeszcze adresu — to adres w :locale, głównym języku strony.',
+    'address-fallback-label' => 'Adres w języku głównym',
 ];

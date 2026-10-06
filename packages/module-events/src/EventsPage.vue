@@ -14,6 +14,7 @@ import {
   type AppliedFilter,
   type RowAction,
   type ScreenAction,
+  WxAddressNote,
 } from '@webx-ui/module-admin'
 import {
   confirm,
@@ -527,7 +528,9 @@ const actions = computed<ScreenAction[]>(() =>
         <template #cell-title="{ row }">
           <div class="wx-events__name">
             <span class="wx-events__title">{{ row.title }}</span>
-            <span class="wx-events__address">{{ address(row) }}</span>
+            <span class="wx-events__address"
+              >{{ address(row) }}<wx-address-note v-if="!inBin" :locale="row.address_locale"
+            /></span>
           </div>
         </template>
 

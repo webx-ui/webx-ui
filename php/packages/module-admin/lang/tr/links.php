@@ -32,4 +32,6 @@ return [
     'hash-length' => 'Bir çapa en fazla :max karakter olabilir.',
     'hash-shape' => 'Çapa, sayfadaki bir addır: boşluk içermez.',
     'not-localized' => 'Bir bağlantı her dilde aynıdır, çevrilemez.',
+    'address-fallback' => 'Bu dilde henüz adres yok — bu, sitenin ana dili :locale dilindeki adres.',
+    'address-fallback-label' => 'Ana dildeki adres',
 ];

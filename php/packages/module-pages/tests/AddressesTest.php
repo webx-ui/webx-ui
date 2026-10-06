@@ -79,6 +79,33 @@ class AddressesTest extends TestCase
     }
 
     #[Test]
+    public function a_list_shows_the_main_languages_address_where_its_own_has_none_and_names_it(): void
+    {
+        $this->useLocales('en', 'uk');
+
+        $about = $this->page('about');
+        $about->publish();
+
+        // Read in Ukrainian, which the page has no address in: the English one, said to be English.
+        $uk = collect($this->actingAs($this->editor(), 'cms')
+            ->getJson($this->api(), ['X-Webx-Locale' => 'uk'])
+            ->assertOk()
+            ->json('data.items'))->firstWhere('id', $about->id);
+
+        $this->assertSame('about', $uk['path']);
+        $this->assertSame('en', $uk['address_locale']);
+
+        // Read in a language the site does not have at all: the site's own, with nothing to say.
+        $ru = collect($this->actingAs($this->editor(), 'cms')
+            ->getJson($this->api(), ['X-Webx-Locale' => 'ru'])
+            ->assertOk()
+            ->json('data.items'))->firstWhere('id', $about->id);
+
+        $this->assertSame('about', $ru['path']);
+        $this->assertNull($ru['address_locale']);
+    }
+
+    #[Test]
     public function an_address_the_application_already_answers_is_refused(): void
     {
         $this->app['router']->get('/account', static fn (): string => 'mine');
