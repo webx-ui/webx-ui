@@ -237,4 +237,13 @@ return [
     'saved' => 'Збережено.',
     'dismiss' => 'Скасувати',
     'view-full' => 'Відкрити в повному розмірі',
+    'view-pages' => 'За сторінками',
+    'view-links' => 'За посиланнями',
+    'leads-to' => 'Веде на',
+    'change-slash' => 'Лише слеш',
+    'change-www' => 'www',
+    'change-https' => 'http → https',
+    'link-pages' => 'Сторінок: :count',
+    'link-show-all' => 'Показати всі',
+    'link-collapse' => 'Згорнути',
 ];

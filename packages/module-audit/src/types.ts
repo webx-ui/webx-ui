@@ -103,6 +103,8 @@ export interface AuditDetailsColumn {
 /** The expansion of a finding: data, drawn by one component for every check. */
 export interface AuditDetails {
   summary: string | null
+  /** The summary's number when the summary says nothing else: shown as a counter. */
+  count?: number | null
   table: { columns: AuditDetailsColumn[]; rows: Record<string, unknown>[] } | null
 }
 
@@ -366,6 +368,15 @@ export interface AuditHostPage {
   status: number | null
 }
 
+/** An address on a host and the pages that point at it. */
+export interface AuditHostTarget {
+  url: string
+  kind: string
+  status: number | null
+  pages: number
+  places: { page: string; anchor: string | null }[]
+}
+
 /** A field of the database that holds an address on a host. */
 export interface AuditHostField {
   source: string
@@ -385,5 +396,7 @@ export interface AuditHosts {
   hosts: AuditHostRow[]
   /** With `host`: where it stands. */
   pages?: AuditHostPage[]
+  /** The same links by where they lead: every page counted, fifty listed. */
+  targets?: AuditHostTarget[]
   fields?: AuditHostField[]
 }

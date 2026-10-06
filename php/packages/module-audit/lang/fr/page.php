@@ -237,4 +237,13 @@ return [
     'saved' => 'Enregistré.',
     'dismiss' => 'Annuler',
     'view-full' => 'Voir en taille réelle',
+    'view-pages' => 'Par page',
+    'view-links' => 'Par lien',
+    'leads-to' => 'Mène à',
+    'change-slash' => 'Seulement la barre oblique',
+    'change-www' => 'www',
+    'change-https' => 'http → https',
+    'link-pages' => 'Pages : :count',
+    'link-show-all' => 'Tout afficher',
+    'link-collapse' => 'Réduire',
 ];

@@ -237,4 +237,13 @@ return [
     'saved' => 'Zapisano.',
     'dismiss' => 'Anuluj',
     'view-full' => 'Pokaż w pełnym rozmiarze',
+    'view-pages' => 'Według stron',
+    'view-links' => 'Według linków',
+    'leads-to' => 'Prowadzi do',
+    'change-slash' => 'Tylko ukośnik',
+    'change-www' => 'www',
+    'change-https' => 'http → https',
+    'link-pages' => 'Strony: :count',
+    'link-show-all' => 'Pokaż wszystkie',
+    'link-collapse' => 'Zwiń',
 ];

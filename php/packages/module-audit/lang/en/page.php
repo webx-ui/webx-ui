@@ -237,4 +237,13 @@ return [
     'saved' => 'Saved.',
     'dismiss' => 'Cancel',
     'view-full' => 'View full size',
+    'view-pages' => 'By page',
+    'view-links' => 'By link',
+    'leads-to' => 'Leads to',
+    'change-slash' => 'Slash only',
+    'change-www' => 'www',
+    'change-https' => 'http → https',
+    'link-pages' => 'Pages: :count',
+    'link-show-all' => 'Show all',
+    'link-collapse' => 'Collapse',
 ];

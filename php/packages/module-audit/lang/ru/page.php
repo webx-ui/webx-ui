@@ -237,4 +237,13 @@ return [
     'saved' => 'Сохранено.',
     'dismiss' => 'Отмена',
     'view-full' => 'Открыть в полном размере',
+    'view-pages' => 'По страницам',
+    'view-links' => 'По ссылкам',
+    'leads-to' => 'Ведёт на',
+    'change-slash' => 'Только слэш',
+    'change-www' => 'www',
+    'change-https' => 'http → https',
+    'link-pages' => 'Страниц: :count',
+    'link-show-all' => 'Показать все',
+    'link-collapse' => 'Свернуть',
 ];

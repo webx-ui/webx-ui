@@ -248,7 +248,9 @@ final class HistoryTest extends TestCase
         $this->getJson(route('webx.audit.hosts.index', ['host' => 'dev.shop.example.com']))
             ->assertOk()
             ->assertJsonPath('data.pages.0.page', self::BASE.'/')
-            ->assertJsonPath('data.pages.0.kind', 'img');
+            ->assertJsonPath('data.pages.0.kind', 'img')
+            ->assertJsonPath('data.targets.0.kind', 'img')
+            ->assertJsonPath('data.targets.0.places.0.page', self::BASE.'/');
 
         $home = AuditPage::query()->where('run_id', $run->id)->where('url', self::BASE.'/')->sole();
 
@@ -277,7 +279,9 @@ final class HistoryTest extends TestCase
         $this->getJson(route('webx.audit.hosts.index', ['host' => 'shop.example.com']))
             ->assertOk()
             ->assertJsonPath('data.pages.0.url', $last->to_url)
-            ->assertJsonPath('data.pages.0.status', 401);
+            ->assertJsonPath('data.pages.0.status', 401)
+            ->assertJsonPath('data.targets.0.url', $last->to_url)
+            ->assertJsonPath('data.targets.0.status', 401);
     }
 
     private function html(string $title): string

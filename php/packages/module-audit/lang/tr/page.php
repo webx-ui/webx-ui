@@ -237,4 +237,13 @@ return [
     'saved' => 'Kaydedildi.',
     'dismiss' => 'İptal',
     'view-full' => 'Tam boyutta göster',
+    'view-pages' => 'Sayfaya göre',
+    'view-links' => 'Bağlantıya göre',
+    'leads-to' => 'Gittiği yer',
+    'change-slash' => 'Yalnızca eğik çizgi',
+    'change-www' => 'www',
+    'change-https' => 'http → https',
+    'link-pages' => 'Sayfa: :count',
+    'link-show-all' => 'Tümünü göster',
+    'link-collapse' => 'Daralt',
 ];

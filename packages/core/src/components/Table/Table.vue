@@ -1241,7 +1241,9 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 
             <tr v-if="expandable && isExpanded(row, index)" class="wx-table__row--expansion">
               <td class="wx-table__cell wx-table__expansion" :colspan="columnCount">
-                <slot name="expanded" :row="row" :index="index" />
+                <div class="wx-table__expansion-body">
+                  <slot name="expanded" :row="row" :index="index" />
+                </div>
               </td>
             </tr>
           </template>
@@ -1932,6 +1934,19 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
 
 .wx-table__expansion {
   background: var(--wx-bg-subtle);
+}
+
+/*
+ * What a row opens into is as wide as the table's window, not as the table: when the columns
+ * scroll sideways, a card spanning all of them would put its right half out of view. It keeps to
+ * the visible width (the root is the inline-size container) and stays put while the columns
+ * scroll under it.
+ */
+.wx-table__expansion-body {
+  position: sticky;
+  inset-inline-start: var(--wx-table-padding-x);
+  box-sizing: border-box;
+  max-width: calc(100cqi - 2 * var(--wx-table-padding-x));
 }
 
 .wx-table__sort {
