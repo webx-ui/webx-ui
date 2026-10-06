@@ -48,7 +48,7 @@ final class DictionaryBuilder
 
         /** @var array{locale: string, fallback: string, namespaces: array<string, array<string, mixed>>} $dictionary */
         $dictionary = $this->cache->remember(
-            $this->cacheKey($locale),
+            $this->cacheKey($locale).'.'.$this->fingerprint($locale),
             (int) $this->config->get('webx-localization.cache.ttl', 86400),
             fn (): array => $this->collect($locale),
         );
@@ -58,14 +58,12 @@ final class DictionaryBuilder
 
     public function forget(?string $locale = null): void
     {
-        if ($locale !== null) {
-            $this->cache->forget($this->cacheKey(LocaleCatalogue::normalise($locale)));
+        $codes = $locale !== null
+            ? [LocaleCatalogue::normalise($locale)]
+            : array_map(static fn (array $panelLocale): string => $panelLocale['code'], $this->locales->panel());
 
-            return;
-        }
-
-        foreach ($this->locales->panel() as $panelLocale) {
-            $this->cache->forget($this->cacheKey($panelLocale['code']));
+        foreach ($codes as $code) {
+            $this->cache->forget($this->cacheKey($code).'.'.$this->fingerprint($code));
         }
     }
 
@@ -159,6 +157,36 @@ final class DictionaryBuilder
         }
 
         return array_values(array_unique($groups));
+    }
+
+    /**
+     * What the dictionary was built from, in a few characters: how many lang files there are and
+     * when the newest of them changed — the package's and whatever the site published over it.
+     *
+     * Part of the cache key, so that new words reach the panel on their own. Before, a package
+     * update that added keys was on disk and the panel kept saying them in English for a day,
+     * until somebody thought of `webx:locales:clear`. A hundred-odd `stat` calls, once per
+     * panel load, is the price; the files themselves are read only when the key changed.
+     */
+    private function fingerprint(string $locale): string
+    {
+        $count = 0;
+        $newest = 0;
+
+        foreach ($this->panelNamespaces() as $namespace => $path) {
+            foreach (array_unique([$locale, $this->locales->fallback()]) as $code) {
+                foreach ([$path.DIRECTORY_SEPARATOR.$code, $this->app->langPath('vendor'.DIRECTORY_SEPARATOR.$namespace.DIRECTORY_SEPARATOR.$code)] as $directory) {
+                    foreach ((array) glob($directory.DIRECTORY_SEPARATOR.'*.php') as $file) {
+                        if (is_string($file)) {
+                            $count++;
+                            $newest = max($newest, (int) @filemtime($file));
+                        }
+                    }
+                }
+            }
+        }
+
+        return $count.'-'.$newest;
     }
 
     private function caching(): bool
