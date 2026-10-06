@@ -231,6 +231,26 @@ describe('WxPageEditorPage', () => {
     expect(asked.message).toContain('/about will lead to the new one')
   })
 
+  it('saves an unsaved edit before asking, so the question names the address it will publish at', async () => {
+    const { wrapper, put } = await panel()
+    const saved = detail('r2', 'About us')
+    saved.page = { ...saved.page, status: 'modified', next_path: 'about-us' }
+    put.mockResolvedValueOnce({ data: saved })
+
+    await type(wrapper, 'About us')
+    await wrapper
+      .findAll('button')
+      .find((one) => one.text() === 'Publish')
+      ?.trigger('click')
+    await flushPromises()
+
+    expect(put).toHaveBeenCalledTimes(1)
+
+    const asked = vi.mocked(confirm).mock.calls.at(-1)?.[0] as { message: string }
+
+    expect(asked.message).toContain('/about-us')
+  })
+
   it('leaves without asking when the save is already on its way', async () => {
     const { wrapper, put, router } = await panel()
 

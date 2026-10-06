@@ -294,6 +294,11 @@ async function discard(): Promise<void> {
 
 /** Publishing is asked about, because it is the one action here that visitors see. */
 async function publish(): Promise<void> {
+  // Saved before asking: the question names the address the draft will publish at, and only a
+  // saved draft has one — an address typed but not saved was asked about under the old one.
+  if (dirty.value) await save()
+  if (conflict.value || dirty.value) return
+
   const row = recipe.value
 
   if (!row) return
@@ -318,8 +323,6 @@ async function publish(): Promise<void> {
 
   if (!agreed) return
 
-  if (dirty.value) await save()
-  if (conflict.value) return
 
   working.value = true
 
