@@ -81,7 +81,7 @@ final class ContentEdit
      * left alone: there is no schema to measure it against.
      *
      * @param  list<array<string, mixed>>  $tree
-     * @param  callable(string): ?list<string>  $fields  Type slug → the field ids it defines; null when unknown.
+     * @param  callable(string): ?array<string, list<string>|null>  $fields  Type slug → its field ids, each with the item keys of a repeater (null for any other field); null when the type is unknown.
      * @param  list<array{key: ?string, type: string, fields: list<string>}>  $dropped  What went, for the report.
      * @return list<array<string, mixed>>
      */
@@ -105,14 +105,38 @@ final class ContentEdit
                     $values[$field] = self::prune(array_values($value), $fields, $dropped);
                 }
 
-                if ($known !== null && ! in_array((string) $field, $known, true)) {
+                if ($known !== null && ! array_key_exists((string) $field, $known)) {
                     $gone[] = (string) $field;
                     unset($values[$field]);
+
+                    continue;
+                }
+
+                // A repeater's items keep the keys its children name, as its own save does.
+                $items = $known[(string) $field] ?? null;
+
+                if ($items !== null && is_array($value) && array_is_list($value)) {
+                    foreach ($value as $index => $item) {
+                        if (! is_array($item)) {
+                            continue;
+                        }
+
+                        foreach (array_keys($item) as $name) {
+                            if (! in_array((string) $name, $items, true)) {
+                                $gone[] = $field.'.*.'.$name;
+                                unset($item[$name]);
+                            }
+                        }
+
+                        $value[$index] = $item;
+                    }
+
+                    $values[$field] = $value;
                 }
             }
 
             if ($gone !== []) {
-                $dropped[] = ['key' => is_string($node['key'] ?? null) ? $node['key'] : null, 'type' => (string) $node['type'], 'fields' => $gone];
+                $dropped[] = ['key' => is_string($node['key'] ?? null) ? $node['key'] : null, 'type' => (string) $node['type'], 'fields' => array_values(array_unique($gone))];
             }
 
             if (is_array($node['values'] ?? null)) {

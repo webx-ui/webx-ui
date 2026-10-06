@@ -13,4 +13,12 @@ return [
     'ok-bare' => 'Keine nackten Elementselektoren.',
     'ok-container' => 'Die Breite wird per Container-Query bestimmt.',
     'ok-variables' => 'Jede Variable des Templates ist ein Feld des Schemas.',
+    'blocks' => [
+        'stray_values' => [
+            'title' => 'Blockwerte für Felder, die der Typ nicht hat',
+            'found' => 'Blöcke enthalten Werte für Felder, die ihr Typ nicht definiert — übrig von einem Import oder einem aus dem Typ entfernten Feld.',
+            'why' => 'Besucher sehen davon nichts, aber es steckt in den Daten des Editors und in dem, was ein Agent liest, und taucht als falsche Bezeichnung eines Blocks auf.',
+            'fix' => 'Entfernen Sie sie mit der Korrektur oder für die ganze Website mit php artisan webx:blocks:prune. Ein Block eines Typs, den es nicht mehr gibt, bleibt unberührt. Elemente eines Repeaters werden mit dessen Feldern verglichen.',
+        ],
+    ],
 ];

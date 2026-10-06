@@ -7,6 +7,14 @@ namespace WebxUi\Blocks\Tests;
 use Illuminate\Testing\Fluent\AssertableJson;
 use Laravel\Mcp\Server\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Audit\Checks\AuditContext;
+use WebxUi\Audit\Checks\Finding;
+use WebxUi\Audit\Hosts\HostClassifier;
+use WebxUi\Audit\Probes\ProbeSet;
+use WebxUi\Audit\Probes\SiteClient;
+use WebxUi\Audit\Runs\AuditRun;
+use WebxUi\Blocks\Audit\PruneStrayValuesFix;
+use WebxUi\Blocks\Audit\StrayValuesCheck;
 use WebxUi\Blocks\Tests\Fixtures\Page;
 use WebxUi\Mcp\Registry\ToolRegistry;
 use WebxUi\Mcp\Server\RegistryTool;
@@ -94,6 +102,55 @@ final class StrayValuesTest extends TestCase
         $this->assertSame(['anything' => 'left alone'], $blocks[1]['values'], 'no schema to measure an unknown type by');
 
         $this->artisan('webx:blocks:prune')->expectsOutputToContain('only the fields its type defines')->assertSuccessful();
+    }
+
+    #[Test]
+    public function the_audit_reports_one_finding_per_entity_and_its_fix_cleans_that_entity_only(): void
+    {
+        $this->publish('faq', '<section data-wx-block="faq"></section>', [], ['schema' => [
+            ['id' => 'items', 'type' => 'wx-repeater', 'children' => [['id' => 'question', 'type' => 'wx-input'], ['id' => 'answer', 'type' => 'wx-textarea']]],
+        ]]);
+
+        $dirty = $this->page([
+            $this->node('hero', ['title' => 'Stray', 'heading' => ['en' => 'Kept']], 'k-hero'),
+            // A repeater item measured against the repeater's own fields.
+            $this->node('faq', ['items' => [['question' => 'Why?', 'answer' => 'Because.', 'legacy' => 'x']]], 'k-faq'),
+        ]);
+        $clean = $this->page([$this->node('hero', ['heading' => ['en' => 'Fine']], 'k-ok')]);
+
+        $findings = $this->audit();
+
+        $this->assertCount(1, $findings, 'the clean page is not reported');
+        $this->assertSame(StrayValuesCheck::ID, $findings[0]->check);
+        $this->assertSame('notice', $findings[0]->severity);
+        $this->assertSame(
+            [['hero · k-hero', 'title'], ['faq · k-faq', 'items.*.legacy']],
+            array_map(static fn (array $row): array => [$row['block'], $row['fields']], $findings[0]->details['table']['rows'] ?? []),
+        );
+
+        $fix = $this->app->make(PruneStrayValuesFix::class);
+        $this->assertTrue($fix->available($findings[0]));
+        $this->assertCount(2, $fix->preview($findings[0])->changes, 'a dry run names what would go');
+        $this->assertArrayHasKey('title', $dirty->refresh()->blocks[0]['values'], 'and changes nothing');
+
+        $fix->apply($findings[0]);
+
+        $blocks = $dirty->refresh()->blocks;
+        $this->assertSame(['heading' => ['en' => 'Kept']], $blocks[0]['values']);
+        $this->assertSame([['question' => 'Why?', 'answer' => 'Because.']], $blocks[1]['values']['items']);
+        $this->assertFalse($fix->available($findings[0]));
+        $this->assertSame([], $this->audit());
+        $this->assertSame(['heading' => ['en' => 'Fine']], $clean->refresh()->blocks[0]['values']);
+    }
+
+    /**
+     * @return list<Finding>
+     */
+    private function audit(): array
+    {
+        $context = new AuditContext(new AuditRun, new HostClassifier(['example.test']), $this->app->make(SiteClient::class), new ProbeSet, $this->app->make('config'));
+
+        return array_values(iterator_to_array($this->app->make(StrayValuesCheck::class)->run($context), false));
     }
 
     /**

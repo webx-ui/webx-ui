@@ -32,8 +32,12 @@ their guides when the question is about one of those.
 - **Commands** `webx:blocks:export`, `webx:blocks:import`, `webx:blocks:offered`,
   `webx:blocks:bundles`, `webx:blocks:clear`, `webx:blocks:regions`, `webx:blocks:prune`.
 - Also registered: field types `wx-data` and `wx-slot`, the registries `BlockOffers`,
-  `BlockShapes`, `BlockComponents`, an audit content source for regions when
-  `webx-ui/module-audit` is installed, demo content (`resources/demo`).
+  `BlockShapes`, `BlockComponents`, demo content (`resources/demo`). With
+  `webx-ui/module-audit` installed: a content source for regions, the check
+  `blocks.stray_values` (one finding per entity whose blocks hold values for fields their type
+  does not define, repeater items included, live and draft) and its fix `blocks.prune-stray` —
+  the same `StrayValues` that `webx:blocks:prune` runs; a block of an unknown type is never
+  touched.
 
 ## Change it without forking
 
