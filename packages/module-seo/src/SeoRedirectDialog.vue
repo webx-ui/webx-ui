@@ -169,13 +169,14 @@ async function save(): Promise<void> {
         <wx-input v-model="form.target" placeholder="/new-address" />
       </wx-form-item>
 
+      <!-- On a line of its own under where the redirect leads, as in the rule dialog. -->
+      <wx-form-item>
+        <wx-switch v-model="form.is_active" :label="t('page.active')" />
+      </wx-form-item>
+
       <div class="wx-seo-redirect__row">
         <wx-form-item :label="t('page.status')">
           <wx-select v-model="form.status" :options="statusOptions" />
-        </wx-form-item>
-
-        <wx-form-item>
-          <wx-switch v-model="form.is_active" :label="t('page.active')" />
         </wx-form-item>
       </div>
     </div>
