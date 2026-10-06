@@ -403,9 +403,15 @@ const actions = computed<ScreenAction[]>(() =>
         </template>
 
         <template #cell-path="{ row }">
-          <!-- A page in the bin holds no address: the registry let it go when it went in, and
-               a live address beside a page nobody can reach would be the wrong promise. -->
-          <wx-text v-if="inBin" size="sm" tone="muted">—</wx-text>
+          <!-- A page in the bin holds no address: the registry let it go when it went in. The
+               one it had is shown greyed — what the editor would be bringing back, not
+               a link to a page nobody can reach. -->
+          <template v-if="inBin">
+            <wx-text v-if="row.former_path != null" mono size="sm" tone="muted"
+              >/{{ row.former_path }}</wx-text
+            >
+            <wx-text v-else size="sm" tone="muted">—</wx-text>
+          </template>
           <!-- The address of a live page is a link to it; a draft's is the address it will
                have, which is worth showing and not worth clicking. -->
           <a
@@ -421,8 +427,10 @@ const actions = computed<ScreenAction[]>(() =>
           <wx-text v-else-if="row.path !== null" mono size="sm" tone="muted"
             >/{{ row.path }}</wx-text
           >
-          <wx-address-note v-if="!inBin && row.path !== null" :locale="row.address_locale" />
-          <wx-text v-else size="sm" tone="muted">{{ t('page.no-address') }}</wx-text>
+          <template v-if="!inBin">
+            <wx-address-note v-if="row.path !== null" :locale="row.address_locale" />
+            <wx-text v-else size="sm" tone="muted">{{ t('page.no-address') }}</wx-text>
+          </template>
         </template>
 
         <template #cell-status="{ row }">

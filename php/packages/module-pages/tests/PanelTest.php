@@ -385,6 +385,9 @@ final class PanelTest extends TestCase
         // The bin lists what somebody deleted, not everything that went dark with it.
         $bin = $this->actingAs($editor, 'cms')->getJson($this->api().'?trashed=1')->assertOk();
         $this->assertSame([$catalog->getKey()], array_column($bin->json('data.items'), 'id'));
+        // No address in the registry while it is there, and the one it had to tell it by.
+        $this->assertNull($bin->json('data.items.0.path'));
+        $this->assertSame('catalog', $bin->json('data.items.0.former_path'));
 
         $this->actingAs($editor, 'cms')
             ->postJson($this->api($catalog->getKey()).'/restore')

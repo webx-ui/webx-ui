@@ -73,6 +73,9 @@ final class PageResource extends JsonResource
             'descendants_count' => $page->branchCount(),
             'deleted_at' => $page->deleted_at?->toAtomString(),
             'trashed_with' => $page->trashed_with,
+            // In the bin the registry holds no address for it, so the list would say «none» about
+            // every row; this is the one it had, for the editor to tell what they are restoring.
+            'former_path' => $page->trashed() ? $this->former($page, $locale) : null,
             'can' => $page->capabilities(),
         ];
     }
@@ -113,6 +116,24 @@ final class PageResource extends JsonResource
     }
 
     /** The language the panel is asking in, normalised the way the registry stores it. */
+    /**
+     * The address the page answered at before the bin: what its slugs make of it, in the asked
+     * language when it named one there, in the site's main language otherwise. Computed rather
+     * than kept — the slugs did not go anywhere, and only they decide it.
+     */
+    private function former(Page $page, string $locale): ?string
+    {
+        $locales = app(Locales::class);
+
+        foreach (array_unique([$locale, $locales->defaultCode()]) as $code) {
+            if ($page->isRoot() || (string) $page->getTranslation('slug', $code, false) !== '') {
+                return $page->routePath($code);
+            }
+        }
+
+        return null;
+    }
+
     private function locale(): string
     {
         return app(Locales::class)->content();
