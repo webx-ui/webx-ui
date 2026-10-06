@@ -206,22 +206,11 @@ final class MenuItemController
     }
 
     /** The content language the panel is reading in, which is what a label is drawn from. */
-    /**
-     * The language of the site's content the tree is worked out in: the one asked for, the
-     * request's, or the site's main one — whichever the site has first. Not the panel's own
-     * language for its own sake: a panel read in Russian over an English-only site found no
-     * Russian page behind any item, and every one of them said it led nowhere.
-     */
+    /** The site's content language for the tree, not the panel's (see `Locales::content()`). */
     private function locale(Request $request): string
     {
         $asked = $request->query('locale');
 
-        foreach ([is_string($asked) ? $asked : '', $this->locales->current()] as $code) {
-            if ($code !== '' && $this->locales->has($code)) {
-                return $code;
-            }
-        }
-
-        return $this->locales->defaultCode();
+        return $this->locales->content(is_string($asked) ? $asked : null);
     }
 }

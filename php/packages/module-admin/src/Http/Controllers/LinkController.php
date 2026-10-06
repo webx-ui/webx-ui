@@ -149,6 +149,6 @@ final class LinkController
     {
         $asked = $request->input('locale') ?? $request->query('locale');
 
-        return is_string($asked) && $asked !== '' ? $asked : $this->locales->current();
+        return $this->locales->content(is_string($asked) ? $asked : null);
     }
 }
