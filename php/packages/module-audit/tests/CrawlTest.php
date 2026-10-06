@@ -55,6 +55,11 @@ final class CrawlTest extends TestCase
         $this->assertSame(1, $about->links_in);
 
         $this->assertSame(200, $this->page('/blog')->final_status, 'The chain ends on the page it leads to.');
+        $this->assertSame(
+            [[1, 'Blog'], [1, 'Latest'], [2, 'Spring'], [4, 'Tulips']],
+            $this->page('/blog/')->fact('outline'),
+            'Every heading, in order, with its level.',
+        );
         $this->assertTrue($this->page('/private')->blocked_by_robots);
         $this->assertNull($this->page('/orphan')->depth, 'No link from the home page reaches it.');
 

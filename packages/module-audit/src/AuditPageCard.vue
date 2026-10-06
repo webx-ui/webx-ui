@@ -23,6 +23,7 @@ import {
   type TableState,
 } from '@webx-ui/core'
 import AuditDetails from './AuditDetails.vue'
+import AuditHeadings from './AuditHeadings.vue'
 import { createAuditApi } from './api'
 import { viewable } from './resources'
 import AuditStatus from './AuditStatus.vue'
@@ -141,6 +142,11 @@ const open = computed({
 const tabs = computed<TabItem[]>(() => [
   { value: 'overview', label: t('page.card-overview') },
   { value: 'issues', label: t('page.card-issues'), badge: card.value?.counts.issues || undefined },
+  {
+    value: 'headings',
+    label: t('page.card-headings'),
+    badge: outline.value?.length || undefined,
+  },
   { value: 'in', label: t('page.card-incoming'), badge: card.value?.counts.incoming || undefined },
   { value: 'out', label: t('page.card-outgoing'), badge: card.value?.counts.outgoing || undefined },
   { value: 'images', label: t('page.card-images'), badge: card.value?.counts.images || undefined },
@@ -152,6 +158,13 @@ const tabs = computed<TabItem[]>(() => [
     badge: card.value?.counts.microdata || undefined,
   },
 ])
+
+/** Every heading in order; null on a run crawled before the parser kept them. */
+const outline = computed(() => {
+  const kept = card.value?.page.facts.outline
+
+  return Array.isArray(kept) ? (kept as [number, string][]) : null
+})
 
 const resourceTab = computed<AuditResourceTab | null>(() =>
   resourceTabs.includes(tab.value as AuditResourceTab) ? (tab.value as AuditResourceTab) : null,
@@ -538,6 +551,10 @@ watch(tab, () => {
           </section>
         </div>
 
+        <div v-else-if="tab === 'headings'" class="wx-audit-card__box wx-audit-card__headings">
+          <audit-headings :outline="outline" :counts="card.page.headings" />
+        </div>
+
         <div v-else-if="tab === 'issues'" class="wx-audit-card__issues">
           <wx-text v-if="!card.issues.length" tone="muted">{{ t('page.no-issues') }}</wx-text>
           <div v-for="issue in card.issues" :key="issue.id" class="wx-audit-card__box">
@@ -750,6 +767,10 @@ watch(tab, () => {
   border-radius: var(--wx-radius-md);
   background: var(--wx-bg-surface);
   overflow: hidden;
+}
+
+.wx-audit-card__headings {
+  padding: var(--wx-space-12) var(--wx-space-16);
 }
 
 .wx-audit-card__box-head {

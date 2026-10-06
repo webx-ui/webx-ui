@@ -30,6 +30,11 @@ final class PageParser
     /** The most H1 texts kept. */
     private const H1 = 10;
 
+    /** The most headings kept for the outline, and how much of each: a map, not the text. */
+    private const OUTLINE = 300;
+
+    private const OUTLINE_LENGTH = 200;
+
     /** Characters of a JSON-LD block kept for the card — enough to see what is wrong. */
     private const JSON_LD_SOURCE = 4000;
 
@@ -70,8 +75,9 @@ final class PageParser
         $facts['favicon'] = $head['favicon'];
         $facts['canonicals'] = $head['canonicals'];
 
-        [$headings, $h1, $skipped] = $this->headings($document);
+        [$headings, $h1, $skipped, $outline] = $this->headings($document);
         $facts['headings_skipped'] = $skipped;
+        $facts['outline'] = $outline;
 
         $facts['links_empty'] = $this->anchors($document, $links);
         $facts += $this->images($document, $links);
@@ -200,9 +206,10 @@ final class PageParser
     }
 
     /**
-     * Counts by level, the H1 texts, and the first level skipped on the way down.
+     * Counts by level, the H1 texts, the first level skipped on the way down, and the outline —
+     * every heading in document order as `[level, text]`, which is what the card draws as a tree.
      *
-     * @return array{0: array<string, int>, 1: list<string>, 2: string|null}
+     * @return array{0: array<string, int>, 1: list<string>, 2: string|null, 3: list<array{0: int, 1: string}>}
      */
     private function headings(HTMLDocument $document): array
     {
@@ -210,6 +217,7 @@ final class PageParser
         $h1 = [];
         $previous = 0;
         $skipped = null;
+        $outline = [];
 
         foreach ($document->querySelectorAll('h1, h2, h3, h4, h5, h6') as $element) {
             $tag = strtolower($element->localName);
@@ -220,6 +228,10 @@ final class PageParser
                 $h1[] = self::cut(self::clean($element->textContent), 500);
             }
 
+            if (count($outline) < self::OUTLINE) {
+                $outline[] = [$level, self::cut(self::clean($element->textContent), self::OUTLINE_LENGTH)];
+            }
+
             if ($skipped === null && $previous > 0 && $level > $previous + 1) {
                 $skipped = 'H'.$previous.' → H'.$level;
             }
@@ -227,7 +239,7 @@ final class PageParser
             $previous = $level;
         }
 
-        return [$counts, $h1, $skipped];
+        return [$counts, $h1, $skipped, $outline];
     }
 
     /**
