@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use WebxUi\Pages\Http\Controllers\PageController;
+use WebxUi\Pages\Http\Controllers\PageDraftController;
 use WebxUi\Pages\Http\Controllers\PageDuplicateController;
 use WebxUi\Pages\Http\Controllers\PageMoveController;
 use WebxUi\Pages\Http\Controllers\PagePublicationController;
@@ -31,6 +32,7 @@ Route::prefix((string) config('webx-admin.api_path').'/pages')
             Route::post('{page}/duplicate', PageDuplicateController::class)->whereNumber('page')->name('duplicate');
             Route::post('{page}/publish', [PagePublicationController::class, 'publish'])->whereNumber('page')->name('publish');
             Route::post('{page}/unpublish', [PagePublicationController::class, 'unpublish'])->whereNumber('page')->name('unpublish');
+            Route::post('{page}/discard', PageDraftController::class)->whereNumber('page')->name('discard');
 
             Route::post('{page}/versions/{number}/restore', [PageVersionController::class, 'restore'])
                 ->whereNumber('page')

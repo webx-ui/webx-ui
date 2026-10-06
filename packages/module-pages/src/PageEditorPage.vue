@@ -381,6 +381,40 @@ async function unpublish(): Promise<void> {
   }
 }
 
+/**
+ * Back to what the site shows. Asked in red, because what was written since the publication goes
+ * — the autosave ring still has it, but nothing here lists it, so the question promises no way
+ * back. Whatever is still waiting to be saved is dropped with it rather than saved first.
+ */
+async function discard(): Promise<void> {
+  const row = page.value
+
+  if (!row) return
+
+  const agreed = await confirm({
+    title: t('page.discard-title'),
+    message: t('page.discard-text'),
+    confirmText: t('page.discard'),
+    cancelText: t('page.cancel'),
+    tone: 'danger',
+  })
+
+  if (!agreed) return
+
+  clearTimeout(timer)
+  working.value = true
+
+  try {
+    take(await api.discard(row.id))
+    reloadToken.value += 1
+    toast.success(t('page.discarded'))
+  } catch (error) {
+    toast.danger(message(error))
+  } finally {
+    working.value = false
+  }
+}
+
 function badge(): 'default' | 'success' | 'warning' {
   if (page.value?.status === 'published') return 'success'
 
@@ -449,6 +483,19 @@ const actions = computed<ScreenAction[]>(() => {
       label: panel('editor.unpublish'),
       icon: 'eye-off',
       run: () => void unpublish(),
+    })
+  }
+
+  // Only while there is a difference to throw away, and in the ··· rather than beside «Publish»:
+  // one slip away from it is the wrong place for the button that undoes it.
+  if (canManage.value && page.value?.status === 'modified') {
+    list.push({
+      key: 'discard',
+      label: t('page.discard'),
+      icon: 'refresh',
+      danger: true,
+      menu: true,
+      run: () => void discard(),
     })
   }
 

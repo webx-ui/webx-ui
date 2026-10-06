@@ -73,6 +73,11 @@ export const pagesMessages: Record<string, Messages> = {
       'The page leaves the bin and takes its address back. One that was on the site answers again.',
     'restore-branch': 'The :count pages that went in with it come back too.',
     'restored-branch': ':count pages are back.',
+    discard: 'Discard changes',
+    'discard-title': 'Discard what is waiting?',
+    'discard-text':
+      'The page goes back to what the site shows. What was written since is not listed anywhere.',
+    discarded: 'The page is back to what is published.',
     purge: 'Delete for good',
     'purge-title': 'Delete “:title” for good?',
     'purge-text':

@@ -179,6 +179,15 @@ final class PageTools
             ),
 
             Tool::mutating(
+                'discard',
+                'Throw away the draft of a published page and go back to what the site shows. The draft is all '
+                .'that changes; the page stays on the site as it is. dry_run says whether there is a draft and '
+                .'which fields it changes.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->discard($arguments, $user)),
+                ['properties' => ['page' => $page], 'required' => ['page']],
+            ),
+
+            Tool::mutating(
                 'purge',
                 'Delete a page in the bin for good, with every page under it, its addresses and former addresses, '
                 .'its SEO card and its history. Cannot be undone. Only a page in the bin — pages_delete puts it '
@@ -517,6 +526,31 @@ final class PageTools
         $page->delete();
 
         return ['trashed' => $count, 'id' => $page->getKey()];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function discard(array $arguments, ?Authenticatable $user): array
+    {
+        $page = $this->page($arguments['page'] ?? null);
+
+        if (! $page->hasDraft()) {
+            throw new ToolFailure("Page [{$page->getKey()}] has no draft: the site already shows what it holds.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return [
+                'dry_run' => true,
+                'would_discard' => array_keys($page->draftValues()),
+                'page' => $this->address($page),
+            ];
+        }
+
+        $page->discardDraft();
+
+        return $this->get(['page' => $page->refresh()->getKey()], $user);
     }
 
     /**

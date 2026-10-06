@@ -32,6 +32,8 @@ export interface PagesApi {
   duplicate(id: number): Promise<PageRow>
   publish(id: number): Promise<PageRow>
   unpublish(id: number): Promise<PageRow>
+  /** Drops the draft and answers the page as the site shows it. */
+  discard(id: number): Promise<PageDetail>
   /** Into the bin, with the branch under it. Answers how many went. */
   remove(id: number): Promise<number>
   /** Out of the bin, with whatever went in with it. Answers how many came back. */
@@ -80,6 +82,7 @@ export function createPagesApi(admin: AdminContext): PagesApi {
     duplicate: (id) => admin.http.post<{ data: PageRow }>(`${base}/${id}/duplicate`, {}).then(data),
     publish: (id) => admin.http.post<{ data: PageRow }>(`${base}/${id}/publish`, {}).then(data),
     unpublish: (id) => admin.http.post<{ data: PageRow }>(`${base}/${id}/unpublish`, {}).then(data),
+    discard: (id) => admin.http.post<{ data: PageDetail }>(`${base}/${id}/discard`, {}).then(data),
     remove: (id) =>
       admin.http
         .delete<{ data: { trashed: number } }>(`${base}/${id}`)
