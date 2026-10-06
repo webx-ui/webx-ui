@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useAdmin, useErrorText, useTranslate, WxScreen } from '@webx-ui/module-admin'
-import { toast, WxButton, WxCard, WxSkeleton, WxText } from '@webx-ui/core'
+import { toast, WxButton, WxCard, WxHeading, WxSkeleton, WxText } from '@webx-ui/core'
 import { useAuthMessages } from './i18n'
 
 /** The values as the screen holds them, keyed by field name. */
@@ -78,22 +78,34 @@ async function save(): Promise<void> {
 </script>
 
 <template>
-  <wx-card v-if="screen && canSee" :title="t('connect.rules')" class="wx-content-rules">
-    <wx-skeleton v-if="loading" :rows="4" />
-    <wx-screen v-else v-model="values" :name="screen" :errors="errors" :disabled="!canManage" />
+  <section v-if="screen && canSee" class="wx-content-rules">
+    <wx-heading :level="2" size="sm">{{ t('connect.rules') }}</wx-heading>
 
-    <template v-if="!loading" #footer>
-      <div class="wx-content-rules__foot">
-        <wx-text size="sm" tone="muted">{{ t('connect.rules-hint') }}</wx-text>
-        <wx-button v-if="canManage" type="primary" :loading="saving" @click="save">{{
-          panel('editor.save')
-        }}</wx-button>
-      </div>
-    </template>
-  </wx-card>
+    <wx-card>
+      <wx-skeleton v-if="loading" :rows="4" />
+      <wx-screen v-else v-model="values" :name="screen" :errors="errors" :disabled="!canManage" />
+
+      <template v-if="!loading" #footer>
+        <div class="wx-content-rules__foot">
+          <wx-text size="sm" tone="muted">{{ t('connect.rules-hint') }}</wx-text>
+          <wx-button v-if="canManage" type="primary" :loading="saving" @click="save">{{
+            panel('editor.save')
+          }}</wx-button>
+        </div>
+      </template>
+    </wx-card>
+  </section>
 </template>
 
 <style scoped>
+/* A section of the page like the others: its heading above, the card under it. */
+.wx-content-rules {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-12);
+  min-width: 0;
+}
+
 .wx-content-rules__foot {
   display: flex;
   flex-wrap: wrap;
