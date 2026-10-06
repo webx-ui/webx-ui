@@ -18,9 +18,9 @@ use WebxUi\Menu\Mcp\MenuTools;
 /**
  * The section where the menus of the site are arranged.
  *
- * Among the content sections and after them: pages are 200 and the blog is 300, so a menu — which
- * is a way of pointing at those rather than a thing of its own — comes at 400, before the block
- * constructor that keeps the site running rather than saying what is on it.
+ * Under «System», after the regions (610): a menu is set up once and lives in the header and the
+ * footer, like the regions it is printed in — the content sections are what an editor opens every
+ * day, and a menu among them was one more item between them and their work.
  *
  * The panel's usual pair of permissions. `manage` covers the cache reset as well as writing,
  * because what the reset changes is what a visitor sees — that makes it an action rather than a
@@ -60,7 +60,12 @@ final class MenuModule extends AbstractModule implements ProvidesDemo, ProvidesM
 
     public function order(): int
     {
-        return 400;
+        return 620;
+    }
+
+    public function group(): string
+    {
+        return 'system';
     }
 
     /**

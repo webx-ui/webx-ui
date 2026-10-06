@@ -787,10 +787,9 @@ on('GET', '/manifest', ({ locale }) => ({
         id: 'menu',
         title: line(locale, 'webx-menu', 'module.title'),
         icon: 'menu',
-        /* Among the content sections and after them: a menu is a way of pointing at pages and
-           articles rather than a thing of its own. */
-        order: 400,
-        group: null,
+        /* Under «System», beside the regions: a menu is the header's and the footer's. */
+        order: 620,
+        group: 'system',
         permissions: ['menu.view', 'menu.manage'],
         meta: {},
       },
