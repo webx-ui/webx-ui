@@ -109,8 +109,11 @@ export function renderNode(node: ScreenNode, context: RenderContext): VNode | nu
 
   if (entry.kind === 'field') {
     const name = node.name
+    // A control that carries its own label takes it, and the form item goes without one.
+    const own = entry.labelProp !== undefined && label !== undefined
     const control = h(entry.component, {
       ...props,
+      ...(own ? { [entry.labelProp as string]: label } : {}),
       /* A nested field draws the children itself, so it needs the node and the way down. */
       ...(entry.nested ? { node, context } : {}),
       name,
@@ -122,7 +125,13 @@ export function renderNode(node: ScreenNode, context: RenderContext): VNode | nu
     })
     return h(
       WxFormItem,
-      { key: node.id, name, label, help: words(node.help, translate), wide: entry.wide },
+      {
+        key: node.id,
+        name,
+        label: own ? undefined : label,
+        help: words(node.help, translate),
+        wide: entry.wide,
+      },
       () => control,
     )
   }

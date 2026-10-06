@@ -230,7 +230,7 @@ function close(): void {
           <wx-input v-model="heading" :disabled="loading" />
         </wx-form-item>
 
-        <wx-form-item :label="t('page.state')">
+        <wx-form-item>
           <wx-switch v-model="active" :label="t('page.active')" />
         </wx-form-item>
       </div>

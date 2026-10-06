@@ -95,7 +95,9 @@ export interface TypeEntry {
   childrenSlot?: string
   /**
    * Prop the node's `label` goes to (`title` on a card). For a `display` type without
-   * one the label becomes the default slot content; a `field` shows it in its form item.
+   * one the label becomes the default slot content; a `field` shows it in its form item —
+   * unless it names one, and then the control carries its label itself, beside it (a switch,
+   * a checkbox), and the form item keeps only the help and the error.
    */
   labelProp?: string
   /** Props derived from the node itself, beyond `props` — a tab's `value`, say. */

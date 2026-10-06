@@ -245,7 +245,7 @@ function onBroken(): void {
         @state-change="load"
       >
         <template #filters>
-          <wx-form-item :label="t('links.broken')">
+          <wx-form-item>
             <wx-switch v-model="broken" :label="t('links.with-broken')" @change="onBroken" />
           </wx-form-item>
         </template>
