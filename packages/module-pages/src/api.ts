@@ -38,6 +38,11 @@ export interface PagesApi {
   restore(id: number): Promise<PageRestore>
   /** Deletes a page in the bin for good, with its branch; answers how many pages went. */
   purge(id: number): Promise<number>
+  /**
+   * How many pages emptying the bin would delete: every page in it, those that went in with a
+   * parent included — what the list shows is only the top of each branch, and maybe a search.
+   */
+  binCount(): Promise<number>
   /** Empties the bin; answers how many pages went. */
   purgeBin(): Promise<number>
   /** The publications, newest first. */
@@ -84,6 +89,8 @@ export function createPagesApi(admin: AdminContext): PagesApi {
       admin.http
         .delete<{ data: { purged: number } }>(`${base}/${id}/purge`)
         .then((body) => body.data.purged),
+    binCount: () =>
+      admin.http.get<{ data: { pages: number } }>(`${base}/bin`).then((body) => body.data.pages),
     purgeBin: () =>
       admin.http
         .delete<{ data: { purged: number } }>(`${base}/bin`)

@@ -962,6 +962,7 @@ on('GET', '/pages/(\\d+)', ({ params }) => {
       values: withSeoImage(record.values),
       revision: revisionOf(record),
       address_prefix: prefixOf(record.row),
+      addresses: addressesOf(record.row),
       preview_url: `/preview/page/${record.row.id}`,
     },
   }
@@ -978,6 +979,7 @@ on('PUT', '/pages/(\\d+)', ({ params, body }) => {
       values: withSeoImage(record.values),
       revision: revisionOf(record),
       address_prefix: prefixOf(record.row),
+      addresses: addressesOf(record.row),
       preview_url: `/preview/page/${record.row.id}`,
     })
   }
@@ -998,6 +1000,7 @@ on('PUT', '/pages/(\\d+)', ({ params, body }) => {
       values: withSeoImage(record.values),
       revision: revisionOf(record),
       address_prefix: prefixOf(record.row),
+      addresses: addressesOf(record.row),
       preview_url: `/preview/page/${record.row.id}`,
     },
   }
@@ -1017,6 +1020,11 @@ on('DELETE', '/pages/(\\d+)', ({ params }) => {
 
   return { data: { trashed: branch.length } }
 })
+
+/* How many pages emptying the bin would take — every one in it, not only the tops of branches. */
+on('GET', '/pages/bin', () => ({
+  data: { pages: [...pages.values()].filter((record) => record.row.deleted_at !== null).length },
+}))
 
 on('POST', '/pages/(\\d+)/restore', ({ params }) => {
   const record = page(params[0])
@@ -1110,6 +1118,7 @@ on('POST', '/pages/(\\d+)/versions/(\\d+)/restore', ({ params }) => {
       values: withSeoImage(record.values),
       revision: revisionOf(record),
       address_prefix: prefixOf(record.row),
+      addresses: addressesOf(record.row),
       preview_url: `/preview/page/${record.row.id}`,
     },
   }
@@ -5277,6 +5286,16 @@ function revisionOf(record: PageRecord): string {
 }
 
 /** The address of the branch above, by language: what this page's own address is built on. */
+/** The address a page answers at now: the slugs above it and its own, the same in both languages. */
+function addressesOf(row: PageRow): Record<string, string> {
+  const path = [...ancestorsOf(row), row]
+    .map((node) => node.slug)
+    .filter((slug) => slug !== '')
+    .join('/')
+
+  return { ru: path, en: path }
+}
+
 function prefixOf(row: PageRow): Record<string, string> {
   const above = ancestorsOf(row)
     .map((node) => node.slug)

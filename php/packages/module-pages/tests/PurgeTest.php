@@ -98,6 +98,25 @@ final class PurgeTest extends TestCase
         $this->assertSame(0, Page::onlyTrashed()->count());
     }
 
+    #[Test]
+    public function the_bin_counts_the_pages_that_went_in_with_a_parent(): void
+    {
+        $catalog = $this->page('catalog');
+        $this->page('shoes', $catalog);
+        $this->page('boots', $catalog);
+        $other = $this->page('other');
+        $this->page('kept');
+
+        $this->actingAs($this->editor(), 'cms')->deleteJson($this->api($catalog->getKey()))->assertOk();
+        $this->actingAs($this->editor(), 'cms')->deleteJson($this->api($other->getKey()))->assertOk();
+
+        // Two rows in the bin, four pages that emptying it deletes — and only those.
+        $this->actingAs($this->editor(['pages.view']), 'cms')
+            ->getJson($this->api('bin'))
+            ->assertOk()
+            ->assertJsonPath('data.pages', 4);
+    }
+
     /**
      * @param  array<string, mixed>  $arguments
      */

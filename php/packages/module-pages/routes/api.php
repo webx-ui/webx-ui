@@ -19,6 +19,7 @@ Route::prefix((string) config('webx-admin.api_path').'/pages')
             Route::get('/', [PageController::class, 'index'])->name('index');
             Route::get('{page}', [PageController::class, 'show'])->whereNumber('page')->name('show');
             Route::get('{page}/versions', [PageVersionController::class, 'index'])->whereNumber('page')->name('versions');
+            Route::get('bin', [PagePurgeController::class, 'count'])->name('bin');
         });
 
         Route::middleware('cms.can:pages.manage')->group(function (): void {

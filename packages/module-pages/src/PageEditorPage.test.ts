@@ -1,17 +1,18 @@
 import { disableAutoUnmount, enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
+import { nextTick, ref } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import {
   adminKey,
   adminMessages,
+  adminTypes,
   createI18n,
   i18nKey,
   type AdminContext,
 } from '@webx-ui/module-admin'
 import { coreTypes, type ScreenNode } from '@webx-ui/schema'
 import type * as core from '@webx-ui/core'
-import { confirm } from '@webx-ui/core'
+import { confirm, localesKey } from '@webx-ui/core'
 import PageEditorPage from './PageEditorPage.vue'
 import type { PageDetail, PageRow } from './types'
 
@@ -61,7 +62,7 @@ function detail(revision: string, title = 'About'): PageDetail {
 
 /* Only the field the tests type into: what the screen holds is the server's business, and a
    second copy of the real description here would be a copy that drifts. */
-const screen: ScreenNode[] = [{ id: 'title', type: 'wx-input', name: 'title' }]
+let screen: ScreenNode[] = [{ id: 'title', type: 'wx-input', name: 'title' }]
 
 async function panel(first = detail('r1')) {
   const get = vi.fn().mockResolvedValue({ data: first })
@@ -78,7 +79,7 @@ async function panel(first = detail('r1')) {
     i18n,
     state: { manifest: null, user: null, status: 'ready', error: null },
     can: () => true,
-    types: coreTypes,
+    types: { ...coreTypes, ...adminTypes },
     loadScreen: () => Promise.resolve(screen),
     screenPatch: () => [],
   } as unknown as AdminContext
@@ -102,7 +103,11 @@ async function panel(first = detail('r1')) {
     {
       global: {
         plugins: [router],
-        provide: { [adminKey as symbol]: admin, [i18nKey as symbol]: i18n },
+        provide: {
+          [adminKey as symbol]: admin,
+          [i18nKey as symbol]: i18n,
+          [localesKey as symbol]: { list: ref([{ code: 'en' }]), active: ref('en') },
+        },
       },
     },
   )
@@ -271,5 +276,80 @@ describe('WxPageEditorPage', () => {
 
     expect(router.currentRoute.value.path).toBe('/pages')
     expect(put).toHaveBeenCalledTimes(1)
+  })
+})
+
+/**
+ * The address is the panel's shared field: the address of the page above stands in front of the
+ * slug, in the language being edited, and a change to a page that is on the site says that the
+ * old address will lead to the new one before anything is saved.
+ */
+describe('the address of a page', () => {
+  const home: PageRow = {
+    ...about,
+    id: 1,
+    parent_id: null,
+    depth: 0,
+    is_home: true,
+    slug: '',
+    path: '',
+  }
+  const consultations: PageRow = {
+    ...about,
+    id: 3,
+    title: 'Consultations',
+    slug: 'private-consultations',
+  }
+
+  function nested(): PageDetail {
+    return {
+      ...detail('r1'),
+      ancestors: [home, consultations],
+      address_prefix: { en: 'private-consultations' },
+      addresses: { en: 'private-consultations/about' },
+    }
+  }
+
+  const slugScreen: ScreenNode[] = [{ id: 'slug', type: 'wx-slug', name: 'slug' }]
+
+  it('prints the address of the page above in front of the slug', async () => {
+    screen = slugScreen
+    const { wrapper } = await panel(nested())
+    screen = [{ id: 'title', type: 'wx-input', name: 'title' }]
+
+    expect(wrapper.find('.wx-slug__prefix').text()).toBe('/private-consultations/')
+    expect(wrapper.find('input').element.value).toBe('about')
+    expect(wrapper.find('.wx-slug .wx-alert').exists()).toBe(false)
+  })
+
+  it('says the address is moving once the slug is changed', async () => {
+    screen = slugScreen
+    const { wrapper } = await panel(nested())
+    screen = [{ id: 'title', type: 'wx-input', name: 'title' }]
+
+    await type(wrapper, 'about-us')
+
+    expect(wrapper.find('.wx-slug .wx-alert').text()).toContain('The address is changing')
+  })
+
+  it('puts a bare slash in front under the home page', async () => {
+    screen = slugScreen
+    const { wrapper } = await panel({
+      ...detail('r1'),
+      ancestors: [home],
+      addresses: { en: 'about' },
+    })
+    screen = [{ id: 'title', type: 'wx-input', name: 'title' }]
+
+    expect(wrapper.find('.wx-slug__prefix').text()).toBe('/')
+  })
+
+  it('says there is no address where the page above has none', async () => {
+    screen = slugScreen
+    const { wrapper } = await panel({ ...nested(), address_prefix: {} })
+    screen = [{ id: 'title', type: 'wx-input', name: 'title' }]
+
+    expect(wrapper.find('.wx-slug__prefix').exists()).toBe(false)
+    expect(wrapper.find('.wx-slug .wx-alert').text()).toContain('No address in this language')
   })
 })

@@ -19,6 +19,12 @@ export interface RecordAddress {
   path: Ref<string | null | undefined>
   /** "The address is changing" — in the module's words. */
   moving: () => string
+  /**
+   * "No address in this language" — for a record whose prefix is a per-language fact rather than
+   * configuration: a page inside one that has no address in a language has none there either.
+   * Given, a `null` prefix means exactly that, and the field says so instead of printing `/`.
+   */
+  missing?: () => string
 }
 
 export const recordAddressKey: InjectionKey<RecordAddress> = Symbol('wx-record-address')

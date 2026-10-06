@@ -5,6 +5,7 @@ import {
   rowMenuWidth,
   useAdmin,
   useErrorText,
+  useI18n,
   useTranslate,
   WxDate,
   WxListScreen,
@@ -31,6 +32,7 @@ import PageCreateDialog from './PageCreateDialog.vue'
 import PageMoveDialog from './PageMoveDialog.vue'
 import { createPagesApi } from './api'
 import { usePagesMessages } from './i18n'
+import { pluralForm } from './plural'
 import type { PageRow, PageStatus } from './types'
 
 /**
@@ -52,6 +54,7 @@ const router = useRouter()
 usePagesMessages()
 
 const t = useTranslate('webx-pages')
+const i18n = useI18n()
 /* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
 const message = useErrorText()
 
@@ -370,10 +373,24 @@ async function purge(page: PageRow): Promise<void> {
   }
 }
 
+/**
+ * What emptying the bin is about to delete, in a number: the scale is the one thing that decides
+ * whether to go ahead, and the toast that says it afterwards is too late to read it in. Asked of
+ * the server, because the rows on screen are the tops of branches, and maybe a search. A count
+ * that did not arrive leaves the sentence without one rather than the dialog unasked.
+ */
+async function binText(): Promise<string> {
+  const count = await api.binCount().catch(() => null)
+
+  if (count === null) return t('page.empty-bin-text')
+
+  return t(`page.empty-bin-count-${pluralForm(count, i18n.state.locale)}`, { count })
+}
+
 async function purgeBin(): Promise<void> {
   const agreed = await confirm({
     title: t('page.empty-bin-title'),
-    message: t('page.empty-bin-text'),
+    message: await binText(),
     confirmText: t('page.empty-bin-action'),
     cancelText: t('page.cancel'),
     tone: 'danger',

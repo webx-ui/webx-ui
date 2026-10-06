@@ -84,6 +84,14 @@ export const pagesMessages: Record<string, Messages> = {
     'empty-bin-title': 'Empty the bin?',
     'empty-bin-text':
       'Every page in the bin is deleted for good, with its addresses, its SEO card and its history. This cannot be undone.',
+    'empty-bin-count-one':
+      ':count page is deleted for good, with its addresses, its SEO card and its history. This cannot be undone.',
+    'empty-bin-count-few':
+      ':count pages are deleted for good, with their addresses, SEO cards and history. This cannot be undone.',
+    'empty-bin-count-many':
+      ':count pages are deleted for good, with their addresses, SEO cards and history. This cannot be undone.',
+    'empty-bin-count-other':
+      ':count pages are deleted for good, with their addresses, SEO cards and history. This cannot be undone.',
     'aliases-dropped':
       'These old addresses were taken while the page was in the bin and no longer lead here: :addresses',
 
@@ -103,7 +111,8 @@ export const pagesMessages: Record<string, Messages> = {
     published: 'The page is on the site.',
     preview: 'Preview',
     more: 'More',
-    address: 'Address',
+    'address-moving':
+      'The address is changing. The old one keeps working and leads to the new one.',
     'parent-help': 'The page it sits inside. A move happens at once, not on publication.',
     'parent-warning':
       'Everything inside this page moves with it. The old addresses keep working and lead to the new ones.',

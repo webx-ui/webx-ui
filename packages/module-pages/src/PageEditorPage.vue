@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import {
+  provideRecordAddress,
   useAdmin,
   useErrorText,
   useTranslate,
@@ -69,6 +70,7 @@ const values = ref<ScreenModel>({})
 const revision = ref('')
 const previewUrl = ref<string | null>(null)
 const prefixes = ref<Record<string, string>>({})
+const addresses = ref<Record<string, string>>({})
 
 const loading = ref(true)
 const saving = ref(false)
@@ -123,6 +125,23 @@ providePageEditor({
   save: () => save(),
 })
 
+/*
+ * The address field is the panel's shared one (`wx-slug`), with what is page-specific behind it:
+ * the prefix is the address of the page above in the language being edited, so it follows a move
+ * the moment the editor reloads, and a language that page has no address in is said in words.
+ */
+provideRecordAddress({
+  values,
+  prefix: computed(() => {
+    if (ancestors.value.length === 0) return null
+
+    return prefixes.value[locales.active.value] ?? null
+  }),
+  path: computed(() => addresses.value[locales.active.value] ?? null),
+  moving: () => t('page.address-moving'),
+  missing: () => t('page.no-address'),
+})
+
 function take(detail: PageDetail): void {
   page.value = detail.page
   ancestors.value = detail.ancestors
@@ -130,6 +149,7 @@ function take(detail: PageDetail): void {
   revision.value = detail.revision
   previewUrl.value = detail.preview_url
   prefixes.value = detail.address_prefix
+  addresses.value = detail.addresses ?? {}
   snapshot.value = JSON.stringify(detail.values)
   conflict.value = null
 }

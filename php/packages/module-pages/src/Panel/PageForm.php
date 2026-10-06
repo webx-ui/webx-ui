@@ -62,12 +62,15 @@ final class PageForm
             'values' => $this->values($page),
             'revision' => $this->revision($page),
             'address_prefix' => $this->prefixes($ancestors->last()),
+            'addresses' => $this->prefixes($page),
             'preview_url' => Preview::url($page, $adminId),
         ];
     }
 
     /**
-     * The address of the page above, in every language it has one in.
+     * The address of the page above, in every language it has one in — or, handed the page
+     * itself, the address it answers at now, which the slug field compares the one being typed
+     * with to say that the address is about to move.
      *
      * The form prints the whole address the page answers at and lets the field edit its last
      * segment, so it needs the rest of it — and per language, because a page has an address in

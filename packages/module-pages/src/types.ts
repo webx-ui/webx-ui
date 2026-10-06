@@ -96,6 +96,11 @@ export interface PageDetail {
    * has no address in, and so neither has this one (§8).
    */
   address_prefix: Record<string, string>
+  /**
+   * The address the page answers at now, by content language — the registry's, not the draft's.
+   * What a slug being typed is compared with to say that the address is about to move.
+   */
+  addresses?: Record<string, string>
   /** A signed, short-lived link to the draft as a page of the site. */
   preview_url: string
 }

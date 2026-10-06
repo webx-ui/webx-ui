@@ -67,6 +67,9 @@ final class EditorTest extends TestCase
         // The whole address is the page above plus the slug, so the form is handed the first
         // half — and the home page's half is the empty string, not the absence of one.
         $this->assertSame(['en' => ''], $response->json('data.address_prefix'));
+
+        // And the address it answers at now, which the slug being typed is compared with.
+        $this->assertSame(['en' => 'about'], $response->json('data.addresses'));
     }
 
     #[Test]
