@@ -43,7 +43,8 @@
     },
     "suggest": {
         "webx-ui/module-pages": "A page with a reviews block is the site's page of reviews.",
-        "webx-ui/module-services": "The demo puts a slider of reviews into one of its services."
+        "webx-ui/module-services": "The demo puts a slider of reviews into one of its services.",
+        "webx-ui/module-audit": "The site audit searches its content, drafts and hidden records included, for addresses of a development stand."
     },
     "autoload": {
         "psr-4": {

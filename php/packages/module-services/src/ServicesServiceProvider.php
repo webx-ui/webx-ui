@@ -14,6 +14,7 @@ use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
 use WebxUi\Routing\Formatters\Prefixed;
@@ -23,6 +24,7 @@ use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
 use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Sitemap\SitemapRoutes;
+use WebxUi\Services\Audit\ServiceContentSource;
 use WebxUi\Services\Collections\ServicesSource;
 use WebxUi\Services\Handlers\CategoryHandler;
 use WebxUi\Services\Handlers\ServiceHandler;
@@ -67,6 +69,11 @@ class ServicesServiceProvider extends ServiceProvider
         $this->registerPanel();
 
         $this->app->make(SitemapRoutes::class)->register(self::INDEX_ROUTE);
+
+        // The text for the site audit — only when `webx-ui/module-audit` is installed.
+        if (class_exists(AuditContentSources::class)) {
+            $this->app->make(AuditContentSources::class)->register(new ServiceContentSource);
+        }
 
         if (! $this->app->runningInConsole()) {
             return;

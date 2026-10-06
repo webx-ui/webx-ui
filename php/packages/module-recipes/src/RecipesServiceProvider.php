@@ -15,8 +15,10 @@ use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Blocks\BlockOffers;
 use WebxUi\Localization\Http\Middleware\OneSpellingPerAddress;
+use WebxUi\Recipes\Audit\RecipeContentSource;
 use WebxUi\Recipes\Collections\RecipesSource;
 use WebxUi\Recipes\Handlers\CategoryHandler;
 use WebxUi\Recipes\Handlers\RecipeHandler;
@@ -79,6 +81,11 @@ class RecipesServiceProvider extends ServiceProvider
         $this->registerPanel();
 
         $this->app->make(SitemapRoutes::class)->register(self::INDEX_ROUTE);
+
+        // The text for the site audit — only when `webx-ui/module-audit` is installed.
+        if (class_exists(AuditContentSources::class)) {
+            $this->app->make(AuditContentSources::class)->register(new RecipeContentSource);
+        }
 
         if (! $this->app->runningInConsole()) {
             return;

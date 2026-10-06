@@ -10,7 +10,9 @@ use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Blocks\BlockOffers;
+use WebxUi\Faq\Audit\QuestionContentSource;
 use WebxUi\Faq\Collections\FaqSource;
 use WebxUi\Faq\Models\FaqCategory;
 use WebxUi\Faq\Models\Question;
@@ -39,6 +41,11 @@ class FaqServiceProvider extends ServiceProvider
         $this->registerScreens();
         $this->registerCollection();
         $this->registerPanel();
+
+        // The text for the site audit — only when `webx-ui/module-audit` is installed.
+        if (class_exists(AuditContentSources::class)) {
+            $this->app->make(AuditContentSources::class)->register(new QuestionContentSource);
+        }
 
         if (! $this->app->runningInConsole()) {
             return;

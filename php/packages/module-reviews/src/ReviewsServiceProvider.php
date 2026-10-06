@@ -10,7 +10,9 @@ use WebxUi\Admin\Categories\CategorySources;
 use WebxUi\Admin\Collections\CollectionSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Blocks\BlockOffers;
+use WebxUi\Reviews\Audit\ReviewContentSource;
 use WebxUi\Reviews\Collections\ReviewsSource;
 use WebxUi\Reviews\Models\Review;
 use WebxUi\Reviews\Models\ReviewCategory;
@@ -40,6 +42,11 @@ class ReviewsServiceProvider extends ServiceProvider
         $this->registerScreens();
         $this->registerCollection();
         $this->registerPanel();
+
+        // The text for the site audit — only when `webx-ui/module-audit` is installed.
+        if (class_exists(AuditContentSources::class)) {
+            $this->app->make(AuditContentSources::class)->register(new ReviewContentSource);
+        }
 
         if (! $this->app->runningInConsole()) {
             return;

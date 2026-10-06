@@ -41,6 +41,9 @@
         "orchestra/testbench": "^11.0",
         "phpunit/phpunit": "^12.0 || ^13.0"
     },
+    "suggest": {
+        "webx-ui/module-audit": "The site audit searches its content, drafts and hidden records included, for addresses of a development stand."
+    },
     "autoload": {
         "psr-4": {
             "WebxUi\\Services\\": "src/"

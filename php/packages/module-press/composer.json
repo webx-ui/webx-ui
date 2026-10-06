@@ -43,7 +43,8 @@
         "webx-ui/module-pages": "^0.62.1"
     },
     "suggest": {
-        "webx-ui/module-pages": "A page at the prefix with the catalogue block is the site's page of press."
+        "webx-ui/module-pages": "A page at the prefix with the catalogue block is the site's page of press.",
+        "webx-ui/module-audit": "The site audit searches its content, drafts and hidden records included, for addresses of a development stand."
     },
     "autoload": {
         "psr-4": {
