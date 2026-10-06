@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use WebxUi\Settings\Settings;
 
 /**
  * The address parts the registry has always enforced — one slash between segments, lower case,
@@ -33,6 +34,12 @@ return new class extends Migration
             if (! in_array($key, $saved, true)) {
                 DB::table('cms_settings')->insert(['key' => $key, 'value' => json_encode($value), 'created_at' => $now, 'updated_at' => $now]);
             }
+        }
+
+        // Written past the settings, so their cache — a day long — is told: otherwise the site
+        // goes on reading the values from before this migration until it expires.
+        if (app()->bound(Settings::class)) {
+            app(Settings::class)->forget();
         }
     }
 
