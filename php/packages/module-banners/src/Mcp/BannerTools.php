@@ -9,6 +9,7 @@ use Illuminate\Contracts\Container\Container;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Links\Link;
+use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Banners\Models\Banner;
 use WebxUi\Banners\Models\Place;
 use WebxUi\Banners\Panel\BannerForm;
@@ -388,6 +389,9 @@ final class BannerTools
         }
 
         $values = $this->prepare($values, $banner);
+        // Merged language by language, and a language the site does not have refused — dry run
+        // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
+        $values = $this->container->make(ScreenValues::class)->patch(Banner::SCREEN, $this->form()->values($banner), $values);
 
         if ($this->dryRun($arguments)) {
             return array_filter([

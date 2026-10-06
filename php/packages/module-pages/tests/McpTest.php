@@ -297,6 +297,35 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function an_update_changes_the_languages_it_names_and_refuses_one_the_site_lacks(): void
+    {
+        $this->useLocales('en', 'de');
+        $about = $this->page('about');
+
+        // A language the site is not published in used to be dropped, and the field arrived empty:
+        // the address in every language was gone. Refused, dry run included, and nothing written.
+        foreach ([true, false] as $dry) {
+            $this->agent('update', ['page' => '/about', 'values' => ['slug' => ['ru' => 'o-nas']], 'dry_run' => $dry], $this->editor())
+                ->assertHasErrors(['[ru], which this site is not published in. It has: en, de.']);
+        }
+
+        $this->assertFalse($about->refresh()->hasDraft());
+
+        $this->agent('update', ['page' => '/about', 'values' => ['slug' => ['de' => 'ueber-uns']]], $this->editor())
+            ->assertOk();
+
+        $this->assertSame(['en' => 'about', 'de' => 'ueber-uns'], $about->refresh()->draftValues()['slug']);
+
+        // Null is how one language is emptied, and a plain string is the main one.
+        $this->agent('update', ['page' => '/about', 'values' => ['slug' => ['de' => null], 'title' => 'About us']], $this->editor())
+            ->assertOk();
+
+        $draft = $about->refresh()->draftValues();
+        $this->assertSame(['en' => 'about'], $draft['slug']);
+        $this->assertSame('About us', $draft['title']['en']);
+    }
+
+    #[Test]
     public function content_is_not_written_through_the_page_tools(): void
     {
         $this->page('about');

@@ -14,6 +14,7 @@ use WebxUi\Admin\Categories\CategoryException;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Relations\RelationTarget;
 use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
 use WebxUi\Localization\Locales;
@@ -339,6 +340,10 @@ final class VacancyTools
         if (! is_array($values) || $values === []) {
             throw new ToolFailure('`values` must be a non-empty object of field name → value. vacancies_get says what the fields are.');
         }
+
+        // Merged language by language, and a language the site does not have refused — dry run
+        // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
+        $values = $this->container->make(ScreenValues::class)->patch(Vacancy::SCREEN, $this->form()->values($vacancy), $values);
 
         if ($vacancy->trashed()) {
             throw new ToolFailure("Vacancy #{$vacancy->getKey()} is in the bin. Bring it back in the panel before editing it.");

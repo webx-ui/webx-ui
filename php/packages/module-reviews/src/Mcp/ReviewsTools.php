@@ -11,6 +11,7 @@ use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Categories\CategoryException;
 use WebxUi\Admin\Categories\Ordering;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
@@ -258,6 +259,10 @@ final class ReviewsTools
         if (! is_array($values) || $values === []) {
             throw new ToolFailure('`values` must be a non-empty object of field name → value. reviews_get says what the fields are.');
         }
+
+        // Merged language by language, and a language the site does not have refused — dry run
+        // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
+        $values = $this->container->make(ScreenValues::class)->patch(Review::SCREEN, $this->form()->values($review), $values);
 
         if ($review->trashed()) {
             throw new ToolFailure("Review #{$review->getKey()} is in the bin. Bring it back in the panel before editing it.");

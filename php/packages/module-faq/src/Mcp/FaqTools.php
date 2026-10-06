@@ -11,6 +11,7 @@ use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Categories\CategoryException;
 use WebxUi\Admin\Categories\Ordering;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Faq\Models\FaqCategory;
 use WebxUi\Faq\Models\Question;
 use WebxUi\Faq\Panel\QuestionForm;
@@ -237,6 +238,10 @@ final class FaqTools
         if (! is_array($values) || $values === []) {
             throw new ToolFailure('`values` must be a non-empty object of field name → value. faq_get says what the fields are.');
         }
+
+        // Merged language by language, and a language the site does not have refused — dry run
+        // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
+        $values = $this->container->make(ScreenValues::class)->patch(Question::SCREEN, $this->form()->values($question), $values);
 
         if ($question->trashed()) {
             throw new ToolFailure("Question {$this->reference($question)} is in the bin. Bring it back in the panel before editing it.");

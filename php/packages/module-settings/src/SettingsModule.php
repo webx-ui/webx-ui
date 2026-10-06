@@ -179,7 +179,10 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
         }
 
         try {
-            $stored = app(ScreenValues::class)->validate($settings->screenOf($key) ?? Settings::SCREEN, [$key => $arguments['value'] ?? null]);
+            $screen = $settings->screenOf($key) ?? Settings::SCREEN;
+            // A translated setting changes in the languages named and refuses one the site lacks.
+            $input = app(ScreenValues::class)->patch($screen, [$key => $settings->raw()[$key] ?? null], [$key => $arguments['value'] ?? null]);
+            $stored = app(ScreenValues::class)->validate($screen, $input);
         } catch (ValidationException $exception) {
             return ['ok' => false, 'reason' => 'The value was refused.', 'errors' => $exception->errors()];
         }

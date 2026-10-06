@@ -14,6 +14,7 @@ use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Links\Link;
 use WebxUi\Admin\Relations\RelationTarget;
 use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
@@ -315,6 +316,10 @@ final class TariffTools
         if (! is_array($values) || $values === []) {
             throw new ToolFailure('`values` must be a non-empty object of field name → value. tariffs_get says what the fields are.');
         }
+
+        // Merged language by language, and a language the site does not have refused — dry run
+        // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
+        $values = $this->container->make(ScreenValues::class)->patch(Tariff::SCREEN, $this->form()->values($tariff), $values);
 
         if ($tariff->trashed()) {
             throw new ToolFailure("Tariff #{$tariff->getKey()} is in the bin. Bring it back in the panel before editing it.");
