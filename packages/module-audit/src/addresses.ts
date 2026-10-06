@@ -68,3 +68,18 @@ export function statusType(value: unknown): BadgeType {
 
   return 'success'
 }
+
+/** The codes with a line of their own in the dictionary; the rest are explained by their class. */
+const EXPLAINED = [
+  200, 201, 204, 206, 301, 302, 303, 304, 307, 308, 400, 401, 403, 404, 405, 406, 408, 410, 415,
+  429, 451, 500, 502, 503, 504,
+]
+
+/** The dictionary key of what an answer means: `code-404`, `code-5xx`, or `code-none`. */
+export function statusKey(code: number | null | undefined): string {
+  if (!code) return 'code-none'
+  if (EXPLAINED.includes(code)) return `code-${code}`
+  if (code >= 100 && code < 600) return `code-${Math.floor(code / 100)}xx`
+
+  return 'code-none'
+}

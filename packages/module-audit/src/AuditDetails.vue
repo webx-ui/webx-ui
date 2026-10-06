@@ -5,7 +5,8 @@ import { useTranslate } from '@webx-ui/module-admin'
 import { WxBadge, WxButton, WxIcon, WxText } from '@webx-ui/core'
 import AuditAddress from './AuditAddress.vue'
 import AuditLinkAttrs from './AuditLinkAttrs.vue'
-import { differences, statusType } from './addresses'
+import { differences } from './addresses'
+import AuditStatus from './AuditStatus.vue'
 import { useAuditMessages } from './i18n'
 import type { AuditDetails, AuditDetailsColumn } from './types'
 
@@ -120,12 +121,10 @@ function changes(row: Record<string, unknown>) {
                 :href="text(cell(row, column))"
                 :type="isSource(column) ? 'muted' : undefined"
               />
-              <wx-badge
+              <audit-status
                 v-else-if="column.type === 'status' && cell(row, column) !== null"
-                :type="statusType(cell(row, column))"
-                size="sm"
-                >{{ text(cell(row, column)) }}</wx-badge
-              >
+                :code="Number(cell(row, column))"
+              />
               <audit-link-attrs
                 v-else-if="column.type === 'attrs'"
                 :rel="text(row.rel)"

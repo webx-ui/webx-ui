@@ -6,7 +6,7 @@ import { WxBadge, WxButton, WxSkeleton, WxText } from '@webx-ui/core'
 import AuditAddress from './AuditAddress.vue'
 import AuditLinkAttrs from './AuditLinkAttrs.vue'
 import { createAuditApi } from './api'
-import { statusType } from './addresses'
+import AuditStatus from './AuditStatus.vue'
 import { useAuditMessages } from './i18n'
 import type { AuditHostTarget, AuditHosts } from './types'
 
@@ -85,13 +85,11 @@ onMounted(async () => {
               :target="target.target"
               class="wx-audit-places__fixed"
             />
-            <wx-badge
+            <audit-status
               v-if="broken(target.status)"
-              :type="statusType(target.status)"
-              size="sm"
+              :code="target.status"
               class="wx-audit-places__fixed"
-              >{{ target.status || t('page.status-none') }}</wx-badge
-            >
+            />
             <wx-text size="sm" tone="muted" class="wx-audit-places__count">{{
               t('page.link-pages', { count: target.pages })
             }}</wx-text>

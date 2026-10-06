@@ -25,6 +25,7 @@ import {
 import AuditDetails from './AuditDetails.vue'
 import { createAuditApi } from './api'
 import { viewable } from './resources'
+import AuditStatus from './AuditStatus.vue'
 import { useAuditMessages } from './i18n'
 import type {
   AuditLinkRow,
@@ -359,15 +360,6 @@ const sections = computed<{ title: string; facts: [string, Fact][] }[]>(() => {
     .filter((section) => section.facts.length)
 })
 
-function statusType(value: number | null): BadgeType {
-  if (value === null) return 'danger'
-  if (value >= 500) return 'danger'
-  if (value >= 400) return 'warning'
-  if (value >= 300) return 'info'
-
-  return 'success'
-}
-
 async function load(id: number): Promise<void> {
   clearTimeout(timer)
   rechecking.value = false
@@ -447,9 +439,7 @@ watch(tab, () => {
   >
     <template #title>
       <span class="wx-audit-card__title">
-        <wx-badge v-if="card" :type="statusType(card.page.status)" size="sm">{{
-          card.page.status ?? '—'
-        }}</wx-badge>
+        <audit-status v-if="card" :code="card.page.status" />
         <span class="wx-audit-card__url">{{ card?.page.url ?? '' }}</span>
       </span>
     </template>
@@ -504,9 +494,7 @@ watch(tab, () => {
           <div class="wx-audit-card__tiles">
             <div v-for="tile in tiles" :key="tile.label" class="wx-audit-card__tile">
               <wx-text size="sm" tone="muted">{{ tile.label }}</wx-text>
-              <wx-badge v-if="tile.status !== undefined" :type="statusType(tile.status ?? null)">{{
-                tile.value
-              }}</wx-badge>
+              <audit-status v-if="tile.status !== undefined" :code="tile.status" size="md" />
               <wx-text
                 v-else
                 weight="semibold"
@@ -621,10 +609,7 @@ watch(tab, () => {
             <wx-text v-if="row.error" size="sm" tone="danger">{{ row.error }}</wx-text>
           </template>
           <template #cell-status="{ row }">
-            <wx-badge v-if="row.status !== null" :type="statusType(row.status)" size="sm">{{
-              row.status
-            }}</wx-badge>
-            <wx-badge v-else-if="row.checked" type="danger" size="sm">—</wx-badge>
+            <audit-status v-if="row.status !== null || row.checked" :code="row.status" />
             <wx-text v-else size="sm" tone="muted">{{ t('page.not-checked') }}</wx-text>
           </template>
           <template #cell-bytes="{ row }">{{ size(row) }}</template>
@@ -690,9 +675,7 @@ watch(tab, () => {
             <span class="wx-audit-card__url">{{ row.url ?? '—' }}</span>
           </template>
           <template #cell-status="{ row }">
-            <wx-badge v-if="row.status !== null" :type="statusType(row.status)" size="sm">{{
-              row.status
-            }}</wx-badge>
+            <audit-status v-if="row.status !== null" :code="row.status" />
           </template>
           <template #cell-host_class="{ row }">
             <wx-badge v-if="row.host_class" :type="hostTypes[row.host_class] ?? 'info'" size="sm">{{

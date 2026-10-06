@@ -4,7 +4,8 @@ import { useTranslate } from '@webx-ui/module-admin'
 import { WxBadge, WxButton, WxIcon, WxText } from '@webx-ui/core'
 import AuditAddress from './AuditAddress.vue'
 import AuditLinkAttrs from './AuditLinkAttrs.vue'
-import { differences, statusType } from './addresses'
+import { differences } from './addresses'
+import AuditStatus from './AuditStatus.vue'
 import { useAuditMessages } from './i18n'
 import type { AuditIssue } from './types'
 
@@ -107,9 +108,7 @@ function toggle(group: LinkGroup): void {
           :target="group.pages[0].target"
           class="wx-audit-links__fixed"
         />
-        <wx-badge v-if="group.status !== null" :type="statusType(group.status)" size="sm">{{
-          group.status
-        }}</wx-badge>
+        <audit-status v-if="group.status !== null" :code="group.status" />
         <wx-text size="sm" tone="muted" class="wx-audit-links__count">{{
           t('page.link-pages', { count: group.pages.length })
         }}</wx-text>

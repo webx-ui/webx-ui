@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { differences, splitMiddle, statusType } from './addresses'
+import { differences, splitMiddle, statusKey, statusType } from './addresses'
 
 describe('differences', () => {
   it('names a trailing slash', () => {
@@ -54,5 +54,14 @@ describe('statusType', () => {
     expect(statusType(404)).toBe('warning')
     expect(statusType(500)).toBe('danger')
     expect(statusType(200)).toBe('success')
+  })
+})
+
+describe('statusKey', () => {
+  it('names a known code, a class, or no answer', () => {
+    expect(statusKey(403)).toBe('code-403')
+    expect(statusKey(522)).toBe('code-5xx')
+    expect(statusKey(0)).toBe('code-none')
+    expect(statusKey(null)).toBe('code-none')
   })
 })
