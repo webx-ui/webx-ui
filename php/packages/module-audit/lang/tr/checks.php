@@ -372,6 +372,18 @@ return [
             'why' => 'Ekran okuyucular başlıklara göre gezinir ve bir boşluk eksik içerik gibi okunur.',
             'fix' => 'Seviyeleri sırayla kullanın; görünümü seviyeyle değil stillerle seçin.',
         ],
+        'h1_not_first' => [
+            'title' => 'H1 ilk başlık değil',
+            'found' => 'H1’den önce başka bir başlık var.',
+            'why' => 'Arama motorları ve ekran okuyucular ilk başlığı içeriğin başı sayar; üstte görünüş için başlık kullanan bir blok sayfanın adını aşağı iter.',
+            'fix' => 'H1’i ilk başlık yapın; üstteki bloklara düz metin ya da biçimlendirilmiş bir öğe verin.',
+        ],
+        'empty' => [
+            'title' => 'Boş başlık',
+            'found' => 'Bir başlığın metni yok — yalnızca simge, resim ya da hiçbir şey.',
+            'why' => 'Ekran okuyucu söyleyecek bir şeyi olmayan bir başlık duyurur, arama motorları da anlamsız bir düzey alır.',
+            'fix' => 'Başlığı yazın ya da yalnızca görünüş içinse öğeyi düz metin yapın.',
+        ],
     ],
     'canonical' => [
         'missing' => [

@@ -372,6 +372,18 @@ return [
             'why' => 'Screen readers navigate by headings, and a gap reads as missing content.',
             'fix' => 'Use the levels in order; choose the look with styles, not with the level.',
         ],
+        'h1_not_first' => [
+            'title' => 'H1 is not the first heading',
+            'found' => 'Another heading comes before the H1.',
+            'why' => 'Search engines and screen readers take the first heading as the start of the content; a block above it that uses a heading for its looks pushes the page’s name down.',
+            'fix' => 'Make the H1 the first heading; give the blocks above it ordinary text or a styled element.',
+        ],
+        'empty' => [
+            'title' => 'Empty heading',
+            'found' => 'A heading has no text — only an icon, a picture, or nothing at all.',
+            'why' => 'A screen reader announces a heading with nothing to say, and search engines get a level with no meaning.',
+            'fix' => 'Write the heading, or make the element ordinary text if it is only for looks.',
+        ],
     ],
     'canonical' => [
         'missing' => [

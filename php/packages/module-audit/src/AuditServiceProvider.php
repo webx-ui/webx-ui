@@ -90,6 +90,8 @@ class AuditServiceProvider extends ServiceProvider
         Page\H1Multiple::class,
         Page\H1EqualsTitle::class,
         Page\HeadingsSkipped::class,
+        Page\H1NotFirst::class,
+        Page\HeadingsEmpty::class,
         Page\CanonicalMissing::class,
         Page\CanonicalRelative::class,
         Page\CanonicalMultiple::class,

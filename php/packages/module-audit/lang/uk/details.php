@@ -48,6 +48,8 @@ return [
     'h1-multiple' => 'Заголовків H1 на сторінці: :count',
     'h1-equals-title' => 'H1 і title збігаються: «:value».',
     'headings-skipped' => 'Пропущено: :skip',
+    'headings-h1-not-first' => 'Першим іде :level «:value».',
+    'headings-empty' => 'Порожні заголовки (:levels): :count',
     'canonical-missing' => 'Немає canonical ні в тезі, ні в заголовку.',
     'canonical-relative' => 'Canonical записано шляхом: :value',
     'canonical-multiple' => 'Адрес canonical: :count',

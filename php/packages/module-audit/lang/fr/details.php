@@ -48,6 +48,8 @@ return [
     'h1-multiple' => 'Titres H1 sur la page : :count',
     'h1-equals-title' => 'Le H1 et le title sont tous deux « :value ».',
     'headings-skipped' => 'Sautés : :skip',
+    'headings-h1-not-first' => 'D’abord vient :level « :value ».',
+    'headings-empty' => 'Titres vides (:levels) : :count',
     'canonical-missing' => 'Pas de canonical dans la balise ni dans l’en-tête.',
     'canonical-relative' => 'Le canonical est écrit comme un chemin : :value',
     'canonical-multiple' => 'Adresses canonical : :count',
