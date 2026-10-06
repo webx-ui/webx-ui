@@ -247,4 +247,8 @@ return [
     'link-show-all' => 'Tümünü göster',
     'link-collapse' => 'Daralt',
     'attrs-opener' => 'noopener olmadan yeni sekmede açılır. Güncel tarayıcılar bunu kendileri ekler; eskiler açılan sayfanın bu sayfayı yönetmesine izin verir.',
+    'section-answer' => 'Sunucu yanıtı',
+    'section-crawl' => 'Tarama',
+    'section-head' => 'İşaretleme',
+    'section-sharing' => 'Önizleme ve yapılandırılmış veri',
 ];

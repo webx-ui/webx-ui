@@ -247,4 +247,8 @@ return [
     'link-show-all' => 'Mostra tutto',
     'link-collapse' => 'Comprimi',
     'attrs-opener' => 'Si apre in una nuova scheda senza noopener. I browser attuali lo aggiungono da soli; quelli vecchi lasciano che la pagina aperta controlli questa.',
+    'section-answer' => 'Risposta del server',
+    'section-crawl' => 'Scansione',
+    'section-head' => 'Markup',
+    'section-sharing' => 'Anteprima e dati strutturati',
 ];

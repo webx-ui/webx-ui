@@ -15,6 +15,7 @@ import {
   WxTable,
   WxTabs,
   WxText,
+  WxTooltip,
   type BadgeType,
   type TabItem,
   type TabValue,
@@ -210,82 +211,152 @@ function size(row: AuditResourceRow): string {
   return row.width && row.height ? `${text} · ${row.width}×${row.height}` : text
 }
 
-/** The answer, the markup and where the page came from — label and value, in reading order. */
 /*
  * A fact is a line, or a list: hreflang and Open Graph are key and value per row, the key set apart
- * as a tag so the eye does not run it into the address after it; JSON-LD is the types as tags.
+ * so the eye does not run it into the value after it; JSON-LD is the types as tags.
  */
 type Fact = string | { pairs: [string, string][] } | { tags: string[]; error?: string | null }
 
-const facts = computed<[string, Fact][]>(() => {
+/** The numbers of the page, read at a glance before the details: one tile each. */
+interface Tile {
+  label: string
+  value: string
+  /** The answer's code is drawn as a badge of its colour. */
+  status?: number | null
+  danger?: boolean
+}
+
+function bytes(value: number): string {
+  const kb = value / 1024
+
+  return kb >= 1024 ? `${(kb / 1024).toFixed(1)} MB` : `${kb.toFixed(1)} KB`
+}
+
+const tiles = computed<Tile[]>(() => {
   const page = card.value?.page
 
   if (!page) return []
 
-  const rows: [string, unknown][] = [
-    [t('page.field-status'), page.status ?? t('page.status-none')],
-    [t('page.field-final_status'), page.redirect_to ? page.final_status : null],
-    [t('page.field-redirect_to'), page.redirect_to],
-    [t('page.error'), page.error],
-    [t('page.field-content_type'), page.content_type],
-    [t('page.field-bytes'), page.bytes],
-    [t('page.field-ttfb_ms'), page.ttfb_ms],
-    [t('page.field-total_ms'), page.total_ms],
-    [t('page.field-compression'), page.compression],
-    [t('page.field-source'), t(`page.source-${page.source}`)],
-    [t('page.field-depth'), page.depth],
-    [t('page.field-indexable'), page.indexable ? t('page.yes') : t('page.no')],
-    [t('page.field-blocked_by_robots'), page.blocked_by_robots ? t('page.yes') : null],
-    [t('page.field-title'), page.title],
-    [t('page.field-description'), page.description],
-    [t('page.field-h1'), page.h1.join(' · ') || null],
-    [t('page.field-canonical'), page.canonical],
-    [t('page.field-robots_meta'), page.robots_meta],
-    [t('page.field-x_robots_tag'), page.x_robots_tag],
-    [t('page.field-lang'), page.lang],
-    [
-      'hreflang',
-      page.hreflang.length
-        ? { pairs: page.hreflang.map((alternate) => [alternate.lang, alternate.url]) }
-        : null,
-    ],
-    [
-      'Open Graph',
-      Object.keys(page.og).length
-        ? { pairs: Object.entries(page.og).map(([key, value]) => [`og:${key}`, String(value)]) }
-        : null,
-    ],
-    [
-      'Twitter',
-      Object.keys(page.twitter).length
-        ? {
-            pairs: Object.entries(page.twitter).map(([key, value]) => [
-              `twitter:${key}`,
-              String(value),
-            ]),
-          }
-        : null,
-    ],
-    [
-      'JSON-LD',
-      page.json_ld.length
-        ? {
-            tags: page.json_ld.flatMap((block) => block.types),
-            error: page.json_ld.find((block) => block.error)?.error ?? null,
-          }
-        : null,
-    ],
-    [t('page.field-word_count'), page.word_count],
-    [t('page.field-links_in'), page.links_in],
-    [t('page.field-links_out_internal'), page.links_out_internal],
-    [t('page.field-links_out_external'), page.links_out_external],
-    [t('page.field-images'), page.images],
-    [t('page.field-images_without_alt'), page.images_without_alt || null],
+  const all: (Tile | null)[] = [
+    {
+      label: t('page.field-status'),
+      value: String(page.status ?? t('page.status-none')),
+      status: page.status,
+    },
+    page.bytes === null ? null : { label: t('page.size'), value: bytes(page.bytes) },
+    page.ttfb_ms === null ? null : { label: t('page.field-ttfb_ms'), value: String(page.ttfb_ms) },
+    page.total_ms === null
+      ? null
+      : { label: t('page.field-total_ms'), value: String(page.total_ms) },
+    page.word_count === null
+      ? null
+      : { label: t('page.field-word_count'), value: String(page.word_count) },
+    { label: t('page.field-links_in'), value: String(page.links_in) },
+    { label: t('page.field-links_out_internal'), value: String(page.links_out_internal) },
+    { label: t('page.field-links_out_external'), value: String(page.links_out_external) },
+    { label: t('page.field-images'), value: String(page.images) },
+    page.images_without_alt
+      ? {
+          label: t('page.field-images_without_alt'),
+          value: String(page.images_without_alt),
+          danger: true,
+        }
+      : null,
   ]
 
-  return rows
-    .filter(([, value]) => value !== null && value !== undefined && value !== '')
-    .map(([label, value]) => [label, typeof value === 'object' ? (value as Fact) : String(value)])
+  return all.filter((tile): tile is Tile => tile !== null)
+})
+
+/** The rest of what the page answered and says in its head, in sections a reader looks for. */
+const sections = computed<{ title: string; facts: [string, Fact][] }[]>(() => {
+  const page = card.value?.page
+
+  if (!page) return []
+
+  const groups: [string, [string, unknown][]][] = [
+    [
+      t('page.section-answer'),
+      [
+        [t('page.field-final_status'), page.redirect_to ? page.final_status : null],
+        [t('page.field-redirect_to'), page.redirect_to],
+        [t('page.error'), page.error],
+        [t('page.field-content_type'), page.content_type],
+        [t('page.field-compression'), page.compression],
+      ],
+    ],
+    [
+      t('page.section-crawl'),
+      [
+        [t('page.field-source'), t(`page.source-${page.source}`)],
+        [t('page.field-depth'), page.depth],
+        [t('page.field-indexable'), page.indexable ? t('page.yes') : t('page.no')],
+        [t('page.field-blocked_by_robots'), page.blocked_by_robots ? t('page.yes') : null],
+      ],
+    ],
+    [
+      t('page.section-head'),
+      [
+        [t('page.field-title'), page.title],
+        [t('page.field-description'), page.description],
+        [t('page.field-h1'), page.h1.join(' · ') || null],
+        [t('page.field-canonical'), page.canonical],
+        [t('page.field-robots_meta'), page.robots_meta],
+        [t('page.field-x_robots_tag'), page.x_robots_tag],
+        [t('page.field-lang'), page.lang],
+        [
+          'hreflang',
+          page.hreflang.length
+            ? { pairs: page.hreflang.map((alternate) => [alternate.lang, alternate.url]) }
+            : null,
+        ],
+      ],
+    ],
+    [
+      t('page.section-sharing'),
+      [
+        [
+          'Open Graph',
+          Object.keys(page.og).length
+            ? {
+                pairs: Object.entries(page.og).map(([key, value]) => [`og:${key}`, String(value)]),
+              }
+            : null,
+        ],
+        [
+          'Twitter',
+          Object.keys(page.twitter).length
+            ? {
+                pairs: Object.entries(page.twitter).map(([key, value]) => [
+                  `twitter:${key}`,
+                  String(value),
+                ]),
+              }
+            : null,
+        ],
+        [
+          'JSON-LD',
+          page.json_ld.length
+            ? {
+                tags: page.json_ld.flatMap((block) => block.types),
+                error: page.json_ld.find((block) => block.error)?.error ?? null,
+              }
+            : null,
+        ],
+      ],
+    ],
+  ]
+
+  return groups
+    .map(([title, rows]) => ({
+      title,
+      facts: rows
+        .filter(([, value]) => value !== null && value !== undefined && value !== '')
+        .map(
+          ([label, value]) =>
+            [label, typeof value === 'object' ? (value as Fact) : String(value)] as [string, Fact],
+        ),
+    }))
+    .filter((section) => section.facts.length)
 })
 
 function statusType(value: number | null): BadgeType {
@@ -429,37 +500,60 @@ watch(tab, () => {
       <wx-text v-if="card.page.title" weight="semibold">{{ card.page.title }}</wx-text>
 
       <wx-tabs v-model="tab" :items="tabs">
-        <dl v-if="tab === 'overview'" class="wx-audit-card__facts">
-          <template v-for="[label, value] in facts" :key="label">
-            <dt>{{ label }}</dt>
-            <dd v-if="typeof value === 'string'">{{ value }}</dd>
-            <dd v-else-if="'pairs' in value" class="wx-audit-card__pairs">
-              <template v-for="([key, text], index) in value.pairs" :key="index">
-                <wx-badge size="sm" class="wx-audit-card__key">{{ key }}</wx-badge>
-                <span>{{ text }}</span>
-              </template>
-            </dd>
-            <dd v-else class="wx-audit-card__tags">
-              <wx-badge v-for="(tag, index) in value.tags" :key="index" type="info" size="sm">{{
-                tag
+        <div v-if="tab === 'overview'" class="wx-audit-card__overview">
+          <div class="wx-audit-card__tiles">
+            <div v-for="tile in tiles" :key="tile.label" class="wx-audit-card__tile">
+              <wx-text size="sm" tone="muted">{{ tile.label }}</wx-text>
+              <wx-badge v-if="tile.status !== undefined" :type="statusType(tile.status ?? null)">{{
+                tile.value
               }}</wx-badge>
-              <wx-text v-if="value.error" size="sm" tone="danger">{{ value.error }}</wx-text>
-            </dd>
-          </template>
-          <template v-if="Object.keys(card.page.headers).length">
-            <dt class="wx-audit-card__section">{{ t('page.headers') }}</dt>
-            <dd />
-            <template v-for="(value, name) in card.page.headers" :key="name">
-              <dt class="wx-audit-card__code">{{ name }}</dt>
-              <dd class="wx-audit-card__code">{{ value }}</dd>
-            </template>
-          </template>
-        </dl>
+              <wx-text
+                v-else
+                weight="semibold"
+                :tone="tile.danger ? 'danger' : undefined"
+                class="wx-audit-card__number"
+                >{{ tile.value }}</wx-text
+              >
+            </div>
+          </div>
+
+          <section v-for="section in sections" :key="section.title" class="wx-audit-card__box">
+            <div class="wx-audit-card__box-head">{{ section.title }}</div>
+            <dl class="wx-audit-card__facts">
+              <template v-for="[label, value] in section.facts" :key="label">
+                <dt>{{ label }}</dt>
+                <dd v-if="typeof value === 'string'">{{ value }}</dd>
+                <dd v-else-if="'pairs' in value" class="wx-audit-card__pairs">
+                  <template v-for="([key, text], index) in value.pairs" :key="index">
+                    <code class="wx-audit-card__key">{{ key }}</code>
+                    <span>{{ text }}</span>
+                  </template>
+                </dd>
+                <dd v-else class="wx-audit-card__tags">
+                  <wx-badge v-for="(tag, index) in value.tags" :key="index" type="info" size="sm">{{
+                    tag
+                  }}</wx-badge>
+                  <wx-text v-if="value.error" size="sm" tone="danger">{{ value.error }}</wx-text>
+                </dd>
+              </template>
+            </dl>
+          </section>
+
+          <section v-if="Object.keys(card.page.headers).length" class="wx-audit-card__box">
+            <div class="wx-audit-card__box-head">{{ t('page.headers') }}</div>
+            <dl class="wx-audit-card__facts">
+              <template v-for="(value, name) in card.page.headers" :key="name">
+                <dt class="wx-audit-card__code">{{ name }}</dt>
+                <dd class="wx-audit-card__code">{{ value }}</dd>
+              </template>
+            </dl>
+          </section>
+        </div>
 
         <div v-else-if="tab === 'issues'" class="wx-audit-card__issues">
           <wx-text v-if="!card.issues.length" tone="muted">{{ t('page.no-issues') }}</wx-text>
-          <div v-for="issue in card.issues" :key="issue.id" class="wx-audit-card__issue">
-            <div class="wx-audit-card__issue-head">
+          <div v-for="issue in card.issues" :key="issue.id" class="wx-audit-card__box">
+            <div class="wx-audit-card__box-head wx-audit-card__issue-head">
               <wx-badge :type="severities[issue.severity]" dot>{{
                 t(`page.severity-${issue.severity}`)
               }}</wx-badge>
@@ -469,8 +563,20 @@ watch(tab, () => {
               <wx-badge v-if="issue.state === 'new'" type="primary" size="sm">{{
                 t('page.state-new')
               }}</wx-badge>
+              <wx-tooltip
+                v-if="issue.details.count != null && issue.details.table"
+                :content="issue.details.summary ?? undefined"
+                :disabled="!issue.details.summary"
+              >
+                <wx-badge round size="sm">{{ issue.details.count }}</wx-badge>
+              </wx-tooltip>
             </div>
-            <audit-details :details="issue.details" />
+            <div class="wx-audit-card__box-body">
+              <audit-details
+                :details="issue.details"
+                :counted="issue.details.count != null && !!issue.details.table"
+              />
+            </div>
           </div>
         </div>
 
@@ -605,6 +711,8 @@ watch(tab, () => {
   flex-direction: column;
   gap: var(--wx-space-12);
   min-width: 0;
+  /* The card decides its layout by its own width, not the window's. */
+  container-type: inline-size;
 }
 
 .wx-audit-card__title {
@@ -619,11 +727,67 @@ watch(tab, () => {
   overflow-wrap: anywhere;
 }
 
+.wx-audit-card__overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-12);
+  margin-top: var(--wx-space-12);
+  min-width: 0;
+}
+
+/* The numbers first: what a reader compares between pages, at a glance. */
+.wx-audit-card__tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--wx-space-8);
+}
+
+.wx-audit-card__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  /* A label on two lines must not lift its number above its neighbours' — the numbers sit on one line. */
+  justify-content: space-between;
+  gap: var(--wx-space-4);
+  min-width: 0;
+  padding: var(--wx-space-8) var(--wx-space-12);
+  border: 1px solid var(--wx-border-default);
+  border-radius: var(--wx-radius-md);
+  background: var(--wx-bg-surface);
+}
+
+.wx-audit-card__number {
+  font-size: var(--wx-font-size-lg);
+}
+
+/* A section, or a finding: an edge of its own, a tinted head, the content under it. */
+.wx-audit-card__box {
+  min-width: 0;
+  border: 1px solid var(--wx-border-default);
+  border-radius: var(--wx-radius-md);
+  background: var(--wx-bg-surface);
+  overflow: hidden;
+}
+
+.wx-audit-card__box-head {
+  padding: var(--wx-space-8) var(--wx-space-12);
+  border-bottom: 1px solid var(--wx-border-muted);
+  background: var(--wx-bg-subtle);
+  font-size: var(--wx-font-size-sm);
+  font-weight: var(--wx-font-weight-semibold);
+}
+
+.wx-audit-card__box-body {
+  padding: var(--wx-space-8) var(--wx-space-12);
+}
+
+/* One label column for every section, so the values start on one line down the card. */
 .wx-audit-card__facts {
   display: grid;
-  grid-template-columns: minmax(120px, max-content) minmax(0, 1fr);
-  gap: var(--wx-space-6) var(--wx-space-16);
-  margin: var(--wx-space-12) 0 0;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: var(--wx-space-8) var(--wx-space-16);
+  margin: 0;
+  padding: var(--wx-space-12);
   font-size: var(--wx-font-size-sm);
 }
 
@@ -637,17 +801,18 @@ watch(tab, () => {
   white-space: pre-line;
 }
 
-/* Key and value in two columns of their own, the key against its value, a row apart from the next pair. */
+/* Key and value in two columns of their own: the keys start on one line, so do the values. */
 .wx-audit-card__pairs {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
-  gap: var(--wx-space-6) var(--wx-space-8);
+  gap: var(--wx-space-6) var(--wx-space-12);
   align-items: baseline;
 }
 
 .wx-audit-card__key {
-  justify-self: end;
+  color: var(--wx-text-muted);
   font-family: var(--wx-font-family-mono);
+  font-size: var(--wx-font-size-xs);
 }
 
 .wx-audit-card__tags {
@@ -655,11 +820,6 @@ watch(tab, () => {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wx-space-6);
-}
-
-.wx-audit-card__section {
-  margin-top: var(--wx-space-12);
-  font-weight: var(--wx-font-weight-semibold);
 }
 
 .wx-audit-card__code {
@@ -716,6 +876,18 @@ watch(tab, () => {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wx-space-8);
+}
+
+/* A narrow card: the label goes above its value instead of beside it. */
+@container (max-width: 560px) {
+  .wx-audit-card__facts {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--wx-space-2);
+  }
+
+  .wx-audit-card__facts dd + dt {
+    margin-top: var(--wx-space-8);
+  }
 }
 
 .wx-audit-card__extra {

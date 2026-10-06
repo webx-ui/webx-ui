@@ -247,4 +247,8 @@ return [
     'link-show-all' => 'Pokaż wszystkie',
     'link-collapse' => 'Zwiń',
     'attrs-opener' => 'Otwiera się w nowej karcie bez noopener. Obecne przeglądarki dodają go same, starsze pozwalają otwartej stronie sterować tą.',
+    'section-answer' => 'Odpowiedź serwera',
+    'section-crawl' => 'Skanowanie',
+    'section-head' => 'Znaczniki',
+    'section-sharing' => 'Podgląd i dane strukturalne',
 ];

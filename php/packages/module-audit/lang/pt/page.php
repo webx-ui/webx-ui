@@ -247,4 +247,8 @@ return [
     'link-show-all' => 'Mostrar tudo',
     'link-collapse' => 'Recolher',
     'attrs-opener' => 'Abre numa nova aba sem noopener. Os navegadores atuais acrescentam-no sozinhos; os antigos deixam a página aberta controlar esta.',
+    'section-answer' => 'Resposta do servidor',
+    'section-crawl' => 'Rastreio',
+    'section-head' => 'Marcação',
+    'section-sharing' => 'Pré-visualização e dados estruturados',
 ];

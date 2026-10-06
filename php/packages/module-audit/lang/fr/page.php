@@ -247,4 +247,8 @@ return [
     'link-show-all' => 'Tout afficher',
     'link-collapse' => 'Réduire',
     'attrs-opener' => 'S\'ouvre dans un nouvel onglet sans noopener. Les navigateurs récents l\'ajoutent d\'eux-mêmes ; les anciens laissent la page ouverte contrôler celle-ci.',
+    'section-answer' => 'Réponse du serveur',
+    'section-crawl' => 'Exploration',
+    'section-head' => 'Balisage',
+    'section-sharing' => 'Aperçu et données structurées',
 ];

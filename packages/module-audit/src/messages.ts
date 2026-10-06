@@ -266,5 +266,9 @@ export const auditMessages: Record<string, Messages> = {
     'link-collapse': 'Collapse',
     'attrs-opener':
       'Opens in a new tab without noopener. Current browsers add it themselves; older ones let the opened page control this one.',
+    'section-answer': 'Server answer',
+    'section-crawl': 'Crawl',
+    'section-head': 'Markup',
+    'section-sharing': 'Preview and structured data',
   },
 }

@@ -82,7 +82,10 @@ function changes(row: Record<string, unknown>) {
           <col
             v-for="column in columns"
             :key="column.key"
-            :class="`wx-audit-details__col--${column.type}`"
+            :class="[
+              `wx-audit-details__col--${column.type}`,
+              `wx-audit-details__col--${column.key}`,
+            ]"
           />
         </colgroup>
         <thead>
@@ -192,6 +195,22 @@ function changes(row: Record<string, unknown>) {
 
 .wx-audit-details__col--attrs {
   width: 216px;
+}
+
+/* Columns whose values are short by nature — a kind, a size, a type — by their key. */
+.wx-audit-details__col--kind,
+.wx-audit-details__col--line {
+  width: 72px;
+}
+
+.wx-audit-details__col--kb,
+.wx-audit-details__col--lang,
+.wx-audit-details__col--locale {
+  width: 96px;
+}
+
+.wx-audit-details__col--type {
+  width: 140px;
 }
 
 .wx-audit-details__col--edit {
