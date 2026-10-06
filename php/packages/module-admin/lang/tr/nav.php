@@ -9,4 +9,7 @@ return [
     'expand' => 'Menüyü genişlet',
     'language' => 'Dil',
     'system' => 'Sistem',
+    'system-site' => 'Site',
+    'system-search' => 'Arama ve denetim',
+    'system-access' => 'Erişim',
 ];

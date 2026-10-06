@@ -7,8 +7,10 @@ namespace WebxUi\Blocks\Panel;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Support\Facades\Route;
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\HasNavSection;
 use WebxUi\Admin\Contracts\ProvidesDemo;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Panel\SystemSections;
 use WebxUi\Blocks\Demo\BlocksDemo;
 use WebxUi\Blocks\Mcp\BlockPrompts;
 use WebxUi\Blocks\Mcp\BlockResources;
@@ -30,7 +32,7 @@ use WebxUi\Mcp\Tool;
  * To an agent the module is the same section by other doors (§18): the tools, the resources
  * it should read first, and one prompt. The scopes are `blocks:read` and `blocks:write`.
  */
-final class BlocksModule extends AbstractModule implements ProvidesDemo, ProvidesMcpTools
+final class BlocksModule extends AbstractModule implements HasNavSection, ProvidesDemo, ProvidesMcpTools
 {
     public function __construct(
         private readonly Config $config,
@@ -63,6 +65,11 @@ final class BlocksModule extends AbstractModule implements ProvidesDemo, Provide
     public function group(): string
     {
         return 'system';
+    }
+
+    public function navSection(): string
+    {
+        return SystemSections::SITE;
     }
 
     /**

@@ -6,6 +6,8 @@ namespace WebxUi\Auth;
 
 use Illuminate\Support\Carbon;
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\HasNavSection;
+use WebxUi\Admin\Panel\SystemSections;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Auth\Models\LoginRecord;
 use WebxUi\Auth\Models\Role;
@@ -20,7 +22,7 @@ use WebxUi\Mcp\Tool;
  * roles, and it cannot set a password, mint a token or create an account. Those are the
  * operations where a mistaken tool call is not a mistake you can review afterwards.
  */
-final class AuthModule extends AbstractModule implements ProvidesMcpTools
+final class AuthModule extends AbstractModule implements HasNavSection, ProvidesMcpTools
 {
     use ProvidesMcpDefaults;
 
@@ -47,6 +49,11 @@ final class AuthModule extends AbstractModule implements ProvidesMcpTools
     public function group(): string
     {
         return 'system';
+    }
+
+    public function navSection(): string
+    {
+        return SystemSections::ACCESS;
     }
 
     /**

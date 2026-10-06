@@ -48,6 +48,7 @@ use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Admin\Links\RoutingSiteUrls;
 use WebxUi\Admin\Manifest\ManifestBuilder;
 use WebxUi\Admin\Notes\NoteTypes;
+use WebxUi\Admin\Panel\SystemSections;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
@@ -263,6 +264,7 @@ class AdminServiceProvider extends ServiceProvider
         $this->registerHistorySchedule();
         $this->registerUploadsSchedule();
         $this->registerGate();
+        SystemSections::register($this->app->make('config'));
 
         $router = $this->app->make('router');
         $router->aliasMiddleware('webx.history', HistorySource::class);

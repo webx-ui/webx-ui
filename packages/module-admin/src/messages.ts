@@ -23,6 +23,9 @@ export const adminMessages: Record<string, Messages> = {
     language: 'Language',
     // The one menu group the panel names itself; a module's own group is named by the module.
     system: 'System',
+    'system-site': 'Site',
+    'system-search': 'Search and checks',
+    'system-access': 'Access',
   },
   // The three words on the theme switch. They belong to the panel rather than to whoever
   // places the switch: a core component ships English prop defaults and knows nothing about

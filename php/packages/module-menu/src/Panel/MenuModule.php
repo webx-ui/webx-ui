@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace WebxUi\Menu\Panel;
 
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\HasNavSection;
 use WebxUi\Admin\Contracts\ProvidesDemo;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Panel\SystemSections;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\McpResource;
 use WebxUi\Mcp\ProvidesMcpDefaults;
@@ -30,7 +32,7 @@ use WebxUi\Menu\Mcp\MenuTools;
  * rules to read first, and no prompt — arranging a menu is one call at a time and needs no recipe.
  * The scopes are `menu:read` and `menu:write`.
  */
-final class MenuModule extends AbstractModule implements ProvidesDemo, ProvidesMcpTools
+final class MenuModule extends AbstractModule implements HasNavSection, ProvidesDemo, ProvidesMcpTools
 {
     use ProvidesMcpDefaults;
 
@@ -66,6 +68,11 @@ final class MenuModule extends AbstractModule implements ProvidesDemo, ProvidesM
     public function group(): string
     {
         return 'system';
+    }
+
+    public function navSection(): string
+    {
+        return SystemSections::SITE;
     }
 
     /**

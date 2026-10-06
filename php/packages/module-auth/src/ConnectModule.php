@@ -7,6 +7,8 @@ namespace WebxUi\Auth;
 use Illuminate\Contracts\Config\Repository as Config;
 use Laravel\Passport\Passport;
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\HasNavSection;
+use WebxUi\Admin\Panel\SystemSections;
 
 /**
  * The page that tells a person how to connect their own agent.
@@ -20,7 +22,7 @@ use WebxUi\Admin\AbstractModule;
  * off, or without Passport, has no address to print and no dance to describe, and the section
  * stays out of the menu rather than explaining a door that is not there.
  */
-final class ConnectModule extends AbstractModule
+final class ConnectModule extends AbstractModule implements HasNavSection
 {
     public function __construct(private readonly Config $config) {}
 
@@ -50,6 +52,11 @@ final class ConnectModule extends AbstractModule
     public function group(): string
     {
         return 'system';
+    }
+
+    public function navSection(): string
+    {
+        return SystemSections::ACCESS;
     }
 
     /**
