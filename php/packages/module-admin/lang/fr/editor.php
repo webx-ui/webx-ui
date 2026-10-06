@@ -13,5 +13,6 @@ return [
     'unpublish-title' => 'Retirer du site ?',
     'unpublish-text' => 'Les visiteurs ne le verront plus : sa page répondra « introuvable » et quittera le plan du site et la recherche. Tout ce qui est écrit reste dans le panneau, et « Publier » le remet à la même adresse.',
     'keep-published' => 'Laisser sur le site',
+    'publish-moves' => 'L’ancienne adresse :old mènera à la nouvelle.',
     'unpublished' => 'Retiré du site.',
 ];

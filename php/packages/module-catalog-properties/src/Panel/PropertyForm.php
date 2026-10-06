@@ -62,7 +62,7 @@ final class PropertyForm
                     if (is_array($value)) {
                         $property->setTranslations($field, [...$property->getTranslations($field), ...$value]);
                     } else {
-                        $property->setTranslation($field, $this->locales->current(), $value);
+                        $property->setTranslation($field, $this->locales->content(), $value);
                     }
 
                     continue;

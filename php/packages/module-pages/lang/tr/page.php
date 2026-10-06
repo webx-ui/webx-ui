@@ -60,6 +60,7 @@ return [
     'restore-page-text' => 'Sayfa çöp kutusundan çıkar ve adresini geri alır. Sitede olan sayfa yeniden yanıt vermeye başlar.',
     'restore-branch' => 'Onunla birlikte giden :count sayfa da geri gelir.',
     'restored-branch' => ':count sayfa geri geldi.',
+    'aliases-dropped' => 'Bu eski adresler sayfa çöp kutusundayken alındı ve artık buraya yönlendirmiyor: :addresses',
 
     'copy-of' => ':title (kopya)',
     'duplicated' => 'Kopya hazır ve sitede değil.',

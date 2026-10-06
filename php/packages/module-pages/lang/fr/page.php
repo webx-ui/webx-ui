@@ -60,6 +60,7 @@ return [
     'restore-page-text' => 'La page sort de la corbeille et retrouve son adresse. Celle qui était en ligne répond de nouveau.',
     'restore-branch' => 'Les :count pages parties avec elle reviennent aussi.',
     'restored-branch' => ':count pages sont de retour.',
+    'aliases-dropped' => 'Ces anciennes adresses ont été reprises pendant que la page était à la corbeille et ne mènent plus ici : :addresses',
 
     'copy-of' => ':title (copie)',
     'duplicated' => 'La copie est prête, et elle n’est pas sur le site.',

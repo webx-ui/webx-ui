@@ -287,14 +287,25 @@ async function keepMine(): Promise<void> {
  * anything — one page goes on the site, and what matters is where.
  */
 async function publish(): Promise<void> {
-  if (!page.value) return
+  const row = page.value
 
-  const address = page.value.path === null ? null : `/${page.value.path}`
+  if (!row) return
+
+  // Publishing moves a renamed slug, so the question names where the page will be, not where
+  // it is — and says the old address will lead there, since that is what happens to it.
+  const next = row.next_path ?? row.path
+  const old =
+    row.next_path != null && row.path !== null
+      ? ` ${panel('editor.publish-moves', { old: `/${row.path}` })}`
+      : ''
+  const address = next === null ? null : `/${next}`
 
   const agreed = await confirm({
-    title: t('page.publish-title', { title: page.value.title }),
+    // The name in the field rather than the row's: a page created before its title reached the
+    // site's language has only its number there.
+    title: t('page.publish-title', { title: title.value || row.title }),
     message:
-      address === null ? t('page.publish-text-nowhere') : t('page.publish-text', { address }),
+      address === null ? t('page.publish-text-nowhere') : t('page.publish-text', { address }) + old,
     confirmText: t('page.publish'),
     cancelText: t('page.cancel'),
   })
@@ -307,7 +318,7 @@ async function publish(): Promise<void> {
   working.value = true
 
   try {
-    await api.publish(page.value.id)
+    await api.publish(row.id)
     await load(true)
     toast.success(t('page.published'))
   } catch (error) {

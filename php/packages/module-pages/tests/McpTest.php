@@ -177,6 +177,16 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function an_agent_cannot_write_in_a_language_the_site_is_not_published_in(): void
+    {
+        // English only: words in Russian would be words nobody reads, at an address that is nowhere.
+        $this->agent('create', ['title' => ['ru' => 'Контакты']], $this->editor())
+            ->assertHasErrors(['which this site is not published in']);
+
+        $this->assertSame(1, Page::query()->count(), 'the home page and nothing else');
+    }
+
+    #[Test]
     public function an_agent_creates_a_page_as_a_draft_and_a_dry_run_creates_nothing(): void
     {
         $this->useLocales('en', 'ru');

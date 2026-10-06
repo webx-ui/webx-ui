@@ -50,6 +50,8 @@ final class ArticleResource extends JsonResource
             // language: the two mean different things, and an article translated into one
             // language has no address in the others (§9).
             'path' => $canonical?->path,
+            // Where publishing moves it, when a renamed slug waits in the draft.
+            'next_path' => PanelAddress::afterPublishing($article, $addressLocale, $canonical?->path),
             'url' => $canonical === null ? null : $article->url($addressLocale),
             // The language of the address when it is the site's main one, shown because this
             // language has none: the row says so in a tooltip rather than instead of the address.

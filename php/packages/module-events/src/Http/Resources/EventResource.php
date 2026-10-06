@@ -44,6 +44,8 @@ final class EventResource extends JsonResource
             'slug' => (string) $shown->getTranslation('slug', $locale, fallback: false),
             // Null where the event names no slug in this language: it has no address there.
             'path' => $canonical?->path,
+            // Where publishing moves it, when a renamed slug waits in the draft.
+            'next_path' => PanelAddress::afterPublishing($event, $addressLocale, $canonical?->path),
             'url' => $canonical === null ? null : $event->url($addressLocale),
             // The language of the address when it is the site's main one, shown because this
             // language has none: the row says so in a tooltip rather than instead of the address.

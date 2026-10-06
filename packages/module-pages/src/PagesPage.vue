@@ -326,11 +326,16 @@ async function restore(page: PageRow): Promise<void> {
 
   try {
     // The server knows what it actually brought back; the question could only guess at it.
-    const restored = await api.restore(page.id)
+    const { restored, aliases_dropped: dropped = [] } = await api.restore(page.id)
 
     toast.success(
       restored > 1 ? t('page.restored-branch', { count: restored }) : t('page.restored'),
     )
+
+    // Old links that now open somebody else's page: worth knowing, not worth blocking on.
+    if (dropped.length > 0) {
+      toast.warning(t('page.aliases-dropped', { addresses: dropped.join(', ') }))
+    }
     await load()
   } catch (error) {
     toast.danger(message(error))

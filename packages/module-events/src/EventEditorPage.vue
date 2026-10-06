@@ -289,12 +289,20 @@ async function publish(): Promise<void> {
 
   if (!row) return
 
+  // Publishing moves a renamed slug, so the question names where the page will be, not where
+  // it is — and says the old address will lead there, since that is what happens to it.
+  const next = row.next_path ?? row.path
+  const old =
+    row.next_path != null && row.path !== null
+      ? ` ${panel('editor.publish-moves', { old: `/${row.path}` })}`
+      : ''
+
   const agreed = await confirm({
     title: t('event.publish-title', { title: title.value || row.title }),
     message:
-      row.path === null
+      next === null
         ? t('event.publish-nowhere')
-        : t('event.publish-text', { address: `/${row.path}` }),
+        : t('event.publish-text', { address: `/${next}` }) + old,
     confirmText: t('panel.publish'),
     cancelText: t('panel.cancel'),
   })

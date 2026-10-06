@@ -14,9 +14,10 @@ use WebxUi\Routing\Exceptions\PathRejected;
  * insert has happened (§7). Everything the observer writes goes through `RouteSync`, which
  * writes quietly — a suffix landing back in the slug must not start the observer again.
  *
- * There is no `restored` here and that is deliberate: a restore is a `save()` of a model whose
- * `deleted_at` went back to null, so `updated` has already run — including the undo that puts
- * the entity back in the bin when the address it wants was taken while it was gone.
+ * The address itself comes back on `updated`, not `restored`: a restore is a `save()` of a model
+ * whose `deleted_at` went back to null, so `updated` has already run — including the undo that
+ * puts the entity back in the bin when the address it wants was taken while it was gone.
+ * `restored` only brings back the trail of former addresses the bin kept.
  */
 class RouteObserver
 {
@@ -80,9 +81,27 @@ class RouteObserver
         $this->updated($entity);
     }
 
+    /**
+     * Into the bin, or gone for good.
+     *
+     * Either way the entity stops answering, aliases included. The difference is the trail: a
+     * soft delete can be undone, and an undo that left every old link broken would undo only
+     * half of it — so the former addresses are kept aside for {@see restored()}.
+     */
     public function deleted(Model $entity): void
     {
+        if (method_exists($entity, 'isForceDeleting') && ! $entity->isForceDeleting()) {
+            $this->sync->trash($entity);
+
+            return;
+        }
+
         $this->sync->forget($entity);
+    }
+
+    public function restored(Model $entity): void
+    {
+        $this->sync->revive($entity);
     }
 
     private function syncDescendants(Model $entity): void

@@ -20,6 +20,9 @@ use WebxUi\Pages\Panel\Editors;
  * The address comes back by itself, or the restore is refused because somebody has taken it in
  * the meantime — a `PathRejected` is a 422 on the slug, which is the right answer: a page
  * quietly restored to a different address is worse than one that says the place is occupied.
+ *
+ * Its former addresses come back too, each one that nobody took meanwhile; the ones somebody
+ * did take are named in `aliases_dropped`, because those old links now open somebody else.
  */
 final class PageRestoreController
 {
@@ -29,11 +32,13 @@ final class PageRestoreController
 
         $count = $trashed->trashedBranch()->count() + 1;
 
-        $trashed->restoreBranch();
+        $trail = $trashed->restoreBranchWithTrail();
 
         return ApiResponse::data([
             'page' => new PageResource($trashed->refresh()->loadMissing('routes')->loadCount('children'), Editors::of([$trashed])),
             'restored' => $count,
+            'aliases_restored' => $trail->restored ?? [],
+            'aliases_dropped' => $trail->dropped ?? [],
         ]);
     }
 }

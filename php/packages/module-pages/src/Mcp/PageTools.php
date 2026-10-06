@@ -531,10 +531,14 @@ final class PageTools
             return ['dry_run' => true, 'would_restore' => $count, 'id' => $trashed->getKey()];
         }
 
-        $trashed->restoreBranch();
+        $trail = $trashed->restoreBranchWithTrail();
 
         return [
             'restored' => $count,
+            // Former addresses that lead here again, and the ones another entity took while the
+            // page was in the bin — those old links now open that entity, not this page.
+            'aliases_restored' => $trail->restored ?? [],
+            'aliases_dropped' => $trail->dropped ?? [],
             'page' => $this->summary($trashed->refresh()->loadMissing('routes')->loadCount('children'), Editors::of([$trashed])),
         ];
     }
@@ -764,6 +768,12 @@ final class PageTools
         $texts = [];
 
         foreach ($value as $locale => $text) {
+            // Words in a language the site is not published in are words nobody reads — and
+            // an address in one is an address that answers nowhere.
+            if (! $this->locales()->has((string) $locale)) {
+                throw new ToolFailure("`{$field}` has a value in [{$locale}], which this site is not published in. It has: ".implode(', ', $this->locales()->codes()).'.');
+            }
+
             if (! is_string($text) || trim($text) === '') {
                 continue;
             }

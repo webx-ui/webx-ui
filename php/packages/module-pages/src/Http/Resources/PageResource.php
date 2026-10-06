@@ -55,6 +55,8 @@ final class PageResource extends JsonResource
             // Null rather than an empty string when the page names no slug in this language:
             // the two mean different things, and only the home page is legitimately at `''`.
             'path' => $canonical?->path,
+            // Where publishing moves it, when a renamed slug waits in the draft.
+            'next_path' => PanelAddress::afterPublishing($page, $addressLocale, $canonical?->path),
             'url' => $canonical === null ? null : $page->url($addressLocale),
             // The language of the address when it is the site's main one, shown because this
             // language has none: the row says so in a tooltip rather than instead of the address.

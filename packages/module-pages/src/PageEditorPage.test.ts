@@ -2,10 +2,25 @@ import { disableAutoUnmount, enableAutoUnmount, flushPromises, mount } from '@vu
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
-import { adminKey, createI18n, i18nKey, type AdminContext } from '@webx-ui/module-admin'
+import {
+  adminKey,
+  adminMessages,
+  createI18n,
+  i18nKey,
+  type AdminContext,
+} from '@webx-ui/module-admin'
 import { coreTypes, type ScreenNode } from '@webx-ui/schema'
+import type * as core from '@webx-ui/core'
+import { confirm } from '@webx-ui/core'
 import PageEditorPage from './PageEditorPage.vue'
 import type { PageDetail, PageRow } from './types'
+
+// The question is the thing under test, not the dialog that asks it: the dialog mounts outside
+// the app, where the wrapper cannot reach.
+vi.mock('@webx-ui/core', async (original) => ({
+  ...(await original<typeof core>()),
+  confirm: vi.fn().mockResolvedValue(false),
+}))
 
 // The editor's autosave pause outlives a test that never unmounts it, and fires into a torn-down
 // jsdom: "Element is not defined" from a ref callback, after every test has already passed. The
@@ -54,6 +69,7 @@ async function panel(first = detail('r1')) {
   const post = vi.fn().mockResolvedValue({ data: about })
 
   const i18n = createI18n()
+  i18n.defaults('webx-admin', adminMessages)
 
   const admin = {
     apiPath: '/api/cms',
@@ -197,6 +213,22 @@ describe('WxPageEditorPage', () => {
     const { wrapper } = await panel()
 
     expect(wrapper.find('a[href*="_preview"]').exists()).toBe(true)
+  })
+
+  it('names the address publishing moves the page to, and says the old one leads there', async () => {
+    const renamed = detail('r1')
+    renamed.page = { ...renamed.page, status: 'modified', next_path: 'about-us' }
+
+    const { wrapper } = await panel(renamed)
+    const button = wrapper.findAll('button').find((one) => one.text() === 'Publish')
+
+    await button?.trigger('click')
+    await flushPromises()
+
+    const asked = vi.mocked(confirm).mock.calls.at(-1)?.[0] as { message: string }
+
+    expect(asked.message).toContain('/about-us')
+    expect(asked.message).toContain('/about will lead to the new one')
   })
 
   it('leaves without asking when the save is already on its way', async () => {

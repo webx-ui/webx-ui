@@ -5,6 +5,7 @@ import type {
   PageInput,
   PageLevel,
   PageMoveResult,
+  PageRestore,
   PageRow,
   PageSave,
   PageVersion,
@@ -34,7 +35,7 @@ export interface PagesApi {
   /** Into the bin, with the branch under it. Answers how many went. */
   remove(id: number): Promise<number>
   /** Out of the bin, with whatever went in with it. Answers how many came back. */
-  restore(id: number): Promise<number>
+  restore(id: number): Promise<PageRestore>
   /** The publications, newest first. */
   versions(id: number): Promise<PageVersion[]>
   /** An old publication becomes the draft; putting it on the site is a separate step. */
@@ -74,10 +75,7 @@ export function createPagesApi(admin: AdminContext): PagesApi {
       admin.http
         .delete<{ data: { trashed: number } }>(`${base}/${id}`)
         .then((body) => body.data.trashed),
-    restore: (id) =>
-      admin.http
-        .post<{ data: { restored: number } }>(`${base}/${id}/restore`, {})
-        .then((body) => body.data.restored),
+    restore: (id) => admin.http.post<{ data: PageRestore }>(`${base}/${id}/restore`, {}).then(data),
     versions: (id) => admin.http.get<{ data: PageVersion[] }>(`${base}/${id}/versions`).then(data),
     restoreVersion: (id, number) =>
       admin.http

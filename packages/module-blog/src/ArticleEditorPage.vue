@@ -373,7 +373,14 @@ async function publish(): Promise<void> {
 
   if (!row) return
 
-  const address = row.path === null ? null : `/${row.path}`
+  // Publishing moves a renamed slug, so the question names where the page will be, not where
+  // it is — and says the old address will lead there, since that is what happens to it.
+  const next = row.next_path ?? row.path
+  const old =
+    row.next_path != null && row.path !== null
+      ? ` ${panel('editor.publish-moves', { old: `/${row.path}` })}`
+      : ''
+  const address = next === null ? null : `/${next}`
   const when = chosen.value === null ? t('article.publish-now') : dates.short(chosen.value)
 
   const agreed = await confirm({
@@ -382,7 +389,7 @@ async function publish(): Promise<void> {
       ? t('article.publish-later', { date: when })
       : address === null
         ? t('article.publish-nowhere')
-        : t('article.publish-text', { address }),
+        : t('article.publish-text', { address }) + old,
     confirmText: future.value ? t('article.schedule') : t('panel.publish'),
     cancelText: t('panel.cancel'),
   })

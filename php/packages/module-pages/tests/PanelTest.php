@@ -6,6 +6,7 @@ namespace WebxUi\Pages\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Pages\Models\Page;
+use WebxUi\Routing\Models\Route;
 
 /**
  * The section's API: the level of the tree the list draws, and what an editor may do to a page.
@@ -230,6 +231,95 @@ final class PanelTest extends TestCase
             ->postJson($this->api(), ['title' => 'About us again', 'slug' => 'about-us'])
             ->assertStatus(422)
             ->assertJsonValidationErrors('slug');
+    }
+
+    #[Test]
+    public function a_new_page_is_named_in_the_sites_language_not_the_panels(): void
+    {
+        // An English-only site, an editor reading the panel in Russian.
+        $this->app['config']->set('webx-localization.panel', ['en', 'ru']);
+
+        $response = $this->actingAs($this->editor(), 'cms')
+            ->withHeader('X-Webx-Locale', 'ru')
+            ->postJson($this->api(), ['title' => 'Alias test'])
+            ->assertCreated();
+
+        $page = Page::query()->findOrFail($response->json('data.id'));
+
+        $this->assertSame(['en' => 'Alias test'], $page->getTranslations('title'));
+        $this->assertSame(['en' => 'alias-test'], $page->getTranslations('slug'));
+        $this->assertSame('alias-test', $response->json('data.path'));
+        $this->assertSame('Alias test', $response->json('data.title'));
+    }
+
+    #[Test]
+    public function a_new_page_is_named_in_the_main_language_even_when_the_panel_speaks_another_of_the_sites(): void
+    {
+        $this->useLocales('en', 'ru');
+        $this->app['config']->set('webx-localization.panel', ['en', 'ru']);
+
+        $response = $this->actingAs($this->editor(), 'cms')
+            ->withHeader('X-Webx-Locale', 'ru')
+            ->postJson($this->api(), ['title' => 'Alias test'])
+            ->assertCreated();
+
+        $page = Page::query()->findOrFail($response->json('data.id'));
+
+        // The main language is the one every page has an address in; the others are the form's.
+        $this->assertSame(['en' => 'Alias test'], $page->getTranslations('title'));
+    }
+
+    #[Test]
+    public function the_editor_is_told_where_publishing_moves_a_renamed_page(): void
+    {
+        $page = $this->page('alias-test');
+        $page->saveDraft(['slug' => ['en' => 'alias-test-2']]);
+
+        $editor = $this->actingAs($this->editor(), 'cms');
+
+        $before = $editor->getJson($this->api($page->getKey()))->assertOk();
+        $this->assertSame('alias-test', $before->json('data.page.path'));
+        $this->assertSame('alias-test-2', $before->json('data.page.next_path'));
+
+        $published = $editor->postJson($this->api($page->getKey()).'/publish')->assertOk();
+        $this->assertSame('alias-test-2', $published->json('data.path'));
+        $this->assertNull($published->json('data.next_path'), 'nothing left to move');
+
+        // And a page with nothing renamed in its draft moves nowhere.
+        $this->assertNull($editor->getJson($this->api($this->page('about')->getKey()))->json('data.page.next_path'));
+    }
+
+    #[Test]
+    public function a_restore_brings_back_the_old_addresses_nobody_took(): void
+    {
+        $page = $this->page('alias-test');
+
+        foreach (['alias-test-2', 'alias-test-3'] as $slug) {
+            $page->setTranslation('slug', 'en', $slug);
+            $page->save();
+        }
+
+        $editor = $this->actingAs($this->editor(), 'cms');
+        $editor->deleteJson($this->api($page->getKey()))->assertOk();
+
+        // While it was in the bin, another page took one of its old addresses.
+        $other = $this->page('alias-test-2');
+
+        $restored = $editor->postJson($this->api($page->getKey()).'/restore')->assertOk();
+
+        $this->assertSame(['/alias-test'], $restored->json('data.aliases_restored'));
+        $this->assertSame(['/alias-test-2'], $restored->json('data.aliases_dropped'));
+
+        $canonical = $page->refresh()->routeCanonical('en');
+        $this->assertNotNull($canonical);
+        $this->assertSame('alias-test-3', $canonical->path);
+
+        $alias = Route::query()->where('path', 'alias-test')->firstOrFail();
+        $this->assertSame(Route::ALIAS, $alias->kind);
+        $this->assertSame($canonical->getKey(), $alias->target_id);
+
+        $taken = Route::query()->where('path', 'alias-test-2')->firstOrFail();
+        $this->assertSame($other->getKey(), $taken->entity_id);
     }
 
     #[Test]

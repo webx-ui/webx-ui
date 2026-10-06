@@ -9,6 +9,8 @@ behind `TreePath` `webx-ui/nested-set` — read their guides for those.
 
 ## What it owns
 
+- **Table** `routes_trashed` (`Models\TrashedAlias`): the former addresses of whatever is in the
+  bin, answering nothing, waiting for a restore.
 - **Table** `routes` (`WebxUi\Routing\Models\Route`): `locale`, `path`, `kind` (`canonical` or
   `alias`), `target_id` (an alias points at the canonical row, so renames never chain),
   `entity_type`, `entity_id`; unique on `locale` + `path`.
@@ -61,8 +63,13 @@ behind `TreePath` `webx-ui/nested-set` — read their guides for those.
   A route of your own for a fixed path is fine — it wins over the registry by design.
 - Do not read anything but the entity in a formatter (no request, no time, no config): a save,
   a preview and a rebuild must compute the same address.
-- Do not treat an alias as a redirect rule: it is exact, always 301, and dies with its entity.
+- Do not treat an alias as a redirect rule: it is exact, always 301, and lives with its entity.
   A redirect elsewhere is a rule in `webx-ui/module-seo`.
+- Do not expect a trashed entity's aliases in `routes`. Into the bin (soft delete), every
+  address stops answering and frees its path; the aliases are kept aside in `routes_trashed`.
+  A restore brings the canonical address back (or is refused if it was taken) and then each
+  alias that is still free — one another entity took meanwhile stays theirs and is reported
+  (`RouteSync::revival()`, `aliases_dropped` in a page restore). A force delete removes both.
 
 ## Check your work
 

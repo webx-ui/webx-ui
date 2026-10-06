@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Routing;
 
+use Illuminate\Database\Eloquent\Model;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Models\Route;
 
@@ -41,5 +42,41 @@ final class PanelAddress
         $route = $canonical($main);
 
         return $route === null ? [null, $locale, null] : [$route, $main, $main];
+    }
+
+    /**
+     * The address a record will answer at once its draft is published, when that is not the one
+     * it answers at now — or null when publishing moves nothing.
+     *
+     * What the publish question names. A slug renamed in the draft moves the address only on
+     * publishing, so the row's `path` is still the old one; a question built from it promised
+     * visitors the address that was about to become a redirect.
+     *
+     * Duck-typed on the draft and the address because neither is this package's: a record with
+     * no draft, or a draft that leaves the slug alone, costs nothing — a list of a few hundred
+     * rows computes no path at all.
+     */
+    public static function afterPublishing(Model $entity, string $locale, ?string $current): ?string
+    {
+        if (! method_exists($entity, 'hasDraft') || ! method_exists($entity, 'withDraft') || ! $entity->hasDraft()) {
+            return null;
+        }
+
+        $draft = $entity->withDraft();
+
+        if (! $draft instanceof Model || ! method_exists($draft, 'routePath')) {
+            return null;
+        }
+
+        $slug = EntitySlug::read($draft, $locale);
+
+        // An emptied slug is not an address; what publishing does with it is the form's to say.
+        if ($slug === '' || $slug === EntitySlug::read($entity, $locale)) {
+            return null;
+        }
+
+        $path = (string) $draft->routePath($locale);
+
+        return $path === $current ? null : $path;
     }
 }

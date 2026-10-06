@@ -76,10 +76,13 @@ final class RecipeController
      * address from the start, answering 404, so nobody else takes it while it is being written.
      * In a transaction: an address refused leaves no recipe without one.
      */
-    public function store(RecipeRequest $request, RecipeForm $form): JsonResponse
+    /** Named in the site's main language, not the panel's: the form fills the others. */
+    public function store(RecipeRequest $request, RecipeForm $form, Locales $locales): JsonResponse
     {
-        $recipe = $this->db->transaction(static function () use ($request): Recipe {
-            $recipe = new Recipe(['title' => $request->title(), 'slug' => $request->slug()]);
+        $locale = $locales->defaultCode();
+
+        $recipe = $this->db->transaction(static function () use ($request, $locale): Recipe {
+            $recipe = new Recipe(['title' => [$locale => $request->title()], 'slug' => [$locale => $request->slug()]]);
             $recipe->save();
 
             return $recipe;

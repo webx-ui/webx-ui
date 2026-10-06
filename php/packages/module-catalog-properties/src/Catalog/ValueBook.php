@@ -187,7 +187,7 @@ final class ValueBook
             // Languages laid over those there; one sent empty is emptied, which for a slug means
             // «make it again from the name».
             $merged = $value->getTranslations($field);
-            $sent = is_array($fields[$field]) ? $fields[$field] : [$this->locales->current() => $fields[$field]];
+            $sent = is_array($fields[$field]) ? $fields[$field] : [$this->locales->content() => $fields[$field]];
 
             foreach ($sent as $locale => $words) {
                 if (is_string($words) && trim($words) !== '') {

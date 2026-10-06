@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Http\ApiResponse;
+use WebxUi\Localization\Locales;
 use WebxUi\Pages\Exceptions\PagesException;
 use WebxUi\Pages\Http\Requests\PageRequest;
 use WebxUi\Pages\Http\Resources\PageResource;
@@ -75,11 +76,19 @@ final class PageController
         return ApiResponse::data($form->describe($page, $this->author($request)));
     }
 
-    public function store(PageRequest $request): JsonResponse
+    /**
+     * A new page, named in the site's main language.
+     *
+     * Not the panel's: the dialog is read in the editor's interface language, and a page born
+     * with its only title and address in a language the site is not published in answers
+     * nowhere and is called by its number. The other languages are the form's to fill.
+     */
+    public function store(PageRequest $request, Locales $locales): JsonResponse
     {
         $parent = $this->parent($request->parentId());
+        $locale = $locales->defaultCode();
 
-        $page = new Page(['title' => $request->title(), 'slug' => $request->slug()]);
+        $page = new Page(['title' => [$locale => $request->title()], 'slug' => [$locale => $request->slug()]]);
         $page->appendTo($parent);
 
         return ApiResponse::data(new PageResource($page->refresh()->loadMissing('routes')), 201);

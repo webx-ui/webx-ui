@@ -40,7 +40,8 @@ trait HasUrl
      */
     public static function bootHasUrl(): void
     {
-        foreach (['created', 'updated', 'deleted', 'moved'] as $event) {
+        // `restored` fires only on a model with `SoftDeletes`; on any other it is never raised.
+        foreach (['created', 'updated', 'deleted', 'restored', 'moved'] as $event) {
             static::registerModelEvent($event, static function (Model $entity) use ($event): void {
                 Container::getInstance()->make(RouteObserver::class)->{$event}($entity);
             });

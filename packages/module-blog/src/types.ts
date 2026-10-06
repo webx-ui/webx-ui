@@ -58,6 +58,8 @@ export interface ArticleRow {
   lead: string
   /** `null` — this article names no address in the language the panel is open in (§9). */
   path: string | null
+  /** Where publishing moves it: a slug renamed in the draft, `null` when publishing moves nothing. */
+  next_path?: string | null
   /** The language of `path` when it is the site's main one, shown because this language has none. */
   address_locale?: string | null
   url: string | null

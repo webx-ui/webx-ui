@@ -13,6 +13,7 @@ use WebxUi\Blog\Http\Requests\TagRequest;
 use WebxUi\Blog\Models\Tag;
 use WebxUi\Blog\Panel\TagList;
 use WebxUi\Blog\Support\TagMerge;
+use WebxUi\Localization\Locales;
 
 /**
  * Tags: made from the article form by the hundred, raked over on a screen of their own (§10).
@@ -42,9 +43,20 @@ final class TagController
      * somebody decides otherwise (§2.9), and that decision belongs on the tags screen rather
      * than in passing while writing a sentence.
      */
-    public function store(TagRequest $request): JsonResponse
+    public function store(TagRequest $request, Locales $locales): JsonResponse
     {
-        $tag = new Tag($request->values());
+        $values = $request->values();
+        $locale = $locales->defaultCode();
+
+        // Born in the site's main language, not the panel's: a tag whose only name is in a
+        // language the site is not published in has no address anywhere.
+        foreach (['title', 'slug'] as $field) {
+            if (array_key_exists($field, $values)) {
+                $values[$field] = [$locale => $values[$field]];
+            }
+        }
+
+        $tag = new Tag($values);
         $tag->noindex = $request->has('noindex')
             ? $request->boolean('noindex')
             : (bool) config('webx-blog.tags.noindex', true);

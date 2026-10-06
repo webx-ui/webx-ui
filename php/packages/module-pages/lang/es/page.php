@@ -60,6 +60,7 @@ return [
     'restore-page-text' => 'La página sale de la papelera y recupera su dirección. La que estaba en el sitio vuelve a responder.',
     'restore-branch' => 'Las :count páginas que entraron con ella también vuelven.',
     'restored-branch' => 'Han vuelto :count páginas.',
+    'aliases-dropped' => 'Estas direcciones antiguas se ocuparon mientras la página estaba en la papelera y ya no llevan aquí: :addresses',
 
     'copy-of' => ':title (copia)',
     'duplicated' => 'La copia está lista y no está en el sitio.',

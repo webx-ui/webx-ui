@@ -8,6 +8,7 @@ use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Routing\Exceptions\PathRejected;
 use WebxUi\Routing\Formatters\TreePath;
 use WebxUi\Routing\Models\Route;
+use WebxUi\Routing\Models\TrashedAlias;
 use WebxUi\Routing\RouteSync;
 use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
@@ -144,6 +145,75 @@ class WritesTest extends TestCase
         }
 
         $this->assertTrue(Article::withTrashed()->findOrFail($article->getKey())->trashed());
+    }
+
+    #[Test]
+    public function the_bin_keeps_the_trail_and_a_restore_brings_it_back(): void
+    {
+        $article = Article::query()->create(['title' => 'Belts', 'slug' => 'belts']);
+        $article->slug = 'belts-2';
+        $article->save();
+        $article->slug = 'belts-3';
+        $article->save();
+
+        $article->delete();
+
+        // In the bin nothing answers — the former addresses are kept aside, not in the registry.
+        $this->assertSame(0, Route::query()->count());
+        $this->assertSame(['belts', 'belts-2'], TrashedAlias::query()->orderBy('path')->pluck('path')->all());
+
+        $article->restore();
+
+        $canonical = $article->routeCanonical();
+        $this->assertNotNull($canonical);
+        $this->assertSame('belts-3', $canonical->path);
+
+        $aliases = Route::query()->alias()->orderBy('path')->get();
+        $this->assertSame(['belts', 'belts-2'], $aliases->pluck('path')->all());
+        $this->assertSame([$canonical->getKey()], $aliases->pluck('target_id')->unique()->values()->all());
+        $this->assertSame(0, TrashedAlias::query()->count());
+
+        $revival = $this->app->make(RouteSync::class)->revival($article);
+        $this->assertSame(['/belts', '/belts-2'], $revival->restored);
+        $this->assertSame([], $revival->dropped);
+    }
+
+    #[Test]
+    public function an_old_address_taken_while_in_the_bin_stays_with_its_new_owner(): void
+    {
+        $article = Article::query()->create(['title' => 'Belts', 'slug' => 'belts']);
+        $article->slug = 'belts-2';
+        $article->save();
+        $article->delete();
+
+        // The path was free while the article was in the bin, and somebody took it.
+        $other = Article::query()->create(['title' => 'Other belts', 'slug' => 'belts']);
+
+        $article->restore();
+
+        $route = Route::query()->where('path', 'belts')->firstOrFail();
+        $this->assertSame($other->getKey(), $route->entity_id);
+        $this->assertSame(Route::CANONICAL, $route->kind);
+
+        $revival = $this->app->make(RouteSync::class)->revival($article);
+        $this->assertSame([], $revival->restored);
+        $this->assertSame(['/belts'], $revival->dropped);
+    }
+
+    #[Test]
+    public function a_force_delete_takes_the_kept_trail_too(): void
+    {
+        $article = Article::query()->create(['title' => 'Belts', 'slug' => 'belts']);
+        $article->slug = 'belts-2';
+        $article->save();
+        $article->delete();
+
+        $this->assertSame(1, TrashedAlias::query()->count());
+
+        $article->forceDelete();
+
+        $this->assertSame(0, TrashedAlias::query()->count());
+        $this->assertSame(0, Route::query()->count());
     }
 
     #[Test]

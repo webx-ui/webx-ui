@@ -13,5 +13,6 @@ return [
     'unpublish-title' => 'Siteden kaldırılsın mı?',
     'unpublish-text' => 'Ziyaretçiler artık görmeyecek: sayfası «bulunamadı» yanıtını verecek, site haritasından ve aramadan çıkacak. Yazılan her şey panelde kalır; «Yayımla» onu aynı adreste geri getirir.',
     'keep-published' => 'Sitede bırak',
+    'publish-moves' => 'Eski adres :old yenisine yönlendirecek.',
     'unpublished' => 'Siteden kaldırıldı.',
 ];

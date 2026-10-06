@@ -60,6 +60,7 @@ return [
     'restore-page-text' => 'The page leaves the bin and takes its address back. One that was on the site answers again.',
     'restore-branch' => 'The :count pages that went in with it come back too.',
     'restored-branch' => ':count pages are back.',
+    'aliases-dropped' => 'These old addresses were taken while the page was in the bin and no longer lead here: :addresses',
 
     'copy-of' => ':title (copy)',
     'duplicated' => 'The copy is ready, and it is not on the site.',

@@ -60,6 +60,7 @@ return [
     'restore-page-text' => 'A página sai da reciclagem e recupera o seu endereço. A que estava no site volta a responder.',
     'restore-branch' => 'As :count páginas que foram com ela também voltam.',
     'restored-branch' => 'Voltaram :count páginas.',
+    'aliases-dropped' => 'Estes endereços antigos foram ocupados enquanto a página estava no lixo e já não levam aqui: :addresses',
 
     'copy-of' => ':title (cópia)',
     'duplicated' => 'A cópia está pronta e não está no site.',

@@ -27,6 +27,8 @@ export interface PageRow {
   slug: string
   /** `null` — this page names no address in the language the panel is open in. */
   path: string | null
+  /** Where publishing moves it: a slug renamed in the draft, `null` when publishing moves nothing. */
+  next_path?: string | null
   /** The language of `path` when it is the site's main one, shown because this language has none. */
   address_locale?: string | null
   url: string | null
@@ -117,6 +119,16 @@ export interface PageVersion {
   source: 'panel' | 'mcp' | 'import'
   comment: string | null
   is_pinned: boolean
+}
+
+/** What a restore from the bin answers. */
+export interface PageRestore {
+  /** How many pages came back — the page and the branch that went down with it. */
+  restored: number
+  /** Former addresses that lead to the page again. */
+  aliases_restored?: string[]
+  /** Former addresses another page took while this one was in the bin: they stay with it. */
+  aliases_dropped?: string[]
 }
 
 export interface PageMoveResult {

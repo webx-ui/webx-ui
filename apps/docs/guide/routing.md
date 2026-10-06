@@ -203,13 +203,13 @@ working.
 Both send a browser somewhere else, and an editor sees them side by side on the SEO section's
 **Automatic** tab — read only — next to the rules they wrote by hand. They are not the same thing:
 
-|            | Alias                           | Rule in `module-seo`                          |
-| ---------- | ------------------------------- | --------------------------------------------- |
-| Written by | the site, when something moved  | an editor                                     |
-| Points at  | the row, so renames never chain | text, so a later rename can leave it stale    |
-| Lives      | as long as the entity           | until somebody deletes it                     |
-| Answers    | always 301, always exact        | 301 or 302; exact, mask or regular expression |
-| Tried      | during routing                  | before routing — a rule wins                  |
+|            | Alias                                   | Rule in `module-seo`                          |
+| ---------- | --------------------------------------- | --------------------------------------------- |
+| Written by | the site, when something moved          | an editor                                     |
+| Points at  | the row, so renames never chain         | text, so a later rename can leave it stale    |
+| Lives      | as long as the entity, the bin included | until somebody deletes it                     |
+| Answers    | always 301, always exact                | 301 or 302; exact, mask or regular expression |
+| Tried      | during routing                          | before routing — a rule wins                  |
 
 A rule beating a live page is deliberate: an address that should now go elsewhere has to be
 expressible. The panel warns when a rule is about to shadow a page and saves it anyway.

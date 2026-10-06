@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace WebxUi\Recipes\Http\Resources;
 
-use WebxUi\Routing\PanelAddress;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use WebxUi\Localization\Locales;
@@ -12,6 +11,7 @@ use WebxUi\Recipes\Models\Recipe;
 use WebxUi\Recipes\Models\RecipeCategory;
 use WebxUi\Recipes\Panel\Revision;
 use WebxUi\Routing\Models\Route;
+use WebxUi\Routing\PanelAddress;
 
 /**
  * One recipe as the panel knows it (§5.10): a row of the list, and the `recipe` of the form.
@@ -42,6 +42,8 @@ final class RecipeResource extends JsonResource
             'slug' => (string) $shown->getTranslation('slug', $locale, fallback: false),
             // Null where the recipe names no slug in this language: it has no address there.
             'path' => $canonical?->path,
+            // Where publishing moves it, when a renamed slug waits in the draft.
+            'next_path' => PanelAddress::afterPublishing($recipe, $addressLocale, $canonical?->path),
             'url' => $canonical === null ? null : $recipe->url($addressLocale),
             // The language of the address when it is the site's main one, shown because this
             // language has none: the row says so in a tooltip rather than instead of the address.

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace WebxUi\Services\Http\Resources;
 
-use WebxUi\Routing\PanelAddress;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use WebxUi\Localization\Locales;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Storage\FileUrls;
 use WebxUi\Routing\Models\Route;
+use WebxUi\Routing\PanelAddress;
 use WebxUi\Services\Models\Service;
 use WebxUi\Services\Models\ServiceCategory;
 use WebxUi\Services\Panel\Revision;
@@ -45,6 +45,8 @@ final class ServiceResource extends JsonResource
             'lead' => (string) $shown->getTranslation('lead', $locale, fallback: false),
             // Null where the service names no slug in this language: it has no address there.
             'path' => $canonical?->path,
+            // Where publishing moves it, when a renamed slug waits in the draft.
+            'next_path' => PanelAddress::afterPublishing($service, $addressLocale, $canonical?->path),
             'url' => $canonical === null ? null : $service->url($addressLocale),
             // The language of the address when it is the site's main one, shown because this
             // language has none: the row says so in a tooltip rather than instead of the address.

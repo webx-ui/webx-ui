@@ -60,6 +60,7 @@ return [
     'restore-page-text' => 'La pagina esce dal cestino e riprende il suo indirizzo. Quella che era sul sito risponde di nuovo.',
     'restore-branch' => 'Tornano anche le :count pagine finite lì insieme a lei.',
     'restored-branch' => 'Sono tornate :count pagine.',
+    'aliases-dropped' => 'Questi vecchi indirizzi sono stati presi mentre la pagina era nel cestino e non portano più qui: :addresses',
 
     'copy-of' => ':title (copia)',
     'duplicated' => 'La copia è pronta e non è sul sito.',

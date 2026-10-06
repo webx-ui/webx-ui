@@ -18,6 +18,8 @@ use WebxUi\NestedSet\HasNestedSet;
 use WebxUi\Pages\Exceptions\PagesException;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
+use WebxUi\Routing\Revival;
+use WebxUi\Routing\RouteSync;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
 use WebxUi\Seo\HasSeo;
@@ -324,19 +326,42 @@ class Page extends Model implements HasBreadcrumbs, Visible
      */
     public function restoreBranch(): bool
     {
-        return (bool) $this->getConnection()->transaction(function (): bool {
+        return $this->restoreBranchWithTrail() !== null;
+    }
+
+    /**
+     * The same, answering what happened to the former addresses of the branch: the ones that
+     * lead to it again, and the ones another entity took while it was in the bin. Null when the
+     * page itself did not come back.
+     */
+    public function restoreBranchWithTrail(): ?Revival
+    {
+        /** @var Revival|null $trail */
+        $trail = $this->getConnection()->transaction(function (): ?Revival {
             $branch = $this->trashedBranch();
 
             $this->setAttribute('trashed_with', null);
-            $restored = (bool) $this->restore();
+
+            if (! (bool) $this->restore()) {
+                return null;
+            }
 
             foreach ($branch as $node) {
                 $node->setAttribute('trashed_with', null);
                 $node->restore();
             }
 
-            return $restored;
+            $routes = app(RouteSync::class);
+            $trail = $routes->revival($this);
+
+            foreach ($branch as $node) {
+                $trail = $trail->merge($routes->revival($node));
+            }
+
+            return $trail;
         });
+
+        return $trail;
     }
 
     /**

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace WebxUi\Vacancies\Http\Resources;
 
-use WebxUi\Routing\PanelAddress;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Models\Route;
+use WebxUi\Routing\PanelAddress;
 use WebxUi\Vacancies\Models\Vacancy;
 use WebxUi\Vacancies\Models\VacancyCategory;
 use WebxUi\Vacancies\Panel\Revision;
@@ -46,6 +46,8 @@ final class VacancyResource extends JsonResource
             'slug' => (string) $shown->getTranslation('slug', $locale, fallback: false),
             // Null where the vacancy names no slug in this language: it has no address there.
             'path' => $canonical?->path,
+            // Where publishing moves it, when a renamed slug waits in the draft.
+            'next_path' => PanelAddress::afterPublishing($vacancy, $addressLocale, $canonical?->path),
             'url' => $canonical === null ? null : $vacancy->url($addressLocale),
             // The language of the address when it is the site's main one, shown because this
             // language has none: the row says so in a tooltip rather than instead of the address.

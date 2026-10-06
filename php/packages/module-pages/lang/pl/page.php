@@ -60,6 +60,7 @@ return [
     'restore-page-text' => 'Strona wyjdzie z kosza i odzyska swój adres. Ta, która była w serwisie, znów zacznie odpowiadać.',
     'restore-branch' => 'Wrócą też :count stron, które trafiły tam razem z nią.',
     'restored-branch' => 'Wróciło stron: :count.',
+    'aliases-dropped' => 'Te stare adresy zostały zajęte, gdy strona była w koszu, i już tu nie prowadzą: :addresses',
 
     'copy-of' => ':title (kopia)',
     'duplicated' => 'Kopia jest gotowa i nie ma jej w witrynie.',

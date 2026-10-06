@@ -65,7 +65,7 @@ final class MenuController
     public function store(MenuRequest $request): JsonResponse
     {
         $menu = new Menu(['key' => $request->key()]);
-        $menu->setTranslation('title', $this->locales->current(), $request->title());
+        $menu->setTranslation('title', $this->locales->defaultCode(), $request->title());
         $menu->save();
 
         return ApiResponse::data($this->one($menu->key, $menu, $request), 201);
@@ -81,7 +81,7 @@ final class MenuController
     {
         $menu = $this->menus->ensure($this->known($key));
 
-        $menu->setTranslation('title', $this->locales->current(), $request->title());
+        $menu->setTranslation('title', $this->locales->content(), $request->title());
 
         $wanted = $request->input('key');
 

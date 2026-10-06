@@ -259,7 +259,7 @@ final class ProductValues
     private function text(Property $property, mixed $value, mixed $before): ?array
     {
         if (is_string($value)) {
-            $value = [$this->locales->current() => $value];
+            $value = [$this->locales->content() => $value];
         }
 
         if (! is_array($value)) {

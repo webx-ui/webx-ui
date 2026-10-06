@@ -10,9 +10,10 @@ use Illuminate\Support\Str;
 /**
  * What the section itself writes: a name, an address and a place in the tree.
  *
- * Only in the language the panel is open in. A page is translated in its own form, field by
- * field beside the rest of its content, and a dialog that asked for ten titles before the page
- * exists would be a worse way to start one.
+ * Only in the site's main language — never the one the panel is open in, which need not be a
+ * language the site has. A page is translated in its own form, field by field beside the rest
+ * of its content, and a dialog that asked for ten titles before the page exists would be a
+ * worse way to start one.
  */
 final class PageRequest extends FormRequest
 {

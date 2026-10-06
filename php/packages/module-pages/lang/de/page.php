@@ -60,6 +60,7 @@ return [
     'restore-page-text' => 'Die Seite verlässt den Papierkorb und bekommt ihre Adresse zurück. Was auf der Website war, antwortet wieder.',
     'restore-branch' => 'Die :count Seiten, die mit ihr hineingingen, kommen mit zurück.',
     'restored-branch' => ':count Seiten sind zurück.',
+    'aliases-dropped' => 'Diese alten Adressen wurden vergeben, während die Seite im Papierkorb lag, und führen nicht mehr hierher: :addresses',
 
     'copy-of' => ':title (Kopie)',
     'duplicated' => 'Die Kopie ist fertig und steht nicht auf der Website.',
