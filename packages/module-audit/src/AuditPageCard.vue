@@ -24,6 +24,7 @@ import {
 } from '@webx-ui/core'
 import AuditDetails from './AuditDetails.vue'
 import AuditHeadings from './AuditHeadings.vue'
+import { outlineHints, type OutlineEntry } from './headings'
 import { createAuditApi } from './api'
 import { viewable } from './resources'
 import AuditStatus from './AuditStatus.vue'
@@ -163,7 +164,7 @@ const tabs = computed<TabItem[]>(() => [
 const outline = computed(() => {
   const kept = card.value?.page.facts.outline
 
-  return Array.isArray(kept) ? (kept as [number, string][]) : null
+  return Array.isArray(kept) ? (kept as OutlineEntry[]) : null
 })
 
 const resourceTab = computed<AuditResourceTab | null>(() =>
@@ -229,7 +230,11 @@ function size(row: AuditResourceRow): string {
  * A fact is a line, or a list: hreflang and Open Graph are key and value per row, the key set apart
  * so the eye does not run it into the value after it; JSON-LD is the types as tags.
  */
-type Fact = string | { pairs: [string, string][] } | { tags: string[]; error?: string | null }
+type Fact =
+  | string
+  | { pairs: [string, string][] }
+  | { tags: string[]; error?: string | null }
+  | { headings: number; hints: string[] }
 
 /** The numbers of the page, read at a glance before the details: one tile each. */
 interface Tile {
@@ -313,6 +318,12 @@ const sections = computed<{ title: string; facts: [string, Fact][] }[]>(() => {
         [t('page.field-title'), page.title],
         [t('page.field-description'), page.description],
         [t('page.field-h1'), page.h1.join(' · ') || null],
+        [
+          t('page.card-headings'),
+          outline.value?.length
+            ? { headings: outline.value.length, hints: outlineHints(outline.value, t) }
+            : null,
+        ],
         [t('page.field-canonical'), page.canonical],
         [t('page.field-robots_meta'), page.robots_meta],
         [t('page.field-x_robots_tag'), page.x_robots_tag],
@@ -529,6 +540,24 @@ watch(tab, () => {
                     <code class="wx-audit-card__key">{{ key }}</code>
                     <span>{{ text }}</span>
                   </template>
+                </dd>
+                <dd v-else-if="'headings' in value" class="wx-audit-card__heading-fact">
+                  <span>
+                    <wx-text :tone="value.hints.length ? 'warning' : 'success'">{{
+                      value.hints.length
+                        ? t('page.headings-summary-bad', { count: value.headings })
+                        : t('page.headings-summary-ok', { count: value.headings })
+                    }}</wx-text>
+                    <wx-link
+                      as="button"
+                      class="wx-audit-card__heading-open"
+                      @click="tab = 'headings'"
+                      >{{ t('page.headings-open') }}</wx-link
+                    >
+                  </span>
+                  <ul v-if="value.hints.length" class="wx-audit-card__heading-hints">
+                    <li v-for="hint in value.hints" :key="hint">{{ hint }}</li>
+                  </ul>
                 </dd>
                 <dd v-else class="wx-audit-card__tags">
                   <wx-badge v-for="(tag, index) in value.tags" :key="index" type="info" size="sm">{{
@@ -767,6 +796,23 @@ watch(tab, () => {
   border-radius: var(--wx-radius-md);
   background: var(--wx-bg-surface);
   overflow: hidden;
+}
+
+.wx-audit-card__heading-fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-4);
+}
+
+.wx-audit-card__heading-open {
+  margin-inline-start: var(--wx-space-8);
+}
+
+.wx-audit-card__heading-hints {
+  margin: 0;
+  padding-inline-start: var(--wx-space-18);
+  color: var(--wx-text-muted);
+  font-size: var(--wx-font-size-sm);
 }
 
 .wx-audit-card__headings {

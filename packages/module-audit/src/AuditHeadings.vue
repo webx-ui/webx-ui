@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useTranslate } from '@webx-ui/module-admin'
 import { WxAlert, WxBadge, WxText } from '@webx-ui/core'
+import { outlineHints, outlineRows, type OutlineEntry } from './headings'
 import { useAuditMessages } from './i18n'
 
 /**
@@ -12,7 +13,7 @@ import { useAuditMessages } from './i18n'
  */
 const props = defineProps<{
   /** `[level, text]` in document order; null on a run crawled before the outline was kept. */
-  outline: [number, string][] | null
+  outline: OutlineEntry[] | null
   /** How many headings of each level — to tell «none» from «not kept». */
   counts: Record<string, number>
 }>()
@@ -21,50 +22,9 @@ useAuditMessages()
 
 const t = useTranslate('webx-audit')
 
-type Row = { level: number; text: string; missing: boolean; after?: number }
+const rows = computed(() => outlineRows(props.outline ?? []))
 
-const rows = computed<Row[]>(() => {
-  const out: Row[] = []
-  let previous = 0
-
-  for (const [level, text] of props.outline ?? []) {
-    // Going down more than one step: the levels in between are the ones the page left out.
-    for (let gap = previous + 1; previous > 0 && gap < level; gap++) {
-      out.push({ level: gap, text: '', missing: true, after: previous })
-    }
-
-    out.push({ level, text, missing: false })
-    previous = level
-  }
-
-  return out
-})
-
-/** What breaks the usual order: one H1, first; each level one step below the one above; text. */
-const hints = computed<string[]>(() => {
-  const outline = props.outline ?? []
-
-  if (!outline.length) return []
-
-  const ones = outline.filter(([level]) => level === 1).length
-  const jumps = rows.value.reduce(
-    (count, row, index) =>
-      count + (!row.missing && index > 0 && rows.value[index - 1].missing ? 1 : 0),
-    0,
-  )
-  const empty = outline.filter(([, text]) => text === '').length
-  const out: string[] = []
-
-  if (ones === 0) out.push(t('page.headings-no-h1'))
-  if (ones > 1) out.push(t('page.headings-many-h1', { count: ones }))
-  if (ones > 0 && outline[0][0] !== 1) {
-    out.push(t('page.headings-h1-not-first', { level: `H${outline[0][0]}` }))
-  }
-  if (jumps > 0) out.push(t('page.headings-skipped', { count: jumps }))
-  if (empty > 0) out.push(t('page.headings-empty', { count: empty }))
-
-  return out
-})
+const hints = computed(() => outlineHints(props.outline ?? [], t))
 
 const total = computed(() => Object.values(props.counts).reduce((sum, count) => sum + count, 0))
 </script>

@@ -185,6 +185,9 @@ export const auditMessages: Record<string, Messages> = {
     'headings-empty':
       'Headings with no text — fill them in or make them ordinary text. Empty: :count',
     'heading-missing': ':level is missing after :after',
+    'headings-summary-ok': 'In order, headings: :count',
+    'headings-summary-bad': 'Out of order, headings: :count',
+    'headings-open': 'Open the map',
     response: 'Response',
     headers: 'Headers',
     markup: 'Markup',
