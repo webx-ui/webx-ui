@@ -246,4 +246,5 @@ return [
     'link-pages' => 'Sayfa: :count',
     'link-show-all' => 'Tümünü göster',
     'link-collapse' => 'Daralt',
+    'attrs-opener' => 'noopener olmadan yeni sekmede açılır. Güncel tarayıcılar bunu kendileri ekler; eskiler açılan sayfanın bu sayfayı yönetmesine izin verir.',
 ];

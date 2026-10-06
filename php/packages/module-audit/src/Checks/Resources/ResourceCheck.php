@@ -57,6 +57,8 @@ abstract class ResourceCheck extends LinkCheck
             'url' => $link->to_url,
             'kind' => $link->kind,
             'anchor' => $link->anchor,
+            'rel' => $link->rel,
+            'target' => $link->target,
             'status' => $resource?->status,
             'error' => $resource?->error,
             'location' => $resource?->location,

@@ -246,4 +246,5 @@ return [
     'link-pages' => 'Páginas: :count',
     'link-show-all' => 'Mostrar tudo',
     'link-collapse' => 'Recolher',
+    'attrs-opener' => 'Abre numa nova aba sem noopener. Os navegadores atuais acrescentam-no sozinhos; os antigos deixam a página aberta controlar esta.',
 ];

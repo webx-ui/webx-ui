@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useTranslate } from '@webx-ui/module-admin'
 import { WxBadge, WxButton, WxIcon, WxText } from '@webx-ui/core'
 import AuditAddress from './AuditAddress.vue'
+import AuditLinkAttrs from './AuditLinkAttrs.vue'
 import { differences, statusType } from './addresses'
 import { useAuditMessages } from './i18n'
 import type { AuditDetails, AuditDetailsColumn } from './types'
@@ -122,6 +123,11 @@ function changes(row: Record<string, unknown>) {
                 size="sm"
                 >{{ text(cell(row, column)) }}</wx-badge
               >
+              <audit-link-attrs
+                v-else-if="column.type === 'attrs'"
+                :rel="text(row.rel)"
+                :target="text(row.target)"
+              />
               <template v-else-if="column.type === 'bool'">
                 {{ yesNo(cell(row, column)) }}
               </template>
@@ -182,6 +188,10 @@ function changes(row: Record<string, unknown>) {
 
 .wx-audit-details__col--bool {
   width: 96px;
+}
+
+.wx-audit-details__col--attrs {
+  width: 216px;
 }
 
 .wx-audit-details__col--edit {

@@ -264,5 +264,7 @@ export const auditMessages: Record<string, Messages> = {
     'link-pages': 'Pages: :count',
     'link-show-all': 'Show all',
     'link-collapse': 'Collapse',
+    'attrs-opener':
+      'Opens in a new tab without noopener. Current browsers add it themselves; older ones let the opened page control this one.',
   },
 }

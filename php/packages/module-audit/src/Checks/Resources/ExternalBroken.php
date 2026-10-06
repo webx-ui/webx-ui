@@ -6,6 +6,7 @@ namespace WebxUi\Audit\Checks\Resources;
 
 use Illuminate\Database\Eloquent\Builder;
 use WebxUi\Audit\Checks\AuditContext;
+use WebxUi\Audit\Checks\Finding;
 use WebxUi\Audit\Checks\Severity;
 use WebxUi\Audit\Runs\AuditLink;
 use WebxUi\Audit\Runs\AuditResource;
@@ -23,6 +24,11 @@ final class ExternalBroken extends ResourceCheck
     protected const SEVERITY = Severity::WARNING;
 
     protected const SUMMARY = 'links-external-broken';
+
+    protected function columns(): array
+    {
+        return [...parent::columns(), Finding::column('attrs', 'attrs')];
+    }
 
     protected function links(AuditContext $context): Builder
     {

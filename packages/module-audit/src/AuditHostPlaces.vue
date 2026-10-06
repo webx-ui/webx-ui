@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
 import { WxBadge, WxButton, WxSkeleton, WxText } from '@webx-ui/core'
 import AuditAddress from './AuditAddress.vue'
+import AuditLinkAttrs from './AuditLinkAttrs.vue'
 import { createAuditApi } from './api'
 import { statusType } from './addresses'
 import { useAuditMessages } from './i18n'
@@ -13,7 +14,8 @@ import type { AuditHostTarget, AuditHosts } from './types'
  * Where one host stands, under its row on «Outgoing»: the addresses on it the pages point at, each
  * a card with the pages under it — a font or a profile link sits in the layout and is on every
  * page, so by page it would be the same line forty times — and the fields of the database that
- * hold it, with «Open in the editor». Fifty of each, broken links first; a card counts all its
+ * hold it, with «Open in the editor». A link's `target` and `rel` sit beside its address, or
+ * beside each page when the pages write it differently. Fifty of each, broken links first; a card counts all its
  * pages and lists fifty.
  */
 const props = defineProps<{ host: string }>()
@@ -77,6 +79,12 @@ onMounted(async () => {
               target.kind
             }}</wx-badge>
             <audit-address :href="target.url" strong />
+            <audit-link-attrs
+              v-if="target.kind === 'a' && !target.mixed"
+              :rel="target.rel"
+              :target="target.target"
+              class="wx-audit-places__fixed"
+            />
             <wx-badge
               v-if="broken(target.status)"
               :type="statusType(target.status)"
@@ -95,6 +103,13 @@ onMounted(async () => {
               <wx-text v-if="place.anchor" size="sm" tone="muted" class="wx-audit-places__anchor"
                 >«{{ place.anchor }}»</wx-text
               >
+              <!-- The pages differ in how they write the link: each says its own. -->
+              <audit-link-attrs
+                v-if="target.kind === 'a' && target.mixed"
+                :rel="place.rel"
+                :target="place.target"
+                class="wx-audit-places__fixed"
+              />
             </li>
           </ul>
 

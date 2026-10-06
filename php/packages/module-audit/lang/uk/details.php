@@ -154,4 +154,5 @@ return [
     'column-type' => 'Тип',
     'column-fields' => 'Поля',
     'column-kb' => 'КБ',
+    'column-attrs' => 'Атрибути',
 ];

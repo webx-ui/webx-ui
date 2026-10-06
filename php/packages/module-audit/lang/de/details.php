@@ -154,4 +154,5 @@ return [
     'column-type' => 'Typ',
     'column-fields' => 'Felder',
     'column-kb' => 'KB',
+    'column-attrs' => 'Attribute',
 ];

@@ -246,4 +246,5 @@ return [
     'link-pages' => 'Pagine: :count',
     'link-show-all' => 'Mostra tutto',
     'link-collapse' => 'Comprimi',
+    'attrs-opener' => 'Si apre in una nuova scheda senza noopener. I browser attuali lo aggiungono da soli; quelli vecchi lasciano che la pagina aperta controlli questa.',
 ];

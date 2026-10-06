@@ -246,4 +246,5 @@ return [
     'link-pages' => 'Páginas: :count',
     'link-show-all' => 'Mostrar todo',
     'link-collapse' => 'Contraer',
+    'attrs-opener' => 'Se abre en una pestaña nueva sin noopener. Los navegadores actuales lo añaden solos; los antiguos dejan que la página abierta controle esta.',
 ];

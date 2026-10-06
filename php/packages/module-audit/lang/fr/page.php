@@ -246,4 +246,5 @@ return [
     'link-pages' => 'Pages : :count',
     'link-show-all' => 'Tout afficher',
     'link-collapse' => 'Réduire',
+    'attrs-opener' => 'S\'ouvre dans un nouvel onglet sans noopener. Les navigateurs récents l\'ajoutent d\'eux-mêmes ; les anciens laissent la page ouverte contrôler celle-ci.',
 ];

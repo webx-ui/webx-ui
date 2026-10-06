@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useTranslate } from '@webx-ui/module-admin'
 import { WxBadge, WxButton, WxIcon, WxText } from '@webx-ui/core'
 import AuditAddress from './AuditAddress.vue'
+import AuditLinkAttrs from './AuditLinkAttrs.vue'
 import { differences, statusType } from './addresses'
 import { useAuditMessages } from './i18n'
 import type { AuditIssue } from './types'
@@ -22,7 +23,15 @@ interface LinkGroup {
   url: string
   location: string
   status: number | null
-  pages: string[]
+  pages: LinkPlace[]
+  /** The pages write the link with different `rel` or `target`: each says its own. */
+  mixed: boolean
+}
+
+interface LinkPlace {
+  page: string
+  rel: string | null
+  target: string | null
 }
 
 /** How many pages a card lists before «Show all». */
@@ -38,10 +47,13 @@ const groups = computed<LinkGroup[]>(() => {
       const url = String(row.url ?? '')
       const location = String(row.location ?? '')
       const key = `${url}\n${location}`
-      const group = found.get(key) ?? { url, location, status: null, pages: [] }
+      const group = found.get(key) ?? { url, location, status: null, pages: [], mixed: false }
+      const place = { page: issue.url ?? '', rel: attr(row.rel), target: attr(row.target) }
+      const first = group.pages[0]
 
       group.status ??= typeof row.status === 'number' ? row.status : null
-      if (issue.url && !group.pages.includes(issue.url)) group.pages.push(issue.url)
+      if (first && (first.rel !== place.rel || first.target !== place.target)) group.mixed = true
+      if (place.page && !group.pages.some((one) => one.page === place.page)) group.pages.push(place)
       found.set(key, group)
     }
   }
@@ -49,11 +61,15 @@ const groups = computed<LinkGroup[]>(() => {
   return [...found.values()].sort((a, b) => b.pages.length - a.pages.length)
 })
 
+function attr(value: unknown): string | null {
+  return typeof value === 'string' && value !== '' ? value : null
+}
+
 function keyOf(group: LinkGroup): string {
   return `${group.url}\n${group.location}`
 }
 
-function shown(group: LinkGroup): string[] {
+function shown(group: LinkGroup): LinkPlace[] {
   return open.value.has(keyOf(group)) ? group.pages : group.pages.slice(0, FEW)
 }
 
@@ -85,6 +101,12 @@ function toggle(group: LinkGroup): void {
           size="sm"
           >{{ t(`page.change-${change}`) }}</wx-badge
         >
+        <audit-link-attrs
+          v-if="!group.mixed && group.pages[0]"
+          :rel="group.pages[0].rel"
+          :target="group.pages[0].target"
+          class="wx-audit-links__fixed"
+        />
         <wx-badge v-if="group.status !== null" :type="statusType(group.status)" size="sm">{{
           group.status
         }}</wx-badge>
@@ -94,8 +116,14 @@ function toggle(group: LinkGroup): void {
       </div>
 
       <ul class="wx-audit-links__pages">
-        <li v-for="page in shown(group)" :key="page">
-          <audit-address :href="page" />
+        <li v-for="place in shown(group)" :key="place.page">
+          <audit-address :href="place.page" />
+          <audit-link-attrs
+            v-if="group.mixed"
+            :rel="place.rel"
+            :target="place.target"
+            class="wx-audit-links__fixed"
+          />
         </li>
       </ul>
 
@@ -146,6 +174,17 @@ function toggle(group: LinkGroup): void {
 .wx-audit-links__arrow {
   flex-shrink: 0;
   color: var(--wx-text-muted);
+}
+
+.wx-audit-links__fixed {
+  flex-shrink: 0;
+}
+
+.wx-audit-links__pages li {
+  display: flex;
+  align-items: center;
+  gap: var(--wx-space-8);
+  min-width: 0;
 }
 
 .wx-audit-links__count {

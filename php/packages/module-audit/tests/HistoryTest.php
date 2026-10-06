@@ -250,7 +250,9 @@ final class HistoryTest extends TestCase
             ->assertJsonPath('data.pages.0.page', self::BASE.'/')
             ->assertJsonPath('data.pages.0.kind', 'img')
             ->assertJsonPath('data.targets.0.kind', 'img')
-            ->assertJsonPath('data.targets.0.places.0.page', self::BASE.'/');
+            ->assertJsonPath('data.targets.0.places.0.page', self::BASE.'/')
+            ->assertJsonPath('data.targets.0.mixed', false)
+            ->assertJsonPath('data.targets.0.places.0.target', null);
 
         $home = AuditPage::query()->where('run_id', $run->id)->where('url', self::BASE.'/')->sole();
 

@@ -154,4 +154,5 @@ return [
     'column-type' => 'Typ',
     'column-fields' => 'Pola',
     'column-kb' => 'KB',
+    'column-attrs' => 'Atrybuty',
 ];

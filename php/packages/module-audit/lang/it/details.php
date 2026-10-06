@@ -154,4 +154,5 @@ return [
     'column-type' => 'Tipo',
     'column-fields' => 'Campi',
     'column-kb' => 'KB',
+    'column-attrs' => 'Attributi',
 ];

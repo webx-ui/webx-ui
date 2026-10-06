@@ -246,4 +246,5 @@ return [
     'link-pages' => 'Seiten: :count',
     'link-show-all' => 'Alle zeigen',
     'link-collapse' => 'Einklappen',
+    'attrs-opener' => 'Öffnet in einem neuen Tab ohne noopener. Aktuelle Browser ergänzen es selbst, ältere lassen die geöffnete Seite diese steuern.',
 ];

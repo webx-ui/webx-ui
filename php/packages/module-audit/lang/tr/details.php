@@ -154,4 +154,5 @@ return [
     'column-type' => 'Tür',
     'column-fields' => 'Alanlar',
     'column-kb' => 'KB',
+    'column-attrs' => 'Öznitelikler',
 ];

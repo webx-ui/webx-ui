@@ -92,7 +92,8 @@ export interface AuditCheckRow {
 }
 
 /** `code` is markup quoted from the page — the page's HTML itself is not kept. */
-export type AuditCellType = 'url' | 'status' | 'bool' | 'text' | 'missing' | 'edit' | 'code'
+export type AuditCellType =
+  'url' | 'status' | 'bool' | 'text' | 'missing' | 'edit' | 'code' | 'attrs'
 
 export interface AuditDetailsColumn {
   key: string
@@ -374,7 +375,11 @@ export interface AuditHostTarget {
   kind: string
   status: number | null
   pages: number
-  places: { page: string; anchor: string | null }[]
+  /** The links' `rel` and `target` when they are the same on every page; `mixed` when not. */
+  rel: string | null
+  target: string | null
+  mixed: boolean
+  places: { page: string; anchor: string | null; rel: string | null; target: string | null }[]
 }
 
 /** A field of the database that holds an address on a host. */
