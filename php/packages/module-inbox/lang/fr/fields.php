@@ -6,6 +6,7 @@ return [
     'field' => 'Champ',
     'new-field' => 'Nouveau champ',
     'edit-field' => 'Champ',
+    'edit' => 'Modifier',
     'no-fields' => 'Pas encore de questions.',
     'no-fields-help' => 'Un formulaire sans champs ne dessine rien sur la page.',
     'save-first' => 'Enregistrez d’abord le formulaire, puis écrivez ses questions.',

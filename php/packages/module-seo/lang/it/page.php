@@ -21,6 +21,8 @@ return [
     'target' => 'Destinazione',
     'status' => 'Codice',
     'status-help' => '301 — spostato per sempre: i motori trasferiscono il peso del vecchio indirizzo al nuovo. 302 — per un po\': il vecchio resta quello principale.',
+    'code-301' => '301 — spostato per sempre. I motori trasferiscono il peso del vecchio indirizzo al nuovo e smettono di mostrare il vecchio.',
+    'code-302' => '302 — per un po\'. Il vecchio indirizzo resta il principale nella ricerca; pensato per una promozione o una pagina in lavorazione.',
     'hits' => 'Utilizzi',
     'last-hit' => 'Ultima volta',
     'loop' => 'Punta a se stessa',

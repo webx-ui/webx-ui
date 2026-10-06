@@ -367,6 +367,11 @@ async function save(): Promise<void> {
   min-width: 0;
 }
 
+/* A number is a few digits: alone in its row it stretched across the dialog like a text field. */
+.wx-inbox-field-form__row > :has(.wx-input-number) {
+  flex: 0 1 200px;
+}
+
 /* Empty when the type has nothing to configure, and then it should take no room at all. */
 .wx-inbox-field-form__row:empty {
   display: none;

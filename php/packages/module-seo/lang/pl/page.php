@@ -21,6 +21,8 @@ return [
     'target' => 'Cel',
     'status' => 'Kod',
     'status-help' => '301 — przeniesiony na stałe: wyszukiwarki przeniosą wagę starego adresu na nowy. 302 — tymczasowo: głównym zostaje stary adres.',
+    'code-301' => '301 — przeniesiony na stałe. Wyszukiwarki przeniosą wagę starego adresu na nowy i przestaną pokazywać stary.',
+    'code-302' => '302 — tymczasowo. W wyszukiwarce głównym zostaje stary adres; do promocji albo strony w remoncie.',
     'hits' => 'Użycia',
     'last-hit' => 'Ostatnio',
     'loop' => 'Wskazuje na siebie',

@@ -25,6 +25,7 @@ import SeoRedirectDialog from './SeoRedirectDialog.vue'
 import TestUrlDialog from './TestUrlDialog.vue'
 import { createSeoApi } from './api'
 import { useSeoMessages } from './i18n'
+import RedirectCode from './RedirectCode.vue'
 import type { SeoPage, SeoRedirect } from './types'
 
 /**
@@ -177,6 +178,10 @@ const actions = computed<ScreenAction[]>(() =>
 
       <template #cell-target="{ row }">
         <wx-text mono size="sm">{{ row.target }}</wx-text>
+      </template>
+
+      <template #cell-status="{ row }">
+        <redirect-code :code="row.status" />
       </template>
 
       <template #cell-last_hit_at="{ row }">

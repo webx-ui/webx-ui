@@ -6,6 +6,7 @@ return [
     'field' => 'Campo',
     'new-field' => 'Nuovo campo',
     'edit-field' => 'Campo',
+    'edit' => 'Modifica',
     'no-fields' => 'Ancora nessuna domanda.',
     'no-fields-help' => 'Un modulo senza campi non disegna nulla nella pagina.',
     'save-first' => 'Salva prima il modulo, poi scrivi le sue domande.',

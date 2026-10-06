@@ -99,7 +99,7 @@ function actionsFor(field: InboxField): RowAction[] {
   if (!props.canManage) return []
 
   return [
-    { key: 'edit', icon: 'edit', label: t('fields.edit-field'), run: () => void open(field) },
+    { key: 'edit', icon: 'edit', label: t('fields.edit'), run: () => void open(field) },
     {
       key: 'delete',
       icon: 'trash',

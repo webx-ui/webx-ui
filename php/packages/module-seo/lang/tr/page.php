@@ -21,6 +21,8 @@ return [
     'target' => 'Hedef',
     'status' => 'Kod',
     'status-help' => '301 — kalıcı taşındı: arama motorları eski adresin değerini yenisine aktarır. 302 — geçici: asıl adres eskisi kalır.',
+    'code-301' => '301 — kalıcı taşındı. Arama motorları eski adresin değerini yenisine aktarır ve eskisini göstermeyi bırakır.',
+    'code-302' => '302 — geçici. Aramada asıl adres eskisi kalır; bir kampanya ya da bakımdaki bir sayfa için.',
     'hits' => 'Kullanım',
     'last-hit' => 'Son kullanım',
     'loop' => 'Kendini gösteriyor',

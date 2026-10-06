@@ -6,6 +6,7 @@ return [
     'field' => 'Alan',
     'new-field' => 'Yeni alan',
     'edit-field' => 'Alan',
+    'edit' => 'Düzenle',
     'no-fields' => 'Henüz soru yok.',
     'no-fields-help' => 'Alanı olmayan bir form sayfada hiçbir şey çizmez.',
     'save-first' => 'Önce formu kaydedin, sonra sorularını yazın.',

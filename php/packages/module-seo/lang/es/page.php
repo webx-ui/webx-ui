@@ -21,6 +21,8 @@ return [
     'target' => 'Destino',
     'status' => 'Código',
     'status-help' => '301 — se mudó para siempre: los buscadores pasan el peso de la dirección antigua a la nueva. 302 — por un tiempo: la antigua sigue siendo la principal.',
+    'code-301' => '301 — se mudó para siempre. Los buscadores pasan el peso de la dirección antigua a la nueva y dejan de mostrar la antigua.',
+    'code-302' => '302 — por un tiempo. La dirección antigua sigue siendo la principal en la búsqueda; pensado para una oferta o una página en obras.',
     'hits' => 'Usos',
     'last-hit' => 'Último uso',
     'loop' => 'Apunta a sí misma',
