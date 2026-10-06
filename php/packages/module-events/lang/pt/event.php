@@ -17,8 +17,6 @@ return [
     'publish-nowhere' => 'Ainda não tem endereço neste idioma, então nada vai responder.',
     'preview' => 'Pré-visualização',
     'discard' => 'Descartar alterações',
-    'discard-title' => 'Descartar o que está à espera?',
-    'discard-text' => 'O evento volta ao que o site mostra. O que foi escrito desde então não aparece em lista nenhuma.',
     'discarded' => 'O evento voltou à versão publicada.',
     'conflict-title' => 'O evento mudou enquanto você o editava',
     'conflict-mine' => 'Manter o meu',

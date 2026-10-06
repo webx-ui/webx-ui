@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
+use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
 use WebxUi\Localization\Locales;
@@ -172,6 +173,26 @@ final class PageTools
                 .'given to another page in the meantime — which is the honest answer, not a page quietly '
                 .'restored somewhere else. By id: a page in the bin has no address to name it by.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->restore($arguments)),
+                ['properties' => [
+                    'page' => ['type' => 'integer', 'description' => 'The id, as pages_tree with trashed reports it.'],
+                ], 'required' => ['page']],
+            ),
+
+            Tool::mutating(
+                'discard',
+                'Throw away the draft of a published page and go back to what the site shows. The draft is all '
+                .'that changes; the page stays on the site as it is. dry_run says whether there is a draft and '
+                .'which fields it changes.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->discard($arguments, $user)),
+                ['properties' => ['page' => $page], 'required' => ['page']],
+            ),
+
+            Tool::mutating(
+                'purge',
+                'Delete a page in the bin for good, with every page under it, its addresses and former addresses, '
+                .'its SEO card and its history. Cannot be undone. Only a page in the bin — pages_delete puts it '
+                .'there first. dry_run names every page that would go.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->purge($arguments)),
                 ['properties' => [
                     'page' => ['type' => 'integer', 'description' => 'The id, as pages_tree with trashed reports it.'],
                 ], 'required' => ['page']],
@@ -393,6 +414,10 @@ final class PageTools
             throw new ToolFailure('`values` must be a non-empty object of field name → value. pages_get says what the fields are.');
         }
 
+        // Merged language by language, and a language the site does not have refused — dry run
+        // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
+        $values = $this->container->make(ScreenValues::class)->patch(PageForm::SCREEN, $this->form()->values($page), $values);
+
         $this->refuseBlocks($values);
         $this->sameRevision($arguments, $page);
 
@@ -507,6 +532,74 @@ final class PageTools
      * @param  array<string, mixed>  $arguments
      * @return array<string, mixed>
      */
+    private function discard(array $arguments, ?Authenticatable $user): array
+    {
+        $page = $this->page($arguments['page'] ?? null);
+
+        if (! $page->hasDraft()) {
+            throw new ToolFailure("Page [{$page->getKey()}] has no draft: the site already shows what it holds.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return [
+                'dry_run' => true,
+                'would_discard' => $page->changedFields(),
+                'page' => $this->address($page),
+            ];
+        }
+
+        $page->discardDraft();
+
+        return $this->get(['page' => $page->refresh()->getKey()], $user);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function purge(array $arguments): array
+    {
+        $trashed = $this->binned($arguments['page'] ?? null);
+        $branch = $trashed->purgeableBranch()->reverse()->values();
+
+        if ($this->dryRun($arguments)) {
+            return [
+                'dry_run' => true,
+                'would_purge' => $branch->count(),
+                'pages' => $branch->map(static fn (Page $page): array => [
+                    'id' => $page->getKey(),
+                    'title' => $page->getTranslations('title'),
+                ])->all(),
+            ];
+        }
+
+        return ['purged' => $trashed->purgeBranch(), 'id' => $trashed->getKey()];
+    }
+
+    /** A page in the bin, by id — an address names only a live page. */
+    private function binned(mixed $id): Page
+    {
+        if (! is_int($id) && ! (is_string($id) && ctype_digit($id))) {
+            throw new ToolFailure('`page` must be the id of a page in the bin: an address names only a live page.');
+        }
+
+        $trashed = Page::withTrashed()->find((int) $id);
+
+        if (! $trashed instanceof Page) {
+            throw new ToolFailure("No page has the id [{$id}].");
+        }
+
+        if (! $trashed->trashed()) {
+            throw new ToolFailure("Page [{$id}] is not in the bin. pages_delete puts it there; only then can it be deleted for good.");
+        }
+
+        return $trashed;
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
     private function restore(array $arguments): array
     {
         $id = $arguments['page'] ?? null;
@@ -531,10 +624,14 @@ final class PageTools
             return ['dry_run' => true, 'would_restore' => $count, 'id' => $trashed->getKey()];
         }
 
-        $trashed->restoreBranch();
+        $trail = $trashed->restoreBranchWithTrail();
 
         return [
             'restored' => $count,
+            // Former addresses that lead here again, and the ones another entity took while the
+            // page was in the bin — those old links now open that entity, not this page.
+            'aliases_restored' => $trail->restored ?? [],
+            'aliases_dropped' => $trail->dropped ?? [],
             'page' => $this->summary($trashed->refresh()->loadMissing('routes')->loadCount('children'), Editors::of([$trashed])),
         ];
     }
@@ -764,6 +861,12 @@ final class PageTools
         $texts = [];
 
         foreach ($value as $locale => $text) {
+            // Words in a language the site is not published in are words nobody reads — and
+            // an address in one is an address that answers nowhere.
+            if (! $this->locales()->has((string) $locale)) {
+                throw new ToolFailure("`{$field}` has a value in [{$locale}], which this site is not published in. It has: ".implode(', ', $this->locales()->codes()).'.');
+            }
+
             if (! is_string($text) || trim($text) === '') {
                 continue;
             }

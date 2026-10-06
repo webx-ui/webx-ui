@@ -11,7 +11,6 @@ import {
   WxSelect,
   WxTable,
   WxText,
-  type BadgeType,
   type SelectValue,
   type TableColumn,
   type TableState,
@@ -27,6 +26,7 @@ import {
   SOURCES,
   WITH_VALUE,
 } from './fields'
+import AuditStatus from './AuditStatus.vue'
 import { useAuditMessages } from './i18n'
 import type {
   AuditFieldFilter,
@@ -191,17 +191,6 @@ function setColumns(keys: unknown[]): void {
 
   /* A table without columns is a blank card; the address stays at least. */
   visible.value = next.length ? next : ['url']
-}
-
-const types: Record<string, BadgeType> = {
-  '2': 'success',
-  '3': 'info',
-  '4': 'warning',
-  '5': 'danger',
-}
-
-function statusType(value: unknown): BadgeType {
-  return types[String(value ?? '').charAt(0)] ?? 'danger'
 }
 
 function text(value: unknown): string {
@@ -380,12 +369,10 @@ onMounted(async () => {
       </template>
 
       <template v-for="key in visible" :key="key" #[`cell-${key}`]="{ row }">
-        <wx-badge
+        <audit-status
           v-if="PAGE_FIELDS[key] === 'status' && row[key] !== null"
-          :type="statusType(row[key])"
-          size="sm"
-          >{{ row[key] }}</wx-badge
-        >
+          :code="Number(row[key])"
+        />
         <wx-text v-else-if="PAGE_FIELDS[key] === 'status'" size="sm" tone="danger">{{
           t('page.status-none')
         }}</wx-text>

@@ -12,8 +12,6 @@ return [
     'publish-nowhere' => 'In dieser Sprache hat sie noch keine Adresse, also antwortet nichts.',
     'preview' => 'Vorschau',
     'discard' => 'Änderungen verwerfen',
-    'discard-title' => 'Wartende Änderungen verwerfen?',
-    'discard-text' => 'Die Leistung kehrt zu dem zurück, was die Website zeigt. Das seither Geschriebene ist nirgends mehr aufgeführt.',
     'discarded' => 'Die Leistung entspricht wieder der veröffentlichten Fassung.',
     'conflict-title' => 'Die Leistung wurde während Ihrer Bearbeitung geändert',
     'conflict-mine' => 'Meine behalten',

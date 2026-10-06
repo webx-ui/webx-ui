@@ -87,6 +87,15 @@ function onClick(event: MouseEvent) {
   transition: color var(--wx-duration-fast) var(--wx-easing-standard);
 }
 
+/* `as="button"` — an action that reads as a link: none of the browser's button chrome. */
+button.wx-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
 .wx-link:hover {
   color: var(--wx-link-hover, var(--wx-link-color));
 }

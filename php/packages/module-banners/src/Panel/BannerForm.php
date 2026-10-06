@@ -332,7 +332,7 @@ final class BannerForm
             return;
         }
 
-        $map = is_array($value) ? $value : [$this->locales->current() => $value];
+        $map = is_array($value) ? $value : [$this->locales->content() => $value];
         $translations = [...$banner->getTranslations($field), ...$map];
 
         $translations = array_map(

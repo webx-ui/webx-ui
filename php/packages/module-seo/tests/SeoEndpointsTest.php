@@ -4,9 +4,16 @@ declare(strict_types=1);
 
 namespace WebxUi\Seo\Tests;
 
+use Illuminate\Testing\Fluent\AssertableJson;
+use Laravel\Mcp\Server\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Mcp\Registry\ToolRegistry;
+use WebxUi\Mcp\Server\RegistryTool;
+use WebxUi\Mcp\Server\WebxServer;
 use WebxUi\Seo\Models\SeoRedirect;
 use WebxUi\Seo\Models\SeoUrl;
+use WebxUi\Seo\Panel\SeoModule;
+use WebxUi\Seo\Panel\SeoRules;
 
 final class SeoEndpointsTest extends TestCase
 {
@@ -98,7 +105,53 @@ final class SeoEndpointsTest extends TestCase
         $this->actingAs($this->editor(), 'cms')
             ->postJson($this->api('test-url'), ['url' => '/old'])
             ->assertOk()
-            ->assertJsonPath('data.redirect.target', '/new');
+            ->assertJsonPath('data.redirect.target', '/new')
+            ->assertJsonPath('data.redirect.leads_to', '/new');
+    }
+
+    #[Test]
+    public function the_agent_hears_about_an_exact_redirect_as_the_panel_does(): void
+    {
+        SeoRedirect::query()->create(['match_type' => 'exact', 'pattern' => '/about-us', 'target' => '/about', 'status' => 302]);
+
+        $this->askAgent('/about-us')->assertStructuredContent(static function (AssertableJson $json): void {
+            $json->where('redirect.pattern', '/about-us')
+                ->where('redirect.status', 302)
+                ->where('redirect.leads_to', '/about')
+                ->has('route')
+                ->etc();
+        });
+    }
+
+    #[Test]
+    public function the_agent_hears_where_a_mask_redirect_sends_this_very_address(): void
+    {
+        SeoRedirect::query()->create(['match_type' => 'mask', 'pattern' => '/catalog/*', 'target' => '/shop/$1']);
+
+        $this->askAgent('/catalog/shoes')->assertStructuredContent(static function (AssertableJson $json): void {
+            $json->where('redirect.target', '/shop/$1')->where('redirect.leads_to', '/shop/shoes')->etc();
+        });
+    }
+
+    #[Test]
+    public function the_agent_hears_no_redirect_where_there_is_none(): void
+    {
+        SeoRedirect::query()->create(['match_type' => 'exact', 'pattern' => '/old', 'target' => '/new']);
+
+        $this->askAgent('/elsewhere')->assertStructuredContent(static function (AssertableJson $json): void {
+            $json->where('redirect', null)->where('route', null)->where('url', '/elsewhere')->etc();
+        });
+    }
+
+    private function askAgent(string $url): TestResponse
+    {
+        $registry = $this->app->make(ToolRegistry::class);
+        $response = WebxServer::actingAs($this->editor(['seo.view']), 'cms')
+            ->tool(new RegistryTool($registry->tool('seo_test_url')), ['url' => $url]);
+
+        $this->assertInstanceOf(TestResponse::class, $response);
+
+        return $response;
     }
 
     #[Test]
@@ -151,5 +204,57 @@ final class SeoEndpointsTest extends TestCase
         }
 
         return $ids;
+    }
+
+    #[Test]
+    public function an_agent_deletes_a_rule_and_the_site_stops_matching_it(): void
+    {
+        $rule = SeoUrl::query()->create(['match_type' => 'exact', 'pattern' => '/about', 'title' => ['ru' => 'О нас']]);
+        // Compiled before the delete, so the test shows the cache being dropped, not never filled.
+        $this->assertCount(1, app(SeoRules::class)->urls());
+
+        $preview = ($this->tool('urls_delete'))(['id' => $rule->id, 'dry_run' => true]);
+
+        $this->assertFalse($preview['applied']);
+        $this->assertSame('/about', $preview['would_delete']['pattern']);
+        $this->assertSame('exact', $preview['would_delete']['match_type']);
+        $this->assertTrue(SeoUrl::query()->whereKey($rule->id)->exists());
+
+        $done = ($this->tool('urls_delete'))(['id' => $rule->id]);
+
+        $this->assertTrue($done['applied']);
+        $this->assertFalse(SeoUrl::query()->whereKey($rule->id)->exists());
+        $this->assertSame([], app(SeoRules::class)->urls());
+        $this->assertFalse(($this->tool('urls_delete'))(['id' => $rule->id])['ok']);
+    }
+
+    #[Test]
+    public function an_agent_deletes_a_redirect_and_the_old_address_stops_moving(): void
+    {
+        $redirect = SeoRedirect::query()->create(['match_type' => 'exact', 'pattern' => '/old', 'target' => '/new']);
+        $this->assertCount(1, app(SeoRules::class)->redirects());
+
+        $preview = ($this->tool('redirects_delete'))(['id' => $redirect->id, 'dry_run' => true]);
+
+        $this->assertFalse($preview['applied']);
+        $this->assertSame(['/old', '/new'], [$preview['would_delete']['from'], $preview['would_delete']['to']]);
+        $this->assertTrue(SeoRedirect::query()->whereKey($redirect->id)->exists());
+
+        $done = ($this->tool('redirects_delete'))(['id' => $redirect->id]);
+
+        $this->assertTrue($done['applied']);
+        $this->assertSame([], app(SeoRules::class)->redirects());
+        $this->assertFalse(($this->tool('redirects_delete'))(['id' => $redirect->id])['ok']);
+    }
+
+    private function tool(string $name): callable
+    {
+        foreach (app(SeoModule::class)->mcpTools() as $tool) {
+            if ($tool->name === $name) {
+                return $tool->handler;
+            }
+        }
+
+        $this->fail("No tool {$name}.");
     }
 }

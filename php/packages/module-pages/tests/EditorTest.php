@@ -67,6 +67,9 @@ final class EditorTest extends TestCase
         // The whole address is the page above plus the slug, so the form is handed the first
         // half — and the home page's half is the empty string, not the absence of one.
         $this->assertSame(['en' => ''], $response->json('data.address_prefix'));
+
+        // And the address it answers at now, which the slug being typed is compared with.
+        $this->assertSame(['en' => 'about'], $response->json('data.addresses'));
     }
 
     #[Test]
@@ -93,6 +96,25 @@ final class EditorTest extends TestCase
         /** @var array<string, mixed> $values */
         $values = $response->json('data.values');
         $this->assertCount(1, $values['blocks']);
+    }
+
+    #[Test]
+    public function a_save_that_takes_the_edit_back_leaves_no_draft(): void
+    {
+        $page = $this->page('about');
+        $values = $this->actingAs($this->editor(), 'cms')->getJson($this->api($page->getKey()))->json('data.values');
+
+        // One letter typed into the address, autosaved, and taken back.
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson($this->api($page->getKey()), ['values' => [...$values, 'slug' => ['en' => 'aboutx']]])
+            ->assertJsonPath('data.page.status', Page::STATUS_MODIFIED);
+
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson($this->api($page->getKey()), ['values' => $values])
+            ->assertOk()
+            ->assertJsonPath('data.page.status', Page::STATUS_PUBLISHED);
+
+        $this->assertFalse($page->refresh()->hasDraft());
     }
 
     #[Test]

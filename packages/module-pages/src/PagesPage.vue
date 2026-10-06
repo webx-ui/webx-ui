@@ -5,10 +5,12 @@ import {
   rowMenuWidth,
   useAdmin,
   useErrorText,
+  useI18n,
   useTranslate,
   WxDate,
   WxListScreen,
   type ScreenAction,
+  WxAddressNote,
 } from '@webx-ui/module-admin'
 import {
   confirm,
@@ -30,6 +32,7 @@ import PageCreateDialog from './PageCreateDialog.vue'
 import PageMoveDialog from './PageMoveDialog.vue'
 import { createPagesApi } from './api'
 import { usePagesMessages } from './i18n'
+import { pluralForm } from './plural'
 import type { PageRow, PageStatus } from './types'
 
 /**
@@ -51,6 +54,7 @@ const router = useRouter()
 usePagesMessages()
 
 const t = useTranslate('webx-pages')
+const i18n = useI18n()
 /* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
 const message = useErrorText()
 
@@ -325,11 +329,79 @@ async function restore(page: PageRow): Promise<void> {
 
   try {
     // The server knows what it actually brought back; the question could only guess at it.
-    const restored = await api.restore(page.id)
+    const { restored, aliases_dropped: dropped = [] } = await api.restore(page.id)
 
     toast.success(
       restored > 1 ? t('page.restored-branch', { count: restored }) : t('page.restored'),
     )
+
+    // Old links that now open somebody else's page: worth knowing, not worth blocking on.
+    if (dropped.length > 0) {
+      toast.warning(t('page.aliases-dropped', { addresses: dropped.join(', ') }))
+    }
+    await load()
+  } catch (error) {
+    toast.danger(message(error))
+  }
+}
+
+/**
+ * Out of the bin for good. Asked in the colour of what it is, and in words that say there is no
+ * way back: the restore beside it in the same menu is the one that can be undone.
+ */
+async function purge(page: PageRow): Promise<void> {
+  const agreed = await confirm({
+    title: t('page.purge-title', { title: page.title }),
+    message:
+      page.descendants_count > 0
+        ? `${t('page.purge-text')} ${t('page.purge-branch', { count: page.descendants_count })}`
+        : t('page.purge-text'),
+    confirmText: t('page.purge'),
+    cancelText: t('page.cancel'),
+    tone: 'danger',
+  })
+
+  if (!agreed) return
+
+  try {
+    const purged = await api.purge(page.id)
+
+    toast.success(purged > 1 ? t('page.purged-branch', { count: purged }) : t('page.purged'))
+    await load()
+  } catch (error) {
+    toast.danger(message(error))
+  }
+}
+
+/**
+ * What emptying the bin is about to delete, in a number: the scale is the one thing that decides
+ * whether to go ahead, and the toast that says it afterwards is too late to read it in. Asked of
+ * the server, because the rows on screen are the tops of branches, and maybe a search. A count
+ * that did not arrive leaves the sentence without one rather than the dialog unasked.
+ */
+async function binText(): Promise<string> {
+  const count = await api.binCount().catch(() => null)
+
+  if (count === null) return t('page.empty-bin-text')
+
+  return t(`page.empty-bin-count-${pluralForm(count, i18n.state.locale)}`, { count })
+}
+
+async function purgeBin(): Promise<void> {
+  const agreed = await confirm({
+    title: t('page.empty-bin-title'),
+    message: await binText(),
+    confirmText: t('page.empty-bin-action'),
+    cancelText: t('page.cancel'),
+    tone: 'danger',
+  })
+
+  if (!agreed) return
+
+  try {
+    const purged = await api.purgeBin()
+
+    toast.success(t('page.purged-branch', { count: purged }))
     await load()
   } catch (error) {
     toast.danger(message(error))
@@ -359,11 +431,28 @@ watch(filter, () => void load())
 onMounted(load)
 
 /* What the section offers. Declared, because on a phone the head folds it into the ···. */
-const actions = computed<ScreenAction[]>(() =>
-  canManage.value
-    ? [{ key: 'new', label: t('page.new'), icon: 'plus', primary: true, run: () => void add(null) }]
-    : [],
-)
+const actions = computed<ScreenAction[]>(() => {
+  if (!canManage.value) return []
+
+  // In the bin the one thing to do with all of it at once is to let it go; a new page belongs
+  // to the tree, not here.
+  if (inBin.value) {
+    return rows.value.length
+      ? [
+          {
+            key: 'empty-bin',
+            label: t('page.empty-bin-action'),
+            icon: 'trash',
+            run: () => void purgeBin(),
+          },
+        ]
+      : []
+  }
+
+  return [
+    { key: 'new', label: t('page.new'), icon: 'plus', primary: true, run: () => void add(null) },
+  ]
+})
 </script>
 
 <template>
@@ -397,9 +486,15 @@ const actions = computed<ScreenAction[]>(() =>
         </template>
 
         <template #cell-path="{ row }">
-          <!-- A page in the bin holds no address: the registry let it go when it went in, and
-               a live address beside a page nobody can reach would be the wrong promise. -->
-          <wx-text v-if="inBin" size="sm" tone="muted">—</wx-text>
+          <!-- A page in the bin holds no address: the registry let it go when it went in. The
+               one it had is shown greyed — what the editor would be bringing back, not
+               a link to a page nobody can reach. -->
+          <template v-if="inBin">
+            <wx-text v-if="row.former_path != null" mono size="sm" tone="muted"
+              >/{{ row.former_path }}</wx-text
+            >
+            <wx-text v-else size="sm" tone="muted">—</wx-text>
+          </template>
           <!-- The address of a live page is a link to it; a draft's is the address it will
                have, which is worth showing and not worth clicking. -->
           <a
@@ -415,7 +510,10 @@ const actions = computed<ScreenAction[]>(() =>
           <wx-text v-else-if="row.path !== null" mono size="sm" tone="muted"
             >/{{ row.path }}</wx-text
           >
-          <wx-text v-else size="sm" tone="muted">{{ t('page.no-address') }}</wx-text>
+          <template v-if="!inBin">
+            <wx-address-note v-if="row.path !== null" :locale="row.address_locale" />
+            <wx-text v-else size="sm" tone="muted">{{ t('page.no-address') }}</wx-text>
+          </template>
         </template>
 
         <template #cell-status="{ row }">
@@ -445,6 +543,7 @@ const actions = computed<ScreenAction[]>(() =>
             @copy="copyAddress"
             @remove="remove"
             @restore="restore"
+            @purge="purge"
           />
         </template>
       </wx-table>

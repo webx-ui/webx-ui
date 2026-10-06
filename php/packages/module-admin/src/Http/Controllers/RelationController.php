@@ -45,7 +45,7 @@ final class RelationController
         }
 
         $asked = $request->query('locale');
-        $locale = is_string($asked) && $asked !== '' ? $asked : $this->locales->current();
+        $locale = $this->locales->content(is_string($asked) ? $asked : null);
 
         if ($request->has('ids')) {
             return ApiResponse::data($found->describe(self::ints($request->query('ids')), $locale));

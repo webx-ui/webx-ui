@@ -37,7 +37,13 @@ export const seoMessages: Record<string, Messages> = {
     title: 'Title',
     target: 'Destination',
     status: 'Code',
+    'status-help':
+      "301 — moved for good: search engines carry the old address's weight to the new one. 302 — for a while: the old address stays the main one.",
     hits: 'Hits',
+    'code-301':
+      "301 — moved for good. Search engines carry the old address's weight to the new one and stop showing the old.",
+    'code-302':
+      '302 — moved for a while. The old address stays the main one in search; meant for a sale or a page under repair.',
     'last-hit': 'Last used',
     loop: 'Points at itself',
 

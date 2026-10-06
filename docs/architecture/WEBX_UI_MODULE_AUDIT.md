@@ -220,6 +220,8 @@
 | `h1.multiple`             | больше одного H1                                                                                                | N        |
 | `h1.equals_title`         | H1 слово в слово как title                                                                                      | N        |
 | `headings.skipped`        | пропуск уровня (H2 → H4)                                                                                        | N        |
+| `headings.h1_not_first`   | H1 есть, но первым идёт другой заголовок                                                                        | N        |
+| `headings.empty`          | заголовок без текста                                                                                            | N        |
 | `canonical.missing`       | нет canonical у индексируемой страницы                                                                          | W        |
 | `canonical.relative`      | относительный адрес                                                                                             | W        |
 | `canonical.multiple`      | больше одного, или meta и заголовок `Link` расходятся                                                           | E        |

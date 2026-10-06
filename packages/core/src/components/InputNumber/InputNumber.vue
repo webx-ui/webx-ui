@@ -248,6 +248,15 @@ defineExpose({
 </template>
 
 <style scoped>
+/*
+ * In a form a number is a few digits, and a field as wide as a title put its − and + a whole line
+ * apart with the digits alone in the middle. Bare — in a filter row or a table cell — it keeps
+ * the width it is given.
+ */
+.wx-form-item .wx-input-number {
+  max-width: 240px;
+}
+
 .wx-input-number {
   display: inline-flex;
   align-items: center;

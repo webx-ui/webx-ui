@@ -48,6 +48,8 @@ return [
     'h1-multiple' => 'H1-Überschriften auf der Seite: :count',
     'h1-equals-title' => 'Die H1 und der Title lauten beide „:value“.',
     'headings-skipped' => 'Übersprungen: :skip',
+    'headings-h1-not-first' => 'Zuerst kommt :level «:value».',
+    'headings-empty' => 'Leere Überschriften (:levels): :count',
     'canonical-missing' => 'Kein Canonical im Tag oder im Header.',
     'canonical-relative' => 'Das Canonical ist als Pfad geschrieben: :value',
     'canonical-multiple' => 'Canonical-Adressen: :count',
@@ -154,4 +156,5 @@ return [
     'column-type' => 'Typ',
     'column-fields' => 'Felder',
     'column-kb' => 'KB',
+    'column-attrs' => 'Attribute',
 ];

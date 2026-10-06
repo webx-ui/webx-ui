@@ -16,8 +16,6 @@ return [
     'publish-nowhere' => 'Es hat noch keine Adresse in dieser Sprache, also wird nichts antworten.',
     'preview' => 'Vorschau',
     'discard' => 'Änderungen verwerfen',
-    'discard-title' => 'Wartende Änderungen verwerfen?',
-    'discard-text' => 'Das Stellenangebot kehrt zu dem zurück, was die Website zeigt. Was seither geschrieben wurde, wird nirgends aufgeführt.',
     'discarded' => 'Das Stellenangebot entspricht wieder dem veröffentlichten Stand.',
     'conflict-title' => 'Das Stellenangebot hat sich während der Bearbeitung geändert',
     'conflict-mine' => 'Meine Version behalten',

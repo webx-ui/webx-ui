@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Blocks\Panel;
 
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\HasNavSection;
+use WebxUi\Admin\Panel\SystemSections;
 
 /**
  * "Site regions": the header and the footer made of blocks (§7 of the regions spec).
@@ -18,7 +20,7 @@ use WebxUi\Admin\AbstractModule;
  * The permission is declared once, by the blocks module, so that the role editor lists it once;
  * this entry only answers to it.
  */
-final class RegionsModule extends AbstractModule
+final class RegionsModule extends AbstractModule implements HasNavSection
 {
     public function id(): string
     {
@@ -44,6 +46,11 @@ final class RegionsModule extends AbstractModule
     public function group(): string
     {
         return 'system';
+    }
+
+    public function navSection(): string
+    {
+        return SystemSections::SITE;
     }
 
     /**

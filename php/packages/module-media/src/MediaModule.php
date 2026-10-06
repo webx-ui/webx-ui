@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace WebxUi\Media;
 
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\HasNavSection;
 use WebxUi\Admin\Contracts\ProvidesDemo;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Panel\SystemSections;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\ProvidesMcpDefaults;
 use WebxUi\Mcp\Tool;
@@ -21,7 +23,7 @@ use WebxUi\Media\Mcp\MediaTools;
  * own media when they are attached, so a product's ten thousand photographs never land in a
  * tree an editor has to browse.
  */
-final class MediaModule extends AbstractModule implements ProvidesDemo, ProvidesMcpTools
+final class MediaModule extends AbstractModule implements HasNavSection, ProvidesDemo, ProvidesMcpTools
 {
     use ProvidesMcpDefaults;
 
@@ -55,6 +57,11 @@ final class MediaModule extends AbstractModule implements ProvidesDemo, Provides
     public function group(): string
     {
         return 'system';
+    }
+
+    public function navSection(): string
+    {
+        return SystemSections::SITE;
     }
 
     /**

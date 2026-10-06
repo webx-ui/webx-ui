@@ -34,7 +34,6 @@ return [
     'normalise-trailing' => 'Schrägstrich am Ende',
     'normalise-trailing-help' => 'Die Adresse in der anderen Form leitet weiter. Dateien bleiben unberührt.',
     'normalise-trailing-strip' => 'Ohne: /about',
-    'normalise-trailing-add' => 'Mit: /about/',
     'normalise-case' => 'Kleinschreibung',
     'normalise-case-help' => '/About leitet auf /about weiter. Dateien behalten ihre Namen.',
     'links-heading' => 'Überschrift der internen Verlinkung',

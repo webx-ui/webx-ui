@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Models\Route;
+use WebxUi\Routing\PanelAddress;
 use WebxUi\Vacancies\Models\Vacancy;
 use WebxUi\Vacancies\Models\VacancyCategory;
 use WebxUi\Vacancies\Panel\Revision;
@@ -34,10 +35,10 @@ final class VacancyResource extends JsonResource
         $vacancy = $this->resource;
 
         $locales = app(Locales::class);
-        $locale = $locales->current();
+        $locale = $locales->content();
         $fallback = $locales->defaultCode();
         $shown = $vacancy->hasDraft() ? $vacancy->withDraft() : $vacancy;
-        $canonical = $this->canonical($vacancy, $locale);
+        [$canonical, $addressLocale, $fallback] = PanelAddress::pick(fn (string $code): ?Route => $this->canonical($vacancy, $code), $locale);
 
         return [
             'id' => (int) $vacancy->getKey(),
@@ -45,7 +46,12 @@ final class VacancyResource extends JsonResource
             'slug' => (string) $shown->getTranslation('slug', $locale, fallback: false),
             // Null where the vacancy names no slug in this language: it has no address there.
             'path' => $canonical?->path,
-            'url' => $canonical === null ? null : $vacancy->url($locale),
+            // Where publishing moves it, when a renamed slug waits in the draft.
+            'next_path' => PanelAddress::afterPublishing($vacancy, $addressLocale, $canonical?->path),
+            'url' => $canonical === null ? null : $vacancy->url($addressLocale),
+            // The language of the address when it is the site's main one, shown because this
+            // language has none: the row says so in a tooltip rather than instead of the address.
+            'address_locale' => $fallback,
             'workplace' => $shown->workplace,
             'city' => self::word($shown, 'city', [$locale, $fallback]) ?? '',
             'employment_types' => $shown->employment(),

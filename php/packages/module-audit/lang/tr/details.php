@@ -48,6 +48,8 @@ return [
     'h1-multiple' => 'Sayfadaki H1 başlıkları: :count',
     'h1-equals-title' => 'H1 ve title ikisi de “:value”.',
     'headings-skipped' => 'Atlanan: :skip',
+    'headings-h1-not-first' => 'Önce :level «:value» geliyor.',
+    'headings-empty' => 'Boş başlıklar (:levels): :count',
     'canonical-missing' => 'Etikette veya başlıkta canonical yok.',
     'canonical-relative' => 'Canonical yol olarak yazılmış: :value',
     'canonical-multiple' => 'Canonical adresleri: :count',
@@ -154,4 +156,5 @@ return [
     'column-type' => 'Tür',
     'column-fields' => 'Alanlar',
     'column-kb' => 'KB',
+    'column-attrs' => 'Öznitelikler',
 ];

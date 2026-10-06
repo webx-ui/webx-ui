@@ -17,8 +17,6 @@ return [
     'preview' => 'Anteprima',
     'more' => 'Altro',
     'discard' => 'Annulla le modifiche',
-    'discard-title' => 'Buttare via quello che è pronto?',
-    'discard-text' => 'L’articolo torna a ciò che il sito mostra. Quanto scritto da allora non è elencato da nessuna parte.',
     'discarded' => 'L’articolo è tornato a quanto pubblicato.',
     'conflict-title' => 'L’articolo è cambiato mentre lo modificavi',
     'conflict-mine' => 'Tieni la mia',

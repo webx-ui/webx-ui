@@ -17,8 +17,6 @@ return [
     'preview' => 'Vista previa',
     'more' => 'Más',
     'discard' => 'Descartar cambios',
-    'discard-title' => '¿Descartar lo que está preparado?',
-    'discard-text' => 'El artículo vuelve a lo que muestra el sitio. Lo escrito desde entonces no figura en ninguna parte.',
     'discarded' => 'El artículo ha vuelto a lo publicado.',
     'conflict-title' => 'El artículo cambió mientras lo editabas',
     'conflict-mine' => 'Quedarme con lo mío',

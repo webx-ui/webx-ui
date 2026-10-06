@@ -17,8 +17,6 @@ return [
     'preview' => 'Vorschau',
     'more' => 'Mehr',
     'discard' => 'Änderungen verwerfen',
-    'discard-title' => 'Verwerfen, was vorbereitet ist?',
-    'discard-text' => 'Der Artikel kehrt zu dem zurück, was die Website zeigt. Was seitdem geschrieben wurde, steht nirgends mehr.',
     'discarded' => 'Der Artikel entspricht wieder dem Veröffentlichten.',
     'conflict-title' => 'Der Artikel hat sich geändert, während Sie ihn bearbeitet haben',
     'conflict-mine' => 'Meine behalten',

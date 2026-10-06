@@ -9,4 +9,7 @@ return [
     'expand' => 'Expandir el menú',
     'language' => 'Idioma',
     'system' => 'Sistema',
+    'system-site' => 'Sitio',
+    'system-search' => 'Búsqueda y revisión',
+    'system-access' => 'Acceso',
 ];

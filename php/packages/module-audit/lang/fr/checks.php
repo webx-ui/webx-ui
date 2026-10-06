@@ -372,6 +372,18 @@ return [
             'why' => 'Les lecteurs d’écran naviguent par les titres, et un trou se lit comme un contenu manquant.',
             'fix' => 'Utilisez les niveaux dans l’ordre ; choisissez l’aspect avec les styles, pas avec le niveau.',
         ],
+        'h1_not_first' => [
+            'title' => 'Le H1 n’est pas le premier titre',
+            'found' => 'Un autre titre précède le H1.',
+            'why' => 'Moteurs et lecteurs d’écran prennent le premier titre pour le début du contenu ; un bloc au-dessus qui emploie un titre pour son allure repousse le nom de la page vers le bas.',
+            'fix' => 'Faites du H1 le premier titre ; donnez aux blocs au-dessus du texte normal ou un élément stylé.',
+        ],
+        'empty' => [
+            'title' => 'Titre vide',
+            'found' => 'Un titre n’a pas de texte — seulement une icône, une image ou rien.',
+            'why' => 'Un lecteur d’écran annonce un titre qui n’a rien à dire, et les moteurs reçoivent un niveau sans sens.',
+            'fix' => 'Écrivez le titre, ou faites de l’élément du texte normal s’il n’est là que pour l’allure.',
+        ],
     ],
     'canonical' => [
         'missing' => [

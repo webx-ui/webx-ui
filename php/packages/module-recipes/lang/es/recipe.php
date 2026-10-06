@@ -12,8 +12,6 @@ return [
     'publish-nowhere' => 'Aún no tiene dirección en este idioma, así que nada responderá.',
     'preview' => 'Vista previa',
     'discard' => 'Descartar cambios',
-    'discard-title' => '¿Descartar lo que está pendiente?',
-    'discard-text' => 'La receta vuelve a lo que muestra el sitio. Lo escrito desde entonces no aparece en ninguna parte.',
     'discarded' => 'La receta ha vuelto a la versión publicada.',
     'conflict-title' => 'La receta cambió mientras la editabas',
     'conflict-mine' => 'Conservar la mía',

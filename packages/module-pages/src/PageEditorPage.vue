@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import {
+  provideRecordAddress,
   useAdmin,
   useErrorText,
   useTranslate,
@@ -54,6 +55,7 @@ const locales = useLocales()
 usePagesMessages()
 
 const t = useTranslate('webx-pages')
+const panel = useTranslate('webx-admin')
 /* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
 const message = useErrorText()
 
@@ -68,6 +70,7 @@ const values = ref<ScreenModel>({})
 const revision = ref('')
 const previewUrl = ref<string | null>(null)
 const prefixes = ref<Record<string, string>>({})
+const addresses = ref<Record<string, string>>({})
 
 const loading = ref(true)
 const saving = ref(false)
@@ -122,6 +125,23 @@ providePageEditor({
   save: () => save(),
 })
 
+/*
+ * The address field is the panel's shared one (`wx-slug`), with what is page-specific behind it:
+ * the prefix is the address of the page above in the language being edited, so it follows a move
+ * the moment the editor reloads, and a language that page has no address in is said in words.
+ */
+provideRecordAddress({
+  values,
+  prefix: computed(() => {
+    if (ancestors.value.length === 0) return null
+
+    return prefixes.value[locales.active.value] ?? null
+  }),
+  path: computed(() => addresses.value[locales.active.value] ?? null),
+  moving: () => t('page.address-moving'),
+  missing: () => t('page.no-address'),
+})
+
 function take(detail: PageDetail): void {
   page.value = detail.page
   ancestors.value = detail.ancestors
@@ -129,6 +149,7 @@ function take(detail: PageDetail): void {
   revision.value = detail.revision
   previewUrl.value = detail.preview_url
   prefixes.value = detail.address_prefix
+  addresses.value = detail.addresses ?? {}
   snapshot.value = JSON.stringify(detail.values)
   conflict.value = null
 }
@@ -286,29 +307,108 @@ async function keepMine(): Promise<void> {
  * anything — one page goes on the site, and what matters is where.
  */
 async function publish(): Promise<void> {
-  if (!page.value) return
+  // Saved before asking: the question names the address the draft will publish at, and only a
+  // saved draft has one — an address typed but not saved was asked about under the old one.
+  if (dirty.value) await save()
+  if (conflict.value || dirty.value) return
 
-  const address = page.value.path === null ? null : `/${page.value.path}`
+  const row = page.value
+
+  if (!row) return
+
+  // Publishing moves a renamed slug, so the question names where the page will be, not where
+  // it is — and says the old address will lead there, since that is what happens to it.
+  const next = row.next_path ?? row.path
+  const old =
+    row.next_path != null && row.path !== null
+      ? ` ${panel('editor.publish-moves', { old: `/${row.path}` })}`
+      : ''
+  const address = next === null ? null : `/${next}`
 
   const agreed = await confirm({
-    title: t('page.publish-title', { title: page.value.title }),
+    // The name in the field rather than the row's: a page created before its title reached the
+    // site's language has only its number there.
+    title: t('page.publish-title', { title: title.value || row.title }),
     message:
-      address === null ? t('page.publish-text-nowhere') : t('page.publish-text', { address }),
+      address === null ? t('page.publish-text-nowhere') : t('page.publish-text', { address }) + old,
     confirmText: t('page.publish'),
     cancelText: t('page.cancel'),
   })
 
   if (!agreed) return
 
-  if (dirty.value) await save()
-  if (conflict.value) return
+  working.value = true
+
+  try {
+    await api.publish(row.id)
+    await load(true)
+    toast.success(t('page.published'))
+  } catch (error) {
+    toast.danger(message(error))
+  } finally {
+    working.value = false
+  }
+}
+
+/**
+ * Taking it off the site is asked about, as publishing is: visitors are who notice. Nothing
+ * written is lost, and «Publish» brings it back at the same address.
+ */
+async function unpublish(): Promise<void> {
+  const row = page.value
+
+  if (!row) return
+
+  const agreed = await confirm({
+    title: panel('editor.unpublish-title'),
+    message: panel('editor.unpublish-text'),
+    confirmText: panel('editor.unpublish'),
+    cancelText: panel('editor.keep-published'),
+  })
+
+  if (!agreed) return
 
   working.value = true
 
   try {
-    await api.publish(page.value.id)
+    await api.unpublish(row.id)
     await load(true)
-    toast.success(t('page.published'))
+    toast.success(panel('editor.unpublished'))
+  } catch (error) {
+    toast.danger(message(error))
+  } finally {
+    working.value = false
+  }
+}
+
+/**
+ * Back to what the site shows. Asked in red, because what was written since the publication goes
+ * — the autosave ring still has it, but nothing here lists it, so the question promises no way
+ * back. Whatever is still waiting to be saved is dropped with it rather than saved first.
+ */
+async function discard(): Promise<void> {
+  const row = page.value
+
+  if (!row) return
+
+  const agreed = await confirm({
+    title: panel('editor.discard-title'),
+    message: panel('editor.discard-text'),
+    confirmText: t('page.discard'),
+    // Not «Cancel»: beside «Discard changes» the two read as the same word.
+    cancelText: panel('editor.keep-changes'),
+    tone: 'danger',
+  })
+
+  if (!agreed) return
+
+  clearTimeout(timer)
+  working.value = true
+
+  try {
+    take(await api.discard(row.id))
+    reloadToken.value += 1
+    toast.success(t('page.discarded'))
   } catch (error) {
     toast.danger(message(error))
   } finally {
@@ -371,6 +471,33 @@ const actions = computed<ScreenAction[]>(() => {
 
   if (page.value?.url && page.value.status !== 'draft') {
     list.push({ key: 'site', label: t('page.open-on-site'), icon: 'link', href: page.value.url })
+  }
+
+  // On the site now: the way off it is a button of its own beside «Open on the site», not a
+  // line in the ···. Hiding loses nothing and is undone by «Publish».
+  if (
+    canManage.value &&
+    (page.value?.status === 'published' || page.value?.status === 'modified')
+  ) {
+    list.push({
+      key: 'unpublish',
+      label: panel('editor.unpublish'),
+      icon: 'eye-off',
+      run: () => void unpublish(),
+    })
+  }
+
+  // Only while there is a difference to throw away, and in the ··· rather than beside «Publish»:
+  // one slip away from it is the wrong place for the button that undoes it.
+  if (canManage.value && page.value?.status === 'modified') {
+    list.push({
+      key: 'discard',
+      label: t('page.discard'),
+      icon: 'refresh',
+      danger: true,
+      menu: true,
+      run: () => void discard(),
+    })
   }
 
   return list

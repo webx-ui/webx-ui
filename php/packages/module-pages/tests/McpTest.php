@@ -29,7 +29,7 @@ final class McpTest extends TestCase
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['pages_tree', 'pages_get', 'pages_create', 'pages_update', 'pages_move', 'pages_publish', 'pages_unpublish', 'pages_delete', 'pages_restore'],
+            ['pages_tree', 'pages_get', 'pages_create', 'pages_update', 'pages_move', 'pages_publish', 'pages_unpublish', 'pages_delete', 'pages_restore', 'pages_discard', 'pages_purge'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('pages')),
         );
 
@@ -177,6 +177,16 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function an_agent_cannot_write_in_a_language_the_site_is_not_published_in(): void
+    {
+        // English only: words in Russian would be words nobody reads, at an address that is nowhere.
+        $this->agent('create', ['title' => ['ru' => 'Контакты']], $this->editor())
+            ->assertHasErrors(['which this site is not published in']);
+
+        $this->assertSame(1, Page::query()->count(), 'the home page and nothing else');
+    }
+
+    #[Test]
     public function an_agent_creates_a_page_as_a_draft_and_a_dry_run_creates_nothing(): void
     {
         $this->useLocales('en', 'ru');
@@ -284,6 +294,35 @@ final class McpTest extends TestCase
             ->assertHasErrors(['changed since you read it', 'pages_get']);
 
         $this->assertSame(['en' => 'About us'], $about->refresh()->draftValues()['title']);
+    }
+
+    #[Test]
+    public function an_update_changes_the_languages_it_names_and_refuses_one_the_site_lacks(): void
+    {
+        $this->useLocales('en', 'de');
+        $about = $this->page('about');
+
+        // A language the site is not published in used to be dropped, and the field arrived empty:
+        // the address in every language was gone. Refused, dry run included, and nothing written.
+        foreach ([true, false] as $dry) {
+            $this->agent('update', ['page' => '/about', 'values' => ['slug' => ['ru' => 'o-nas']], 'dry_run' => $dry], $this->editor())
+                ->assertHasErrors(['[ru], which this site is not published in. It has: en, de.']);
+        }
+
+        $this->assertFalse($about->refresh()->hasDraft());
+
+        $this->agent('update', ['page' => '/about', 'values' => ['slug' => ['de' => 'ueber-uns']]], $this->editor())
+            ->assertOk();
+
+        $this->assertSame(['en' => 'about', 'de' => 'ueber-uns'], $about->refresh()->draftValues()['slug']);
+
+        // Null is how one language is emptied, and a plain string is the main one.
+        $this->agent('update', ['page' => '/about', 'values' => ['slug' => ['de' => null], 'title' => 'About us']], $this->editor())
+            ->assertOk();
+
+        $draft = $about->refresh()->draftValues();
+        $this->assertSame(['en' => 'about'], $draft['slug']);
+        $this->assertSame('About us', $draft['title']['en']);
     }
 
     #[Test]

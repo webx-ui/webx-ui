@@ -60,6 +60,7 @@ const dates = useDates()
 useBlogMessages()
 
 const t = useTranslate('webx-blog')
+const panel = useTranslate('webx-admin')
 /* Not the server's `message`: the panel says how a request failed in its own words. */
 const message = useErrorText()
 
@@ -338,10 +339,11 @@ async function discard(): Promise<void> {
   if (!article.value) return
 
   const agreed = await confirm({
-    title: t('article.discard-title'),
-    message: t('article.discard-text'),
+    title: panel('editor.discard-title'),
+    message: panel('editor.discard-text'),
     confirmText: t('article.discard'),
-    cancelText: t('panel.cancel'),
+    // Not «Cancel»: beside «Discard changes» the two read as the same word.
+    cancelText: panel('editor.keep-changes'),
     tone: 'danger',
   })
 
@@ -368,11 +370,23 @@ async function discard(): Promise<void> {
  * they were publishing now would go and look for it on the site (§7).
  */
 async function publish(): Promise<void> {
+  // Saved before asking: the question names the address the draft will publish at, and only a
+  // saved draft has one — an address typed but not saved was asked about under the old one.
+  if (dirty.value) await save()
+  if (conflict.value || dirty.value) return
+
   const row = article.value
 
   if (!row) return
 
-  const address = row.path === null ? null : `/${row.path}`
+  // Publishing moves a renamed slug, so the question names where the page will be, not where
+  // it is — and says the old address will lead there, since that is what happens to it.
+  const next = row.next_path ?? row.path
+  const old =
+    row.next_path != null && row.path !== null
+      ? ` ${panel('editor.publish-moves', { old: `/${row.path}` })}`
+      : ''
+  const address = next === null ? null : `/${next}`
   const when = chosen.value === null ? t('article.publish-now') : dates.short(chosen.value)
 
   const agreed = await confirm({
@@ -381,15 +395,12 @@ async function publish(): Promise<void> {
       ? t('article.publish-later', { date: when })
       : address === null
         ? t('article.publish-nowhere')
-        : t('article.publish-text', { address }),
+        : t('article.publish-text', { address }) + old,
     confirmText: future.value ? t('article.schedule') : t('panel.publish'),
     cancelText: t('panel.cancel'),
   })
 
   if (!agreed) return
-
-  if (dirty.value) await save()
-  if (conflict.value) return
 
   working.value = true
 
@@ -397,6 +408,37 @@ async function publish(): Promise<void> {
     await api.publish(row.id, chosen.value)
     await load(true)
     toast.success(future.value ? t('article.scheduled') : t('panel.published'))
+  } catch (error) {
+    toast.danger(message(error))
+  } finally {
+    working.value = false
+  }
+}
+
+/**
+ * Taking it off the site is asked about, as publishing is: visitors are who notice. Nothing
+ * written is lost, and «Publish» brings it back at the same address.
+ */
+async function unpublish(): Promise<void> {
+  const row = article.value
+
+  if (!row) return
+
+  const agreed = await confirm({
+    title: panel('editor.unpublish-title'),
+    message: panel('editor.unpublish-text'),
+    confirmText: panel('editor.unpublish'),
+    cancelText: panel('editor.keep-published'),
+  })
+
+  if (!agreed) return
+
+  working.value = true
+
+  try {
+    await api.unpublish(row.id)
+    await load(true)
+    toast.success(panel('editor.unpublished'))
   } catch (error) {
     toast.danger(message(error))
   } finally {
@@ -466,6 +508,20 @@ const actions = computed<ScreenAction[]>(() => {
       label: t('panel.open-on-site'),
       icon: 'link',
       href: article.value.url,
+    })
+  }
+
+  // On the site now: the way off it is a button of its own beside «Open on the site», not a
+  // line in the ···. Hiding loses nothing and is undone by «Publish».
+  if (
+    canManage.value &&
+    (article.value?.status === 'published' || article.value?.status === 'modified')
+  ) {
+    leads.push({
+      key: 'unpublish',
+      label: panel('editor.unpublish'),
+      icon: 'eye-off',
+      run: () => void unpublish(),
     })
   }
 

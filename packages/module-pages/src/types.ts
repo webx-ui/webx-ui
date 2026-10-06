@@ -27,6 +27,12 @@ export interface PageRow {
   slug: string
   /** `null` — this page names no address in the language the panel is open in. */
   path: string | null
+  /** Where publishing moves it: a slug renamed in the draft, `null` when publishing moves nothing. */
+  next_path?: string | null
+  /** In the bin: the address the page had before it went in. */
+  former_path?: string | null
+  /** The language of `path` when it is the site's main one, shown because this language has none. */
+  address_locale?: string | null
   url: string | null
   status: PageStatus
   published_at: string | null
@@ -90,6 +96,11 @@ export interface PageDetail {
    * has no address in, and so neither has this one (§8).
    */
   address_prefix: Record<string, string>
+  /**
+   * The address the page answers at now, by content language — the registry's, not the draft's.
+   * What a slug being typed is compared with to say that the address is about to move.
+   */
+  addresses?: Record<string, string>
   /** A signed, short-lived link to the draft as a page of the site. */
   preview_url: string
 }
@@ -115,6 +126,16 @@ export interface PageVersion {
   source: 'panel' | 'mcp' | 'import'
   comment: string | null
   is_pinned: boolean
+}
+
+/** What a restore from the bin answers. */
+export interface PageRestore {
+  /** How many pages came back — the page and the branch that went down with it. */
+  restored: number
+  /** Former addresses that lead to the page again. */
+  aliases_restored?: string[]
+  /** Former addresses another page took while this one was in the bin: they stay with it. */
+  aliases_dropped?: string[]
 }
 
 export interface PageMoveResult {

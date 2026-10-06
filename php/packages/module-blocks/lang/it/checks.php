@@ -13,4 +13,12 @@ return [
     'ok-bare' => 'Nessun selettore di elemento nudo.',
     'ok-container' => 'La larghezza è decisa dalle container query.',
     'ok-variables' => 'Ogni variabile del template è un campo dello schema.',
+    'blocks' => [
+        'stray_values' => [
+            'title' => 'Valori di blocco per campi che il tipo non ha',
+            'found' => 'Alcuni blocchi hanno valori di campi che il loro tipo non definisce, rimasti da un’importazione o da un campo tolto dal tipo.',
+            'why' => 'Il visitatore non li vede, ma stanno nei dati dell’editor e in ciò che legge un agente, e riemergono come etichetta sbagliata del blocco.',
+            'fix' => 'Toglieteli con la correzione o per tutto il sito con php artisan webx:blocks:prune. Un blocco di un tipo che non esiste più non viene toccato. Gli elementi di un ripetitore sono confrontati con i suoi campi.',
+        ],
+    ],
 ];

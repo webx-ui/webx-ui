@@ -372,6 +372,18 @@ return [
             'why' => 'Los lectores de pantalla navegan por encabezados, y un salto se lee como contenido que falta.',
             'fix' => 'Usa los niveles en orden; elige el aspecto con estilos, no con el nivel.',
         ],
+        'h1_not_first' => [
+            'title' => 'El H1 no es el primer encabezado',
+            'found' => 'Antes del H1 hay otro encabezado.',
+            'why' => 'Los buscadores y los lectores de pantalla toman el primer encabezado como inicio del contenido; un bloque encima que usa un encabezado por su aspecto empuja hacia abajo el nombre de la página.',
+            'fix' => 'Haga del H1 el primer encabezado; dé a los bloques de encima texto normal o un elemento con estilo.',
+        ],
+        'empty' => [
+            'title' => 'Encabezado vacío',
+            'found' => 'Un encabezado no tiene texto: solo un icono, una imagen o nada.',
+            'why' => 'Un lector de pantalla anuncia un encabezado sin nada que decir y los buscadores reciben un nivel sin sentido.',
+            'fix' => 'Escriba el encabezado o convierta el elemento en texto normal si solo es decorativo.',
+        ],
     ],
     'canonical' => [
         'missing' => [

@@ -23,6 +23,9 @@ defineOptions({ name: 'WxSlugField', inheritAttrs: false })
 const address = useRecordAddress()
 const locales = useLocales()
 
+/** Nothing to put in front of the slug: the record has no address in this language at all. */
+const orphaned = computed(() => address?.prefix.value === null && address.missing !== undefined)
+
 /** `/services/`, or `/` for a module that lives at the root of the site. */
 const prefix = computed(() => {
   const head = address?.prefix.value ?? ''
@@ -47,6 +50,7 @@ const moving = computed(() => {
   const current = address?.path.value
 
   return (
+    !orphaned.value &&
     typeof current === 'string' &&
     slug.value !== '' &&
     `${prefix.value}${slug.value}` !== `/${current}`
@@ -57,12 +61,23 @@ const moving = computed(() => {
 <template>
   <div class="wx-slug">
     <wx-input v-bind="$attrs">
-      <template #prefix>
+      <template v-if="!orphaned" #prefix>
         <span class="wx-slug__prefix">{{ prefix }}</span>
       </template>
     </wx-input>
 
-    <wx-alert v-if="moving && address" type="info" variant="soft" :description="address.moving()" />
+    <wx-alert
+      v-if="orphaned && address?.missing"
+      type="info"
+      variant="soft"
+      :description="address.missing()"
+    />
+    <wx-alert
+      v-else-if="moving && address"
+      type="info"
+      variant="soft"
+      :description="address.moving()"
+    />
   </div>
 </template>
 

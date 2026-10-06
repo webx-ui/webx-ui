@@ -11,6 +11,7 @@ use WebxUi\Recipes\Models\Recipe;
 use WebxUi\Recipes\Models\RecipeCategory;
 use WebxUi\Recipes\Panel\Revision;
 use WebxUi\Routing\Models\Route;
+use WebxUi\Routing\PanelAddress;
 
 /**
  * One recipe as the panel knows it (§5.10): a row of the list, and the `recipe` of the form.
@@ -30,9 +31,9 @@ final class RecipeResource extends JsonResource
         /** @var Recipe $recipe */
         $recipe = $this->resource;
 
-        $locale = app(Locales::class)->current();
+        $locale = app(Locales::class)->content();
         $shown = $recipe->hasDraft() ? $recipe->withDraft() : $recipe;
-        $canonical = $this->canonical($recipe, $locale);
+        [$canonical, $addressLocale, $fallback] = PanelAddress::pick(fn (string $code): ?Route => $this->canonical($recipe, $code), $locale);
         $cover = $shown->cover($locale);
 
         return [
@@ -41,7 +42,12 @@ final class RecipeResource extends JsonResource
             'slug' => (string) $shown->getTranslation('slug', $locale, fallback: false),
             // Null where the recipe names no slug in this language: it has no address there.
             'path' => $canonical?->path,
-            'url' => $canonical === null ? null : $recipe->url($locale),
+            // Where publishing moves it, when a renamed slug waits in the draft.
+            'next_path' => PanelAddress::afterPublishing($recipe, $addressLocale, $canonical?->path),
+            'url' => $canonical === null ? null : $recipe->url($addressLocale),
+            // The language of the address when it is the site's main one, shown because this
+            // language has none: the row says so in a tooltip rather than instead of the address.
+            'address_locale' => $fallback,
             'cover' => $cover === null ? null : ['thumb' => $cover['thumb'] ?? $cover['url'] ?? null],
             'minutes' => $shown->total_minutes,
             'status' => $recipe->status(),

@@ -12,8 +12,6 @@ return [
     'publish-nowhere' => 'In dieser Sprache hat es noch keine Adresse, also antwortet nichts.',
     'preview' => 'Vorschau',
     'discard' => 'Änderungen verwerfen',
-    'discard-title' => 'Wartende Änderungen verwerfen?',
-    'discard-text' => 'Das Rezept kehrt zu dem zurück, was die Website zeigt. Das seither Geschriebene ist nirgends mehr aufgeführt.',
     'discarded' => 'Das Rezept entspricht wieder der veröffentlichten Fassung.',
     'conflict-title' => 'Das Rezept wurde während Ihrer Bearbeitung geändert',
     'conflict-mine' => 'Meine behalten',

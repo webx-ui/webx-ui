@@ -38,5 +38,7 @@ return [
     'next-2' => 'Le panneau montre qui demande et où part la réponse. Il y a là un interrupteur « lecture seule », et c\'est la façon prudente de commencer.',
     'next-3' => 'Ensuite l\'agent agit en votre nom : il peut ce que vous pouvez et rien de plus, et chacun de ses appels est consigné.',
     'mine' => 'Vos connexions',
+    'rules' => 'Règles pour les agents',
+    'rules-hint' => 'Chaque agent connecté les lit avant d\'écrire ce qu\'un visiteur verra.',
 
 ];

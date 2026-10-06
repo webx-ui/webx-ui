@@ -32,4 +32,6 @@ return [
     'hash-length' => 'An anchor may be at most :max characters long.',
     'hash-shape' => 'An anchor is a name on the page: no spaces in it.',
     'not-localized' => 'A link is the same in every language and cannot be translated.',
+    'address-fallback' => 'No address in this language yet — this is the address in :locale, the site\'s main language.',
+    'address-fallback-label' => 'Address in the main language',
 ];

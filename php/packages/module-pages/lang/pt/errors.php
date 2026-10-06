@@ -11,6 +11,7 @@ return [
     'home-no-siblings' => 'A página inicial não tem vizinhas; uma página só pode ficar dentro dela.',
     'move-into-self' => 'Uma página não pode ser movida para dentro de si mesma nem das suas próprias páginas.',
     'parent-trashed' => 'Essa página está na lixeira. Restaure-a antes de colocar algo dentro dela.',
+    'not-in-bin' => 'Só uma página na reciclagem pode ser eliminada de vez. Elimine-a primeiro.',
     'slug-shape' => 'Um endereço aceita letras, dígitos, hifens e sublinhados.',
 
     // The editor.

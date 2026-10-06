@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Versions;
 
+use BackedEnum;
 use Carbon\CarbonInterface;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -88,6 +90,13 @@ trait HasDraft
      */
     public function saveDraft(array $values, ?int $authorId = null, string $source = EntityVersion::SOURCE_PANEL): static
     {
+        // A draft that says what the site already says is no draft: a letter typed and taken back
+        // between two autosaves left the page «modified» with nothing to publish, and publishing
+        // it wrote a version identical to the one before.
+        if ($values !== [] && $this->isPublished() && $this->matchesLive($values)) {
+            $values = [];
+        }
+
         $this->setAttribute($this->draftColumn(), $values === [] ? null : $values);
         $this->save();
 
@@ -136,6 +145,17 @@ trait HasDraft
      */
     public function publish(?int $authorId = null, string $source = EntityVersion::SOURCE_PANEL, ?string $comment = null, ?CarbonInterface $at = null): static
     {
+        // Already on the site as it is, and no new date asked for: nothing to publish, and a
+        // version identical to the last one would only make the history longer.
+        if ($at === null && $this->isPublished() && $this->matchesLive($this->draftValues())) {
+            if ($this->getAttribute($this->draftColumn()) !== null) {
+                $this->setAttribute($this->draftColumn(), null);
+                $this->save();
+            }
+
+            return $this;
+        }
+
         $this->getConnection()->transaction(function () use ($authorId, $source, $comment, $at): void {
             $this->applyDraft($this->draftValues());
             $this->setAttribute($this->draftColumn(), null);
@@ -158,6 +178,109 @@ trait HasDraft
         $this->save();
 
         return $this;
+    }
+
+    /**
+     * Whether these draft values are what the columns already hold — each attribute compared as
+     * stored, with maps compared regardless of key order, so a translation map written in another
+     * order is still the same text.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    public function matchesLive(array $values): bool
+    {
+        return $this->changedFields($values) === [];
+    }
+
+    /**
+     * The draft's fields that differ from what the site shows — the draft's own when none are
+     * given. What a discard would throw away, named the way the history names a change.
+     *
+     * @param  array<string, mixed>|null  $values
+     * @return list<string>
+     */
+    public function changedFields(?array $values = null): array
+    {
+        $values ??= $this->draftValues();
+        $drafted = clone $this;
+        $drafted->applyDraft($values);
+        $changed = [];
+
+        foreach (array_keys($values) as $attribute) {
+            $attribute = (string) $attribute;
+
+            // A key that is not a column — relations, a choice another table keeps — is applied by
+            // whoever put it there on publication, and this cannot tell whether it changed.
+            if (! array_key_exists($attribute, $this->getAttributes())
+                || self::comparable($drafted, $attribute) !== self::comparable($this, $attribute)) {
+                $changed[] = $attribute;
+            }
+        }
+
+        return $changed;
+    }
+
+    /**
+     * An attribute as the model reads it, in one spelling, for comparing.
+     *
+     * Through the casts rather than as stored: a draft holds what the form sent — `false`, an ISO
+     * date with an offset, `12.5` — and the column what the database gave back — `0`, a datetime
+     * string, `"12.50"`. Compared raw, an event's untouched `all_day` read as a change. A
+     * translatable attribute is the exception, since reading it gives one language: it is
+     * compared as its whole map.
+     */
+    private static function comparable(Model $model, string $attribute): string
+    {
+        if (method_exists($model, 'isTranslatableAttribute') && $model->isTranslatableAttribute($attribute)) {
+            $value = $model->getAttributes()[$attribute] ?? null;
+
+            if (is_string($value)) {
+                $decoded = json_decode($value, true);
+                $value = json_last_error() === JSON_ERROR_NONE && is_array($decoded) ? $decoded : $value;
+            }
+        } else {
+            $value = $model->getAttribute($attribute);
+        }
+
+        $normal = static function (mixed $value) use (&$normal): mixed {
+            if ($value instanceof CarbonInterface) {
+                return $value->getTimestamp();
+            }
+
+            if ($value instanceof BackedEnum) {
+                return $value->value;
+            }
+
+            if ($value instanceof Arrayable) {
+                $value = $value->toArray();
+            }
+
+            if (is_bool($value)) {
+                return $value ? '1' : '0';
+            }
+
+            if (is_int($value) || is_float($value)) {
+                return (string) $value;
+            }
+
+            if (! is_array($value)) {
+                return $value;
+            }
+
+            if (! array_is_list($value)) {
+                ksort($value);
+            }
+
+            return array_map($normal, $value);
+        };
+
+        // Empty is empty however it was written: a page with no blocks stores null, and the form
+        // sends that back as an empty list.
+        if ($value === [] || $value === '') {
+            $value = null;
+        }
+
+        return (string) json_encode($normal($value), JSON_UNESCAPED_UNICODE);
     }
 
     /** Whether the model keeps a history too. Asked of the class, not of a method, on purpose. */

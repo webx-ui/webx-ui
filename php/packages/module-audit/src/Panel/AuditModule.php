@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Audit\Panel;
 
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\HasNavSection;
+use WebxUi\Admin\Panel\SystemSections;
 use WebxUi\Audit\Mcp\AuditTools;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\McpResource;
@@ -16,7 +18,7 @@ use WebxUi\Mcp\Tool;
  * every new project by hand (§8). After SEO in the group — both are about being found, and the
  * audit is the one opened after a release rather than every week.
  */
-final class AuditModule extends AbstractModule implements ProvidesMcpTools
+final class AuditModule extends AbstractModule implements HasNavSection, ProvidesMcpTools
 {
     use ProvidesMcpDefaults;
 
@@ -45,6 +47,11 @@ final class AuditModule extends AbstractModule implements ProvidesMcpTools
     public function group(): string
     {
         return 'system';
+    }
+
+    public function navSection(): string
+    {
+        return SystemSections::SEARCH;
     }
 
     /**

@@ -20,7 +20,7 @@ final class PanelTest extends TestCase
 {
     /** The keys of a row, and of `vacancy` in the form (§4.11). */
     private const ROW = [
-        'id', 'title', 'slug', 'path', 'url', 'workplace', 'city', 'employment_types', 'valid_through', 'posted_at',
+        'id', 'title', 'slug', 'path', 'next_path', 'url', 'address_locale', 'workplace', 'city', 'employment_types', 'valid_through', 'posted_at',
         'closed', 'closed_reason', 'status', 'position', 'categories', 'published_at', 'updated_at', 'deleted_at', 'revision',
     ];
 

@@ -35,7 +35,7 @@ final class McpTest extends TestCase
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['events_list', 'events_get', 'events_create', 'events_update', 'events_duplicate', 'events_publish', 'events_unpublish', 'events_delete'],
+            ['events_list', 'events_get', 'events_create', 'events_update', 'events_duplicate', 'events_publish', 'events_unpublish', 'events_discard', 'events_delete'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('events')),
         );
 
@@ -274,6 +274,25 @@ final class McpTest extends TestCase
         $this->assertSame([$both->id], array_column($catalog['categories'][1]['upcoming'], 'id'));
         $this->assertSame([$loose->id], array_column($catalog['uncategorised']['upcoming'], 'id'));
         $this->assertSame(1, $catalog['uncategorised']['past_count']);
+    }
+
+    #[Test]
+    public function a_draft_is_compared_through_the_casts(): void
+    {
+        // A timed event: `all_day` false in the form, 0 in the column — and a start the form sends
+        // as ISO with an offset, the column keeps as a datetime string.
+        $event = $this->event('class', '2026-10-12 10:00:00');
+        $values = $this->content($this->agent('events_get', ['event' => $event->id]))['values'];
+        unset($values['blocks']);
+
+        // Everything sent back as it was read: nothing changes, so nothing waits.
+        $this->agent('events_update', ['event' => $event->id, 'values' => $values])->assertOk();
+        $this->assertFalse($event->refresh()->hasDraft(), 'an update that changes nothing leaves no draft');
+
+        $this->agent('events_update', ['event' => $event->id, 'values' => ['title' => ['en' => 'Class (draft)']]])->assertOk();
+
+        $dry = $this->content($this->agent('events_discard', ['event' => $event->id, 'dry_run' => true]));
+        $this->assertSame(['title'], $dry['would_discard']);
     }
 
     #[Test]

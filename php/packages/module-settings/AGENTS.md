@@ -16,9 +16,12 @@ picture fields `webx-ui/module-media`, the languages of a localized value
   `SettingsSaved` carries the keys that changed.
 - **Panel screen** `settings.index`, nodes `tabs`, `general`, `general-card`, `project-name`
   (`general.project-name`), `branding`, `branding-card`, `logo` (`branding.logo`), `mark`
-  (`branding.mark`), `content`, `content-card`, `tone` (`content.tone`), `donts`
-  (`content.donts`), `notes` (`content.notes`). API `GET` / `PUT` under `/api/cms/settings`; permissions
-  `settings.view`, `settings.manage`.
+  (`branding.mark`). API `GET` / `PUT` under `/api/cms/settings`; permissions `settings.view`,
+  `settings.manage`.
+- **Content screen** `settings.content`, nodes `content-card`, `tone` (`content.tone`), `donts`
+  (`content.donts`), `notes` (`content.notes`); API `GET` / `PUT` `/api/cms/settings/content`.
+  The panel shows it on `module-auth`'s «Connect an agent» page, found by the manifest's
+  `content_screen`.
 - **Branding**: binds `WebxUi\Admin\Contracts\BrandingSource` to `PanelBranding`, so the three
   values above become the panel's title, logo and rail mark.
 - **MCP** tools `settings_list`, `settings_get`, `settings_set`; scopes `settings:read`,
@@ -36,7 +39,7 @@ picture fields `webx-ui/module-media`, the languages of a localized value
 | A setting of the site's own           | a patch: `Screens::extend('settings.index', resource_path('screens/settings.json'))` in `AppServiceProvider::boot()`, adding a tab under `tabs` |
 | Read it on the site                   | `settings('<tab>.<field>', 'fallback')` (e.g. `settings('branding.logo')`) — current language, media resolved to its address                    |
 | A setting per language                | `"localized": true` on the field in the patch                                                                                                   |
-| A content rule of the site's own      | a patch adding a field under `content-card` named `content.<name>`; it comes out in `more`                                                      |
+| A content rule of the site's own      | a patch on `settings.content` adding a field under `content-card` named `content.<name>`; it comes out in `more`                                |
 | React when settings change            | listen to `WebxUi\Settings\Events\SettingsSaved`                                                                                                |
 | The panel's brand from somewhere else | bind your own `WebxUi\Admin\Contracts\BrandingSource`                                                                                           |
 | No cache while debugging              | `WEBX_SETTINGS_CACHE=false`                                                                                                                     |

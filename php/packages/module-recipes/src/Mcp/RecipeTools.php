@@ -16,6 +16,7 @@ use WebxUi\Admin\Categories\Ordering;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Relations\RelationTarget;
 use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
 use WebxUi\Localization\Locales;
@@ -167,6 +168,15 @@ final class RecipeTools
             ),
 
             Tool::mutating(
+                'discard',
+                'Throw away the draft of a recipe that is on the site and go back to what the site shows. The draft '
+                .'is all that changes. dry_run names the fields that differ from the published ones.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->discard($arguments)),
+                ['properties' => ['recipe' => $recipe], 'required' => ['recipe']],
+                permission: 'recipes.manage',
+            ),
+
+            Tool::mutating(
                 'delete',
                 'Put a recipe in the bin. Its address is released, so afterwards it can only be named by its id. '
                 .'Nothing is destroyed: the bin in the panel puts it back, as long as nobody has taken its address '
@@ -299,6 +309,10 @@ final class RecipeTools
             throw new ToolFailure('`values` must be a non-empty object of field name → value. recipes_get says what the fields are.');
         }
 
+        // Merged language by language, and a language the site does not have refused — dry run
+        // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
+        $values = $this->container->make(ScreenValues::class)->patch(Recipe::SCREEN, $this->form()->values($recipe), $values);
+
         if ($recipe->trashed()) {
             throw new ToolFailure("Recipe #{$recipe->getKey()} is in the bin. Bring it back in the panel before editing it.");
         }
@@ -357,6 +371,27 @@ final class RecipeTools
         }
 
         $recipe->unpublish();
+
+        return ['recipe' => $this->summary($recipe->refresh())];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function discard(array $arguments): array
+    {
+        $recipe = $this->recipe($arguments['recipe'] ?? null);
+
+        if (! $recipe->hasDraft()) {
+            throw new ToolFailure("Recipe [{$recipe->getKey()}] has no draft: the site already shows what it holds.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_discard' => $recipe->changedFields(), 'recipe' => $this->reference($recipe)];
+        }
+
+        $recipe->discardDraft();
 
         return ['recipe' => $this->summary($recipe->refresh())];
     }
@@ -750,6 +785,12 @@ final class RecipeTools
         $texts = [];
 
         foreach ($value as $locale => $text) {
+            // Words in a language the site is not published in are words nobody reads — and
+            // an address in one is an address that answers nowhere.
+            if (! $this->locales()->has((string) $locale)) {
+                throw new ToolFailure("`{$field}` has a value in [{$locale}], which this site is not published in. It has: ".implode(', ', $this->locales()->codes()).'.');
+            }
+
             if (is_string($text) && trim($text) !== '') {
                 $texts[(string) $locale] = trim($text);
             }

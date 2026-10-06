@@ -13,4 +13,12 @@ return [
     'ok-bare' => 'Sem seletores de elemento soltos.',
     'ok-container' => 'A largura é decidida por consultas de contentor.',
     'ok-variables' => 'Todas as variáveis do modelo são campos do esquema.',
+    'blocks' => [
+        'stray_values' => [
+            'title' => 'Valores de bloco para campos que o tipo não tem',
+            'found' => 'Há blocos com valores de campos que o seu tipo não define — restos de uma importação ou de um campo retirado do tipo.',
+            'why' => 'O visitante não os vê, mas estão nos dados do editor e no que um agente lê, e reaparecem como uma etiqueta errada do bloco.',
+            'fix' => 'Retire-os com a correção ou para todo o site com php artisan webx:blocks:prune. Um bloco de um tipo que já não existe não é tocado. Os itens de um repetidor são comparados com os seus campos.',
+        ],
+    ],
 ];

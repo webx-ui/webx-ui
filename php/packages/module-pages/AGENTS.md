@@ -19,7 +19,7 @@ from scratch: the tree is `webx-ui/nested-set`, the address `webx-ui/routing`, t
 - **Panel screen** `pages.form` (tabs `content`, `settings`, `seo`, `history`); API under
   `/api/cms/pages`; permissions `pages.view`, `pages.manage`.
 - **MCP** tools `pages_tree`, `pages_get`, `pages_create`, `pages_update`, `pages_move`,
-  `pages_publish`, `pages_unpublish`, `pages_delete`, `pages_restore`; resource `pages://sitemap`;
+  `pages_publish`, `pages_unpublish`, `pages_delete`, `pages_restore`, `pages_discard`, `pages_purge`; resource `pages://sitemap`;
   prompt `build_page`. Scopes `pages:read`, `pages:write`.
 - Also registered: a link source (pages in every link picker), an audit content source when
   `webx-ui/module-audit` is installed, demo content (`resources/demo`).
@@ -60,6 +60,14 @@ boot instead of failing quietly. Values the screen does not name are dropped on 
 - Do not delete rows with SQL: deleting a page bins its whole branch and releases its addresses,
   and `restoreBranch()` brings back exactly that branch. A raw delete leaves orphans in the tree
   and in the routing registry.
+- Do not `forceDelete()` a page by hand to delete it for good: `Page::purgeBranch()` (API
+  `DELETE /pages/{id}/purge`, `DELETE /pages/bin`, MCP `pages_purge`) takes only a page in the bin,
+  and removes its whole branch node by node, deepest first, so each page's `deleted` event takes
+  its addresses, the former ones kept for a restore, its SEO card and its history. A bulk delete
+  of the subtree skips those events and leaves all of it behind.
+- In a partial `pages_update`, a translated field changes only in the languages you name:
+  `{"slug": {"de": "…"}}` leaves the others, `null` empties one. A language the site is not
+  published in is refused, dry run included.
 
 ## Check your work
 

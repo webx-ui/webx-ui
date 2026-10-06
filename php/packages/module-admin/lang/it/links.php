@@ -32,4 +32,6 @@ return [
     'hash-length' => 'Un’ancora può essere lunga al massimo :max caratteri.',
     'hash-shape' => 'Un’ancora è un nome nella pagina: senza spazi.',
     'not-localized' => 'Un collegamento è lo stesso in ogni lingua e non si traduce.',
+    'address-fallback' => 'Non c\'è ancora un indirizzo in questa lingua: questo è l\'indirizzo in :locale, la lingua principale del sito.',
+    'address-fallback-label' => 'Indirizzo nella lingua principale',
 ];

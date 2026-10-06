@@ -9,9 +9,8 @@ use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Features;
 use WebxUi\Seo\Models\SeoRedirect;
 use WebxUi\Seo\Models\SeoUrl;
+use WebxUi\Seo\Panel\AddressReport;
 use WebxUi\Seo\Panel\UrlMatcher;
-use WebxUi\Seo\Panel\UrlRuleSource;
-use WebxUi\Seo\Rendering\Seo;
 use WebxUi\Seo\Sitemap\Sitemap;
 
 /**
@@ -97,9 +96,20 @@ final class SeoTools
                 scope: 'seo:write',
             ),
 
+            Tool::mutating(
+                'urls_delete',
+                'Delete a rule by id. The address goes back to what the page and the defaults say about it.',
+                static fn (array $arguments): array => self::deleteUrl($arguments),
+                [
+                    'properties' => ['id' => ['type' => 'integer']],
+                    'required' => ['id'],
+                ],
+                scope: 'seo:write',
+            ),
+
             Tool::read(
                 'test_url',
-                'What an address ends up saying about itself, and where every part of it came from: the redirect that catches it, the rule that matched, each source in turn, and whether it is in the sitemap and why not.',
+                'What an address ends up saying about itself, and where every part of it came from: the redirect that catches it (redirect, with leads_to — where it sends this very address, $1 filled in), what the address registry holds there (route: a live page or an alias of one that moved), the rule that matched, each source in turn, and whether it is in the sitemap and why not.',
                 static fn (array $arguments): array => self::test($arguments),
                 [
                     'properties' => [
@@ -146,6 +156,17 @@ final class SeoTools
                         'is_active' => ['type' => 'boolean'],
                     ],
                     'required' => ['pattern', 'target'],
+                ],
+                scope: 'seo:write',
+            ),
+
+            Tool::mutating(
+                'redirects_delete',
+                'Delete a redirect by id. The old address answers again with whatever lives there, or 404.',
+                static fn (array $arguments): array => self::deleteRedirect($arguments),
+                [
+                    'properties' => ['id' => ['type' => 'integer']],
+                    'required' => ['id'],
                 ],
                 scope: 'seo:write',
             ),
@@ -243,19 +264,11 @@ final class SeoTools
      */
     private static function test(array $arguments): array
     {
-        $url = UrlNormaliser::normalise((string) ($arguments['url'] ?? '/'));
-        $locale = is_string($arguments['locale'] ?? null) ? $arguments['locale'] : null;
-
-        $seo = app(Seo::class);
-        $matched = app(UrlRuleSource::class)->matching($url);
-
-        return [
-            'url' => $url,
-            'matched' => $matched === null ? null : self::summarise($matched),
-            'chain' => $seo->chain($url, null, $locale),
-            'seo' => $seo->for($url, null, $locale)->toArray(),
-            'sitemap' => app(Sitemap::class)->verdict($url, $locale),
-        ];
+        // The panel's test-url answers with the same report, so the two cannot drift apart.
+        return app(AddressReport::class)->for(
+            (string) ($arguments['url'] ?? '/'),
+            is_string($arguments['locale'] ?? null) ? $arguments['locale'] : null,
+        );
     }
 
     /**
@@ -354,6 +367,61 @@ final class SeoTools
         $redirect->fill($values)->save();
 
         return ['ok' => true, 'applied' => true, 'id' => $redirect->id];
+    }
+
+    /**
+     * Through the model, as the panel does: its `deleted` hook drops the compiled rules and
+     * rebuilds the sitemap, which a query on the table would skip.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private static function deleteUrl(array $arguments): array
+    {
+        $rule = SeoUrl::query()->find((int) ($arguments['id'] ?? 0));
+
+        if (! $rule instanceof SeoUrl) {
+            return ['ok' => false, 'reason' => 'No rule with that id.'];
+        }
+
+        $what = ['id' => $rule->id, 'match_type' => $rule->match_type, 'pattern' => $rule->pattern];
+
+        if ($arguments['dry_run'] ?? false) {
+            return ['ok' => true, 'would_change' => true, 'applied' => false, 'would_delete' => $what];
+        }
+
+        $rule->delete();
+
+        return ['ok' => true, 'applied' => true, 'deleted' => $what];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private static function deleteRedirect(array $arguments): array
+    {
+        $redirect = SeoRedirect::query()->find((int) ($arguments['id'] ?? 0));
+
+        if (! $redirect instanceof SeoRedirect) {
+            return ['ok' => false, 'reason' => 'No redirect with that id.'];
+        }
+
+        $what = [
+            'id' => $redirect->id,
+            'match_type' => $redirect->match_type,
+            'from' => $redirect->pattern,
+            'to' => $redirect->target,
+            'status' => $redirect->status,
+        ];
+
+        if ($arguments['dry_run'] ?? false) {
+            return ['ok' => true, 'would_change' => true, 'applied' => false, 'would_delete' => $what];
+        }
+
+        $redirect->delete();
+
+        return ['ok' => true, 'applied' => true, 'deleted' => $what];
     }
 
     /**

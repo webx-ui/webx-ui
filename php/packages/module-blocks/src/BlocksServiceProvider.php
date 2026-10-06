@@ -16,13 +16,18 @@ use WebxUi\Admin\Gate\Openings;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Content\AuditContentSources;
+use WebxUi\Audit\Fixes\AuditFixes;
+use WebxUi\Blocks\Audit\PruneStrayValuesFix;
 use WebxUi\Blocks\Audit\RegionContentSource;
+use WebxUi\Blocks\Audit\StrayValuesCheck;
 use WebxUi\Blocks\Console\BundlesCommand;
 use WebxUi\Blocks\Console\ClearCommand;
 use WebxUi\Blocks\Console\ExportCommand;
 use WebxUi\Blocks\Console\ImportCommand;
 use WebxUi\Blocks\Console\OfferedCommand;
+use WebxUi\Blocks\Console\PruneCommand;
 use WebxUi\Blocks\Console\RegionsCommand;
 use WebxUi\Blocks\Fields\DataType;
 use WebxUi\Blocks\Fields\SlotType;
@@ -135,7 +140,7 @@ class BlocksServiceProvider extends ServiceProvider
             return;
         }
 
-        $this->commands([BundlesCommand::class, ClearCommand::class, ExportCommand::class, ImportCommand::class, OfferedCommand::class, RegionsCommand::class]);
+        $this->commands([BundlesCommand::class, ClearCommand::class, ExportCommand::class, ImportCommand::class, OfferedCommand::class, PruneCommand::class, RegionsCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-blocks.php' => config_path('webx-blocks.php'),
@@ -163,6 +168,9 @@ class BlocksServiceProvider extends ServiceProvider
     {
         if (class_exists(AuditContentSources::class)) {
             $this->app->make(AuditContentSources::class)->register($this->app->make(RegionContentSource::class));
+            // Values for fields a block type does not define: found, and taken out per entity.
+            $this->app->make(AuditChecks::class)->register($this->app->make(StrayValuesCheck::class));
+            $this->app->make(AuditFixes::class)->register($this->app->make(PruneStrayValuesFix::class));
         }
     }
 

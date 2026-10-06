@@ -34,7 +34,6 @@ return [
     'normalise-trailing' => 'Barra final',
     'normalise-trailing-help' => 'La dirección en la otra forma redirige. Los archivos se dejan como están.',
     'normalise-trailing-strip' => 'Sin barra: /about',
-    'normalise-trailing-add' => 'Con barra: /about/',
     'normalise-case' => 'Minúsculas',
     'normalise-case-help' => '/About redirige a /about. Los archivos conservan sus nombres.',
     'links-heading' => 'Título del enlazado interno',

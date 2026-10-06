@@ -38,5 +38,7 @@ return [
     'next-2' => 'Das Panel zeigt, wer fragt und wohin die Antwort geht. Dort steht auch der Schalter „nur lesen“, und damit anzufangen ist der sichere Weg.',
     'next-3' => 'Von da an handelt der Agent als Sie: er kann, was Sie können, und nichts darüber hinaus, und jeder seiner Aufrufe wird aufgeschrieben.',
     'mine' => 'Ihre Verbindungen',
+    'rules' => 'Regeln für Agenten',
+    'rules-hint' => 'Jeder verbundene Agent liest sie, bevor er etwas schreibt, das Besucher sehen.',
 
 ];

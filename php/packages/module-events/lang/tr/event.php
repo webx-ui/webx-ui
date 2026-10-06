@@ -17,8 +17,6 @@ return [
     'publish-nowhere' => 'Bu dilde henüz adresi yok, yani hiçbir şey yanıt vermeyecek.',
     'preview' => 'Önizleme',
     'discard' => 'Değişiklikleri at',
-    'discard-title' => 'Bekleyenler atılsın mı?',
-    'discard-text' => 'Etkinlik sitenin gösterdiğine döner. O zamandan beri yazılanlar hiçbir yerde listelenmez.',
     'discarded' => 'Etkinlik yayındaki haline döndü.',
     'conflict-title' => 'Siz düzenlerken etkinlik değişti',
     'conflict-mine' => 'Benimkini koru',

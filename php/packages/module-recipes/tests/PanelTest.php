@@ -32,7 +32,7 @@ final class PanelTest extends TestCase
         $row = $response->json('data.0');
 
         $this->assertSame([
-            'id', 'title', 'slug', 'path', 'url', 'cover', 'minutes', 'status', 'position', 'categories',
+            'id', 'title', 'slug', 'path', 'next_path', 'url', 'address_locale', 'cover', 'minutes', 'status', 'position', 'categories',
             'published_at', 'updated_at', 'deleted_at', 'revision',
         ], array_keys($row));
         $this->assertSame('Porridge', $row['title']);

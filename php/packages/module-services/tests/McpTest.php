@@ -28,7 +28,7 @@ final class McpTest extends TestCase
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['services_list', 'services_get', 'services_create', 'services_update', 'services_publish', 'services_unpublish', 'services_delete', 'services_reorder'],
+            ['services_list', 'services_get', 'services_create', 'services_update', 'services_publish', 'services_unpublish', 'services_discard', 'services_delete', 'services_reorder'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('services')),
         );
 
@@ -201,6 +201,24 @@ final class McpTest extends TestCase
         $this->agent('service_categories_delete', ['category' => 'implants'])->assertHasErrors();
 
         $this->assertNotNull(ServiceCategory::query()->find($implants->getKey()));
+    }
+
+    #[Test]
+    public function an_agent_discards_a_draft_and_the_dry_run_names_only_what_changed(): void
+    {
+        $crowns = $this->service('crowns');
+
+        $this->agent('services_discard', ['service' => $crowns->getKey()])->assertHasErrors(['has no draft']);
+
+        $this->agent('services_update', ['service' => $crowns->getKey(), 'values' => ['title' => ['en' => 'Crowns and bridges']]])->assertOk();
+
+        $dry = $this->content($this->agent('services_discard', ['service' => $crowns->getKey(), 'dry_run' => true]));
+        $this->assertSame(['title'], $dry['would_discard']);
+        $this->assertTrue($crowns->refresh()->hasDraft(), 'a dry run changes nothing');
+
+        $this->agent('services_discard', ['service' => $crowns->getKey()])->assertOk();
+        $this->assertFalse($crowns->refresh()->hasDraft());
+        $this->assertSame('Crowns', $crowns->title);
     }
 
     private function resource(string $uri): McpResource

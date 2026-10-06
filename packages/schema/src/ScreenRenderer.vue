@@ -194,15 +194,6 @@ defineExpose({
   max-width: calc(var(--wx-field-max-width, 640px) + var(--wx-row-gutter, 0px));
 }
 
-/*
- * A number is a few digits, and a field as wide as a title put its − and + a whole line apart,
- * with the digits alone in the middle. The core's own number keeps `width: 100%` — a filter row
- * or a table cell decides its width — so the cap is the screen's.
- */
-.wx-screen .wx-input-number {
-  max-width: 240px;
-}
-
 /* Global on purpose: the placeholder is created by a render function, outside any scope. */
 .wx-screen__unknown {
   padding: var(--wx-space-8) var(--wx-space-12);

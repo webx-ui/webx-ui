@@ -34,7 +34,6 @@ return [
     'normalise-trailing' => 'Слеш у кінці',
     'normalise-trailing-help' => 'Адреса в іншій формі перенаправляє. Файли залишаються як є.',
     'normalise-trailing-strip' => 'Без слеша: /about',
-    'normalise-trailing-add' => 'Зі слешем: /about/',
     'normalise-case' => 'Нижній регістр',
     'normalise-case-help' => '/About перенаправляє на /about. Файли зберігають свої імена.',
     'links-heading' => 'Заголовок перелінковки',

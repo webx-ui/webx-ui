@@ -44,8 +44,11 @@ final class IssueResource extends JsonResource
     }
 
     /**
+     * `count` is the summary's number when the summary says nothing else — «Links to redirects:
+     * 3» — so the panel can show it as a counter beside the address instead of a line of its own.
+     *
      * @param  array<string, mixed>  $details
-     * @return array{summary: string|null, table: array{columns: list<array{key: string, label: string, type: string}>, rows: list<array<string, mixed>>}|null}
+     * @return array{summary: string|null, count: int|null, table: array{columns: list<array{key: string, label: string, type: string}>, rows: list<array<string, mixed>>}|null}
      */
     public static function details(array $details): array
     {
@@ -87,10 +90,13 @@ final class IssueResource extends JsonResource
             }
         }
 
+        $params = is_array($summary) && is_array($summary['params'] ?? null) ? $summary['params'] : [];
+
         return [
             'summary' => is_array($summary) && is_string($summary['key'] ?? null)
                 ? CheckTexts::line($summary['key'], is_array($summary['params'] ?? null) ? $summary['params'] : [])
                 : null,
+            'count' => array_keys($params) === ['count'] && is_int($params['count']) ? $params['count'] : null,
             'table' => is_array($table) ? ['columns' => $columns, 'rows' => $rows] : null,
         ];
     }

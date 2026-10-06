@@ -12,6 +12,7 @@ use WebxUi\Admin\Categories\Ordering;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Relations\RelationTarget;
 use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
@@ -271,6 +272,10 @@ final class TeamTools
         if (! is_array($values) || $values === []) {
             throw new ToolFailure('`values` must be a non-empty object of field name → value. team_get says what the fields are.');
         }
+
+        // Merged language by language, and a language the site does not have refused — dry run
+        // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
+        $values = $this->container->make(ScreenValues::class)->patch(Member::SCREEN, $this->form()->values($member), $values);
 
         if ($member->trashed()) {
             throw new ToolFailure("Person #{$member->getKey()} is in the bin. Bring them back in the panel before editing them.");
@@ -558,6 +563,12 @@ final class TeamTools
         $texts = [];
 
         foreach ($value as $locale => $text) {
+            // Words in a language the site is not published in are words nobody reads — and
+            // an address in one is an address that answers nowhere.
+            if (! $this->locales()->has((string) $locale)) {
+                throw new ToolFailure("`{$field}` has a value in [{$locale}], which this site is not published in. It has: ".implode(', ', $this->locales()->codes()).'.');
+            }
+
             if (is_string($text) && trim($text) !== '') {
                 $texts[(string) $locale] = trim($text);
             }

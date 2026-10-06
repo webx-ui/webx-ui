@@ -87,6 +87,24 @@ class Locales
     }
 
     /**
+     * The language of the site's content a panel request works in: the one asked for, the
+     * request's, or the site's main one — whichever the site has first.
+     *
+     * Not the request's language for its own sake: in the panel that is the interface's, and a
+     * panel read in Russian over an English-only site found no Russian page behind anything.
+     */
+    public function content(?string $asked = null): string
+    {
+        foreach ([$asked ?? '', $this->current()] as $code) {
+            if ($code !== '' && $this->has($code)) {
+                return $code;
+            }
+        }
+
+        return $this->defaultCode();
+    }
+
+    /**
      * Switch the application over, if the language is one this site has.
      *
      * Returns whether it took: a caller resolving an unknown language from a URL wants to know

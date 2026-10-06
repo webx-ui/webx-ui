@@ -17,8 +17,6 @@ return [
     'publish-nowhere' => 'In dieser Sprache hat sie noch keine Adresse, also antwortet nichts.',
     'preview' => 'Vorschau',
     'discard' => 'Änderungen verwerfen',
-    'discard-title' => 'Verwerfen, was wartet?',
-    'discard-text' => 'Die Veranstaltung kehrt zu dem zurück, was die Website zeigt. Was seitdem geschrieben wurde, ist nirgends aufgeführt.',
     'discarded' => 'Die Veranstaltung ist wieder auf dem veröffentlichten Stand.',
     'conflict-title' => 'Die Veranstaltung hat sich geändert, während Sie sie bearbeitet haben',
     'conflict-mine' => 'Meine behalten',

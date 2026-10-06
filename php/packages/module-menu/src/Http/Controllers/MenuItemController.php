@@ -206,10 +206,11 @@ final class MenuItemController
     }
 
     /** The content language the panel is reading in, which is what a label is drawn from. */
+    /** The site's content language for the tree, not the panel's (see `Locales::content()`). */
     private function locale(Request $request): string
     {
         $asked = $request->query('locale');
 
-        return is_string($asked) && $asked !== '' ? $asked : $this->locales->current();
+        return $this->locales->content(is_string($asked) ? $asked : null);
     }
 }

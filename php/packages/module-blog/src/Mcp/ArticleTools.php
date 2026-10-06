@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
+use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
 use WebxUi\Blog\Exceptions\BlogException;
@@ -158,6 +159,15 @@ final class ArticleTools
                 'Take an article off the site. It answers 404 from then on and drops out of the feed; its '
                 .'address stays reserved and whatever was being prepared is still being prepared.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->unpublish($arguments)),
+                ['properties' => ['article' => $article], 'required' => ['article']],
+                permission: 'blog.articles.manage',
+            ),
+
+            Tool::mutating(
+                'discard',
+                'Throw away the draft of an article that is on the site and go back to what the site shows. The draft '
+                .'is all that changes. dry_run names the fields that differ from the published ones.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->discard($arguments)),
                 ['properties' => ['article' => $article], 'required' => ['article']],
                 permission: 'blog.articles.manage',
             ),
@@ -348,6 +358,10 @@ final class ArticleTools
             throw new ToolFailure('`values` must be a non-empty object of field name → value. articles_get says what the fields are.');
         }
 
+        // Merged language by language, and a language the site does not have refused — dry run
+        // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
+        $values = $this->container->make(ScreenValues::class)->patch(ArticleForm::SCREEN, $this->form()->values($article), $values);
+
         $this->refuseBlocks($values);
         $this->sameRevision($arguments, $article);
 
@@ -410,6 +424,27 @@ final class ArticleTools
         }
 
         $article->unpublish();
+
+        return ['article' => $this->summary($article->refresh())];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function discard(array $arguments): array
+    {
+        $article = $this->article($arguments['article'] ?? null);
+
+        if (! $article->hasDraft()) {
+            throw new ToolFailure("Article [{$article->getKey()}] has no draft: the site already shows what it holds.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_discard' => $article->changedFields(), 'article' => $this->reference($article)];
+        }
+
+        $article->discardDraft();
 
         return ['article' => $this->summary($article->refresh())];
     }
@@ -681,6 +716,12 @@ final class ArticleTools
         $texts = [];
 
         foreach ($value as $locale => $text) {
+            // Words in a language the site is not published in are words nobody reads — and
+            // an address in one is an address that answers nowhere.
+            if (! $this->locales()->has((string) $locale)) {
+                throw new ToolFailure("`{$field}` has a value in [{$locale}], which this site is not published in. It has: ".implode(', ', $this->locales()->codes()).'.');
+            }
+
             if (! is_string($text) || trim($text) === '') {
                 continue;
             }

@@ -642,7 +642,7 @@ final class PropertyTools
     {
         foreach ((new Property)->translatable() as $field) {
             if (is_string($values[$field] ?? null)) {
-                $values[$field] = [$this->locales->current() => $values[$field]];
+                $values[$field] = [$this->locales->content() => $values[$field]];
             }
         }
 

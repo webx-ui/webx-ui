@@ -48,6 +48,8 @@ return [
     'h1-multiple' => 'Títulos H1 na página: :count',
     'h1-equals-title' => 'O H1 e o title são ambos «:value».',
     'headings-skipped' => 'Saltados: :skip',
+    'headings-h1-not-first' => 'Primeiro vem :level «:value».',
+    'headings-empty' => 'Títulos vazios (:levels): :count',
     'canonical-missing' => 'Sem canonical na tag nem no cabeçalho.',
     'canonical-relative' => 'O canonical está escrito como um caminho: :value',
     'canonical-multiple' => 'Endereços canonical: :count',
@@ -154,4 +156,5 @@ return [
     'column-type' => 'Tipo',
     'column-fields' => 'Campos',
     'column-kb' => 'KB',
+    'column-attrs' => 'Atributos',
 ];

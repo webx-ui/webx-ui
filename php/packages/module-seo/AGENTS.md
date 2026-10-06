@@ -22,6 +22,9 @@ their guides when the question is about one of those.
   `faq`. The last two print nothing while their feature is off.
 - **Global middleware** `NormaliseAddress` then `RedirectRequests` (aliases `webx.normalise`,
   `webx.redirects`): they run before routing, so they answer addresses that have no route.
+  The resolver's spelling (routing's `Contracts\Spelling`) is bound to the same settings
+  (`SeoSpelling`): an address the registry answers takes one 301, never two, and «keep as it is»
+  is obeyed. «With a slash» is not offered: every link the site prints is written without one.
 - **Public routes** `/robots.txt` (the `seo.robots-txt` setting; 404 while it is empty),
   `/sitemap.xml` and `/sitemap-{file}.xml`, one file per address type.
 - **Panel** module `seo` (group `system`); permissions `seo.view`, `seo.manage`; API under
@@ -34,8 +37,9 @@ their guides when the question is about one of those.
   field `seo-fields` (type `wx-seo`) in place of a `seo-placeholder` node on `pages.form`,
   `blog.article-form`, `services.form`, `recipes.form`, `events.form`, `vacancies.form` and the
   category forms. A screen that is not registered is simply not patched.
-- **MCP** tools `seo_urls_list`, `seo_urls_get`, `seo_urls_set`, `seo_test_url`,
-  `seo_sitemap_status`, `seo_redirects_list`, `seo_redirects_set`, `seo_import_redirects`; with
+- **MCP** tools `seo_urls_list`, `seo_urls_get`, `seo_urls_set`, `seo_urls_delete`,
+  `seo_test_url`, `seo_sitemap_status`, `seo_redirects_list`, `seo_redirects_set`,
+  `seo_redirects_delete`, `seo_import_redirects`; with
   interlinking `seo_links_list`, `seo_links_get`, `seo_links_set`, `seo_links_delete`,
   `seo_links_import`, `seo_links_heading`; with page FAQ `seo_faq_get`, `seo_faq_set`,
   `seo_faq_import`. Scopes `seo:read`, `seo:write`.
@@ -44,25 +48,25 @@ their guides when the question is about one of those.
 
 ## Change it without forking
 
-| You want                                        | Do this                                                                                          |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| The head not to print a part the site writes    | `php artisan vendor:publish --tag=webx-seo-config`, set that key of `print` to `false`           |
-| A default title pattern                         | `title_template` in `config/webx-seo.php` (`{title}`, `{site}`); editors use the setting         |
-| Titles cut to the limits                        | `'trim' => true`; the limits are `limits.title`, `limits.description`, `limits.keywords`         |
-| Keep more of the query in the self-canonical    | `canonical.query` (default `['page']`); `canonical.self` off for no self-canonical               |
-| Turn interlinking or page FAQ on                | `WEBX_SEO_LINKS=true`, `WEBX_SEO_FAQ=true` — a developer's decision, not an editor's             |
-| No redirects, no sitemap, own sitemap           | `WEBX_SEO_REDIRECTS=false`, `WEBX_SEO_SITEMAP=false`; `sitemap.per_file`, `WEBX_SEO_SITEMAP_TTL` |
-| Own `robots.txt` route                          | `robots_txt.enabled` to `false` in the published config                                          |
-| One address per page (www, https, slash, case)  | the `normalise-*` settings on the SEO tab — all off until turned on                              |
-| Restyle crumbs, links, FAQ or the head          | `php artisan vendor:publish --tag=webx-seo-views`, keep only the files you change                |
-| Other words in the panel                        | `php artisan vendor:publish --tag=webx-seo-lang`                                                 |
-| The SEO card on your own entity                 | `use HasSeo;` on the model, a patch putting a `wx-seo` node on its screen                        |
-| Breadcrumbs or JSON-LD from an entity           | implement `HasBreadcrumbs` (list of `Crumb`) or `HasStructuredData` on the model                 |
-| JSON-LD for one response (a list on this page)  | `app(Seo::class)->push([...])` in the handler before the view renders                            |
-| SEO values from somewhere else                  | implement `SeoSource`, `app(SeoSources::class)->register(...)` in a provider                     |
-| Sitemap addresses no registry row stands behind | implement `SitemapSource`, `app(SitemapSources::class)->register(...)`                           |
-| A redirecting type out of the sitemap           | implement `WebxUi\Routing\Contracts\NotAPage` on the handler you bound over the module's         |
-| A field on the SEO tab                          | a patch: `Screens::extend('settings.index', [...])` against the ids above                        |
+| You want                                        | Do this                                                                                                                                                        |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The head not to print a part the site writes    | `php artisan vendor:publish --tag=webx-seo-config`, set that key of `print` to `false`                                                                         |
+| A default title pattern                         | `title_template` in `config/webx-seo.php` (`{title}`, `{site}`); editors use the setting                                                                       |
+| Titles cut to the limits                        | `'trim' => true`; the limits are `limits.title`, `limits.description`, `limits.keywords`                                                                       |
+| Keep more of the query in the self-canonical    | `canonical.query` (default `['page']`); `canonical.self` off for no self-canonical                                                                             |
+| Turn interlinking or page FAQ on                | `WEBX_SEO_LINKS=true`, `WEBX_SEO_FAQ=true` — a developer's decision, not an editor's                                                                           |
+| No redirects, no sitemap, own sitemap           | `WEBX_SEO_REDIRECTS=false`, `WEBX_SEO_SITEMAP=false`; `sitemap.per_file`, `WEBX_SEO_SITEMAP_TTL`                                                               |
+| Own `robots.txt` route                          | `robots_txt.enabled` to `false` in the published config                                                                                                        |
+| One address per page (www, https, slash, case)  | the `normalise-*` settings on the SEO tab; slashes, case and the trailing slash start on (the registry's spelling), the rest off; one 301 for every difference |
+| Restyle crumbs, links, FAQ or the head          | `php artisan vendor:publish --tag=webx-seo-views`, keep only the files you change                                                                              |
+| Other words in the panel                        | `php artisan vendor:publish --tag=webx-seo-lang`                                                                                                               |
+| The SEO card on your own entity                 | `use HasSeo;` on the model, a patch putting a `wx-seo` node on its screen                                                                                      |
+| Breadcrumbs or JSON-LD from an entity           | implement `HasBreadcrumbs` (list of `Crumb`) or `HasStructuredData` on the model                                                                               |
+| JSON-LD for one response (a list on this page)  | `app(Seo::class)->push([...])` in the handler before the view renders                                                                                          |
+| SEO values from somewhere else                  | implement `SeoSource`, `app(SeoSources::class)->register(...)` in a provider                                                                                   |
+| Sitemap addresses no registry row stands behind | implement `SitemapSource`, `app(SitemapSources::class)->register(...)`                                                                                         |
+| A redirecting type out of the sitemap           | implement `WebxUi\Routing\Contracts\NotAPage` on the handler you bound over the module's                                                                       |
+| A field on the SEO tab                          | a patch: `Screens::extend('settings.index', [...])` against the ids above                                                                                      |
 
 ## Do not
 
@@ -80,7 +84,8 @@ their guides when the question is about one of those.
   setting.
 - Do not write `seo_urls` or `seo_redirects` with SQL: the compiled rules in the cache are
   thrown away by the models' save and delete, and a raw write leaves the site matching the old
-  list. Go through the panel, the API or `seo_urls_set` / `seo_redirects_set`.
+  list. Go through the panel, the API or `seo_urls_set` / `seo_redirects_set` and
+  `seo_urls_delete` / `seo_redirects_delete`.
 - Do not mark every address of a redirecting type `noindex` to get it out of the sitemap: the
   handler that redirects implements `NotAPage`, and the whole type goes. A list of types in config
   is not offered on purpose — it would drift from the binding.

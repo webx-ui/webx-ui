@@ -8,7 +8,6 @@ use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Contracts\ProvidesDemo;
 use WebxUi\Admin\Demo\DemoLedger;
-use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Screens\Tree;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
@@ -68,7 +67,7 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
      */
     public function manifest(): array
     {
-        return ['screen' => Settings::SCREEN];
+        return ['screen' => Settings::SCREEN, 'content_screen' => Settings::CONTENT_SCREEN];
     }
 
     /**
@@ -156,7 +155,7 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
      */
     private static function describe(): array
     {
-        $fields = app(ScreenRegistry::class)->fields(Settings::SCREEN);
+        $fields = app(Settings::class)->fields();
 
         return array_map(static fn (array $node): array => [
             'key' => $node['name'],
@@ -180,7 +179,10 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
         }
 
         try {
-            $stored = app(ScreenValues::class)->validate(Settings::SCREEN, [$key => $arguments['value'] ?? null]);
+            $screen = $settings->screenOf($key) ?? Settings::SCREEN;
+            // A translated setting changes in the languages named and refuses one the site lacks.
+            $input = app(ScreenValues::class)->patch($screen, [$key => $settings->raw()[$key] ?? null], [$key => $arguments['value'] ?? null]);
+            $stored = app(ScreenValues::class)->validate($screen, $input);
         } catch (ValidationException $exception) {
             return ['ok' => false, 'reason' => 'The value was refused.', 'errors' => $exception->errors()];
         }

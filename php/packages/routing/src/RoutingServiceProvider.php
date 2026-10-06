@@ -13,7 +13,9 @@ use WebxUi\Routing\Aliases\RouteAliases;
 use WebxUi\Routing\Audit\RegistryCheck;
 use WebxUi\Routing\Console\CheckRoutesCommand;
 use WebxUi\Routing\Console\RebuildRoutesCommand;
+use WebxUi\Routing\Contracts\Spelling;
 use WebxUi\Routing\Http\Controllers\ResolveController;
+use WebxUi\Routing\Spelling\RegistrySpelling;
 
 /**
  * The registry is two halves that meet only in `RouteTypes`: writing (the trait, the observer,
@@ -33,6 +35,8 @@ class RoutingServiceProvider extends ServiceProvider
         $this->app->singleton(Reserved::class);
         $this->app->singleton(UniquePath::class);
         $this->app->singleton(RouteSync::class);
+        // The registry's own spelling, unless a module that normalises addresses bound its own.
+        $this->app->singletonIf(Spelling::class, RegistrySpelling::class);
         $this->app->singleton(Resolver::class);
         $this->app->singleton(Misses::class);
 

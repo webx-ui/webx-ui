@@ -14,7 +14,9 @@ function keysOf(group: string): string[] {
   const source = readFileSync(lang(group), 'utf8')
   const keys = [...source.matchAll(/^ {4}'([^']+)' => /gm)].map((match) => match[1]!)
 
-  return keys.sort()
+  // `checks.blocks.*` is the site audit's, not the panel's: the audit reads a module's check
+  // texts at `<namespace>::checks.<id>`, and this module's ids start with `blocks.`.
+  return keys.filter((key) => !(group === 'checks' && key === 'blocks')).sort()
 }
 
 /**

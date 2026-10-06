@@ -34,7 +34,6 @@ return [
     'normalise-trailing' => 'Barre oblique à la fin',
     'normalise-trailing-help' => 'L’adresse dans l’autre forme redirige. Les fichiers sont laissés tels quels.',
     'normalise-trailing-strip' => 'Sans : /about',
-    'normalise-trailing-add' => 'Avec : /about/',
     'normalise-case' => 'Minuscules',
     'normalise-case-help' => '/About redirige vers /about. Les fichiers gardent leur nom.',
     'links-heading' => 'Titre du maillage interne',

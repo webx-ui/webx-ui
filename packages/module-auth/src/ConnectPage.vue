@@ -13,6 +13,7 @@ import {
   WxText,
 } from '@webx-ui/core'
 import ConnectionList from './ConnectionList.vue'
+import ContentRulesCard from './ContentRulesCard.vue'
 import { useAuthMessages } from './i18n'
 
 /**
@@ -27,7 +28,8 @@ import { useAuthMessages } from './i18n'
  * spec): it can be printed in a letter, read aloud, or left on this page for anybody signed
  * in. What a person has to do themselves is sign in, and that happens on our own screen.
  *
- * Under it are their own connections, because the first thing somebody does after connecting
+ * Then the rules agents read before they write, when the site keeps them. Under them are their
+ * own connections, because the first thing somebody does after connecting
  * is look for proof that it worked — and the second, weeks later, is come back to end it.
  */
 const admin = useAdmin()
@@ -144,21 +146,22 @@ function byHand(value: string): boolean {
     <div class="wx-connect">
       <wx-text class="wx-connect__lead">{{ t('connect.lead') }}</wx-text>
 
-      <!-- The address, large. Everything else on this page is about what to do with it. -->
-      <wx-card bordered>
-        <wx-text size="xs" tone="muted" class="wx-connect__label">{{
-          t('connect.address')
-        }}</wx-text>
+      <!-- The address, large. Everything else on this page is about what to do with it. Its
+           heading is the page's section heading, as every other part of the page has. -->
+      <section class="wx-connect__section">
+        <wx-heading :level="2" size="sm">{{ t('connect.address') }}</wx-heading>
 
-        <div class="wx-connect__row">
-          <code class="wx-connect__url">{{ url }}</code>
+        <wx-card bordered>
+          <div class="wx-connect__row">
+            <code class="wx-connect__url">{{ url }}</code>
 
-          <wx-button type="primary" :disabled="url === ''" @click="copy(url)">
-            <template #icon><wx-icon :name="copied ? 'check' : 'copy'" /></template>
-            {{ copied ? t('connect.copied') : t('connect.copy') }}
-          </wx-button>
-        </div>
-      </wx-card>
+            <wx-button type="primary" :disabled="url === ''" @click="copy(url)">
+              <template #icon><wx-icon :name="copied ? 'check' : 'copy'" /></template>
+              {{ copied ? t('connect.copied') : t('connect.copy') }}
+            </wx-button>
+          </div>
+        </wx-card>
+      </section>
 
       <section class="wx-connect__section">
         <wx-heading :level="2" size="sm">{{ t('connect.how') }}</wx-heading>
@@ -241,6 +244,8 @@ function byHand(value: string): boolean {
         </ol>
       </wx-alert>
 
+      <content-rules-card />
+
       <section class="wx-connect__section">
         <wx-heading :level="2" size="sm">{{ t('connect.mine') }}</wx-heading>
 
@@ -262,11 +267,6 @@ function byHand(value: string): boolean {
 
 .wx-connect__lead {
   max-width: 68ch;
-}
-
-.wx-connect__label {
-  display: block;
-  margin-bottom: var(--wx-space-8);
 }
 
 /* The address and its button on one line, and under each other as soon as they do not fit:

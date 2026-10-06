@@ -91,10 +91,13 @@ final class EventController
      * address from the start, answering 404, so nobody else takes it while it is being written.
      * In a transaction: an address refused leaves no event without one.
      */
-    public function store(EventRequest $request, EventForm $form): JsonResponse
+    /** Named in the site's main language, not the panel's: the form fills the others. */
+    public function store(EventRequest $request, EventForm $form, Locales $locales): JsonResponse
     {
-        $event = $this->db->transaction(static function () use ($request): Event {
-            $event = new Event(['title' => $request->title(), 'slug' => $request->slug()]);
+        $locale = $locales->defaultCode();
+
+        $event = $this->db->transaction(static function () use ($request, $locale): Event {
+            $event = new Event(['title' => [$locale => $request->title()], 'slug' => [$locale => $request->slug()]]);
             $event->save();
 
             return $event;

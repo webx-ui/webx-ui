@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Catalog\Manticore\Panel;
 
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\HasNavSection;
+use WebxUi\Admin\Panel\SystemSections;
 use WebxUi\Catalog\Manticore\IndexStatus;
 
 /**
@@ -15,7 +17,7 @@ use WebxUi\Catalog\Manticore\IndexStatus;
  * the section stays out of the menu rather than explaining a server that is not there. The rebuild
  * is minutes of load on a large catalogue, so it has a permission of its own.
  */
-final class SearchIndexModule extends AbstractModule
+final class SearchIndexModule extends AbstractModule implements HasNavSection
 {
     public const ID = 'search-index';
 
@@ -45,6 +47,11 @@ final class SearchIndexModule extends AbstractModule
     public function group(): string
     {
         return 'system';
+    }
+
+    public function navSection(): string
+    {
+        return SystemSections::SEARCH;
     }
 
     public function permissions(): array

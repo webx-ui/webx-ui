@@ -48,6 +48,8 @@ return [
     'h1-multiple' => 'Заголовков H1 на странице: :count',
     'h1-equals-title' => 'H1 и title совпадают: «:value».',
     'headings-skipped' => 'Пропущено: :skip',
+    'headings-h1-not-first' => 'Первым идёт :level «:value».',
+    'headings-empty' => 'Пустые заголовки (:levels): :count',
     'canonical-missing' => 'Нет canonical ни в теге, ни в заголовке.',
     'canonical-relative' => 'Canonical записан путём: :value',
     'canonical-multiple' => 'Адресов canonical: :count',
@@ -154,4 +156,5 @@ return [
     'column-type' => 'Тип',
     'column-fields' => 'Поля',
     'column-kb' => 'КБ',
+    'column-attrs' => 'Атрибуты',
 ];

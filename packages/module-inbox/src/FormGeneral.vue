@@ -45,8 +45,8 @@ const redirect = option<string>(options, 'redirect', '')
         <wx-input v-model="settings.slug" placeholder="contact" />
       </wx-form-item>
 
-      <wx-form-item :label="t('panel.is-enabled')" :help="t('panel.is-enabled-help')">
-        <wx-switch v-model="settings.is_enabled" />
+      <wx-form-item :help="t('panel.is-enabled-help')">
+        <wx-switch v-model="settings.is_enabled" :label="t('panel.is-enabled')" />
       </wx-form-item>
     </wx-card>
 

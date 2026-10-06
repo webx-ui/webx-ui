@@ -23,6 +23,9 @@ export const adminMessages: Record<string, Messages> = {
     language: 'Language',
     // The one menu group the panel names itself; a module's own group is named by the module.
     system: 'System',
+    'system-site': 'Site',
+    'system-search': 'Search and checks',
+    'system-access': 'Access',
   },
   // The three words on the theme switch. They belong to the panel rather than to whoever
   // places the switch: a core component ships English prop defaults and knows nothing about
@@ -44,6 +47,17 @@ export const adminMessages: Record<string, Messages> = {
     // Said out loud to a screen reader while the little wheel turns, and after it stops.
     saving: 'Saving…',
     saved: 'Saved',
+    unpublish: 'Take off the site',
+    'unpublish-title': 'Take it off the site?',
+    'unpublish-text':
+      'Visitors will no longer see it: its page will answer «not found» and leave the sitemap and search. Everything written stays in the panel, and «Publish» brings it back at the same address.',
+    'keep-published': 'Keep it on the site',
+    'discard-title': 'Discard changes?',
+    'discard-text':
+      'The published version comes back. Everything changed since publishing is lost and cannot be brought back.',
+    'keep-changes': 'Keep',
+    'publish-moves': 'The old address :old will lead to the new one.',
+    unpublished: 'Taken off the site.',
   },
   // The page behind a '?'. Only the heading is the panel's: what the page says belongs to
   // whatever is being explained, and travels with that module's own words.
@@ -213,6 +227,9 @@ export const adminMessages: Record<string, Messages> = {
     'hash-length': 'An anchor may be at most :max characters long.',
     'hash-shape': 'An anchor is a name on the page: no spaces in it.',
     'not-localized': 'A link is the same in every language and cannot be translated.',
+    'address-fallback':
+      "No address in this language yet — this is the address in :locale, the site's main language.",
+    'address-fallback-label': 'Address in the main language',
   },
   // The categories every module shares: the refusals the server says, and the words of the
   // shared screens under a module's own.

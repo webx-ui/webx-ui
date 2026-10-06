@@ -16,8 +16,6 @@ return [
     'publish-nowhere' => 'Todavía no tiene dirección en este idioma, así que nada responderá.',
     'preview' => 'Vista previa',
     'discard' => 'Descartar cambios',
-    'discard-title' => '¿Descartar lo que está pendiente?',
-    'discard-text' => 'La vacante vuelve a lo que el sitio está mostrando. Lo escrito desde entonces no queda registrado en ningún lugar.',
     'discarded' => 'La vacante volvió a lo publicado.',
     'conflict-title' => 'La vacante cambió mientras la editabas',
     'conflict-mine' => 'Conservar la mía',

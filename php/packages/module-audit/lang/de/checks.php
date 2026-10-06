@@ -372,6 +372,18 @@ return [
             'why' => 'Screenreader navigieren über Überschriften, und eine Lücke wirkt wie fehlender Inhalt.',
             'fix' => 'Verwenden Sie die Ebenen der Reihe nach; das Aussehen bestimmen Sie über Styles, nicht über die Ebene.',
         ],
+        'h1_not_first' => [
+            'title' => 'H1 ist nicht die erste Überschrift',
+            'found' => 'Vor der H1 steht eine andere Überschrift.',
+            'why' => 'Suchmaschinen und Screenreader nehmen die erste Überschrift als Beginn des Inhalts; ein Block darüber, der eine Überschrift nur für die Optik nutzt, schiebt den Seitennamen nach unten.',
+            'fix' => 'Machen Sie die H1 zur ersten Überschrift; Blöcke darüber bekommen normalen Text oder ein gestaltetes Element.',
+        ],
+        'empty' => [
+            'title' => 'Leere Überschrift',
+            'found' => 'Eine Überschrift hat keinen Text — nur ein Symbol, ein Bild oder gar nichts.',
+            'why' => 'Ein Screenreader kündigt eine Überschrift ohne Inhalt an, und Suchmaschinen bekommen eine Ebene ohne Bedeutung.',
+            'fix' => 'Schreiben Sie die Überschrift oder machen Sie das Element zu normalem Text, wenn es nur der Optik dient.',
+        ],
     ],
     'canonical' => [
         'missing' => [

@@ -31,8 +31,8 @@ const captchas = computed(() => [
 
 <template>
   <wx-card>
-    <wx-form-item :label="t('panel.honeypot')" :help="t('panel.honeypot-help')">
-      <wx-switch v-model="honeypot" />
+    <wx-form-item :help="t('panel.honeypot-help')">
+      <wx-switch v-model="honeypot" :label="t('panel.honeypot')" />
     </wx-form-item>
 
     <wx-form-item :label="t('panel.min-seconds')" :help="t('panel.min-seconds-help')">

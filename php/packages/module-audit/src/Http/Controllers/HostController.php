@@ -91,7 +91,10 @@ final class HostController
     /**
      * Where a host stands: the pages that link to it, and the fields of the database that hold it.
      *
-     * @return array{pages: list<array<string, mixed>>, fields: list<array<string, mixed>>}
+     * `targets` is the same links by where they lead: a font or a profile link sits in the layout,
+     * and by page it is one line forty times over. Each target counts all its pages and lists fifty.
+     *
+     * @return array{pages: list<array<string, mixed>>, targets: list<array<string, mixed>>, fields: list<array<string, mixed>>}
      */
     public function places(string $host, ?AuditRun $crawled, ?AuditRun $done): array
     {
@@ -105,12 +108,62 @@ final class HostController
                 ->orderBy('audit_links.id')
                 ->limit(50)->get(['audit_pages.id as page_id', 'audit_pages.url as page', 'audit_links.to_url as url', 'audit_links.kind', 'audit_links.anchor', 'audit_links.rel', 'audit_links.status'])
                 ->map(static fn (object $row): array => (array) $row)->all(),
+            'targets' => $crawled === null ? [] : $this->targets($host, $crawled),
             'fields' => $done === null ? [] : DB::table('audit_content_urls')
                 ->where('run_id', $done->id)->where('host', $host)
                 ->orderBy('id')
                 ->limit(50)->get(['source', 'record_id', 'record_label', 'field', 'locale', 'url', 'published', 'edit_url'])
                 ->map(static fn (object $row): array => (array) $row)->all(),
         ];
+    }
+
+    /**
+     * The addresses on a host the pages point at, broken first, then by how many pages have them.
+     *
+     * `rel` and `target` are the link's when every link to the address has the same, and `mixed`
+     * says they differ — then each place carries its own.
+     *
+     * @return list<array{url: string, kind: string, status: int|null, pages: int, rel: string|null, target: string|null, mixed: bool, places: list<array{page: string, anchor: string|null, rel: string|null, target: string|null}>}>
+     */
+    private function targets(string $host, AuditRun $crawled): array
+    {
+        $links = static fn () => DB::table('audit_links')->where('audit_links.run_id', $crawled->id)->where('audit_links.host', $host);
+
+        return $links()
+            ->groupBy('to_url', 'kind')
+            ->orderByRaw('min(case when status >= 400 or status = 0 then 0 else 1 end)')
+            ->orderByRaw('count(distinct from_page_id) desc')
+            ->orderBy('to_url')
+            ->limit(50)
+            ->get([
+                'to_url', 'kind', DB::raw('max(status) as status'), DB::raw('count(distinct from_page_id) as pages'),
+                DB::raw('max(rel) as rel'), DB::raw('max(target) as target'),
+                DB::raw("count(distinct coalesce(rel, '')) + count(distinct coalesce(target, '')) as variants"),
+            ])
+            ->map(static fn (object $target): array => [
+                'url' => (string) $target->to_url,
+                'kind' => (string) $target->kind,
+                'status' => $target->status === null ? null : (int) $target->status,
+                'pages' => (int) $target->pages,
+                'rel' => $target->variants > 2 || $target->rel === null ? null : (string) $target->rel,
+                'target' => $target->variants > 2 || $target->target === null ? null : (string) $target->target,
+                'mixed' => $target->variants > 2,
+                'places' => $links()
+                    ->join('audit_pages', 'audit_pages.id', '=', 'audit_links.from_page_id')
+                    ->where('audit_links.to_url', $target->to_url)->where('audit_links.kind', $target->kind)
+                    ->groupBy('audit_pages.id', 'audit_pages.url')
+                    ->orderByRaw('min(audit_links.id)')
+                    ->limit(50)
+                    ->get(['audit_pages.url as page', DB::raw('min(audit_links.anchor) as anchor'), DB::raw('min(audit_links.rel) as rel'), DB::raw('min(audit_links.target) as target')])
+                    ->map(static fn (object $place): array => [
+                        'page' => (string) $place->page,
+                        'anchor' => $place->anchor === null ? null : (string) $place->anchor,
+                        'rel' => $place->rel === null ? null : (string) $place->rel,
+                        'target' => $place->target === null ? null : (string) $place->target,
+                    ])
+                    ->all(),
+            ])
+            ->all();
     }
 
     /**

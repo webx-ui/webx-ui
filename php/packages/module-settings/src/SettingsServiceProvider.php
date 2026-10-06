@@ -33,6 +33,7 @@ class SettingsServiceProvider extends ServiceProvider
         // The reference screen. A project lays its own tabs over it from its provider, which
         // boots after this one — `Screens::extend('settings.index', ...)`.
         $this->app->make(ScreenRegistry::class)->register(Settings::SCREEN, __DIR__.'/../resources/screens/index.json');
+        $this->app->make(ScreenRegistry::class)->register(Settings::CONTENT_SCREEN, __DIR__.'/../resources/screens/content.json');
 
         if (! $this->app->runningInConsole()) {
             return;

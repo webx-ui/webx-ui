@@ -143,6 +143,23 @@ class PanelTest extends TestCase
         $this->assertTrue($child['available']);
     }
 
+    public function test_a_panel_in_a_language_the_site_lacks_reads_the_tree_in_the_sites_own(): void
+    {
+        $thing = $this->thing('about', 'About');
+        $menu = $this->menu('header');
+        $this->item(['target' => 'entity', 'entity_type' => 'thing', 'entity_id' => $thing->getKey()], $menu);
+        $this->item(['title' => ['en' => 'Book'], 'target' => 'url', 'url' => 'https://booking.test/'], $menu);
+
+        $tree = $this->actingAs($this->editor(), 'cms')
+            ->getJson($this->api('header/items'), ['X-Webx-Locale' => 'ru'])
+            ->assertOk()
+            ->json('data');
+
+        $this->assertStringEndsWith('/about', (string) $tree[0]['href']);
+        $this->assertTrue($tree[0]['available']);
+        $this->assertSame('Book', $tree[1]['label']);
+    }
+
     public function test_a_draft_target_is_offered_and_marked_rather_than_left_out(): void
     {
         $thing = $this->thing('draft', 'Draft', published: false);

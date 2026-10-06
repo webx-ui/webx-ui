@@ -67,9 +67,11 @@ final class ServiceController
      * holds its address — answering 404 — until somebody publishes: an address held from the
      * start is one nobody else can take while the service is being written.
      */
-    public function store(ServiceRequest $request): JsonResponse
+    /** Named in the site's main language, not the panel's: the form fills the others. */
+    public function store(ServiceRequest $request, Locales $locales): JsonResponse
     {
-        $service = new Service(['title' => $request->title(), 'slug' => $request->slug()]);
+        $locale = $locales->defaultCode();
+        $service = new Service(['title' => [$locale => $request->title()], 'slug' => [$locale => $request->slug()]]);
         $service->save();
 
         return ApiResponse::data(new ServiceResource($this->loaded($service->refresh())), 201);

@@ -391,17 +391,17 @@ onMounted(() => {
               "
             />
           </wx-form-item>
-          <wx-form-item :label="t('panel.filter-attention')">
-            <wx-switch v-model="attention" size="sm" />
+          <wx-form-item>
+            <wx-switch v-model="attention" size="sm" :label="t('panel.filter-attention')" />
           </wx-form-item>
-          <wx-form-item :label="t('panel.filter-published')">
-            <wx-switch v-model="published" size="sm" />
+          <wx-form-item>
+            <wx-switch v-model="published" size="sm" :label="t('panel.filter-published')" />
           </wx-form-item>
-          <wx-form-item :label="t('panel.filter-empty')">
-            <wx-switch v-model="empty" size="sm" />
+          <wx-form-item>
+            <wx-switch v-model="empty" size="sm" :label="t('panel.filter-empty')" />
           </wx-form-item>
-          <wx-form-item :label="t('panel.filter-trashed')">
-            <wx-switch v-model="trashed" size="sm" />
+          <wx-form-item>
+            <wx-switch v-model="trashed" size="sm" :label="t('panel.filter-trashed')" />
           </wx-form-item>
 
           <wx-button v-if="applied.length > 0" variant="text" size="sm" block @click="clearFilters">

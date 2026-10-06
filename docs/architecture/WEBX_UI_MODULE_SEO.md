@@ -266,8 +266,10 @@ Middleware `webx.redirects` — **глобальная, не в группе `we
 `seo.view`, `seo.manage`, `order()` — рядом с настройками (у `module-settings` 800; взять 700,
 чтобы SEO стоял выше), `icon()` — уточнить имя в наборе ядра.
 
-MCP-инструменты (`ProvidesMcpTools`): `urls_list`, `urls_get`, `urls_set` (mutating, `dry_run`),
-`test_url`, `redirects_list`, `redirects_set`, `import_redirects` (список «старый → новый»).
+MCP-инструменты (`ProvidesMcpTools`): `urls_list`, `urls_get`, `urls_set`, `urls_delete` (mutating,
+`dry_run`), `test_url`, `redirects_list`, `redirects_set`, `redirects_delete`, `import_redirects`
+(список «старый → новый»). `test_url` спрашивает источники с сущностью, которую реестр адресов
+нашёл по этому адресу, — как публичная страница.
 Скоупы `seo:read` / `seo:write`.
 
 ## 12. npm-половина

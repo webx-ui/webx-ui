@@ -16,8 +16,6 @@ return [
     'publish-nowhere' => 'Ainda não tem endereço neste idioma, então nada vai responder.',
     'preview' => 'Pré-visualização',
     'discard' => 'Descartar alterações',
-    'discard-title' => 'Descartar o que está pendente?',
-    'discard-text' => 'A vaga volta ao que o site está mostrando. O que foi escrito desde então não fica registrado em lugar nenhum.',
     'discarded' => 'A vaga voltou ao que está publicado.',
     'conflict-title' => 'A vaga mudou enquanto você a editava',
     'conflict-mine' => 'Manter a minha',

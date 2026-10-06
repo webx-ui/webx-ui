@@ -5,6 +5,7 @@ import type {
   PageInput,
   PageLevel,
   PageMoveResult,
+  PageRestore,
   PageRow,
   PageSave,
   PageVersion,
@@ -31,10 +32,21 @@ export interface PagesApi {
   duplicate(id: number): Promise<PageRow>
   publish(id: number): Promise<PageRow>
   unpublish(id: number): Promise<PageRow>
+  /** Drops the draft and answers the page as the site shows it. */
+  discard(id: number): Promise<PageDetail>
   /** Into the bin, with the branch under it. Answers how many went. */
   remove(id: number): Promise<number>
   /** Out of the bin, with whatever went in with it. Answers how many came back. */
-  restore(id: number): Promise<number>
+  restore(id: number): Promise<PageRestore>
+  /** Deletes a page in the bin for good, with its branch; answers how many pages went. */
+  purge(id: number): Promise<number>
+  /**
+   * How many pages emptying the bin would delete: every page in it, those that went in with a
+   * parent included — what the list shows is only the top of each branch, and maybe a search.
+   */
+  binCount(): Promise<number>
+  /** Empties the bin; answers how many pages went. */
+  purgeBin(): Promise<number>
   /** The publications, newest first. */
   versions(id: number): Promise<PageVersion[]>
   /** An old publication becomes the draft; putting it on the site is a separate step. */
@@ -70,14 +82,22 @@ export function createPagesApi(admin: AdminContext): PagesApi {
     duplicate: (id) => admin.http.post<{ data: PageRow }>(`${base}/${id}/duplicate`, {}).then(data),
     publish: (id) => admin.http.post<{ data: PageRow }>(`${base}/${id}/publish`, {}).then(data),
     unpublish: (id) => admin.http.post<{ data: PageRow }>(`${base}/${id}/unpublish`, {}).then(data),
+    discard: (id) => admin.http.post<{ data: PageDetail }>(`${base}/${id}/discard`, {}).then(data),
     remove: (id) =>
       admin.http
         .delete<{ data: { trashed: number } }>(`${base}/${id}`)
         .then((body) => body.data.trashed),
-    restore: (id) =>
+    restore: (id) => admin.http.post<{ data: PageRestore }>(`${base}/${id}/restore`, {}).then(data),
+    purge: (id) =>
       admin.http
-        .post<{ data: { restored: number } }>(`${base}/${id}/restore`, {})
-        .then((body) => body.data.restored),
+        .delete<{ data: { purged: number } }>(`${base}/${id}/purge`)
+        .then((body) => body.data.purged),
+    binCount: () =>
+      admin.http.get<{ data: { pages: number } }>(`${base}/bin`).then((body) => body.data.pages),
+    purgeBin: () =>
+      admin.http
+        .delete<{ data: { purged: number } }>(`${base}/bin`)
+        .then((body) => body.data.purged),
     versions: (id) => admin.http.get<{ data: PageVersion[] }>(`${base}/${id}/versions`).then(data),
     restoreVersion: (id, number) =>
       admin.http

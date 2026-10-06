@@ -13,4 +13,12 @@ return [
     'ok-bare' => 'Brak gołych selektorów elementów.',
     'ok-container' => 'O szerokości decydują zapytania kontenera.',
     'ok-variables' => 'Każda zmienna szablonu jest polem schematu.',
+    'blocks' => [
+        'stray_values' => [
+            'title' => 'Wartości bloku dla pól, których typ nie ma',
+            'found' => 'Bloki trzymają wartości pól, których ich typ nie definiuje — zostały po imporcie albo po polu usuniętym z typu.',
+            'why' => 'Odwiedzający ich nie widzi, ale są w danych edytora i w tym, co czyta agent, i wracają jako błędny podpis bloku.',
+            'fix' => 'Usuń je poprawką albo dla całej strony poleceniem php artisan webx:blocks:prune. Blok typu, którego już nie ma, nie jest ruszany. Elementy repeatera są porównywane z jego polami.',
+        ],
+    ],
 ];

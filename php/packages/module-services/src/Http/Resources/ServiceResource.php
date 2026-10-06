@@ -10,6 +10,7 @@ use WebxUi\Localization\Locales;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Storage\FileUrls;
 use WebxUi\Routing\Models\Route;
+use WebxUi\Routing\PanelAddress;
 use WebxUi\Services\Models\Service;
 use WebxUi\Services\Models\ServiceCategory;
 use WebxUi\Services\Panel\Revision;
@@ -33,9 +34,9 @@ final class ServiceResource extends JsonResource
         /** @var Service $service */
         $service = $this->resource;
 
-        $locale = app(Locales::class)->current();
+        $locale = app(Locales::class)->content();
         $shown = $service->hasDraft() ? $service->withDraft() : $service;
-        $canonical = $this->canonical($service, $locale);
+        [$canonical, $addressLocale, $fallback] = PanelAddress::pick(fn (string $code): ?Route => $this->canonical($service, $code), $locale);
 
         return [
             'id' => (int) $service->getKey(),
@@ -44,7 +45,12 @@ final class ServiceResource extends JsonResource
             'lead' => (string) $shown->getTranslation('lead', $locale, fallback: false),
             // Null where the service names no slug in this language: it has no address there.
             'path' => $canonical?->path,
-            'url' => $canonical === null ? null : $service->url($locale),
+            // Where publishing moves it, when a renamed slug waits in the draft.
+            'next_path' => PanelAddress::afterPublishing($service, $addressLocale, $canonical?->path),
+            'url' => $canonical === null ? null : $service->url($addressLocale),
+            // The language of the address when it is the site's main one, shown because this
+            // language has none: the row says so in a tooltip rather than instead of the address.
+            'address_locale' => $fallback,
             'status' => $service->status(),
             'position' => (int) $service->position,
             'published_at' => $service->published_at?->toAtomString(),

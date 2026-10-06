@@ -11,6 +11,7 @@ return [
     'home-no-siblings' => 'La home page non ha vicine; una pagina può andare soltanto al suo interno.',
     'move-into-self' => 'Una pagina non può essere spostata dentro sé stessa né dentro le proprie pagine.',
     'parent-trashed' => 'Quella pagina è nel cestino. Ripristinala prima di metterci qualcosa dentro.',
+    'not-in-bin' => 'Solo una pagina nel cestino può essere eliminata per sempre. Eliminatela prima.',
     'slug-shape' => 'Un indirizzo accetta lettere, cifre, trattini e trattini bassi.',
 
     // The editor.

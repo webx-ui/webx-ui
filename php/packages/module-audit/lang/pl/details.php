@@ -48,6 +48,8 @@ return [
     'h1-multiple' => 'Nagłówków H1 na stronie: :count',
     'h1-equals-title' => 'H1 i title są takie same: „:value”.',
     'headings-skipped' => 'Pominięto: :skip',
+    'headings-h1-not-first' => 'Pierwszy jest :level «:value».',
+    'headings-empty' => 'Puste nagłówki (:levels): :count',
     'canonical-missing' => 'Brak canonical w znaczniku i w nagłówku.',
     'canonical-relative' => 'Canonical jest zapisany jako ścieżka: :value',
     'canonical-multiple' => 'Adresów canonical: :count',
@@ -154,4 +156,5 @@ return [
     'column-type' => 'Typ',
     'column-fields' => 'Pola',
     'column-kb' => 'KB',
+    'column-attrs' => 'Atrybuty',
 ];

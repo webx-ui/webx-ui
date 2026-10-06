@@ -30,8 +30,17 @@ final class CategoryResource extends JsonResource
         $category = $this->resource;
 
         $kind = $category::categoryKind();
-        $locale = app(Locales::class)->current();
+        $locales = app(Locales::class);
+        $locale = $locales->content();
         $path = $this->path($category, $locale);
+        $addressLocale = $locale;
+
+        // No address in this language: the main language's, named, so the row says so in a
+        // tooltip rather than instead of the address (as `PanelAddress` does for records).
+        if ($path === null && $locales->defaultCode() !== $locale) {
+            $path = $this->path($category, $locales->defaultCode());
+            $addressLocale = $path === null ? $locale : $locales->defaultCode();
+        }
         $count = $category->getAttribute($kind->countKey());
 
         return [
@@ -42,7 +51,8 @@ final class CategoryResource extends JsonResource
             // Null rather than an empty string where the category names no slug in this
             // language: a category translated into one language has no address in the others.
             'path' => $path,
-            'url' => $path === null || ! method_exists($category, 'urlOf') ? null : $category->urlOf($path, $locale),
+            'url' => $path === null || ! method_exists($category, 'urlOf') ? null : $category->urlOf($path, $addressLocale),
+            'address_locale' => $addressLocale === $locale ? null : $addressLocale,
             'is_visible' => (bool) $category->getAttribute('is_visible'),
             'position' => (int) $category->getAttribute('position'),
             $kind->countKey() => $count === null ? $category->itemCount() : (int) $count,

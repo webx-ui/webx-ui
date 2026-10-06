@@ -15,6 +15,7 @@ use WebxUi\Blog\Panel\ArticleFilters;
 use WebxUi\Blog\Panel\ArticleForm;
 use WebxUi\Blog\Panel\ArticleList;
 use WebxUi\Blog\Panel\Revision;
+use WebxUi\Localization\Locales;
 
 /**
  * The section's list, and one article as its editor opens it (§11).
@@ -74,9 +75,11 @@ final class ArticleController
      * registry's design rather than an oversight: an address held from the start is an address
      * nobody else can take while the article is being written.
      */
-    public function store(ArticleRequest $request): JsonResponse
+    /** Named in the site's main language, not the panel's — see `PageController::store()`. */
+    public function store(ArticleRequest $request, Locales $locales): JsonResponse
     {
-        $article = new Article(['title' => $request->title(), 'slug' => $request->slug()]);
+        $locale = $locales->defaultCode();
+        $article = new Article(['title' => [$locale => $request->title()], 'slug' => [$locale => $request->slug()]]);
         $article->author_id = $this->author($request);
         $article->save();
 

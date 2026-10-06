@@ -58,6 +58,10 @@ export interface ArticleRow {
   lead: string
   /** `null` — this article names no address in the language the panel is open in (§9). */
   path: string | null
+  /** Where publishing moves it: a slug renamed in the draft, `null` when publishing moves nothing. */
+  next_path?: string | null
+  /** The language of `path` when it is the site's main one, shown because this language has none. */
+  address_locale?: string | null
   url: string | null
   status: ArticleStatus
   pinned: boolean
@@ -221,6 +225,8 @@ export interface TagRow {
   slug: string
   /** The address a SEO rule for this page would be written for: language prefix and all. */
   path: string | null
+  /** The language of `path` when it is the site's main one, shown because this language has none. */
+  address_locale?: string | null
   url: string | null
   noindex: boolean
   indexing: TagIndexing

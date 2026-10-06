@@ -12,8 +12,6 @@ return [
     'publish-nowhere' => 'W tym języku nie ma jeszcze adresu, więc nic nie odpowie.',
     'preview' => 'Podgląd',
     'discard' => 'Odrzuć zmiany',
-    'discard-title' => 'Odrzucić to, co czeka?',
-    'discard-text' => 'Usługa wróci do tego, co pokazuje strona. To, co napisano od tamtej pory, nigdzie nie będzie widoczne.',
     'discarded' => 'Usługa wróciła do opublikowanej wersji.',
     'conflict-title' => 'Usługa zmieniła się podczas Twojej edycji',
     'conflict-mine' => 'Zachowaj moją',

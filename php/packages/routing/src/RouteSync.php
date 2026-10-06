@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Exceptions\PathRejected;
 use WebxUi\Routing\Models\Route;
+use WebxUi\Routing\Models\TrashedAlias;
 
 /**
  * Keeps the registry in step with the entities.
@@ -25,6 +26,13 @@ class RouteSync
 {
     /** A collision is settled by one retry in practice; three is for a pathological import. */
     private const RETRIES = 3;
+
+    /**
+     * What the last restore of each entity did with its trail, until somebody asks.
+     *
+     * @var array<string, Revival>
+     */
+    private array $revivals = [];
 
     public function __construct(
         private readonly RouteTypes $types,
@@ -74,10 +82,114 @@ class RouteSync
         return $moved;
     }
 
-    /** The entity is gone, so its addresses stop answering — aliases included (§9). */
+    /** The entity is gone for good, so its addresses stop answering — aliases included (§9). */
     public function forget(Model $entity): void
     {
         Route::query()->forEntity($entity)->delete();
+        TrashedAlias::query()->forEntity($entity)->delete();
+    }
+
+    /**
+     * The entity went into the bin: its addresses stop answering and free their paths, and the
+     * former ones are kept aside so that a restore can bring the trail back.
+     *
+     * The canonical address is not kept: the slug still holds it, and the restore's own save
+     * recomputes it — or is refused if somebody took it meanwhile.
+     */
+    public function trash(Model $entity): void
+    {
+        DB::transaction(static function () use ($entity): void {
+            $now = now();
+            $kept = Route::query()
+                ->forEntity($entity)
+                ->alias()
+                ->get()
+                ->map(static fn (Route $alias): array => [
+                    'locale' => $alias->locale,
+                    'path' => $alias->path,
+                    'entity_type' => $alias->entity_type,
+                    'entity_id' => $alias->entity_id,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ])
+                ->all();
+
+            // A second trip to the bin replaces what the first one kept rather than doubling it.
+            TrashedAlias::query()->forEntity($entity)->delete();
+
+            if ($kept !== []) {
+                TrashedAlias::query()->insert($kept);
+            }
+
+            Route::query()->forEntity($entity)->delete();
+        });
+    }
+
+    /**
+     * The entity came out of the bin: its former addresses lead to it again — each one that is
+     * still free and in a language the entity has an address in. A path another entity took
+     * meanwhile stays theirs; that alias is dropped, and {@see revival()} says so.
+     */
+    public function revive(Model $entity): Revival
+    {
+        $revival = DB::transaction(static function () use ($entity): Revival {
+            $restored = [];
+            $dropped = [];
+
+            foreach (TrashedAlias::query()->forEntity($entity)->orderBy('id')->get() as $former) {
+                $canonical = Route::query()->forEntity($entity)->canonical()->where('locale', $former->locale)->first();
+                $standing = Route::query()->where('locale', $former->locale)->where('path', $former->path)->first();
+
+                if ($standing !== null && $standing->entity_type === $entity->getMorphClass() && $standing->entity_id === $entity->getKey()) {
+                    // The entity answers there itself — renamed back to it before the delete.
+                    continue;
+                }
+
+                if ($canonical === null || $standing !== null) {
+                    $dropped[] = '/'.$former->path;
+
+                    continue;
+                }
+
+                Route::query()->create([
+                    'locale' => $former->locale,
+                    'path' => $former->path,
+                    'kind' => Route::ALIAS,
+                    'target_id' => $canonical->getKey(),
+                    'entity_type' => $entity->getMorphClass(),
+                    'entity_id' => $entity->getKey(),
+                ]);
+
+                $restored[] = '/'.$former->path;
+            }
+
+            TrashedAlias::query()->forEntity($entity)->delete();
+
+            return new Revival($restored, $dropped);
+        });
+
+        $this->revivals[$this->key($entity)] = $revival;
+
+        return $revival;
+    }
+
+    /**
+     * What the last restore of this entity did with its trail — once: the answer is handed to
+     * whoever restored it and then forgotten, so a long-running worker does not collect them.
+     */
+    public function revival(Model $entity): Revival
+    {
+        $key = $this->key($entity);
+        $revival = $this->revivals[$key] ?? new Revival;
+
+        unset($this->revivals[$key]);
+
+        return $revival;
+    }
+
+    private function key(Model $entity): string
+    {
+        return $entity->getMorphClass().'|'.(string) $entity->getKey();
     }
 
     /**

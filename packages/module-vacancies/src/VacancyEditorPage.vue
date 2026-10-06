@@ -61,6 +61,7 @@ const dates = useDates()
 useVacanciesMessages()
 
 const t = useTranslate('webx-vacancies')
+const panel = useTranslate('webx-admin')
 /* Not the server's `message`: the panel says how a request failed in its own words. */
 const message = useErrorText()
 
@@ -263,10 +264,11 @@ async function discard(): Promise<void> {
   if (!vacancy.value) return
 
   const agreed = await confirm({
-    title: t('editor.discard-title'),
-    message: t('editor.discard-text'),
+    title: panel('editor.discard-title'),
+    message: panel('editor.discard-text'),
     confirmText: t('editor.discard'),
-    cancelText: t('panel.cancel'),
+    // Not «Cancel»: beside «Discard changes» the two read as the same word.
+    cancelText: panel('editor.keep-changes'),
     tone: 'danger',
   })
 
@@ -286,24 +288,34 @@ async function discard(): Promise<void> {
 
 /** Publishing is asked about, because it is the one action here that visitors see. */
 async function publish(): Promise<void> {
+  // Saved before asking: the question names the address the draft will publish at, and only a
+  // saved draft has one — an address typed but not saved was asked about under the old one.
+  if (dirty.value) await save()
+  if (conflict.value || dirty.value) return
+
   const row = vacancy.value
 
   if (!row) return
 
+  // Publishing moves a renamed slug, so the question names where the page will be, not where
+  // it is — and says the old address will lead there, since that is what happens to it.
+  const next = row.next_path ?? row.path
+  const old =
+    row.next_path != null && row.path !== null
+      ? ` ${panel('editor.publish-moves', { old: `/${row.path}` })}`
+      : ''
+
   const agreed = await confirm({
     title: t('editor.publish-title', { title: title.value || row.title }),
     message:
-      row.path === null
+      next === null
         ? t('editor.publish-nowhere')
-        : t('editor.publish-text', { address: `/${row.path}` }),
+        : t('editor.publish-text', { address: `/${next}` }) + old,
     confirmText: t('panel.publish'),
     cancelText: t('panel.cancel'),
   })
 
   if (!agreed) return
-
-  if (dirty.value) await save()
-  if (conflict.value) return
 
   working.value = true
 
@@ -339,6 +351,37 @@ async function duplicate(): Promise<void> {
     toast.success(t('panel.duplicated'))
     // The same route with another id: the editor stays and reads the copy (`watch(id)`).
     await router.push({ path: `${list.value}/${copy.vacancy.id}`, query: { ...route.query } })
+  } catch (error) {
+    toast.danger(message(error))
+  } finally {
+    working.value = false
+  }
+}
+
+/**
+ * Taking it off the site is asked about, as publishing is: visitors are who notice. Nothing
+ * written is lost, and «Publish» brings it back at the same address.
+ */
+async function unpublish(): Promise<void> {
+  const row = vacancy.value
+
+  if (!row) return
+
+  const agreed = await confirm({
+    title: panel('editor.unpublish-title'),
+    message: panel('editor.unpublish-text'),
+    confirmText: panel('editor.unpublish'),
+    cancelText: panel('editor.keep-published'),
+  })
+
+  if (!agreed) return
+
+  working.value = true
+
+  try {
+    await api.unpublish(row.id)
+    await load(true)
+    toast.success(panel('editor.unpublished'))
   } catch (error) {
     toast.danger(message(error))
   } finally {
@@ -404,6 +447,20 @@ const actions = computed<ScreenAction[]>(() => {
       label: t('panel.open-on-site'),
       icon: 'link',
       href: vacancy.value.url,
+    })
+  }
+
+  // On the site now: the way off it is a button of its own beside «Open on the site», not a
+  // line in the ···. Hiding loses nothing and is undone by «Publish».
+  if (
+    canManage.value &&
+    (vacancy.value?.status === 'published' || vacancy.value?.status === 'modified')
+  ) {
+    leads.push({
+      key: 'unpublish',
+      label: panel('editor.unpublish'),
+      icon: 'eye-off',
+      run: () => void unpublish(),
     })
   }
 

@@ -97,6 +97,79 @@ final class ScreenValues
     }
 
     /**
+     * An agent's partial edit laid over what the record holds, before it goes to `validate`.
+     *
+     * The panel sends a translated field whole — every language the form shows — so replacing it
+     * is right there. An agent sends what it means to change: `{"slug": {"de": …}}` is the German
+     * address and nothing else, and replacing the field with it erased every other language. So a
+     * translated field is merged language by language, a language set to null is the one way to
+     * empty it, and a plain string is the site's main language.
+     *
+     * A language the site is not published in is refused rather than dropped: `validate` keeps
+     * only the site's languages, and an edit made only of foreign ones used to arrive empty and
+     * empty the field. The panel never gets here — a draft can still hold words in a language the
+     * site has since dropped, and an editor's save must not fail on them.
+     *
+     * @param  array<string, mixed>  $current  The record's values as its form describes them.
+     * @param  array<string, mixed>  $input
+     * @return array<string, mixed>
+     *
+     * @throws ValidationException
+     */
+    public function patch(string $screen, array $current, array $input): array
+    {
+        $errors = [];
+        $codes = $this->locales->codes();
+
+        foreach ($this->screens->fields($screen) as $node) {
+            /** @var string $name */
+            $name = $node['name'];
+
+            if (($node['localized'] ?? false) !== true || ! array_key_exists($name, $input)) {
+                continue;
+            }
+
+            $sent = $input[$name];
+
+            if (is_string($sent)) {
+                $sent = [$this->locales->content() => $sent];
+            }
+
+            if (! is_array($sent)) {
+                continue;
+            }
+
+            $foreign = array_diff(array_map(strval(...), array_keys($sent)), $codes);
+
+            if ($foreign !== []) {
+                $errors[$name] = [
+                    'has a value in ['.implode(', ', $foreign).'], which this site is not published in. It has: '.implode(', ', $codes).'.',
+                ];
+
+                continue;
+            }
+
+            $merged = is_array($current[$name] ?? null) ? $current[$name] : [];
+
+            foreach ($sent as $locale => $value) {
+                if ($value === null) {
+                    unset($merged[$locale]);
+                } else {
+                    $merged[$locale] = $value;
+                }
+            }
+
+            $input[$name] = $merged;
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
+
+        return $input;
+    }
+
+    /**
      * What the site reads for one field: the current language of a localized value, with the
      * usual fallbacks, then whatever the type makes of it.
      *

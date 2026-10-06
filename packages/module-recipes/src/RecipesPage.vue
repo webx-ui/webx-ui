@@ -9,6 +9,7 @@ import {
   WxRowMenu,
   type RowAction,
   type ScreenAction,
+  WxAddressNote,
 } from '@webx-ui/module-admin'
 import {
   confirm,
@@ -421,7 +422,9 @@ const actions = computed<ScreenAction[]>(() =>
 
               <span class="wx-recipe-row__name">
                 <span class="wx-recipe-row__title">{{ item.title }}</span>
-                <span class="wx-recipe-row__address">{{ address(item) }}</span>
+                <span class="wx-recipe-row__address"
+                  >{{ address(item) }}<wx-address-note v-if="!inBin" :locale="item.address_locale"
+                /></span>
               </span>
 
               <span class="wx-recipe-row__facts">

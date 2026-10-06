@@ -33,8 +33,10 @@ final class SettingsDemo
     {
         $nodes = [];
 
-        foreach (Tree::fields($this->screens->tree(Settings::SCREEN)) as $node) {
-            $nodes[(string) $node['name']] = $node;
+        foreach (Settings::SCREENS as $screen) {
+            foreach (Tree::fields($this->screens->tree($screen)) as $node) {
+                $nodes[(string) $node['name']] = $node;
+            }
         }
 
         foreach ($this->read() as $key => $value) {

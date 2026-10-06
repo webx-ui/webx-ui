@@ -16,8 +16,6 @@ return [
     'publish-nowhere' => 'Non ha ancora un indirizzo in questa lingua, quindi nulla risponderà.',
     'preview' => 'Anteprima',
     'discard' => 'Scarta le modifiche',
-    'discard-title' => 'Scartare ciò che è in sospeso?',
-    'discard-text' => 'L\'offerta torna a ciò che mostra il sito. Ciò che è stato scritto da allora non è elencato da nessuna parte.',
     'discarded' => 'L\'offerta è tornata alla versione pubblicata.',
     'conflict-title' => 'L\'offerta è cambiata mentre la stavi modificando',
     'conflict-mine' => 'Mantieni la mia versione',

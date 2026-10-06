@@ -12,8 +12,6 @@ return [
     'publish-nowhere' => 'Il n’a pas encore d’adresse dans cette langue, rien ne répondra donc.',
     'preview' => 'Aperçu',
     'discard' => 'Annuler les modifications',
-    'discard-title' => 'Abandonner ce qui attend ?',
-    'discard-text' => 'Le service revient à ce que montre le site. Ce qui a été écrit depuis n’apparaît plus nulle part.',
     'discarded' => 'Le service est revenu à la version publiée.',
     'conflict-title' => 'Le service a changé pendant votre modification',
     'conflict-mine' => 'Garder la mienne',

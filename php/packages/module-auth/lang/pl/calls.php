@@ -27,6 +27,8 @@ return [
     'only-dry' => 'Tylko próby',
     'arguments' => 'Argumenty',
     'no-arguments' => 'Wywołane bez argumentów',
+    'request' => 'Żądanie agenta',
+    'request-hint' => 'Co agent przekazał narzędziu. Odpowiedź nie jest zapisywana.',
     'error' => 'Powód odmowy',
     'empty' => 'Brak pasujących wywołań',
 ];

@@ -27,7 +27,7 @@ photos `webx-ui/module-media`; the languages `webx-ui/localization`; the Service
   `events.category-form`; API under `/api/cms/events` and `/api/cms/events/categories`;
   permissions `events.view`, `events.manage`, `events.categories.manage`.
 - **MCP** tools `events_list`, `events_get`, `events_create`, `events_update`,
-  `events_duplicate`, `events_publish`, `events_unpublish`, `events_delete`;
+  `events_duplicate`, `events_publish`, `events_unpublish`, `events_discard`, `events_delete`;
   `event_categories_list`, `event_categories_create`, `event_categories_update`,
   `event_categories_delete`, `event_categories_reorder`. Resource
   `events://catalog`. Scopes `events:read`, `events:write`, `event-categories:read`,

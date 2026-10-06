@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Panel;
 
 use WebxUi\Admin\AbstractModule;
+use WebxUi\Admin\Contracts\HasNavSection;
 use WebxUi\Admin\Contracts\ProvidesDemo;
 use WebxUi\Admin\Demo\DemoLedger;
+use WebxUi\Admin\Panel\SystemSections;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
 use WebxUi\Mcp\ProvidesMcpDefaults;
 use WebxUi\Mcp\Tool;
@@ -21,7 +23,7 @@ use WebxUi\Seo\Mcp\SeoTools;
  * Sits above the settings in the system group, because it is the one an editor opens weekly and
  * the settings are the one they open twice.
  */
-final class SeoModule extends AbstractModule implements ProvidesDemo, ProvidesMcpTools
+final class SeoModule extends AbstractModule implements HasNavSection, ProvidesDemo, ProvidesMcpTools
 {
     use ProvidesMcpDefaults;
 
@@ -50,6 +52,11 @@ final class SeoModule extends AbstractModule implements ProvidesDemo, ProvidesMc
     public function group(): string
     {
         return 'system';
+    }
+
+    public function navSection(): string
+    {
+        return SystemSections::SEARCH;
     }
 
     /**

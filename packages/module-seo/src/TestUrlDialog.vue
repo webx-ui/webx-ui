@@ -87,7 +87,7 @@ async function run(): Promise<void> {
           type="warning"
           :description="
             t('page.test-redirected', {
-              target: result.redirect.target,
+              target: result.redirect.leads_to ?? result.redirect.target,
               status: result.redirect.status,
             })
           "

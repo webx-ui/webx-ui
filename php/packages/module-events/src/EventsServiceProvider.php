@@ -14,6 +14,8 @@ use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Audit\Content\AuditContentSources;
+use WebxUi\Events\Audit\EventContentSource;
 use WebxUi\Events\Handlers\CategoryHandler;
 use WebxUi\Events\Handlers\EventHandler;
 use WebxUi\Events\Http\Controllers\CalendarController;
@@ -74,6 +76,11 @@ class EventsServiceProvider extends ServiceProvider
 
         if ((bool) $this->config()->get('webx-events.index', true)) {
             $this->app->make(SitemapRoutes::class)->register(self::INDEX_ROUTE);
+        }
+
+        // The text for the site audit — only when `webx-ui/module-audit` is installed.
+        if (class_exists(AuditContentSources::class)) {
+            $this->app->make(AuditContentSources::class)->register(new EventContentSource);
         }
 
         if (! $this->app->runningInConsole()) {

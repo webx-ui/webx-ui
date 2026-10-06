@@ -34,7 +34,7 @@ read their guides when the question is about one of those.
   permissions `recipes.view`, `recipes.manage`, `recipes.categories.manage` (categories and
   nutrients).
 - **MCP** tools `recipes_list`, `recipes_get`, `recipes_create`, `recipes_update`,
-  `recipes_publish`, `recipes_unpublish`, `recipes_delete`, `recipes_reorder`;
+  `recipes_publish`, `recipes_unpublish`, `recipes_discard`, `recipes_delete`, `recipes_reorder`;
   `recipe_categories_*` and `recipe_nutrients_*` (`list`, `create`, `update`, `delete`,
   `reorder`); resource `recipes://catalog`. Scopes `recipes:read`, `recipes:write`,
   `recipe-categories:write`, `recipe-nutrients:write` (and their `:read`).

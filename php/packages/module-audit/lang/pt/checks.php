@@ -372,6 +372,18 @@ return [
             'why' => 'Os leitores de ecrã navegam pelos títulos, e um salto lê-se como conteúdo em falta.',
             'fix' => 'Use os níveis por ordem; escolha o aspeto com estilos, não com o nível.',
         ],
+        'h1_not_first' => [
+            'title' => 'O H1 não é o primeiro título',
+            'found' => 'Antes do H1 há outro título.',
+            'why' => 'Motores de busca e leitores de ecrã tomam o primeiro título como início do conteúdo; um bloco acima que usa um título pela aparência empurra o nome da página para baixo.',
+            'fix' => 'Faça do H1 o primeiro título; dê aos blocos acima texto normal ou um elemento com estilo.',
+        ],
+        'empty' => [
+            'title' => 'Título vazio',
+            'found' => 'Um título não tem texto — só um ícone, uma imagem ou nada.',
+            'why' => 'Um leitor de ecrã anuncia um título sem nada para dizer e os motores recebem um nível sem sentido.',
+            'fix' => 'Escreva o título, ou passe o elemento a texto normal se for só decorativo.',
+        ],
     ],
     'canonical' => [
         'missing' => [

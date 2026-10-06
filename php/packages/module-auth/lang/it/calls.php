@@ -27,6 +27,8 @@ return [
     'only-dry' => 'Solo prove',
     'arguments' => 'Argomenti',
     'no-arguments' => 'Chiamata senza argomenti',
+    'request' => 'Richiesta dell\'agente',
+    'request-hint' => 'Cosa l\'agente ha passato allo strumento. La risposta non viene conservata.',
     'error' => 'Rifiutata con',
     'empty' => 'Nessuna chiamata corrisponde',
 ];

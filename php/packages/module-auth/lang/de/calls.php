@@ -27,6 +27,8 @@ return [
     'only-dry' => 'Nur Probeläufe',
     'arguments' => 'Argumente',
     'no-arguments' => 'Ohne Argumente aufgerufen',
+    'request' => 'Anfrage des Agenten',
+    'request-hint' => 'Was der Agent dem Werkzeug übergab. Die Antwort wird nicht gespeichert.',
     'error' => 'Abgelehnt mit',
     'empty' => 'Keine passenden Aufrufe',
 ];

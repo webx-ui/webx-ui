@@ -13,6 +13,7 @@ import {
   type AppliedFilter,
   type RowAction,
   type ScreenAction,
+  WxAddressNote,
 } from '@webx-ui/module-admin'
 import {
   confirm,
@@ -567,6 +568,7 @@ const actions = computed<ScreenAction[]>(() =>
                    something nobody can publish without bringing it back first. -->
               <span class="wx-articles__address">
                 {{ address(row) }}
+                <wx-address-note v-if="!inBin" :locale="row.address_locale" />
               </span>
             </div>
           </div>

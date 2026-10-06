@@ -46,7 +46,8 @@
     "suggest": {
         "webx-ui/module-blocks": "The recipes block — a showcase or the whole catalogue on any page — and the preview of a draft.",
         "webx-ui/module-services": "The Services field on a recipe, and the services printed on its page.",
-        "webx-ui/module-pages": "A page at the prefix, made of blocks, in place of the index."
+        "webx-ui/module-pages": "A page at the prefix, made of blocks, in place of the index.",
+        "webx-ui/module-audit": "The site audit searches its content, drafts and hidden records included, for addresses of a development stand."
     },
     "autoload": {
         "psr-4": {

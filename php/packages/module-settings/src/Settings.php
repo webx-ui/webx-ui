@@ -9,7 +9,6 @@ use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Events\Dispatcher;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
-use WebxUi\Admin\Screens\Tree;
 use WebxUi\Settings\Events\SettingsSaved;
 use WebxUi\Settings\Models\Setting;
 
@@ -24,6 +23,15 @@ use WebxUi\Settings\Models\Setting;
 final class Settings
 {
     public const SCREEN = 'settings.index';
+
+    /**
+     * The house rules for content: what agents read before they write. Their own screen, shown
+     * where agents are connected rather than among the site's settings; stored here all the same.
+     */
+    public const CONTENT_SCREEN = 'settings.content';
+
+    /** Every screen whose fields are settings. */
+    public const SCREENS = [self::SCREEN, self::CONTENT_SCREEN];
 
     /** @var array<string, mixed>|null */
     private ?array $loaded = null;
@@ -57,7 +65,7 @@ final class Settings
     }
 
     /**
-     * The keys the screen describes — the ones that can be edited and written.
+     * The keys the screens describe — the ones that can be edited and written.
      *
      * @return list<string>
      */
@@ -65,8 +73,38 @@ final class Settings
     {
         return array_values(array_map(
             static fn (array $node): string => (string) $node['name'],
-            $this->screens->fields(self::SCREEN),
+            $this->fields(),
         ));
+    }
+
+    /**
+     * The field nodes of every settings screen.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function fields(): array
+    {
+        $fields = [];
+
+        foreach (self::SCREENS as $screen) {
+            if ($this->screens->has($screen)) {
+                array_push($fields, ...$this->screens->fields($screen));
+            }
+        }
+
+        return $fields;
+    }
+
+    /** The screen that describes a key — what its value is validated against. */
+    public function screenOf(string $key): ?string
+    {
+        foreach (self::SCREENS as $screen) {
+            if ($this->screens->has($screen) && in_array($key, array_column($this->screens->fields($screen), 'name'), true)) {
+                return $screen;
+            }
+        }
+
+        return null;
     }
 
     /** One value, the way the site reads it. */
@@ -91,7 +129,15 @@ final class Settings
      */
     public function all(?string $locale = null): array
     {
-        return $this->values->resolveAll(self::SCREEN, $this->raw(), $locale);
+        $all = [];
+
+        foreach (self::SCREENS as $screen) {
+            if ($this->screens->has($screen)) {
+                $all = [...$all, ...$this->values->resolveAll($screen, $this->raw(), $locale)];
+            }
+        }
+
+        return $all;
     }
 
     /**
@@ -123,7 +169,7 @@ final class Settings
      */
     private function node(string $key): ?array
     {
-        foreach (Tree::fields($this->screens->tree(self::SCREEN)) as $node) {
+        foreach ($this->fields() as $node) {
             if ($node['name'] === $key) {
                 return $node;
             }

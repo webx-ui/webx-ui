@@ -372,6 +372,18 @@ return [
             'why' => 'Czytniki ekranu nawigują po nagłówkach, a luka brzmi jak brakująca treść.',
             'fix' => 'Używaj poziomów po kolei; wygląd wybieraj stylami, a nie poziomem.',
         ],
+        'h1_not_first' => [
+            'title' => 'H1 nie jest pierwszym nagłówkiem',
+            'found' => 'Przed H1 stoi inny nagłówek.',
+            'why' => 'Wyszukiwarki i czytniki ekranu traktują pierwszy nagłówek jako początek treści; blok nad nim, który użył nagłówka dla wyglądu, spycha nazwę strony w dół.',
+            'fix' => 'Zrób z H1 pierwszy nagłówek; blokom nad nim daj zwykły tekst albo element ze stylem.',
+        ],
+        'empty' => [
+            'title' => 'Pusty nagłówek',
+            'found' => 'Nagłówek nie ma tekstu — tylko ikonę, obrazek albo nic.',
+            'why' => 'Czytnik ekranu ogłosi nagłówek, który nic nie mówi, a wyszukiwarka dostanie poziom bez znaczenia.',
+            'fix' => 'Napisz nagłówek albo zamień element na zwykły tekst, jeśli służy tylko wyglądowi.',
+        ],
     ],
     'canonical' => [
         'missing' => [

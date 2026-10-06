@@ -69,10 +69,13 @@ final class VacancyController
      * On site, full time, in the first currency of the site and its country (§4.11). In a
      * transaction: an address refused leaves no vacancy without one.
      */
-    public function store(VacancyRequest $request, VacancyForm $form): JsonResponse
+    /** Named in the site's main language, not the panel's: the form fills the others. */
+    public function store(VacancyRequest $request, VacancyForm $form, Locales $locales): JsonResponse
     {
-        $vacancy = $this->db->transaction(static function () use ($request, $form): Vacancy {
-            $vacancy = $form->blank($request->title(), $request->slug());
+        $locale = $locales->defaultCode();
+
+        $vacancy = $this->db->transaction(static function () use ($request, $form, $locale): Vacancy {
+            $vacancy = $form->blank([$locale => $request->title()], [$locale => $request->slug()]);
             $vacancy->save();
 
             return $vacancy;

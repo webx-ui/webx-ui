@@ -16,8 +16,6 @@ return [
     'publish-nowhere' => 'Elle n\'a pas encore d\'adresse dans cette langue, donc rien ne répondra.',
     'preview' => 'Aperçu',
     'discard' => 'Annuler les modifications',
-    'discard-title' => 'Annuler ce qui est en attente ?',
-    'discard-text' => 'L\'offre revient à ce que le site affiche. Ce qui a été écrit depuis n\'apparaît nulle part.',
     'discarded' => 'L\'offre est revenue à sa version publiée.',
     'conflict-title' => 'L\'offre a changé pendant que vous la modifiiez',
     'conflict-mine' => 'Garder ma version',

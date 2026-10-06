@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAdmin, useErrorText, useTranslate, WxScreen } from '@webx-ui/module-admin'
 import { toast, WxActionBar, WxButton, WxSkeleton } from '@webx-ui/core'
 import type { ScreenModel } from '@webx-ui/schema'
@@ -11,7 +12,8 @@ import { useAuditMessages } from './i18n'
  * The section's settings (§8): where the site is and which hosts are its stands, the limits of
  * the crawl and the paths it leaves out, the thresholds, the nightly run and how much history
  * to keep. The form is the screen the server describes (`audit.settings`), so a project patches
- * a field in the way it does everywhere else; saving is this page's own.
+ * a field in the way it does everywhere else; saving is this page's own. «Back» beside «Save» returns
+ * to the overview — the tabs above cannot, their «Overview» is already the lit one.
  */
 const props = defineProps<{ base: string }>()
 
@@ -20,6 +22,8 @@ const api = createAuditApi(context)
 useAuditMessages()
 
 const t = useTranslate('webx-audit')
+const panel = useTranslate('webx-admin')
+const router = useRouter()
 const message = useErrorText()
 
 const values = ref<ScreenModel>({})
@@ -71,8 +75,13 @@ async function save(): Promise<void> {
         :disabled="!canManage"
       />
 
-      <wx-action-bar v-if="canManage && !loading">
-        <wx-button type="primary" :loading="saving" @click="save">{{ t('page.save') }}</wx-button>
+      <wx-action-bar v-if="!loading">
+        <wx-button icon="arrow-left" @click="router.push(props.base)">{{
+          panel('editor.back')
+        }}</wx-button>
+        <wx-button v-if="canManage" type="primary" :loading="saving" @click="save">{{
+          t('page.save')
+        }}</wx-button>
       </wx-action-bar>
     </div>
   </audit-layout>

@@ -38,7 +38,7 @@
                 },
                 {
                   "id": "slug",
-                  "type": "wx-input",
+                  "type": "wx-slug",
                   "name": "slug",
                   "label": "trans::webx-pages::screen.slug",
                   "help": "trans::webx-pages::screen.slug-help",

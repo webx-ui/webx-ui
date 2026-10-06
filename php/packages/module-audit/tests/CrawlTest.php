@@ -55,6 +55,11 @@ final class CrawlTest extends TestCase
         $this->assertSame(1, $about->links_in);
 
         $this->assertSame(200, $this->page('/blog')->final_status, 'The chain ends on the page it leads to.');
+        $this->assertSame(
+            [[2, 'News'], [1, 'Blog'], [1, 'Latest'], [2, 'Spring'], [4, 'Tulips'], [3, '']],
+            $this->page('/blog/')->fact('outline'),
+            'Every heading, in order, with its level.',
+        );
         $this->assertTrue($this->page('/private')->blocked_by_robots);
         $this->assertNull($this->page('/orphan')->depth, 'No link from the home page reaches it.');
 
@@ -78,6 +83,8 @@ final class CrawlTest extends TestCase
             'indexing.noindex' => '/blog/',
             'h1.multiple' => '/blog/',
             'headings.skipped' => '/blog/',
+            'headings.h1_not_first' => '/blog/',
+            'headings.empty' => '/blog/',
             'structure.orphan' => '/orphan',
             'title.missing' => '/orphan',
             'description.duplicate' => '/about',
@@ -257,7 +264,7 @@ final class CrawlTest extends TestCase
                 .'<body><h1>About</h1><p>We grow what we sell.</p><a href="/">Home</a></body></html>', $html],
             '/blog' => [301, '', ['Location' => self::BASE.'/blog/']],
             '/blog/' => [200, $head('The garden blog: what to plant and when to plant it', '<meta name="robots" content="noindex, follow">')
-                .'<body><h1>Blog</h1><h1>Latest</h1><h2>Spring</h2><h4>Tulips</h4><a href="/">Home</a></body></html>', $html],
+                .'<body><h2>News</h2><h1>Blog</h1><h1>Latest</h1><h2>Spring</h2><h4>Tulips</h4><h3> </h3><a href="/">Home</a></body></html>', $html],
             '/private' => [200, '<html><head><link rel="canonical" href="https://shop.example.com/about"></head><body><a href="/">Home</a></body></html>', $html],
             '/orphan' => [200, '<html><body><p>Forgotten.</p><a href="/">Home</a></body></html>', $html],
             '/robots.txt' => [200, "User-agent: *\nDisallow: /private\nSitemap: https://shop.example.com/sitemap.xml\n", ['Content-Type' => 'text/plain']],

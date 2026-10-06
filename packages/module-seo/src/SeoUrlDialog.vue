@@ -190,8 +190,9 @@ async function save(): Promise<void> {
           <wx-input-number v-model="form.priority" :step="10" />
         </wx-form-item>
 
-        <wx-form-item :label="t('page.state')">
-          <wx-switch v-model="form.is_active" />
+        <!-- Under the address it turns on and off, not in a column of its own beside the priority. -->
+        <wx-form-item class="wx-seo-rule__active">
+          <wx-switch v-model="form.is_active" :label="t('page.active')" />
         </wx-form-item>
       </div>
 
@@ -236,9 +237,13 @@ async function save(): Promise<void> {
    reading half of it. */
 .wx-seo-rule__where {
   display: grid;
-  grid-template-columns: 180px 1fr 140px 100px;
+  grid-template-columns: 180px 1fr 140px;
   gap: var(--wx-space-12);
   align-items: start;
+}
+
+.wx-seo-rule__active {
+  grid-column: 2 / -1;
 }
 
 @container (max-width: 720px) {
@@ -246,7 +251,8 @@ async function save(): Promise<void> {
     grid-template-columns: 1fr 1fr;
   }
 
-  .wx-seo-rule__address {
+  .wx-seo-rule__address,
+  .wx-seo-rule__active {
     grid-column: 1 / -1;
   }
 }

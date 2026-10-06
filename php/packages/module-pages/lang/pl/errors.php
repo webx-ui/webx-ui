@@ -11,6 +11,7 @@ return [
     'home-no-siblings' => 'Strona główna nie ma sąsiadów; stronę można umieścić tylko w jej wnętrzu.',
     'move-into-self' => 'Strony nie można przenieść do samej siebie ani do własnych stron.',
     'parent-trashed' => 'Ta strona jest w koszu. Przywróć ją, zanim coś w niej umieścisz.',
+    'not-in-bin' => 'Na zawsze można usunąć tylko stronę z kosza. Najpierw ją usuń.',
     'slug-shape' => 'Adres może zawierać litery, cyfry, myślniki i podkreślenia.',
 
     // The editor.

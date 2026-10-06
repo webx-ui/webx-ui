@@ -17,8 +17,6 @@ return [
     'preview' => 'Preview',
     'more' => 'More',
     'discard' => 'Discard changes',
-    'discard-title' => 'Discard what is waiting?',
-    'discard-text' => 'The article goes back to what the site is showing. What was written since is not listed anywhere.',
     'discarded' => 'The article is back to what is published.',
     'conflict-title' => 'The article changed while you were editing',
     'conflict-mine' => 'Keep mine',

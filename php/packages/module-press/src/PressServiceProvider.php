@@ -10,7 +10,9 @@ use InvalidArgumentException;
 use WebxUi\Admin\Links\LinkSources;
 use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Audit\Content\AuditContentSources;
 use WebxUi\Blocks\BlockOffers;
+use WebxUi\Press\Audit\PressContentSource;
 use WebxUi\Press\Handlers\OutletHandler;
 use WebxUi\Press\Links\OutletLinkSource;
 use WebxUi\Press\Models\Outlet;
@@ -57,6 +59,11 @@ class PressServiceProvider extends ServiceProvider
         $this->app->make(ScreenRegistry::class)->register(Outlet::SCREEN, OutletScreen::build(__DIR__.'/../resources/screens/outlet-form.json', $pages));
         $this->app->make(BlockOffers::class)->offer(PressModule::ID, __DIR__.'/../resources/blocks', self::withKinds(...));
         $this->app->make(ModuleRegistry::class)->register($this->app->make(PressModule::class));
+
+        // The text for the site audit — only when `webx-ui/module-audit` is installed.
+        if (class_exists(AuditContentSources::class)) {
+            $this->app->make(AuditContentSources::class)->register(new PressContentSource);
+        }
 
         if (! $this->app->runningInConsole()) {
             return;

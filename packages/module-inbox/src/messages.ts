@@ -187,6 +187,7 @@ export const inboxMessages: Record<string, Messages> = {
     field: 'Field',
     'new-field': 'New field',
     'edit-field': 'Field',
+    edit: 'Edit',
     'no-fields': 'No questions yet.',
     'no-fields-help': 'A form with no fields draws nothing on the page.',
     'save-first': 'Save the form first, then write its questions.',

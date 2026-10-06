@@ -27,6 +27,8 @@ return [
     'only-dry' => 'Simulations seulement',
     'arguments' => 'Arguments',
     'no-arguments' => 'Appelé sans arguments',
+    'request' => 'Requête de l\'agent',
+    'request-hint' => 'Ce que l\'agent a transmis à l\'outil. La réponse n\'est pas conservée.',
     'error' => 'Refusé avec',
     'empty' => 'Aucun appel ne correspond',
 ];

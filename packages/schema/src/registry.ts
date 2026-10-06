@@ -83,8 +83,9 @@ export const coreTypes: TypeRegistry = {
   'wx-textarea': { component: WxTextarea, kind: 'field' },
   'wx-input-number': { component: WxInputNumber, kind: 'field' },
   'wx-select': { component: WxSelect, kind: 'field' },
-  'wx-switch': { component: WxSwitch, kind: 'field' },
-  'wx-checkbox': { component: WxCheckbox, kind: 'field' },
+  // The label beside the control rather than above it: on, off, and what is being turned.
+  'wx-switch': { component: WxSwitch, kind: 'field', labelProp: 'label' },
+  'wx-checkbox': { component: WxCheckbox, kind: 'field', labelProp: 'label' },
   'wx-radio-group': { component: WxRadioGroup, kind: 'field' },
   'wx-date-picker': { component: WxDatePicker, kind: 'field' },
   'wx-color-picker': { component: WxColorPicker, kind: 'field' },

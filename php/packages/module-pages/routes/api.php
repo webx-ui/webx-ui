@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use WebxUi\Pages\Http\Controllers\PageController;
+use WebxUi\Pages\Http\Controllers\PageDraftController;
 use WebxUi\Pages\Http\Controllers\PageDuplicateController;
 use WebxUi\Pages\Http\Controllers\PageMoveController;
 use WebxUi\Pages\Http\Controllers\PagePublicationController;
+use WebxUi\Pages\Http\Controllers\PagePurgeController;
 use WebxUi\Pages\Http\Controllers\PageRestoreController;
 use WebxUi\Pages\Http\Controllers\PageVersionController;
 
@@ -18,6 +20,7 @@ Route::prefix((string) config('webx-admin.api_path').'/pages')
             Route::get('/', [PageController::class, 'index'])->name('index');
             Route::get('{page}', [PageController::class, 'show'])->whereNumber('page')->name('show');
             Route::get('{page}/versions', [PageVersionController::class, 'index'])->whereNumber('page')->name('versions');
+            Route::get('bin', [PagePurgeController::class, 'count'])->name('bin');
         });
 
         Route::middleware('cms.can:pages.manage')->group(function (): void {
@@ -29,6 +32,7 @@ Route::prefix((string) config('webx-admin.api_path').'/pages')
             Route::post('{page}/duplicate', PageDuplicateController::class)->whereNumber('page')->name('duplicate');
             Route::post('{page}/publish', [PagePublicationController::class, 'publish'])->whereNumber('page')->name('publish');
             Route::post('{page}/unpublish', [PagePublicationController::class, 'unpublish'])->whereNumber('page')->name('unpublish');
+            Route::post('{page}/discard', PageDraftController::class)->whereNumber('page')->name('discard');
 
             Route::post('{page}/versions/{number}/restore', [PageVersionController::class, 'restore'])
                 ->whereNumber('page')
@@ -38,5 +42,7 @@ Route::prefix((string) config('webx-admin.api_path').'/pages')
             // Not model-bound: the page this one is about is in the bin, and the binding of
             // every other route here cannot see it.
             Route::post('{page}/restore', PageRestoreController::class)->whereNumber('page')->name('restore');
+            Route::delete('{page}/purge', [PagePurgeController::class, 'page'])->whereNumber('page')->name('purge');
+            Route::delete('bin', [PagePurgeController::class, 'bin'])->name('purge-bin');
         });
     });

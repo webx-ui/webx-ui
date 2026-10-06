@@ -86,6 +86,36 @@ final class VersionsTest extends TestCase
     }
 
     #[Test]
+    public function a_draft_that_says_what_the_site_says_is_not_kept_and_publishing_it_writes_nothing(): void
+    {
+        $article = Article::query()->create(['slug' => 'hello', 'title' => ['en' => 'Hello']]);
+        $article->saveDraft(['title' => ['en' => 'First']]);
+        $article->publish();
+
+        // A letter typed and taken back between two autosaves.
+        $article->saveDraft(['title' => ['en' => 'Firstx']]);
+        $this->assertTrue($article->refresh()->hasDraft());
+        $article->saveDraft(['title' => ['en' => 'First']]);
+        $this->assertFalse($article->refresh()->hasDraft());
+
+        $article->publish();
+        $this->assertSame([1], $article->publishedVersions()->pluck('number')->all(), 'no copy of the last version');
+    }
+
+    #[Test]
+    public function the_history_goes_with_an_entity_deleted_for_good(): void
+    {
+        $article = Article::query()->create(['slug' => 'hello', 'title' => ['en' => 'Hello']]);
+        $article->saveDraft(['title' => ['en' => 'First']]);
+        $article->publish();
+        $this->assertSame(1, EntityVersion::query()->count());
+
+        // Nothing else would ever read those rows again: they are keyed to an id nothing has.
+        $article->delete();
+        $this->assertSame(0, EntityVersion::query()->count());
+    }
+
+    #[Test]
     public function a_date_can_be_chosen_and_without_one_it_is_now(): void
     {
         Carbon::setTestNow('2026-09-19 10:00:00');

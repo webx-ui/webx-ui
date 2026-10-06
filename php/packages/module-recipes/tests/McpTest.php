@@ -27,7 +27,7 @@ final class McpTest extends TestCase
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['recipes_list', 'recipes_get', 'recipes_create', 'recipes_update', 'recipes_publish', 'recipes_unpublish', 'recipes_delete', 'recipes_reorder'],
+            ['recipes_list', 'recipes_get', 'recipes_create', 'recipes_update', 'recipes_publish', 'recipes_unpublish', 'recipes_discard', 'recipes_delete', 'recipes_reorder'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('recipes')),
         );
 

@@ -24,6 +24,7 @@ const emit = defineEmits<{
   copy: [page: PageRow]
   remove: [page: PageRow]
   restore: [page: PageRow]
+  purge: [page: PageRow]
 }>()
 
 usePagesMessages()
@@ -40,6 +41,13 @@ const actions = computed<RowAction[]>(() => {
         icon: 'refresh',
         label: t('page.restore'),
         run: () => emit('restore', page),
+      },
+      {
+        key: 'purge',
+        icon: 'trash',
+        label: t('page.purge'),
+        danger: true,
+        run: () => emit('purge', page),
       },
     ]
   }

@@ -36,6 +36,6 @@ final class ExternalRedirect extends ResourceCheck
 
     protected function columns(): array
     {
-        return [Finding::column('url', 'url'), Finding::column('status', 'status'), Finding::column('location', 'url')];
+        return [Finding::column('url', 'url'), Finding::column('status', 'status'), Finding::column('location', 'url'), Finding::column('attrs', 'attrs')];
     }
 }

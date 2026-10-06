@@ -48,6 +48,8 @@ return [
     'h1-multiple' => 'H1 headings on the page: :count',
     'h1-equals-title' => 'The H1 and the title are both “:value”.',
     'headings-skipped' => 'Skipped: :skip',
+    'headings-h1-not-first' => 'First comes :level «:value».',
+    'headings-empty' => 'Empty headings (:levels): :count',
     'canonical-missing' => 'No canonical in the tag or the header.',
     'canonical-relative' => 'The canonical is written as a path: :value',
     'canonical-multiple' => 'Canonical addresses: :count',
@@ -154,4 +156,5 @@ return [
     'column-type' => 'Type',
     'column-fields' => 'Fields',
     'column-kb' => 'KB',
+    'column-attrs' => 'Attributes',
 ];

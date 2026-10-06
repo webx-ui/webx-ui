@@ -53,10 +53,12 @@ const columns = computed<TableColumn<SeoAlias>[]>(() => [
     key: 'locale',
     label: t('page.language'),
     align: 'center',
+    width: 100,
     hidden: !multilingual.value,
     hideBelow: 760,
   },
-  { key: 'created_at', label: t('page.moved-at'), hideBelow: 900, hideOnCards: true },
+  // Fixed table: the two addresses share what is left and a long one is cut, not scrolled to.
+  { key: 'created_at', label: t('page.moved-at'), width: 150, hideBelow: 900, hideOnCards: true },
 ])
 
 async function load(state: TableState): Promise<void> {
@@ -87,6 +89,7 @@ async function load(state: TableState): Promise<void> {
       :data="page"
       :columns="columns"
       row-key="id"
+      layout="fixed"
       searchable
       flush
       :loading="loading"
@@ -95,15 +98,21 @@ async function load(state: TableState): Promise<void> {
       @state-change="load"
     >
       <template #cell-pattern="{ row }">
-        <wx-text mono size="sm">{{ row.pattern }}</wx-text>
+        <wx-text mono size="sm" truncate :title="row.pattern">{{ row.pattern }}</wx-text>
       </template>
 
       <!-- The address it leads to now, as a link: this is the one place in the panel where an
              editor can walk from a dead address to the live page without knowing the section it
              lives in. -->
       <template #cell-target="{ row }">
-        <wx-link v-if="row.target && row.target_url" :href="row.target_url" external size="sm">
-          <wx-text mono size="sm">{{ row.target }}</wx-text>
+        <wx-link
+          v-if="row.target && row.target_url"
+          class="wx-seo-aliases__target"
+          :href="row.target_url"
+          external
+          size="sm"
+        >
+          <wx-text mono size="sm" truncate :title="row.target">{{ row.target }}</wx-text>
         </wx-link>
         <wx-badge v-else type="warning">{{ t('page.gone') }}</wx-badge>
       </template>
@@ -120,6 +129,11 @@ async function load(state: TableState): Promise<void> {
 </template>
 
 <style scoped>
+/* A link sizes to its text; held to the cell, the address inside it can be cut. */
+.wx-seo-aliases__target {
+  max-width: 100%;
+}
+
 .wx-seo-aliases__note {
   margin-bottom: var(--wx-space-12);
 }

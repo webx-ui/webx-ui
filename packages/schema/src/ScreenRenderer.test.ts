@@ -149,6 +149,24 @@ describe('WxScreenRenderer', () => {
     error.mockRestore()
   })
 
+  it('puts a switch label beside the switch, not above it', () => {
+    const wrapper = mountScreen({
+      root: [
+        {
+          id: 'shown',
+          type: 'wx-switch',
+          name: 'shown',
+          label: 'Show on the site',
+          help: 'Hidden is 404',
+        },
+      ],
+    })
+
+    expect(wrapper.find('.wx-form-item__label').exists()).toBe(false)
+    expect(wrapper.find('.wx-switch').text()).toContain('Show on the site')
+    expect(wrapper.text()).toContain('Hidden is 404')
+  })
+
   it('shows server errors under the field they name', () => {
     const wrapper = mountScreen({ errors: { name: ['Taken'] } })
 

@@ -17,8 +17,6 @@ return [
     'preview' => 'Aperçu',
     'more' => 'Plus',
     'discard' => 'Annuler les modifications',
-    'discard-title' => 'Abandonner ce qui est préparé ?',
-    'discard-text' => 'L’article revient à ce que le site affiche. Ce qui a été écrit depuis n’est listé nulle part.',
     'discarded' => 'L’article est revenu à la version publiée.',
     'conflict-title' => 'L’article a changé pendant que vous le modifiiez',
     'conflict-mine' => 'Garder la mienne',

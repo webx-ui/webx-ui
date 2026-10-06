@@ -38,5 +38,7 @@ return [
     'next-2' => 'Panel pokaże, kto prosi o dostęp i dokąd trafi odpowiedź. Jest tam też przełącznik „tylko odczyt” — bezpieczniej zacząć z nim.',
     'next-3' => 'Od tej chwili agent działa w Twoim imieniu: może dokładnie to, co Ty, i każde jego wywołanie jest zapisywane.',
     'mine' => 'Twoje połączenia',
+    'rules' => 'Zasady dla agentów',
+    'rules-hint' => 'Każdy podłączony agent czyta je, zanim napisze coś, co zobaczy odwiedzający.',
 
 ];

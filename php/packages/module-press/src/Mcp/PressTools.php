@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Categories\Ordering;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
@@ -326,6 +327,10 @@ final class PressTools
         if (! is_array($values) || $values === []) {
             throw new ToolFailure('`values` must be a non-empty object of field name → value. press_get says what the fields are.');
         }
+
+        // Merged language by language, and a language the site does not have refused — dry run
+        // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
+        $values = $this->container->make(ScreenValues::class)->patch(Outlet::SCREEN, $this->form()->values($outlet), $values);
 
         if (array_key_exists('articles', $values)) {
             // The whole list in one value is the list as the agent last read it, and an article
@@ -893,6 +898,12 @@ final class PressTools
         $texts = [];
 
         foreach ($value as $locale => $text) {
+            // Words in a language the site is not published in are words nobody reads — and
+            // an address in one is an address that answers nowhere.
+            if (! $this->locales()->has((string) $locale)) {
+                throw new ToolFailure("`{$field}` has a value in [{$locale}], which this site is not published in. It has: ".implode(', ', $this->locales()->codes()).'.');
+            }
+
             if (is_string($text) && trim($text) !== '') {
                 $texts[(string) $locale] = trim($text);
             } elseif ($keep && ($text === '' || $text === null)) {

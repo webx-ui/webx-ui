@@ -38,5 +38,7 @@ return [
     'next-2' => 'O painel mostra quem está a pedir e para onde vai a resposta. Aí está o interruptor «apenas leitura», e começar com ele é o caminho seguro.',
     'next-3' => 'A partir daí o agente age como você: pode o que você pode e nada mais, e cada chamada sua fica registada.',
     'mine' => 'As suas ligações',
+    'rules' => 'Regras para agentes',
+    'rules-hint' => 'Cada agente ligado lê-as antes de escrever o que um visitante vai ver.',
 
 ];

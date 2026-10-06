@@ -25,7 +25,7 @@ categories `webx-ui/module-admin`, the SEO card and redirects `webx-ui/module-se
   `blog.category-form` for a rubric; API under `/api/cms/blog` (`articles`, `rubrics`, `tags`);
   permissions `blog.articles.view`, `blog.articles.manage`, `blog.taxonomy.manage`.
 - **MCP** tools `articles_list`, `articles_get`, `articles_create`, `articles_update`,
-  `articles_publish`, `articles_unpublish`, `articles_delete`; `rubrics_list`, `rubrics_create`,
+  `articles_publish`, `articles_unpublish`, `articles_discard`, `articles_delete`; `rubrics_list`, `rubrics_create`,
   `rubrics_update`, `rubrics_delete`, `rubrics_reorder`; `tags_list`, `tags_merge`. Resource
   `blog://feed`, prompt `write_article`. Scopes `articles:read`, `articles:write`,
   `rubrics:read`, `rubrics:write`, `tags:read`, `tags:write`.

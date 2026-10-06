@@ -147,10 +147,6 @@
                   {
                     "label": "trans::webx-seo::screen.normalise-trailing-strip",
                     "value": "strip"
-                  },
-                  {
-                    "label": "trans::webx-seo::screen.normalise-trailing-add",
-                    "value": "add"
                   }
                 ]
               }

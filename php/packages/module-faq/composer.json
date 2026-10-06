@@ -44,7 +44,8 @@
     "suggest": {
         "webx-ui/module-seo": "Prints FAQPage markup for the questions a FAQ block shows.",
         "webx-ui/module-pages": "A page with a FAQ block is the site's FAQ page.",
-        "webx-ui/module-services": "The demo puts a FAQ block with the payment questions into one of its services."
+        "webx-ui/module-services": "The demo puts a FAQ block with the payment questions into one of its services.",
+        "webx-ui/module-audit": "The site audit searches its content, drafts and hidden records included, for addresses of a development stand."
     },
     "autoload": {
         "psr-4": {

@@ -316,9 +316,15 @@ trait HasTranslations
         return $attributes;
     }
 
+    /**
+     * The content language, not the request's for its own sake: in the panel the request speaks
+     * the interface's language, and a title assigned as a plain string in a Russian panel over
+     * an English-only site was once stored under `ru` — a page with no address in any language
+     * the site has.
+     */
     protected function translationLocale(): string
     {
-        return $this->translationLocale ?? $this->locales()?->current() ?? 'en';
+        return $this->translationLocale ?? $this->locales()?->content() ?? 'en';
     }
 
     protected function defaultTranslationLocale(): string

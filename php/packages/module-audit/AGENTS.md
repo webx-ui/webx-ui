@@ -30,7 +30,9 @@ bring. The panel shell, screens and permissions are `webx-ui/module-admin`, the 
   and `webx-audit:nightly` once the settings switch it on.
 - **Registries** (singletons): `WebxUi\Audit\Checks\AuditChecks`,
   `WebxUi\Audit\Content\AuditContentSources`, `WebxUi\Audit\Fixes\AuditFixes`. Its own fix is
-  `audit.replace-host` (a stand's host in the content replaced by the site's).
+  `audit.replace-host` (a stand's host in the content replaced by the site's). Other modules
+  register theirs: `webx-ui/module-blocks` brings `blocks.stray_values` (block values for fields
+  the type does not define) with the fix `blocks.prune-stray`.
 
 ## Change it without forking
 

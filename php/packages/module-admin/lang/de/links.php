@@ -32,4 +32,6 @@ return [
     'hash-length' => 'Ein Anker darf höchstens :max Zeichen lang sein.',
     'hash-shape' => 'Ein Anker ist ein Name auf der Seite: ohne Leerzeichen.',
     'not-localized' => 'Ein Link ist in jeder Sprache derselbe und kann nicht übersetzt werden.',
+    'address-fallback' => 'In dieser Sprache gibt es noch keine Adresse — das ist die Adresse in :locale, der Hauptsprache der Website.',
+    'address-fallback-label' => 'Adresse in der Hauptsprache',
 ];

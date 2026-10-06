@@ -93,6 +93,26 @@ final class DictionaryBuilderTest extends TestCase
     }
 
     #[Test]
+    public function a_cached_dictionary_learns_new_words_without_being_cleared(): void
+    {
+        // A package update that adds keys used to reach the panel a day later, or after somebody
+        // thought of `webx:locales:clear`: the cache did not know the files had changed.
+        $this->app['config']->set('webx-localization.cache.enabled', true);
+        $this->assertArrayNotHasKey('fresh', $this->builder()->build('en')['namespaces']['webx-test']['nav']);
+
+        $published = $this->app->langPath('vendor/webx-test/en');
+        mkdir($published, 0o777, true);
+        file_put_contents($published.'/nav.php', "<?php\n\nreturn ['fresh' => 'Fresh'];\n");
+
+        try {
+            $this->assertSame('Fresh', $this->builder()->build('en')['namespaces']['webx-test']['nav']['fresh']);
+        } finally {
+            unlink($published.'/nav.php');
+            rmdir($published);
+        }
+    }
+
+    #[Test]
     public function a_group_only_the_application_has_is_found(): void
     {
         $published = $this->app->langPath('vendor/webx-test/en');

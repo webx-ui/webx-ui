@@ -48,6 +48,108 @@ final class ContentEdit
     }
 
     /**
+     * Take values out of one node — the keys themselves, not their contents.
+     *
+     * `set` with null leaves the key holding null, and a value for a field the type no longer has
+     * is then still there for every reader of the tree. This is the way to drop it.
+     *
+     * @param  list<array<string, mixed>>  $tree
+     * @param  list<string>  $fields
+     * @return list<array<string, mixed>>
+     */
+    public static function unset(array $tree, string $key, array $fields): array
+    {
+        return self::edit($tree, $key, static function (array $node) use ($fields): array {
+            $values = is_array($node['values'] ?? null) ? $node['values'] : [];
+
+            foreach ($fields as $field) {
+                unset($values[$field]);
+            }
+
+            $node['values'] = $values;
+
+            return $node;
+        });
+    }
+
+    /**
+     * Drop every value whose key the block's type does not define, all the way down.
+     *
+     * A field taken out of a type leaves its value in every page written before — kept on
+     * purpose by a save ({@see ContentValues}), so that a field put back finds what it had. This is
+     * the deliberate clean-up, run when somebody asks for it. A node of a type nobody knows is
+     * left alone: there is no schema to measure it against.
+     *
+     * @param  list<array<string, mixed>>  $tree
+     * @param  callable(string): ?array<string, list<string>|null>  $fields  Type slug → its field ids, each with the item keys of a repeater (null for any other field); null when the type is unknown.
+     * @param  list<array{key: ?string, type: string, fields: list<string>}>  $dropped  What went, for the report.
+     * @return list<array<string, mixed>>
+     */
+    public static function prune(array $tree, callable $fields, array &$dropped = []): array
+    {
+        $pruned = [];
+
+        foreach ($tree as $node) {
+            if (! Content::isNode($node)) {
+                $pruned[] = $node;
+
+                continue;
+            }
+
+            $values = is_array($node['values'] ?? null) ? $node['values'] : [];
+            $known = $fields((string) $node['type']);
+            $gone = [];
+
+            foreach ($values as $field => $value) {
+                if (Content::isNodeList($value)) {
+                    $values[$field] = self::prune(array_values($value), $fields, $dropped);
+                }
+
+                if ($known !== null && ! array_key_exists((string) $field, $known)) {
+                    $gone[] = (string) $field;
+                    unset($values[$field]);
+
+                    continue;
+                }
+
+                // A repeater's items keep the keys its children name, as its own save does.
+                $items = $known[(string) $field] ?? null;
+
+                if ($items !== null && is_array($value) && array_is_list($value)) {
+                    foreach ($value as $index => $item) {
+                        if (! is_array($item)) {
+                            continue;
+                        }
+
+                        foreach (array_keys($item) as $name) {
+                            if (! in_array((string) $name, $items, true)) {
+                                $gone[] = $field.'.*.'.$name;
+                                unset($item[$name]);
+                            }
+                        }
+
+                        $value[$index] = $item;
+                    }
+
+                    $values[$field] = $value;
+                }
+            }
+
+            if ($gone !== []) {
+                $dropped[] = ['key' => is_string($node['key'] ?? null) ? $node['key'] : null, 'type' => (string) $node['type'], 'fields' => array_values(array_unique($gone))];
+            }
+
+            if (is_array($node['values'] ?? null)) {
+                $node['values'] = $values;
+            }
+
+            $pruned[] = $node;
+        }
+
+        return $pruned;
+    }
+
+    /**
      * Put a node somewhere: at the top level, or inside another block's constructor field.
      *
      * @param  list<array<string, mixed>>  $tree
@@ -164,9 +266,10 @@ final class ContentEdit
      * expensive part, and it needs them for one node, not for twenty.
      *
      * @param  list<array<string, mixed>>  $tree
+     * @param  (callable(array<string, mixed>): ?string)|null  $label  A node → its line ({@see BlockLabel}); without one, the first text it holds.
      * @return list<array<string, mixed>>
      */
-    public static function outline(array $tree, ?string $parent = null, int $depth = 0): array
+    public static function outline(array $tree, ?string $parent = null, int $depth = 0, ?callable $label = null): array
     {
         $outline = [];
 
@@ -183,7 +286,7 @@ final class ContentEdit
                 'type' => (string) $node['type'],
                 'depth' => $depth,
                 'parent' => $parent,
-                'label' => self::label($values),
+                'label' => $label !== null ? $label($node) : self::label($values),
                 // Only when it is on: a reader has no other way of knowing that a block which
                 // is plainly there in the content is not drawn on the site (§23).
                 'hidden' => Content::isHidden($node) ? true : null,
@@ -191,7 +294,7 @@ final class ContentEdit
 
             foreach ($values as $field => $value) {
                 if (Content::isNodeList($value)) {
-                    $outline = [...$outline, ...self::outline(array_values($value), $key, $depth + 1)];
+                    $outline = [...$outline, ...self::outline(array_values($value), $key, $depth + 1, $label)];
                 }
             }
         }

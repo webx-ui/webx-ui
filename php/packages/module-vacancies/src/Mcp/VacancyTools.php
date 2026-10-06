@@ -14,6 +14,7 @@ use WebxUi\Admin\Categories\CategoryException;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Relations\RelationTarget;
 use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
 use WebxUi\Localization\Locales;
@@ -164,6 +165,15 @@ final class VacancyTools
                 .'being prepared is still there. A position that has been filled is not this — that is vacancies_close, '
                 .'which keeps the page for the links that lead to it.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->unpublish($arguments)),
+                ['properties' => ['vacancy' => $vacancy], 'required' => ['vacancy']],
+                permission: 'vacancies.manage',
+            ),
+
+            Tool::mutating(
+                'discard',
+                'Throw away the draft of a vacancy that is on the site and go back to what the site shows. The draft '
+                .'is all that changes. dry_run names the fields that differ from the published ones.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->discard($arguments)),
                 ['properties' => ['vacancy' => $vacancy], 'required' => ['vacancy']],
                 permission: 'vacancies.manage',
             ),
@@ -340,6 +350,10 @@ final class VacancyTools
             throw new ToolFailure('`values` must be a non-empty object of field name → value. vacancies_get says what the fields are.');
         }
 
+        // Merged language by language, and a language the site does not have refused — dry run
+        // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
+        $values = $this->container->make(ScreenValues::class)->patch(Vacancy::SCREEN, $this->form()->values($vacancy), $values);
+
         if ($vacancy->trashed()) {
             throw new ToolFailure("Vacancy #{$vacancy->getKey()} is in the bin. Bring it back in the panel before editing it.");
         }
@@ -425,6 +439,27 @@ final class VacancyTools
         }
 
         $vacancy->unpublish();
+
+        return ['vacancy' => $this->summary($vacancy->refresh())];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function discard(array $arguments): array
+    {
+        $vacancy = $this->vacancy($arguments['vacancy'] ?? null);
+
+        if (! $vacancy->hasDraft()) {
+            throw new ToolFailure("Vacancy [{$vacancy->getKey()}] has no draft: the site already shows what it holds.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_discard' => $vacancy->changedFields(), 'vacancy' => $this->reference($vacancy)];
+        }
+
+        $vacancy->discardDraft();
 
         return ['vacancy' => $this->summary($vacancy->refresh())];
     }
@@ -899,6 +934,12 @@ final class VacancyTools
         $texts = [];
 
         foreach ($value as $locale => $text) {
+            // Words in a language the site is not published in are words nobody reads — and
+            // an address in one is an address that answers nowhere.
+            if (! $this->locales()->has((string) $locale)) {
+                throw new ToolFailure("`{$field}` has a value in [{$locale}], which this site is not published in. It has: ".implode(', ', $this->locales()->codes()).'.');
+            }
+
             if (is_string($text) && trim($text) !== '') {
                 $texts[(string) $locale] = trim($text);
             }

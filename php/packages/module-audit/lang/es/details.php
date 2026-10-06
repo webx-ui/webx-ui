@@ -48,6 +48,8 @@ return [
     'h1-multiple' => 'Encabezados H1 en la página: :count',
     'h1-equals-title' => 'El H1 y el title son ambos «:value».',
     'headings-skipped' => 'Omitidos: :skip',
+    'headings-h1-not-first' => 'Primero va :level «:value».',
+    'headings-empty' => 'Encabezados vacíos (:levels): :count',
     'canonical-missing' => 'Sin canonical en la etiqueta ni en la cabecera.',
     'canonical-relative' => 'El canonical está escrito como una ruta: :value',
     'canonical-multiple' => 'Direcciones canonical: :count',
@@ -154,4 +156,5 @@ return [
     'column-type' => 'Tipo',
     'column-fields' => 'Campos',
     'column-kb' => 'KB',
+    'column-attrs' => 'Atributos',
 ];

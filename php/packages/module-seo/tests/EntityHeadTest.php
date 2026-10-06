@@ -289,6 +289,43 @@ final class EntityHeadTest extends TestCase
     }
 
     #[Test]
+    public function test_url_asks_the_page_behind_the_address_as_the_public_page_does(): void
+    {
+        $this->entity(['ru' => 'О нас'], ['ru' => 'about'])->saveSeo(['title' => ['ru' => 'О компании'], 'description' => ['ru' => 'Кто мы']]);
+
+        $this->actingAs($this->editor(['seo.view']), 'cms');
+
+        $response = $this->postJson('/api/cms/seo/test-url', ['url' => '/about'])->assertOk();
+
+        $this->assertNull($response->json('data.matched'));
+        $this->assertSame('Кто мы', $response->json('data.seo.description'));
+        $this->assertStringContainsString('О компании', (string) $response->json('data.seo.title'));
+        $this->assertContains('EntitySource', array_column((array) $response->json('data.chain'), 'source'));
+
+        // The agent asks through the same path and gets the same answer.
+        $registry = $this->app->make(ToolRegistry::class);
+        $tool = WebxServer::actingAs($this->editor(['seo.view']), 'cms')
+            ->tool(new RegistryTool($registry->tool('seo_test_url')), ['url' => '/about']);
+
+        $this->assertInstanceOf(TestResponse::class, $tool);
+        $tool->assertStructuredContent(static function (AssertableJson $json): void {
+            $json->where('seo.description', 'Кто мы')->where('chain.0.source', 'EntitySource')->etc();
+        });
+    }
+
+    #[Test]
+    public function test_url_leaves_the_page_out_of_an_address_that_is_only_its_tail(): void
+    {
+        $this->entity(['ru' => 'О нас'], ['ru' => 'about'])->saveSeo(['title' => ['ru' => 'О компании']]);
+
+        $this->actingAs($this->editor(['seo.view']), 'cms');
+
+        $chain = $this->postJson('/api/cms/seo/test-url', ['url' => '/about/team'])->assertOk()->json('data.chain');
+
+        $this->assertNotContains('EntitySource', array_column((array) $chain, 'source'));
+    }
+
+    #[Test]
     public function a_named_route_in_the_map_is_one_test_url_knows(): void
     {
         Route::get('catalog', static fn (): string => 'catalog')->name('catalog');

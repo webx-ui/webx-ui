@@ -787,10 +787,9 @@ on('GET', '/manifest', ({ locale }) => ({
         id: 'menu',
         title: line(locale, 'webx-menu', 'module.title'),
         icon: 'menu',
-        /* Among the content sections and after them: a menu is a way of pointing at pages and
-           articles rather than a thing of its own. */
-        order: 400,
-        group: null,
+        /* Under «System», beside the regions: a menu is the header's and the footer's. */
+        order: 620,
+        group: 'system',
         permissions: ['menu.view', 'menu.manage'],
         meta: {},
       },
@@ -963,6 +962,7 @@ on('GET', '/pages/(\\d+)', ({ params }) => {
       values: withSeoImage(record.values),
       revision: revisionOf(record),
       address_prefix: prefixOf(record.row),
+      addresses: addressesOf(record.row),
       preview_url: `/preview/page/${record.row.id}`,
     },
   }
@@ -979,6 +979,7 @@ on('PUT', '/pages/(\\d+)', ({ params, body }) => {
       values: withSeoImage(record.values),
       revision: revisionOf(record),
       address_prefix: prefixOf(record.row),
+      addresses: addressesOf(record.row),
       preview_url: `/preview/page/${record.row.id}`,
     })
   }
@@ -999,6 +1000,7 @@ on('PUT', '/pages/(\\d+)', ({ params, body }) => {
       values: withSeoImage(record.values),
       revision: revisionOf(record),
       address_prefix: prefixOf(record.row),
+      addresses: addressesOf(record.row),
       preview_url: `/preview/page/${record.row.id}`,
     },
   }
@@ -1018,6 +1020,11 @@ on('DELETE', '/pages/(\\d+)', ({ params }) => {
 
   return { data: { trashed: branch.length } }
 })
+
+/* How many pages emptying the bin would take — every one in it, not only the tops of branches. */
+on('GET', '/pages/bin', () => ({
+  data: { pages: [...pages.values()].filter((record) => record.row.deleted_at !== null).length },
+}))
 
 on('POST', '/pages/(\\d+)/restore', ({ params }) => {
   const record = page(params[0])
@@ -1111,6 +1118,7 @@ on('POST', '/pages/(\\d+)/versions/(\\d+)/restore', ({ params }) => {
       values: withSeoImage(record.values),
       revision: revisionOf(record),
       address_prefix: prefixOf(record.row),
+      addresses: addressesOf(record.row),
       preview_url: `/preview/page/${record.row.id}`,
     },
   }
@@ -3115,15 +3123,84 @@ function checkMenuKey(key: string, current: string | null): void {
 }
 
 /*
- * The SEO section, as far as the screens need it to be drawn: no rules, no redirects, no moves,
+ * The SEO section, as far as the screens need it to be drawn: no rules, a few redirects and moves,
  * and a sitemap counted from what the fixtures have published. The map's own verdicts — noindex,
  * a canonical elsewhere — live on the server and are tested there; here the card only has to
- * have numbers to show.
+ * have numbers to show. The redirects and moves are long on purpose: a long address is what
+ * pushes a row menu off the edge, and an empty table cannot show that.
  */
-const emptyPage = {
-  data: [],
-  meta: { current_page: 1, last_page: 1, per_page: 20, total: 0, from: null, to: null },
+const lastHit = '2026-10-05T10:00:00+00:00'
+const redirectRows = [
+  ['exact', '/about-us', '/about', 302, 12, false],
+  [
+    'mask',
+    '/catalog/old-collection/*',
+    '/shop/collections/new-collection-2026/$1',
+    301,
+    340,
+    false,
+  ],
+  [
+    'exact',
+    '/blog/2019/how-to-choose-the-right-supplement-for-your-morning-routine',
+    '/articles/choosing-a-morning-supplement-a-complete-guide',
+    301,
+    5,
+    false,
+  ],
+  [
+    'regex',
+    '#^/products/([0-9]+)-(.*)$#',
+    'https://www.example.com/catalog/item/$2?from=oldsite&utm_source=migration2026',
+    301,
+    0,
+    false,
+  ],
+  ['exact', '/contacts/', '/contacts', 301, 0, true],
+] as const
+
+const redirectsPage = {
+  data: redirectRows.map(([match_type, pattern, target, status, hits, is_loop], index) => ({
+    id: index + 1,
+    match_type,
+    pattern,
+    target,
+    status,
+    is_active: true,
+    hits,
+    last_hit_at: hits > 0 ? lastHit : null,
+    is_loop,
+    created_at: lastHit,
+    updated_at: lastHit,
+  })),
+  meta: {
+    current_page: 1,
+    last_page: 1,
+    per_page: 20,
+    total: redirectRows.length,
+    from: 1,
+    to: redirectRows.length,
+  },
 }
+
+const aliasesPage = {
+  data: [
+    {
+      id: 1,
+      pattern: '/blog/how-to-choose-the-right-supplement-for-your-morning-routine',
+      target: '/blog/choosing-a-morning-supplement-a-complete-guide-for-beginners',
+      locale: 'en',
+      url: 'http://localhost:5174/blog/how-to-choose-the-right-supplement-for-your-morning-routine',
+      target_url:
+        'http://localhost:5174/blog/choosing-a-morning-supplement-a-complete-guide-for-beginners',
+      entity_type: 'article',
+      entity_id: 1,
+      created_at: lastHit,
+    },
+  ],
+  meta: { current_page: 1, last_page: 1, per_page: 20, total: 1, from: 1, to: 1 },
+}
+
 let sitemapBuiltAt = new Date().toISOString()
 
 function sitemapStatus(): unknown {
@@ -3148,8 +3225,8 @@ function sitemapStatus(): unknown {
   }
 }
 
-on('GET', '/seo/redirects', () => emptyPage)
-on('GET', '/seo/aliases', () => emptyPage)
+on('GET', '/seo/redirects', () => redirectsPage)
+on('GET', '/seo/aliases', () => aliasesPage)
 on('GET', '/seo/sitemap', () => sitemapStatus())
 on('POST', '/seo/sitemap', () => {
   sitemapBuiltAt = new Date().toISOString()
@@ -5209,6 +5286,16 @@ function revisionOf(record: PageRecord): string {
 }
 
 /** The address of the branch above, by language: what this page's own address is built on. */
+/** The address a page answers at now: the slugs above it and its own, the same in both languages. */
+function addressesOf(row: PageRow): Record<string, string> {
+  const path = [...ancestorsOf(row), row]
+    .map((node) => node.slug)
+    .filter((slug) => slug !== '')
+    .join('/')
+
+  return { ru: path, en: path }
+}
+
 function prefixOf(row: PageRow): Record<string, string> {
   const above = ancestorsOf(row)
     .map((node) => node.slug)

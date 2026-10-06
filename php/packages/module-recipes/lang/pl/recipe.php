@@ -12,8 +12,6 @@ return [
     'publish-nowhere' => 'W tym języku nie ma jeszcze adresu, więc nic nie odpowie.',
     'preview' => 'Podgląd',
     'discard' => 'Odrzuć zmiany',
-    'discard-title' => 'Odrzucić to, co czeka?',
-    'discard-text' => 'Przepis wróci do tego, co pokazuje strona. To, co napisano od tamtej pory, nigdzie nie będzie widoczne.',
     'discarded' => 'Przepis wrócił do opublikowanej wersji.',
     'conflict-title' => 'Przepis zmienił się podczas Twojej edycji',
     'conflict-mine' => 'Zachowaj mój',

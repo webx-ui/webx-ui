@@ -55,6 +55,7 @@ const dates = useDates()
 useServicesMessages()
 
 const t = useTranslate('webx-services')
+const panel = useTranslate('webx-admin')
 /* Not the server's `message`: the panel says how a request failed in its own words. */
 const message = useErrorText()
 
@@ -274,10 +275,11 @@ async function discard(): Promise<void> {
   if (!service.value) return
 
   const agreed = await confirm({
-    title: t('service.discard-title'),
-    message: t('service.discard-text'),
+    title: panel('editor.discard-title'),
+    message: panel('editor.discard-text'),
     confirmText: t('service.discard'),
-    cancelText: t('panel.cancel'),
+    // Not «Cancel»: beside «Discard changes» the two read as the same word.
+    cancelText: panel('editor.keep-changes'),
     tone: 'danger',
   })
 
@@ -297,24 +299,34 @@ async function discard(): Promise<void> {
 
 /** Publishing is asked about, because it is the one action here that visitors see. */
 async function publish(): Promise<void> {
+  // Saved before asking: the question names the address the draft will publish at, and only a
+  // saved draft has one — an address typed but not saved was asked about under the old one.
+  if (dirty.value) await save()
+  if (conflict.value || dirty.value) return
+
   const row = service.value
 
   if (!row) return
 
+  // Publishing moves a renamed slug, so the question names where the page will be, not where
+  // it is — and says the old address will lead there, since that is what happens to it.
+  const next = row.next_path ?? row.path
+  const old =
+    row.next_path != null && row.path !== null
+      ? ` ${panel('editor.publish-moves', { old: `/${row.path}` })}`
+      : ''
+
   const agreed = await confirm({
     title: t('service.publish-title', { title: title.value || row.title }),
     message:
-      row.path === null
+      next === null
         ? t('service.publish-nowhere')
-        : t('service.publish-text', { address: `/${row.path}` }),
+        : t('service.publish-text', { address: `/${next}` }) + old,
     confirmText: t('panel.publish'),
     cancelText: t('panel.cancel'),
   })
 
   if (!agreed) return
-
-  if (dirty.value) await save()
-  if (conflict.value) return
 
   working.value = true
 
@@ -322,6 +334,37 @@ async function publish(): Promise<void> {
     await api.publish(row.id)
     await load(true)
     toast.success(t('panel.published'))
+  } catch (error) {
+    toast.danger(message(error))
+  } finally {
+    working.value = false
+  }
+}
+
+/**
+ * Taking it off the site is asked about, as publishing is: visitors are who notice. Nothing
+ * written is lost, and «Publish» brings it back at the same address.
+ */
+async function unpublish(): Promise<void> {
+  const row = service.value
+
+  if (!row) return
+
+  const agreed = await confirm({
+    title: panel('editor.unpublish-title'),
+    message: panel('editor.unpublish-text'),
+    confirmText: panel('editor.unpublish'),
+    cancelText: panel('editor.keep-published'),
+  })
+
+  if (!agreed) return
+
+  working.value = true
+
+  try {
+    await api.unpublish(row.id)
+    await load(true)
+    toast.success(panel('editor.unpublished'))
   } catch (error) {
     toast.danger(message(error))
   } finally {
@@ -387,6 +430,20 @@ const actions = computed<ScreenAction[]>(() => {
       label: t('panel.open-on-site'),
       icon: 'link',
       href: service.value.url,
+    })
+  }
+
+  // On the site now: the way off it is a button of its own beside «Open on the site», not a
+  // line in the ···. Hiding loses nothing and is undone by «Publish».
+  if (
+    canManage.value &&
+    (service.value?.status === 'published' || service.value?.status === 'modified')
+  ) {
+    leads.push({
+      key: 'unpublish',
+      label: panel('editor.unpublish'),
+      icon: 'eye-off',
+      run: () => void unpublish(),
     })
   }
 

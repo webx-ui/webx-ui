@@ -6,6 +6,7 @@ return [
     'field' => 'Pole',
     'new-field' => 'Nowe pole',
     'edit-field' => 'Pole',
+    'edit' => 'Edytuj',
     'no-fields' => 'Nie ma jeszcze pytań.',
     'no-fields-help' => 'Formularz bez pól nie rysuje na stronie niczego.',
     'save-first' => 'Najpierw zapisz formularz, potem napisz jego pytania.',

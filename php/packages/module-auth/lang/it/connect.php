@@ -38,5 +38,7 @@ return [
     'next-2' => 'Il pannello mostra chi chiede e dove va la risposta. Lì c\'è l\'interruttore «sola lettura», ed è il modo prudente di cominciare.',
     'next-3' => 'Da lì in poi l’agente agisce come lei: può ciò che può lei e nulla di più, e ogni sua chiamata viene annotata.',
     'mine' => 'Le sue connessioni',
+    'rules' => 'Regole per gli agenti',
+    'rules-hint' => 'Ogni agente collegato le legge prima di scrivere ciò che vedrà un visitatore.',
 
 ];

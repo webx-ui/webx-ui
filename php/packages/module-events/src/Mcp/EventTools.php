@@ -16,6 +16,7 @@ use WebxUi\Admin\Categories\CategoryException;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Relations\RelationTarget;
 use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
 use WebxUi\Events\Models\Event;
@@ -191,6 +192,15 @@ final class EventTools
             ),
 
             Tool::mutating(
+                'discard',
+                'Throw away the draft of an event that is on the site and go back to what the site shows. The draft '
+                .'is all that changes. dry_run names the fields that differ from the published ones.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->discard($arguments)),
+                ['properties' => ['event' => $event], 'required' => ['event']],
+                permission: 'events.manage',
+            ),
+
+            Tool::mutating(
                 'delete',
                 'Put an event in the bin. Its address is released, so afterwards it can only be named by its id. '
                 .'Nothing is destroyed: the bin in the panel puts it back, as long as nobody has taken its address '
@@ -321,6 +331,10 @@ final class EventTools
             throw new ToolFailure('`values` must be a non-empty object of field name → value. events_get says what the fields are.');
         }
 
+        // Merged language by language, and a language the site does not have refused — dry run
+        // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
+        $values = $this->container->make(ScreenValues::class)->patch(Event::SCREEN, $this->form()->values($event), $values);
+
         if ($event->trashed()) {
             throw new ToolFailure("Event #{$event->getKey()} is in the bin. Bring it back in the panel before editing it.");
         }
@@ -404,6 +418,27 @@ final class EventTools
         }
 
         $event->unpublish();
+
+        return ['event' => $this->summary($event->refresh())];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function discard(array $arguments): array
+    {
+        $event = $this->event($arguments['event'] ?? null);
+
+        if (! $event->hasDraft()) {
+            throw new ToolFailure("Event [{$event->getKey()}] has no draft: the site already shows what it holds.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_discard' => $event->changedFields(), 'event' => $this->reference($event)];
+        }
+
+        $event->discardDraft();
 
         return ['event' => $this->summary($event->refresh())];
     }
@@ -737,6 +772,12 @@ final class EventTools
         $texts = [];
 
         foreach ($value as $locale => $text) {
+            // Words in a language the site is not published in are words nobody reads — and
+            // an address in one is an address that answers nowhere.
+            if (! $this->locales()->has((string) $locale)) {
+                throw new ToolFailure("`{$field}` has a value in [{$locale}], which this site is not published in. It has: ".implode(', ', $this->locales()->codes()).'.');
+            }
+
             if (is_string($text) && trim($text) !== '') {
                 $texts[(string) $locale] = trim($text);
             }

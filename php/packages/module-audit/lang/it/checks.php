@@ -372,6 +372,18 @@ return [
             'why' => 'Gli screen reader navigano per titoli, e un salto sembra un contenuto mancante.',
             'fix' => 'Usa i livelli in ordine; scegli l’aspetto con gli stili, non con il livello.',
         ],
+        'h1_not_first' => [
+            'title' => 'L’H1 non è la prima intestazione',
+            'found' => 'Prima dell’H1 c’è un’altra intestazione.',
+            'why' => 'Motori e lettori di schermo considerano la prima intestazione l’inizio del contenuto; un blocco sopra che usa un’intestazione per l’aspetto spinge in basso il nome della pagina.',
+            'fix' => 'Rendete l’H1 la prima intestazione; ai blocchi sopra date testo normale o un elemento con stile.',
+        ],
+        'empty' => [
+            'title' => 'Intestazione vuota',
+            'found' => 'Un’intestazione non ha testo: solo un’icona, un’immagine o niente.',
+            'why' => 'Un lettore di schermo annuncia un’intestazione che non dice nulla e i motori ricevono un livello senza senso.',
+            'fix' => 'Scrivete l’intestazione, o rendete l’elemento testo normale se serve solo all’aspetto.',
+        ],
     ],
     'canonical' => [
         'missing' => [
