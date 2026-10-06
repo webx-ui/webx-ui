@@ -1,5 +1,37 @@
 # @webx-ui/admin
 
+## 0.23.4
+
+### Patch Changes
+
+- a814314: «Discard changes» asks one plain question in every drafted editor — «Discard changes? The published version comes back. Everything changed since publishing is lost…» — with «Keep» beside it instead of «Cancel». Agents get `articles_discard`, `events_discard`, `services_discard`, `recipes_discard` and `vacancies_discard` beside `pages_discard`; a dry run names only the fields that differ from the published ones (`HasDraft::changedFields()`).
+- a814314: The editors of pages, services, events, recipes, vacancies and articles have «Take off the site»
+  as a button of its own in the head while the record is on the site — before, only the list's ···
+  had it. It asks first, saying what happens and that «Publish» brings it back at the same address.
+  The words are the panel's (`editor.unpublish*`), shared by every module.
+- a814314: Panel lists show an address instead of «No address in this language». They are read in the site's
+  content language, not the panel's, so an English-only site in a Russian panel shows its addresses
+  plainly; and a record with no address in the language a multilingual list is read in shows its
+  address in the site's main language, with an info mark whose tooltip says so (`address_locale` in
+  the rows, `PanelAddress` in `routing`, `WxAddressNote` in `module-admin`). Pages, articles,
+  events, recipes, services, vacancies and every module's categories.
+- a814314: The page editor's address is the panel's shared slug field (`wx-slug`), as on a catalog product: the address of the page above stands inside the field in front of the slug, in the language being edited, and a changed slug on a page that has an address says that the old one will lead to the new one. The separate read-only «Address» line under it is gone. `GET /pages/{id}` also answers `addresses` — the page's current address by language. `RecordAddress` takes an optional `missing()`: with it, a `null` prefix means the record has no address in this language, and the field says so instead of printing `/`.
+- a814314: The publish question names the address the record will have after publishing. A slug renamed in
+  the draft moved the address only on publishing, while the question still named the old one; rows
+  now carry `next_path` (`PanelAddress::afterPublishing()`), and the question adds that the old
+  address will lead to the new one.
+- a814314: «System» is split under captions: the settings on top, then «Site» (files, blocks, regions,
+  menus), «Search and checks» (SEO, the audit, a search index) and «Access» (administrators,
+  connecting an agent). The captions are added to the config at boot, so a site with its own
+  `webx-admin.php` gets them too; a module joins one with `HasNavSection` and `SystemSections`.
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+  - @webx-ui/core@0.37.1
+  - @webx-ui/schema@0.7.4
+
 ## 0.23.3
 
 ### Patch Changes

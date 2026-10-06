@@ -1,5 +1,28 @@
 # @webx-ui/module-catalog-landings
 
+## 0.1.4
+
+### Patch Changes
+
+- a814314: A switch says what it turns beside itself, not in a heading above it. In screens a `wx-switch` or
+  `wx-checkbox` node hands its label to the control (`labelProp` on a field type), and the form
+  item keeps the help and the error; the hand-written forms of SEO, the inbox and the landings'
+  filters follow.
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+  - @webx-ui/core@0.37.1
+  - @webx-ui/module-admin@0.23.4
+  - @webx-ui/schema@0.7.4
+
 ## 0.1.3
 
 ### Patch Changes

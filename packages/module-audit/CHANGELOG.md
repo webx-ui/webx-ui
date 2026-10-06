@@ -1,5 +1,54 @@
 # @webx-ui/module-audit
 
+## 0.3.0
+
+### Minor Changes
+
+- a814314: The audit keeps every heading of a page in order, and the page card shows them as a tree on a «Headings» tab: indented by level, a skipped level drawn where it should have been, and above the tree what breaks the usual order (no H1, several, not first, skipped levels, empty headings).
+
+  Two new page checks join the findings: `headings.h1_not_first` (another heading comes before the H1) and `headings.empty` (a heading with no text).
+
+  The overview of a page has a «Headings» line: whether the order is fine, how many there are, what breaks the rules, and a link to the map.
+
+### Patch Changes
+
+- a814314: The audit shows how an external link is written: its `target` and `rel` (`_blank`, `nofollow`,
+  `noopener`…) as badges — an «Attributes» column in the external redirect and broken link findings,
+  and beside the address on «Outgoing». When the pages write one link differently, each page says
+  its own. `_blank` without `noopener` or `noreferrer` is marked, with why in the tooltip.
+- a814314: The audit's page card reads at a glance. «Overview» opens with the page's numbers as tiles — code,
+  size in KB, first byte, answer, words, links, pictures — then sections with an edge each: server
+  answer, crawl, markup, preview and structured data, headers; the Open Graph and Twitter keys line
+  up in a column of their own. «Findings» are cards with the count in the head, like the findings
+  list, and short columns (kind, KB, type) keep narrow.
+- a814314: The audit's address lists read at a glance. A finding is a card: its page, the «New» badge and the
+  count as a counter on one line, the table under it. Columns take their width from their type, so
+  the tables of one check line up. A redirect row reads from → to, the target emphasised and a
+  trailing slash, `www.` or `http → https` named; 302 is coloured apart from 301. Long addresses
+  keep to one line, losing their middle, with the whole in the panel's tooltip. A redirect check
+  can be read by link — one card per link with the pages it is on. On «Outgoing» a host's links are
+  grouped by where they lead, every page counted (`targets` in the hosts answer), and a card's
+  «Show all» folds back with «Collapse».
+- a814314: The audit's settings can be left again: «Back» beside «Save» returns to the overview, whose tab
+  was lit and so could not be clicked to.
+- a814314: Every answer code in the audit says what it means: hover a 403, a 301 or «No answer» for its name
+  and what to do about it — in the findings, on «Outgoing», in the page list and the page card. A
+  code without a line of its own is explained by its class.
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+- Updated dependencies [a814314]
+  - @webx-ui/core@0.37.1
+  - @webx-ui/module-admin@0.23.4
+  - @webx-ui/schema@0.7.4
+
 ## 0.2.1
 
 ### Patch Changes

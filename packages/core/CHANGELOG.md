@@ -1,5 +1,20 @@
 # @webx-ui/core
 
+## 0.37.1
+
+### Patch Changes
+
+- a814314: `WxAside`: the menu scrolls without a scrollbar and keeps no room for one — the reserved room stood
+  as a gap on the right of every item even when nothing overflowed. The wheel, touch and the keyboard
+  still scroll it.
+- a814314: `WxInputNumber` in a form item is at most 240px wide everywhere, not only in screens: in a
+  hand-written form a number stretched across the card with its − and + a line apart. Bare — in a
+  filter row or a table cell — it keeps the width it is given. The screens' own cap and the field
+  dialog's are gone, the core's covers both.
+- a814314: `WxLink` with `as="button"` drops the browser's button frame and background, so it reads as a link.
+- a814314: `WxTable`: what a row opens into keeps to the table's visible width and stays in place while the
+  columns scroll sideways, instead of stretching the table to fit its widest line.
+
 ## 0.37.0
 
 ### Minor Changes
