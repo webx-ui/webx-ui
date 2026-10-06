@@ -61,8 +61,6 @@ return [
     'restore-branch' => 'Onunla birlikte giden :count sayfa da geri gelir.',
     'restored-branch' => ':count sayfa geri geldi.',
     'discard' => 'Değişiklikleri at',
-    'discard-title' => 'Bekleyen değişiklikler atılsın mı?',
-    'discard-text' => 'Sayfa sitenin gösterdiği hâline döner. O zamandan beri yazılanlar hiçbir yerde listelenmez.',
     'discarded' => 'Sayfa yayımlanan hâline döndü.',
     'purge' => 'Kalıcı olarak sil',
     'purge-title' => '“:title” kalıcı olarak silinsin mi?',

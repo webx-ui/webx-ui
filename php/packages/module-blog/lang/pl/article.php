@@ -17,8 +17,6 @@ return [
     'preview' => 'Podgląd',
     'more' => 'Więcej',
     'discard' => 'Odrzuć zmiany',
-    'discard-title' => 'Odrzucić to, co przygotowane?',
-    'discard-text' => 'Artykuł wraca do tego, co pokazuje strona. Napisane od tamtej pory nigdzie nie jest wypisane.',
     'discarded' => 'Artykuł wrócił do opublikowanej wersji.',
     'conflict-title' => 'Artykuł zmienił się w trakcie edycji',
     'conflict-mine' => 'Zostaw moją',

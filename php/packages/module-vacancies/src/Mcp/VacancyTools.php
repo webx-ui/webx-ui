@@ -170,6 +170,15 @@ final class VacancyTools
             ),
 
             Tool::mutating(
+                'discard',
+                'Throw away the draft of a vacancy that is on the site and go back to what the site shows. The draft '
+                .'is all that changes. dry_run names the fields that differ from the published ones.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->discard($arguments)),
+                ['properties' => ['vacancy' => $vacancy], 'required' => ['vacancy']],
+                permission: 'vacancies.manage',
+            ),
+
+            Tool::mutating(
                 'close',
                 'Close the hiring: the vacancy leaves the lists, its page stays with the note "This vacancy is closed", '
                 .'without the markup search engines read and out of their index. A save and a publication in one step, '
@@ -430,6 +439,27 @@ final class VacancyTools
         }
 
         $vacancy->unpublish();
+
+        return ['vacancy' => $this->summary($vacancy->refresh())];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function discard(array $arguments): array
+    {
+        $vacancy = $this->vacancy($arguments['vacancy'] ?? null);
+
+        if (! $vacancy->hasDraft()) {
+            throw new ToolFailure("Vacancy [{$vacancy->getKey()}] has no draft: the site already shows what it holds.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_discard' => $vacancy->changedFields(), 'vacancy' => $this->reference($vacancy)];
+        }
+
+        $vacancy->discardDraft();
 
         return ['vacancy' => $this->summary($vacancy->refresh())];
     }

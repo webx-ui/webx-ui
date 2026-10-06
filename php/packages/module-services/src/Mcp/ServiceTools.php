@@ -149,6 +149,15 @@ final class ServiceTools
             ),
 
             Tool::mutating(
+                'discard',
+                'Throw away the draft of a service that is on the site and go back to what the site shows. The draft '
+                .'is all that changes. dry_run names the fields that differ from the published ones.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->discard($arguments)),
+                ['properties' => ['service' => $service], 'required' => ['service']],
+                permission: 'services.manage',
+            ),
+
+            Tool::mutating(
                 'delete',
                 'Put a service in the bin. Its address is released, so afterwards it can only be named by its '
                 .'id. Nothing is destroyed: the bin in the panel puts it back, as long as nobody has taken its '
@@ -337,6 +346,27 @@ final class ServiceTools
         }
 
         $service->unpublish();
+
+        return ['service' => $this->summary($service->refresh())];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function discard(array $arguments): array
+    {
+        $service = $this->service($arguments['service'] ?? null);
+
+        if (! $service->hasDraft()) {
+            throw new ToolFailure("Service [{$service->getKey()}] has no draft: the site already shows what it holds.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_discard' => $service->changedFields(), 'service' => $this->reference($service)];
+        }
+
+        $service->discardDraft();
 
         return ['service' => $this->summary($service->refresh())];
     }

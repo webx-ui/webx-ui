@@ -61,8 +61,6 @@ return [
     'restore-branch' => 'Tornano anche le :count pagine finite lì insieme a lei.',
     'restored-branch' => 'Sono tornate :count pagine.',
     'discard' => 'Annulla le modifiche',
-    'discard-title' => 'Scartare ciò che è in attesa?',
-    'discard-text' => 'La pagina torna a ciò che mostra il sito. Quanto scritto da allora non è elencato da nessuna parte.',
     'discarded' => 'La pagina è tornata alla versione pubblicata.',
     'purge' => 'Elimina per sempre',
     'purge-title' => 'Eliminare «:title» per sempre?',

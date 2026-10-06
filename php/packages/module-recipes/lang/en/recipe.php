@@ -12,8 +12,6 @@ return [
     'publish-nowhere' => 'It has no address in this language yet, so nothing will answer.',
     'preview' => 'Preview',
     'discard' => 'Discard changes',
-    'discard-title' => 'Discard what is waiting?',
-    'discard-text' => 'The recipe goes back to what the site is showing. What was written since is not listed anywhere.',
     'discarded' => 'The recipe is back to what is published.',
     'conflict-title' => 'The recipe changed while you were editing',
     'conflict-mine' => 'Keep mine',

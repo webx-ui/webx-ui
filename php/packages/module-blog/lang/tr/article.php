@@ -17,8 +17,6 @@ return [
     'preview' => 'Önizleme',
     'more' => 'Daha fazla',
     'discard' => 'Değişiklikleri geri al',
-    'discard-title' => 'Hazırlanan şey atılsın mı?',
-    'discard-text' => 'Yazı sitenin gösterdiği hâline döner. O zamandan beri yazılanlar hiçbir yerde listelenmez.',
     'discarded' => 'Yazı yayımlanmış hâline döndü.',
     'conflict-title' => 'Siz düzenlerken yazı değişti',
     'conflict-mine' => 'Benimkini tut',

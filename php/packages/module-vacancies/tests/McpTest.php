@@ -36,7 +36,7 @@ final class McpTest extends TestCase
         $this->assertSame(
             [
                 'vacancies_list', 'vacancies_get', 'vacancies_create', 'vacancies_update', 'vacancies_duplicate',
-                'vacancies_publish', 'vacancies_unpublish', 'vacancies_close', 'vacancies_reopen', 'vacancies_delete',
+                'vacancies_publish', 'vacancies_unpublish', 'vacancies_discard', 'vacancies_close', 'vacancies_reopen', 'vacancies_delete',
                 'vacancies_reorder',
             ],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('vacancies')),

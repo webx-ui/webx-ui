@@ -43,7 +43,8 @@ final class DiscardTest extends TestCase
 
         $page->saveDraft(['title' => ['en' => 'About us'], 'slug' => ['en' => 'about']]);
 
-        $this->agent(['page' => '/about', 'dry_run' => true])->assertOk()->assertSee('would_discard');
+        // The title is what changed; the slug the draft carries is the one on the site.
+        $this->agent(['page' => '/about', 'dry_run' => true])->assertOk()->assertSee('"would_discard":["title"]');
         $this->assertTrue($page->refresh()->hasDraft(), 'a dry run changes nothing');
 
         $this->agent(['page' => '/about'])->assertOk();

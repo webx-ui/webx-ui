@@ -61,8 +61,6 @@ return [
     'restore-branch' => 'Die :count Seiten, die mit ihr hineingingen, kommen mit zurück.',
     'restored-branch' => ':count Seiten sind zurück.',
     'discard' => 'Änderungen verwerfen',
-    'discard-title' => 'Verwerfen, was wartet?',
-    'discard-text' => 'Die Seite kehrt zu dem zurück, was die Website zeigt. Was seitdem geschrieben wurde, wird nirgends aufgeführt.',
     'discarded' => 'Die Seite ist wieder beim Veröffentlichten.',
     'purge' => 'Endgültig löschen',
     'purge-title' => '„:title“ endgültig löschen?',

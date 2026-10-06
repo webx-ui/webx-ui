@@ -271,10 +271,11 @@ async function discard(): Promise<void> {
   if (!recipe.value) return
 
   const agreed = await confirm({
-    title: t('recipe.discard-title'),
-    message: t('recipe.discard-text'),
+    title: panel('editor.discard-title'),
+    message: panel('editor.discard-text'),
     confirmText: t('recipe.discard'),
-    cancelText: t('panel.cancel'),
+    // Not «Cancel»: beside «Discard changes» the two read as the same word.
+    cancelText: panel('editor.keep-changes'),
     tone: 'danger',
   })
 
@@ -322,7 +323,6 @@ async function publish(): Promise<void> {
   })
 
   if (!agreed) return
-
 
   working.value = true
 

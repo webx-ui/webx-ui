@@ -12,8 +12,6 @@ return [
     'publish-nowhere' => 'Bu dilde henüz adresi yok, bu yüzden hiçbir şey yanıt vermez.',
     'preview' => 'Önizleme',
     'discard' => 'Değişiklikleri at',
-    'discard-title' => 'Bekleyenler atılsın mı?',
-    'discard-text' => 'Hizmet, sitenin gösterdiği hâline döner. O zamandan beri yazılanlar hiçbir yerde listelenmez.',
     'discarded' => 'Hizmet yayınlanan hâline döndü.',
     'conflict-title' => 'Siz düzenlerken hizmet değişti',
     'conflict-mine' => 'Benimkini tut',

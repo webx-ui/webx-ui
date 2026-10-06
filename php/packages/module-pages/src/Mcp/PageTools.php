@@ -543,7 +543,7 @@ final class PageTools
         if ($this->dryRun($arguments)) {
             return [
                 'dry_run' => true,
-                'would_discard' => array_keys($page->draftValues()),
+                'would_discard' => $page->changedFields(),
                 'page' => $this->address($page),
             ];
         }

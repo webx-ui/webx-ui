@@ -61,8 +61,6 @@ return [
     'restore-branch' => 'As :count páginas que foram com ela também voltam.',
     'restored-branch' => 'Voltaram :count páginas.',
     'discard' => 'Descartar alterações',
-    'discard-title' => 'Descartar o que está pendente?',
-    'discard-text' => 'A página volta ao que o site mostra. O que foi escrito desde então não aparece em lado nenhum.',
     'discarded' => 'A página voltou ao que está publicado.',
     'purge' => 'Eliminar de vez',
     'purge-title' => 'Eliminar «:title» de vez?',

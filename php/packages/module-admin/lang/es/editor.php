@@ -13,6 +13,9 @@ return [
     'unpublish-title' => '¿Retirar del sitio?',
     'unpublish-text' => 'Los visitantes dejarán de verlo: su página responderá «no encontrado» y saldrá del mapa del sitio y de la búsqueda. Todo lo escrito se queda en el panel, y «Publicar» lo devuelve en la misma dirección.',
     'keep-published' => 'Mantener en el sitio',
+    'discard-title' => '¿Descartar los cambios?',
+    'discard-text' => 'Vuelve la versión publicada. Todo lo cambiado desde la publicación se pierde y no se puede recuperar.',
+    'keep-changes' => 'Conservar',
     'publish-moves' => 'La dirección antigua :old llevará a la nueva.',
     'unpublished' => 'Retirado del sitio.',
 ];

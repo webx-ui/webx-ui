@@ -61,8 +61,6 @@ return [
     'restore-branch' => 'Wrócą też :count stron, które trafiły tam razem z nią.',
     'restored-branch' => 'Wróciło stron: :count.',
     'discard' => 'Odrzuć zmiany',
-    'discard-title' => 'Odrzucić to, co czeka?',
-    'discard-text' => 'Strona wróci do tego, co pokazuje witryna. To, co napisano od tego czasu, nie jest nigdzie wymienione.',
     'discarded' => 'Strona wróciła do opublikowanej wersji.',
     'purge' => 'Usuń na zawsze',
     'purge-title' => 'Usunąć „:title” na zawsze?',

@@ -164,6 +164,15 @@ final class ArticleTools
             ),
 
             Tool::mutating(
+                'discard',
+                'Throw away the draft of an article that is on the site and go back to what the site shows. The draft '
+                .'is all that changes. dry_run names the fields that differ from the published ones.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->discard($arguments)),
+                ['properties' => ['article' => $article], 'required' => ['article']],
+                permission: 'blog.articles.manage',
+            ),
+
+            Tool::mutating(
                 'delete',
                 'Put an article in the bin. Its address is released — an article nobody can reach has no '
                 .'business holding a spelling the next one called the same thing will want — so it can only be '
@@ -415,6 +424,27 @@ final class ArticleTools
         }
 
         $article->unpublish();
+
+        return ['article' => $this->summary($article->refresh())];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function discard(array $arguments): array
+    {
+        $article = $this->article($arguments['article'] ?? null);
+
+        if (! $article->hasDraft()) {
+            throw new ToolFailure("Article [{$article->getKey()}] has no draft: the site already shows what it holds.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_discard' => $article->changedFields(), 'article' => $this->reference($article)];
+        }
+
+        $article->discardDraft();
 
         return ['article' => $this->summary($article->refresh())];
     }

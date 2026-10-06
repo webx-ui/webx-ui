@@ -192,6 +192,15 @@ final class EventTools
             ),
 
             Tool::mutating(
+                'discard',
+                'Throw away the draft of an event that is on the site and go back to what the site shows. The draft '
+                .'is all that changes. dry_run names the fields that differ from the published ones.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->discard($arguments)),
+                ['properties' => ['event' => $event], 'required' => ['event']],
+                permission: 'events.manage',
+            ),
+
+            Tool::mutating(
                 'delete',
                 'Put an event in the bin. Its address is released, so afterwards it can only be named by its id. '
                 .'Nothing is destroyed: the bin in the panel puts it back, as long as nobody has taken its address '
@@ -409,6 +418,27 @@ final class EventTools
         }
 
         $event->unpublish();
+
+        return ['event' => $this->summary($event->refresh())];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function discard(array $arguments): array
+    {
+        $event = $this->event($arguments['event'] ?? null);
+
+        if (! $event->hasDraft()) {
+            throw new ToolFailure("Event [{$event->getKey()}] has no draft: the site already shows what it holds.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_discard' => $event->changedFields(), 'event' => $this->reference($event)];
+        }
+
+        $event->discardDraft();
 
         return ['event' => $this->summary($event->refresh())];
     }

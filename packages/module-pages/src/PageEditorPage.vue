@@ -392,10 +392,11 @@ async function discard(): Promise<void> {
   if (!row) return
 
   const agreed = await confirm({
-    title: t('page.discard-title'),
-    message: t('page.discard-text'),
+    title: panel('editor.discard-title'),
+    message: panel('editor.discard-text'),
     confirmText: t('page.discard'),
-    cancelText: t('page.cancel'),
+    // Not «Cancel»: beside «Discard changes» the two read as the same word.
+    cancelText: panel('editor.keep-changes'),
     tone: 'danger',
   })
 

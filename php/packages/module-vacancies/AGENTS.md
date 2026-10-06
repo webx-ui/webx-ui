@@ -33,7 +33,7 @@ history and categories `webx-ui/module-admin`, the SEO card `webx-ui/module-seo`
 - **API** under `/api/cms/vacancies` and `/api/cms/vacancies/categories`; permissions
   `vacancies.view`, `vacancies.manage`, `vacancies.categories.manage`.
 - **MCP** tools `vacancies_list`, `vacancies_get`, `vacancies_create`, `vacancies_update`,
-  `vacancies_duplicate`, `vacancies_publish`, `vacancies_unpublish`, `vacancies_close`,
+  `vacancies_duplicate`, `vacancies_publish`, `vacancies_unpublish`, `vacancies_discard`, `vacancies_close`,
   `vacancies_reopen`, `vacancies_delete`, `vacancies_reorder`, and `vacancy_categories_list`,
   `_create`, `_update`, `_delete`, `_reorder`; resource `vacancies://catalog`. Scopes
   `vacancies:read`, `vacancies:write`, `vacancy-categories:read`, `vacancy-categories:write`.

@@ -17,8 +17,6 @@ return [
     'preview' => 'Pré-visualizar',
     'more' => 'Mais',
     'discard' => 'Descartar alterações',
-    'discard-title' => 'Descartar o que está preparado?',
-    'discard-text' => 'O artigo volta ao que o site mostra. O que foi escrito desde então não está listado em lado nenhum.',
     'discarded' => 'O artigo voltou ao que está publicado.',
     'conflict-title' => 'O artigo mudou enquanto o editava',
     'conflict-mine' => 'Ficar com a minha',

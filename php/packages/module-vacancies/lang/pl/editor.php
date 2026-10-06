@@ -16,8 +16,6 @@ return [
     'publish-nowhere' => 'W tym języku nie ma jeszcze adresu, więc nic nie będzie odpowiadać.',
     'preview' => 'Podgląd',
     'discard' => 'Odrzuć zmiany',
-    'discard-title' => 'Odrzucić oczekujące zmiany?',
-    'discard-text' => 'Oferta wróci do tego, co pokazuje strona. To, co napisano od tamtej pory, nigdzie się nie zapisze.',
     'discarded' => 'Oferta wróciła do opublikowanej wersji.',
     'conflict-title' => 'Oferta zmieniła się podczas edycji',
     'conflict-mine' => 'Zachowaj moją wersję',

@@ -187,22 +187,35 @@ trait HasDraft
      */
     public function matchesLive(array $values): bool
     {
+        return $this->changedFields($values) === [];
+    }
+
+    /**
+     * The draft's fields that differ from what the site shows — the draft's own when none are
+     * given. What a discard would throw away, named the way the history names a change.
+     *
+     * @param  array<string, mixed>|null  $values
+     * @return list<string>
+     */
+    public function changedFields(?array $values = null): array
+    {
+        $values ??= $this->draftValues();
         $drafted = clone $this;
         $drafted->applyDraft($values);
+        $changed = [];
 
         foreach (array_keys($values) as $attribute) {
+            $attribute = (string) $attribute;
+
             // A key that is not a column — relations, a choice another table keeps — is applied by
             // whoever put it there on publication, and this cannot tell whether it changed.
-            if (! array_key_exists((string) $attribute, $this->getAttributes())) {
-                return false;
-            }
-
-            if (self::comparable($drafted, (string) $attribute) !== self::comparable($this, (string) $attribute)) {
-                return false;
+            if (! array_key_exists($attribute, $this->getAttributes())
+                || self::comparable($drafted, $attribute) !== self::comparable($this, $attribute)) {
+                $changed[] = $attribute;
             }
         }
 
-        return true;
+        return $changed;
     }
 
     /** An attribute as stored, decoded and with its maps sorted, for comparing. */

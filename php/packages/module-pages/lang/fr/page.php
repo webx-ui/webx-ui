@@ -61,8 +61,6 @@ return [
     'restore-branch' => 'Les :count pages parties avec elle reviennent aussi.',
     'restored-branch' => ':count pages sont de retour.',
     'discard' => 'Annuler les modifications',
-    'discard-title' => 'Abandonner ce qui attend ?',
-    'discard-text' => 'La page revient à ce que montre le site. Ce qui a été écrit depuis n’est listé nulle part.',
     'discarded' => 'La page est revenue à la version publiée.',
     'purge' => 'Supprimer définitivement',
     'purge-title' => 'Supprimer « :title » définitivement ?',

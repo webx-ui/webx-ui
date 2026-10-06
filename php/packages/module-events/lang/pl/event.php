@@ -17,8 +17,6 @@ return [
     'publish-nowhere' => 'W tym języku nie ma jeszcze adresu, więc nic nie odpowie.',
     'preview' => 'Podgląd',
     'discard' => 'Odrzuć zmiany',
-    'discard-title' => 'Odrzucić to, co czeka?',
-    'discard-text' => 'Wydarzenie wróci do tego, co pokazuje strona. To, co napisano od tego czasu, nie jest nigdzie wymienione.',
     'discarded' => 'Wydarzenie wróciło do opublikowanej wersji.',
     'conflict-title' => 'Wydarzenie zmieniło się podczas edycji',
     'conflict-mine' => 'Zachowaj moje',

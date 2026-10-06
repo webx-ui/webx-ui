@@ -168,6 +168,15 @@ final class RecipeTools
             ),
 
             Tool::mutating(
+                'discard',
+                'Throw away the draft of a recipe that is on the site and go back to what the site shows. The draft '
+                .'is all that changes. dry_run names the fields that differ from the published ones.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->discard($arguments)),
+                ['properties' => ['recipe' => $recipe], 'required' => ['recipe']],
+                permission: 'recipes.manage',
+            ),
+
+            Tool::mutating(
                 'delete',
                 'Put a recipe in the bin. Its address is released, so afterwards it can only be named by its id. '
                 .'Nothing is destroyed: the bin in the panel puts it back, as long as nobody has taken its address '
@@ -362,6 +371,27 @@ final class RecipeTools
         }
 
         $recipe->unpublish();
+
+        return ['recipe' => $this->summary($recipe->refresh())];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function discard(array $arguments): array
+    {
+        $recipe = $this->recipe($arguments['recipe'] ?? null);
+
+        if (! $recipe->hasDraft()) {
+            throw new ToolFailure("Recipe [{$recipe->getKey()}] has no draft: the site already shows what it holds.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_discard' => $recipe->changedFields(), 'recipe' => $this->reference($recipe)];
+        }
+
+        $recipe->discardDraft();
 
         return ['recipe' => $this->summary($recipe->refresh())];
     }
