@@ -53,9 +53,9 @@ final class StrayValues
             } else {
                 $allowed = [];
 
-                foreach (Schema::fields($type->schema, $this->types) as $id => $field) {
+                foreach (Schema::valueFields($type->schema, $this->types) as $id => $field) {
                     $allowed[(string) $id] = ($field['type'] ?? null) === 'wx-repeater'
-                        ? array_map('strval', array_keys(Schema::fields(Tree::children($field), $this->types)))
+                        ? array_map('strval', array_keys(Schema::valueFields(Tree::children($field), $this->types)))
                         : null;
                 }
 

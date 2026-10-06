@@ -43,6 +43,22 @@ final class Schema
     }
 
     /**
+     * The same walk, less the layout: only the nodes that hold a value. A row or a column has an
+     * id too — the walk needs it to reach the fields inside — but nothing is ever written under
+     * it, so it is not a field to offer an agent, nor a key a block may hold.
+     *
+     * @param  list<array<string, mixed>>  $nodes
+     * @return array<string, array<string, mixed>>
+     */
+    public static function valueFields(array $nodes, FieldTypes $types): array
+    {
+        return array_filter(
+            self::fields($nodes, $types),
+            static fn (array $node): bool => ! self::isLayout((string) ($node['type'] ?? '')),
+        );
+    }
+
+    /**
      * @param  list<array<string, mixed>>  $nodes
      * @return array<string, array<string, mixed>>
      */

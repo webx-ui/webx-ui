@@ -172,6 +172,24 @@ final class StrayValuesTest extends TestCase
     }
 
     #[Test]
+    public function layout_holds_no_value_and_is_not_offered_as_a_field(): void
+    {
+        $this->publish('banner', '<section data-wx-block="banner">{{ $heading }}</section>', [], ['schema' => [
+            ['id' => 'head_row', 'type' => 'wx-row', 'children' => [
+                ['id' => 'image_col', 'type' => 'wx-col', 'children' => [['id' => 'image', 'type' => 'wx-media']]],
+                ['id' => 'head_col', 'type' => 'wx-col', 'children' => [['id' => 'heading', 'type' => 'wx-input']]],
+            ]],
+        ]]);
+        $page = $this->page([$this->node('banner', ['heading' => 'Hi', 'head_row' => 'from an import'], 'k-banner')]);
+
+        // The fields inside the row and its columns are reachable; the row and columns are not fields.
+        $this->agent('edit_content', ['entity' => 'note', 'id' => $page->id, 'ops' => [['op' => 'set', 'key' => 'k-banner', 'values' => ['head_col' => 'x']]]])
+            ->assertHasErrors(['banner has no field [head_col]. Its fields: image, heading.']);
+
+        $this->assertSame(['head_row'], $this->app->make(StrayValues::class)->find($page)->site[0]['fields']);
+    }
+
+    #[Test]
     public function a_draft_that_differed_only_by_stray_values_is_dropped_by_the_prune(): void
     {
         $page = $this->page([$this->node('hero', ['heading' => ['en' => 'Live']], 'k-hero')]);
