@@ -60,7 +60,7 @@ final class ContentRulesTest extends TestCase
     #[Test]
     public function the_rules_are_settings_written_like_any_other_and_a_patched_rule_comes_out_in_more(): void
     {
-        Screens::extend('settings.index', [
+        Screens::extend('settings.content', [
             [
                 'op' => 'add',
                 'target' => 'content-card',
@@ -85,14 +85,33 @@ final class ContentRulesTest extends TestCase
     public function an_editor_who_may_only_look_cannot_change_the_rules(): void
     {
         $this->actingAs($this->editor(['settings.view']), 'cms')
-            ->putJson('/api/cms/settings', ['values' => ['content.tone' => 'Loud']])
+            ->putJson('/api/cms/settings/content', ['values' => ['content.tone' => 'Loud']])
             ->assertForbidden();
 
         $this->actingAs($this->editor(), 'cms')
-            ->putJson('/api/cms/settings', ['values' => ['content.tone' => 'Calm']])
+            ->putJson('/api/cms/settings/content', ['values' => ['content.tone' => 'Calm']])
             ->assertOk();
 
         $this->assertSame('Calm', $this->read()['tone']);
+    }
+
+    #[Test]
+    public function the_rules_have_their_own_screen_and_endpoint_apart_from_the_settings(): void
+    {
+        $this->actingAs($this->editor(), 'cms')
+            ->putJson('/api/cms/settings/content', ['values' => ['content.tone' => 'Calm', 'site.name' => 'Not here']])
+            ->assertOk()
+            ->assertJsonPath('data.values', ['content.tone' => 'Calm']);
+
+        $this->actingAs($this->editor(), 'cms')
+            ->getJson('/api/cms/settings')
+            ->assertOk()
+            ->assertJsonMissingPath('data.values.content.tone');
+
+        $this->actingAs($this->editor(['settings.view']), 'cms')
+            ->getJson('/api/cms/settings/content')
+            ->assertOk()
+            ->assertJsonPath('data.values', ['content.tone' => 'Calm']);
     }
 
     #[Test]

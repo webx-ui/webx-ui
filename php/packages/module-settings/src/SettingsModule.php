@@ -8,7 +8,6 @@ use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\AbstractModule;
 use WebxUi\Admin\Contracts\ProvidesDemo;
 use WebxUi\Admin\Demo\DemoLedger;
-use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Screens\Tree;
 use WebxUi\Mcp\Contracts\ProvidesMcpTools;
@@ -68,7 +67,7 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
      */
     public function manifest(): array
     {
-        return ['screen' => Settings::SCREEN];
+        return ['screen' => Settings::SCREEN, 'content_screen' => Settings::CONTENT_SCREEN];
     }
 
     /**
@@ -156,7 +155,7 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
      */
     private static function describe(): array
     {
-        $fields = app(ScreenRegistry::class)->fields(Settings::SCREEN);
+        $fields = app(Settings::class)->fields();
 
         return array_map(static fn (array $node): array => [
             'key' => $node['name'],
@@ -180,7 +179,7 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
         }
 
         try {
-            $stored = app(ScreenValues::class)->validate(Settings::SCREEN, [$key => $arguments['value'] ?? null]);
+            $stored = app(ScreenValues::class)->validate($settings->screenOf($key) ?? Settings::SCREEN, [$key => $arguments['value'] ?? null]);
         } catch (ValidationException $exception) {
             return ['ok' => false, 'reason' => 'The value was refused.', 'errors' => $exception->errors()];
         }

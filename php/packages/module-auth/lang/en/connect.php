@@ -38,5 +38,7 @@ return [
     'next-2' => 'The panel shows who is asking and where the answer goes. There is a "read only" switch on that screen, and turning it on is the safe way to begin.',
     'next-3' => 'From then on the agent acts as you: it can do what you can do and nothing more, and every call it makes is written down.',
     'mine' => 'Your connections',
+    'rules' => 'Rules for agents',
+    'rules-hint' => 'Every connected agent reads these before it writes anything a visitor will see.',
 
 ];

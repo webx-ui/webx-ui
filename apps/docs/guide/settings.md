@@ -32,21 +32,28 @@ Out of the box the screen is three tabs — what the panel is called, what it we
 rules for whoever writes the content. That is deliberately little: the rest of a site's settings are the site's own, and a module cannot
 guess them.
 
-| id              | type          | name                   | what it is                         |
-| --------------- | ------------- | ---------------------- | ---------------------------------- |
-| `tabs`          | `wx-tabs`     |                        | The tab strip                      |
-| `general`       | `wx-tab`      |                        | "General"                          |
-| `general-card`  | `wx-card`     |                        | The card inside it                 |
-| `project-name`  | `wx-input`    | `general.project-name` | The project's name, per language   |
-| `branding`      | `wx-tab`      |                        | "Branding"                         |
-| `branding-card` | `wx-card`     |                        | The card inside it                 |
-| `logo`          | `wx-media`    | `branding.logo`        | The logo for the open sidebar      |
-| `mark`          | `wx-media`    | `branding.mark`        | The square mark for the rail       |
-| `content`       | `wx-tab`      |                        | "Content"                          |
-| `content-card`  | `wx-card`     |                        | The card inside it                 |
-| `tone`          | `wx-textarea` | `content.tone`         | The tone of voice                  |
-| `donts`         | `wx-textarea` | `content.donts`        | What never to say, one per line    |
-| `notes`         | `wx-textarea` | `content.notes`        | Anything else an agent should know |
+| id              | type       | name                   | what it is                       |
+| --------------- | ---------- | ---------------------- | -------------------------------- |
+| `tabs`          | `wx-tabs`  |                        | The tab strip                    |
+| `general`       | `wx-tab`   |                        | "General"                        |
+| `general-card`  | `wx-card`  |                        | The card inside it               |
+| `project-name`  | `wx-input` | `general.project-name` | The project's name, per language |
+| `branding`      | `wx-tab`   |                        | "Branding"                       |
+| `branding-card` | `wx-card`  |                        | The card inside it               |
+| `logo`          | `wx-media` | `branding.logo`        | The logo for the open sidebar    |
+| `mark`          | `wx-media` | `branding.mark`        | The square mark for the rail     |
+
+The content rules are a screen of their own, `settings.content`, shown on the page where agents
+are connected (`module-auth`'s «Connect an agent») rather than among the settings — agents are
+who reads them. Stored, cached and read like any other setting; `GET` / `PUT`
+`/api/cms/settings/content`.
+
+| Node           | Type          | Key             | What it is                         |
+| -------------- | ------------- | --------------- | ---------------------------------- |
+| `content-card` | `wx-col`      |                 | The fields; the card is the page's |
+| `tone`         | `wx-textarea` | `content.tone`  | The tone of voice                  |
+| `donts`        | `wx-textarea` | `content.donts` | What never to say, one per line    |
+| `notes`        | `wx-textarea` | `content.notes` | Anything else an agent should know |
 
 ## Whose panel this is
 
@@ -158,8 +165,8 @@ administrator can — patched fields included — and nothing else.
 
 ### Content rules
 
-The «Content» tab is for an AI agent that writes the site's content through MCP rather than a
-person reading the panel. The module serves it as the resource `settings://content-rules`:
+The rules are for an AI agent that writes the site's content through MCP rather than a person
+reading the panel, and are edited where agents are connected. The module serves it as the resource `settings://content-rules`:
 
 ```json
 {
@@ -173,9 +180,10 @@ person reading the panel. The module serves it as the resource `settings://conte
 }
 ```
 
-The languages are not typed into the tab: they come from the site's language settings, so the
+The languages are not typed into the rules: they come from the site's language settings, so the
 rules never disagree with the site about them. `donts` is the field split into lines; a field a
-project patches into `content-card` under `content.<name>` comes out in `more` with its label.
+project patches into `content-card` of `settings.content` under `content.<name>` comes out in
+`more` with its label.
 The MCP server's instructions tell every agent to read the resource before writing anything a
 visitor will read — said whenever the module is installed, since the languages are always
 there. Editing the rules takes `settings.manage`, like any setting; an agent changes them with

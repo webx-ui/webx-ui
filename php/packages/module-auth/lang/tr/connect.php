@@ -38,5 +38,7 @@ return [
     'next-2' => 'Panel kimin istediğini ve yanıtın nereye gideceğini gösterir. O ekranda „yalnızca okuma” anahtarı vardır; işe onunla başlamak güvenli olanıdır.',
     'next-3' => 'Bundan sonra aracı sizin adınıza davranır: sizin yapabildiğinizi yapar, fazlasını değil, ve her çağrısı kaydedilir.',
     'mine' => 'Bağlantılarınız',
+    'rules' => 'Ajanlar için kurallar',
+    'rules-hint' => 'Bağlı her ajan, ziyaretçinin göreceği bir şey yazmadan önce bunları okur.',
 
 ];

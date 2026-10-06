@@ -11,7 +11,6 @@ return [
     'logo-help' => 'Erscheint in der Ecke der geöffneten Seitenleiste anstelle des Namens.',
     'mark' => 'Bildmarke',
     'mark-help' => 'Die quadratische Fassung für die eingeklappte Seitenleiste. Bleibt sie leer, bleibt die Leiste wie sie ist.',
-    'content' => 'Inhalt',
     'tone' => 'Tonalität',
     'tone-help' => 'Wie die Website spricht: mit wem, wie förmlich, wie ausführlich. KI-Agenten lesen das, bevor sie Inhalte schreiben.',
     'donts' => 'Tabus',

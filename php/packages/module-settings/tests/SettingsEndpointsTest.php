@@ -21,7 +21,7 @@ final class SettingsEndpointsTest extends TestCase
         $this->actingAs($this->editor(), 'cms')
             ->getJson('/api/cms/manifest')
             ->assertOk()
-            ->assertJsonPath('data.screens', ['settings.index'])
+            ->assertJsonPath('data.screens', ['settings.content', 'settings.index'])
             ->assertJsonPath('data.modules.0.id', 'settings')
             ->assertJsonPath('data.modules.0.group', 'system')
             ->assertJsonPath('data.modules.0.title', 'Settings')

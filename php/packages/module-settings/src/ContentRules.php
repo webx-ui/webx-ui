@@ -15,11 +15,11 @@ use WebxUi\Mcp\Server\WebxServer;
  * The site's house rules for whoever writes its content through MCP: the languages, the tone,
  * what not to say.
  *
- * The rules are ordinary settings under `content.*` — the «Content» tab of the settings
- * screen — so they are stored, cached, validated and patched like any other. The languages
- * are not among them: the site already lists its languages, and a second list would drift
- * from the first. A field a project patches into the tab under `content.` comes out in
- * `more`, so a site's own rule needs no code here.
+ * The rules are ordinary settings under `content.*` — the screen `settings.content`, shown
+ * where agents are connected — so they are stored, cached, validated and patched like any
+ * other. The languages are not among them: the site already lists its languages, and a second
+ * list would drift from the first. A field a project patches into that screen under
+ * `content.` comes out in `more`, so a site's own rule needs no code here.
  */
 final class ContentRules
 {
@@ -71,7 +71,7 @@ final class ContentRules
 
         $more = [];
 
-        foreach ($this->screens->fields(Settings::SCREEN) as $node) {
+        foreach ($this->screens->fields(Settings::CONTENT_SCREEN) as $node) {
             $key = (string) $node['name'];
             $value = $this->settings->get($key);
 

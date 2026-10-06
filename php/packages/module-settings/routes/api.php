@@ -16,4 +16,10 @@ Route::prefix((string) config('webx-admin.api_path').'/settings')
         Route::put('', [SettingsController::class, 'update'])
             ->middleware('cms.can:settings.manage')
             ->name('update');
+        Route::get('content', [SettingsController::class, 'content'])
+            ->middleware('cms.can:settings.view,settings.manage')
+            ->name('content');
+        Route::put('content', [SettingsController::class, 'updateContent'])
+            ->middleware('cms.can:settings.manage')
+            ->name('content.update');
     });

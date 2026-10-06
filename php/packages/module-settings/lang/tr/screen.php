@@ -11,7 +11,6 @@ return [
     'logo-help' => 'Açık kenar çubuğunun köşesinde adın yerine görünür.',
     'mark' => 'Amblem',
     'mark-help' => 'Daraltılmış kenar çubuğu için kare sürüm. Boş bırakılırsa çubuk olduğu gibi kalır.',
-    'content' => 'İçerik',
     'tone' => 'Üslup',
     'tone-help' => 'Sitenin nasıl konuştuğu: kime, ne kadar resmî, ne uzunlukta. Yapay zekâ ajanları içerik yazmadan önce bunu okur.',
     'donts' => 'Yasaklar',

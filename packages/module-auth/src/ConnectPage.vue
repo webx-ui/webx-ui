@@ -13,6 +13,7 @@ import {
   WxText,
 } from '@webx-ui/core'
 import ConnectionList from './ConnectionList.vue'
+import ContentRulesCard from './ContentRulesCard.vue'
 import { useAuthMessages } from './i18n'
 
 /**
@@ -27,7 +28,8 @@ import { useAuthMessages } from './i18n'
  * spec): it can be printed in a letter, read aloud, or left on this page for anybody signed
  * in. What a person has to do themselves is sign in, and that happens on our own screen.
  *
- * Under it are their own connections, because the first thing somebody does after connecting
+ * Then the rules agents read before they write, when the site keeps them. Under them are their
+ * own connections, because the first thing somebody does after connecting
  * is look for proof that it worked — and the second, weeks later, is come back to end it.
  */
 const admin = useAdmin()
@@ -240,6 +242,8 @@ function byHand(value: string): boolean {
           <li>{{ t('connect.next-3') }}</li>
         </ol>
       </wx-alert>
+
+      <content-rules-card />
 
       <section class="wx-connect__section">
         <wx-heading :level="2" size="sm">{{ t('connect.mine') }}</wx-heading>

@@ -58,43 +58,6 @@
               ]
             }
           ]
-        },
-        {
-          "id": "content",
-          "type": "wx-tab",
-          "label": "trans::webx-settings::screen.content",
-          "children": [
-            {
-              "id": "content-card",
-              "type": "wx-card",
-              "children": [
-                {
-                  "id": "tone",
-                  "type": "wx-textarea",
-                  "name": "content.tone",
-                  "label": "trans::webx-settings::screen.tone",
-                  "help": "trans::webx-settings::screen.tone-help",
-                  "props": { "rows": 4, "maxlength": 4000 }
-                },
-                {
-                  "id": "donts",
-                  "type": "wx-textarea",
-                  "name": "content.donts",
-                  "label": "trans::webx-settings::screen.donts",
-                  "help": "trans::webx-settings::screen.donts-help",
-                  "props": { "rows": 6, "maxlength": 4000 }
-                },
-                {
-                  "id": "notes",
-                  "type": "wx-textarea",
-                  "name": "content.notes",
-                  "label": "trans::webx-settings::screen.notes",
-                  "help": "trans::webx-settings::screen.notes-help",
-                  "props": { "rows": 6, "maxlength": 4000 }
-                }
-              ]
-            }
-          ]
         }
       ]
     }

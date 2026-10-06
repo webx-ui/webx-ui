@@ -38,5 +38,7 @@ return [
     'next-2' => 'El panel muestra quién lo pide y adónde va la respuesta. Ahí está el interruptor «solo lectura», y empezar con él es lo prudente.',
     'next-3' => 'A partir de ahí el agente actúa como usted: puede lo que usted puede y nada más, y cada llamada suya queda anotada.',
     'mine' => 'Sus conexiones',
+    'rules' => 'Reglas para agentes',
+    'rules-hint' => 'Cada agente conectado las lee antes de escribir algo que verá un visitante.',
 
 ];

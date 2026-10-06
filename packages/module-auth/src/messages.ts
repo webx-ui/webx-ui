@@ -149,6 +149,8 @@ export const authMessages: Record<string, Messages> = {
     'next-3':
       'From then on the agent acts as you: it can do what you can do and nothing more, and every call it makes is written down.',
     mine: 'Your connections',
+    rules: 'Rules for agents',
+    'rules-hint': 'Every connected agent reads these before it writes anything a visitor will see.',
   },
   errors: {
     unauthenticated: 'Unauthenticated.',

@@ -11,7 +11,6 @@ return [
     'logo-help' => 'Aparece no canto da barra lateral aberta, no lugar do nome.',
     'mark' => 'Símbolo',
     'mark-help' => 'A versão quadrada, para a barra lateral recolhida. Deixada vazia, a barra fica como está.',
-    'content' => 'Conteúdo',
     'tone' => 'Tom de voz',
     'tone-help' => 'Como o site fala: com quem, com que formalidade, com que extensão. Os agentes de IA leem isto antes de escrever conteúdo.',
     'donts' => 'Proibido',
