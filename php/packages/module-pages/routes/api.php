@@ -7,6 +7,7 @@ use WebxUi\Pages\Http\Controllers\PageController;
 use WebxUi\Pages\Http\Controllers\PageDuplicateController;
 use WebxUi\Pages\Http\Controllers\PageMoveController;
 use WebxUi\Pages\Http\Controllers\PagePublicationController;
+use WebxUi\Pages\Http\Controllers\PagePurgeController;
 use WebxUi\Pages\Http\Controllers\PageRestoreController;
 use WebxUi\Pages\Http\Controllers\PageVersionController;
 
@@ -38,5 +39,7 @@ Route::prefix((string) config('webx-admin.api_path').'/pages')
             // Not model-bound: the page this one is about is in the bin, and the binding of
             // every other route here cannot see it.
             Route::post('{page}/restore', PageRestoreController::class)->whereNumber('page')->name('restore');
+            Route::delete('{page}/purge', [PagePurgeController::class, 'page'])->whereNumber('page')->name('purge');
+            Route::delete('bin', [PagePurgeController::class, 'bin'])->name('purge-bin');
         });
     });

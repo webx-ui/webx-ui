@@ -11,6 +11,7 @@ return [
     'home-no-siblings' => 'La página de inicio no tiene vecinas; una página solo puede ir dentro de ella.',
     'move-into-self' => 'Una página no se puede mover dentro de sí misma ni dentro de sus propias páginas.',
     'parent-trashed' => 'Esa página está en la papelera. Restáurala antes de poner algo dentro.',
+    'not-in-bin' => 'Solo una página de la papelera se puede eliminar para siempre. Elimínela primero.',
     'slug-shape' => 'Una dirección admite letras, dígitos, guiones y guiones bajos.',
 
     // The editor.

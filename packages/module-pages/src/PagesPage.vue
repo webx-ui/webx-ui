@@ -342,6 +342,55 @@ async function restore(page: PageRow): Promise<void> {
   }
 }
 
+/**
+ * Out of the bin for good. Asked in the colour of what it is, and in words that say there is no
+ * way back: the restore beside it in the same menu is the one that can be undone.
+ */
+async function purge(page: PageRow): Promise<void> {
+  const agreed = await confirm({
+    title: t('page.purge-title', { title: page.title }),
+    message:
+      page.descendants_count > 0
+        ? `${t('page.purge-text')} ${t('page.purge-branch', { count: page.descendants_count })}`
+        : t('page.purge-text'),
+    confirmText: t('page.purge'),
+    cancelText: t('page.cancel'),
+    tone: 'danger',
+  })
+
+  if (!agreed) return
+
+  try {
+    const purged = await api.purge(page.id)
+
+    toast.success(purged > 1 ? t('page.purged-branch', { count: purged }) : t('page.purged'))
+    await load()
+  } catch (error) {
+    toast.danger(message(error))
+  }
+}
+
+async function purgeBin(): Promise<void> {
+  const agreed = await confirm({
+    title: t('page.empty-bin-title'),
+    message: t('page.empty-bin-text'),
+    confirmText: t('page.empty-bin-action'),
+    cancelText: t('page.cancel'),
+    tone: 'danger',
+  })
+
+  if (!agreed) return
+
+  try {
+    const purged = await api.purgeBin()
+
+    toast.success(t('page.purged-branch', { count: purged }))
+    await load()
+  } catch (error) {
+    toast.danger(message(error))
+  }
+}
+
 async function copyAddress(page: PageRow): Promise<void> {
   if (!page.url) return
 
@@ -365,11 +414,28 @@ watch(filter, () => void load())
 onMounted(load)
 
 /* What the section offers. Declared, because on a phone the head folds it into the ···. */
-const actions = computed<ScreenAction[]>(() =>
-  canManage.value
-    ? [{ key: 'new', label: t('page.new'), icon: 'plus', primary: true, run: () => void add(null) }]
-    : [],
-)
+const actions = computed<ScreenAction[]>(() => {
+  if (!canManage.value) return []
+
+  // In the bin the one thing to do with all of it at once is to let it go; a new page belongs
+  // to the tree, not here.
+  if (inBin.value) {
+    return rows.value.length
+      ? [
+          {
+            key: 'empty-bin',
+            label: t('page.empty-bin-action'),
+            icon: 'trash',
+            run: () => void purgeBin(),
+          },
+        ]
+      : []
+  }
+
+  return [
+    { key: 'new', label: t('page.new'), icon: 'plus', primary: true, run: () => void add(null) },
+  ]
+})
 </script>
 
 <template>
@@ -460,6 +526,7 @@ const actions = computed<ScreenAction[]>(() =>
             @copy="copyAddress"
             @remove="remove"
             @restore="restore"
+            @purge="purge"
           />
         </template>
       </wx-table>

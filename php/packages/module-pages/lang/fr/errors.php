@@ -11,6 +11,7 @@ return [
     'home-no-siblings' => 'La page d’accueil n’a pas de voisines ; une page ne peut aller qu’à l’intérieur.',
     'move-into-self' => 'Une page ne peut pas être déplacée dans elle-même ni dans ses propres pages.',
     'parent-trashed' => 'Cette page est à la corbeille. Restaurez-la avant d’y placer quoi que ce soit.',
+    'not-in-bin' => 'Seule une page de la corbeille peut être supprimée définitivement. Supprimez-la d’abord.',
     'slug-shape' => 'Une adresse accepte lettres, chiffres, tirets et tirets bas.',
 
     // The editor.

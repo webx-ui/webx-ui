@@ -69,7 +69,9 @@ behind `TreePath` `webx-ui/nested-set` — read their guides for those.
   address stops answering and frees its path; the aliases are kept aside in `routes_trashed`.
   A restore brings the canonical address back (or is refused if it was taken) and then each
   alias that is still free — one another entity took meanwhile stays theirs and is reported
-  (`RouteSync::revival()`, `aliases_dropped` in a page restore). A force delete removes both.
+  (`RouteSync::revival()`, `aliases_dropped` in a page restore). A force delete removes both,
+  through the `deleted` event (`isForceDeleting()`), so it has to be a model delete: a query
+  `delete()` of the rows leaves their `routes_trashed` behind.
 
 ## Check your work
 

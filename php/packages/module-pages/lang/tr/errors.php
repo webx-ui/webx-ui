@@ -11,6 +11,7 @@ return [
     'home-no-siblings' => 'Ana sayfanın komşusu yoktur; bir sayfa yalnızca onun içine konabilir.',
     'move-into-self' => 'Bir sayfa kendi içine ya da kendi sayfalarının içine taşınamaz.',
     'parent-trashed' => 'O sayfa çöp kutusunda. İçine bir şey koymadan önce geri getirin.',
+    'not-in-bin' => 'Yalnızca çöp kutusundaki bir sayfa kalıcı olarak silinebilir. Önce silin.',
     'slug-shape' => 'Bir adres harf, rakam, tire ve alt çizgi içerebilir.',
 
     // The editor.

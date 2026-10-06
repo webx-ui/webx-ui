@@ -11,6 +11,7 @@ return [
     'home-no-siblings' => 'The home page has no neighbours; a page can only go inside it.',
     'move-into-self' => 'A page cannot be moved inside itself or inside one of its own pages.',
     'parent-trashed' => 'That page is in the bin. Restore it before putting anything inside it.',
+    'not-in-bin' => 'Only a page in the bin can be deleted for good. Delete it first.',
     'slug-shape' => 'An address may hold letters, digits, hyphens and underscores.',
 
     // The editor.

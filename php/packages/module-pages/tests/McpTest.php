@@ -29,7 +29,7 @@ final class McpTest extends TestCase
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['pages_tree', 'pages_get', 'pages_create', 'pages_update', 'pages_move', 'pages_publish', 'pages_unpublish', 'pages_delete', 'pages_restore'],
+            ['pages_tree', 'pages_get', 'pages_create', 'pages_update', 'pages_move', 'pages_publish', 'pages_unpublish', 'pages_delete', 'pages_restore', 'pages_purge'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('pages')),
         );
 

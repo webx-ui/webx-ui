@@ -36,6 +36,10 @@ export interface PagesApi {
   remove(id: number): Promise<number>
   /** Out of the bin, with whatever went in with it. Answers how many came back. */
   restore(id: number): Promise<PageRestore>
+  /** Deletes a page in the bin for good, with its branch; answers how many pages went. */
+  purge(id: number): Promise<number>
+  /** Empties the bin; answers how many pages went. */
+  purgeBin(): Promise<number>
   /** The publications, newest first. */
   versions(id: number): Promise<PageVersion[]>
   /** An old publication becomes the draft; putting it on the site is a separate step. */
@@ -76,6 +80,14 @@ export function createPagesApi(admin: AdminContext): PagesApi {
         .delete<{ data: { trashed: number } }>(`${base}/${id}`)
         .then((body) => body.data.trashed),
     restore: (id) => admin.http.post<{ data: PageRestore }>(`${base}/${id}/restore`, {}).then(data),
+    purge: (id) =>
+      admin.http
+        .delete<{ data: { purged: number } }>(`${base}/${id}/purge`)
+        .then((body) => body.data.purged),
+    purgeBin: () =>
+      admin.http
+        .delete<{ data: { purged: number } }>(`${base}/bin`)
+        .then((body) => body.data.purged),
     versions: (id) => admin.http.get<{ data: PageVersion[] }>(`${base}/${id}/versions`).then(data),
     restoreVersion: (id, number) =>
       admin.http

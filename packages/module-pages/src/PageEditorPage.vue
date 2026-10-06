@@ -317,7 +317,6 @@ async function publish(): Promise<void> {
 
   if (!agreed) return
 
-
   working.value = true
 
   try {

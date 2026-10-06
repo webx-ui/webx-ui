@@ -317,6 +317,83 @@ class Page extends Model implements HasBreadcrumbs, Visible
     }
 
     /**
+     * Every page a delete for good would take: this one and everything under it, whichever
+     * delete put each in the bin — a page under this one deleted separately beforehand stands
+     * on its bounds too, and goes with them.
+     *
+     * @return EloquentCollection<int, static>
+     */
+    public function purgeableBranch(): EloquentCollection
+    {
+        $fresh = static::withTrashed()->find($this->getKey()) ?? $this;
+
+        /** @var EloquentCollection<int, static> $branch */
+        $branch = static::withTrashed()
+            ->where($this->getLftName(), '>=', $fresh->getLft())
+            ->where($this->getRgtName(), '<=', $fresh->getRgt())
+            ->orderByDesc($this->getLftName())
+            ->get();
+
+        return $branch;
+    }
+
+    /**
+     * Delete the page and its branch for good — only from the bin.
+     *
+     * Node by node, deepest first, and each through `forceDelete()`: it is the `deleted` event
+     * of each page that takes what belongs to it — its addresses and the former ones kept for a
+     * restore (`routing`), its SEO card (`module-seo`), its history (`HasVersions`). The
+     * nested set would happily remove the descendants in one statement, and leave every one of
+     * those behind. Each node is read again before it goes, because the gap the one before it
+     * closed has moved its bounds.
+     *
+     * @return int How many pages went.
+     *
+     * @throws PagesException When the page is not in the bin.
+     */
+    public function purgeBranch(): int
+    {
+        if (! $this->trashed()) {
+            throw PagesException::notInBin();
+        }
+
+        /** @var int $count */
+        $count = $this->getConnection()->transaction(function (): int {
+            $ids = $this->purgeableBranch()->modelKeys();
+
+            foreach ($ids as $id) {
+                static::withTrashed()->find($id)?->forceDelete();
+            }
+
+            return count($ids);
+        });
+
+        return $count;
+    }
+
+    /**
+     * Empty the bin: every page in it, each with its branch.
+     *
+     * @return int How many pages went.
+     */
+    public static function purgeBin(): int
+    {
+        $count = 0;
+
+        // Shallowest first: a branch takes the trashed pages under it, which are then gone
+        // before the loop reaches them.
+        foreach (static::onlyTrashed()->orderBy('lft')->pluck('id') as $id) {
+            $page = static::onlyTrashed()->find($id);
+
+            if ($page !== null) {
+                $count += $page->purgeBranch();
+            }
+        }
+
+        return $count;
+    }
+
+    /**
      * Take the page and everything that went down with it back out of the bin.
      *
      * The address comes back on its own: a restore is a `save()` of a row whose `deleted_at`

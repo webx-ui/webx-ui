@@ -177,6 +177,17 @@ final class PageTools
                     'page' => ['type' => 'integer', 'description' => 'The id, as pages_tree with trashed reports it.'],
                 ], 'required' => ['page']],
             ),
+
+            Tool::mutating(
+                'purge',
+                'Delete a page in the bin for good, with every page under it, its addresses and former addresses, '
+                .'its SEO card and its history. Cannot be undone. Only a page in the bin — pages_delete puts it '
+                .'there first. dry_run names every page that would go.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->purge($arguments)),
+                ['properties' => [
+                    'page' => ['type' => 'integer', 'description' => 'The id, as pages_tree with trashed reports it.'],
+                ], 'required' => ['page']],
+            ),
         ];
     }
 
@@ -506,6 +517,49 @@ final class PageTools
         $page->delete();
 
         return ['trashed' => $count, 'id' => $page->getKey()];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function purge(array $arguments): array
+    {
+        $trashed = $this->binned($arguments['page'] ?? null);
+        $branch = $trashed->purgeableBranch()->reverse()->values();
+
+        if ($this->dryRun($arguments)) {
+            return [
+                'dry_run' => true,
+                'would_purge' => $branch->count(),
+                'pages' => $branch->map(static fn (Page $page): array => [
+                    'id' => $page->getKey(),
+                    'title' => $page->getTranslations('title'),
+                ])->all(),
+            ];
+        }
+
+        return ['purged' => $trashed->purgeBranch(), 'id' => $trashed->getKey()];
+    }
+
+    /** A page in the bin, by id — an address names only a live page. */
+    private function binned(mixed $id): Page
+    {
+        if (! is_int($id) && ! (is_string($id) && ctype_digit($id))) {
+            throw new ToolFailure('`page` must be the id of a page in the bin: an address names only a live page.');
+        }
+
+        $trashed = Page::withTrashed()->find((int) $id);
+
+        if (! $trashed instanceof Page) {
+            throw new ToolFailure("No page has the id [{$id}].");
+        }
+
+        if (! $trashed->trashed()) {
+            throw new ToolFailure("Page [{$id}] is not in the bin. pages_delete puts it there; only then can it be deleted for good.");
+        }
+
+        return $trashed;
     }
 
     /**

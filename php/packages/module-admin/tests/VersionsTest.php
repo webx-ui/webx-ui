@@ -86,6 +86,19 @@ final class VersionsTest extends TestCase
     }
 
     #[Test]
+    public function the_history_goes_with_an_entity_deleted_for_good(): void
+    {
+        $article = Article::query()->create(['slug' => 'hello', 'title' => ['en' => 'Hello']]);
+        $article->saveDraft(['title' => ['en' => 'First']]);
+        $article->publish();
+        $this->assertSame(1, EntityVersion::query()->count());
+
+        // Nothing else would ever read those rows again: they are keyed to an id nothing has.
+        $article->delete();
+        $this->assertSame(0, EntityVersion::query()->count());
+    }
+
+    #[Test]
     public function a_date_can_be_chosen_and_without_one_it_is_now(): void
     {
         Carbon::setTestNow('2026-09-19 10:00:00');

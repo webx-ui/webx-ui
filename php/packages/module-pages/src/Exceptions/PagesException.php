@@ -84,6 +84,12 @@ class PagesException extends RuntimeException
         return new self((string) trans('webx-pages::errors.home-missing'));
     }
 
+    /** Deleting for good is what the bin is for: a live page goes there first. */
+    public static function notInBin(): self
+    {
+        return new self((string) trans('webx-pages::errors.not-in-bin'));
+    }
+
     /** A page in the bin is not a place to put a live one; it would go dark with it. */
     public static function parentIsInBin(): self
     {

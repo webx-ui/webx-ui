@@ -34,6 +34,22 @@ use LogicException;
  */
 trait HasVersions
 {
+    /**
+     * The history goes when the entity really goes. Not on a soft delete — an entity in the bin
+     * can come back, and coming back without its history would be a loss nobody asked for — but a
+     * row deleted for good left every snapshot of it behind, keyed to an id nothing has.
+     */
+    public static function bootHasVersions(): void
+    {
+        static::registerModelEvent('deleted', static function (Model $model): void {
+            $softDeleted = method_exists($model, 'isForceDeleting') && ! $model->isForceDeleting();
+
+            if (! $softDeleted && method_exists($model, 'versions')) {
+                $model->versions()->delete();
+            }
+        });
+    }
+
     /** @return MorphMany<EntityVersion, $this> */
     public function versions(): MorphMany
     {
