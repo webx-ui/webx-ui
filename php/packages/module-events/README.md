@@ -147,6 +147,7 @@ and the categories' scopes:
 | `events_duplicate`   | The panel's "Duplicate": a draft copy with the next free `-2`, `-3` address          |
 | `events_publish`     | The draft onto the site · `events_unpublish` takes it off                            |
 | `events_delete`      | To the bin, and its address is released                                              |
+| `events_restore`     | Out of the bin, refused if its address was taken · `events_purge` deletes for good   |
 | `event_categories_*` | `list`, `create`, `update`, `delete`, `reorder`                                      |
 
 An event is named by its id or its address, a service in `services` the same way, a category by

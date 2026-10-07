@@ -405,6 +405,7 @@ With the panel's MCP server on (see [AI agents](/guide/agents)), the two section
 | `events_duplicate`   | **Duplicate**: a draft copy with the next free address                               |
 | `events_publish`     | The draft onto the site · `events_unpublish` takes it off                            |
 | `events_delete`      | To the bin, and its address is released                                              |
+| `events_restore`     | Out of the bin, refused if its address was taken · `events_purge` deletes for good   |
 | `event_categories_*` | `list`, `create`, `update`, `delete`, `reorder`                                      |
 
 An event is named by its id or its address (`"/events/spring-cooking-class"`), a category by its id

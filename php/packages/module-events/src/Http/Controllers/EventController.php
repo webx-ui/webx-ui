@@ -42,7 +42,8 @@ final class EventController
      */
     public function index(Request $request, Locales $locales, RelationTargets $targets): JsonResponse
     {
-        $locale = $locales->current();
+        // The filters name categories and services in the content's language, as the rows do.
+        $locale = $locales->content();
         $service = $targets->find('service');
 
         $page = $this->list->build($request)->paginate(
