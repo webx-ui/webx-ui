@@ -78,6 +78,14 @@ final class McpTest extends TestCase
         $checks = $this->content($this->agent('issues', [], $admin))['checks'] ?? [];
         $this->assertContains('hosts.dev_content', array_column($checks, 'id'));
 
+        // One check's findings come with the three numbers every tool pages by, and none of the
+        // panel's own paging links, which point at an API the agent does not call.
+        $one = $this->content($this->agent('issues', ['check' => 'hosts.dev_content'], $admin));
+        $this->assertSame([1, 1], [$one['page'] ?? null, $one['pages'] ?? null]);
+        $this->assertGreaterThan(0, $one['total'] ?? 0);
+        $this->assertArrayNotHasKey('links', $one);
+        $this->assertArrayNotHasKey('meta', $one);
+
         $issue = AuditIssue::query()->where('check', 'hosts.dev_content')->latest('id')->firstOrFail();
 
         $offers = $this->content($this->agent('fix', ['issue' => $issue->id], $admin));
