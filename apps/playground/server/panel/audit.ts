@@ -1065,6 +1065,18 @@ export function registerAudit(on: On, fail: Fail, line: Line): void {
     return { data: resource(run) }
   })
 
+  on('DELETE', '/audit/runs', () => {
+    if (runs.some((run) => run.status === 'queued' || run.status === 'running')) {
+      throw fail(409, line('en', 'webx-audit', 'page.clear-running'))
+    }
+
+    const count = runs.length
+
+    runs.splice(0)
+
+    return { data: { runs: count } }
+  })
+
   /* Hidden findings are a state of their own: out of every list, until asked for. */
   const filtered = (run: Run, query: URLSearchParams) =>
     run.findings.filter(

@@ -231,6 +231,36 @@ final class HistoryTest extends TestCase
     }
 
     #[Test]
+    public function clearing_takes_every_run_and_leaves_the_rules(): void
+    {
+        $this->fakeSite();
+        $runner = $this->app->make(Runner::class);
+        $run = $runner->complete($runner->start(AuditRun::FULL));
+        AuditIgnore::query()->create(['check' => 'config.debug', 'pattern' => '', 'reason' => 'Staging.']);
+
+        $this->assertTrue(AuditPage::query()->where('run_id', $run->id)->exists());
+
+        $this->actingAs($this->admin(['audit.view', 'audit.run']), 'cms')
+            ->deleteJson(route('webx.audit.runs.clear'))
+            ->assertForbidden();
+
+        $this->actingAs($this->admin(['audit.manage']), 'cms');
+
+        // A run that is going would keep writing rows for a run no longer there.
+        $going = $runner->start(AuditRun::QUICK);
+        $this->deleteJson(route('webx.audit.runs.clear'))->assertStatus(409);
+        $runner->cancel($going);
+
+        $this->deleteJson(route('webx.audit.runs.clear'))->assertOk()->assertJsonPath('data.runs', 2);
+
+        foreach (['audit_runs', 'audit_issues', 'audit_pages', 'audit_links', 'audit_resources', 'audit_content_urls'] as $table) {
+            $this->assertSame(0, DB::table($table)->count(), $table);
+        }
+
+        $this->assertSame(1, AuditIgnore::query()->count());
+    }
+
+    #[Test]
     public function outgoing_hosts_and_one_page_as_a_file(): void
     {
         $this->fakeSite();

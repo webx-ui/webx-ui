@@ -3,9 +3,11 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAdmin, useErrorText, useTranslate, WxDate } from '@webx-ui/module-admin'
 import {
+  confirm,
   toast,
   WxAlert,
   WxBadge,
+  WxButton,
   WxCard,
   WxTable,
   WxText,
@@ -31,11 +33,13 @@ import type {
  * The history (§8 «Runs»): every run kept, newest first, with its health and counts. Ticking a
  * run compares it with the one it was analysed against; ticking two compares those two — by
  * fingerprint (decision 8): what is new in the later one, what both have, what is gone. `?to=`
- * opens on one run already ticked — the way the page card's recheck leads here.
+ * opens on one run already ticked — the way the page card's recheck leads here. Below, for whoever
+ * manages the section, the way to clear every run at once, behind a warning.
  */
 const props = defineProps<{ base: string }>()
 
-const api = createAuditApi(useAdmin())
+const context = useAdmin()
+const api = createAuditApi(context)
 const route = useRoute()
 useAuditMessages()
 
@@ -48,6 +52,10 @@ const selected = ref<RowKey[]>([])
 const comparison = ref<AuditComparison | null>(null)
 const comparing = ref(false)
 const expanded = ref<RowKey[]>([])
+const clearing = ref(false)
+
+// A boolean, not a computed: the permissions do not change while the screen is open.
+const canManage = context.can('audit.manage')
 
 const statuses: Record<AuditRunStatus, BadgeType> = {
   queued: 'info',
@@ -132,6 +140,31 @@ async function compare(): Promise<void> {
     toast.danger(message(error))
   } finally {
     comparing.value = false
+  }
+}
+
+async function clear(): Promise<void> {
+  const agreed = await confirm({
+    title: t('page.clear-title'),
+    message: t('page.clear-text'),
+    confirmText: t('page.clear-confirm'),
+    cancelText: t('page.clear-cancel'),
+    tone: 'danger',
+  })
+
+  if (!agreed) return
+
+  clearing.value = true
+
+  try {
+    await api.clear()
+    selected.value = []
+    toast.success(t('page.cleared'))
+    await load()
+  } catch (error) {
+    toast.danger(message(error))
+  } finally {
+    clearing.value = false
   }
 }
 
@@ -237,6 +270,17 @@ watch(selected, (keys) => {
           </template>
         </wx-table>
       </wx-card>
+
+      <div v-if="canManage && runs?.total" class="wx-audit-runs__danger">
+        <wx-button
+          type="danger"
+          variant="outline"
+          icon="trash"
+          :loading="clearing"
+          @click="clear"
+          >{{ t('page.clear') }}</wx-button
+        >
+      </div>
     </div>
   </audit-layout>
 </template>
@@ -258,6 +302,11 @@ watch(selected, (keys) => {
 .wx-audit-runs__pair {
   display: block;
   margin-bottom: var(--wx-space-12);
+}
+
+.wx-audit-runs__danger {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .wx-audit-runs__note {

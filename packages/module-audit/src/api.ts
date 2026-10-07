@@ -34,6 +34,8 @@ export interface AuditApi {
    */
   start(scope: AuditScope, urls?: string[]): Promise<AuditRun>
   cancel(id: number): Promise<AuditRun>
+  /** Deletes every run with all it found; refused with 409 while a run is going. */
+  clear(): Promise<number>
   /** The checks of a run that found something, worst first. */
   checks(run: number, query?: AuditIssueQuery): Promise<AuditCheckRow[]>
   /** The findings of a run — of one check when `check` is given. */
@@ -150,6 +152,9 @@ export function createAuditApi(admin: AdminContext): AuditApi {
         .then(data),
 
     cancel: (id) => admin.http.post<{ data: AuditRun }>(`${base}/runs/${id}/cancel`, {}).then(data),
+
+    clear: () =>
+      admin.http.delete<{ data: { runs: number } }>(`${base}/runs`).then((body) => body.data.runs),
 
     checks: (run, query = {}) =>
       admin.http
