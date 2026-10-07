@@ -495,6 +495,8 @@ cat > "$APP/app/Console/Commands/SmokeFormCommand.php" <<'PHP'
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Contracts\Encryption\Encrypter;
+use WebxUi\Inbox\Antispam\Guard;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\SubmissionFile;
@@ -503,12 +505,22 @@ class SmokeFormCommand extends Command
 {
     protected $signature = 'smoke:form
         {--count : Print how many submissions the form has}
-        {--attachment : Print the ids of the last attachment received}';
+        {--attachment : Print the ids of the last attachment received}
+        {--mark : Print the timestamp field and a mark an hour old}';
 
     protected $description = 'Build a contact form for webx-ui/module-inbox';
 
     public function handle(): int
     {
+        // Every form the package draws carries an encrypted timestamp, and a POST without one is
+        // refused as a robot writing straight to the address. An hour old is what a page cached
+        // whole hands every visitor — the case this script exists to prove.
+        if ($this->option('mark')) {
+            $this->line(app(Guard::class)->timestampField().' '.app(Encrypter::class)->encrypt((string) (time() - 3600)));
+
+            return self::SUCCESS;
+        }
+
         $form = Form::query()->where('slug', 'smoke-contact')->first();
 
         if ($this->option('count') && $form !== null) {
@@ -829,11 +841,14 @@ run_http_checks() {
     # The intake of module-inbox: a POST with no CSRF token at all, which is the whole point of
     # the hand-built middleware stack. A page cached whole carries a token minted when the cache
     # was written, and Testbench cannot show this — there the middleware is off for every route.
-    local before after answer attachment
+    local before after answer attachment mark mark_field mark_value
     before="$("$PHP_BIN" "$APP/artisan" smoke:form --count --no-interaction | tr -dc '0-9')"
+    mark="$("$PHP_BIN" "$APP/artisan" smoke:form --mark --no-interaction | tr -d '\r')"
+    mark_field="${mark%% *}"
+    mark_value="${mark#* }"
 
     answer="$(curl -s -H 'Accept: application/json' -H 'Content-Type: application/json' \
-        -d "{\"fields\":{\"name\":\"Ada $phase\",\"email\":\"ada-$phase@example.test\"}}" \
+        -d "{\"$mark_field\":\"$mark_value\",\"fields\":{\"name\":\"Ada $phase\",\"email\":\"ada-$phase@example.test\"}}" \
         "$BASE/webx/forms/smoke-contact")"
 
     printf '%s' "$answer" | grep -q '"ok":true' \
@@ -845,15 +860,22 @@ run_http_checks() {
 
     expect 422 "$(
         curl -s -o /dev/null -w '%{http_code}' -H 'Accept: application/json' \
-            -H 'Content-Type: application/json' -d '{"fields":{"name":"Ada"}}' \
+            -H 'Content-Type: application/json' -d "{\"$mark_field\":\"$mark_value\",\"fields\":{\"name\":\"Ada\"}}" \
             "$BASE/webx/forms/smoke-contact"
     )" "[$phase] and a form missing a required field is refused"
+
+    expect 422 "$(
+        curl -s -o /dev/null -w '%{http_code}' -H 'Accept: application/json' \
+            -H 'Content-Type: application/json' \
+            -d "{\"fields\":{\"name\":\"Eve\",\"email\":\"eve-$phase@example.test\"}}" \
+            "$BASE/webx/forms/smoke-contact"
+    )" "[$phase] and a POST without the timestamp mark is refused"
 
     # A submission with an attachment, posted as a browser posts a multipart form. The bytes
     # land on the module's own disk and come back only through the panel (§8).
     printf 'attached in %s\n' "$phase" > "$WORKDIR/attachment.txt"
 
-    answer="$(curl -s -H 'Accept: application/json' \
+    answer="$(curl -s -H 'Accept: application/json' -F "$mark_field=$mark_value" \
         -F "fields[name]=Bob $phase" -F "fields[email]=bob-$phase@example.test" \
         -F "fields[attachment]=@$WORKDIR/attachment.txt" \
         "$BASE/webx/forms/smoke-contact")"
