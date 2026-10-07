@@ -24,14 +24,14 @@ use WebxUi\Routing\Models\Route;
 final class McpTest extends TestCase
 {
     #[Test]
-    public function it_offers_ten_tools_and_the_catalogue(): void
+    public function it_offers_twelve_tools_and_the_catalogue(): void
     {
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
             [
                 'press_list', 'press_get', 'press_create', 'press_update', 'press_delete', 'press_reorder',
-                'press_articles_add', 'press_articles_update', 'press_articles_delete', 'press_articles_move',
+                'press_articles_add', 'press_articles_update', 'press_articles_delete', 'press_articles_move', 'press_restore', 'press_purge',
             ],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('press')),
         );
