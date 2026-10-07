@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Throwable;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
@@ -120,7 +121,7 @@ final class PageTools
                 'Change the values of a page — title, address, the SEO card — into its draft. A field left out '
                 .'keeps what it had. Send the revision pages_get gave you and the write is refused if somebody '
                 .'saved in between, instead of quietly overwriting them. Content is not written here: blocks go '
-                .'through blocks_edit_content.',
+                .'through blocks_edit_content. The SEO card is the exception: it is not drafted and is on the site the moment it is saved — the answer says so with seo_live: true.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'page' => $page,
@@ -154,9 +155,12 @@ final class PageTools
             Tool::mutating(
                 'unpublish',
                 'Take a page off the site. It answers 404 from then on; its address stays reserved and whatever '
-                .'was being prepared is still being prepared.',
+                .'was being prepared is still being prepared. The home page is refused unless force is sent.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->unpublish($arguments)),
-                ['properties' => ['page' => $page], 'required' => ['page']],
+                ['properties' => [
+                    'page' => $page,
+                    'force' => ['type' => 'boolean', 'description' => 'Take the home page off too — the root of the site then answers 404.'],
+                ], 'required' => ['page']],
             ),
 
             Tool::mutating(
@@ -369,7 +373,9 @@ final class PageTools
         return [
             'page' => $this->summary($page, $editors),
             'ancestors' => $ancestors
-                ->map(fn (Page $node): array => $this->summary($node->loadMissing('routes'), $editors))
+                // Counted here: `pathFromRoot()` loads bare nodes, and a home page with a dozen
+                // children reported none.
+                ->map(fn (Page $node): array => $this->summary($node->loadMissing('routes')->loadCount('children'), $editors))
                 ->values()
                 ->all(),
             'values' => $values,
@@ -396,31 +402,39 @@ final class PageTools
         }
 
         $this->refuseBlocks($values);
+        $this->refuseUnknownFields($values);
+
+        $make = function () use ($title, $slug, $parent, $values, $user): Page {
+            $page = new Page;
+            $page->setTranslations('title', $title);
+            $page->setTranslations('slug', $slug);
+
+            // One transaction for the node and its values: a value the screen refuses must not
+            // leave a bare page in the tree with its address already taken — the routing observer
+            // writes the address on `created`, inside this same transaction, so it goes with it.
+            $page->getConnection()->transaction(function () use ($page, $parent, $values, $user): void {
+                $page->appendTo($parent);
+
+                if ($values !== []) {
+                    $this->write($page, $values, $user);
+                }
+            });
+
+            return $page;
+        };
 
         if ($this->dryRun($arguments)) {
-            return [
+            // The real create, rolled back: a taken address or a refused value is refused here
+            // exactly as it would be, instead of a cheerful "would create" the call then breaks.
+            return $this->rehearse(fn (): array => [
                 'dry_run' => true,
                 'would_create' => ['title' => $title, 'slug' => $slug],
                 'under' => $this->address($parent),
-            ];
+                'page' => $this->address($make()->refresh()),
+            ]);
         }
 
-        $page = new Page;
-        $page->setTranslations('title', $title);
-        $page->setTranslations('slug', $slug);
-
-        // One transaction for the node and its values: a value the screen refuses must not leave
-        // a bare page in the tree with its address already taken — the routing observer writes
-        // the address on `created`, inside this same transaction, so it goes with the node.
-        $page->getConnection()->transaction(function () use ($page, $parent, $values, $user): void {
-            $page->appendTo($parent);
-
-            if ($values !== []) {
-                $this->write($page, $values, $user);
-            }
-        });
-
-        return $this->get(['page' => $page->refresh()->getKey()], $user);
+        return $this->get(['page' => $make()->refresh()->getKey()], $user);
     }
 
     /**
@@ -436,6 +450,11 @@ final class PageTools
             throw new ToolFailure('`values` must be a non-empty object of field name → value. pages_get says what the fields are.');
         }
 
+        // `is_home` is in what pages_get answers but is not a field anybody writes: an agent that
+        // sends the values back as it read them is not wrong for it.
+        unset($values['is_home']);
+        $this->refuseUnknownFields($values);
+
         // Merged language by language, and a language the site does not have refused — dry run
         // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
         $values = $this->container->make(ScreenValues::class)->patch(PageForm::SCREEN, $this->form()->values($page), $values);
@@ -444,17 +463,23 @@ final class PageTools
         $this->sameRevision($arguments, $page);
 
         if ($this->dryRun($arguments)) {
-            return [
-                'dry_run' => true,
-                'would_write' => 'draft',
-                'fields' => array_keys($values),
-                'page' => $this->address($page),
-            ];
+            // Through the same save, rolled back, so that what the model refuses is refused in
+            // the rehearsal too rather than first by the real call.
+            return $this->rehearse(function () use ($page, $values, $user): array {
+                $this->write($page, $values, $user);
+
+                return [
+                    'dry_run' => true,
+                    'would_write' => 'draft',
+                    'fields' => array_keys($values),
+                    'page' => $this->address($page),
+                ];
+            });
         }
 
         $this->write($page, $values, $user);
 
-        return $this->get(['page' => $page->refresh()->getKey()], $user);
+        return $this->get(['page' => $page->refresh()->getKey()], $user) + $this->seoLive($values);
     }
 
     /**
@@ -525,6 +550,12 @@ final class PageTools
     {
         $page = $this->page($arguments['page'] ?? null);
 
+        // The home page off the site is the root of the site answering 404 — never what somebody
+        // tidying drafts meant. Possible, but only when asked for in so many words.
+        if ($page->isRoot() && ($arguments['force'] ?? false) !== true) {
+            throw new ToolFailure('This is the home page: taking it off the site makes the root of the site answer 404. Send force: true if that is really what is wanted.');
+        }
+
         if ($this->dryRun($arguments)) {
             return ['dry_run' => true, 'would_unpublish' => $this->address($page), 'status' => $page->status()];
         }
@@ -544,7 +575,14 @@ final class PageTools
         $count = $page->descendants()->count() + 1;
 
         if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'would_trash' => $count, 'page' => $this->address($page)];
+            // The real delete, rolled back: the model is what refuses the home page, and a
+            // rehearsal that skipped it promised a delete the call then refused.
+            return $this->rehearse(function () use ($page, $count): array {
+                $address = $this->address($page);
+                $page->delete();
+
+                return ['dry_run' => true, 'would_trash' => $count, 'page' => $address];
+            });
         }
 
         $page->delete();
@@ -864,6 +902,49 @@ final class PageTools
     }
 
     /**
+     * A name that is not a field of the page's screen is refused, the way blocks_edit_content
+     * refuses one: dropped, it read as saved — and a dry run listed it among what it would write.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    private function refuseUnknownFields(array $values): void
+    {
+        $known = array_map(
+            static fn (array $node): string => (string) $node['name'],
+            $this->container->make(ScreenRegistry::class)->fields(PageForm::SCREEN),
+        );
+        $unknown = array_diff(array_map(strval(...), array_keys($values)), $known);
+
+        if ($unknown !== []) {
+            throw new ToolFailure(
+                'Not a field of a page: ['.implode(', ', $unknown).']. Its fields are: '.implode(', ', array_diff($known, ['blocks'])).'.'
+            );
+        }
+    }
+
+    /**
+     * Run the real change and throw it away.
+     *
+     * A dry run that checked its own idea of the rules answered "would" for what the call then
+     * refused; this one goes through the same save, the same model guards and the same address
+     * registry, inside a transaction that is always rolled back.
+     *
+     * @param  callable(): array<string, mixed>  $work
+     * @return array<string, mixed>
+     */
+    private function rehearse(callable $work): array
+    {
+        $connection = (new Page)->getConnection();
+        $connection->beginTransaction();
+
+        try {
+            return $work();
+        } finally {
+            $connection->rollBack();
+        }
+    }
+
+    /**
      * @param  array<string, mixed>  $arguments
      */
     private function sameRevision(array $arguments, Page $page): void
@@ -1033,5 +1114,17 @@ final class PageTools
     private function locales(): Locales
     {
         return $this->container->make(Locales::class);
+    }
+
+    /**
+     * The SEO card skips the draft (`HasSeo`): an agent that reads "into its draft" must not
+     * believe a new description is waiting for a publication that it does not need.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function seoLive(array $values): array
+    {
+        return array_key_exists('seo', $values) ? ['seo_live' => true] : [];
     }
 }

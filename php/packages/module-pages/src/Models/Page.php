@@ -18,6 +18,7 @@ use WebxUi\NestedSet\HasNestedSet;
 use WebxUi\Pages\Exceptions\PagesException;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
+use WebxUi\Routing\Models\Route;
 use WebxUi\Routing\Revival;
 use WebxUi\Routing\RouteSync;
 use WebxUi\Seo\Contracts\Crumb;
@@ -86,6 +87,9 @@ class Page extends Model implements HasBreadcrumbs, HasSeoFallback, Visible
 
     /** On the site, with edits that are not on it yet. */
     public const STATUS_MODIFIED = 'modified';
+
+    /** Whether the page was on the site when the save under way began; see `booted()`. */
+    private ?bool $liveBeforeSave = null;
 
     /** @var list<string> */
     protected $fillable = ['title', 'slug', 'blocks'];
@@ -541,6 +545,62 @@ class Page extends Model implements HasBreadcrumbs, HasSeoFallback, Visible
 
             $page->trashDescendants();
         });
+
+        // Whether the page was on the site before this save, taken before anything runs: by the
+        // time `updated` is heard, a listener ahead of ours may have synced the originals, and the
+        // first publication — the save that moves a renamed draft's address — reads as live.
+        static::updating(static function (self $page): void {
+            $page->liveBeforeSave ??= $page->getRawOriginal($page->publishedAtColumn()) !== null;
+        });
+
+        // Registered after `HasUrl`'s own listeners (trait boots run before `booted()`), so the
+        // registry has already turned the old address into a redirect by the time this runs.
+        foreach (['updated', 'moved'] as $event) {
+            static::registerModelEvent($event, static function (self $page) use ($event): void {
+                $live = $page->liveBeforeSave ?? $page->isPublished();
+                $page->liveBeforeSave = null;
+
+                $page->forgetAddressesNeverLive($live, $event === 'moved' || $page->wasChanged('slug'));
+            });
+        }
+    }
+
+    /**
+     * Drop the redirects from addresses that never answered.
+     *
+     * Renaming or moving a page that was never on the site leaves its old address behind as a
+     * 301, like any other — but nobody can have linked to a page that never answered, and the
+     * leftover redirect only holds a path another page may want and shows up among the site's
+     * redirects as if it mattered. A page that was on the site once keeps its trail: somebody may
+     * have linked to it then.
+     *
+     * The branch is looked at only when an address may have moved under it, not on every autosave.
+     */
+    private function forgetAddressesNeverLive(bool $live, bool $branch): void
+    {
+        // A page off the site now may have been on it before: its history says so.
+        $wasLive = static fn (self $node, bool $live): bool => $live
+            || ($node->hasVersions() && $node->publishedVersions()->exists());
+
+        $nodes = [[$this, $live]];
+
+        if ($branch) {
+            $fresh = static::query()->find($this->getKey()) ?? $this;
+            $under = static::query()->whereNull($this->publishedAtColumn())
+                ->where('lft', '>', $fresh->getLft())
+                ->where('rgt', '<', $fresh->getRgt())
+                ->get();
+
+            foreach ($under as $node) {
+                $nodes[] = [$node, false];
+            }
+        }
+
+        foreach ($nodes as [$node, $publishedBefore]) {
+            if (! $wasLive($node, $publishedBefore)) {
+                Route::query()->forEntity($node)->alias()->delete();
+            }
+        }
     }
 
     /**
