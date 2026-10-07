@@ -13,4 +13,5 @@ return [
     'too-many' => 'Mieści najwyżej :max blok(ów).',
     'not-at-top' => '«:type» nie może tu stać na najwyższym poziomie.',
     'not-inside' => '«:type» nie może znaleźć się wewnątrz «:parent».',
+    'unknown-type' => 'Typ bloku «:type» już nie istnieje: strona pominęłaby ten blok. Usuń go lub wstaw w jego miejsce inny blok.',
 ];

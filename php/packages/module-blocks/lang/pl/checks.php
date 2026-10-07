@@ -24,4 +24,5 @@ return [
     'syntax' => 'Szablon się nie kompiluje: :reason. Publikacja zostanie odrzucona.',
     'unknown-field-type' => 'Pola typu nieznanego stronie: :fields. Formularz pokaże w ich miejscu ostrzeżenie, a wartości nikt nie sprawdzi.',
     'field-id' => 'Identyfikator pola to litery, cyfry, _ i -, na początku litera: :ids.',
+    'marker-slug' => 'Korzeń jest oznaczony data-wx-block=":marker", ale identyfikator to «:slug»: skrypt i panel znajdują blok po dokładnym identyfikatorze. Publikacja zostanie odrzucona.',
 ];

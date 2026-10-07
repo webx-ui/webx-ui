@@ -507,6 +507,8 @@ final class PageTools
                 'would_publish' => $this->address($page),
                 'status' => $page->status(),
                 'has_waiting_edits' => $page->hasDraft(),
+                // What the publication itself would refuse, block by block.
+                'refused' => $page->publishProblems(),
             ];
         }
 
@@ -633,12 +635,14 @@ final class PageTools
                 'would_restore' => $version->number,
                 'into' => 'draft',
                 'changes' => $page->changedFields(is_array($version->payload) ? $version->payload : []),
+                'blocks' => $page->restoreReport(is_array($version->payload) ? $version->payload : []),
             ];
         }
 
+        $report = $page->restoreReport(is_array($version->payload) ? $version->payload : []);
         $page->restoreVersion($version);
 
-        return ['restored' => $version->number, 'into' => 'draft'] + $this->get(['page' => $page->refresh()->getKey(), 'blocks' => false], $user);
+        return ['restored' => $version->number, 'into' => 'draft', 'blocks' => $report] + $this->get(['page' => $page->refresh()->getKey(), 'blocks' => false], $user);
     }
 
     /**

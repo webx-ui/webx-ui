@@ -24,4 +24,5 @@ return [
     'syntax' => 'Die Vorlage lässt sich nicht kompilieren: :reason. Die Veröffentlichung wird abgelehnt.',
     'unknown-field-type' => 'Felder eines Typs, den die Website nicht kennt: :fields. Das Formular zeigt an ihrer Stelle eine Warnung, und ihre Werte prüft niemand.',
     'field-id' => 'Feld-IDs bestehen aus Buchstaben, Ziffern, _ und -, am Anfang ein Buchstabe: :ids.',
+    'marker-slug' => 'Die Wurzel ist mit data-wx-block=":marker" markiert, die Kennung lautet aber «:slug»: Skript und Panel finden den Block nur über die exakte Kennung. Die Veröffentlichung wird abgelehnt.',
 ];

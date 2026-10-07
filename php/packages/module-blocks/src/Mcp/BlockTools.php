@@ -91,13 +91,15 @@ final class BlockTools
         return [
             Tool::read(
                 'list',
-                'The block types of this site: what each is called, whether it is a block editors add or a component '
-                .'templates call by tag, which fields it has, whether it is published, on how many pages it stands and '
-                .'which types call it (used_by). declared lists the places modules call a component from, and whether '
-                .'the site has customised each. Read blocks://guidelines before writing one.',
+                'The block types of this site, one short row each: slug, title, whether it is a block editors add or a '
+                .'component templates call by tag, its group, the draft and published version, on how many pages it '
+                .'stands (usage) and which types call it (used_by). full: true adds every setting and the fields; '
+                .'blocks_get has one type in full. declared lists the places modules call a component from, and '
+                .'whether the site has customised each. Read blocks://guidelines before writing one.',
                 fn (array $arguments): array => $this->list($arguments),
                 ['properties' => [
                     'group' => ['type' => 'string', 'description' => 'Only the types of this group.'],
+                    'full' => ['type' => 'boolean', 'description' => 'Every setting and the fields of every type, not the short row.'],
                 ]],
             ),
 
@@ -372,8 +374,22 @@ final class BlockTools
         $blocks = [];
         $slugs = [];
 
+        // Short by default: every type with every field was twenty-odd thousand characters on a
+        // real site, read in full to find one slug.
+        $full = ($arguments['full'] ?? false) === true;
+
         foreach ($query->get() as $block) {
-            $blocks[] = $this->summary($block, $counts, $parents);
+            $blocks[] = $full ? $this->summary($block, $counts, $parents) : [
+                'slug' => $block->slug,
+                'title' => $block->title,
+                'kind' => $block->kind,
+                'group' => $block->group,
+                'is_enabled' => $block->is_enabled,
+                'draft' => $block->draftVersion?->number,
+                'published' => $block->publishedVersion?->number,
+                'usage' => $counts[$block->slug] ?? 0,
+                'used_by' => $parents[$block->slug] ?? [],
+            ];
             $slugs[$block->slug] = true;
         }
 
@@ -656,6 +672,10 @@ final class BlockTools
             $renamed = ['from' => $from, 'to' => $renameTo] + $renamer->rename($block, $renameTo, BlockVersion::SOURCE_MCP, $this->authorId($user));
             $block = $this->block(['slug' => $renameTo]);
             unset($values['slug']);
+
+            // Content sent beside rename_to was written against the old slug.
+            $content = Renamer::carry($content, $from, $renameTo);
+            $writesVersion = $content !== [] && $block->contentDiffers($content);
         }
 
         if ($changes !== []) {
@@ -742,7 +762,7 @@ final class BlockTools
         } catch (PublishFailed $failed) {
             // A component that breaks another type, the module's declared place or a cycle: the
             // sentence names the parent and the page, which is what the agent has to go and look at.
-            if ($failed->parent !== null || $failed->declared !== null || $failed->cycle !== null) {
+            if ($failed->parent !== null || $failed->declared !== null || $failed->cycle !== null || $failed->marker) {
                 $line = $failed->failure->templateLine !== null ? " (template line {$failed->failure->templateLine})" : '';
 
                 throw new ToolFailure('Not published: '.$failed->describe().$line);
@@ -888,6 +908,7 @@ final class BlockTools
 
         $tree = $this->editing($entity);
         $this->sameRevision($arguments, $tree);
+        $keysBefore = self::keys($tree);
 
         $localized = $this->localized(...);
         $applied = [];
@@ -906,7 +927,30 @@ final class BlockTools
             $applied[] = (string) ($op['op'] ?? '?');
         }
 
-        return $this->writeContent($entity, $tree, $user, $this->dryRun($arguments), ['ops' => $applied]);
+        // The keys the ops made — a duplicate's copy and everything inside it, an added block — on
+        // top of the ones the write itself fills in; `keys_made: 0` was said after a duplicate.
+        $made = count(array_diff(self::keys($tree), $keysBefore));
+
+        return $this->writeContent($entity, $tree, $user, $this->dryRun($arguments), ['ops' => $applied, 'keys_made' => $made]);
+    }
+
+    /**
+     * Every key in a tree, nested ones included.
+     *
+     * @param  list<array<string, mixed>>  $tree
+     * @return list<string>
+     */
+    private static function keys(array $tree): array
+    {
+        $keys = [];
+
+        Content::walk($tree, static function (array $node) use (&$keys): void {
+            if (is_string($node['key'] ?? null) && $node['key'] !== '') {
+                $keys[] = $node['key'];
+            }
+        });
+
+        return $keys;
     }
 
     /**
@@ -1111,7 +1155,8 @@ final class BlockTools
     {
         $known = Block::query()->pluck('slug')->all();
         $unknown = [];
-        $added = 0;
+        $added = (int) ($extra['keys_made'] ?? 0);
+        unset($extra['keys_made']);
         $tree = $this->normalise($tree, $known, $unknown, $added, 0);
 
         if ($unknown !== []) {

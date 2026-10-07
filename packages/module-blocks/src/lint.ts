@@ -29,6 +29,18 @@ export function lintBlock(
     lints.push({ file: 'template', code: 'no-marker', line: null, message: t('checks.no-marker') })
   }
 
+  // The runtime and the panel match the marker to the slug exactly; «Quote» on `quote` never ran.
+  const marker = /data-wx-block\s*=\s*(["'])([^"']*)\1/.exec(content.template)?.[2]
+
+  if (marker !== undefined && !marker.includes('{{') && marker !== slug) {
+    lints.push({
+      file: 'template',
+      code: 'marker-slug',
+      line: null,
+      message: t('checks.marker-slug', { marker, slug }),
+    })
+  }
+
   const missing = undeclared(content.template, content.schema)
 
   if (missing.length > 0) {

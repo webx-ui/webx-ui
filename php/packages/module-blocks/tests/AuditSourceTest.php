@@ -16,6 +16,8 @@ class AuditSourceTest extends RegionTestCase
     #[Test]
     public function the_published_tree_and_the_draft_are_both_read(): void
     {
+        // A publication refuses a block of a type nobody has.
+        $this->publish('bar', '<nav data-wx-block="bar">{{ $href }}</nav>');
         $region = $this->region('header', [['key' => 'h1', 'type' => 'bar', 'values' => ['href' => 'https://dev.shop.test/']]]);
         $region->saveDraft(['blocks' => [['key' => 'h1', 'type' => 'bar', 'values' => ['href' => 'http://192.168.0.5/']]]]);
 

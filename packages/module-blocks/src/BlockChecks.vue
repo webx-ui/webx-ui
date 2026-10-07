@@ -26,7 +26,7 @@ const passed = computed(() => {
   const lines: string[] = []
 
   if (props.file === 'template') {
-    if (!codes.has('no-marker')) lines.push(t('checks.ok-marker'))
+    if (!codes.has('no-marker') && !codes.has('marker-slug')) lines.push(t('checks.ok-marker'))
     if (!codes.has('variables-missing')) lines.push(t('checks.ok-variables'))
   }
 

@@ -178,7 +178,8 @@ work with the same `trans::` marker as everywhere on a screen.
 **The template is Blade** with the fields as variables, plus `$block` (`key`, `type`, `version`,
 `depth`, `value('name', default)`) and `$entity`, the record the block stands on. The root element
 carries `data-wx-block="{slug}"`: the runtime finds the block by it and the panel highlights it by
-it. Every block renders in its own `try`/`catch` — on the site a failure goes to the log and leaves
+it — by the exact slug, so `data-wx-block="Quote"` on a type called `quote` is a block whose script
+never runs. A marker that is not the slug is said under the editor and refused on publishing. Every block renders in its own `try`/`catch` — on the site a failure goes to the log and leaves
 a gap; in the preview it is a notice with the line.
 
 A variable holds what the field type makes of the stored value, the same way
@@ -220,7 +221,8 @@ the page.
 **The styles start with `.b-{slug}`**, in BEM: `.b-hero__title`, `.b-hero--wide`. Width decisions
 are container queries, because the block does not know whether it is the page or a third of it.
 Saving reports what leaks — a selector outside the prefix, a bare element selector, `@media`, a
-missing `data-wx-block` — as warnings under the editor, never as a refusal.
+missing `data-wx-block` — as warnings under the editor, never as a refusal. (A marker that names
+another slug is the one exception: it is refused on publishing.)
 
 **The script is a body**, not a program:
 
@@ -473,7 +475,7 @@ way tinker is.
 
 | Tool                     | What it does                                                                                                                                                                     |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `blocks_list`            | The types: names, fields, where each may go, published or not, on how many pages                                                                                                 |
+| `blocks_list`            | The types, one short row each: slug, title, kind, group, versions, on how many pages; `full: true` adds every setting and the fields                                             |
 | `blocks_get`             | One type in full, at the current or a given version, with the warnings on it                                                                                                     |
 | `blocks_create`          | A new type as a draft                                                                                                                                                            |
 | `blocks_update`          | Any settings and any of the five content fields; a version only when content differs; `rename_to` renames the type everywhere it stands; answers with a summary and the warnings |

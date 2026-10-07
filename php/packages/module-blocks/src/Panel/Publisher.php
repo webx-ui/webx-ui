@@ -102,6 +102,12 @@ final class Publisher
         $graph = new Graph;
         $checked = 0;
 
+        $marker = Lints::marker((string) $version->template);
+
+        if ($marker !== null && $marker !== $block->slug) {
+            throw PublishFailed::onMarker($block->slug, $version->number, (string) __('webx-blocks::checks.marker-slug', ['marker' => $marker, 'slug' => $block->slug]));
+        }
+
         $cycle = $graph->cycle($block->slug, $version->calls());
 
         if ($cycle !== null) {

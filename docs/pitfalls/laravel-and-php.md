@@ -635,6 +635,15 @@ php vendor/bin/testbench package:discover` из `php/`, убрать `bootstrap/
   пространства имён) элементы лежат вне HTML-пространства, а `body`, `head` и `title` документа
   ищут именно в нём — и молча отдают `null`. Выглядит как «на странице ноль слов». Брать
   `querySelector('body')`. Проверка — тест с настоящим текстом в `<body>` и счётом слов.
+- **`ImageException` из `Intervention\Image\Exceptions` в v3 не существует.** `catch (ImageException)`
+  с таким импортом молча не ловит ничего — PHP не проверяет классы в `catch`, PHPStan тоже
+  промолчал. Базовый класс v3 — `RuntimeException`; в пакетах он импортируется как
+  `RuntimeException as ImageException`. Проверка — тест, где вариант режется из SVG.
+- **GD сообщает о непонятном формате предупреждением раньше исключения.** На SVG и HEIC
+  `imagecreatefromstring()` пишет warning, и под обработчиком ошибок фреймворка (консоль, tinker)
+  это `ErrorException`, а не `DecoderException` — его никто не ловил, и одна SVG в данных блока
+  обрывала все миниатюры списка. `Media\Images\Thumbnails` не режет SVG/HEIC вовсе и любой сбой
+  чтения отдаёт как `DecoderException`.
 - **`tinker <файл>` открывает REPL, а не выполняет файл.** Команда виснет до таймаута. Скрипт
   запускается как `artisan tinker --execute="require '<путь>';"`.
 - **Rich Results Test не показывает FAQ, даже когда разметка верна.** FAQ-сниппеты Google даёт

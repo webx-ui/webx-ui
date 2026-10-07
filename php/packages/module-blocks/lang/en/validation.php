@@ -13,4 +13,5 @@ return [
     'too-many' => 'Takes at most :max block(s).',
     'not-at-top' => '«:type» cannot stand at the top level here.',
     'not-inside' => '«:type» cannot go inside «:parent».',
+    'unknown-type' => 'There is no block type «:type» any more: the site would leave this block out. Remove it or put another block in its place.',
 ];

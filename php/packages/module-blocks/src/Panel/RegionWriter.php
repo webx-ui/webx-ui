@@ -90,14 +90,14 @@ final class RegionWriter
 
         $render = $this->regions->draw($region->name, $tree, [], preview: false, report: false);
 
-        return array_map(
+        return [...$region->publishProblems(), ...array_map(
             static fn (array $failure): string => (string) __('webx-blocks::regions.failed-block', [
                 'type' => $failure['type'],
                 'key' => $failure['key'],
                 'reason' => $failure['message'].($failure['line'] === null ? '' : ' (line '.$failure['line'].')'),
             ]),
             $render->failures,
-        );
+        )];
     }
 
     /**

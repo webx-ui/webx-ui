@@ -89,8 +89,9 @@ whose type has no `wx-blocks` field is refused as "not a container".
 - Do not write rows of `blocks` or `block_versions` with SQL: a version is checked and compiled on
   save, publishing renders it first, and the cache is forgotten only through the model. Use
   `webx:blocks:import` or the tools.
-- Do not publish a template that declares no `data-wx-block="{slug}"` on its root or uses
-  variables the schema lacks: the script never runs, the publish check refuses. `blocks_render`
+- Do not publish a template that declares no `data-wx-block="{slug}"` on its root, marks it with
+  anything but the exact slug, or uses variables the schema lacks: the script never runs, the
+  publish check refuses the last two. `blocks_render`
   shows both before you publish.
 - Do not style with bare element selectors or `@media`: they reach the whole site. Prefix every
   selector with `.b-{slug}` and size with `@container`.

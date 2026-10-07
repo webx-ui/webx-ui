@@ -13,4 +13,5 @@ return [
     'too-many' => 'Nimmt höchstens :max Block/Blöcke auf.',
     'not-at-top' => '«:type» kann hier nicht auf der obersten Ebene stehen.',
     'not-inside' => '«:type» kann nicht in «:parent» stehen.',
+    'unknown-type' => 'Den Blocktyp «:type» gibt es nicht mehr: Die Website würde diesen Block weglassen. Entfernen Sie ihn oder setzen Sie einen anderen Block an seine Stelle.',
 ];

@@ -13,4 +13,5 @@ return [
     'too-many' => 'En fazla :max blok alır.',
     'not-at-top' => '«:type» burada en üst seviyede yer alamaz.',
     'not-inside' => '«:type», «:parent» içine konamaz.',
+    'unknown-type' => '«:type» blok türü artık yok: site bu bloğu atlar. Kaldırın ya da yerine başka bir blok koyun.',
 ];

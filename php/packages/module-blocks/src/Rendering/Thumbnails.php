@@ -29,10 +29,25 @@ use WebxUi\Localization\Locales;
  * A type whose sample reads records is a picture of those records, which change without any type
  * changing: hence a lifetime too (`webx-blocks.thumbnails.ttl`, an hour by default) — the most a
  * thumbnail of a recipe card can lag behind the recipes.
+ *
+ * A list reads them in one go ({@see self::prime()}): the generation once, the keys with one
+ * `many()`. Read type by type it was two reads per card, ninety for one `GET /api/cms/blocks` on
+ * a site with forty-odd types. And moving the generation on deletes what the old one wrote,
+ * through a list of its keys: left to expire, a `database` store kept every old row — it expires
+ * entries on read, and nobody read them again.
+ *
+ * Bound per request (`scoped`), so the generation read once is not carried into the next one.
  */
 final class Thumbnails
 {
     private const GENERATION = 'webx.blocks.thumbnails.generation';
+
+    private const INDEX = 'webx.blocks.thumbnails.index.';
+
+    private ?string $generation = null;
+
+    /** @var array<string, array{html: string, styles: string, empty: bool}> Read or drawn this request, by cache key. */
+    private array $kept = [];
 
     public function __construct(
         private readonly Renderer $renderer,
@@ -51,12 +66,62 @@ final class Thumbnails
         }
 
         try {
-            $key = sprintf('webx.blocks.thumbnails.%s.%d.%s', $this->generation(), $type->versionId, $this->locales->content());
+            $key = $this->key($type);
 
-            /** @var array{html: string, styles: string, empty: bool} */
-            return $this->cache->remember($key, $this->ttl(), fn (): array => $this->draw($type));
+            if (! isset($this->kept[$key])) {
+                $this->prime([$type]);
+            }
+
+            return $this->kept[$key] ?? $this->draw($type);
         } catch (Throwable) {
             return $this->draw($type);
+        }
+    }
+
+    /**
+     * The thumbnails of many types at once, for a list: what is kept read with one `many()`, the
+     * rest drawn and written with one `putMany()`. {@see self::of()} then answers from memory.
+     *
+     * @param  iterable<BlockType>  $types
+     */
+    public function prime(iterable $types): void
+    {
+        if (! $this->enabled()) {
+            return;
+        }
+
+        try {
+            $wanted = [];
+
+            foreach ($types as $type) {
+                $key = $this->key($type);
+
+                if (! isset($this->kept[$key])) {
+                    $wanted[$key] = $type;
+                }
+            }
+
+            if ($wanted === []) {
+                return;
+            }
+
+            $drawn = [];
+
+            foreach ($this->cache->many(array_keys($wanted)) as $key => $value) {
+                if (is_array($value)) {
+                    /** @var array{html: string, styles: string, empty: bool} $value */
+                    $this->kept[(string) $key] = $value;
+                } else {
+                    $drawn[(string) $key] = $this->kept[(string) $key] = $this->draw($wanted[$key]);
+                }
+            }
+
+            if ($drawn !== []) {
+                $this->cache->putMany($drawn, $this->ttl());
+                $this->remember(array_keys($drawn));
+            }
+        } catch (Throwable) {
+            // No cache to read: of() draws each one.
         }
     }
 
@@ -64,7 +129,15 @@ final class Thumbnails
     public function forget(): void
     {
         try {
-            $this->cache->forever(self::GENERATION, Str::random(8));
+            $old = $this->cache->get(self::GENERATION);
+            $this->generation = Str::random(8);
+            $this->kept = [];
+            $this->cache->forever(self::GENERATION, $this->generation);
+
+            if (is_string($old) && $old !== '') {
+                $keys = $this->cache->get(self::INDEX.$old);
+                $this->cache->deleteMultiple([...(is_array($keys) ? $keys : []), self::INDEX.$old]);
+            }
         } catch (Throwable) {
             // No cache to tell — a console command before the store is configured.
         }
@@ -92,8 +165,30 @@ final class Thumbnails
         return ['html' => $html, 'styles' => $type->styles, 'empty' => self::isEmpty($html)];
     }
 
+    private function key(BlockType $type): string
+    {
+        return sprintf('webx.blocks.thumbnails.%s.%d.%s', $this->generation(), $type->versionId, $this->locales->content());
+    }
+
+    /**
+     * The keys this generation wrote, so that moving it on can delete them.
+     *
+     * @param  list<string>  $keys
+     */
+    private function remember(array $keys): void
+    {
+        $index = self::INDEX.$this->generation();
+        $known = $this->cache->get($index);
+
+        $this->cache->forever($index, array_values(array_unique([...(is_array($known) ? $known : []), ...$keys])));
+    }
+
     private function generation(): string
     {
+        if ($this->generation !== null) {
+            return $this->generation;
+        }
+
         $generation = $this->cache->get(self::GENERATION);
 
         if (! is_string($generation) || $generation === '') {
@@ -101,7 +196,7 @@ final class Thumbnails
             $this->cache->forever(self::GENERATION, $generation);
         }
 
-        return $generation;
+        return $this->generation = $generation;
     }
 
     private function enabled(): bool

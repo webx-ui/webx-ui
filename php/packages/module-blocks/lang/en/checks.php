@@ -24,4 +24,5 @@ return [
     'syntax' => 'The template does not compile: :reason. Publishing will be refused.',
     'unknown-field-type' => 'Fields of a type this site does not know: :fields. The form draws a warning in their place and nothing checks their values.',
     'field-id' => 'Field ids must be letters, digits, _ and -, starting with a letter: :ids.',
+    'marker-slug' => 'The root is marked data-wx-block=":marker", but the identifier is «:slug»: the script and the panel find the block by the exact identifier. Publishing will be refused.',
 ];

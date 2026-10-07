@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Blocks\Tests;
 
+use Illuminate\Testing\Fluent\AssertableJson;
 use Illuminate\Validation\ValidationException;
 use Laravel\Mcp\Server\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -260,7 +261,10 @@ final class ValidationTest extends TestCase
             'entity' => 'note',
             'id' => $page->id,
             'ops' => [['op' => 'duplicate', 'key' => 's1']],
-        ])->assertOk();
+        ])->assertOk()->assertStructuredContent(static function (AssertableJson $json): void {
+            // The section's copy and the quote inside it.
+            self::assertSame(2, $json->etc()->toArray()['keys_made']);
+        });
 
         $tree = $page->refresh()->draft['blocks'];
 

@@ -17,7 +17,8 @@ use WebxUi\Blocks\Schema;
 /**
  * What is said on saving and never refused (§15): selectors outside the block's prefix,
  * bare element selectors, a media query where a container query belongs, no `data-wx-block`
- * on the root. Each is a habit that bites later — on another block, on another page — so
+ * on the root. A marker that is not the slug is said here and refused on publishing
+ * ({@see Publisher::check()}): unlike a missing one, it is never what anybody meant. Each is a habit that bites later — on another block, on another page — so
  * each is worth a line under the editor, and none is worth a locked save.
  *
  * The same checks run live in the editor, in `lint.ts`; this is the copy the server sends back
@@ -44,6 +45,12 @@ final class Lints
 
         if (! preg_match('/data-wx-block\s*=/', $template)) {
             $lints[] = self::lint('template', 'no-marker', null);
+        }
+
+        $marker = self::marker($template);
+
+        if ($marker !== null && $marker !== $slug) {
+            $lints[] = self::lint('template', 'marker-slug', null, ['marker' => $marker, 'slug' => $slug]);
         }
 
         $syntax = self::syntax($slug, $template);
@@ -95,6 +102,22 @@ final class Lints
         }
 
         return $lints;
+    }
+
+    /**
+     * What the root's `data-wx-block` says — the first one in the template, which is the root's in
+     * every template that has one — or null when there is none or it is not a plain string. The
+     * runtime and the panel match it to the slug exactly: «Quote» on a type called `quote` was a
+     * block whose script never ran and which the preview could not highlight.
+     */
+    public static function marker(string $template): ?string
+    {
+        if (preg_match('/data-wx-block\s*=\s*(["\'])([^"\']*)\1/', $template, $match) !== 1) {
+            return null;
+        }
+
+        // A Blade echo is somebody's own way of writing it; nothing to compare.
+        return str_contains($match[2], '{{') ? null : $match[2];
     }
 
     /**

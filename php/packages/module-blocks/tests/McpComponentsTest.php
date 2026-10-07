@@ -61,6 +61,26 @@ final class McpComponentsTest extends TestCase
     }
 
     #[Test]
+    public function the_list_is_short_unless_asked_for_in_full(): void
+    {
+        $this->publish('hero', '<section data-wx-block="hero">{{ $title }}</section>');
+
+        $this->agent('list')
+            ->assertOk()
+            ->assertStructuredContent(static function (AssertableJson $json): void {
+                $row = $json->etc()->toArray()['blocks'][0];
+
+                self::assertSame(['slug', 'title', 'kind', 'group', 'is_enabled', 'draft', 'published', 'usage', 'used_by'], array_keys($row));
+            });
+
+        $this->agent('list', ['full' => true])
+            ->assertOk()
+            ->assertStructuredContent(static function (AssertableJson $json): void {
+                self::assertSame('title', $json->etc()->toArray()['blocks'][0]['fields'][0]['id']);
+            });
+    }
+
+    #[Test]
     public function the_list_says_the_kind_who_calls_whom_and_what_modules_declared(): void
     {
         $this->publish('badge', '<b>{{ $label }}</b>', ['kind' => 'component']);

@@ -24,4 +24,5 @@ return [
     'syntax' => 'O modelo não compila: :reason. A publicação será recusada.',
     'unknown-field-type' => 'Campos de um tipo que o site não conhece: :fields. O formulário mostra um aviso no lugar deles e ninguém verifica os valores.',
     'field-id' => 'O id de um campo são letras, dígitos, _ e -, começando por uma letra: :ids.',
+    'marker-slug' => 'A raiz está marcada com data-wx-block=":marker", mas o identificador é «:slug»: o script e o painel encontram o bloco pelo identificador exato. A publicação será recusada.',
 ];

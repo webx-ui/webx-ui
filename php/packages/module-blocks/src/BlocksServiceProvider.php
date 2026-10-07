@@ -63,7 +63,7 @@ class BlocksServiceProvider extends ServiceProvider
         $this->app->singleton(Preview::class);
         $this->app->singleton(Usage::class);
         $this->app->singleton(Publisher::class);
-        $this->app->singleton(Thumbnails::class);
+        $this->app->scoped(Thumbnails::class);
         $this->app->singleton(Regions::class);
 
         // What modules offer as block types (§3.4 of the FAQ spec). Filled from their providers.

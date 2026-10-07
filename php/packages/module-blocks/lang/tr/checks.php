@@ -24,4 +24,5 @@ return [
     'syntax' => 'Şablon derlenmiyor: :reason. Yayınlama reddedilecek.',
     'unknown-field-type' => 'Sitenin tanımadığı türde alanlar: :fields. Form yerlerinde bir uyarı gösterir ve değerlerini kimse denetlemez.',
     'field-id' => 'Alan kimliği harf, rakam, _ ve - içerir ve harfle başlar: :ids.',
+    'marker-slug' => 'Kök data-wx-block=":marker" ile işaretli, ancak tanımlayıcı «:slug»: betik ve panel bloğu tam tanımlayıcıyla bulur. Yayınlama reddedilecek.',
 ];

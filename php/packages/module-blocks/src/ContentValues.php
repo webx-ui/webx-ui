@@ -35,7 +35,7 @@ use WebxUi\Localization\Locales;
  * Three things pass through unchecked, and all three on purpose: a value whose key the schema does
  * not name — a field removed after the page was written, which the stray-values clean-up is for —
  * a value of a type nobody registered, and a node of a block type that does not exist, which every
- * writer refuses before it gets here.
+ * writer refuses before it gets here — and a publication refuses too ({@see self::publishProblems()}).
  *
  * @phpstan-type Problem array{key: string|null, type: string, field: string|null, message: string}
  */
@@ -54,6 +54,9 @@ final class ContentValues
      * @var array<string, array<string, mixed>>|null
      */
     private ?array $held = null;
+
+    /** Whether a block of a type that does not exist is a problem: on publication it is. */
+    private bool $unknownRefused = false;
 
     public function __construct(
         private readonly BlockTypes $blocks,
@@ -94,12 +97,31 @@ final class ContentValues
      */
     public function check(?iterable $tree, string $attribute = 'blocks', string $root = 'root'): void
     {
-        // Nothing in a stored tree is new: a picture deleted from the library since is the
-        // editor's to take out, not a reason to refuse the publication.
-        $problems = $this->problems($tree, $root, $tree);
+        $problems = $this->publishProblems($tree, $root);
 
         if ($problems !== []) {
             throw ValidationException::withMessages(self::messages($problems, $attribute));
+        }
+    }
+
+    /**
+     * What is wrong with a stored tree on its way to the site. Besides the checks every write has,
+     * a block of a type that exists under no slug: the site would leave it out without a word —
+     * what a version restored from before a rename used to do.
+     *
+     * @param  iterable<array-key, mixed>|null  $tree
+     * @return list<Problem>
+     */
+    public function publishProblems(?iterable $tree, string $root = 'root'): array
+    {
+        $this->unknownRefused = true;
+
+        try {
+            // Nothing in a stored tree is new: a picture deleted from the library since is the
+            // editor's to take out, not a reason to refuse the publication.
+            return $this->problems($tree, $root, $tree);
+        } finally {
+            $this->unknownRefused = false;
         }
     }
 
@@ -189,6 +211,10 @@ final class ContentValues
 
             // Refused at every door before it gets here; with no schema there is nothing to check.
             if ($type === null) {
+                if ($this->unknownRefused) {
+                    $problems[] = ['key' => $key, 'type' => $slug, 'field' => null, 'message' => (string) __('webx-blocks::validation.unknown-type', ['type' => $slug])];
+                }
+
                 continue;
             }
 

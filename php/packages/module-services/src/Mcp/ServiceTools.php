@@ -348,6 +348,8 @@ final class ServiceTools
                 'would_publish' => $this->reference($service),
                 'status' => $service->status(),
                 'has_waiting_edits' => $service->hasDraft(),
+                // What the publication itself would refuse, block by block.
+                'refused' => $service->publishProblems(),
             ];
         }
 
@@ -586,12 +588,14 @@ final class ServiceTools
                 'would_restore' => $version->number,
                 'into' => 'draft',
                 'changes' => $service->changedFields(is_array($version->payload) ? $version->payload : []),
+                'blocks' => $service->restoreReport(is_array($version->payload) ? $version->payload : []),
             ];
         }
 
+        $report = $service->restoreReport(is_array($version->payload) ? $version->payload : []);
         $service->restoreVersion($version);
 
-        return ['restored' => $version->number, 'into' => 'draft'] + $this->get(['service' => $service->refresh()->getKey()], $user);
+        return ['restored' => $version->number, 'into' => 'draft', 'blocks' => $report] + $this->get(['service' => $service->refresh()->getKey()], $user);
     }
 
     /**

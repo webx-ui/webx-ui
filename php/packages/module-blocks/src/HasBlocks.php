@@ -8,6 +8,8 @@ use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
 use Illuminate\Validation\ValidationException;
+use WebxUi\Blocks\Models\Block;
+use WebxUi\Blocks\Panel\Renamer;
 use WebxUi\Blocks\Rendering\Renderer;
 
 /**
@@ -120,6 +122,71 @@ trait HasBlocks
         $before = is_array($draft[$column] ?? null) ? $draft[$column] : $this->blocksTree();
 
         return Container::getInstance()->make(ContentValues::class)->store($tree, $column, $this->blocksRoot(), $before);
+    }
+
+    /**
+     * An old version on its way back into the draft, with the block types renamed since it was
+     * written followed to their new slugs ({@see Renamer::forward()}). Called by
+     * `restoreVersion()`.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
+     */
+    public function restoredPayload(array $payload): array
+    {
+        $column = $this->blocksColumn();
+
+        if (is_array($payload[$column] ?? null)) {
+            $payload[$column] = Renamer::forward($payload[$column])[0];
+        }
+
+        return $payload;
+    }
+
+    /**
+     * What restoring `$payload` would do to its blocks, for a dry run: the types it would follow
+     * to a new slug, and the ones that exist under no slug at all — which publishing refuses.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array{renamed: array<string, string>, unknown: list<string>}
+     */
+    public function restoreReport(array $payload): array
+    {
+        $tree = $payload[$this->blocksColumn()] ?? null;
+
+        if (! is_array($tree)) {
+            return ['renamed' => [], 'unknown' => []];
+        }
+
+        [$tree, $renamed] = Renamer::forward($tree);
+        $known = Block::query()->pluck('slug')->all();
+
+        return ['renamed' => $renamed, 'unknown' => array_values(array_diff(Content::types($tree), $known))];
+    }
+
+    /**
+     * Why publishing the draft would be refused, one sentence per block — empty when it would
+     * not be. What the `publishing` check throws, said ahead for a dry run.
+     *
+     * @return list<string>
+     */
+    public function publishProblems(): array
+    {
+        if (! method_exists($this, 'draftValues')) {
+            return [];
+        }
+
+        $draft = $this->draftValues();
+        $tree = $draft[$this->blocksColumn()] ?? null;
+
+        if (! is_array($tree)) {
+            return [];
+        }
+
+        return array_map(
+            ContentValues::describe(...),
+            Container::getInstance()->make(ContentValues::class)->publishProblems($tree, $this->blocksRoot()),
+        );
     }
 
     /**

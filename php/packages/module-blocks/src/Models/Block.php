@@ -32,6 +32,7 @@ use WebxUi\Blocks\Rendering\Thumbnails;
  *
  * @property int $id
  * @property string $slug
+ * @property list<string>|null $former_slugs Slugs it had before a rename, oldest first.
  * @property string $kind
  * @property string $title
  * @property string|null $description
@@ -85,6 +86,7 @@ class Block extends Model
             'position' => 'integer',
             'allow' => 'array',
             'allowed_in' => 'array',
+            'former_slugs' => 'array',
             'max_per_entity' => 'integer',
             'is_enabled' => 'boolean',
             'draft_version_id' => 'integer',

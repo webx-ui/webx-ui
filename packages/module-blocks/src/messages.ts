@@ -311,6 +311,8 @@ export const blocksMessages: Record<string, Messages> = {
     'media-query': '@media measures the window. A block is sized by its container: use @container.',
     'variables-missing':
       'The template uses :variables, which the schema does not declare. Publishing will be refused.',
+    'marker-slug':
+      'The root is marked data-wx-block=":marker", but the identifier is «:slug»: the script and the panel find the block by the exact identifier. Publishing will be refused.',
     'ok-marker': 'The root carries data-wx-block.',
     'ok-prefix': 'Every selector starts with .b-:slug.',
     'ok-bare': 'No bare element selectors.',

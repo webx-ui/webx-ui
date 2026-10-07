@@ -7,7 +7,11 @@ namespace WebxUi\Media\Images;
 use Illuminate\Contracts\Config\Repository as Config;
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Drivers\Imagick\Driver as ImagickDriver;
+use Intervention\Image\Exceptions\DecoderException;
+use Intervention\Image\Exceptions\RuntimeException as ImageException;
 use Intervention\Image\ImageManager;
+use Intervention\Image\Interfaces\ImageInterface;
+use Throwable;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Storage\FileStore;
 
@@ -25,6 +29,9 @@ use WebxUi\Media\Storage\FileStore;
  */
 final class Thumbnails
 {
+    /** Extensions no driver here cuts a variant from. */
+    private const UNREADABLE = ['svg', 'svgz', 'heic', 'heif'];
+
     public function __construct(
         private readonly FileStore $files,
         private readonly Config $config,
@@ -68,13 +75,19 @@ final class Thumbnails
             return $path;
         }
 
+        // A vector has no smaller copy, and GD reads neither it nor HEIC: said as the decoder's
+        // own failure, which every caller already answers with the picture whole.
+        if (in_array(strtolower(pathinfo($source, PATHINFO_EXTENSION)), self::UNREADABLE, true)) {
+            throw new DecoderException("[{$source}] is not a format a variant can be cut from.");
+        }
+
         $contents = $disk->get($source);
 
         if ($contents === null) {
             throw new MissingSource($source);
         }
 
-        $image = $this->manager()->read($contents);
+        $image = $this->read($contents, $source);
 
         if ($height === null) {
             $image->scaleDown(width: $width);
@@ -89,6 +102,23 @@ final class Thumbnails
         $disk->put($path, (string) $image->encodeByExtension($extension, quality: $quality));
 
         return $path;
+    }
+
+    /**
+     * The bytes as an image, or a {@see DecoderException}. GD says a format it does not know with
+     * a PHP warning before the decoder throws, and with the framework's error handler on — a
+     * console command, tinker — the warning was an ErrorException nobody caught: one SVG in a data
+     * block's sample stopped every thumbnail of the list.
+     */
+    private function read(string $contents, string $source): ImageInterface
+    {
+        try {
+            return $this->manager()->read($contents);
+        } catch (ImageException $failed) {
+            throw $failed;
+        } catch (Throwable $failed) {
+            throw new DecoderException("[{$source}] could not be read as an image: {$failed->getMessage()}", 0, $failed);
+        }
     }
 
     private function libraryDirectory(MediaFile $file): string

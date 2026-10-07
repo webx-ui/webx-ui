@@ -48,8 +48,9 @@ Blade, with the schema's fields as variables: `{{ $title }}`, `@if ($subtitle)`,
 `value('name', default)`) and `$entity`, the page or article the block stands on. Nothing else:
 no facades that reach for the database, no `@php` that does work a controller should.
 
-- The root element carries `data-wx-block="{slug}"` — the runtime finds the block by it, and
-  the panel highlights it by it. One root element per block.
+- The root element carries `data-wx-block="{slug}"` — the exact slug, letter for letter: the
+  runtime finds the block by it, and the panel highlights it by it. Another word there is refused
+  on publishing. One root element per block.
 - Escape by default (`{{ }}`); `{!! !!}` only for a field that is rich text on purpose.
 - Every field may be empty. A template that throws on an empty value is refused at publish
   time; render it on empty values before you are done.
@@ -161,7 +162,13 @@ unpublished (`fallback`).
 - `blocks_update` with `rename_to` gives a type a new slug and rewrites the pages, regions and
   `allow` lists that name it, and its own `data-wx-block` and `.b-{slug}` prefix. Refused while
   another template calls it by tag. `blocks_update` answers with a short summary; `full: true`
-  for the whole type.
+  for the whole type. `content` sent beside `rename_to` is carried to the new slug.
+- The type remembers its former slugs: restoring a version of a page, a service or a region from
+  before a rename brings its blocks back under the new slug (the dry run lists them under
+  `blocks.renamed`). A block of a type that exists under no slug is refused on publishing —
+  `pages_publish` / `services_publish` with `dry_run` list it under `refused`.
+- `blocks_list` is one short row per type; `full: true` adds every setting and the fields, and
+  `blocks_get` reads one type whole.
 
 ## The loop
 

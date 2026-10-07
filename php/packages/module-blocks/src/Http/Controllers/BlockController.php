@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Blocks\BlockComponents;
+use WebxUi\Blocks\BlockType;
 use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Http\Requests\BlockRequest;
 use WebxUi\Blocks\Http\Resources\BlockResource;
@@ -22,6 +23,7 @@ use WebxUi\Blocks\Panel\Publisher;
 use WebxUi\Blocks\Panel\Renamer;
 use WebxUi\Blocks\Panel\Usage;
 use WebxUi\Blocks\Regions;
+use WebxUi\Blocks\Rendering\Thumbnails;
 
 /**
  * The types: the list the section opens on, the catalogue the constructor reads, and the
@@ -139,6 +141,12 @@ final class BlockController
 
         $content = $request->content();
 
+        // The form sent the content it opened with, old marker and all: carried to the new slug,
+        // it is either what the rename just wrote (nothing to save) or the editor's own changes.
+        if ($content !== null && $renamed !== null) {
+            $content = Renamer::carry($content, $renamed['from'], $renamed['to']);
+        }
+
         if ($content !== null && $block->contentDiffers($content)) {
             $block->saveVersion($content, BlockVersion::SOURCE_PANEL, $this->author($request), $request->comment());
         }
@@ -219,6 +227,19 @@ final class BlockController
         $authors = Authors::names($ids);
 
         $parents = (new Graph)->parents();
+
+        // Every card's picture read in one go rather than two cache reads a card.
+        $types = [];
+
+        foreach ($blocks as $block) {
+            $version = $block->publishedVersion ?? $block->draftVersion;
+
+            if ($version !== null) {
+                $types[] = BlockType::fromModels($block, $version);
+            }
+        }
+
+        app(Thumbnails::class)->prime($types);
 
         return $blocks
             ->map(static fn (Block $block): BlockResource => new BlockResource($block, $usage, $authors, $withContent, $parents))

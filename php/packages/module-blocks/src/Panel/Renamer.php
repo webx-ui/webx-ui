@@ -31,8 +31,9 @@ use WebxUi\Blocks\Regions;
  * by tag (their templates would need new versions, and a version is somebody's work to publish)
  * and a slug a module declared (the module calls it by that name).
  *
- * Not rewritten: the history of entities and of other types. Restoring a version of a page from
- * before the rename brings the old slug back, and the block is left out where it stands.
+ * Not rewritten: the history of entities and of other types. The old slug is kept on the row
+ * instead (`former_slugs`), and restoring a version from before the rename follows it to the
+ * new one ({@see self::forward()}).
  */
 final class Renamer
 {
@@ -88,6 +89,8 @@ final class Renamer
             $types = $this->others($block, $from, $to, $source, $authorId);
 
             $block->slug = $to;
+            // The trail an old version of a page follows to the type it became (§ forward()).
+            $block->former_slugs = array_values(array_unique([...array_diff($block->former_slugs ?? [], [$to]), $from]));
             $block->save();
 
             $version = $this->own($block, $from, $to, $source, $authorId);
@@ -299,22 +302,91 @@ final class Renamer
     }
 
     /**
+     * Content written in the same breath as a rename — the editor's form, an agent's `content`
+     * beside `rename_to` — carried over to the new slug: its marker, prefix and own `allow`.
+     * Saved as it came, it was the old template written as the draft after the rename's version,
+     * and publishing that draft lost the block its marker and styles. Only the keys that came.
+     *
+     * @param  array<string, mixed>  $content
+     * @return array<string, mixed>
+     */
+    public static function carry(array $content, string $from, string $to): array
+    {
+        if (is_array($content['schema'] ?? null)) {
+            $changed = false;
+            $content['schema'] = self::allowRenamed($content['schema'], $from, $to, $changed);
+        }
+
+        $quoted = preg_quote($from, '/');
+        $prefix = '/(?<![A-Za-z0-9_-])b-'.$quoted.'(?![a-z0-9])/';
+
+        if (is_string($content['template'] ?? null)) {
+            $template = (string) preg_replace('/(data-wx-block\s*=\s*["\'])'.$quoted.'(["\'])/', '${1}'.$to.'${2}', $content['template']);
+            $content['template'] = (string) preg_replace($prefix, 'b-'.$to, $template);
+        }
+
+        if (is_string($content['styles'] ?? null)) {
+            $content['styles'] = (string) preg_replace($prefix, 'b-'.$to, $content['styles']);
+        }
+
+        return $content;
+    }
+
+    /**
      * @param  array<string, mixed>  $content
      * @return array<string, mixed>
      */
     private static function renamed(array $content, string $from, string $to): array
     {
-        $quoted = preg_quote($from, '/');
-        $prefix = '/(?<![A-Za-z0-9_-])b-'.$quoted.'(?![a-z0-9])/';
+        $content['template'] = (string) ($content['template'] ?? '');
+        $content['styles'] = (string) ($content['styles'] ?? '');
 
-        $template = (string) $content['template'];
-        $template = (string) preg_replace('/(data-wx-block\s*=\s*["\'])'.$quoted.'(["\'])/', '${1}'.$to.'${2}', $template);
-        $template = (string) preg_replace($prefix, 'b-'.$to, $template);
+        return array_intersect_key(self::carry($content, $from, $to), array_flip(BlockVersion::CONTENT));
+    }
 
-        $content['template'] = $template;
-        $content['styles'] = (string) preg_replace($prefix, 'b-'.$to, (string) $content['styles']);
+    /**
+     * A tree from before a rename, its old slugs swapped for the types they became. A rename
+     * rewrites what entities hold now, never their history: a version restored from before it
+     * brought back a slug nobody had, publishing let it through, and the block vanished from the
+     * site without a word. A slug that names a type today is left alone even if another type
+     * once had it — what exists wins.
+     *
+     * @param  array<array-key, mixed>  $tree
+     * @return array{0: array<array-key, mixed>, 1: array<string, string>} The tree, and old slug → new.
+     */
+    public static function forward(array $tree): array
+    {
+        $types = Content::types($tree);
 
-        return array_intersect_key($content, array_flip(BlockVersion::CONTENT));
+        if ($types === []) {
+            return [$tree, []];
+        }
+
+        /** @var array<string, mixed> $trails */
+        $trails = Block::query()->pluck('former_slugs', 'slug')->all();
+        $map = [];
+
+        foreach ($types as $slug) {
+            if (array_key_exists($slug, $trails)) {
+                continue;
+            }
+
+            foreach ($trails as $current => $former) {
+                $former = is_string($former) ? json_decode($former, true) : $former;
+
+                if (is_array($former) && in_array($slug, $former, true)) {
+                    $map[$slug] = (string) $current;
+
+                    break;
+                }
+            }
+        }
+
+        foreach ($map as $from => $to) {
+            $tree = self::retype($tree, $from, $to);
+        }
+
+        return [$tree, $map];
     }
 
     /**

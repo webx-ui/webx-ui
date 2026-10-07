@@ -13,4 +13,5 @@ return [
     'too-many' => 'Admite como máximo :max bloque(s).',
     'not-at-top' => '«:type» no puede estar aquí en el nivel superior.',
     'not-inside' => '«:type» no puede ir dentro de «:parent».',
+    'unknown-type' => 'El tipo de bloque «:type» ya no existe: el sitio omitiría este bloque. Elimínelo o ponga otro bloque en su lugar.',
 ];
