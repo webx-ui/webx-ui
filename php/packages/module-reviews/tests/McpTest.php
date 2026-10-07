@@ -27,12 +27,12 @@ final class McpTest extends TestCase
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['reviews_list', 'reviews_get', 'reviews_create', 'reviews_update', 'reviews_delete', 'reviews_reorder'],
+            ['reviews_list', 'reviews_get', 'reviews_create', 'reviews_update', 'reviews_delete', 'reviews_reorder', 'reviews_restore', 'reviews_purge'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('reviews')),
         );
 
         $this->assertSame(
-            ['review_categories_list', 'review_categories_create', 'review_categories_update', 'review_categories_delete', 'review_categories_reorder'],
+            ['review_categories_list', 'review_categories_get', 'review_categories_create', 'review_categories_update', 'review_categories_delete', 'review_categories_reorder'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('review-categories')),
         );
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Reviews\Mcp;
 
+use Closure;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Http\Request;
@@ -11,9 +12,12 @@ use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Categories\CategoryException;
 use WebxUi\Admin\Categories\Ordering;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Localization\Locales;
+use WebxUi\Mcp\Arguments;
 use WebxUi\Mcp\Exceptions\ToolFailure;
+use WebxUi\Mcp\Rehearsal;
 use WebxUi\Mcp\Tool;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Reviews\Models\Review;
@@ -35,6 +39,10 @@ use WebxUi\Reviews\Panel\ReviewNames;
  *
  * A review is named by its id and nothing else: it has no slug and no anchor of its own making, and
  * names repeat — two Annas are two reviews.
+ *
+ * A dry run is the write itself, rolled back ({@see Rehearsal}): refused where the write would be
+ * refused, answering what it would answer. An argument or a field the tool does not take is
+ * refused rather than dropped ({@see Arguments}).
  */
 final class ReviewsTools
 {
@@ -74,7 +82,7 @@ final class ReviewsTools
             ],
         ];
 
-        return [
+        return Arguments::strictAll([
             Tool::read(
                 'list',
                 'Reviews in the order they stand in: who wrote them, the stars, whether each is published and the '
@@ -150,7 +158,25 @@ final class ReviewsTools
                 ], 'required' => ['reviews']],
                 permission: 'reviews.manage',
             ),
-        ];
+
+            Tool::mutating(
+                'restore',
+                'Take a review out of the bin. It comes back where it stood, with its categories, published or '
+                .'not as it was when it went in.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->restore($arguments)),
+                ['properties' => ['review' => $review], 'required' => ['review']],
+                permission: 'reviews.manage',
+            ),
+
+            Tool::mutating(
+                'purge',
+                'Delete a review in the bin for good. Cannot be undone. Only a review in the bin — reviews_delete '
+                .'puts it there first.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->purge($arguments)),
+                ['properties' => ['review' => $review], 'required' => ['review']],
+                permission: 'reviews.manage',
+            ),
+        ], 'reviews_');
     }
 
     /**
@@ -209,6 +235,8 @@ final class ReviewsTools
             throw new ToolFailure('`values` must be an object of field name → value.');
         }
 
+        Arguments::refuseUnknown($values, $this->fields(), 'reviews_create');
+
         // The named arguments win over the same names in `values`: they are what the tool says it
         // takes, and an agent that sent both meant the one it could see.
         $values = [
@@ -231,20 +259,17 @@ final class ReviewsTools
 
         $values = $this->prepare($values);
 
-        if ($this->dryRun($arguments)) {
-            return [
-                'dry_run' => true,
-                'would_create' => [
-                    'name' => $values['name'],
-                    'published' => $values['published'],
-                    'categories' => $values['categories'] ?? [],
-                ],
-            ];
+        $work = fn (): array => $this->get(['review' => $this->form()->save(new Review, $values, $this->can($user))->getKey()]);
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        $review = $this->form()->save(new Review, $values, $this->can($user));
+        $would = $this->rehearse($work);
+        // The id the rehearsal was given is nobody's once it is rolled back.
+        $would['review']['id'] = null;
 
-        return $this->get(['review' => $review->getKey()]);
+        return ['dry_run' => true] + $would;
     }
 
     /**
@@ -259,6 +284,8 @@ final class ReviewsTools
         if (! is_array($values) || $values === []) {
             throw new ToolFailure('`values` must be a non-empty object of field name → value. reviews_get says what the fields are.');
         }
+
+        Arguments::refuseUnknown($values, $this->fields(), 'reviews_update');
 
         // Merged language by language, and a language the site does not have refused — dry run
         // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
@@ -278,13 +305,17 @@ final class ReviewsTools
 
         $values = $this->prepare($values);
 
-        if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'fields' => array_keys($values), 'review' => $this->reference($review)];
+        $work = function () use ($review, $values, $user): array {
+            $this->form()->save($review, $values, $this->can($user));
+
+            return $this->get(['review' => $review->getKey()]);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        $this->form()->save($review, $values, $this->can($user));
-
-        return $this->get(['review' => $review->getKey()]);
+        return ['dry_run' => true, 'fields' => array_keys($values)] + $this->rehearse($work);
     }
 
     /**
@@ -337,13 +368,87 @@ final class ReviewsTools
             }
         }
 
-        if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'would_order' => $ids, 'category' => $category?->getKey()];
+        $work = function () use ($ids, $category): array {
+            Ordering::move(Review::class, $ids, $category === null ? null : (int) $category->getKey());
+
+            return $this->list($category === null ? [] : ['category' => $category->getKey()]);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        Ordering::move(Review::class, $ids, $category === null ? null : (int) $category->getKey());
+        return ['dry_run' => true, 'would_order' => $ids, 'category' => $category?->getKey()] + $this->rehearse($work);
+    }
 
-        return $this->list($category === null ? [] : ['category' => $category->getKey()]);
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function restore(array $arguments): array
+    {
+        $review = $this->review($arguments['review'] ?? null);
+
+        if (! $review->trashed()) {
+            throw new ToolFailure("Review #{$review->getKey()} is not in the bin.");
+        }
+
+        $work = function () use ($review): array {
+            $review->restore();
+
+            return $this->get(['review' => $review->getKey()]);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return ['restored' => true] + $work();
+        }
+
+        return ['dry_run' => true, 'would_restore' => $this->reference($review)] + $this->rehearse($work);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function purge(array $arguments): array
+    {
+        $review = $this->review($arguments['review'] ?? null);
+
+        if (! $review->trashed()) {
+            throw new ToolFailure("Review #{$review->getKey()} is not in the bin. reviews_delete puts it there; only then can it be deleted for good.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_purge' => $this->reference($review)];
+        }
+
+        $review->getConnection()->transaction(static fn (): ?bool => $review->forceDelete());
+
+        return ['purged' => true, 'id' => (int) $review->getKey()];
+    }
+
+    /**
+     * What `values` may name: the fields of the screen — everything the save reads.
+     *
+     * @return list<string>
+     */
+    private function fields(): array
+    {
+        return array_values(array_unique(array_map(
+            static fn (array $node): string => (string) $node['name'],
+            $this->container->make(ScreenRegistry::class)->fields(Review::SCREEN),
+        )));
+    }
+
+    /**
+     * @template T
+     *
+     * @param  Closure(): T  $work
+     * @return T
+     */
+    private function rehearse(Closure $work): mixed
+    {
+        return Rehearsal::run($work, (new Review)->getConnectionName());
     }
 
     /**
@@ -445,7 +550,18 @@ final class ReviewsTools
         if (is_int($reference) || (is_string($reference) && ctype_digit($reference))) {
             $category = ReviewCategory::query()->find((int) $reference);
         } elseif (is_string($reference)) {
-            $category = ReviewCategory::query()->whereTranslationLikeAny('title', trim($reference))->first();
+            $matches = ReviewCategory::query()->whereTranslationLikeAny('title', trim($reference))->get();
+
+            // Two by one name: picking the first is a guess, and it used to pick the empty one.
+            if ($matches->count() > 1) {
+                throw new ToolFailure(sprintf(
+                    'More than one category is called [%s]: #%s. Name it by its id.',
+                    trim($reference),
+                    $matches->map(static fn (ReviewCategory $one): int => (int) $one->getKey())->implode(', #'),
+                ));
+            }
+
+            $category = $matches->first();
         } else {
             throw new ToolFailure('`category` is an id or a title.');
         }
