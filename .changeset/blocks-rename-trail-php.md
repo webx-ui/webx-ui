@@ -1,5 +1,0 @@
----
-'@webx-ui/php': patch
----
-
-`module-blocks`: a rename saved from the panel no longer writes the form's old template as the next draft — content sent beside a new slug is carried to it. A type remembers its former slugs (`blocks.former_slugs`), and restoring a version of a page, a service or a region from before a rename follows them to the new one; the restore's dry run lists them. A block of a type that exists under no slug is refused on publishing, and `pages_publish` / `services_publish` dry runs list it under `refused`. A root `data-wx-block` that is not the exact slug is warned about and refused on publishing. `keys_made` counts the keys a `duplicate` makes. `blocks_list` answers one short row per type, `full: true` for every setting and the fields. The list of types reads its thumbnails with one cache read, and moving the generation on deletes the old one's entries. `module-media`: a variant is not cut from SVG or HEIC, and any image GD cannot read fails as a decoder error that every caller answers with the picture whole, instead of a PHP warning that stopped the render.

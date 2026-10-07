@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-tariffs",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "Tariffs for the WebX UI admin panel: price cards with a currency, a period, what is included and a button, in groups, ordered by hand, shown on the site by a block.",
   "license": "MIT",
   "type": "module",

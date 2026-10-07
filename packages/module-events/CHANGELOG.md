@@ -1,5 +1,19 @@
 # @webx-ui/module-events
 
+## 0.1.10
+
+### Patch Changes
+
+- 52f4e14: Moments are shown and entered on the site's clock: `WxDatePicker` takes a `timezone` (IANA zone) for a value whose format carries an offset, or reads one provided with `provideDateTimezone` / `dateTimezoneKey`, and names that zone's offset after the time when it is not the reader's. The panel provides the manifest's `timezone`, so an event at 09:30 on the site reads 09:30 to an editor anywhere and goes back with the site's offset. The events editor no longer moves the days of an event of days onto the reader's clock.
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+  - @webx-ui/core@0.38.0
+  - @webx-ui/schema@0.8.0
+  - @webx-ui/module-admin@0.23.5
+
 ## 0.1.9
 
 ### Patch Changes

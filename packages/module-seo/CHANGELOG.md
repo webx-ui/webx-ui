@@ -1,5 +1,22 @@
 # @webx-ui/module-seo
 
+## 0.8.0
+
+### Minor Changes
+
+- 52f4e14: The SEO card has no share fields (title, description, picture) unless the site turns them on (`webx-seo.og.panel_fields`, manifest `og_fields`) or the `share-fields` prop asks for them: Open Graph is filled in from the page itself.
+
+### Patch Changes
+
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+  - @webx-ui/core@0.38.0
+  - @webx-ui/schema@0.8.0
+  - @webx-ui/module-admin@0.23.5
+
 ## 0.7.1
 
 ### Patch Changes

@@ -1,5 +1,19 @@
 # @webx-ui/module-catalog-landings
 
+## 0.1.5
+
+### Patch Changes
+
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+  - @webx-ui/core@0.38.0
+  - @webx-ui/schema@0.8.0
+  - @webx-ui/module-admin@0.23.5
+  - @webx-ui/module-catalog@0.8.3
+
 ## 0.1.4
 
 ### Patch Changes
