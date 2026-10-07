@@ -12,9 +12,7 @@ import {
 import {
   confirm,
   createModal,
-  localizedValue,
   toast,
-  useLocales,
   WxBadge,
   WxEmpty,
   WxSortableList,
@@ -22,7 +20,7 @@ import {
 } from '@webx-ui/core'
 import StatusDialog from './StatusDialog.vue'
 import { createInboxApi } from './api'
-import { useInboxMessages } from './i18n'
+import { useInboxMessages, useStatusName } from './i18n'
 import type { InboxStatus } from './types'
 
 /**
@@ -39,7 +37,6 @@ const props = withDefaults(defineProps<{ base?: string }>(), { base: '/inbox' })
 
 const context = useAdmin()
 const api = createInboxApi(context)
-const locales = useLocales()
 useInboxMessages()
 
 const t = useTranslate('webx-inbox')
@@ -53,9 +50,8 @@ const canManage = context.can('inbox.manage')
 
 const edit = createModal<InboxStatus, { status: InboxStatus | null }>(StatusDialog)
 
-function name(status: InboxStatus): string {
-  return localizedValue(status.title, locales.active.value, status.key)
-}
+/* In the panel's language, not the content's: a status is a word of the interface. */
+const name = useStatusName()
 
 async function load(): Promise<void> {
   loading.value = true
@@ -157,6 +153,7 @@ async function reorder(): Promise<void> {
         plain
         item-key="id"
         :item-label="name"
+        :drag-label="t('panel.reorder')"
         :disabled="!canManage"
         :aria-label="t('panel.statuses')"
         @move="reorder"

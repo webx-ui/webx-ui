@@ -22,6 +22,7 @@ return [
     'duplicated' => 'A copy was made.',
     'failed' => 'Some values were not accepted. Check the highlighted fields.',
     'reorder-failed' => 'The new order could not be saved.',
+    'reorder' => 'Reorder',
     'new-form-title' => 'New form',
     'title' => 'Title',
     'slug' => 'Address',

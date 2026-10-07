@@ -63,7 +63,7 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
 | Another intake path or disk               | `WEBX_INBOX_PATH`, `WEBX_INBOX_DISK`                                                   |
 | Larger uploads                            | `WEBX_INBOX_MAX_SIZE` (KB); `upload.extensions`, `upload.max_files` in the config      |
 | Posts from another domain of the site     | `antispam.origins` in `config/webx-inbox.php` (`--tag=webx-inbox-config`)              |
-| Rate limit, duplicate window              | `antispam.throttle`, `duplicate_window` in the config                                  |
+| Rate limit, duplicate window              | `antispam.throttle` (accepted), `antispam.attempts` (all), `duplicate_window`          |
 | Visitors' IPs not kept whole              | `WEBX_INBOX_ANONYMISE_IP=true`                                                         |
 | Forget old submissions                    | `prune.days`, `prune.spam_days`, and schedule `webx:inbox:prune` in the site           |
 | A different letter                        | publish the views and rewrite `mail/submission.blade.php`                              |

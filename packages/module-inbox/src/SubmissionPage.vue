@@ -33,7 +33,7 @@ import {
   WxTimelineItem,
 } from '@webx-ui/core'
 import { createInboxApi } from './api'
-import { useInboxMessages } from './i18n'
+import { useInboxMessages, useStatusName } from './i18n'
 import type { InboxRecipient, InboxStatus, InboxSubmission, SubmissionEvent } from './types'
 
 /**
@@ -92,9 +92,8 @@ const assigneeOptions = computed(() =>
   admins.value.map((admin) => ({ value: admin.id, label: admin.name })),
 )
 
-function name(status: InboxStatus): string {
-  return localizedValue(status.title, locales.active.value, status.key)
-}
+/* In the panel's language, not the content's: a status is a word of the interface. */
+const name = useStatusName()
 
 const heading = computed(() => t('panel.submission', { id: String(id.value) }))
 

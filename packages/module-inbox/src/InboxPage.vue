@@ -334,6 +334,7 @@ const actions = computed<ScreenAction[]>(() => {
               size="sm"
               item-key="id"
               :item-label="name"
+              :drag-label="t('panel.reorder')"
               :disabled="!canManage"
               :title="inline ? t('panel.forms') : undefined"
               @move="reorder"

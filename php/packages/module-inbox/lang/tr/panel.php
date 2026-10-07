@@ -22,6 +22,7 @@ return [
     'duplicated' => 'Bir kopya oluşturuldu.',
     'failed' => 'Bazı değerler kabul edilmedi. İşaretli alanları gözden geçirin.',
     'reorder-failed' => 'Yeni sıralama kaydedilemedi.',
+    'reorder' => 'Yeniden sırala',
     'new-form-title' => 'Yeni form',
     'title' => 'Başlık',
     'slug' => 'Adres',

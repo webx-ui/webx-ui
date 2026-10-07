@@ -22,6 +22,7 @@ return [
     'duplicated' => 'Eine Kopie wurde angelegt.',
     'failed' => 'Einige Werte wurden nicht angenommen. Prüfen Sie die markierten Felder.',
     'reorder-failed' => 'Die neue Reihenfolge konnte nicht gespeichert werden.',
+    'reorder' => 'Neu anordnen',
     'new-form-title' => 'Neues Formular',
     'title' => 'Titel',
     'slug' => 'Adresse',

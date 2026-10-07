@@ -135,7 +135,8 @@ final class InboxTools
                 'What has come in through one form, newest first. The same filters the panel has: a status by its '
                 .'key, unread only, who it is assigned to, a date range, where on the site the form stood, and a search that looks inside every '
                 .'answer and not only the ones that are columns. Spam is left out unless you ask for it by status. '
-                .'Each row carries the answers the form marks as columns; inbox_get opens one in full.',
+                .'Each row carries the answers the form marks as columns and its status by key — `statuses` names each key once; '
+                .'inbox_get opens one in full.',
                 fn (array $arguments): array => $this->list($arguments),
                 ['properties' => [
                     'form' => $form,
@@ -470,11 +471,52 @@ final class InboxTools
             'counts' => $list->counts($request),
             // Where on the site this form has been sent from; null is "the page did not say".
             'placements' => $list->placements(),
+            'statuses' => $this->statusNames(),
             'submissions' => array_map(
-                fn (Submission $submission): array => (new SubmissionRowResource($submission, $list->columns))->resolve($request),
+                fn (Submission $submission): array => $this->row($submission, $list->columns, $request),
                 $page->items(),
             ),
         ];
+    }
+
+    /**
+     * One line of the list, with its status as a key.
+     *
+     * The panel's row carries the whole status — every language of its title, its colour, its
+     * flags — because it draws a badge from it. An agent reading a page of a hundred got the
+     * same object a hundred times over; the key is what it filters and writes by, and
+     * `statuses` at the top of the answer says once what each key is called.
+     *
+     * @param  list<Field>  $columns
+     * @return array<string, mixed>
+     */
+    private function row(Submission $submission, array $columns, Request $request): array
+    {
+        $row = (new SubmissionRowResource($submission, $columns))->resolve($request);
+        $row['status'] = $submission->status?->key;
+
+        return $row;
+    }
+
+    /**
+     * Every status by key, named in the language the answer is in, with the two flags that
+     * change what a status means.
+     *
+     * @return array<string, array{title: string, is_closed: bool, is_spam: bool}>
+     */
+    private function statusNames(): array
+    {
+        $names = [];
+
+        foreach (Status::query()->orderBy('position')->get() as $status) {
+            $names[$status->key] = [
+                'title' => (string) $status->title,
+                'is_closed' => (bool) $status->is_closed,
+                'is_spam' => (bool) $status->is_spam,
+            ];
+        }
+
+        return $names;
     }
 
     /**

@@ -144,6 +144,7 @@ async function reorder(): Promise<void> {
       plain
       item-key="id"
       :item-label="name"
+      :drag-label="t('panel.reorder')"
       :disabled="!canManage"
       :aria-label="t('panel.tab-fields')"
       @move="reorder"

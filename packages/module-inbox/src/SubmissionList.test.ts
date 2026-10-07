@@ -99,6 +99,7 @@ function panel(
   return {
     get,
     post,
+    i18n,
     router,
     wrapper: mount(SubmissionList, {
       props: { form, base: '/inbox' },
@@ -237,6 +238,33 @@ describe('WxInboxSubmissionList', () => {
       expect.objectContaining({ query: expect.objectContaining({ placement: 'footer' }) }),
     )
     expect(wrapper.text()).toContain('Placement: footer')
+  })
+
+  it('asks for the list once when it opens, with the page size the table draws', async () => {
+    const { get } = panel([row(1, { name: 'Ada' })])
+
+    await flushPromises()
+
+    // The table reports its state on mounting, and that is the first request; asking from
+    // the setup as well sent the list twice, the first time without `per_page`.
+    const lists = get.mock.calls.filter(([path]) => String(path).endsWith('/submissions'))
+    expect(lists).toHaveLength(1)
+    expect(lists[0]?.[1]).toEqual(
+      expect.objectContaining({ query: expect.objectContaining({ per_page: expect.any(Number) }) }),
+    )
+  })
+
+  it("names a status in the panel's language, not the content's", async () => {
+    const named = { ...status, title: { en: 'New', ru: 'Новая' } }
+    const { wrapper, i18n } = panel([{ ...row(1, { name: 'Ada' }), status: named }])
+
+    await flushPromises()
+    expect(wrapper.text()).toContain('New')
+
+    i18n.state.locale = 'ru'
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Новая')
   })
 
   it("turns a page with one request, not the table's and a second one racing it", async () => {

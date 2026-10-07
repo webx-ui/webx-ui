@@ -293,6 +293,12 @@ final class McpTest extends TestCase
         $this->assertSame('Ada', $content['submissions'][0]['values']['name']);
         $this->assertArrayNotHasKey('message', $content['submissions'][0]['values']);
 
+        // A row names its status by key; what each key is called is said once, at the top,
+        // rather than every language of it on every row.
+        $this->assertSame('new', $content['submissions'][0]['status']);
+        $this->assertSame('New', $content['statuses']['new']['title']);
+        $this->assertTrue($content['statuses']['spam']['is_spam']);
+
         // The search looks inside every answer, and not only the ones that are columns.
         $found = $this->content($this->agent('list', ['form' => 'contact', 'search' => 'Hello'])->assertOk());
         $this->assertSame(1, $found['total']);

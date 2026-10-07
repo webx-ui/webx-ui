@@ -22,6 +22,7 @@ return [
     'duplicated' => 'Une copie a été faite.',
     'failed' => 'Certaines valeurs n’ont pas été acceptées. Vérifiez les champs signalés.',
     'reorder-failed' => 'Le nouvel ordre n’a pas pu être enregistré.',
+    'reorder' => 'Réordonner',
     'new-form-title' => 'Nouveau formulaire',
     'title' => 'Titre',
     'slug' => 'Adresse',

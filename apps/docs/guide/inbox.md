@@ -228,6 +228,7 @@ Five layers, in the order they run:
 | Origin / Referer | posted from this site's own pages                 | 422                           |
 | Captcha          | reCAPTCHA or Turnstile, only if the form asks     | 422                           |
 | Rate limit       | submissions a minute from one address to one form | 429                           |
+| Attempt limit    | any requests a minute, refused ones included      | 429                           |
 
 The honeypot is answered as a success on purpose: telling a robot which trick was seen is what
 makes the next attempt harder to catch.
@@ -235,7 +236,12 @@ makes the next attempt harder to catch.
 The timestamp has a trap in it. On a page cached whole the mark belongs to the moment the cache
 was written and not to the moment somebody opened the page, so it reads as hours old for every
 visitor. A mark older than a day is therefore not judged at all, and the honeypot and the rate
-limit carry the weight.
+limit carry the weight. A POST with no mark at all is refused: every form the package draws carries
+one, cached or not, so that request was written straight to the address.
+
+The rate limit counts only submissions that got through (`throttle`, 5 a minute): somebody who
+mistypes their address five times is correcting a mistake, not flooding the form. Everything that
+knocks, refused or not, counts towards the second, higher limit (`attempts`, 20 a minute).
 
 The captcha is off unless a form asks for it, and its keys are the site's rather than the form's —
 one pair for every form, mapped from the Integrations group of
@@ -461,18 +467,18 @@ to tell which flat they are in.
 
 `config/webx-inbox.php`:
 
-| Key                | Default           | What it is                                           |
-| ------------------ | ----------------- | ---------------------------------------------------- |
-| `path`             | `webx/forms`      | The prefix every form posts under                    |
-| `disk` · `prefix`  | `local` · `inbox` | Where attachments live                               |
-| `upload`           | 10 MB, 10 files   | The size and the white list of extensions            |
-| `antispam`         | see above         | Honeypot name, `min_seconds`, `throttle`, `origins`  |
-| `captcha`          | off               | The site keys for reCAPTCHA and Turnstile            |
-| `script`           | `true`            | Whether the tag links the package's own script       |
-| `duplicate_window` | `900`             | Seconds in which the same answers are the same thing |
-| `prune`            | 30 · 0            | Days for spam, days for everything; 0 means never    |
-| `anonymise_ip`     | `false`           | Drop the last octet before writing the address       |
-| `handlers`         | `[]`              | Handlers by form slug or `*`, run once it is stored  |
+| Key                | Default           | What it is                                                      |
+| ------------------ | ----------------- | --------------------------------------------------------------- |
+| `path`             | `webx/forms`      | The prefix every form posts under                               |
+| `disk` · `prefix`  | `local` · `inbox` | Where attachments live                                          |
+| `upload`           | 10 MB, 10 files   | The size and the white list of extensions                       |
+| `antispam`         | see above         | Honeypot name, `min_seconds`, `throttle`, `attempts`, `origins` |
+| `captcha`          | off               | The site keys for reCAPTCHA and Turnstile                       |
+| `script`           | `true`            | Whether the tag links the package's own script                  |
+| `duplicate_window` | `900`             | Seconds in which the same answers are the same thing            |
+| `prune`            | 30 · 0            | Days for spam, days for everything; 0 means never               |
+| `anonymise_ip`     | `false`           | Drop the last octet before writing the address                  |
+| `handlers`         | `[]`              | Handlers by form slug or `*`, run once it is stored             |
 
 A form may lower or raise its own antispam settings; everything else here is the site's.
 

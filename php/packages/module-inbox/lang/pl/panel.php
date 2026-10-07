@@ -22,6 +22,7 @@ return [
     'duplicated' => 'Kopia została zrobiona.',
     'failed' => 'Części wartości nie przyjęto. Sprawdź zaznaczone pola.',
     'reorder-failed' => 'Nie udało się zapisać nowej kolejności.',
+    'reorder' => 'Zmień kolejność',
     'new-form-title' => 'Nowy formularz',
     'title' => 'Tytuł',
     'slug' => 'Adres',
