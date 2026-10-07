@@ -316,6 +316,31 @@ final class HistoryTest extends TestCase
             ->assertJsonPath('data.targets.0.status', 401);
     }
 
+    #[Test]
+    public function a_small_og_picture_stored_under_the_old_id_moves_with_its_hiding_rule(): void
+    {
+        $run = AuditRun::query()->create(['status' => AuditRun::DONE, 'scope' => AuditRun::QUICK, 'base_url' => self::BASE]);
+        $rule = AuditIgnore::query()->create(['check' => 'og.image_broken', 'pattern' => '/promo', 'reason' => 'A square on purpose']);
+        $old = static fn (string $key): array => [
+            'run_id' => $run->id, 'check' => 'og.image_broken', 'severity' => 'warning', 'url' => self::BASE.'/promo',
+            'fingerprint' => sha1("og.image_broken\n".self::BASE."/promo\n".$key), 'key' => $key, 'ignored_by' => $rule->id,
+            'created_at' => now(), 'updated_at' => now(),
+        ];
+        DB::table('audit_issues')->insert([$old('small'), $old('broken')]);
+
+        (require __DIR__.'/../database/migrations/2026_01_01_000009_split_og_image_small.php')->up();
+
+        $copy = AuditIgnore::query()->where('check', 'og.image_small')->sole();
+        $this->assertSame('/promo', $copy->pattern);
+        $this->assertTrue(AuditIgnore::query()->whereKey($rule->id)->exists(), 'The old rule still hides broken pictures.');
+
+        $small = AuditIssue::query()->where('key', 'small')->sole();
+        $this->assertSame('og.image_small', $small->check);
+        $this->assertSame(sha1("og.image_small\n".self::BASE."/promo\nsmall"), $small->fingerprint);
+        $this->assertSame($copy->id, $small->ignored_by);
+        $this->assertSame('og.image_broken', AuditIssue::query()->where('key', 'broken')->sole()->check);
+    }
+
     private function html(string $title): string
     {
         return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">'

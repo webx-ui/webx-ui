@@ -445,10 +445,16 @@ return [
             'fix' => 'Rellena la vista previa social en los ajustes SEO de la página o haz que la plantilla base imprima las etiquetas.',
         ],
         'image_broken' => [
-            'title' => 'La imagen de Open Graph está rota o es pequeña',
-            'found' => 'og:image no se abre, o es menor de 1200×630.',
-            'why' => 'Un enlace compartido no muestra imagen, o muestra un cuadrado pequeño junto al texto en lugar de una tarjeta grande.',
-            'fix' => 'Pon una imagen operativa de al menos 1200×630 en la vista previa social de la página.',
+            'title' => 'La imagen de Open Graph no se abre',
+            'found' => 'og:image responde con un error o no se abre.',
+            'why' => 'Un enlace compartido no muestra ninguna imagen.',
+            'fix' => 'Pon una imagen operativa en la vista previa social de la página.',
+        ],
+        'image_small' => [
+            'title' => 'La imagen de Open Graph es pequeña',
+            'found' => 'og:image es menor de 1200×630.',
+            'why' => 'Un enlace compartido muestra un cuadrado pequeño junto al texto en lugar de una tarjeta grande.',
+            'fix' => 'Pon una imagen de al menos 1200×630 en la vista previa social de la página.',
         ],
     ],
     'hreflang' => [

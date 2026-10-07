@@ -445,10 +445,16 @@ return [
             'fix' => 'Füllen Sie die Social-Vorschau in den SEO-Einstellungen der Seite aus oder lassen Sie das Layout die Tags ausgeben.',
         ],
         'image_broken' => [
-            'title' => 'Das Open-Graph-Bild ist defekt oder zu klein',
-            'found' => 'og:image öffnet sich nicht oder ist kleiner als 1200×630.',
-            'why' => 'Ein geteilter Link zeigt kein Bild oder ein kleines Quadrat neben dem Text statt einer großen Karte.',
-            'fix' => 'Setzen Sie in der Social-Vorschau der Seite ein funktionierendes Bild von mindestens 1200×630.',
+            'title' => 'Das Open-Graph-Bild öffnet sich nicht',
+            'found' => 'og:image antwortet mit einem Fehler oder öffnet sich nicht.',
+            'why' => 'Ein geteilter Link zeigt gar kein Bild.',
+            'fix' => 'Setzen Sie in der Social-Vorschau der Seite ein funktionierendes Bild.',
+        ],
+        'image_small' => [
+            'title' => 'Das Open-Graph-Bild ist zu klein',
+            'found' => 'og:image ist kleiner als 1200×630.',
+            'why' => 'Ein geteilter Link zeigt ein kleines Quadrat neben dem Text statt einer großen Karte.',
+            'fix' => 'Setzen Sie in der Social-Vorschau der Seite ein Bild von mindestens 1200×630.',
         ],
     ],
     'hreflang' => [

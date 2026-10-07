@@ -445,10 +445,16 @@ return [
             'fix' => 'Wypełnij podgląd dla sieci społecznościowych w ustawieniach SEO strony lub niech szablon drukuje znaczniki.',
         ],
         'image_broken' => [
-            'title' => 'Obraz Open Graph jest uszkodzony lub mały',
-            'found' => 'og:image się nie otwiera albo jest mniejszy niż 1200×630.',
-            'why' => 'Udostępniony link nie pokazuje obrazu albo pokazuje mały kwadrat obok tekstu zamiast dużej karty.',
-            'fix' => 'Ustaw w podglądzie dla sieci społecznościowych strony działający obraz o rozmiarze co najmniej 1200×630.',
+            'title' => 'Obraz Open Graph się nie otwiera',
+            'found' => 'og:image odpowiada błędem albo się nie otwiera.',
+            'why' => 'Udostępniony link nie pokazuje żadnego obrazu.',
+            'fix' => 'Ustaw działający obraz w podglądzie strony dla sieci społecznościowych.',
+        ],
+        'image_small' => [
+            'title' => 'Obraz Open Graph jest mały',
+            'found' => 'og:image jest mniejszy niż 1200×630.',
+            'why' => 'Udostępniony link pokazuje mały kwadrat obok tekstu zamiast dużej karty.',
+            'fix' => 'Ustaw w podglądzie strony dla sieci społecznościowych obraz o rozmiarze co najmniej 1200×630.',
         ],
     ],
     'hreflang' => [

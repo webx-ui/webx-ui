@@ -105,6 +105,7 @@ class AuditServiceProvider extends ServiceProvider
         Page\Favicon::class,
         Page\OpenGraph::class,
         Resources\OgImage::class,
+        Resources\OgImageSmall::class,
         JsonLd\Invalid::class,
         JsonLd\Required::class,
         JsonLd\Recommended::class,

@@ -445,10 +445,16 @@ return [
             'fix' => 'Compila l’anteprima social nelle impostazioni SEO della pagina, oppure fai stampare i tag dal layout.',
         ],
         'image_broken' => [
-            'title' => 'L’immagine Open Graph è rotta o troppo piccola',
-            'found' => 'og:image non si apre, oppure è più piccola di 1200×630.',
-            'why' => 'Un link condiviso non mostra alcuna immagine, oppure un piccolo quadrato accanto al testo invece di una scheda grande.',
-            'fix' => 'Imposta nell’anteprima social della pagina un’immagine funzionante di almeno 1200×630.',
+            'title' => 'L’immagine Open Graph non si apre',
+            'found' => 'og:image risponde con un errore o non si apre.',
+            'why' => 'Un link condiviso non mostra alcuna immagine.',
+            'fix' => 'Imposta un’immagine funzionante nell’anteprima social della pagina.',
+        ],
+        'image_small' => [
+            'title' => 'L’immagine Open Graph è troppo piccola',
+            'found' => 'og:image è più piccola di 1200×630.',
+            'why' => 'Un link condiviso mostra un piccolo quadrato accanto al testo invece di una scheda grande.',
+            'fix' => 'Imposta nell’anteprima social della pagina un’immagine di almeno 1200×630.',
         ],
     ],
     'hreflang' => [

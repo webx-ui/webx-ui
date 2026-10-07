@@ -234,7 +234,8 @@
 | `html.viewport`           | нет `meta viewport`                                                                                             | E        |
 | `html.favicon`            | нет иконки или она не открывается                                                                               | N        |
 | `og.missing`              | нет `og:title`, `og:image` или `og:url`                                                                         | N        |
-| `og.image_broken`         | картинка OG не открывается или меньше 1200×630                                                                  | W        |
+| `og.image_broken`         | картинка OG не открывается                                                                                      | W        |
+| `og.image_small`          | картинка OG меньше 1200×630 (раньше — под `og.image_broken`; миграция переносит находки и правила)              | W        |
 | `jsonld.invalid`          | JSON-LD не разбирается                                                                                          | E        |
 | `jsonld.required`         | у `Product`, `Article`, `Event`, `JobPosting`, `FAQPage`, `BreadcrumbList` нет обязательных полей               | W        |
 | `jsonld.recommended`      | нет рекомендуемых полей (`Article` без `description`, `Product` без `brand`)                                    | N        |

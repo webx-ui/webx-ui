@@ -445,10 +445,16 @@ return [
             'fix' => 'Fill in the social preview in the page’s SEO settings, or have the layout print the tags.',
         ],
         'image_broken' => [
-            'title' => 'The Open Graph picture is broken or small',
-            'found' => 'og:image does not open, or is smaller than 1200×630.',
-            'why' => 'A shared link shows no picture, or a small square beside the text instead of a large card.',
-            'fix' => 'Set a working picture of at least 1200×630 in the page’s social preview.',
+            'title' => 'The Open Graph picture does not open',
+            'found' => 'og:image answers an error or does not open.',
+            'why' => 'A shared link shows no picture at all.',
+            'fix' => 'Set a working picture in the page’s social preview.',
+        ],
+        'image_small' => [
+            'title' => 'The Open Graph picture is small',
+            'found' => 'og:image is smaller than 1200×630.',
+            'why' => 'A shared link shows a small square beside the text instead of a large card.',
+            'fix' => 'Set a picture of at least 1200×630 in the page’s social preview.',
         ],
     ],
     'hreflang' => [
