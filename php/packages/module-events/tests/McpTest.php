@@ -40,7 +40,7 @@ final class McpTest extends TestCase
         );
 
         $this->assertSame(
-            ['event_categories_list', 'event_categories_create', 'event_categories_update', 'event_categories_delete', 'event_categories_reorder'],
+            ['event_categories_list', 'event_categories_get', 'event_categories_create', 'event_categories_update', 'event_categories_delete', 'event_categories_reorder'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('event-categories')),
         );
 

@@ -32,12 +32,12 @@ final class McpTest extends TestCase
         );
 
         $this->assertSame(
-            ['recipe_categories_list', 'recipe_categories_create', 'recipe_categories_update', 'recipe_categories_delete', 'recipe_categories_reorder'],
+            ['recipe_categories_list', 'recipe_categories_get', 'recipe_categories_create', 'recipe_categories_update', 'recipe_categories_delete', 'recipe_categories_reorder'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('recipe-categories')),
         );
 
         $this->assertSame(
-            ['recipe_nutrients_list', 'recipe_nutrients_create', 'recipe_nutrients_update', 'recipe_nutrients_delete', 'recipe_nutrients_reorder'],
+            ['recipe_nutrients_list', 'recipe_nutrients_get', 'recipe_nutrients_create', 'recipe_nutrients_update', 'recipe_nutrients_delete', 'recipe_nutrients_reorder'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('recipe-nutrients')),
         );
 

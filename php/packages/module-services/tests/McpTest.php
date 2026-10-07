@@ -33,7 +33,7 @@ final class McpTest extends TestCase
         );
 
         $this->assertSame(
-            ['service_categories_list', 'service_categories_create', 'service_categories_update', 'service_categories_delete', 'service_categories_reorder'],
+            ['service_categories_list', 'service_categories_get', 'service_categories_create', 'service_categories_update', 'service_categories_delete', 'service_categories_reorder'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('service-categories')),
         );
 

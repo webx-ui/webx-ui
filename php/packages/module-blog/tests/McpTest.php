@@ -36,7 +36,7 @@ final class McpTest extends TestCase
         );
 
         $this->assertSame(
-            ['rubrics_list', 'rubrics_create', 'rubrics_update', 'rubrics_delete', 'rubrics_reorder'],
+            ['rubrics_list', 'rubrics_get', 'rubrics_create', 'rubrics_update', 'rubrics_delete', 'rubrics_reorder'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('rubrics')),
         );
 

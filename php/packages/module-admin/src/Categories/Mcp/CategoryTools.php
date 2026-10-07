@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Categories\Mcp;
 
+use Closure;
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
@@ -13,11 +15,14 @@ use WebxUi\Admin\Categories\CategoryForm;
 use WebxUi\Admin\Categories\CategoryKind;
 use WebxUi\Admin\Categories\Ordering;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Screens\ScreenRegistry;
+use WebxUi\Mcp\Arguments;
 use WebxUi\Mcp\Exceptions\ToolFailure;
+use WebxUi\Mcp\Rehearsal;
 use WebxUi\Mcp\Tool;
 
 /**
- * One module's categories, for an agent: list, create, update, delete, reorder.
+ * One module's categories, for an agent: list, get, create, update, delete, reorder.
  *
  * The names carry no prefix of their own — the module's id puts one in front (`rubrics_list`,
  * `services_categories_update`), and what stands after it is what tells the tools apart in a
@@ -26,6 +31,12 @@ use WebxUi\Mcp\Tool;
  *
  * Every write goes through {@see CategoryForm} — the door the panel uses — so the screen checks
  * an agent's values exactly as it checks the editor's, and a project's field lands in `extra`.
+ * A dry run is that same write, rolled back ({@see Rehearsal}): it is refused where the write
+ * would be, and answers what the write would answer.
+ *
+ * A category is named by its title or its slug, so two by one name are a trap: the second one
+ * is refused when it is made or renamed, and a name that already points at two is refused with
+ * their ids rather than guessed.
  *
  * Needs `webx-ui/mcp`, which the frame does not require: a module that offers these tools
  * requires it, and nothing loads this class otherwise.
@@ -66,7 +77,7 @@ final readonly class CategoryTools
             ? ['slug' => ['type' => ['string', 'object'], 'description' => 'The address part, the same shape as the title. Made out of the title when omitted.']]
             : [];
 
-        return [
+        return Arguments::strictAll([
             Tool::read(
                 'list',
                 "The {$many} in the order they stand in on the site: what each is called in every language, "
@@ -87,12 +98,22 @@ final readonly class CategoryTools
                 permission: array_values(array_unique([...$kind->view, $kind->manage])),
             ),
 
+            Tool::read(
+                'get',
+                "One {$one} in full: what the list says of it, and every value of its editor — the fields "
+                .'the project added to the screen included.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->describe($this->find($arguments[$one] ?? null))),
+                ['properties' => [$one => $category], 'required' => [$one]],
+                permission: array_values(array_unique([...$kind->view, $kind->manage])),
+            ),
+
             Tool::mutating(
                 'create',
                 "Make a new {$one} at the end of the list. "
                 .($addressed
                     ? 'The address is made out of the title unless a slug is given; an address another page already answers at is refused, not quietly changed. '
                     : '')
+                ."A title another {$one} already has, in any language, is refused. "
                 ."It is visible at once — a {$one} has no draft — so make one only when a person asked for it.",
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->create($arguments)),
                 ['properties' => [
@@ -129,14 +150,15 @@ final readonly class CategoryTools
             Tool::mutating(
                 'reorder',
                 "Put the {$many} in a new order — the order of the menu on the site. Name them in the order they "
-                .'should stand in: they trade the places they hold among themselves, and one left out stays where it is.',
+                .'should stand in: they trade the places they hold among themselves, and one left out stays where it is. '
+                ."An id that is not one of the {$many} is refused.",
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->reorder($arguments)),
                 ['properties' => [
                     'ids' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'The ids, first to last.'],
                 ], 'required' => ['ids']],
                 permission: $kind->manage,
             ),
-        ];
+        ], $this->module === null ? '' : str_replace('-', '_', $this->module).'_');
     }
 
     /**
@@ -176,15 +198,25 @@ final readonly class CategoryTools
      */
     private function create(array $arguments): array
     {
-        if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'would_create' => ['title' => $arguments['title'] ?? null, 'slug' => $arguments['slug'] ?? null]];
+        $this->refuseTaken($arguments['title'] ?? null);
+
+        $work = function () use ($arguments): array {
+            $category = $this->form->create($this->model, $arguments['title'] ?? null, $arguments['slug'] ?? null);
+
+            // Read back: a column the insert left to its default (`is_visible`) is not on the
+            // model yet, and the answer would call a visible category hidden.
+            return $this->describe($category->refresh());
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        $category = $this->form->create($this->model, $arguments['title'] ?? null, $arguments['slug'] ?? null);
+        $would = $this->rehearse($work);
+        // The id the rehearsal was given is nobody's once it is rolled back.
+        $would[$this->kind()->noun]['id'] = null;
 
-        // Read back: a column the insert left to its default (`is_visible`) is not on the
-        // model yet, and the answer would call a visible category hidden.
-        return $this->describe($category->refresh());
+        return ['dry_run' => true] + $would;
     }
 
     /**
@@ -200,17 +232,27 @@ final readonly class CategoryTools
             throw new ToolFailure('`values` must be a non-empty object of field name → value.');
         }
 
-        if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'fields' => array_keys($values), $this->kind()->noun => $this->row($category)];
+        Arguments::refuseUnknown($values, $this->fieldsOf($category), $this->toolName('update'));
+
+        if (array_key_exists('title', $values)) {
+            $this->refuseTaken($values['title'], $category);
         }
 
-        $this->form->save(
-            $category,
-            $values,
-            $user instanceof HasPermissions ? static fn (string $permission): bool => $user->hasPermission($permission) : null,
-        );
+        $work = function () use ($category, $values, $user): array {
+            $this->form->save(
+                $category,
+                $values,
+                $user instanceof HasPermissions ? static fn (string $permission): bool => $user->hasPermission($permission) : null,
+            );
 
-        return $this->describe($category);
+            return $this->describe($category);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
+        }
+
+        return ['dry_run' => true, 'fields' => array_keys($values)] + $this->rehearse($work);
     }
 
     /**
@@ -248,13 +290,38 @@ final readonly class CategoryTools
             throw new ToolFailure('`ids` must be a non-empty list of ids.');
         }
 
-        $ids = array_values(array_map(intval(...), $ids));
-
-        if (! $this->dryRun($arguments)) {
-            Ordering::move($this->model, $ids);
+        foreach ($ids as $id) {
+            if (! is_int($id) && ! (is_string($id) && ctype_digit($id))) {
+                throw new ToolFailure('`ids` is a list of ids — numbers, as '.$this->listTool().' gives them.');
+            }
         }
 
-        return $this->list([]) + ['dry_run' => $this->dryRun($arguments)];
+        $ids = array_values(array_map(intval(...), $ids));
+        // `Ordering` skips an id it does not know, which is right for a panel that has not seen the
+        // newest row and wrong for an agent that typed one: it would be told the order was saved.
+        $known = ($this->model)::query()->whereKey($ids)->pluck((new $this->model)->getKeyName())->map(intval(...))->all();
+        $unknown = array_values(array_unique(array_diff($ids, $known)));
+
+        if ($unknown !== []) {
+            throw new ToolFailure(sprintf(
+                'There is no %s #%s. %s has them all.',
+                $this->kind()->noun,
+                implode(', #', $unknown),
+                $this->listTool(),
+            ));
+        }
+
+        $work = function () use ($ids): array {
+            Ordering::move($this->model, $ids);
+
+            return $this->list([]);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work() + ['dry_run' => false];
+        }
+
+        return $this->rehearse($work) + ['dry_run' => true];
     }
 
     /**
@@ -312,11 +379,17 @@ final readonly class CategoryTools
     {
         return $this->module === null
             ? 'The list of '.$this->kind()->plural
-            : str_replace('-', '_', $this->module).'_list';
+            : $this->toolName('list');
+    }
+
+    private function toolName(string $tool): string
+    {
+        return $this->module === null ? $tool : str_replace('-', '_', $this->module).'_'.$tool;
     }
 
     /**
-     * By id, or by the slug an agent read off an address.
+     * By id, or by the slug an agent read off an address — the title, for a kind without one.
+     * A name two of them answer to is refused with both ids: picking one is a guess.
      *
      * @return Model&Category
      */
@@ -324,17 +397,107 @@ final readonly class CategoryTools
     {
         $query = ($this->model)::query();
 
-        $found = match (true) {
-            is_int($key), is_string($key) && ctype_digit($key) => $query->find((int) $key),
-            is_string($key) && $key !== '' => $query->whereTranslationLikeAny($this->kind()->prefix === null ? 'title' : 'slug', $key)->first(),
-            default => null,
-        };
+        if (is_int($key) || (is_string($key) && ctype_digit($key))) {
+            $found = $query->find((int) $key);
+        } elseif (is_string($key) && trim($key) !== '') {
+            $matches = $query->whereTranslationLikeAny($this->kind()->prefix === null ? 'title' : 'slug', trim($key))->get();
+
+            if ($matches->count() > 1) {
+                throw new ToolFailure(sprintf(
+                    'More than one %s is called %s: #%s. Name it by its id.',
+                    $this->kind()->noun,
+                    $this->printable($key),
+                    $matches->map(static fn (Model $one): int => (int) $one->getKey())->implode(', #'),
+                ));
+            }
+
+            $found = $matches->first();
+        } else {
+            $found = null;
+        }
 
         if (! $found instanceof Category) {
             throw new ToolFailure("There is no {$this->kind()->noun} {$this->printable($key)}. {$this->listTool()} has them all.");
         }
 
         return $found;
+    }
+
+    /**
+     * A title another one already carries, in any language and in any case, is refused: these are
+     * picked by name — in the panel's filters and by agents — and two by one name is a filter that
+     * picks the wrong one.
+     *
+     * @param  (Model&Category)|null  $except  The one being renamed.
+     */
+    private function refuseTaken(mixed $title, ?Model $except = null): void
+    {
+        $names = $this->names($title);
+
+        if ($names === []) {
+            return;
+        }
+
+        $clash = ($this->model)::query()->get()
+            ->filter(fn (Model $other): bool => ($except === null || (int) $other->getKey() !== (int) $except->getKey())
+                && array_intersect($names, $this->names($other->categoryValue('title'))) !== [])
+            ->values();
+
+        if ($clash->isEmpty()) {
+            return;
+        }
+
+        throw new ToolFailure(sprintf(
+            'A %s called [%s] already exists: #%s. Reuse it — %s has them all — or give this one another name.',
+            $this->kind()->noun,
+            implode('], [', array_values(array_intersect($names, $this->names($clash->first()->categoryValue('title'))))),
+            $clash->map(static fn (Model $one): int => (int) $one->getKey())->implode(', #'),
+            $this->listTool(),
+        ));
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function names(mixed $title): array
+    {
+        $texts = is_array($title) ? $title : [$title];
+        $names = [];
+
+        foreach ($texts as $text) {
+            if (is_string($text) && trim($text) !== '') {
+                $names[] = mb_strtolower(trim($text));
+            }
+        }
+
+        return array_values(array_unique($names));
+    }
+
+    /**
+     * What `values` may hold: the fields of the screen, which is everything the save reads.
+     *
+     * @param  Model&Category  $category
+     * @return list<string>
+     */
+    private function fieldsOf(Model $category): array
+    {
+        $fields = array_map(
+            static fn (array $node): string => (string) $node['name'],
+            Container::getInstance()->make(ScreenRegistry::class)->fields($this->kind()->screen),
+        );
+
+        return array_values(array_unique([...$category->categoryFields(), ...$fields]));
+    }
+
+    /**
+     * @template T
+     *
+     * @param  Closure(): T  $work
+     * @return T
+     */
+    private function rehearse(Closure $work): mixed
+    {
+        return Rehearsal::run($work, (new $this->model)->getConnectionName());
     }
 
     /**
