@@ -38,6 +38,12 @@ class Region extends Model
 
     protected $fillable = ['name'];
 
+    /** A region's top level, as a type's `allowed_in` names it. */
+    public function blocksRoot(): string
+    {
+        return Regions::ALLOWED_IN.$this->name;
+    }
+
     protected static function booted(): void
     {
         // The site reads the published tree from the cache, so whatever changes it drops the

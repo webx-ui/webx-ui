@@ -6,4 +6,5 @@ return [
     'bad-regex' => 'PHP no puede compilar esta expresión regular.',
     'bad-json-ld' => 'Aquí debe ir un objeto JSON-LD, o una lista de ellos.',
     'foreign-host' => 'Esta dirección es de otro sitio. Aquí solo funcionan las direcciones de este sitio.',
+    'self-loop' => 'Esta redirección envía la dirección a sí misma: un bucle sin fin.',
 ];

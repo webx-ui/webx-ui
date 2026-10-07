@@ -28,6 +28,12 @@ return [
             'why' => 'Letters and submissions are handled while the visitor waits, a slow mail server makes forms slow, and long jobs such as the audit cannot run from the panel.',
             'fix' => 'Use the database or redis queue and keep a worker running (php artisan queue:work under a supervisor).',
         ],
+        'queue_worker' => [
+            'title' => 'Nobody works through the queue',
+            'found' => 'Jobs in the database queue have been due for minutes and no worker has taken them.',
+            'why' => 'Letters from forms, audit runs and image work stay queued and never happen, while the panel says everything is fine.',
+            'fix' => 'Keep a worker running (php artisan queue:work under a supervisor), or schedule queue:work --stop-when-empty every minute, or set QUEUE_CONNECTION=sync on a small site.',
+        ],
         'mail' => [
             'title' => 'Mail goes nowhere',
             'found' => 'The mailer writes letters to the log or to memory.',
@@ -445,10 +451,16 @@ return [
             'fix' => 'Fill in the social preview in the page’s SEO settings, or have the layout print the tags.',
         ],
         'image_broken' => [
-            'title' => 'The Open Graph picture is broken or small',
-            'found' => 'og:image does not open, or is smaller than 1200×630.',
-            'why' => 'A shared link shows no picture, or a small square beside the text instead of a large card.',
-            'fix' => 'Set a working picture of at least 1200×630 in the page’s social preview.',
+            'title' => 'The Open Graph picture does not open',
+            'found' => 'og:image answers an error or does not open.',
+            'why' => 'A shared link shows no picture at all.',
+            'fix' => 'Set a working picture in the page’s social preview.',
+        ],
+        'image_small' => [
+            'title' => 'The Open Graph picture is small',
+            'found' => 'og:image is smaller than 1200×630.',
+            'why' => 'A shared link shows a small square beside the text instead of a large card.',
+            'fix' => 'Set a picture of at least 1200×630 in the page’s social preview.',
         ],
     ],
     'hreflang' => [

@@ -29,7 +29,8 @@ export interface BlocksApi {
   remove(id: number): Promise<void>
   /** A declared place made into the site's own type: an unpublished draft of the module's view. */
   customise(slug: string): Promise<BlockType>
-  publish(id: number): Promise<BlockType>
+  /** `dropTranslations` agrees to keep one language where a field stops being localized. */
+  publish(id: number, options?: { dropTranslations?: boolean }): Promise<BlockType>
   render(id: number, input?: RenderInput): Promise<RenderResult>
   usage(id: number): Promise<BlockUsage[]>
   versions(id: number): Promise<BlockVersionMeta[]>
@@ -63,7 +64,13 @@ export function createBlocksApi(admin: AdminContext): BlocksApi {
           data: BlockType
         }>(`${base}/components/${encodeURIComponent(slug)}/customise`, {})
         .then(data),
-    publish: (id) => admin.http.post<{ data: BlockType }>(`${base}/${id}/publish`, {}).then(data),
+    publish: (id, options = {}) =>
+      admin.http
+        .post<{ data: BlockType }>(
+          `${base}/${id}/publish`,
+          options.dropTranslations ? { drop_translations: true } : {},
+        )
+        .then(data),
     render: (id, input = {}) =>
       admin.http.post<{ data: RenderResult }>(`${base}/${id}/render`, input).then(data),
     usage: (id) => admin.http.get<{ data: BlockUsage[] }>(`${base}/${id}/usage`).then(data),

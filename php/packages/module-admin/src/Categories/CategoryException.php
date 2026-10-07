@@ -23,6 +23,6 @@ final class CategoryException extends RuntimeException
             return null;
         }
 
-        return new JsonResponse(['message' => $this->getMessage(), 'errors' => []], 422);
+        return new JsonResponse(['message' => $this->getMessage(), 'errors' => (object) []], 422);
     }
 }

@@ -46,6 +46,15 @@ describe('the checks under the editor', () => {
     expect(lints[2]!.message).toContain('.promo, #x')
   })
 
+  it('says when the marker is not the identifier, which the runtime matches exactly', () => {
+    const codes = (template: string) =>
+      lintBlock('quote', { template, styles: '', schema: [] }, t).map((lint) => lint.code)
+
+    expect(codes('<q data-wx-block="Quote"></q>')).toEqual(['marker-slug'])
+    expect(codes('<q data-wx-block="quote"></q>')).toEqual([])
+    expect(codes('<q data-wx-block="{{ $block }}"></q>')).toEqual([])
+  })
+
   it('does not count what the template itself declares', () => {
     expect(
       undeclared(

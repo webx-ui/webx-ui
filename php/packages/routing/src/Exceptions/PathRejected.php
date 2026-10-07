@@ -12,9 +12,9 @@ use Illuminate\Validation\ValidationException;
  *
  * A validation exception rather than a plain one because of where this happens: an editor is
  * saving a form, and the answer they need is "this address is taken", under the field they can
- * change — not a 500. The message is English, like every other default a library ships (see
- * CLAUDE.md §4): whoever opens the form is the one who translates it, by catching this and
- * re-raising with their own message, or by translating the key in their own request class.
+ * change — not a 500. The words come from `webx-routing::paths` in the language of the request:
+ * the panel shows this message as it is, and an English sentence in a Russian form read as a
+ * fault. A site that wants other words overrides the keys, or catches this and re-raises.
  */
 class PathRejected extends ValidationException
 {
@@ -25,8 +25,8 @@ class PathRejected extends ValidationException
     public static function taken(string $path, string $attribute = 'slug', ?string $by = null): self
     {
         return self::make($attribute, $path, $by === null
-            ? sprintf('The address "/%s" is already taken.', $path)
-            : sprintf('The address "/%s" is already taken by "%s".', $path, $by));
+            ? self::say('taken', ['path' => '/'.$path])
+            : self::say('taken-by', ['path' => '/'.$path, 'by' => $by]));
     }
 
     /**
@@ -35,12 +35,20 @@ class PathRejected extends ValidationException
      */
     public static function reserved(string $path, string $attribute = 'slug'): self
     {
-        return self::make($attribute, $path, sprintf('The address "/%s" is reserved by the application.', $path));
+        return self::make($attribute, $path, self::say('reserved', ['path' => '/'.$path]));
     }
 
     public static function tooLong(string $path, int $limit, string $attribute = 'slug'): self
     {
-        return self::make($attribute, $path, sprintf('The address is %d characters long; the limit is %d.', mb_strlen($path), $limit));
+        return self::make($attribute, $path, self::say('too-long', ['length' => mb_strlen($path), 'limit' => $limit]));
+    }
+
+    /**
+     * @param  array<string, string|int>  $replace
+     */
+    private static function say(string $key, array $replace): string
+    {
+        return (string) trans('webx-routing::paths.'.$key, $replace);
     }
 
     private static function make(string $attribute, string $path, string $message): self

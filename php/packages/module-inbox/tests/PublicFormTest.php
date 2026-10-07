@@ -239,6 +239,28 @@ final class PublicFormTest extends TestCase
     }
 
     #[Test]
+    public function the_same_form_twice_on_a_page_repeats_no_id(): void
+    {
+        $this->form();
+
+        // A subscription in the footer and the same one in a popup.
+        $html = $this->render('<x-webx-inbox::form slug="contact" placement="footer" /><x-webx-inbox::form slug="contact" placement="popup" />');
+
+        preg_match_all('/\sid="([^"]+)"/', $html, $matches);
+        $ids = $matches[1];
+
+        $this->assertNotSame([], $ids);
+        $this->assertSame($ids, array_values(array_unique($ids)));
+
+        // The first copy keeps the plain names, the honeypot's label points into its own form.
+        $this->assertStringContainsString('id="wx-form-contact-name"', $html);
+        $this->assertStringContainsString('id="wx-form-contact-2-name"', $html);
+        $this->assertStringContainsString('<label for="wx-form-contact-hp">', $html);
+        $this->assertStringContainsString('<label for="wx-form-contact-2-hp">', $html);
+        $this->assertSame(2, substr_count($html, 'name="webx_hp"'));
+    }
+
+    #[Test]
     public function a_form_may_ask_for_no_honeypot_at_all(): void
     {
         $this->form('contact', [], ['antispam.honeypot' => false]);
@@ -257,6 +279,72 @@ final class PublicFormTest extends TestCase
 
         $this->assertStringContainsString('class="cf-turnstile" data-sitekey="site-key"', $html);
         $this->assertStringContainsString('challenges.cloudflare.com/turnstile/v0/api.js', $html);
+    }
+
+    #[Test]
+    public function an_invisible_recaptcha_is_left_for_the_forms_script_to_draw(): void
+    {
+        // Drawn by the provider's script as `g-recaptcha`, an Invisible key would want a global
+        // callback — and drawn as a checkbox it is the widget's own "Invalid key type".
+        config()->set('webx-inbox.captcha.recaptcha.key', 'site-key');
+        config()->set('webx-inbox.captcha.recaptcha.type', 'invisible');
+
+        $this->form('contact', [], ['antispam.captcha' => 'recaptcha']);
+
+        $html = $this->render();
+
+        $this->assertStringNotContainsString('class="g-recaptcha"', $html);
+        $this->assertStringContainsString('data-webx-captcha-type="invisible"', $html);
+        $this->assertStringContainsString('class="wx-form__captcha-widget" data-sitekey="site-key"', $html);
+        $this->assertStringContainsString('src="https://www.google.com/recaptcha/api.js"', $html);
+    }
+
+    #[Test]
+    public function an_invisible_turnstile_is_left_for_the_forms_script_to_draw(): void
+    {
+        config()->set('webx-inbox.captcha.turnstile.key', 'site-key');
+        config()->set('webx-inbox.captcha.turnstile.mode', 'invisible');
+
+        $this->form('contact', [], ['antispam.captcha' => 'turnstile']);
+
+        $html = $this->render();
+
+        $this->assertStringNotContainsString('class="cf-turnstile"', $html);
+        $this->assertStringContainsString('class="wx-form__captcha-widget" data-sitekey="site-key"', $html);
+    }
+
+    #[Test]
+    public function recaptcha_v3_is_loaded_with_the_site_key_and_has_no_widget(): void
+    {
+        config()->set('webx-inbox.captcha.recaptcha.key', 'site-key');
+        config()->set('webx-inbox.captcha.recaptcha.type', 'v3');
+
+        $this->form('contact-us', [], ['antispam.captcha' => 'recaptcha']);
+
+        $html = $this->render('<x-webx-inbox::form slug="contact-us" />');
+
+        $this->assertStringContainsString('api.js?render=site-key', $html);
+        $this->assertStringContainsString('<input type="hidden" name="g-recaptcha-response" value="">', $html);
+        $this->assertStringContainsString('data-webx-captcha-action="webx_form_contact_us"', $html);
+        $this->assertStringNotContainsString('data-sitekey', $html);
+    }
+
+    #[Test]
+    public function a_captcha_refusal_without_javascript_comes_back_beside_the_widget(): void
+    {
+        config()->set('webx-inbox.captcha.recaptcha.key', 'site-key');
+        config()->set('webx-inbox.captcha.recaptcha.secret', 'site-secret');
+
+        $this->form('contact', [], ['antispam.captcha' => 'recaptcha']);
+
+        $this->post($this->intake(), [
+            'webx_form' => 'contact',
+            'fields' => ['name' => 'Ada', 'email' => 'ada@example.test'],
+        ], ['referer' => 'http://localhost/page'])->assertSessionHasErrors('captcha');
+
+        $html = $this->render();
+
+        $this->assertMatchesRegularExpression('/data-webx-captcha-error\s+role="alert"\s*>Please confirm you are not a robot/', $html);
     }
 
     #[Test]

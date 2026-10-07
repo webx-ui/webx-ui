@@ -78,6 +78,7 @@ final class Form extends Component
 
         return $this->views->make($this->view ?? 'webx-inbox::form', [
             'form' => $form,
+            'formId' => $this->formId($form),
             'fields' => $fields,
             'action' => $this->action($form),
             'multipart' => $fields->contains(static fn (Field $field): bool => $field->type->value === 'file'),
@@ -124,6 +125,28 @@ final class Form extends Component
         }
 
         return $placement;
+    }
+
+    /**
+     * What every `id` inside this form starts with, unique on the page.
+     *
+     * The same form often stands on one page twice — a subscription in the footer and again
+     * in a popup — and two inputs with one `id` make every `<label for>` of the second copy
+     * point into the first. The first copy keeps the plain name, so a page with one form reads
+     * as it always did; each further copy gets a number. Counted on the request, which is
+     * exactly the life of one page.
+     */
+    private function formId(FormModel $form): string
+    {
+        $base = 'wx-form-'.$form->slug;
+        $seen = $this->request->attributes->get('webx-inbox.form-ids', []);
+        $seen = is_array($seen) ? $seen : [];
+
+        $count = (int) ($seen[$base] ?? 0) + 1;
+        $seen[$base] = $count;
+        $this->request->attributes->set('webx-inbox.form-ids', $seen);
+
+        return $count === 1 ? $base : $base.'-'.$count;
     }
 
     private function form(): ?FormModel

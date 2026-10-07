@@ -69,11 +69,42 @@ export interface InboxApi {
   exportUrl(formId: number, query?: SubmissionQuery): string
 }
 
+/**
+ * The statuses, asked once for everything on screen.
+ *
+ * The list of submissions and the one open beside it each want them, and each made its own
+ * request — the section opened with `GET /statuses` twice. Every component makes its own api
+ * object, so the answer is kept here — per HTTP client, which is one per panel — until the
+ * statuses themselves are changed through this api or the request fails. Each caller gets its
+ * own copy of the list: a page that reorders its statuses must not reorder everybody else's.
+ */
+const statusRequests = new WeakMap<object, Promise<InboxStatus[]>>()
+
 /** Everything under `/inbox`, below the panel's API path. */
 export function createInboxApi(admin: AdminContext): InboxApi {
   const base = `${admin.apiPath}/inbox`
   const data = <T>(body: { data: T }): T => body.data
   const nothing = (): void => undefined
+  const forgetStatuses = <T>(result: T): T => {
+    statusRequests.delete(admin.http)
+
+    return result
+  }
+
+  function statuses(): Promise<InboxStatus[]> {
+    const known = statusRequests.get(admin.http)
+
+    if (known !== undefined) {
+      return known.then((list) => [...list])
+    }
+
+    const asked = admin.http.get<{ data: InboxStatus[] }>(`${base}/statuses`).then(data)
+
+    statusRequests.set(admin.http, asked)
+    asked.catch(() => statusRequests.delete(admin.http))
+
+    return asked.then((list) => [...list])
+  }
 
   return {
     forms: () => admin.http.get<{ data: InboxForm[] }>(`${base}/forms`).then(data),
@@ -96,13 +127,21 @@ export function createInboxApi(admin: AdminContext): InboxApi {
     sortFields: (formId, ids) =>
       admin.http.post(`${base}/forms/${formId}/fields/sorting`, { ids }).then(nothing),
 
-    statuses: () => admin.http.get<{ data: InboxStatus[] }>(`${base}/statuses`).then(data),
+    statuses,
     createStatus: (input) =>
-      admin.http.post<{ data: InboxStatus }>(`${base}/statuses`, input).then(data),
+      admin.http
+        .post<{ data: InboxStatus }>(`${base}/statuses`, input)
+        .then(data)
+        .then(forgetStatuses),
     saveStatus: (id, input) =>
-      admin.http.put<{ data: InboxStatus }>(`${base}/statuses/${id}`, input).then(data),
-    removeStatus: (id) => admin.http.delete(`${base}/statuses/${id}`).then(nothing),
-    sortStatuses: (ids) => admin.http.post(`${base}/statuses/sorting`, { ids }).then(nothing),
+      admin.http
+        .put<{ data: InboxStatus }>(`${base}/statuses/${id}`, input)
+        .then(data)
+        .then(forgetStatuses),
+    removeStatus: (id) =>
+      admin.http.delete(`${base}/statuses/${id}`).then(nothing).then(forgetStatuses),
+    sortStatuses: (ids) =>
+      admin.http.post(`${base}/statuses/sorting`, { ids }).then(nothing).then(forgetStatuses),
 
     recipients: () => admin.http.get<{ data: InboxRecipient[] }>(`${base}/recipients`).then(data),
 

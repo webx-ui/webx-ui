@@ -130,7 +130,7 @@ final class Places
             return is_string($title) && trim($title) !== '' ? (string) __($title) : $key;
         }
 
-        foreach (array_unique([$this->locales->current(), $this->locales->defaultCode()]) as $code) {
+        foreach (array_unique([$this->locales->content(), $this->locales->defaultCode()]) as $code) {
             $title = $row?->getTranslation('title', $code, fallback: false);
 
             if (is_string($title) && trim($title) !== '') {

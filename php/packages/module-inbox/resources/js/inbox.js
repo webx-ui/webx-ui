@@ -24,6 +24,8 @@
     message: '[data-webx-message]',
     heading: '[data-webx-message-heading]',
     text: '[data-webx-message-text]',
+    captcha: '[data-webx-captcha]',
+    captchaError: '[data-webx-captcha-error]',
   }
 
   function init(form) {
@@ -32,14 +34,16 @@
     form.dataset.webxReady = '1'
     form.addEventListener('submit', function (event) {
       event.preventDefault()
-      send(form)
+      clear(form)
+      withCaptcha(form, function () {
+        send(form)
+      })
     })
   }
 
   function send(form) {
     var submit = form.querySelector(HOOK.submit)
 
-    clear(form)
     busy(form, submit, true)
 
     fetch(form.getAttribute('action'), {
@@ -119,6 +123,12 @@
       var key = name.replace(/^fields\./, '').replace(/\.\d+$/, '')
       var messages = [].concat(errors[name]).join(' ')
 
+      if (name === 'captcha') {
+        sayCaptcha(form, messages)
+
+        return
+      }
+
       if (name === 'form' || key === name) {
         say(form, messages)
 
@@ -176,7 +186,7 @@
     })
 
     Array.prototype.forEach.call(
-      form.querySelectorAll(HOOK.error + ', ' + HOOK.formError),
+      form.querySelectorAll(HOOK.error + ', ' + HOOK.formError + ', ' + HOOK.captchaError),
       function (box) {
         box.textContent = ''
         box.hidden = true
@@ -210,20 +220,203 @@
   }
 
   /**
+   * The captcha's answer, then the submission.
+   *
+   * Three kinds behave three ways (`webx-inbox.captcha.recaptcha.type` and
+   * `webx-inbox.captcha.turnstile.mode`). A checkbox — reCAPTCHA v2, or Turnstile drawn on load —
+   * is answered by the visitor before they press the button, so an empty answer is stopped here
+   * with the sentence the intake would have sent back. An invisible one, of either provider, is
+   * drawn on the first submit and run then; its callback sends the form, and a visitor who
+   * closes a challenge simply presses the button again. reCAPTCHA v3 asks for a score for this
+   * form's action and sends the form with it.
+   *
+   * A provider whose script never arrived — blocked, offline — is not waited for: the form is
+   * sent, and the intake's refusal says what is missing.
+   */
+  function withCaptcha(form, proceed) {
+    var widget = form.querySelector(HOOK.captcha)
+
+    if (!widget) return proceed()
+
+    var provider = widget.getAttribute('data-webx-captcha')
+    var type = widget.getAttribute('data-webx-captcha-type') || 'checkbox'
+    var key = widget.getAttribute('data-webx-captcha-key') || ''
+
+    if (type === 'checkbox') {
+      var answer = widget.querySelector(
+        '[name="' +
+          (provider === 'turnstile' ? 'cf-turnstile-response' : 'g-recaptcha-response') +
+          '"]',
+      )
+
+      if (answer && !answer.value) {
+        sayCaptcha(form, widget.getAttribute('data-webx-captcha-message'))
+
+        return
+      }
+
+      return proceed()
+    }
+
+    if (provider === 'recaptcha' && type === 'v3') {
+      var grecaptcha = window.grecaptcha
+
+      if (!grecaptcha || typeof grecaptcha.ready !== 'function') return proceed()
+
+      grecaptcha.ready(function () {
+        grecaptcha
+          .execute(key, { action: widget.getAttribute('data-webx-captcha-action') || 'submit' })
+          .then(
+            function (token) {
+              var input = widget.querySelector('[name="g-recaptcha-response"]')
+
+              if (input) input.value = token
+              proceed()
+            },
+            function () {
+              proceed()
+            },
+          )
+      })
+
+      return
+    }
+
+    // Invisible, either provider: one widget per form, drawn on the first submit and
+    // remembered by its id, because the providers' execute and reset act on the first widget
+    // of the page without one. Run on submit rather than on load, so the token is fresh — a
+    // Turnstile token made when the page opened is dead after five minutes of typing.
+    var api = provider === 'turnstile' ? window.turnstile : window.grecaptcha
+    var box = widget.querySelector('[data-sitekey]')
+
+    if (!api || typeof api.render !== 'function' || !box) return proceed()
+
+    widget.webxProceed = proceed
+
+    // A provider that could not vouch for this browser leaves no token, and posting without
+    // one only earns a refusal that says less than this does. The visitor is told now; the
+    // next press of the button tries once more from a clean widget.
+    var failed = function () {
+      widget.dataset.webxCaptchaState = 'error'
+      widget.webxProceed = null
+      sayCaptcha(form, widget.getAttribute('data-webx-captcha-unavailable'))
+
+      // Handled: Turnstile throws an uncaught error for every one it is not told about.
+      return true
+    }
+
+    var run = function () {
+      if (widget.dataset.webxWidget === undefined) {
+        var settings = {
+          sitekey: key,
+          callback: function () {
+            widget.dataset.webxCaptchaState = 'ready'
+
+            var next = widget.webxProceed
+
+            widget.webxProceed = null
+            if (next) next()
+          },
+          'error-callback': failed,
+          'expired-callback': function () {
+            widget.dataset.webxCaptchaState = 'expired'
+          },
+        }
+
+        if (provider === 'turnstile') {
+          // Nothing on the page unless Cloudflare really needs the visitor to do something,
+          // and no retrying on its own: a browser Cloudflare distrusts fails the same way
+          // every few seconds, for as long as the page is open. The visitor's next press of
+          // the button is the retry.
+          settings.appearance = 'interaction-only'
+          settings.execution = 'execute'
+          settings.retry = 'never'
+          settings['timeout-callback'] = failed
+        } else {
+          settings.size = 'invisible'
+        }
+
+        widget.dataset.webxWidget = String(api.render(box, settings))
+      } else if (widget.dataset.webxCaptchaState === 'error') {
+        api.reset(widgetId(widget, provider))
+      }
+
+      widget.dataset.webxCaptchaState = 'running'
+      api.execute(widgetId(widget, provider))
+    }
+
+    // reCAPTCHA has to be asked whether it is ready; Turnstile is, once its script is here.
+    if (provider === 'recaptcha' && typeof api.ready === 'function') api.ready(run)
+    else run()
+  }
+
+  /** reCAPTCHA numbers its widgets, Turnstile names them. */
+  function widgetId(widget, provider) {
+    var id = widget.dataset.webxWidget
+
+    return provider === 'recaptcha' ? Number(id) : id
+  }
+
+  /** What the intake said about the captcha, beside the widget it is about. */
+  function sayCaptcha(form, message) {
+    var box = form.querySelector(HOOK.captchaError)
+
+    if (!box) return say(form, message)
+
+    box.textContent = message || ''
+    box.hidden = box.textContent === ''
+  }
+
+  /**
    * A captcha token is good once. Without this, a visitor who is told their e-mail is wrong
    * corrects it, sends again, and is refused by a captcha they already passed — which reads
    * as a form that simply does not work.
+   *
+   * Every reset names its widget: a page may carry two forms with a captcha each, and the
+   * providers' reset without one resets the first widget on the page, not this form's.
    */
   function resetCaptcha(form) {
-    var widget = form.querySelector('[data-webx-captcha]')
+    var widget = form.querySelector(HOOK.captcha)
 
     if (!widget) return
 
     var provider = widget.getAttribute('data-webx-captcha')
+    var type = widget.getAttribute('data-webx-captcha-type') || 'checkbox'
 
     try {
-      if (provider === 'turnstile' && window.turnstile) window.turnstile.reset()
-      if (provider === 'recaptcha' && window.grecaptcha) window.grecaptcha.reset()
+      if (provider === 'recaptcha' && type === 'v3') {
+        var input = widget.querySelector('[name="g-recaptcha-response"]')
+
+        if (input) input.value = ''
+
+        return
+      }
+
+      var api = provider === 'turnstile' ? window.turnstile : window.grecaptcha
+
+      if (!api) return
+
+      if (type === 'invisible') {
+        if (widget.dataset.webxWidget !== undefined) api.reset(widgetId(widget, provider))
+
+        return
+      }
+
+      if (provider === 'turnstile') {
+        // Turnstile takes the container it drew in.
+        api.reset(widget.querySelector('.cf-turnstile') || undefined)
+
+        return
+      }
+
+      // A reCAPTCHA checkbox is drawn by the provider's script, which numbers the widgets it
+      // finds in the order they stand on the page — so the place of this one is its id.
+      var drawn = Array.prototype.indexOf.call(
+        document.querySelectorAll('.g-recaptcha'),
+        widget.querySelector('.g-recaptcha'),
+      )
+
+      if (drawn >= 0) api.reset(drawn)
     } catch {
       // A provider that is not loaded yet, or one that has nothing to reset. Neither is worth
       // taking the submission down over.

@@ -50,6 +50,7 @@ return [
     'move-branch' => ':count addresses change — the page and everything inside it. The old ones will redirect to the new ones.',
     'moved' => 'Moved. :count addresses changed; the old ones now redirect to the new ones.',
     'moved-one' => 'Moved. The address changed; the old one now redirects to it.',
+    'reordered' => 'Moved. Its address stays the same.',
 
     'delete-title' => 'Delete “:title”?',
     'delete-text' => 'The page goes to the bin and stops answering on the site.',

@@ -34,7 +34,7 @@ final class QuestionController
      */
     public function index(Request $request, Locales $locales): JsonResponse
     {
-        $locale = $locales->current();
+        $locale = $locales->content();
 
         return new JsonResponse([
             'data' => $this->list->build($request)

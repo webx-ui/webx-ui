@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Blocks\BlockComponents;
+use WebxUi\Blocks\BlockType;
+use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Http\Requests\BlockRequest;
 use WebxUi\Blocks\Http\Resources\BlockResource;
 use WebxUi\Blocks\Models\Block;
@@ -17,8 +19,11 @@ use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Panel\Authors;
 use WebxUi\Blocks\Panel\BlockInput;
 use WebxUi\Blocks\Panel\Graph;
+use WebxUi\Blocks\Panel\Publisher;
+use WebxUi\Blocks\Panel\Renamer;
 use WebxUi\Blocks\Panel\Usage;
 use WebxUi\Blocks\Regions;
+use WebxUi\Blocks\Rendering\Thumbnails;
 
 /**
  * The types: the list the section opens on, the catalogue the constructor reads, and the
@@ -102,7 +107,12 @@ final class BlockController
         return ApiResponse::data($this->one($block->refresh(), $usage), 201);
     }
 
-    public function update(BlockRequest $request, Block $block, Usage $usage): JsonResponse
+    /**
+     * A new slug is a rename, not a field: the pages that hold the type, the types that allow it
+     * and its own marker are rewritten with it ({@see Renamer}), and the answer says how many — the
+     * editor's toast reads it, where it used to say nothing had changed.
+     */
+    public function update(BlockRequest $request, Block $block, Usage $usage, Renamer $renamer): JsonResponse
     {
         $values = $request->values();
         $refusal = BlockInput::kindRefusal($block, $values['kind'] ?? null, $usage->counts());
@@ -111,15 +121,37 @@ final class BlockController
             throw ValidationException::withMessages(['kind' => $refusal]);
         }
 
+        $renamed = null;
+        $slug = $values['slug'] ?? null;
+        unset($values['slug']);
+
+        if (is_string($slug) && $slug !== $block->slug) {
+            $from = $block->slug;
+
+            try {
+                $renamed = ['from' => $from, 'to' => $slug] + $renamer->rename($block, $slug, BlockVersion::SOURCE_PANEL, $this->author($request));
+            } catch (BlocksException $refused) {
+                throw ValidationException::withMessages(['slug' => $refused->getMessage()]);
+            }
+
+            $block->refresh();
+        }
+
         $block->fill($values)->save();
 
         $content = $request->content();
+
+        // The form sent the content it opened with, old marker and all: carried to the new slug,
+        // it is either what the rename just wrote (nothing to save) or the editor's own changes.
+        if ($content !== null && $renamed !== null) {
+            $content = Renamer::carry($content, $renamed['from'], $renamed['to']);
+        }
 
         if ($content !== null && $block->contentDiffers($content)) {
             $block->saveVersion($content, BlockVersion::SOURCE_PANEL, $this->author($request), $request->comment());
         }
 
-        return ApiResponse::data($this->one($block->refresh(), $usage));
+        return ApiResponse::data($this->one($block->refresh(), $usage, $renamed === null ? [] : ['renamed' => $renamed]));
     }
 
     /**
@@ -160,13 +192,22 @@ final class BlockController
         return ApiResponse::noContent();
     }
 
-    private function one(Block $block, Usage $usage): BlockResource
+    /**
+     * One type, as the editor opens it — with what publishing its draft would do to the pages
+     * already written when it changes a field's `localized`, so the editor can say so before
+     * anybody presses Publish.
+     */
+    /**
+     * @param  array<string, mixed>  $extra
+     */
+    private function one(Block $block, Usage $usage, array $extra = []): BlockResource
     {
         $block->loadMissing(['draftVersion', 'publishedVersion']);
 
         $authors = Authors::names([$block->draftVersion?->author_id, $block->publishedVersion?->author_id]);
+        $changes = app(Publisher::class)->languageChanges($block);
 
-        return new BlockResource($block, $usage->counts(), $authors, withContent: true);
+        return new BlockResource($block, $usage->counts(), $authors, withContent: true, languageChanges: $changes, extra: $extra);
     }
 
     /**
@@ -186,6 +227,19 @@ final class BlockController
         $authors = Authors::names($ids);
 
         $parents = (new Graph)->parents();
+
+        // Every card's picture read in one go rather than two cache reads a card.
+        $types = [];
+
+        foreach ($blocks as $block) {
+            $version = $block->publishedVersion ?? $block->draftVersion;
+
+            if ($version !== null) {
+                $types[] = BlockType::fromModels($block, $version);
+            }
+        }
+
+        app(Thumbnails::class)->prime($types);
 
         return $blocks
             ->map(static fn (Block $block): BlockResource => new BlockResource($block, $usage, $authors, $withContent, $parents))

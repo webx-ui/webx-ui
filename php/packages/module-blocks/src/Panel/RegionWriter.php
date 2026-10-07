@@ -55,7 +55,7 @@ final class RegionWriter
         $this->admissible($name, $tree);
 
         $draft = $region->draftValues();
-        $region->saveDraft(array_merge($draft, ['blocks' => $this->values->store($tree)]), $authorId, $source);
+        $region->saveDraft(array_merge($draft, ['blocks' => $this->values->store($tree, 'blocks', Regions::ALLOWED_IN.$name, $region->editingTree())]), $authorId, $source);
 
         return $region;
     }
@@ -90,14 +90,14 @@ final class RegionWriter
 
         $render = $this->regions->draw($region->name, $tree, [], preview: false, report: false);
 
-        return array_map(
+        return [...$region->publishProblems(), ...array_map(
             static fn (array $failure): string => (string) __('webx-blocks::regions.failed-block', [
                 'type' => $failure['type'],
                 'key' => $failure['key'],
                 'reason' => $failure['message'].($failure['line'] === null ? '' : ' (line '.$failure['line'].')'),
             ]),
             $render->failures,
-        );
+        )];
     }
 
     /**

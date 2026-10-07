@@ -22,7 +22,9 @@ use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * A category of events — a format the site runs, with its own address, SEO, introduction and
@@ -43,7 +45,7 @@ use WebxUi\Seo\HasSeo;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class EventCategory extends Model implements Category, HasBreadcrumbs, Visible
+class EventCategory extends Model implements Category, HasBreadcrumbs, HasSeoFallback, Visible
 {
     use HasExtra;
     use HasSeo;
@@ -103,6 +105,20 @@ class EventCategory extends Model implements Category, HasBreadcrumbs, Visible
     public function breadcrumbs(string $locale): array
     {
         return Trail::of($locale, new Crumb((string) $this->getTranslation('title', $locale), $this->url($locale)));
+    }
+
+    /** The name, the introduction and the picture the page prints under its heading. */
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        $locale ??= app()->getLocale();
+        $picture = $this->picture($locale);
+
+        return SeoData::fallback(
+            (string) $this->getTranslation('title', $locale),
+            $this->leadHtml($locale),
+            is_string($picture['url'] ?? null) ? $picture['url'] : null,
+            is_string($picture['alt'] ?? null) ? $picture['alt'] : null,
+        );
     }
 
     /** The introduction as a page prints it: library pictures pointed at where they live now. */

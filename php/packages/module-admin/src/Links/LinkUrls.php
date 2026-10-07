@@ -108,7 +108,9 @@ final readonly class LinkUrls
     {
         $address = match ($link->target) {
             LinkTarget::Entity => $candidate?->url,
-            LinkTarget::Url => $link->url === null ? null : $this->path($link->url, $locale),
+            // Checked again on the way out, not only on the way in: a value stored before the
+            // check, or written straight into a column, must not print `javascript:` into an href.
+            LinkTarget::Url => $link->url === null || ! Link::isAcceptableUrl($link->url) ? null : $this->path($link->url, $locale),
             LinkTarget::None => null,
         };
 

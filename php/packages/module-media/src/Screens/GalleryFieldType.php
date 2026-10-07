@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Media\Screens;
 
+use WebxUi\Admin\Screens\ChecksNewValues;
 use WebxUi\Admin\Screens\FieldType;
 use WebxUi\Media\Support\MediaType;
 
@@ -14,7 +15,7 @@ use WebxUi\Media\Support\MediaType;
  * template printing an `<img>` at a document. A list of files that takes anything is `wx-files`,
  * and it is a separate type because that is a different thing to choose from a menu.
  */
-final class GalleryFieldType implements FieldType
+final class GalleryFieldType implements ChecksNewValues, FieldType
 {
     public function __construct(private readonly MediaValues $values) {}
 
@@ -41,5 +42,16 @@ final class GalleryFieldType implements FieldType
     public function resolve(mixed $stored, array $node, ?string $locale = null): mixed
     {
         return $this->values->resolveList($stored, $locale);
+    }
+
+    /**
+     * A key the library never had, in a value written now: a path typed rather than picked.
+     *
+     * @param  array<string, mixed>  $node
+     * @return list<string>
+     */
+    public function newValueProblems(mixed $value, array $node): array
+    {
+        return $this->values->missing($value);
     }
 }

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 return [
     'refused' => 'Form gönderilemedi. Lütfen birazdan tekrar deneyin.',
+    'captcha' => 'Lütfen robot olmadığınızı doğrulayın ve formu yeniden gönderin.',
+    'captcha-script' => 'Bu form robot olmadığınızı JavaScript ile denetler. Lütfen JavaScript’i açın ve formu yeniden gönderin.',
+    'captcha-unavailable' => 'Robot olmadığınızı doğrulayamadık. Lütfen sayfayı yenileyin ya da başka bir tarayıcı deneyin.',
+    'too-many' => 'Bu adresten çok fazla gönderim yapıldı. Lütfen bir dakika sonra tekrar deneyin.',
     'form-has-submissions' => '“:form” formunda gönderimler var; kapatılabilir ama silinemez.',
     'status-in-use' => '“:status” durumunda hâlâ gönderimler var; bu durum silinemez.',
     'no-statuses' => 'Yeni bir gönderime verilecek durum yok. Geçişleri çalıştırın.',
@@ -11,6 +15,11 @@ return [
 
     'slug-shape' => 'Adres küçük harfler, rakamlar ve kısa çizgilerden oluşur: “contact-us”.',
     'field-name-shape' => 'Ad bir harfle başlar; sonrasında harf, rakam, kısa çizgi ve alt çizgi gelebilir.',
-    'recipient-shape' => 'Alıcı bir yönetici ya da bir e-posta adresidir.',
+    'recipient-shape' => ':entry alıcısı ne bir yönetici ne de bir e-posta adresi.',
+    'recipient-unknown' => ':entry alıcısı var olmayan bir yöneticiyi gösteriyor.',
+    'choices-required' => 'Bir liste alanının değeri olan en az bir seçeneği olmalı.',
+    'email-field' => 'Yanıt alanı bu formun bir e-posta alanı olmalı.',
+    'no-such-answer' => 'Bu gönderimde bu adla bir yanıt yok.',
+    'not-correctable' => 'Bir dosya ya da onay düzeltilemez.',
     'nobody-to-notify' => '“:form” formu kime yazılacağını belirtmiyor.',
 ];

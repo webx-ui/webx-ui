@@ -55,6 +55,6 @@ watch(
     v-if="destination === null && admin.state.status === 'ready'"
     status="info"
     :title="t('shell.empty-title')"
-    :description="t('shell.empty-description')"
+    :subtitle="t('shell.empty-description')"
   />
 </template>

@@ -301,4 +301,36 @@ describe('WxScreenRenderer', () => {
     await nextTick()
     expect(selected()).toBe('Two')
   })
+
+  it('draws a field with nothing in it with its default, and writes nothing for it', async () => {
+    const withDefaults: ScreenNode[] = [
+      { id: 'popup', type: 'wx-switch', name: 'popup.enabled', default: true },
+      { id: 'title', type: 'wx-input', name: 'popup.title', default: 'Hello' },
+      {
+        id: 'delay',
+        type: 'wx-input',
+        name: 'popup.delay',
+        visible: { when: 'popup.enabled', is: true },
+      },
+    ]
+    const wrapper = mountScreen({ root: withDefaults, modelValue: { 'popup.title': null } })
+    const popup = () => wrapper.find('input[name="popup.enabled"]').element as HTMLInputElement
+
+    expect(popup().checked).toBe(true)
+    expect((wrapper.find('input[name="popup.title"]').element as HTMLInputElement).value).toBe(
+      'Hello',
+    )
+    // A condition reads the field as it is drawn.
+    expect(wrapper.find('input[name="popup.delay"]').exists()).toBe(true)
+
+    // Only what the editor touched reaches the model; the defaults stay out of it.
+    await wrapper.find('input[name="popup.delay"]').setValue('5')
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
+      { 'popup.title': null, 'popup.delay': '5' },
+    ])
+
+    // A stored value wins, false included.
+    await wrapper.setProps({ modelValue: { 'popup.enabled': false } })
+    expect(popup().checked).toBe(false)
+  })
 })

@@ -79,6 +79,11 @@ whose target is gone throws when the screen is first built.
   it to the config first.
 - Do not delete rows with SQL: deleting bins a vacancy; a raw delete leaves its address in the
   routing registry.
+- Do not print `<title>` in a site's copy of a view: with an empty SEO card the vacancy names the
+  page itself (`seoFallback()` — the name through the title template, the lead), and the index is
+  called by the section.
+  A copy published before still has an `@if ($meta->title === null)` block and the `$seo` /
+  `$meta` lines for it: delete them, they never print any more.
 
 ## Check your work
 

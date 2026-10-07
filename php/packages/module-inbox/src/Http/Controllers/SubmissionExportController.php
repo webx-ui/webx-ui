@@ -34,7 +34,10 @@ final class SubmissionExportController
         /** @var list<Field> $fields */
         $fields = $form->fields()->get()->all();
 
-        $query = ListQuery::for($form)->build($request)->with('values');
+        $list = ListQuery::for($form);
+        $request->validate($list->rules());
+
+        $query = $list->build($request)->with('values');
 
         $name = $form->slug.'-'.Carbon::now()->format('Y-m-d-His').'.csv';
 
@@ -82,7 +85,7 @@ final class SubmissionExportController
             // The label, and the machine name beside it: the label is what a person reads and
             // the name is what a script matching columns can rely on (§2.6).
             $label = (string) $field->title;
-            $row[] = $label === '' ? $field->key() : $label.' ('.$field->key().')';
+            $row[] = self::cell($label === '' ? $field->key() : $label.' ('.$field->key().')');
         }
 
         return $row;
@@ -97,7 +100,7 @@ final class SubmissionExportController
         $answers = [];
 
         foreach ($submission->values as $value) {
-            $answers[$value->name] = (string) $value->value;
+            $answers[$value->name] = (string) $value->readable();
         }
 
         $assignee = AdminBrief::of($submission->assignee);
@@ -105,14 +108,29 @@ final class SubmissionExportController
         $row = [
             (string) $submission->getKey(),
             $submission->created_at?->toDateTimeString() ?? '',
-            (string) $submission->status->title,
-            $assignee['name'] ?? '',
+            // In the panel's language, like the headings above it: a status is a word of the
+            // panel and not of the site, and `title` alone reads in the site's.
+            (string) $submission->status->getTranslation('title', app()->getLocale()),
+            self::cell($assignee['name'] ?? ''),
         ];
 
         foreach ($fields as $field) {
-            $row[] = $answers[$field->key()] ?? '';
+            $row[] = self::cell($answers[$field->key()] ?? '');
         }
 
         return $row;
+    }
+
+    /**
+     * A cell a spreadsheet will not run.
+     *
+     * The answers are whatever a stranger typed into the site, and Excel or Sheets reads a
+     * cell starting with `=`, `+`, `-` or `@` as a formula — `=HYPERLINK(…)` in a name is a
+     * link somebody in the office clicks. A leading apostrophe is the spreadsheet's own way of
+     * saying "text", and it is not shown in the cell.
+     */
+    public static function cell(string $value): string
+    {
+        return $value !== '' && str_contains("=+-@\t\r", $value[0]) ? "'".$value : $value;
     }
 }

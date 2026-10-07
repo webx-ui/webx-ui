@@ -116,7 +116,7 @@ final class MenuResources
             .'language at once. Write one only where the tree says "Work With Katia" and the header wants '
             .'something shorter.',
 
-            'A group heading is is_heading, which is about how to draw it, and not target: none, which is '
+            'A group heading is marked is_heading, which is about how to draw it, and not target: none, which is '
             .'about where it goes. A heading with children and a page of its own is an ordinary thing.',
 
             'An item may point at something that is not on the site yet — a draft page is a legitimate '

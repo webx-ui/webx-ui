@@ -41,19 +41,41 @@ With an entity to name — once there is a source that answers about one:
 ```
 
 Both print `<title>`, the description, keywords and robots meta tags, the canonical link, the
-Open Graph properties and every JSON-LD block. What each of those is allowed to print is in
-`config/webx-seo.php`.
+whole Open Graph set with `article:*` and `twitter:*`, and every JSON-LD block. What each of
+those is allowed to print is in `config/webx-seo.php`.
+
+## Social cards
+
+Every `og:*`, `article:*` and `twitter:*` line comes from what the page already says — the
+title after the template, the description, the canonical, the picture the sources chose, the
+language, `general.project-name` — and none is typed for the purpose. The details:
+
+- `og:type` is the entity's own (`HasOpenGraph::openGraphType()`, `article` for blog articles and
+  recipes), `website` for everything else (`og.type`). `openGraphProperties()` adds
+  `article:published_time`, `article:modified_time`, `article:section`, `article:tag`.
+- `og:image` is the first picture of the sources a network can show: an SVG falls through to the
+  next source. With `webx-ui/module-media` running, the library's record gives `og:image:type`,
+  `:width`, `:height`, and a landscape photo at least 1200×630 is shared as a variant of exactly
+  that size (`og.image`). `og:image:alt` is the picture's alt, or the page's title.
+- `og:locale` from the page's language (`og.locales` maps a code where the guess is wrong),
+  `og:locale:alternate` for each language `hreflang` lists.
+- `twitter:*` mirrors Open Graph; `twitter:site` is the x.com profile in `seo.org-socials`.
+- Switches: `print.og`, `print.article`, `print.twitter`. Nothing empty is printed.
+
+The SEO card has no share fields unless `WEBX_SEO_OG_FIELDS=true` (`og.panel_fields`); stored
+values still win either way.
 
 ## Where a value comes from
 
 Sources are asked highest first and merged **field by field**, so a rule that fills in nothing
 but a title keeps the description and the picture that came from below it.
 
-| Priority | Source           | Reads                                        |
-| -------- | ---------------- | -------------------------------------------- |
-| 100      | `UrlRuleSource`  | `seo_urls` — the rules written for addresses |
-| 50       | `EntitySource`   | `seo_meta` — what the page's entity says     |
-| 10       | `DefaultsSource` | `settings('seo.*')`                          |
+| Priority | Source           | Reads                                                   |
+| -------- | ---------------- | ------------------------------------------------------- |
+| 100      | `UrlRuleSource`  | `seo_urls` — the rules written for addresses            |
+| 50       | `EntitySource`   | `seo_meta` — the entity's SEO card                      |
+| 30       | `FallbackSource` | the entity's own name, lead and picture (`seoFallback`) |
+| 10       | `DefaultsSource` | `settings('seo.*')`                                     |
 
 A project adds its own by implementing `SeoSource` and registering it:
 

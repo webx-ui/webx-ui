@@ -27,8 +27,11 @@ use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasOpenGraph;
+use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\Contracts\HasStructuredData;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * A recipe: a page of fixed structure — no blocks (decision 2) — printed by the module's view.
@@ -62,7 +65,7 @@ use WebxUi\Seo\HasSeo;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Recipe extends Model implements HasBreadcrumbs, HasStructuredData, Visible
+class Recipe extends Model implements HasBreadcrumbs, HasOpenGraph, HasSeoFallback, HasStructuredData, Visible
 {
     use HasCategories {
         scopeOrderedIn as private categoryOrderedIn;
@@ -455,6 +458,51 @@ class Recipe extends Model implements HasBreadcrumbs, HasStructuredData, Visible
             : null;
 
         return Trail::of($locale, $categoryCrumb, new Crumb((string) $this->getTranslation('title', $locale), $this->url($locale)));
+    }
+
+    /**
+     * The name, the lead and the cover — the first photo of the gallery, the one the Recipe
+     * markup leads with — for a recipe nobody wrote an SEO card for.
+     */
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        $locale ??= app()->getLocale();
+        $lead = $this->getTranslation('lead', $locale);
+        $cover = $this->cover($locale);
+
+        return SeoData::fallback(
+            (string) $this->getTranslation('title', $locale),
+            is_string($lead) ? $lead : null,
+            is_string($cover['url'] ?? null) ? $cover['url'] : null,
+            is_string($cover['alt'] ?? null) ? $cover['alt'] : null,
+        );
+    }
+
+    /**
+     * A recipe is an article to a social network: Open Graph has no recipe type of its own, and
+     * `article` is what carries a date and a section into the shared card.
+     */
+    public function openGraphType(): string
+    {
+        return 'article';
+    }
+
+    /**
+     * The publication date — every publication stamps it anew, so it is also when the page last
+     * changed — and the main category as the section.
+     *
+     * @return array<string, string|list<string>|null>
+     */
+    public function openGraphProperties(string $locale): array
+    {
+        $category = $this->mainCategory();
+        $section = $category instanceof RecipeCategory ? $category->getTranslation('title', $locale) : null;
+
+        return [
+            'article:published_time' => $this->published_at?->toAtomString(),
+            'article:modified_time' => $this->visibleUpdatedAt()?->toAtomString(),
+            'article:section' => is_string($section) ? $section : null,
+        ];
     }
 
     /**

@@ -32,7 +32,13 @@ const checked = computed(() =>
   group ? group.modelValue.value.includes(props.value ?? null) : model.value === true,
 )
 
-const disabled = computed(() => props.disabled || group?.disabled.value || field.disabled.value)
+const disabled = computed(
+  () =>
+    props.disabled ||
+    group?.disabled.value ||
+    group?.locked?.(props.value ?? null) === true ||
+    field.disabled.value,
+)
 const size = computed(() => props.size ?? group?.size.value ?? field.size.value)
 
 const classes = computed(() => [
@@ -54,9 +60,12 @@ onMounted(syncIndeterminate)
 watch([() => props.indeterminate, checked], syncIndeterminate)
 
 function onChange(event: Event) {
-  const next = (event.target as HTMLInputElement).checked
+  const input = event.target as HTMLInputElement
+  const next = input.checked
   if (group) group.toggle(props.value ?? null, next)
   else model.value = next
+  // The group may have refused the change; the input says what the group holds, not the click.
+  if (input.checked !== checked.value) input.checked = checked.value
   emit('change', next)
 }
 </script>

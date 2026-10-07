@@ -8,8 +8,12 @@
 
     `aria-hidden` and `tabindex="-1"` keep it away from a screen reader and out of the tab
     order, so the only visitor who ever meets it is the one this is for.
+
+    The `id` is the form's and not the field's name: a page with two forms on it would carry
+    the same `id` twice, and the second label would point at the first form's input.
 --}}
+@php($id ??= $name)
 <div class="wx-form__honeypot" aria-hidden="true" style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0">
-    <label for="{{ $name }}">{{ __('webx-inbox::form.honeypot') }}</label>
-    <input type="text" id="{{ $name }}" name="{{ $name }}" value="" tabindex="-1" autocomplete="off">
+    <label for="{{ $id }}">{{ __('webx-inbox::form.honeypot') }}</label>
+    <input type="text" id="{{ $id }}" name="{{ $name }}" value="" tabindex="-1" autocomplete="off">
 </div>

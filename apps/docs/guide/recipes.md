@@ -187,6 +187,13 @@ A part is markup over plain data — no part asks the database for itself. What 
 | `$nutrition`              | `[key => text]` — `calories`, `protein`, `fat`, `carbohydrates`, `fiber`, only what is written |
 | `$services`, `$similar`   | cards, as `services()` and `recipes()` give them                                               |
 
+Nobody types a `<title>` into a view. With an empty SEO card a recipe or a category names its page
+itself: the name through the site's title template, the lead as the description, the first photo — a
+category's picture — as `og:image`, above the site's default social image. The index is called by
+the section's name the same way. A copy of a view published before this still has an
+`@if ($meta->title === null)` block and the `$seo` / `$meta` lines for it — delete them, they never
+print any more.
+
 The views stand in the site's layout the way every module's do: `webx-recipes.layout` names the
 component, the same seam as the [blog's](/guide/blog#the-layout).
 

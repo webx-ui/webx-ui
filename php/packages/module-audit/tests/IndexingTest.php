@@ -57,7 +57,7 @@ final class IndexingTest extends TestCase
             'images.broken' => '/',
             'images.heavy' => '/',
             'images.format' => '/',
-            'og.image_broken' => '/',
+            'og.image_small' => '/',
             'html.favicon' => '/',
             'links.external_broken' => '/',
             'hosts.external_redirect' => '/',
@@ -82,7 +82,7 @@ final class IndexingTest extends TestCase
         $format = $found->get('images.format')?->first();
         $this->assertSame([self::BASE.'/img/big.jpg'], array_column($format->details['table']['rows'] ?? [], 'url'), 'The JPEG with a WebP source beside it is left alone.');
 
-        $og = $found->get('og.image_broken')?->first();
+        $og = $found->get('og.image_small')?->first();
         $this->assertSame('webx-audit::details.og-image-small', $og->details['summary']['key'] ?? null);
 
         $broken = $found->get('hreflang.broken')?->first();

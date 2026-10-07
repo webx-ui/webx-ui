@@ -6,8 +6,8 @@ namespace WebxUi\Seo\Screens;
 
 use Closure;
 use Illuminate\Contracts\Validation\Factory as ValidationFactory;
-use WebxUi\Admin\Screens\FieldType;
 use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Screens\MergesEdits;
 use WebxUi\Localization\Locales;
 use WebxUi\Seo\Fields;
 use WebxUi\Seo\Rules\ValidJsonLd;
@@ -23,7 +23,7 @@ use WebxUi\Seo\Rules\ValidJsonLd;
  * chips live inside the card, where they can sit on the three fields that need them and stay
  * off the picture, which has no languages.
  */
-final class SeoFieldType implements FieldType
+final class SeoFieldType implements MergesEdits
 {
     /**
      * How long a field may be, in characters. Hard limits, not the soft ones the card counts
@@ -143,6 +143,71 @@ final class SeoFieldType implements FieldType
         }
 
         return $stored;
+    }
+
+    /**
+     * An agent's partial card laid over the one the entity has.
+     *
+     * The card is a dozen values in one field, and an edit names the ones it changes:
+     * `{"title": {"en": "…"}}` is the English title, not "a card with only an English title".
+     * So a key left out keeps what it had, a translated key is merged language by language
+     * (a plain string is the site's main language), and null — on a key or on one language —
+     * is the way to empty it. Null for the whole card still empties the card.
+     *
+     * @param  array<string, mixed>  $node
+     */
+    public function merge(mixed $current, mixed $sent, array $node): mixed
+    {
+        if ($sent === null || ! is_array($sent)) {
+            return $sent;
+        }
+
+        $merged = is_array($current) ? $current : [];
+
+        foreach ($sent as $key => $value) {
+            $key = (string) $key;
+
+            if ($value === null) {
+                unset($merged[$key]);
+
+                continue;
+            }
+
+            if (! in_array($key, Fields::TRANSLATED, true)) {
+                $merged[$key] = $value;
+
+                continue;
+            }
+
+            if (is_string($value)) {
+                $value = [$this->locales->content() => $value];
+            }
+
+            if (! is_array($value)) {
+                // Not a language map: handed on as it came, for the rules to refuse.
+                $merged[$key] = $value;
+
+                continue;
+            }
+
+            $languages = is_array($merged[$key] ?? null) ? $merged[$key] : [];
+
+            foreach ($value as $locale => $text) {
+                if ($text === null) {
+                    unset($languages[$locale]);
+                } else {
+                    $languages[$locale] = $text;
+                }
+            }
+
+            if ($languages === []) {
+                unset($merged[$key]);
+            } else {
+                $merged[$key] = $languages;
+            }
+        }
+
+        return $merged;
     }
 
     /**

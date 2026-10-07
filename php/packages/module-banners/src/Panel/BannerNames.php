@@ -15,7 +15,7 @@ final class BannerNames
 {
     public static function of(Banner $banner, Locales $locales): string
     {
-        foreach (array_unique([$locales->current(), $locales->defaultCode()]) as $code) {
+        foreach (array_unique([$locales->content(), $locales->defaultCode()]) as $code) {
             $title = $banner->wordsIn('title', $code);
 
             if ($title !== '') {

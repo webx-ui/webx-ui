@@ -13,6 +13,9 @@ return [
     'parent-trashed' => 'Quella pagina è nel cestino. Ripristinala prima di metterci qualcosa dentro.',
     'not-in-bin' => 'Solo una pagina nel cestino può essere eliminata per sempre. Eliminatela prima.',
     'slug-shape' => 'Un indirizzo accetta lettere, cifre, trattini e trattini bassi.',
+    'ancestor-trashed' => 'La pagina sopra, «:title» (#:id), è nel cestino. Ripristina prima quella.',
+    'move-beside-self' => 'Una pagina non può stare prima o dopo sé stessa.',
+    'title-required' => 'Il titolo non può essere vuoto nella lingua principale del sito (:locale).',
 
     // The editor.
     'conflict' => ':name ha modificato questa pagina mentre la modificavi.',

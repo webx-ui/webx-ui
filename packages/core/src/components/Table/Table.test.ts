@@ -246,6 +246,13 @@ describe('WxTable', () => {
     expect(wrapper.get('table').attributes('aria-busy')).toBe('true')
     expect(wrapper.findAll('tbody tr')).toHaveLength(2)
     expect(wrapper.find('.wx-table__loading').exists()).toBe(true)
+    expect(wrapper.get('.wx-table__loading-text').text()).toBe('Loading')
+  })
+
+  it('says loading in the words it is given', () => {
+    const wrapper = mountTable({ loading: true, loadingText: 'Загрузка' })
+
+    expect(wrapper.get('.wx-table__loading-text').text()).toBe('Загрузка')
   })
 
   it('waits for the load to finish before saying there is nothing', () => {

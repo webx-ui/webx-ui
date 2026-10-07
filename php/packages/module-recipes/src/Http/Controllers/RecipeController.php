@@ -42,7 +42,7 @@ final class RecipeController
      */
     public function index(Request $request, Locales $locales, RelationTargets $targets): JsonResponse
     {
-        $locale = $locales->current();
+        $locale = $locales->content();
         $service = $targets->find('service');
         $named = static fn (RecipeCategory|RecipeNutrient $category): array => [
             'id' => (int) $category->getKey(),

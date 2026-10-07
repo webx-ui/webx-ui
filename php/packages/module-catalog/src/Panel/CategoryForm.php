@@ -195,7 +195,7 @@ final class CategoryForm
             if ($category->isTranslatableAttribute($field)) {
                 is_array($value)
                     ? $category->setTranslations($field, [...$category->getTranslations($field), ...$value])
-                    : $category->setTranslation($field, $this->locales->current(), $value);
+                    : $category->setTranslation($field, $this->locales->content(), $value);
 
                 continue;
             }

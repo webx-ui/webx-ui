@@ -238,6 +238,11 @@ async function save(): Promise<void> {
           <template #icon><wx-icon name="plus" /></template>
           {{ t('fields.add-choice') }}
         </wx-button>
+
+        <!-- A list field with nothing to pick is refused by the server: it could never be sent. -->
+        <wx-text v-if="errorOf('options.choices')" size="sm" tone="danger">
+          {{ errorOf('options.choices') }}
+        </wx-text>
       </div>
 
       <div class="wx-inbox-field-form__row">

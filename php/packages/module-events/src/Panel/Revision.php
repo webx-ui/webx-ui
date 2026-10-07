@@ -37,6 +37,10 @@ final class Revision
         $content['categories'] = $event->draftedCategoryIds();
         $content['services'] = $event->draftedRelatedIds(Event::SERVICES);
 
+        // The SEO card is saved live, outside the draft, and is an edit like any other: two
+        // people who each rewrote the description have to find out about it.
+        $content['seo'] = $event->seoValue();
+
         return substr(sha1(json_encode($content, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)), 0, 12);
     }
 }

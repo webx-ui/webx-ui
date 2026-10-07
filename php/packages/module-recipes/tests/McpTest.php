@@ -27,17 +27,17 @@ final class McpTest extends TestCase
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['recipes_list', 'recipes_get', 'recipes_create', 'recipes_update', 'recipes_publish', 'recipes_unpublish', 'recipes_discard', 'recipes_delete', 'recipes_reorder'],
+            ['recipes_list', 'recipes_get', 'recipes_create', 'recipes_update', 'recipes_publish', 'recipes_unpublish', 'recipes_discard', 'recipes_delete', 'recipes_reorder', 'recipes_restore', 'recipes_purge'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('recipes')),
         );
 
         $this->assertSame(
-            ['recipe_categories_list', 'recipe_categories_create', 'recipe_categories_update', 'recipe_categories_delete', 'recipe_categories_reorder'],
+            ['recipe_categories_list', 'recipe_categories_get', 'recipe_categories_create', 'recipe_categories_update', 'recipe_categories_delete', 'recipe_categories_reorder'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('recipe-categories')),
         );
 
         $this->assertSame(
-            ['recipe_nutrients_list', 'recipe_nutrients_create', 'recipe_nutrients_update', 'recipe_nutrients_delete', 'recipe_nutrients_reorder'],
+            ['recipe_nutrients_list', 'recipe_nutrients_get', 'recipe_nutrients_create', 'recipe_nutrients_update', 'recipe_nutrients_delete', 'recipe_nutrients_reorder'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('recipe-nutrients')),
         );
 

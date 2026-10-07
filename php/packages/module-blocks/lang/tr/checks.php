@@ -21,4 +21,8 @@ return [
             'fix' => 'Bunları düzeltmeyle ya da tüm site için php artisan webx:blocks:prune ile kaldırın. Artık var olmayan bir türün bloğuna dokunulmaz. Tekrarlayıcı öğeleri kendi alanlarıyla karşılaştırılır.',
         ],
     ],
+    'syntax' => 'Şablon derlenmiyor: :reason. Yayınlama reddedilecek.',
+    'unknown-field-type' => 'Sitenin tanımadığı türde alanlar: :fields. Form yerlerinde bir uyarı gösterir ve değerlerini kimse denetlemez.',
+    'field-id' => 'Alan kimliği harf, rakam, _ ve - içerir ve harfle başlar: :ids.',
+    'marker-slug' => 'Kök data-wx-block=":marker" ile işaretli, ancak tanımlayıcı «:slug»: betik ve panel bloğu tam tanımlayıcıyla bulur. Yayınlama reddedilecek.',
 ];

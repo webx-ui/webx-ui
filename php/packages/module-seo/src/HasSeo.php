@@ -82,7 +82,11 @@ trait HasSeo
         $meta = $this->seo()->first();
 
         if ($value === null || $value === []) {
-            $meta?->delete();
+            if ($meta !== null) {
+                $meta->delete();
+                $this->touchForSeo();
+            }
+
             $this->unsetRelation('seo');
 
             return;
@@ -97,7 +101,21 @@ trait HasSeo
             $this->seo()->create($value);
         }
 
+        $this->touchForSeo();
         $this->unsetRelation('seo');
+    }
+
+    /**
+     * The card lives in its own table, but it is an edit of the entity all the same: whoever
+     * reads `updated_at` to see whether somebody wrote in between — a list sorted by it, an agent
+     * comparing what it read — has to see this one too. Quietly, because the entity's own
+     * observers (versions, addresses, search) have nothing to do for a card they do not hold.
+     */
+    private function touchForSeo(): void
+    {
+        if ($this->exists && $this->usesTimestamps()) {
+            $this->touchQuietly();
+        }
     }
 
     private function seoMeta(): ?SeoMeta

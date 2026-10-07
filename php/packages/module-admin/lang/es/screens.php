@@ -15,4 +15,5 @@ return [
         'reorder' => 'Reordenar',
         'empty' => 'Aún no hay nada',
     ],
+    'not-a-language-map' => ':field se traduce: envíe un valor por idioma, { "en": … }, no una sola lista.',
 ];

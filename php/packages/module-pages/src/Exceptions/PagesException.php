@@ -38,7 +38,7 @@ class PagesException extends RuntimeException
 
         return new JsonResponse([
             'message' => $this->getMessage(),
-            'errors' => $this->field === null ? [] : [$this->field => [$this->getMessage()]],
+            'errors' => $this->field === null ? (object) [] : [$this->field => [$this->getMessage()]],
         ], 422);
     }
 
@@ -88,6 +88,24 @@ class PagesException extends RuntimeException
     public static function notInBin(): self
     {
         return new self((string) trans('webx-pages::errors.not-in-bin'));
+    }
+
+    /** A page cannot come back under a parent that is still in the bin; that one comes first. */
+    public static function ancestorIsInBin(string $title, int $id): self
+    {
+        return new self((string) trans('webx-pages::errors.ancestor-trashed', ['title' => $title, 'id' => $id]));
+    }
+
+    /** A page is never its own neighbour. */
+    public static function pageBesideItself(): self
+    {
+        return new self((string) trans('webx-pages::errors.move-beside-self'), 'target');
+    }
+
+    /** The title is what a page is called everywhere; the site's main language must have one. */
+    public static function titleRequired(string $locale): self
+    {
+        return new self((string) trans('webx-pages::errors.title-required', ['locale' => $locale]), 'title');
     }
 
     /** A page in the bin is not a place to put a live one; it would go dark with it. */

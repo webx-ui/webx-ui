@@ -25,11 +25,14 @@ final class Placement
      *
      * The count is the page and everything under it: moving a branch rewrites every address in
      * it and leaves a redirect on each of the old ones, and whoever asked for the move has to
-     * be told that out loud rather than find it in a report a month later.
+     * be told that out loud rather than find it in a report a month later. A reorder among
+     * siblings changes no address at all, and says so with a zero.
      */
     public static function apply(Page $page, Page $target, string $zone): int
     {
         self::assert($page, $target, $zone);
+
+        $wouldChange = self::addressesThatChange($page, $target, $zone);
 
         match ($zone) {
             'before' => $page->insertBefore($target),
@@ -39,7 +42,19 @@ final class Placement
 
         $page->refresh();
 
-        return $page->descendants()->count() + 1;
+        return $wouldChange;
+    }
+
+    /**
+     * How many addresses a move would rewrite: the page and its branch when it changes parent,
+     * none when it only changes place among the same siblings — the address is the ancestors'
+     * slugs, and those stay the same.
+     */
+    public static function addressesThatChange(Page $page, Page $target, string $zone): int
+    {
+        $parent = $zone === 'inside' ? $target->getKey() : $target->parent_id;
+
+        return (int) $parent === (int) $page->parent_id ? 0 : $page->descendants()->count() + 1;
     }
 
     /**
@@ -57,6 +72,11 @@ final class Placement
         // Inside it is the ordinary case: every page of the site is under the home page.
         if ($target->isRoot() && $zone !== 'inside') {
             throw PagesException::homeHasNoSiblings();
+        }
+
+        // Before or after itself is not a place, and saying "inside itself" about it was wrong.
+        if ($target->is($page) && $zone !== 'inside') {
+            throw PagesException::pageBesideItself();
         }
 
         // A page cannot land in its own branch — it would be its own ancestor, and the bounds

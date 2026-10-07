@@ -34,7 +34,7 @@ final class ReviewResource extends JsonResource
         $review = $this->resource;
 
         $locales = app(Locales::class);
-        $locale = $locales->current();
+        $locale = $locales->content();
 
         return [
             'id' => (int) $review->getKey(),

@@ -6,6 +6,7 @@ namespace WebxUi\Inbox\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Mail\Recipients;
 use WebxUi\Inbox\Models\Form;
 
@@ -23,6 +24,11 @@ use WebxUi\Inbox\Models\Form;
  * stays in `options.recipients` as it was; these two are what a form with nobody to write to
  * shows instead of looking like a queue that has not run. A list of forms looks the people up
  * once ({@see Recipients::load()}).
+ *
+ * `captcha` is the site's and not the form's: for each provider, how it runs (`checkbox`,
+ * `invisible`, `v3`) and whether both halves of its keys are in the `.env`. A reCAPTCHA key of
+ * the wrong kind is the widget's "Invalid key type", and the antispam tab is where somebody
+ * choosing a captcha can be told which kind this site expects.
  *
  * `fields` is here only when they were loaded: the column does not need them and the editor
  * cannot do without them.
@@ -52,8 +58,22 @@ final class FormResource extends JsonResource
             'submissions_count' => $this->count($form, 'submissions_count'),
             'unread_count' => $this->count($form, 'unread_count'),
             'fields' => FieldResource::collection($this->whenLoaded('fields')),
+            'captcha' => self::captcha(),
             'created_at' => $form->created_at?->toAtomString(),
             'updated_at' => $form->updated_at?->toAtomString(),
+        ];
+    }
+
+    /**
+     * @return array<string, array{type: string, configured: bool}>
+     */
+    private static function captcha(): array
+    {
+        $captcha = app(Captcha::class);
+
+        return [
+            'recaptcha' => ['type' => $captcha->type('recaptcha'), 'configured' => $captcha->configured('recaptcha')],
+            'turnstile' => ['type' => $captcha->type('turnstile'), 'configured' => $captcha->configured('turnstile')],
         ];
     }
 

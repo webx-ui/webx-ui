@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, useAttrs } from 'vue'
 import { WxRepeater } from '@webx-ui/core'
-import { screenErrorsKey, WxScreenNodes, type RenderContext } from './render'
+import { screenErrorsKey, withFieldDefaults, WxScreenNodes, type RenderContext } from './render'
 import type { ScreenModel, ScreenNode } from './types'
 
 defineOptions({ name: 'WxScreenRepeater', inheritAttrs: false })
@@ -119,7 +119,7 @@ const bound = computed(() => {
         :nodes="node.children ?? []"
         :context="{
           ...context,
-          model: item,
+          model: withFieldDefaults(node.children ?? [], item),
           update: (key: string, value: unknown) => update({ [key]: value }),
         }"
       />

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace WebxUi\Audit\Tests;
 
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Audit\Runs\AuditIssue;
 
@@ -62,6 +65,31 @@ final class ConfigTest extends TestCase
 
         $this->assertSame('error', $issue->severity);
         $this->assertSame('webx-audit::details.app-url-redirects', $issue->details['summary']['key'] ?? null);
+    }
+
+    #[Test]
+    public function a_database_queue_nobody_works_through_is_an_error(): void
+    {
+        $this->site();
+        config(['queue.default' => 'database', 'queue.connections.database' => ['driver' => 'database', 'table' => 'jobs', 'queue' => 'default']]);
+        Schema::create('jobs', static function (Blueprint $table): void {
+            $table->id();
+            $table->string('queue');
+            $table->longText('payload');
+            $table->unsignedTinyInteger('attempts');
+            $table->unsignedInteger('reserved_at')->nullable();
+            $table->unsignedInteger('available_at');
+            $table->unsignedInteger('created_at');
+        });
+        DB::table('jobs')->insert(['queue' => 'default', 'payload' => '{}', 'attempts' => 0, 'available_at' => time() - 900, 'created_at' => time() - 900]);
+
+        // The audit itself goes on the queue only from the panel; the command runs it in place.
+        $this->artisan('webx:audit:run', ['--quick' => true])->assertSuccessful();
+
+        $issue = AuditIssue::query()->where('check', 'config.queue_worker')->sole();
+
+        $this->assertSame('error', $issue->severity);
+        $this->assertSame(['connection' => 'database', 'count' => 1, 'minutes' => 5], $issue->details['summary']['params'] ?? null);
     }
 
     #[Test]

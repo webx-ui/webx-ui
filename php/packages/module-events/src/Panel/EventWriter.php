@@ -113,7 +113,9 @@ final class EventWriter
      */
     public function draft(Event $event, array $columns): array
     {
-        $locale = $this->locales->current();
+        // A bare string is the content's language, not the interface's: a panel read in Russian
+        // over an English site has no Russian to write into.
+        $locale = $this->locales->content();
         $values = $event->hasDraft() ? $event->draftValues() : $this->published($event);
 
         foreach ($columns as $field => $value) {

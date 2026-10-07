@@ -159,8 +159,9 @@ final class EditorTest extends TestCase
     public function a_save_keeps_a_collection_block_as_the_choice_the_source_can_act_on(): void
     {
         // The door that matters for `wx-collection` (§3.3 of the FAQ spec): the editor's save,
-        // through the endpoint. A source without categories or markup keeps neither, whatever
-        // the request said, and a string that is a number is kept as one.
+        // through the endpoint. A source without markup keeps none, whatever the request said.
+        // (Categories the source does not have, or a limit out of bounds, are refused by the
+        // field's rules now — see the blocks validation tests.)
         $this->app->make(CollectionSources::class)->register(new TipSource);
 
         $block = Block::query()->create(['slug' => 'tips', 'title' => 'Tips']);
@@ -178,7 +179,7 @@ final class EditorTest extends TestCase
                     'blocks' => [[
                         'key' => 'k1',
                         'type' => 'tips',
-                        'values' => ['list' => ['categories' => [4, 2], 'limit' => '3', 'filter' => true, 'markup' => true]],
+                        'values' => ['list' => ['categories' => [], 'limit' => 3, 'filter' => true, 'markup' => true]],
                     ]],
                 ],
             ])

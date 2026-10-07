@@ -20,6 +20,7 @@ use WebxUi\Auth\Models\CmsUser;
  * @property int $submission_id
  * @property int|null $admin_id
  * @property string $type
+ * @property string|null $field
  * @property string|null $from
  * @property string|null $to
  * @property Carbon|null $created_at
@@ -53,6 +54,9 @@ class SubmissionEvent extends Model
 
     /** A letter that could not be sent; `to` is the address it was for. */
     public const NOTIFY_FAILED = 'notify_failed';
+
+    /** An answer corrected by hand; `field` is its machine name, `from` and `to` the text. */
+    public const VALUE = 'value';
 
     protected $table = 'inbox_submission_events';
 

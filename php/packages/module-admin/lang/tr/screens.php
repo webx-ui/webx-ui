@@ -15,4 +15,5 @@ return [
         'reorder' => 'Yeniden sırala',
         'empty' => 'Henüz bir şey yok',
     ],
+    'not-a-language-map' => ':field çevrilir: her dil için bir değer gönderin, { "en": … }, tek bir liste değil.',
 ];

@@ -15,6 +15,7 @@ use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Rendering\Calls;
 use WebxUi\Blocks\Rendering\Renderer;
+use WebxUi\Blocks\Rendering\Thumbnails;
 
 /**
  * A block type: what it is called, where it may go, and two pointers into its own history.
@@ -31,6 +32,7 @@ use WebxUi\Blocks\Rendering\Renderer;
  *
  * @property int $id
  * @property string $slug
+ * @property list<string>|null $former_slugs Slugs it had before a rename, oldest first.
  * @property string $kind
  * @property string $title
  * @property string|null $description
@@ -84,6 +86,7 @@ class Block extends Model
             'position' => 'integer',
             'allow' => 'array',
             'allowed_in' => 'array',
+            'former_slugs' => 'array',
             'max_per_entity' => 'integer',
             'is_enabled' => 'boolean',
             'draft_version_id' => 'integer',
@@ -95,9 +98,11 @@ class Block extends Model
     {
         // A change to the row itself — a new sort, a disabled flag — is a change to the
         // registry's list; the pointers move through `saveVersion()` and `publish()`, which
-        // save the row too.
+        // save the row too. The thumbnails go with it, every one of them: a type that calls this
+        // one prints it in its own picture.
         $forget = static function (): void {
             Container::getInstance()->make(BlockTypes::class)->forget();
+            Container::getInstance()->make(Thumbnails::class)->forget();
         };
 
         // A new type joins the end of the list: first would push every card an editor already

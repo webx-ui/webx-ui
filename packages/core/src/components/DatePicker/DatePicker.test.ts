@@ -1,12 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { VueDatePicker } from '@vuepic/vue-datepicker'
 import WxDatePicker from './DatePicker.vue'
 import WxDateTimePicker from '../DateTimePicker/DateTimePicker.vue'
 import WxTimePicker from '../TimePicker/TimePicker.vue'
 import WxDateRangePicker from '../DateRangePicker/DateRangePicker.vue'
 import { dateLocaleKey } from '../../composables/useDateLocale'
+import { dateTimezoneKey } from '../../composables/useDateTimezone'
 import type { DateFnsLocale } from '../../internal/dateLocale'
 
 type DateFnsLocalize = DateFnsLocale['localize']
@@ -246,5 +247,100 @@ describe.each([
 
     expect(picker(wrapper).props('timeConfig')).toMatchObject({ is24: false })
     expect(picker(wrapper).props('teleport')).toBe(false)
+  })
+})
+
+/*
+ * The machine running the tests is put in New York for these: a zone far from the site's, on
+ * the other side of UTC, where a moment drawn on the reader's clock lands on another day.
+ */
+describe("WxDatePicker in the site's timezone", () => {
+  const moment = "yyyy-MM-dd'T'HH:mm:ssXXX"
+  let saved: string | undefined
+
+  beforeAll(() => {
+    saved = process.env.TZ
+    process.env.TZ = 'America/New_York'
+  })
+
+  afterAll(() => {
+    if (saved === undefined) delete process.env.TZ
+    else process.env.TZ = saved
+  })
+
+  async function pickDay(wrapper: ReturnType<typeof mount>, day: string): Promise<void> {
+    await wrapper.find('input').trigger('click')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    const cell = [...document.querySelectorAll<HTMLElement>('.dp--cell-inner')].find(
+      (element) => element.textContent?.trim() === day,
+    )
+
+    expect(cell).toBeDefined()
+    cell?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    await nextTick()
+  }
+
+  it("shows the wall clock of the provided zone and sends that zone's offset back", async () => {
+    const wrapper = mount(WxDatePicker, {
+      props: {
+        type: 'datetime',
+        valueFormat: moment,
+        teleport: false,
+        modelValue: '2026-10-12T09:30:00+08:00',
+      },
+      global: { provide: { [dateTimezoneKey as symbol]: 'Asia/Hong_Kong' } },
+      attachTo: document.body,
+    })
+    await nextTick()
+
+    expect(picker(wrapper).props('timezone')).toBe('Asia/Hong_Kong')
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
+      '12.10.2026 09:30 GMT+08:00',
+    )
+
+    await pickDay(wrapper, '15')
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['2026-10-15T09:30:00+08:00'])
+    wrapper.unmount()
+  })
+
+  it('keeps the day of a date-only moment', async () => {
+    const wrapper = mount(WxDatePicker, {
+      props: {
+        type: 'date',
+        valueFormat: moment,
+        teleport: false,
+        timezone: 'Asia/Hong_Kong',
+        modelValue: '2026-10-12T00:00:00+08:00',
+      },
+      attachTo: document.body,
+    })
+    await nextTick()
+
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe('12.10.2026')
+
+    await pickDay(wrapper, '14')
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['2026-10-14T00:00:00+08:00'])
+    wrapper.unmount()
+  })
+
+  it('leaves a value without an offset alone: it is a wall clock already', () => {
+    const wrapper = mount(WxDatePicker, {
+      props: { type: 'datetime', timezone: 'Asia/Hong_Kong', modelValue: '2026-10-12 09:30' },
+    })
+
+    expect(picker(wrapper).props('timezone')).toBeUndefined()
+    expect(picker(wrapper).props('formats')).toEqual({ input: 'dd.MM.yyyy HH:mm' })
+  })
+
+  it("names no zone when it is the reader's own", () => {
+    const wrapper = mount(WxDatePicker, {
+      props: { type: 'datetime', valueFormat: moment, timezone: 'America/New_York' },
+    })
+
+    expect(picker(wrapper).props('timezone')).toBe('America/New_York')
+    expect(picker(wrapper).props('formats')).toEqual({ input: 'dd.MM.yyyy HH:mm' })
   })
 })

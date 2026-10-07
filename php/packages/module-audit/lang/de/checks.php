@@ -28,6 +28,12 @@ return [
             'why' => 'E-Mails und Einsendungen werden bearbeitet, während der Besucher wartet, ein langsamer Mailserver macht Formulare langsam, und lange Jobs wie das Audit lassen sich nicht aus dem Panel starten.',
             'fix' => 'Verwenden Sie die Queue database oder redis und lassen Sie einen Worker laufen (php artisan queue:work unter einem Supervisor).',
         ],
+        'queue_worker' => [
+            'title' => 'Niemand arbeitet die Queue ab',
+            'found' => 'Jobs in der Datenbank-Queue sind seit Minuten fällig, und kein Worker hat sie übernommen.',
+            'why' => 'Briefe aus Formularen, Audit-Läufe und Bildbearbeitung bleiben in der Warteschlange und geschehen nie, während das Panel meldet, alles sei in Ordnung.',
+            'fix' => 'Lassen Sie einen Worker laufen (php artisan queue:work unter einem Supervisor), planen Sie queue:work --stop-when-empty jede Minute ein oder setzen Sie auf einer kleinen Website QUEUE_CONNECTION=sync.',
+        ],
         'mail' => [
             'title' => 'E-Mails gehen ins Leere',
             'found' => 'Der Mailer schreibt E-Mails ins Log oder in den Speicher.',
@@ -445,10 +451,16 @@ return [
             'fix' => 'Füllen Sie die Social-Vorschau in den SEO-Einstellungen der Seite aus oder lassen Sie das Layout die Tags ausgeben.',
         ],
         'image_broken' => [
-            'title' => 'Das Open-Graph-Bild ist defekt oder zu klein',
-            'found' => 'og:image öffnet sich nicht oder ist kleiner als 1200×630.',
-            'why' => 'Ein geteilter Link zeigt kein Bild oder ein kleines Quadrat neben dem Text statt einer großen Karte.',
-            'fix' => 'Setzen Sie in der Social-Vorschau der Seite ein funktionierendes Bild von mindestens 1200×630.',
+            'title' => 'Das Open-Graph-Bild öffnet sich nicht',
+            'found' => 'og:image antwortet mit einem Fehler oder öffnet sich nicht.',
+            'why' => 'Ein geteilter Link zeigt gar kein Bild.',
+            'fix' => 'Setzen Sie in der Social-Vorschau der Seite ein funktionierendes Bild.',
+        ],
+        'image_small' => [
+            'title' => 'Das Open-Graph-Bild ist zu klein',
+            'found' => 'og:image ist kleiner als 1200×630.',
+            'why' => 'Ein geteilter Link zeigt ein kleines Quadrat neben dem Text statt einer großen Karte.',
+            'fix' => 'Setzen Sie in der Social-Vorschau der Seite ein Bild von mindestens 1200×630.',
         ],
     ],
     'hreflang' => [

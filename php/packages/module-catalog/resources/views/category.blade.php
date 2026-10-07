@@ -9,6 +9,7 @@
     Overridden by the site in `resources/views/vendor/webx-catalog/category.blade.php`, or a part
     at a time: `filter`, `grid`, `card`, `sort`, `pagination`, `breadcrumbs`.
 --}}
+{{-- Asked here only for the <h1>: an SEO card may name a heading other than the category's name. --}}
 @php($seo = app(WebxUi\Seo\Rendering\Seo::class))
 @php($meta = $seo->for($seo->currentUrl(), $page))
 @php($owner = $page->owner())
@@ -18,10 +19,9 @@
 
 <x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'">
     <x-slot:head>
+        {{-- The title is in there too: the card's, or the page's heading through the site's
+             template, with the category's description and cover under it (`seoFallback()`). --}}
         @webxSeo($page)
-        @if ($meta->title === null)
-            <title>{{ $page->heading }}</title>
-        @endif
     </x-slot:head>
 
     <article class="webx-catalog-category">

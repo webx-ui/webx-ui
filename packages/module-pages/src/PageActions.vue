@@ -84,8 +84,9 @@ const actions = computed<RowAction[]>(() => {
       key: 'on-site',
       icon: 'external-link',
       label: t('page.open-on-site'),
-      disabled: !page.url,
-      href: page.url ?? undefined,
+      // A page never published answers 404 at its address; its draft is the editor's preview.
+      disabled: !page.url || page.status === 'draft',
+      href: page.url && page.status !== 'draft' ? page.url : undefined,
     },
   )
 

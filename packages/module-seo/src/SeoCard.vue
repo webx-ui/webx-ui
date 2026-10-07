@@ -14,6 +14,7 @@ import {
   WxTextarea,
   type LocalizedValue,
 } from '@webx-ui/core'
+import { ogFieldsEnabled } from './features'
 import { useSeoMessages } from './i18n'
 import { robotsDirectives, type SeoImage, type SeoValue } from './types'
 
@@ -51,6 +52,12 @@ const props = withDefaults(
     site?: string
     /** Hidden when a screen has no use for them. */
     structuredData?: boolean
+    /**
+     * The share tab — its own title, description and picture. Left out, the site decides
+     * (`webx-seo.og.panel_fields`, off by default): Open Graph is filled in from the page's
+     * title, description and picture, and fields nobody needs to fill in look forgotten.
+     */
+    shareFields?: boolean
   }>(),
   {
     mediaField: undefined,
@@ -59,6 +66,7 @@ const props = withDefaults(
     descriptionLimit: 160,
     site: undefined,
     structuredData: true,
+    shareFields: undefined,
   },
 )
 
@@ -87,6 +95,8 @@ const picker = computed<Component | undefined>(
   () => props.mediaField ?? admin?.types['wx-media']?.component,
 )
 const locales = useLocales()
+
+const withShare = computed(() => props.shareFields ?? (admin !== null && ogFieldsEnabled(admin)))
 
 const jsonLdText = ref<string | null>(null)
 const jsonLdBroken = ref(false)
@@ -266,7 +276,7 @@ function tone(count: number, limit: number): 'muted' | 'warning' {
         </div>
       </wx-tab>
 
-      <wx-tab :label="t('card.section-share')" value="share">
+      <wx-tab v-if="withShare" :label="t('card.section-share')" value="share">
         <div class="wx-seo__fields">
           <component
             :is="picker"

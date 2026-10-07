@@ -12,7 +12,10 @@ use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Routing\Formatters\Slug;
 use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
+use WebxUi\Seo\Contracts\Crumb;
+use WebxUi\Seo\Contracts\HasBreadcrumbs;
 use WebxUi\Seo\Models\SeoUrl;
+use WebxUi\Seo\Rendering\Breadcrumbs;
 use WebxUi\Seo\Sitemap\Sitemap;
 use WebxUi\Seo\Sitemap\SitemapRoutes;
 use WebxUi\Seo\Tests\Fixtures\MappedEntity;
@@ -241,6 +244,38 @@ final class SitemapTest extends TestCase
         $this->assertStringNotContainsString('<loc>http://localhost/closed-news</loc>', $file);
         // A route with parameters is a family of addresses, not one.
         $this->assertStringNotContainsString('{slug}', $file);
+    }
+
+    #[Test]
+    public function a_crumb_whose_address_only_redirects_is_left_out_of_the_trail(): void
+    {
+        app(RouteTypes::class)->register(new RouteType(type: 'mapped', model: MappedEntity::class, formatter: Slug::class, handler: MappedPage::class));
+        $category = $this->entity('sauces');
+
+        $item = new class((string) $category->url('ru')) implements HasBreadcrumbs
+        {
+            public function __construct(private readonly string $category) {}
+
+            public function breadcrumbs(string $locale): array
+            {
+                return [new Crumb('Sauces', $this->category), new Crumb('Pesto', 'http://localhost/pesto')];
+            }
+        };
+
+        $names = static fn (): array => array_map(
+            static fn (Crumb $crumb): string => $crumb->title,
+            app(Breadcrumbs::class)->trail($item, 'ru'),
+        );
+
+        $this->assertCount(3, $names());
+        $this->assertContains('Sauces', $names());
+
+        // The site binds a redirect over the category's page: the map leaves it out, and so do
+        // the crumbs and the BreadcrumbList printed from them — the page itself stays.
+        $this->app->bind(MappedPage::class, MappedRedirect::class);
+
+        $this->assertNotContains('Sauces', $names());
+        $this->assertSame('Pesto', $names()[1]);
     }
 
     #[Test]

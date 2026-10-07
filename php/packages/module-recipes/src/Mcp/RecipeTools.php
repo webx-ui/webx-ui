@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Recipes\Mcp;
 
+use Closure;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Model;
@@ -16,11 +17,14 @@ use WebxUi\Admin\Categories\Ordering;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Relations\RelationTarget;
 use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
 use WebxUi\Localization\Locales;
+use WebxUi\Mcp\Arguments;
 use WebxUi\Mcp\Exceptions\ToolFailure;
+use WebxUi\Mcp\Rehearsal;
 use WebxUi\Mcp\Tool;
 use WebxUi\Recipes\Models\Recipe;
 use WebxUi\Recipes\Models\RecipeCategory;
@@ -46,6 +50,10 @@ use WebxUi\Routing\UrlNormaliser;
  * The ingredients and the method are HTML, and the description says so twice: the markup of the
  * page reads `<li>` out of them, and an agent that writes prose gets a recipe Google reads as one
  * ingredient.
+ *
+ * A dry run is the write itself, rolled back ({@see Rehearsal}): refused where the write would be,
+ * answering what it would answer. An argument or a field the tool does not take is refused rather
+ * than dropped ({@see Arguments}).
  */
 final class RecipeTools
 {
@@ -83,7 +91,7 @@ final class RecipeTools
             .'An empty related list lets the site pick similar recipes itself by shared categories, services and '
             .'nutrients. All four wait in the draft like the text.';
 
-        return [
+        return Arguments::strictAll([
             Tool::read(
                 'list',
                 'The recipes in the one order they stand in on the site: what each is called in every language, '
@@ -139,7 +147,7 @@ final class RecipeTools
                 'Change the values of a recipe into its draft. A field left out keeps what it had; a localized '
                 .'field sent as { "en": "…" } changes that language only. Send the revision recipes_get gave you and '
                 .'the write is refused if somebody saved in between. Everything — the categories and the links '
-                .'included — reaches the site when the recipe is published. '.$html,
+                .'included — reaches the site when the recipe is published. The SEO card is the exception: it is not drafted and is on the site the moment it is saved — the answer says so with seo_live: true. '.$html,
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'recipe' => $recipe,
@@ -197,7 +205,30 @@ final class RecipeTools
                 ], 'required' => ['recipes']],
                 permission: 'recipes.manage',
             ),
-        ];
+
+            Tool::mutating(
+                'restore',
+                'Take a recipe out of the bin, with its draft, its links and its history. Its address is given '
+                .'back; refused if another page or recipe has taken it in the meantime. By id: a recipe in the bin '
+                .'has no address to name it by.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->restore($arguments)),
+                ['properties' => [
+                    'recipe' => ['type' => 'integer', 'description' => 'The id, as recipes_list with trashed reports it.'],
+                ], 'required' => ['recipe']],
+                permission: 'recipes.manage',
+            ),
+
+            Tool::mutating(
+                'purge',
+                'Delete a recipe in the bin for good, with its former addresses, its SEO card and its history. '
+                .'Cannot be undone. Only a recipe in the bin — recipes_delete puts it there first.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->purge($arguments)),
+                ['properties' => [
+                    'recipe' => ['type' => 'integer', 'description' => 'The id, as recipes_list with trashed reports it.'],
+                ], 'required' => ['recipe']],
+                permission: 'recipes.manage',
+            ),
+        ], 'recipes_');
     }
 
     /**
@@ -270,30 +301,36 @@ final class RecipeTools
         }
 
         $values = $this->prepare($values);
+        Arguments::refuseUnknown($values, $this->fields(), 'recipes_create');
 
-        if ($this->dryRun($arguments)) {
-            return [
-                'dry_run' => true,
-                'would_create' => ['title' => $title, 'slug' => $slug, 'fields' => array_keys($values)],
-                'would_answer_at' => $this->addresses($slug),
-            ];
+        $work = function () use ($title, $slug, $values, $user): array {
+            $recipe = new Recipe;
+            $recipe->setTranslations('title', $title);
+            $recipe->setTranslations('slug', $slug);
+
+            // One transaction for the row and its values: the routing observer writes the address on
+            // `created`, inside this same transaction, so a refused value takes the address with it.
+            $recipe->getConnection()->transaction(function () use ($recipe, $values, $user): void {
+                $recipe->save();
+
+                if ($values !== []) {
+                    $this->form()->save($recipe, $values, $this->can($user), $this->authorId($user));
+                }
+            });
+
+            return $this->get(['recipe' => $recipe->refresh()->getKey()], $user);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        $recipe = new Recipe;
-        $recipe->setTranslations('title', $title);
-        $recipe->setTranslations('slug', $slug);
+        $would = $this->rehearse($work);
+        // The id and the signed link the rehearsal was given are nobody's once it is rolled back.
+        $would['recipe']['id'] = null;
+        unset($would['preview_url'], $would['revision']);
 
-        // One transaction for the row and its values: the routing observer writes the address on
-        // `created`, inside this same transaction, so a refused value takes the address with it.
-        $recipe->getConnection()->transaction(function () use ($recipe, $values, $user): void {
-            $recipe->save();
-
-            if ($values !== []) {
-                $this->form()->save($recipe, $values, $this->can($user), $this->authorId($user));
-            }
-        });
-
-        return $this->get(['recipe' => $recipe->refresh()->getKey()], $user);
+        return ['dry_run' => true, 'would_answer_at' => $this->addresses($slug)] + $would;
     }
 
     /**
@@ -318,22 +355,25 @@ final class RecipeTools
         }
 
         $values = $this->prepare($values, $recipe);
+        Arguments::refuseUnknown($values, $this->fields(), 'recipes_update');
         $this->sameRevision($arguments, $recipe);
 
-        if ($this->dryRun($arguments)) {
-            return [
-                'dry_run' => true,
-                'would_write' => 'draft',
-                'fields' => array_keys($values),
-                'recipe' => $this->reference($recipe),
-            ];
+        $work = function () use ($recipe, $values, $user): array {
+            $recipe->getConnection()->transaction(
+                fn () => $this->form()->save($recipe, $values, $this->can($user), $this->authorId($user)),
+            );
+
+            return $this->get(['recipe' => $recipe->refresh()->getKey()], $user) + $this->seoLive($values);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        $recipe->getConnection()->transaction(
-            fn () => $this->form()->save($recipe, $values, $this->can($user), $this->authorId($user)),
-        );
+        $would = $this->rehearse($work);
+        unset($would['preview_url'], $would['revision']);
 
-        return $this->get(['recipe' => $recipe->refresh()->getKey()], $user);
+        return ['dry_run' => true, 'would_write' => 'draft', 'fields' => array_keys($values)] + $would;
     }
 
     /**
@@ -427,13 +467,96 @@ final class RecipeTools
 
         $ids = array_values(array_map(fn (mixed $one): int => (int) $this->recipe($one)->getKey(), $given));
 
-        if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'would_order' => $ids];
+        $work = function () use ($ids): array {
+            Ordering::move(Recipe::class, $ids);
+
+            return $this->list([]);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        Ordering::move(Recipe::class, $ids);
+        return ['dry_run' => true, 'would_order' => $ids] + $this->rehearse($work);
+    }
 
-        return $this->list([]);
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function restore(array $arguments): array
+    {
+        $recipe = $this->binned($arguments['recipe'] ?? null);
+
+        $work = function () use ($recipe): array {
+            // The registry gives the address back on `restored` — or refuses, when it is taken.
+            $recipe->restore();
+
+            return ['recipe' => $this->summary($recipe->refresh())];
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return ['restored' => true] + $work();
+        }
+
+        return ['dry_run' => true, 'would_restore' => (int) $recipe->getKey()] + $this->rehearse($work);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function purge(array $arguments): array
+    {
+        $recipe = $this->binned($arguments['recipe'] ?? null);
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_purge' => (int) $recipe->getKey(), 'title' => $recipe->getTranslations('title')];
+        }
+
+        $recipe->getConnection()->transaction(static fn (): ?bool => $recipe->forceDelete());
+
+        return ['purged' => true, 'id' => (int) $recipe->getKey()];
+    }
+
+    /** A recipe in the bin, by id — an address names only a live one. */
+    private function binned(mixed $id): Recipe
+    {
+        if (! is_int($id) && ! (is_string($id) && ctype_digit($id))) {
+            throw new ToolFailure('`recipe` must be the id of a recipe in the bin: an address names only a live one.');
+        }
+
+        $recipe = $this->recipe($id);
+
+        if (! $recipe->trashed()) {
+            throw new ToolFailure("Recipe [{$id}] is not in the bin. recipes_delete puts it there.");
+        }
+
+        return $recipe;
+    }
+
+    /**
+     * What `values` may name once prepared: the fields of the screen — everything the save reads.
+     *
+     * @return list<string>
+     */
+    private function fields(): array
+    {
+        return array_values(array_unique(array_map(
+            static fn (array $node): string => (string) $node['name'],
+            $this->container->make(ScreenRegistry::class)->fields(Recipe::SCREEN),
+        )));
+    }
+
+    /**
+     * @template T
+     *
+     * @param  Closure(): T  $work
+     * @return T
+     */
+    private function rehearse(Closure $work): mixed
+    {
+        return Rehearsal::run($work, (new Recipe)->getConnectionName());
     }
 
     /**
@@ -633,7 +756,18 @@ final class RecipeTools
         if (is_int($reference) || (is_string($reference) && ctype_digit($reference))) {
             $nutrient = RecipeNutrient::query()->find((int) $reference);
         } elseif (is_string($reference)) {
-            $nutrient = RecipeNutrient::query()->whereTranslationLikeAny('title', trim($reference))->first();
+            $matches = RecipeNutrient::query()->whereTranslationLikeAny('title', trim($reference))->get();
+
+            // Two by one name: picking the first is a guess.
+            if ($matches->count() > 1) {
+                throw new ToolFailure(sprintf(
+                    'More than one nutrient is called [%s]: #%s. Name it by its id.',
+                    trim($reference),
+                    $matches->map(static fn (RecipeNutrient $one): int => (int) $one->getKey())->implode(', #'),
+                ));
+            }
+
+            $nutrient = $matches->first();
         } else {
             throw new ToolFailure('`nutrient` is an id or a title.');
         }
@@ -863,5 +997,17 @@ final class RecipeTools
     private function locales(): Locales
     {
         return $this->container->make(Locales::class);
+    }
+
+    /**
+     * The SEO card skips the draft (`HasSeo`): an agent that reads "into its draft" must not
+     * believe a new description is waiting for a publication that it does not need.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function seoLive(array $values): array
+    {
+        return array_key_exists('seo', $values) ? ['seo_live' => true] : [];
     }
 }

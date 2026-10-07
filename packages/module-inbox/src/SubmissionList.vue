@@ -38,7 +38,7 @@ import {
 } from '@webx-ui/core'
 import SubmissionCreateDialog from './SubmissionCreateDialog.vue'
 import { createInboxApi } from './api'
-import { useInboxMessages } from './i18n'
+import { useInboxMessages, useStatusName } from './i18n'
 import type {
   InboxForm,
   InboxStatus,
@@ -280,9 +280,8 @@ const statusOptions = computed(() =>
   statuses.value.map((status) => ({ value: status.id, label: name(status) })),
 )
 
-function name(status: InboxStatus): string {
-  return localizedValue(status.title, locales.active.value, status.key)
-}
+/* In the panel's language, not the content's: a status is a word of the interface. */
+const name = useStatusName()
 
 function formName(): string {
   return localizedValue(props.form.title, locales.active.value, props.form.slug)
@@ -337,7 +336,9 @@ watch([() => props.form.id, view, () => query.value.assignee, () => query.value.
   void load()
 })
 
-void load()
+/* No `load()` of its own here: the table reports its state once it is mounted, and that
+   report is the first request — with the page size the table draws. Asking here as well sent
+   the list twice on every opening, the first time without `per_page`. */
 void statusList()
 
 async function statusList(): Promise<void> {
@@ -492,6 +493,7 @@ defineExpose({ create: byHand })
         hover
         flush
         :loading="loading"
+        :loading-text="t('panel.loading')"
         :selectable="canUpdate"
         :select-row-label="panel('filters.select-row')"
         :select-all-label="panel('filters.select-all')"

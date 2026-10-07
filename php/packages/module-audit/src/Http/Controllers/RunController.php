@@ -22,8 +22,8 @@ use WebxUi\Audit\Runs\RunAuditStage;
 use WebxUi\Audit\Runs\Runner;
 
 /**
- * The runs: the list, the latest one for the overview, starting one and cancelling it, and two
- * of them compared.
+ * The runs: the list, the latest one for the overview, starting one and cancelling it, two of
+ * them compared, and all of them cleared.
  */
 final class RunController
 {
@@ -192,6 +192,19 @@ final class RunController
         $this->runner->cancel($run);
 
         return ApiResponse::data(new RunResource($run->refresh()));
+    }
+
+    /**
+     * Every run and all it found, at once. Refused while a run is going: its job would keep
+     * writing rows for a run that is no longer there.
+     */
+    public function clear(): JsonResponse
+    {
+        if (AuditRun::query()->active()->exists()) {
+            return ApiResponse::message((string) __('webx-audit::page.clear-running'), 409);
+        }
+
+        return ApiResponse::data(['runs' => $this->runner->clear()]);
     }
 
     private function syncQueue(): bool

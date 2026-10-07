@@ -32,6 +32,16 @@ export interface DatePickerProps {
    * `provideDateLocale`, then to the browser's own language.
    */
   locale?: string | DateFnsLocale
+  /**
+   * The IANA zone a moment is shown and picked in, e.g. `'Asia/Hong_Kong'`: the field reads
+   * the wall clock of that zone whatever the reader's machine is set to, and the value goes
+   * back with that zone's offset. Applies only when `valueFormat` carries an offset (`XXX`,
+   * `xxx`) — a value without one is a wall clock already and has no zone to move between.
+   * Defaults to what the application provided with `provideDateTimezone`, then to the
+   * reader's own zone. Under the default display format, a time is followed by the zone's
+   * offset whenever it is not the reader's.
+   */
+  timezone?: string
   /** First day of the week: 0 is Sunday, 1 is Monday. */
   weekStart?: number
   /** Apply the value as soon as it is picked, with no confirm button. */

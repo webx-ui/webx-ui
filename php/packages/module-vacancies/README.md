@@ -130,6 +130,12 @@ description and the three lists), `responsibilities`, `qualifications`, `jobBene
 `applicantLocationRequirements` for remote and hybrid, `baseSalary` when there is a currency, a
 unit and a number. The index pushes an `ItemList`.
 
+With an empty SEO card a vacancy names its page itself (`HasSeoFallback`): the name through the
+site's title template, the lead as the description; it has no picture, so the site's default
+social image stands. The index is called by the section's name,
+`@webxSeo(fallback: ['title' => …])`. So no view prints `<title>` itself, and a site's copy that
+still has the old `@if ($meta->title === null)` block can delete it.
+
 ## In a template
 
 ```blade

@@ -332,6 +332,15 @@ with `Offer` (when the price is on, filled in and the currency is set), `Breadcr
 the catalogue: the category's own card on the plain page, the pattern on an open first level,
 `noindex, follow` on everything closed. An address rule of `module-seo` beats all of it.
 
+Nobody types a `<title>` into a view. With an empty SEO card a product names its page itself: the
+name through the site's title template, the summary (or the description, cut short) as the
+description, the main picture as `og:image`, above the site's default social image. A page of a list
+is called by its heading — the category's name, a brand's, «Catalogue» on the root — and on the
+plain page the owner's description and cover (a brand's logo) come with it; once a filter is chosen
+they are not that page's, the same as the card. A copy of a view published before this still has an
+`@if ($meta->title === null)` block — delete it; keep `$meta` only where the `<h1>` reads
+`$meta->h1`.
+
 ## The gallery
 
 A product's pictures are files on a disk of the catalogue's own (`webx-catalog.images.disk`,

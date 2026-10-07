@@ -83,6 +83,12 @@ final class Entities
         return $entity instanceof Region ? self::REGION : $this->nameFor($entity::class);
     }
 
+    /** The same, from the class alone — what a list of where a type stands carries. */
+    public function nameOfClass(string $class): string
+    {
+        return $class === Region::class ? self::REGION : $this->nameFor($class);
+    }
+
     /**
      * @throws ToolFailure when the site does not declare the region
      */

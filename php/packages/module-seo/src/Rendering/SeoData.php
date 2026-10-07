@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Seo\Rendering;
 
+use WebxUi\Seo\Contracts\HasSeoFallback;
+
 /**
  * What a page says about itself.
  *
@@ -20,6 +22,8 @@ final class SeoData
     /**
      * @param  Og  $og  Open Graph properties without the `og:` prefix.
      * @param  list<JsonLdBlock>  $jsonLd  Blocks, each printed as its own script tag.
+     * @param  list<string>  $images  Every picture the sources offered, highest first — what
+     *                                `og:image` falls through when one cannot be shared.
      */
     public function __construct(
         public readonly ?string $title = null,
@@ -30,6 +34,7 @@ final class SeoData
         public readonly ?string $robots = null,
         public readonly array $og = [],
         public readonly array $jsonLd = [],
+        public readonly array $images = [],
     ) {}
 
     /**
@@ -57,6 +62,44 @@ final class SeoData
     }
 
     /**
+     * What an entity says about itself when nobody wrote it a card ({@see HasSeoFallback}).
+     *
+     * The lead is what an editor typed for the page, often in the rich-text editor: the markup
+     * comes out, the whitespace is squeezed, and it is cut at a word near 300 characters — a
+     * description is a snippet, not the article. A picture on this site's own path is made
+     * absolute — a relative `og:image` is no picture at all to a social network — and anything
+     * else that is not an http(s) address is left out.
+     */
+    public static function fallback(?string $title, ?string $description = null, ?string $image = null, ?string $imageAlt = null): self
+    {
+        $description = $description === null ? null : trim((string) preg_replace(
+            '/\s+/u',
+            ' ',
+            // A block or a line break is a gap between words; inline markup is not — "on <em>it</em>."
+            // must not come out as "on it .".
+            html_entity_decode(strip_tags((string) preg_replace('~<(?:br|/?(?:p|div|li|ul|ol|h[1-6]|blockquote|tr|td|th))\b[^>]*>~i', ' $0', $description)), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+        ));
+
+        if ($description !== null && mb_strlen($description) > 300) {
+            $cut = mb_substr($description, 0, 300);
+            $space = mb_strrpos($cut, ' ');
+            $description = rtrim($space !== false && $space > 200 ? mb_substr($cut, 0, $space) : $cut, ' ,.;:—-').'…';
+        }
+
+        $image = $image === null ? null : trim($image);
+
+        if ($image !== null && str_starts_with($image, '/') && ! str_starts_with($image, '//')) {
+            $image = Seo::root().$image;
+        }
+
+        return self::make([
+            'title' => $title,
+            'description' => $description,
+            'og' => $image !== null && preg_match('~^https?://~i', $image) === 1 ? ['image' => $image, 'image:alt' => $imageAlt] : [],
+        ]);
+    }
+
+    /**
      * This one wins where it has something to say; `$lower` fills in the rest.
      *
      * `jsonLd` is the exception and adds up: an Organization block from the defaults and a
@@ -73,6 +116,7 @@ final class SeoData
             robots: $this->robots ?? $lower->robots,
             og: $this->og + $lower->og,
             jsonLd: array_merge($this->jsonLd, $lower->jsonLd),
+            images: array_values(array_unique([...$this->images, ...$lower->images])),
         );
     }
 
@@ -81,6 +125,7 @@ final class SeoData
      *
      * @param  Og|null  $og
      * @param  list<JsonLdBlock>|null  $jsonLd
+     * @param  list<string>|null  $images
      */
     public function with(
         ?string $title = null,
@@ -91,6 +136,7 @@ final class SeoData
         ?string $robots = null,
         ?array $og = null,
         ?array $jsonLd = null,
+        ?array $images = null,
     ): self {
         return new self(
             title: $title ?? $this->title,
@@ -101,6 +147,7 @@ final class SeoData
             robots: $robots ?? $this->robots,
             og: $og ?? $this->og,
             jsonLd: $jsonLd ?? $this->jsonLd,
+            images: $images ?? $this->images,
         );
     }
 

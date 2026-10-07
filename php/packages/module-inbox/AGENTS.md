@@ -21,8 +21,9 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
 - **Blade tag** `<x-webx-inbox::form slug="contact" />`, with `:values` for hidden fields by
   machine name and `placement="footer"` (adds `wx-form--footer`, remembered on the submission).
   An unknown or switched-off slug prints nothing.
-- **Antispam**, in order: honeypot, timestamp, origin, captcha (reCAPTCHA or Turnstile, only if
-  the form asks), rate limit.
+- **Antispam**, in order: honeypot, timestamp, origin, captcha (only if the form asks), rate limit. A
+  refusal logs its `reason` and the provider's `error-codes`/`score`. Kind of captcha, in `.env`:
+  `WEBX_INBOX_RECAPTCHA_TYPE` `checkbox|invisible|v3`, `WEBX_INBOX_TURNSTILE_MODE` `managed|invisible`.
 - **Attachments** on `config('webx-inbox.disk')`, never in the media library, served only through
   the panel API to `inbox.view`.
 - **Letters**: `SubmissionReceived`, queued, `Reply-To` from the form's e-mail field. The
@@ -44,9 +45,9 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
 - **MCP** tools `inbox_forms_list`, `inbox_form_get`, `inbox_form_save`, `inbox_list`,
   `inbox_get`, `inbox_set_status`, `inbox_notify`; scopes `inbox:read`, `inbox:write`.
 - **Command** `webx:inbox:prune` (`--days`, `--spam-days`, `--dry-run`) — not scheduled by default.
-- **Audit**, only with `webx-ui/module-audit`: `inbox.no_recipients` — switched-on forms that notify
-  nobody; `inbox.notification` — letters failed in 30 days or queued over 30 minutes
-  (`webx-audit.thresholds` `inbox_failed_days`, `inbox_queued_minutes`).
+- **Audit** (`webx-ui/module-audit`): `inbox.no_recipients`, `inbox.notification` (`inbox_failed_days`,
+  `inbox_queued_minutes`), `inbox.captcha_keys` (error), `inbox.captcha_unused` (notice),
+  `inbox.spam_without_captcha` (warning; `inbox_spam_min` 3 spam + refusals in `inbox_spam_days` 30).
 - Also registered: a relation target for forms, notes on submissions, demo content (`resources/demo`).
 
 ## Change it without forking
@@ -58,12 +59,12 @@ permissions are `webx-ui/module-auth`, the panel frame `webx-ui/module-admin`, t
 | The same form styled per place            | `placement="footer"`, then style `.wx-form--footer` in the site's CSS                  |
 | Different markup of the form or a control | `php artisan vendor:publish --tag=webx-inbox-views`; keep `data-webx-*` and `[name]`   |
 | Bundle the script yourself                | `php artisan vendor:publish --tag=webx-inbox-assets`, then `WEBX_INBOX_SCRIPT=false`   |
-| A reCAPTCHA                               | `WEBX_INBOX_RECAPTCHA_KEY`, `WEBX_INBOX_RECAPTCHA_SECRET`; then turn it on in the form |
+| A reCAPTCHA                               | `WEBX_INBOX_RECAPTCHA_KEY`, `_SECRET` and `_TYPE` matching the key kind; then the form |
 | A Turnstile                               | `WEBX_INBOX_TURNSTILE_KEY`, `WEBX_INBOX_TURNSTILE_SECRET`; then turn it on in the form |
 | Another intake path or disk               | `WEBX_INBOX_PATH`, `WEBX_INBOX_DISK`                                                   |
 | Larger uploads                            | `WEBX_INBOX_MAX_SIZE` (KB); `upload.extensions`, `upload.max_files` in the config      |
 | Posts from another domain of the site     | `antispam.origins` in `config/webx-inbox.php` (`--tag=webx-inbox-config`)              |
-| Rate limit, duplicate window              | `antispam.throttle`, `duplicate_window` in the config                                  |
+| Rate limit, duplicate window              | `antispam.throttle` (accepted), `antispam.attempts` (all), `duplicate_window`          |
 | Visitors' IPs not kept whole              | `WEBX_INBOX_ANONYMISE_IP=true`                                                         |
 | Forget old submissions                    | `prune.days`, `prune.spam_days`, and schedule `webx:inbox:prune` in the site           |
 | A different letter                        | publish the views and rewrite `mail/submission.blade.php`                              |
@@ -117,8 +118,8 @@ handlers never notice. Not run again for `repeated`.
   `webx:inbox:prune`. Run it with `--dry-run` first.
 - Do not create submissions through MCP or the database to "test" a form: there is no such tool
   on purpose. Send the form on the site, so the antispam and the letter are tested too.
-- Do not ask a form for a captcha the site has no keys for: it refuses every submission and only
-  the log says why. Set the keys first.
+- Do not ask a form for a captcha the site has no keys for, or set a type other than the keys'
+  kind ("Invalid key type"): either refuses every submission. The Antispam tab says which is set.
 - Do not hook a CRM into a fork of `SubmitController` or an Eloquent `created` listener: the
   first is the vendor directory, and the second fires before any answer is written. Use the
   handlers or the event.

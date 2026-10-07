@@ -68,9 +68,9 @@ final class EventsResources
             'index_url' => (bool) config('webx-events.index', true) ? url($prefix) : null,
             'categories' => EventCategory::query()->ordered()->get()->map(fn (EventCategory $category): array => [
                 'id' => (int) $category->getKey(),
-                'title' => $category->displayName($locales->current()),
-                'slug' => (string) $category->getTranslation('slug', $locales->current()),
-                'url' => $category->hasUrlIn($locales->current()) ? $category->url($locales->current()) : null,
+                'title' => $category->displayName($locales->content()),
+                'slug' => (string) $category->getTranslation('slug', $locales->content()),
+                'url' => $category->hasUrlIn($locales->content()) ? $category->url($locales->content()) : null,
                 'visible' => (bool) $category->is_visible,
                 'upcoming' => $this->rows(
                     $this->inCategory((int) $category->getKey())->scopes(['upcoming'])->with('routes')->get()->all(),
@@ -102,7 +102,7 @@ final class EventsResources
      */
     private function rows(array $events, Locales $locales): array
     {
-        $locale = $locales->current();
+        $locale = $locales->content();
         $codes = $locales->codes();
 
         return array_map(static function (Event $event) use ($locale, $codes): array {

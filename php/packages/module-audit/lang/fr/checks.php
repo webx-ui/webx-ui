@@ -28,6 +28,12 @@ return [
             'why' => 'Les e-mails et les envois sont traités pendant que le visiteur attend, un serveur de messagerie lent ralentit les formulaires, et les tâches longues comme l’audit ne peuvent pas être lancées depuis le panneau.',
             'fix' => 'Utilisez la file database ou redis et gardez un worker actif (php artisan queue:work sous un superviseur).',
         ],
+        'queue_worker' => [
+            'title' => 'Personne ne traite la file',
+            'found' => 'Des tâches de la file en base de données sont dues depuis des minutes et aucun worker ne les a prises.',
+            'why' => 'Les e-mails des formulaires, les audits et le traitement des images restent en file et n’arrivent jamais, alors que le panneau dit que tout va bien.',
+            'fix' => 'Gardez un worker actif (php artisan queue:work sous un superviseur), planifiez queue:work --stop-when-empty chaque minute, ou utilisez QUEUE_CONNECTION=sync sur un petit site.',
+        ],
         'mail' => [
             'title' => 'Les e-mails ne vont nulle part',
             'found' => 'Le mailer écrit les e-mails dans le journal ou en mémoire.',
@@ -445,10 +451,16 @@ return [
             'fix' => 'Renseignez l’aperçu social dans les réglages SEO de la page, ou faites afficher les balises par la mise en page.',
         ],
         'image_broken' => [
-            'title' => 'L’image Open Graph est cassée ou trop petite',
-            'found' => 'og:image ne s’ouvre pas, ou est plus petite que 1200×630.',
-            'why' => 'Un lien partagé n’affiche aucune image, ou un petit carré à côté du texte au lieu d’une grande carte.',
-            'fix' => 'Définissez une image fonctionnelle d’au moins 1200×630 dans l’aperçu social de la page.',
+            'title' => 'L’image Open Graph ne s’ouvre pas',
+            'found' => 'og:image répond par une erreur ou ne s’ouvre pas.',
+            'why' => 'Un lien partagé n’affiche aucune image.',
+            'fix' => 'Définissez une image fonctionnelle dans l’aperçu social de la page.',
+        ],
+        'image_small' => [
+            'title' => 'L’image Open Graph est trop petite',
+            'found' => 'og:image est plus petite que 1200×630.',
+            'why' => 'Un lien partagé affiche un petit carré à côté du texte au lieu d’une grande carte.',
+            'fix' => 'Définissez une image d’au moins 1200×630 dans l’aperçu social de la page.',
         ],
     ],
     'hreflang' => [

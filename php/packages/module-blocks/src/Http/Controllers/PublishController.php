@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace WebxUi\Blocks\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Http\Resources\BlockResource;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Panel\Authors;
+use WebxUi\Blocks\Panel\DropsTranslations;
 use WebxUi\Blocks\Panel\Publisher;
 use WebxUi\Blocks\Panel\PublishFailed;
 use WebxUi\Blocks\Panel\Usage;
@@ -18,13 +20,17 @@ use WebxUi\Blocks\Panel\Usage;
  * Publishing is its own action (§2), and it can be refused (§15). A refusal is a 422 in the
  * shape the panel already reads — the message under `template` — with the line and, when a
  * page rather than the sample broke, which page.
+ *
+ * One refusal is a question rather than a no: a version that takes `localized` off a field over
+ * pages holding words in several languages answers 409 with `translations`, and the panel asks
+ * whether to keep only the main language, then sends `drop_translations` with the same request.
  */
 final class PublishController
 {
-    public function __invoke(Block $block, Publisher $publisher, Usage $usage): JsonResponse
+    public function __invoke(Request $request, Block $block, Publisher $publisher, Usage $usage): JsonResponse
     {
         try {
-            $publisher->publish($block);
+            $publisher->publish($block, $request->boolean('drop_translations'));
         } catch (PublishFailed $failed) {
             return new JsonResponse([
                 'message' => (string) __('webx-blocks::page.publish-failed'),
@@ -37,6 +43,15 @@ final class PublishController
                 'declared' => $failed->declared,
                 'cycle' => $failed->cycle,
             ], 422);
+        } catch (DropsTranslations $drops) {
+            return new JsonResponse([
+                'message' => $drops->getMessage(),
+                'errors' => ['translations' => [$drops->getMessage()]],
+                'translations' => [
+                    'flips' => $drops->flips,
+                    'entities' => $drops->entities,
+                ],
+            ], 409);
         } catch (BlocksException) {
             return ApiResponse::message((string) __('webx-blocks::page.no-draft'), 409);
         }

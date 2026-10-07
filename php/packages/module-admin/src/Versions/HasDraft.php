@@ -156,6 +156,11 @@ trait HasDraft
             return $this;
         }
 
+        // A trait that keeps something in the draft may refuse it here, before anything moves:
+        // `module-blocks` checks the blocks of a draft written before its checks existed, so that
+        // publishing is not the door an old invalid value walks onto the site through.
+        $this->fireModelEvent('publishing');
+
         $this->getConnection()->transaction(function () use ($authorId, $source, $comment, $at): void {
             $this->applyDraft($this->draftValues());
             $this->setAttribute($this->draftColumn(), null);

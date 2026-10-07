@@ -19,7 +19,8 @@ from scratch: the tree is `webx-ui/nested-set`, the address `webx-ui/routing`, t
 - **Panel screen** `pages.form` (tabs `content`, `settings`, `seo`, `history`); API under
   `/api/cms/pages`; permissions `pages.view`, `pages.manage`.
 - **MCP** tools `pages_tree`, `pages_get`, `pages_create`, `pages_update`, `pages_move`,
-  `pages_publish`, `pages_unpublish`, `pages_delete`, `pages_restore`, `pages_discard`, `pages_purge`; resource `pages://sitemap`;
+  `pages_publish`, `pages_unpublish`, `pages_delete`, `pages_restore`, `pages_discard`, `pages_versions`,
+  `pages_version_restore`, `pages_purge`; resource `pages://sitemap`;
   prompt `build_page`. Scopes `pages:read`, `pages:write`.
 - Also registered: a link source (pages in every link picker), an audit content source when
   `webx-ui/module-audit` is installed, demo content (`resources/demo`).
@@ -68,6 +69,9 @@ boot instead of failing quietly. Values the screen does not name are dropped on 
 - In a partial `pages_update`, a translated field changes only in the languages you name:
   `{"slug": {"de": "…"}}` leaves the others, `null` empties one. A language the site is not
   published in is refused, dry run included.
+- Do not print `<title>` in a site's copy of the view: with an empty SEO card the page names
+  itself (`seoFallback()` — its title through the title template, the site's name on the home
+  page). `@webxSeo($page)` prints it.
 
 ## Check your work
 

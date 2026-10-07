@@ -13,6 +13,9 @@ return [
     'parent-trashed' => 'That page is in the bin. Restore it before putting anything inside it.',
     'not-in-bin' => 'Only a page in the bin can be deleted for good. Delete it first.',
     'slug-shape' => 'An address may hold letters, digits, hyphens and underscores.',
+    'ancestor-trashed' => 'The page above it, «:title» (#:id), is in the bin. Restore that one first.',
+    'move-beside-self' => 'A page cannot be put before or after itself.',
+    'title-required' => 'The title cannot be empty in the site\'s main language (:locale).',
 
     // The editor.
     'conflict' => ':name changed this page while you were editing it.',

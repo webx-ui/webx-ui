@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Tests;
 
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Admin\Doctor\Checks\Halves;
 use WebxUi\Admin\Doctor\Checks\Helpers;
@@ -12,6 +15,7 @@ use WebxUi\Admin\Doctor\Checks\Languages;
 use WebxUi\Admin\Doctor\Checks\Layouts;
 use WebxUi\Admin\Doctor\Checks\NpmRanges;
 use WebxUi\Admin\Doctor\Checks\PanelOpens;
+use WebxUi\Admin\Doctor\Checks\Queue;
 use WebxUi\Admin\Doctor\Checks\Regions;
 use WebxUi\Admin\Doctor\Diagnosis;
 use WebxUi\Admin\Doctor\VersionRange;
@@ -52,6 +56,42 @@ final class DoctorTest extends TestCase
         }
 
         parent::tearDown();
+    }
+
+    // -- queue -------------------------------------------------------------------------------
+
+    #[Test]
+    public function it_says_when_the_database_queue_has_no_worker(): void
+    {
+        config(['queue.default' => 'database', 'queue.connections.database' => ['driver' => 'database', 'table' => 'jobs', 'queue' => 'default']]);
+        Schema::create('jobs', static function (Blueprint $table): void {
+            $table->id();
+            $table->string('queue');
+            $table->longText('payload');
+            $table->unsignedTinyInteger('attempts');
+            $table->unsignedInteger('reserved_at')->nullable();
+            $table->unsignedInteger('available_at');
+            $table->unsignedInteger('created_at');
+        });
+
+        $job = static fn (int $ago, ?int $reserved = null): array => [
+            'queue' => 'default', 'payload' => '{}', 'attempts' => 0,
+            'reserved_at' => $reserved, 'available_at' => time() - $ago, 'created_at' => time() - $ago,
+        ];
+
+        // Due a minute ago, delayed into the future, taken by a worker: none of them is a sign.
+        DB::table('jobs')->insert([$job(60), $job(-3600), $job(3600, time())]);
+        $this->assertSame([Diagnosis::OK], array_map(static fn (Diagnosis $d): string => $d->state, $this->app->make(Queue::class)->run()));
+
+        DB::table('jobs')->insert([$job(600), $job(3600)]);
+        $found = $this->app->make(Queue::class)->run();
+
+        $this->assertSame(Diagnosis::WARN, $found[0]->state);
+        $this->assertStringContainsString('2 jobs have waited more than 5 minutes', $found[0]->detail);
+        $this->assertStringContainsString('queue:work --stop-when-empty', $found[0]->detail);
+
+        Schema::drop('jobs');
+        $this->assertSame(Diagnosis::FAIL, $this->app->make(Queue::class)->run()[0]->state);
     }
 
     // -- npm ranges --------------------------------------------------------------------------

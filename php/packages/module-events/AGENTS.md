@@ -27,7 +27,8 @@ photos `webx-ui/module-media`; the languages `webx-ui/localization`; the Service
   `events.category-form`; API under `/api/cms/events` and `/api/cms/events/categories`;
   permissions `events.view`, `events.manage`, `events.categories.manage`.
 - **MCP** tools `events_list`, `events_get`, `events_create`, `events_update`,
-  `events_duplicate`, `events_publish`, `events_unpublish`, `events_discard`, `events_delete`;
+  `events_duplicate`, `events_publish`, `events_unpublish`, `events_discard`, `events_delete`,
+  `events_restore`, `events_purge`;
   `event_categories_list`, `event_categories_create`, `event_categories_update`,
   `event_categories_delete`, `event_categories_reorder`. Resource
   `events://catalog`. Scopes `events:read`, `events:write`, `event-categories:read`,
@@ -79,6 +80,11 @@ A screen patch addresses nodes by `id`. Event editor: `event`, `when`, `all-day`
   it now is. Read again and redo the change.
 - Do not delete rows with SQL: deleting puts the event in the bin and releases its address
   through the registry. A raw delete leaves the address and the links behind.
+- Do not print `<title>` in a site's copy of a view: with an empty SEO card the event and the
+  category name the page themselves (`seoFallback()` — the name through the title template, the
+  lead, the cover or the picture), and the index is called by the section.
+  A copy published before still has an `@if ($meta->title === null)` block and the `$seo` /
+  `$meta` lines for it: delete them, they never print any more.
 
 ## Check your work
 

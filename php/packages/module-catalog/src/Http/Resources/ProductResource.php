@@ -85,7 +85,7 @@ final class ProductResource extends JsonResource
             return null;
         }
 
-        $locale = app(Locales::class)->current();
+        $locale = app(Locales::class)->content();
         $routes = $product->relationLoaded('routes') ? $product->routes : $product->routes()->get();
         $row = $routes->first(static fn (Route $route): bool => $route->kind === Route::CANONICAL && $route->locale === $locale);
 

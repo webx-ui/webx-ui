@@ -27,8 +27,10 @@ use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\Contracts\HasStructuredData;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * An event: a page of fixed structure — no blocks (decision 1) — printed by the module's view.
@@ -68,7 +70,7 @@ use WebxUi\Seo\HasSeo;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Event extends Model implements HasBreadcrumbs, HasStructuredData, Visible
+class Event extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructuredData, Visible
 {
     use HasCategories;
     use HasDraft;
@@ -538,6 +540,23 @@ class Event extends Model implements HasBreadcrumbs, HasStructuredData, Visible
             : null;
 
         return Trail::of($locale, $categoryCrumb, new Crumb((string) $this->getTranslation('title', $locale), $this->url($locale)));
+    }
+
+    /**
+     * The name, the lead and the cover — the first photo of the gallery — for an event nobody
+     * wrote an SEO card for.
+     */
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        $locale ??= app()->getLocale();
+        $cover = $this->cover($locale);
+
+        return SeoData::fallback(
+            $this->text('title', $locale),
+            $this->text('lead', $locale),
+            is_string($cover['url'] ?? null) ? $cover['url'] : null,
+            is_string($cover['alt'] ?? null) ? $cover['alt'] : null,
+        );
     }
 
     /**

@@ -13,6 +13,9 @@ return [
     'parent-trashed' => 'Cette page est à la corbeille. Restaurez-la avant d’y placer quoi que ce soit.',
     'not-in-bin' => 'Seule une page de la corbeille peut être supprimée définitivement. Supprimez-la d’abord.',
     'slug-shape' => 'Une adresse accepte lettres, chiffres, tirets et tirets bas.',
+    'ancestor-trashed' => 'La page au-dessus, « :title » (#:id), est dans la corbeille. Restaurez-la d’abord.',
+    'move-beside-self' => 'Une page ne peut pas être placée avant ou après elle-même.',
+    'title-required' => 'Le titre ne peut pas être vide dans la langue principale du site (:locale).',
 
     // The editor.
     'conflict' => ':name a modifié cette page pendant que vous la modifiiez.',

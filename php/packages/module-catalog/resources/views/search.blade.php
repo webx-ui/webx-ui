@@ -2,7 +2,6 @@
     The search (§4): `/{catalog.root}/search?q=`, always `noindex`, with the filter over what was
     found. `$page` is null until something is asked.
 --}}
-@php($seo = app(WebxUi\Seo\Rendering\Seo::class))
 
 <x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'">
     <x-slot:head>

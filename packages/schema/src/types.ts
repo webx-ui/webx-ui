@@ -23,6 +23,12 @@ export interface ScreenNode {
   help?: string
   /** The field is edited per content language; the value is a record keyed by locale. */
   localized?: boolean
+  /**
+   * For fields: what is drawn — and what the site reads — while nothing is stored. Checked
+   * on the server by the type's own rules. A localized field takes one plain value for every
+   * language. Never written on its own: an untouched field still saves nothing.
+   */
+  default?: unknown
   /** Passed to the component untouched. */
   props?: Record<string, unknown>
   children?: ScreenNode[]

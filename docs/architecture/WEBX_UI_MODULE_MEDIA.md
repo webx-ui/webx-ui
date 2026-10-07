@@ -333,14 +333,28 @@ path-style, публичное чтение через `https://cdn.alexx.group/
 | `search_files`     | read     | `query`, `type?`                           |
 | `get_file`         | read     | `id`                                       |
 | `create_directory` | mutating | `parent_id`, `title`                       |
+| `delete_directory` | mutating | `id` — только пустая папка                 |
 | `rename_file`      | mutating | `id`, `name`                               |
 | `move_files`       | mutating | `ids`, `directory_id`                      |
 | `upload_from_url`  | mutating | `url`, `directory_id`, `name?`             |
 | `optimize_images`  | mutating | `ids?`, `directory_id?`                    |
-| `delete_files`     | mutating | `ids`                                      |
+| `delete_files`     | mutating | `ids`, `force?`                            |
 
-`Tool::mutating` сам добавляет `dry_run`. Удаления папок среди инструментов нет намеренно:
-рекурсивное удаление по ошибочному вызову агента не отменить.
+`Tool::mutating` сам добавляет `dry_run`. Отказ — `ToolFailure`, то есть ошибка MCP, а не
+ответ `ok: false`. Рекурсивного удаления папок среди инструментов нет намеренно: по ошибочному
+вызову агента его не отменить, поэтому `delete_directory` удаляет только пустую.
+
+`delete_files` не удаляет файл, который сайт ещё использует, и называет места (таблица, колонка,
+id), пока не передан `force: true`. Места ищет `MediaUsage` по источникам с тегом
+`MediaUsage::TAG`; штатный `DatabaseUsage` читает схему: внешние ключи на `media_files` и
+последний сегмент ключа файла (uuid) в текстовых и JSON-колонках. Таблицы истории, журналов и
+очередей пропускаются (`webx-media.usage.ignore`).
+
+`upload_from_url` ходит только в публичный интернет: имя резолвится, каждый адрес проверяется
+(loopback, частные, link-local, зарезервированные — в обеих семьях и внутри IPv6), соединение
+прибивается к проверенному адресу (`CURLOPT_RESOLVE`), редиректы — вручную и с той же проверкой.
+Тип берётся из байтов, расширение — из белого списка загрузки, правила те же, что у загрузки в
+панели. Исключения — `webx-media.remote.allow_hosts`.
 
 ## 12. `@webx-ui/module-media`
 

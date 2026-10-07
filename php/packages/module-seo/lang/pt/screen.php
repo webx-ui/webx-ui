@@ -7,7 +7,7 @@ return [
     'default-og' => 'Imagem social predefinida',
     'default-og-help' => 'Mostrada quando uma página não tem imagem própria.',
     'title-template' => 'Modelo do título',
-    'title-template-help' => '{title} é a página, {site} é o nome do projeto.',
+    'title-template-help' => '{title} é a página, {site} é o nome do projeto. Um título que já nomeia o site é publicado tal como foi escrito.',
     'home-crumb' => 'Início nas migalhas',
     'home-crumb-help' => 'O primeiro passo de cada trilha de migalhas. Vazio, é a palavra «Início» no idioma da página.',
     'robots-txt' => 'robots.txt',

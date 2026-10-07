@@ -107,6 +107,12 @@ how people attend, the gallery as `image`, the site's organisation as `organizer
 with the booking link and — with the site's currency — the price as a number. A price of zero is
 `isAccessibleForFree`. The price on the page is words, as the editor wrote them.
 
+With an empty SEO card an event or a category names its page itself (`HasSeoFallback`): the name
+through the site's title template, the lead as the description, the cover — a category's picture
+— as `og:image`, above the site's default social image. The index is called by the section's
+name, `@webxSeo(fallback: ['title' => …])`. So no view prints `<title>` itself, and a site's copy
+that still has the old `@if ($meta->title === null)` block can delete it.
+
 The index and a category page are an `ItemList`. Check an event on https://validator.schema.org
 and in the Rich Results Test — Google shows events to any site.
 
@@ -141,6 +147,7 @@ and the categories' scopes:
 | `events_duplicate`   | The panel's "Duplicate": a draft copy with the next free `-2`, `-3` address          |
 | `events_publish`     | The draft onto the site · `events_unpublish` takes it off                            |
 | `events_delete`      | To the bin, and its address is released                                              |
+| `events_restore`     | Out of the bin, refused if its address was taken · `events_purge` deletes for good   |
 | `event_categories_*` | `list`, `create`, `update`, `delete`, `reorder`                                      |
 
 An event is named by its id or its address, a service in `services` the same way, a category by

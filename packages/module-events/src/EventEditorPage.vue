@@ -31,7 +31,6 @@ import {
 } from '@webx-ui/core'
 import type { ScreenModel } from '@webx-ui/schema'
 import { createEventsApi } from './api'
-import { withDaysAsWritten } from './days'
 import { provideEventEditor } from './editor'
 import { useEventsMessages } from './i18n'
 import type { EventConflict, EventDetail, EventRow } from './types'
@@ -141,8 +140,10 @@ provideRecordAddress({
 provideEventEditor({ event, canManage: canManage.value, reload: () => load(true) })
 
 function take(detail: EventDetail): void {
-  // An event of days is its calendar dates, not two moments in the site's zone: see `days.ts`.
-  const taken = withDaysAsWritten(detail.values)
+  // The dates come as moments in the site's zone and the pickers show them on the site's clock
+  // (the manifest's `timezone`), so the days of an event of days are the days the site prints
+  // wherever the editor is.
+  const taken = detail.values
 
   event.value = detail.event
   values.value = taken

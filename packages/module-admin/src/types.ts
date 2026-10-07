@@ -24,6 +24,11 @@ export interface Manifest {
   locales: LocaleDescriptor[]
   /** The languages the interface itself can be switched to. */
   panelLocales: LocaleDescriptor[]
+  /**
+   * The site's clock, an IANA zone such as `Asia/Hong_Kong`: every date picker of a moment shows
+   * and takes it there, whatever zone the editor's machine is in. Absent from an older server.
+   */
+  timezone?: string
   /** Navigation groups, translated and in order; a module names one by id. */
   groups?: ManifestGroup[]
   modules: ManifestModule[]

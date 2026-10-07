@@ -2,7 +2,14 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useTranslate } from '@webx-ui/module-admin'
 import { useElementWidth, WxAction, WxSegmented, WxText } from '@webx-ui/core'
-import { bindFrame, blockElement, highlightBlock, replaceBlock, type FrameBinding } from './frame'
+import {
+  bindFrame,
+  blockElement,
+  highlightBlock,
+  markHidden,
+  replaceBlock,
+  type FrameBinding,
+} from './frame'
 
 /**
  * The page in an iframe, the way it will be: the same handler, the same view, the draft
@@ -24,8 +31,10 @@ const props = withDefaults(
      * there is no tree standing next to it to click.
      */
     compact?: boolean
+    /** Keys of the blocks switched off: marked in the page until it reloads without them. */
+    hidden?: string[]
   }>(),
-  { selected: null, reload: 0, compact: false },
+  { selected: null, reload: 0, compact: false, hidden: () => [] },
 )
 
 const emit = defineEmits<{
@@ -232,6 +241,7 @@ function onLoad(): void {
   })
 
   highlightBlock(page, props.selected ?? null)
+  markHidden(page, props.hidden)
   reveal(props.selected ?? null)
 }
 
@@ -360,7 +370,10 @@ function replace(key: string, html: string): boolean {
   if (!page || !ready.value) return false
 
   const done = replaceBlock(page, key, html)
-  if (done) highlightBlock(page, props.selected ?? null)
+  if (done) {
+    highlightBlock(page, props.selected ?? null)
+    markHidden(page, props.hidden)
+  }
 
   return done
 }
@@ -392,6 +405,14 @@ watch(
 )
 
 watch(() => props.reload, refresh)
+watch(
+  () => props.hidden,
+  (keys) => {
+    const page = doc()
+
+    if (page && ready.value) markHidden(page, keys)
+  },
+)
 watch(
   () => props.url,
   () => (ready.value = false),

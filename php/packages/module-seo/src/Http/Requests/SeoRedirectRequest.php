@@ -6,17 +6,20 @@ namespace WebxUi\Seo\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 use WebxUi\Routing\UrlNormaliser;
+use WebxUi\Seo\Models\SeoRedirect;
 use WebxUi\Seo\Panel\UrlMatcher;
 use WebxUi\Seo\Rules\ValidRegex;
 
 /**
  * An address that has moved, and where to.
  *
- * A loop is not refused here. `/a` to `/a` obviously is one, but a mask redirect is a loop only
- * for some of the addresses it covers, and the answer to that is to skip it when it happens
- * rather than to make the rule unwritable — so the middleware does the skipping and the panel
- * says which rows look wrong.
+ * An exact address sent to itself is refused: it is a loop for every request it catches, and
+ * the middleware stepping over it meant the redirect was saved and never happened. A mask
+ * redirect is a loop only for some of the addresses it covers, and the answer to that is to
+ * skip it when it happens rather than to make the rule unwritable — so the middleware does the
+ * skipping and the panel says which rows look wrong.
  */
 final class SeoRedirectRequest extends FormRequest
 {
@@ -40,6 +43,20 @@ final class SeoRedirectRequest extends FormRequest
         }
 
         return $rules;
+    }
+
+    /**
+     * @return list<callable(Validator): void>
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                if (SeoRedirect::loops((string) $this->string('match_type'), (string) $this->string('pattern'), trim((string) $this->string('target')))) {
+                    $validator->errors()->add('target', (string) __('webx-seo::errors.self-loop'));
+                }
+            },
+        ];
     }
 
     /**

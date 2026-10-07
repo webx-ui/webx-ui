@@ -89,6 +89,7 @@ final class SeoModule extends AbstractModule implements HasNavSection, ProvidesD
         return [
             'links' => Features::links(),
             'faq' => Features::faq(),
+            'og_fields' => Features::ogFields(),
         ];
     }
 

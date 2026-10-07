@@ -12,6 +12,7 @@ use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Status;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Models\SubmissionEvent;
+use WebxUi\Inbox\Models\SubmissionValue;
 
 /**
  * The submissions as the panel reads and works them (§11, §12).
@@ -208,6 +209,68 @@ final class PanelSubmissionsTest extends TestCase
     }
 
     #[Test]
+    public function a_correction_is_written_in_the_log_with_who_made_it_and_what_it_was(): void
+    {
+        $form = $this->form();
+        $submission = $this->filled($form, ['name' => 'Ada', 'email' => 'ada@example.test']);
+        $editor = $this->editor();
+
+        $response = $this->actingAs($editor, 'cms')
+            ->putJson($this->api('submissions/'.$submission->getKey()), ['values' => ['email' => 'ada@example.org']])
+            ->assertOk();
+
+        $event = SubmissionEvent::query()->where('type', SubmissionEvent::VALUE)->sole();
+
+        $this->assertSame('email', $event->field);
+        $this->assertSame('ada@example.test', $event->from);
+        $this->assertSame('ada@example.org', $event->to);
+        $this->assertSame((int) $editor->getKey(), $event->admin_id);
+        $this->assertContains('email', array_column((array) $response->json('data.events'), 'field'));
+    }
+
+    #[Test]
+    public function a_correction_is_checked_against_the_type_it_was_asked_in(): void
+    {
+        $form = $this->form('survey', [
+            ['name' => 'email', 'type' => FieldType::Email],
+            ['name' => 'when', 'type' => FieldType::Date],
+            ['name' => 'plan', 'type' => FieldType::Select, 'options' => ['choices' => [
+                ['value' => 'basic', 'label' => ['en' => 'Basic plan']],
+                ['value' => 'pro', 'label' => ['en' => 'Pro plan']],
+            ]]],
+            ['name' => 'terms', 'type' => FieldType::Consent],
+        ]);
+        $submission = $this->filled($form, ['email' => 'ada@example.test', 'when' => '2026-02-01', 'plan' => 'Basic plan', 'terms' => 'yes']);
+        $submission->value('plan')?->forceFill(['payload' => ['basic']])->save();
+        $editor = $this->editor();
+
+        $this->actingAs($editor, 'cms')
+            ->putJson($this->api('submissions/'.$submission->getKey()), [
+                'status_id' => Status::spam()?->getKey(),
+                'values' => ['email' => 'not-an-email', 'when' => '2026-02-30', 'plan' => 'gold', 'terms' => 'no', 'nope' => 'x'],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['values.email', 'values.when', 'values.plan', 'values.terms', 'values.nope']);
+
+        // All or nothing: the status in the same request did not move either.
+        $this->assertSame('ada@example.test', $submission->refresh()->value('email')?->value);
+        $this->assertSame(Status::default()?->getKey(), $submission->status_id);
+        $this->assertSame(0, SubmissionEvent::query()->where('type', SubmissionEvent::VALUE)->count());
+
+        // A choice by its value or by its label; the payload follows it.
+        $this->actingAs($editor, 'cms')
+            ->putJson($this->api('submissions/'.$submission->getKey()), ['values' => ['plan' => 'pro', 'when' => '2026-03-01']])
+            ->assertOk();
+
+        $submission->refresh();
+        $plan = $submission->value('plan');
+        $this->assertNotNull($plan);
+        $this->assertSame('Pro plan', $plan->value);
+        $this->assertSame(['pro'], $plan->payload);
+        $this->assertSame('2026-03-01', $submission->value('when')?->value);
+    }
+
+    #[Test]
     public function a_submission_can_be_typed_in_by_hand(): void
     {
         $form = $this->form();
@@ -307,6 +370,87 @@ final class PanelSubmissionsTest extends TestCase
         $this->assertStringContainsString('Message (message)', $csv, 'a column the list has no room for is exactly what an export is opened for');
         $this->assertStringContainsString('ada@example.test', $csv);
         $this->assertStringContainsString('The lift is broken', $csv);
+    }
+
+    #[Test]
+    public function a_filter_that_cannot_be_read_is_refused_rather_than_answered_with_nothing(): void
+    {
+        $form = $this->form();
+        $this->filled($form, ['name' => 'Ada']);
+        $editor = $this->editor();
+
+        foreach (['from=not-a-date', 'to=2026-02-30', 'view=bogus', 'assignee=abc'] as $query) {
+            $this->actingAs($editor, 'cms')
+                ->getJson($this->api('forms/'.$form->getKey().'/submissions?'.$query))
+                ->assertStatus(422)
+                ->assertJsonValidationErrors([explode('=', $query)[0]]);
+        }
+
+        $this->actingAs($editor, 'cms')
+            ->getJson($this->api('forms/'.$form->getKey().'/submissions?from=2020-01-01&to=2099-12-31&view=new&assignee=none'))
+            ->assertOk()
+            ->assertJsonPath('meta.total', 1);
+
+        // An open submission carries the list's filters for its arrows, and a hand-edited
+        // address there is not a 500 either.
+        $submission = Submission::query()->sole();
+        $this->actingAs($editor, 'cms')
+            ->getJson($this->api('submissions/'.$submission->getKey().'?from=not-a-date'))
+            ->assertOk();
+    }
+
+    #[Test]
+    public function the_export_does_not_hand_a_spreadsheet_a_formula(): void
+    {
+        $form = $this->form();
+        $this->filled($form, ['name' => '=HYPERLINK("http://evil.test","x")', 'email' => '+cmd@example.test', 'message' => '@SUM(A1)']);
+
+        $csv = $this->actingAs($this->editor(), 'cms')
+            ->get($this->api('forms/'.$form->getKey().'/submissions/export'))
+            ->assertOk()
+            ->streamedContent();
+
+        $rows = array_map(str_getcsv(...), explode("\n", trim(substr($csv, 3))));
+        $row = $rows[1];
+
+        $this->assertSame("'=HYPERLINK(\"http://evil.test\",\"x\")", $row[4]);
+        $this->assertSame("'+cmd@example.test", $row[5]);
+        $this->assertSame("'@SUM(A1)", $row[6]);
+    }
+
+    #[Test]
+    public function the_export_names_statuses_and_consents_in_the_panels_language(): void
+    {
+        config(['webx-localization.panel' => ['en', 'ru']]);
+
+        $form = $this->form('survey', [
+            ['name' => 'name', 'type' => FieldType::Text],
+            ['name' => 'terms', 'type' => FieldType::Consent],
+        ]);
+
+        // Typed in by hand from a panel kept in Russian, and sent from the site in English:
+        // the same answer, stored the same way.
+        $this->actingAs($this->editor(), 'cms')
+            ->postJson($this->api('forms/'.$form->getKey().'/submissions'), ['fields' => ['name' => 'Ada', 'terms' => '1']], ['X-Webx-Locale' => 'ru'])
+            ->assertCreated();
+        $this->postJson($this->intake('survey'), ['fields' => ['name' => 'Grace', 'terms' => '1']])->assertOk();
+
+        $this->assertSame(
+            [SubmissionValue::CONSENTED, SubmissionValue::CONSENTED],
+            SubmissionValue::query()->where('name', 'terms')->pluck('value')->all(),
+        );
+
+        $csv = $this->actingAs($this->editor(), 'cms')
+            ->get($this->api('forms/'.$form->getKey().'/submissions/export'), ['X-Webx-Locale' => 'ru'])
+            ->assertOk()
+            ->streamedContent();
+
+        $status = (string) Status::default()?->getTranslation('title', 'ru');
+
+        $this->assertNotSame('New', $status);
+        $this->assertStringContainsString(','.$status.',', $csv);
+        $this->assertStringContainsString(trans('webx-inbox::values.consented', [], 'ru'), $csv);
+        $this->assertStringNotContainsString(','.SubmissionValue::CONSENTED, $csv);
     }
 
     #[Test]

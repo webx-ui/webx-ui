@@ -15,4 +15,5 @@ return [
         'reorder' => 'Verschieben',
         'empty' => 'Noch nichts hier',
     ],
+    'not-a-language-map' => ':field wird übersetzt: Senden Sie einen Wert je Sprache, { "en": … }, nicht eine Liste.',
 ];

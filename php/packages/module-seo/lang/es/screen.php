@@ -7,7 +7,7 @@ return [
     'default-og' => 'Imagen social por defecto',
     'default-og-help' => 'Se muestra cuando una página no tiene imagen propia.',
     'title-template' => 'Plantilla del título',
-    'title-template-help' => '{title} es la página, {site} el nombre del proyecto.',
+    'title-template-help' => '{title} es la página, {site} el nombre del proyecto. Un título que ya nombra el sitio se publica tal como está escrito.',
     'home-crumb' => 'Inicio en las migas de pan',
     'home-crumb-help' => 'El primer paso de cada rastro de migas. Vacío, es la palabra «Inicio» en el idioma de la página.',
     'robots-txt' => 'robots.txt',

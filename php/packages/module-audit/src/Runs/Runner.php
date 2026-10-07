@@ -191,6 +191,28 @@ final class Runner
         }
     }
 
+    /**
+     * Every run with everything it found, crawled and kept — the section back to its first day.
+     * The hiding rules and the settings stay: they are what the administrator decided, not what
+     * a run saw. The caller makes sure nothing is running.
+     *
+     * @return int the runs removed
+     */
+    public function clear(): int
+    {
+        $runs = AuditRun::query()->count();
+
+        // One by one table, children first, for the same reason as in pruneRuns().
+        AuditLink::query()->delete();
+        AuditResource::query()->delete();
+        AuditPage::query()->delete();
+        AuditIssue::query()->delete();
+        ContentUrl::query()->delete();
+        AuditRun::query()->delete();
+
+        return $runs;
+    }
+
     private function nextStage(AuditRun $run, string $stage): ?string
     {
         $index = array_search($stage, self::STAGES, true);

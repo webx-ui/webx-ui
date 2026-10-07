@@ -44,6 +44,7 @@ Route::prefix((string) config('webx-admin.api_path').'/audit')
             Route::post('runs/{run}/issues/{issue}/fixes/{fix}', [FixController::class, 'store'])->whereNumber(['run', 'issue'])->name('runs.issues.fixes.store');
             Route::post('ignores', [IgnoreController::class, 'store'])->name('ignores.store');
             Route::delete('ignores/{ignore}', [IgnoreController::class, 'destroy'])->whereNumber('ignore')->name('ignores.destroy');
+            Route::delete('runs', [RunController::class, 'clear'])->name('runs.clear');
             Route::put('settings', [SettingsController::class, 'update'])->name('settings.update');
         });
     });

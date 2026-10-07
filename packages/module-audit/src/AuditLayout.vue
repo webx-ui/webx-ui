@@ -19,8 +19,10 @@ const props = withDefaults(
     current: 'overview' | 'issues' | 'pages' | 'hosts' | 'runs' | 'settings'
     /** A card around the slot — the tables want one, the overview draws its own. */
     card?: boolean
+    /** What the view itself offers in the head, before the way to the settings. */
+    actions?: ScreenAction[]
   }>(),
-  { card: true },
+  { card: true, actions: () => [] },
 )
 
 defineSlots<{ default?: () => unknown }>()
@@ -50,8 +52,9 @@ const views = computed<TabItem[]>(() => [
 /* The settings are a view of their own, out of the tabs: opened now and then, not every day. */
 const actions = computed<ScreenAction[]>(() =>
   props.current === 'settings'
-    ? []
+    ? props.actions
     : [
+        ...props.actions,
         {
           key: 'settings',
           label: t('page.settings'),

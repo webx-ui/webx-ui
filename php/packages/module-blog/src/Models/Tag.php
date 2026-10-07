@@ -15,6 +15,8 @@ use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasSeoFallback;
+use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * A tag: one word about an article, made from the article form and sorted out later (§2.8).
@@ -34,7 +36,7 @@ use WebxUi\Seo\Contracts\HasBreadcrumbs;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Tag extends Model implements HasBreadcrumbs, Visible
+class Tag extends Model implements HasBreadcrumbs, HasSeoFallback, Visible
 {
     use HasTranslations;
     use HasUrl;
@@ -83,6 +85,18 @@ class Tag extends Model implements HasBreadcrumbs, Visible
     public function isVisible(?string $locale = null): bool
     {
         return true;
+    }
+
+    /**
+     * The word itself: a tag has no card, so this is what its page is called — through the
+     * site's title template, like every other title. Whether the page is in the index is
+     * `TagSource`'s business, not this.
+     */
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        $title = $this->getTranslation('title', $locale);
+
+        return SeoData::fallback(is_string($title) && trim($title) !== '' ? $title : null);
     }
 
     /**

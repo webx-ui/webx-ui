@@ -13,6 +13,9 @@ return [
     'parent-trashed' => 'Diese Seite liegt im Papierkorb. Stellen Sie sie wieder her, bevor Sie etwas hineinlegen.',
     'not-in-bin' => 'Endgültig löschen lässt sich nur eine Seite im Papierkorb. Löschen Sie sie zuerst.',
     'slug-shape' => 'Eine Adresse darf Buchstaben, Ziffern, Bindestriche und Unterstriche enthalten.',
+    'ancestor-trashed' => 'Die Seite darüber, „:title“ (#:id), liegt im Papierkorb. Stellen Sie zuerst diese wieder her.',
+    'move-beside-self' => 'Eine Seite kann nicht vor oder hinter sich selbst stehen.',
+    'title-required' => 'Der Titel darf in der Hauptsprache der Website (:locale) nicht leer sein.',
 
     // The editor.
     'conflict' => ':name hat diese Seite geändert, während Sie sie bearbeitet haben.',

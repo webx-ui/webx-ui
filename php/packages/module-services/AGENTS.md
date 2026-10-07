@@ -32,7 +32,8 @@ about one of those.
 - **API** under `/api/cms/services` and `/api/cms/services/categories`; permissions
   `services.view`, `services.manage`, `services.categories.manage`.
 - **MCP** tools `services_list`, `services_get`, `services_create`, `services_update`,
-  `services_publish`, `services_unpublish`, `services_discard`, `services_delete`, `services_reorder`, and
+  `services_publish`, `services_unpublish`, `services_discard`, `services_versions`,
+  `services_version_restore`, `services_delete`, `services_reorder`, and
   `service_categories_list`, `service_categories_create`, `service_categories_update`,
   `service_categories_delete`, `service_categories_reorder`; resource `services://catalog`.
   Scopes `services:read`, `services:write`, `service-categories:read`, `service-categories:write`.
@@ -75,6 +76,11 @@ whose target is gone throws when the screen is first built.
 - Do not add a migration for a project field: the patch and the `extra` column are the place.
 - Do not bin a category that still has services — it is refused with the count. Move the services
   out first. Do not delete rows with SQL: a raw delete leaves addresses in the routing registry.
+- Do not print `<title>` in a site's copy of a view: with an empty SEO card the service and the
+  category name the page themselves (`seoFallback()` — the name through the title template, the
+  lead, the cover), and the index is called by the section.
+  A copy published before still has an `@if ($meta->title === null)` block and the `$seo` /
+  `$meta` lines for it: delete them, they never print any more.
 
 ## Check your work
 

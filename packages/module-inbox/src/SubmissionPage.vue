@@ -33,7 +33,7 @@ import {
   WxTimelineItem,
 } from '@webx-ui/core'
 import { createInboxApi } from './api'
-import { useInboxMessages } from './i18n'
+import { useInboxMessages, useStatusName } from './i18n'
 import type { InboxRecipient, InboxStatus, InboxSubmission, SubmissionEvent } from './types'
 
 /**
@@ -92,9 +92,8 @@ const assigneeOptions = computed(() =>
   admins.value.map((admin) => ({ value: admin.id, label: admin.name })),
 )
 
-function name(status: InboxStatus): string {
-  return localizedValue(status.title, locales.active.value, status.key)
-}
+/* In the panel's language, not the content's: a status is a word of the interface. */
+const name = useStatusName()
 
 const heading = computed(() => t('panel.submission', { id: String(id.value) }))
 
@@ -329,9 +328,22 @@ function line(event: SubmissionEvent): string {
       return t('panel.event-notify-queued')
     case 'notify_failed':
       return t('panel.event-notify-failed', { to: event.to ?? '' })
+    // An answer corrected by hand: named by the label it was asked under, when it still has one.
+    case 'value':
+      return t('panel.event-value', {
+        field: answerLabel(event.field ?? ''),
+        from: event.from ?? '',
+        to: event.to ?? '',
+      })
     default:
       return event.type
   }
+}
+
+function answerLabel(name: string): string {
+  const answer = submission.value?.values.find((value) => value.name === name)
+
+  return answer?.label || name
 }
 
 function handlerName(name: string | null): string {

@@ -201,6 +201,15 @@ final class LinkTypeTest extends TestCase
         $this->assertSame('/account', $resolved['url']);
     }
 
+    #[Test]
+    public function a_stored_scheme_that_executes_is_never_printed(): void
+    {
+        // Written around the rules — an old value, a script, a column edited by hand.
+        $resolved = $this->resolve(['target' => 'url', 'url' => 'javascript:alert(1)']);
+
+        $this->assertNull($resolved['url']);
+    }
+
     /**
      * @param  array<string, mixed>|null  $value
      * @return array<string, mixed>|null

@@ -187,6 +187,17 @@ final class FieldTypeTest extends TestCase
     }
 
     #[Test]
+    public function a_key_the_library_never_had_is_refused_when_it_is_written_now(): void
+    {
+        // Not part of the rules — a deleted picture must not stop a save — but whoever writes knows
+        // which values are new, and a path typed rather than picked is one of them.
+        $this->file(['path' => 'media/ab/cd/one.jpg']);
+
+        $this->assertSame([], $this->field()->newValueProblems(['path' => 'media/ab/cd/one.jpg'], ['type' => 'wx-media']));
+        $this->assertNotSame([], $this->field()->newValueProblems(['path' => '/images/typed.jpg'], ['type' => 'wx-media']));
+    }
+
+    #[Test]
     public function a_field_of_files_says_it_cannot_be_translated(): void
     {
         $node = ['type' => 'wx-media', 'localized' => true];

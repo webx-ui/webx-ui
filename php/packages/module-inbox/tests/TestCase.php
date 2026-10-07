@@ -59,6 +59,11 @@ abstract class TestCase extends Orchestra
             'root' => storage_path('framework/testing/inbox'),
         ]);
         $app['config']->set('webx-inbox.disk', 'inbox');
+
+        // A POST without the hidden timestamp is refused as a robot (§7), and most tests post
+        // straight to the door without drawing the form first. The ones about the timing ask
+        // for it on their form.
+        $app['config']->set('webx-inbox.antispam.min_seconds', 0);
     }
 
     protected function defineDatabaseMigrations(): void

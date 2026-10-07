@@ -6,8 +6,10 @@ namespace WebxUi\Inbox\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use stdClass;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Submission;
+use WebxUi\Inbox\Models\SubmissionValue;
 use WebxUi\Inbox\Submissions\ListQuery;
 
 /**
@@ -43,7 +45,8 @@ final class SubmissionRowResource extends JsonResource
 
         return [
             'id' => (int) $submission->getKey(),
-            'values' => $this->values($submission),
+            // An object even when empty: `[]` and `{"name": …}` are two shapes for one key.
+            'values' => $this->values($submission) ?: new stdClass,
             'status' => $submission->relationLoaded('status') && $submission->status !== null
                 ? new StatusResource($submission->status)
                 : null,
@@ -75,7 +78,7 @@ final class SubmissionRowResource extends JsonResource
         foreach ($this->columns as $field) {
             $value = $submission->getAttribute(ListQuery::alias($field));
 
-            $values[$field->key()] = $value === null ? null : (string) $value;
+            $values[$field->key()] = SubmissionValue::read($field->type->value, $value === null ? null : (string) $value);
         }
 
         return $values;

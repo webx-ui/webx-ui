@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Catalog\Models;
 
 use Carbon\CarbonInterface;
+use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,12 +20,15 @@ use WebxUi\Catalog\Exceptions\CatalogException;
 use WebxUi\Catalog\Storefront\HasListingTexts;
 use WebxUi\Localization\HasTranslations;
 use WebxUi\Media\Models\MediaFile;
+use WebxUi\Media\Storage\FileUrls;
 use WebxUi\NestedSet\HasNestedSet;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * A category of the catalogue: a node of one tree whose slugs are flat (§6).
@@ -55,7 +59,7 @@ use WebxUi\Seo\HasSeo;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Category extends Model implements HasBreadcrumbs, HasListingTexts, Visible
+class Category extends Model implements HasBreadcrumbs, HasListingTexts, HasSeoFallback, Visible
 {
     use HasNestedSet;
     use HasSeo;
@@ -177,6 +181,24 @@ class Category extends Model implements HasBreadcrumbs, HasListingTexts, Visible
     public function cover(): BelongsTo
     {
         return $this->belongsTo(MediaFile::class, 'cover_id');
+    }
+
+    /** What a template puts in `src`, or null — worked out from the file each time, never stored. */
+    public function coverUrl(): ?string
+    {
+        $cover = $this->cover;
+
+        return $cover instanceof MediaFile ? Container::getInstance()->make(FileUrls::class)->url($cover) : null;
+    }
+
+    /** The name, the description and the cover, for a category whose SEO card leaves them empty. */
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        return SeoData::fallback(
+            $this->displayName($locale),
+            $this->textAbove($locale ?? app()->getLocale()),
+            $this->coverUrl(),
+        );
     }
 
     /**

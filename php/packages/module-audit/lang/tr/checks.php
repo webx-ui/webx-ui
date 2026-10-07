@@ -28,6 +28,12 @@ return [
             'why' => 'E-postalar ve gönderimler ziyaretçi beklerken işlenir, yavaş bir posta sunucusu formları yavaşlatır ve denetim gibi uzun işler panelden çalıştırılamaz.',
             'fix' => 'database veya redis kuyruğunu kullanın ve bir worker çalışır durumda tutun (bir supervisor altında php artisan queue:work).',
         ],
+        'queue_worker' => [
+            'title' => 'Kuyruğu işleyen yok',
+            'found' => 'Veritabanı kuyruğundaki işlerin zamanı dakikalar önce geldi ve hiçbir worker onları almadı.',
+            'why' => 'Formlardan gelen e-postalar, denetim çalıştırmaları ve görsel işleri kuyrukta kalır ve hiç gerçekleşmez; panel ise her şeyin yolunda olduğunu söyler.',
+            'fix' => 'Bir worker’ı sürekli çalıştırın (supervisor altında php artisan queue:work), queue:work --stop-when-empty komutunu her dakika zamanlayın ya da küçük bir sitede QUEUE_CONNECTION=sync kullanın.',
+        ],
         'mail' => [
             'title' => 'Posta hiçbir yere gitmiyor',
             'found' => 'Posta sürücüsü e-postaları günlüğe veya belleğe yazıyor.',
@@ -445,10 +451,16 @@ return [
             'fix' => 'Sayfanın SEO ayarlarında sosyal önizlemeyi doldurun veya ana şablonun etiketleri yazdırmasını sağlayın.',
         ],
         'image_broken' => [
-            'title' => 'Open Graph görseli bozuk veya küçük',
-            'found' => 'og:image açılmıyor veya 1200×630’dan küçük.',
-            'why' => 'Paylaşılan bir bağlantı görsel göstermez ya da büyük bir kart yerine metnin yanında küçük bir kare gösterir.',
-            'fix' => 'Sayfanın sosyal önizlemesinde en az 1200×630 boyutunda çalışan bir görsel ayarlayın.',
+            'title' => 'Open Graph görseli açılmıyor',
+            'found' => 'og:image hata veriyor veya açılmıyor.',
+            'why' => 'Paylaşılan bir bağlantı hiç görsel göstermez.',
+            'fix' => 'Sayfanın sosyal önizlemesinde çalışan bir görsel ayarlayın.',
+        ],
+        'image_small' => [
+            'title' => 'Open Graph görseli küçük',
+            'found' => 'og:image 1200×630’dan küçük.',
+            'why' => 'Paylaşılan bir bağlantı büyük bir kart yerine metnin yanında küçük bir kare gösterir.',
+            'fix' => 'Sayfanın sosyal önizlemesinde en az 1200×630 boyutunda bir görsel ayarlayın.',
         ],
     ],
     'hreflang' => [

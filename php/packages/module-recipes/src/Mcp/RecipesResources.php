@@ -53,7 +53,7 @@ final class RecipesResources
     private function catalog(): array
     {
         $locales = $this->container->make(Locales::class);
-        $locale = $locales->current();
+        $locale = $locales->content();
         $prefix = (string) config('webx-recipes.prefix', 'recipes');
 
         return [
@@ -90,7 +90,7 @@ final class RecipesResources
      */
     private function rows(array $recipes, Locales $locales): array
     {
-        $locale = $locales->current();
+        $locale = $locales->content();
         $codes = $locales->codes();
 
         return array_map(static function (Recipe $recipe) use ($locale, $codes): array {

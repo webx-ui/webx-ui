@@ -13,6 +13,9 @@ return [
     'parent-trashed' => 'Ta strona jest w koszu. Przywróć ją, zanim coś w niej umieścisz.',
     'not-in-bin' => 'Na zawsze można usunąć tylko stronę z kosza. Najpierw ją usuń.',
     'slug-shape' => 'Adres może zawierać litery, cyfry, myślniki i podkreślenia.',
+    'ancestor-trashed' => 'Strona nad nią, „:title” (#:id), jest w koszu. Najpierw przywróć tamtą.',
+    'move-beside-self' => 'Strony nie można umieścić przed ani po samej sobie.',
+    'title-required' => 'Tytuł nie może być pusty w głównym języku witryny (:locale).',
 
     // The editor.
     'conflict' => ':name zmienił(a) tę stronę, gdy ją edytowałeś.',

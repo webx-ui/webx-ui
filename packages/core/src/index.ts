@@ -22,6 +22,12 @@ export {
   dateLocaleKey,
   type DateLocaleSource,
 } from './composables/useDateLocale'
+export {
+  provideDateTimezone,
+  useDateTimezone,
+  dateTimezoneKey,
+  type DateTimezoneSource,
+} from './composables/useDateTimezone'
 export type { DateFnsLocale } from './internal/dateLocale'
 export { useElementWidth } from './composables/useElementWidth'
 export { useHoverPointer } from './composables/useHoverPointer'

@@ -35,12 +35,12 @@ final class McpTest extends TestCase
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['events_list', 'events_get', 'events_create', 'events_update', 'events_duplicate', 'events_publish', 'events_unpublish', 'events_discard', 'events_delete'],
+            ['events_list', 'events_get', 'events_create', 'events_update', 'events_duplicate', 'events_publish', 'events_unpublish', 'events_discard', 'events_delete', 'events_restore', 'events_purge'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('events')),
         );
 
         $this->assertSame(
-            ['event_categories_list', 'event_categories_create', 'event_categories_update', 'event_categories_delete', 'event_categories_reorder'],
+            ['event_categories_list', 'event_categories_get', 'event_categories_create', 'event_categories_update', 'event_categories_delete', 'event_categories_reorder'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('event-categories')),
         );
 

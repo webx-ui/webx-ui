@@ -26,6 +26,7 @@ final class PublishFailed extends BlocksException
         public readonly ?array $parent = null,
         public readonly ?string $declared = null,
         public readonly ?array $cycle = null,
+        public readonly bool $marker = false,
     ) {
         parent::__construct($failure->getMessage(), 0, $failure);
     }
@@ -56,6 +57,12 @@ final class PublishFailed extends BlocksException
     public static function onDeclared(BlockNotPublishable $failure, string $module): self
     {
         return new self($failure, null, declared: $module);
+    }
+
+    /** The root's data-wx-block is not the slug: its script and the panel would never find it. */
+    public static function onMarker(string $slug, int $version, string $reason): self
+    {
+        return new self(new BlockNotPublishable($slug, $version, $reason, null), null, marker: true);
     }
 
     /**

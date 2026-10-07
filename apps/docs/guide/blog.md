@@ -233,6 +233,13 @@ Publishing is by file and not by directory: keep `article.blade.php`, delete the
 those go on coming from the package — fresh with every release — rather than being four files you
 now maintain for the sake of one.
 
+Nobody types a `<title>` into a view. With an empty SEO card an article, a rubric or a tag names its
+page itself: the title through the site's title template, the lead as the description, the cover as
+`og:image`, above the site's default social image (a tag has only its word). The feed is called by
+the blog's name the same way — `@webxSeo(fallback: ['title' => trans('webx-blog::blog.title')])`. A
+copy of a view published before this still has an `@if ($meta->title === null)` block and the
+`$seo` / `$meta` lines for it — delete them, they never print any more.
+
 ### The layout
 
 A blog with no header reads as a different site, and until now the only cure was publishing all

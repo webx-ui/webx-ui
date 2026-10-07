@@ -29,7 +29,7 @@ final class QuestionResource extends JsonResource
         $question = $this->resource;
 
         $locales = app(Locales::class);
-        $locale = $locales->current();
+        $locale = $locales->content();
 
         return [
             'id' => (int) $question->getKey(),

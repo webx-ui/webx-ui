@@ -21,4 +21,13 @@ final class Features
     {
         return (bool) config('webx-seo.faq.enabled', false);
     }
+
+    /**
+     * The share title, description and picture in the SEO card. Off by default: Open Graph is
+     * filled in from the page itself, and fields nobody fills in are fields that look forgotten.
+     */
+    public static function ogFields(): bool
+    {
+        return (bool) config('webx-seo.og.panel_fields', false);
+    }
 }

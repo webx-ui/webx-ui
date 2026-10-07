@@ -15,6 +15,7 @@ use WebxUi\Seo\Models\SeoMeta;
 use WebxUi\Seo\Models\SeoUrl;
 use WebxUi\Seo\Rendering\Seo;
 use WebxUi\Seo\Tests\Fixtures\SeoEntity;
+use WebxUi\Seo\Tests\Fixtures\StampedSeoEntity;
 use WebxUi\Settings\Settings;
 
 /**
@@ -152,6 +153,76 @@ final class EntitySeoTest extends TestCase
 
         $this->expectException(ValidationException::class);
         $values->validate('test.form', ['seo' => ['json_ld' => 'not json at all']]);
+    }
+
+    #[Test]
+    public function an_agents_partial_card_keeps_what_it_left_out(): void
+    {
+        app(ScreenRegistry::class)->register('test.form', [
+            ['id' => 'seo', 'type' => 'wx-seo', 'name' => 'seo'],
+        ]);
+
+        $entity = $this->entity([
+            'title' => ['ru' => 'О компании', 'uk' => 'Про компанію'],
+            'description' => ['ru' => 'Кто мы'],
+            'robots' => 'noindex',
+        ]);
+
+        $values = app(ScreenValues::class);
+        $current = ['seo' => $entity->seoValue()];
+
+        // One language of one field: the other language and the other fields stay.
+        $patched = $values->patch('test.form', $current, ['seo' => ['title' => ['ru' => 'Новое']]]);
+        $entity->saveSeo($values->validate('test.form', $patched)['seo']);
+
+        $this->assertSame(
+            ['title' => ['ru' => 'Новое', 'uk' => 'Про компанію'], 'description' => ['ru' => 'Кто мы'], 'robots' => 'noindex'],
+            $entity->seoValue(),
+        );
+
+        // Null is how a key — or one language of it — is emptied, and a plain string is the
+        // site's main language.
+        $patched = $values->patch('test.form', ['seo' => $entity->seoValue()], ['seo' => [
+            'title' => ['uk' => null],
+            'robots' => null,
+            'h1' => 'Заголовок',
+        ]]);
+        $entity->saveSeo($values->validate('test.form', $patched)['seo']);
+
+        $this->assertSame(
+            ['title' => ['ru' => 'Новое'], 'h1' => ['ru' => 'Заголовок'], 'description' => ['ru' => 'Кто мы']],
+            $entity->seoValue(),
+        );
+
+        // And null for the whole card still empties it.
+        $patched = $values->patch('test.form', ['seo' => $entity->seoValue()], ['seo' => null]);
+        $this->assertNull($patched['seo']);
+    }
+
+    #[Test]
+    public function writing_the_card_is_an_edit_of_the_entity(): void
+    {
+        Schema::create('seo_stamped_entities', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name')->nullable();
+            $table->timestamps();
+        });
+
+        $this->travelTo(now()->subDay());
+        $entity = StampedSeoEntity::query()->create(['name' => 'About']);
+        $this->travelBack();
+
+        $before = $entity->updated_at;
+        $entity->saveSeo(['title' => ['ru' => 'О компании']]);
+
+        // The card has a table of its own, and `updated_at` is how a reader finds out that
+        // somebody wrote in between — the card's write has to show there too.
+        $this->assertTrue($entity->fresh()?->updated_at?->gt($before));
+
+        $this->travelTo(now()->addMinute());
+        $before = $entity->refresh()->updated_at;
+        $entity->saveSeo(null);
+        $this->assertTrue($entity->fresh()?->updated_at?->gt($before));
     }
 
     /**

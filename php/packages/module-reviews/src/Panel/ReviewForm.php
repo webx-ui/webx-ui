@@ -197,7 +197,7 @@ final class ReviewForm
             return;
         }
 
-        $map = is_array($value) ? $value : [$this->locales->current() => $value];
+        $map = is_array($value) ? $value : [$this->locales->content() => $value];
         $translations = [...$review->getTranslations($field), ...$map];
 
         $translations = array_filter(

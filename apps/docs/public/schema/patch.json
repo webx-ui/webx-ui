@@ -70,6 +70,7 @@
             "label": { "type": "string" },
             "help": { "type": "string" },
             "localized": { "type": "boolean" },
+            "default": {},
             "props": {
               "type": "object",
               "description": "Merged key by key into the node's props."

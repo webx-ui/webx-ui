@@ -126,4 +126,47 @@ return [
         'fits' => ['cover', 'contain'],
     ],
 
+    /*
+    |---------------------------------------------------------------------------
+    | Fetching from an address
+    |---------------------------------------------------------------------------
+    |
+    | `media_upload_from_url` fetches only from the public internet: an address
+    | that is or resolves to loopback, a private network, link-local (cloud
+    | metadata) or another reserved range is refused. `allow_hosts` names
+    | hosts on the site's own network that may be fetched all the same —
+    | exact host names, no wildcards.
+    |
+    */
+
+    'remote' => [
+        'allow_hosts' => [],
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Where a file is in use
+    |---------------------------------------------------------------------------
+    |
+    | Before an agent deletes a file, every table is searched for it: foreign
+    | keys into `media_files`, and the file's key inside text and JSON columns.
+    | These tables are skipped — history, logs, queues and the library itself,
+    | where a mention is not a use. Patterns as Str::is reads them.
+    |
+    */
+
+    'usage' => [
+        'ignore' => [
+            'media_*',
+            'migrations',
+            'cache', 'cache_locks', 'sessions',
+            'jobs', 'job_batches', 'failed_jobs',
+            'password_reset_tokens', 'personal_access_tokens', 'oauth_*',
+            'mcp_*', 'audit_*', 'admin_history', 'admin_uploads',
+            'entity_versions', 'block_versions', 'routes_trashed',
+            'catalog_exchange_*', 'catalog_bulk_*', 'catalog_index_queue',
+            'telescope_*', 'pulse_*',
+        ],
+    ],
+
 ];

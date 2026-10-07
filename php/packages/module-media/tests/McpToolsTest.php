@@ -36,22 +36,13 @@ final class McpToolsTest extends TestCase
             'search_files',
             'get_file',
             'create_directory',
+            'delete_directory',
             'rename_file',
             'move_files',
             'upload_from_url',
             'optimize_images',
             'delete_files',
         ], $names);
-    }
-
-    #[Test]
-    public function there_is_no_tool_that_deletes_a_folder(): void
-    {
-        $names = array_map(static fn ($tool): string => $tool->name, $this->module()->mcpTools());
-
-        // Recursive deletion is the one thing here a mistaken call cannot take back, and an
-        // agent cannot ask the question the panel asks first.
-        $this->assertSame([], array_filter($names, static fn (string $name): bool => str_contains($name, 'directory') && str_contains($name, 'delete')));
     }
 
     #[Test]

@@ -28,12 +28,12 @@ final class McpTest extends TestCase
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['services_list', 'services_get', 'services_create', 'services_update', 'services_publish', 'services_unpublish', 'services_discard', 'services_delete', 'services_reorder'],
+            ['services_list', 'services_get', 'services_create', 'services_update', 'services_publish', 'services_unpublish', 'services_discard', 'services_versions', 'services_version_restore', 'services_delete', 'services_reorder', 'services_restore', 'services_purge'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('services')),
         );
 
         $this->assertSame(
-            ['service_categories_list', 'service_categories_create', 'service_categories_update', 'service_categories_delete', 'service_categories_reorder'],
+            ['service_categories_list', 'service_categories_get', 'service_categories_create', 'service_categories_update', 'service_categories_delete', 'service_categories_reorder'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('service-categories')),
         );
 
@@ -139,6 +139,38 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function a_partial_seo_card_is_merged_live_and_moves_the_revision(): void
+    {
+        $service = $this->service('crowns');
+        $id = $service->getKey();
+
+        $this->agent('services_update', ['service' => $id, 'values' => ['seo' => [
+            'title' => ['en' => 'Crowns'],
+            'description' => ['en' => 'Ceramic crowns.'],
+        ]]])->assertOk();
+
+        $read = $this->content($this->agent('services_get', ['service' => $id]));
+
+        $answer = $this->content($this->agent('services_update', [
+            'service' => $id,
+            'values' => ['seo' => ['title' => ['en' => 'Crowns and bridges']]],
+            'revision' => $read['revision'],
+        ]));
+
+        // The card is not drafted, and the answer says so rather than "into its draft".
+        $this->assertTrue($answer['seo_live'] ?? false);
+        $this->assertSame(
+            ['title' => ['en' => 'Crowns and bridges'], 'description' => ['en' => 'Ceramic crowns.']],
+            Service::query()->findOrFail($id)->seoValue(),
+        );
+
+        // A SEO-only edit is an edit: whoever still holds the old revision is told.
+        $this->assertNotSame($read['revision'], $answer['revision']);
+        $this->agent('services_update', ['service' => $id, 'values' => ['lead' => 'Mine'], 'revision' => $read['revision']])
+            ->assertHasErrors(['changed since you read it']);
+    }
+
+    #[Test]
     public function the_body_is_not_written_here(): void
     {
         $service = $this->service('crowns');
@@ -219,6 +251,23 @@ final class McpTest extends TestCase
         $this->agent('services_discard', ['service' => $crowns->getKey()])->assertOk();
         $this->assertFalse($crowns->refresh()->hasDraft());
         $this->assertSame('Crowns', $crowns->title);
+    }
+
+    #[Test]
+    public function the_history_of_a_service_is_listed_and_a_publication_comes_back_into_the_draft(): void
+    {
+        $crowns = $this->service('crowns');
+        $this->agent('services_update', ['service' => $crowns->getKey(), 'values' => ['title' => ['en' => 'Crowns and bridges']]])->assertOk();
+        $this->agent('services_publish', ['service' => $crowns->getKey()])->assertOk();
+
+        $history = $this->content($this->agent('services_versions', ['service' => $crowns->getKey()]));
+        $this->assertCount(2, $history['versions']);
+        $this->assertTrue($history['versions'][0]['on_site']);
+
+        $this->agent('services_version_restore', ['service' => $crowns->getKey(), 'number' => $history['versions'][1]['number']])->assertOk();
+
+        $this->assertSame('Crowns', $crowns->refresh()->draftValues()['title']['en'] ?? null);
+        $this->assertSame('Crowns and bridges', $crowns->title, 'the site keeps what it shows');
     }
 
     private function resource(string $uri): McpResource

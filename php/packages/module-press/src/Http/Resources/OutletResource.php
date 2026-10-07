@@ -39,7 +39,7 @@ final class OutletResource extends JsonResource
         return [
             'id' => (int) $outlet->getKey(),
             'title' => OutletNames::of($outlet, $locales),
-            'logo' => $this->logo($outlet, $locales->current()),
+            'logo' => $this->logo($outlet, $locales->content()),
             'published' => $outlet->published,
             'featured' => $outlet->featured,
             'position' => (int) $outlet->position,

@@ -30,23 +30,62 @@ final class Publisher
         private readonly Renderer $renderer,
         private readonly Usage $usage,
         private readonly BlockComponents $components,
+        private readonly LanguageShapes $shapes,
     ) {}
 
     /**
+     * Publish the draft, and bring the content written under the old schema into the new one's
+     * shape where a field's `localized` changed ({@see LanguageShapes}).
+     *
+     * @param  bool  $dropTranslations  Agreed to keep only the main language where a field stops being localized.
+     *
      * @throws BlocksException when there is no draft
      * @throws PublishFailed when a render fails, saying on which page
+     * @throws DropsTranslations when a field stops being localized over words in other languages
      */
-    public function publish(Block $block): BlockVersion
+    public function publish(Block $block, bool $dropTranslations = false): BlockVersion
     {
         $draft = $this->draftOf($block);
 
         $this->check($block);
 
+        $changes = $this->languageChanges($block);
+        $lossy = array_values(array_filter($changes['entities'], static fn (array $entity): bool => $entity['translations']));
+
+        if ($lossy !== [] && ! $dropTranslations) {
+            throw new DropsTranslations($changes['flips'], $lossy);
+        }
+
         try {
-            return $block->publish($draft);
+            $version = $block->publish($draft);
         } catch (BlockNotPublishable $failure) {
             throw PublishFailed::onSample($failure);
         }
+
+        $this->shapes->apply($block->slug, $changes['flips']);
+
+        return $version;
+    }
+
+    /**
+     * What publishing the draft would do to the content already written: the fields whose
+     * `localized` it changes, and the entities holding values of them. Empty for a type never
+     * published — nothing was written under another schema.
+     *
+     * @return array{flips: list<array{field: string, child: string|null, localized: bool}>, entities: list<array{model: string, id: int|string, title: string|null, translations: bool}>}
+     */
+    public function languageChanges(Block $block): array
+    {
+        $draft = $block->draftVersion;
+        $published = $block->publishedVersion;
+
+        if (! $draft instanceof BlockVersion || ! $published instanceof BlockVersion) {
+            return ['flips' => [], 'entities' => []];
+        }
+
+        $flips = $this->shapes->flips($published->schema ?? [], $draft->schema ?? []);
+
+        return ['flips' => $flips, 'entities' => $this->shapes->affected($block->slug, $flips)];
     }
 
     /**
@@ -62,6 +101,12 @@ final class Publisher
         $type = BlockType::fromModels($block, $version);
         $graph = new Graph;
         $checked = 0;
+
+        $marker = Lints::marker((string) $version->template);
+
+        if ($marker !== null && $marker !== $block->slug) {
+            throw PublishFailed::onMarker($block->slug, $version->number, (string) __('webx-blocks::checks.marker-slug', ['marker' => $marker, 'slug' => $block->slug]));
+        }
 
         $cycle = $graph->cycle($block->slug, $version->calls());
 

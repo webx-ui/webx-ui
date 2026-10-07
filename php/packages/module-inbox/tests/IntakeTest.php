@@ -152,7 +152,9 @@ final class IntakeTest extends TestCase
         // The label, because that is what goes into the letter and into the export.
         $this->assertSame('Pro plan', $submission->value('plan')?->value);
         $this->assertSame(['pro'], $submission->value('plan')->payload);
-        $this->assertSame('Yes', $submission->value('terms')?->value);
+        // A consent is stored as a key and put into words when it is read.
+        $this->assertSame('yes', $submission->value('terms')?->value);
+        $this->assertSame('Yes', $submission->value('terms')->readable());
     }
 
     #[Test]
@@ -230,7 +232,7 @@ final class IntakeTest extends TestCase
     #[Test]
     public function it_refuses_a_form_filled_in_faster_than_a_person_could(): void
     {
-        $this->form();
+        $this->form('contact', [], ['antispam.min_seconds' => 3]);
 
         $this->postJson($this->intake(), [
             'fields' => ['name' => 'Ada', 'email' => 'ada@example.test'],
@@ -241,9 +243,36 @@ final class IntakeTest extends TestCase
     }
 
     #[Test]
+    public function it_refuses_a_post_that_carries_no_timestamp_at_all(): void
+    {
+        $this->form('contact', [], ['antispam.min_seconds' => 3]);
+
+        // Every form this package draws carries the mark, a cached one included, so a POST
+        // without it was written straight to the address.
+        $this->postJson($this->intake(), [
+            'fields' => ['name' => 'Ada', 'email' => 'ada@example.test'],
+        ])->assertStatus(422)->assertJsonValidationErrors(['form']);
+
+        $this->assertSame(0, Submission::query()->count());
+    }
+
+    #[Test]
+    public function it_refuses_a_timestamp_that_does_not_decrypt_like_a_missing_one(): void
+    {
+        $this->form('contact', [], ['antispam.min_seconds' => 3]);
+
+        $this->postJson($this->intake(), [
+            'fields' => ['name' => 'Ada', 'email' => 'ada@example.test'],
+            'webx_ts' => 'garbage',
+        ])->assertStatus(422)->assertJsonValidationErrors(['form']);
+
+        $this->assertSame(0, Submission::query()->count());
+    }
+
+    #[Test]
     public function it_ignores_a_timestamp_old_enough_to_have_come_from_a_cached_page(): void
     {
-        $this->form();
+        $this->form('contact', [], ['antispam.min_seconds' => 3]);
 
         // The trap of §7: on a page cached whole the mark belongs to the moment the cache was
         // written, so it reads as hours old for every visitor and must not be held against
@@ -281,6 +310,67 @@ final class IntakeTest extends TestCase
         $this->postJson($this->intake(), ['fields' => ['name' => 'Bob', 'email' => 'b@example.test']])->assertStatus(429);
 
         $this->assertSame(1, Submission::query()->count());
+    }
+
+    #[Test]
+    public function a_refused_attempt_does_not_count_towards_the_forms_limit(): void
+    {
+        $this->form('contact', [], ['antispam.throttle' => 1]);
+
+        // Somebody mistyping their address is correcting a mistake, not flooding the form —
+        // counting those was a form that locked a person out of their own sixth attempt.
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson($this->intake(), ['fields' => ['name' => 'Ada', 'email' => 'a@b']])->assertStatus(422);
+        }
+
+        $this->postJson($this->intake(), ['fields' => ['name' => 'Ada', 'email' => 'a@example.test']])->assertOk();
+
+        $this->assertSame(1, Submission::query()->count());
+    }
+
+    #[Test]
+    public function every_attempt_counts_towards_the_higher_limit(): void
+    {
+        config(['webx-inbox.antispam.attempts' => 3]);
+        $this->form('contact', [], ['antispam.throttle' => 1]);
+
+        for ($i = 0; $i < 3; $i++) {
+            $this->postJson($this->intake(), ['fields' => ['name' => 'Ada', 'email' => 'nope']])->assertStatus(422);
+        }
+
+        $this->postJson($this->intake(), ['fields' => ['name' => 'Ada', 'email' => 'a@example.test']])->assertStatus(429);
+    }
+
+    #[Test]
+    public function both_limits_answer_in_the_language_of_the_page(): void
+    {
+        config(['webx-localization.locales' => [['code' => 'en', 'default' => true], ['code' => 'ru']]]);
+        config(['webx-inbox.antispam.attempts' => 2]);
+        $this->form('contact', [], ['antispam.throttle' => 1]);
+
+        $sent = ['fields' => ['name' => 'Ada', 'email' => 'a@example.test'], 'webx_locale' => 'ru'];
+        $words = trans('webx-inbox::errors.too-many', [], 'ru');
+
+        $this->postJson($this->intake(), $sent)->assertOk();
+
+        // The form's own limit, checked by the controller…
+        $this->postJson($this->intake(), $sent)->assertStatus(429)->assertJson(['message' => $words]);
+
+        // …and the route's, which stops the door before the controller is reached.
+        $this->postJson($this->intake(), $sent)->assertStatus(429)->assertJson(['message' => $words]);
+        $this->assertNotSame('Too Many Attempts.', $words);
+    }
+
+    #[Test]
+    public function an_address_without_a_dot_in_its_domain_is_refused(): void
+    {
+        $this->form();
+
+        $this->postJson($this->intake(), ['fields' => ['name' => 'Ada', 'email' => 'a@b']])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['fields.email']);
+
+        $this->postJson($this->intake(), ['fields' => ['name' => 'Ada', 'email' => 'ada@пример.рф']])->assertOk();
     }
 
     #[Test]

@@ -58,6 +58,10 @@ Brand form node ids: `naming`, `title`, `slug`, `logo`, `is-visible`, `is-featur
   another brand with the bulk action `set-brand`, or clear the brand that way.
 - Do not set a product's brand through the brand API. Use `catalog_products_update` with
   `brand.id` (empty clears it), or `catalog_bulk` with `set-brand`.
+- Do not print `<title>` in a site's copy of a view: with an empty SEO card a brand names its
+  page itself (`seoFallback()` — the name through the title template, the description, the
+  logo), and the list is called by the section. A copy published before still has an
+  `@if ($meta->title === null)` block: delete it, and keep `$meta` only for `$meta->h1`.
 
 ## Check your work
 

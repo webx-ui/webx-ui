@@ -171,7 +171,8 @@ new Swiper(el, values.options)
 
 The runtime rides in the bundle. It finds every `[data-wx-block="hero"]` and calls the function
 with the element and the values it carries in `data-wx-values` (JSON, `{}` when absent —
-`data-wx-values="{{ json_encode($block->values) }}"` in the template); `webx.mount(root)` picks up
+`data-wx-values="{{ json_encode(['speed' => $speed]) }}"` in the template, with only what the
+script needs: everything there is in the page's markup); `webx.mount(root)` picks up
 what is new inside a subtree, which is what the panel calls after replacing a block. The bridge
 to the site's build is `webx.provide('swiper', Swiper)` on the site's side and `await
 webx.use('swiper')` in the block: `use` waits, so the order the two files load in does not
@@ -182,7 +183,13 @@ steps aside.
 Housekeeping: `webx:blocks:bundles --prune` drops the bundles glued from versions no longer
 published, `--warm` writes the bundle of every entity of the models listed in
 `webx-blocks.entities` ahead of the first visitor, and `webx:blocks:clear` forgets the cached
-types and the compiled templates.
+types, the thumbnails and the compiled templates.
+
+The list of types and the picker show every type drawn on its sample. Those pictures are kept
+(`webx-blocks.thumbnails`) until any type changes — a new version, a publication, a restore, a
+setting, a rename, a delete, an import — and for at most `ttl` seconds, since a type that reads
+records draws records that change on their own. They are drawn in a language of the site's content,
+whatever language the panel is in, and a type that prints nothing on its sample says so.
 
 ## The registry
 

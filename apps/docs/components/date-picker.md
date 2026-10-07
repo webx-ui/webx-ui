@@ -53,31 +53,32 @@ Override either side when the backend disagrees, or opt out of strings entirely:
 
 All three take the same props; `WxDateTimePicker` and `WxTimePicker` simply fix `type`.
 
-| Prop               | Type                                             | Default     | Description                                                       |
-| ------------------ | ------------------------------------------------ | ----------- | ----------------------------------------------------------------- |
-| `modelValue`       | `string \| Date \| null`                         | `null`      | Current value                                                     |
-| `type`             | `'date' \| 'datetime' \| 'time'`                 | `'date'`    | What is being picked                                              |
-| `valueFormat`      | `string`                                         | per type    | Format the value is stored in; `'date'` keeps a `Date`            |
-| `format`           | `string`                                         | per type    | Format the field shows                                            |
-| `placeholder`      | `string`                                         | —           | Placeholder text                                                  |
-| `clearable`        | `boolean`                                        | `true`      | Show the clear button                                             |
-| `minDate`          | `string \| Date`                                 | —           | Earliest selectable date                                          |
-| `maxDate`          | `string \| Date`                                 | —           | Latest selectable date                                            |
-| `seconds`          | `boolean`                                        | `false`     | Include seconds                                                   |
-| `minutesIncrement` | `number`                                         | `1`         | Step of the minutes column                                        |
-| `is24`             | `boolean`                                        | `true`      | 24-hour clock                                                     |
-| `locale`           | `string \| Locale`                               | the browser | Language of the calendar                                          |
-| `weekStart`        | `number`                                         | `1`         | 0 is Sunday, 1 is Monday                                          |
-| `autoApply`        | `boolean`                                        | `true`      | Apply on pick, with no confirm button                             |
-| `textInput`        | `boolean`                                        | `false`     | Allow typing as well as picking                                   |
-| `teleport`         | `boolean \| string`                              | `true`      | Render the menu in a portal                                       |
-| `size`             | `'sm' \| 'md' \| 'lg'`                           | `'md'`      | Control height                                                    |
-| `status`           | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'` | Validation state                                                  |
-| `disabled`         | `boolean`                                        | `false`     | Disables the field                                                |
-| `readonly`         | `boolean`                                        | `false`     | Read-only field                                                   |
-| `id`               | `string`                                         | generated   | Overrides the `id` the label points at; `WxFormItem` supplies one |
-| `name`             | `string`                                         | —           | `name` of the underlying input                                    |
-| `ariaLabel`        | `string`                                         | —           | Label when there is no visible one                                |
+| Prop               | Type                                             | Default      | Description                                                       |
+| ------------------ | ------------------------------------------------ | ------------ | ----------------------------------------------------------------- |
+| `modelValue`       | `string \| Date \| null`                         | `null`       | Current value                                                     |
+| `type`             | `'date' \| 'datetime' \| 'time'`                 | `'date'`     | What is being picked                                              |
+| `valueFormat`      | `string`                                         | per type     | Format the value is stored in; `'date'` keeps a `Date`            |
+| `format`           | `string`                                         | per type     | Format the field shows                                            |
+| `placeholder`      | `string`                                         | —            | Placeholder text                                                  |
+| `clearable`        | `boolean`                                        | `true`       | Show the clear button                                             |
+| `minDate`          | `string \| Date`                                 | —            | Earliest selectable date                                          |
+| `maxDate`          | `string \| Date`                                 | —            | Latest selectable date                                            |
+| `seconds`          | `boolean`                                        | `false`      | Include seconds                                                   |
+| `minutesIncrement` | `number`                                         | `1`          | Step of the minutes column                                        |
+| `is24`             | `boolean`                                        | `true`       | 24-hour clock                                                     |
+| `locale`           | `string \| Locale`                               | the browser  | Language of the calendar                                          |
+| `timezone`         | `string`                                         | the reader's | IANA zone a moment is shown and picked in                         |
+| `weekStart`        | `number`                                         | `1`          | 0 is Sunday, 1 is Monday                                          |
+| `autoApply`        | `boolean`                                        | `true`       | Apply on pick, with no confirm button                             |
+| `textInput`        | `boolean`                                        | `false`      | Allow typing as well as picking                                   |
+| `teleport`         | `boolean \| string`                              | `true`       | Render the menu in a portal                                       |
+| `size`             | `'sm' \| 'md' \| 'lg'`                           | `'md'`       | Control height                                                    |
+| `status`           | `'default' \| 'success' \| 'warning' \| 'error'` | `'default'`  | Validation state                                                  |
+| `disabled`         | `boolean`                                        | `false`      | Disables the field                                                |
+| `readonly`         | `boolean`                                        | `false`      | Read-only field                                                   |
+| `id`               | `string`                                         | generated    | Overrides the `id` the label points at; `WxFormItem` supplies one |
+| `name`             | `string`                                         | —            | `name` of the underlying input                                    |
+| `ariaLabel`        | `string`                                         | —            | Label when there is no visible one                                |
 
 **Events:** `update:modelValue`, `change`, `clear`, `open`, `close`.
 
@@ -126,6 +127,27 @@ import { uk } from 'date-fns/locale'
   <wx-date-picker v-model="value" :locale="uk" />
 </template>
 ```
+
+## Timezone
+
+A value with an offset — `valueFormat: "yyyy-MM-dd'T'HH:mm:ssXXX"` — is a moment, and on its own the
+picker draws it on the reader's clock: an event at 09:30 in Hong Kong reads 04:30 to an editor in
+Moscow, and what they pick goes back with Moscow's offset. `timezone` names the zone the field
+reads and writes instead, whatever the machine is set to:
+
+```vue
+<wx-date-time-picker
+  v-model="startsAt"
+  value-format="yyyy-MM-dd'T'HH:mm:ssXXX"
+  timezone="Asia/Hong_Kong"
+/>
+<!-- shows "12.10.2026 09:30 GMT+08:00" anywhere; sends "2026-10-12T09:30:00+08:00" -->
+```
+
+When that zone is not the reader's own, the default display format names its offset after the
+time. A site has one clock, so a panel says it once — `app.provide(dateTimezoneKey, …)` or
+`provideDateTimezone()` — and the WebX panel does so with the site's own zone. A value without an
+offset is a wall clock already (a Laravel `datetime` column read as written) and is never moved.
 
 ## Anything else the library takes
 

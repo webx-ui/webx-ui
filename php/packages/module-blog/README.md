@@ -134,6 +134,12 @@ php artisan vendor:publish --tag=webx-blog-views
 Publishing is by file, not by directory: keep `article.blade.php`, delete the other four, and
 those go on coming from the package.
 
+With an empty SEO card an article, a rubric or a tag names its page itself (`HasSeoFallback`): the
+title through the site's title template, the lead as the description, the cover as `og:image`,
+above the site's default social image. The feed is called by the blog's name,
+`@webxSeo(fallback: ['title' => …])`. So no view prints `<title>` itself, and a site's copy that
+still has the old `@if ($meta->title === null)` block can delete it.
+
 `webx-blog.layout` names the Blade component the four pages stand in; empty means
 `webx-blog::standalone`, the bare document. One line and the blog is inside the site's header and
 footer:

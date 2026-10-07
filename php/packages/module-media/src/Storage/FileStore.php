@@ -40,7 +40,9 @@ final class FileStore
     public function store(UploadedFile $upload, MediaDirectory $directory): MediaFile
     {
         $extension = $this->extension($upload);
-        $mime = (string) $upload->getClientMimeType();
+        // Without parameters: a type taken from a header can arrive as `image/png; qs=0.7`, and
+        // the library compares types as they are written.
+        $mime = strtolower(trim(explode(';', (string) $upload->getClientMimeType())[0]));
 
         // A path of the filesystem, deliberately: this is PHP's own temporary file, the one
         // place in the module where there is nothing remote to speak to.

@@ -106,6 +106,7 @@ function onClick(event: MouseEvent) {
       :class="classes"
       :style="{ '--wx-menu-depth': submenu.depth }"
       :title="collapsed ? label : undefined"
+      :aria-label="collapsed ? label : undefined"
       @click="onClick"
     >
       <span v-if="icon || $slots.icon" class="wx-menu-row__icon">

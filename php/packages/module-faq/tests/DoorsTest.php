@@ -49,7 +49,7 @@ final class DoorsTest extends TestCase
                         'type' => 'faq',
                         'values' => ['questions' => [
                             'categories' => [(string) $delivery->id, $billing->id, $delivery->id],
-                            'limit' => '5',
+                            'limit' => 5,
                             'filter' => true,
                             'markup' => true,
                             'source' => 'reviews',
@@ -66,7 +66,7 @@ final class DoorsTest extends TestCase
     }
 
     #[Test]
-    public function an_agents_edit_keeps_the_choice_cleaned(): void
+    public function an_agents_edit_is_refused_when_dirty_and_kept_cleaned_when_not(): void
     {
         $billing = $this->category('Billing');
 
@@ -77,7 +77,15 @@ final class DoorsTest extends TestCase
             'entity' => 'page',
             'id' => $this->page->getKey(),
             'ops' => [['op' => 'set', 'key' => 'k-faq', 'values' => [
-                'questions' => ['categories' => [$billing->id, $billing->id], 'limit' => 500, 'filter' => 'yes', 'markup' => null],
+                'questions' => ['categories' => [$billing->id], 'limit' => 500, 'filter' => 'yes'],
+            ]]],
+        ], $this->editor(['pages.view', 'pages.manage', 'blocks.manage']))->assertHasErrors(['field [questions]']);
+
+        $this->agent('edit_content', [
+            'entity' => 'page',
+            'id' => $this->page->getKey(),
+            'ops' => [['op' => 'set', 'key' => 'k-faq', 'values' => [
+                'questions' => ['categories' => [$billing->id, $billing->id], 'limit' => 100, 'filter' => false, 'markup' => null],
             ]]],
         ], $this->editor(['pages.view', 'pages.manage', 'blocks.manage']))->assertOk();
 

@@ -50,6 +50,7 @@ return [
     'move-branch' => ':count Adressen ändern sich — die Seite und alles darin. Die alten leiten künftig auf die neuen weiter.',
     'moved' => 'Verschoben. :count Adressen haben sich geändert; die alten leiten auf die neuen weiter.',
     'moved-one' => 'Verschoben. Die Adresse hat sich geändert; die alte leitet darauf weiter.',
+    'reordered' => 'Verschoben. Die Adresse bleibt dieselbe.',
 
     'delete-title' => '„:title“ löschen?',
     'delete-text' => 'Die Seite wandert in den Papierkorb und antwortet auf der Website nicht mehr.',

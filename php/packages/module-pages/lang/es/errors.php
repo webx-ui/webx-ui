@@ -13,6 +13,9 @@ return [
     'parent-trashed' => 'Esa página está en la papelera. Restáurala antes de poner algo dentro.',
     'not-in-bin' => 'Solo una página de la papelera se puede eliminar para siempre. Elimínela primero.',
     'slug-shape' => 'Una dirección admite letras, dígitos, guiones y guiones bajos.',
+    'ancestor-trashed' => 'La página superior, «:title» (#:id), está en la papelera. Restáurela primero.',
+    'move-beside-self' => 'Una página no puede ir antes ni después de sí misma.',
+    'title-required' => 'El título no puede estar vacío en el idioma principal del sitio (:locale).',
 
     // The editor.
     'conflict' => ':name cambió esta página mientras la editabas.',

@@ -80,7 +80,11 @@
                   "id": "org-social-url",
                   "type": "wx-input",
                   "name": "url",
-                  "label": "trans::webx-seo::screen.org-social-url"
+                  "label": "trans::webx-seo::screen.org-social-url",
+                  "props": {
+                    "type": "url",
+                    "placeholder": "https://"
+                  }
                 }
               ]
             }

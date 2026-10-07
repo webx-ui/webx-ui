@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import { h } from 'vue'
+import { h, inject } from 'vue'
+import { dateTimezoneKey } from '@webx-ui/core'
 import { createAdmin } from './createAdmin'
 import type { Http } from './http'
 import type { Manifest } from './types'
@@ -102,6 +103,34 @@ describe('createAdmin', () => {
     expect(document.body.textContent).toContain('sign in')
   })
 
+  it('says an address nothing answers for is not there, with the way back', async () => {
+    // A section this site does not have installed used to open as an empty content area.
+    window.history.replaceState({}, '', '/cms/service-categories')
+
+    const admin = createAdmin({
+      el: mountPoint(),
+      basePath: '/cms',
+      routes: [rootRoute],
+      http: stubHttp(),
+      modules: [
+        { id: 'pages', routes: [{ path: '/pages', component: { render: () => h('p', 'pages') } }] },
+      ],
+    })
+
+    await admin.mount()
+    await admin.router.isReady()
+    await flushPromises()
+
+    expect(admin.router.currentRoute.value.name).toBe('webx.not-found')
+    expect(document.body.textContent).toContain('There is nothing at this address')
+
+    await admin.router.push('/pages')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('pages')
+    expect(document.body.textContent).not.toContain('There is nothing at this address')
+  })
+
   it('reads the manifest address out of the page when the shell wrote one', async () => {
     const meta = document.createElement('meta')
     meta.name = 'webx-manifest'
@@ -145,6 +174,39 @@ describe('createAdmin', () => {
 
     expect(admin.context.state.status).toBe('ready')
     expect(admin.context.state.manifest?.title).toBe('WebX UI')
+  })
+
+  it("hands every date picker the site's clock from the manifest", async () => {
+    let zone: unknown = 'not read'
+    const reader = {
+      setup() {
+        const provided = inject(dateTimezoneKey)
+
+        return () => {
+          zone = provided === undefined || typeof provided === 'string' ? provided : provided.value
+
+          return h('div')
+        }
+      },
+    }
+    const admin = createAdmin({
+      el: mountPoint(),
+      http: stubHttp({
+        get: ((url: string) =>
+          Promise.resolve(
+            url.includes('/manifest')
+              ? { data: { ...manifest, timezone: 'Asia/Hong_Kong' } }
+              : answer(url),
+          )) as never,
+      }),
+      basePath: '/cms',
+      routes: [{ path: '/', component: reader }],
+    })
+
+    await admin.mount()
+    await flushPromises()
+
+    expect(zone).toBe('Asia/Hong_Kong')
   })
 
   it('treats a 401 on the manifest as nobody being signed in, not as a failure', async () => {
@@ -217,6 +279,9 @@ describe('createAdmin', () => {
       '/api/cms/translations/uk',
     ])
     expect(admin.i18n.state.locale).toBe('uk')
+    // The manifest came back in the administrator's language already; asking for it again
+    // after adopting that language was the same request twice.
+    expect(asked.filter((url) => url.includes('/manifest'))).toHaveLength(1)
     // The dictionary was asked for before the manifest: the first paint is not in English
     // and then something else a moment later.
     expect(asked.indexOf('/api/cms/translations/en')).toBeLessThan(
@@ -288,6 +353,62 @@ describe('createAdmin', () => {
 
     expect(admin.i18n.state.locale).toBe('de')
     expect(admin.context.nav.value[0]?.title).toBe('Dateien')
+  })
+
+  it('asks for a dictionary once per language and for a stored file once per visit', async () => {
+    const asked: string[] = []
+    const resolved: string[][] = []
+
+    const admin = createAdmin({
+      el: mountPoint(),
+      basePath: '/cms',
+      routes: [rootRoute],
+      modules: [
+        {
+          id: 'pages',
+          assetUrls: (paths) => {
+            resolved.push(paths)
+
+            return Promise.resolve(
+              Object.fromEntries(
+                paths.map((path) => [path, path === 'lost.jpg' ? null : `/s/${path}`]),
+              ),
+            )
+          },
+        },
+      ],
+      http: stubHttp({
+        get: ((url: string) => {
+          asked.push(url)
+
+          const locale = /\/translations\/(\w+)/.exec(url)?.[1]
+
+          return Promise.resolve(
+            locale === undefined ? answer(url) : { data: { ...dictionary, locale } },
+          )
+        }) as never,
+      }),
+    })
+
+    await admin.mount()
+    await admin.context.setLocale('de')
+    await admin.context.setLocale('en')
+
+    // In whichever order the first guess put them — this browser may remember either.
+    expect(asked.filter((url) => url.includes('/translations/')).sort()).toEqual([
+      '/api/cms/translations/de',
+      '/api/cms/translations/en',
+    ])
+    expect(admin.i18n.state.locale).toBe('en')
+
+    const urls = admin.context.assetUrls!
+    const [first, second] = await Promise.all([urls(['me.jpg']), urls(['me.jpg', 'lost.jpg'])])
+
+    expect(first).toEqual({ 'me.jpg': '/s/me.jpg' })
+    expect(second).toEqual({ 'me.jpg': '/s/me.jpg', 'lost.jpg': null })
+    expect(await urls(['me.jpg', 'lost.jpg'])).toEqual({ 'me.jpg': '/s/me.jpg', 'lost.jpg': null })
+    // The photograph once; the lost file again, since an upload may have brought it back.
+    expect(resolved).toEqual([['me.jpg'], ['lost.jpg'], ['lost.jpg']])
   })
   it('opens on the section that claimed the root, and on the first one when none did', async () => {
     // Nothing answered at '/' until now: the routes are the modules', and none of them was

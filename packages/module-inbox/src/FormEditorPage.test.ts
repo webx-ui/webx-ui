@@ -185,4 +185,33 @@ describe('WxInboxFormEditor', () => {
 
     expect(wrapper.text()).toContain('That address is taken.')
   })
+
+  it('says how the site runs the chosen captcha, and warns when it has no keys for it', async () => {
+    const { wrapper } = await panel({
+      ...form,
+      captcha: {
+        recaptcha: { type: 'invisible', configured: true },
+        turnstile: { type: 'invisible', configured: false },
+      },
+    })
+
+    expect(wrapper.text()).toContain('This site runs Turnstile invisibly when the form is sent.')
+    expect(wrapper.text()).toContain('The site has no keys for this captcha yet')
+    // Where the keys are, rather than a pointer at settings the panel does not have.
+    expect(wrapper.text()).toContain('WEBX_INBOX_TURNSTILE_KEY')
+  })
+
+  it('names the reCAPTCHA key type the site expects', async () => {
+    const { wrapper } = await panel({
+      ...form,
+      options: { ...form.options, 'antispam.captcha': 'recaptcha' },
+      captcha: {
+        recaptcha: { type: 'checkbox', configured: true },
+        turnstile: { type: 'checkbox', configured: true },
+      },
+    })
+
+    expect(wrapper.text()).toContain('its keys must be v2 Checkbox keys')
+    expect(wrapper.text()).not.toContain('The site has no keys for this captcha yet')
+  })
 })

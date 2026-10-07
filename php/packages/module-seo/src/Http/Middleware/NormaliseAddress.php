@@ -31,6 +31,9 @@ final class NormaliseAddress
 {
     private const INDEX = '~/index\.(?:php|html?)$~i';
 
+    /** The front controller written into the middle of an address: `/index.php/about`. */
+    private const FRONT = '~^/index\.php(?=/)~i';
+
     public function __construct(
         private readonly Normalisation $settings,
         private readonly Config $config,
@@ -61,11 +64,10 @@ final class NormaliseAddress
 
         $base = $request->getBaseUrl();
         // The base is where the front controller lives (`/index.php`, or a subdirectory); the
-        // index file it names is exactly what the index part is about, so it is cut too.
-        $path = $base !== '' && str_starts_with($uri, $base) && preg_match(self::INDEX, $base) !== 1
-            ? substr($uri, strlen($base))
-            : $uri;
+        // index file it names is exactly what the index part is about, so it stays in the path
+        // and is cut there, by the setting.
         $prefix = preg_match(self::INDEX, $base) === 1 ? (string) preg_replace(self::INDEX, '', $base) : $base;
+        $path = $prefix !== '' && str_starts_with($uri, $prefix) ? substr($uri, strlen($prefix)) : $uri;
         $path = $path === '' ? '/' : $path;
 
         // The panel keeps its own path, but not another host or plain http: a panel answering on
@@ -125,6 +127,9 @@ final class NormaliseAddress
         }
 
         if ($this->settings->index()) {
+            // `/index.php/about` is `/about` with the front controller named: a second address
+            // for every page, and the one the canonical used to repeat.
+            $path = (string) preg_replace(self::FRONT, '', $path);
             $path = (string) preg_replace(self::INDEX, '/', $path);
         }
 

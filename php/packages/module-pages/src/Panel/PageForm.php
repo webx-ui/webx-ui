@@ -8,6 +8,8 @@ use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
+use WebxUi\Localization\Locales;
+use WebxUi\Pages\Exceptions\PagesException;
 use WebxUi\Pages\Http\Resources\PageResource;
 use WebxUi\Pages\Models\Page;
 use WebxUi\Routing\Models\Route;
@@ -35,7 +37,10 @@ final class PageForm
      */
     private const OWN = ['title', 'slug', 'blocks'];
 
-    public function __construct(private readonly ScreenValues $values) {}
+    public function __construct(
+        private readonly ScreenValues $values,
+        private readonly Locales $locales,
+    ) {}
 
     /**
      * A page and everything its editor needs around it: the row, the trail above it for the
@@ -138,6 +143,10 @@ final class PageForm
             $content[$field] = $values[$field] ?? null;
         }
 
+        // The SEO card is saved live, outside the draft, and is an edit like any other: two
+        // people who each rewrote the description have to find out about it.
+        $content['seo'] = $values[Fields::SCREEN] ?? null;
+
         return substr(sha1(json_encode($content, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE)), 0, 12);
     }
 
@@ -157,6 +166,18 @@ final class PageForm
     public function save(Page $page, array $input, ?callable $can = null, ?int $authorId = null, string $source = EntityVersion::SOURCE_PANEL): void
     {
         $stored = $this->values->validate(self::SCREEN, $input, $can);
+
+        // A page with no title in the site's main language is called by its slug everywhere —
+        // the list, the menu picker, the breadcrumbs. The create dialog and pages_create refuse
+        // one; a save that empties it is refused the same way, whichever door it came through.
+        if (array_key_exists('title', $stored)) {
+            $main = $this->locales->defaultCode();
+            $title = is_array($stored['title']) ? ($stored['title'][$main] ?? null) : $stored['title'];
+
+            if (! is_string($title) || trim($title) === '') {
+                throw PagesException::titleRequired($main);
+            }
+        }
 
         // The home page's address is `''` in every language, and the model refuses anything
         // else. Dropped rather than refused, because a form that sends the whole screen back

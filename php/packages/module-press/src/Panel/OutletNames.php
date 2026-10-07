@@ -15,7 +15,7 @@ final class OutletNames
 {
     public static function of(Outlet $outlet, Locales $locales): string
     {
-        $title = $outlet->displayTitle($locales->current());
+        $title = $outlet->displayTitle($locales->content());
 
         return $title !== '' ? $title : '#'.$outlet->getKey();
     }

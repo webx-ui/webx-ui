@@ -78,6 +78,11 @@ patch whose target is gone throws when the screen is first built.
   wait in the draft with the text until `recipes_publish`.
 - Do not delete rows with SQL: deleting bins a recipe and releases its address; a raw delete
   leaves the address in the routing registry.
+- Do not print `<title>` in a site's copy of a view: with an empty SEO card the recipe and the
+  category name the page themselves (`seoFallback()` — the name through the title template, the
+  lead, the first photo or the picture), and the index is called by the section.
+  A copy published before still has an `@if ($meta->title === null)` block and the `$seo` /
+  `$meta` lines for it: delete them, they never print any more.
 
 ## Check your work
 

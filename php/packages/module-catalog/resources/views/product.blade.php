@@ -13,18 +13,15 @@
     Two points for the satellites: `catalog.product.aside` beside the price (the stock, the brand)
     and `catalog.product.tabs` under the description (properties, related products).
 --}}
-@php($seo = app(WebxUi\Seo\Rendering\Seo::class))
-@php($meta = $seo->for($seo->currentUrl(), $product))
 @php($priced = (bool) config('webx-catalog.price.enabled', true))
 @php($images = $product->images)
 @php($videos = (bool) config('webx-catalog.fields.video', true))
 
 <x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'">
     <x-slot:head>
+        {{-- The SEO card, then the product's own name, summary and main picture where the card is
+             empty (`seoFallback()`), then the site defaults. --}}
         @webxSeo($product)
-        @if ($meta->title === null)
-            <title>{{ $product->displayName() }}</title>
-        @endif
     </x-slot:head>
 
     <article class="webx-catalog-product">

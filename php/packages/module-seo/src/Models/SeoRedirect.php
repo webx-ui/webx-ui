@@ -85,7 +85,18 @@ class SeoRedirect extends Model
     /** Is this redirect a loop for the address it was written for? What the panel labels. */
     public function isLoop(): bool
     {
-        return $this->match_type === UrlMatcher::EXACT
-            && UrlNormaliser::normalise($this->target) === UrlNormaliser::normalise($this->pattern);
+        return self::loops((string) $this->match_type, (string) $this->pattern, (string) $this->target);
+    }
+
+    /**
+     * An exact address sent to itself — the loop that is a loop for every request it catches.
+     * A mask or a pattern loops only for some of what it covers, so those are left to the
+     * runtime to step over rather than made unwritable.
+     */
+    public static function loops(string $matchType, string $pattern, string $target): bool
+    {
+        return $matchType === UrlMatcher::EXACT
+            && ! str_contains($target, '://')
+            && UrlNormaliser::normalise($target) === UrlNormaliser::normalise($pattern);
     }
 }

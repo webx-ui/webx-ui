@@ -51,7 +51,7 @@ final class ReviewsResources
     private function catalog(): array
     {
         $locales = $this->container->make(Locales::class);
-        $locale = $locales->current();
+        $locale = $locales->content();
 
         return [
             'locales' => $locales->codes(),

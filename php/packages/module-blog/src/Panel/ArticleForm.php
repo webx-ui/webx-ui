@@ -290,7 +290,7 @@ final class ArticleForm
      */
     private function rubrics(): array
     {
-        $locale = $this->locales->current();
+        $locale = $this->locales->content();
 
         return Rubric::query()
             ->inMenuOrder()
@@ -325,7 +325,7 @@ final class ArticleForm
      */
     private function related(Article $article): array
     {
-        $locale = $this->locales->current();
+        $locale = $this->locales->content();
 
         return $article->related()
             ->get()

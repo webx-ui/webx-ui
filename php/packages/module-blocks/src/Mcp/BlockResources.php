@@ -46,7 +46,7 @@ final class BlockResources
         'wx-cascader' => ['kind' => 'field', 'note' => 'A place in the tree of props.options ([{ value, label, children }]), stored as the path of values from the root; with props.emitPath: false, the last value alone. Leaves only unless props.checkStrictly.'],
         'wx-tree-select' => ['kind' => 'field', 'note' => 'The key of a node of props.nodes ([{ id, label, children }]); a list of keys with props.multiple.'],
         'wx-transfer' => ['kind' => 'field', 'note' => 'Several of props.items ([{ value, label }]), moved from one list into another; stored as a list of their values.'],
-        'wx-link' => ['kind' => 'field', 'note' => 'Somewhere to go: a page of this site, an address, or nowhere. Stored as { target, entity_type, entity_id, url, hash, new_tab, rel } — the entity, never its address. The template gets url worked out when the block is printed, with the anchor already on the end of it, plus label, available, new_tab and rel. props: allowNone, attributes.'],
+        'wx-link' => ['kind' => 'field', 'note' => 'Somewhere to go: a page of this site, an address, or nowhere. Stored as { target, entity_type, entity_id, url, hash, new_tab, rel } — the entity, never its address. target is required: "url" with url ({ "target": "url", "url": "/contacts" }), "entity" with entity_type and entity_id, or "none"; { "url": … } without it is refused. The template gets url worked out when the block is printed, with the anchor already on the end of it, plus label, available, new_tab and rel. props: allowNone, attributes.'],
         'wx-repeater' => ['kind' => 'field', 'note' => 'A list of records; children are the fields of one record. Rows start folded to `#N · <itemLabel>`. props: itemLabel, min, max, addLabel, collapsed.'],
         'wx-media' => ['kind' => 'field', 'note' => 'A file from the media library; the value is { path, alt, title }, and the template also gets url, worked out when the block is printed. props: accept.'],
         'wx-gallery' => ['kind' => 'field', 'note' => 'Pictures from the media library, in the order they were dragged into; a list of wx-media values, each resolved with url, thumb, name, size, width and height. Use this rather than a wx-repeater around a wx-media. props: max, min, columns, aspect, captions.'],
@@ -66,6 +66,14 @@ final class BlockResources
         'wx-text' => ['kind' => 'display', 'note' => 'A paragraph of help text in props.text.'],
         'wx-alert' => ['kind' => 'display', 'note' => 'A callout; props.title, props.type.'],
     ];
+
+    /**
+     * Field types modules register for their own screens — a category picker, an address, the SEO
+     * card — that mean nothing in a block: they read and write the record the screen is about,
+     * and a block is not one. Listed as "registered by the site", they were offered as if a
+     * schema could use them.
+     */
+    private const SCREEN_ONLY = ['wx-categories', 'wx-category-slug', 'wx-relations', 'wx-seo', 'wx-slug'];
 
     public function __construct(private readonly Container $container) {}
 
@@ -160,6 +168,10 @@ final class BlockResources
         }
 
         foreach ($registered as $type) {
+            if (in_array($type, self::SCREEN_ONLY, true)) {
+                continue;
+            }
+
             $nodes[$type] ??= ['kind' => 'field', 'note' => 'Registered by the site; ask its owners what it holds.'];
         }
 

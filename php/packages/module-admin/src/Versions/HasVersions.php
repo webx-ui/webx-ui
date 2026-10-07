@@ -167,7 +167,13 @@ trait HasVersions
             throw new LogicException(sprintf('%s has no version %s.', static::class, $version instanceof EntityVersion ? $version->getKey() : $version));
         }
 
-        $this->saveDraft($found->payload, $found->author_id, EntityVersion::SOURCE_PANEL);
+        // A model may bring an old payload up to date on its way back — module-blocks follows a
+        // renamed block type to its new slug ({@see \WebxUi\Blocks\HasBlocks::restoredPayload()}).
+        $payload = is_array($found->payload) && method_exists($this, 'restoredPayload')
+            ? $this->restoredPayload($found->payload)
+            : $found->payload;
+
+        $this->saveDraft($payload, $found->author_id, EntityVersion::SOURCE_PANEL);
 
         return $found;
     }

@@ -11,6 +11,7 @@ describe('validateScreen', () => {
           label: 'Card',
           children: [
             { id: 'name', type: 'wx-input', name: 'name', localized: true, props: {} },
+            { id: 'shown', type: 'wx-switch', name: 'shown', default: true },
             {
               id: 'x',
               type: 'wx-input',
@@ -71,6 +72,7 @@ describe('validatePatch', () => {
         { op: 'replace', target: 'a', node: { id: 'n', type: 't' } },
         { op: 'move', target: 'a', to: 'b', position: 'first' },
         { op: 'set', target: 'a', props: { rows: 4 }, label: 'L' },
+        { op: 'set', target: 'a', default: false },
       ]),
     ).toEqual([])
   })

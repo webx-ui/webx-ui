@@ -7,6 +7,7 @@ const NODE_KEYS = new Set([
   'label',
   'help',
   'localized',
+  'default',
   'props',
   'children',
   'slot',

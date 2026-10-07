@@ -6,6 +6,7 @@ import '../../styles/datepicker.css'
 import type { DatePickerEmits, DatePickerModelValue, DatePickerProps } from './types'
 import { useControlAttrs } from '../../composables/useControlAttrs'
 import { useDateLocale } from '../../composables/useDateLocale'
+import { readersTimezone, useDateTimezone } from '../../composables/useDateTimezone'
 
 defineOptions({ name: 'WxDatePicker', inheritAttrs: false })
 
@@ -24,6 +25,7 @@ const props = withDefaults(defineProps<DatePickerProps>(), {
   minutesIncrement: 1,
   is24: true,
   locale: undefined,
+  timezone: undefined,
   weekStart: 1,
   autoApply: true,
   textInput: false,
@@ -73,12 +75,30 @@ const modelType = computed(() => {
   return 'yyyy-MM-dd'
 })
 
+const asked = useDateTimezone(() => props.timezone)
+
+/**
+ * The zone handed to the picker — only for a value that is a moment. A format without an
+ * offset is a wall clock (a Laravel `datetime` column read as written), and moving it into a
+ * zone would shift the hour it names; a plain date would even change its day.
+ */
+const timezone = computed(() =>
+  typeof modelType.value === 'string' && /[Xx]/.test(modelType.value.replace(/'[^']*'/g, ''))
+    ? asked.value
+    : undefined,
+)
+
 /** What the field shows. Day-first, because this kit is aimed at European admins. */
 const displayFormat = computed(() => {
   if (props.format) return props.format
   const time = props.seconds ? 'HH:mm:ss' : 'HH:mm'
   if (props.type === 'time') return time
-  if (props.type === 'datetime') return `dd.MM.yyyy ${time}`
+  if (props.type === 'datetime') {
+    // A clock in somebody else's zone says whose it is: "09:30" alone reads as the reader's own.
+    const zone = timezone.value && timezone.value !== readersTimezone() ? " 'GMT'xxx" : ''
+
+    return `dd.MM.yyyy ${time}${zone}`
+  }
   return 'dd.MM.yyyy'
 })
 
@@ -142,6 +162,7 @@ function onCleared() {
       :min-date="minDate"
       :max-date="maxDate"
       :locale="locale"
+      :timezone="timezone"
       :week-start="weekStart"
       :auto-apply="autoApply"
       :text-input="textInput"

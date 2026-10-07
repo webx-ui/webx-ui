@@ -79,6 +79,11 @@ own fields into `project-fields`.
   articles to another rubric, or hide the rubric (`is_visible`) instead.
 - Do not put a list of articles on `/` through this package: with an empty prefix the feed route
   is not registered, because `/` belongs to the site. Make that a page with a block.
+- Do not print `<title>` in a site's copy of a view: with an empty SEO card the article, the
+  rubric and the tag name the page themselves (`seoFallback()` — the title through the title
+  template, the lead, the cover), and the feed is called by the blog's name.
+  A copy published before still has an `@if ($meta->title === null)` block and the `$seo` /
+  `$meta` lines for it: delete them, they never print any more.
 
 ## Check your work
 

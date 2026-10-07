@@ -169,14 +169,19 @@ final class Notifier
     /**
      * The queued way: marked first and pushed after, so a quick worker finds the mark.
      *
-     * A push that throws — the queue's own database or Redis is down — is a letter that never
-     * reached the queue, and it is failed on the spot.
+     * A push that throws — the queue's own database or Redis is down, the mailer is not
+     * configured — is a letter that never reached the queue, and it is failed on the spot.
+     * The "queued" line is written after the pushes and counts only the letters that made it:
+     * written before, it read "queued" beside "failed" at the same second for a letter that
+     * was never anywhere near a queue.
      *
      * @param  list<array{0: string, 1: string}>  $recipients
      */
     private function enqueue(Submission $submission, array $recipients, ?int $adminId): void
     {
-        $this->delivery->queued($submission, array_map(static fn (array $one): string => $one[0], $recipients), $adminId);
+        $this->delivery->queued($submission, array_map(static fn (array $one): string => $one[0], $recipients));
+
+        $pushed = 0;
 
         foreach ($recipients as [$address, $locale]) {
             try {
@@ -184,9 +189,15 @@ final class Notifier
                     ->to($address)
                     ->locale($locale)
                     ->send((new SubmissionReceived($submission))->reportingFor($address));
+
+                $pushed++;
             } catch (Throwable $exception) {
                 $this->delivery->failed((int) $submission->getKey(), $address, $exception->getMessage());
             }
+        }
+
+        if ($pushed > 0) {
+            $submission->log(SubmissionEvent::NOTIFY_QUEUED, null, (string) $pushed, $adminId);
         }
 
         $submission->refresh();

@@ -50,6 +50,7 @@ return [
     'move-branch' => 'Cambian :count direcciones: la de la página y las de todo lo que contiene. Las antiguas redirigirán a las nuevas.',
     'moved' => 'Movida. Han cambiado :count direcciones; las antiguas redirigen a las nuevas.',
     'moved-one' => 'Movida. La dirección ha cambiado; la antigua redirige a ella.',
+    'reordered' => 'Movida. Su dirección no cambia.',
 
     'delete-title' => '¿Eliminar «:title»?',
     'delete-text' => 'La página va a la papelera y deja de responder en el sitio.',

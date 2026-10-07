@@ -30,7 +30,7 @@ export const blocksMessages: Record<string, Messages> = {
 
     identifier: 'Identifier',
     'identifier-help':
-      'The type in the page content. Renaming it breaks every page the block stands on.',
+      'The type in the page content. Renaming it rewrites every page and region it stands on; it is refused while another template calls it.',
     title: 'Name',
     description: 'Description',
     'description-help': 'A hint for the editor, and the instruction an agent reads.',
@@ -42,7 +42,8 @@ export const blocksMessages: Record<string, Messages> = {
     group: 'Group',
     'group-help': 'The section of the list an editor picks a block from.',
     allow: 'May hold',
-    'allow-help': 'Types that can be put inside. Empty — the block is not a container.',
+    'allow-help':
+      'Types that can be put inside a field holding blocks that names none of its own. Empty — any type.',
     'allowed-in': 'Allowed in',
     'allowed-in-help': 'Types that may hold this one. Empty — anywhere, the page itself included.',
     root: 'The page itself',
@@ -118,6 +119,22 @@ export const blocksMessages: Record<string, Messages> = {
     'source-panel': 'panel',
     'source-mcp': 'agent',
     'source-import': 'import',
+    'allow-help-none':
+      'The schema has no field of type wx-blocks, so the block holds nothing; this list applies once it has one.',
+    'allow-from-fields':
+      'The fields holding blocks name what they take — :fields — and that wins. This list applies to a field that names nothing.',
+    renamed: 'Renamed to :slug. Pages and regions rewritten: :pages; other types: :types.',
+    'settings-saved': 'Settings saved.',
+    'drop-translations-title': 'Keep only the main language?',
+    'drop-translations-confirm': 'Keep the main language and publish',
+    'thumb-empty': 'Prints nothing on its sample: it draws only when there is data to show.',
+    'drops-translations':
+      'This version makes :fields hold one language. :count page(s) hold text in several languages there, and only the main one would be kept: :pages. Publish again agreeing to drop the other languages, or move the text first.',
+    'localized-changes':
+      'Publishing this version changes the language shape of :fields: the values already on :count page(s) will be converted.',
+    'rename-called':
+      'Other types call this one by its identifier: :types. Change their templates first, then rename it.',
+    'rename-declared': 'A module calls this component by its identifier, so it cannot be renamed.',
   },
   field: {
     blocks: 'Blocks',
@@ -164,6 +181,8 @@ export const blocksMessages: Record<string, Messages> = {
     'width-desktop': 'Desktop',
     'width-tablet': 'Tablet',
     'width-phone': 'Phone',
+    'add-inside-full': 'Full: takes :max',
+    invalid: 'Some values were not accepted',
   },
   components: {
     kind: 'Kind',
@@ -292,10 +311,16 @@ export const blocksMessages: Record<string, Messages> = {
     'media-query': '@media measures the window. A block is sized by its container: use @container.',
     'variables-missing':
       'The template uses :variables, which the schema does not declare. Publishing will be refused.',
+    'marker-slug':
+      'The root is marked data-wx-block=":marker", but the identifier is «:slug»: the script and the panel find the block by the exact identifier. Publishing will be refused.',
     'ok-marker': 'The root carries data-wx-block.',
     'ok-prefix': 'Every selector starts with .b-:slug.',
     'ok-bare': 'No bare element selectors.',
     'ok-container': 'Width is decided by container queries.',
     'ok-variables': 'Every variable of the template is a field of the schema.',
+    syntax: 'The template does not compile: :reason. Publishing will be refused.',
+    'unknown-field-type':
+      'Fields of a type this site does not know: :fields. The form draws a warning in their place and nothing checks their values.',
+    'field-id': 'Field ids must be letters, digits, _ and -, starting with a letter: :ids.',
   },
 }

@@ -47,4 +47,6 @@ return [
     'width-desktop' => 'Desktop',
     'width-tablet' => 'Tablet',
     'width-phone' => 'Phone',
+    'add-inside-full' => 'Full: takes :max',
+    'invalid' => 'Some values were not accepted',
 ];

@@ -47,4 +47,6 @@ return [
     'width-desktop' => 'Ordinateur',
     'width-tablet' => 'Tablette',
     'width-phone' => 'Téléphone',
+    'add-inside-full' => 'Plein : :max au plus',
+    'invalid' => 'Certaines valeurs n\'ont pas été acceptées',
 ];

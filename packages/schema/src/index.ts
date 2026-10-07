@@ -25,6 +25,7 @@ export { coreTypes, defineTypes, describeTypes, typesTable, type TypeDescription
 export {
   screenErrorsKey,
   translateDeep,
+  withFieldDefaults,
   words,
   WxScreenNodes,
   TRANS_MARKER,

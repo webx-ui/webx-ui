@@ -24,7 +24,7 @@ final class CategoryResource extends JsonResource
     {
         /** @var Category $category */
         $category = $this->resource;
-        $locale = app(Locales::class)->current();
+        $locale = app(Locales::class)->content();
         $routes = $category->relationLoaded('routes') ? $category->routes : $category->routes()->get();
         $row = $routes->first(static fn (Route $route): bool => $route->kind === Route::CANONICAL && $route->locale === $locale);
 

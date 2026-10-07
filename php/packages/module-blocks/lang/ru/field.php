@@ -47,4 +47,6 @@ return [
     'width-desktop' => 'Десктоп',
     'width-tablet' => 'Планшет',
     'width-phone' => 'Телефон',
+    'add-inside-full' => 'Заполнено: не больше :max',
+    'invalid' => 'Часть значений не принята',
 ];

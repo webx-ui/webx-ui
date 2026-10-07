@@ -43,7 +43,7 @@ final class McpTest extends TestCase
         );
 
         $this->assertSame(
-            ['vacancy_categories_list', 'vacancy_categories_create', 'vacancy_categories_update', 'vacancy_categories_delete', 'vacancy_categories_reorder'],
+            ['vacancy_categories_list', 'vacancy_categories_get', 'vacancy_categories_create', 'vacancy_categories_update', 'vacancy_categories_delete', 'vacancy_categories_reorder'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('vacancy-categories')),
         );
 

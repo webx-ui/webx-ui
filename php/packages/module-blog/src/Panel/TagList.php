@@ -49,7 +49,7 @@ final class TagList
      */
     public function page(Request $request): array
     {
-        $locale = $this->locales->current();
+        $locale = $this->locales->content();
         $term = trim((string) $request->query('q', ''));
 
         $searched = $this->search($term);
@@ -94,7 +94,7 @@ final class TagList
      */
     public function row(Tag $tag, ?string $locale = null): array
     {
-        $locale ??= $this->locales->current();
+        $locale ??= $this->locales->content();
 
         $tag->load($this->canonicalRoutes($locale));
         $tag->loadCount('articles');

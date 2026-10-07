@@ -18,11 +18,14 @@ use WebxUi\NestedSet\HasNestedSet;
 use WebxUi\Pages\Exceptions\PagesException;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
+use WebxUi\Routing\Models\Route;
 use WebxUi\Routing\Revival;
 use WebxUi\Routing\RouteSync;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * A page of the site.
@@ -50,7 +53,7 @@ use WebxUi\Seo\HasSeo;
  * @property int $depth
  * @property int|null $parent_id
  */
-class Page extends Model implements HasBreadcrumbs, Visible
+class Page extends Model implements HasBreadcrumbs, HasSeoFallback, Visible
 {
     use HasBlocks;
     use HasDraft;
@@ -84,6 +87,9 @@ class Page extends Model implements HasBreadcrumbs, Visible
 
     /** On the site, with edits that are not on it yet. */
     public const STATUS_MODIFIED = 'modified';
+
+    /** Whether the page was on the site when the save under way began; see `booted()`. */
+    private ?bool $liveBeforeSave = null;
 
     /** @var list<string> */
     protected $fillable = ['title', 'slug', 'blocks'];
@@ -220,6 +226,20 @@ class Page extends Model implements HasBreadcrumbs, Visible
         }
 
         return $crumbs;
+    }
+
+    /**
+     * The page's title, for the `<title>` of a page nobody wrote an SEO card for.
+     *
+     * Only the title: a page is blocks, and there is no lead or picture of its own to say more
+     * with — guessing a description out of the first block would put a menu or a button text in
+     * the snippet. On the home page `module-seo` puts the site's name in its place.
+     */
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        $title = $this->getTranslation('title', $locale);
+
+        return SeoData::fallback(is_string($title) && trim($title) !== '' ? $title : null);
     }
 
     /**
@@ -413,6 +433,18 @@ class Page extends Model implements HasBreadcrumbs, Visible
      */
     public function restoreBranchWithTrail(): ?Revival
     {
+        // A page whose parent is still in the bin has nowhere to come back to: restored, it was
+        // a live page under a dead one, and its address skipped the missing slugs and claimed a
+        // place at the top of the site. Refused, naming the page that has to come back first.
+        $buried = $this->trashedAncestor();
+
+        if ($buried !== null) {
+            throw PagesException::ancestorIsInBin(
+                (string) ($buried->getTranslation('title', null) ?: '#'.$buried->getKey()),
+                (int) $buried->getKey(),
+            );
+        }
+
         /** @var Revival|null $trail */
         $trail = $this->getConnection()->transaction(function (): ?Revival {
             $branch = $this->trashedBranch();
@@ -439,6 +471,24 @@ class Page extends Model implements HasBreadcrumbs, Visible
         });
 
         return $trail;
+    }
+
+    /**
+     * The highest page above this one that is in the bin — the one whose restore brings the
+     * rest of the way back with it — or null when the way up is clear.
+     */
+    public function trashedAncestor(): ?static
+    {
+        $fresh = static::withTrashed()->find($this->getKey()) ?? $this;
+
+        /** @var static|null $ancestor */
+        $ancestor = static::onlyTrashed()
+            ->where($this->getLftName(), '<', $fresh->getLft())
+            ->where($this->getRgtName(), '>', $fresh->getRgt())
+            ->orderBy($this->getLftName())
+            ->first();
+
+        return $ancestor;
     }
 
     /**
@@ -525,6 +575,62 @@ class Page extends Model implements HasBreadcrumbs, Visible
 
             $page->trashDescendants();
         });
+
+        // Whether the page was on the site before this save, taken before anything runs: by the
+        // time `updated` is heard, a listener ahead of ours may have synced the originals, and the
+        // first publication — the save that moves a renamed draft's address — reads as live.
+        static::updating(static function (self $page): void {
+            $page->liveBeforeSave ??= $page->getRawOriginal($page->publishedAtColumn()) !== null;
+        });
+
+        // Registered after `HasUrl`'s own listeners (trait boots run before `booted()`), so the
+        // registry has already turned the old address into a redirect by the time this runs.
+        foreach (['updated', 'moved'] as $event) {
+            static::registerModelEvent($event, static function (self $page) use ($event): void {
+                $live = $page->liveBeforeSave ?? $page->isPublished();
+                $page->liveBeforeSave = null;
+
+                $page->forgetAddressesNeverLive($live, $event === 'moved' || $page->wasChanged('slug'));
+            });
+        }
+    }
+
+    /**
+     * Drop the redirects from addresses that never answered.
+     *
+     * Renaming or moving a page that was never on the site leaves its old address behind as a
+     * 301, like any other — but nobody can have linked to a page that never answered, and the
+     * leftover redirect only holds a path another page may want and shows up among the site's
+     * redirects as if it mattered. A page that was on the site once keeps its trail: somebody may
+     * have linked to it then.
+     *
+     * The branch is looked at only when an address may have moved under it, not on every autosave.
+     */
+    private function forgetAddressesNeverLive(bool $live, bool $branch): void
+    {
+        // A page off the site now may have been on it before: its history says so.
+        $wasLive = static fn (self $node, bool $live): bool => $live
+            || ($node->hasVersions() && $node->publishedVersions()->exists());
+
+        $nodes = [[$this, $live]];
+
+        if ($branch) {
+            $fresh = static::query()->find($this->getKey()) ?? $this;
+            $under = static::query()->whereNull($this->publishedAtColumn())
+                ->where('lft', '>', $fresh->getLft())
+                ->where('rgt', '<', $fresh->getRgt())
+                ->get();
+
+            foreach ($under as $node) {
+                $nodes[] = [$node, false];
+            }
+        }
+
+        foreach ($nodes as [$node, $publishedBefore]) {
+            if (! $wasLive($node, $publishedBefore)) {
+                Route::query()->forEntity($node)->alias()->delete();
+            }
+        }
     }
 
     /**

@@ -28,6 +28,12 @@ return [
             'why' => 'Le e-mail e gli invii vengono gestiti mentre il visitatore aspetta, un server di posta lento rallenta i moduli e i job lunghi, come l’audit, non possono essere avviati dal pannello.',
             'fix' => 'Usa la coda database o redis e tieni in esecuzione un worker (php artisan queue:work sotto un supervisor).',
         ],
+        'queue_worker' => [
+            'title' => 'Nessuno elabora la coda',
+            'found' => 'I job della coda su database sono scaduti da minuti e nessun worker li ha presi.',
+            'why' => 'Le email dei moduli, le analisi e l’elaborazione delle immagini restano in coda e non avvengono mai, mentre il pannello dice che va tutto bene.',
+            'fix' => 'Tieni un worker in esecuzione (php artisan queue:work sotto un supervisore), pianifica queue:work --stop-when-empty ogni minuto, oppure usa QUEUE_CONNECTION=sync su un sito piccolo.',
+        ],
         'mail' => [
             'title' => 'La posta non va da nessuna parte',
             'found' => 'Il mailer scrive le e-mail nel log o in memoria.',
@@ -445,10 +451,16 @@ return [
             'fix' => 'Compila l’anteprima social nelle impostazioni SEO della pagina, oppure fai stampare i tag dal layout.',
         ],
         'image_broken' => [
-            'title' => 'L’immagine Open Graph è rotta o troppo piccola',
-            'found' => 'og:image non si apre, oppure è più piccola di 1200×630.',
-            'why' => 'Un link condiviso non mostra alcuna immagine, oppure un piccolo quadrato accanto al testo invece di una scheda grande.',
-            'fix' => 'Imposta nell’anteprima social della pagina un’immagine funzionante di almeno 1200×630.',
+            'title' => 'L’immagine Open Graph non si apre',
+            'found' => 'og:image risponde con un errore o non si apre.',
+            'why' => 'Un link condiviso non mostra alcuna immagine.',
+            'fix' => 'Imposta un’immagine funzionante nell’anteprima social della pagina.',
+        ],
+        'image_small' => [
+            'title' => 'L’immagine Open Graph è troppo piccola',
+            'found' => 'og:image è più piccola di 1200×630.',
+            'why' => 'Un link condiviso mostra un piccolo quadrato accanto al testo invece di una scheda grande.',
+            'fix' => 'Imposta nell’anteprima social della pagina un’immagine di almeno 1200×630.',
         ],
     ],
     'hreflang' => [

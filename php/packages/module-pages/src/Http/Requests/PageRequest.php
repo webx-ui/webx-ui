@@ -6,6 +6,8 @@ namespace WebxUi\Pages\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use WebxUi\Pages\Models\Page;
 
 /**
  * What the section itself writes: a name, an address and a place in the tree.
@@ -27,7 +29,10 @@ final class PageRequest extends FormRequest
             // The address is checked for shape here and for being free by the registry, which
             // is the only thing that can answer that — it sees every kind of entity.
             'slug' => ['nullable', 'string', 'max:190', 'regex:/^[\p{L}\p{N}]+(?:[-_][\p{L}\p{N}]+)*$/u'],
-            'parent_id' => ['nullable', 'integer'],
+            // A parent that does not exist is a mistake in the form, under its field — not a 404
+            // that reads as if the page being created were the thing missing. One in the bin
+            // exists and is refused by the controller, which can say why.
+            'parent_id' => ['nullable', 'integer', Rule::exists(Page::class, 'id')],
         ];
     }
 
@@ -37,6 +42,21 @@ final class PageRequest extends FormRequest
     public function messages(): array
     {
         return ['slug.regex' => (string) __('webx-pages::errors.slug-shape')];
+    }
+
+    /**
+     * The fields by the names the dialog gives them, so that a refusal reads «Заголовок», not
+     * «title».
+     *
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'title' => (string) __('webx-pages::page.field-title'),
+            'slug' => (string) __('webx-pages::page.field-slug'),
+            'parent_id' => (string) __('webx-pages::page.field-parent'),
+        ];
     }
 
     public function title(): string

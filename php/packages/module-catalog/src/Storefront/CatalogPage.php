@@ -14,6 +14,8 @@ use WebxUi\Catalog\Purchase\Verdict;
 use WebxUi\Catalog\Seo\ListingSource;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasSeoFallback;
+use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * A page of the storefront's list — a category, the root, a search — with everything its template
@@ -27,8 +29,10 @@ use WebxUi\Seo\Contracts\HasBreadcrumbs;
  * `$base` is what the page stands on before the reader chooses anything: nothing on a category,
  * the set of a landing on a landing (§10.1 of the landings spec). "Nothing chosen" means "nothing
  * over the base".
+ *
+ * Where nobody wrote a title, the page is called its heading ({@see seoFallback()}).
  */
-final class CatalogPage implements HasBreadcrumbs
+final class CatalogPage implements HasBreadcrumbs, HasSeoFallback
 {
     public readonly FilterState $base;
 
@@ -121,6 +125,25 @@ final class CatalogPage implements HasBreadcrumbs
     public function verdict(Product $product): Verdict
     {
         return $this->verdicts[(int) $product->id] ?? Verdict::yes();
+    }
+
+    /**
+     * What the page is called when no card and no rule says: its heading — the category's name,
+     * the brand's, «Catalogue» on the root. With nothing chosen over the base the owner's own
+     * answer stands under it too, so its description and picture reach the snippet; once a
+     * filter is chosen they are not this page's, for the same reason its SEO card is not
+     * ({@see ListingSource}).
+     */
+    public function seoFallback(?string $locale = null): SeoData
+    {
+        $own = SeoData::fallback($this->heading);
+        $owner = $this->owner();
+
+        if ($this->isFiltered() || ! $owner instanceof HasSeoFallback) {
+            return $own;
+        }
+
+        return $own->mergeOver($owner->seoFallback($locale ?? $this->context->locale) ?? SeoData::empty());
     }
 
     /**

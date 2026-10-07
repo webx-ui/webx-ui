@@ -92,6 +92,25 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Thumbnails
+    |---------------------------------------------------------------------------
+    |
+    | The picture of every type on its sample, in the list of types and the
+    | picker, is drawn once and kept. Any change to any type — a version, a
+    | publication, a setting, a delete, an import — and `webx:blocks:clear`
+    | throw all of them away. A type that reads records draws those records,
+    | which change on their own: `ttl` (seconds) is how stale its picture may
+    | get. `cache` false draws them on every request, as before.
+    |
+    */
+
+    'thumbnails' => [
+        'cache' => env('WEBX_BLOCKS_THUMBNAILS_CACHE', true),
+        'ttl' => 3600,
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
     | Bundles
     |---------------------------------------------------------------------------
     |
@@ -119,6 +138,20 @@ return [
     */
 
     'entities' => [],
+
+    /*
+    |---------------------------------------------------------------------------
+    | Views
+    |---------------------------------------------------------------------------
+    |
+    | The folders whose Blade views are read for `<x-webx-block type="…">`, so
+    | that a type a view calls by tag is counted as used: `blocks_usage` lists
+    | those views and `blocks_delete` refuses the type unless forced. Null is
+    | the application's `resources/views`.
+    |
+    */
+
+    'views' => null,
 
     /*
     |---------------------------------------------------------------------------

@@ -49,6 +49,7 @@ switch controls whether the address field below it renders at all.
 | `label`     | no         | Text. For a field it goes on the form item; for a card it is the title; see the table below for the rest.                |
 | `help`      | no         | Hint under a field.                                                                                                      |
 | `localized` | no         | The field is edited per content language; the value is a record keyed by locale. Needs `provideLocales` above.           |
+| `default`   | no         | For fields: drawn, and read by the site, while nothing is stored. Checked by the type's rules on the server.             |
 | `props`     | no         | Passed to the component as they are. The renderer does not interpret them.                                               |
 | `children`  | no         | Nested nodes.                                                                                                            |
 | `slot`      | no         | A named slot of the parent to land in — `sidebar` on a card, `extra` on a header. Without it, the parent's default slot. |
@@ -57,6 +58,16 @@ switch controls whether the address field below it renders at all.
 
 There are no other keys. The set is closed on purpose — `validateScreen` and the JSON schema
 both reject `childrens` — so a typo is an error, not a silently empty tab.
+
+**A default.** A field with nothing stored — no key, or `null` — is drawn with its `default`, and
+the site reads the same: a switch that should be on until somebody turns it off is
+`{ "type": "wx-switch", "name": "popup.enabled", "default": true }`, and `settings('popup.enabled')`
+answers `true` before anything is saved. The default is only drawn, never written: the renderer
+fills it into what the fields show and writes edits into the real model, so an untouched field is
+not sent and nothing is stored for it. A localized field takes one plain value for every language
+(the form shows it in the main one). The server checks a default with the rules of its type, once
+the tree is patched — one the type would refuse from an editor breaks the screen like any other
+mistake in it.
 
 **Translatable strings.** Any string in a node that starts with `trans::` is a dictionary key:
 `trans::<namespace>::<key>`. The marker works in `label`, `help` and anywhere inside `props`,
@@ -217,6 +228,16 @@ list emptied to `[]` and a date cleared to `''` are kept as `null`:
 `wx-date-time-picker` always writes the offset: the registry binds its `valueFormat`, because a
 wall clock without a zone is read by the server in its timezone and by the browser in the
 reader's, and the same value shows two different hours.
+
+`wx-input` holds a format when `props.type` names one. The type goes to the native `<input>`, so
+the browser checks it and a phone opens the matching keyboard, and the server holds the same line:
+`email` must be an address, `url` an `http` or `https` address, and `tel` is lenient on purpose —
+digits, spaces and `+ ( ) - .`, at least three digits. An empty value is still allowed. Inside a
+`wx-repeater` every row is checked the same way.
+
+```json
+{ "id": "email", "type": "wx-input", "name": "contacts.email", "props": { "type": "email" } }
+```
 
 The panel's own frame comes with `module-admin` and is in every screen it draws:
 

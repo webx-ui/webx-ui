@@ -9,6 +9,7 @@ return [
     'unreachable' => 'Rien n’a répondu à l’adresse :url : :error',
     'app-url-redirects' => 'APP_URL :app_url redirige vers :location.',
     'queue-sync' => 'La connexion de file :connection exécute les tâches dans la requête.',
+    'queue-stalled' => 'Tâches sur :connection en attente depuis plus de :minutes minutes : :count',
     'mail-nowhere' => 'Le mailer :mailer écrit les e-mails dans :transport.',
     'schedule-never' => 'Le planificateur ne s’est jamais exécuté.',
     'schedule-stale' => 'Minutes depuis la dernière exécution du planificateur : :minutes',

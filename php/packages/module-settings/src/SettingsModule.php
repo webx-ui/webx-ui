@@ -126,12 +126,18 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
 
             Tool::mutating(
                 'set',
-                'Change one setting. A localized value is an object keyed by language code.',
+                'Change one setting. A localized value is an object keyed by language code; a language set to null empties that language. '
+                .'Send null to clear a value — every language of a localized one — and the site then falls back to its default.',
                 static fn (array $arguments): array => self::set($arguments),
                 [
                     'properties' => [
                         'key' => ['type' => 'string', 'description' => 'The setting key'],
-                        'value' => ['description' => 'The new value, in the shape the field expects'],
+                        'value' => [
+                            // Every JSON type spelled out: with no type at all, clients sent null
+                            // as the string "null", which a text field then kept as its words.
+                            'type' => ['string', 'number', 'integer', 'boolean', 'object', 'array', 'null'],
+                            'description' => 'The new value, in the shape the field expects; null clears it.',
+                        ],
                     ],
                     'required' => ['key', 'value'],
                 ],
@@ -178,24 +184,59 @@ final class SettingsModule extends AbstractModule implements ProvidesDemo, Provi
             return ['ok' => false, 'reason' => "No setting is named [{$key}]."];
         }
 
-        try {
-            $screen = $settings->screenOf($key) ?? Settings::SCREEN;
-            // A translated setting changes in the languages named and refuses one the site lacks.
-            $input = app(ScreenValues::class)->patch($screen, [$key => $settings->raw()[$key] ?? null], [$key => $arguments['value'] ?? null]);
-            $stored = app(ScreenValues::class)->validate($screen, $input);
-        } catch (ValidationException $exception) {
-            return ['ok' => false, 'reason' => 'The value was refused.', 'errors' => $exception->errors()];
+        $value = $arguments['value'] ?? null;
+        $localized = in_array($key, array_column(array_filter(
+            $settings->fields(),
+            static fn (array $node): bool => ($node['localized'] ?? false) === true,
+        ), 'name'), true);
+
+        // Clearing is not a value of the field's type, so it skips the type's rules: a media field
+        // would otherwise want a list, a number field a number, and nothing could be emptied.
+        $clearing = self::clears($value);
+        $stored = [];
+
+        if (! $clearing) {
+            if ($localized && is_array($value)) {
+                $value = array_map(static fn (mixed $one): mixed => self::clears($one) ? null : $one, $value);
+            }
+
+            try {
+                $screen = $settings->screenOf($key) ?? Settings::SCREEN;
+                // A translated setting changes in the languages named and refuses one the site lacks.
+                $input = app(ScreenValues::class)->patch($screen, [$key => $settings->raw()[$key] ?? null], [$key => $value]);
+                $stored = app(ScreenValues::class)->validate($screen, $input);
+            } catch (ValidationException $exception) {
+                return ['ok' => false, 'reason' => 'The value was refused.', 'errors' => $exception->errors()];
+            }
+
+            // The last language emptied leaves nothing to translate, which is the same as cleared.
+            $clearing = $localized && ($stored[$key] ?? null) === [];
         }
 
-        $before = $settings->raw()[$key] ?? null;
-        $changes = $before !== ($stored[$key] ?? null);
+        $changes = $clearing
+            ? array_key_exists($key, $settings->raw())
+            : ($settings->raw()[$key] ?? null) !== ($stored[$key] ?? null);
 
         if ((bool) ($arguments['dry_run'] ?? false) || ! $changes) {
             return ['ok' => true, 'would_change' => $changes, 'key' => $key, 'applied' => false];
         }
 
-        $settings->save($stored);
+        // A clear removes the row instead of saving null, which the site would read as a value.
+        if ($clearing) {
+            $settings->clear([$key]);
+        } else {
+            $settings->save($stored);
+        }
 
         return ['ok' => true, 'would_change' => true, 'key' => $key, 'applied' => true];
+    }
+
+    /**
+     * Null, or the word for it: not every client can send a real null for a parameter that
+     * takes any type, and no setting means the four letters "null".
+     */
+    private static function clears(mixed $value): bool
+    {
+        return $value === null || (is_string($value) && strtolower(trim($value)) === 'null');
     }
 }

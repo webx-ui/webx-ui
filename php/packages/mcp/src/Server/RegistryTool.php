@@ -8,6 +8,7 @@ use Illuminate\Container\Container;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\ResponseFactory;
@@ -166,9 +167,22 @@ final class RegistryTool extends McpTool
             );
         } catch (ToolFailure $failure) {
             return Response::error($failure->getMessage());
+        } catch (ValidationException $invalid) {
+            // A refusal the model or a shared service raised on the way — a publication whose
+            // draft breaks a rule, say. The agent gets the fields and the reasons, as the panel
+            // does, rather than an internal error with nothing to act on.
+            $lines = [];
+
+            foreach ($invalid->errors() as $field => $messages) {
+                $lines[] = $field.': '.implode(' ', $messages);
+            }
+
+            return Response::error('Not accepted — '.implode('; ', $lines));
         }
 
-        return Results::toResponse($result);
+        return Results::toResponse(
+            Container::getInstance()->make(EmptyMaps::class)->apply($result, $this->bound->tool->inputSchema),
+        );
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Events\Mcp;
 
+use Closure;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Model;
@@ -16,6 +17,7 @@ use WebxUi\Admin\Categories\CategoryException;
 use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Relations\RelationTarget;
 use WebxUi\Admin\Relations\RelationTargets;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
@@ -28,9 +30,12 @@ use WebxUi\Events\Panel\Revision;
 use WebxUi\Events\Rendering\When;
 use WebxUi\Events\Support\Moment;
 use WebxUi\Localization\Locales;
+use WebxUi\Mcp\Arguments;
 use WebxUi\Mcp\Exceptions\ToolFailure;
+use WebxUi\Mcp\Rehearsal;
 use WebxUi\Mcp\Tool;
 use WebxUi\Routing\Models\Route;
+use WebxUi\Routing\RouteSync;
 use WebxUi\Routing\UrlNormaliser;
 
 /**
@@ -44,6 +49,9 @@ use WebxUi\Routing\UrlNormaliser;
  * Creating is the row and its values in one transaction, and so is a save: a value the screen
  * refuses must not leave a bare event behind with its address already taken (the lesson of
  * `services_create`). A copy is one transaction of its own.
+ *
+ * A dry run is the real call rolled back ({@see Rehearsal}), so it is refused wherever the call
+ * would be; an argument or a field the tool does not know is refused rather than dropped.
  *
  * The dates are the part an agent gets wrong without being told, so every tool that writes them
  * says how they are read: ISO 8601, with an offset or without one — and without one, in the
@@ -91,7 +99,7 @@ final class EventTools
             .'first; services — ids or addresses ("/services/nutrition-plan"). Both wait in the draft like '
             .'the text.';
 
-        return [
+        return Arguments::strictAll([
             Tool::read(
                 'list',
                 'The events, a page at a time, in the order the site shows them: the ones to come by default — '
@@ -151,7 +159,7 @@ final class EventTools
                 'Change the values of an event into its draft. A field left out keeps what it had; a localized '
                 .'field sent as { "en": "…" } changes that language only. Send the revision events_get gave you '
                 .'and the write is refused if somebody saved in between. Everything — the categories and the '
-                .'services included — reaches the site when the event is published. '.$dates,
+                .'services included — reaches the site when the event is published. The SEO card is the exception: it is not drafted and is on the site the moment it is saved — the answer says so with seo_live: true. '.$dates,
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'event' => $event,
@@ -203,13 +211,36 @@ final class EventTools
             Tool::mutating(
                 'delete',
                 'Put an event in the bin. Its address is released, so afterwards it can only be named by its id. '
-                .'Nothing is destroyed: the bin in the panel puts it back, as long as nobody has taken its address '
+                .'Nothing is destroyed: events_restore puts it back, as long as nobody has taken its address '
                 .'in the meantime.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->delete($arguments)),
                 ['properties' => ['event' => $event], 'required' => ['event']],
                 permission: 'events.manage',
             ),
-        ];
+
+            Tool::mutating(
+                'restore',
+                'Take an event out of the bin, with its address, categories, services and history. Refused if '
+                .'its address has been given to something else in the meantime — the honest answer, not an event '
+                .'quietly restored at another address. By id: an event in the bin has no address to name it by.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->restore($arguments)),
+                ['properties' => [
+                    'event' => ['type' => 'integer', 'description' => 'The id, as events_list with trashed reports it.'],
+                ], 'required' => ['event']],
+                permission: 'events.manage',
+            ),
+
+            Tool::mutating(
+                'purge',
+                'Delete an event in the bin for good, with its addresses and former addresses, its SEO card and its '
+                .'history. Cannot be undone. Only an event in the bin — events_delete puts it there first.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->purge($arguments)),
+                ['properties' => [
+                    'event' => ['type' => 'integer', 'description' => 'The id, as events_list with trashed reports it.'],
+                ], 'required' => ['event']],
+                permission: 'events.manage',
+            ),
+        ], 'events_');
     }
 
     /**
@@ -270,7 +301,7 @@ final class EventTools
 
         return [
             'event' => $this->summary($event),
-            'values' => $this->form()->values($event),
+            'values' => $this->withEveryField($this->form()->values($event)),
             // Send it back with events_update, and a write over somebody else's is refused.
             'revision' => Revision::of($event),
             'preview_url' => $this->preview($event, $user),
@@ -292,30 +323,39 @@ final class EventTools
         }
 
         $values = $this->prepare($values);
+        Arguments::refuseUnknown($values, $this->fields(), 'events_create');
 
-        if ($this->dryRun($arguments)) {
-            return [
-                'dry_run' => true,
-                'would_create' => ['title' => $title, 'slug' => $slug, 'fields' => array_keys($values)],
-                'would_answer_at' => $this->addresses($slug),
-            ];
+        $work = function () use ($title, $slug, $values, $user): array {
+            $event = new Event;
+            $event->setTranslations('title', $title);
+            $event->setTranslations('slug', $slug);
+
+            // One transaction for the row and its values: the routing observer writes the address
+            // on `created`, inside this same transaction, so a refused value takes the address
+            // with it.
+            $event->getConnection()->transaction(function () use ($event, $values, $user): void {
+                $event->save();
+
+                if ($values !== []) {
+                    $this->form()->save($event, $values, $this->can($user), $this->authorId($user));
+                }
+            });
+
+            return $this->get(['event' => $event->refresh()->getKey()], $user);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        $event = new Event;
-        $event->setTranslations('title', $title);
-        $event->setTranslations('slug', $slug);
+        $would = $this->rehearse($work);
 
-        // One transaction for the row and its values: the routing observer writes the address on
-        // `created`, inside this same transaction, so a refused value takes the address with it.
-        $event->getConnection()->transaction(function () use ($event, $values, $user): void {
-            $event->save();
-
-            if ($values !== []) {
-                $this->form()->save($event, $values, $this->can($user), $this->authorId($user));
-            }
-        });
-
-        return $this->get(['event' => $event->refresh()->getKey()], $user);
+        return [
+            'dry_run' => true,
+            'would_create' => ['title' => $title, 'slug' => $slug, 'fields' => array_keys($values)],
+            'would_answer_at' => $this->addresses($slug),
+            'values' => $would['values'] ?? [],
+        ];
     }
 
     /**
@@ -340,22 +380,34 @@ final class EventTools
         }
 
         $values = $this->prepare($values);
+        // What events_get handed out is always good to send back — a project's field the screen
+        // has since dropped included.
+        Arguments::refuseUnknown($values, array_values(array_unique([...$this->fields(), ...array_keys($this->form()->values($event))])), 'events_update');
         $this->sameRevision($arguments, $event);
 
-        if ($this->dryRun($arguments)) {
-            return [
-                'dry_run' => true,
-                'would_write' => 'draft',
-                'fields' => array_keys($values),
-                'event' => $this->reference($event),
-            ];
+        $work = function () use ($event, $values, $user): array {
+            $event->getConnection()->transaction(
+                fn () => $this->form()->save($event, $values, $this->can($user), $this->authorId($user)),
+            );
+
+            return $this->get(['event' => $event->refresh()->getKey()], $user) + $this->seoLive($values);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        $event->getConnection()->transaction(
-            fn () => $this->form()->save($event, $values, $this->can($user), $this->authorId($user)),
-        );
+        $would = $this->rehearse($work);
+        // The model was written to inside the rehearsal; what it holds now is what was rolled back.
+        $event->refresh();
 
-        return $this->get(['event' => $event->refresh()->getKey()], $user);
+        return [
+            'dry_run' => true,
+            'would_write' => 'draft',
+            'fields' => array_keys($values),
+            'event' => $this->reference($event),
+            'values' => $would['values'] ?? [],
+        ];
     }
 
     /**
@@ -370,13 +422,24 @@ final class EventTools
             throw new ToolFailure("Event #{$event->getKey()} is in the bin. Bring it back in the panel before copying it.");
         }
 
-        if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'would_copy' => $this->reference($event), 'as' => 'draft'];
+        $work = function () use ($event, $user): array {
+            $copy = $this->container->make(Duplicate::class)->of($event);
+
+            return ['copied_from' => (int) $event->getKey(), ...$this->get(['event' => $copy->getKey()], $user)];
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        $copy = $this->container->make(Duplicate::class)->of($event);
+        $would = $this->rehearse($work);
 
-        return ['copied_from' => (int) $event->getKey(), ...$this->get(['event' => $copy->getKey()], $user)];
+        return [
+            'dry_run' => true,
+            'would_copy' => $this->reference($event),
+            'as' => 'draft',
+            'would_answer_at' => array_map(static fn (array $url): string => $url['path'], $would['event']['urls'] ?? []),
+        ];
     }
 
     /**
@@ -392,11 +455,22 @@ final class EventTools
         }
 
         if ($this->dryRun($arguments)) {
+            $status = $event->status();
+            $waiting = $event->hasDraft();
+
+            // Through the real publication: a guard on `publishing` refuses here as it would there.
+            $this->rehearse(function () use ($event, $user): array {
+                $event->publish($this->authorId($user), EntityVersion::SOURCE_MCP);
+
+                return [];
+            });
+            $event->refresh();
+
             return [
                 'dry_run' => true,
                 'would_publish' => $this->reference($event),
-                'status' => $event->status(),
-                'has_waiting_edits' => $event->hasDraft(),
+                'status' => $status,
+                'has_waiting_edits' => $waiting,
             ];
         }
 
@@ -412,6 +486,14 @@ final class EventTools
     private function unpublish(array $arguments): array
     {
         $event = $this->event($arguments['event'] ?? null);
+
+        if ($event->trashed()) {
+            throw new ToolFailure("Event #{$event->getKey()} is in the bin, and so already off the site.");
+        }
+
+        if (! $event->isPublished()) {
+            throw new ToolFailure("Event #{$event->getKey()} is not on the site: its status is {$event->status()}.");
+        }
 
         if ($this->dryRun($arguments)) {
             return ['dry_run' => true, 'would_unpublish' => $this->reference($event), 'status' => $event->status()];
@@ -451,6 +533,10 @@ final class EventTools
     {
         $event = $this->event($arguments['event'] ?? null);
 
+        if ($event->trashed()) {
+            throw new ToolFailure("Event #{$event->getKey()} is already in the bin. events_purge deletes it for good.");
+        }
+
         if ($this->dryRun($arguments)) {
             return ['dry_run' => true, 'would_trash' => $this->reference($event), 'status' => $event->status()];
         }
@@ -458,6 +544,89 @@ final class EventTools
         $event->delete();
 
         return ['trashed' => true, 'id' => (int) $event->getKey()];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function restore(array $arguments): array
+    {
+        $event = $this->binned($arguments['event'] ?? null);
+
+        $work = function () use ($event): array {
+            // The registry refuses an address somebody took meanwhile (a 422 under the slug)
+            // rather than handing out `-2`: an event quietly back at another address is worse.
+            $event->restore();
+            $trail = $this->container->make(RouteSync::class)->revival($event);
+
+            return [
+                'restored' => (int) $event->getKey(),
+                // Former addresses that lead here again, and the ones something else took while
+                // the event was in the bin — those old links now open that, not this event.
+                'aliases_restored' => $trail->restored,
+                'aliases_dropped' => $trail->dropped,
+                'event' => $this->summary($event->refresh()->load(['routes', 'categories'])),
+            ];
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
+        }
+
+        $would = $this->rehearse($work);
+        $event->refresh();
+
+        return ['dry_run' => true, 'would_restore' => (int) $event->getKey(), 'would_answer_at' => $would['event']['urls'] ?? []];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function purge(array $arguments): array
+    {
+        $event = $this->binned($arguments['event'] ?? null);
+
+        if ($this->dryRun($arguments)) {
+            return [
+                'dry_run' => true,
+                'would_purge' => (int) $event->getKey(),
+                'title' => $event->getTranslations('title'),
+                'versions' => $event->versions()->count(),
+            ];
+        }
+
+        $event->getConnection()->transaction(static function () use ($event): void {
+            // The link rows go first: the foreign key cascades on a database that enforces it,
+            // and nothing else would on one that does not. The `deleted` event of a forced
+            // delete takes the rest — addresses (`routing`), the SEO card, the history, the
+            // relations.
+            $event->categories()->detach();
+            $event->forceDelete();
+        });
+
+        return ['purged' => (int) $event->getKey()];
+    }
+
+    /** An event in the bin, by id — an address names only a live one. */
+    private function binned(mixed $id): Event
+    {
+        if (! is_int($id) && ! (is_string($id) && ctype_digit($id))) {
+            throw new ToolFailure('`event` must be the id of an event in the bin: an address names only a live event.');
+        }
+
+        $event = Event::withTrashed()->find((int) $id);
+
+        if (! $event instanceof Event) {
+            throw new ToolFailure("No event has the id [{$id}].");
+        }
+
+        if (! $event->trashed()) {
+            throw new ToolFailure("Event #{$id} is not in the bin. events_delete puts it there.");
+        }
+
+        return $event;
     }
 
     /**
@@ -634,15 +803,20 @@ final class EventTools
     {
         $event->loadMissing(['routes', 'categories']);
         $shown = $event->hasDraft() ? $event->withDraft() : $event;
-        $locale = $this->locales()->current();
+        // The content's language, not the interface's: `when` is the line the site prints.
+        $locale = $this->locales()->content();
+        $status = $event->status();
 
         $summary = [
             'id' => (int) $event->getKey(),
             'title' => $shown->getTranslations('title'),
             'slug' => $shown->getTranslations('slug'),
             'urls' => $this->urls($event),
-            'status' => $event->status(),
-            'has_draft' => $event->hasDraft(),
+            'status' => $status,
+            // Whether there is something a publication would put on the site. An event never
+            // published is all of it, whether its values sit in the draft (events_create) or in
+            // the columns (events_duplicate) — the same answer pages give.
+            'has_draft' => $status === Event::STATUS_DRAFT || $event->hasDraft(),
             'starts_at' => $shown->starts_at?->toAtomString(),
             'ends_at' => $shown->ends_at?->toAtomString(),
             'all_day' => (bool) $shown->all_day,
@@ -845,5 +1019,63 @@ final class EventTools
     private function locales(): Locales
     {
         return $this->container->make(Locales::class);
+    }
+
+    /**
+     * The names of the editor's fields — the module's and whatever a project patched onto the
+     * screen.
+     *
+     * @return list<string>
+     */
+    private function fields(): array
+    {
+        $names = array_map(
+            static fn (array $node): string => (string) ($node['name'] ?? ''),
+            $this->container->make(ScreenRegistry::class)->fields(Event::SCREEN),
+        );
+
+        return array_values(array_unique(array_filter($names, static fn (string $name): bool => $name !== '')));
+    }
+
+    /**
+     * Every field of the editor, a project's field nobody has written yet as null: an agent
+     * reading the values learns that the field is there to be filled.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function withEveryField(array $values): array
+    {
+        foreach ($this->fields() as $name) {
+            if (! array_key_exists($name, $values)) {
+                $values[$name] = null;
+            }
+        }
+
+        return $values;
+    }
+
+    /**
+     * The real call, rolled back: what a dry run answers is what the call would have answered,
+     * and a refusal is the same refusal.
+     *
+     * @param  Closure(): array<string, mixed>  $work
+     * @return array<string, mixed>
+     */
+    private function rehearse(Closure $work): array
+    {
+        return Rehearsal::on((new Event)->getConnection(), $work);
+    }
+
+    /**
+     * The SEO card skips the draft (`HasSeo`): an agent that reads "into its draft" must not
+     * believe a new description is waiting for a publication that it does not need.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function seoLive(array $values): array
+    {
+        return array_key_exists('seo', $values) ? ['seo_live' => true] : [];
     }
 }

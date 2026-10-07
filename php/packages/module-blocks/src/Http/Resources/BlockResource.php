@@ -14,7 +14,8 @@ use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Panel\Graph;
 use WebxUi\Blocks\Panel\Lints;
-use WebxUi\Blocks\Rendering\Renderer;
+use WebxUi\Blocks\Panel\Publisher;
+use WebxUi\Blocks\Rendering\Thumbnails;
 
 /**
  * A block type as the section shows it: the row, the two pointers as version summaries, the
@@ -35,6 +36,8 @@ final class BlockResource extends JsonResource
      * @param  array<int, string>  $authors  Author id → name, for every version at once.
      * @param  array<string, list<array{id: int, slug: string, title: string}>>|null  $parents  Slug → the
      *                                                                                          published types that call it, for every type at once; read here when not given.
+     * @param  array<string, mixed>  $extra  What one response adds — what a rename rewrote.
+     * @param  array<string, mixed>|null  $languageChanges  What publishing the draft would convert ({@see Publisher::languageChanges()}); only for one type.
      */
     public function __construct(
         Block $block,
@@ -42,6 +45,8 @@ final class BlockResource extends JsonResource
         private readonly array $authors = [],
         private readonly bool $withContent = true,
         private readonly ?array $parents = null,
+        private readonly ?array $languageChanges = null,
+        private readonly array $extra = [],
     ) {
         parent::__construct($block);
     }
@@ -86,7 +91,7 @@ final class BlockResource extends JsonResource
             $content = $current?->content() ?? ['schema' => [], 'template' => '', 'styles' => '', 'script' => null, 'sample' => []];
 
             $payload['content'] = $content;
-            $payload['warnings'] = Lints::check($block->slug, $content['template'], $content['styles']);
+            $payload['warnings'] = Lints::check($block->slug, $content['template'], $content['styles'], $content['schema']);
 
             // What the editor of a component shows under the template: the module's place, when
             // one declared it, and the fields of every data shape its input names.
@@ -96,7 +101,11 @@ final class BlockResource extends JsonResource
             $payload['shape'] = (object) Container::getInstance()->make(BlockShapes::class)->describe($content['schema']);
         }
 
-        return $payload;
+        if ($this->languageChanges !== null && $this->languageChanges['flips'] !== []) {
+            $payload['language_changes'] = $this->languageChanges;
+        }
+
+        return [...$payload, ...$this->extra];
     }
 
     /**
@@ -120,9 +129,10 @@ final class BlockResource extends JsonResource
 
     /**
      * The block on its sample, ready for an iframe: the HTML with the markers and the styles
-     * beside it. Null for a type that has no version at all — nothing to draw.
+     * beside it, and whether it printed anything at all. Null for a type that has no version at
+     * all — nothing to draw. Kept between requests ({@see Thumbnails}).
      *
-     * @return array{html: string, styles: string}|null
+     * @return array{html: string, styles: string, empty: bool}|null
      */
     private function thumbnail(Block $block, ?BlockVersion $version): ?array
     {
@@ -130,11 +140,6 @@ final class BlockResource extends JsonResource
             return null;
         }
 
-        $type = BlockType::fromModels($block, $version);
-
-        return [
-            'html' => Container::getInstance()->make(Renderer::class)->draw($type, $type->sample),
-            'styles' => $type->styles,
-        ];
+        return Container::getInstance()->make(Thumbnails::class)->of(BlockType::fromModels($block, $version));
     }
 }

@@ -486,6 +486,7 @@ key of `actions` and fill it from `#cell-actions`.
 | `filtersLabel`      | `string`                              | `'Filters'`                       | Its name, and the heading of the panel            |
 | `filtersWidth`      | `number                               | string`                           | `300`                                             | Width of that panel |
 | `loading`           | `boolean`                             | `false`                           | Dims the table and marks it busy                  |
+| `loadingText`       | `string`                              | `'Loading'`                       | Beside the spinner while `loading`                |
 | `emptyText`         | `string`                              | `'Nothing to show'`               | Shown when there are no rows                      |
 | `selectRowLabel`    | `string`                              | `'Select row'`                    | Accessible name of each row's checkbox            |
 | `selectAllLabel`    | `string`                              | `'Select every row on this page'` | Accessible name of the header checkbox            |

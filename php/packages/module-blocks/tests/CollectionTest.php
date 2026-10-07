@@ -53,7 +53,7 @@ final class CollectionTest extends TestCase
             'entity' => 'note',
             'id' => $page->id,
             'ops' => [['op' => 'set', 'key' => 'k-quotes', 'values' => [
-                'list' => ['categories' => [3], 'limit' => '2', 'filter' => true, 'markup' => false, 'source' => 'faq'],
+                'list' => ['categories' => [], 'limit' => 2, 'filter' => true, 'markup' => false, 'source' => 'faq'],
             ]]],
         ], $this->editor())->assertOk();
 

@@ -42,7 +42,7 @@ final class NoRecipients extends ModuleCheck
                 continue;
             }
 
-            $title = $this->title($form);
+            $title = FormTitle::of($form);
 
             yield $this->found('no-recipients', ['form' => $title, 'slug' => $form->slug], key: (string) $form->id, table: [
                 'columns' => [Finding::column('title'), Finding::column('value'), Finding::column('edit', 'edit')],
@@ -50,13 +50,5 @@ final class NoRecipients extends ModuleCheck
                 'rows' => [['title' => $title, 'value' => $form->slug, 'edit' => '/inbox/forms/'.$form->id.'?tab=notifications']],
             ]);
         }
-    }
-
-    /** The name in the language the audit is read in, or the slug where it has none. */
-    private function title(Form $form): string
-    {
-        $title = $form->getTranslation('title', app()->getLocale());
-
-        return is_string($title) && $title !== '' ? $title : $form->slug;
     }
 }

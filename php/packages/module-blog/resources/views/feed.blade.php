@@ -1,15 +1,9 @@
-@php($seo = app(WebxUi\Seo\Rendering\Seo::class))
-@php($meta = $seo->for($seo->currentUrl(), null))
-
 <x-dynamic-component :component="config('webx-blog.layout') ?: 'webx-blog::standalone'">
     <x-slot:head>
-        {{-- No entity: the feed is a route, not a record (§2.11), so what it says comes from the site's SEO defaults. --}}
-        @webxSeo
-        @if ($meta->title === null)
-            {{-- The defaults name a title only if the site wrote one, and a feed with no
-                 <title> at all is worse than a plain one. --}}
-            <title>{{ trans('webx-blog::blog.title') }}</title>
-        @endif
+        {{-- No entity: the feed is a route, not a record (§2.11). A rule for its address and the
+             site's defaults speak for it; where neither names a title, the feed's own word does,
+             through the title template like any other. --}}
+        @webxSeo(fallback: ['title' => trans('webx-blog::blog.title')])
         <link rel="alternate" type="application/rss+xml" title="{{ trans('webx-blog::blog.rss') }}" href="{{ route('webx.blog.rss') }}">
     </x-slot:head>
 

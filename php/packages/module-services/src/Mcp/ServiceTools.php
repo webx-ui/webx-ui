@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Services\Mcp;
 
+use Closure;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Http\Request;
@@ -13,11 +14,15 @@ use Throwable;
 use WebxUi\Admin\Categories\CategoryException;
 use WebxUi\Admin\Categories\Ordering;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
+use WebxUi\Blocks\Panel\Authors;
 use WebxUi\Localization\Locales;
+use WebxUi\Mcp\Arguments;
 use WebxUi\Mcp\Exceptions\ToolFailure;
+use WebxUi\Mcp\Rehearsal;
 use WebxUi\Mcp\Tool;
 use WebxUi\Routing\Models\Route;
 use WebxUi\Routing\UrlNormaliser;
@@ -37,6 +42,10 @@ use WebxUi\Services\Panel\ServiceList;
  * order is {@see Ordering}, the code behind the drag.
  *
  * The body is not written here, as with pages and articles: blocks are `blocks_edit_content`.
+ *
+ * A dry run is the write itself, rolled back ({@see Rehearsal}): an address that is taken is
+ * refused by the dry run as it is by the write. An argument or a field the tool does not take is
+ * refused rather than dropped ({@see Arguments}).
  */
 final class ServiceTools
 {
@@ -60,7 +69,7 @@ final class ServiceTools
             'description' => 'One language as a string, or every language as { "en": "…", "ru": "…" }.',
         ];
 
-        return [
+        return Arguments::strictAll([
             Tool::read(
                 'list',
                 'The services of this catalogue in the order they stand in: what each is called in every '
@@ -120,7 +129,7 @@ final class ServiceTools
                 .'fields the project added — into its draft. A field left out keeps what it had. Send the '
                 .'revision services_get gave you and the write is refused if somebody saved in between. The '
                 .'body is not written here: blocks go through blocks_edit_content. The categories are not '
-                .'drafted — they are on the site the moment they are saved.',
+                .'drafted — they are on the site the moment they are saved, and so is the SEO card — the answer says so with seo_live: true.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'service' => $service,
@@ -157,6 +166,28 @@ final class ServiceTools
                 permission: 'services.manage',
             ),
 
+            Tool::read(
+                'versions',
+                'The history of a service: every publication, newest first — number, date, who, the comment — '
+                .'and which one the site shows now. What the panel\'s «History» tab lists; with '
+                .'services_version_restore, the way to undo a bad edit.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->versions($arguments)),
+                ['properties' => ['service' => $service], 'required' => ['service']],
+                permission: ['services.view', 'services.manage'],
+            ),
+
+            Tool::mutating(
+                'version_restore',
+                'Put an old publication of a service back into its draft. The site does not change until '
+                .'somebody publishes; dry_run says which fields would change.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->versionRestore($arguments, $user)),
+                ['properties' => [
+                    'service' => $service,
+                    'number' => ['type' => 'integer', 'description' => 'A version number, as services_versions lists it.'],
+                ], 'required' => ['service', 'number']],
+                permission: 'services.manage',
+            ),
+
             Tool::mutating(
                 'delete',
                 'Put a service in the bin. Its address is released, so afterwards it can only be named by its '
@@ -179,7 +210,30 @@ final class ServiceTools
                 ], 'required' => ['services']],
                 permission: 'services.manage',
             ),
-        ];
+
+            Tool::mutating(
+                'restore',
+                'Take a service out of the bin, with its categories, its draft and its history. Its address is '
+                .'given back; refused if another page or service has taken it in the meantime. By id: a service '
+                .'in the bin has no address to name it by.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->restore($arguments)),
+                ['properties' => [
+                    'service' => ['type' => 'integer', 'description' => 'The id, as services_list with trashed reports it.'],
+                ], 'required' => ['service']],
+                permission: 'services.manage',
+            ),
+
+            Tool::mutating(
+                'purge',
+                'Delete a service in the bin for good, with its former addresses, its SEO card and its history. '
+                .'Cannot be undone. Only a service in the bin — services_delete puts it there first.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->purge($arguments)),
+                ['properties' => [
+                    'service' => ['type' => 'integer', 'description' => 'The id, as services_list with trashed reports it.'],
+                ], 'required' => ['service']],
+                permission: 'services.manage',
+            ),
+        ], 'services_');
     }
 
     /**
@@ -250,31 +304,37 @@ final class ServiceTools
         }
 
         $this->refuseBlocks($values);
+        Arguments::refuseUnknown($values, $this->fields(), 'services_create');
 
-        if ($this->dryRun($arguments)) {
-            return [
-                'dry_run' => true,
-                'would_create' => ['title' => $title, 'slug' => $slug],
-                'would_answer_at' => $this->addresses($slug),
-            ];
+        $work = function () use ($title, $slug, $values, $user): array {
+            $service = new Service;
+            $service->setTranslations('title', $title);
+            $service->setTranslations('slug', $slug);
+
+            // One transaction for the row and its values: a value the screen refuses must not leave
+            // a bare service behind with its address already taken — the routing observer writes the
+            // address on `created`, inside this same transaction, so it goes with the row.
+            $service->getConnection()->transaction(function () use ($service, $values, $user): void {
+                $service->save();
+
+                if ($values !== []) {
+                    $this->form()->save($service, $values, $this->can($user), $this->authorId($user));
+                }
+            });
+
+            return $this->get(['service' => $service->refresh()->getKey()], $user);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        $service = new Service;
-        $service->setTranslations('title', $title);
-        $service->setTranslations('slug', $slug);
+        $would = $this->rehearse($work);
+        // The id and the signed link the rehearsal was given are nobody's once it is rolled back.
+        $would['service']['id'] = null;
+        unset($would['preview_url'], $would['revision']);
 
-        // One transaction for the row and its values: a value the screen refuses must not leave
-        // a bare service behind with its address already taken — the routing observer writes the
-        // address on `created`, inside this same transaction, so it goes with the row.
-        $service->getConnection()->transaction(function () use ($service, $values, $user): void {
-            $service->save();
-
-            if ($values !== []) {
-                $this->form()->save($service, $values, $this->can($user), $this->authorId($user));
-            }
-        });
-
-        return $this->get(['service' => $service->refresh()->getKey()], $user);
+        return ['dry_run' => true, 'would_answer_at' => $this->addresses($slug)] + $would;
     }
 
     /**
@@ -290,25 +350,29 @@ final class ServiceTools
             throw new ToolFailure('`values` must be a non-empty object of field name → value. services_get says what the fields are.');
         }
 
+        $this->refuseBlocks($values);
+        Arguments::refuseUnknown($values, $this->fields(), 'services_update');
+
         // Merged language by language, and a language the site does not have refused — dry run
         // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
         $values = $this->container->make(ScreenValues::class)->patch(Service::SCREEN, $this->form()->values($service), $values);
 
-        $this->refuseBlocks($values);
         $this->sameRevision($arguments, $service);
 
-        if ($this->dryRun($arguments)) {
-            return [
-                'dry_run' => true,
-                'would_write' => 'draft',
-                'fields' => array_keys($values),
-                'service' => $this->reference($service),
-            ];
+        $work = function () use ($service, $values, $user): array {
+            $this->form()->save($service, $values, $this->can($user), $this->authorId($user));
+
+            return $this->get(['service' => $service->refresh()->getKey()], $user) + $this->seoLive($values);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        $this->form()->save($service, $values, $this->can($user), $this->authorId($user));
+        $would = $this->rehearse($work);
+        unset($would['preview_url'], $would['revision']);
 
-        return $this->get(['service' => $service->refresh()->getKey()], $user);
+        return ['dry_run' => true, 'would_write' => 'draft', 'fields' => array_keys($values)] + $would;
     }
 
     /**
@@ -325,6 +389,8 @@ final class ServiceTools
                 'would_publish' => $this->reference($service),
                 'status' => $service->status(),
                 'has_waiting_edits' => $service->hasDraft(),
+                // What the publication itself would refuse, block by block.
+                'refused' => $service->publishProblems(),
             ];
         }
 
@@ -417,13 +483,96 @@ final class ServiceTools
             }
         }
 
-        if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'would_order' => $ids, 'category' => $category?->getKey()];
+        $work = function () use ($ids, $category): array {
+            Ordering::move(Service::class, $ids, $category === null ? null : (int) $category->getKey());
+
+            return $this->list($category === null ? [] : ['category' => $category->getKey()]);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        Ordering::move(Service::class, $ids, $category === null ? null : (int) $category->getKey());
+        return ['dry_run' => true, 'would_order' => $ids, 'category' => $category?->getKey()] + $this->rehearse($work);
+    }
 
-        return $this->list($category === null ? [] : ['category' => $category->getKey()]);
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function restore(array $arguments): array
+    {
+        $service = $this->binned($arguments['service'] ?? null);
+
+        $work = function () use ($service): array {
+            // The registry gives the address back on `restored` — or refuses, when it is taken.
+            $service->restore();
+
+            return ['service' => $this->summary($service->refresh())];
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return ['restored' => true] + $work();
+        }
+
+        return ['dry_run' => true, 'would_restore' => (int) $service->getKey()] + $this->rehearse($work);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function purge(array $arguments): array
+    {
+        $service = $this->binned($arguments['service'] ?? null);
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_purge' => (int) $service->getKey(), 'title' => $service->getTranslations('title')];
+        }
+
+        $service->getConnection()->transaction(static fn (): ?bool => $service->forceDelete());
+
+        return ['purged' => true, 'id' => (int) $service->getKey()];
+    }
+
+    /** A service in the bin, by id — an address names only a live one. */
+    private function binned(mixed $id): Service
+    {
+        if (! is_int($id) && ! (is_string($id) && ctype_digit($id))) {
+            throw new ToolFailure('`service` must be the id of a service in the bin: an address names only a live one.');
+        }
+
+        $service = $this->service($id);
+
+        if (! $service->trashed()) {
+            throw new ToolFailure("Service [{$id}] is not in the bin. services_delete puts it there.");
+        }
+
+        return $service;
+    }
+
+    /**
+     * What `values` may name: the fields of the screen — everything the save reads.
+     *
+     * @return list<string>
+     */
+    private function fields(): array
+    {
+        return array_values(array_unique(array_map(
+            static fn (array $node): string => (string) $node['name'],
+            $this->container->make(ScreenRegistry::class)->fields(Service::SCREEN),
+        )));
+    }
+
+    /**
+     * @template T
+     *
+     * @param  Closure(): T  $work
+     * @return T
+     */
+    private function rehearse(Closure $work): mixed
+    {
+        return Rehearsal::run($work, (new Service)->getConnectionName());
     }
 
     /**
@@ -503,6 +652,74 @@ final class ServiceTools
             static fn (string $one): string => '/'.UrlNormaliser::join($prefix, $one),
             $slug,
         );
+    }
+
+    /**
+     * The publications of a service, newest first — what the panel's «History» tab lists — and which
+     * one the site shows now. Without payloads: a version is picked by its number, and
+     * services_version_restore does the rest.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function versions(array $arguments): array
+    {
+        $service = $this->service($arguments['service'] ?? null);
+        $versions = $service->publishedVersions()->get();
+        $authors = Authors::names($versions->map(static fn (EntityVersion $version): ?int => $version->author_id));
+        $live = $service->isPublished() ? $versions->first()?->number : null;
+
+        return [
+            'service' => $service->getKey(),
+            'has_draft' => $service->hasDraft(),
+            'versions' => $versions->map(static fn (EntityVersion $version): array => [
+                'number' => $version->number,
+                'created_at' => $version->created_at?->toAtomString(),
+                'author' => $version->author_id === null ? null : ($authors[$version->author_id] ?? null),
+                'source' => $version->source,
+                'comment' => $version->comment,
+                'is_pinned' => $version->is_pinned,
+                'on_site' => $version->number === $live,
+            ])->values()->all(),
+        ];
+    }
+
+    /**
+     * An old publication back into the draft — the panel's «Restore». Not onto the site: publishing
+     * it is the separate step it always is. This is how a bad edit of the content is undone.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function versionRestore(array $arguments, ?Authenticatable $user): array
+    {
+        $service = $this->service($arguments['service'] ?? null);
+        $number = $arguments['number'] ?? null;
+
+        if (! is_int($number) && ! (is_string($number) && ctype_digit($number))) {
+            throw new ToolFailure('`number` is required: a version number from services_versions.');
+        }
+
+        $version = $service->publishedVersions()->where('number', (int) $number)->first();
+
+        if (! $version instanceof EntityVersion) {
+            throw new ToolFailure("Service [{$service->getKey()}] has no version {$number}. services_versions lists them.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return [
+                'dry_run' => true,
+                'would_restore' => $version->number,
+                'into' => 'draft',
+                'changes' => $service->changedFields(is_array($version->payload) ? $version->payload : []),
+                'blocks' => $service->restoreReport(is_array($version->payload) ? $version->payload : []),
+            ];
+        }
+
+        $report = $service->restoreReport(is_array($version->payload) ? $version->payload : []);
+        $service->restoreVersion($version);
+
+        return ['restored' => $version->number, 'into' => 'draft', 'blocks' => $report] + $this->get(['service' => $service->refresh()->getKey()], $user);
     }
 
     /**
@@ -712,5 +929,17 @@ final class ServiceTools
     private function locales(): Locales
     {
         return $this->container->make(Locales::class);
+    }
+
+    /**
+     * The SEO card skips the draft (`HasSeo`): an agent that reads "into its draft" must not
+     * believe a new description is waiting for a publication that it does not need.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function seoLive(array $values): array
+    {
+        return array_key_exists('seo', $values) ? ['seo_live' => true] : [];
     }
 }

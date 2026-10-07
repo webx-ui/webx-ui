@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Resolution;
 use WebxUi\Routing\UrlNormaliser;
+use WebxUi\Seo\Contracts\HasOpenGraph;
 use WebxUi\Seo\Contracts\HasStructuredData;
 use WebxUi\Seo\Faq\PageFaq;
 use WebxUi\Settings\Settings;
@@ -54,21 +55,45 @@ final class Seo
     /**
      * Every source, highest first, merged field by field, with the title template applied and
      * the Open Graph gaps filled in from what is already there.
+     *
+     * @param  SeoData|array<string, mixed>|null  $fallback  What the view calls a page that has no entity — see `head()`.
      */
-    public function for(string $url, ?object $subject = null, ?string $locale = null): SeoData
+    public function for(string $url, ?object $subject = null, ?string $locale = null, SeoData|array|null $fallback = null): SeoData
     {
         $url = UrlNormaliser::normalise($url);
         $data = SeoData::empty();
+        $titled = null;
+        $images = [];
+        $pictured = null;
 
-        foreach ($this->sources->all() as $source) {
-            $answer = $source->forUrl($url, $subject, $locale);
+        foreach ($this->answers($url, $subject, $locale, $fallback) as [$source, $answer]) {
+            $data = $data->mergeOver($answer);
+            $titled ??= $answer->title !== null ? $source : null;
 
-            if ($answer instanceof SeoData) {
-                $data = $data->mergeOver($answer);
+            if (isset($answer->og['image'])) {
+                $images[] = $answer->og['image'];
+                $pictured ??= $answer;
             }
         }
 
-        return $this->finish($data, $url, $locale);
+        // A picture and its alt travel together: merged field by field, a card's picture would
+        // otherwise be printed with the alt of the cover it replaced.
+        $og = array_filter($data->og, static fn (string $key): bool => $key !== 'image' && ! str_starts_with($key, 'image:'), ARRAY_FILTER_USE_KEY);
+        $og += $pictured === null ? [] : array_filter($pictured->og, static fn (string $key): bool => $key === 'image' || str_starts_with($key, 'image:'), ARRAY_FILTER_USE_KEY);
+
+        $data = new SeoData(
+            title: $data->title,
+            h1: $data->h1,
+            description: $data->description,
+            keywords: $data->keywords,
+            canonical: $data->canonical,
+            robots: $data->robots,
+            og: $og,
+            jsonLd: $data->jsonLd,
+            images: array_values(array_unique($images)),
+        );
+
+        return $this->finish($data, $url, $subject, $locale, $titled instanceof FallbackSource);
     }
 
     /**
@@ -77,20 +102,15 @@ final class Seo
      * This is what `POST /test-url` answers with, and it exists because "why does this page have
      * the wrong title" is the question this module gets asked most. One call should answer it.
      *
+     * @param  SeoData|array<string, mixed>|null  $fallback
      * @return list<array{source: string, priority: int, data: array<string, mixed>}>
      */
-    public function chain(string $url, ?object $subject = null, ?string $locale = null): array
+    public function chain(string $url, ?object $subject = null, ?string $locale = null, SeoData|array|null $fallback = null): array
     {
         $url = UrlNormaliser::normalise($url);
         $chain = [];
 
-        foreach ($this->sources->all() as $source) {
-            $answer = $source->forUrl($url, $subject, $locale);
-
-            if (! $answer instanceof SeoData) {
-                continue;
-            }
-
+        foreach ($this->answers($url, $subject, $locale, $fallback) as [$source, $answer]) {
             $chain[] = [
                 'source' => class_basename($source),
                 'priority' => $source->priority(),
@@ -101,36 +121,95 @@ final class Seo
         return $chain;
     }
 
-    /** The address of the request being answered: path and query, nothing else. */
+    /**
+     * Every source that had something to say, highest first, each with its answer.
+     *
+     * @param  SeoData|array<string, mixed>|null  $fallback
+     * @return list<array{0: SeoSource, 1: SeoData}>
+     */
+    private function answers(string $url, ?object $subject, ?string $locale, SeoData|array|null $fallback): array
+    {
+        $given = is_array($fallback) ? SeoData::make($fallback) : $fallback;
+        $answers = [];
+
+        foreach ($this->sources->all() as $source) {
+            $answer = $source instanceof FallbackSource
+                ? $source->answer($subject, $locale, $given)
+                : $source->forUrl($url, $subject, $locale);
+
+            if ($answer instanceof SeoData) {
+                $answers[] = [$source, $answer];
+            }
+        }
+
+        return $answers;
+    }
+
+    /**
+     * The address of the request being answered: path and query, nothing else.
+     *
+     * The path the application sees, not the one the browser asked for: `/index.php/about` and a
+     * site in `/sub` both put something in front of it that `url()` adds back on its own, and
+     * the canonical came out with the front controller in it twice.
+     */
     public function currentUrl(): string
     {
         $request = app()->bound('request') ? app('request') : null;
 
-        return UrlNormaliser::normalise($request instanceof Request ? $request->getRequestUri() : '/');
+        if (! $request instanceof Request) {
+            return '/';
+        }
+
+        $uri = $request->getRequestUri();
+        $at = strpos($uri, '?');
+
+        return UrlNormaliser::normalise($request->getPathInfo().($at === false ? '' : substr($uri, $at)));
+    }
+
+    /**
+     * The site's root without its front controller: `https://example.com` or
+     * `https://example.com/sub`, never `…/index.php` — a canonical names the address a visitor
+     * should use, and that is the one without it.
+     */
+    public static function root(): string
+    {
+        return rtrim((string) preg_replace('~/index\.php$~i', '', rtrim(url('/'), '/')), '/');
     }
 
     /**
      * The `<head>` block, ready to print: what `for()` resolved, and around it what only a page
      * being served can say — its other languages, its trail, the schema.org blocks of the entity
      * and of the handler (§17.4).
+     *
+     * `$fallback` is what a page that is a route rather than a record is called when nobody wrote
+     * a rule for it — `@webxSeo(fallback: ['title' => __('Recipes')])` on the index of recipes.
+     * It stands where an entity's own name would ({@see FallbackSource}), so the title template
+     * and `og:title` reach it too.
+     *
+     * @param  SeoData|array<string, mixed>|null  $fallback
      */
-    public function head(?object $subject = null, ?string $url = null, ?string $locale = null): HtmlString
+    public function head(?object $subject = null, ?string $url = null, ?string $locale = null, SeoData|array|null $fallback = null): HtmlString
     {
         $subject ??= $this->subject();
         $url ??= $this->currentUrl();
         $locale ??= $this->locale();
 
-        $data = $this->for($url, $subject, $locale);
+        $data = $this->for($url, $subject, $locale, $fallback);
 
         /** @var array<string, bool> $print */
         $print = (array) $this->config->get('webx-seo.print', []);
 
+        // Asked once for both: `hreflang` prints them, `og:locale:alternate` names their languages.
+        $alternates = ($print['hreflang'] ?? true) || ($print['og'] ?? true)
+            ? app(Alternates::class)->for($url, $subject, $locale, $data)
+            : [];
+
         return new HtmlString((string) $this->views->make('webx-seo::head', [
             'seo' => $data,
             'print' => $print,
-            'alternates' => ($print['hreflang'] ?? true) ? app(Alternates::class)->for($url, $subject, $locale, $data) : [],
+            'alternates' => ($print['hreflang'] ?? true) ? $alternates : [],
+            'social' => app(SocialTags::class)->for($data, $subject, $locale, $alternates),
             'blocks' => $this->blocks($data, $subject, $locale, $print),
-            'twitter' => isset($data->og['image']) ? 'summary_large_image' : 'summary',
         ])->render());
     }
 
@@ -299,6 +378,22 @@ final class Seo
     }
 
     /**
+     * The JSON-LD the `<head>` prints for this data: the sources', the trail, the entity's own.
+     *
+     * For `test_url`, which has no page being rendered: what a handler or a template pushes while
+     * it renders (`push()`, `put()`) exists only during that render and is not in here.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function printedJsonLd(SeoData $data, ?object $subject, string $locale): array
+    {
+        /** @var array<string, bool> $print */
+        $print = (array) $this->config->get('webx-seo.print', []);
+
+        return $this->blocks($data, $subject, $locale, $print);
+    }
+
+    /**
      * The JSON-LD of the page, in the order a reader of the source expects: the site's own and
      * the rules', the trail, the entity's, the handler's.
      *
@@ -366,9 +461,13 @@ final class Seo
      * The last word: the template around the title, the soft limits, and the Open Graph
      * properties that repeat what the page already said.
      */
-    private function finish(SeoData $data, string $url, ?string $locale): SeoData
+    private function finish(SeoData $data, string $url, ?object $subject, ?string $locale, bool $fallbackTitle = false): SeoData
     {
-        $title = $this->applyTemplate($data->title, $locale);
+        $site = $this->setting('general.project-name', $locale);
+
+        // The home page called by its own name is "Home — Site"; what it is called is the site.
+        $title = $fallbackTitle && $site !== null && $this->isHome($url) ? $site : $data->title;
+        $title = $this->applyTemplate($title, $site, $locale);
 
         $data = $data->with(
             title: $this->clamp($title, 'title'),
@@ -382,8 +481,9 @@ final class Seo
         foreach ([
             'title' => $data->title,
             'description' => $data->description,
-            'url' => $data->canonical ?? url($url),
-            'type' => (string) $this->config->get('webx-seo.og.type', 'website'),
+            'url' => $data->canonical ?? self::root().$url,
+            // The entity knows what kind of page it is; everything else is a website (§20).
+            'type' => $subject instanceof HasOpenGraph ? $subject->openGraphType() : (string) $this->config->get('webx-seo.og.type', 'website'),
         ] as $property => $fallback) {
             if (! isset($og[$property]) && is_string($fallback) && $fallback !== '') {
                 $og[$property] = $fallback;
@@ -407,17 +507,26 @@ final class Seo
             return null;
         }
 
-        return url(explode('?', $url, 2)[0]).$this->keptQuery($url);
+        return self::root().explode('?', $url, 2)[0].$this->keptQuery($url);
     }
 
     /**
      * `{title} — {site}`. A placeholder nobody filled takes the punctuation around it with it,
      * so a site without a name does not publish "Contacts —".
+     *
+     * A title that already names the site is left as it was written: an editor who typed
+     * "About us | Acme" into a card meant exactly that, and "About us | Acme — Acme" is what
+     * applying the template anyway prints. "Names" is compared on letters and digits alone, so
+     * "Acme Studio" in a title is the project named "AcmeStudio" too.
      */
-    private function applyTemplate(?string $title, ?string $locale): ?string
+    private function applyTemplate(?string $title, ?string $site, ?string $locale): ?string
     {
         if ($title === null) {
             return null;
+        }
+
+        if ($site !== null && self::names($title, $site)) {
+            return $title;
         }
 
         $template = $this->setting('seo.title-template', $locale);
@@ -428,7 +537,7 @@ final class Seo
 
         $replaced = str_replace(
             ['{title}', '{site}'],
-            [$title, $this->setting('general.project-name', $locale) ?? ''],
+            [$title, $site ?? ''],
             $template,
         );
 
@@ -439,6 +548,20 @@ final class Seo
         $replaced = trim($replaced);
 
         return $replaced === '' ? $title : $replaced;
+    }
+
+    /** Whether `$title` already says `$site`, spaces, case and punctuation aside. */
+    private static function names(string $title, string $site): bool
+    {
+        $squeeze = static fn (string $text): string => (string) preg_replace('/[^\p{L}\p{N}]+/u', '', mb_strtolower($text, 'UTF-8'));
+        $needle = $squeeze($site);
+
+        return $needle !== '' && str_contains($squeeze($title), $needle);
+    }
+
+    private function isHome(string $url): bool
+    {
+        return explode('?', $url, 2)[0] === '/';
     }
 
     /**

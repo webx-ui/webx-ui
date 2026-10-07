@@ -14,10 +14,10 @@ use WebxUi\Admin\Support\Authors;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Inbox\Exceptions\InboxException;
 use WebxUi\Inbox\Exceptions\NobodyToNotify;
+use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Http\Controllers\FormController;
 use WebxUi\Inbox\Http\Resources\FieldResource;
 use WebxUi\Inbox\Http\Resources\FormResource;
-use WebxUi\Inbox\Http\Resources\StatusResource;
 use WebxUi\Inbox\Http\Resources\SubmissionResource;
 use WebxUi\Inbox\Http\Resources\SubmissionRowResource;
 use WebxUi\Inbox\Mail\Notifier;
@@ -77,7 +77,9 @@ final class InboxTools
                 .'Each form also says who a submission would be written to: `recipients` lists everybody the form '
                 .'names with `receives` and, when false, the `problem` (admin_deleted, admin_inactive, '
                 .'invalid_email); `notifies: false` means nobody is told at all. Read this first — a form is '
-                .'named by its slug everywhere else.',
+                .'named by its slug everywhere else. This is the catalogue of the inbox module: it has no '
+                .'resource to read instead. `submissions_count` counts everything the form took, spam '
+                .'included; inbox_list\'s `counts.all` leaves spam out, as the panel\'s "All" tab does.',
                 fn (array $arguments): array => $this->formsList($arguments),
                 ['properties' => [
                     'disabled' => ['type' => 'boolean', 'description' => 'Include the forms that are switched off; true when omitted.'],
@@ -107,7 +109,9 @@ final class InboxTools
                 .'refused here exactly as they are in the panel.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->formSave($arguments)),
                 ['properties' => [
-                    'form' => $form + ['description' => 'The form to change; omit to create one.'],
+                    // Spread, not `+`: the left side wins a `+`, and the "omit to create" half
+                    // of the description never reached the listing.
+                    'form' => [...$form, 'description' => 'The form to change, by its id or its slug; omit to create one.'],
                     'slug' => ['type' => 'string', 'description' => 'Where it answers: lower case, words joined by hyphens.'],
                     'title' => ['type' => ['string', 'object'], 'description' => 'One language as a string, or every language as { "en": "…" }.'],
                     'is_enabled' => ['type' => 'boolean', 'description' => 'A form that is off is a 404 to the site and keeps everything it has received.'],
@@ -122,7 +126,10 @@ final class InboxTools
                             'title' => ['type' => ['string', 'object'], 'description' => 'The label, in one language or in all of them.'],
                             'is_required' => ['type' => 'boolean'],
                             'in_table' => ['type' => 'boolean', 'description' => 'Show this answer as a column of the submission list.'],
-                            'options' => ['type' => 'object', 'description' => 'What this type takes: choices for a list, maxlength for text, extensions for a file.'],
+                            'options' => ['type' => 'object', 'description' => 'What this type takes. select · radio · checkbox: choices, required and at least one — '
+                                .'[{ "value": "pro", "label": { "en": "Pro plan" } }], or plain strings ["Pro", "Basic"] where the value is the label; '
+                                .'checkbox also min and max. text · email · textarea: maxlength (textarea also rows). tel: pattern. '
+                                .'date: min and max, YYYY-MM-DD. file: extensions, max_size in KB, multiple. consent: text, the sentence beside the tick.'],
                             'remove' => ['type' => 'boolean', 'description' => 'Put the field aside: it leaves the form and stays readable in the submissions that used it.'],
                         ]],
                     ],
@@ -135,12 +142,13 @@ final class InboxTools
                 'What has come in through one form, newest first. The same filters the panel has: a status by its '
                 .'key, unread only, who it is assigned to, a date range, where on the site the form stood, and a search that looks inside every '
                 .'answer and not only the ones that are columns. Spam is left out unless you ask for it by status. '
-                .'Each row carries the answers the form marks as columns; inbox_get opens one in full.',
+                .'Each row carries the answers the form marks as columns and its status by key — `statuses` names each key once; '
+                .'inbox_get opens one in full.',
                 fn (array $arguments): array => $this->list($arguments),
                 ['properties' => [
                     'form' => $form,
                     'view' => ['type' => 'string', 'description' => 'all · unread · the key of a status, as inbox_forms_list and the counts report them.'],
-                    'assignee' => ['type' => ['integer', 'string'], 'description' => 'An administrator id, or "none" for the pile nobody has picked up.'],
+                    'assignee' => ['type' => ['integer', 'string'], 'description' => 'An administrator by id or by email address, or "none" for the pile nobody has picked up.'],
                     'from' => ['type' => 'string', 'description' => 'On or after this date, YYYY-MM-DD.'],
                     'to' => ['type' => 'string', 'description' => 'On or before this date, YYYY-MM-DD.'],
                     'search' => ['type' => 'string', 'description' => 'Text in any answer, or a submission id.'],
@@ -160,7 +168,8 @@ final class InboxTools
                 .'`notification` says whether the letter about it left: none, queued (handed to the queue and '
                 .'not yet sent — long in this state means no queue worker runs), delivered, or failed with the '
                 .'reason, and how it went for each recipient. Reading it does not mark it read: that is a '
-                .'person having looked.',
+                .'person having looked. Files are named with their size and type; `files[].url` is the panel\'s '
+                .'address and opens only in a signed-in panel — the bytes cannot be read through this tool.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->get($arguments, $user),
                 ['properties' => [
                     'submission' => ['type' => 'integer', 'description' => 'The id, as inbox_list reports it.'],
@@ -277,7 +286,9 @@ final class InboxTools
             // usually looking at it to explain the form to somebody building a page.
             'intake' => $this->intake($form->slug),
             'fields' => $fields,
-            'statuses' => $this->statuses(),
+            // By key, in the language of the answer: the panel's resource carried every
+            // language of every title and a count that is never loaded here.
+            'statuses' => $this->statusNames(),
         ];
     }
 
@@ -295,10 +306,17 @@ final class InboxTools
         // be refused for something nobody was changing.
         $input = [...$this->formAsInput($form), ...array_intersect_key($arguments, array_flip(['slug', 'title', 'is_enabled', 'options']))];
 
-        $this->validator()->make($input, FormInput::rules($form === null ? null : (int) $form->getKey()), FormInput::messages())->validate();
+        // The questions first: the Reply-To field the settings name has to be an e-mail field
+        // of the form as it will be after this call, which may be adding it right now.
+        $plan = $this->fieldsPlan($form, $sent);
+
+        $this->validator()->make(
+            $input,
+            FormInput::rules($form === null ? null : (int) $form->getKey(), $this->emailFieldsAfter($form, $plan)),
+            FormInput::messages(),
+        )->validate();
 
         $values = FormInput::values($input);
-        $plan = array_map(fn (array $field): array => $this->fieldPlan($form, $field), $sent);
 
         if ($this->dryRun($arguments)) {
             return [
@@ -354,37 +372,147 @@ final class InboxTools
     }
 
     /**
-     * What one field of the call would do, checked before anything is written.
+     * What every field of the call would do, checked before anything is written.
      *
      * Worked out for every field first and applied afterwards, so that a form is not half
      * saved when the fourth question turns out to name a type this package does not have.
      *
+     * Each entry is planned against the form as the entries before it leave it, not as the
+     * table has it: `phone` removed and `phone` added in one call is a field put aside and a
+     * new one in its place, and two new fields both called `name` are refused — matched
+     * against the table alone, the second of each pair met the same row as the first, and the
+     * call either lost a field without a word or made a form that could no longer be edited.
+     *
+     * @param  list<array<string, mixed>>  $sent
+     * @return list<array{would: string, field: Field|null, values: array<string, mixed>}>
+     */
+    private function fieldsPlan(?Form $form, array $sent): array
+    {
+        /** @var array<string, int|string> $names  name → the id of the field holding it, or the entry of this call that took it */
+        $names = [];
+
+        foreach ($form === null ? [] : $form->fields as $field) {
+            $names[$field->key()] = (int) $field->getKey();
+        }
+
+        $removed = [];
+        $plan = [];
+
+        foreach ($sent as $index => $one) {
+            $name = is_string($one['name'] ?? null) ? trim($one['name']) : '';
+            $entry = 'fields['.$index.']'.($name === '' ? '' : ' "'.$name.'"');
+
+            try {
+                $plan[] = $this->fieldPlan($form, $one, $entry, $names, $removed);
+            } catch (ValidationException $invalid) {
+                $lines = [];
+
+                foreach ($invalid->errors() as $key => $messages) {
+                    $line = $key.': '.implode(' ', (array) $messages);
+
+                    if ($key === 'type') {
+                        $line .= ' The types are: '.implode(', ', FieldType::values()).'.';
+                    }
+
+                    $lines[] = $line;
+                }
+
+                throw new ToolFailure('Not accepted — '.$entry.': '.implode('; ', $lines));
+            }
+        }
+
+        return $plan;
+    }
+
+    /**
+     * One entry of {@see fieldsPlan()}.
+     *
      * @param  array<string, mixed>  $sent
+     * @param  array<string, int|string>  $names
+     * @param  array<int, true>  $removed
      * @return array{would: string, field: Field|null, values: array<string, mixed>}
      */
-    private function fieldPlan(?Form $form, array $sent): array
+    private function fieldPlan(?Form $form, array $sent, string $entry, array &$names, array &$removed): array
     {
-        $field = $form === null ? null : $this->matchField($form, $sent);
+        $field = $form === null ? null : $this->matchField($form, $sent, $entry, $names, $removed);
 
         if (($sent['remove'] ?? false) === true) {
-            return $field === null
-                ? throw new ToolFailure('A field to remove has to be one the form has: name it by id or by machine name.')
-                : ['would' => 'remove', 'field' => $field, 'values' => ['name' => $field->key()]];
+            if ($field === null) {
+                throw new ToolFailure("{$entry}: a field to remove has to be one the form has — name it by id or by machine name.");
+            }
+
+            unset($names[$field->key()]);
+            $removed[(int) $field->getKey()] = true;
+
+            return ['would' => 'remove', 'field' => $field, 'values' => ['name' => $field->key()]];
         }
 
         $input = [...$this->fieldAsInput($field), ...array_diff_key($sent, array_flip(['id', 'remove']))];
 
+        // The name is checked against `$names` below rather than against the table: the table
+        // does not know what the entries before this one freed or took.
         $this->validator()->make(
             $input,
-            FieldInput::rules($form === null ? null : (int) $form->getKey(), $field === null ? null : (int) $field->getKey()),
+            FieldInput::rules($form === null ? null : (int) $form->getKey(), $field === null ? null : (int) $field->getKey(), unique: false),
             FieldInput::messages(),
         )->validate();
+
+        $values = FieldInput::values($input);
+        $name = $values['name'];
+
+        if (is_string($name)) {
+            $holder = $names[$name] ?? null;
+
+            if ($holder !== null && $holder !== ($field === null ? null : (int) $field->getKey())) {
+                throw new ToolFailure(is_int($holder)
+                    ? "{$entry}: the form already has a field named [{$name}] (id {$holder}). Name it to change it, or remove it first in this call."
+                    : "{$entry}: [{$name}] is already the name of {$holder} in this call — one name, one field.");
+            }
+        }
+
+        if ($field !== null) {
+            unset($names[$field->key()]);
+        }
+
+        if (is_string($name)) {
+            $names[$name] = $field === null ? $entry : (int) $field->getKey();
+        }
 
         return [
             'would' => $field === null ? 'add' : 'update',
             'field' => $field,
-            'values' => FieldInput::values($input),
+            'values' => $values,
         ];
+    }
+
+    /**
+     * The machine names of the form's e-mail fields once the plan has been applied — what
+     * `options.email_field` may name.
+     *
+     * @param  list<array{would: string, field: Field|null, values: array<string, mixed>}>  $plan
+     * @return list<string>
+     */
+    private function emailFieldsAfter(?Form $form, array $plan): array
+    {
+        /** @var array<int|string, string> $emails  field id (or entry) → name */
+        $emails = [];
+
+        foreach ($form === null ? [] : $form->fields as $field) {
+            if ($field->type === FieldType::Email) {
+                $emails[(int) $field->getKey()] = $field->key();
+            }
+        }
+
+        foreach ($plan as $index => $one) {
+            $id = $one['field'] === null ? 'new'.$index : (int) $one['field']->getKey();
+            unset($emails[$id]);
+
+            if ($one['would'] !== 'remove' && $one['values']['type'] === FieldType::Email && is_string($one['values']['name'])) {
+                $emails[$id] = $one['values']['name'];
+            }
+        }
+
+        return array_values($emails);
     }
 
     /**
@@ -417,21 +545,36 @@ final class InboxTools
      * name. A field put aside is not matched by name — it is gone from the form, and a save
      * that quietly resurrected it would be a save nobody asked for.
      *
+     * Matched against the state the earlier entries of the call left: a name one of them freed
+     * matches nothing (so this entry adds a field), and a name one of them took is refused
+     * by {@see fieldPlan()} rather than read as the same field twice.
+     *
      * @param  array<string, mixed>  $sent
+     * @param  array<string, int|string>  $names
+     * @param  array<int, true>  $removed
      */
-    private function matchField(Form $form, array $sent): ?Field
+    private function matchField(Form $form, array $sent, string $entry, array $names, array $removed): ?Field
     {
         if (isset($sent['id']) && is_numeric($sent['id'])) {
-            $field = $form->fields()->find((int) $sent['id']);
+            $field = $form->fields->firstWhere('id', (int) $sent['id']);
 
-            return $field instanceof Field
-                ? $field
-                : throw new ToolFailure("Form [{$form->slug}] has no field with the id [{$sent['id']}].");
+            if (! $field instanceof Field) {
+                throw new ToolFailure("{$entry}: form [{$form->slug}] has no field with the id [{$sent['id']}].");
+            }
+
+            return isset($removed[(int) $field->getKey()])
+                ? throw new ToolFailure("{$entry}: the field with the id [{$sent['id']}] is removed earlier in this call.")
+                : $field;
         }
 
         $name = trim((string) ($sent['name'] ?? ''));
+        $holder = $name === '' ? null : ($names[$name] ?? null);
 
-        return $name === '' ? null : $form->fields()->where('name', $name)->first();
+        if (is_string($holder)) {
+            throw new ToolFailure("{$entry}: [{$name}] is already the name of {$holder} in this call — one name, one field.");
+        }
+
+        return is_int($holder) ? $form->fields->firstWhere('id', $holder) : null;
     }
 
     /**
@@ -444,13 +587,13 @@ final class InboxTools
         $list = ListQuery::for($form);
 
         $request = $this->request([
-            'view' => (string) ($arguments['view'] ?? ListQuery::VIEW_ALL),
-            'assignee' => $arguments['assignee'] ?? null,
-            'from' => $arguments['from'] ?? null,
-            'to' => $arguments['to'] ?? null,
+            'view' => $this->view($list, $arguments['view'] ?? null),
+            'assignee' => $this->assigneeFilter($arguments['assignee'] ?? null),
+            'from' => $this->day($arguments, 'from'),
+            'to' => $this->day($arguments, 'to'),
             'search' => $arguments['search'] ?? null,
             'placement' => $arguments['placement'] ?? null,
-            'sort' => $arguments['sort'] ?? null,
+            'sort' => $this->sort($list, $arguments['sort'] ?? null),
         ]);
 
         $perPage = min(100, max(5, (int) ($arguments['per_page'] ?? self::PER_PAGE)));
@@ -470,11 +613,126 @@ final class InboxTools
             'counts' => $list->counts($request),
             // Where on the site this form has been sent from; null is "the page did not say".
             'placements' => $list->placements(),
+            'statuses' => $this->statusNames(),
             'submissions' => array_map(
-                fn (Submission $submission): array => (new SubmissionRowResource($submission, $list->columns))->resolve($request),
+                fn (Submission $submission): array => $this->row($submission, $list->columns, $request),
                 $page->items(),
             ),
         ];
+    }
+
+    /**
+     * The filters of `inbox_list`, each refused by name when it cannot be read.
+     *
+     * An agent cannot tell "this form has nothing under that filter" from "that filter is not
+     * one" — both used to come back as a total of 0 — so a view, a sort or a date nobody has is
+     * an answer that says so, with the ones that exist.
+     */
+    private function view(ListQuery $list, mixed $view): string
+    {
+        $view = trim((string) ($view ?? ''));
+
+        if ($view === '') {
+            return ListQuery::VIEW_ALL;
+        }
+
+        $views = $list->views();
+
+        return in_array($view, $views, true)
+            ? $view
+            : throw new ToolFailure("There is no view [{$view}]. The views are: ".implode(', ', $views).'.');
+    }
+
+    /** An administrator by id or by email, or "none" for the pile nobody has picked up. */
+    private function assigneeFilter(mixed $assignee): ?string
+    {
+        if ($assignee === null || $assignee === '') {
+            return null;
+        }
+
+        if ($assignee === 'none') {
+            return 'none';
+        }
+
+        if (! is_int($assignee) && ! is_string($assignee)) {
+            throw new ToolFailure('`assignee` is an administrator id, an email address, or "none".');
+        }
+
+        $admin = $this->assignee($assignee);
+
+        return $admin === null ? null : (string) $admin->getKey();
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    private function day(array $arguments, string $key): ?string
+    {
+        $value = $arguments[$key] ?? null;
+
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return is_string($value) && ListQuery::day($value) !== null
+            ? $value
+            : throw new ToolFailure("`{$key}` is a date, YYYY-MM-DD — a day that exists.");
+    }
+
+    private function sort(ListQuery $list, mixed $sort): ?string
+    {
+        $sort = trim((string) ($sort ?? ''));
+
+        if ($sort === '') {
+            return null;
+        }
+
+        $sorts = $list->sorts();
+
+        return in_array(ltrim($sort, '-'), $sorts, true)
+            ? $sort
+            : throw new ToolFailure("The list cannot be sorted by [{$sort}]. It sorts by: ".implode(', ', $sorts)
+                .'; a leading - reverses it. A values.<name> sort is only there for a field shown in the list (in_table).');
+    }
+
+    /**
+     * One line of the list, with its status as a key.
+     *
+     * The panel's row carries the whole status — every language of its title, its colour, its
+     * flags — because it draws a badge from it. An agent reading a page of a hundred got the
+     * same object a hundred times over; the key is what it filters and writes by, and
+     * `statuses` at the top of the answer says once what each key is called.
+     *
+     * @param  list<Field>  $columns
+     * @return array<string, mixed>
+     */
+    private function row(Submission $submission, array $columns, Request $request): array
+    {
+        $row = (new SubmissionRowResource($submission, $columns))->resolve($request);
+        $row['status'] = $submission->status?->key;
+
+        return $row;
+    }
+
+    /**
+     * Every status by key, named in the language the answer is in, with the two flags that
+     * change what a status means.
+     *
+     * @return array<string, array{title: string, is_closed: bool, is_spam: bool}>
+     */
+    private function statusNames(): array
+    {
+        $names = [];
+
+        foreach (Status::query()->orderBy('position')->get() as $status) {
+            $names[$status->key] = [
+                'title' => (string) $status->title,
+                'is_closed' => (bool) $status->is_closed,
+                'is_spam' => (bool) $status->is_spam,
+            ];
+        }
+
+        return $names;
     }
 
     /**
@@ -487,21 +745,42 @@ final class InboxTools
         $request = $this->request();
 
         $submission->load(['form', 'status', 'assignee', 'values', 'files', 'events']);
+        $notes = $submission->noteFeed();
 
-        $shown = (new SubmissionResource(
-            $submission,
-            Authors::names($user, $submission->events->pluck('admin_id')->all()),
-        ))->resolve($request);
+        $authors = Authors::names($user, [
+            ...$submission->events->pluck('admin_id')->all(),
+            ...array_map(static fn (Note $note): ?int => $note->admin_id, $notes),
+        ]);
+
+        $shown = (new SubmissionResource($submission, $authors))->resolve($request);
+
+        // The arrows of the panel's card walk the list it was opened from; there is no list
+        // here, so they were always null — two keys that only looked like an answer.
+        unset($shown['previous_id'], $shown['next_id']);
+
+        // The status as the list names it — by key, in one language — rather than the
+        // panel's badge with every language of its title.
+        $status = $submission->status;
+        $shown['status'] = $status === null ? null : [
+            'key' => $status->key,
+            'title' => (string) $status->title,
+            'is_closed' => (bool) $status->is_closed,
+            'is_spam' => (bool) $status->is_spam,
+        ];
 
         // Notes are `module-admin`'s and travel on their own address in the panel; an agent
         // reading a submission is reading it to know what has been said about it, so they
-        // come with it here rather than as a second call.
+        // come with it here rather than as a second call. The author in the same shape as a
+        // line of the log.
         $shown['notes'] = array_map(fn (Note $note): array => [
             'id' => (int) $note->getKey(),
             'body' => $note->body,
-            'author' => $note->admin_id,
+            'author' => $note->admin_id === null ? null : [
+                'id' => (int) $note->admin_id,
+                'name' => $authors[(int) $note->admin_id] ?? null,
+            ],
             'created_at' => $note->created_at?->toAtomString(),
-        ], $submission->noteFeed());
+        ], $notes);
 
         return $shown;
     }
@@ -587,19 +866,6 @@ final class InboxTools
         $summary['fields_count'] = $count === null ? $form->fields()->count() : (int) $count;
 
         return $summary;
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private function statuses(): array
-    {
-        $request = $this->request();
-
-        return Status::query()->orderBy('position')->get()
-            ->map(static fn (Status $status): array => (new StatusResource($status))->resolve($request))
-            ->values()
-            ->all();
     }
 
     /**

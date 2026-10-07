@@ -20,7 +20,9 @@
         works, it just reloads the page to say so.
 --}}
 @php
-    $formId = 'wx-form-'.$form->slug;
+    // Unique on the page even when the same form stands on it twice. A view published before
+    // the component handed it in falls back to the old, plain name.
+    $formId ??= 'wx-form-'.$form->slug;
 @endphp
 <form
     method="post"
@@ -46,7 +48,7 @@
 
     <input type="hidden" name="{{ $timestampField }}" value="{{ $timestamp }}">
 
-    @includeWhen($honeypot !== null, 'webx-inbox::honeypot', ['name' => $honeypot])
+    @includeWhen($honeypot !== null, 'webx-inbox::honeypot', ['name' => $honeypot, 'id' => $formId.'-hp'])
 
     <div class="wx-form__fields">
         @foreach ($fields as $field)

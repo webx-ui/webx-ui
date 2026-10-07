@@ -231,6 +231,36 @@ final class HistoryTest extends TestCase
     }
 
     #[Test]
+    public function clearing_takes_every_run_and_leaves_the_rules(): void
+    {
+        $this->fakeSite();
+        $runner = $this->app->make(Runner::class);
+        $run = $runner->complete($runner->start(AuditRun::FULL));
+        AuditIgnore::query()->create(['check' => 'config.debug', 'pattern' => '', 'reason' => 'Staging.']);
+
+        $this->assertTrue(AuditPage::query()->where('run_id', $run->id)->exists());
+
+        $this->actingAs($this->admin(['audit.view', 'audit.run']), 'cms')
+            ->deleteJson(route('webx.audit.runs.clear'))
+            ->assertForbidden();
+
+        $this->actingAs($this->admin(['audit.manage']), 'cms');
+
+        // A run that is going would keep writing rows for a run no longer there.
+        $going = $runner->start(AuditRun::QUICK);
+        $this->deleteJson(route('webx.audit.runs.clear'))->assertStatus(409);
+        $runner->cancel($going);
+
+        $this->deleteJson(route('webx.audit.runs.clear'))->assertOk()->assertJsonPath('data.runs', 2);
+
+        foreach (['audit_runs', 'audit_issues', 'audit_pages', 'audit_links', 'audit_resources', 'audit_content_urls'] as $table) {
+            $this->assertSame(0, DB::table($table)->count(), $table);
+        }
+
+        $this->assertSame(1, AuditIgnore::query()->count());
+    }
+
+    #[Test]
     public function outgoing_hosts_and_one_page_as_a_file(): void
     {
         $this->fakeSite();
@@ -284,6 +314,31 @@ final class HistoryTest extends TestCase
             ->assertJsonPath('data.pages.0.status', 401)
             ->assertJsonPath('data.targets.0.url', $last->to_url)
             ->assertJsonPath('data.targets.0.status', 401);
+    }
+
+    #[Test]
+    public function a_small_og_picture_stored_under_the_old_id_moves_with_its_hiding_rule(): void
+    {
+        $run = AuditRun::query()->create(['status' => AuditRun::DONE, 'scope' => AuditRun::QUICK, 'base_url' => self::BASE]);
+        $rule = AuditIgnore::query()->create(['check' => 'og.image_broken', 'pattern' => '/promo', 'reason' => 'A square on purpose']);
+        $old = static fn (string $key): array => [
+            'run_id' => $run->id, 'check' => 'og.image_broken', 'severity' => 'warning', 'url' => self::BASE.'/promo',
+            'fingerprint' => sha1("og.image_broken\n".self::BASE."/promo\n".$key), 'key' => $key, 'ignored_by' => $rule->id,
+            'created_at' => now(), 'updated_at' => now(),
+        ];
+        DB::table('audit_issues')->insert([$old('small'), $old('broken')]);
+
+        (require __DIR__.'/../database/migrations/2026_01_01_000009_split_og_image_small.php')->up();
+
+        $copy = AuditIgnore::query()->where('check', 'og.image_small')->sole();
+        $this->assertSame('/promo', $copy->pattern);
+        $this->assertTrue(AuditIgnore::query()->whereKey($rule->id)->exists(), 'The old rule still hides broken pictures.');
+
+        $small = AuditIssue::query()->where('key', 'small')->sole();
+        $this->assertSame('og.image_small', $small->check);
+        $this->assertSame(sha1("og.image_small\n".self::BASE."/promo\nsmall"), $small->fingerprint);
+        $this->assertSame($copy->id, $small->ignored_by);
+        $this->assertSame('og.image_broken', AuditIssue::query()->where('key', 'broken')->sole()->check);
     }
 
     private function html(string $title): string

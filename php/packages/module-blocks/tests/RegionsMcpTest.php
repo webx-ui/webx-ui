@@ -100,7 +100,7 @@ final class RegionsMcpTest extends RegionTestCase
 
         $this->agent('region_publish', ['name' => 'header'], $editor)->assertHasErrors(['never saved']);
 
-        $this->agent('set_content', ['entity' => 'region', 'id' => 'header', 'blocks' => [['type' => 'bomb', 'values' => ['boom' => true]]]], $editor)->assertOk();
+        $this->agent('set_content', ['entity' => 'region', 'id' => 'header', 'blocks' => [['type' => 'bomb', 'values' => ['boom' => 'yes']]]], $editor)->assertOk();
         $this->agent('region_publish', ['name' => 'header'], $editor)->assertHasErrors(['Not published', 'Boom']);
         $this->agent('region_publish', ['name' => 'header', 'dry_run' => true], $editor)->assertHasErrors(['Would not publish']);
 

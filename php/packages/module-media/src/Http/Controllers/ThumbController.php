@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Intervention\Image\Exceptions\RuntimeException as ImageException;
 use WebxUi\Media\Images\Thumbnails;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Storage\FileUrls;
@@ -40,12 +41,17 @@ final class ThumbController
             'fit' => ['nullable', Rule::in((array) config('webx-media.thumbs.fits', []))],
         ]);
 
-        $path = $this->thumbnails->variant(
-            $file,
-            (int) $parameters['w'],
-            isset($parameters['h']) ? (int) $parameters['h'] : null,
-            $parameters['fit'] ?? 'cover',
-        );
+        try {
+            $path = $this->thumbnails->variant(
+                $file,
+                (int) $parameters['w'],
+                isset($parameters['h']) ? (int) $parameters['h'] : null,
+                $parameters['fit'] ?? 'cover',
+            );
+        } catch (ImageException) {
+            // An SVG, a HEIC, broken bytes: the picture whole rather than a failed request.
+            return new RedirectResponse($this->urls->url($file));
+        }
 
         return new RedirectResponse($this->urls->variantUrl($file, $path));
     }

@@ -9,6 +9,7 @@ use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Links\Link;
+use WebxUi\Admin\Links\LinkTarget;
 use WebxUi\Admin\Links\LinkUrls;
 use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Exceptions\ToolFailure;
@@ -362,12 +363,45 @@ final class MenuTools
         }
 
         $this->validator()->make($input, ItemInput::rules($key))->validate();
+        $this->refuseMissingEntity($link, $item);
 
         return [
             'link' => $link,
             'title' => isset($input['title']) && is_array($input['title']) ? $input['title'] : null,
             'locales' => isset($input['locales']) && is_array($input['locales']) ? $input['locales'] : null,
         ];
+    }
+
+    /**
+     * An entity named by id has to exist when it is named.
+     *
+     * The panel's picker can only offer what is there, but an agent types the id, and an id
+     * nothing answers for would be stored as an item with no label and no address — invisible
+     * on the site and puzzling in the panel. A draft resolves, so it still passes. Only a pair
+     * that is being set is checked: an item whose page was deleted later stays editable for its
+     * other fields.
+     *
+     * @param  array<string, mixed>  $link
+     */
+    private function refuseMissingEntity(array $link, MenuItem $item): void
+    {
+        $wanted = Link::fromArray($link);
+
+        if ($wanted->target !== LinkTarget::Entity || $wanted->entityType === null || $wanted->entityId === null) {
+            return;
+        }
+
+        if ($item->exists) {
+            $current = $item->link();
+
+            if ($current->target === $wanted->target && $current->entityType === $wanted->entityType && $current->entityId === $wanted->entityId) {
+                return;
+            }
+        }
+
+        if ($this->urls()->candidate($wanted) === null) {
+            throw new ToolFailure("There is no {$wanted->entityType} #{$wanted->entityId} to link to. Find the id with the tools of the module that owns it.");
+        }
     }
 
     /**

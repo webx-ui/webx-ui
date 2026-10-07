@@ -7,7 +7,7 @@ return [
     'default-og' => 'Immagine social predefinita',
     'default-og-help' => 'Mostrata quando una pagina non ha un’immagine propria.',
     'title-template' => 'Modello del titolo',
-    'title-template-help' => '{title} è la pagina, {site} il nome del progetto.',
+    'title-template-help' => '{title} è la pagina, {site} il nome del progetto. Un titolo che nomina già il sito viene pubblicato così come è scritto.',
     'home-crumb' => 'Home nelle briciole di pane',
     'home-crumb-help' => 'Il primo passo di ogni percorso di briciole. Se vuoto, è la parola «Home» nella lingua della pagina.',
     'robots-txt' => 'robots.txt',

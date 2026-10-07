@@ -57,8 +57,11 @@ final class Assets
      * Printed by the package because the block is: a widget with nothing to draw it is an
      * empty div and a form that cannot be submitted, and finding out why is a bad afternoon.
      * A site that loads the provider itself turns this off in the configuration.
+     *
+     * `$render` is a reCAPTCHA v3 site key: v3 is loaded with it, `api.js?render=<key>`, and
+     * without it `grecaptcha.execute(key, …)` has nothing to run.
      */
-    public function captchaScript(string $provider): ?string
+    public function captchaScript(string $provider, ?string $render = null): ?string
     {
         $src = $this->config->get("webx-inbox.captcha.{$provider}.script");
 
@@ -67,6 +70,10 @@ final class Assets
         }
 
         $this->captcha[$provider] = true;
+
+        if ($render !== null && $render !== '') {
+            $src .= (str_contains($src, '?') ? '&' : '?').'render='.rawurlencode($render);
+        }
 
         return $src;
     }

@@ -23,9 +23,10 @@ guides when the question is about one of those. An entity's own attachments are 
 - **Permissions** `media.view`, `media.upload`, `media.manage` — uploading is separate from
   managing on purpose.
 - **MCP** tools `media_list_directories`, `media_list_files`, `media_search_files`,
-  `media_get_file`, `media_create_directory`, `media_rename_file`, `media_move_files`,
-  `media_upload_from_url`, `media_delete_files`. Scopes `media:read`, `media:write`. There is no
-  tool that deletes a folder.
+  `media_get_file`, `media_create_directory`, `media_delete_directory` (empty folders only),
+  `media_rename_file`, `media_move_files`, `media_upload_from_url` (public addresses only),
+  `media_optimize_images`, `media_delete_files`. Scopes `media:read`, `media:write`. A refusal is
+  an MCP error, not an `ok: false` answer.
 - Also registered: the panel section `media` (group `system`), demo files (`resources/demo`), and
   audit checks `media.missing_file` and `media.heavy` when `webx-ui/module-audit` is installed.
 
@@ -60,11 +61,17 @@ a migration of your own, bytes and rows together.
   `hash`, `mime`, `size`, dimensions and `name_lower` that search and duplicates rely on. Upload
   through the panel, the API or `media_upload_from_url`.
 - Do not delete rows with SQL: `media_delete_files` (or the panel) removes the bytes and the
-  edited original with the row. A raw delete leaves orphaned bytes; a deleted file on the disk
+  edited original with the row. It refuses a file the site still uses and says where (a foreign
+  key into `media_files`, or the file's key inside a text or JSON column); `force: true` deletes
+  anyway — replace the file in those places first. A module that keeps files where the schema
+  cannot show them tags a `WebxUi\Media\Usage\UsageSource` with `MediaUsage::TAG`. A raw delete leaves orphaned bytes; a deleted file on the disk
   leaves a row the audit reports as `media.missing_file`.
 - Do not try to move or delete the root folder — it is refused (`root_immutable`). Deleting a
   non-empty folder answers `409` with counts until `?force=1`; ask the person first, there is no
-  bin and no MCP tool for it on purpose.
+  bin. `media_delete_directory` deletes only an empty folder, on purpose.
+- Do not point `media_upload_from_url` at the site itself or the local network: loopback,
+  private, link-local and reserved addresses are refused, after resolving the name. A host on
+  the site's own network that must be fetched goes into `webx-media.remote.allow_hosts`.
 - Do not ask for a thumbnail size outside `thumbs.widths` and `thumbs.fits`: it is refused, so
   one request cannot make the server resize anything to anything. Add the size to the config.
 - Do not widen `upload.extensions` with executable or script types: the list is a white list on

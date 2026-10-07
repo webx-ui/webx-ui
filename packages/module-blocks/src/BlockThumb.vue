@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
-import { useElementWidth, WxIcon } from '@webx-ui/core'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useTranslate } from '@webx-ui/module-admin'
+import { useElementWidth, WxIcon, WxText } from '@webx-ui/core'
 import { stageDocument, thumbDocument } from './frame'
 import { useSiteShell } from './shell'
 import type { BlockThumbnail } from './types'
@@ -34,8 +35,37 @@ const props = withDefaults(
   { width: 1280, height: 120, fit: false },
 )
 
+const t = useTranslate('webx-blocks')
+
 const box = ref<HTMLElement | null>(null)
 const boxWidth = useElementWidth(box)
+
+/*
+ * Drawn once it is near the screen, and never taken down again. Every frame loads the site's
+ * stylesheet and its fonts, and the list of a site with forty types built forty of them at once —
+ * most of them below the fold, all of them competing with the one being looked at.
+ */
+const seen = ref(typeof IntersectionObserver === 'undefined')
+let watcher: IntersectionObserver | null = null
+
+onMounted(() => {
+  if (seen.value || !box.value) return
+
+  watcher = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        seen.value = true
+        watcher?.disconnect()
+        watcher = null
+      }
+    },
+    { rootMargin: '200px' },
+  )
+  watcher.observe(box.value)
+})
+
+/** Drawn, and nothing came out: a block that prints only with data to print. */
+const blank = computed(() => props.thumbnail?.empty === true)
 
 /** The root of what was drawn, in the frame's pixels; null until the frame has loaded. */
 const drawn = ref<{ left: number; top: number; width: number; height: number } | null>(null)
@@ -132,13 +162,20 @@ function onLoad(event: Event): void {
   observer.observe(root)
 }
 
-onBeforeUnmount(() => observer?.disconnect())
+onBeforeUnmount(() => {
+  observer?.disconnect()
+  watcher?.disconnect()
+})
 </script>
 
 <template>
   <div ref="box" class="wx-block-thumb" :style="{ height: `${height}px` }">
+    <div v-if="blank" class="wx-block-thumb__empty is-blank">
+      <wx-icon name="grid" />
+      <wx-text size="xs" tone="muted">{{ t('page.thumb-empty') }}</wx-text>
+    </div>
     <iframe
-      v-if="thumbnail"
+      v-else-if="thumbnail && seen"
       class="wx-block-thumb__frame"
       :srcdoc="srcdoc"
       :style="frameStyle"
@@ -147,7 +184,7 @@ onBeforeUnmount(() => observer?.disconnect())
       aria-hidden="true"
       @load="onLoad"
     />
-    <div v-else class="wx-block-thumb__empty">
+    <div v-else-if="!thumbnail" class="wx-block-thumb__empty">
       <wx-icon name="grid" />
     </div>
   </div>
@@ -175,5 +212,12 @@ onBeforeUnmount(() => observer?.disconnect())
   place-items: center;
   height: 100%;
   color: var(--wx-text-muted);
+}
+
+.wx-block-thumb__empty.is-blank {
+  place-content: center;
+  gap: var(--wx-space-4);
+  padding: var(--wx-space-8);
+  text-align: center;
 }
 </style>

@@ -28,7 +28,10 @@ return [
     |
     | `hreflang` is the page in the site's other languages, `breadcrumbs` the
     | BreadcrumbList, `structured_data` what the entity and the handler add
-    | (`HasStructuredData`, `Seo::push()`), `twitter` the one `twitter:card` line.
+    | (`HasStructuredData`, `Seo::push()`). `og` is every og:* line, `article`
+    | the article:* ones of an article (dates, section, tags), `twitter` the
+    | twitter:* lines. X reads og:* when twitter:* is missing, so those mirror
+    | it and can be turned off; they are on because some readers do not fall back.
     |
     */
 
@@ -39,6 +42,7 @@ return [
         'robots' => true,
         'canonical' => true,
         'og' => true,
+        'article' => true,
         'json_ld' => true,
         'hreflang' => true,
         'breadcrumbs' => true,
@@ -70,13 +74,29 @@ return [
     | Open Graph
     |---------------------------------------------------------------------------
     |
-    | `og:title`, `og:description` and `og:url` fall back to the title, the
-    | description and the canonical address when nothing sets them apart.
+    | Filled in from what the page already says, never typed for the purpose:
+    | og:title, og:description and og:url are the title (after the template),
+    | the description and the canonical; og:image is the first picture of the
+    | sources a network can show (an SVG falls through to the next one), with
+    | its type, size and alt. og:type is the entity's (HasOpenGraph) or `type`.
+    |
+    | `locales` maps a language code to the og:locale it means, where the
+    | default guess (en → en_US, de → de_DE) is not the one: ['pt' => 'pt_BR'].
+    |
+    | `image` is the variant a landscape library picture at least that big is
+    | cut to — the size networks recommend; null shares the picture as it is.
+    |
+    | `panel_fields` brings back the share title, description and picture in
+    | the SEO card, for a site that wants to override them by hand. Off, values
+    | already stored are still honoured.
     |
     */
 
     'og' => [
         'type' => 'website',
+        'locales' => [],
+        'image' => ['width' => 1200, 'height' => 630],
+        'panel_fields' => env('WEBX_SEO_OG_FIELDS', false),
     ],
 
     /*
@@ -92,11 +112,16 @@ return [
     | wrong, so it wins; the defaults are what is said when nothing was said,
     | so they lose.
     |
+    | Fallbacks are what an entity says without a card — its own name, lead and
+    | picture (HasSeoFallback). Below the card, above the defaults: a recipe's
+    | photo is a better picture of the recipe than the site's default one.
+    |
     */
 
     'sources' => [
         'urls' => 100,
         'entities' => 50,
+        'fallbacks' => 30,
         'defaults' => 10,
     ],
 

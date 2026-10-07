@@ -28,6 +28,12 @@ return [
             'why' => 'Los correos y los envíos se procesan mientras el visitante espera, un servidor de correo lento ralentiza los formularios y los trabajos largos, como la auditoría, no pueden ejecutarse desde el panel.',
             'fix' => 'Usa la cola database o redis y mantén un worker en marcha (php artisan queue:work bajo un supervisor).',
         ],
+        'queue_worker' => [
+            'title' => 'Nadie procesa la cola',
+            'found' => 'Los trabajos de la cola en base de datos llevan minutos pendientes y ningún worker los ha tomado.',
+            'why' => 'Los correos de los formularios, las auditorías y el trabajo con imágenes se quedan en cola y nunca ocurren, mientras el panel dice que todo va bien.',
+            'fix' => 'Mantén un worker en marcha (php artisan queue:work bajo un supervisor), programa queue:work --stop-when-empty cada minuto o usa QUEUE_CONNECTION=sync en un sitio pequeño.',
+        ],
         'mail' => [
             'title' => 'El correo no va a ninguna parte',
             'found' => 'El mailer escribe los correos en el registro o en la memoria.',
@@ -445,10 +451,16 @@ return [
             'fix' => 'Rellena la vista previa social en los ajustes SEO de la página o haz que la plantilla base imprima las etiquetas.',
         ],
         'image_broken' => [
-            'title' => 'La imagen de Open Graph está rota o es pequeña',
-            'found' => 'og:image no se abre, o es menor de 1200×630.',
-            'why' => 'Un enlace compartido no muestra imagen, o muestra un cuadrado pequeño junto al texto en lugar de una tarjeta grande.',
-            'fix' => 'Pon una imagen operativa de al menos 1200×630 en la vista previa social de la página.',
+            'title' => 'La imagen de Open Graph no se abre',
+            'found' => 'og:image responde con un error o no se abre.',
+            'why' => 'Un enlace compartido no muestra ninguna imagen.',
+            'fix' => 'Pon una imagen operativa en la vista previa social de la página.',
+        ],
+        'image_small' => [
+            'title' => 'La imagen de Open Graph es pequeña',
+            'found' => 'og:image es menor de 1200×630.',
+            'why' => 'Un enlace compartido muestra un cuadrado pequeño junto al texto en lugar de una tarjeta grande.',
+            'fix' => 'Pon una imagen de al menos 1200×630 en la vista previa social de la página.',
         ],
     ],
     'hreflang' => [

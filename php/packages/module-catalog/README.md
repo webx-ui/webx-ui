@@ -42,6 +42,13 @@ none. A deleted category answers 410. An unpublished category hides everything b
 `product` and `product-unavailable`, overridden by a site in
 `resources/views/vendor/webx-catalog/`. `webx-catalog.layout` names the site's layout component.
 
+With an empty SEO card a product names its page itself (`HasSeoFallback`): the name through the
+site's title template, the summary (or the description, cut short) as the description, the main
+picture as `og:image`, above the site's default social image. A page of a list (`CatalogPage`) is
+called by its heading, and on the plain page the category's description and cover come with it.
+So no view prints `<title>` itself, and a site's copy that still has the old
+`@if ($meta->title === null)` block can delete it.
+
 ## Satellites
 
 A satellite writes its share of the product form through a `ProductPart` registered with

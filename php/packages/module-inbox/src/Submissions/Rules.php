@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Inbox\Submissions;
 
+use Closure;
 use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
@@ -70,7 +71,7 @@ final class Rules
         $presence = $field->is_required ? 'required' : 'nullable';
 
         return match ($field->type) {
-            FieldType::Email => [$key => [$presence, 'string', 'email', 'max:255']],
+            FieldType::Email => [$key => [$presence, 'string', 'email:rfc', $this->reachableDomain(...), 'max:255']],
             FieldType::Tel => [$key => array_values(array_filter([
                 $presence,
                 'string',
@@ -136,6 +137,27 @@ final class Rules
             $key => [$field->is_required ? 'required' : 'nullable', 'array', 'max:'.$this->files->maxFiles()],
             $key.'.*' => ['required', ...$one],
         ];
+    }
+
+    /**
+     * An address somebody can actually be written to.
+     *
+     * The bare `email` rule takes `a@b`: it is valid by the RFC, which allows a host with no
+     * dot in it, and no mailbox on the internet lives at one. `email:filter` would refuse it
+     * but also refuses a domain written in its own script, and a site in any language may
+     * hear from one — so the RFC check stays, and the domain only has to have a dot inside it.
+     */
+    public function reachableDomain(string $attribute, mixed $value, Closure $fail): void
+    {
+        if (! is_string($value)) {
+            return;
+        }
+
+        $domain = substr((string) strrchr($value, '@'), 1);
+
+        if (preg_match('/^[^.]+(\.[^.]+)+$/u', $domain) !== 1) {
+            $fail('validation.email')->translate();
+        }
     }
 
     /** `in:` over the values the field was given, so an answer nobody was offered is refused. */

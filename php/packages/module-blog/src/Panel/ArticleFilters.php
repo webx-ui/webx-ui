@@ -38,7 +38,7 @@ final class ArticleFilters
      */
     public function all(): array
     {
-        $locale = $this->locales->current();
+        $locale = $this->locales->content();
 
         return [
             'rubrics' => Rubric::query()

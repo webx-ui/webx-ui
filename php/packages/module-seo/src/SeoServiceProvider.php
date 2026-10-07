@@ -6,6 +6,7 @@ namespace WebxUi\Seo;
 
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
+use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Http\Kernel;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
@@ -15,6 +16,7 @@ use WebxUi\Admin\Screens\FieldTypes;
 use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Audit\Fixes\AuditFixes;
+use WebxUi\Media\MediaServiceProvider;
 use WebxUi\Routing\Contracts\Spelling;
 use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\Models\Route as RouteRow;
@@ -24,6 +26,7 @@ use WebxUi\Seo\Audit\RedirectChains;
 use WebxUi\Seo\Audit\RobotsSitemapFix;
 use WebxUi\Seo\Audit\SeoChecks;
 use WebxUi\Seo\Console\SitemapCommand;
+use WebxUi\Seo\Contracts\SharesImages;
 use WebxUi\Seo\Http\Middleware\NormaliseAddress;
 use WebxUi\Seo\Http\Middleware\RedirectRequests;
 use WebxUi\Seo\Links\LinkBlocks;
@@ -40,8 +43,12 @@ use WebxUi\Seo\Panel\UrlRuleSource;
 use WebxUi\Seo\Rendering\Alternates;
 use WebxUi\Seo\Rendering\Breadcrumbs;
 use WebxUi\Seo\Rendering\EntitySource;
+use WebxUi\Seo\Rendering\FallbackSource;
+use WebxUi\Seo\Rendering\Images\ImagesByAddress;
+use WebxUi\Seo\Rendering\Images\LibraryImages;
 use WebxUi\Seo\Rendering\Seo;
 use WebxUi\Seo\Rendering\SeoSources;
+use WebxUi\Seo\Rendering\SocialTags;
 use WebxUi\Seo\Screens\SeoFieldType;
 use WebxUi\Seo\Sitemap\Sitemap;
 use WebxUi\Seo\Sitemap\SitemapRoutes;
@@ -70,6 +77,13 @@ class SeoServiceProvider extends ServiceProvider
         $this->app->singleton(Seo::class);
         $this->app->singleton(Alternates::class);
         $this->app->singleton(Breadcrumbs::class);
+        $this->app->singleton(SocialTags::class);
+        // The library describes its own pictures when it is running; otherwise the address does.
+        // Asked on first use, when every provider has registered — installed is not enough, a
+        // site may have the package without its tables.
+        $this->app->singleton(SharesImages::class, static fn (Application $app): SharesImages => class_exists(MediaServiceProvider::class) && $app->providerIsLoaded(MediaServiceProvider::class)
+            ? $app->make(LibraryImages::class)
+            : new ImagesByAddress);
         $this->app->singleton(Sitemap::class);
         $this->app->singleton(SitemapRoutes::class);
         $this->app->singleton(SitemapSources::class);
@@ -155,6 +169,7 @@ class SeoServiceProvider extends ServiceProvider
 
         $sources->register($this->app->make(UrlRuleSource::class));
         $sources->register($this->app->make(EntitySource::class));
+        $sources->register($this->app->make(FallbackSource::class));
         $sources->register($this->app->make(DefaultsSource::class));
     }
 

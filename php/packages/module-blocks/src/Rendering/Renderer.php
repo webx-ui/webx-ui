@@ -18,6 +18,7 @@ use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Content;
 use WebxUi\Blocks\Exceptions\BlockNotPublishable;
 use WebxUi\Blocks\Exceptions\BlocksException;
+use WebxUi\Localization\Locales;
 
 /**
  * An entity's content — a tree of `{ key, type, values }` nodes — printed as HTML.
@@ -289,29 +290,48 @@ final class Renderer
      * around it, drafts for whatever it nests. `$unsaved` compiles the template in the type
      * as it is rather than the stored version, for the editor rendering what is being typed.
      *
+     * Drawn in a language of the site's content, not the panel's: a panel request speaks the
+     * editor's language, and on a site that has no page in it a block that reads records — the
+     * latest recipes, the next events — found none and drew nothing, or failed on the first one.
+     * The editor's language when the site has it, the site's main one when it does not.
+     *
      * @param  array<string, mixed>  $values
      */
     public function draw(BlockType $type, array $values, string $key = 'sample', bool $unsaved = false): string
     {
-        $context = new BlockContext(
-            key: $key,
-            type: $type->slug,
-            version: $type->version,
-            values: $this->values->resolve($type, $values),
-            entity: null,
-            depth: 0,
-        );
+        $locales = Container::getInstance()->make(Locales::class);
+        $locale = app()->getLocale();
+        $content = $locales->content();
 
-        $path = $unsaved ? $this->compiler->adHoc($type->slug, $type->template) : $this->compiler->path($type);
-        $was = $this->preview;
-        $this->preview = true;
+        if ($content !== $locale) {
+            app()->setLocale($content);
+        }
 
         try {
-            $html = $this->evaluate($path, $type, $context);
-        } catch (Throwable $failure) {
-            $html = $this->failed($context, $failure, $this->line($failure, $path, $type));
+            $context = new BlockContext(
+                key: $key,
+                type: $type->slug,
+                version: $type->version,
+                values: $this->values->resolve($type, $values),
+                entity: null,
+                depth: 0,
+            );
+
+            $path = $unsaved ? $this->compiler->adHoc($type->slug, $type->template) : $this->compiler->path($type);
+            $was = $this->preview;
+            $this->preview = true;
+
+            try {
+                $html = $this->evaluate($path, $type, $context);
+            } catch (Throwable $failure) {
+                $html = $this->failed($context, $failure, $this->line($failure, $path, $type));
+            } finally {
+                $this->preview = $was;
+            }
         } finally {
-            $this->preview = $was;
+            if ($content !== $locale) {
+                app()->setLocale($locale);
+            }
         }
 
         $this->used[$type->slug] = $type;

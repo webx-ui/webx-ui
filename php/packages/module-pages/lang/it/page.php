@@ -50,6 +50,7 @@ return [
     'move-branch' => 'Cambiano :count indirizzi: quello della pagina e quelli di tutto ciò che contiene. I vecchi rimanderanno ai nuovi.',
     'moved' => 'Spostata. Sono cambiati :count indirizzi; i vecchi rimandano ai nuovi.',
     'moved-one' => 'Spostata. L’indirizzo è cambiato; il vecchio rimanda a quello nuovo.',
+    'reordered' => 'Spostata. L’indirizzo resta lo stesso.',
 
     'delete-title' => 'Eliminare «:title»?',
     'delete-text' => 'La pagina va nel cestino e smette di rispondere sul sito.',

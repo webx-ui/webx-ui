@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Press\Mcp;
 
+use Closure;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\ConnectionInterface;
@@ -11,9 +12,13 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Categories\Ordering;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
+use WebxUi\Admin\Screens\Tree;
 use WebxUi\Localization\Locales;
+use WebxUi\Mcp\Arguments;
 use WebxUi\Mcp\Exceptions\ToolFailure;
+use WebxUi\Mcp\Rehearsal;
 use WebxUi\Mcp\Tool;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Press\Models\Article;
@@ -40,6 +45,11 @@ use WebxUi\Press\Support\Kinds;
  *
  * An outlet is named by its id or by its title in any language — a proper name, and the way a
  * person refers to it. An article is named by its id: titles repeat from one outlet to the next.
+ * Because an outlet is named by its name, a second outlet by a name another already has is refused.
+ *
+ * A dry run is the write itself, rolled back ({@see Rehearsal}): refused where the write would be —
+ * a row the form refuses included — and answering what it would answer. An argument or a field the
+ * tool does not take is refused rather than dropped ({@see Arguments}).
  */
 final class PressTools
 {
@@ -89,7 +99,7 @@ final class PressTools
             'is_hidden' => ['type' => 'boolean', 'description' => 'Kept, but not shown anywhere. False when omitted.'],
         ];
 
-        return [
+        return Arguments::strictAll([
             Tool::read(
                 'list',
                 'Outlets in the order they stand in — the order of the strip of logos and the catalogue: each with '
@@ -222,7 +232,29 @@ final class PressTools
                 ], 'required' => ['article']],
                 permission: 'press.manage',
             ),
-        ];
+
+            Tool::mutating(
+                'restore',
+                'Take an outlet out of the bin, with its articles. Its address is given back; refused if another '
+                .'page has taken it in the meantime.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->restore($arguments)),
+                ['properties' => [
+                    'outlet' => ['type' => 'integer', 'description' => 'The id, as press_list with trashed reports it.'],
+                ], 'required' => ['outlet']],
+                permission: 'press.manage',
+            ),
+
+            Tool::mutating(
+                'purge',
+                'Delete an outlet in the bin for good, its articles with it, and its former addresses and SEO card. '
+                .'Cannot be undone. Only an outlet in the bin — press_delete puts it there first.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->purge($arguments)),
+                ['properties' => [
+                    'outlet' => ['type' => 'integer', 'description' => 'The id, as press_list with trashed reports it.'],
+                ], 'required' => ['outlet']],
+                permission: 'press.manage',
+            ),
+        ], 'press_');
     }
 
     /**
@@ -268,11 +300,13 @@ final class PressTools
             throw new ToolFailure('`values` must be an object of field name → value.');
         }
 
+        Arguments::refuseUnknown($values, $this->fields(), 'press_create');
+
         // The named arguments win over the same names in `values`: they are what the tool says it
         // takes, and an agent that sent both meant the one it could see.
         $values = [
             ...$values,
-            'title' => $this->text($arguments['title'] ?? null, 'title'),
+            'title' => $this->free($this->text($arguments['title'] ?? null, 'title')),
             'published' => ($arguments['published'] ?? false) === true,
             'featured' => ($arguments['featured'] ?? false) === true,
         ];
@@ -295,24 +329,27 @@ final class PressTools
             throw new ToolFailure('`articles` is a list of articles, each an object like press_articles_add takes.');
         }
 
+        foreach (array_values($articles) as $n => $one) {
+            if (is_array($one)) {
+                $this->refuseUnknownArticle($one, 'press_create articles['.$n.']');
+            }
+        }
+
         $values['articles'] = array_map(fn (mixed $one): array => $this->row([], is_array($one) ? $one : []), array_values($articles));
         $values = $this->prepare($values);
 
-        if ($this->dryRun($arguments)) {
-            return [
-                'dry_run' => true,
-                'would_create' => [
-                    'title' => $values['title'],
-                    'published' => $values['published'],
-                    'featured' => $values['featured'],
-                    'articles' => count($values['articles']),
-                ],
-            ];
+        $work = fn (): array => $this->describe($this->form()->save(new Outlet, $values, $this->can($user)));
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        $outlet = $this->form()->save(new Outlet, $values, $this->can($user));
+        $would = $this->rehearse($work);
+        // The ids the rehearsal handed out are nobody's once it is rolled back.
+        $would['outlet']['id'] = null;
+        $would['articles'] = array_map(static fn (array $article): array => ['id' => null] + $article, $would['articles']);
 
-        return $this->describe($outlet);
+        return ['dry_run' => true] + $would;
     }
 
     /**
@@ -326,6 +363,12 @@ final class PressTools
 
         if (! is_array($values) || $values === []) {
             throw new ToolFailure('`values` must be a non-empty object of field name → value. press_get says what the fields are.');
+        }
+
+        Arguments::refuseUnknown($values, $this->fields(), 'press_update');
+
+        if (array_key_exists('title', $values)) {
+            $this->free($values['title'], $outlet);
         }
 
         // Merged language by language, and a language the site does not have refused — dry run
@@ -348,13 +391,17 @@ final class PressTools
 
         $values = $this->prepare($values);
 
-        if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'fields' => array_keys($values), 'outlet' => $this->reference($outlet)];
+        $work = function () use ($outlet, $values, $user): array {
+            $this->form()->save($outlet, $values, $this->can($user));
+
+            return $this->describe($outlet);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        $this->form()->save($outlet, $values, $this->can($user));
-
-        return $this->describe($outlet);
+        return ['dry_run' => true, 'fields' => array_keys($values)] + $this->rehearse($work);
     }
 
     /**
@@ -397,13 +444,17 @@ final class PressTools
 
         $ids = array_values(array_unique(array_map(fn (mixed $one): int => (int) $this->writable($one)->getKey(), $given)));
 
-        if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'would_order' => $ids];
+        $work = function () use ($ids): array {
+            Ordering::move(Outlet::class, $ids);
+
+            return $this->list([]);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        Ordering::move(Outlet::class, $ids);
-
-        return $this->list([]);
+        return ['dry_run' => true, 'would_order' => $ids] + $this->rehearse($work);
     }
 
     /**
@@ -413,24 +464,36 @@ final class PressTools
     private function addArticle(array $arguments, ?Authenticatable $user): array
     {
         $outlet = $this->writable($arguments['outlet'] ?? null);
+        $this->refuseUnknownArticle(array_intersect_key($arguments, ['values' => true]), 'press_articles_add');
         $rows = $this->rows($outlet);
         $row = $this->prepareRow($this->row([], $arguments));
         $at = $this->position($arguments['position'] ?? null, count($rows));
 
         array_splice($rows, $at, 0, [$row]);
 
-        if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'would_add' => $row['title'], 'outlet' => $this->reference($outlet), 'position' => $at + 1];
+        $work = function () use ($outlet, $rows, $user, $at): array {
+            $this->saveRows($outlet, $rows, $user);
+
+            $added = $outlet->articles()->get()->values()->get($at);
+
+            return [
+                'article' => $added instanceof Article ? $this->articleSummary($added) : null,
+                ...$this->describe($outlet),
+            ];
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        $this->saveRows($outlet, $rows, $user);
+        $would = $this->rehearse($work);
 
-        $added = $outlet->articles()->get()->values()->get($at);
+        if (is_array($would['article'] ?? null)) {
+            // The id the rehearsal handed out is nobody's once it is rolled back.
+            $would['article']['id'] = null;
+        }
 
-        return [
-            'article' => $added instanceof Article ? $this->articleSummary($added) : null,
-            ...$this->describe($outlet),
-        ];
+        return ['dry_run' => true, 'position' => $at + 1] + $would;
     }
 
     /**
@@ -447,20 +510,26 @@ final class PressTools
             throw new ToolFailure('`values` must be a non-empty object of field name → value. press_get says what an article holds.');
         }
 
+        $this->refuseUnknownArticle($values, 'press_articles_update');
+
         $rows = $this->rows($outlet);
         $n = $this->indexOf($rows, $article);
         $rows[$n] = $this->prepareRow($this->row($rows[$n], $values));
 
-        if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'fields' => array_keys($values), 'article' => (int) $article->getKey(), 'outlet' => $this->reference($outlet)];
+        $work = function () use ($outlet, $rows, $user, $article): array {
+            $this->saveRows($outlet, $rows, $user);
+
+            return [
+                'article' => $this->articleSummary($article->refresh()),
+                ...$this->describe($outlet),
+            ];
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        $this->saveRows($outlet, $rows, $user);
-
-        return [
-            'article' => $this->articleSummary($article->refresh()),
-            ...$this->describe($outlet),
-        ];
+        return ['dry_run' => true, 'fields' => array_keys($values)] + $this->rehearse($work);
     }
 
     /**
@@ -475,13 +544,17 @@ final class PressTools
 
         array_splice($rows, $this->indexOf($rows, $article), 1);
 
-        if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'would_delete' => (int) $article->getKey(), 'outlet' => $this->reference($outlet)];
+        $work = function () use ($outlet, $rows, $user): array {
+            $this->saveRows($outlet, $rows, $user);
+
+            return $this->describe($outlet);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return ['deleted' => true, 'id' => (int) $article->getKey(), ...$work()];
         }
 
-        $this->saveRows($outlet, $rows, $user);
-
-        return ['deleted' => true, 'id' => (int) $article->getKey(), ...$this->describe($outlet)];
+        return ['dry_run' => true, 'would_delete' => (int) $article->getKey()] + $this->rehearse($work);
     }
 
     /**
@@ -503,40 +576,197 @@ final class PressTools
             $at = $this->position($arguments['position'] ?? null, count($rows));
             array_splice($rows, $at, 0, [$row]);
 
-            if ($this->dryRun($arguments)) {
-                return ['dry_run' => true, 'would_move' => (int) $article->getKey(), 'position' => $at + 1];
-            }
+            $work = function () use ($from, $rows, $user, $article): array {
+                $this->saveRows($from, $rows, $user);
 
-            $this->saveRows($from, $rows, $user);
+                return ['article' => $this->articleSummary($article->refresh()), ...$this->describe($from)];
+            };
 
-            return ['article' => $this->articleSummary($article->refresh()), ...$this->describe($from)];
+            return $this->dryRun($arguments)
+                ? ['dry_run' => true, 'would_move' => (int) $article->getKey(), 'position' => $at + 1] + $this->rehearse($work)
+                : $work();
         }
 
         $ids = $to->articles()->pluck('id')->map(intval(...))->all();
         $at = $this->position($arguments['position'] ?? null, count($ids));
         array_splice($ids, $at, 0, [(int) $article->getKey()]);
 
-        if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'would_move' => (int) $article->getKey(), 'into' => $this->reference($to), 'position' => $at + 1];
+        $work = function () use ($article, $from, $to, $ids): array {
+            // Not a save of either form — a row of one outlet is refused by the form of another — so
+            // the transaction and the one pass over the addresses are taken here, as the form takes
+            // them.
+            $this->container->make(ConnectionInterface::class)->transaction(static fn (): bool => Outlet::holdingAddresses(static function () use ($article, $from, $to, $ids): bool {
+                $article->outlet_id = (int) $to->getKey();
+                $article->save();
+
+                foreach ([$to->getKey() => $ids, $from->getKey() => $from->articles()->pluck('id')->map(intval(...))->all()] as $outlet => $order) {
+                    foreach (array_values($order) as $position => $id) {
+                        Article::query()->whereKey($id)->where('outlet_id', $outlet)->update(['position' => $position + 1]);
+                    }
+                }
+
+                return true;
+            }));
+
+            return ['article' => $this->articleSummary($article->refresh()), ...$this->describe($to)];
+        };
+
+        return $this->dryRun($arguments)
+            ? ['dry_run' => true, 'would_move' => (int) $article->getKey(), 'into' => $this->reference($to), 'position' => $at + 1] + $this->rehearse($work)
+            : $work();
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function restore(array $arguments): array
+    {
+        $outlet = $this->binned($arguments['outlet'] ?? null);
+
+        $work = function () use ($outlet): array {
+            // The registry gives the address back on `restored` — or refuses, when it is taken.
+            $outlet->restore();
+
+            return $this->describe($outlet);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return ['restored' => true] + $work();
         }
 
-        // Not a save of either form — a row of one outlet is refused by the form of another — so
-        // the transaction and the one pass over the addresses are taken here, as the form takes
-        // them.
-        $this->container->make(ConnectionInterface::class)->transaction(static fn (): bool => Outlet::holdingAddresses(static function () use ($article, $from, $to, $ids): bool {
-            $article->outlet_id = (int) $to->getKey();
-            $article->save();
+        return ['dry_run' => true, 'would_restore' => $this->reference($outlet)] + $this->rehearse($work);
+    }
 
-            foreach ([$to->getKey() => $ids, $from->getKey() => $from->articles()->pluck('id')->map(intval(...))->all()] as $outlet => $order) {
-                foreach (array_values($order) as $position => $id) {
-                    Article::query()->whereKey($id)->where('outlet_id', $outlet)->update(['position' => $position + 1]);
-                }
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function purge(array $arguments): array
+    {
+        $outlet = $this->binned($arguments['outlet'] ?? null);
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_purge' => $this->reference($outlet), 'articles' => $outlet->articles()->count()];
+        }
+
+        // The articles go with it: their foreign key cascades.
+        $outlet->getConnection()->transaction(static fn (): ?bool => $outlet->forceDelete());
+
+        return ['purged' => true, 'id' => (int) $outlet->getKey()];
+    }
+
+    /** An outlet in the bin, by id — a name names only a live one. */
+    private function binned(mixed $id): Outlet
+    {
+        if (! is_int($id) && ! (is_string($id) && ctype_digit(ltrim(trim($id), '#')))) {
+            throw new ToolFailure('`outlet` must be the id of an outlet in the bin, as press_list with trashed reports it.');
+        }
+
+        $outlet = $this->outlet($id);
+
+        if (! $outlet->trashed()) {
+            throw new ToolFailure("Outlet #{$outlet->getKey()} is not in the bin. press_delete puts it there.");
+        }
+
+        return $outlet;
+    }
+
+    /**
+     * A name another outlet already has, in any language and in any case, is refused: outlets are
+     * named by their names, and two by one name is a name that names neither.
+     *
+     * @return mixed The title, untouched.
+     */
+    private function free(mixed $title, ?Outlet $except = null): mixed
+    {
+        $names = [];
+
+        foreach (is_array($title) ? $title : [$title] as $text) {
+            if (is_string($text) && trim($text) !== '') {
+                $names[] = mb_strtolower(trim($text));
             }
+        }
 
-            return true;
-        }));
+        if ($names === []) {
+            return $title;
+        }
 
-        return ['article' => $this->articleSummary($article->refresh()), ...$this->describe($to)];
+        // Compared here rather than by `LIKE`, for the reason `outlet()` gives.
+        $clash = Outlet::query()->get()
+            ->filter(static fn (Outlet $other): bool => ($except === null || (int) $other->getKey() !== (int) $except->getKey())
+                && array_intersect($names, array_map(
+                    static fn (mixed $one): string => is_string($one) ? mb_strtolower(trim($one)) : '',
+                    $other->getTranslations('title'),
+                )) !== [])
+            ->values();
+
+        if ($clash->isNotEmpty()) {
+            throw new ToolFailure(sprintf(
+                'An outlet by that name already exists: #%s. Add the article to it with press_articles_add, or give this one another name.',
+                $clash->map(static fn (Outlet $one): int => (int) $one->getKey())->implode(', #'),
+            ));
+        }
+
+        return $title;
+    }
+
+    /**
+     * An article as an agent sends it: its own fields and `values` for the project's — anything
+     * else is a typo the form would drop without a word.
+     *
+     * @param  array<array-key, mixed>  $given
+     */
+    private function refuseUnknownArticle(array $given, string $what): void
+    {
+        Arguments::refuseUnknown($given, [...self::ARTICLE, 'values'], $what);
+
+        if (is_array($given['values'] ?? null)) {
+            Arguments::refuseUnknown($given['values'], array_values(array_diff($this->articleFields(), self::ARTICLE, ['id'])), $what.' values');
+        }
+    }
+
+    /**
+     * What `values` of an outlet may name: the fields of the screen — everything the save reads.
+     *
+     * @return list<string>
+     */
+    private function fields(): array
+    {
+        return array_values(array_unique(array_map(
+            static fn (array $node): string => (string) $node['name'],
+            $this->container->make(ScreenRegistry::class)->fields(Outlet::SCREEN),
+        )));
+    }
+
+    /**
+     * The fields of one row of the articles repeater: an article's own and the project's.
+     *
+     * @return list<string>
+     */
+    private function articleFields(): array
+    {
+        foreach ($this->container->make(ScreenRegistry::class)->fields(Outlet::SCREEN) as $node) {
+            if (($node['name'] ?? null) === 'articles') {
+                return array_values(array_unique(array_map(
+                    static fn (array $field): string => (string) $field['name'],
+                    Tree::fields(Tree::children($node)),
+                )));
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * @template T
+     *
+     * @param  Closure(): T  $work
+     * @return T
+     */
+    private function rehearse(Closure $work): mixed
+    {
+        return Rehearsal::run($work, (new Outlet)->getConnectionName());
     }
 
     /**

@@ -25,8 +25,10 @@ use WebxUi\Routing\RouteSync;
 use WebxUi\Routing\RouteTypes;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\Contracts\HasStructuredData;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * An outlet (§4.1 of the press spec): a magazine, a paper, a portal — its logo, its name, a few
@@ -57,7 +59,7 @@ use WebxUi\Seo\HasSeo;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Outlet extends Model implements HasBreadcrumbs, HasStructuredData, Visible
+class Outlet extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructuredData, Visible
 {
     use HasExtra;
     use HasSeo;
@@ -308,6 +310,25 @@ class Outlet extends Model implements HasBreadcrumbs, HasStructuredData, Visible
         }
 
         return '';
+    }
+
+    /**
+     * The name, the summary and the logo — what the outlet's page shows of it — for an outlet
+     * nobody wrote an SEO card for. A logo is a poor social picture, but it is the outlet's own,
+     * and it says more about the page than the site's default one does.
+     */
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        $locale ??= Container::getInstance()->make(Locales::class)->current();
+
+        $logo = $this->logoIn($locale);
+
+        return SeoData::fallback(
+            $this->displayTitle($locale),
+            $this->text('summary', $locale),
+            $logo['url'] ?? null,
+            is_string($logo['alt'] ?? null) ? $logo['alt'] : null,
+        );
     }
 
     /** One translated column in one language, with no fallback — '' where it is not written. */

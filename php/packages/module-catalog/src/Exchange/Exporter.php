@@ -51,7 +51,7 @@ final class Exporter
         $chosen = $this->formats->find($format) ?? throw ExchangeFiles::refused('format', 'unknown-format', ['known' => implode(', ', $this->formats->keys())]);
         $codes = $this->codes($codes, $can);
         $trashed = filter_var($selection['trashed'] ?? false, FILTER_VALIDATE_BOOLEAN);
-        $ids = $this->selection->resolve($selection, $trashed, $this->locales->current());
+        $ids = $this->selection->resolve($selection, $trashed, $this->locales->content());
 
         $context = $this->container->make(HistoryContext::class);
         [$adminId, $adminName] = $admin === null

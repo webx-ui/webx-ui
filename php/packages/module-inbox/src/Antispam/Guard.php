@@ -29,25 +29,21 @@ final class Guard
         private readonly Captcha $captcha,
     ) {}
 
-    public function inspect(Form $form, Request $request): Verdict
+    public function inspect(Form $form, Request $request): Inspection
     {
         if ($this->honeypotFilled($form, $request)) {
-            return Verdict::Trap;
+            return Inspection::trap(Inspection::HONEYPOT);
         }
 
         if ($this->tooFast($form, $request)) {
-            return Verdict::Reject;
+            return Inspection::reject(Inspection::TOO_FAST);
         }
 
         if (! $this->originAllowed($request)) {
-            return Verdict::Reject;
+            return Inspection::reject(Inspection::ORIGIN);
         }
 
-        if (! $this->captcha->passes($form, $request)) {
-            return Verdict::Reject;
-        }
-
-        return Verdict::Pass;
+        return $this->captcha->check($form, $request) ?? Inspection::pass();
     }
 
     /** The name of the field a person never sees, so the form on the site can draw it. */
@@ -94,8 +90,12 @@ final class Guard
      * On a page cached whole the timestamp belongs to the moment the cache was written, not to
      * the moment somebody opened the page — so it reads as hours old for every visitor, and an
      * old mark is therefore not held against anybody. Only a fresh one that is too fresh means
-     * anything, and a missing or unreadable one means nothing at all: this is the softest of
-     * the four layers on purpose.
+     * anything — and a missing one, because every form this package draws carries it, cached
+     * or not, so a POST without it never came from one of them: it is the cheapest robot
+     * there is, writing straight to the address. A mark that does not decrypt is the same
+     * robot with one more line in its script — `webx_ts=anything` — and is refused like a
+     * missing one. A key rotated under a cached page is what `APP_PREVIOUS_KEYS` is for: the
+     * encrypter still reads the old marks, and they are old, so they pass as stale.
      */
     private function tooFast(Form $form, Request $request): bool
     {
@@ -108,13 +108,13 @@ final class Guard
         $mark = $request->input($this->timestampField());
 
         if (! is_string($mark) || $mark === '') {
-            return false;
+            return true;
         }
 
         try {
             $drawn = (int) $this->encrypter->decrypt($mark);
         } catch (Throwable) {
-            return false;
+            return true;
         }
 
         $age = time() - $drawn;

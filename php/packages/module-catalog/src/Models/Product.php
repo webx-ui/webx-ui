@@ -27,8 +27,10 @@ use WebxUi\Routing\HasUrl;
 use WebxUi\Routing\Models\Route;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\Contracts\HasStructuredData;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * A product (§3, §5).
@@ -64,7 +66,7 @@ use WebxUi\Seo\HasSeo;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Product extends Model implements HasBreadcrumbs, HasStructuredData, Visible
+class Product extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructuredData, Visible
 {
     use HasSeo;
     use HasTranslations;
@@ -367,6 +369,27 @@ class Product extends Model implements HasBreadcrumbs, HasStructuredData, Visibl
     public function structuredData(string $locale): array
     {
         return app(ProductMarkup::class)->for($this, $locale);
+    }
+
+    /**
+     * The name, the summary and the main picture — what the `Product` markup names too — for a
+     * product whose SEO card leaves them empty. The summary is the short text written for
+     * exactly this; the description stands in only when there is none, cut down to a snippet.
+     */
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        $text = null;
+
+        foreach (['summary', 'description'] as $field) {
+            $value = $this->getTranslation($field, $locale);
+
+            if (is_string($value) && trim(strip_tags($value)) !== '') {
+                $text = $value;
+                break;
+            }
+        }
+
+        return SeoData::fallback($this->displayName($locale), $text, $this->mainImage()?->url());
     }
 
     /** An id in the journal is a name there: "Laptops → Tablets", not "3 → 7". */

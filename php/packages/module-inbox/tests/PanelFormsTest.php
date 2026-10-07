@@ -139,6 +139,52 @@ final class PanelFormsTest extends TestCase
     }
 
     #[Test]
+    public function an_administrator_added_as_a_recipient_has_to_exist_but_one_deleted_since_is_kept(): void
+    {
+        $gone = $this->editor();
+        $form = $this->form('contact', [], ['recipients' => [['admin_id' => $gone->getKey()]]]);
+        $gone->delete();
+        $editor = $this->editor();
+
+        $this->actingAs($editor, 'cms')
+            ->putJson($this->api("forms/{$form->getKey()}"), [
+                'slug' => 'contact',
+                'title' => 'Contact',
+                'options' => ['recipients' => [['admin_id' => $gone->getKey()], ['admin_id' => 999]]],
+            ])
+            ->assertJsonValidationErrors(['options.recipients' => '#2 ({"admin_id":999})']);
+
+        // The one the form already named is not held against the rest of the settings.
+        $this->actingAs($editor, 'cms')
+            ->putJson($this->api("forms/{$form->getKey()}"), [
+                'slug' => 'contact',
+                'title' => 'Renamed',
+                'options' => ['recipients' => [['admin_id' => $gone->getKey()]]],
+            ])
+            ->assertOk();
+    }
+
+    #[Test]
+    public function the_reply_to_field_has_to_be_an_email_field_of_the_form(): void
+    {
+        $form = $this->form('contact');
+        $editor = $this->editor();
+        $save = fn (string $field) => $this->actingAs($editor, 'cms')->putJson($this->api("forms/{$form->getKey()}"), [
+            'slug' => 'contact',
+            'title' => 'Contact',
+            'options' => ['email_field' => $field],
+        ]);
+
+        $save('nope')->assertJsonValidationErrors('options.email_field');
+        $save('name')->assertJsonValidationErrors('options.email_field');
+        $save('email')->assertOk();
+
+        // Stored before its field was taken out, it does not stop the form being saved.
+        $form->fields()->where('name', 'email')->first()?->delete();
+        $save('email')->assertOk();
+    }
+
+    #[Test]
     public function it_will_not_delete_a_form_that_has_taken_submissions(): void
     {
         $form = $this->form('contact');

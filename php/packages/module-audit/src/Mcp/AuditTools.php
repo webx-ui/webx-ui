@@ -462,7 +462,23 @@ final class AuditTools
             return [];
         }
 
-        return $whole ? $data : (is_array($data['data'] ?? null) ? $data['data'] : []);
+        if (! $whole) {
+            return is_array($data['data'] ?? null) ? $data['data'] : [];
+        }
+
+        // A paginated answer of the panel carries the screen's `links` and `meta` — addresses of
+        // the panel's API that an agent cannot follow and must not try to. What it can use is
+        // the same three numbers every other tool answers with.
+        $meta = is_array($data['meta'] ?? null) ? $data['meta'] : null;
+        unset($data['links'], $data['meta']);
+
+        if ($meta !== null && isset($meta['current_page'], $meta['last_page'], $meta['total'])) {
+            $data['page'] = (int) $meta['current_page'];
+            $data['pages'] = (int) $meta['last_page'];
+            $data['total'] = (int) $meta['total'];
+        }
+
+        return $data;
     }
 
     /**

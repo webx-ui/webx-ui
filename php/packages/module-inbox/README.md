@@ -155,11 +155,26 @@ and set `webx-inbox.script` to false.
 
 ### The captcha block
 
-The widget is drawn by the provider's own script, which the block loads once per page. A form
-says which provider it wants; the site key and the secret are the site's, in
-`webx-inbox.captcha.<provider>`. A token is good once, so the script resets the widget after
-every answer — otherwise a visitor who corrects one typo is refused by a captcha they already
-passed, which reads as a form that simply does not work.
+A form says which provider it wants; the site key, the secret and how the captcha runs are the
+site's, in `webx-inbox.captcha.<provider>`:
+
+| Setting                                      | Values                                  | What the visitor sees                                               |
+| -------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------- |
+| `recaptcha.type` `WEBX_INBOX_RECAPTCHA_TYPE` | `checkbox` (default), `invisible`, `v3` | the "I'm not a robot" box; nothing (a challenge if needed); nothing |
+| `recaptcha.min_score`                        | 0.5                                     | v3 only: below it the submission is a robot                         |
+| `turnstile.mode` `WEBX_INBOX_TURNSTILE_MODE` | `managed` (default), `invisible`        | the widget on load; nothing unless Cloudflare asks                  |
+
+The type has to match the keys: a reCAPTCHA key drawn as another kind is the widget's "Invalid
+key type". A checkbox is drawn by the provider's own script, which the block loads once per
+page. An invisible one is drawn by the form's script on the first submit, per form, and run
+then, so the token is fresh; a Turnstile widget set to Invisible in Cloudflare shows nothing at
+all. v3 is loaded with `?render=<key>` and asked for the action `webx_form_<slug>`. Invisible and
+v3 need the form's script: without JavaScript they are refused with a sentence that says so.
+
+A token is good once, so the script resets the widget after every answer — otherwise a visitor
+who corrects one typo is refused by a captcha they already passed, which reads as a form that
+simply does not work. A provider that cannot vouch for the browser is told to the visitor at once
+("reload the page or try another browser") instead of a post that would be refused anyway.
 
 ## Antispam
 
@@ -185,6 +200,21 @@ The captcha is off unless a form asks for it, and its keys are the site's rather
 — one pair for every form. A form that asks for a captcha the site has no key for refuses
 submissions and says so in the log: a rubber stamp would be worse than no captcha, because
 nobody would know.
+
+Every refusal is one info line in the log with the layer that made it — `honeypot`, `too_fast`,
+`origin`, `captcha_missing`, `captcha_failed`, `captcha_unconfigured` — and, for a captcha,
+what the provider said (`error-codes`, a v3 `score` and `action`), never the token or the
+secret. The visitor hears one sentence for all of them except the captcha they can answer: a
+missing or failed one is filed under `captcha` and shown beside the widget. Refusals are also
+counted per form and day in the cache, for the audit below.
+
+With `webx-ui/module-audit` installed, three checks look at the captcha: `inbox.captcha_keys`
+(error) — a switched-on form asks for a captcha whose key or secret the `.env` lacks;
+`inbox.captcha_unused` (notice) — the site has keys and a switched-on form uses none;
+`inbox.spam_without_captcha` (warning) — a form without a captcha had at least
+`thresholds.inbox_spam_min` (3) submissions in a spam status or refusals in the last
+`thresholds.inbox_spam_days` (30). There is no check for a form without a captcha as such: the
+free layers are the default, and most sites never need more.
 
 ## Attachments
 
