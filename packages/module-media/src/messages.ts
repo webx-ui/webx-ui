@@ -140,6 +140,7 @@ export const mediaMessages: Record<string, Messages> = {
     shape: 'This is not a file from the library.',
     accept: 'This field takes :kind only.',
     localized: 'A field of files cannot be translated — the captions inside it are.',
+    missing: 'There is no file [:path] in the library: pick one from it.',
     kind: {
       image: 'images',
       video: 'video',
