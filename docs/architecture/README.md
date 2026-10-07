@@ -9,23 +9,23 @@
 
 ## Справочники
 
-| Файл                                                         | О чём                                                                       | Статус                               |
-| ------------------------------------------------------------ | --------------------------------------------------------------------------- | ------------------------------------ |
-| [WEBX_UI_COMPOSER_PACKAGES.md](WEBX_UI_COMPOSER_PACKAGES.md) | Реестр composer-пакетов: назначение, состав, npm-пара                       | на 28.09.2026, v0.49.1               |
-| [WEBX_UI_PHP_RELEASE.md](WEBX_UI_PHP_RELEASE.md)             | Как php-пакеты попадают на Packagist через зеркала                          | действует                            |
-| [WEBX_UI_RELEASE_SPEED.md](WEBX_UI_RELEASE_SPEED.md)         | Параллельный CI, релизный PR от App, канал `next`                           | сделано 24.09.2026                   |
-| [WEBX_UI_SCREENS.md](WEBX_UI_SCREENS.md)                     | Экраны панели как JSON-дерево, патчи, реестр типов                          | третья редакция, в работе            |
-| [WEBX_UI_ROUTING.md](WEBX_UI_ROUTING.md)                     | Плоский реестр адресов сайта и резолвер                                     | выпущен 15.09.2026, v0.15.0          |
-| [WEBX_UI_VISUAL.md](WEBX_UI_VISUAL.md)                       | Визуальная переделка панели: 21 пункт с решениями                           | этапы сделаны 17.09.2026             |
-| [WEBX_UI_NEW_SITE.md](WEBX_UI_NEW_SITE.md)                   | Новый сайт одной командой: скелет, `webx:setup`                             | сделано 22.09.2026                   |
-| [WEBX_UI_MCP_ACCESS.md](WEBX_UI_MCP_ACCESS.md)               | Подключение AI-агентов: OAuth, согласие, журнал                             | выпущен 21.09.2026, v0.27.0          |
-| [WEBX_UI_BACKUPS.md](WEBX_UI_BACKUPS.md)                     | Ночные дампы базы и строка о них в панели                                   | выпущен 21.09.2026, v0.27.0          |
-| [WEBX_UI_BLOCK_COMPONENTS.md](WEBX_UI_BLOCK_COMPONENTS.md)   | Тип блока как компонент `<x-webx-block>` в шаблонах                         | выпущен 25.09.2026, v0.42.0          |
-| [WEBX_UI_LAYOUT_REGIONS.md](WEBX_UI_LAYOUT_REGIONS.md)       | Шапка и подвал сайта деревьями блоков                                       | выпущен 28.09.2026, v0.49.0          |
-| [WEBX_UI_CATALOG.md](WEBX_UI_CATALOG.md)                     | Каталог товаров: ядро и спутники, контракты                                 | волна A выпущена в v0.56.0           |
-| [WEBX_UI_HISTORY.md](WEBX_UI_HISTORY.md)                     | Журнал изменений в module-admin, узел `wx-history`                          | сделано 29.09.2026 (H1), ждёт релиза |
-| [WEBX_UI_AGENT_DOCS.md](WEBX_UI_AGENT_DOCS.md)               | `AGENTS.md` в пакетах и корневой файл сайта                                 | AG1–AG4 04.10.2026, AG5 впереди      |
-| [WEBX_UI_THEMES.md](WEBX_UI_THEMES.md)                       | Тема сайта пакетом: токены, пресеты, блоки, демо на языках, состояние сайта | спроектировано 07.10.2026            |
+| Файл                                                         | О чём                                                                                             | Статус                                |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| [WEBX_UI_COMPOSER_PACKAGES.md](WEBX_UI_COMPOSER_PACKAGES.md) | Реестр composer-пакетов: назначение, состав, npm-пара                                             | на 28.09.2026, v0.49.1                |
+| [WEBX_UI_PHP_RELEASE.md](WEBX_UI_PHP_RELEASE.md)             | Как php-пакеты попадают на Packagist через зеркала                                                | действует                             |
+| [WEBX_UI_RELEASE_SPEED.md](WEBX_UI_RELEASE_SPEED.md)         | Параллельный CI, релизный PR от App, канал `next`                                                 | сделано 24.09.2026                    |
+| [WEBX_UI_SCREENS.md](WEBX_UI_SCREENS.md)                     | Экраны панели как JSON-дерево, патчи, реестр типов                                                | третья редакция, в работе             |
+| [WEBX_UI_ROUTING.md](WEBX_UI_ROUTING.md)                     | Плоский реестр адресов сайта и резолвер                                                           | выпущен 15.09.2026, v0.15.0           |
+| [WEBX_UI_VISUAL.md](WEBX_UI_VISUAL.md)                       | Визуальная переделка панели: 21 пункт с решениями                                                 | этапы сделаны 17.09.2026              |
+| [WEBX_UI_NEW_SITE.md](WEBX_UI_NEW_SITE.md)                   | Новый сайт одной командой: скелет, `webx:setup`                                                   | сделано 22.09.2026                    |
+| [WEBX_UI_MCP_ACCESS.md](WEBX_UI_MCP_ACCESS.md)               | Подключение AI-агентов: OAuth, согласие, журнал                                                   | выпущен 21.09.2026, v0.27.0           |
+| [WEBX_UI_BACKUPS.md](WEBX_UI_BACKUPS.md)                     | Ночные дампы базы и строка о них в панели                                                         | выпущен 21.09.2026, v0.27.0           |
+| [WEBX_UI_BLOCK_COMPONENTS.md](WEBX_UI_BLOCK_COMPONENTS.md)   | Тип блока как компонент `<x-webx-block>` в шаблонах                                               | выпущен 25.09.2026, v0.42.0           |
+| [WEBX_UI_LAYOUT_REGIONS.md](WEBX_UI_LAYOUT_REGIONS.md)       | Шапка и подвал сайта деревьями блоков                                                             | выпущен 28.09.2026, v0.49.0           |
+| [WEBX_UI_CATALOG.md](WEBX_UI_CATALOG.md)                     | Каталог товаров: ядро и спутники, контракты                                                       | волна A выпущена в v0.56.0            |
+| [WEBX_UI_HISTORY.md](WEBX_UI_HISTORY.md)                     | Журнал изменений в module-admin, узел `wx-history`                                                | сделано 29.09.2026 (H1), ждёт релиза  |
+| [WEBX_UI_AGENT_DOCS.md](WEBX_UI_AGENT_DOCS.md)               | `AGENTS.md` в пакетах и корневой файл сайта                                                       | AG1–AG4 04.10.2026, AG5 впереди       |
+| [WEBX_UI_THEMES.md](WEBX_UI_THEMES.md)                       | Тема сайта пакетом: набор и цепочка слоёв, токены, блоки, иконки, демо на языках, состояние сайта | спроектировано 07.10.2026, редакция 2 |
 
 ## Модули
 
