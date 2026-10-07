@@ -79,6 +79,11 @@ A screen patch addresses nodes by `id`. Event editor: `event`, `when`, `all-day`
   it now is. Read again and redo the change.
 - Do not delete rows with SQL: deleting puts the event in the bin and releases its address
   through the registry. A raw delete leaves the address and the links behind.
+- Do not print `<title>` in a site's copy of a view: with an empty SEO card the event and the
+  category name the page themselves (`seoFallback()` — the name through the title template, the
+  lead, the cover or the picture), and the index is called by the section.
+  A copy published before still has an `@if ($meta->title === null)` block and the `$seo` /
+  `$meta` lines for it: delete them, they never print any more.
 
 ## Check your work
 

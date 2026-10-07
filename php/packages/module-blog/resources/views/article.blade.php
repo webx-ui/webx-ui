@@ -2,18 +2,12 @@
      after the blocks themselves — and a slot is worked out before the layout around it, so this
      line has to stay at the top of the file rather than move inside the tag. --}}
 @php($content = $article->renderBlocks())
-@php($seo = app(WebxUi\Seo\Rendering\Seo::class))
-@php($meta = $seo->for($seo->currentUrl(), $article))
 
 <x-dynamic-component :component="config('webx-blog.layout') ?: 'webx-blog::standalone'">
     <x-slot:head>
-        {{-- Everything the article says about itself, from its SEO card and the site defaults. --}}
+        {{-- Everything the article says about itself: its SEO card, then its own title, lead and
+             cover where the card is empty (`seoFallback()`), then the site defaults. --}}
         @webxSeo($article)
-        @if ($meta->title === null)
-            {{-- Nothing derives a title from the entity: the SEO card is written by hand and is
-                 often empty, and a page with no <title> at all is worse than a plain one. --}}
-            <title>{{ $article->title }}</title>
-        @endif
         {{-- The styles and scripts of exactly the block types this article used. --}}
         @webxBlocks
         <link rel="alternate" type="application/rss+xml" title="{{ trans('webx-blog::blog.rss') }}" href="{{ route('webx.blog.rss') }}">

@@ -6,15 +6,15 @@
 
     Overridden by the site in `resources/views/vendor/webx-catalog-brands/brand.blade.php`.
 --}}
+{{-- Asked here only for the <h1>: an SEO card may name a heading other than the brand's name. --}}
 @php($seo = app(WebxUi\Seo\Rendering\Seo::class))
 @php($meta = $seo->for($seo->currentUrl(), $page))
 
 <x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'">
     <x-slot:head>
+        {{-- The title is in there too: the card's, or the brand's name through the site's template,
+             with its description and logo under it (`seoFallback()`). --}}
         @webxSeo($page)
-        @if ($meta->title === null)
-            <title>{{ $page->heading }}</title>
-        @endif
     </x-slot:head>
 
     <article class="webx-catalog-brand">

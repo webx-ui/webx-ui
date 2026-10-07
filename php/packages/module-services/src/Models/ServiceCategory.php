@@ -20,7 +20,9 @@ use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Rendering\SeoData;
 use WebxUi\Services\Seo\Trail;
 
 /**
@@ -47,7 +49,7 @@ use WebxUi\Services\Seo\Trail;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class ServiceCategory extends Model implements Category, HasBreadcrumbs, Visible
+class ServiceCategory extends Model implements Category, HasBreadcrumbs, HasSeoFallback, Visible
 {
     use HasBlocks;
     use HasCover;
@@ -119,6 +121,18 @@ class ServiceCategory extends Model implements Category, HasBreadcrumbs, Visible
         $resolved = $type === null ? $stored : $type->resolve($stored, [], $locale);
 
         return is_string($resolved) ? $resolved : $stored;
+    }
+
+    /** The name, the introduction and the cover, for a category nobody wrote an SEO card for. */
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        $locale ??= app()->getLocale();
+
+        return SeoData::fallback(
+            (string) $this->getTranslation('title', $locale),
+            $this->leadHtml($locale),
+            $this->coverUrl(),
+        );
     }
 
     /**

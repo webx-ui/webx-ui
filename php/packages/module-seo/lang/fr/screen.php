@@ -7,7 +7,7 @@ return [
     'default-og' => 'Image sociale par défaut',
     'default-og-help' => 'Affichée quand une page n’a pas d’image à elle.',
     'title-template' => 'Modèle de titre',
-    'title-template-help' => '{title} est la page, {site} le nom du projet.',
+    'title-template-help' => '{title} est la page, {site} le nom du projet. Un titre qui nomme déjà le site est publié tel qu’il est écrit.',
     'home-crumb' => 'Accueil dans le fil d’Ariane',
     'home-crumb-help' => 'Le premier pas de chaque fil d’Ariane. Vide, c’est le mot « Accueil » dans la langue de la page.',
     'robots-txt' => 'robots.txt',

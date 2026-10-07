@@ -20,9 +20,11 @@ use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\Contracts\HasStructuredData;
 use WebxUi\Seo\HasSeo;
 use WebxUi\Seo\Panel\DefaultsSource;
+use WebxUi\Seo\Rendering\SeoData;
 use WebxUi\Services\Seo\Trail;
 
 /**
@@ -51,7 +53,7 @@ use WebxUi\Services\Seo\Trail;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Service extends Model implements HasBreadcrumbs, HasStructuredData, Visible
+class Service extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructuredData, Visible
 {
     use HasBlocks;
     use HasCategories;
@@ -205,6 +207,19 @@ class Service extends Model implements HasBreadcrumbs, HasStructuredData, Visibl
             : null;
 
         return Trail::of($locale, $categoryCrumb, new Crumb((string) $this->getTranslation('title', $locale), $this->url($locale)));
+    }
+
+    /** The name, the announcement and the cover, for a service nobody wrote an SEO card for. */
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        $locale ??= app()->getLocale();
+        $lead = $this->getTranslation('lead', $locale);
+
+        return SeoData::fallback(
+            (string) $this->getTranslation('title', $locale),
+            is_string($lead) ? $lead : null,
+            $this->coverUrl(),
+        );
     }
 
     /**

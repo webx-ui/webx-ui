@@ -23,7 +23,9 @@ use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * A rubric: a section of the blog, flat, ordered by hand.
@@ -50,7 +52,7 @@ use WebxUi\Seo\HasSeo;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Rubric extends Model implements Category, HasBreadcrumbs, Visible
+class Rubric extends Model implements Category, HasBreadcrumbs, HasSeoFallback, Visible
 {
     use HasCover;
     use HasExtra;
@@ -111,6 +113,23 @@ class Rubric extends Model implements Category, HasBreadcrumbs, Visible
         $resolved = $type === null ? $stored : $type->resolve($stored, [], $locale);
 
         return is_string($resolved) ? $resolved : $stored;
+    }
+
+    /**
+     * The title, the lead and the cover, for a rubric whose SEO card leaves them empty. The lead
+     * as stored rather than {@see leadHtml()}: only its words reach the description, so the
+     * pictures in it need no addresses worked out.
+     */
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        $title = $this->getTranslation('title', $locale);
+        $lead = $this->getTranslation('lead', $locale);
+
+        return SeoData::fallback(
+            is_string($title) && trim($title) !== '' ? $title : null,
+            is_string($lead) ? $lead : null,
+            $this->coverUrl(),
+        );
     }
 
     /** Shown, and not in the bin — the handler's 404 and the sitemap's line (§17.1 of the SEO spec). */

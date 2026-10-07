@@ -7,7 +7,7 @@ return [
     'default-og' => 'Varsayılan sosyal medya görseli',
     'default-og-help' => 'Sayfanın kendi görseli yoksa bu gösterilir.',
     'title-template' => 'Başlık şablonu',
-    'title-template-help' => '{title} sayfa, {site} proje adıdır.',
+    'title-template-help' => '{title} sayfa, {site} proje adıdır. Site adını zaten içeren bir başlık yazıldığı gibi yayımlanır.',
     'home-crumb' => 'İçerik yolunda ana sayfa',
     'home-crumb-help' => 'Her içerik yolunun ilk adımı. Boş bırakılırsa sayfanın dilinde «Ana sayfa» sözcüğüdür.',
     'robots-txt' => 'robots.txt',

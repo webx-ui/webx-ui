@@ -54,6 +54,14 @@ final readonly class Values
         foreach ($fields as $name => $node) {
             $field = $this->types->get((string) ($node['type'] ?? ''));
 
+            // A field with a `default` is drawn with it in the editor, so the template reads it
+            // too; it goes through the second loop like any written value.
+            if (array_key_exists('default', $node) && ! array_key_exists($name, $values)) {
+                $values[$name] = null;
+
+                continue;
+            }
+
             if ($field instanceof ResolvesMissing && ! array_key_exists($name, $values)) {
                 $resolved[$name] = $field instanceof ResolvesForEntity
                     ? $field->resolveFor(null, $node, $entity)
@@ -70,6 +78,10 @@ final readonly class Values
             // Blade refuses to print an array, and the block renders as nothing at all.
             if ($node !== null && ($node['localized'] ?? false) === true && is_array($value)) {
                 $value = $this->pick($value);
+            }
+
+            if ($value === null && $node !== null && array_key_exists('default', $node)) {
+                $value = $node['default'];
             }
 
             $field = $node === null ? null : $this->types->get((string) ($node['type'] ?? ''));

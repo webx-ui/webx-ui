@@ -27,8 +27,10 @@ use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\Contracts\HasStructuredData;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * A recipe: a page of fixed structure — no blocks (decision 2) — printed by the module's view.
@@ -62,7 +64,7 @@ use WebxUi\Seo\HasSeo;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Recipe extends Model implements HasBreadcrumbs, HasStructuredData, Visible
+class Recipe extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructuredData, Visible
 {
     use HasCategories {
         scopeOrderedIn as private categoryOrderedIn;
@@ -455,6 +457,23 @@ class Recipe extends Model implements HasBreadcrumbs, HasStructuredData, Visible
             : null;
 
         return Trail::of($locale, $categoryCrumb, new Crumb((string) $this->getTranslation('title', $locale), $this->url($locale)));
+    }
+
+    /**
+     * The name, the lead and the cover — the first photo of the gallery, the one the Recipe
+     * markup leads with — for a recipe nobody wrote an SEO card for.
+     */
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        $locale ??= app()->getLocale();
+        $lead = $this->getTranslation('lead', $locale);
+        $cover = $this->cover($locale);
+
+        return SeoData::fallback(
+            (string) $this->getTranslation('title', $locale),
+            is_string($lead) ? $lead : null,
+            is_string($cover['url'] ?? null) ? $cover['url'] : null,
+        );
     }
 
     /**

@@ -68,6 +68,9 @@ boot instead of failing quietly. Values the screen does not name are dropped on 
 - In a partial `pages_update`, a translated field changes only in the languages you name:
   `{"slug": {"de": "…"}}` leaves the others, `null` empties one. A language the site is not
   published in is refused, dry run included.
+- Do not print `<title>` in a site's copy of the view: with an empty SEO card the page names
+  itself (`seoFallback()` — its title through the title template, the site's name on the home
+  page). `@webxSeo($page)` prints it.
 
 ## Check your work
 

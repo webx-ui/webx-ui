@@ -188,6 +188,12 @@ they are and print the code in place of the symbol — but it cannot be chosen f
 takes `webx-vacancies.country` (`WEBX_VACANCIES_COUNTRY`). Two countries on one site are simply two
 vacancies with different codes.
 
+Nobody types a `<title>` into a view. With an empty SEO card a vacancy names its page itself: the
+name through the site's title template, the lead as the description, and, with no picture of its
+own, the site's default social image. The index is called by the section's name the same way. A copy
+of a view published before this still has an `@if ($meta->title === null)` block and the `$seo` /
+`$meta` lines for it — delete them, they never print any more.
+
 ## The JobPosting markup, and how to check it
 
 An **open** vacancy describes itself as a schema.org `JobPosting`; a closed one has none.

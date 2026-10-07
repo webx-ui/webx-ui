@@ -49,11 +49,12 @@ Open Graph properties and every JSON-LD block. What each of those is allowed to 
 Sources are asked highest first and merged **field by field**, so a rule that fills in nothing
 but a title keeps the description and the picture that came from below it.
 
-| Priority | Source           | Reads                                        |
-| -------- | ---------------- | -------------------------------------------- |
-| 100      | `UrlRuleSource`  | `seo_urls` — the rules written for addresses |
-| 50       | `EntitySource`   | `seo_meta` — what the page's entity says     |
-| 10       | `DefaultsSource` | `settings('seo.*')`                          |
+| Priority | Source           | Reads                                                   |
+| -------- | ---------------- | ------------------------------------------------------- |
+| 100      | `UrlRuleSource`  | `seo_urls` — the rules written for addresses            |
+| 50       | `EntitySource`   | `seo_meta` — the entity's SEO card                      |
+| 30       | `FallbackSource` | the entity's own name, lead and picture (`seoFallback`) |
+| 10       | `DefaultsSource` | `settings('seo.*')`                                     |
 
 A project adds its own by implementing `SeoSource` and registering it:
 

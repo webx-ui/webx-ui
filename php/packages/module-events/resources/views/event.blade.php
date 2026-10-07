@@ -6,8 +6,6 @@
 
     The parts first, the layout after: the head slot is worked out before the body.
 --}}
-@php($seo = app(WebxUi\Seo\Rendering\Seo::class))
-@php($meta = $seo->for($seo->currentUrl(), $event))
 
 @php(ob_start())
     <article class="wx-event">
@@ -27,11 +25,9 @@
 
 <x-dynamic-component :component="config('webx-events.layout') ?: 'webx-events::standalone'">
     <x-slot:head>
-        {{-- The SEO card, the site defaults, and the Event markup (HasStructuredData). --}}
+        {{-- The SEO card, the event's own name, lead and cover under it (HasSeoFallback), the
+             site defaults, and the Event markup (HasStructuredData). --}}
         @webxSeo($event)
-        @if ($meta->title === null)
-            <title>{{ $title }}</title>
-        @endif
     </x-slot:head>
 
     {!! $body !!}

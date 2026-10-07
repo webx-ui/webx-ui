@@ -803,6 +803,7 @@ const NODE_KEYS: { key: string; value: string; info: string }[] = [
   { key: 'label', value: '""', info: 'What the editor sees above the field.' },
   { key: 'help', value: '""', info: 'A hint under the field.' },
   { key: 'localized', value: 'true', info: 'Edited per content language.' },
+  { key: 'default', value: '', info: 'Shown and read until the field is set.' },
   { key: 'props', value: '{}', info: 'Passed to the component as they are.' },
   { key: 'children', value: '[]', info: 'Nodes inside a layout node or a repeater.' },
   { key: 'visible', value: '', info: '`false`, or a condition on another field.' },

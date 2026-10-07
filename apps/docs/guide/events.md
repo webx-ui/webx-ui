@@ -190,6 +190,13 @@ No date, not published, in the bin — the file answers 404, and the page has no
 `offers` with the site's one currency, `webx-events.currency` (`WEBX_EVENTS_CURRENCY`, `EUR`, `HKD`).
 No number or no currency — no price in the markup. **Zero** is `isAccessibleForFree`.
 
+Nobody types a `<title>` into a view. With an empty SEO card an event or a category names its page
+itself: the name through the site's title template, the lead as the description, the cover — a
+category's picture — as `og:image`, above the site's default social image. The index is called by
+the section's name the same way. A copy of a view published before this still has an
+`@if ($meta->title === null)` block and the `$seo` / `$meta` lines for it — delete them, they never
+print any more.
+
 ## The Event markup, and how to check it
 
 An event **with a date** describes itself as a schema.org `Event`; one without has none, because

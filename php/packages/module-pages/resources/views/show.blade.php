@@ -5,7 +5,8 @@
 
 <x-dynamic-component :component="config('webx-pages.layout') ?: 'webx-pages::standalone'">
     <x-slot:head>
-        {{-- Everything the page says about itself; the title is in there too. --}}
+        {{-- Everything the page says about itself, the title included: from its SEO card, or
+             its own title through the site's template when the card is empty (`seoFallback()`). --}}
         @webxSeo($page)
         {{-- The styles and scripts of exactly the block types this page used. --}}
         @webxBlocks

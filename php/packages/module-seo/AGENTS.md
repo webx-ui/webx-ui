@@ -16,7 +16,10 @@ their guides when the question is about one of those.
   their feature is off.
 - **The head**: `@webxSeo`, `@webxSeo($page)` or `<x-webx-seo::head :for="$page" />`. Values come
   from sources merged field by field, highest first: `UrlRuleSource` (100), `EntitySource` (50,
-  `seo_meta` through the `HasSeo` trait), `DefaultsSource` (10, `settings('seo.*')`).
+  `seo_meta` through the `HasSeo` trait), `FallbackSource` (30, the entity's own name, lead and
+  picture through `HasSeoFallback::seoFallback()`, or `@webxSeo(fallback: [...])` from a view),
+  `DefaultsSource` (10, `settings('seo.*')`). The title template applies to every title except one
+  that already names the site; a view never prints `<title>` of its own.
 - **Components** `<x-webx-seo::breadcrumbs />` (the same list as the `BreadcrumbList`),
   `<x-webx-seo::links />`, `<x-webx-seo::faq />`; views `webx-seo::head`, `breadcrumbs`, `links`,
   `faq`. The last two print nothing while their feature is off.
@@ -61,6 +64,7 @@ their guides when the question is about one of those.
 | Restyle crumbs, links, FAQ or the head          | `php artisan vendor:publish --tag=webx-seo-views`, keep only the files you change                                                                              |
 | Other words in the panel                        | `php artisan vendor:publish --tag=webx-seo-lang`                                                                                                               |
 | The SEO card on your own entity                 | `use HasSeo;` on the model, a patch putting a `wx-seo` node on its screen                                                                                      |
+| A title, lead and picture without a card        | implement `HasSeoFallback` (`SeoData::fallback(...)`); a view with no entity: `@webxSeo(fallback: ['title' => ...])`                                           |
 | Breadcrumbs or JSON-LD from an entity           | implement `HasBreadcrumbs` (list of `Crumb`) or `HasStructuredData` on the model                                                                               |
 | JSON-LD for one response (a list on this page)  | `app(Seo::class)->push([...])` in the handler before the view renders                                                                                          |
 | SEO values from somewhere else                  | implement `SeoSource`, `app(SeoSources::class)->register(...)` in a provider                                                                                   |

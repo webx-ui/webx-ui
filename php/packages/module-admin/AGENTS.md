@@ -70,6 +70,8 @@ same address, are kept; a file that is not JSON is left alone with a warning (`A
 | Another panel name or tab icons        | `WEBX_ADMIN_TITLE`; `WEBX_ADMIN_ICONS` = a directory with the same file names                                             |
 | A field or tab on a module's screen    | a patch: `Screens::extend('<module>.<screen>', [...])` in `AppServiceProvider::boot()`                                    |
 | A field stored without a migration     | the same patch on a model with `HasExtra`; read it with `$model->extra('<name>')`                                         |
+| A field with a value until it is set   | `"default": …` on the node: drawn in the panel and read by the site, never written by itself                              |
+| An email, address or phone field       | `wx-input` with `"props": { "type": "email" }` (or `url`, `tel`); the server holds the format too                         |
 | A screen of your own                   | `Screens::register('<module>.<screen>', $pathOrTree)` from a provider                                                     |
 | A section of your own                  | `php artisan webx:make-module <Name>`, register it in `ModuleRegistry` from a provider                                    |
 | A navigation group or caption          | `groups` in `config/webx-admin.php` (`php artisan vendor:publish --tag=webx-admin-config`)                                |

@@ -1,18 +1,12 @@
 {{-- The blocks first: `@webxBlocks` prints the bundle of what was rendered, so it has to run after
      them — and a slot is worked out before the layout around it. --}}
 @php($content = config('webx-services.categories.blocks') ? $category->renderBlocks() : '')
-@php($seo = app(WebxUi\Seo\Rendering\Seo::class))
-@php($meta = $seo->for($seo->currentUrl(), $category))
 @php($lead = $category->leadHtml())
 
 <x-dynamic-component :component="config('webx-services.layout') ?: 'webx-services::standalone'">
     <x-slot:head>
+        {{-- The SEO card, the category's own name, lead and cover under it (HasSeoFallback). --}}
         @webxSeo($category)
-        @if ($meta->title === null)
-            {{-- Nothing derives a title from the entity: the SEO card is often empty, and a page
-                 with no <title> at all is worse than a plain one. --}}
-            <title>{{ $category->title }}</title>
-        @endif
         @webxBlocks
     </x-slot:head>
 

@@ -7,7 +7,7 @@ return [
     'default-og' => 'Standardbild für soziale Netzwerke',
     'default-og-help' => 'Wird gezeigt, wenn eine Seite kein eigenes Bild hat.',
     'title-template' => 'Titelvorlage',
-    'title-template-help' => '{title} ist die Seite, {site} der Projektname.',
+    'title-template-help' => '{title} ist die Seite, {site} der Projektname. Ein Titel, der die Website schon nennt, bleibt, wie er geschrieben ist.',
     'home-crumb' => 'Startseite in der Brotkrumennavigation',
     'home-crumb-help' => 'Der erste Schritt jedes Brotkrumenpfads. Leer gelassen, steht dort das Wort „Startseite“ in der Sprache der Seite.',
     'robots-txt' => 'robots.txt',

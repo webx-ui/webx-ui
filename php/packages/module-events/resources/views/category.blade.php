@@ -1,7 +1,5 @@
 {{-- The content first, for the same reason as on the index: the head slot is worked out before
      the body, and the list pushes into it. --}}
-@php($seo = app(WebxUi\Seo\Rendering\Seo::class))
-@php($meta = $seo->for($seo->currentUrl(), $category))
 @php($lead = $category->leadHtml())
 @php($picture = $category->picture())
 
@@ -27,10 +25,8 @@
 
 <x-dynamic-component :component="config('webx-events.layout') ?: 'webx-events::standalone'">
     <x-slot:head>
+        {{-- The SEO card, the category's own name, lead and picture under it (HasSeoFallback). --}}
         @webxSeo($category)
-        @if ($meta->title === null)
-            <title>{{ $category->title }}</title>
-        @endif
     </x-slot:head>
 
     {!! $body !!}

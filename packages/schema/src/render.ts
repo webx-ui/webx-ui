@@ -27,6 +27,36 @@ function shown(node: ScreenNode, context: RenderContext): boolean {
   return isVisible(node, context.model)
 }
 
+/**
+ * The model as the fields draw it: a field with nothing in it — absent or null — shows its
+ * `default`. The site reads a missing value the same way, so a switch whose default is on is
+ * drawn on rather than contradicting the page. Only what is drawn changes: writes still go to
+ * the real model, so an untouched field is not sent and nothing is stored for it.
+ *
+ * Fields only, through layout and not into a named node — a repeater's children are the fields
+ * of its rows, and each row fills its own. Returns the model itself when there is nothing to fill.
+ */
+export function withFieldDefaults(nodes: ScreenNode[], model: ScreenModel): ScreenModel {
+  let filled: ScreenModel | undefined
+
+  const walk = (list: ScreenNode[]): void => {
+    for (const node of list) {
+      if (node.name === undefined) {
+        walk(node.children ?? [])
+        continue
+      }
+      const value = model[node.name]
+      if (node.default !== undefined && (value === undefined || value === null)) {
+        filled ??= { ...model }
+        filled[node.name] = node.default
+      }
+    }
+  }
+
+  walk(nodes)
+  return filled ?? model
+}
+
 /** Without a dictionary the key itself shows — honest, and easy to spot in a screenshot. */
 export const keyAsIs: Translate = (key) => key
 

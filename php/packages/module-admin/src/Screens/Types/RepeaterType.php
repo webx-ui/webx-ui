@@ -139,6 +139,11 @@ final class RepeaterType implements FieldType
                     $value = $this->pick($value, $locale);
                 }
 
+                // A row's field is drawn with its default just as a screen's is, so it reads so.
+                if ($value === null && array_key_exists('default', $child)) {
+                    $value = $child['default'];
+                }
+
                 $resolved[$name] = $this->types->get((string) $child['type'])?->resolve($value, $child, $locale) ?? $value;
             }
 

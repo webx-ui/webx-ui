@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace WebxUi\Admin\Screens;
 
+use Illuminate\Contracts\Validation\Factory as ValidationFactory;
+
 /**
  * The same checks `validateScreen` / `validatePatch` make in `@webx-ui/schema`, so a description
  * that passes on one half passes on the other: required keys, the closed key set, value types,
@@ -11,7 +13,7 @@ namespace WebxUi\Admin\Screens;
  */
 final class ScreenValidator
 {
-    private const NODE_KEYS = ['id', 'type', 'name', 'label', 'help', 'localized', 'props', 'children', 'slot', 'visible', 'can'];
+    private const NODE_KEYS = ['id', 'type', 'name', 'label', 'help', 'localized', 'default', 'props', 'children', 'slot', 'visible', 'can'];
 
     private const OPS = ['add', 'remove', 'replace', 'move', 'set'];
 
@@ -92,6 +94,46 @@ final class ScreenValidator
                     }
                 }
             }
+        }
+
+        return $problems;
+    }
+
+    /**
+     * Every `default` in a built tree, checked by the rules its field's type declares.
+     *
+     * Not part of {@see screen()}: the types are registered by other modules' providers, so a
+     * default can only be judged once the tree is patched and the types are in place. A default
+     * the type would refuse from an editor is refused here too — otherwise the site would read a
+     * value the panel could never have saved. A localized field takes one plain value for every
+     * language, so it is checked as one value. A type nobody registered has no rules to break.
+     *
+     * @param  list<array<string, mixed>>  $nodes
+     * @return list<string>
+     */
+    public static function defaults(array $nodes, FieldTypes $types, ValidationFactory $validator): array
+    {
+        $problems = [];
+
+        foreach ($nodes as $node) {
+            if (array_key_exists('default', $node)) {
+                $id = (string) ($node['id'] ?? '');
+
+                if (! is_string($node['name'] ?? null) || $node['name'] === '') {
+                    $problems[] = "\"{$id}\": \"default\" belongs to a field: a node without \"name\" has no value";
+                } else {
+                    $rules = $types->get((string) ($node['type'] ?? ''))?->rules($node) ?? [];
+                    $check = $rules === [] ? null : $validator->make(['default' => $node['default']], ['default' => $rules]);
+
+                    if ($check !== null && $check->fails()) {
+                        foreach (array_unique($check->errors()->all()) as $message) {
+                            $problems[] = "\"{$id}\": the default is not a value of its type: {$message}";
+                        }
+                    }
+                }
+            }
+
+            array_push($problems, ...self::defaults(Tree::children($node), $types, $validator));
         }
 
         return $problems;

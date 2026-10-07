@@ -22,7 +22,9 @@ use WebxUi\Routing\Revival;
 use WebxUi\Routing\RouteSync;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * A page of the site.
@@ -50,7 +52,7 @@ use WebxUi\Seo\HasSeo;
  * @property int $depth
  * @property int|null $parent_id
  */
-class Page extends Model implements HasBreadcrumbs, Visible
+class Page extends Model implements HasBreadcrumbs, HasSeoFallback, Visible
 {
     use HasBlocks;
     use HasDraft;
@@ -220,6 +222,20 @@ class Page extends Model implements HasBreadcrumbs, Visible
         }
 
         return $crumbs;
+    }
+
+    /**
+     * The page's title, for the `<title>` of a page nobody wrote an SEO card for.
+     *
+     * Only the title: a page is blocks, and there is no lead or picture of its own to say more
+     * with — guessing a description out of the first block would put a menu or a button text in
+     * the snippet. On the home page `module-seo` puts the site's name in its place.
+     */
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        $title = $this->getTranslation('title', $locale);
+
+        return SeoData::fallback(is_string($title) && trim($title) !== '' ? $title : null);
     }
 
     /**

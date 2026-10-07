@@ -173,6 +173,11 @@ interface SeoSource
 - `DefaultsSource` — приоритет `10`, читает `settings('seo.*')`: OG по умолчанию, шаблон title,
   Organization/WebSite в JSON-LD.
 - `EntitySource` — приоритет `50`, читает `seo_meta` через `HasSeo` у переданного subject.
+- `FallbackSource` — приоритет `30`: собственные имя, лид и картинка сущности без карточки
+  (`HasSeoFallback::seoFallback()`, ответ собирает `SeoData::fallback()`), или то, что передал
+  шаблон страницы-маршрута: `@webxSeo(fallback: ['title' => …])`. Ниже карточки, выше дефолтов —
+  фото рецепта побеждает `seo.default-og`. До него шаблоны модулей печатали `<title>` сами при
+  `$meta->title === null` — мимо шаблона заголовка, `og:title` и любой картинки.
 
 `SeoData` — value-object: `title`, `h1`, `description`, `keywords`, `canonical`, `robots`,
 `og` (массив), `jsonLd` (список блоков). Ключевой метод — `mergeOver(SeoData $lower): SeoData`:
@@ -180,7 +185,10 @@ interface SeoSource
 
 `Seo::for(string $url, ?object $subject = null, ?string $locale = null): SeoData` — обходит
 источники по убыванию приоритета, мержит, подставляет шаблон (`{title} — {site}`), обрезает по
-лимитам из конфига. Язык — запрошенный; значения разворачиваются `forLocale()`, как это делает
+лимитам из конфига. Шаблон не трогает заголовок, в котором название сайта уже есть (сравнение по
+буквам и цифрам, без регистра): «О нас | Акме» не превращается в «О нас | Акме — Акме». Главная
+без написанного заголовка называется именем сайта, а не «Главная — Акме». Self-canonical и
+`og:url` строятся от корня сайта без фронт-контроллера (`/index.php/about` → `…/about`). Язык — запрошенный; значения разворачиваются `forLocale()`, как это делает
 `FieldType::resolve` у настроек.
 
 ## 6. Рендер

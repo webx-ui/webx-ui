@@ -152,6 +152,10 @@ The handler hands the page to `webx-pages.view`, which defaults to `pages.show`,
 </x-dynamic-component>
 ```
 
+`@webxSeo($page)` prints the `<title>` card or no card: with an empty SEO card the page is called by
+its own title through the site's title template (`HasSeoFallback`), and the home page by the site's
+name.
+
 Until the site has written that view, the package prints its own — the blocks, the SEO head and
 nothing else — so a fresh installation serves a page rather than an error.
 

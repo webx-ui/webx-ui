@@ -7,7 +7,7 @@ return [
     'default-og' => 'Default social image',
     'default-og-help' => 'Shown when a page has no picture of its own.',
     'title-template' => 'Title template',
-    'title-template-help' => '{title} is the page, {site} is the project name.',
+    'title-template-help' => '{title} is the page, {site} is the project name. A title that already names the site is printed as written.',
     'home-crumb' => 'Home in breadcrumbs',
     'home-crumb-help' => 'The first step of every breadcrumb trail. Left empty, it is the word for “Home” in the language of the page.',
     'robots-txt' => 'robots.txt',

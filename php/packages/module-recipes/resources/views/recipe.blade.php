@@ -8,8 +8,6 @@
     — the similar recipes are cards, and a customised card brings its own styles and script —
     and the head slot is worked out before the body.
 --}}
-@php($seo = app(WebxUi\Seo\Rendering\Seo::class))
-@php($meta = $seo->for($seo->currentUrl(), $recipe))
 
 @php(ob_start())
     <article class="wx-recipe">
@@ -30,11 +28,9 @@
 
 <x-dynamic-component :component="config('webx-recipes.layout') ?: 'webx-recipes::standalone'">
     <x-slot:head>
-        {{-- The SEO card, the site defaults, and the Recipe markup (HasStructuredData). --}}
+        {{-- The SEO card, the recipe's own name, lead and cover under it (HasSeoFallback), the
+             site defaults, and the Recipe markup (HasStructuredData). --}}
         @webxSeo($recipe)
-        @if ($meta->title === null)
-            <title>{{ $title }}</title>
-        @endif
         @webxPartAssets
     </x-slot:head>
 

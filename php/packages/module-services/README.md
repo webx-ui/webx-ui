@@ -109,6 +109,12 @@ place in the sitemap. A service describes itself as a schema.org `Service`, nami
 `Organization` as its provider by `@id`. A category page and the index push an `ItemList` of what
 they list.
 
+With an empty SEO card a service or a category names its page itself (`HasSeoFallback`): the name
+through the site's title template, the lead as the description, the cover as `og:image`, above
+the site's default social image. The index is called by the section's name,
+`@webxSeo(fallback: ['title' => …])`. So no view prints `<title>` itself, and a site's copy that
+still has the old `@if ($meta->title === null)` block can delete it.
+
 ## Views
 
 Three views, each with the package's own underneath until the site writes its:

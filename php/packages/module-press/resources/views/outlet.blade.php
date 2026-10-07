@@ -7,8 +7,6 @@
     a block a site puts into its own copy of this view brings its styles and script that way — and
     the head slot is worked out before the body.
 --}}
-@php($seo = app(WebxUi\Seo\Rendering\Seo::class))
-@php($meta = $seo->for($seo->currentUrl(), $outlet))
 
 @php(ob_start())
     <article class="wx-press-outlet">
@@ -24,18 +22,9 @@
 
 <x-dynamic-component :component="config('webx-press.layout') ?: 'webx-press::standalone'">
     <x-slot:head>
-        {{-- The SEO card, the site defaults, and the ItemList of the articles (HasStructuredData). --}}
+        {{-- The SEO card, the outlet's own name, summary and logo under it (HasSeoFallback), the
+             site defaults, and the ItemList of the articles (HasStructuredData). --}}
         @webxSeo($outlet)
-        {{-- What the outlet says about itself when nobody wrote a card for its page. --}}
-        @if ($meta->title === null)
-            <title>{{ $title }}</title>
-        @endif
-        @if ($meta->description === null && $summary !== '')
-            <meta name="description" content="{{ $summary }}">
-        @endif
-        @if (! isset($meta->og['image']) && is_string($logo['url'] ?? null))
-            <meta property="og:image" content="{{ $logo['url'] }}">
-        @endif
         @webxPartAssets
     </x-slot:head>
 

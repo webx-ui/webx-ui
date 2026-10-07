@@ -1,15 +1,9 @@
-@php($seo = app(WebxUi\Seo\Rendering\Seo::class))
-@php($meta = $seo->for($seo->currentUrl(), $rubric))
 @php($lead = $rubric->leadHtml())
 
 <x-dynamic-component :component="config('webx-blog.layout') ?: 'webx-blog::standalone'">
     <x-slot:head>
+        {{-- The SEO card, then the rubric's own title, lead and cover where the card is empty. --}}
         @webxSeo($rubric)
-        @if ($meta->title === null)
-            {{-- Nothing derives a title from the entity: the SEO card is written by hand and is
-                 often empty, and a page with no <title> at all is worse than a plain one. --}}
-            <title>{{ $rubric->title }}</title>
-        @endif
         <link rel="alternate" type="application/rss+xml" title="{{ trans('webx-blog::blog.rss') }}" href="{{ route('webx.blog.rss') }}">
     </x-slot:head>
 

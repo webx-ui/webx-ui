@@ -36,11 +36,12 @@ Sources are asked highest first and merged **field by field**. A rule that fills
 title keeps the description and the picture that came from below it — merging whole objects
 instead is how one rule wipes out half a page's markup and the engine looks broken.
 
-| Priority | Source           | Reads                                        |
-| -------- | ---------------- | -------------------------------------------- |
-| 100      | `UrlRuleSource`  | `seo_urls` — the rules written for addresses |
-| 50       | `EntitySource`   | `seo_meta` — what the page's entity says     |
-| 10       | `DefaultsSource` | `settings('seo.*')`                          |
+| Priority | Source           | Reads                                                   |
+| -------- | ---------------- | ------------------------------------------------------- |
+| 100      | `UrlRuleSource`  | `seo_urls` — the rules written for addresses            |
+| 50       | `EntitySource`   | `seo_meta` — the entity's SEO card                      |
+| 30       | `FallbackSource` | the entity's own name, lead and picture (`seoFallback`) |
+| 10       | `DefaultsSource` | `settings('seo.*')`                                     |
 
 A project adds its own from a provider:
 
@@ -63,6 +64,43 @@ app(SeoSources::class)->register(new CampaignSource);
 ```
 
 Answer with the fields you know and leave the rest null. Whatever stands below fills those in.
+
+## When nobody wrote a card
+
+An entity says what its page is called without anybody writing it a card, by implementing
+`HasSeoFallback`:
+
+```php
+use WebxUi\Seo\Contracts\HasSeoFallback;
+use WebxUi\Seo\Rendering\SeoData;
+
+final class Recipe extends Model implements HasSeoFallback
+{
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        return SeoData::fallback(
+            $this->getTranslation('title', $locale),
+            $this->getTranslation('lead', $locale),   // markup stripped, cut near 300 characters
+            $this->coverUrl(),                        // a /path is made absolute
+        );
+    }
+}
+```
+
+`FallbackSource` asks it below the card and above the defaults. So the card wins every field it
+fills in, the entity's own picture wins over `seo.default-og` — which is only "shown when a page
+has no picture of its own" — and the title goes through the title template like any other: the
+site's name is added once, by the template, and not typed into a view.
+
+A page that is a route rather than a record — the index of recipes, the blog feed — has no
+entity to ask. The view names it:
+
+```blade
+@webxSeo(fallback: ['title' => trans('webx-recipes::site.title')])
+```
+
+The modules' views used to print `<title>` by hand when `$meta->title === null`. That missed the
+template, `og:title` and every picture; a site's copy of a module view can drop the block.
 
 ## Printing the head
 
@@ -192,8 +230,15 @@ patch against them:
 The dot in `seo.default-og` is part of the name, not a path. A key with a dot in it is one key,
 and both the server's validator and its tests have to be told so.
 
-The title template is applied to whatever title the sources agreed on. A placeholder with nothing
-behind it takes its separator with it, so a site with no name does not publish "Contacts —".
+The title template is applied to whatever title the sources agreed on — a rule's, a card's, an
+entity's own name. A placeholder with nothing behind it takes its separator with it, so a site with
+no name does not publish "Contacts —".
+
+A title that already names the site is printed as written: an editor who typed "About us | Acme"
+into a card meant exactly that, and "About us | Acme — Acme" is what the template would make of
+it. The site's name is compared on letters and digits alone, ignoring case, so "Acme Studio" in a
+title is the project called "AcmeStudio". The home page, when nobody wrote it a title, is called
+by the site's name rather than "Home — Acme".
 
 ## `wx-seo`, the card
 

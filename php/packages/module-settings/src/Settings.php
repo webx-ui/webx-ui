@@ -107,17 +107,23 @@ final class Settings
         return null;
     }
 
-    /** One value, the way the site reads it. */
+    /**
+     * One value, the way the site reads it.
+     *
+     * Nothing stored reads as the field's own `default` when the screen gives one — the value
+     * the panel draws — and as the caller's `$default` only when it does not.
+     */
     public function get(string $key, mixed $default = null, ?string $locale = null): mixed
     {
         $raw = $this->raw();
+        $node = $this->node($key);
 
-        if (! array_key_exists($key, $raw)) {
+        if (! array_key_exists($key, $raw) && ($node === null || ! array_key_exists('default', $node))) {
             return $default;
         }
 
-        $node = $this->node($key);
-        $value = $node === null ? $raw[$key] : $this->values->resolve($node, $raw[$key], $locale);
+        $stored = $raw[$key] ?? null;
+        $value = $node === null ? $stored : $this->values->resolve($node, $stored, $locale);
 
         return $value ?? $default;
     }
@@ -143,6 +149,9 @@ final class Settings
     /**
      * Writes what it is given — already validated by `ScreenValues` — and tells the site.
      *
+     * A null is stored as null, not dropped: a module may read "saved empty" differently from
+     * "never saved" (SEO's normalisation takes a null as the editor's "leave it as it is").
+     *
      * @param  array<string, mixed>  $values
      */
     public function save(array $values): void
@@ -153,6 +162,23 @@ final class Settings
 
         $this->forget();
         $this->events->dispatch(new SettingsSaved(array_keys($values)));
+    }
+
+    /**
+     * Back to never saved: the rows go, so `settings($key, $default)` answers the default again.
+     * Storing null would not do — a type may read a stored null as something of its own (a
+     * repeater as an empty list), and a module may read it as a choice (see `save`).
+     *
+     * @param  list<string>  $keys
+     */
+    public function clear(array $keys): void
+    {
+        foreach (Setting::query()->whereIn('key', $keys)->get() as $setting) {
+            $setting->delete();
+        }
+
+        $this->forget();
+        $this->events->dispatch(new SettingsSaved($keys));
     }
 
     public function forget(): void

@@ -252,7 +252,9 @@ php artisan vendor:publish --tag=webx-press-views
 
 `webx-press.views.outlet` names the view, `webx-press.layout` the Blade component it stands in (the
 site's `<x-layout>`, say), `webx-press.breadcrumbs` whether the visible trail is printed. The page
-prints the outlet's SEO card — falling back on its name, its summary and its logo — and an
+prints the outlet's SEO card — falling back on its name, its summary and its logo, which the outlet
+answers itself through the site's title template, so a copy of the view prints no `<title>` of its
+own — and an
 `ItemList` of its articles, each an `Article` with the outlet as its `publisher` and a
 `datePublished` only when the day is known. That markup wins no rich result; it ties the site to the
 outlets for search engines and agents.

@@ -6,8 +6,6 @@
 
     The parts first, the layout after: the head slot is worked out before the body.
 --}}
-@php($seo = app(WebxUi\Seo\Rendering\Seo::class))
-@php($meta = $seo->for($seo->currentUrl(), $vacancy))
 
 @php(ob_start())
     <article class="wx-vacancy">
@@ -28,12 +26,10 @@
 
 <x-dynamic-component :component="config('webx-vacancies.layout') ?: 'webx-vacancies::standalone'">
     <x-slot:head>
-        {{-- The SEO card, the site defaults, the JobPosting of an open vacancy (HasStructuredData)
-             and the noindex of a closed one. --}}
+        {{-- The SEO card, the vacancy's own name and lead under it (HasSeoFallback), the site
+             defaults, the JobPosting of an open vacancy (HasStructuredData) and the noindex of a
+             closed one. --}}
         @webxSeo($vacancy)
-        @if ($meta->title === null)
-            <title>{{ $title }}</title>
-        @endif
     </x-slot:head>
 
     {!! $body !!}

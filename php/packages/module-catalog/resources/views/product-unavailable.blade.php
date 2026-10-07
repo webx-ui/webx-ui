@@ -5,15 +5,12 @@
     view prints.
 --}}
 @php($image = $product->mainImage())
-@php($seo = app(WebxUi\Seo\Rendering\Seo::class))
-@php($meta = $seo->for($seo->currentUrl(), $product))
 
 <x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'">
     <x-slot:head>
+        {{-- `noindex` comes out of the product's SEO answer too (UnavailableSource), and the title is
+             the card's or the product's name through the site's template (`seoFallback()`). --}}
         @webxSeo($product)
-        @if ($meta->title === null)
-            <title>{{ $product->displayName() }}</title>
-        @endif
     </x-slot:head>
 
     <article class="webx-catalog-product webx-catalog-product--unavailable">

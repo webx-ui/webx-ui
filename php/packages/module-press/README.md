@@ -99,7 +99,9 @@ php artisan vendor:publish --tag=webx-press-views
 ```
 
 The page prints the SEO card of the outlet, falls back to its name, its summary and its logo for
-the title, the description and `og:image`, and carries an `ItemList` of its articles, each an
+the title, the description and `og:image` — the outlet answers `seoFallback()`, so the site's
+title template applies and the logo beats the site's default social image; a site's copy of the
+view prints none of them by hand — and carries an `ItemList` of its articles, each an
 `Article` with `publisher` the outlet as an `Organization`. The trail goes through whatever page
 stands at the prefix.
 

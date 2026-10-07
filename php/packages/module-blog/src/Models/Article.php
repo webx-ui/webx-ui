@@ -23,8 +23,10 @@ use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\Contracts\HasStructuredData;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * An article.
@@ -54,7 +56,7 @@ use WebxUi\Seo\HasSeo;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Article extends Model implements HasBreadcrumbs, HasStructuredData, Visible
+class Article extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructuredData, Visible
 {
     use HasBlocks;
     use HasCategories;
@@ -193,6 +195,22 @@ class Article extends Model implements HasBreadcrumbs, HasStructuredData, Visibl
             : null;
 
         return Trail::of($locale, $rubricCrumb, new Crumb((string) $this->getTranslation('title', $locale), $this->url($locale)));
+    }
+
+    /**
+     * The title, the lead and the cover — the same three the `BlogPosting` below names — for an
+     * article whose SEO card leaves them empty.
+     */
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        $title = $this->getTranslation('title', $locale);
+        $lead = $this->getTranslation('lead', $locale);
+
+        return SeoData::fallback(
+            is_string($title) && trim($title) !== '' ? $title : null,
+            is_string($lead) ? $lead : null,
+            $this->coverUrl(),
+        );
     }
 
     /**

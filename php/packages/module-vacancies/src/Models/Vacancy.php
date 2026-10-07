@@ -23,8 +23,10 @@ use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\Contracts\HasStructuredData;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Rendering\SeoData;
 use WebxUi\Vacancies\Seo\JobPostingMarkup;
 use WebxUi\Vacancies\Seo\Trail;
 use WebxUi\Vacancies\Support\Day;
@@ -74,7 +76,7 @@ use WebxUi\Vacancies\Support\Day;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Vacancy extends Model implements HasBreadcrumbs, HasStructuredData, Visible
+class Vacancy extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructuredData, Visible
 {
     use HasCategories;
     use HasDraft;
@@ -519,6 +521,17 @@ class Vacancy extends Model implements HasBreadcrumbs, HasStructuredData, Visibl
         $resolved = $type === null ? $stored : $type->resolve($stored, [], $locale);
 
         return is_string($resolved) ? $resolved : $stored;
+    }
+
+    /**
+     * The name and the lead, for a vacancy nobody wrote an SEO card for. No picture: a vacancy
+     * has none of its own, so the site's default one stands.
+     */
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        $locale ??= app()->getLocale();
+
+        return SeoData::fallback($this->text('title', $locale), $this->text('lead', $locale));
     }
 
     /** One translated column in one language, with no fallback — '' where it is not written. */

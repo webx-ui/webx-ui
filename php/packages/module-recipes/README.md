@@ -97,6 +97,12 @@ the trail, and schema.org `Recipe`: the gallery as `image`, `totalTime`, `recipe
 `recipeInstructions` read out of the documents: every `<li>` is one item, or with no list every
 paragraph. So type the ingredients and the steps as lists.
 
+With an empty SEO card a recipe or a category names its page itself (`HasSeoFallback`): the name
+through the site's title template, the lead as the description, the first photo of the gallery —
+a category's picture — as `og:image`, above the site's default social image. The index is called
+by the section's name, `@webxSeo(fallback: ['title' => …])`. So no view prints `<title>` itself,
+and a site's copy that still has the old `@if ($meta->title === null)` block can delete it.
+
 The index and a category page are an `ItemList`. A catalogue narrowed to a nutrient
 (`?nutrient=`) is `noindex` with a canonical without the filter; `?page=` stays in the canonical.
 

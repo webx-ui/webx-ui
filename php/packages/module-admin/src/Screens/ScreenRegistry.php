@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace WebxUi\Admin\Screens;
 
 use Illuminate\Container\Container;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 
 /**
  * Every screen the panel can draw, by name, with the patches other packages and the project
@@ -26,6 +28,9 @@ final class ScreenRegistry
 
     /** @var array<string, list<Node>> */
     private array $built = [];
+
+    /** @var array<string, true> Screens whose defaults were checked against the types. */
+    private array $checked = [];
 
     /**
      * @param  string|array<int|string, mixed>  $screen  A path to a JSON file, or the decoded
@@ -53,7 +58,7 @@ final class ScreenRegistry
 
         /** @var list<Node> $root */
         $this->trees[$name] = $root;
-        unset($this->built[$name]);
+        unset($this->built[$name], $this->checked[$name]);
     }
 
     /**
@@ -73,7 +78,7 @@ final class ScreenRegistry
 
         /** @var list<array<string, mixed>> $ops */
         $this->patches[$name][] = $ops;
-        unset($this->built[$name]);
+        unset($this->built[$name], $this->checked[$name]);
     }
 
     public function has(string $name): bool
@@ -114,6 +119,8 @@ final class ScreenRegistry
 
             $this->built[$name] = $root;
         }
+
+        $this->checkDefaults($name, $this->built[$name]);
 
         // Not cached with the patches: what a node has to edit is registered by other modules'
         // providers, and a tree built before the last of them booted must not keep the answer.
@@ -183,6 +190,39 @@ final class ScreenRegistry
         }
 
         return $kept;
+    }
+
+    /**
+     * A `default` the field's type would refuse is a broken description, thrown like any other
+     * ({@see ScreenValidator::defaults()}). Judged once per built tree, and only after the
+     * application has booted: before that a module's types may not be registered yet, and a
+     * default of an unknown type would pass unchecked for good.
+     *
+     * @param  list<Node>  $root
+     */
+    private function checkDefaults(string $name, array $root): void
+    {
+        if (isset($this->checked[$name])) {
+            return;
+        }
+
+        $container = Container::getInstance();
+
+        if (! $container->bound(FieldTypes::class) || ! $container->bound(ValidationFactory::class)) {
+            return;
+        }
+
+        if ($container instanceof Application && ! $container->isBooted()) {
+            return;
+        }
+
+        $problems = ScreenValidator::defaults($root, $container->make(FieldTypes::class), $container->make(ValidationFactory::class));
+
+        if ($problems !== []) {
+            throw ScreenException::invalid("The screen [{$name}]", $problems);
+        }
+
+        $this->checked[$name] = true;
     }
 
     /**

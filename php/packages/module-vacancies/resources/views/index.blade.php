@@ -1,7 +1,5 @@
 {{-- The content first: a slot is worked out before the layout around it, the head before the
      body, and what the page pushes (its ItemList, its styles) has to be pushed by then. --}}
-@php($seo = app(WebxUi\Seo\Rendering\Seo::class))
-@php($meta = $seo->for($seo->currentUrl(), null))
 
 @php(ob_start())
     @once
@@ -45,11 +43,10 @@
 
 <x-dynamic-component :component="config('webx-vacancies.layout') ?: 'webx-vacancies::standalone'">
     <x-slot:head>
-        {{-- No entity: the index is a route, not a record, so what it says comes from the SEO defaults. --}}
-        @webxSeo
-        @if ($meta->title === null)
-            <title>{{ trans('webx-vacancies::site.title') }}</title>
-        @endif
+        {{-- No entity: the index is a route, not a record. A rule for its address or the site's
+             defaults say what they have; the title under them is the section's name, and it goes
+             through the title template like any other. --}}
+        @webxSeo(fallback: ['title' => trans('webx-vacancies::site.title')])
     </x-slot:head>
 
     {!! $body !!}

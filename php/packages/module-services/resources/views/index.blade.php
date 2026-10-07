@@ -1,13 +1,10 @@
-@php($seo = app(WebxUi\Seo\Rendering\Seo::class))
-@php($meta = $seo->for($seo->currentUrl(), null))
 
 <x-dynamic-component :component="config('webx-services.layout') ?: 'webx-services::standalone'">
     <x-slot:head>
-        {{-- No entity: the index is a route, not a record, so what it says comes from the site's SEO defaults. --}}
-        @webxSeo
-        @if ($meta->title === null)
-            <title>{{ trans('webx-services::services.title') }}</title>
-        @endif
+        {{-- No entity: the index is a route, not a record. A rule for its address or the site's
+             defaults say what they have; the title under them is the section's name, and it goes
+             through the title template like any other. --}}
+        @webxSeo(fallback: ['title' => trans('webx-services::services.title')])
     </x-slot:head>
 
     <header>

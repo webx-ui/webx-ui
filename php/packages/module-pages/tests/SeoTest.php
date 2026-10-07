@@ -9,6 +9,7 @@ use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Pages\Models\Page;
 use WebxUi\Pages\Panel\PageForm;
 use WebxUi\Seo\Models\SeoUrl;
+use WebxUi\Settings\Settings;
 
 /**
  * The SEO card on the page editor, end to end: it arrives on the screen from the other package,
@@ -79,6 +80,30 @@ final class SeoTest extends TestCase
     }
 
     #[Test]
+    public function a_page_without_a_card_is_called_by_its_own_title_through_the_template(): void
+    {
+        $this->siteName();
+        $this->page('about');
+
+        $response = $this->get('/about');
+
+        // It printed no <title> at all before the page answered `seoFallback()`.
+        $response->assertOk();
+        $response->assertSee('<title>About — Acme</title>', false);
+        $response->assertSee('<meta property="og:title" content="About — Acme">', false);
+    }
+
+    #[Test]
+    public function the_home_page_without_a_card_is_called_by_the_sites_name(): void
+    {
+        $this->siteName();
+        $this->home()->publish();
+
+        // "Home — Acme" says nothing the site's name does not.
+        $this->assertHead('/', '<title>Acme</title>');
+    }
+
+    #[Test]
     public function saving_another_tab_leaves_the_card_alone(): void
     {
         $page = $this->page('about');
@@ -99,6 +124,14 @@ final class SeoTest extends TestCase
     private function save(Page $page, array $seo): void
     {
         app(PageForm::class)->save($page, ['seo' => $seo]);
+    }
+
+    private function siteName(): void
+    {
+        app(Settings::class)->save([
+            'general.project-name' => ['en' => 'Acme'],
+            'seo.title-template' => '{title} — {site}',
+        ]);
     }
 
     /** Named so as not to collide with anything the base class already answers to. */

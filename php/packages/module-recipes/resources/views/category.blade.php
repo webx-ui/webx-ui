@@ -1,7 +1,5 @@
 {{-- The content first, for the same reason as on the index: `@webxPartAssets` prints the
      bundle of what was rendered, and the head slot is worked out before the body. --}}
-@php($seo = app(WebxUi\Seo\Rendering\Seo::class))
-@php($meta = $seo->for($seo->currentUrl(), $category))
 @php($lead = $category->leadHtml())
 @php($picture = $category->picture())
 
@@ -27,10 +25,8 @@
 
 <x-dynamic-component :component="config('webx-recipes.layout') ?: 'webx-recipes::standalone'">
     <x-slot:head>
+        {{-- The SEO card, the category's own name, lead and picture under it (HasSeoFallback). --}}
         @webxSeo($category)
-        @if ($meta->title === null)
-            <title>{{ $category->title }}</title>
-        @endif
         @webxPartAssets
     </x-slot:head>
 

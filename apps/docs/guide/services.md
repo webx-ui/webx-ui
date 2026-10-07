@@ -223,6 +223,12 @@ themselves; the breadcrumbs are index → main category → service. A service d
 schema.org `Service` whose `provider` points at the site's `Organization` by `@id`; the index and a
 category page push an `ItemList`.
 
+Nobody types a `<title>` into a view. With an empty SEO card a service or a category names its page
+itself: the name through the site's title template, the lead as the description, the cover as
+`og:image`, above the site's default social image. The index is called by the section's name the
+same way. A copy of a view published before this still has an `@if ($meta->title === null)` block
+and the `$seo` / `$meta` lines for it — delete them, they never print any more.
+
 ## Services in a block
 
 Two ways, and they give the same card, so a block can move from one to the other without its

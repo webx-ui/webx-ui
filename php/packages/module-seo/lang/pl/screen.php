@@ -7,7 +7,7 @@ return [
     'default-og' => 'Domyślny obrazek dla mediów społecznościowych',
     'default-og-help' => 'Pokazywany, gdy strona nie ma własnego obrazka.',
     'title-template' => 'Szablon tytułu',
-    'title-template-help' => '{title} to strona, {site} to nazwa projektu.',
+    'title-template-help' => '{title} to strona, {site} to nazwa projektu. Tytuł, który już zawiera nazwę witryny, jest publikowany tak, jak go napisano.',
     'home-crumb' => 'Strona główna w okruszkach',
     'home-crumb-help' => 'Pierwszy krok każdej ścieżki okruszków. Puste — słowo „Strona główna” w języku strony.',
     'robots-txt' => 'robots.txt',

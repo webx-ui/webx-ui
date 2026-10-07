@@ -106,6 +106,19 @@ final class NormaliseTest extends TestCase
     }
 
     #[Test]
+    public function the_front_controller_in_the_middle_of_an_address_goes_in_the_same_301(): void
+    {
+        $this->assertFalse($this->visit('https://shop.example.com/index.php/about')->isRedirect());
+
+        $this->settings([Normalisation::INDEX => true]);
+
+        $this->assertSame('https://shop.example.com/about?x=1', $this->visit('https://shop.example.com/index.php/about?x=1')->headers->get('Location'));
+        $this->assertSame('https://shop.example.com/', $this->visit('https://shop.example.com/index.php')->headers->get('Location'));
+        // A page whose own name starts the same is not the front controller.
+        $this->assertFalse($this->visit('https://shop.example.com/index.phpx/about')->isRedirect());
+    }
+
+    #[Test]
     public function the_redirects_table_sees_the_normalised_address(): void
     {
         $this->settings([Normalisation::LOWERCASE => true]);

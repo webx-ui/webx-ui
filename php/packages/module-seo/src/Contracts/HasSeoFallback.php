@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace WebxUi\Seo\Contracts;
 
+use WebxUi\Seo\Rendering\FallbackSource;
 use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * What an entity says about its page when nobody wrote it an SEO card: its own name, its lead,
  * its picture.
  *
- * Asked by {@see \WebxUi\Seo\Rendering\FallbackSource}, which stands below the card and above the
- * site defaults. So a card wins every field it fills in, and the recipe's own photo wins over
+ * Asked by {@see FallbackSource}, which stands below the card and above the site
+ * defaults. So a card wins every field it fills in, and the recipe's own photo wins over
  * the site's default social image — the one that is "shown when a page has no picture of its
  * own" and should be exactly that.
  *

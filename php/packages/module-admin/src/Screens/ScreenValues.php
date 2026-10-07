@@ -173,6 +173,11 @@ final class ScreenValues
      * What the site reads for one field: the current language of a localized value, with the
      * usual fallbacks, then whatever the type makes of it.
      *
+     * Nothing stored is the node's `default` when it has one: the panel draws a missing value
+     * with it, and the site must read what the editor sees — a switch drawn on has to be on.
+     * A localized field whose languages are all empty falls to it too; it is one plain value
+     * for every language.
+     *
      * @param  Node  $node
      */
     public function resolve(array $node, mixed $stored, ?string $locale = null): mixed
@@ -181,6 +186,10 @@ final class ScreenValues
 
         if (($node['localized'] ?? false) === true && is_array($stored)) {
             $stored = $this->pick($stored, $locale);
+        }
+
+        if ($stored === null && array_key_exists('default', $node)) {
+            $stored = $node['default'];
         }
 
         return $type === null ? $stored : $type->resolve($stored, $node, $locale);

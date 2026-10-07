@@ -40,7 +40,10 @@ products are of cannot be deleted.
 `--tag=webx-catalog-brands-views`. The brand's page is drawn with the catalogue's own partials
 (`filter`, `grid`, `sort`, `pagination`) and its layout (`webx-catalog.layout`); `$page` is the
 catalogue's `CatalogPage`, `$brand` the brand. Its SEO is the brand's own card on the plain page and
-«{brand} {value}» on the first level of the filter.
+«{brand} {value}» on the first level of the filter. With an empty card the brand names the page
+itself (`HasSeoFallback`): the name through the site's title template, the description, the logo as
+`og:image`; the list is called by the section's name. So neither view prints `<title>` itself, and
+a site's copy that still has the old `@if ($meta->title === null)` block can delete it.
 
 ## What it adds to the catalogue
 

@@ -71,6 +71,10 @@ A screen patch addresses nodes by `id`: `general`, `outlet`, `logo`, `title`, `s
   another outlet.
 - Do not delete rows with SQL: `press_delete` puts the outlet in the bin with its articles, and
   the panel restores it. A raw delete leaves its address in the routing registry behind.
+- Do not print `<title>`, the description or `og:image` in a site's copy of `outlet.blade.php`:
+  with an empty SEO card the outlet names the page itself (`seoFallback()` — the name through the
+  title template, the summary, the logo). A copy published before still has those blocks and the
+  `$seo` / `$meta` lines for them: delete them.
 
 ## Check your work
 

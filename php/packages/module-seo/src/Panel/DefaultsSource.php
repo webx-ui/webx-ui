@@ -6,6 +6,7 @@ namespace WebxUi\Seo\Panel;
 
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Container\Container;
+use WebxUi\Seo\Rendering\Seo;
 use WebxUi\Seo\Rendering\SeoData;
 use WebxUi\Seo\Rendering\SeoSource;
 use WebxUi\Settings\Settings;
@@ -158,7 +159,9 @@ final class DefaultsSource implements SeoSource
         foreach ($value as $row) {
             $address = $this->text(is_array($row) ? ($row['url'] ?? null) : $row);
 
-            if ($address !== null) {
+            // The field checks rows saved from now on; a row saved before it did, or written
+            // straight into the table, must still not reach the page as `"sameAs": ["not a url"]`.
+            if ($address !== null && filter_var($address, FILTER_VALIDATE_URL) !== false && preg_match('~^https?://~i', $address) === 1) {
                 $addresses[] = $address;
             }
         }
@@ -166,10 +169,16 @@ final class DefaultsSource implements SeoSource
         return $addresses;
     }
 
-    /** What a `wx-media` value resolves to — the field type has already worked out the address. */
+    /**
+     * What a `wx-media` value resolves to — the field type has already worked out the address,
+     * but as the library keeps it: `/storage/…`. A social network reads `og:image` and a
+     * validator reads `logo` from somewhere else, where a path is no address at all.
+     */
     private function url(mixed $value): ?string
     {
-        return is_array($value) ? $this->text($value['url'] ?? null) : null;
+        $url = is_array($value) ? $this->text($value['url'] ?? null) : null;
+
+        return $url !== null && str_starts_with($url, '/') && ! str_starts_with($url, '//') ? Seo::root().$url : $url;
     }
 
     private function text(mixed $value): ?string

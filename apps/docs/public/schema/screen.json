@@ -42,6 +42,9 @@
           "type": "boolean",
           "description": "The value is a record keyed by content language."
         },
+        "default": {
+          "description": "For fields: the value shown and read while nothing is stored. Checked by the field type's own rules; a localized field takes one plain value for every language."
+        },
         "props": {
           "type": "object",
           "description": "Passed to the component untouched.",

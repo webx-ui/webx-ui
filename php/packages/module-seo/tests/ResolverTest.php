@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace WebxUi\Seo\Tests;
 
+use Illuminate\Validation\ValidationException;
 use PHPUnit\Framework\Attributes\Test;
+use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Seo\Models\SeoUrl;
 use WebxUi\Seo\Rendering\Seo;
 use WebxUi\Seo\Rendering\SeoData;
@@ -102,6 +104,34 @@ final class ResolverTest extends TestCase
 
         $this->settings(['general.project-name' => ['ru' => '']]);
         $this->assertSame('О нас', $this->seo()->for('/about', null, 'ru')->title);
+    }
+
+    #[Test]
+    public function a_profile_that_is_not_an_address_never_reaches_same_as(): void
+    {
+        // Saved before the field checked its rows, or written straight into the table.
+        $this->settings([
+            'seo.org-name' => ['ru' => 'Acme'],
+            'seo.org-socials' => [['url' => 'https://example.test/acme'], ['url' => 'not a url'], ['url' => '/acme'], ['url' => 'javascript:alert(1)']],
+        ]);
+
+        $organisation = $this->seo()->for('/', null, 'ru')->jsonLd[0];
+
+        $this->assertSame(['https://example.test/acme'], $organisation['sameAs']);
+    }
+
+    #[Test]
+    public function the_profiles_field_takes_only_web_addresses(): void
+    {
+        $values = app(ScreenValues::class);
+
+        $this->assertSame(
+            [['url' => 'https://example.test/acme']],
+            $values->validate('settings.index', ['seo.org-socials' => [['url' => 'https://example.test/acme']]])['seo.org-socials'],
+        );
+
+        $this->expectException(ValidationException::class);
+        $values->validate('settings.index', ['seo.org-socials' => [['url' => 'not a url']]]);
     }
 
     #[Test]

@@ -3,7 +3,13 @@ import { computed, markRaw, provide, toRaw, watch } from 'vue'
 import { WxForm } from '@webx-ui/core'
 import { applyPatch } from './patch'
 import { coreTypes } from './registry'
-import { keyAsIs, screenErrorsKey, WxScreenNodes, type RenderContext } from './render'
+import {
+  keyAsIs,
+  screenErrorsKey,
+  withFieldDefaults,
+  WxScreenNodes,
+  type RenderContext,
+} from './render'
 import type {
   Patch,
   PatchError,
@@ -141,7 +147,8 @@ const registry = computed<TypeRegistry>(() => {
 
 const context = computed<RenderContext>(() => ({
   types: registry.value,
-  model: model.value,
+  // Drawn with the defaults filled in; `update` below writes to the model as it is.
+  model: withFieldDefaults(applied.value.root, model.value),
   update: (name, value) => {
     model.value = { ...model.value, [name]: value }
   },

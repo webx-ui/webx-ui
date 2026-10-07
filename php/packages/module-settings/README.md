@@ -95,7 +95,9 @@ carries the keys that changed.
 ## MCP
 
 `settings_list`, `settings_get`, `settings_set` (mutating, honours `dry_run`) — the keys and the
-rules come from the screen, so an agent can change exactly what an administrator can.
+rules come from the screen, so an agent can change exactly what an administrator can. `value: null`
+(or the string `"null"`) clears a setting of any type, every language at once; `{"de": null}`
+empties one language. A cleared key has no row, so `settings('key', $default)` returns the default.
 
 ## Languages
 

@@ -192,6 +192,11 @@ The handler hands the page to `webx-pages.view`, which defaults to `pages.show`,
 Until the site has written that view, the package prints its own — the blocks, the SEO head and
 nothing else — so a fresh installation serves a page rather than an error.
 
+`@webxSeo($page)` prints the `<title>` too, card or no card: a page whose SEO card is empty is
+called by its own title through the site's title template, and the home page by the site's name —
+"Home — Acme" says nothing "Acme" does not. A page has no lead or picture of its own, so its
+description and `og:image` come from the card or the site's defaults.
+
 ## The layout
 
 A package cannot assume the site has a layout, so the view above asks. `webx-pages.layout` names a

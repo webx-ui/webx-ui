@@ -36,7 +36,9 @@ use WebxUi\Routing\Models\Route;
 use WebxUi\Routing\SiteUrl;
 use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Contracts\Crumb;
+use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\HasSeo;
+use WebxUi\Seo\Rendering\SeoData;
 
 /**
  * A brand: one per product, with a page of its own (§2.3 of the dictionaries spec).
@@ -67,7 +69,7 @@ use WebxUi\Seo\HasSeo;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Brand extends Model implements Category, ListingSubject, Visible
+class Brand extends Model implements Category, HasSeoFallback, ListingSubject, Visible
 {
     use HasExtra;
     use HasSeo;
@@ -277,6 +279,23 @@ class Brand extends Model implements Category, ListingSubject, Visible
         $logo = $this->logo;
 
         return $logo instanceof MediaFile ? Container::getInstance()->make(FileUrls::class)->url($logo) : null;
+    }
+
+    /**
+     * The name, the description and the logo, for a brand whose SEO card leaves them empty. The
+     * description as stored rather than {@see descriptionHtml()}: only its words reach the
+     * snippet, so the pictures in it need no addresses worked out.
+     */
+    public function seoFallback(?string $locale = null): ?SeoData
+    {
+        $locale ??= app()->getLocale();
+        $description = $this->getTranslation('description', $locale);
+
+        return SeoData::fallback(
+            $this->displayName($locale),
+            is_string($description) ? $description : null,
+            $this->logoUrl(),
+        );
     }
 
     /**

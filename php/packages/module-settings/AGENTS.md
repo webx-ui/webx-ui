@@ -26,6 +26,8 @@ picture fields `webx-ui/module-media`, the languages of a localized value
   values above become the panel's title, logo and rail mark.
 - **MCP** tools `settings_list`, `settings_get`, `settings_set`; scopes `settings:read`,
   `settings:write`. Only keys the screen names can be written, checked with the screen's rules.
+  `value: null` (or the string `"null"`) clears a key of any type — every language of a
+  localized one; `{"de": null}` empties one language — and the site falls back to its default.
 - **Content rules** `WebxUi\Settings\ContentRules`: the `content.*` keys plus the site's
   languages (from `webx-ui/localization`), served as the MCP resource `settings://content-rules`
   (`languages`, `primary`, `tone`, `donts`, `notes`, `more`, `empty`); the MCP server's

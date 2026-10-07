@@ -3,15 +3,14 @@
     over the whole catalogue, where the category is a filter like any other. Only there when
     `webx-catalog.root.enabled` is on.
 --}}
+{{-- Asked here only for the <h1>: a rule for the address may name a heading of its own. --}}
 @php($seo = app(WebxUi\Seo\Rendering\Seo::class))
 @php($meta = $seo->for($seo->currentUrl(), $page))
 
 <x-dynamic-component :component="config('webx-catalog.layout') ?: 'webx-catalog::standalone'">
     <x-slot:head>
+        {{-- The title is in there too: a rule's, or the page's heading through the site's template. --}}
         @webxSeo($page)
-        @if ($meta->title === null)
-            <title>{{ $page->heading }}</title>
-        @endif
     </x-slot:head>
 
     <article class="webx-catalog-root">
