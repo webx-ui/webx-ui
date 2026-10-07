@@ -269,9 +269,12 @@ export function createAdminContext(options: {
       options.i18n.state.panelLocales = manifest.panelLocales ?? options.i18n.state.panelLocales
 
       // The administrator's own choice, which the sign-in screen had no way of knowing: it
-      // drew itself in whatever the browser asked for.
+      // drew itself in whatever the browser asked for. The manifest itself is already in that
+      // language — the server answers a signed-in administrator in their stored one — so only
+      // the dictionary is missing; asking for the manifest again here was the same request twice
+      // on every visit that started in another language.
       if (manifest.locale !== undefined && manifest.locale !== options.i18n.state.locale) {
-        await setLocale(manifest.locale)
+        await switchLocale(manifest.locale, false)
       }
 
       state.status = 'ready'
@@ -316,7 +319,11 @@ export function createAdminContext(options: {
     }
   }
 
-  async function setLocale(code: string): Promise<void> {
+  function setLocale(code: string): Promise<void> {
+    return switchLocale(code, true)
+  }
+
+  async function switchLocale(code: string, refresh: boolean): Promise<void> {
     if (options.loadDictionary === undefined) {
       options.i18n.state.locale = code
 
@@ -329,11 +336,46 @@ export function createAdminContext(options: {
     // server and travel inside the manifest, which was fetched in the previous language — so
     // without this the panel switches everything except its own navigation, and the sidebar
     // goes on naming the section in the language nobody is reading any more until the page is
-    // reloaded. Only worth doing once there is a manifest to replace: during the first load
-    // the caller is `reload()` itself, which is about to fetch one. A manifest that will not
-    // come back is `reload()`'s problem to report — the language did change, and a stale
+    // reloaded. Only worth doing once there is a manifest to replace, and not when the caller
+    // is `reload()` itself, which has just fetched one in this language. A manifest that will
+    // not come back is `reload()`'s problem to report — the language did change, and a stale
     // section title is not worth throwing away a working panel for.
-    await refreshManifest()
+    if (refresh) {
+      await refreshManifest()
+    }
+  }
+
+  /*
+   * Where a stored key lives, remembered for the visit. The corner of the panel draws the
+   * signed-in person in up to three places and redraws them as the layout changes, and every
+   * mount asked the library about the same photograph again. A question already on its way is
+   * shared rather than asked twice; a key the library has lost, or a request that failed, is
+   * forgotten, since an upload or a retry may find it.
+   */
+  const knownAssets = new Map<string, Promise<string | null>>()
+
+  async function cachedAssetUrls(paths: string[]): Promise<Record<string, string | null>> {
+    const missing = [...new Set(paths.filter((path) => !knownAssets.has(path)))]
+
+    if (missing.length > 0 && assetUrls) {
+      const batch = assetUrls(missing, context)
+
+      for (const path of missing) {
+        const one = batch.then((found) => found[path] ?? null)
+
+        knownAssets.set(path, one)
+        one.then(
+          (url) => {
+            if (url === null) knownAssets.delete(path)
+          },
+          () => knownAssets.delete(path),
+        )
+      }
+    }
+
+    const urls = await Promise.all(paths.map((path) => knownAssets.get(path) ?? null))
+
+    return Object.fromEntries(paths.map((path, index) => [path, urls[index] ?? null]))
   }
 
   const context: AdminContext = {
@@ -347,7 +389,7 @@ export function createAdminContext(options: {
     groups,
     types,
     pickImage: pickImage ?? null,
-    assetUrls: assetUrls ? (paths) => assetUrls(paths, context) : null,
+    assetUrls: assetUrls ? cachedAssetUrls : null,
     reload,
     refreshManifest,
     setLocale,

@@ -9,6 +9,7 @@ import {
 } from '@webx-ui/core'
 import AdminLanding from './AdminLanding.vue'
 import AdminNav from './AdminNav.vue'
+import AdminNotFound from './AdminNotFound.vue'
 import AdminShell from './AdminShell.vue'
 import { createAdminContext, provideAdmin, type AdminContext } from './admin'
 import { createHttp, type Http } from './http'
@@ -122,6 +123,13 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
     })
   }
 
+  // An address nothing answers for says so, instead of leaving the content area empty — unless
+  // the project brought its own catch-all. Matched last whatever the order: the router ranks a
+  // catch-all below every other route, including those a plugin adds later.
+  if (!routes.some((route) => route.path.includes('(.*)'))) {
+    routes.push({ path: '/:pathMatch(.*)*', name: 'webx.not-found', component: AdminNotFound })
+  }
+
   const router = createRouter({
     history: createWebHistory(basePath),
     routes,
@@ -155,10 +163,28 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
 
   i18n.defaults('webx-admin', adminMessages)
 
+  /*
+   * A dictionary is asked for once per language and visit: the words do not change while the
+   * panel is open, and switching back to a language already read should not be a request. A
+   * failed one is forgotten, so the next switch tries again.
+   */
+  const dictionaries = new Map<
+    string,
+    Promise<{ data: { locale: string; fallback: string; namespaces: Dictionary } }>
+  >()
+
   async function loadDictionary(locale: string): Promise<void> {
-    const body = await http.get<{
-      data: { locale: string; fallback: string; namespaces: Dictionary }
-    }>(`${apiPath}/translations/${locale}`)
+    let pending = dictionaries.get(locale)
+
+    if (pending === undefined) {
+      pending = http.get<{
+        data: { locale: string; fallback: string; namespaces: Dictionary }
+      }>(`${apiPath}/translations/${locale}`)
+      pending.catch(() => dictionaries.delete(locale))
+      dictionaries.set(locale, pending)
+    }
+
+    const body = await pending
 
     i18n.load(body.data.namespaces, body.data.locale, body.data.fallback)
     rememberLocale(body.data.locale)
