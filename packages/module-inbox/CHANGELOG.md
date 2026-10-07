@@ -1,5 +1,19 @@
 # @webx-ui/module-inbox
 
+## 0.6.2
+
+### Patch Changes
+
+- 52f4e14: The form's Antispam tab says how the site runs the chosen captcha and which key type it needs (reCAPTCHA v2 Checkbox, v2 Invisible or v3; Turnstile on load or invisible). It says that the keys live in the site's `.env`, and warns when they are missing.
+- 52f4e14: Inbox panel: status names (tabs, badges, the status select, the statuses screen) follow the panel's language, with the content language and then any line as fallbacks; the drag handles of the forms, fields and statuses lists are named in the module's own words ("Reorder: …"); the submissions list is requested once on opening instead of twice.
+- 52f4e14: The submissions list says "Loading" in the panel's language. The section asks for the statuses once instead of once per component. A corrected answer appears in the log. The field dialog shows the server's refusal of a list field with no choices, and the notification settings show a refused reply-to field. «Embedding» tells a site with Blocks to put the tag into a block template in the panel, and shows `:values` and `placement`.
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+  - @webx-ui/core@0.38.0
+  - @webx-ui/module-admin@0.23.5
+
 ## 0.6.1
 
 ### Patch Changes

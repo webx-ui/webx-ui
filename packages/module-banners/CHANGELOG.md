@@ -1,5 +1,18 @@
 # @webx-ui/module-banners
 
+## 0.1.9
+
+### Patch Changes
+
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+  - @webx-ui/core@0.38.0
+  - @webx-ui/schema@0.8.0
+  - @webx-ui/module-admin@0.23.5
+
 ## 0.1.8
 
 ### Patch Changes

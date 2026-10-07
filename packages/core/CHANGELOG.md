@@ -1,5 +1,16 @@
 # @webx-ui/core
 
+## 0.38.0
+
+### Minor Changes
+
+- 52f4e14: `WxTable` takes `loadingText` for the words beside its spinner. The default is still `'Loading'`, which used to be hard-coded with no way to translate it.
+
+### Patch Changes
+
+- 52f4e14: The block constructor shows what a save was refused for: the block opens and the message stands under its field, the tree marks the block, a limit of the page is said above the tree. A block added from the picker starts with the sample's settings and none of its words, which are shown as placeholders. «Add inside» on a full container says it is full; a block switched off is dimmed in the preview until it reloads. The block editor offers only real fields to insert (a repeater as a loop, a container as `@blocks`), says which list a container field takes, warns before publishing a version that switches a field's `localized`, asks before dropping other languages, and names a rename in its toast. Thumbnails load as they scroll into view and say when a block draws nothing on its sample; the tree's marks use the panel's tooltip. `WxCheckboxGroup` disables the boxes past `max` instead of ignoring the click; a collapsed menu row carries its name as `aria-label`. `wx-text` in a screen draws `props.text`.
+- 52f4e14: Moments are shown and entered on the site's clock: `WxDatePicker` takes a `timezone` (IANA zone) for a value whose format carries an offset, or reads one provided with `provideDateTimezone` / `dateTimezoneKey`, and names that zone's offset after the time when it is not the reader's. The panel provides the manifest's `timezone`, so an event at 09:30 on the site reads 09:30 to an editor anywhere and goes back with the site's offset. The events editor no longer moves the days of an event of days onto the reader's clock.
+
 ## 0.37.1
 
 ### Patch Changes

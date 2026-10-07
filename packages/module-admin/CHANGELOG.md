@@ -1,5 +1,18 @@
 # @webx-ui/admin
 
+## 0.23.5
+
+### Patch Changes
+
+- 52f4e14: The panel says when an address answers nothing — a not-found screen with the way back to the start instead of an empty content area. It also asks the server less: a dictionary once per language, a stored file's address once per visit (the avatar was asked for on every redraw), and the manifest once when the administrator's language differs from the browser's guess.
+- 52f4e14: Moments are shown and entered on the site's clock: `WxDatePicker` takes a `timezone` (IANA zone) for a value whose format carries an offset, or reads one provided with `provideDateTimezone` / `dateTimezoneKey`, and names that zone's offset after the time when it is not the reader's. The panel provides the manifest's `timezone`, so an event at 09:30 on the site reads 09:30 to an editor anywhere and goes back with the site's offset. The events editor no longer moves the days of an event of days onto the reader's clock.
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+  - @webx-ui/core@0.38.0
+  - @webx-ui/schema@0.8.0
+
 ## 0.23.4
 
 ### Patch Changes

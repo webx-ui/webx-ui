@@ -1,6 +1,6 @@
 {
   "name": "@webx-ui/module-catalog-properties",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Properties of products for the catalogue of the WebX UI admin panel: reference books with colours and pictures, numbers with units, texts and yes/no, sets inherited down the categories, the specifications tab of the product form and columns of the list.",
   "license": "MIT",
   "type": "module",

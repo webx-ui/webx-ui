@@ -1,5 +1,22 @@
 # @webx-ui/module-audit
 
+## 0.4.0
+
+### Minor Changes
+
+- 52f4e14: The runs screen clears every run with everything it found, behind a warning — for whoever manages the section; the hiding rules and the settings stay.
+
+### Patch Changes
+
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+  - @webx-ui/core@0.38.0
+  - @webx-ui/schema@0.8.0
+  - @webx-ui/module-admin@0.23.5
+
 ## 0.3.0
 
 ### Minor Changes

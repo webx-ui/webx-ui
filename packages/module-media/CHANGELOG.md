@@ -1,5 +1,20 @@
 # @webx-ui/module-media
 
+## 0.9.1
+
+### Patch Changes
+
+- 52f4e14: The library asks for the files of the folder it opens once, not twice: opening the first folder no longer loads the list both on mount and from the folder watcher, and a reload after an upload or a move no longer asks for the list twice either.
+- 52f4e14: The panel knows the words for a library file that is not there.
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+- Updated dependencies [52f4e14]
+  - @webx-ui/core@0.38.0
+  - @webx-ui/schema@0.8.0
+  - @webx-ui/module-admin@0.23.5
+
 ## 0.9.0
 
 ### Minor Changes
