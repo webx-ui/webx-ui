@@ -155,18 +155,44 @@ final class SeoEndpointsTest extends TestCase
     }
 
     #[Test]
-    public function it_writes_a_redirect_and_marks_one_that_points_at_itself(): void
+    public function it_writes_a_redirect_and_refuses_one_that_points_at_itself(): void
     {
-        $response = $this->actingAs($this->editor(), 'cms')->postJson($this->api('redirects'), [
+        $this->actingAs($this->editor(), 'cms')->postJson($this->api('redirects'), [
             'match_type' => 'exact',
-            'pattern' => '/old/',
-            'target' => '/old',
+            'pattern' => '/old',
+            'target' => '/new',
             'status' => 302,
-        ]);
+        ])->assertCreated()->assertJsonPath('data.status', 302)->assertJsonPath('data.is_loop', false);
 
-        $response->assertCreated()
-            ->assertJsonPath('data.status', 302)
-            ->assertJsonPath('data.is_loop', true);
+        // Saved, it only looked fine: the middleware steps over it and nothing ever moves.
+        $this->postJson($this->api('redirects'), [
+            'match_type' => 'exact',
+            'pattern' => '/loop/',
+            'target' => '/loop',
+        ])->assertUnprocessable()->assertJsonValidationErrors('target');
+
+        $this->postJson($this->api('redirects'), [
+            'match_type' => 'regex',
+            'pattern' => '([a-z',
+            'target' => '/new',
+        ])->assertUnprocessable()->assertJsonValidationErrors('pattern');
+    }
+
+    #[Test]
+    public function an_agent_is_refused_a_redirect_to_itself_and_a_broken_pattern(): void
+    {
+        $set = $this->tool('redirects_set');
+
+        $loop = $set(['pattern' => '/qa-loop', 'target' => '/qa-loop/']);
+        $this->assertFalse($loop['ok']);
+        $this->assertSame(__('webx-seo::errors.self-loop'), $loop['reason']);
+
+        $broken = $set(['match_type' => 'regex', 'pattern' => '([a-z', 'target' => '/new']);
+        $this->assertFalse($broken['ok']);
+        $this->assertSame(__('webx-seo::errors.bad-regex'), $broken['reason']);
+
+        $this->assertSame(0, SeoRedirect::query()->count());
+        $this->assertTrue($set(['match_type' => 'regex', 'pattern' => '#^/old/(\d+)$#', 'target' => '/new/$1'])['ok']);
     }
 
     #[Test]

@@ -352,6 +352,17 @@ final class SeoTools
             return ['ok' => false, 'reason' => 'A redirect needs a pattern and a target.'];
         }
 
+        // The same refusals as the panel's form. Saved, both only ever looked fine: the runtime
+        // steps over a pattern that will not compile and over an address sent to itself, so the
+        // redirect silently never happened.
+        if ($matchType === UrlMatcher::REGEX && ! UrlMatcher::isValidRegex($pattern)) {
+            return ['ok' => false, 'reason' => (string) __('webx-seo::errors.bad-regex')];
+        }
+
+        if (SeoRedirect::loops($matchType, $pattern, $target)) {
+            return ['ok' => false, 'reason' => (string) __('webx-seo::errors.self-loop')];
+        }
+
         $values = [
             'match_type' => $matchType,
             'pattern' => $matchType === UrlMatcher::REGEX ? $pattern : UrlNormaliser::normalise($pattern),
