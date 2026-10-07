@@ -50,6 +50,7 @@ return [
     'move-branch' => ':count adres değişir — sayfanın kendisi ve içindeki her şey. Eskiler bundan sonra yenilere yönlendirir.',
     'moved' => 'Taşındı. :count adres değişti; eskiler yenilere yönlendiriyor.',
     'moved-one' => 'Taşındı. Adres değişti; eskisi yenisine yönlendiriyor.',
+    'reordered' => 'Taşındı. Adresi aynı kaldı.',
 
     'delete-title' => '“:title” silinsin mi?',
     'delete-text' => 'Sayfa çöp kutusuna gider ve sitede yanıt vermeyi bırakır.',

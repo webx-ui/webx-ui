@@ -50,6 +50,7 @@ return [
     'move-branch' => 'Mudam :count endereços — o da página e os de tudo o que está dentro dela. Os antigos passarão a levar aos novos.',
     'moved' => 'Movida. :count endereços mudaram; os antigos redirecionam para os novos.',
     'moved-one' => 'Movida. O endereço mudou; o antigo redireciona para ele.',
+    'reordered' => 'Movida. O endereço continua o mesmo.',
 
     'delete-title' => 'Excluir “:title”?',
     'delete-text' => 'A página vai para a lixeira e deixa de responder no site.',

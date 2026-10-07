@@ -50,6 +50,7 @@ return [
     'move-branch' => 'Zmieni się :count adresów — strony i wszystkiego, co jest w środku. Stare będą prowadzić do nowych.',
     'moved' => 'Przeniesiono. Zmieniło się :count adresów; stare przekierowują na nowe.',
     'moved-one' => 'Przeniesiono. Adres się zmienił; stary przekierowuje na nowy.',
+    'reordered' => 'Przeniesiono. Adres pozostaje bez zmian.',
 
     'delete-title' => 'Usunąć „:title”?',
     'delete-text' => 'Strona trafi do kosza i przestanie odpowiadać w witrynie.',

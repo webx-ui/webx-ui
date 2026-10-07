@@ -145,6 +145,20 @@ describe('WxPagesPage', () => {
     expect(wrapper.get('.wx-table').classes()).not.toContain('wx-table--hover')
   })
 
+  it('does not draw the tree under the bin columns while the bin is on its way', async () => {
+    const { wrapper, get } = panel({ home, items: [page({ id: 2, title: 'Pricing' })] })
+
+    await flushPromises()
+    expect(wrapper.text()).toContain('Pricing')
+
+    // The bin never answers in this test: what is on screen meanwhile is the point.
+    get.mockImplementationOnce(() => new Promise(() => {}))
+    await wrapper.findAll('.wx-tabs__tab').at(-1)?.trigger('mousedown')
+    await flushPromises()
+
+    expect(wrapper.find('tbody').text()).not.toContain('Pricing')
+  })
+
   it('asks before a drop that rewrites more than one address, and not before one that does not', async () => {
     const leaf = page({ id: 2, parent_id: 1, descendants_count: 0 })
     const branch = page({ id: 3, parent_id: 1, title: 'Catalogue', descendants_count: 41 })

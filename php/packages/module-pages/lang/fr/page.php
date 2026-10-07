@@ -50,6 +50,7 @@ return [
     'move-branch' => ':count adresses changent — celle de la page et celles de tout ce qu’elle contient. Les anciennes redirigeront vers les nouvelles.',
     'moved' => 'Déplacée. :count adresses ont changé ; les anciennes redirigent vers les nouvelles.',
     'moved-one' => 'Déplacée. L’adresse a changé ; l’ancienne y redirige.',
+    'reordered' => 'Déplacée. Son adresse reste la même.',
 
     'delete-title' => 'Supprimer « :title » ?',
     'delete-text' => 'La page part à la corbeille et ne répond plus sur le site.',

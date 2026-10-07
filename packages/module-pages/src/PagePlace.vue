@@ -25,6 +25,14 @@ const editor = usePageEditor()
 usePagesMessages()
 
 const t = useTranslate('webx-pages')
+
+/** None for a reorder among the same siblings, one, or a branch: what the move did to addresses. */
+function movedMessage(changed: number): string {
+  if (changed === 0) return t('page.reordered')
+
+  return changed > 1 ? t('page.moved', { count: changed }) : t('page.moved-one')
+}
+
 /* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
 const message = useErrorText()
 
@@ -74,11 +82,7 @@ async function move(target: number | null): Promise<void> {
   try {
     const result = await api.move(current.id, target, 'inside')
 
-    toast.success(
-      result.addresses_changed > 1
-        ? t('page.moved', { count: result.addresses_changed })
-        : t('page.moved-one'),
-    )
+    toast.success(movedMessage(result.addresses_changed))
     await editor?.reload()
   } catch (error) {
     toast.danger(message(error))

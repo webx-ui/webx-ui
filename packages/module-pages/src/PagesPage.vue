@@ -54,6 +54,14 @@ const router = useRouter()
 usePagesMessages()
 
 const t = useTranslate('webx-pages')
+
+/** None for a reorder among the same siblings, one, or a branch: what the move did to addresses. */
+function movedMessage(changed: number): string {
+  if (changed === 0) return t('page.reordered')
+
+  return changed > 1 ? t('page.moved', { count: changed }) : t('page.moved-one')
+}
+
 const i18n = useI18n()
 /* Not the server's `message`: the panel says how a request failed in its own words (§13.3). */
 const message = useErrorText()
@@ -271,11 +279,7 @@ async function apply(page: PageRow, target: number, zone: TreeDropZone): Promise
   try {
     const result = await api.move(page.id, target, zone)
 
-    toast.success(
-      result.addresses_changed > 1
-        ? t('page.moved', { count: result.addresses_changed })
-        : t('page.moved-one'),
-    )
+    toast.success(movedMessage(result.addresses_changed))
   } catch (error) {
     toast.danger(message(error))
   } finally {
@@ -426,7 +430,19 @@ function badge(status: PageStatus): 'default' | 'success' | 'warning' {
   return status === 'modified' ? 'warning' : 'default'
 }
 
-watch(filter, () => void load())
+/*
+ * Into the bin or out of it, the rows on screen belong to the other list: drawn under the bin's
+ * columns for the moment the request takes, tree rows read «—» and «never». Emptied first, so
+ * the table shows it is loading instead.
+ */
+watch(filter, (now, before) => {
+  if ((now === 'trashed') !== (before === 'trashed')) {
+    home.value = null
+    items.value = []
+  }
+
+  void load()
+})
 
 onMounted(load)
 
