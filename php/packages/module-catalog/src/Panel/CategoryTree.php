@@ -113,7 +113,7 @@ final class CategoryTree
 
     private function url(Category $category): ?string
     {
-        $locale = $this->locales->current();
+        $locale = $this->locales->content();
         $row = $category->routes->first(
             static fn (Route $route): bool => $route->kind === Route::CANONICAL && $route->locale === $locale,
         );

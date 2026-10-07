@@ -74,7 +74,7 @@ final class ProductController
             'facets.*' => ['array'],
         ]);
 
-        $locale = $locales->current();
+        $locale = $locales->content();
         $perPage = (int) ($validated['per_page'] ?? 20);
         $page = (int) ($validated['page'] ?? 1);
         $chosen = $chosenFacets->read((array) ($validated['facets'] ?? []));

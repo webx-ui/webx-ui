@@ -209,7 +209,7 @@ final class ProductForm
             return;
         }
 
-        $product->setTranslation($field, $this->locales->current(), $value);
+        $product->setTranslation($field, $this->locales->content(), $value);
     }
 
     /** A product with no name in any language is a row nobody can find again. */

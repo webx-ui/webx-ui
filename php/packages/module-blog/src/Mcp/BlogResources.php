@@ -84,7 +84,7 @@ final class BlogResources
      */
     private function entry(Article $article): array
     {
-        $locale = $this->container->make(Locales::class)->current();
+        $locale = $this->container->make(Locales::class)->content();
 
         return [
             'id' => (int) $article->getKey(),

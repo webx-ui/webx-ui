@@ -73,7 +73,7 @@ final class BulkRunner
         return [
             'action' => $action,
             'params' => [...$params, ...$checked],
-            'ids' => $this->selection->resolve($selection, $action->trashed(), $this->locales->current()),
+            'ids' => $this->selection->resolve($selection, $action->trashed(), $this->locales->content()),
         ];
     }
 

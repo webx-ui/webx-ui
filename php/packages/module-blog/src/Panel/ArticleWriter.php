@@ -114,7 +114,7 @@ final class ArticleWriter
      */
     private function draft(Article $article, array $columns): array
     {
-        $locale = $this->locales->current();
+        $locale = $this->locales->content();
         $values = $article->hasDraft() ? $article->draftValues() : $this->published($article);
 
         foreach ($columns as $field => $value) {
