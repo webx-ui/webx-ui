@@ -46,6 +46,7 @@ use WebxUi\Blocks\Preview\Preview;
 use WebxUi\Blocks\Regions;
 use WebxUi\Blocks\Rendering\Bundles;
 use WebxUi\Blocks\Rendering\Renderer;
+use WebxUi\Blocks\Rendering\ViewCalls;
 use WebxUi\Blocks\Schema;
 use WebxUi\Blocks\StrayValues;
 use WebxUi\Localization\Locales;
@@ -88,7 +89,7 @@ final class BlockTools
             'description' => 'The revision blocks_get_content returned. Left out, the write goes in whatever happened since.',
         ];
 
-        return [
+        $tools = [
             Tool::read(
                 'list',
                 'The block types of this site, one short row each: slug, title, whether it is a block editors add or a '
@@ -159,10 +160,14 @@ final class BlockTools
             Tool::mutating(
                 'delete',
                 'Delete a block type with its whole history. Refused while it stands on any page or region, or while '
-                .'another type\'s template calls it — blocks_usage says where. Deleting a customised module component '
-                .'brings the module\'s own partial back: that is how a customisation is undone.',
+                .'another type\'s template calls it — blocks_usage says where. Refused too while a view of the site '
+                .'calls it by tag, unless force is sent: the view would print nothing there. Deleting a customised '
+                .'module component brings the module\'s own partial back: that is how a customisation is undone.',
                 fn (array $arguments): array => $this->delete($arguments),
-                ['properties' => ['slug' => $slug], 'required' => ['slug']],
+                ['properties' => [
+                    'slug' => $slug,
+                    'force' => ['type' => 'boolean', 'description' => 'Delete although views of the site call it by tag.'],
+                ], 'required' => ['slug']],
             ),
 
             Tool::read(
@@ -189,7 +194,7 @@ final class BlockTools
                 'usage',
                 'Where a block type stands: every page, service, region or other entity holding it — entity and id '
                 .'as blocks_get_content takes them, title, address, whether it is in what the site shows, in the draft '
-                .'or both — and the types whose templates call it.',
+                .'or both — the types whose templates call it, and the views of the site that call it by tag (views).',
                 fn (array $arguments): array => $this->usageOf($arguments),
                 ['properties' => ['slug' => $slug], 'required' => ['slug']],
             ),
@@ -285,6 +290,16 @@ final class BlockTools
                 ], 'required' => ['entity', 'id']],
                 permission: $reads,
             ),
+        ];
+
+        // Regions are the site's to declare. Seven tools about a header and a footer the layout
+        // does not have were seven ways for an agent to go looking for them.
+        if ($this->container->make(Regions::class)->declared() === []) {
+            return $tools;
+        }
+
+        return [
+            ...$tools,
 
             Tool::read(
                 'regions',
@@ -418,6 +433,19 @@ final class BlockTools
 
         $content = $version->content();
         $declared = $this->container->make(BlockComponents::class)->get($block->slug);
+        $type = BlockType::fromModels($block, $version);
+        $strays = array_values(array_diff(array_map(strval(...), array_keys($type->sample)), $type->fields()));
+        $warnings = Lints::check($block->slug, $content['template'], $content['styles'], $content['schema']);
+
+        // A sample value no field holds is drawn by nothing and copied into every new block.
+        if ($strays !== []) {
+            $warnings[] = [
+                'file' => 'sample',
+                'code' => 'sample-unknown-field',
+                'line' => null,
+                'message' => 'The sample has values for fields the schema does not have: ['.implode('], [', $strays).']. Take them out of the sample.',
+            ];
+        }
 
         return $this->summary($block, $this->usage()->counts(), $this->container->make(Graph::class)->parents()) + [
             'uses' => $version->calls(),
@@ -431,7 +459,7 @@ final class BlockTools
                 'created_at' => $version->created_at?->toAtomString(),
             ],
             'content' => $content,
-            'warnings' => Lints::check($block->slug, $content['template'], $content['styles'], $content['schema']),
+            'warnings' => $warnings,
         ];
     }
 
@@ -458,15 +486,30 @@ final class BlockTools
             throw new ToolFailure('Not deleted: it stands on '.count($where).' page(s) or region(s). blocks_usage lists them; take it out of them first.');
         }
 
+        // A view of the site that calls the type by tag is a use the tables know nothing about:
+        // deleted, the tag prints nothing and the page loses that part without a word.
+        $views = $this->container->make(ViewCalls::class)->of($block->slug);
+        $forced = ($arguments['force'] ?? false) === true;
+
+        if ($views !== [] && ! $forced) {
+            throw new ToolFailure(
+                'Not deleted: views of the site call it by tag — '.implode(', ', array_map(ViewCalls::describe(...), $views))
+                .'. Take the tag out of them first, or send force: true and those places print nothing.'
+            );
+        }
+
         $declared = $this->container->make(BlockComponents::class)->get($block->slug);
 
         if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'would_delete' => $block->slug, 'versions' => $block->versions()->count(), 'restores_module_view' => $declared === null ? null : $declared['fallback']];
+            $answer = ['dry_run' => true, 'would_delete' => $block->slug, 'versions' => $block->versions()->count(), 'restores_module_view' => $declared === null ? null : $declared['fallback']];
+
+            return $views === [] ? $answer : $answer + ['views_left_calling' => $views];
         }
 
         $block->delete();
+        $answer = ['deleted' => $block->slug, 'restored_module_view' => $declared === null ? null : $declared['fallback']];
 
-        return ['deleted' => $block->slug, 'restored_module_view' => $declared === null ? null : $declared['fallback']];
+        return $views === [] ? $answer : $answer + ['views_left_calling' => $views];
     }
 
     /**
@@ -560,6 +603,9 @@ final class BlockTools
             'count' => count($where),
             'entities' => $where,
             'used_by' => $this->container->make(Graph::class)->usedBy($block->slug),
+            // The site's own views: a component called from a listing or a layout stands there
+            // without being in any table, and blocks_delete would otherwise not know.
+            'views' => $this->container->make(ViewCalls::class)->of($block->slug),
         ];
     }
 
@@ -637,7 +683,17 @@ final class BlockTools
         }
 
         $writesVersion = $content !== [] && $block->contentDiffers($content);
-        $merged = array_merge($block->currentVersion()?->content() ?? [], $content);
+        $current = $block->currentVersion()?->content() ?? [];
+
+        // The content fields that differ, beside the settings: `changes: []` next to
+        // `wrote_version: true` read as an update that did nothing.
+        foreach ($content as $field => $value) {
+            if (($current[$field] ?? null) != $value) {
+                $changes[] = (string) $field;
+            }
+        }
+
+        $merged = array_merge($current, $content);
         $renameTo = is_string($arguments['rename_to'] ?? null) && $arguments['rename_to'] !== '' && $arguments['rename_to'] !== $block->slug
             ? $arguments['rename_to']
             : null;
@@ -666,6 +722,9 @@ final class BlockTools
         }
 
         $renamed = null;
+        // Counted rather than predicted: a rename writes versions of its own (the template's
+        // `data-wx-block`, the `.b-{slug}` prefix), and `wrote_version: false` was said after two.
+        $numberBefore = (int) $block->versions()->max('number');
 
         if ($renameTo !== null) {
             $from = $block->slug;
@@ -686,8 +745,11 @@ final class BlockTools
             $block->saveVersion($content, BlockVersion::SOURCE_MCP, $this->authorId($user), BlockInput::comment($input['comment'] ?? null));
         }
 
+        $versionsWritten = max(0, (int) $block->versions()->max('number') - $numberBefore);
+        $writesVersion = $versionsWritten > 0;
+
         if (($arguments['full'] ?? false) === true) {
-            return $this->get(['slug' => $block->slug]) + ['changes' => $changes, 'wrote_version' => $writesVersion, 'renamed' => $renamed];
+            return $this->get(['slug' => $block->slug]) + ['changes' => $changes, 'wrote_version' => $writesVersion, 'versions_written' => $versionsWritten, 'renamed' => $renamed];
         }
 
         $block->refresh()->load(['draftVersion', 'publishedVersion']);
@@ -701,6 +763,7 @@ final class BlockTools
             'published' => $block->publishedVersion?->number,
             'changes' => $changes,
             'wrote_version' => $writesVersion,
+            'versions_written' => $versionsWritten,
             'renamed' => $renamed,
             'warnings' => $language === null ? $warnings : [...$warnings, $language],
         ], static fn (mixed $value): bool => $value !== null);
@@ -797,8 +860,8 @@ final class BlockTools
         }
 
         $type = BlockType::fromModels($block, $version);
-        $values = $arguments['values'] ?? null;
-        $values = is_array($values) ? $values : $type->sample;
+        $sent = is_array($arguments['values'] ?? null);
+        $values = $sent ? $arguments['values'] : $type->sample;
 
         $renderer = $this->container->make(Renderer::class);
 
@@ -810,14 +873,57 @@ final class BlockTools
             throw new ToolFailure("The template of [{$block->slug}] v{$type->version} failed{$line}: {$failure->reason}");
         }
 
+        // The preview's markers are for the panel's stage, which finds a block by them; here they
+        // only said `sample` around values the agent had just sent.
+        $html = (string) preg_replace('/^<!--wx:[A-Za-z0-9_.:-]*-->(.*)<!--\/wx:[A-Za-z0-9_.:-]*-->$/s', '$1', $renderer->draw($type, $values));
+
         return [
             'slug' => $block->slug,
             'version' => $type->version,
-            'html' => $renderer->draw($type, $values),
+            'values_from' => $sent ? 'values' : 'sample',
+            'html' => $html,
             'styles' => $type->styles,
             'script' => Bundles::wrapScript($type),
-            'warnings' => Lints::check($block->slug, $type->template, $type->styles),
+            'warnings' => [
+                ...Lints::check($block->slug, $type->template, $type->styles),
+                ...$this->valueWarnings($type, $values),
+            ],
         ];
+    }
+
+    /**
+     * What a write would refuse in these values, as warnings: a render draws whatever it is
+     * given, and a link sent as `{ url }` without its `target` drew nothing and said nothing.
+     *
+     * @param  array<string, mixed>  $values
+     * @return list<array{file: string, code: string, line: null, message: string}>
+     */
+    private function valueWarnings(BlockType $type, array $values): array
+    {
+        $warnings = [];
+        $strays = array_values(array_diff(array_map(strval(...), array_keys($values)), $type->fields()));
+
+        if ($strays !== []) {
+            $warnings[] = [
+                'file' => 'values',
+                'code' => 'unknown-field',
+                'line' => null,
+                'message' => "{$type->slug} has no field [".implode('], [', $strays).']; those values are not drawn and a write refuses them.',
+            ];
+        }
+
+        $problems = $this->container->make(ContentValues::class)->problems([['key' => 'render', 'type' => $type->slug, 'values' => $values]]);
+
+        foreach ($problems as $problem) {
+            // Where the block may stand is not this block's values: a render stands nowhere.
+            if ($problem['field'] === null) {
+                continue;
+            }
+
+            $warnings[] = ['file' => 'values', 'code' => 'value-refused', 'line' => null, 'message' => ContentValues::describe($problem)];
+        }
+
+        return $warnings;
     }
 
     /**
@@ -1207,7 +1313,15 @@ final class BlockTools
         ];
 
         if ($dryRun) {
-            return ['dry_run' => true, 'would_write' => $asDraft ? 'draft' : $column] + $report;
+            // The revision is what the entity is now — the one to send with the real write. The
+            // tree it would become has one too, under its own name: sent back, it was refused as
+            // "the entity changed".
+            return [
+                'dry_run' => true,
+                'would_write' => $asDraft ? 'draft' : $column,
+                'revision' => Content::revision($before),
+                'would_be_revision' => $report['revision'],
+            ] + $report;
         }
 
         if ($asDraft) {

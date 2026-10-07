@@ -141,6 +141,20 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Views
+    |---------------------------------------------------------------------------
+    |
+    | The folders whose Blade views are read for `<x-webx-block type="…">`, so
+    | that a type a view calls by tag is counted as used: `blocks_usage` lists
+    | those views and `blocks_delete` refuses the type unless forced. Null is
+    | the application's `resources/views`.
+    |
+    */
+
+    'views' => null,
+
+    /*
+    |---------------------------------------------------------------------------
     | Preview
     |---------------------------------------------------------------------------
     |

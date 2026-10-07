@@ -59,6 +59,7 @@ final class ValidationTest extends TestCase
         yield 'not a date' => ['when', 'not a date'];
         yield 'not a colour' => ['colour', 'red"><script>alert(1)</script>'];
         yield 'a javascript: link' => ['link', ['target' => 'url', 'url' => 'javascript:alert(1)']];
+        yield 'a link without its target' => ['link', ['url' => '/contacts']];
     }
 
     #[Test]
@@ -82,6 +83,21 @@ final class ValidationTest extends TestCase
             'blocks' => [['key' => 'k-one', 'type' => 'every', 'values' => [$field => $value]]],
             'dry_run' => true,
         ])->assertHasErrors(["field [{$field}]"]);
+    }
+
+    #[Test]
+    public function a_render_warns_about_what_a_write_would_refuse(): void
+    {
+        // Drawn, because a render draws whatever it is handed — but a link with no target prints
+        // nothing, and the agent has to hear why before it writes the same value into a page.
+        $this->agent('render', ['slug' => 'every', 'values' => ['link' => ['url' => '/contacts']]])
+            ->assertOk()
+            ->assertStructuredContent(function (AssertableJson $json): void {
+                $warnings = $json->etc()->toArray()['warnings'];
+
+                $this->assertContains('value-refused', array_column($warnings, 'code'));
+                $this->assertStringContainsString('field [link]', implode(' ', array_column($warnings, 'message')));
+            });
     }
 
     #[Test]

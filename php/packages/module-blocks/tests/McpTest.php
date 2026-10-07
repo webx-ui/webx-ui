@@ -41,8 +41,6 @@ final class McpTest extends TestCase
                 'blocks_list', 'blocks_get', 'blocks_create', 'blocks_update', 'blocks_publish',
                 'blocks_delete', 'blocks_versions', 'blocks_version_restore', 'blocks_usage',
                 'blocks_render', 'blocks_get_content', 'blocks_set_content', 'blocks_edit_content', 'blocks_preview_url',
-                'blocks_regions', 'blocks_region_publish', 'blocks_region_unpublish',
-                'blocks_region_discard', 'blocks_region_versions', 'blocks_region_restore', 'blocks_region_adopt',
             ],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('blocks')),
         );
@@ -60,6 +58,121 @@ final class McpTest extends TestCase
 
         // The entity names reach the agent through the argument's description.
         $this->assertStringContainsString('note', $registry->tool('blocks_get_content')->tool->inputSchema['properties']['entity']['description']);
+
+        // The region tools come with a layout that declares regions, and not before.
+        $this->app['config']->set('webx-blocks.regions', ['header' => ['title' => 'Header']]);
+
+        $this->assertCount(21, $registry->toolsOf('blocks'));
+    }
+
+    #[Test]
+    public function update_says_what_changed_and_how_many_versions_it_wrote(): void
+    {
+        $this->publish('text', '<p data-wx-block="text" class="b-text">{{ $body }}</p>');
+
+        $answer = $this->answer($this->agent('update', ['slug' => 'text', 'template' => '<p data-wx-block="text" class="b-text b-text--wide">{{ $body }}</p>']));
+
+        // The content field is a change too: `changes: []` beside a written version read as nothing.
+        $this->assertSame(['template'], $answer['changes']);
+        $this->assertTrue($answer['wrote_version']);
+        $this->assertSame(1, $answer['versions_written']);
+
+        $before = (int) Block::query()->where('slug', 'text')->first()?->versions()->max('number');
+        $renamed = $this->answer($this->agent('update', ['slug' => 'text', 'rename_to' => 'paragraph']));
+        $after = (int) Block::query()->where('slug', 'paragraph')->first()?->versions()->max('number');
+
+        // A rename rewrites the template's marker and prefix, which is a version of its own.
+        $this->assertSame($after - $before, $renamed['versions_written']);
+        $this->assertSame($after > $before, $renamed['wrote_version']);
+    }
+
+    #[Test]
+    public function a_render_says_whose_values_it_drew_and_what_a_write_would_refuse(): void
+    {
+        $this->publish('hero', '<section data-wx-block="hero">{{ $title }}</section>', [], [
+            'sample' => ['title' => 'Welcome'],
+        ]);
+
+        $sent = $this->answer($this->agent('render', ['slug' => 'hero', 'values' => ['title' => 'Mine', 'subtitle' => 'Stray']]));
+
+        $this->assertSame('values', $sent['values_from']);
+        $this->assertStringNotContainsString('<!--wx:', $sent['html']);
+        $this->assertStringContainsString('Mine', $sent['html']);
+        $this->assertContains('unknown-field', array_column($sent['warnings'], 'code'));
+
+        $this->assertSame('sample', $this->answer($this->agent('render', ['slug' => 'hero']))['values_from']);
+    }
+
+    #[Test]
+    public function a_sample_with_values_for_no_field_is_warned_about(): void
+    {
+        $this->publish('prose', '<div data-wx-block="prose">{!! $body !!}</div>', [], [
+            'sample' => ['body' => '<p>Text</p>', 'prose' => 'left over'],
+        ]);
+
+        $warnings = $this->answer($this->agent('get', ['slug' => 'prose']))['warnings'];
+
+        $this->assertContains('sample-unknown-field', array_column($warnings, 'code'));
+        $this->assertStringContainsString('[prose]', implode(' ', array_column($warnings, 'message')));
+    }
+
+    #[Test]
+    public function a_dry_run_edit_answers_the_revision_to_send_with_the_real_one(): void
+    {
+        $this->publish('quote', '<blockquote data-wx-block="quote">{{ $words }}</blockquote>');
+        $page = Page::query()->create(['title' => 'About', 'blocks' => [$this->node('quote', ['words' => 'Once'], 'k-one')]]);
+        $revision = Content::revision($page->refresh()->blocks);
+        $ops = [['op' => 'set', 'key' => 'k-one', 'values' => ['words' => 'Twice']]];
+
+        $dry = $this->answer($this->agent('edit_content', ['entity' => 'note', 'id' => $page->id, 'ops' => $ops, 'dry_run' => true]));
+
+        $this->assertSame($revision, $dry['revision']);
+        $this->assertNotSame($revision, $dry['would_be_revision']);
+
+        $this->agent('edit_content', ['entity' => 'note', 'id' => $page->id, 'ops' => $ops, 'revision' => $dry['revision']], $this->editor())
+            ->assertOk();
+    }
+
+    #[Test]
+    public function a_type_a_view_of_the_site_calls_is_used_and_not_deleted_unforced(): void
+    {
+        $views = sys_get_temp_dir().'/webx-blocks-views-'.uniqid();
+        mkdir($views.'/events', 0777, true);
+        file_put_contents($views.'/events/list.blade.php', "<ul>\n  <x-webx-block type=\"card\" :card=\"\$card\" />\n</ul>");
+        $this->app['config']->set('webx-blocks.views', [$views]);
+
+        try {
+            $this->publish('card', '<article data-wx-block="card">{{ $title }}</article>', ['kind' => 'component']);
+
+            $this->assertSame([['view' => 'events/list.blade.php', 'line' => 2]], $this->answer($this->agent('usage', ['slug' => 'card']))['views']);
+
+            $this->agent('delete', ['slug' => 'card'], $this->editor())->assertHasErrors(['events/list.blade.php:2', 'force']);
+            $this->assertTrue(Block::query()->where('slug', 'card')->exists());
+
+            $this->agent('delete', ['slug' => 'card', 'force' => true], $this->editor())->assertOk();
+            $this->assertFalse(Block::query()->where('slug', 'card')->exists());
+        } finally {
+            unlink($views.'/events/list.blade.php');
+            rmdir($views.'/events');
+            rmdir($views);
+        }
+    }
+
+    #[Test]
+    public function the_field_types_of_module_screens_are_not_offered_to_a_schema(): void
+    {
+        $types = $this->app->make(FieldTypes::class);
+        $types->register('wx-seo', new ProseType);
+        $types->register('wx-site-own', new ProseType);
+
+        $resource = array_values(array_filter(
+            $this->app->make(ToolRegistry::class)->resources(),
+            static fn ($resource): bool => $resource->uri === 'blocks://fields',
+        ))[0];
+        $fields = ($resource->handler)()['types'];
+
+        $this->assertArrayNotHasKey('wx-seo', $fields);
+        $this->assertArrayHasKey('wx-site-own', $fields);
     }
 
     #[Test]
@@ -566,6 +679,20 @@ final class McpTest extends TestCase
             ]))
             ->assertOk()
             ->assertJsonPath('result.structuredContent.slug', 'hero');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function answer(TestResponse $response): array
+    {
+        $decoded = null;
+
+        $response->assertOk()->assertStructuredContent(static function (AssertableJson $json) use (&$decoded): void {
+            $decoded = $json->etc()->toArray();
+        });
+
+        return is_array($decoded) ? $decoded : [];
     }
 
     /**
