@@ -35,7 +35,7 @@
                         <td style="padding:8px 0;vertical-align:top;border-bottom:1px solid #eceef1;">
                             {{-- Kept as the visitor typed it, newlines and all: a message from a
                                  textarea is unreadable as one paragraph. --}}
-                            {!! nl2br(e($value->value)) !!}
+                            {!! nl2br(e($value->readable())) !!}
                         </td>
                     </tr>
                 @empty

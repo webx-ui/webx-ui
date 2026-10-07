@@ -12,6 +12,7 @@ use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Status;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Models\SubmissionEvent;
+use WebxUi\Inbox\Models\SubmissionValue;
 
 /**
  * The submissions as the panel reads and works them (§11, §12).
@@ -307,6 +308,60 @@ final class PanelSubmissionsTest extends TestCase
         $this->assertStringContainsString('Message (message)', $csv, 'a column the list has no room for is exactly what an export is opened for');
         $this->assertStringContainsString('ada@example.test', $csv);
         $this->assertStringContainsString('The lift is broken', $csv);
+    }
+
+    #[Test]
+    public function the_export_does_not_hand_a_spreadsheet_a_formula(): void
+    {
+        $form = $this->form();
+        $this->filled($form, ['name' => '=HYPERLINK("http://evil.test","x")', 'email' => '+cmd@example.test', 'message' => '@SUM(A1)']);
+
+        $csv = $this->actingAs($this->editor(), 'cms')
+            ->get($this->api('forms/'.$form->getKey().'/submissions/export'))
+            ->assertOk()
+            ->streamedContent();
+
+        $rows = array_map(str_getcsv(...), explode("\n", trim(substr($csv, 3))));
+        $row = $rows[1];
+
+        $this->assertSame("'=HYPERLINK(\"http://evil.test\",\"x\")", $row[4]);
+        $this->assertSame("'+cmd@example.test", $row[5]);
+        $this->assertSame("'@SUM(A1)", $row[6]);
+    }
+
+    #[Test]
+    public function the_export_names_statuses_and_consents_in_the_panels_language(): void
+    {
+        config(['webx-localization.panel' => ['en', 'ru']]);
+
+        $form = $this->form('survey', [
+            ['name' => 'name', 'type' => FieldType::Text],
+            ['name' => 'terms', 'type' => FieldType::Consent],
+        ]);
+
+        // Typed in by hand from a panel kept in Russian, and sent from the site in English:
+        // the same answer, stored the same way.
+        $this->actingAs($this->editor(), 'cms')
+            ->postJson($this->api('forms/'.$form->getKey().'/submissions'), ['fields' => ['name' => 'Ada', 'terms' => '1']], ['X-Webx-Locale' => 'ru'])
+            ->assertCreated();
+        $this->postJson($this->intake('survey'), ['fields' => ['name' => 'Grace', 'terms' => '1']])->assertOk();
+
+        $this->assertSame(
+            [SubmissionValue::CONSENTED, SubmissionValue::CONSENTED],
+            SubmissionValue::query()->where('name', 'terms')->pluck('value')->all(),
+        );
+
+        $csv = $this->actingAs($this->editor(), 'cms')
+            ->get($this->api('forms/'.$form->getKey().'/submissions/export'), ['X-Webx-Locale' => 'ru'])
+            ->assertOk()
+            ->streamedContent();
+
+        $status = (string) Status::default()?->getTranslation('title', 'ru');
+
+        $this->assertNotSame('New', $status);
+        $this->assertStringContainsString(','.$status.',', $csv);
+        $this->assertStringContainsString(trans('webx-inbox::values.consented', [], 'ru'), $csv);
+        $this->assertStringNotContainsString(','.SubmissionValue::CONSENTED, $csv);
     }
 
     #[Test]

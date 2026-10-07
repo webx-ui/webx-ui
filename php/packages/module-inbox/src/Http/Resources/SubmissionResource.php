@@ -85,7 +85,7 @@ final class SubmissionResource extends JsonResource
             'name' => $value->name,
             'label' => $value->label,
             'type' => $value->type,
-            'value' => $value->value,
+            'value' => $value->readable(),
             'payload' => $value->payload,
         ];
     }

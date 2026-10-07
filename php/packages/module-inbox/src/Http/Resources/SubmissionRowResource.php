@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Submission;
+use WebxUi\Inbox\Models\SubmissionValue;
 use WebxUi\Inbox\Submissions\ListQuery;
 
 /**
@@ -75,7 +76,7 @@ final class SubmissionRowResource extends JsonResource
         foreach ($this->columns as $field) {
             $value = $submission->getAttribute(ListQuery::alias($field));
 
-            $values[$field->key()] = $value === null ? null : (string) $value;
+            $values[$field->key()] = SubmissionValue::read($field->type->value, $value === null ? null : (string) $value);
         }
 
         return $values;

@@ -19,6 +19,7 @@ use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Status;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Models\SubmissionEvent;
+use WebxUi\Inbox\Models\SubmissionValue;
 use WebxUi\Inbox\Storage\FileStore;
 use WebxUi\Inbox\Support\Placement;
 
@@ -276,7 +277,7 @@ final class Intake
         }
 
         if ($field->type === FieldType::Consent) {
-            return [(string) trans('webx-inbox::values.consented'), null];
+            return [SubmissionValue::CONSENTED, null];
         }
 
         $one = (string) $value;

@@ -29,6 +29,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class SubmissionValue extends Model
 {
+    /**
+     * What a ticked consent is stored as, whoever ticked it.
+     *
+     * A key and not a word: a word is in the language of whoever was answering — "Yes" from
+     * the site, "Да" from a panel kept in Russian — and the same answer then read differently
+     * in the export depending on who had typed it. It is put into words when it is shown.
+     */
+    public const CONSENTED = 'yes';
+
     public $timestamps = false;
 
     protected $table = 'inbox_submission_values';
@@ -62,5 +71,19 @@ class SubmissionValue extends Model
     public function field(): BelongsTo
     {
         return $this->belongsTo(Field::class, 'field_id')->withTrashed();
+    }
+
+    /** The answer as a person reads it, in the language being read. */
+    public function readable(): ?string
+    {
+        return self::read($this->type, $this->value);
+    }
+
+    /** The same for an answer that arrived without its row — a column of the list. */
+    public static function read(?string $type, ?string $value): ?string
+    {
+        return $type === 'consent' && $value === self::CONSENTED
+            ? (string) trans('webx-inbox::values.consented')
+            : $value;
     }
 }

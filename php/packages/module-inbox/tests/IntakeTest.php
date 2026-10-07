@@ -152,7 +152,9 @@ final class IntakeTest extends TestCase
         // The label, because that is what goes into the letter and into the export.
         $this->assertSame('Pro plan', $submission->value('plan')?->value);
         $this->assertSame(['pro'], $submission->value('plan')->payload);
-        $this->assertSame('Yes', $submission->value('terms')?->value);
+        // A consent is stored as a key and put into words when it is read.
+        $this->assertSame('yes', $submission->value('terms')?->value);
+        $this->assertSame('Yes', $submission->value('terms')?->readable());
     }
 
     #[Test]
