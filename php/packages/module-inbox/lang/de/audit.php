@@ -6,4 +6,5 @@ return [
     'no-recipients' => 'Das Formular :form (:slug) benachrichtigt niemanden',
     'notify-failed' => 'Fehlgeschlagene Benachrichtigungen der letzten :days Tage: :count',
     'notify-queued' => 'Benachrichtigungen seit über :minutes Minuten in der Warteschlange: :count',
+    'captcha-keys' => 'Das Formular :form (:slug) verlangt :provider, und die Website hat keine Schlüssel dafür',
 ];

@@ -6,4 +6,5 @@ return [
     'no-recipients' => 'The form :form (:slug) tells nobody when it is sent',
     'notify-failed' => 'Notifications that failed in the last :days days: :count',
     'notify-queued' => 'Notifications waiting in the queue for over :minutes minutes: :count',
+    'captcha-keys' => 'The form :form (:slug) asks for :provider and the site has no keys for it',
 ];

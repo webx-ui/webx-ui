@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 return [
     'refused' => 'Nie udało się wysłać formularza. Spróbuj ponownie za chwilę.',
+    'captcha' => 'Potwierdź, że nie jesteś robotem, i wyślij formularz ponownie.',
+    'captcha-script' => 'Ten formularz sprawdza za pomocą JavaScriptu, że nie jesteś robotem. Włącz go i wyślij formularz ponownie.',
+    'captcha-unavailable' => 'Nie udało się sprawdzić, że nie jesteś robotem. Odśwież stronę albo spróbuj innej przeglądarki.',
     'too-many' => 'Zbyt wiele zgłoszeń z tego adresu. Spróbuj ponownie za minutę.',
     'form-has-submissions' => 'Formularz „:form” ma zgłoszenia, więc można go wyłączyć, ale nie usunąć.',
     'status-in-use' => 'W statusie „:status” są jeszcze zgłoszenia, więc nie można go usunąć.',

@@ -6,4 +6,5 @@ return [
     'no-recipients' => 'Il modulo :form (:slug) non avvisa nessuno',
     'notify-failed' => 'Notifiche non riuscite negli ultimi :days giorni: :count',
     'notify-queued' => 'Notifiche in coda da oltre :minutes minuti: :count',
+    'captcha-keys' => 'Il modulo :form (:slug) chiede :provider e il sito non ha le chiavi',
 ];

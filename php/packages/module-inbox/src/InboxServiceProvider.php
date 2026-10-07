@@ -15,6 +15,7 @@ use WebxUi\Admin\Notes\NoteTypes;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Inbox\Antispam\Throttle;
+use WebxUi\Inbox\Audit\CaptchaKeys;
 use WebxUi\Inbox\Audit\NoRecipients;
 use WebxUi\Inbox\Audit\NotificationTrouble;
 use WebxUi\Inbox\Console\PruneSubmissionsCommand;
@@ -69,6 +70,9 @@ class InboxServiceProvider extends ServiceProvider
         // that would write to nobody saves every enquiry and tells nobody about any of them.
         if (class_exists(AuditChecks::class)) {
             $this->app->make(AuditChecks::class)->register($this->app->make(NoRecipients::class));
+
+            // And one that asks for a captcha the site has no keys for refuses every enquiry.
+            $this->app->make(AuditChecks::class)->register($this->app->make(CaptchaKeys::class));
         }
 
         // Notes on a submission are the panel's own feature, not this module's (§2.17): the

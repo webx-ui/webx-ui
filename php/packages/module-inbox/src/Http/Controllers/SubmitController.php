@@ -11,7 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Antispam\Guard;
+use WebxUi\Inbox\Antispam\Inspection;
 use WebxUi\Inbox\Antispam\Throttle;
 use WebxUi\Inbox\Antispam\Verdict;
 use WebxUi\Inbox\Mail\Notifier;
@@ -56,14 +58,15 @@ final class SubmitController
         // submissions as the form takes is not let in to leave one more (§7).
         $this->throttle->check($form, $request);
 
-        $verdict = $this->guard->inspect($form, $request);
+        $inspection = $this->guard->inspect($form, $request);
 
-        if ($verdict === Verdict::Trap) {
+        if ($inspection->verdict === Verdict::Trap) {
             // A robot is thanked and nothing is written. Telling it which trick was seen is
             // the one thing that makes the next attempt harder to catch (§7).
             $this->log->info('webx-inbox: a submission to {form} was trapped.', [
                 'form' => $form->slug,
                 'ip' => $request->ip(),
+                'reason' => $inspection->reason,
             ]);
 
             // Counted as the success it is told it was, so the robot meets the same limit a
@@ -73,15 +76,17 @@ final class SubmitController
             return $this->accepted($form, $request);
         }
 
-        if ($verdict === Verdict::Reject) {
-            $this->log->info('webx-inbox: a submission to {form} was refused by the antispam.', [
+        if ($inspection->verdict === Verdict::Reject) {
+            // Which layer said no and what the provider answered — without which a captcha
+            // refusing every visitor reads exactly like a robot being kept out.
+            $this->log->info('webx-inbox: a submission to {form} was refused by the antispam ({reason}).', [
                 'form' => $form->slug,
                 'ip' => $request->ip(),
+                'reason' => $inspection->reason,
+                ...$inspection->details,
             ]);
 
-            throw ValidationException::withMessages([
-                'form' => [(string) trans('webx-inbox::errors.refused')],
-            ]);
+            throw ValidationException::withMessages($this->refusal($inspection));
         }
 
         $values = $this->validate($form, $request);
@@ -97,6 +102,37 @@ final class SubmitController
         $this->notifier->send($submission);
 
         return $this->accepted($form, $request);
+    }
+
+    /**
+     * What the visitor is told.
+     *
+     * One sentence for every layer, so a robot learns nothing from which of them it tripped —
+     * except the captcha a person can answer, which is drawn on the page for anybody to see:
+     * saying what to do with it gives a robot nothing new, and a person who did not tick the
+     * box is told to tick it rather than to wait a moment. It is filed under `captcha`, so
+     * the form shows it beside the widget.
+     *
+     * An Invisible or v3 reCAPTCHA without an answer is a page without JavaScript; a failed v3
+     * is a score, which the visitor cannot argue with, and gets the sentence everybody gets.
+     *
+     * @return array<string, list<string>>
+     */
+    private function refusal(Inspection $inspection): array
+    {
+        $type = $inspection->details['type'] ?? Captcha::CHECKBOX;
+        $interactive = $type !== Captcha::V3;
+
+        $key = match (true) {
+            $inspection->reason === Inspection::CAPTCHA_MISSING && $type !== Captcha::CHECKBOX => 'captcha-script',
+            $inspection->reason === Inspection::CAPTCHA_MISSING,
+            $inspection->reason === Inspection::CAPTCHA_FAILED && $interactive => 'captcha',
+            default => null,
+        };
+
+        return $key === null
+            ? ['form' => [(string) trans('webx-inbox::errors.refused')]]
+            : ['captcha' => [(string) trans('webx-inbox::errors.'.$key)]];
     }
 
     /**

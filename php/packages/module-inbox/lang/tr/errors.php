@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 return [
     'refused' => 'Form gönderilemedi. Lütfen birazdan tekrar deneyin.',
+    'captcha' => 'Lütfen robot olmadığınızı doğrulayın ve formu yeniden gönderin.',
+    'captcha-script' => 'Bu form robot olmadığınızı JavaScript ile denetler. Lütfen JavaScript’i açın ve formu yeniden gönderin.',
+    'captcha-unavailable' => 'Robot olmadığınızı doğrulayamadık. Lütfen sayfayı yenileyin ya da başka bir tarayıcı deneyin.',
     'too-many' => 'Bu adresten çok fazla gönderim yapıldı. Lütfen bir dakika sonra tekrar deneyin.',
     'form-has-submissions' => '“:form” formunda gönderimler var; kapatılabilir ama silinemez.',
     'status-in-use' => '“:status” durumunda hâlâ gönderimler var; bu durum silinemez.',

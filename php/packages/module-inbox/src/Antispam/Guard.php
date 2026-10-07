@@ -29,25 +29,21 @@ final class Guard
         private readonly Captcha $captcha,
     ) {}
 
-    public function inspect(Form $form, Request $request): Verdict
+    public function inspect(Form $form, Request $request): Inspection
     {
         if ($this->honeypotFilled($form, $request)) {
-            return Verdict::Trap;
+            return Inspection::trap(Inspection::HONEYPOT);
         }
 
         if ($this->tooFast($form, $request)) {
-            return Verdict::Reject;
+            return Inspection::reject(Inspection::TOO_FAST);
         }
 
         if (! $this->originAllowed($request)) {
-            return Verdict::Reject;
+            return Inspection::reject(Inspection::ORIGIN);
         }
 
-        if (! $this->captcha->passes($form, $request)) {
-            return Verdict::Reject;
-        }
-
-        return Verdict::Pass;
+        return $this->captcha->check($form, $request) ?? Inspection::pass();
     }
 
     /** The name of the field a person never sees, so the form on the site can draw it. */

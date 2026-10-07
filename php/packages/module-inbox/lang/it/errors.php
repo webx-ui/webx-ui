@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 return [
     'refused' => 'Non è stato possibile inviare il modulo. Riprova tra un momento.',
+    'captcha' => 'Conferma di non essere un robot e invia di nuovo il modulo.',
+    'captcha-script' => 'Questo modulo verifica con JavaScript che tu non sia un robot. Attivalo e invia di nuovo il modulo.',
+    'captcha-unavailable' => 'Non siamo riusciti a verificare che tu non sia un robot. Ricarica la pagina o prova un altro browser.',
     'too-many' => 'Troppi invii da questo indirizzo. Riprova tra un minuto.',
     'form-has-submissions' => 'Il modulo «:form» ha richieste, quindi può essere disattivato ma non eliminato.',
     'status-in-use' => 'Ci sono ancora richieste nello stato «:status», quindi non può essere eliminato.',

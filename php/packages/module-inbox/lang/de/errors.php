@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 return [
     'refused' => 'Das Formular konnte nicht gesendet werden. Bitte versuchen Sie es gleich noch einmal.',
+    'captcha' => 'Bitte bestätigen Sie, dass Sie kein Roboter sind, und senden Sie das Formular erneut.',
+    'captcha-script' => 'Dieses Formular prüft mit JavaScript, dass Sie kein Roboter sind. Bitte schalten Sie es ein und senden Sie das Formular erneut.',
+    'captcha-unavailable' => 'Wir konnten nicht prüfen, dass Sie kein Roboter sind. Bitte laden Sie die Seite neu oder versuchen Sie einen anderen Browser.',
     'too-many' => 'Zu viele Einsendungen von dieser Adresse. Bitte versuchen Sie es in einer Minute erneut.',
     'form-has-submissions' => 'Das Formular „:form“ hat Einsendungen und kann deshalb deaktiviert, aber nicht gelöscht werden.',
     'status-in-use' => 'Im Status „:status“ liegen noch Einsendungen; er kann nicht gelöscht werden.',

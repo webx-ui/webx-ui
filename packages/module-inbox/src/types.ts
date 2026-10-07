@@ -132,8 +132,22 @@ export interface InboxForm {
   unread_count: number | null
   /** Only on a form asked for by id, or one just written. */
   fields?: InboxField[]
+  /**
+   * What the site has for each captcha — the keys and how they are run live in its `.env`,
+   * not in the form — so the antispam tab can say which kind of key it expects. Optional
+   * because a server older than this field does not send it.
+   */
+  captcha?: Record<CaptchaProvider, CaptchaSite>
   created_at: string | null
   updated_at: string | null
+}
+
+export type CaptchaProvider = 'recaptcha' | 'turnstile'
+
+/** How a provider runs on this site, and whether both halves of its keys are there. */
+export interface CaptchaSite {
+  type: 'checkbox' | 'invisible' | 'v3'
+  configured: boolean
 }
 
 /** A form as its editor saves it. */

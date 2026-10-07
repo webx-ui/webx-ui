@@ -16,5 +16,11 @@ return [
             'why' => 'As pessoas indicadas no formulário não sabem de pedidos que o painel já tem, e o site não o diz.',
             'fix' => 'Falharam: corrija as configurações de e-mail, reinicie o worker da fila (php artisan queue:restart) para que as leia e envie a notificação novamente a partir do envio. Aguardando: inicie um worker da fila.',
         ],
+        'captcha_keys' => [
+            'title' => 'Formulários que pedem um captcha sem chaves no site',
+            'found' => 'Um formulário ativo pede reCAPTCHA ou Turnstile, e falta no .env do site a chave do site, o segredo ou ambos.',
+            'why' => 'Sem chave do site o widget não aparece; sem segredo nenhuma resposta pode ser verificada. Em ambos os casos o formulário recusa cada envio e os visitantes não conseguem contactá-lo.',
+            'fix' => 'Acrescente WEBX_INBOX_RECAPTCHA_KEY e WEBX_INBOX_RECAPTCHA_SECRET (ou o par TURNSTILE) ao .env do site, com WEBX_INBOX_RECAPTCHA_TYPE conforme o tipo de chave, e limpe a cache de configuração (php artisan config:clear). Ou desligue o captcha no separador Antispam do formulário.',
+        ],
     ],
 ];

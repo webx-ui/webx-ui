@@ -58,6 +58,32 @@ final class AuditTest extends TestCase
     }
 
     #[Test]
+    public function a_form_asking_for_a_captcha_without_keys_is_an_error_with_a_way_to_its_antispam(): void
+    {
+        config()->set('webx-inbox.captcha.recaptcha.key', 'site-key');
+        config()->set('webx-inbox.captcha.recaptcha.secret', null);
+        config()->set('webx-inbox.captcha.turnstile.key', 'site-key');
+        config()->set('webx-inbox.captcha.turnstile.secret', 'secret');
+
+        $broken = $this->form('contact', [], ['antispam.captcha' => 'recaptcha']);
+        $this->form('callback', [], ['antispam.captcha' => 'turnstile']);
+        $this->form('plain');
+        $this->form('old', [], ['antispam.captcha' => 'recaptcha'])->update(['is_enabled' => false]);
+
+        $findings = $this->findings('inbox.captcha_keys');
+
+        $this->assertCount(1, $findings);
+        $this->assertSame('error', $findings[0]->severity);
+        $this->assertSame((string) $broken->getKey(), $findings[0]->key);
+        $this->assertSame('/inbox/forms/'.$broken->getKey().'?tab=antispam', $findings[0]->details['table']['rows'][0]['edit'] ?? null);
+
+        foreach (['title', 'found', 'why', 'fix'] as $text) {
+            $key = 'webx-inbox::checks.inbox.captcha_keys.'.$text;
+            $this->assertNotSame($key, __($key), $text);
+        }
+    }
+
+    #[Test]
     public function the_check_speaks_in_its_own_words(): void
     {
         foreach (['title', 'found', 'why', 'fix'] as $text) {
@@ -74,9 +100,9 @@ final class AuditTest extends TestCase
      *
      * @return list<Finding>
      */
-    private function findings(): array
+    private function findings(string $id = 'inbox.no_recipients'): array
     {
-        $check = $this->app->make(AuditChecks::class)->get('inbox.no_recipients');
+        $check = $this->app->make(AuditChecks::class)->get($id);
         $this->assertNotNull($check, 'Registered by the inbox when the audit is installed.');
 
         $context = new AuditContext(new AuditRun, new HostClassifier(['example.test']), $this->app->make(SiteClient::class), new ProbeSet, $this->app->make('config'));

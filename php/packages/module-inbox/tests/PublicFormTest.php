@@ -282,6 +282,72 @@ final class PublicFormTest extends TestCase
     }
 
     #[Test]
+    public function an_invisible_recaptcha_is_left_for_the_forms_script_to_draw(): void
+    {
+        // Drawn by the provider's script as `g-recaptcha`, an Invisible key would want a global
+        // callback — and drawn as a checkbox it is the widget's own "Invalid key type".
+        config()->set('webx-inbox.captcha.recaptcha.key', 'site-key');
+        config()->set('webx-inbox.captcha.recaptcha.type', 'invisible');
+
+        $this->form('contact', [], ['antispam.captcha' => 'recaptcha']);
+
+        $html = $this->render();
+
+        $this->assertStringNotContainsString('class="g-recaptcha"', $html);
+        $this->assertStringContainsString('data-webx-captcha-type="invisible"', $html);
+        $this->assertStringContainsString('class="wx-form__captcha-widget" data-sitekey="site-key"', $html);
+        $this->assertStringContainsString('src="https://www.google.com/recaptcha/api.js"', $html);
+    }
+
+    #[Test]
+    public function an_invisible_turnstile_is_left_for_the_forms_script_to_draw(): void
+    {
+        config()->set('webx-inbox.captcha.turnstile.key', 'site-key');
+        config()->set('webx-inbox.captcha.turnstile.mode', 'invisible');
+
+        $this->form('contact', [], ['antispam.captcha' => 'turnstile']);
+
+        $html = $this->render();
+
+        $this->assertStringNotContainsString('class="cf-turnstile"', $html);
+        $this->assertStringContainsString('class="wx-form__captcha-widget" data-sitekey="site-key"', $html);
+    }
+
+    #[Test]
+    public function recaptcha_v3_is_loaded_with_the_site_key_and_has_no_widget(): void
+    {
+        config()->set('webx-inbox.captcha.recaptcha.key', 'site-key');
+        config()->set('webx-inbox.captcha.recaptcha.type', 'v3');
+
+        $this->form('contact-us', [], ['antispam.captcha' => 'recaptcha']);
+
+        $html = $this->render('<x-webx-inbox::form slug="contact-us" />');
+
+        $this->assertStringContainsString('api.js?render=site-key', $html);
+        $this->assertStringContainsString('<input type="hidden" name="g-recaptcha-response" value="">', $html);
+        $this->assertStringContainsString('data-webx-captcha-action="webx_form_contact_us"', $html);
+        $this->assertStringNotContainsString('data-sitekey', $html);
+    }
+
+    #[Test]
+    public function a_captcha_refusal_without_javascript_comes_back_beside_the_widget(): void
+    {
+        config()->set('webx-inbox.captcha.recaptcha.key', 'site-key');
+        config()->set('webx-inbox.captcha.recaptcha.secret', 'site-secret');
+
+        $this->form('contact', [], ['antispam.captcha' => 'recaptcha']);
+
+        $this->post($this->intake(), [
+            'webx_form' => 'contact',
+            'fields' => ['name' => 'Ada', 'email' => 'ada@example.test'],
+        ], ['referer' => 'http://localhost/page'])->assertSessionHasErrors('captcha');
+
+        $html = $this->render();
+
+        $this->assertMatchesRegularExpression('/data-webx-captcha-error\s+role="alert"\s*>Please confirm you are not a robot/', $html);
+    }
+
+    #[Test]
     public function a_captcha_the_site_has_no_key_for_is_not_drawn(): void
     {
         // The form would refuse every submission anyway — the verifier has no secret either —

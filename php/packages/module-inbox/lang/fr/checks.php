@@ -16,5 +16,11 @@ return [
             'why' => 'Les personnes désignées par le formulaire ignorent des demandes que le panneau contient déjà, et le site ne le dit pas.',
             'fix' => 'Échouées : corrigez les réglages de messagerie, redémarrez le worker de la file (php artisan queue:restart) pour qu’il les relise, puis renvoyez la notification depuis la soumission. En attente : démarrez un worker de la file.',
         ],
+        'captcha_keys' => [
+            'title' => 'Formulaires demandant un captcha sans clés sur le site',
+            'found' => 'Un formulaire activé demande reCAPTCHA ou Turnstile, et il manque au .env du site la clé du site, le secret ou les deux.',
+            'why' => 'Sans clé du site le widget n’est pas affiché ; sans secret aucune réponse ne peut être vérifiée. Dans les deux cas le formulaire refuse chaque envoi et les visiteurs ne peuvent pas vous joindre.',
+            'fix' => 'Ajoutez WEBX_INBOX_RECAPTCHA_KEY et WEBX_INBOX_RECAPTCHA_SECRET (ou la paire TURNSTILE) au .env du site, avec WEBX_INBOX_RECAPTCHA_TYPE selon le type de clé, et videz le cache de configuration (php artisan config:clear). Ou désactivez le captcha dans l’onglet Antispam du formulaire.',
+        ],
     ],
 ];

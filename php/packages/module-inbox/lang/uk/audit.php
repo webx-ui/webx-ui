@@ -6,4 +6,5 @@ return [
     'no-recipients' => 'Форма :form (:slug) нікого не сповіщає',
     'notify-failed' => 'Листів не пішло за останні :days дн.: :count',
     'notify-queued' => 'Листів чекають у черзі довше :minutes хв.: :count',
+    'captcha-keys' => 'Форма :form (:slug) просить :provider, а в сайту немає для неї ключів',
 ];

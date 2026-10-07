@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 return [
     'refused' => 'Le formulaire n\'a pas pu être envoyé. Merci de réessayer dans un instant.',
+    'captcha' => 'Confirmez que vous n’êtes pas un robot et envoyez le formulaire à nouveau.',
+    'captcha-script' => 'Ce formulaire vérifie avec JavaScript que vous n’êtes pas un robot. Activez-le et envoyez le formulaire à nouveau.',
+    'captcha-unavailable' => 'Nous n’avons pas pu vérifier que vous n’êtes pas un robot. Rechargez la page ou essayez un autre navigateur.',
     'too-many' => 'Trop d\'envois depuis cette adresse. Merci de réessayer dans une minute.',
     'form-has-submissions' => 'Le formulaire « :form » a des soumissions : il peut être désactivé, pas supprimé.',
     'status-in-use' => 'Des soumissions sont encore au statut « :status » : il ne peut pas être supprimé.',

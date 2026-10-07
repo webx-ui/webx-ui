@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 return [
     'refused' => 'This form could not be sent. Please try again in a moment.',
+    'captcha' => 'Please confirm you are not a robot and send the form again.',
+    'captcha-script' => 'This form checks that you are not a robot with JavaScript. Please turn it on and send the form again.',
+    'captcha-unavailable' => 'We could not check that you are not a robot. Please reload the page or try another browser.',
     'too-many' => 'Too many submissions from this address. Please try again in a minute.',
     'form-has-submissions' => 'The form “:form” has submissions, so it can be switched off but not deleted.',
     'status-in-use' => 'Submissions are still in the status “:status”, so it cannot be deleted.',

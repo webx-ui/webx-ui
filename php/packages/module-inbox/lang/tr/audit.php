@@ -6,4 +6,5 @@ return [
     'no-recipients' => ':form (:slug) formu kimseye haber vermiyor',
     'notify-failed' => 'Son :days günde gönderilemeyen bildirimler: :count',
     'notify-queued' => ':minutes dakikadan uzun süredir kuyrukta bekleyen bildirimler: :count',
+    'captcha-keys' => ':form (:slug) formu :provider istiyor ve sitenin bunun için anahtarı yok',
 ];

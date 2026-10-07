@@ -201,7 +201,7 @@ async function save(): Promise<void> {
         </wx-tab>
 
         <wx-tab value="antispam" :label="t('panel.tab-antispam')">
-          <form-antispam v-model="options" />
+          <form-antispam v-model="options" :site="form.captcha" />
         </wx-tab>
 
         <wx-tab value="embed" :label="t('panel.tab-embed')">

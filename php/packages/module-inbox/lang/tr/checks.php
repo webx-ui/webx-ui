@@ -16,5 +16,11 @@ return [
             'why' => 'Formda belirtilen kişiler panelde zaten bulunan taleplerden habersiz ve site bunu söylemiyor.',
             'fix' => 'Gönderilemeyenler: e-posta ayarlarını düzeltin, kuyruk işçisini yeniden başlatın (php artisan queue:restart) ki ayarları okusun, sonra bildirimi başvurudan yeniden gönderin. Bekleyenler: bir kuyruk işçisi başlatın.',
         ],
+        'captcha_keys' => [
+            'title' => 'Sitenin anahtarı olmayan bir captcha isteyen formlar',
+            'found' => 'Açık bir form reCAPTCHA ya da Turnstile istiyor ve sitenin .env dosyasında site anahtarı, gizli anahtar ya da ikisi birden eksik.',
+            'why' => 'Site anahtarı olmadan widget gösterilmez; gizli anahtar olmadan hiçbir yanıt doğrulanamaz. Her iki durumda da form her gönderimi reddeder ve ziyaretçiler size ulaşamaz.',
+            'fix' => 'Sitenin .env dosyasına WEBX_INBOX_RECAPTCHA_KEY ve WEBX_INBOX_RECAPTCHA_SECRET’ı (ya da TURNSTILE çiftini) ve anahtar türüne uygun WEBX_INBOX_RECAPTCHA_TYPE’ı ekleyin, sonra yapılandırma önbelleğini temizleyin (php artisan config:clear). Ya da formun Spam koruması sekmesinde captcha’yı kapatın.',
+        ],
     ],
 ];

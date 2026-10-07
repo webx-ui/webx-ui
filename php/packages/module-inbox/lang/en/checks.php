@@ -16,5 +16,11 @@ return [
             'why' => 'The people the form names have not heard of enquiries the panel already holds, and nothing on the site says so.',
             'fix' => 'Failed: correct the mail settings, restart the queue worker (php artisan queue:restart) so it reads them, then send the notification again from the submission. Waiting: start a queue worker.',
         ],
+        'captcha_keys' => [
+            'title' => 'Forms asking for a captcha the site has no keys for',
+            'found' => 'A switched-on form asks for reCAPTCHA or Turnstile, and the site’s .env lacks the site key, the secret or both.',
+            'why' => 'Without a site key the widget is not drawn; without a secret no answer can be verified. Either way the form refuses every submission, and visitors cannot reach you.',
+            'fix' => 'Add WEBX_INBOX_RECAPTCHA_KEY and WEBX_INBOX_RECAPTCHA_SECRET (or the TURNSTILE pair) to the site’s .env, with WEBX_INBOX_RECAPTCHA_TYPE matching the kind of key, and clear the configuration cache (php artisan config:clear). Or switch the captcha off on the form’s Antispam tab.',
+        ],
     ],
 ];

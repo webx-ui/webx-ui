@@ -107,18 +107,35 @@ return [
     | site that loads it itself — or that would rather ask a mirror, which is
     | what `recaptcha.net` is for — empties or changes it here.
     |
+    | reCAPTCHA keys come in three kinds, and a key of one kind drawn as another
+    | is the widget's own "Invalid key type". `type` says which kind this site's
+    | keys are: `checkbox` (v2, "I'm not a robot"), `invisible` (v2 Invisible,
+    | run when the form is sent) or `v3` (a score, no widget at all). The last
+    | two are run by the form's script, so a visitor without JavaScript cannot
+    | pass them; `min_score` is the v3 score below which a submission is a robot.
+    |
+    | Turnstile has one kind of key and decides in Cloudflare's dashboard what it
+    | shows. `mode` is how the form runs it: `managed` draws the widget when the
+    | page opens, and a Managed widget shows "Verify you are human"; `invisible`
+    | runs it when the form is sent and shows something only if Cloudflare asks
+    | the visitor to act — set the widget to Invisible there and nothing shows.
+    | Run on submit, the token is fresh: one made on load dies in five minutes.
+    |
     */
 
     'captcha' => [
         'recaptcha' => [
             'key' => env('WEBX_INBOX_RECAPTCHA_KEY'),
             'secret' => env('WEBX_INBOX_RECAPTCHA_SECRET'),
+            'type' => env('WEBX_INBOX_RECAPTCHA_TYPE', 'checkbox'),
+            'min_score' => (float) env('WEBX_INBOX_RECAPTCHA_MIN_SCORE', 0.5),
             'verify' => 'https://www.google.com/recaptcha/api/siteverify',
             'script' => 'https://www.google.com/recaptcha/api.js',
         ],
         'turnstile' => [
             'key' => env('WEBX_INBOX_TURNSTILE_KEY'),
             'secret' => env('WEBX_INBOX_TURNSTILE_SECRET'),
+            'mode' => env('WEBX_INBOX_TURNSTILE_MODE', 'managed'),
             'verify' => 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
             'script' => 'https://challenges.cloudflare.com/turnstile/v0/api.js',
         ],

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 return [
     'refused' => 'Não foi possível enviar o formulário. Tente novamente daqui a pouco.',
+    'captcha' => 'Confirme que não é um robô e envie o formulário de novo.',
+    'captcha-script' => 'Este formulário verifica com JavaScript que não é um robô. Ative-o e envie o formulário de novo.',
+    'captcha-unavailable' => 'Não foi possível verificar que não é um robô. Recarregue a página ou experimente outro navegador.',
     'too-many' => 'Demasiados envios a partir deste endereço. Tente novamente dentro de um minuto.',
     'form-has-submissions' => 'O formulário «:form» tem envios, por isso pode ser desativado mas não eliminado.',
     'status-in-use' => 'Ainda há envios no estado «:status», por isso não pode ser eliminado.',
