@@ -433,6 +433,18 @@ class Page extends Model implements HasBreadcrumbs, HasSeoFallback, Visible
      */
     public function restoreBranchWithTrail(): ?Revival
     {
+        // A page whose parent is still in the bin has nowhere to come back to: restored, it was
+        // a live page under a dead one, and its address skipped the missing slugs and claimed a
+        // place at the top of the site. Refused, naming the page that has to come back first.
+        $buried = $this->trashedAncestor();
+
+        if ($buried !== null) {
+            throw PagesException::ancestorIsInBin(
+                (string) ($buried->getTranslation('title', null) ?: '#'.$buried->getKey()),
+                (int) $buried->getKey(),
+            );
+        }
+
         /** @var Revival|null $trail */
         $trail = $this->getConnection()->transaction(function (): ?Revival {
             $branch = $this->trashedBranch();
@@ -459,6 +471,24 @@ class Page extends Model implements HasBreadcrumbs, HasSeoFallback, Visible
         });
 
         return $trail;
+    }
+
+    /**
+     * The highest page above this one that is in the bin — the one whose restore brings the
+     * rest of the way back with it — or null when the way up is clear.
+     */
+    public function trashedAncestor(): ?static
+    {
+        $fresh = static::withTrashed()->find($this->getKey()) ?? $this;
+
+        /** @var static|null $ancestor */
+        $ancestor = static::onlyTrashed()
+            ->where($this->getLftName(), '<', $fresh->getLft())
+            ->where($this->getRgtName(), '>', $fresh->getRgt())
+            ->orderBy($this->getLftName())
+            ->first();
+
+        return $ancestor;
     }
 
     /**

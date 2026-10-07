@@ -13,6 +13,9 @@ return [
     'parent-trashed' => 'O sayfa çöp kutusunda. İçine bir şey koymadan önce geri getirin.',
     'not-in-bin' => 'Yalnızca çöp kutusundaki bir sayfa kalıcı olarak silinebilir. Önce silin.',
     'slug-shape' => 'Bir adres harf, rakam, tire ve alt çizgi içerebilir.',
+    'ancestor-trashed' => 'Üstündeki sayfa, «:title» (#:id), çöp kutusunda. Önce onu geri yükleyin.',
+    'move-beside-self' => 'Bir sayfa kendisinin önüne veya arkasına konamaz.',
+    'title-required' => 'Başlık, sitenin ana dilinde (:locale) boş olamaz.',
 
     // The editor.
     'conflict' => 'Siz düzenlerken bu sayfayı :name değiştirdi.',

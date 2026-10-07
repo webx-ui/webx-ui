@@ -13,6 +13,9 @@ return [
     'parent-trashed' => 'Essa página está na lixeira. Restaure-a antes de colocar algo dentro dela.',
     'not-in-bin' => 'Só uma página na reciclagem pode ser eliminada de vez. Elimine-a primeiro.',
     'slug-shape' => 'Um endereço aceita letras, dígitos, hifens e sublinhados.',
+    'ancestor-trashed' => 'A página acima, «:title» (#:id), está na lixeira. Restaure-a primeiro.',
+    'move-beside-self' => 'Uma página não pode ficar antes nem depois de si mesma.',
+    'title-required' => 'O título não pode ficar vazio no idioma principal do site (:locale).',
 
     // The editor.
     'conflict' => ':name alterou esta página enquanto a editavas.',

@@ -516,10 +516,18 @@ final class McpTest extends TestCase
 
         $this->assertSame(1, Page::query()->whereNull('parent_id')->count());
 
-        // Its slug is empty in every language on purpose, and `PageForm` drops one sent for it
-        // rather than refusing the whole save — the screen hides the field anyway.
+        // Its slug is empty in every language on purpose. The panel's form drops one sent for it;
+        // an agent that asked for an address is told it has none rather than seeing a success.
         $this->agent('update', ['page' => '/', 'values' => ['title' => ['en' => 'Front'], 'slug' => ['en' => 'home']]])
-            ->assertOk();
+            ->assertHasErrors(['it has no address of its own']);
+
+        // The values sent back as read — an empty slug — are no request for one, and dry run does
+        // not list the field it is not going to write.
+        $this->agent('update', ['page' => '/', 'values' => ['title' => ['en' => 'Front'], 'slug' => []], 'dry_run' => true])
+            ->assertOk()
+            ->assertStructuredContent(function (AssertableJson $json): void {
+                $this->assertSame(['title'], $json->etc()->toArray()['fields']);
+            });
 
         $this->assertSame('', $home->refresh()->routeCanonical('en')?->path);
     }
@@ -632,7 +640,9 @@ final class McpTest extends TestCase
         $this->agent('create', ['title' => 'Contacts', 'dry_run' => true])
             ->assertOk()
             ->assertStructuredContent(function (AssertableJson $json): void {
-                $this->assertStringContainsString('/contacts', $json->etc()->toArray()['page']);
+                // The address, never an id: the rehearsal's id is burnt by the rollback.
+                $this->assertSame('/contacts', $json->etc()->toArray()['address']);
+                $this->assertArrayNotHasKey('page', $json->etc()->toArray());
             });
 
         // And nothing of either rehearsal stayed behind.
