@@ -378,6 +378,22 @@ final class Seo
     }
 
     /**
+     * The JSON-LD the `<head>` prints for this data: the sources', the trail, the entity's own.
+     *
+     * For `test_url`, which has no page being rendered: what a handler or a template pushes while
+     * it renders (`push()`, `put()`) exists only during that render and is not in here.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function printedJsonLd(SeoData $data, ?object $subject, string $locale): array
+    {
+        /** @var array<string, bool> $print */
+        $print = (array) $this->config->get('webx-seo.print', []);
+
+        return $this->blocks($data, $subject, $locale, $print);
+    }
+
+    /**
      * The JSON-LD of the page, in the order a reader of the source expects: the site's own and
      * the rules', the trail, the entity's, the handler's.
      *

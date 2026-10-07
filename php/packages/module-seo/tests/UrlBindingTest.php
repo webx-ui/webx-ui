@@ -6,10 +6,17 @@ namespace WebxUi\Seo\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
 use WebxUi\Seo\Models\SeoRedirect;
+use WebxUi\Routing\Formatters\Slug;
+use WebxUi\Routing\RouteType;
+use WebxUi\Routing\RouteTypes;
 use WebxUi\Seo\Models\SeoUrl;
+use WebxUi\Seo\Panel\AddressReport;
 use WebxUi\Seo\Panel\UrlRuleSource;
 use WebxUi\Seo\Targets\ForeignHost;
 use WebxUi\Seo\Targets\UrlTargets;
+use WebxUi\Seo\Tests\Fixtures\MappedEntity;
+use WebxUi\Seo\Tests\Fixtures\MappedPage;
+use WebxUi\Seo\Tests\Fixtures\MappedRedirect;
 use WebxUi\Seo\Tests\Fixtures\MapsEntities;
 
 /**
@@ -25,6 +32,27 @@ final class UrlBindingTest extends TestCase
         parent::setUp();
 
         $this->mapEntities();
+    }
+
+    #[Test]
+    public function the_report_says_what_a_visitor_gets_at_an_address(): void
+    {
+        app(RouteTypes::class)->register(new RouteType(type: 'mapped', model: MappedEntity::class, formatter: Slug::class, handler: MappedPage::class));
+        $entity = $this->entity('booking');
+        $this->rename($entity, 'booking-now');
+        $report = app(AddressReport::class);
+
+        $this->assertSame(['kind' => 'page', 'by' => 'route'], $report->for('/booking-now')['answers']);
+        $this->assertSame(['kind' => 'redirect', 'by' => 'alias', 'status' => 301, 'leads_to' => '/booking-now'], $report->for('/booking')['answers']);
+
+        // A handler that only sends the reader on is asked where to: no row of the redirects
+        // table knows, and "redirect: null" read as a page.
+        $this->app->bind(MappedPage::class, MappedRedirect::class);
+
+        $this->assertSame(
+            ['kind' => 'redirect', 'by' => 'handler', 'handler' => MappedRedirect::class, 'status' => 301, 'leads_to' => 'https://booking.example.test/'],
+            $report->for('/booking-now')['answers'],
+        );
     }
 
     #[Test]

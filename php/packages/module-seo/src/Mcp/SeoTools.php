@@ -109,7 +109,7 @@ final class SeoTools
 
             Tool::read(
                 'test_url',
-                'What an address ends up saying about itself, and where every part of it came from: the redirect that catches it (redirect, with leads_to — where it sends this very address, $1 filled in), what the address registry holds there (route: a live page or an alias of one that moved), the rule that matched, each source in turn, the social card as the head prints it (social: og:*, article:* and twitter:* lines, all derived from the page — there are no share fields to write), and whether it is in the sitemap and why not.',
+                'What an address ends up saying about itself, and where every part of it came from: the redirect that catches it (redirect, with leads_to — where it sends this very address, $1 filled in), what the address registry holds there (route: a live page or an alias of one that moved), the rule that matched, each source in turn, the social card as the head prints it (social: og:*, article:* and twitter:* lines, all derived from the page — there are no share fields to write), and whether it is in the sitemap and why not. answers says first what a visitor gets: a page, a redirect (a written one, an old address, or a handler that only sends the reader on — with where to), or a 404, in which case everything else is only what the defaults would say. json_ld is every block the head prints, the trail and the entity\'s own (Recipe, Event…) included — not what a template pushes while it renders.',
                 static fn (array $arguments): array => self::test($arguments),
                 [
                     'properties' => [

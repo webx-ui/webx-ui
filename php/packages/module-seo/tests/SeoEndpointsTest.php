@@ -139,7 +139,9 @@ final class SeoEndpointsTest extends TestCase
         SeoRedirect::query()->create(['match_type' => 'exact', 'pattern' => '/old', 'target' => '/new']);
 
         $this->askAgent('/elsewhere')->assertStructuredContent(static function (AssertableJson $json): void {
-            $json->where('redirect', null)->where('route', null)->where('url', '/elsewhere')->etc();
+            $json->where('redirect', null)->where('route', null)->where('url', '/elsewhere')
+                // Nothing lives here: said in so many words, so the SEO below is not read as a page's.
+                ->where('answers.kind', 'not-found')->where('answers.status', 404)->etc();
         });
     }
 
