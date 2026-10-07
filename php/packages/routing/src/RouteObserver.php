@@ -53,8 +53,14 @@ class RouteObserver
             // its own JSON as if it were a value in the current language.
             $original = $entity->getRawOriginal();
 
+            // Only what is a column goes back. A model read with `withCount()` or a subselect
+            // carries its aggregates among the raw attributes, and writing `children_count` back
+            // into the table turned a clean "address taken" into an unknown-column error.
+            $columns = $entity->getConnection()->getSchemaBuilder()->getColumnListing($entity->getTable());
+
             $entity->setRawAttributes($original, true);
-            $entity->newQueryWithoutScopes()->whereKey($entity->getKey())->toBase()->update($original);
+            $entity->newQueryWithoutScopes()->whereKey($entity->getKey())->toBase()
+                ->update(array_intersect_key($original, array_flip($columns)));
 
             throw $rejected;
         }

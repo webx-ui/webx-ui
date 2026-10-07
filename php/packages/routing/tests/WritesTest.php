@@ -148,6 +148,40 @@ class WritesTest extends TestCase
     }
 
     #[Test]
+    public function a_refused_address_is_undone_on_a_model_read_with_aggregates(): void
+    {
+        $first = Article::query()->create(['title' => 'Belts', 'slug' => 'belts']);
+        Article::query()->create(['title' => 'Bags', 'slug' => 'bags']);
+
+        // Read the way a list reads it, with a count that is not a column of the table.
+        $loaded = Article::query()->select('*')->selectRaw('(select count(*) from articles) as siblings_count')->findOrFail($first->getKey());
+        $loaded->slug = 'bags';
+
+        try {
+            $loaded->save();
+            $this->fail('An address another entity holds should have been refused.');
+        } catch (PathRejected $rejected) {
+            $this->assertArrayHasKey('slug', $rejected->errors());
+        }
+
+        $this->assertSame('belts', Article::query()->findOrFail($first->getKey())->slug);
+    }
+
+    #[Test]
+    public function a_refused_address_is_said_in_the_language_of_the_request(): void
+    {
+        Article::query()->create(['title' => 'Belts', 'slug' => 'belts']);
+        $this->app->setLocale('ru');
+
+        try {
+            Article::query()->create(['title' => 'Belts', 'slug' => 'belts']);
+            $this->fail('An address another entity holds should have been refused.');
+        } catch (PathRejected $rejected) {
+            $this->assertStringContainsString('Адрес «/belts» уже занят', $rejected->errors()['slug'][0]);
+        }
+    }
+
+    #[Test]
     public function the_bin_keeps_the_trail_and_a_restore_brings_it_back(): void
     {
         $article = Article::query()->create(['title' => 'Belts', 'slug' => 'belts']);
