@@ -15,7 +15,7 @@ final class ReviewNames
 {
     public static function of(Review $review, Locales $locales): string
     {
-        $name = $review->wordsIn('name', $locales->current(), $locales->defaultCode());
+        $name = $review->wordsIn('name', $locales->content(), $locales->defaultCode());
 
         return $name !== '' ? $name : '#'.$review->getKey();
     }

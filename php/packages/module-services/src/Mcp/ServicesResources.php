@@ -48,7 +48,7 @@ final class ServicesResources
     private function catalog(): array
     {
         $locales = $this->container->make(Locales::class);
-        $locale = $locales->current();
+        $locale = $locales->content();
         $prefix = (string) config('webx-services.prefix', 'services');
 
         $categories = ServiceCategory::query()->ordered()->get();

@@ -69,7 +69,7 @@ final class RecipeWriter
      */
     private function draft(Recipe $recipe, array $columns): array
     {
-        $locale = $this->locales->current();
+        $locale = $this->locales->content();
         $values = $recipe->hasDraft() ? $recipe->draftValues() : $this->published($recipe);
 
         foreach ($columns as $field => $value) {

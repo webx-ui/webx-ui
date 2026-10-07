@@ -131,7 +131,7 @@ final class QuestionForm
             return;
         }
 
-        $map = is_array($value) ? $value : [$this->locales->current() => $value];
+        $map = is_array($value) ? $value : [$this->locales->content() => $value];
         $translations = [...$question->getTranslations($field), ...$map];
 
         $translations = array_filter(

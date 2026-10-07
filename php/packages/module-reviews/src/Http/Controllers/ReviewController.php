@@ -35,7 +35,7 @@ final class ReviewController
      */
     public function index(Request $request, Locales $locales, MediaFiles $files): JsonResponse
     {
-        $locale = $locales->current();
+        $locale = $locales->content();
         $reviews = $this->list->build($request)->get();
 
         // The thumbnails of the whole list in one query of the library.

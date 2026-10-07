@@ -49,7 +49,7 @@ final class FaqResources
     private function catalog(): array
     {
         $locales = $this->container->make(Locales::class);
-        $locale = $locales->current();
+        $locale = $locales->content();
         $codes = $locales->codes();
 
         return [

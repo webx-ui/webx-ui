@@ -55,7 +55,7 @@ final class ServiceWriter
      */
     private function draft(Service $service, array $columns): array
     {
-        $locale = $this->locales->current();
+        $locale = $this->locales->content();
         $values = $service->hasDraft() ? $service->draftValues() : $this->published($service);
 
         foreach ($columns as $field => $value) {
