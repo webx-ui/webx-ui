@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import { h } from 'vue'
+import { h, inject } from 'vue'
+import { dateTimezoneKey } from '@webx-ui/core'
 import { createAdmin } from './createAdmin'
 import type { Http } from './http'
 import type { Manifest } from './types'
@@ -145,6 +146,39 @@ describe('createAdmin', () => {
 
     expect(admin.context.state.status).toBe('ready')
     expect(admin.context.state.manifest?.title).toBe('WebX UI')
+  })
+
+  it("hands every date picker the site's clock from the manifest", async () => {
+    let zone: unknown = 'not read'
+    const reader = {
+      setup() {
+        const provided = inject(dateTimezoneKey)
+
+        return () => {
+          zone = provided === undefined || typeof provided === 'string' ? provided : provided.value
+
+          return h('div')
+        }
+      },
+    }
+    const admin = createAdmin({
+      el: mountPoint(),
+      http: stubHttp({
+        get: ((url: string) =>
+          Promise.resolve(
+            url.includes('/manifest')
+              ? { data: { ...manifest, timezone: 'Asia/Hong_Kong' } }
+              : answer(url),
+          )) as never,
+      }),
+      basePath: '/cms',
+      routes: [{ path: '/', component: reader }],
+    })
+
+    await admin.mount()
+    await flushPromises()
+
+    expect(zone).toBe('Asia/Hong_Kong')
   })
 
   it('treats a 401 on the manifest as nobody being signed in, not as a failure', async () => {

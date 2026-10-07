@@ -1,9 +1,9 @@
 import { disableAutoUnmount, enableAutoUnmount, flushPromises, mount } from '@vue/test-utils'
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { adminKey, adminTypes, createI18n, i18nKey, type AdminContext } from '@webx-ui/module-admin'
-import { localesKey } from '@webx-ui/core'
+import { dateTimezoneKey, localesKey } from '@webx-ui/core'
 import { coreTypes, type ScreenModel, type ScreenNode } from '@webx-ui/schema'
 import EventEditorPage from './EventEditorPage.vue'
 import EventHistory from './EventHistory.vue'
@@ -171,6 +171,8 @@ async function panel(first = detail('r1')) {
             list: ref([{ code: 'en', name: 'English' }]),
             active: ref('en'),
           },
+          // The site's clock, from the manifest.
+          [dateTimezoneKey as symbol]: 'Asia/Hong_Kong',
         },
       },
     },
@@ -225,6 +227,51 @@ describe('WxEventEditorPage', () => {
     await flushPromises()
 
     expect(pickerTypes(wrapper)).toEqual(['date', 'date'])
+  })
+
+  /*
+   * The machine is put in New York: an event at ten in Hong Kong read 22:00 the day before there,
+   * and an event of days started a day early.
+   */
+  describe("on the site's clock, wherever the editor is", () => {
+    let saved: string | undefined
+
+    beforeAll(() => {
+      saved = process.env.TZ
+      process.env.TZ = 'America/New_York'
+    })
+
+    afterAll(() => {
+      if (saved === undefined) delete process.env.TZ
+      else process.env.TZ = saved
+    })
+
+    const shown = (wrapper: Awaited<ReturnType<typeof panel>>['wrapper']) =>
+      wrapper
+        .findAllComponents({ name: 'WxDatePicker' })
+        .map((one) => (one.find('input').element as HTMLInputElement).value)
+
+    it('shows a time at the hour the site prints, and says whose hour it is', async () => {
+      const { wrapper } = await panel()
+
+      expect(shown(wrapper)).toEqual(['12.10.2026 10:00 GMT+08:00', ''])
+    })
+
+    it('shows an event of days on the days the site prints', async () => {
+      const { wrapper } = await panel(
+        detail(
+          'r1',
+          {},
+          {
+            all_day: true,
+            starts_at: '2026-10-12T00:00:00+08:00',
+            ends_at: '2026-10-14T23:59:59+08:00',
+          },
+        ),
+      )
+
+      expect(shown(wrapper)).toEqual(['12.10.2026', '14.10.2026'])
+    })
   })
 
   it('hides the place of an event that is online', async () => {

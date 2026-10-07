@@ -1,6 +1,12 @@
 import { computed, createApp, h, ref, type App, type Component } from 'vue'
 import { createRouter, createWebHistory, type Router, type RouteRecordRaw } from 'vue-router'
-import { dateLocaleKey, localesKey, WebxUI, type LocaleOption } from '@webx-ui/core'
+import {
+  dateLocaleKey,
+  dateTimezoneKey,
+  localesKey,
+  WebxUI,
+  type LocaleOption,
+} from '@webx-ui/core'
 import AdminLanding from './AdminLanding.vue'
 import AdminNav from './AdminNav.vue'
 import AdminShell from './AdminShell.vue'
@@ -200,6 +206,16 @@ export function createAdmin(options: CreateAdminOptions = {}): Admin {
   app.provide(
     dateLocaleKey,
     computed(() => i18n.state.locale),
+  )
+
+  /*
+   * A moment is shown and entered on the site's clock, not the editor's: an event at 09:30 in
+   * the site's zone read 04:30 to an editor abroad, and their pick went back with their own
+   * offset. Until the manifest arrives there is no form to draw anyway.
+   */
+  app.provide(
+    dateTimezoneKey,
+    computed(() => context.state.manifest?.timezone),
   )
 
   app.provide(localesKey, {

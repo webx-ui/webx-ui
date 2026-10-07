@@ -38,6 +38,7 @@ final class ManifestBuilder
      *     locale: string,
      *     locales: list<array{code: string, name: string, nativeName: string, direction: string, default: bool}>,
      *     panelLocales: list<array{code: string, name: string, nativeName: string, direction: string, default: bool}>,
+     *     timezone: string,
      *     groups: list<array{id: string, title: string, icon: string|null, order: int, sections: list<array{id: string, title: string, order: int}>}>,
      *     modules: list<array<string, mixed>>,
      *     screens: list<string>,
@@ -64,12 +65,23 @@ final class ManifestBuilder
             'locales' => $this->locales->toPayload(),
             // What the interface itself can be switched to.
             'panelLocales' => $this->locales->panel(),
+            // The site's clock: a date picker shows and takes a moment in it, so an editor abroad
+            // reads an event at the hour the site prints rather than at their own.
+            'timezone' => $this->timezone(),
             'groups' => $this->groups(),
             'modules' => array_map($this->describe(...), $this->registry->all()),
             // Only the names: a screen travels on its own, when the page that needs it opens.
             'screens' => $this->screens->names(),
             'backup' => $this->backup(),
         ];
+    }
+
+    /** The application's zone, the one every moment is stored and printed in. */
+    private function timezone(): string
+    {
+        $zone = $this->config->get('app.timezone');
+
+        return is_string($zone) && $zone !== '' ? $zone : 'UTC';
     }
 
     /**

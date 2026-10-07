@@ -81,4 +81,15 @@ final class LocaleEndpointTest extends TestCase
             ->assertJsonPath('data.panelLocales.0.code', 'en')
             ->assertJsonPath('data.locale', 'en');
     }
+
+    #[Test]
+    public function the_manifest_tells_the_panel_the_sites_clock(): void
+    {
+        // A date picker shows a moment in it, so an editor abroad reads the hour the site prints.
+        config()->set('app.timezone', 'Asia/Hong_Kong');
+
+        $this->getJson('api/cms/manifest')
+            ->assertOk()
+            ->assertJsonPath('data.timezone', 'Asia/Hong_Kong');
+    }
 }
