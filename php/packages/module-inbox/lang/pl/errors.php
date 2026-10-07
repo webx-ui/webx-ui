@@ -16,5 +16,7 @@ return [
     'recipient-unknown' => 'Odbiorca :entry wskazuje administratora, który nie istnieje.',
     'choices-required' => 'Pole listy potrzebuje co najmniej jednej opcji z wartością.',
     'email-field' => 'Pole odpowiedzi musi być polem e-mail tego formularza.',
+    'no-such-answer' => 'To zgłoszenie nie ma odpowiedzi o tej nazwie.',
+    'not-correctable' => 'Pliku ani zgody nie można poprawić.',
     'nobody-to-notify' => 'Formularz „:form” nie wskazuje nikogo, do kogo pisać.',
 ];

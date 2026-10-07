@@ -160,4 +160,5 @@ return [
     'notify-recipient-failed' => 'non riuscita',
     'event-notify-queued' => 'La notifica è stata messa in coda',
     'event-notify-failed' => 'La notifica a :to non è riuscita',
+    'event-value' => 'Risposta «:field» corretta: «:from» → «:to»',
 ];

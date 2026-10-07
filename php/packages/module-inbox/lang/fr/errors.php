@@ -16,5 +16,7 @@ return [
     'recipient-unknown' => 'Le destinataire :entry désigne un administrateur qui n\'existe pas.',
     'choices-required' => 'Un champ de liste a besoin d\'au moins un choix avec une valeur.',
     'email-field' => 'Le champ de réponse doit être un champ e-mail de ce formulaire.',
+    'no-such-answer' => 'Cet envoi n\'a pas de réponse sous ce nom.',
+    'not-correctable' => 'Un fichier ou un consentement ne peut pas être corrigé.',
     'nobody-to-notify' => 'Le formulaire « :form » ne désigne personne à qui écrire.',
 ];

@@ -8,9 +8,11 @@ use Illuminate\Contracts\Validation\Factory as ValidationFactory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Admin\Support\Authors;
 use WebxUi\Inbox\Exceptions\NobodyToNotify;
+use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Http\Resources\SubmissionResource;
 use WebxUi\Inbox\Http\Resources\SubmissionRowResource;
 use WebxUi\Inbox\Mail\Notifier;
@@ -19,6 +21,7 @@ use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Status;
 use WebxUi\Inbox\Models\Submission;
 use WebxUi\Inbox\Models\SubmissionEvent;
+use WebxUi\Inbox\Models\SubmissionValue;
 use WebxUi\Inbox\Submissions\Intake;
 use WebxUi\Inbox\Submissions\ListQuery;
 use WebxUi\Inbox\Submissions\Rules;
@@ -138,16 +141,18 @@ final class SubmissionController
 
         $admin = $this->adminId($request);
 
+        // First, because it is the part that can still be refused: a status moved before a
+        // correction was turned down would be half of a request that answered 422.
+        if (array_key_exists('values', $validated) && is_array($validated['values'])) {
+            $this->correct($submission, $validated['values'], $admin);
+        }
+
         if (array_key_exists('status_id', $validated)) {
             $this->moveTo($submission, (int) $validated['status_id'], $admin);
         }
 
         if (array_key_exists('assignee_id', $validated)) {
             $this->assignTo($submission, $validated['assignee_id'] === null ? null : (int) $validated['assignee_id'], $admin);
-        }
-
-        if (array_key_exists('values', $validated) && is_array($validated['values'])) {
-            $this->correct($submission, $validated['values']);
         }
 
         return ApiResponse::data($this->one($request, $submission->refresh()));
@@ -216,29 +221,139 @@ final class SubmissionController
      * A correction to what arrived — a telephone number with a digit missing, a name spelled
      * from a bad line.
      *
-     * Only the text is touched: the snapshot beside it says what was asked and in what shape,
-     * and rewriting that would turn a correction into a forgery. Answers whose field is not in
-     * what was sent are left alone, so a form can be corrected one value at a time.
+     * Only the answer is touched: the snapshot beside it says what was asked and in what shape,
+     * and rewriting that would turn a correction into a forgery. That shape is also what the
+     * correction is checked against — an e-mail answer stays an address, a date a date, a
+     * choice one of the choices — and every change is a line in the log with who made it and
+     * what it was before. Answers whose field is not in what was sent are left alone, so a
+     * form can be corrected one value at a time; a name the submission has no answer under is
+     * refused rather than ignored, because it is a typo the caller would never hear about.
      *
-     * @param  array<string, mixed>  $values  machine name → the corrected text
+     * All or nothing: everything is checked before anything is written.
+     *
+     * @param  array<string, mixed>  $values  machine name → the corrected answer
      */
-    private function correct(Submission $submission, array $values): void
+    private function correct(Submission $submission, array $values, ?int $admin): void
     {
-        foreach ($submission->values as $value) {
-            if (! array_key_exists($value->name, $values)) {
+        $answers = $submission->values->keyBy('name');
+        $changes = [];
+        $errors = [];
+
+        foreach ($values as $name => $sent) {
+            $answer = $answers->get((string) $name);
+
+            if (! $answer instanceof SubmissionValue) {
+                $errors['values.'.$name] = [(string) trans('webx-inbox::errors.no-such-answer')];
+
                 continue;
             }
 
-            $text = $values[$value->name];
+            $corrected = $this->corrected($answer, $sent, 'values.'.$name);
 
-            if (! is_scalar($text) && $text !== null) {
+            if (is_array($corrected) && isset($corrected['error'])) {
+                $errors['values.'.$name] = [$corrected['error']];
+
                 continue;
             }
 
-            $value->forceFill(['value' => $text === null ? null : (string) $text])->save();
+            $changes[] = [$answer, $corrected];
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
+
+        foreach ($changes as [$answer, [$text, $payload]]) {
+            if ($answer->value === $text && $answer->payload === $payload) {
+                continue;
+            }
+
+            $was = $answer->readable();
+            $answer->forceFill(['value' => $text, 'payload' => $payload])->save();
+            $submission->log(SubmissionEvent::VALUE, $was, $answer->readable(), $admin, $answer->name);
         }
 
         $submission->unsetRelation('values');
+        $submission->unsetRelation('events');
+    }
+
+    /**
+     * One corrected answer as it will be stored — the text and the payload beside it — or why
+     * it cannot be.
+     *
+     * @return array{0: string|null, 1: array<int|string, mixed>|null}|array{error: string}
+     */
+    private function corrected(SubmissionValue $answer, mixed $sent, string $key): array
+    {
+        $type = FieldType::tryFrom($answer->type);
+
+        // A file is bytes on a disk and a consent is a box the visitor ticked: neither is a
+        // typo somebody in the office fixes.
+        if ($type === FieldType::File || $type === FieldType::Consent) {
+            return ['error' => (string) trans('webx-inbox::errors.not-correctable')];
+        }
+
+        if ($sent === null || $sent === '' || $sent === []) {
+            return [null, null];
+        }
+
+        $field = $answer->field;
+
+        if ($type !== null && $type->hasChoices() && $field instanceof Field) {
+            return $this->chosen($field, $sent, $key);
+        }
+
+        $rules = match ($type) {
+            FieldType::Email => ['string', 'email:rfc', $this->rules->reachableDomain(...), 'max:255'],
+            FieldType::Date => ['string', 'date_format:Y-m-d'],
+            FieldType::Tel => ['string', 'max:64'],
+            default => ['string', 'max:20000'],
+        };
+
+        // Under a flat key: `values.email` would be read as a path into an array that is not
+        // there, and the rules would pass over a value they never found.
+        $check = $this->validator->make(
+            ['value' => is_scalar($sent) ? (string) $sent : $sent],
+            ['value' => $rules],
+            [],
+            ['value' => (string) ($answer->label ?: $key)],
+        );
+
+        if ($check->fails()) {
+            return ['error' => (string) $check->errors()->first('value')];
+        }
+
+        return [(string) $sent, null];
+    }
+
+    /**
+     * A list answer, corrected to one of the choices the field offers — by its value or by
+     * the label the panel shows. The text becomes the label and the payload the values, the
+     * same two the intake writes, so the payload never goes on naming the old choice.
+     *
+     * @return array{0: string, 1: list<string>}|array{error: string}
+     */
+    private function chosen(Field $field, mixed $sent, string $key): array
+    {
+        $choices = $field->choices();
+        $picked = [];
+
+        foreach ($field->isMultiple() && is_array($sent) ? $sent : [$sent] as $one) {
+            if (! is_scalar($one)) {
+                return ['error' => (string) trans('validation.in', ['attribute' => (string) $field->title ?: $key])];
+            }
+
+            $one = (string) $one;
+            $value = array_key_exists($one, $choices) ? $one : array_search($one, $choices, true);
+
+            if ($value === false) {
+                return ['error' => (string) trans('validation.in', ['attribute' => (string) $field->title ?: $key])];
+            }
+
+            $picked[] = (string) $value;
+        }
+
+        return [implode(', ', array_map(static fn (string $value): string => $choices[$value], $picked)), $picked];
     }
 
     /**

@@ -160,4 +160,5 @@ return [
     'notify-recipient-failed' => 'nieudane',
     'event-notify-queued' => 'Powiadomienie trafiło do kolejki',
     'event-notify-failed' => 'Powiadomienie do :to nie zostało wysłane',
+    'event-value' => 'Poprawiono odpowiedź „:field”: „:from” → „:to”',
 ];

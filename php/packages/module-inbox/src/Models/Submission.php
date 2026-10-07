@@ -196,13 +196,15 @@ class Submission extends Model implements Notable
      * One line of the log. It is only ever added to: an audit trail that can be edited is a
      * story rather than a record.
      */
-    public function log(string $type, ?string $from = null, ?string $to = null, ?int $adminId = null): SubmissionEvent
+    public function log(string $type, ?string $from = null, ?string $to = null, ?int $adminId = null, ?string $field = null): SubmissionEvent
     {
         return $this->events()->create([
             'admin_id' => $adminId,
             'type' => $type,
-            'from' => $from,
-            'to' => $to,
+            'field' => $field,
+            // The columns hold 255, and a corrected letter is longer than that.
+            'from' => $from === null ? null : mb_substr($from, 0, 255),
+            'to' => $to === null ? null : mb_substr($to, 0, 255),
             'created_at' => Carbon::now(),
         ]);
     }

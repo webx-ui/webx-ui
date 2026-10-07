@@ -209,6 +209,66 @@ final class PanelSubmissionsTest extends TestCase
     }
 
     #[Test]
+    public function a_correction_is_written_in_the_log_with_who_made_it_and_what_it_was(): void
+    {
+        $form = $this->form();
+        $submission = $this->filled($form, ['name' => 'Ada', 'email' => 'ada@example.test']);
+        $editor = $this->editor();
+
+        $response = $this->actingAs($editor, 'cms')
+            ->putJson($this->api('submissions/'.$submission->getKey()), ['values' => ['email' => 'ada@example.org']])
+            ->assertOk();
+
+        $event = SubmissionEvent::query()->where('type', SubmissionEvent::VALUE)->sole();
+
+        $this->assertSame('email', $event->field);
+        $this->assertSame('ada@example.test', $event->from);
+        $this->assertSame('ada@example.org', $event->to);
+        $this->assertSame((int) $editor->getKey(), $event->admin_id);
+        $this->assertContains('email', array_column((array) $response->json('data.events'), 'field'));
+    }
+
+    #[Test]
+    public function a_correction_is_checked_against_the_type_it_was_asked_in(): void
+    {
+        $form = $this->form('survey', [
+            ['name' => 'email', 'type' => FieldType::Email],
+            ['name' => 'when', 'type' => FieldType::Date],
+            ['name' => 'plan', 'type' => FieldType::Select, 'options' => ['choices' => [
+                ['value' => 'basic', 'label' => ['en' => 'Basic plan']],
+                ['value' => 'pro', 'label' => ['en' => 'Pro plan']],
+            ]]],
+            ['name' => 'terms', 'type' => FieldType::Consent],
+        ]);
+        $submission = $this->filled($form, ['email' => 'ada@example.test', 'when' => '2026-02-01', 'plan' => 'Basic plan', 'terms' => 'yes']);
+        $submission->value('plan')?->forceFill(['payload' => ['basic']])->save();
+        $editor = $this->editor();
+
+        $this->actingAs($editor, 'cms')
+            ->putJson($this->api('submissions/'.$submission->getKey()), [
+                'status_id' => Status::spam()?->getKey(),
+                'values' => ['email' => 'not-an-email', 'when' => '2026-02-30', 'plan' => 'gold', 'terms' => 'no', 'nope' => 'x'],
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['values.email', 'values.when', 'values.plan', 'values.terms', 'values.nope']);
+
+        // All or nothing: the status in the same request did not move either.
+        $this->assertSame('ada@example.test', $submission->refresh()->value('email')?->value);
+        $this->assertSame(Status::default()?->getKey(), $submission->status_id);
+        $this->assertSame(0, SubmissionEvent::query()->where('type', SubmissionEvent::VALUE)->count());
+
+        // A choice by its value or by its label; the payload follows it.
+        $this->actingAs($editor, 'cms')
+            ->putJson($this->api('submissions/'.$submission->getKey()), ['values' => ['plan' => 'pro', 'when' => '2026-03-01']])
+            ->assertOk();
+
+        $plan = $submission->refresh()->value('plan');
+        $this->assertSame('Pro plan', $plan?->value);
+        $this->assertSame(['pro'], $plan?->payload);
+        $this->assertSame('2026-03-01', $submission->value('when')?->value);
+    }
+
+    #[Test]
     public function a_submission_can_be_typed_in_by_hand(): void
     {
         $form = $this->form();

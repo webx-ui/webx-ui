@@ -16,5 +16,7 @@ return [
     'recipient-unknown' => 'Empfänger :entry nennt einen Administrator, den es nicht gibt.',
     'choices-required' => 'Ein Listenfeld braucht mindestens eine Auswahl mit einem Wert.',
     'email-field' => 'Das Antwortfeld muss ein E-Mail-Feld dieses Formulars sein.',
+    'no-such-answer' => 'Diese Einsendung hat keine Antwort unter diesem Namen.',
+    'not-correctable' => 'Eine Datei oder eine Einwilligung kann nicht korrigiert werden.',
     'nobody-to-notify' => 'Das Formular „:form“ nennt niemanden, dem geschrieben wird.',
 ];

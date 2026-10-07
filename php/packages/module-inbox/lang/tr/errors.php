@@ -16,5 +16,7 @@ return [
     'recipient-unknown' => ':entry alıcısı var olmayan bir yöneticiyi gösteriyor.',
     'choices-required' => 'Bir liste alanının değeri olan en az bir seçeneği olmalı.',
     'email-field' => 'Yanıt alanı bu formun bir e-posta alanı olmalı.',
+    'no-such-answer' => 'Bu gönderimde bu adla bir yanıt yok.',
+    'not-correctable' => 'Bir dosya ya da onay düzeltilemez.',
     'nobody-to-notify' => '“:form” formu kime yazılacağını belirtmiyor.',
 ];

@@ -16,5 +16,7 @@ return [
     'recipient-unknown' => 'Recipient :entry names an administrator who does not exist.',
     'choices-required' => 'A list field needs at least one choice, each with a value.',
     'email-field' => 'The reply-to field has to be an e-mail field of this form.',
+    'no-such-answer' => 'This submission has no answer under that name.',
+    'not-correctable' => 'A file or a consent cannot be corrected.',
     'nobody-to-notify' => 'The form “:form” names nobody to write to.',
 ];

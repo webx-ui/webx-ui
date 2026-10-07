@@ -160,4 +160,5 @@ return [
     'notify-recipient-failed' => 'fehlgeschlagen',
     'event-notify-queued' => 'Die Benachrichtigung wurde in die Warteschlange gestellt',
     'event-notify-failed' => 'Die Benachrichtigung an :to ist fehlgeschlagen',
+    'event-value' => 'Antwort „:field“ korrigiert: „:from“ → „:to“',
 ];

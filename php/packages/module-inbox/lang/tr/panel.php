@@ -160,4 +160,5 @@ return [
     'notify-recipient-failed' => 'gönderilemedi',
     'event-notify-queued' => 'Bildirim kuyruğa alındı',
     'event-notify-failed' => ':to adresine bildirim gönderilemedi',
+    'event-value' => '“:field” yanıtı düzeltildi: “:from” → “:to”',
 ];

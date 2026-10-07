@@ -271,7 +271,10 @@ export interface SubmissionEvent {
     | 'no_recipients'
     | 'notify_queued'
     | 'notify_failed'
+    | 'value'
     | string
+  /** The answer a `value` line is about, by machine name; null on every other line. */
+  field?: string | null
   from: string | null
   to: string | null
   /** Null is the system — the submission arriving, the notification going out. */

@@ -160,4 +160,5 @@ return [
     'notify-recipient-failed' => 'не ушло',
     'event-notify-queued' => 'Письмо поставлено в очередь',
     'event-notify-failed' => 'Письмо на :to не ушло',
+    'event-value' => 'Ответ «:field» исправлен: «:from» → «:to»',
 ];

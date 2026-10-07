@@ -160,4 +160,5 @@ return [
     'notify-recipient-failed' => 'не пішов',
     'event-notify-queued' => 'Лист поставлено в чергу',
     'event-notify-failed' => 'Лист на :to не пішов',
+    'event-value' => 'Відповідь «:field» виправлено: «:from» → «:to»',
 ];

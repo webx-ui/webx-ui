@@ -160,4 +160,5 @@ return [
     'notify-recipient-failed' => 'failed',
     'event-notify-queued' => 'The notification was queued',
     'event-notify-failed' => 'The notification to :to failed',
+    'event-value' => 'Answer “:field” corrected: “:from” → “:to”',
 ];

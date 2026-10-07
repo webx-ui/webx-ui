@@ -160,4 +160,5 @@ return [
     'notify-recipient-failed' => 'falhou',
     'event-notify-queued' => 'A notificação foi colocada na fila',
     'event-notify-failed' => 'A notificação para :to falhou',
+    'event-value' => 'Resposta «:field» corrigida: «:from» → «:to»',
 ];

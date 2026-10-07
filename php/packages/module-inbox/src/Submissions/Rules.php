@@ -147,7 +147,7 @@ final class Rules
      * but also refuses a domain written in its own script, and a site in any language may
      * hear from one — so the RFC check stays, and the domain only has to have a dot inside it.
      */
-    private function reachableDomain(string $attribute, mixed $value, Closure $fail): void
+    public function reachableDomain(string $attribute, mixed $value, Closure $fail): void
     {
         if (! is_string($value)) {
             return;

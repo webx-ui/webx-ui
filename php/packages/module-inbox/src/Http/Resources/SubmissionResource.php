@@ -118,6 +118,8 @@ final class SubmissionResource extends JsonResource
         return [
             'id' => (int) $event->getKey(),
             'type' => $event->type,
+            // The answer a `value` line is about, by machine name; null on every other line.
+            'field' => $event->field,
             'from' => $event->from,
             'to' => $event->to,
             // Null is the system — the submission arriving, the notification going out.
