@@ -44,8 +44,8 @@ The section has five views and its settings:
   itself. A row opens into the pages that link there and the records that hold the address, with
   «Open in the editor».
 - **Runs** — the history. Tick one run to compare it with the run before it, tick two to compare
-  those: what is new, what persists and what is gone, check by check. «Clear audit data» below
-  (`audit.manage`) deletes every run with everything it found, after a warning; the hiding rules
+  those: what is new, what persists and what is gone, check by check. «Clear audit data» in the
+  head's `···` (`audit.manage`) deletes every run with everything it found, after a warning; the hiding rules
   and the settings stay. It is refused while a run is going — cancel it first.
 - **Settings** (the button in the head) — where the site is, its stands, the limits of the crawl,
   the paths it leaves out, the thresholds, the nightly run and how much history to keep.

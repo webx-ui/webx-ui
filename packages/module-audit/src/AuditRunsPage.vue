@@ -1,13 +1,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAdmin, useErrorText, useTranslate, WxDate } from '@webx-ui/module-admin'
+import {
+  useAdmin,
+  useErrorText,
+  useTranslate,
+  WxDate,
+  type ScreenAction,
+} from '@webx-ui/module-admin'
 import {
   confirm,
   toast,
   WxAlert,
   WxBadge,
-  WxButton,
   WxCard,
   WxTable,
   WxText,
@@ -33,8 +38,8 @@ import type {
  * The history (§8 «Runs»): every run kept, newest first, with its health and counts. Ticking a
  * run compares it with the one it was analysed against; ticking two compares those two — by
  * fingerprint (decision 8): what is new in the later one, what both have, what is gone. `?to=`
- * opens on one run already ticked — the way the page card's recheck leads here. Below, for whoever
- * manages the section, the way to clear every run at once, behind a warning.
+ * opens on one run already ticked — the way the page card's recheck leads here. In the head, for
+ * whoever manages the section, the way to clear every run at once, behind a warning.
  */
 const props = defineProps<{ base: string }>()
 
@@ -143,6 +148,22 @@ async function compare(): Promise<void> {
   }
 }
 
+// Danger, so the head puts it in its `···`: never a red button beside the section's name.
+const actions = computed<ScreenAction[]>(() =>
+  canManage && runs.value?.total
+    ? [
+        {
+          key: 'clear',
+          label: t('page.clear'),
+          icon: 'trash',
+          danger: true,
+          disabled: clearing.value,
+          run: () => void clear(),
+        },
+      ]
+    : [],
+)
+
 async function clear(): Promise<void> {
   const agreed = await confirm({
     title: t('page.clear-title'),
@@ -182,9 +203,17 @@ watch(selected, (keys) => {
 </script>
 
 <template>
-  <audit-layout :base="props.base" current="runs" :card="false">
+  <audit-layout :base="props.base" current="runs" :card="false" :actions="actions">
     <div class="wx-audit-runs">
       <wx-card>
+        <!-- Above the table, not under it: read before ticking, not found after scrolling. -->
+        <wx-alert
+          v-if="!pair && runs?.total"
+          type="info"
+          :description="t('page.compare-help')"
+          class="wx-audit-runs__note"
+        />
+
         <wx-table
           v-model:selected="selected"
           :data="runs"
@@ -220,9 +249,7 @@ watch(selected, (keys) => {
         </wx-table>
       </wx-card>
 
-      <wx-text v-if="!pair" size="sm" tone="muted">{{ t('page.compare-help') }}</wx-text>
-
-      <wx-card v-else :title="t('page.compare')">
+      <wx-card v-if="pair" :title="t('page.compare')">
         <wx-text v-if="comparison" size="sm" tone="muted" class="wx-audit-runs__pair">
           {{ t('page.compare-from') }} #{{ comparison.from.id }} ·
           <wx-date :value="comparison.from.created_at" /> → {{ t('page.compare-to') }} #{{
@@ -270,17 +297,6 @@ watch(selected, (keys) => {
           </template>
         </wx-table>
       </wx-card>
-
-      <div v-if="canManage && runs?.total" class="wx-audit-runs__danger">
-        <wx-button
-          type="danger"
-          variant="outline"
-          icon="trash"
-          :loading="clearing"
-          @click="clear"
-          >{{ t('page.clear') }}</wx-button
-        >
-      </div>
     </div>
   </audit-layout>
 </template>
@@ -302,11 +318,6 @@ watch(selected, (keys) => {
 .wx-audit-runs__pair {
   display: block;
   margin-bottom: var(--wx-space-12);
-}
-
-.wx-audit-runs__danger {
-  display: flex;
-  justify-content: flex-end;
 }
 
 .wx-audit-runs__note {
