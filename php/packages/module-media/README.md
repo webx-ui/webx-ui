@@ -94,12 +94,24 @@ The steps are `webx-media.optimize.steps` — add a class implementing
 
 ## MCP
 
-`list_directories`, `list_files`, `search_files`, `get_file`, `create_directory`,
+`list_directories`, `list_files`, `search_files`, `get_file`, `create_directory`, `delete_directory`,
 `rename_file`, `move_files`, `upload_from_url`, `optimize_images`, `delete_files`. Every mutating tool takes
-`dry_run`.
+`dry_run`; a refusal is an MCP error (`ToolFailure`), not an `ok: false` answer.
 
-Deleting a folder is deliberately not among them: recursive deletion is the one operation here
-that a mistaken call cannot take back, and an agent cannot ask the question the panel asks first.
+- `delete_directory` deletes an **empty** folder only: recursive deletion is the one operation
+  here that a mistaken call cannot take back, and an agent cannot ask the question the panel asks
+  first.
+- `delete_files` refuses a file the site still uses and says where, unless `force: true`.
+  `WebxUi\Media\Usage\MediaUsage` asks every source tagged `MediaUsage::TAG`; the one that ships,
+  `DatabaseUsage`, reads the schema — foreign keys into `media_files`, and the last segment of
+  the file's key (a uuid) inside text and JSON columns. History, logs and queues are skipped
+  (`webx-media.usage.ignore`).
+- `upload_from_url` fetches only from the public internet: the host is resolved, every address
+  is checked (loopback, private, link-local, reserved, in both families and inside IPv6), the
+  connection is pinned to the checked address, and redirects are followed by hand and checked
+  the same way. The type is sniffed from the bytes, the name gets an extension from the upload
+  white list, and the panel's upload rules apply. `webx-media.remote.allow_hosts` names hosts on
+  the site's own network that may be fetched anyway.
 
 ## Configuration
 

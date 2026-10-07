@@ -20,6 +20,8 @@ use WebxUi\Media\Screens\GalleryFieldType;
 use WebxUi\Media\Screens\MediaFieldType;
 use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Media\Storage\LibraryUrls;
+use WebxUi\Media\Usage\DatabaseUsage;
+use WebxUi\Media\Usage\MediaUsage;
 
 class MediaServiceProvider extends ServiceProvider
 {
@@ -47,6 +49,10 @@ class MediaServiceProvider extends ServiceProvider
         // pictures in a `wx-rich-text` document above all. Bound here rather than asked for by
         // name, because the panel may not have a file manager at all.
         $this->app->bind(AssetUrls::class, LibraryUrls::class);
+
+        // Where a file is in use, asked before it is deleted. A module that keeps files where the
+        // schema cannot show them tags a source of its own with the same name.
+        $this->app->tag([DatabaseUsage::class], MediaUsage::TAG);
     }
 
     public function boot(): void
