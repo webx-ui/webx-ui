@@ -139,7 +139,7 @@ final class RecipeTools
                 'Change the values of a recipe into its draft. A field left out keeps what it had; a localized '
                 .'field sent as { "en": "…" } changes that language only. Send the revision recipes_get gave you and '
                 .'the write is refused if somebody saved in between. Everything — the categories and the links '
-                .'included — reaches the site when the recipe is published. '.$html,
+                .'included — reaches the site when the recipe is published. The SEO card is the exception: it is not drafted and is on the site the moment it is saved — the answer says so with seo_live: true. '.$html,
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'recipe' => $recipe,
@@ -333,7 +333,7 @@ final class RecipeTools
             fn () => $this->form()->save($recipe, $values, $this->can($user), $this->authorId($user)),
         );
 
-        return $this->get(['recipe' => $recipe->refresh()->getKey()], $user);
+        return $this->get(['recipe' => $recipe->refresh()->getKey()], $user) + $this->seoLive($values);
     }
 
     /**
@@ -863,5 +863,17 @@ final class RecipeTools
     private function locales(): Locales
     {
         return $this->container->make(Locales::class);
+    }
+
+    /**
+     * The SEO card skips the draft (`HasSeo`): an agent that reads "into its draft" must not
+     * believe a new description is waiting for a publication that it does not need.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function seoLive(array $values): array
+    {
+        return array_key_exists('seo', $values) ? ['seo_live' => true] : [];
     }
 }

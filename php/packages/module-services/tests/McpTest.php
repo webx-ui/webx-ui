@@ -139,6 +139,38 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function a_partial_seo_card_is_merged_live_and_moves_the_revision(): void
+    {
+        $service = $this->service('crowns');
+        $id = $service->getKey();
+
+        $this->agent('services_update', ['service' => $id, 'values' => ['seo' => [
+            'title' => ['en' => 'Crowns'],
+            'description' => ['en' => 'Ceramic crowns.'],
+        ]]])->assertOk();
+
+        $read = $this->content($this->agent('services_get', ['service' => $id]));
+
+        $answer = $this->content($this->agent('services_update', [
+            'service' => $id,
+            'values' => ['seo' => ['title' => ['en' => 'Crowns and bridges']]],
+            'revision' => $read['revision'],
+        ]));
+
+        // The card is not drafted, and the answer says so rather than "into its draft".
+        $this->assertTrue($answer['seo_live'] ?? false);
+        $this->assertSame(
+            ['title' => ['en' => 'Crowns and bridges'], 'description' => ['en' => 'Ceramic crowns.']],
+            Service::query()->findOrFail($id)->seoValue(),
+        );
+
+        // A SEO-only edit is an edit: whoever still holds the old revision is told.
+        $this->assertNotSame($read['revision'], $answer['revision']);
+        $this->agent('services_update', ['service' => $id, 'values' => ['lead' => 'Mine'], 'revision' => $read['revision']])
+            ->assertHasErrors(['changed since you read it']);
+    }
+
+    #[Test]
     public function the_body_is_not_written_here(): void
     {
         $service = $this->service('crowns');

@@ -151,7 +151,7 @@ final class EventTools
                 'Change the values of an event into its draft. A field left out keeps what it had; a localized '
                 .'field sent as { "en": "…" } changes that language only. Send the revision events_get gave you '
                 .'and the write is refused if somebody saved in between. Everything — the categories and the '
-                .'services included — reaches the site when the event is published. '.$dates,
+                .'services included — reaches the site when the event is published. The SEO card is the exception: it is not drafted and is on the site the moment it is saved — the answer says so with seo_live: true. '.$dates,
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'event' => $event,
@@ -355,7 +355,7 @@ final class EventTools
             fn () => $this->form()->save($event, $values, $this->can($user), $this->authorId($user)),
         );
 
-        return $this->get(['event' => $event->refresh()->getKey()], $user);
+        return $this->get(['event' => $event->refresh()->getKey()], $user) + $this->seoLive($values);
     }
 
     /**
@@ -845,5 +845,17 @@ final class EventTools
     private function locales(): Locales
     {
         return $this->container->make(Locales::class);
+    }
+
+    /**
+     * The SEO card skips the draft (`HasSeo`): an agent that reads "into its draft" must not
+     * believe a new description is waiting for a publication that it does not need.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function seoLive(array $values): array
+    {
+        return array_key_exists('seo', $values) ? ['seo_live' => true] : [];
     }
 }

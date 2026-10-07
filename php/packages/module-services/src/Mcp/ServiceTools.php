@@ -121,7 +121,7 @@ final class ServiceTools
                 .'fields the project added — into its draft. A field left out keeps what it had. Send the '
                 .'revision services_get gave you and the write is refused if somebody saved in between. The '
                 .'body is not written here: blocks go through blocks_edit_content. The categories are not '
-                .'drafted — they are on the site the moment they are saved.',
+                .'drafted — they are on the site the moment they are saved, and so is the SEO card — the answer says so with seo_live: true.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->update($arguments, $user)),
                 ['properties' => [
                     'service' => $service,
@@ -331,7 +331,7 @@ final class ServiceTools
 
         $this->form()->save($service, $values, $this->can($user), $this->authorId($user));
 
-        return $this->get(['service' => $service->refresh()->getKey()], $user);
+        return $this->get(['service' => $service->refresh()->getKey()], $user) + $this->seoLive($values);
     }
 
     /**
@@ -805,5 +805,17 @@ final class ServiceTools
     private function locales(): Locales
     {
         return $this->container->make(Locales::class);
+    }
+
+    /**
+     * The SEO card skips the draft (`HasSeo`): an agent that reads "into its draft" must not
+     * believe a new description is waiting for a publication that it does not need.
+     *
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function seoLive(array $values): array
+    {
+        return array_key_exists('seo', $values) ? ['seo_live' => true] : [];
     }
 }
