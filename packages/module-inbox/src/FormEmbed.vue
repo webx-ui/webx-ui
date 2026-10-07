@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useTranslate } from '@webx-ui/module-admin'
+import { useAdmin, useTranslate } from '@webx-ui/module-admin'
 import { toast, WxAction, WxCard, WxTable, WxText, type TableColumn } from '@webx-ui/core'
 import { useInboxMessages } from './i18n'
 import type { InboxField, InboxForm } from './types'
@@ -15,17 +15,39 @@ import type { InboxField, InboxForm } from './types'
  * Under them, the names. A hidden field is filled in by the page it stands on — the address
  * somebody wrote from, the product they were looking at, the campaign that brought them — and
  * the only way to fill one in is to know what it is called (§2.6).
+ *
+ * Where a block's template lives depends on the site: with `module-blocks` it is written in
+ * the panel's Blocks section, and a hint pointing at `resources/views/blocks/…` sent people
+ * looking for a file that is not there. Without it, a block type is the site's own view.
  */
 const props = defineProps<{ form: InboxForm; slug: string; fields: InboxField[] }>()
 
 useInboxMessages()
 const t = useTranslate('webx-inbox')
+const admin = useAdmin()
+
+const hasBlocks = computed(
+  () => admin.state.manifest?.modules.some((module) => module.id === 'blocks') ?? false,
+)
 
 const blade = computed(() => `<x-webx-inbox::form slug="${props.slug}" />`)
 
-const block = computed(
+const block = computed(() =>
+  hasBlocks.value
+    ? blade.value
+    : `{{-- resources/views/blocks/contact.blade.php --}}\n<x-webx-inbox::form slug="${props.slug}" />`,
+)
+
+/** The first hidden field, so the example fills a name this form actually has. */
+const hidden = computed(
   () =>
-    `{{-- resources/views/blocks/contact.blade.php --}}\n<x-webx-inbox::form slug="${props.slug}" />`,
+    props.fields.find((field) => field.type === 'hidden' && field.is_enabled)?.key ?? 'page',
+)
+
+const extras = computed(
+  () =>
+    `<x-webx-inbox::form slug="${props.slug}" :values="['${hidden.value}' => url()->current()]" />\n` +
+    `<x-webx-inbox::form slug="${props.slug}" placement="footer" />`,
 )
 
 const columns = computed<TableColumn<InboxField>[]>(() => [
@@ -60,11 +82,22 @@ async function copy(text: string): Promise<void> {
     </wx-card>
 
     <wx-card :title="t('panel.embed-block')">
-      <wx-text size="sm" tone="muted">{{ t('panel.embed-block-help') }}</wx-text>
+      <wx-text size="sm" tone="muted">
+        {{ t(hasBlocks ? 'panel.embed-block-panel-help' : 'panel.embed-block-help') }}
+      </wx-text>
 
       <div class="wx-inbox-embed__snippet">
         <code>{{ block }}</code>
         <wx-action icon="copy" :title="t('panel.copy')" @click="copy(block)" />
+      </div>
+    </wx-card>
+
+    <wx-card :title="t('panel.embed-extras')">
+      <wx-text size="sm" tone="muted">{{ t('panel.embed-extras-help') }}</wx-text>
+
+      <div class="wx-inbox-embed__snippet">
+        <code>{{ extras }}</code>
+        <wx-action icon="copy" :title="t('panel.copy')" @click="copy(extras)" />
       </div>
     </wx-card>
 

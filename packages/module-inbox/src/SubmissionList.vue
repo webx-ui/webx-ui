@@ -493,6 +493,7 @@ defineExpose({ create: byHand })
         hover
         flush
         :loading="loading"
+        :loading-text="t('panel.loading')"
         :selectable="canUpdate"
         :select-row-label="panel('filters.select-row')"
         :select-all-label="panel('filters.select-all')"

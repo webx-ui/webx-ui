@@ -52,6 +52,7 @@ const props = withDefaults(defineProps<TableProps<T>>(), {
   filtersLabel: 'Filters',
   filtersWidth: 300,
   loading: false,
+  loadingText: 'Loading',
   emptyText: 'Nothing to show',
   selectRowLabel: 'Select row',
   selectAllLabel: 'Select every row on this page',
@@ -1303,7 +1304,7 @@ function summaryText(row: TableSummaryRow, column: TableColumn<T>): string {
     <div v-if="loading" class="wx-table__loading">
       <slot name="loading">
         <span class="wx-table__spinner" aria-hidden="true" />
-        <span class="wx-table__loading-text">Loading</span>
+        <span class="wx-table__loading-text">{{ loadingText }}</span>
       </slot>
     </div>
   </div>

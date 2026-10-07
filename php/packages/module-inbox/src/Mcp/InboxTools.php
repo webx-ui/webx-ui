@@ -391,7 +391,7 @@ final class InboxTools
         /** @var array<string, int|string> $names  name → the id of the field holding it, or the entry of this call that took it */
         $names = [];
 
-        foreach ($form?->fields ?? [] as $field) {
+        foreach ($form === null ? [] : $form->fields as $field) {
             $names[$field->key()] = (int) $field->getKey();
         }
 
@@ -497,7 +497,7 @@ final class InboxTools
         /** @var array<int|string, string> $emails  field id (or entry) → name */
         $emails = [];
 
-        foreach ($form?->fields ?? [] as $field) {
+        foreach ($form === null ? [] : $form->fields as $field) {
             if ($field->type === FieldType::Email) {
                 $emails[(int) $field->getKey()] = $field->key();
             }

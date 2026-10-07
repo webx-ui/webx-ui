@@ -251,7 +251,7 @@ final class SubmissionController
 
             $corrected = $this->corrected($answer, $sent, 'values.'.$name);
 
-            if (is_array($corrected) && isset($corrected['error'])) {
+            if (isset($corrected['error'])) {
                 $errors['values.'.$name] = [$corrected['error']];
 
                 continue;

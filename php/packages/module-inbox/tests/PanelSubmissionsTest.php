@@ -262,9 +262,11 @@ final class PanelSubmissionsTest extends TestCase
             ->putJson($this->api('submissions/'.$submission->getKey()), ['values' => ['plan' => 'pro', 'when' => '2026-03-01']])
             ->assertOk();
 
-        $plan = $submission->refresh()->value('plan');
-        $this->assertSame('Pro plan', $plan?->value);
-        $this->assertSame(['pro'], $plan?->payload);
+        $submission->refresh();
+        $plan = $submission->value('plan');
+        $this->assertNotNull($plan);
+        $this->assertSame('Pro plan', $plan->value);
+        $this->assertSame(['pro'], $plan->payload);
         $this->assertSame('2026-03-01', $submission->value('when')?->value);
     }
 

@@ -154,7 +154,7 @@ final class IntakeTest extends TestCase
         $this->assertSame(['pro'], $submission->value('plan')->payload);
         // A consent is stored as a key and put into words when it is read.
         $this->assertSame('yes', $submission->value('terms')?->value);
-        $this->assertSame('Yes', $submission->value('terms')?->readable());
+        $this->assertSame('Yes', $submission->value('terms')->readable());
     }
 
     #[Test]

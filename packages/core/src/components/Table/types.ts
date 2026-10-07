@@ -188,6 +188,8 @@ export interface TableProps<T = TableRow> {
   /** How long typing settles before `search` fires. Zero reports every keystroke. */
   searchDebounce?: number
   loading?: boolean
+  /** The words beside the spinner while `loading`; English by default, translated by the caller. */
+  loadingText?: string
   /** Shown in place of the rows when there are none. */
   emptyText?: string
   /** Accessible name of each row's checkbox. */
