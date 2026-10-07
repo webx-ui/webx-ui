@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace WebxUi\Seo\Panel;
 
+use WebxUi\Localization\Locales;
 use WebxUi\Routing\Resolver;
 use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Http\Resources\SeoRedirectResource;
 use WebxUi\Seo\Http\Resources\SeoUrlResource;
 use WebxUi\Seo\Models\SeoRedirect;
+use WebxUi\Seo\Rendering\Alternates;
 use WebxUi\Seo\Rendering\Seo;
+use WebxUi\Seo\Rendering\SocialTags;
 use WebxUi\Seo\Sitemap\Sitemap;
 
 /**
@@ -27,6 +30,9 @@ final class AddressReport
         private readonly Resolver $resolver,
         private readonly Sitemap $sitemap,
         private readonly AddressSubject $subjects,
+        private readonly SocialTags $social,
+        private readonly Alternates $alternates,
+        private readonly Locales $locales,
     ) {}
 
     /**
@@ -40,6 +46,8 @@ final class AddressReport
         // has the page's own card in it — the public page has it, and the answer is about that.
         [$subject, $rowLocale] = $this->subjects->at($url, $locale);
         $seoLocale = $locale ?? $rowLocale;
+        $data = $this->seo->for($url, $subject, $seoLocale);
+        $tagLocale = $seoLocale ?? $this->locales->current();
 
         return [
             'url' => $url,
@@ -51,7 +59,13 @@ final class AddressReport
             'route' => $this->route($url, $locale),
             'matched' => $matched === null ? null : (new SeoUrlResource($matched))->resolve(),
             'chain' => $this->seo->chain($url, $subject, $seoLocale),
-            'seo' => $this->seo->for($url, $subject, $seoLocale)->toArray(),
+            'seo' => $data->toArray(),
+            // The og:*, article:* and twitter:* lines exactly as the <head> prints them — the
+            // picture after the SVG fall-through, the type the entity gave.
+            'social' => array_map(
+                static fn (array $tag): array => ['key' => $tag['key'], 'content' => $tag['content']],
+                $this->social->for($data, $subject, $tagLocale, $this->alternates->for($url, $subject, $tagLocale, $data)),
+            ),
             // The first question when a page is missing from a search engine (§17.6).
             'sitemap' => $this->sitemap->verdict($url, $locale),
         ];

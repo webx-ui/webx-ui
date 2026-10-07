@@ -42,6 +42,27 @@ final class SeoFallbackTest extends TestCase
     }
 
     #[Test]
+    public function an_article_is_an_article_to_a_social_network_with_its_dates_rubric_and_tags(): void
+    {
+        $article = $this->article('changing-a-belt');
+        $article->rubrics()->attach([$this->rubric('repairs')->id => ['position' => 0]]);
+        $article->tags()->attach([$this->tag('belts')->id, $this->tag('tools')->id]);
+        $article->publish();
+
+        $body = (string) $this->get('/blog/changing-a-belt')->assertOk()->getContent();
+
+        $this->assertStringContainsString('<meta property="og:type" content="article">', $body);
+        $this->assertMatchesRegularExpression('~<meta property="article:published_time" content="\d{4}-\d{2}-\d{2}T[^"]+">~', $body);
+        $this->assertMatchesRegularExpression('~<meta property="article:modified_time" content="\d{4}-\d{2}-\d{2}T[^"]+">~', $body);
+        $this->assertStringContainsString('<meta property="article:section" content="Repairs">', $body);
+        $this->assertStringContainsString('<meta property="article:tag" content="Belts">', $body);
+        $this->assertStringContainsString('<meta property="article:tag" content="Tools">', $body);
+
+        // The feed is a listing, not an article.
+        $this->assertStringContainsString('<meta property="og:type" content="website">', (string) $this->get(route('webx.blog.feed'))->getContent());
+    }
+
+    #[Test]
     public function the_sites_default_picture_does_not_replace_the_articles_cover(): void
     {
         // Stored the way the panel stores it: a library key, which the setting turns into an address.

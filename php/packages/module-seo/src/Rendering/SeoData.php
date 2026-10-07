@@ -22,6 +22,8 @@ final class SeoData
     /**
      * @param  Og  $og  Open Graph properties without the `og:` prefix.
      * @param  list<JsonLdBlock>  $jsonLd  Blocks, each printed as its own script tag.
+     * @param  list<string>  $images  Every picture the sources offered, highest first — what
+     *                                `og:image` falls through when one cannot be shared.
      */
     public function __construct(
         public readonly ?string $title = null,
@@ -32,6 +34,7 @@ final class SeoData
         public readonly ?string $robots = null,
         public readonly array $og = [],
         public readonly array $jsonLd = [],
+        public readonly array $images = [],
     ) {}
 
     /**
@@ -67,7 +70,7 @@ final class SeoData
      * absolute — a relative `og:image` is no picture at all to a social network — and anything
      * else that is not an http(s) address is left out.
      */
-    public static function fallback(?string $title, ?string $description = null, ?string $image = null): self
+    public static function fallback(?string $title, ?string $description = null, ?string $image = null, ?string $imageAlt = null): self
     {
         $description = $description === null ? null : trim((string) preg_replace(
             '/\s+/u',
@@ -92,7 +95,7 @@ final class SeoData
         return self::make([
             'title' => $title,
             'description' => $description,
-            'og' => $image !== null && preg_match('~^https?://~i', $image) === 1 ? ['image' => $image] : [],
+            'og' => $image !== null && preg_match('~^https?://~i', $image) === 1 ? ['image' => $image, 'image:alt' => $imageAlt] : [],
         ]);
     }
 
@@ -113,6 +116,7 @@ final class SeoData
             robots: $this->robots ?? $lower->robots,
             og: $this->og + $lower->og,
             jsonLd: array_merge($this->jsonLd, $lower->jsonLd),
+            images: array_values(array_unique([...$this->images, ...$lower->images])),
         );
     }
 
@@ -121,6 +125,7 @@ final class SeoData
      *
      * @param  Og|null  $og
      * @param  list<JsonLdBlock>|null  $jsonLd
+     * @param  list<string>|null  $images
      */
     public function with(
         ?string $title = null,
@@ -131,6 +136,7 @@ final class SeoData
         ?string $robots = null,
         ?array $og = null,
         ?array $jsonLd = null,
+        ?array $images = null,
     ): self {
         return new self(
             title: $title ?? $this->title,
@@ -141,6 +147,7 @@ final class SeoData
             robots: $robots ?? $this->robots,
             og: $og ?? $this->og,
             jsonLd: $jsonLd ?? $this->jsonLd,
+            images: $images ?? $this->images,
         );
     }
 

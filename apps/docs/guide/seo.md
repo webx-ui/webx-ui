@@ -128,13 +128,13 @@ Open Graph properties and every JSON-LD block. Around that, for the page being s
   shares one address and there is nothing to point at.
 - **The trail** as a `BreadcrumbList`, when the entity has one, and the entity's own schema.org
   blocks — see [Contracts for module authors](#contracts-for-module-authors).
-- **`twitter:card`** — `summary_large_image` when there is an `og:image`, `summary` otherwise.
-  Everything else Twitter reads from Open Graph.
+- **The social card** — the whole Open Graph set, `article:*` and `twitter:*`, from what the page
+  already says; see [Social cards](#social-cards).
 
 Without `:for` the head takes the entity the address registry found for the request. Which of
 these are printed at all is `webx-seo.print` in `config/webx-seo.php` (`hreflang`, `breadcrumbs`,
-`structured_data`, `twitter` beside the old ones), so a site that writes its own canonical links
-turns that one off rather than working around it.
+`structured_data`, `og`, `article`, `twitter` beside the old ones), so a site that writes its own
+canonical links turns that one off rather than working around it.
 
 Everything goes through Blade's escaping, and JSON-LD through `json_encode` with `JSON_HEX_TAG`:
 a title with a quote in it cannot end an attribute, and a `</script>` inside a string cannot close
@@ -240,6 +240,52 @@ it. The site's name is compared on letters and digits alone, ignoring case, so "
 title is the project called "AcmeStudio". The home page, when nobody wrote it a title, is called
 by the site's name rather than "Home — Acme".
 
+## Social cards
+
+Nobody types a social card. Every line is worked out from what the page already has, so an editor
+who wrote a title and picked a cover has written the card too:
+
+| Line                                                             | Where it comes from                                                                            |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `og:title`, `og:description`                                     | the title after the template, the description — the same merge as `<title>`                    |
+| `og:url`                                                         | the canonical                                                                                  |
+| `og:type`                                                        | the entity's (`HasOpenGraph`); `website` for everything else                                   |
+| `og:site_name`                                                   | `general.project-name`                                                                         |
+| `og:locale`, `og:locale:alternate`                               | the page's language, and the languages `hreflang` lists for it                                 |
+| `og:image`, `:type`, `:width`, `:height`, `:alt`                 | the first picture of the sources a network can show — card, the entity's own, `seo.default-og` |
+| `article:published_time`, `:modified_time`, `:section`, `:tag`   | an article's dates, its main rubric or category, its tags                                      |
+| `twitter:card`, `:title`, `:description`, `:image`, `:image:alt` | the same values as Open Graph                                                                  |
+| `twitter:site`                                                   | the x.com / twitter.com profile among `seo.org-socials`                                        |
+
+A line with nothing to say is not printed, and each group has its switch: `print.og`,
+`print.article`, `print.twitter`.
+
+**The picture.** An SVG is never `og:image` — no network shows one — so a press outlet whose logo
+is a vector falls through to the next source's picture, usually the site's default. With
+`module-media` installed the library's own record gives the type and the size, and a landscape
+photo at least 1200×630 is shared as a variant cut to exactly that (`webx-seo.og.image`; `null`
+shares the picture as it is). A portrait photo or a wide logo is shared whole: cut to 1.91:1 it
+would lose what it is a picture of. `og:image:alt` is the alt the picture was given where it was
+picked, and the page's title where it was not. `og:image:secure_url` is not printed: every address
+is already the https one, and the line would repeat it.
+
+**The kind of page.** `og:type` is `article` for a blog article and for a recipe — Open Graph has
+no recipe type, and `article` is what carries a date and a section into the card. Everything else
+is `website`: the home page, listings, ordinary pages, services, events, press outlets, vacancies,
+the catalogue. Open Graph has no current type for an event or a service, and a wrong type is worse
+than the general one. A module that has an article says so with `HasOpenGraph` (below).
+
+**The language.** `og:locale` is `language_TERRITORY`: `pt-BR` stays `pt_BR`, a bare code takes its
+usual country (`en` → `en_US`, `uk` → `uk_UA`, `de` → `de_DE`). A site that means another one says
+so: `'og' => ['locales' => ['en' => 'en_GB']]`.
+
+**Twitter.** X reads `og:*` where `twitter:*` is missing, so the mirrored lines are there for the
+readers that do not fall back. A site that wants a shorter head turns `print.twitter` off; it
+loses `twitter:site` too, the one line Open Graph cannot say.
+
+`seo_test_url` and the panel's «Test an address» answer with `social` — these lines exactly as the
+head prints them.
+
 ## `wx-seo`, the card
 
 The module registers `wx-seo` as a field type, on both halves. Its value is everything a page says
@@ -261,7 +307,14 @@ about itself, as one object:
 ```
 
 The text fields are language maps and grow the same chip every localized field in the panel does.
-`og_image` is not one: there are no per-language pictures anywhere in the panel yet, and a column
+
+The share fields — `og_title`, `og_description`, `og_image` — are not in the card by default: the
+card is filled in from the page ([Social cards](#social-cards)), and fields nobody needs to fill in
+look forgotten. A site that wants to override them by hand turns them back on with
+`WEBX_SEO_OG_FIELDS=true` (`webx-seo.og.panel_fields`); the card's `share-fields` prop decides for
+one screen. Values already stored are honoured either way, above everything derived.
+
+`og_image` is not a language map: there are no per-language pictures anywhere in the panel yet, and a column
 that already holds an object would read `path` as a language code the day one was added.
 
 An entity's form gets the whole card from a patch, laid over the screen the content module
@@ -399,6 +452,7 @@ registered. Each one asks one question.
 | `WebxUi\Routing\Contracts\Visible`       | `routing` | is it on the site — for the handler and a map |
 | `WebxUi\Seo\Contracts\HasBreadcrumbs`    | `seo`     | where does it stand                           |
 | `WebxUi\Seo\Contracts\HasStructuredData` | `seo`     | what is it, in schema.org                     |
+| `WebxUi\Seo\Contracts\HasOpenGraph`      | `seo`     | what kind of page, to a social network        |
 
 ```php
 use Carbon\CarbonInterface;

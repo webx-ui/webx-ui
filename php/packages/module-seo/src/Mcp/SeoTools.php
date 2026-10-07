@@ -109,7 +109,7 @@ final class SeoTools
 
             Tool::read(
                 'test_url',
-                'What an address ends up saying about itself, and where every part of it came from: the redirect that catches it (redirect, with leads_to — where it sends this very address, $1 filled in), what the address registry holds there (route: a live page or an alias of one that moved), the rule that matched, each source in turn, and whether it is in the sitemap and why not.',
+                'What an address ends up saying about itself, and where every part of it came from: the redirect that catches it (redirect, with leads_to — where it sends this very address, $1 filled in), what the address registry holds there (route: a live page or an alias of one that moved), the rule that matched, each source in turn, the social card as the head prints it (social: og:*, article:* and twitter:* lines, all derived from the page — there are no share fields to write), and whether it is in the sitemap and why not.',
                 static fn (array $arguments): array => self::test($arguments),
                 [
                     'properties' => [

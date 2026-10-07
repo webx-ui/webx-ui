@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use WebxUi\Localization\Locales;
 use WebxUi\Routing\Resolution;
 use WebxUi\Routing\UrlNormaliser;
+use WebxUi\Seo\Contracts\HasOpenGraph;
 use WebxUi\Seo\Contracts\HasStructuredData;
 use WebxUi\Seo\Faq\PageFaq;
 use WebxUi\Settings\Settings;
@@ -62,13 +63,37 @@ final class Seo
         $url = UrlNormaliser::normalise($url);
         $data = SeoData::empty();
         $titled = null;
+        $images = [];
+        $pictured = null;
 
         foreach ($this->answers($url, $subject, $locale, $fallback) as [$source, $answer]) {
             $data = $data->mergeOver($answer);
             $titled ??= $answer->title !== null ? $source : null;
+
+            if (isset($answer->og['image'])) {
+                $images[] = $answer->og['image'];
+                $pictured ??= $answer;
+            }
         }
 
-        return $this->finish($data, $url, $locale, $titled instanceof FallbackSource);
+        // A picture and its alt travel together: merged field by field, a card's picture would
+        // otherwise be printed with the alt of the cover it replaced.
+        $og = array_filter($data->og, static fn (string $key): bool => $key !== 'image' && ! str_starts_with($key, 'image:'), ARRAY_FILTER_USE_KEY);
+        $og += $pictured === null ? [] : array_filter($pictured->og, static fn (string $key): bool => $key === 'image' || str_starts_with($key, 'image:'), ARRAY_FILTER_USE_KEY);
+
+        $data = new SeoData(
+            title: $data->title,
+            h1: $data->h1,
+            description: $data->description,
+            keywords: $data->keywords,
+            canonical: $data->canonical,
+            robots: $data->robots,
+            og: $og,
+            jsonLd: $data->jsonLd,
+            images: array_values(array_unique($images)),
+        );
+
+        return $this->finish($data, $url, $subject, $locale, $titled instanceof FallbackSource);
     }
 
     /**
@@ -174,12 +199,17 @@ final class Seo
         /** @var array<string, bool> $print */
         $print = (array) $this->config->get('webx-seo.print', []);
 
+        // Asked once for both: `hreflang` prints them, `og:locale:alternate` names their languages.
+        $alternates = ($print['hreflang'] ?? true) || ($print['og'] ?? true)
+            ? app(Alternates::class)->for($url, $subject, $locale, $data)
+            : [];
+
         return new HtmlString((string) $this->views->make('webx-seo::head', [
             'seo' => $data,
             'print' => $print,
-            'alternates' => ($print['hreflang'] ?? true) ? app(Alternates::class)->for($url, $subject, $locale, $data) : [],
+            'alternates' => ($print['hreflang'] ?? true) ? $alternates : [],
+            'social' => app(SocialTags::class)->for($data, $subject, $locale, $alternates),
             'blocks' => $this->blocks($data, $subject, $locale, $print),
-            'twitter' => isset($data->og['image']) ? 'summary_large_image' : 'summary',
         ])->render());
     }
 
@@ -415,7 +445,7 @@ final class Seo
      * The last word: the template around the title, the soft limits, and the Open Graph
      * properties that repeat what the page already said.
      */
-    private function finish(SeoData $data, string $url, ?string $locale, bool $fallbackTitle = false): SeoData
+    private function finish(SeoData $data, string $url, ?object $subject, ?string $locale, bool $fallbackTitle = false): SeoData
     {
         $site = $this->setting('general.project-name', $locale);
 
@@ -436,7 +466,8 @@ final class Seo
             'title' => $data->title,
             'description' => $data->description,
             'url' => $data->canonical ?? self::root().$url,
-            'type' => (string) $this->config->get('webx-seo.og.type', 'website'),
+            // The entity knows what kind of page it is; everything else is a website (§20).
+            'type' => $subject instanceof HasOpenGraph ? $subject->openGraphType() : (string) $this->config->get('webx-seo.og.type', 'website'),
         ] as $property => $fallback) {
             if (! isset($og[$property]) && is_string($fallback) && $fallback !== '') {
                 $og[$property] = $fallback;

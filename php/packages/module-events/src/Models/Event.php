@@ -555,6 +555,7 @@ class Event extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructur
             $this->text('title', $locale),
             $this->text('lead', $locale),
             is_string($cover['url'] ?? null) ? $cover['url'] : null,
+            is_string($cover['alt'] ?? null) ? $cover['alt'] : null,
         );
     }
 

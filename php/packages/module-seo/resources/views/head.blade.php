@@ -20,15 +20,11 @@
 @foreach ($alternates ?? [] as $hreflang => $href)
 <link rel="alternate" hreflang="{{ $hreflang }}" href="{{ $href }}">
 @endforeach
-@if ($print['og'] ?? true)
-@foreach ($seo->og as $property => $content)
-<meta property="og:{{ $property }}" content="{{ $content }}">
+{{-- Open Graph, article:* and twitter:*, each group already filtered by its switch and with
+     nothing empty in it (SocialTags). --}}
+@foreach ($social ?? [] as $tag)
+<meta {{ $tag['attribute'] }}="{{ $tag['key'] }}" content="{{ $tag['content'] }}">
 @endforeach
-@endif
-{{-- The one Twitter line Open Graph cannot say for it; the rest it reads from og:*. --}}
-@if (($print['twitter'] ?? true) && isset($twitter))
-<meta name="twitter:card" content="{{ $twitter }}">
-@endif
 @foreach ($blocks ?? [] as $block)
 <script type="application/ld+json">{!! json_encode($block, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}</script>
 @endforeach

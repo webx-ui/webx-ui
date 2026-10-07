@@ -117,6 +117,7 @@ class EventCategory extends Model implements Category, HasBreadcrumbs, HasSeoFal
             (string) $this->getTranslation('title', $locale),
             $this->leadHtml($locale),
             is_string($picture['url'] ?? null) ? $picture['url'] : null,
+            is_string($picture['alt'] ?? null) ? $picture['alt'] : null,
         );
     }
 

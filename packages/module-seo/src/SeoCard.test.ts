@@ -11,8 +11,10 @@ import type { SeoValue } from './types'
  * controls and the one object the field stores: a checkbox that turns into a word in a
  * comma-separated line, and a code editor that turns into parsed JSON.
  */
-function card(value: SeoValue | null = null) {
-  return mount(SeoCard, { props: { modelValue: value, 'onUpdate:modelValue': () => {} } })
+function card(value: SeoValue | null = null, shareFields?: boolean) {
+  return mount(SeoCard, {
+    props: { modelValue: value, 'onUpdate:modelValue': () => {}, shareFields },
+  })
 }
 
 /** The last value the field emitted. */
@@ -92,14 +94,29 @@ describe('WxSeo', () => {
    * What the share preview says, which is the one thing about it jsdom can check: how it looks
    * is measured in a browser, but which words end up in it is arithmetic between four fields.
    */
+  /*
+   * Open Graph is filled in from the page by the site, so the share fields are a site's choice
+   * (`webx-seo.og.panel_fields`) and not there by default.
+   */
+  it('has no share fields unless the site asks for them', () => {
+    const wrapper = card({ title: { en: 'Something' } })
+
+    expect(wrapper.find('.wx-seo__share').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('card.og-title')
+    expect(card({ title: { en: 'Something' } }, true).text()).toContain('card.og-title')
+  })
+
   describe('the share preview', () => {
     const share = (wrapper: ReturnType<typeof card>) => wrapper.find('.wx-seo__share')
 
     it('falls back on what the page says when the share fields are empty', () => {
-      const wrapper = card({
-        title: { en: 'A panel nobody has to explain' },
-        description: { en: 'How we rewrote it.' },
-      })
+      const wrapper = card(
+        {
+          title: { en: 'A panel nobody has to explain' },
+          description: { en: 'How we rewrote it.' },
+        },
+        true,
+      )
 
       expect(share(wrapper).find('.wx-seo__share-title').text()).toBe(
         'A panel nobody has to explain',
@@ -108,10 +125,13 @@ describe('WxSeo', () => {
     })
 
     it('prefers the share fields when they are written', () => {
-      const wrapper = card({
-        title: { en: 'A panel nobody has to explain' },
-        og_title: { en: 'We rewrote the panel' },
-      })
+      const wrapper = card(
+        {
+          title: { en: 'A panel nobody has to explain' },
+          og_title: { en: 'We rewrote the panel' },
+        },
+        true,
+      )
 
       expect(share(wrapper).find('.wx-seo__share-title').text()).toBe('We rewrote the panel')
     })
@@ -119,10 +139,13 @@ describe('WxSeo', () => {
     /* The address the server worked out beside the key — never the key itself, which is not a
        thing a browser can load. */
     it('draws the picture by the address that travelled with the value', () => {
-      const wrapper = card({
-        title: { en: 'Something' },
-        og_image: { path: 'blog/cover.jpg', url: '/files/blog/cover.jpg' },
-      })
+      const wrapper = card(
+        {
+          title: { en: 'Something' },
+          og_image: { path: 'blog/cover.jpg', url: '/files/blog/cover.jpg' },
+        },
+        true,
+      )
 
       expect(share(wrapper).find('img').attributes('src')).toBe('/files/blog/cover.jpg')
     })
@@ -130,7 +153,7 @@ describe('WxSeo', () => {
     /* A page whose picture is left to the site is not a page with no picture, and saying
        nothing there would read as "nothing will be shown". */
     it('says the site fills the picture in when none is chosen', () => {
-      const wrapper = card({ title: { en: 'Something' } })
+      const wrapper = card({ title: { en: 'Something' } }, true)
 
       expect(share(wrapper).find('img').exists()).toBe(false)
       // The key rather than the sentence: mounted outside a panel there is no dictionary, and
@@ -139,7 +162,7 @@ describe('WxSeo', () => {
     })
 
     it('is not drawn at all for a record that says nothing about itself', () => {
-      expect(share(card()).exists()).toBe(false)
+      expect(share(card(null, true)).exists()).toBe(false)
     })
   })
 })

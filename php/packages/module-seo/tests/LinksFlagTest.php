@@ -46,7 +46,7 @@ final class LinksFlagTest extends TestCase
 
         $this->assertIsArray($seo);
 
-        $this->assertSame(['links' => false, 'faq' => false], $seo['meta']);
+        $this->assertSame(['links' => false, 'faq' => false, 'og_fields' => false], $seo['meta']);
     }
 
     #[Test]

@@ -321,10 +321,13 @@ class Outlet extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructu
     {
         $locale ??= Container::getInstance()->make(Locales::class)->current();
 
+        $logo = $this->logoIn($locale);
+
         return SeoData::fallback(
             $this->displayTitle($locale),
             $this->text('summary', $locale),
-            $this->logoIn($locale)['url'] ?? null,
+            $logo['url'] ?? null,
+            is_string($logo['alt'] ?? null) ? $logo['alt'] : null,
         );
     }
 

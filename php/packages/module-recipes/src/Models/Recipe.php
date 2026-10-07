@@ -27,6 +27,7 @@ use WebxUi\Routing\Contracts\Visible;
 use WebxUi\Routing\HasUrl;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
+use WebxUi\Seo\Contracts\HasOpenGraph;
 use WebxUi\Seo\Contracts\HasSeoFallback;
 use WebxUi\Seo\Contracts\HasStructuredData;
 use WebxUi\Seo\HasSeo;
@@ -64,7 +65,7 @@ use WebxUi\Seo\Rendering\SeoData;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Recipe extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructuredData, Visible
+class Recipe extends Model implements HasBreadcrumbs, HasOpenGraph, HasSeoFallback, HasStructuredData, Visible
 {
     use HasCategories {
         scopeOrderedIn as private categoryOrderedIn;
@@ -473,7 +474,35 @@ class Recipe extends Model implements HasBreadcrumbs, HasSeoFallback, HasStructu
             (string) $this->getTranslation('title', $locale),
             is_string($lead) ? $lead : null,
             is_string($cover['url'] ?? null) ? $cover['url'] : null,
+            is_string($cover['alt'] ?? null) ? $cover['alt'] : null,
         );
+    }
+
+    /**
+     * A recipe is an article to a social network: Open Graph has no recipe type of its own, and
+     * `article` is what carries a date and a section into the shared card.
+     */
+    public function openGraphType(): string
+    {
+        return 'article';
+    }
+
+    /**
+     * The publication date — every publication stamps it anew, so it is also when the page last
+     * changed — and the main category as the section.
+     *
+     * @return array<string, string|list<string>|null>
+     */
+    public function openGraphProperties(string $locale): array
+    {
+        $category = $this->mainCategory();
+        $section = $category instanceof RecipeCategory ? $category->getTranslation('title', $locale) : null;
+
+        return [
+            'article:published_time' => $this->published_at?->toAtomString(),
+            'article:modified_time' => $this->visibleUpdatedAt()?->toAtomString(),
+            'article:section' => is_string($section) ? $section : null,
+        ];
     }
 
     /**
