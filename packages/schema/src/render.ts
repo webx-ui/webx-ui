@@ -176,7 +176,15 @@ export function renderNode(node: ScreenNode, context: RenderContext): VNode | nu
     if (label !== undefined) props[entry.labelProp] = label
     return h(entry.component, props)
   }
-  return h(entry.component, props, label === undefined ? undefined : () => label)
+
+  // A paragraph is its label, or `props.text` — the way the blocks reference has always written
+  // `wx-text`. Handed on as a prop it reached a component without one and drew nothing at all.
+  const text = typeof props.text === 'string' ? props.text : undefined
+  const body = label ?? text
+
+  if (text !== undefined && label === undefined) delete props.text
+
+  return h(entry.component, props, body === undefined ? undefined : () => body)
 }
 
 export function renderNodes(nodes: ScreenNode[], context: RenderContext): VNode[] {

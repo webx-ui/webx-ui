@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTranslate, WxRowMenu, type RowAction } from '@webx-ui/module-admin'
-import { WxIcon, WxSortableList } from '@webx-ui/core'
+import { WxIcon, WxSortableList, WxTooltip } from '@webx-ui/core'
 import type { ScreenNode } from '@webx-ui/schema'
 import { nestedFields } from './content'
 import type { BlockNode, BlockType } from './types'
@@ -24,6 +24,8 @@ const props = withDefaults(
     selected?: string | null
     disabled?: boolean
     depth?: number
+    /** What the last save was refused for, by block key. */
+    errors?: Record<string, string[]>
   }>(),
   {
     parentKey: null,
@@ -33,6 +35,7 @@ const props = withDefaults(
     selected: null,
     disabled: false,
     depth: 0,
+    errors: () => ({}),
   },
 )
 
@@ -67,6 +70,64 @@ function childrenIn(node: BlockNode, field: ScreenNode): BlockNode[] {
   const value = node.values[field.id]
 
   return Array.isArray(value) ? (value as BlockNode[]) : []
+}
+
+interface Flag {
+  key: string
+  icon: string
+  tone: 'danger' | 'warning' | null
+  text: string
+}
+
+/**
+ * The marks beside a block's name, each with the words it stands for: refused on the last save,
+ * a type nobody has, a type with an unpublished version or hidden from editors, a block switched
+ * off. The hidden one is always there, not only on hover: the actions beside it are invisible at
+ * rest, and a row that is merely dimmer than its neighbours is not a statement.
+ */
+function flagsOf(node: BlockNode): Flag[] {
+  const flags: Flag[] = []
+  const refused = props.errors[node.key]
+  const type = typeOf(node)
+
+  if (refused?.length) {
+    flags.push({ key: 'invalid', icon: 'warning', tone: 'danger', text: refused.join(' ') })
+  }
+
+  if (!type) {
+    flags.push({
+      key: 'unknown',
+      icon: 'close-circle',
+      tone: 'danger',
+      text: t('field.unknown-type', { type: node.type }),
+    })
+  } else if (type.draft) {
+    flags.push({ key: 'draft', icon: 'warning', tone: 'warning', text: t('field.draft-type') })
+  } else if (type.is_enabled === false) {
+    // Not the eye: that one means this block is off, which is a different thing from its type
+    // being withdrawn from the catalogue.
+    flags.push({ key: 'disabled', icon: 'lock', tone: null, text: t('field.disabled-type') })
+  }
+
+  if (node.hidden === true) {
+    flags.push({ key: 'hidden', icon: 'eye-off', tone: null, text: t('field.hidden-note') })
+  }
+
+  return flags
+}
+
+/** How many blocks a container's field takes, or null for no limit. */
+function limitOf(field: ScreenNode): number | null {
+  const max = field.props?.max
+
+  return typeof max === 'number' ? max : null
+}
+
+/** A field that holds as many blocks as it takes: "Add inside" says so instead of doing nothing. */
+function isFull(node: BlockNode, field: ScreenNode): boolean {
+  const limit = limitOf(field)
+
+  return limit !== null && childrenIn(node, field).length >= limit
 }
 
 /**
@@ -141,7 +202,11 @@ function actionsFor(node: BlockNode, index: number): RowAction[] {
       <div class="wx-blocks-tree__node">
         <div
           class="wx-blocks-tree__row"
-          :class="{ 'is-selected': selected === item.key, 'is-hidden': item.hidden === true }"
+          :class="{
+            'is-selected': selected === item.key,
+            'is-hidden': item.hidden === true,
+            'is-invalid': (errors[item.key]?.length ?? 0) > 0,
+          }"
           role="button"
           tabindex="0"
           @click="emit('select', item.key)"
@@ -149,38 +214,19 @@ function actionsFor(node: BlockNode, index: number): RowAction[] {
           @keydown.space.prevent="emit('select', item.key)"
         >
           <span class="wx-blocks-tree__name">{{ titleOf(item) }}</span>
-          <span
-            v-if="!typeOf(item)"
-            class="wx-blocks-tree__flag is-danger"
-            :title="t('field.unknown-type', { type: item.type })"
-          >
-            <wx-icon name="close-circle" />
-          </span>
-          <span
-            v-else-if="typeOf(item)?.draft"
-            class="wx-blocks-tree__flag is-warning"
-            :title="t('field.draft-type')"
-          >
-            <wx-icon name="warning" />
-          </span>
-          <span
-            v-else-if="typeOf(item)?.is_enabled === false"
-            class="wx-blocks-tree__flag"
-            :title="t('field.disabled-type')"
-          >
-            <!-- Not the eye: that one now means this block is off, which is a different thing
-                 from its type being withdrawn from the catalogue. -->
-            <wx-icon name="lock" />
-          </span>
-          <!-- Always, not only on hover: the actions beside it are invisible at rest, and a
-               row that is merely dimmer than its neighbours is not a statement. -->
-          <span
-            v-if="item.hidden === true"
-            class="wx-blocks-tree__flag"
-            :title="t('field.hidden-note')"
-          >
-            <wx-icon name="eye-off" />
-          </span>
+          <!-- The panel's own tooltip, not the browser's `title`: the same tip, delay and look as
+               every other icon of the panel, and one a finger on a phone can open. -->
+          <wx-tooltip v-for="flag in flagsOf(item)" :key="flag.key" :content="flag.text">
+            <span
+              class="wx-blocks-tree__flag"
+              :class="flag.tone ? `is-${flag.tone}` : undefined"
+              role="img"
+              tabindex="0"
+              :aria-label="flag.text"
+            >
+              <wx-icon :name="flag.icon" />
+            </span>
+          </wx-tooltip>
           <span v-if="!disabled" class="wx-blocks-tree__actions">
             <wx-row-menu :actions="actionsFor(item, index)" :label="titleOf(item)" />
           </span>
@@ -196,6 +242,7 @@ function actionsFor(node: BlockNode, index: number): RowAction[] {
             :selected="selected"
             :disabled="disabled"
             :depth="depth + 1"
+            :errors="errors"
             @select="emit('select', $event)"
             @add="(p, f, n, i) => emit('add', p, f, n, i)"
             @remove="emit('remove', $event)"
@@ -204,14 +251,20 @@ function actionsFor(node: BlockNode, index: number): RowAction[] {
             @visibility="(key, hidden) => emit('visibility', key, hidden)"
             @reorder="(p, f, list) => emit('reorder', p, f, list)"
           />
+          <!-- A full container says so, the way "Move to" marks one: a button that did nothing
+               on a click was a button that looked broken. -->
           <button
             v-if="!disabled"
             type="button"
             class="wx-blocks-tree__add is-inner"
+            :disabled="isFull(item, slot)"
             @click="emit('add', item.key, slot.id, slot)"
           >
-            + {{ t('field.add-inside')
-            }}<template v-if="fieldsOf(item).length > 1"> · {{ slot.label ?? slot.id }}</template>
+            <template v-if="isFull(item, slot)">{{
+              t('field.add-inside-full', { max: limitOf(slot)! })
+            }}</template>
+            <template v-else>+ {{ t('field.add-inside') }}</template>
+            <template v-if="fieldsOf(item).length > 1"> · {{ slot.label ?? slot.id }}</template>
           </button>
         </div>
       </div>
@@ -338,9 +391,20 @@ function actionsFor(node: BlockNode, index: number): RowAction[] {
   cursor: pointer;
 }
 
-.wx-blocks-tree__add:hover {
+.wx-blocks-tree__add:hover:not(:disabled) {
   color: var(--wx-color-primary);
   border-color: var(--wx-color-primary);
   background: var(--wx-color-primary-soft);
+}
+
+.wx-blocks-tree__add:disabled {
+  cursor: not-allowed;
+  border-style: solid;
+  border-color: var(--wx-border-default);
+}
+
+/* A block a save was refused for: the row says so before anybody opens it. */
+.wx-blocks-tree__row.is-invalid {
+  border-color: var(--wx-color-danger);
 }
 </style>

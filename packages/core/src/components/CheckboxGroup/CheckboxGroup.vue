@@ -41,12 +41,27 @@ function toggle(value: ChoiceValue, checked: boolean) {
   emit('change', model.value)
 }
 
+/*
+ * A box the limit will not let change is drawn disabled. Before, a click past `max` was ignored
+ * by the group while the native input had already flipped: a box that looked unchecked and was
+ * checked to the browser, and nothing said why.
+ */
+function locked(value: ChoiceValue): boolean {
+  const current = model.value ?? []
+  const checked = current.includes(value)
+
+  if (!checked) return props.max !== undefined && current.length >= props.max
+
+  return props.min !== undefined && current.length <= props.min
+}
+
 provide(checkboxGroupKey, {
   name: computed(() => props.name),
   modelValue: computed(() => model.value ?? []),
   disabled,
   size,
   toggle,
+  locked,
 })
 </script>
 

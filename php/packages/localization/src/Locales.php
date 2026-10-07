@@ -49,6 +49,43 @@ class Locales
         return $this->all()->pluck('code')->all();
     }
 
+    /**
+     * Whether a stored value is a language map — `{ en: …, de: … }` — rather than one value.
+     *
+     * By its shape first: a list is never one (tags, a repeater's rows). A field whose
+     * `localized` flag was switched after content was written holds the other shape, and a
+     * reader that trusted the flag read a list of tags as a map of languages and lost it.
+     *
+     * Under a field that says it is localized, any map is one (an empty one too) — a language the
+     * site has since dropped is still a language. Anywhere else a map is one only when every key
+     * is a language — this site's, or one the catalogue knows — which a link or a picture, whose
+     * keys are words like `url` and `path`, never is.
+     */
+    public function isMap(mixed $value, bool $localized = false): bool
+    {
+        if (! is_array($value)) {
+            return false;
+        }
+
+        if ($localized) {
+            return $value === [] || ! array_is_list($value);
+        }
+
+        if ($value === [] || array_is_list($value)) {
+            return false;
+        }
+
+        $codes = $this->codes();
+
+        foreach (array_keys($value) as $key) {
+            if (! in_array((string) $key, $codes, true) && ! LocaleCatalogue::has((string) $key)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function has(string $code): bool
     {
         return in_array(LocaleCatalogue::normalise($code), $this->codes(), true);

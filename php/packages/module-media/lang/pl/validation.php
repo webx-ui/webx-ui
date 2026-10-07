@@ -18,4 +18,5 @@ return [
         'document' => 'dokumenty',
         'other' => 'inne pliki',
     ],
+    'missing' => 'W bibliotece nie ma pliku [:path]: wybierz plik z biblioteki.',
 ];

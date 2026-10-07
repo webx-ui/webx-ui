@@ -72,11 +72,15 @@ final readonly class Values
         foreach ($values as $name => $value) {
             $node = $fields[(string) $name] ?? null;
 
-            // A localized field keeps a language map, and a template wants one language. This
-            // is the same step a described screen takes on the way to the site
+            // A language map is read in one language, and a template wants one. This is the
+            // same step a described screen takes on the way to the site
             // ({@see ScreenValues::resolve()}) — without it the template is handed the map,
             // Blade refuses to print an array, and the block renders as nothing at all.
-            if ($node !== null && ($node['localized'] ?? false) === true && is_array($value)) {
+            //
+            // By the value's shape, not the schema's flag: a field switched to `localized`
+            // after the page was written still holds a plain value (a list of tags is not a map
+            // of languages), and one switched back still holds the map until it is written again.
+            if ($node !== null && $this->locales->isMap($value, ($node['localized'] ?? false) === true)) {
                 $value = $this->pick($value);
             }
 

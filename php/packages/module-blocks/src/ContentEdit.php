@@ -30,17 +30,19 @@ final class ContentEdit
      * @param  list<array<string, mixed>>  $tree
      * @param  array<string, mixed>  $values
      * @param  (callable(string, string): ?bool)|null  $localized  Type slug and field name → whether the field holds a language map; null when nobody knows.
+     * @param  string|null  $primary  The site's main language: a plain value already held by a field that has become localized is kept under it when another language is written.
      * @return list<array<string, mixed>>
      */
-    public static function set(array $tree, string $key, array $values, ?string $locale = null, ?callable $localized = null): array
+    public static function set(array $tree, string $key, array $values, ?string $locale = null, ?callable $localized = null, ?string $primary = null): array
     {
-        return self::edit($tree, $key, static function (array $node) use ($values, $locale, $localized): array {
+        return self::edit($tree, $key, static function (array $node) use ($values, $locale, $localized, $primary): array {
             $node['values'] = self::merge(
                 is_array($node['values'] ?? null) ? $node['values'] : [],
                 $values,
                 $locale,
                 $localized,
                 (string) $node['type'],
+                $primary,
             );
 
             return $node;
@@ -163,8 +165,87 @@ final class ContentEdit
         ?string $field = null,
         ?string $before = null,
         ?string $after = null,
+        ?callable $containers = null,
     ): array {
-        return self::inList($tree, $parent, $field, static fn (array $list): array => self::place($list, $node, $before, $after));
+        return self::inList($tree, $parent, $field, static fn (array $list): array => self::place($list, $node, $before, $after), $containers);
+    }
+
+    /**
+     * A copy of one block, with everything nested in it, placed right after it — the panel's
+     * «Duplicate». Every node of the copy gets a key of its own: two blocks with one key are two
+     * blocks nobody can address.
+     *
+     * @param  list<array<string, mixed>>  $tree
+     * @param  callable(): string  $newKey
+     * @param  string|null  $copied  The key the copy got.
+     * @return list<array<string, mixed>>
+     */
+    public static function duplicate(array $tree, string $key, callable $newKey, ?string &$copied = null): array
+    {
+        $done = false;
+        $tree = self::duplicateIn($tree, $key, $newKey, $done, $copied);
+
+        if (! $done) {
+            throw new BlocksException(self::unknown($key));
+        }
+
+        return $tree;
+    }
+
+    /**
+     * @param  list<mixed>  $list
+     * @param  callable(): string  $newKey
+     * @return list<mixed>
+     */
+    private static function duplicateIn(array $list, string $key, callable $newKey, bool &$done, ?string &$copied): array
+    {
+        $result = [];
+
+        foreach ($list as $node) {
+            if ($done || ! Content::isNode($node)) {
+                $result[] = $node;
+
+                continue;
+            }
+
+            if (($node['key'] ?? null) === $key) {
+                $copy = self::rekey($node, $newKey);
+                $copied = (string) $copy['key'];
+                $done = true;
+                $result[] = $node;
+                $result[] = $copy;
+
+                continue;
+            }
+
+            foreach (is_array($node['values'] ?? null) ? $node['values'] : [] as $field => $value) {
+                if (! $done && Content::isNodeList($value)) {
+                    $node['values'][$field] = self::duplicateIn(array_values($value), $key, $newKey, $done, $copied);
+                }
+            }
+
+            $result[] = $node;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param  array<string, mixed>  $node
+     * @param  callable(): string  $newKey
+     * @return array<string, mixed>
+     */
+    private static function rekey(array $node, callable $newKey): array
+    {
+        $node['key'] = $newKey();
+
+        foreach (is_array($node['values'] ?? null) ? $node['values'] : [] as $field => $value) {
+            if (Content::isNodeList($value)) {
+                $node['values'][$field] = array_map(static fn (array $child): array => self::rekey($child, $newKey), array_values($value));
+            }
+        }
+
+        return $node;
     }
 
     /**
@@ -180,6 +261,7 @@ final class ContentEdit
         ?string $field = null,
         ?string $before = null,
         ?string $after = null,
+        ?callable $containers = null,
     ): array {
         $node = self::find($tree, $key);
 
@@ -191,7 +273,7 @@ final class ContentEdit
             throw new BlocksException("Block [{$key}] cannot be moved inside itself.");
         }
 
-        return self::insert(self::remove($tree, $key), $node, $parent, $field, $before, $after);
+        return self::insert(self::remove($tree, $key), $node, $parent, $field, $before, $after, $containers);
     }
 
     /**
@@ -369,17 +451,42 @@ final class ContentEdit
      *
      * @param  list<array<string, mixed>>  $tree
      * @param  callable(list<array<string, mixed>>): list<array<string, mixed>>  $edit
+     * @param  (callable(string): ?list<string>)|null  $containers  Type slug → its `wx-blocks` field ids; null when the type is unknown.
      * @return list<array<string, mixed>>
      */
-    private static function inList(array $tree, ?string $parent, ?string $field, callable $edit): array
+    private static function inList(array $tree, ?string $parent, ?string $field, callable $edit, ?callable $containers = null): array
     {
         if ($parent === null) {
             return $edit($tree);
         }
 
-        return self::edit($tree, $parent, static function (array $node) use ($parent, $field, $edit): array {
+        return self::edit($tree, $parent, static function (array $node) use ($parent, $field, $edit, $containers): array {
             $nested = self::nested($node);
             $name = $field;
+            $type = (string) $node['type'];
+            $declared = $containers === null ? null : $containers($type);
+
+            // What the type says it holds, before anything the node happens to hold: a block that
+            // is not a container takes nothing, and a field it does not declare is not a place.
+            if ($declared !== null) {
+                if ($declared === []) {
+                    throw new BlocksException(
+                        "Block [{$parent}] is a [{$type}], which is not a container: its type has no wx-blocks field, so nothing can go inside it."
+                    );
+                }
+
+                if ($name !== null && ! in_array($name, $declared, true)) {
+                    throw new BlocksException(
+                        "[{$type}] has no wx-blocks field [{$name}]. The fields that hold blocks: ".implode(', ', $declared).'.'
+                    );
+                }
+
+                if ($name === null && count($declared) === 1) {
+                    $name = $declared[0];
+                }
+
+                $nested = $declared;
+            }
 
             if ($name === null) {
                 if (count($nested) > 1) {
@@ -466,28 +573,35 @@ final class ContentEdit
      * @param  (callable(string, string): ?bool)|null  $localized
      * @return array<string, mixed>
      */
-    private static function merge(array $current, array $values, ?string $locale, ?callable $localized, string $type): array
+    private static function merge(array $current, array $values, ?string $locale, ?callable $localized, string $type, ?string $primary = null): array
     {
         foreach ($values as $field => $value) {
             $name = (string) $field;
             $many = $localized === null ? null : $localized($type, $name);
             $held = $current[$name] ?? null;
+            $heldMap = is_array($held) && $held !== [] && ! array_is_list($held);
 
             if ($locale !== null) {
-                if ($many === false || ($many === null && $held !== null && ! is_array($held))) {
+                if ($many === false || ($many === null && $held !== null && ! $heldMap)) {
                     throw new BlocksException(
                         "Field [{$name}] of [{$type}] holds one value, not a language map: send it without `locale`."
                     );
                 }
 
-                $map = is_array($held) ? $held : [];
+                // A plain value under a field made localized after it was written is the main
+                // language's — kept there, not dropped for the one language being written.
+                $map = match (true) {
+                    $heldMap => $held,
+                    $held === null || $held === '' || $held === [] || $primary === null => [],
+                    default => [$primary => $held],
+                };
                 $map[$locale] = $value;
                 $current[$name] = $map;
 
                 continue;
             }
 
-            if ($many === true && ! is_array($value)) {
+            if ($many === true && $value !== null && (! is_array($value) || array_is_list($value))) {
                 throw new BlocksException(
                     "Field [{$name}] of [{$type}] is localized: send `locale` with the value, or a map of languages."
                 );

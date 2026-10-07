@@ -18,4 +18,5 @@ return [
         'document' => 'Dokumente',
         'other' => 'andere Dateien',
     ],
+    'missing' => 'In der Bibliothek gibt es keine Datei [:path]: Wählen Sie eine daraus.',
 ];

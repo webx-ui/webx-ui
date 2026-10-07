@@ -184,7 +184,9 @@ final class BlockInput
 
     /**
      * A schema is a list of screen nodes, checked by the same rules a screen file is — and
-     * every node needs an `id`, because the id is the field's key in the values.
+     * every node needs an `id`, because the id is the field's key in the values. An id with a
+     * space or a dot in it is refused: it is a key no template can read as a variable, and no
+     * error address (`blocks.<key>.<field>`) can name.
      */
     private static function schemaRule(): Closure
     {
@@ -193,7 +195,40 @@ final class BlockInput
 
             if ($problems !== []) {
                 $fail((string) __('webx-blocks::validation.schema', ['problems' => implode('; ', array_slice($problems, 0, 3))]));
+
+                return;
+            }
+
+            $bad = self::badIds(is_array($value) ? $value : []);
+
+            if ($bad !== []) {
+                $fail((string) __('webx-blocks::checks.field-id', ['ids' => implode(', ', array_map(static fn (string $id): string => '"'.$id.'"', $bad))]));
             }
         };
+    }
+
+    /**
+     * @param  array<array-key, mixed>  $nodes
+     * @return list<string>
+     */
+    private static function badIds(array $nodes): array
+    {
+        $bad = [];
+
+        foreach ($nodes as $node) {
+            if (! is_array($node)) {
+                continue;
+            }
+
+            if (is_string($node['id'] ?? null) && preg_match(Lints::FIELD_ID, $node['id']) !== 1) {
+                $bad[] = $node['id'];
+            }
+
+            if (is_array($node['children'] ?? null)) {
+                $bad = [...$bad, ...self::badIds($node['children'])];
+            }
+        }
+
+        return array_values(array_unique($bad));
     }
 }

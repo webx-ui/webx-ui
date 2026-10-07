@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Http\ApiResponse;
 use WebxUi\Blocks\BlockComponents;
+use WebxUi\Blocks\Exceptions\BlocksException;
 use WebxUi\Blocks\Http\Requests\BlockRequest;
 use WebxUi\Blocks\Http\Resources\BlockResource;
 use WebxUi\Blocks\Models\Block;
@@ -17,6 +18,8 @@ use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Panel\Authors;
 use WebxUi\Blocks\Panel\BlockInput;
 use WebxUi\Blocks\Panel\Graph;
+use WebxUi\Blocks\Panel\Publisher;
+use WebxUi\Blocks\Panel\Renamer;
 use WebxUi\Blocks\Panel\Usage;
 use WebxUi\Blocks\Regions;
 
@@ -102,13 +105,34 @@ final class BlockController
         return ApiResponse::data($this->one($block->refresh(), $usage), 201);
     }
 
-    public function update(BlockRequest $request, Block $block, Usage $usage): JsonResponse
+    /**
+     * A new slug is a rename, not a field: the pages that hold the type, the types that allow it
+     * and its own marker are rewritten with it ({@see Renamer}), and the answer says how many — the
+     * editor's toast reads it, where it used to say nothing had changed.
+     */
+    public function update(BlockRequest $request, Block $block, Usage $usage, Renamer $renamer): JsonResponse
     {
         $values = $request->values();
         $refusal = BlockInput::kindRefusal($block, $values['kind'] ?? null, $usage->counts());
 
         if ($refusal !== null) {
             throw ValidationException::withMessages(['kind' => $refusal]);
+        }
+
+        $renamed = null;
+        $slug = $values['slug'] ?? null;
+        unset($values['slug']);
+
+        if (is_string($slug) && $slug !== $block->slug) {
+            $from = $block->slug;
+
+            try {
+                $renamed = ['from' => $from, 'to' => $slug] + $renamer->rename($block, $slug, BlockVersion::SOURCE_PANEL, $this->author($request));
+            } catch (BlocksException $refused) {
+                throw ValidationException::withMessages(['slug' => $refused->getMessage()]);
+            }
+
+            $block->refresh();
         }
 
         $block->fill($values)->save();
@@ -119,7 +143,7 @@ final class BlockController
             $block->saveVersion($content, BlockVersion::SOURCE_PANEL, $this->author($request), $request->comment());
         }
 
-        return ApiResponse::data($this->one($block->refresh(), $usage));
+        return ApiResponse::data($this->one($block->refresh(), $usage, $renamed === null ? [] : ['renamed' => $renamed]));
     }
 
     /**
@@ -160,13 +184,22 @@ final class BlockController
         return ApiResponse::noContent();
     }
 
-    private function one(Block $block, Usage $usage): BlockResource
+    /**
+     * One type, as the editor opens it — with what publishing its draft would do to the pages
+     * already written when it changes a field's `localized`, so the editor can say so before
+     * anybody presses Publish.
+     */
+    /**
+     * @param  array<string, mixed>  $extra
+     */
+    private function one(Block $block, Usage $usage, array $extra = []): BlockResource
     {
         $block->loadMissing(['draftVersion', 'publishedVersion']);
 
         $authors = Authors::names([$block->draftVersion?->author_id, $block->publishedVersion?->author_id]);
+        $changes = app(Publisher::class)->languageChanges($block);
 
-        return new BlockResource($block, $usage->counts(), $authors, withContent: true);
+        return new BlockResource($block, $usage->counts(), $authors, withContent: true, languageChanges: $changes, extra: $extra);
     }
 
     /**

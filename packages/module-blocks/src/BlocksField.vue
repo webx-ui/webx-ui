@@ -23,10 +23,12 @@ import {
 } from '@webx-ui/core'
 import {
   coreTypes,
+  screenErrorsKey,
   WxScreenRenderer,
   type RenderContext,
   type ScreenNode,
   type TypeRegistry,
+  type ValidationErrors,
 } from '@webx-ui/schema'
 import { createBlocksApi, type BlocksApi } from './api'
 import BlockMoveDialog from './BlockMoveDialog.vue'
@@ -48,7 +50,7 @@ import {
 import { useBlocksMessages } from './i18n'
 import { blocksOwnerKey, blocksPreviewKey, blocksRootKey, blocksTopKey } from './preview'
 import { destinations, type Destination } from './move'
-import { formSchema } from './schema'
+import { formSchema, startValues, withPlaceholders } from './schema'
 import type { BlockNode, BlockType } from './types'
 
 /**
@@ -101,6 +103,8 @@ const props = withDefaults(
 const model = defineModel<BlockNode[]>({ default: () => [] })
 
 const nested = inject(blocksRootKey, false)
+/* The refusal of the last save of the screen this field stands on: `blocks.<key>.<field>`. */
+const refusal = inject(screenErrorsKey, null)
 /* Inside the block editor's sample form, the top level is that block rather than a page. */
 const owner = inject(blocksOwnerKey, null)
 /* In a layout region's editor, the top level is that region rather than a page. */
@@ -128,6 +132,49 @@ const topMax = computed(() => props.max ?? top?.value?.max ?? null)
 const topRoot = computed(() => top?.value?.root ?? 'root')
 
 const tree = computed<BlockNode[]>(() => (Array.isArray(model.value) ? model.value : []))
+
+/**
+ * The refusal, by block: key → field → messages. The server names a value by the block's key and
+ * the field (`blocks.k1.title`), and a block standing where it may not by the key alone
+ * (`blocks.k1`, under `''`). A limit of the whole page names the type (`blocks.hero`) — kept
+ * under that, for the list above the tree.
+ */
+const refused = computed<Record<string, Record<string, string[]>>>(() => {
+  const errors: ValidationErrors | undefined = refusal?.value
+  const prefix = `${props.name ?? 'blocks'}.`
+  const out: Record<string, Record<string, string[]>> = {}
+
+  for (const [path, messages] of Object.entries(errors ?? {})) {
+    if (!path.startsWith(prefix)) continue
+
+    const rest = path.slice(prefix.length)
+    const dot = rest.indexOf('.')
+    const key = dot === -1 ? rest : rest.slice(0, dot)
+    const field = dot === -1 ? '' : rest.slice(dot + 1)
+
+    out[key] = { ...(out[key] ?? {}), [field]: messages }
+  }
+
+  return out
+})
+
+/** What the tree marks: every message of a block, in one list. */
+const refusedByKey = computed<Record<string, string[]>>(() => {
+  const out: Record<string, string[]> = {}
+
+  for (const [key, fields] of Object.entries(refused.value)) {
+    out[key] = Object.values(fields).flat()
+  }
+
+  return out
+})
+
+/** A refusal that names no block on the page — a limit of the whole page, by type. */
+const pageRefusals = computed(() =>
+  Object.entries(refusedByKey.value)
+    .filter(([key]) => locate(tree.value, key) === null)
+    .flatMap(([, messages]) => messages),
+)
 
 const selectedKey = ref<string | null>(null)
 const selected = computed(() => (selectedKey.value ? locate(tree.value, selectedKey.value) : null))
@@ -310,23 +357,12 @@ async function add(
 
   if (!type) return
 
-  const node = makeNode(type.slug, structuredSample(type))
+  const node = makeNode(
+    type.slug,
+    startValues(type.content?.schema ?? [], type.content?.sample ?? {}),
+  )
   set(insertNode(tree.value, parentKey, field, index ?? list.length, node))
   selectedKey.value = node.key
-}
-
-/** A new block starts from the sample rather than empty, so the page shows something. */
-function structuredSample(type: BlockType): Record<string, unknown> {
-  const sample = type.content?.sample ?? {}
-  const values: Record<string, unknown> = {}
-
-  for (const [key, value] of Object.entries(sample)) {
-    // Nested blocks in a sample are the author's own — a page starts with an empty container.
-    if (!Array.isArray(value) || value.length === 0 || typeof value[0] !== 'object')
-      values[key] = value
-  }
-
-  return values
 }
 
 /**
@@ -472,6 +508,49 @@ watch(
   { deep: true },
 )
 
+/*
+ * A save refused for a block's value opens that block, so the field with the message is on
+ * screen: the tree marks it, but a form that is not open shows nothing under any field.
+ */
+watch(refusedByKey, (now) => {
+  const keys = Object.keys(now).filter((key) => locate(tree.value, key) !== null)
+
+  if (keys.length === 0 || (selectedKey.value !== null && keys.includes(selectedKey.value))) return
+
+  selectedKey.value = keys[0]!
+})
+
+/** The open block's refusal, under the names its form's fields answer to. */
+const selectedErrors = computed<ValidationErrors | undefined>(() => {
+  const fields = selectedKey.value ? refused.value[selectedKey.value] : undefined
+
+  if (!fields) return undefined
+
+  const out: ValidationErrors = {}
+
+  for (const [field, messages] of Object.entries(fields)) {
+    if (field !== '') out[field] = messages
+  }
+
+  return out
+})
+
+/** What the open block was refused for as a whole — where it stands, not a value. */
+const selectedPlacement = computed(() =>
+  selectedKey.value ? (refused.value[selectedKey.value]?.[''] ?? []) : [],
+)
+
+/** Keys of the blocks switched off, for the preview to mark until it reloads without them. */
+const hiddenKeys = computed(() => {
+  const keys: string[] = []
+
+  walk(tree.value, (node) => {
+    if (node.hidden === true) keys.push(node.key)
+  })
+
+  return keys
+})
+
 function onKey(event: KeyboardEvent): void {
   if (event.key === 'Escape' && selectedKey.value) done()
 }
@@ -498,7 +577,12 @@ onBeforeUnmount(() => {
 })
 
 const formRoot = computed(() =>
-  selectedType.value?.content ? formSchema(selectedType.value.content.schema) : [],
+  selectedType.value?.content
+    ? withPlaceholders(
+        formSchema(selectedType.value.content.schema),
+        selectedType.value.content.sample ?? {},
+      )
+    : [],
 )
 </script>
 
@@ -534,6 +618,11 @@ const formRoot = computed(() =>
             <span class="wx-blocks__panel-title">{{ t('field.blocks') }}</span>
             <wx-text size="sm" tone="muted">{{ tree.length }}</wx-text>
           </div>
+          <div v-if="pageRefusals.length" class="wx-blocks__refusals" role="alert">
+            <wx-text v-for="(line, index) in pageRefusals" :key="index" size="sm" tone="danger">{{
+              line
+            }}</wx-text>
+          </div>
           <div class="wx-blocks__list">
             <blocks-tree
               :nodes="tree"
@@ -541,6 +630,7 @@ const formRoot = computed(() =>
               :max="max"
               :selected="selectedKey"
               :disabled="disabled"
+              :errors="refusedByKey"
               @select="select"
               @add="add"
               @remove="remove"
@@ -639,6 +729,15 @@ const formRoot = computed(() =>
             </span>
           </div>
           <div class="wx-blocks__form">
+            <div v-if="selectedPlacement.length" class="wx-blocks__refusals" role="alert">
+              <wx-text
+                v-for="(line, index) in selectedPlacement"
+                :key="index"
+                size="sm"
+                tone="danger"
+                >{{ line }}</wx-text
+              >
+            </div>
             <wx-screen-renderer
               v-if="selectedType?.content"
               :key="selected.node.key"
@@ -648,6 +747,7 @@ const formRoot = computed(() =>
               :translate="translate"
               :can="can"
               :disabled="disabled"
+              :errors="selectedErrors"
               @update:model-value="onValues"
             />
             <wx-text v-else size="sm" tone="danger">{{
@@ -662,6 +762,7 @@ const formRoot = computed(() =>
           ref="previewEl"
           :url="preview.url.value"
           :selected="selectedKey"
+          :hidden="hiddenKeys"
           :reload="preview.reload?.value ?? 0"
           :compact="compact"
           @select="selectFromPreview"
@@ -777,6 +878,17 @@ const formRoot = computed(() =>
 
 .wx-blocks__form {
   padding: var(--wx-space-6);
+}
+
+/* What a save was refused for that is not one field's: a limit of the page, a block standing
+   where it may not. Above the tree or the form, where the eye starts. */
+.wx-blocks__refusals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wx-space-4);
+  padding: var(--wx-space-6) var(--wx-space-8);
+  border-radius: var(--wx-radius-control);
+  background: var(--wx-color-danger-soft);
 }
 
 /*

@@ -18,4 +18,5 @@ return [
         'document' => 'belgeler',
         'other' => 'diğer dosyalar',
     ],
+    'missing' => 'Kitaplıkta [:path] dosyası yok: oradan bir dosya seçin.',
 ];

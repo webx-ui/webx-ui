@@ -55,7 +55,7 @@ final class RegionWriter
         $this->admissible($name, $tree);
 
         $draft = $region->draftValues();
-        $region->saveDraft(array_merge($draft, ['blocks' => $this->values->store($tree)]), $authorId, $source);
+        $region->saveDraft(array_merge($draft, ['blocks' => $this->values->store($tree, 'blocks', Regions::ALLOWED_IN.$name, $region->editingTree())]), $authorId, $source);
 
         return $region;
     }

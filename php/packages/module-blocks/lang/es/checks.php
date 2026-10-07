@@ -21,4 +21,7 @@ return [
             'fix' => 'Quítelos con la corrección o en todo el sitio con php artisan webx:blocks:prune. Un bloque de un tipo que ya no existe no se toca. Los elementos de un repetidor se comparan con sus campos.',
         ],
     ],
+    'syntax' => 'La plantilla no compila: :reason. La publicación será rechazada.',
+    'unknown-field-type' => 'Campos de un tipo que el sitio no conoce: :fields. El formulario muestra un aviso en su lugar y nadie comprueba sus valores.',
+    'field-id' => 'El id de un campo son letras, dígitos, _ y -, empezando por una letra: :ids.',
 ];

@@ -179,8 +179,8 @@ final class EditorTest extends TestCase
     {
         // `wx-blocks` is not a type the server registers, so the screen hands the tree over
         // whole: without `storeBlocks()` on this door the request's choice went into the draft
-        // as it came. A source without categories or markup keeps neither, and a string that is
-        // a number is kept as one.
+        // as it came. A source without markup keeps none. (A category the source does not have,
+        // or a limit out of bounds, is refused by the field's rules — the blocks validation tests.)
         $this->app->make(CollectionSources::class)->register(new TipSource);
 
         $block = Block::query()->create(['slug' => 'tips', 'title' => 'Tips']);
@@ -198,7 +198,7 @@ final class EditorTest extends TestCase
                     'blocks' => [[
                         'key' => 'k1',
                         'type' => 'tips',
-                        'values' => ['list' => ['categories' => [4, 2], 'limit' => '3', 'filter' => true, 'markup' => true]],
+                        'values' => ['list' => ['categories' => [], 'limit' => 3, 'filter' => true, 'markup' => true]],
                     ]],
                 ],
             ])

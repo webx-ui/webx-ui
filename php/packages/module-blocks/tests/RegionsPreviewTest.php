@@ -114,7 +114,7 @@ final class RegionsPreviewTest extends RegionTestCase
     {
         $this->publish('bar', '<div class="b-bar">{{ $text }}</div>');
         $this->publish('bomb', '<p>@if ($boom) {{ throw new RuntimeException(\'Boom\') }} @endif fine</p>');
-        $this->region('header', [$this->node('bar', ['text' => 'Menu'], 'm1'), $this->node('bomb', ['boom' => true], 'x1')], published: false);
+        $this->region('header', [$this->node('bar', ['text' => 'Menu'], 'm1'), $this->node('bomb', ['boom' => 'yes'], 'x1')], published: false);
 
         RegionPage::query()->create(['slug' => '', 'title' => 'Home'])->publish();
 

@@ -21,4 +21,7 @@ return [
             'fix' => 'Usuń je poprawką albo dla całej strony poleceniem php artisan webx:blocks:prune. Blok typu, którego już nie ma, nie jest ruszany. Elementy repeatera są porównywane z jego polami.',
         ],
     ],
+    'syntax' => 'Szablon się nie kompiluje: :reason. Publikacja zostanie odrzucona.',
+    'unknown-field-type' => 'Pola typu nieznanego stronie: :fields. Formularz pokaże w ich miejscu ostrzeżenie, a wartości nikt nie sprawdzi.',
+    'field-id' => 'Identyfikator pola to litery, cyfry, _ i -, na początku litera: :ids.',
 ];

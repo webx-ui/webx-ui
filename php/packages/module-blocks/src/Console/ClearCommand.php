@@ -9,6 +9,7 @@ use Illuminate\Filesystem\Filesystem;
 use WebxUi\Blocks\BlockTypes;
 use WebxUi\Blocks\Regions;
 use WebxUi\Blocks\Rendering\TemplateCompiler;
+use WebxUi\Blocks\Rendering\Thumbnails;
 
 /**
  * Forget the registry's cache and drop the compiled templates.
@@ -22,12 +23,16 @@ final class ClearCommand extends Command
 {
     protected $signature = 'webx:blocks:clear';
 
-    protected $description = 'Forget the cached block types and drop the compiled templates';
+    protected $description = 'Forget the cached block types and thumbnails and drop the compiled templates';
 
-    public function handle(BlockTypes $types, TemplateCompiler $compiler, Filesystem $files, Regions $regions): int
+    public function handle(BlockTypes $types, TemplateCompiler $compiler, Filesystem $files, Regions $regions, Thumbnails $thumbnails): int
     {
         $types->forget();
         $this->info('Block types forgotten.');
+
+        // The pictures of the list and the picker: drawn from the types just forgotten.
+        $thumbnails->forget();
+        $this->info('Thumbnails forgotten.');
 
         // The regions' published trees too: a restored database leaves them just as stale.
         foreach (array_keys($regions->declared()) as $name) {

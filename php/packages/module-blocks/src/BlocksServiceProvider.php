@@ -42,6 +42,7 @@ use WebxUi\Blocks\Preview\PreviewToken;
 use WebxUi\Blocks\Rendering\Bundles;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\Rendering\TemplateCompiler;
+use WebxUi\Blocks\Rendering\Thumbnails;
 use WebxUi\Blocks\Tags\BlockTag;
 
 /**
@@ -62,6 +63,7 @@ class BlocksServiceProvider extends ServiceProvider
         $this->app->singleton(Preview::class);
         $this->app->singleton(Usage::class);
         $this->app->singleton(Publisher::class);
+        $this->app->singleton(Thumbnails::class);
         $this->app->singleton(Regions::class);
 
         // What modules offer as block types (§3.4 of the FAQ spec). Filled from their providers.

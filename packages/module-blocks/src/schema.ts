@@ -70,6 +70,90 @@ export function callerWords(
 /** Layout nodes: they group fields and are never a value of their own. */
 const LAYOUT = new Set(['wx-card', 'wx-tabs', 'wx-tab', 'wx-row', 'wx-col', 'wx-divider'])
 
+/**
+ * Fields whose sample is words somebody wrote — a heading, a caption, a picture. A block added to
+ * a page starts without them: the sample is the author's example, and copied in as the block's own
+ * content it went onto the site under the next autosave ("Quote text sample", "John Doe"). What
+ * the other fields hold — a number, a switch, a choice from a list — is a setting, and the sample's
+ * setting is as good a start as any.
+ */
+const WORDS = new Set([
+  'wx-input',
+  'wx-textarea',
+  'wx-rich-text',
+  'wx-tags-input',
+  'wx-autocomplete',
+  'wx-code-editor',
+  'wx-media',
+  'wx-gallery',
+  'wx-file',
+  'wx-files',
+  'wx-link',
+  'wx-repeater',
+  'wx-relations',
+  'wx-blocks',
+])
+
+/**
+ * What a block added from the picker starts with: the sample's settings, none of its words.
+ *
+ * @see WORDS
+ */
+export function startValues(
+  schema: ScreenNode[],
+  sample: Record<string, unknown>,
+): Record<string, unknown> {
+  const values: Record<string, unknown> = {}
+
+  for (const node of schemaFields(schema)) {
+    if (WORDS.has(node.type) || !(node.id in sample)) continue
+
+    const value = sample[node.id]
+
+    // Nested blocks in a sample are the author's own — a page starts with an empty container.
+    if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') continue
+
+    values[node.id] = value
+  }
+
+  return values
+}
+
+/**
+ * The form of a block, with the sample's words shown as placeholders in the empty fields that
+ * take words: the editor sees what goes where without the example becoming the content.
+ */
+export function withPlaceholders(
+  nodes: ScreenNode[],
+  sample: Record<string, unknown>,
+): ScreenNode[] {
+  return nodes.map((node) => {
+    if (LAYOUT.has(node.type)) {
+      return node.children ? { ...node, children: withPlaceholders(node.children, sample) } : node
+    }
+
+    if (node.type !== 'wx-input' && node.type !== 'wx-textarea') return node
+    if (node.props?.placeholder !== undefined) return node
+
+    const words = sampleWords(sample[node.id])
+
+    return words === null ? node : { ...node, props: { ...(node.props ?? {}), placeholder: words } }
+  })
+}
+
+/** A sample's text: itself, or the first language of a translated one. */
+function sampleWords(value: unknown): string | null {
+  if (typeof value === 'string') return value.trim() === '' ? null : value.slice(0, 160)
+
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    for (const one of Object.values(value as Record<string, unknown>)) {
+      if (typeof one === 'string' && one.trim() !== '') return one.slice(0, 160)
+    }
+  }
+
+  return null
+}
+
 /** The fields of a schema through its layout, flat — the variables a template gets. */
 export function schemaFields(schema: ScreenNode[]): ScreenNode[] {
   const found: ScreenNode[] = []

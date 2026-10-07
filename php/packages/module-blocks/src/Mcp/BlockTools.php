@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Screens\Tree;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\BlockComponents;
 use WebxUi\Blocks\BlockLabel;
@@ -28,14 +30,17 @@ use WebxUi\Blocks\Http\Resources\BlockResource;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Models\BlockVersion;
 use WebxUi\Blocks\Models\Region;
+use WebxUi\Blocks\Panel\Authors;
 use WebxUi\Blocks\Panel\BlockInput;
 use WebxUi\Blocks\Panel\Customiser;
+use WebxUi\Blocks\Panel\DropsTranslations;
 use WebxUi\Blocks\Panel\Graph;
 use WebxUi\Blocks\Panel\Lints;
 use WebxUi\Blocks\Panel\Publisher;
 use WebxUi\Blocks\Panel\PublishFailed;
 use WebxUi\Blocks\Panel\RegionForm;
 use WebxUi\Blocks\Panel\RegionWriter;
+use WebxUi\Blocks\Panel\Renamer;
 use WebxUi\Blocks\Panel\Usage;
 use WebxUi\Blocks\Preview\Preview;
 use WebxUi\Blocks\Regions;
@@ -43,6 +48,7 @@ use WebxUi\Blocks\Rendering\Bundles;
 use WebxUi\Blocks\Rendering\Renderer;
 use WebxUi\Blocks\Schema;
 use WebxUi\Blocks\StrayValues;
+use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
 
@@ -121,17 +127,68 @@ final class BlockTools
             Tool::mutating(
                 'update',
                 'Change a block type: any of its settings, and any of the five content fields — a field left out '
-                .'keeps its value. Changed content is written as a new version of the draft; unchanged content writes none.',
+                .'keeps its value. Changed content is written as a new version of the draft; unchanged content writes none. '
+                .'rename_to gives it a new slug and rewrites every page, region and type that names it — refused while '
+                .'another template calls it by tag. Answers with a short summary and the warnings (lints of the template, '
+                .'schema and styles; what publishing would convert when a field\'s localized changes); full: true for the whole type.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->update($arguments, $user),
-                ['properties' => ['slug' => $slug] + $this->typeProperties(), 'required' => ['slug']],
+                ['properties' => [
+                    'slug' => $slug,
+                    'rename_to' => ['type' => 'string', 'description' => 'A new slug for the type: kebab-case, unique. Pages keep their blocks; the template\'s data-wx-block and the .b-{slug} prefix are rewritten too.'],
+                    'full' => ['type' => 'boolean', 'description' => 'Answer with the whole type, as blocks_get does, instead of a summary.'],
+                ] + $this->typeProperties(), 'required' => ['slug']],
             ),
 
             Tool::mutating(
                 'publish',
                 'Publish the draft of a block type, so the site prints it. Refused with the line when the template '
                 .'fails on the sample or on any page the block already stands on — and, for a type other types call, '
-                .'when it breaks one of them, naming the type and the page. With dry_run the checks run and nothing moves.',
+                .'when it breaks one of them, naming the type and the page. A draft that switches a field\'s localized '
+                .'converts the values already on pages to the new shape; one that takes localized off over text in '
+                .'several languages is refused, naming the pages, unless drop_translations is true. With dry_run the '
+                .'checks run and nothing moves.',
                 fn (array $arguments): array => $this->publish($arguments),
+                ['properties' => [
+                    'slug' => $slug,
+                    'drop_translations' => ['type' => 'boolean', 'description' => 'Agree to keep only the main language where a field stops being localized.'],
+                ], 'required' => ['slug']],
+            ),
+
+            Tool::mutating(
+                'delete',
+                'Delete a block type with its whole history. Refused while it stands on any page or region, or while '
+                .'another type\'s template calls it — blocks_usage says where. Deleting a customised module component '
+                .'brings the module\'s own partial back: that is how a customisation is undone.',
+                fn (array $arguments): array => $this->delete($arguments),
+                ['properties' => ['slug' => $slug], 'required' => ['slug']],
+            ),
+
+            Tool::read(
+                'versions',
+                'The history of a block type: every version, newest first — number, source (panel, mcp, import), '
+                .'author, comment, date — and which one is the draft and which is published. blocks_get with version '
+                .'reads one; blocks_version_restore brings one back.',
+                fn (array $arguments): array => $this->versions($arguments),
+                ['properties' => ['slug' => $slug], 'required' => ['slug']],
+            ),
+
+            Tool::mutating(
+                'version_restore',
+                'Bring an old version of a block type back as a new draft — its schema, template, styles, script and '
+                .'sample as they were. Nothing is published: publish it as any draft.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->versionRestore($arguments, $user),
+                ['properties' => [
+                    'slug' => $slug,
+                    'number' => ['type' => 'integer', 'description' => 'A version number, as blocks_versions lists it.'],
+                ], 'required' => ['slug', 'number']],
+            ),
+
+            Tool::read(
+                'usage',
+                'Where a block type stands: every page, service, region or other entity holding it — entity and id '
+                .'as blocks_get_content takes them, title, address, whether it is in what the site shows, in the draft '
+                .'or both — and the types whose templates call it.',
+                fn (array $arguments): array => $this->usageOf($arguments),
                 ['properties' => ['slug' => $slug], 'required' => ['slug']],
             ),
 
@@ -183,8 +240,12 @@ final class BlockTools
             Tool::mutating(
                 'edit_content',
                 'Change the blocks of an entity a node at a time, by key: set merges values into one block, unset takes values out of it, add puts '
-                .'a new one where you say, move and remove rearrange, hide and show switch one block off and back '
-                .'on without touching what is in it. Everything not named stays exactly as it is. '
+                .'a new one where you say, move and remove rearrange, duplicate copies a block with everything inside it '
+                .'right after it, hide and show switch one block off and back on without touching what is in it. '
+                .'Everything not named stays exactly as it is. Every value is checked by its field\'s rules (bounds, '
+                .'options, dates, colours, links — http(s), mailto, tel, relative paths and #anchors only — library files) '
+                .'and every block against where it stands (a container\'s allow and max, a type\'s allowed_in and '
+                .'max_per_entity); a refusal names the block\'s key and the field. '
                 .'Send the revision blocks_get_content gave you and the edit is refused if the entity changed in '
                 .'between, instead of quietly overwriting somebody.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->editContent($arguments, $user),
@@ -195,7 +256,7 @@ final class BlockTools
                     'ops' => [
                         'type' => 'array',
                         'items' => ['type' => 'object'],
-                        'description' => 'In order: { op: "set", key, values, locale? } · { op: "unset", key, fields } · '
+                        'description' => 'In order: { op: "set", key, values, locale? } · { op: "unset", key, fields } · { op: "duplicate", key } · '
                             .'{ op: "add", type, values?, parent?, field?, before?, after? } · '
                             .'{ op: "move", key, parent?, field?, before?, after? } · { op: "remove", key } · '
                             .'{ op: "hide", key } · { op: "show", key }. unset takes the named values out of a block — '
@@ -248,6 +309,45 @@ final class BlockTools
                 'Take a region off the site: the layout prints the markup from code again. The blocks and the draft '
                 .'stay, for the next publication.',
                 fn (array $arguments): array => $this->regionUnpublish($arguments),
+                ['properties' => ['name' => $region], 'required' => ['name']],
+                permission: 'blocks.regions',
+            ),
+
+            Tool::mutating(
+                'region_discard',
+                'Throw away the draft of a region: the editor goes back to what the site shows (or to nothing, for a '
+                .'region never published). dry_run says whether there is a draft.',
+                fn (array $arguments): array => $this->regionDiscard($arguments),
+                ['properties' => ['name' => $region], 'required' => ['name']],
+                permission: 'blocks.regions',
+            ),
+
+            Tool::read(
+                'region_versions',
+                'The publications of a region, newest first: number, date, author, source, comment. '
+                .'blocks_region_restore brings one back into the draft.',
+                fn (array $arguments): array => $this->regionVersions($arguments),
+                ['properties' => ['name' => $region], 'required' => ['name']],
+                permission: 'blocks.regions',
+            ),
+
+            Tool::mutating(
+                'region_restore',
+                'Put an old publication of a region back into its draft. Publish it with blocks_region_publish.',
+                fn (array $arguments): array => $this->regionRestore($arguments),
+                ['properties' => [
+                    'name' => $region,
+                    'number' => ['type' => 'integer', 'description' => 'A version number, as blocks_region_versions lists it.'],
+                ], 'required' => ['name', 'number']],
+                permission: 'blocks.regions',
+            ),
+
+            Tool::mutating(
+                'region_adopt',
+                'Start a region from the markup the layout prints there now: a block type site-{name} is made from '
+                .'that view and published, and one block of it is put into the region\'s draft. Writes a block type, '
+                .'so it needs blocks.manage too. Refused when the region has no fallback view or the slug is taken.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->regionAdopt($arguments, $user),
                 ['properties' => ['name' => $region], 'required' => ['name']],
                 permission: 'blocks.regions',
             ),
@@ -315,7 +415,135 @@ final class BlockTools
                 'created_at' => $version->created_at?->toAtomString(),
             ],
             'content' => $content,
-            'warnings' => Lints::check($block->slug, $content['template'], $content['styles']),
+            'warnings' => Lints::check($block->slug, $content['template'], $content['styles'], $content['schema']),
+        ];
+    }
+
+    /**
+     * The panel's Delete: refused while the type stands anywhere or is called by another type.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function delete(array $arguments): array
+    {
+        $this->ensureEditing();
+
+        $block = $this->block($arguments);
+        $parents = $this->container->make(Graph::class)->usedBy($block->slug);
+
+        if ($parents !== []) {
+            throw new ToolFailure('Not deleted: other types call it — '.implode(', ', array_map(static fn (array $parent): string => $parent['slug'], $parents)).'. Change their templates first.');
+        }
+
+        $where = $this->usage()->of($block->slug);
+
+        if ($where !== []) {
+            throw new ToolFailure('Not deleted: it stands on '.count($where).' page(s) or region(s). blocks_usage lists them; take it out of them first.');
+        }
+
+        $declared = $this->container->make(BlockComponents::class)->get($block->slug);
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_delete' => $block->slug, 'versions' => $block->versions()->count(), 'restores_module_view' => $declared === null ? null : $declared['fallback']];
+        }
+
+        $block->delete();
+
+        return ['deleted' => $block->slug, 'restored_module_view' => $declared === null ? null : $declared['fallback']];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function versions(array $arguments): array
+    {
+        $block = $this->block($arguments);
+        $versions = $block->versions()->get();
+        $authors = Authors::names($versions->map(static fn (BlockVersion $version): ?int => $version->author_id));
+
+        return [
+            'slug' => $block->slug,
+            'draft' => $block->draftVersion?->number,
+            'published' => $block->publishedVersion?->number,
+            'versions' => $versions->map(static fn (BlockVersion $version): array => [
+                'number' => $version->number,
+                'source' => $version->source,
+                'author' => $version->author_id === null ? null : ($authors[$version->author_id] ?? null),
+                'comment' => $version->comment,
+                'created_at' => $version->created_at?->toAtomString(),
+                'is_draft' => $version->id === $block->draft_version_id,
+                'is_published' => $version->id === $block->published_version_id,
+            ])->values()->all(),
+        ];
+    }
+
+    /**
+     * The panel's «Restore»: an old version becomes a new draft.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function versionRestore(array $arguments, ?Authenticatable $user): array
+    {
+        $this->ensureEditing();
+
+        $block = $this->block($arguments);
+        $number = $arguments['number'] ?? null;
+
+        if (! is_int($number) && ! (is_string($number) && ctype_digit($number))) {
+            throw new ToolFailure('`number` is required: a version number from blocks_versions.');
+        }
+
+        $version = $this->version($block, (int) $number);
+
+        if (! $version instanceof BlockVersion) {
+            throw new ToolFailure("Block [{$block->slug}] has no version {$number}.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_restore' => $version->number, 'as_draft' => (int) $block->versions()->max('number') + 1];
+        }
+
+        $draft = $block->saveVersion(
+            $version->content(),
+            BlockVersion::SOURCE_MCP,
+            $this->authorId($user),
+            (string) __('webx-blocks::page.restored-from', ['number' => $version->number]),
+        );
+
+        return ['restored' => $version->number, 'draft' => $draft->number, 'slug' => $block->slug];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function usageOf(array $arguments): array
+    {
+        $block = $this->block($arguments);
+        $entities = $this->entities();
+        $where = [];
+
+        foreach ($this->usage()->of($block->slug) as $entry) {
+            $name = $entities->nameOfClass($entry['model']);
+
+            $where[] = [
+                'entity' => $name,
+                'id' => $entry['region'] ?? $entry['id'],
+                'title' => $entry['title'],
+                'url' => $entry['url'],
+                'published' => $entry['published'],
+                'in' => $entry['live'] && $entry['draft'] ? 'live and draft' : ($entry['live'] ? 'live' : 'draft'),
+            ];
+        }
+
+        return [
+            'slug' => $block->slug,
+            'count' => count($where),
+            'entities' => $where,
+            'used_by' => $this->container->make(Graph::class)->usedBy($block->slug),
         ];
     }
 
@@ -394,14 +622,40 @@ final class BlockTools
 
         $writesVersion = $content !== [] && $block->contentDiffers($content);
         $merged = array_merge($block->currentVersion()?->content() ?? [], $content);
+        $renameTo = is_string($arguments['rename_to'] ?? null) && $arguments['rename_to'] !== '' && $arguments['rename_to'] !== $block->slug
+            ? $arguments['rename_to']
+            : null;
+        $renamer = $this->container->make(Renamer::class);
+
+        if ($renameTo !== null) {
+            $this->validate(['slug' => $renameTo], ['slug' => BlockInput::rowRules(false, $block->id)['slug']]);
+
+            $refused = $renamer->refusal($block);
+
+            if ($refused !== null) {
+                throw new ToolFailure('Not renamed: '.$refused);
+            }
+        }
+
+        $warnings = Lints::check($block->slug, (string) ($merged['template'] ?? ''), (string) ($merged['styles'] ?? ''), is_array($merged['schema'] ?? null) ? $merged['schema'] : []);
 
         if ($this->dryRun($arguments)) {
             return [
                 'dry_run' => true,
                 'changes' => $changes,
                 'would_write_version' => $writesVersion,
-                'warnings' => Lints::check($block->slug, (string) ($merged['template'] ?? ''), (string) ($merged['styles'] ?? '')),
+                'would_rename' => $renameTo === null ? null : ['to' => $renameTo, 'pages' => count($this->usage()->of($block->slug))],
+                'warnings' => $warnings,
             ];
+        }
+
+        $renamed = null;
+
+        if ($renameTo !== null) {
+            $from = $block->slug;
+            $renamed = ['from' => $from, 'to' => $renameTo] + $renamer->rename($block, $renameTo, BlockVersion::SOURCE_MCP, $this->authorId($user));
+            $block = $this->block(['slug' => $renameTo]);
+            unset($values['slug']);
         }
 
         if ($changes !== []) {
@@ -412,7 +666,51 @@ final class BlockTools
             $block->saveVersion($content, BlockVersion::SOURCE_MCP, $this->authorId($user), BlockInput::comment($input['comment'] ?? null));
         }
 
-        return $this->get(['slug' => $block->slug]) + ['changes' => $changes, 'wrote_version' => $writesVersion];
+        if (($arguments['full'] ?? false) === true) {
+            return $this->get(['slug' => $block->slug]) + ['changes' => $changes, 'wrote_version' => $writesVersion, 'renamed' => $renamed];
+        }
+
+        $block->refresh()->load(['draftVersion', 'publishedVersion']);
+        $language = $this->languageWarning($block);
+
+        // A summary: the whole type again is a page of schema and template the agent has just
+        // sent, on every call. blocks_get, or full: true, when it is wanted.
+        return array_filter([
+            'slug' => $block->slug,
+            'draft' => $block->draftVersion?->number,
+            'published' => $block->publishedVersion?->number,
+            'changes' => $changes,
+            'wrote_version' => $writesVersion,
+            'renamed' => $renamed,
+            'warnings' => $language === null ? $warnings : [...$warnings, $language],
+        ], static fn (mixed $value): bool => $value !== null);
+    }
+
+    /**
+     * What publishing the draft would do to content already written, as a warning — or null when
+     * it changes no field's `localized`.
+     *
+     * @return array{file: string, code: string, line: null, message: string}|null
+     */
+    private function languageWarning(Block $block): ?array
+    {
+        $changes = $this->container->make(Publisher::class)->languageChanges($block);
+
+        if ($changes['flips'] === []) {
+            return null;
+        }
+
+        $fields = array_map(
+            static fn (array $flip): string => ($flip['child'] === null ? $flip['field'] : "{$flip['field']}.*.{$flip['child']}").($flip['localized'] ? ' → localized' : ' → one language'),
+            $changes['flips'],
+        );
+
+        return [
+            'file' => 'schema',
+            'code' => 'localized-changes',
+            'line' => null,
+            'message' => (string) __('webx-blocks::page.localized-changes', ['fields' => implode(', ', $fields), 'count' => count($changes['entities'])]),
+        ];
     }
 
     /**
@@ -429,16 +727,18 @@ final class BlockTools
         try {
             if ($this->dryRun($arguments)) {
                 $checked = $publisher->check($block);
+                $language = $publisher->languageChanges($block);
 
                 return [
                     'dry_run' => true,
                     'ok' => true,
                     'version' => $block->draftVersion?->number,
                     'checked_on_pages' => $checked,
+                    'would_convert' => $language['flips'] === [] ? null : $language,
                 ];
             }
 
-            $version = $publisher->publish($block);
+            $version = $publisher->publish($block, ($arguments['drop_translations'] ?? false) === true);
         } catch (PublishFailed $failed) {
             // A component that breaks another type, the module's declared place or a cycle: the
             // sentence names the parent and the page, which is what the agent has to go and look at.
@@ -454,6 +754,8 @@ final class BlockTools
             $line = $failed->failure->templateLine !== null ? " at template line {$failed->failure->templateLine}" : '';
 
             throw new ToolFailure("Not published: the template failed {$where}{$line}: {$failed->failure->reason}");
+        } catch (DropsTranslations $drops) {
+            throw new ToolFailure('Not published: '.$drops->getMessage().' (drop_translations: true agrees.)');
         } catch (BlocksException) {
             throw new ToolFailure("Block [{$block->slug}] has no draft to publish: what is on the site is the latest version.");
         }
@@ -632,6 +934,8 @@ final class BlockTools
             $this->refuseStray($op['type'], $op['values'], [], self::held($tree));
         }
 
+        $containers = $this->containers(...);
+
         return match ($name) {
             'set' => ContentEdit::set(
                 $tree,
@@ -639,7 +943,9 @@ final class BlockTools
                 is_array($op['values'] ?? null) ? $op['values'] : throw new ToolFailure('`values` is required by set.'),
                 is_string($op['locale'] ?? null) && $op['locale'] !== '' ? $op['locale'] : null,
                 $localized,
+                $this->container->make(Locales::class)->defaultCode(),
             ),
+            'duplicate' => ContentEdit::duplicate($tree, $this->opKey($key), static fn (): string => substr(bin2hex(random_bytes(8)), 0, 12)),
             'add' => ContentEdit::insert(
                 $tree,
                 [
@@ -652,8 +958,9 @@ final class BlockTools
                 $field,
                 $before,
                 $after,
+                $containers,
             ),
-            'move' => ContentEdit::move($tree, $this->opKey($key), $parent, $field, $before, $after),
+            'move' => ContentEdit::move($tree, $this->opKey($key), $parent, $field, $before, $after, $containers),
             'remove' => ContentEdit::remove($tree, $this->opKey($key)),
             'unset' => ContentEdit::unset(
                 $tree,
@@ -664,8 +971,22 @@ final class BlockTools
             ),
             'hide' => ContentEdit::visibility($tree, $this->opKey($key), true),
             'show' => ContentEdit::visibility($tree, $this->opKey($key), false),
-            default => throw new ToolFailure('Unknown operation ['.(is_string($name) ? $name : '?').']: set, unset, add, move, remove, hide or show.'),
+            default => throw new ToolFailure('Unknown operation ['.(is_string($name) ? $name : '?').']: set, unset, add, move, duplicate, remove, hide or show.'),
         };
+    }
+
+    /**
+     * The `wx-blocks` fields of a block type, by id — empty for a type that holds no blocks, null
+     * for one nobody knows. What says whether "inside this block" is a place at all.
+     *
+     * @return list<string>|null
+     */
+    private function containers(string $type): ?array
+    {
+        $types = $this->container->make(BlockTypes::class);
+        $block = $types->find($type) ?? $types->draft($type);
+
+        return $block?->nestedFields();
     }
 
     /**
@@ -801,7 +1122,19 @@ final class BlockTools
         // panel's save takes: what an agent writes and what an editor writes have to arrive in
         // the row as the same thing, or the allowlist a type runs its HTML through is a door
         // with one side.
-        $tree = $this->container->make(ContentValues::class)->store($tree);
+        //
+        // Checked first, by the same rules, so that a dry run says what a write would refuse: a
+        // value past its field's bounds, an option nobody offered, a link to `javascript:`, a block
+        // where its container does not take it.
+        $column = $this->column($entity);
+        $root = method_exists($entity, 'blocksRoot') ? (string) $entity->blocksRoot() : 'root';
+        $values = $this->container->make(ContentValues::class);
+        $before = $this->editing($entity);
+        $problems = $values->problems($tree, $root, $before);
+
+        if ($problems !== []) {
+            throw new ToolFailure('Not accepted — '.implode('; ', array_map(ContentValues::describe(...), $problems)));
+        }
 
         // A region takes what its declaration and the types' `allowed_in` let it take — the same
         // gate the panel's save goes through.
@@ -813,7 +1146,8 @@ final class BlockTools
             }
         }
 
-        $column = $this->column($entity);
+        $tree = $values->store($tree, $column, $root, $before);
+
         $asDraft = method_exists($entity, 'saveDraft');
         $count = 0;
         Content::walk($tree, static function () use (&$count): void {
@@ -1013,39 +1347,37 @@ final class BlockTools
     }
 
     /**
-     * The fields of a schema, through the layout nodes: what a template may use.
+     * The fields of a schema, through the layout nodes and not into a field: what a template may
+     * use as a variable. A repeater's children are its items' keys, listed under it — offered as
+     * top-level fields they read as variables a template does not have.
      *
      * @param  list<array<string, mixed>>  $nodes
-     * @return list<array{id: string, type: string, label: string|null}>
+     * @return list<array<string, mixed>>
      */
     private function fields(array $nodes): array
     {
+        $types = $this->container->make(FieldTypes::class);
         $fields = [];
 
-        foreach ($nodes as $node) {
-            if (! is_array($node)) {
-                continue;
+        foreach (Schema::valueFields($nodes, $types) as $id => $node) {
+            $field = [
+                'id' => (string) $id,
+                'type' => (string) ($node['type'] ?? ''),
+                'label' => is_string($node['label'] ?? null) ? $node['label'] : null,
+            ];
+
+            if (($node['localized'] ?? false) === true) {
+                $field['localized'] = true;
             }
 
-            if (is_string($node['id'] ?? null) && $node['id'] !== '' && isset($node['type']) && ! $this->isLayout((string) $node['type'])) {
-                $fields[] = [
-                    'id' => $node['id'],
-                    'type' => (string) $node['type'],
-                    'label' => is_string($node['label'] ?? null) ? $node['label'] : null,
-                ];
+            if (($node['type'] ?? null) === 'wx-repeater') {
+                $field['items'] = $this->fields(Tree::children($node));
             }
 
-            if (is_array($node['children'] ?? null)) {
-                $fields = [...$fields, ...$this->fields(array_values($node['children']))];
-            }
+            $fields[] = $field;
         }
 
         return $fields;
-    }
-
-    private function isLayout(string $type): bool
-    {
-        return Schema::isLayout($type);
     }
 
     /**
@@ -1202,7 +1534,7 @@ final class BlockTools
             'schema' => ['type' => 'array', 'items' => ['type' => 'object'], 'description' => 'Screen nodes; see blocks://fields.'],
             'template' => ['type' => 'string', 'description' => 'Blade. The root element carries data-wx-block="{slug}".'],
             'styles' => ['type' => 'string', 'description' => 'CSS, every selector under .b-{slug}.'],
-            'script' => ['type' => ['string', 'null'], 'description' => 'The body of async (el, values) => { … }; null for none.'],
+            'script' => ['type' => ['string', 'null'], 'description' => 'The body of async (el, values) => { … }; null for none. values is what the root prints in data-wx-values — {} unless the template writes data-wx-values="{{ json_encode([...]) }}" with what the script needs.'],
             'sample' => ['type' => 'object', 'description' => 'A value for every field.'],
             'comment' => ['type' => 'string', 'description' => 'A line for the history of versions.'],
         ];
@@ -1303,6 +1635,113 @@ final class BlockTools
         $this->container->make(RegionWriter::class)->unpublish($region->name);
 
         return ['unpublished' => $was, 'name' => $region->name];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function regionDiscard(array $arguments): array
+    {
+        $region = $this->declaredRegion($arguments);
+        $row = $this->container->make(Regions::class)->find($region->name);
+        $has = $row instanceof Region && $row->hasDraft();
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'has_draft' => $has];
+        }
+
+        $this->container->make(RegionWriter::class)->discard($region->name);
+
+        return ['discarded' => $has, 'name' => $region->name];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function regionVersions(array $arguments): array
+    {
+        $region = $this->declaredRegion($arguments);
+        $row = $this->container->make(Regions::class)->find($region->name);
+
+        if (! $row instanceof Region) {
+            return ['name' => $region->name, 'versions' => []];
+        }
+
+        $versions = $row->publishedVersions()->get();
+        $authors = Authors::names($versions->map(static fn (EntityVersion $version): ?int => $version->author_id));
+
+        return [
+            'name' => $region->name,
+            'versions' => $versions->map(static fn (EntityVersion $version): array => [
+                'number' => $version->number,
+                'created_at' => $version->created_at?->toAtomString(),
+                'author' => $version->author_id === null ? null : ($authors[$version->author_id] ?? null),
+                'source' => $version->source,
+                'comment' => $version->comment,
+            ])->values()->all(),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function regionRestore(array $arguments): array
+    {
+        $region = $this->declaredRegion($arguments);
+        $number = $arguments['number'] ?? null;
+
+        if (! is_int($number) && ! (is_string($number) && ctype_digit($number))) {
+            throw new ToolFailure('`number` is required: a version number from blocks_region_versions.');
+        }
+
+        if ($this->dryRun($arguments)) {
+            $row = $this->container->make(Regions::class)->find($region->name);
+            $exists = $row instanceof Region && $row->publishedVersions()->where('number', (int) $number)->exists();
+
+            return ['dry_run' => true, 'would_restore' => $exists ? (int) $number : null];
+        }
+
+        try {
+            $restored = $this->container->make(RegionWriter::class)->restore($region->name, (int) $number);
+        } catch (RegionRefused $refused) {
+            throw new ToolFailure('Not restored: '.$refused->sentence());
+        }
+
+        return ['restored' => (int) $number, 'into' => 'draft', 'name' => $restored->name, 'revision' => Content::revision($restored->editingTree())];
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function regionAdopt(array $arguments, ?Authenticatable $user): array
+    {
+        $region = $this->declaredRegion($arguments);
+
+        if ($user instanceof HasPermissions && ! $user->hasPermission('blocks.manage')) {
+            throw new ToolFailure('Adopting writes a block type: it needs [blocks.manage] too.');
+        }
+
+        $this->ensureEditing();
+
+        $regions = $this->container->make(Regions::class);
+        $fallback = $regions->fallbackOf($region->name);
+        $slug = RegionForm::adoptedSlug($region->name);
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'fallback' => $fallback, 'would_create' => $slug, 'taken' => Block::query()->where('slug', $slug)->exists()];
+        }
+
+        try {
+            [, $block] = $this->container->make(RegionWriter::class)->adopt($region->name, $this->authorId($user), BlockVersion::SOURCE_MCP);
+        } catch (RegionRefused $refused) {
+            throw new ToolFailure('Not adopted: '.$refused->sentence());
+        }
+
+        return ['adopted' => $region->name, 'block' => $block->slug, 'from' => $fallback, 'into' => 'draft'];
     }
 
     /**

@@ -32,7 +32,8 @@ about one of those.
 - **API** under `/api/cms/services` and `/api/cms/services/categories`; permissions
   `services.view`, `services.manage`, `services.categories.manage`.
 - **MCP** tools `services_list`, `services_get`, `services_create`, `services_update`,
-  `services_publish`, `services_unpublish`, `services_discard`, `services_delete`, `services_reorder`, and
+  `services_publish`, `services_unpublish`, `services_discard`, `services_versions`,
+  `services_version_restore`, `services_delete`, `services_reorder`, and
   `service_categories_list`, `service_categories_create`, `service_categories_update`,
   `service_categories_delete`, `service_categories_reorder`; resource `services://catalog`.
   Scopes `services:read`, `services:write`, `service-categories:read`, `service-categories:write`.

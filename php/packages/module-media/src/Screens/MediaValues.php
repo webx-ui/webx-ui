@@ -106,6 +106,31 @@ final class MediaValues
     }
 
     /**
+     * The keys in a value — one element or a list of them — that the library does not have.
+     *
+     * Not part of {@see self::rules()}: a picture deleted from the library must not stop a page
+     * from being saved. Asked only of a value being written for the first time
+     * ({@see ChecksNewValues}), where a key nobody has is a path typed rather than picked.
+     *
+     * @return list<string>
+     */
+    public function missing(mixed $value): array
+    {
+        $elements = is_array($value) && array_is_list($value) ? $value : [$value];
+        $missing = [];
+
+        foreach ($elements as $element) {
+            $path = is_array($element) ? ($element['path'] ?? null) : null;
+
+            if (is_string($path) && $path !== '' && ! $this->files->find($path) instanceof MediaFile) {
+                $missing[] = (string) __('webx-media::validation.missing', ['path' => $path]);
+            }
+        }
+
+        return $missing;
+    }
+
+    /**
      * What is kept: the key, the captions, and nothing else.
      *
      * The address is never stored. A library that moves from a public directory to a bucket

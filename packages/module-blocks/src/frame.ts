@@ -111,6 +111,25 @@ export function highlightBlock(doc: Document, key: string | null): Element | nul
   return element
 }
 
+export const HIDDEN_CLASS = 'wx-preview-hidden'
+
+/**
+ * Mark the blocks switched off. The page drawn under the preview token leaves a hidden block out,
+ * but one hidden after the page was drawn is still in the frame until it reloads — and it looked
+ * exactly like the blocks that will be on the site.
+ */
+export function markHidden(doc: Document, keys: string[]): void {
+  ensureStyle(doc)
+
+  for (const element of Array.from(doc.querySelectorAll(`.${HIDDEN_CLASS}`))) {
+    element.classList.remove(HIDDEN_CLASS)
+  }
+
+  for (const key of keys) {
+    blockElement(doc, key)?.classList.add(HIDDEN_CLASS)
+  }
+}
+
 /** Mark one block as the one under the pointer. Null clears it. */
 export function hoverBlock(doc: Document, key: string | null): void {
   ensureStyle(doc)
@@ -334,7 +353,9 @@ function ensureStyle(doc: Document): void {
   // two, so that pointing at the selected block does not look like selecting another one.
   style.textContent =
     `.${SELECTED_CLASS}{outline:2px solid #427edd;outline-offset:-2px;}` +
-    `.${HOVER_CLASS}:not(.${SELECTED_CLASS}){outline:1px solid #427edd;outline-offset:-1px;cursor:pointer;}`
+    `.${HOVER_CLASS}:not(.${SELECTED_CLASS}){outline:1px solid #427edd;outline-offset:-1px;cursor:pointer;}` +
+    // Dimmed and greyed, not removed: it is still the block an editor clicks to switch back on.
+    `.${HIDDEN_CLASS}{opacity:.35;filter:grayscale(1);outline:1px dashed #8a8f98;outline-offset:-1px;}`
   ;(doc.head ?? doc.documentElement).appendChild(style)
 }
 

@@ -47,4 +47,6 @@ return [
     'width-desktop' => 'Masaüstü',
     'width-tablet' => 'Tablet',
     'width-phone' => 'Telefon',
+    'add-inside-full' => 'Dolu: en fazla :max',
+    'invalid' => 'Bazı değerler kabul edilmedi',
 ];

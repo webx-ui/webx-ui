@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Media\Screens;
 
+use WebxUi\Admin\Screens\ChecksNewValues;
 use WebxUi\Admin\Screens\FieldType;
 
 /**
@@ -12,7 +13,7 @@ use WebxUi\Admin\Screens\FieldType;
  * The list a page attaches its downloads to. What may go in it is whatever `props.accept` says —
  * unlike a gallery, which is pictures by definition.
  */
-final class FilesFieldType implements FieldType
+final class FilesFieldType implements ChecksNewValues, FieldType
 {
     public function __construct(private readonly MediaValues $values) {}
 
@@ -39,5 +40,16 @@ final class FilesFieldType implements FieldType
     public function resolve(mixed $stored, array $node, ?string $locale = null): mixed
     {
         return $this->values->resolveList($stored, $locale);
+    }
+
+    /**
+     * A key the library never had, in a value written now: a path typed rather than picked.
+     *
+     * @param  array<string, mixed>  $node
+     * @return list<string>
+     */
+    public function newValueProblems(mixed $value, array $node): array
+    {
+        return $this->values->missing($value);
     }
 }

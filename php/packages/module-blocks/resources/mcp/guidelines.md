@@ -19,13 +19,27 @@ extend it. Five hero blocks that differ in a margin are the failure mode to avoi
 
 A list of screen nodes: `{ "id": "title", "type": "wx-input", "label": "Title" }`. The `id` is
 the variable the template gets and the key in `sample`, so it must be a valid PHP variable name
-in snake_case. `label` is what the editor sees; `props` are the component's props (`placeholder`,
+in snake_case — an id with a space or a dot is refused, and a `type` the site does not know comes
+back as the warning `unknown-field-type` (the panel draws a warning in its place and nothing
+checks its values). `label` is what the editor sees; `props` are the component's props (`placeholder`,
 `options` for a select, `rows` for a textarea). Fields may sit inside `wx-card`, `wx-tabs` or
 `wx-row` nodes for layout; the values stay flat.
 
-A `wx-blocks` node makes the type a container: its value is a list of nested blocks, and
-`props.allow` says which types may go inside. Print it with `@blocks('content')`. Keep the
-schema small — a block with fifteen fields is two blocks.
+A `wx-blocks` node makes the type a container: its value is a list of nested blocks,
+`props.allow` says which types may go inside and `props.max` how many. A field without
+`props.allow` takes the type's own `allow`; with neither, any type. Print it with
+`@blocks('content')`. Keep the schema small — a block with fifteen fields is two blocks.
+
+The schema's rules are the server's too: `min`/`max` of a number, the `options` of a select, the
+`max` of a rating, a checkbox group or a repeater, a date, a colour, a link (`http(s)`, `mailto`,
+`tel`, a relative path or an `#anchor` — never `javascript:`), a library file for `wx-media`. A
+value that breaks one is refused on every write — `blocks_set_content`, `blocks_edit_content`,
+the panel's save, a publication — with the block's key and the field named.
+
+`localized: true` on a field keeps one value per language. Switching it on a type pages already
+use is announced by `blocks_update` (`localized-changes`) and done on `blocks_publish`: plain
+values become the main language's, and taking it off keeps the main language — refused while
+other languages hold text, unless you pass `drop_translations: true`.
 
 ## Template
 
@@ -68,7 +82,9 @@ no facades that reach for the database, no `@php` that does work a controller sh
 ## Script
 
 The `script` field is the body of `async (el, values) => { … }`, run once for each root element
-of this type on the page. `el` is the root, `values` the block's values. Anything the site's own
+of this type on the page. `el` is the root, `values` whatever the root carries in `data-wx-values` —
+`{}` unless the template prints it: `data-wx-values="{{ json_encode(['speed' => $speed]) }}"`.
+Print only what the script needs; everything there is in the page's markup. Anything the site's own
 bundle shares is reached with `const Swiper = await webx.use('swiper')`; `blocks://site` lists
 what this site provides. Do not load libraries from a CDN inside a block. Leave the field empty
 when the block needs no behaviour.
@@ -106,8 +122,8 @@ everywhere.
 - Modules declare places they call a component from (`declared` in `blocks_list`), such as
   `recipe-card`. Until the site customises one, the module's own view prints there.
   `blocks_create` with that slug and no template starts the component from that view, with the
-  module's input and a real sample; publishing it switches the site over. There is no tool to
-  delete a type: going back to the module's look is a person's decision in the panel.
+  module's input and a real sample; publishing it switches the site over. `blocks_delete` on it
+  brings the module's look back — ask a person first: it deletes the type with its history.
 - Calls from the site's own view files are invisible to all of this. A component such a view
   calls should be given a `fallback` there.
 
@@ -130,6 +146,22 @@ unpublished (`fallback`).
   `auth()` and `@csrf` and be right on every page.
 - On the site a region in which any block throws prints its fallback entirely. Render every type
   you put there with `blocks_render` first; `blocks_region_publish` refuses a draft that fails.
+
+## History, usage, renames
+
+- `blocks_versions` lists a type's versions (source, author, comment, which is the draft and which
+  is published); `blocks_get` with `version` reads one; `blocks_version_restore` makes one the
+  draft again. Pages and services have the same pair: `pages_versions` /
+  `pages_version_restore`, `services_versions` / `services_version_restore` — the way a bad
+  content edit is undone. Regions: `blocks_region_versions` / `blocks_region_restore`,
+  `blocks_region_discard` for the draft.
+- `blocks_usage` says where a type stands (entity and id as `blocks_get_content` takes them,
+  title, address, live or draft) and which types call it. `blocks_delete` is refused while it
+  stands anywhere or is called.
+- `blocks_update` with `rename_to` gives a type a new slug and rewrites the pages, regions and
+  `allow` lists that name it, and its own `data-wx-block` and `.b-{slug}` prefix. Refused while
+  another template calls it by tag. `blocks_update` answers with a short summary; `full: true`
+  for the whole type.
 
 ## The loop
 

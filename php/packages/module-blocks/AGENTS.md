@@ -24,9 +24,11 @@ their guides when the question is about one of those.
 - **Panel**: sections `blocks` and `regions`; screen `regions.form` (nodes `tabs`, `content`,
   `blocks`, `history`, `versions`); API under `/api/cms/blocks` and `/api/cms/regions`;
   permissions `blocks.view`, `blocks.manage` (writes Blade), `blocks.regions` (edits regions).
-- **MCP** tools `blocks_list`, `blocks_get`, `blocks_create`, `blocks_update`, `blocks_publish`,
+- **MCP** tools `blocks_list`, `blocks_get`, `blocks_create`, `blocks_update` (also `rename_to`),
+  `blocks_publish`, `blocks_delete`, `blocks_versions`, `blocks_version_restore`, `blocks_usage`,
   `blocks_render`, `blocks_get_content`, `blocks_set_content`, `blocks_edit_content`,
-  `blocks_preview_url`, `blocks_regions`, `blocks_region_publish`, `blocks_region_unpublish`;
+  `blocks_preview_url`, `blocks_regions`, `blocks_region_publish`, `blocks_region_unpublish`,
+  `blocks_region_discard`, `blocks_region_versions`, `blocks_region_restore`, `blocks_region_adopt`;
   resources `blocks://guidelines`, `blocks://schema`, `blocks://catalog`, `blocks://fields`,
   `blocks://site`; prompt `design_block`. Scopes `blocks:read`, `blocks:write`.
 - **Commands** `webx:blocks:export`, `webx:blocks:import`, `webx:blocks:offered`,
@@ -51,7 +53,9 @@ their guides when the question is about one of those.
 | Another group in the picker                | add it to `groups` in `config/webx-blocks.php` and translate it in the panel's dictionary                               |
 | Blocks drawn inside the site's layout      | `WEBX_BLOCKS_LAYOUT=layout` (`<x-layout>` with a `head` slot and the default one)                                       |
 | A library a block script can ask for       | `webx.provide('swiper', Swiper)` in the site's bundle, list it in `provides`; the block does `await webx.use('swiper')` |
-| A module's partial replaced by a block     | «Customise» in the panel, or `blocks_create` on the declared slug; deleting the type brings the partial back            |
+| A module's partial replaced by a block     | «Customise» in the panel, or `blocks_create` on the declared slug; `blocks_delete` brings the partial back              |
+| A type under another slug                  | «Identifier» in the type's settings, or `blocks_update` with `rename_to`: pages, regions and `allow` lists follow       |
+| A bad edit of a page undone                | `pages_versions`, then `pages_version_restore` (services: `services_*`; a type: `blocks_versions`)                      |
 | Types read-only on production              | `WEBX_BLOCKS_EDITING=false`; types then arrive by `webx:blocks:import`                                                  |
 | Bundles written before the first visitor   | list the models in `entities`, run `webx:blocks:bundles --warm`                                                         |
 | Values of fields no type defines any more  | `php artisan webx:blocks:prune --dry-run`, then without the flag: live and draft, every listed model and the regions    |
@@ -62,11 +66,18 @@ their guides when the question is about one of those.
 
 Read `blocks_get_content` (entity and id; for a region, entity `region` and its name), then send
 `blocks_edit_content` with the `revision` it returned and `ops`: `set`, `unset`, `add`, `move`,
-`remove`, `hide`, `show`, each by `key`. `set` with null keeps the key; `unset` with `fields` takes it out. A
+`duplicate`, `remove`, `hide`, `show`, each by `key`. `set` with null keeps the key; `unset` with `fields` takes it out. A
 value for a field the type does not define is refused in `set`, `add` and `blocks_set_content` (repeater
 items included); one the block already holds may be written back as it was or emptied. Nodes not named stay as they are; a stale revision is refused.
 `blocks_set_content` replaces the whole draft tree: anything left out is gone. Both write the
 draft; the site changes when a person publishes the entity (a region: `blocks_region_publish`).
+
+Every value is checked by its field type's rules — bounds, options, dates, colours, links
+(`http(s)`, `mailto`, `tel`, relative paths and `#anchors` only), library files — and every
+block against where it stands: a container field's `props.allow` and `props.max` (or the type's
+`allow`), a type's `allowed_in` and `max_per_entity`. A refusal names the block's key and the
+field (`hero [k1], field [title]: …`); the panel shows it under the field. `add` into a block
+whose type has no `wx-blocks` field is refused as "not a container".
 
 ## Do not
 
@@ -84,7 +95,11 @@ draft; the site changes when a person publishes the entity (a region: `blocks_re
 - Do not style with bare element selectors or `@media`: they reach the whole site. Prefix every
   selector with `.b-{slug}` and size with `@container`.
 - Do not delete a type that stands on pages or that other types call: the API answers `409` or
-  `422`. Remove it from the content first, or disable it.
+  `422`, `blocks_delete` refuses. `blocks_usage` lists where it stands; remove it there first, or disable it.
+- Do not switch a field's `localized` on a type pages already use without reading the warning:
+  publishing converts the stored values (a plain value becomes the main language's; a map keeps
+  the main language) and refuses to drop text in other languages unless told to
+  (`drop_translations`).
 - Do not remove a region from the config and leave its row: run `webx:blocks:regions --prune`,
   which deletes the saved regions no longer declared, with their versions.
 

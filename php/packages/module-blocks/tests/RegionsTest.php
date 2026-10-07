@@ -92,8 +92,8 @@ final class RegionsTest extends RegionTestCase
         $this->publish('bar', '<div class="b-bar">{{ $text }}</div>');
         $this->publish('bomb', '<p>@if ($boom) {{ throw new RuntimeException(\'Boom\') }} @endif fine</p>');
 
-        $this->region('header', [$this->node('bar', ['text' => 'Menu']), $this->node('bomb', ['boom' => true])]);
-        $this->region('footer', [$this->node('bar', ['text' => 'Menu']), $this->node('bomb', ['boom' => true])]);
+        $this->region('header', [$this->node('bar', ['text' => 'Menu']), $this->node('bomb', ['boom' => 'yes'])]);
+        $this->region('footer', [$this->node('bar', ['text' => 'Menu']), $this->node('bomb', ['boom' => 'yes'])]);
 
         Log::shouldReceive('warning')->twice()->withArgs(static fn (string $message): bool => str_contains($message, 'failed; the whole region prints its fallback'));
         Log::shouldReceive('error')->zeroOrMoreTimes();

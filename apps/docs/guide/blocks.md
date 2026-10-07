@@ -471,24 +471,33 @@ and agree, and it leaves with a token of theirs. The agent acts as that administ
 machine the site runs on, `php artisan mcp:start webx` is the same server over stdio, trusted the
 way tinker is.
 
-| Tool                  | What it does                                                                             |
-| --------------------- | ---------------------------------------------------------------------------------------- |
-| `blocks_list`         | The types: names, fields, where each may go, published or not, on how many pages         |
-| `blocks_get`          | One type in full, at the current or a given version, with the warnings on it             |
-| `blocks_create`       | A new type as a draft                                                                    |
-| `blocks_update`       | Any settings and any of the five content fields; a version only when content differs     |
-| `blocks_publish`      | Publish the draft — the same checks as the panel; `dry_run` runs them and moves nothing  |
-| `blocks_render`       | Draw a type on values (the sample by default): HTML, styles, script, or the failing line |
-| `blocks_get_content`  | An entity's blocks: the map with `outline`, one node with `key`, both trees by default   |
-| `blocks_set_content`  | Replace the entity's draft with a tree of nodes; keys are kept or made                   |
-| `blocks_edit_content` | Change one block at a time: `set`, `add`, `move`, `remove`, `hide`, `show`, by key       |
-| `blocks_preview_url`  | A signed link to the entity's draft as the page it will be                               |
+| Tool                     | What it does                                                                                                                                                                     |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `blocks_list`            | The types: names, fields, where each may go, published or not, on how many pages                                                                                                 |
+| `blocks_get`             | One type in full, at the current or a given version, with the warnings on it                                                                                                     |
+| `blocks_create`          | A new type as a draft                                                                                                                                                            |
+| `blocks_update`          | Any settings and any of the five content fields; a version only when content differs; `rename_to` renames the type everywhere it stands; answers with a summary and the warnings |
+| `blocks_publish`         | Publish the draft — the same checks as the panel; `dry_run` runs them and moves nothing                                                                                          |
+| `blocks_delete`          | Delete a type nobody uses and nothing calls; undoes a customised module component                                                                                                |
+| `blocks_versions`        | The history of a type: number, source, author, comment, which is draft and published                                                                                             |
+| `blocks_version_restore` | An old version back as a new draft                                                                                                                                               |
+| `blocks_usage`           | Where a type stands — entity, id, title, address, live or draft — and who calls it                                                                                               |
+| `blocks_render`          | Draw a type on values (the sample by default): HTML, styles, script, or the failing line                                                                                         |
+| `blocks_get_content`     | An entity's blocks: the map with `outline`, one node with `key`, both trees by default                                                                                           |
+| `blocks_set_content`     | Replace the entity's draft with a tree of nodes; keys are kept or made                                                                                                           |
+| `blocks_edit_content`    | Change one block at a time: `set`, `unset`, `add`, `move`, `duplicate`, `remove`, `hide`, `show`, by key                                                                         |
+| `blocks_preview_url`     | A signed link to the entity's draft as the page it will be                                                                                                                       |
+| `blocks_region_*`        | A region: `publish`, `unpublish`, `discard` its draft, `versions` and `restore`, `adopt` the markup from code                                                                    |
+
+Pages and services have their history too: `pages_versions` / `pages_version_restore` and
+`services_versions` / `services_version_restore` — what the panel's «History» tab does, and the
+way an agent undoes a bad edit of the content.
 
 For components, `blocks_list` and `blocks_get` add the kind, the types a template calls (`uses`)
 and the ones that call it (`used_by`), the fields of each data shape, and `declared` — the places
 modules call a component from, customised or not. `blocks_create` with a declared slug and no
-template is **Customise**; a refused publication names the block and the page it would break. There
-is no tool that deletes a type.
+template is **Customise**; a refused publication names the block and the page it would break.
+`blocks_delete` on a customised component brings the module's own view back.
 
 `render` and `preview_url` are what close the loop: without them an agent writes a template it
 never sees, and the site gets the markup it imagined. Every tool that changes something accepts
@@ -528,6 +537,26 @@ names the node instead, and everything else stays the object it already was:
   entity changed in between, instead of overwriting whoever changed it. `blocks_set_content` takes
   it too.
 
+### What is checked
+
+Every value a block holds is checked by its field type's rules — the same `rules()` a settings
+screen runs — on every door: `blocks_set_content`, `blocks_edit_content`, the panel's save and
+autosave, a region's save, and a publication (for a draft written before the checks). A number past
+its `min`/`max`, an option the select does not offer, a rating, a checkbox group or a repeater past
+its `max`, something that is not a date or a colour, a link that is not `http(s)`, `mailto`, `tel`,
+a relative path or an `#anchor`, a library key nobody has — each is refused, naming the block's key
+and the field (`hero [k1], field [title]: …`); the panel opens that block and shows the message
+under the field. Where a block stands is checked too: a container field's `props.allow` and
+`props.max` (or the type's `allow` when the field names none), a type's `allowed_in` and
+`max_per_entity`. A picture deleted from the library after a page was written does not stop the
+page from being saved; a key typed now that the library never had does.
+
+A field switched to `localized` (or back) on a type pages already use: `blocks_update` and the
+editor say how many pages hold values of it, and publishing the type converts them — a plain value
+becomes the main language's; a map keeps the main language, and while other languages hold text
+the publication asks first (`drop_translations` over MCP, a confirmation in the panel). Until then
+the site reads either shape.
+
 Start from the map rather than the page: `blocks_get_content` with `outline: true` answers with
 the keys, types, nesting and a line of text each, and with `key` it answers with that one node in
 full. The values of twenty blocks are not what you need to edit one.
@@ -543,23 +572,28 @@ report — and do not publish unless asked.
 
 `config/webx-blocks.php`:
 
-| Key                    | Default                          | What it is                                                       |
-| ---------------------- | -------------------------------- | ---------------------------------------------------------------- |
-| `groups`               | `content`, `layout`, `media`     | The sections of the picker, in order; labels from the dictionary |
-| `editing`              | `true`                           | Off, and the section is read-only: types arrive by import        |
-| `provides`             | `[]`                             | What the site's bundle hands to blocks through `webx.provide()`  |
-| `max_depth`            | `5`                              | How deep containers may nest                                     |
-| `compiled`             | next to the app's compiled views | Where compiled templates go, one file per version                |
-| `cache`                | on, a day                        | The registry of published types                                  |
-| `bundles.path`         | `blocks`                         | The prefix of `/{hash}.css` and `.js`                            |
-| `bundles.inline_below` | `0`                              | Sets lighter than this many bytes are printed inline             |
-| `entities`             | `[]`                             | The models that use `HasBlocks`                                  |
-| `preview.path`         | `_preview`                       | The service prefix; closed to the address registry               |
-| `preview.ttl`          | `60`                             | Minutes a preview link lives                                     |
-| `preview.middleware`   | `['web']`                        | What the preview route runs through                              |
-| `layout`               | empty                            | The site's layout the block editor's stage draws a block in      |
+| Key                    | Default                          | What it is                                                           |
+| ---------------------- | -------------------------------- | -------------------------------------------------------------------- |
+| `groups`               | `content`, `layout`, `media`     | The sections of the picker, in order; labels from the dictionary     |
+| `editing`              | `true`                           | Off, and the section is read-only: types arrive by import            |
+| `provides`             | `[]`                             | What the site's bundle hands to blocks through `webx.provide()`      |
+| `max_depth`            | `5`                              | How deep containers may nest                                         |
+| `compiled`             | next to the app's compiled views | Where compiled templates go, one file per version                    |
+| `cache`                | on, a day                        | The registry of published types                                      |
+| `thumbnails.cache`     | on                               | The pictures of the list and the picker, kept until any type changes |
+| `thumbnails.ttl`       | `3600`                           | Seconds a thumbnail of a type that reads records may lag behind them |
+| `bundles.path`         | `blocks`                         | The prefix of `/{hash}.css` and `.js`                                |
+| `bundles.inline_below` | `0`                              | Sets lighter than this many bytes are printed inline                 |
+| `entities`             | `[]`                             | The models that use `HasBlocks`                                      |
+| `preview.path`         | `_preview`                       | The service prefix; closed to the address registry                   |
+| `preview.ttl`          | `60`                             | Minutes a preview link lives                                         |
+| `preview.middleware`   | `['web']`                        | What the preview route runs through                                  |
+| `layout`               | empty                            | The site's layout the block editor's stage draws a block in          |
 
 ## What is deferred
+
+- The «Fields» tab is a JSON editor of the schema with a live form beside it. A visual field
+  builder — add, reorder and configure fields without JSON — is planned, not started.
 
 - Dragging a block between two containers is "duplicate" plus "remove", not a drag.
 - The line above the tree for what the view prints from the record's own fields, and the

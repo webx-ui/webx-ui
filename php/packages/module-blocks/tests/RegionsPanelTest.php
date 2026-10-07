@@ -124,7 +124,7 @@ final class RegionsPanelTest extends RegionTestCase
         // Never saved: nothing to publish.
         $this->actingAs($editor, 'cms')->postJson($this->api('header/publish'))->assertUnprocessable();
 
-        $this->actingAs($editor, 'cms')->putJson($this->api('header'), ['blocks' => [$this->node('bomb', ['boom' => true], 'x1')]])->assertOk();
+        $this->actingAs($editor, 'cms')->putJson($this->api('header'), ['blocks' => [$this->node('bomb', ['boom' => 'yes'], 'x1')]])->assertOk();
 
         $refused = $this->actingAs($editor, 'cms')->postJson($this->api('header/publish'))->assertUnprocessable();
         $this->assertStringContainsString('bomb', (string) $refused->json('errors.blocks.0'));

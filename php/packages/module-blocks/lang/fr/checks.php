@@ -21,4 +21,7 @@ return [
             'fix' => 'Retirez-les avec la correction, ou pour tout le site avec php artisan webx:blocks:prune. Un bloc d’un type qui n’existe plus n’est pas touché. Les éléments d’un répéteur sont comparés à ses champs.',
         ],
     ],
+    'syntax' => 'Le modèle ne compile pas : :reason. La publication sera refusée.',
+    'unknown-field-type' => 'Champs d\'un type que le site ne connaît pas : :fields. Le formulaire affiche un avertissement à leur place et rien ne vérifie leurs valeurs.',
+    'field-id' => 'Un identifiant de champ est fait de lettres, chiffres, _ et -, et commence par une lettre : :ids.',
 ];

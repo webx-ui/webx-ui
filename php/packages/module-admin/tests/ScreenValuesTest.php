@@ -109,4 +109,29 @@ final class ScreenValuesTest extends TestCase
         $this->assertSame(5, $resolved['general.rows']);
         $this->assertNull($resolved['contacts.map']);
     }
+
+    /*
+     * A field whose `localized` was switched after it was written holds the other shape: read as
+     * a map, a plain value came out null; a map under a plain field reached the site whole.
+     */
+    #[Test]
+    public function either_shape_is_read_whatever_the_flag_says_now(): void
+    {
+        $values = $this->values();
+
+        $this->assertSame('Plain', $values->resolve(['type' => 'wx-input', 'localized' => true], 'Plain', 'uk'));
+        $this->assertSame('Акме', $values->resolve(['type' => 'wx-input'], ['ru' => 'Акме'], 'ru'));
+        $this->assertSame(['a', 'b'], $values->resolve(['type' => 'wx-tags-input', 'localized' => true], ['a', 'b'], 'uk'));
+    }
+
+    #[Test]
+    public function a_list_sent_to_a_translated_field_is_refused_rather_than_emptied(): void
+    {
+        try {
+            $this->values()->validate('settings.index', ['general.project-name' => ['one', 'two']]);
+            $this->fail('A list was taken for a map of languages.');
+        } catch (ValidationException $refused) {
+            $this->assertArrayHasKey('general.project-name', $refused->errors());
+        }
+    }
 }

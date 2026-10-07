@@ -46,7 +46,7 @@ final class DoorsTest extends TestCase
                         'values' => [
                             'tariffs' => [
                                 'categories' => [(string) $business->id],
-                                'limit' => '3',
+                                'limit' => 3,
                                 'filter' => true,
                                 'markup' => true,
                                 'related' => ['type' => 'service', 'ids' => [(string) $seo->id, $seo->id]],
@@ -68,7 +68,7 @@ final class DoorsTest extends TestCase
     }
 
     #[Test]
-    public function an_agents_edit_keeps_the_choice_cleaned(): void
+    public function an_agents_edit_is_refused_when_dirty_and_kept_cleaned_when_not(): void
     {
         $business = $this->group('For business');
         $this->pricing->blocks = [['key' => 'k-tariffs', 'type' => 'tariffs', 'values' => []]];
@@ -78,7 +78,15 @@ final class DoorsTest extends TestCase
             'entity' => 'page',
             'id' => $this->pricing->getKey(),
             'ops' => [['op' => 'set', 'key' => 'k-tariffs', 'values' => [
-                'tariffs' => ['categories' => [$business->id], 'limit' => 500, 'markup' => true, 'related' => ['type' => 'recipe', 'ids' => [1]]],
+                'tariffs' => ['limit' => 500, 'related' => ['type' => 'recipe', 'ids' => [1]]],
+            ]]],
+        ], $this->editor(['pages.view', 'pages.manage', 'blocks.manage']))->assertHasErrors(['field [tariffs]']);
+
+        $this->agent('edit_content', [
+            'entity' => 'page',
+            'id' => $this->pricing->getKey(),
+            'ops' => [['op' => 'set', 'key' => 'k-tariffs', 'values' => [
+                'tariffs' => ['categories' => [$business->id], 'limit' => 100, 'markup' => true, 'related' => null],
                 'layout' => 'slider',
             ]]],
         ], $this->editor(['pages.view', 'pages.manage', 'blocks.manage']))->assertOk();
@@ -88,7 +96,7 @@ final class DoorsTest extends TestCase
         $this->assertSame(
             ['categories' => [$business->id], 'limit' => 100, 'filter' => false, 'markup' => null, 'related' => null],
             $values['tariffs'],
-            'a relation the source does not offer is no relation, and markup is never kept',
+            'markup is never kept',
         );
         $this->assertSame('slider', $values['layout']);
     }

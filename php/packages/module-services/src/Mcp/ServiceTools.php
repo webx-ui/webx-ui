@@ -16,6 +16,7 @@ use WebxUi\Admin\Contracts\HasPermissions;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
+use WebxUi\Blocks\Panel\Authors;
 use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
@@ -154,6 +155,28 @@ final class ServiceTools
                 .'is all that changes. dry_run names the fields that differ from the published ones.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->discard($arguments)),
                 ['properties' => ['service' => $service], 'required' => ['service']],
+                permission: 'services.manage',
+            ),
+
+            Tool::read(
+                'versions',
+                'The history of a service: every publication, newest first — number, date, who, the comment — '
+                .'and which one the site shows now. What the panel\'s «History» tab lists; with '
+                .'services_version_restore, the way to undo a bad edit.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->versions($arguments)),
+                ['properties' => ['service' => $service], 'required' => ['service']],
+                permission: ['services.view', 'services.manage'],
+            ),
+
+            Tool::mutating(
+                'version_restore',
+                'Put an old publication of a service back into its draft. The site does not change until '
+                .'somebody publishes; dry_run says which fields would change.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->versionRestore($arguments, $user)),
+                ['properties' => [
+                    'service' => $service,
+                    'number' => ['type' => 'integer', 'description' => 'A version number, as services_versions lists it.'],
+                ], 'required' => ['service', 'number']],
                 permission: 'services.manage',
             ),
 
@@ -503,6 +526,72 @@ final class ServiceTools
             static fn (string $one): string => '/'.UrlNormaliser::join($prefix, $one),
             $slug,
         );
+    }
+
+    /**
+     * The publications of a service, newest first — what the panel's «History» tab lists — and which
+     * one the site shows now. Without payloads: a version is picked by its number, and
+     * services_version_restore does the rest.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function versions(array $arguments): array
+    {
+        $service = $this->service($arguments['service'] ?? null);
+        $versions = $service->publishedVersions()->get();
+        $authors = Authors::names($versions->map(static fn (EntityVersion $version): ?int => $version->author_id));
+        $live = $service->isPublished() ? $versions->first()?->number : null;
+
+        return [
+            'service' => $service->getKey(),
+            'has_draft' => $service->hasDraft(),
+            'versions' => $versions->map(static fn (EntityVersion $version): array => [
+                'number' => $version->number,
+                'created_at' => $version->created_at?->toAtomString(),
+                'author' => $version->author_id === null ? null : ($authors[$version->author_id] ?? null),
+                'source' => $version->source,
+                'comment' => $version->comment,
+                'is_pinned' => $version->is_pinned,
+                'on_site' => $version->number === $live,
+            ])->values()->all(),
+        ];
+    }
+
+    /**
+     * An old publication back into the draft — the panel's «Restore». Not onto the site: publishing
+     * it is the separate step it always is. This is how a bad edit of the content is undone.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function versionRestore(array $arguments, ?Authenticatable $user): array
+    {
+        $service = $this->service($arguments['service'] ?? null);
+        $number = $arguments['number'] ?? null;
+
+        if (! is_int($number) && ! (is_string($number) && ctype_digit($number))) {
+            throw new ToolFailure('`number` is required: a version number from services_versions.');
+        }
+
+        $version = $service->publishedVersions()->where('number', (int) $number)->first();
+
+        if (! $version instanceof EntityVersion) {
+            throw new ToolFailure("Service [{$service->getKey()}] has no version {$number}. services_versions lists them.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return [
+                'dry_run' => true,
+                'would_restore' => $version->number,
+                'into' => 'draft',
+                'changes' => $service->changedFields(is_array($version->payload) ? $version->payload : []),
+            ];
+        }
+
+        $service->restoreVersion($version);
+
+        return ['restored' => $version->number, 'into' => 'draft'] + $this->get(['service' => $service->refresh()->getKey()], $user);
     }
 
     /**

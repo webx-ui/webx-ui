@@ -18,4 +18,5 @@ return [
         'document' => 'documenti',
         'other' => 'altri file',
     ],
+    'missing' => 'Nella libreria non c\'è il file [:path]: scegline uno da lì.',
 ];

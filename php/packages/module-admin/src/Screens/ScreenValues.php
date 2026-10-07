@@ -63,6 +63,15 @@ final class ScreenValues
             $label = $this->label($node);
             $localized = ($node['localized'] ?? false) === true;
 
+            // A list is one value, never a map of languages: narrowed to language keys it came
+            // out empty and was saved so. Refused, like any other plain value sent to a field that
+            // takes one per language.
+            if ($localized && is_array($value) && $value !== [] && array_is_list($value)) {
+                $errors[$name] = [(string) __('webx-admin::screens.not-a-language-map', ['field' => $label])];
+
+                continue;
+            }
+
             if ($localized) {
                 $value = $this->localeKeys($value);
                 $validator = $this->validator->make(
@@ -184,7 +193,7 @@ final class ScreenValues
     {
         $type = $this->types->get((string) ($node['type'] ?? ''));
 
-        if (($node['localized'] ?? false) === true && is_array($stored)) {
+        if ($this->isMap($node, $stored)) {
             $stored = $this->pick($stored, $locale);
         }
 
@@ -212,6 +221,22 @@ final class ScreenValues
         }
 
         return $resolved;
+    }
+
+    /**
+     * Whether a value is a language map: any map of the site's languages whatever the flag says,
+     * and under a localized field any map at all — a language the site has dropped is still one.
+     * Never a list.
+     *
+     * @param  Node  $node
+     */
+    private function isMap(array $node, mixed $value): bool
+    {
+        if ($this->locales->isMap($value)) {
+            return true;
+        }
+
+        return ($node['localized'] ?? false) === true && is_array($value) && ($value === [] || ! array_is_list($value));
     }
 
     /**

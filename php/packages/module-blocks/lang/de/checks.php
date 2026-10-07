@@ -21,4 +21,7 @@ return [
             'fix' => 'Entfernen Sie sie mit der Korrektur oder für die ganze Website mit php artisan webx:blocks:prune. Ein Block eines Typs, den es nicht mehr gibt, bleibt unberührt. Elemente eines Repeaters werden mit dessen Feldern verglichen.',
         ],
     ],
+    'syntax' => 'Die Vorlage lässt sich nicht kompilieren: :reason. Die Veröffentlichung wird abgelehnt.',
+    'unknown-field-type' => 'Felder eines Typs, den die Website nicht kennt: :fields. Das Formular zeigt an ihrer Stelle eine Warnung, und ihre Werte prüft niemand.',
+    'field-id' => 'Feld-IDs bestehen aus Buchstaben, Ziffern, _ und -, am Anfang ein Buchstabe: :ids.',
 ];

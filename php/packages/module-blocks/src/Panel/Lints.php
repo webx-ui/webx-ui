@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace WebxUi\Blocks\Panel;
 
+use Illuminate\Container\Container;
+use ParseError;
 use Throwable;
+use WebxUi\Admin\Screens\FieldTypes;
+use WebxUi\Admin\Screens\Tree;
 use WebxUi\Blocks\Models\Block;
 use WebxUi\Blocks\Rendering\Calls;
+use WebxUi\Blocks\Rendering\TemplateCompiler;
+use WebxUi\Blocks\Schema;
 
 /**
  * What is said on saving and never refused (§15): selectors outside the block's prefix,
@@ -14,20 +20,48 @@ use WebxUi\Blocks\Rendering\Calls;
  * on the root. Each is a habit that bites later — on another block, on another page — so
  * each is worth a line under the editor, and none is worth a locked save.
  *
- * The same four checks run live in the editor, in `lint.ts`; this is the copy the server
- * sends back with the saved version, so that an agent writing through MCP hears them too.
+ * The same checks run live in the editor, in `lint.ts`; this is the copy the server sends back
+ * with the saved version, so that an agent writing through MCP hears them too — the two that
+ * refuse publication above all: a variable the schema does not declare, and a template that does
+ * not compile. Two more are about the schema: a field of a type this site does not know (the form
+ * draws a warning in its place and nothing checks its value) and an id that cannot be a key.
  */
 final class Lints
 {
+    /** Variables Blade or the renderer hand a template on their own — `GIVEN` in `lint.ts`. */
+    private const GIVEN = ['block', 'entity', 'loop', 'slot', '__env', 'errors', 'app', 'region', 'attributes', 'this'];
+
+    /** What a field id may be: a key of the values, and a variable when it is a valid PHP name. */
+    public const FIELD_ID = '/^[A-Za-z_][A-Za-z0-9_-]*$/';
+
     /**
+     * @param  list<array<string, mixed>>|null  $schema  Null skips the checks that need one.
      * @return list<array{file: string, code: string, line: int|null, message: string}>
      */
-    public static function check(string $slug, string $template, string $styles): array
+    public static function check(string $slug, string $template, string $styles, ?array $schema = null): array
     {
         $lints = [];
 
         if (! preg_match('/data-wx-block\s*=/', $template)) {
             $lints[] = self::lint('template', 'no-marker', null);
+        }
+
+        $syntax = self::syntax($slug, $template);
+
+        if ($syntax !== null) {
+            $lints[] = $syntax;
+        }
+
+        if ($schema !== null) {
+            $missing = self::undeclared($template, $schema);
+
+            if ($missing !== []) {
+                $lints[] = self::lint('template', 'variables-missing', null, [
+                    'variables' => implode(', ', array_map(static fn (string $name): string => '$'.$name, $missing)),
+                ]);
+            }
+
+            $lints = [...$lints, ...self::schema($schema)];
         }
 
         $lints = [...$lints, ...self::calls($template)];
@@ -61,6 +95,164 @@ final class Lints
         }
 
         return $lints;
+    }
+
+    /**
+     * Variables the template reads that nothing declares: not the schema, not Blade's own, not a
+     * `@foreach (… as $item)` or an assignment in the template itself — `undeclared()` in
+     * `lint.ts`, rule for rule.
+     *
+     * @param  list<array<string, mixed>>  $schema
+     * @return list<string>
+     */
+    public static function undeclared(string $template, array $schema): array
+    {
+        $declared = array_flip([...self::ids($schema), ...self::GIVEN]);
+
+        preg_match_all('/\bas\s+\$([a-zA-Z_]\w*)(?:\s*=>\s*\$([a-zA-Z_]\w*))?/', $template, $loops, PREG_SET_ORDER);
+
+        foreach ($loops as $match) {
+            $declared[$match[1]] = true;
+
+            if (($match[2] ?? '') !== '') {
+                $declared[$match[2]] = true;
+            }
+        }
+
+        preg_match_all('/\$([a-zA-Z_]\w*)\s*(?:=[^=>]|\+\+|--|\.=|\+=|-=|\?\?=)/', $template, $assigned);
+
+        foreach ($assigned[1] as $name) {
+            $declared[$name] = true;
+        }
+
+        // A closure's parameters and what it `use`s are its own: `fn ($card) =>`, `function ($x)`.
+        preg_match_all('/(?:fn|function)\s*\(([^)]*)\)/', $template, $closures);
+
+        foreach ($closures[1] as $parameters) {
+            preg_match_all('/\$([a-zA-Z_]\w*)/', $parameters, $names);
+
+            foreach ($names[1] as $name) {
+                $declared[$name] = true;
+            }
+        }
+
+        $used = [];
+
+        preg_match_all('/\$([a-zA-Z_]\w*)/', $template, $all);
+
+        foreach ($all[1] as $name) {
+            if (! isset($declared[$name]) && ! in_array($name, $used, true)) {
+                $used[] = $name;
+            }
+        }
+
+        return $used;
+    }
+
+    /**
+     * A template that does not compile, said before anybody renders it: compiled the way the
+     * renderer compiles it and parsed, not run.
+     *
+     * @return array{file: string, code: string, line: int|null, message: string}|null
+     */
+    private static function syntax(string $slug, string $template): ?array
+    {
+        if (trim($template) === '') {
+            return null;
+        }
+
+        try {
+            $compiler = Container::getInstance()->make(TemplateCompiler::class);
+            $compiled = Container::getInstance()->make('blade.compiler')->compileString($template);
+        } catch (Throwable $failure) {
+            return self::lint('template', 'syntax', null, ['reason' => $failure->getMessage()]);
+        }
+
+        try {
+            // Parsed, not run: a syntax error is a ParseError thrown here, and nothing executes.
+            $tokens = token_get_all((string) $compiled, TOKEN_PARSE);
+        } catch (ParseError $failure) {
+            $line = $compiler->templateLine($template, $failure->getLine());
+
+            return self::lint('template', 'syntax', $line, ['reason' => $failure->getMessage()]);
+        }
+
+        return null;
+    }
+
+    /**
+     * What is wrong with the schema itself: fields of a type nobody registered, and ids that
+     * cannot be a key.
+     *
+     * @param  list<array<string, mixed>>  $schema
+     * @return list<array{file: string, code: string, line: int|null, message: string}>
+     */
+    private static function schema(array $schema): array
+    {
+        $types = Container::getInstance()->make(FieldTypes::class);
+        $unknown = [];
+        $badIds = [];
+
+        $walk = static function (array $nodes) use (&$walk, $types, &$unknown, &$badIds): void {
+            foreach ($nodes as $node) {
+                if (! is_array($node)) {
+                    continue;
+                }
+
+                $type = (string) ($node['type'] ?? '');
+                $id = $node['id'] ?? null;
+
+                if ($type !== '' && ! $types->has($type) && ! Schema::isLayout($type) && $type !== 'wx-blocks') {
+                    $unknown[] = (is_string($id) ? $id.': ' : '').$type;
+                }
+
+                if (is_string($id) && preg_match(self::FIELD_ID, $id) !== 1) {
+                    $badIds[] = '"'.$id.'"';
+                }
+
+                $walk(Tree::children($node));
+            }
+        };
+
+        $walk($schema);
+
+        $lints = [];
+
+        if ($unknown !== []) {
+            $lints[] = self::lint('schema', 'unknown-field-type', null, ['fields' => implode(', ', array_unique($unknown))]);
+        }
+
+        if ($badIds !== []) {
+            $lints[] = self::lint('schema', 'field-id', null, ['ids' => implode(', ', array_unique($badIds))]);
+        }
+
+        return $lints;
+    }
+
+    /**
+     * Every id the schema declares, through its layout and into a repeater — the names a template
+     * may read, its loops included.
+     *
+     * @param  list<array<string, mixed>>  $nodes
+     * @return list<string>
+     */
+    private static function ids(array $nodes): array
+    {
+        $ids = [];
+
+        foreach ($nodes as $node) {
+            if (! is_array($node)) {
+                continue;
+            }
+
+            if (is_string($node['id'] ?? null) && $node['id'] !== '') {
+                $ids[] = $node['id'];
+            }
+
+            $ids = [...$ids, ...self::ids(Tree::children($node))];
+        }
+
+        return $ids;
     }
 
     /**

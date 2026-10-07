@@ -127,6 +127,7 @@ function onTriggerClick() {
           :disabled="disabled"
           :style="{ '--wx-menu-depth': parent.depth }"
           :title="collapsed ? title : undefined"
+          :aria-label="collapsed ? title : undefined"
         >
           <span v-if="icon || $slots.icon" class="wx-menu-row__icon">
             <slot name="icon">

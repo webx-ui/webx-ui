@@ -21,4 +21,7 @@ return [
             'fix' => 'Remove them with the fix, or for the whole site with php artisan webx:blocks:prune. A block of a type that no longer exists is left alone. Repeater items are checked against the repeater\'s fields.',
         ],
     ],
+    'syntax' => 'The template does not compile: :reason. Publishing will be refused.',
+    'unknown-field-type' => 'Fields of a type this site does not know: :fields. The form draws a warning in their place and nothing checks their values.',
+    'field-id' => 'Field ids must be letters, digits, _ and -, starting with a letter: :ids.',
 ];

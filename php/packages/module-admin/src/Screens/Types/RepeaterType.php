@@ -135,7 +135,9 @@ final class RepeaterType implements FieldType
                 $name = $child['name'];
                 $value = $item[$name] ?? null;
 
-                if (($child['localized'] ?? false) === true && is_array($value)) {
+                // By shape: a child switched to `localized` still holds the plain values written
+                // before, and one switched back still holds its map until it is written again.
+                if ($this->isMap($child, $value)) {
                     $value = $this->pick($value, $locale);
                 }
 
@@ -190,7 +192,7 @@ final class RepeaterType implements FieldType
         $label = $this->label($child);
         $value = $item[$name];
 
-        $validator = ($child['localized'] ?? false) === true
+        $validator = $this->isMap($child, $value)
             ? $this->validator->make(
                 ['value' => $this->localeKeys($value)],
                 ['value' => ['nullable', 'array'], 'value.*' => $rules],
@@ -210,13 +212,30 @@ final class RepeaterType implements FieldType
      */
     private function each(array $child, mixed $value, callable $cast): mixed
     {
-        if (($child['localized'] ?? false) !== true) {
+        if (! $this->isMap($child, $value)) {
             return $cast($value);
         }
 
         $value = $this->localeKeys($value);
 
         return is_array($value) ? array_map($cast, $value) : $cast($value);
+    }
+
+    /**
+     * Whether a value is a language map. Any map of the site's languages is, whatever the flag
+     * says; under a localized child a map with a language the site dropped is too. A list never
+     * is — a child switched to `localized` over a list of tags kept the tags as they were, where
+     * reading them as languages emptied the list.
+     *
+     * @param  Node  $child
+     */
+    private function isMap(array $child, mixed $value): bool
+    {
+        if ($this->locales->isMap($value)) {
+            return true;
+        }
+
+        return ($child['localized'] ?? false) === true && is_array($value) && ($value === [] || ! array_is_list($value));
     }
 
     /**

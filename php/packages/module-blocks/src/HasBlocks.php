@@ -7,6 +7,7 @@ namespace WebxUi\Blocks;
 use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
+use Illuminate\Validation\ValidationException;
 use WebxUi\Blocks\Rendering\Renderer;
 
 /**
@@ -31,6 +32,37 @@ use WebxUi\Blocks\Rendering\Renderer;
  */
 trait HasBlocks
 {
+    /**
+     * A draft holding blocks is checked once more on its way to the site: the values against
+     * their field types, the containers against what they take ({@see ContentValues::check()}).
+     * Every save checks already; this is for a draft saved before those checks existed, or by
+     * something that wrote the column itself.
+     */
+    public static function bootHasBlocks(): void
+    {
+        static::registerModelEvent('publishing', static function (Model $model): void {
+            if (! method_exists($model, 'draftValues') || ! method_exists($model, 'blocksColumn') || ! method_exists($model, 'blocksRoot')) {
+                return;
+            }
+
+            $column = $model->blocksColumn();
+            $draft = $model->draftValues();
+
+            if (is_array($draft[$column] ?? null)) {
+                Container::getInstance()->make(ContentValues::class)->check($draft[$column], $column, $model->blocksRoot());
+            }
+        });
+    }
+
+    /**
+     * What the top level of this entity is called in a type's `allowed_in`: `root` for a page and
+     * anything like one; a region of the layout says `region:<name>`.
+     */
+    public function blocksRoot(): string
+    {
+        return 'root';
+    }
+
     public function initializeHasBlocks(): void
     {
         $this->mergeCasts([$this->blocksColumn() => 'array']);
@@ -73,12 +105,21 @@ trait HasBlocks
      * calls this with the value of its `wx-blocks` field; the agent's tools do the same step
      * on their way through `BlockTools`.
      *
+     * Checked first, and refused with a {@see ValidationException} keyed `blocks.<key>.<field>`
+     * when a value breaks its field's rules or a block stands where it may not.
+     *
      * @param  iterable<array-key, mixed>|null  $tree
      * @return list<mixed>
      */
     public function storeBlocks(?iterable $tree): array
     {
-        return Container::getInstance()->make(ContentValues::class)->store($tree);
+        // What the entity holds until now — the draft, or the column when there is none — so that a
+        // value it already had is not held to the checks only a new value has to pass.
+        $column = $this->blocksColumn();
+        $draft = method_exists($this, 'draftValues') ? $this->draftValues() : [];
+        $before = is_array($draft[$column] ?? null) ? $draft[$column] : $this->blocksTree();
+
+        return Container::getInstance()->make(ContentValues::class)->store($tree, $column, $this->blocksRoot(), $before);
     }
 
     /**

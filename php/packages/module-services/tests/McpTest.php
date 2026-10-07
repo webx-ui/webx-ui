@@ -28,7 +28,7 @@ final class McpTest extends TestCase
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['services_list', 'services_get', 'services_create', 'services_update', 'services_publish', 'services_unpublish', 'services_discard', 'services_delete', 'services_reorder'],
+            ['services_list', 'services_get', 'services_create', 'services_update', 'services_publish', 'services_unpublish', 'services_discard', 'services_versions', 'services_version_restore', 'services_delete', 'services_reorder'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('services')),
         );
 
@@ -219,6 +219,23 @@ final class McpTest extends TestCase
         $this->agent('services_discard', ['service' => $crowns->getKey()])->assertOk();
         $this->assertFalse($crowns->refresh()->hasDraft());
         $this->assertSame('Crowns', $crowns->title);
+    }
+
+    #[Test]
+    public function the_history_of_a_service_is_listed_and_a_publication_comes_back_into_the_draft(): void
+    {
+        $crowns = $this->service('crowns');
+        $this->agent('services_update', ['service' => $crowns->getKey(), 'values' => ['title' => ['en' => 'Crowns and bridges']]])->assertOk();
+        $this->agent('services_publish', ['service' => $crowns->getKey()])->assertOk();
+
+        $history = $this->content($this->agent('services_versions', ['service' => $crowns->getKey()]));
+        $this->assertCount(2, $history['versions']);
+        $this->assertTrue($history['versions'][0]['on_site']);
+
+        $this->agent('services_version_restore', ['service' => $crowns->getKey(), 'number' => $history['versions'][1]['number']])->assertOk();
+
+        $this->assertSame('Crowns', $crowns->refresh()->draftValues()['title']['en'] ?? null);
+        $this->assertSame('Crowns and bridges', $crowns->title, 'the site keeps what it shows');
     }
 
     private function resource(string $uri): McpResource

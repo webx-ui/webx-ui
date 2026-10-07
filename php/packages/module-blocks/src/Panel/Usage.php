@@ -7,6 +7,7 @@ namespace WebxUi\Blocks\Panel;
 use Illuminate\Contracts\Config\Repository as Config;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Database\Eloquent\Model;
+use Throwable;
 use WebxUi\Blocks\Content;
 use WebxUi\Blocks\Models\Region;
 use WebxUi\Blocks\Regions;
@@ -47,16 +48,22 @@ final class Usage
     }
 
     /**
-     * The entities that hold a type: enough to name them in a list, no more.
+     * The entities that hold a type: enough to name them in a list and to go and look — which
+     * tree it stands in (what the site shows, the draft, or both) and the address, when the
+     * entity has one.
      *
-     * @return list<array{model: string, id: int|string, title: string|null, published: bool}>
+     * @return list<array{model: string, id: int|string, title: string|null, published: bool, live: bool, draft: bool, url: string|null, region: string|null}>
      */
     public function of(string $slug): array
     {
         $found = [];
 
         foreach ($this->entities() as $entity) {
-            if (! in_array($slug, $this->typesOf($entity), true)) {
+            [$live, $draft] = $this->trees($entity, separately: true);
+            $inLive = in_array($slug, Content::types($live), true);
+            $inDraft = in_array($slug, Content::types($draft), true);
+
+            if (! $inLive && ! $inDraft) {
                 continue;
             }
 
@@ -65,6 +72,11 @@ final class Usage
                 'id' => $entity->getKey(),
                 'title' => $this->title($entity),
                 'published' => method_exists($entity, 'isPublished') ? (bool) $entity->isPublished() : true,
+                'live' => $inLive,
+                'draft' => $inDraft,
+                'url' => $this->url($entity),
+                // A region is named, not numbered, wherever a tool takes one.
+                'region' => $entity instanceof Region ? $entity->name : null,
             ];
         }
 
@@ -116,11 +128,31 @@ final class Usage
     }
 
     /**
-     * The live tree and, when the entity keeps one, the draft's.
+     * Where an entity is on the site, when it has an address of its own; null for one that does
+     * not (a region) or whose address cannot be worked out right now.
+     */
+    private function url(Model $entity): ?string
+    {
+        if ($entity instanceof Region || ! method_exists($entity, 'url')) {
+            return null;
+        }
+
+        try {
+            $url = $entity->url();
+        } catch (Throwable) {
+            return null;
+        }
+
+        return is_string($url) && $url !== '' ? $url : null;
+    }
+
+    /**
+     * The live tree and, when the entity keeps one, the draft's. Separately: always both, the
+     * missing one empty.
      *
      * @return list<list<array<string, mixed>>>
      */
-    private function trees(Model $entity): array
+    private function trees(Model $entity, bool $separately = false): array
     {
         $column = method_exists($entity, 'blocksColumn') ? (string) $entity->blocksColumn() : 'blocks';
         $trees = [];
@@ -128,7 +160,7 @@ final class Usage
         $live = $entity->getAttribute($column);
 
         if (is_array($live)) {
-            $trees[] = array_values(array_filter($live, static fn (mixed $node): bool => Content::isNode($node)));
+            $trees[0] = array_values(array_filter($live, static fn (mixed $node): bool => Content::isNode($node)));
         }
 
         if (method_exists($entity, 'draftValues')) {
@@ -136,8 +168,12 @@ final class Usage
             $blocks = is_array($draft) ? ($draft[$column] ?? null) : null;
 
             if (is_array($blocks)) {
-                $trees[] = array_values(array_filter($blocks, static fn (mixed $node): bool => Content::isNode($node)));
+                $trees[$separately ? 1 : count($trees)] = array_values(array_filter($blocks, static fn (mixed $node): bool => Content::isNode($node)));
             }
+        }
+
+        if ($separately) {
+            return [$trees[0] ?? [], $trees[1] ?? []];
         }
 
         return $trees;
@@ -192,7 +228,7 @@ final class Usage
      *
      * @return iterable<int, Model>
      */
-    private function entities(): iterable
+    public function entities(): iterable
     {
         $classes = $this->config->get('webx-blocks.entities', []);
         $classes = is_array($classes) ? $classes : [];

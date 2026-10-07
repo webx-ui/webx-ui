@@ -265,17 +265,101 @@ const sampleModel = computed<ScreenModel>({
   },
 })
 
-const fieldIds = computed(() => collectIds(content.schema))
+/**
+ * What "Insert a field" offers: the fields a template can read, as the snippet that reads them.
+ *
+ * Through layout (cards, tabs, rows) and not into a field: a repeater's children are keys of its
+ * rows, not variables, so the repeater is offered as a loop over them; a container is offered as
+ * `@blocks('…')`, which is how its blocks are printed. A heading, a note or a divider in the form
+ * holds no value and is not offered at all.
+ */
+const fieldSnippets = computed(() => insertable(content.schema))
 
-function collectIds(nodes: BlockContent['schema']): string[] {
-  const ids: string[] = []
+function insertable(nodes: BlockContent['schema']): { id: string; label: string; text: string }[] {
+  const found: { id: string; label: string; text: string }[] = []
 
   for (const node of nodes) {
-    if (node.type !== 'wx-blocks' && !(node.children?.length && !node.name)) ids.push(node.id)
-    if (node.children) ids.push(...collectIds(node.children))
+    if (LAYOUT.includes(node.type)) {
+      found.push(...insertable(node.children ?? []))
+      continue
+    }
+
+    if (!node.id) continue
+
+    if (node.type === 'wx-blocks') {
+      found.push({ id: node.id, label: `@blocks('${node.id}')`, text: `@blocks('${node.id}')` })
+    } else if (node.type === 'wx-repeater') {
+      const keys = (node.children ?? []).filter((child) => child.id && !LAYOUT.includes(child.type))
+      const inner = keys.map((child) => `{{ $item['${child.id}'] }}`).join(' ')
+
+      found.push({
+        id: node.id,
+        label: `@foreach ($${node.id} …)`,
+        text: `@foreach ($${node.id} ?? [] as $item)\n    ${inner}\n@endforeach`,
+      })
+    } else {
+      found.push({ id: node.id, label: pill(node.id), text: pill(node.id) })
+    }
   }
 
-  return ids
+  return found
+}
+
+/** The schema types that arrange or explain fields and hold no value — `Schema::LAYOUT` on the server. */
+const LAYOUT = [
+  'wx-card',
+  'wx-tabs',
+  'wx-tab',
+  'wx-row',
+  'wx-col',
+  'wx-divider',
+  'wx-heading',
+  'wx-text',
+  'wx-alert',
+]
+
+/**
+ * The containers of the schema and what each takes of its own: the settings' "May hold" applies
+ * to a field that names nothing, and says so when every field names its own.
+ */
+const containerFields = computed(() =>
+  schemaFields(content.schema)
+    .filter((node) => node.type === 'wx-blocks')
+    .map((node) => ({
+      id: node.id,
+      allow: Array.isArray(node.props?.allow) ? (node.props.allow as string[]) : null,
+    })),
+)
+
+const allowHelp = computed(() => {
+  const fields = containerFields.value
+
+  if (fields.length === 0) return t('page.allow-help-none')
+
+  const own = fields.filter((field) => field.allow !== null)
+
+  if (own.length === 0) return t('page.allow-help')
+
+  return t('page.allow-from-fields', {
+    fields: own.map((field) => `${field.id}: ${field.allow!.join(', ') || '—'}`).join('; '),
+  })
+})
+
+/** The row's own settings as a type carries them — what decides whether a save changed any. */
+function settingsOf(type: BlockType): Record<string, unknown> {
+  return {
+    kind: kindOf(type),
+    slug: type.slug,
+    title: type.title,
+    description: type.description,
+    icon: type.icon,
+    group: type.group,
+    sort: type.sort,
+    allow: type.allow,
+    allowed_in: type.allowed_in,
+    max_per_entity: type.max_per_entity,
+    is_enabled: type.is_enabled,
+  }
 }
 
 function take(loaded: BlockType): void {
@@ -396,8 +480,8 @@ function pill(field: string): string {
   return `{{ $${field} }}`
 }
 
-/** `{{ $field }}` at the caret of the template editor. */
-function insertField(field: string): void {
+/** A field's snippet at the caret of the template editor. */
+function insertField(text: string): void {
   const view = (templateEditor.value as { view?: { value?: unknown } } | null)?.view as
     | {
         value?: {
@@ -410,12 +494,12 @@ function insertField(field: string): void {
   const editor = view?.value
 
   if (!editor) {
-    content.template += `{{ $${field} }}`
+    content.template += text
 
     return
   }
 
-  editor.dispatch(editor.state.replaceSelection(`{{ $${field} }}`))
+  editor.dispatch(editor.state.replaceSelection(text))
   editor.focus()
 }
 
@@ -427,6 +511,7 @@ async function save(): Promise<void> {
   refusal.value = null
 
   const before = block.value.draft?.number ?? null
+  const settingsBefore = JSON.stringify(settingsOf(block.value))
 
   try {
     const saved = await api.update(block.value.id, {
@@ -440,11 +525,23 @@ async function save(): Promise<void> {
 
     take(saved)
 
-    toast.success(
-      saved.draft && saved.draft.number !== before
-        ? t('page.saved', { number: saved.draft.number })
-        : t('page.unchanged'),
-    )
+    // Three different outcomes, three different sentences: a rename (and what it rewrote), a new
+    // version, settings alone. "Nothing changed" was said after a rename that rewrote every page.
+    if (saved.renamed) {
+      toast.success(
+        t('page.renamed', {
+          slug: saved.renamed.to,
+          pages: saved.renamed.entities,
+          types: saved.renamed.types,
+        }),
+      )
+    } else if (saved.draft && saved.draft.number !== before) {
+      toast.success(t('page.saved', { number: saved.draft.number }))
+    } else if (JSON.stringify(settingsOf(saved)) !== settingsBefore) {
+      toast.success(t('page.settings-saved'))
+    } else {
+      toast.success(t('page.unchanged'))
+    }
   } catch (error) {
     const body = (error as { body?: { errors?: Record<string, string[]>; message?: string } }).body
 
@@ -487,10 +584,15 @@ async function publish(): Promise<void> {
   refusal.value = null
 
   try {
-    take(await api.publish(block.value.id))
+    take(await publishAsking(block.value.id))
     toast.success(t('page.published', { number: block.value.published?.number ?? 0 }))
   } catch (error) {
     const body = (error as { status?: number; body?: PublishRefusal }).body
+
+    if (body?.translations) {
+      // Asked and declined: nothing was published, and nothing more to say.
+      return
+    }
 
     if (body?.errors) {
       refusal.value = body
@@ -501,6 +603,33 @@ async function publish(): Promise<void> {
     }
   } finally {
     publishing.value = false
+  }
+}
+
+/**
+ * Publish, and when the draft takes `localized` off a field over pages holding several languages,
+ * ask whether to keep only the main one — the server refuses with 409 and the pages, and the same
+ * request goes again with the answer.
+ */
+async function publishAsking(blockId: number): Promise<BlockType> {
+  try {
+    return await api.publish(blockId)
+  } catch (error) {
+    const body = (error as { status?: number; body?: PublishRefusal }).body
+
+    if (!body?.translations) throw error
+
+    const agreed = await confirm({
+      title: t('page.drop-translations-title'),
+      message: body.message,
+      confirmText: t('page.drop-translations-confirm'),
+      cancelText: t('page.cancel'),
+      tone: 'danger',
+    })
+
+    if (!agreed) throw error
+
+    return api.publish(blockId, { dropTranslations: true })
   }
 }
 
@@ -531,6 +660,19 @@ async function remove(): Promise<void> {
     toast.danger(message(error))
   }
 }
+
+const languageNotice = computed(() => {
+  const changes = block.value?.language_changes
+
+  if (!changes || changes.flips.length === 0) return null
+
+  return t('page.localized-changes', {
+    fields: changes.flips
+      .map((flip) => (flip.child ? `${flip.field}.*.${flip.child}` : flip.field))
+      .join(', '),
+    count: changes.entities.length,
+  })
+})
 
 const refusalError = computed(() =>
   refusal.value
@@ -789,6 +931,10 @@ const actions = computed<ScreenAction[]>(() =>
         :description="t('page.editing-off')"
       />
 
+      <!-- Said before anybody presses Publish: the draft changes the shape of values already on
+           pages, and publishing converts them. -->
+      <wx-alert v-if="languageNotice" type="warning" variant="soft" :description="languageNotice" />
+
       <!--
         The block stands beside the two files that draw it and nowhere else: it used to be a
         column down the whole screen, half the width of the settings and of the history, which
@@ -809,16 +955,16 @@ const actions = computed<ScreenAction[]>(() =>
                 max-height="70vh"
                 line-wrapping
               />
-              <div v-if="fieldIds.length" class="wx-block-editor__pills">
+              <div v-if="fieldSnippets.length" class="wx-block-editor__pills">
                 <wx-text size="sm" tone="muted">{{ t('page.insert-field') }}</wx-text>
                 <button
-                  v-for="field in fieldIds"
-                  :key="field"
+                  v-for="field in fieldSnippets"
+                  :key="field.id"
                   type="button"
                   class="wx-block-editor__pill"
                   :disabled="!canManage"
-                  @click="insertField(field)"
-                  v-text="pill(field)"
+                  @click="insertField(field.text)"
+                  v-text="field.label"
                 />
               </div>
               <block-checks
@@ -1044,7 +1190,7 @@ const actions = computed<ScreenAction[]>(() =>
                 <wx-form-item
                   v-if="!isComponent"
                   :label="t('page.allow')"
-                  :help="t('page.allow-help')"
+                  :help="allowHelp"
                   :error="errorOf('allow')"
                   :disabled="!canManage"
                 >

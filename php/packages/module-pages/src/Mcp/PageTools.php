@@ -14,6 +14,7 @@ use Throwable;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Admin\Versions\EntityVersion;
 use WebxUi\Blocks\Facades\Preview;
+use WebxUi\Blocks\Panel\Authors;
 use WebxUi\Localization\Locales;
 use WebxUi\Mcp\Exceptions\ToolFailure;
 use WebxUi\Mcp\Tool;
@@ -185,6 +186,27 @@ final class PageTools
                 .'which fields it changes.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->discard($arguments, $user)),
                 ['properties' => ['page' => $page], 'required' => ['page']],
+            ),
+
+            Tool::read(
+                'versions',
+                'The history of a page: every publication, newest first — number, date, who (or which agent), '
+                .'the comment — and which one the site shows now. What the panel\'s «History» tab lists. The way '
+                .'to undo a bad edit: find the version before it, then pages_version_restore.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->versions($arguments)),
+                ['properties' => ['page' => $page], 'required' => ['page']],
+            ),
+
+            Tool::mutating(
+                'version_restore',
+                'Put an old publication of a page back into its draft — its title, address, SEO card and blocks '
+                .'as they were. The site does not change until somebody publishes; dry_run says which fields '
+                .'would change.',
+                fn (array $arguments, ?Authenticatable $user = null): array => $this->attempt(fn (): array => $this->versionRestore($arguments, $user)),
+                ['properties' => [
+                    'page' => $page,
+                    'number' => ['type' => 'integer', 'description' => 'A version number, as pages_versions lists it.'],
+                ], 'required' => ['page', 'number']],
             ),
 
             Tool::mutating(
@@ -551,6 +573,72 @@ final class PageTools
         $page->discardDraft();
 
         return $this->get(['page' => $page->refresh()->getKey()], $user);
+    }
+
+    /**
+     * The publications of a page, newest first — what the panel's «History» tab lists — and which
+     * one the site shows now. Without payloads: a version is picked by its number, and
+     * pages_version_restore does the rest.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function versions(array $arguments): array
+    {
+        $page = $this->page($arguments['page'] ?? null);
+        $versions = $page->publishedVersions()->get();
+        $authors = Authors::names($versions->map(static fn (EntityVersion $version): ?int => $version->author_id));
+        $live = $page->isPublished() ? $versions->first()?->number : null;
+
+        return [
+            'page' => $page->getKey(),
+            'has_draft' => $page->hasDraft(),
+            'versions' => $versions->map(static fn (EntityVersion $version): array => [
+                'number' => $version->number,
+                'created_at' => $version->created_at?->toAtomString(),
+                'author' => $version->author_id === null ? null : ($authors[$version->author_id] ?? null),
+                'source' => $version->source,
+                'comment' => $version->comment,
+                'is_pinned' => $version->is_pinned,
+                'on_site' => $version->number === $live,
+            ])->values()->all(),
+        ];
+    }
+
+    /**
+     * An old publication back into the draft — the panel's «Restore». Not onto the site: publishing
+     * it is the separate step it always is. This is how a bad edit of the content is undone.
+     *
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function versionRestore(array $arguments, ?Authenticatable $user): array
+    {
+        $page = $this->page($arguments['page'] ?? null);
+        $number = $arguments['number'] ?? null;
+
+        if (! is_int($number) && ! (is_string($number) && ctype_digit($number))) {
+            throw new ToolFailure('`number` is required: a version number from pages_versions.');
+        }
+
+        $version = $page->publishedVersions()->where('number', (int) $number)->first();
+
+        if (! $version instanceof EntityVersion) {
+            throw new ToolFailure("Page [{$page->getKey()}] has no version {$number}. pages_versions lists them.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return [
+                'dry_run' => true,
+                'would_restore' => $version->number,
+                'into' => 'draft',
+                'changes' => $page->changedFields(is_array($version->payload) ? $version->payload : []),
+            ];
+        }
+
+        $page->restoreVersion($version);
+
+        return ['restored' => $version->number, 'into' => 'draft'] + $this->get(['page' => $page->refresh()->getKey(), 'blocks' => false], $user);
     }
 
     /**

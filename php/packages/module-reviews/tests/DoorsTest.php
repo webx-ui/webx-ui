@@ -50,7 +50,7 @@ final class DoorsTest extends TestCase
                         'values' => [
                             'reviews' => [
                                 'categories' => [(string) $implants->id, $clinic->id, $implants->id],
-                                'limit' => '6',
+                                'limit' => 6,
                                 'filter' => true,
                                 'markup' => true,
                                 'source' => 'faq',
@@ -72,7 +72,7 @@ final class DoorsTest extends TestCase
     }
 
     #[Test]
-    public function an_agents_edit_keeps_the_choice_cleaned(): void
+    public function an_agents_edit_is_refused_when_dirty_and_kept_cleaned_when_not(): void
     {
         $clinic = $this->category('Clinic');
 
@@ -83,7 +83,15 @@ final class DoorsTest extends TestCase
             'entity' => 'page',
             'id' => $this->page->getKey(),
             'ops' => [['op' => 'set', 'key' => 'k-reviews', 'values' => [
-                'reviews' => ['categories' => [$clinic->id, $clinic->id], 'limit' => 500, 'filter' => 'yes', 'markup' => true],
+                'reviews' => ['limit' => 500, 'filter' => 'yes'],
+            ]]],
+        ], $this->editor(['pages.view', 'pages.manage', 'blocks.manage']))->assertHasErrors(['field [reviews]']);
+
+        $this->agent('edit_content', [
+            'entity' => 'page',
+            'id' => $this->page->getKey(),
+            'ops' => [['op' => 'set', 'key' => 'k-reviews', 'values' => [
+                'reviews' => ['categories' => [$clinic->id, $clinic->id], 'limit' => 100, 'filter' => false, 'markup' => true],
                 'layout' => 'marquee',
             ]]],
         ], $this->editor(['pages.view', 'pages.manage', 'blocks.manage']))->assertOk();

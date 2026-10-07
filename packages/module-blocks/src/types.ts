@@ -30,6 +30,31 @@ export interface BlockVersion extends BlockVersionMeta {
 export interface BlockThumbnail {
   html: string
   styles: string
+  /** The block printed nothing on its sample — a data block with nothing to show. */
+  empty?: boolean
+}
+
+/** A field whose `localized` the draft changes, and the pages holding values of it. */
+export interface LanguageFlip {
+  field: string
+  /** A repeater's child, when the flip is inside one. */
+  child: string | null
+  /** Whether the field is localized in the draft. */
+  localized: boolean
+}
+
+export interface LanguageChanges {
+  flips: LanguageFlip[]
+  entities: { model: string; id: number | string; title: string | null; translations: boolean }[]
+}
+
+/** What a rename rewrote. */
+export interface BlockRenamed {
+  from: string
+  to: string
+  entities: number
+  types: number
+  version: number | null
 }
 
 /** What was noticed on saving; never a refusal. */
@@ -117,6 +142,10 @@ export interface BlockType {
   /** The draft's content, or the published version's without a draft. Absent in the list. */
   content?: BlockContent
   warnings?: Lint[]
+  /** What publishing the draft converts on pages, when it changes a field's `localized`. */
+  language_changes?: LanguageChanges
+  /** Only in the answer to a save that renamed the type. */
+  renamed?: BlockRenamed
 }
 
 /** What a save sends: only what changed. */
@@ -148,6 +177,10 @@ export interface BlockUsage {
   id: number | string
   title: string | null
   published: boolean
+  /** In what the site shows, in the draft, or both. Absent from an older server. */
+  live?: boolean
+  draft?: boolean
+  url?: string | null
 }
 
 /** One block drawn by the server. */
@@ -176,6 +209,8 @@ export interface RenderInput {
 
 /** A 422 from publishing: the reason, the line, and the page when a page broke. */
 export interface PublishRefusal {
+  /** A 409 that asks rather than refuses: the draft drops languages on these pages. */
+  translations?: LanguageChanges
   message: string
   errors: Record<string, string[]>
   line: number | null

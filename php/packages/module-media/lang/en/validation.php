@@ -20,4 +20,5 @@ return [
         'document' => 'documents',
         'other' => 'other files',
     ],
+    'missing' => 'There is no file [:path] in the library: pick one from it.',
 ];

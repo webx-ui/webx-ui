@@ -21,4 +21,7 @@ return [
             'fix' => 'Toglieteli con la correzione o per tutto il sito con php artisan webx:blocks:prune. Un blocco di un tipo che non esiste più non viene toccato. Gli elementi di un ripetitore sono confrontati con i suoi campi.',
         ],
     ],
+    'syntax' => 'Il modello non si compila: :reason. La pubblicazione sarà rifiutata.',
+    'unknown-field-type' => 'Campi di un tipo che il sito non conosce: :fields. Il modulo mostra un avviso al loro posto e nessuno ne controlla i valori.',
+    'field-id' => 'L\'id di un campo è fatto di lettere, cifre, _ e -, e inizia con una lettera: :ids.',
 ];

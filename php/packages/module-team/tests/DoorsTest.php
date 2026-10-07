@@ -50,8 +50,8 @@ final class DoorsTest extends TestCase
                         'type' => 'team',
                         'values' => [
                             'team' => [
-                                'categories' => [3, 4],
-                                'limit' => '6',
+                                'categories' => [],
+                                'limit' => 6,
                                 'filter' => true,
                                 'markup' => true,
                                 'related' => ['type' => 'service', 'ids' => [(string) $implants->id, $implants->id]],
@@ -73,7 +73,7 @@ final class DoorsTest extends TestCase
     }
 
     #[Test]
-    public function an_agents_edit_keeps_the_choice_cleaned(): void
+    public function an_agents_edit_is_refused_when_dirty_and_kept_cleaned_when_not(): void
     {
         $this->page->blocks = [['key' => 'k-team', 'type' => 'team', 'values' => []]];
         $this->page->save();
@@ -82,7 +82,15 @@ final class DoorsTest extends TestCase
             'entity' => 'page',
             'id' => $this->page->getKey(),
             'ops' => [['op' => 'set', 'key' => 'k-team', 'values' => [
-                'team' => ['categories' => [1], 'limit' => 500, 'markup' => true, 'related' => ['type' => 'recipe', 'ids' => [1]]],
+                'team' => ['categories' => [1], 'limit' => 500, 'related' => ['type' => 'recipe', 'ids' => [1]]],
+            ]]],
+        ], $this->editor(['pages.view', 'pages.manage', 'blocks.manage']))->assertHasErrors(['field [team]']);
+
+        $this->agent('edit_content', [
+            'entity' => 'page',
+            'id' => $this->page->getKey(),
+            'ops' => [['op' => 'set', 'key' => 'k-team', 'values' => [
+                'team' => ['categories' => [], 'limit' => 100, 'markup' => true, 'related' => null],
                 'layout' => 'slider',
             ]]],
         ], $this->editor(['pages.view', 'pages.manage', 'blocks.manage']))->assertOk();
@@ -92,7 +100,7 @@ final class DoorsTest extends TestCase
         $this->assertSame(
             ['categories' => [], 'limit' => 100, 'filter' => false, 'markup' => null, 'related' => null],
             $values['team'],
-            'a relation the source does not offer is no relation',
+            'markup the source does not have is never kept',
         );
         $this->assertSame('slider', $values['layout']);
     }

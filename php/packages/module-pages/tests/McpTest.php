@@ -29,7 +29,7 @@ final class McpTest extends TestCase
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['pages_tree', 'pages_get', 'pages_create', 'pages_update', 'pages_move', 'pages_publish', 'pages_unpublish', 'pages_delete', 'pages_restore', 'pages_discard', 'pages_purge'],
+            ['pages_tree', 'pages_get', 'pages_create', 'pages_update', 'pages_move', 'pages_publish', 'pages_unpublish', 'pages_delete', 'pages_restore', 'pages_discard', 'pages_versions', 'pages_version_restore', 'pages_purge'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('pages')),
         );
 
@@ -589,13 +589,40 @@ final class McpTest extends TestCase
         $this->fail("No module offers the prompt [{$name}].");
     }
 
+    #[Test]
+    public function the_history_of_a_page_is_listed_and_an_old_publication_comes_back_into_the_draft(): void
+    {
+        $page = $this->page('about');
+        $page->saveDraft(['title' => ['en' => 'About us, again']]);
+        $page->publish();
+
+        $history = $this->content($this->agent('pages_versions', ['page' => '/about'], $this->editor()));
+
+        $this->assertCount(2, $history['versions']);
+        $this->assertTrue($history['versions'][0]['on_site']);
+        $this->assertFalse($history['has_draft']);
+
+        $first = $history['versions'][1]['number'];
+
+        $dry = $this->content($this->agent('pages_version_restore', ['page' => '/about', 'number' => $first, 'dry_run' => true], $this->editor()));
+        $this->assertContains('title', $dry['changes']);
+        $this->assertFalse($page->refresh()->hasDraft());
+
+        $this->agent('pages_version_restore', ['page' => '/about', 'number' => $first], $this->editor())->assertOk();
+
+        $this->assertSame('About', $page->refresh()->draftValues()['title']['en'] ?? null);
+        $this->assertSame('About us, again', $page->getTranslation('title', 'en'), 'the site keeps what it shows');
+
+        $this->agent('pages_version_restore', ['page' => '/about', 'number' => 99], $this->editor())->assertHasErrors(['no version 99']);
+    }
+
     /**
      * @param  array<string, mixed>  $arguments
      */
     private function agent(string $tool, array $arguments = [], ?CmsUser $as = null): TestResponse
     {
         $registry = $this->app->make(ToolRegistry::class);
-        $bound = new RegistryTool($registry->tool('pages_'.$tool));
+        $bound = new RegistryTool($registry->tool(str_starts_with($tool, 'pages_') ? $tool : 'pages_'.$tool));
 
         return $as instanceof CmsUser
             ? WebxServer::actingAs($as, 'cms')->tool($bound, $arguments)

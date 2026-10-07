@@ -87,6 +87,11 @@ export interface ChoiceGroupContext<T> {
   disabled: ComputedRef<boolean>
   size: ComputedRef<ControlSize>
   toggle: (value: ChoiceValue, checked: boolean) => void
+  /**
+   * Whether one choice cannot be changed right now — a box left unchecked once a group holds its
+   * `max`, a checked one at its `min`. Drawn disabled, rather than a click that does nothing.
+   */
+  locked?: (value: ChoiceValue) => boolean
 }
 
 export const checkboxGroupKey: InjectionKey<ChoiceGroupContext<ChoiceValue[]>> =

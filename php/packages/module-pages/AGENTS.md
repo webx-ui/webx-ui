@@ -19,7 +19,8 @@ from scratch: the tree is `webx-ui/nested-set`, the address `webx-ui/routing`, t
 - **Panel screen** `pages.form` (tabs `content`, `settings`, `seo`, `history`); API under
   `/api/cms/pages`; permissions `pages.view`, `pages.manage`.
 - **MCP** tools `pages_tree`, `pages_get`, `pages_create`, `pages_update`, `pages_move`,
-  `pages_publish`, `pages_unpublish`, `pages_delete`, `pages_restore`, `pages_discard`, `pages_purge`; resource `pages://sitemap`;
+  `pages_publish`, `pages_unpublish`, `pages_delete`, `pages_restore`, `pages_discard`, `pages_versions`,
+  `pages_version_restore`, `pages_purge`; resource `pages://sitemap`;
   prompt `build_page`. Scopes `pages:read`, `pages:write`.
 - Also registered: a link source (pages in every link picker), an audit content source when
   `webx-ui/module-audit` is installed, demo content (`resources/demo`).

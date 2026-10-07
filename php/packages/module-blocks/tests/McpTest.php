@@ -37,7 +37,13 @@ final class McpTest extends TestCase
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['blocks_list', 'blocks_get', 'blocks_create', 'blocks_update', 'blocks_publish', 'blocks_render', 'blocks_get_content', 'blocks_set_content', 'blocks_edit_content', 'blocks_preview_url', 'blocks_regions', 'blocks_region_publish', 'blocks_region_unpublish'],
+            [
+                'blocks_list', 'blocks_get', 'blocks_create', 'blocks_update', 'blocks_publish',
+                'blocks_delete', 'blocks_versions', 'blocks_version_restore', 'blocks_usage',
+                'blocks_render', 'blocks_get_content', 'blocks_set_content', 'blocks_edit_content', 'blocks_preview_url',
+                'blocks_regions', 'blocks_region_publish', 'blocks_region_unpublish',
+                'blocks_region_discard', 'blocks_region_versions', 'blocks_region_restore', 'blocks_region_adopt',
+            ],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('blocks')),
         );
 
@@ -489,7 +495,7 @@ final class McpTest extends TestCase
                 'type' => 'event',
                 'values' => [
                     'starts' => '2026-09-25T11:06:00+03:00',
-                    'tags' => [' jazz ', ''],
+                    'tags' => [' jazz '],
                     'price' => ['10', '20'],
                     'days' => [],
                     'section' => [],
