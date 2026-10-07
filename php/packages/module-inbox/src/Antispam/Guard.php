@@ -96,9 +96,10 @@ final class Guard
      * old mark is therefore not held against anybody. Only a fresh one that is too fresh means
      * anything — and a missing one, because every form this package draws carries it, cached
      * or not, so a POST without it never came from one of them: it is the cheapest robot
-     * there is, writing straight to the address. An unreadable mark still passes: the one way
-     * a real page sends one is an application key changed under a cached page, and refusing
-     * every visitor until somebody clears the cache is worse than one robot let through.
+     * there is, writing straight to the address. A mark that does not decrypt is the same
+     * robot with one more line in its script — `webx_ts=anything` — and is refused like a
+     * missing one. A key rotated under a cached page is what `APP_PREVIOUS_KEYS` is for: the
+     * encrypter still reads the old marks, and they are old, so they pass as stale.
      */
     private function tooFast(Form $form, Request $request): bool
     {
@@ -117,7 +118,7 @@ final class Guard
         try {
             $drawn = (int) $this->encrypter->decrypt($mark);
         } catch (Throwable) {
-            return false;
+            return true;
         }
 
         $age = time() - $drawn;

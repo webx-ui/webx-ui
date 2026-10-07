@@ -45,7 +45,15 @@ final class Throttle
         $attempts = (int) ($form?->antispam('attempts') ?? $this->config->get('webx-inbox.antispam.attempts', 20));
 
         // Never below the number of submissions it lets through, or that one would be a lie.
-        return Limit::perMinute(max($attempts, $accepted))->by($request->ip().'|'.$slug.'|attempts');
+        return Limit::perMinute(max($attempts, $accepted))
+            ->by($request->ip().'|'.$slug.'|attempts')
+            // Thrown rather than answered, so the handler still renders it in the shape the
+            // request asked for — but with words the page has, not the framework's English.
+            ->response(static fn (Request $request, array $headers) => throw new ThrottleRequestsException(
+                (string) trans('webx-inbox::errors.too-many'),
+                null,
+                $headers,
+            ));
     }
 
     /** Refuses with a 429 when this address has already sent as many as the form takes. */
@@ -59,7 +67,9 @@ final class Throttle
 
         $retryAfter = $this->limiter->availableIn($this->key($form, $request));
 
-        throw new ThrottleRequestsException('Too Many Attempts.', null, [
+        // In the language of the page, like every other refusal of the intake: `inbox.js` shows
+        // the message it gets to the visitor as it is.
+        throw new ThrottleRequestsException((string) trans('webx-inbox::errors.too-many'), null, [
             'Retry-After' => $retryAfter,
             'X-RateLimit-Limit' => $limit,
             'X-RateLimit-Remaining' => 0,

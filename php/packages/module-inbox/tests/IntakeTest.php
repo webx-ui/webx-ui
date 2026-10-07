@@ -255,6 +255,19 @@ final class IntakeTest extends TestCase
     }
 
     #[Test]
+    public function it_refuses_a_timestamp_that_does_not_decrypt_like_a_missing_one(): void
+    {
+        $this->form('contact', [], ['antispam.min_seconds' => 3]);
+
+        $this->postJson($this->intake(), [
+            'fields' => ['name' => 'Ada', 'email' => 'ada@example.test'],
+            'webx_ts' => 'garbage',
+        ])->assertStatus(422)->assertJsonValidationErrors(['form']);
+
+        $this->assertSame(0, Submission::query()->count());
+    }
+
+    #[Test]
     public function it_ignores_a_timestamp_old_enough_to_have_come_from_a_cached_page(): void
     {
         $this->form('contact', [], ['antispam.min_seconds' => 3]);
@@ -324,6 +337,26 @@ final class IntakeTest extends TestCase
         }
 
         $this->postJson($this->intake(), ['fields' => ['name' => 'Ada', 'email' => 'a@example.test']])->assertStatus(429);
+    }
+
+    #[Test]
+    public function both_limits_answer_in_the_language_of_the_page(): void
+    {
+        config(['webx-localization.locales' => [['code' => 'en', 'default' => true], ['code' => 'ru']]]);
+        config(['webx-inbox.antispam.attempts' => 2]);
+        $this->form('contact', [], ['antispam.throttle' => 1]);
+
+        $sent = ['fields' => ['name' => 'Ada', 'email' => 'a@example.test'], 'webx_locale' => 'ru'];
+        $words = trans('webx-inbox::errors.too-many', [], 'ru');
+
+        $this->postJson($this->intake(), $sent)->assertOk();
+
+        // The form's own limit, checked by the controller…
+        $this->postJson($this->intake(), $sent)->assertStatus(429)->assertJson(['message' => $words]);
+
+        // …and the route's, which stops the door before the controller is reached.
+        $this->postJson($this->intake(), $sent)->assertStatus(429)->assertJson(['message' => $words]);
+        $this->assertNotSame('Too Many Attempts.', $words);
     }
 
     #[Test]
