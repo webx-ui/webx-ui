@@ -134,7 +134,19 @@ final class ScreenValues
             /** @var string $name */
             $name = $node['name'];
 
-            if (($node['localized'] ?? false) !== true || ! array_key_exists($name, $input)) {
+            if (! array_key_exists($name, $input)) {
+                continue;
+            }
+
+            if (($node['localized'] ?? false) !== true) {
+                // A value made of many (the SEO card) is merged by its own type: the edit names
+                // what changes, and everything it leaves out keeps what it had.
+                $type = $this->types->get((string) ($node['type'] ?? ''));
+
+                if ($type instanceof MergesEdits) {
+                    $input[$name] = $type->merge($current[$name] ?? null, $input[$name], $node);
+                }
+
                 continue;
             }
 
