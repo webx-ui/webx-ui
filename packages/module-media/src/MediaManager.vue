@@ -182,10 +182,22 @@ watch(compact, (narrow) => {
   }
 })
 
-async function load(): Promise<void> {
+/**
+ * The folders, then the files of the open one at page `to` — one request for each.
+ *
+ * Opening the first folder is a change the watcher on `current` already loads for, so the files
+ * are not asked for here as well: that was the same list twice on every visit.
+ */
+async function load(to = 1): Promise<void> {
   directories.value = await api.directories()
-  current.value ??= directories.value[0]?.id ?? null
-  await loadFiles(1)
+
+  if (current.value === null && directories.value[0] !== undefined) {
+    current.value = directories.value[0].id
+
+    return
+  }
+
+  await loadFiles(to)
 }
 
 async function loadFiles(to = page.value?.meta.current_page ?? 1): Promise<void> {
@@ -238,7 +250,7 @@ async function upload(event: Event): Promise<void> {
       toast.info(t('manager.duplicate-added'))
     }
 
-    await Promise.all([load(), loadFiles(1)])
+    await load(1)
   } catch (error) {
     toast.danger(message(error, t('errors.upload')))
   }
@@ -361,7 +373,7 @@ async function moveSelected(): Promise<void> {
   }
 
   await api.move([...selected.value], to)
-  await Promise.all([load(), loadFiles()])
+  await load(page.value?.meta.current_page ?? 1)
 }
 
 async function removeSelected(): Promise<void> {
@@ -377,7 +389,7 @@ async function removeSelected(): Promise<void> {
 
   if (agreed) {
     await api.remove(ids)
-    await Promise.all([load(), loadFiles()])
+    await load(page.value?.meta.current_page ?? 1)
   }
 }
 
@@ -388,7 +400,7 @@ async function rename(file: MediaFile, name: string): Promise<void> {
 
 async function remove(file: MediaFile): Promise<void> {
   await api.removeOne(file.id)
-  await Promise.all([load(), loadFiles()])
+  await load(page.value?.meta.current_page ?? 1)
 }
 
 /**
