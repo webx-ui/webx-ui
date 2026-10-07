@@ -40,6 +40,14 @@ class PruneSubmissionsCommand extends Command
         $spamDays = $this->days('spam-days', 'webx-inbox.prune.spam_days');
         $days = $this->days('days', 'webx-inbox.prune.days');
 
+        // A typo in a command that deletes is not a thing to guess around: --days=abc read as
+        // "the config" is somebody believing they asked for one thing and getting another.
+        if ($spamDays === null || $days === null) {
+            $this->components->error('--days and --spam-days are a whole number of days, 0 or more.');
+
+            return self::INVALID;
+        }
+
         if ($spamDays === 0 && $days === 0) {
             $this->components->info('Nothing is pruned: both ages are zero, which means keep everything.');
 
@@ -107,13 +115,16 @@ class PruneSubmissionsCommand extends Command
         return $ids;
     }
 
-    /** An age from the command line, or the site's own. Never negative: that would be the future. */
-    private function days(string $option, string $key): int
+    /**
+     * An age from the command line, or the site's own; null for one given that is not a
+     * whole number of days. Never negative: that would be the future.
+     */
+    private function days(string $option, string $key): ?int
     {
         $given = $this->option($option);
 
         if (is_scalar($given) && (string) $given !== '') {
-            return max(0, (int) $given);
+            return ctype_digit((string) $given) ? (int) $given : null;
         }
 
         $configured = $this->laravel->make('config')->get($key, 0);

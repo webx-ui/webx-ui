@@ -41,9 +41,12 @@ final class Delivery
      * A new attempt starts clean — the last one's error and delivery time belong to letters
      * that are no longer the ones in question.
      *
+     * The line in the log is not written here: it says the letters reached the queue, which is
+     * known only once they have been pushed — {@see Notifier} writes it then.
+     *
      * @param  list<string>  $addresses
      */
-    public function queued(Submission $submission, array $addresses, ?int $adminId = null): void
+    public function queued(Submission $submission, array $addresses): void
     {
         $now = Carbon::now();
 
@@ -58,8 +61,6 @@ final class Delivery
                 'at' => $now->toAtomString(),
             ], $addresses),
         ])->save();
-
-        $submission->log(SubmissionEvent::NOTIFY_QUEUED, null, (string) count($addresses), $adminId);
     }
 
     public function delivered(int $submissionId, string $address): void

@@ -30,6 +30,25 @@ final class PruneTest extends TestCase
     }
 
     #[Test]
+    public function an_age_that_is_not_a_whole_number_of_days_is_refused_and_nothing_goes(): void
+    {
+        config()->set('webx-inbox.prune', ['spam_days' => 30, 'days' => 30]);
+
+        $form = $this->form();
+        $this->aged($form, 400);
+
+        foreach (['--days=-5', '--days=abc', '--spam-days=1.5'] as $option) {
+            [$name, $value] = explode('=', $option);
+
+            $this->artisan('webx:inbox:prune', [$name => $value])
+                ->expectsOutputToContain('whole number of days')
+                ->assertExitCode(2);
+        }
+
+        $this->assertSame(1, Submission::query()->count());
+    }
+
+    #[Test]
     public function spam_goes_after_its_own_age_and_everything_else_stays(): void
     {
         config()->set('webx-inbox.prune', ['spam_days' => 30, 'days' => 0]);

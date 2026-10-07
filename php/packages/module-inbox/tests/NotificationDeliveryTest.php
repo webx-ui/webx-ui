@@ -130,6 +130,39 @@ final class NotificationDeliveryTest extends TestCase
     }
 
     #[Test]
+    public function a_letter_about_a_submission_deleted_in_the_meantime_is_dropped_quietly(): void
+    {
+        $queue = Queue::fake();
+
+        $submission = $this->send(['sales@example.test']);
+        $submission->delete();
+
+        // Before, the worker threw ModelNotFoundException unpacking the job — the letter went
+        // to failed_jobs and `failed()` tried to report on a row that is gone.
+        $this->work($queue);
+
+        $this->assertSame(0, Submission::query()->count());
+        $this->assertSame(0, SubmissionEvent::query()->count());
+    }
+
+    #[Test]
+    public function a_letter_that_never_reached_the_queue_is_not_said_to_be_queued(): void
+    {
+        // A queue whose table is not there: every push throws, as on a site whose queue
+        // database or mailer is misconfigured.
+        config([
+            'queue.default' => 'broken',
+            'queue.connections.broken' => ['driver' => 'database', 'table' => 'no_such_jobs', 'queue' => 'default'],
+        ]);
+
+        $submission = $this->send(['sales@example.test']);
+
+        $this->assertSame(Submission::NOTIFY_FAILED, $submission->notification()['state']);
+        $this->assertFalse($submission->events->contains('type', SubmissionEvent::NOTIFY_QUEUED));
+        $this->assertSame('sales@example.test', $submission->events->firstWhere('type', SubmissionEvent::NOTIFY_FAILED)?->to);
+    }
+
+    #[Test]
     public function a_letter_reported_twice_is_written_down_once(): void
     {
         $queue = Queue::fake();
