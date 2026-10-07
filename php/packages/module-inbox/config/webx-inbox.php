@@ -70,7 +70,9 @@ return [
     | — and note the trap in §7: on a page cached whole the hidden timestamp
     | belongs to the moment the cache was written, not to the moment somebody
     | opened the page, so a mark older than `stale_after` is not judged at all.
-    | `throttle` is submissions per minute from one address to one form.
+    | `throttle` is accepted submissions per minute from one address to one
+    | form; `attempts` is every request, refused ones included, so a person
+    | correcting a typo is not locked out while a script hammering the door is.
     |
     | `origins` are hosts allowed to post besides the application's own. A site
     | that serves its pages from more than one domain names the others here.
@@ -83,6 +85,7 @@ return [
         'min_seconds' => 3,
         'stale_after' => 86400,
         'throttle' => 5,
+        'attempts' => 20,
         'origins' => [],
     ],
 

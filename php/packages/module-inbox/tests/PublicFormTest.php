@@ -239,6 +239,28 @@ final class PublicFormTest extends TestCase
     }
 
     #[Test]
+    public function the_same_form_twice_on_a_page_repeats_no_id(): void
+    {
+        $this->form();
+
+        // A subscription in the footer and the same one in a popup.
+        $html = $this->render('<x-webx-inbox::form slug="contact" placement="footer" /><x-webx-inbox::form slug="contact" placement="popup" />');
+
+        preg_match_all('/\sid="([^"]+)"/', $html, $matches);
+        $ids = $matches[1];
+
+        $this->assertNotSame([], $ids);
+        $this->assertSame($ids, array_values(array_unique($ids)));
+
+        // The first copy keeps the plain names, the honeypot's label points into its own form.
+        $this->assertStringContainsString('id="wx-form-contact-name"', $html);
+        $this->assertStringContainsString('id="wx-form-contact-2-name"', $html);
+        $this->assertStringContainsString('<label for="wx-form-contact-hp">', $html);
+        $this->assertStringContainsString('<label for="wx-form-contact-2-hp">', $html);
+        $this->assertSame(2, substr_count($html, 'name="webx_hp"'));
+    }
+
+    #[Test]
     public function a_form_may_ask_for_no_honeypot_at_all(): void
     {
         $this->form('contact', [], ['antispam.honeypot' => false]);

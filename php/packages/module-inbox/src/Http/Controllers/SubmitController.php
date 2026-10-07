@@ -12,6 +12,7 @@ use Illuminate\Validation\ValidationException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Inbox\Antispam\Guard;
+use WebxUi\Inbox\Antispam\Throttle;
 use WebxUi\Inbox\Antispam\Verdict;
 use WebxUi\Inbox\Mail\Notifier;
 use WebxUi\Inbox\Models\Form;
@@ -36,6 +37,7 @@ final class SubmitController
         private readonly ValidationFactory $validator,
         private readonly LoggerInterface $log,
         private readonly Forms $forms,
+        private readonly Throttle $throttle,
     ) {}
 
     public function __invoke(Request $request, string $slug): JsonResponse|RedirectResponse
@@ -50,6 +52,10 @@ final class SubmitController
             throw new NotFoundHttpException;
         }
 
+        // Before anything else is looked at: an address that has already left as many
+        // submissions as the form takes is not let in to leave one more (§7).
+        $this->throttle->check($form, $request);
+
         $verdict = $this->guard->inspect($form, $request);
 
         if ($verdict === Verdict::Trap) {
@@ -59,6 +65,10 @@ final class SubmitController
                 'form' => $form->slug,
                 'ip' => $request->ip(),
             ]);
+
+            // Counted as the success it is told it was, so the robot meets the same limit a
+            // person would.
+            $this->throttle->hit($form, $request);
 
             return $this->accepted($form, $request);
         }
@@ -77,6 +87,10 @@ final class SubmitController
         $values = $this->validate($form, $request);
 
         $submission = $this->intake->receive($form, $values, $request);
+
+        // Only now: a refused or invalid attempt is somebody correcting a mistake, and it
+        // counts towards the route's higher limit instead.
+        $this->throttle->hit($form, $request);
 
         // Last, and on its own: everything above it is the submission, and a mail server that
         // is down must not undo any of it (§2.10).

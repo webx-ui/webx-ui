@@ -14,6 +14,7 @@ use WebxUi\Admin\ModuleRegistry;
 use WebxUi\Admin\Notes\NoteTypes;
 use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Audit\Checks\AuditChecks;
+use WebxUi\Inbox\Antispam\Throttle;
 use WebxUi\Inbox\Audit\NoRecipients;
 use WebxUi\Inbox\Audit\NotificationTrouble;
 use WebxUi\Inbox\Console\PruneSubmissionsCommand;
@@ -117,27 +118,24 @@ class InboxServiceProvider extends ServiceProvider
     }
 
     /**
-     * How often one address may submit one form (§7).
+     * How often one address may knock on one form, accepted or not (§7).
      *
-     * A named limiter rather than `throttle:5,1` on the route, because the number belongs to
+     * A named limiter rather than `throttle:20,1` on the route, because the number belongs to
      * the form: a support form that people send twice in a row is not a subscribe box. The
      * form is already in memory by the time this runs — the limiter and the controller share
-     * one lookup — so reading its setting costs nothing.
+     * one lookup — so reading its setting costs nothing. The limit on submissions that got
+     * through is the controller's, see {@see Throttle}.
      */
     private function registerRateLimiter(): void
     {
         RateLimiter::for('webx-inbox', function (Request $request): Limit {
             $slug = (string) $request->route('slug');
-            $form = $this->app->make(Forms::class)->enabled($slug);
 
-            $perMinute = $form !== null
-                ? (int) $form->antispam('throttle')
-                : (int) $this->app->make('config')->get('webx-inbox.antispam.throttle', 5);
-
-            // Zero turns it off, which is a thing a site behind its own rate limiting wants.
-            return $perMinute <= 0
-                ? Limit::none()
-                : Limit::perMinute($perMinute)->by($request->ip().'|'.$slug);
+            return $this->app->make(Throttle::class)->attempts(
+                $this->app->make(Forms::class)->enabled($slug),
+                $request,
+                $slug,
+            );
         });
     }
 }
