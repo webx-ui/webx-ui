@@ -141,7 +141,7 @@ final class InboxTools
                 ['properties' => [
                     'form' => $form,
                     'view' => ['type' => 'string', 'description' => 'all · unread · the key of a status, as inbox_forms_list and the counts report them.'],
-                    'assignee' => ['type' => ['integer', 'string'], 'description' => 'An administrator id, or "none" for the pile nobody has picked up.'],
+                    'assignee' => ['type' => ['integer', 'string'], 'description' => 'An administrator by id or by email address, or "none" for the pile nobody has picked up.'],
                     'from' => ['type' => 'string', 'description' => 'On or after this date, YYYY-MM-DD.'],
                     'to' => ['type' => 'string', 'description' => 'On or before this date, YYYY-MM-DD.'],
                     'search' => ['type' => 'string', 'description' => 'Text in any answer, or a submission id.'],
@@ -445,13 +445,13 @@ final class InboxTools
         $list = ListQuery::for($form);
 
         $request = $this->request([
-            'view' => (string) ($arguments['view'] ?? ListQuery::VIEW_ALL),
-            'assignee' => $arguments['assignee'] ?? null,
-            'from' => $arguments['from'] ?? null,
-            'to' => $arguments['to'] ?? null,
+            'view' => $this->view($list, $arguments['view'] ?? null),
+            'assignee' => $this->assigneeFilter($arguments['assignee'] ?? null),
+            'from' => $this->day($arguments, 'from'),
+            'to' => $this->day($arguments, 'to'),
             'search' => $arguments['search'] ?? null,
             'placement' => $arguments['placement'] ?? null,
-            'sort' => $arguments['sort'] ?? null,
+            'sort' => $this->sort($list, $arguments['sort'] ?? null),
         ]);
 
         $perPage = min(100, max(5, (int) ($arguments['per_page'] ?? self::PER_PAGE)));
@@ -477,6 +477,80 @@ final class InboxTools
                 $page->items(),
             ),
         ];
+    }
+
+    /**
+     * The filters of `inbox_list`, each refused by name when it cannot be read.
+     *
+     * An agent cannot tell "this form has nothing under that filter" from "that filter is not
+     * one" — both used to come back as a total of 0 — so a view, a sort or a date nobody has is
+     * an answer that says so, with the ones that exist.
+     */
+    private function view(ListQuery $list, mixed $view): string
+    {
+        $view = trim((string) ($view ?? ''));
+
+        if ($view === '') {
+            return ListQuery::VIEW_ALL;
+        }
+
+        $views = $list->views();
+
+        return in_array($view, $views, true)
+            ? $view
+            : throw new ToolFailure("There is no view [{$view}]. The views are: ".implode(', ', $views).'.');
+    }
+
+    /** An administrator by id or by email, or "none" for the pile nobody has picked up. */
+    private function assigneeFilter(mixed $assignee): ?string
+    {
+        if ($assignee === null || $assignee === '') {
+            return null;
+        }
+
+        if ($assignee === 'none') {
+            return 'none';
+        }
+
+        if (! is_int($assignee) && ! is_string($assignee)) {
+            throw new ToolFailure('`assignee` is an administrator id, an email address, or "none".');
+        }
+
+        $admin = $this->assignee($assignee);
+
+        return $admin === null ? null : (string) $admin->getKey();
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     */
+    private function day(array $arguments, string $key): ?string
+    {
+        $value = $arguments[$key] ?? null;
+
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return is_string($value) && ListQuery::day($value) !== null
+            ? $value
+            : throw new ToolFailure("`{$key}` is a date, YYYY-MM-DD — a day that exists.");
+    }
+
+    private function sort(ListQuery $list, mixed $sort): ?string
+    {
+        $sort = trim((string) ($sort ?? ''));
+
+        if ($sort === '') {
+            return null;
+        }
+
+        $sorts = $list->sorts();
+
+        return in_array(ltrim($sort, '-'), $sorts, true)
+            ? $sort
+            : throw new ToolFailure("The list cannot be sorted by [{$sort}]. It sorts by: ".implode(', ', $sorts)
+                .'; a leading - reverses it. A values.<name> sort is only there for a field shown in the list (in_table).');
     }
 
     /**

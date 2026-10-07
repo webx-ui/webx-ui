@@ -371,6 +371,33 @@ final class PanelSubmissionsTest extends TestCase
     }
 
     #[Test]
+    public function a_filter_that_cannot_be_read_is_refused_rather_than_answered_with_nothing(): void
+    {
+        $form = $this->form();
+        $this->filled($form, ['name' => 'Ada']);
+        $editor = $this->editor();
+
+        foreach (['from=not-a-date', 'to=2026-02-30', 'view=bogus', 'assignee=abc'] as $query) {
+            $this->actingAs($editor, 'cms')
+                ->getJson($this->api('forms/'.$form->getKey().'/submissions?'.$query))
+                ->assertStatus(422)
+                ->assertJsonValidationErrors([explode('=', $query)[0]]);
+        }
+
+        $this->actingAs($editor, 'cms')
+            ->getJson($this->api('forms/'.$form->getKey().'/submissions?from=2020-01-01&to=2099-12-31&view=new&assignee=none'))
+            ->assertOk()
+            ->assertJsonPath('meta.total', 1);
+
+        // An open submission carries the list's filters for its arrows, and a hand-edited
+        // address there is not a 500 either.
+        $submission = Submission::query()->sole();
+        $this->actingAs($editor, 'cms')
+            ->getJson($this->api('submissions/'.$submission->getKey().'?from=not-a-date'))
+            ->assertOk();
+    }
+
+    #[Test]
     public function the_export_does_not_hand_a_spreadsheet_a_formula(): void
     {
         $form = $this->form();

@@ -44,6 +44,7 @@ final class SubmissionController
     public function index(Request $request, Form $form): JsonResponse
     {
         $list = ListQuery::for($form);
+        $request->validate($list->rules());
 
         $page = $list->build($request)->paginate(
             min(100, max(5, (int) $request->integer('per_page', ListQuery::PER_PAGE))),

@@ -7,6 +7,8 @@ namespace WebxUi\Inbox\Submissions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
+use Throwable;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Status;
@@ -48,6 +50,57 @@ final class ListQuery
             ->all();
 
         return new self($form, array_values($columns));
+    }
+
+    /**
+     * What the filters of the list may hold, for the door that reads them to refuse with.
+     *
+     * A filter that cannot be read used to be read anyway: a date that was not one reached
+     * `Carbon::parse` and came back as a 500, an assignee that was not a number was cast to 0,
+     * a view nobody has was a list of nothing — and "nothing came in" is exactly what a typo
+     * must not look like. The sort is not here: the panel keeps it in the address, and a
+     * column taken out of the list since is not a reason to stop showing the list.
+     *
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        return [
+            'view' => ['nullable', 'string', Rule::in($this->views())],
+            'assignee' => ['nullable', 'regex:/^(none|\d+)$/'],
+            // Strictly: `date` would take "next tuesday", and `Y-m-d` alone would let
+            // 2026-02-30 roll over into March without a word.
+            'from' => ['nullable', 'date_format:Y-m-d'],
+            'to' => ['nullable', 'date_format:Y-m-d'],
+        ];
+    }
+
+    /**
+     * Every tab the list has: all, unread, and each status by key.
+     *
+     * @return list<string>
+     */
+    public function views(): array
+    {
+        /** @var list<string> $keys */
+        $keys = Status::query()->orderBy('position')->pluck('key')->all();
+
+        return [self::VIEW_ALL, self::VIEW_UNREAD, ...$keys];
+    }
+
+    /**
+     * Every order the list can be put in, ascending; a leading `-` reverses each.
+     *
+     * @return list<string>
+     */
+    public function sorts(): array
+    {
+        return [
+            'created_at',
+            'id',
+            'status',
+            ...array_map(static fn (Field $field): string => 'values.'.$field->key(), $this->columns),
+        ];
     }
 
     /** The alias one field's answers arrive under. */
@@ -231,12 +284,15 @@ final class ListQuery
                 : $query->where('assignee_id', (int) $assignee);
         }
 
-        if ($request->filled('from')) {
-            $query->where('inbox_submissions.created_at', '>=', Carbon::parse((string) $request->query('from'))->startOfDay());
+        $from = self::day($request->query('from'));
+        $to = self::day($request->query('to'));
+
+        if ($from !== null) {
+            $query->where('inbox_submissions.created_at', '>=', $from->startOfDay());
         }
 
-        if ($request->filled('to')) {
-            $query->where('inbox_submissions.created_at', '<=', Carbon::parse((string) $request->query('to'))->endOfDay());
+        if ($to !== null) {
+            $query->where('inbox_submissions.created_at', '<=', $to->endOfDay());
         }
 
         if ($request->filled('placement')) {
@@ -322,6 +378,29 @@ final class ListQuery
         $column === null
             ? $query->orderByDesc('inbox_submissions.id')
             : $query->orderBy($column, $direction)->orderByDesc('inbox_submissions.id');
+    }
+
+    /**
+     * A day of the date filters, or null for one that is not a day.
+     *
+     * The doors refuse a bad date with {@see rules()}; this is the floor under them — the
+     * arrows of an open submission carry the list's filters too, and a hand-edited address
+     * must not turn them into a 500.
+     */
+    public static function day(mixed $value): ?Carbon
+    {
+        if (! is_string($value) || $value === '') {
+            return null;
+        }
+
+        // Carbon throws where PHP would answer false.
+        try {
+            $day = Carbon::createFromFormat('!Y-m-d', $value);
+        } catch (Throwable) {
+            return null;
+        }
+
+        return $day instanceof Carbon && $day->format('Y-m-d') === $value ? $day : null;
     }
 
     /**

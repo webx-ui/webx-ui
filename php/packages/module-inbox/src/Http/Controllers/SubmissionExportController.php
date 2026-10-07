@@ -34,7 +34,10 @@ final class SubmissionExportController
         /** @var list<Field> $fields */
         $fields = $form->fields()->get()->all();
 
-        $query = ListQuery::for($form)->build($request)->with('values');
+        $list = ListQuery::for($form);
+        $request->validate($list->rules());
+
+        $query = $list->build($request)->with('values');
 
         $name = $form->slug.'-'.Carbon::now()->format('Y-m-d-His').'.csv';
 

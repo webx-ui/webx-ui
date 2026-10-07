@@ -308,6 +308,24 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function a_filter_that_is_not_one_is_refused_by_name_rather_than_answered_with_nothing(): void
+    {
+        $form = $this->form();
+        $owner = $this->editor();
+        $this->filled($form, ['name' => 'Ada'], ['assignee_id' => $owner->getKey()]);
+
+        $this->agent('list', ['form' => 'contact', 'view' => 'bogus'])->assertHasErrors(['There is no view [bogus]', 'unread', 'in-progress']);
+        $this->agent('list', ['form' => 'contact', 'assignee' => 'abc'])->assertHasErrors(['No administrator matches [abc]']);
+        $this->agent('list', ['form' => 'contact', 'from' => 'not-a-date'])->assertHasErrors(['`from` is a date, YYYY-MM-DD']);
+        $this->agent('list', ['form' => 'contact', 'to' => '2026-02-30'])->assertHasErrors(['`to` is a date']);
+        $this->agent('list', ['form' => 'contact', 'sort' => '-bogus'])->assertHasErrors(['cannot be sorted by [-bogus]', 'values.name']);
+
+        // The assignee by email, the way inbox_set_status takes one.
+        $mine = $this->content($this->agent('list', ['form' => 'contact', 'assignee' => $owner->email, 'sort' => '-values.name'])->assertOk());
+        $this->assertSame(1, $mine['total']);
+    }
+
+    #[Test]
     public function the_agent_sees_where_a_submission_was_sent_from_and_filters_by_it(): void
     {
         $form = $this->form();
