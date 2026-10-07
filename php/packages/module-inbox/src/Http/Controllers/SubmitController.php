@@ -14,6 +14,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use WebxUi\Inbox\Antispam\Captcha;
 use WebxUi\Inbox\Antispam\Guard;
 use WebxUi\Inbox\Antispam\Inspection;
+use WebxUi\Inbox\Antispam\Refusals;
 use WebxUi\Inbox\Antispam\Throttle;
 use WebxUi\Inbox\Antispam\Verdict;
 use WebxUi\Inbox\Mail\Notifier;
@@ -40,6 +41,7 @@ final class SubmitController
         private readonly LoggerInterface $log,
         private readonly Forms $forms,
         private readonly Throttle $throttle,
+        private readonly Refusals $refusals,
     ) {}
 
     public function __invoke(Request $request, string $slug): JsonResponse|RedirectResponse
@@ -72,6 +74,7 @@ final class SubmitController
             // Counted as the success it is told it was, so the robot meets the same limit a
             // person would.
             $this->throttle->hit($form, $request);
+            $this->refusals->record($form);
 
             return $this->accepted($form, $request);
         }
@@ -85,6 +88,9 @@ final class SubmitController
                 'reason' => $inspection->reason,
                 ...$inspection->details,
             ]);
+
+            // Counted, so the audit can tell a form robots have found from one they have not.
+            $this->refusals->record($form);
 
             throw ValidationException::withMessages($this->refusal($inspection));
         }

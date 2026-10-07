@@ -43,22 +43,16 @@ final class CaptchaKeys extends ModuleCheck
                 continue;
             }
 
-            $title = $this->title($form);
+            $title = FormTitle::of($form);
             $name = (string) __('webx-inbox::panel.captcha-'.$provider);
+            // Named the way they are written in the `.env`, which reads the same in every language.
+            $missing = implode(', ', array_map(static fn (string $half): string => 'WEBX_INBOX_'.strtoupper($provider).'_'.strtoupper($half), $this->captcha->missing($provider)));
 
-            yield $this->found('captcha-keys', ['form' => $title, 'slug' => $form->slug, 'provider' => $name], key: (string) $form->id, table: [
+            yield $this->found('captcha-keys', ['form' => $title, 'slug' => $form->slug, 'provider' => $name, 'missing' => $missing], key: (string) $form->id, table: [
                 'columns' => [Finding::column('title'), Finding::column('value'), Finding::column('edit', 'edit')],
                 // The fix is in the `.env`; the other way out is the form's own antispam tab.
-                'rows' => [['title' => $title, 'value' => $name, 'edit' => '/inbox/forms/'.$form->id.'?tab=antispam']],
+                'rows' => [['title' => $title, 'value' => $missing, 'edit' => '/inbox/forms/'.$form->id.'?tab=antispam']],
             ]);
         }
-    }
-
-    /** The name in the language the audit is read in, or the slug where it has none. */
-    private function title(Form $form): string
-    {
-        $title = $form->getTranslation('title', app()->getLocale());
-
-        return is_string($title) && $title !== '' ? $title : $form->slug;
     }
 }

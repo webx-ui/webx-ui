@@ -22,5 +22,17 @@ return [
             'why' => 'Sans clé du site le widget n’est pas affiché ; sans secret aucune réponse ne peut être vérifiée. Dans les deux cas le formulaire refuse chaque envoi et les visiteurs ne peuvent pas vous joindre.',
             'fix' => 'Ajoutez WEBX_INBOX_RECAPTCHA_KEY et WEBX_INBOX_RECAPTCHA_SECRET (ou la paire TURNSTILE) au .env du site, avec WEBX_INBOX_RECAPTCHA_TYPE selon le type de clé, et videz le cache de configuration (php artisan config:clear). Ou désactivez le captcha dans l’onglet Antispam du formulaire.',
         ],
+        'captcha_unused' => [
+            'title' => 'Formulaires sans captcha sur un site qui a les clés',
+            'found' => 'Un formulaire activé ne demande pas de captcha, alors que le site a des clés pour reCAPTCHA ou Turnstile.',
+            'why' => 'Le champ caché, l’horodatage et la limite par adresse arrêtent la plupart des robots, ce n’est donc qu’une remarque : le captcha est prêt pour le jour où le formulaire recevra du spam.',
+            'fix' => 'Si le formulaire reçoit du spam, activez le captcha dans son onglet Antispam. Sinon, ignorez ce problème.',
+        ],
+        'spam_without_captcha' => [
+            'title' => 'Formulaires sans captcha qui reçoivent du spam',
+            'found' => 'Un formulaire activé sans captcha a reçu ces derniers jours des envois marqués comme spam, ou l’antispam a refusé des envois.',
+            'why' => 'Des robots ont trouvé le formulaire. Ce qui passe arrive dans la boîte et dans les notifications, et les couches gratuites sont justement ce qu’ils essaient de contourner.',
+            'fix' => 'Activez un captcha dans l’onglet Antispam du formulaire — le site a besoin de ses clés dans le .env — et gardez le champ caché. Les refus sont comptés par jour dans le cache : un cache vidé repart de zéro.',
+        ],
     ],
 ];

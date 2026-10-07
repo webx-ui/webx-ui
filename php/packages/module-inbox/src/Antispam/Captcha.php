@@ -126,15 +126,37 @@ final class Captcha
     /** Whether the site holds both halves of a provider's keys. */
     public function configured(string $provider): bool
     {
+        return $this->missing($provider) === [];
+    }
+
+    /**
+     * The halves of a provider's keys the site does not have: `key`, `secret`, both or none.
+     *
+     * @return list<'key'|'secret'>
+     */
+    public function missing(string $provider): array
+    {
+        $missing = [];
+
         foreach (['key', 'secret'] as $half) {
             $value = $this->config->get("webx-inbox.captcha.{$provider}.{$half}");
 
             if (! is_string($value) || $value === '') {
-                return false;
+                $missing[] = $half;
             }
         }
 
-        return true;
+        return $missing;
+    }
+
+    /**
+     * The providers the site has both halves of the keys for.
+     *
+     * @return list<string>
+     */
+    public function available(): array
+    {
+        return array_values(array_filter(array_keys(self::RESPONSE_FIELDS), $this->configured(...)));
     }
 
     /** The name of the hidden input that carries the answer, for the form on the site. */

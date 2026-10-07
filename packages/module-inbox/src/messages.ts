@@ -73,16 +73,23 @@ export const inboxMessages: Record<string, Messages> = {
     throttle: 'Sends a minute from one address',
     'throttle-help': 'Zero switches the limit off.',
     captcha: 'Captcha',
-    'captcha-keys': 'The keys are not set in the panel but in the site’s .env: WEBX_INBOX_RECAPTCHA_KEY / WEBX_INBOX_RECAPTCHA_SECRET for reCAPTCHA, WEBX_INBOX_TURNSTILE_KEY / WEBX_INBOX_TURNSTILE_SECRET for Turnstile.',
+    'captcha-keys':
+      'The keys are not set in the panel but in the site’s .env: WEBX_INBOX_RECAPTCHA_KEY / WEBX_INBOX_RECAPTCHA_SECRET for reCAPTCHA, WEBX_INBOX_TURNSTILE_KEY / WEBX_INBOX_TURNSTILE_SECRET for Turnstile.',
     'captcha-off': 'Off',
     'captcha-recaptcha': 'reCAPTCHA',
     'captcha-turnstile': 'Turnstile',
-    'captcha-unconfigured': 'The site has no keys for this captcha yet, so the form refuses every submission until they are in its .env.',
-    'captcha-recaptcha-checkbox': 'This site draws reCAPTCHA as the “I’m not a robot” checkbox, so its keys must be v2 Checkbox keys. To run it invisibly, create v2 Invisible keys and set WEBX_INBOX_RECAPTCHA_TYPE=invisible.',
-    'captcha-recaptcha-invisible': 'This site runs reCAPTCHA invisibly when the form is sent, so its keys must be v2 Invisible keys (WEBX_INBOX_RECAPTCHA_TYPE=invisible).',
-    'captcha-recaptcha-v3': 'This site runs reCAPTCHA v3: no widget, only a score checked when the form is sent, so its keys must be v3 keys (WEBX_INBOX_RECAPTCHA_TYPE=v3).',
-    'captcha-turnstile-checkbox': 'This site draws Turnstile when the page opens, and a Managed widget shows visitors “Verify you are human”. To run it invisibly, set WEBX_INBOX_TURNSTILE_MODE=invisible and the widget mode to Invisible in Cloudflare.',
-    'captcha-turnstile-invisible': 'This site runs Turnstile invisibly when the form is sent. Set the widget mode to Invisible in Cloudflare: a Managed widget still shows a challenge when it decides one is needed.',
+    'captcha-unconfigured':
+      'The site has no keys for this captcha yet, so the form refuses every submission until they are in its .env.',
+    'captcha-recaptcha-checkbox':
+      'This site draws reCAPTCHA as the “I’m not a robot” checkbox, so its keys must be v2 Checkbox keys. To run it invisibly, create v2 Invisible keys and set WEBX_INBOX_RECAPTCHA_TYPE=invisible.',
+    'captcha-recaptcha-invisible':
+      'This site runs reCAPTCHA invisibly when the form is sent, so its keys must be v2 Invisible keys (WEBX_INBOX_RECAPTCHA_TYPE=invisible).',
+    'captcha-recaptcha-v3':
+      'This site runs reCAPTCHA v3: no widget, only a score checked when the form is sent, so its keys must be v3 keys (WEBX_INBOX_RECAPTCHA_TYPE=v3).',
+    'captcha-turnstile-checkbox':
+      'This site draws Turnstile when the page opens, and a Managed widget shows visitors “Verify you are human”. To run it invisibly, set WEBX_INBOX_TURNSTILE_MODE=invisible and the widget mode to Invisible in Cloudflare.',
+    'captcha-turnstile-invisible':
+      'This site runs Turnstile invisibly when the form is sent. Set the widget mode to Invisible in Cloudflare: a Managed widget still shows a challenge when it decides one is needed.',
     'embed-blade': 'On a page of the site',
     'embed-blade-help':
       'Put the tag where the form belongs. The markup is published and rewritten by the site.',

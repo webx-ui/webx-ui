@@ -14,6 +14,7 @@ use WebxUi\Audit\Hosts\HostClassifier;
 use WebxUi\Audit\Probes\ProbeSet;
 use WebxUi\Audit\Probes\SiteClient;
 use WebxUi\Audit\Runs\AuditRun;
+use WebxUi\Inbox\Models\Status;
 
 /**
  * What the inbox brings to the site audit when the audit is installed: the forms that would
@@ -76,10 +77,81 @@ final class AuditTest extends TestCase
         $this->assertSame('error', $findings[0]->severity);
         $this->assertSame((string) $broken->getKey(), $findings[0]->key);
         $this->assertSame('/inbox/forms/'.$broken->getKey().'?tab=antispam', $findings[0]->details['table']['rows'][0]['edit'] ?? null);
+        // What is missing, named the way the .env spells it.
+        $this->assertSame('WEBX_INBOX_RECAPTCHA_SECRET', $findings[0]->details['table']['rows'][0]['value'] ?? null);
 
         foreach (['title', 'found', 'why', 'fix'] as $text) {
             $key = 'webx-inbox::checks.inbox.captcha_keys.'.$text;
             $this->assertNotSame($key, __($key), $text);
+        }
+    }
+
+    #[Test]
+    public function a_site_without_captcha_keys_is_not_told_its_forms_have_no_captcha(): void
+    {
+        // The free layers are the default protection; most sites never set a captcha up.
+        $this->form('contact');
+
+        $this->assertSame([], $this->findings('inbox.captcha_unused'));
+    }
+
+    #[Test]
+    public function a_site_with_keys_hears_of_the_forms_left_without_a_captcha_as_a_notice(): void
+    {
+        config()->set('webx-inbox.captcha.turnstile.key', 'site-key');
+        config()->set('webx-inbox.captcha.turnstile.secret', 'secret');
+
+        $bare = $this->form('contact');
+        $this->form('callback', [], ['antispam.captcha' => 'turnstile']);
+        $this->form('old')->update(['is_enabled' => false]);
+
+        $findings = $this->findings('inbox.captcha_unused');
+
+        $this->assertCount(1, $findings);
+        $this->assertSame('notice', $findings[0]->severity);
+        $this->assertSame((string) $bare->getKey(), $findings[0]->key);
+        $this->assertSame('Turnstile', $findings[0]->details['table']['rows'][0]['value'] ?? null);
+    }
+
+    #[Test]
+    public function a_form_without_a_captcha_that_draws_spam_is_a_warning(): void
+    {
+        $spam = Status::spam();
+        $this->assertNotNull($spam);
+
+        $found = $this->form('contact');
+        $quiet = $this->form('callback');
+        $guarded = $this->form('careers', [], ['antispam.captcha' => 'recaptcha']);
+
+        // Two marked as spam, and one the honeypot trapped: three, the default minimum.
+        $this->submission($found, ['status_id' => $spam->getKey()]);
+        $this->submission($found, ['status_id' => $spam->getKey()]);
+        $this->postJson($this->intake('contact'), ['fields' => ['name' => 'Bot'], 'webx_hp' => 'x'])->assertOk();
+
+        // Below the minimum: one test of the honeypot is not a finding.
+        $this->submission($quiet, ['status_id' => $spam->getKey()]);
+
+        // Long ago is not now.
+        $this->submission($quiet, ['status_id' => $spam->getKey(), 'created_at' => now()->subDays(60)]);
+        $this->submission($quiet, ['status_id' => $spam->getKey(), 'created_at' => now()->subDays(60)]);
+
+        // A form with a captcha is past what this check would advise.
+        foreach (range(1, 5) as $ignored) {
+            $this->submission($guarded, ['status_id' => $spam->getKey()]);
+        }
+
+        $findings = $this->findings('inbox.spam_without_captcha');
+
+        $this->assertCount(1, $findings);
+        $this->assertSame('warning', $findings[0]->severity);
+        $this->assertSame((string) $found->getKey(), $findings[0]->key);
+        $this->assertSame('2 + 1', $findings[0]->details['table']['rows'][0]['value'] ?? null);
+
+        foreach (['captcha_unused', 'spam_without_captcha'] as $check) {
+            foreach (['title', 'found', 'why', 'fix'] as $text) {
+                $key = 'webx-inbox::checks.inbox.'.$check.'.'.$text;
+                $this->assertNotSame($key, __($key), $key);
+            }
         }
     }
 

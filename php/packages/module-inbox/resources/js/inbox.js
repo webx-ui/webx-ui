@@ -244,7 +244,9 @@
 
     if (type === 'checkbox') {
       var answer = widget.querySelector(
-        '[name="' + (provider === 'turnstile' ? 'cf-turnstile-response' : 'g-recaptcha-response') + '"]',
+        '[name="' +
+          (provider === 'turnstile' ? 'cf-turnstile-response' : 'g-recaptcha-response') +
+          '"]',
       )
 
       if (answer && !answer.value) {

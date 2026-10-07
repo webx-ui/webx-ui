@@ -1,7 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useTranslate } from '@webx-ui/module-admin'
-import { WxAlert, WxCard, WxFormItem, WxInputNumber, WxSelect, WxSwitch, WxText } from '@webx-ui/core'
+import {
+  WxAlert,
+  WxCard,
+  WxFormItem,
+  WxInputNumber,
+  WxSelect,
+  WxSwitch,
+  WxText,
+} from '@webx-ui/core'
 import { option } from './options'
 import type { CaptchaProvider, CaptchaSite, FormOptions } from './types'
 

@@ -16,8 +16,10 @@ use WebxUi\Admin\Relations\RelationTargets;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Inbox\Antispam\Throttle;
 use WebxUi\Inbox\Audit\CaptchaKeys;
+use WebxUi\Inbox\Audit\CaptchaUnused;
 use WebxUi\Inbox\Audit\NoRecipients;
 use WebxUi\Inbox\Audit\NotificationTrouble;
+use WebxUi\Inbox\Audit\SpamWithoutCaptcha;
 use WebxUi\Inbox\Console\PruneSubmissionsCommand;
 use WebxUi\Inbox\Events\SubmissionStored;
 use WebxUi\Inbox\Models\Submission;
@@ -73,6 +75,12 @@ class InboxServiceProvider extends ServiceProvider
 
             // And one that asks for a captcha the site has no keys for refuses every enquiry.
             $this->app->make(AuditChecks::class)->register($this->app->make(CaptchaKeys::class));
+
+            // A site with keys and a form left without them is a notice; a form without a
+            // captcha that robots have found is the one that says it needs one. There is no
+            // check for a form without a captcha as such: the free layers are the default.
+            $this->app->make(AuditChecks::class)->register($this->app->make(CaptchaUnused::class));
+            $this->app->make(AuditChecks::class)->register($this->app->make(SpamWithoutCaptcha::class));
         }
 
         // Notes on a submission are the panel's own feature, not this module's (§2.17): the
