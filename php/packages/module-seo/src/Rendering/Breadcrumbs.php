@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Rendering;
 
 use Illuminate\Contracts\Translation\Translator;
+use Illuminate\Support\Facades\URL;
+use WebxUi\Routing\Models\Route;
+use WebxUi\Routing\RouteType;
+use WebxUi\Routing\RouteTypes;
 use WebxUi\Routing\SiteUrl;
+use WebxUi\Routing\UrlNormaliser;
 use WebxUi\Seo\Contracts\Crumb;
 use WebxUi\Seo\Contracts\HasBreadcrumbs;
 use WebxUi\Settings\Settings;
@@ -24,6 +29,7 @@ final class Breadcrumbs
     public function __construct(
         private readonly SiteUrl $site,
         private readonly Translator $translator,
+        private readonly RouteTypes $types,
     ) {}
 
     /**
@@ -44,7 +50,70 @@ final class Breadcrumbs
             return [];
         }
 
-        return [new Crumb($this->home($locale), $this->site->to('/', $locale)), ...$own];
+        return [new Crumb($this->home($locale), $this->site->to('/', $locale)), ...$this->pagesOnly($own, $locale)];
+    }
+
+    /**
+     * The steps whose address shows a page — the same line the sitemap draws.
+     *
+     * A category whose handler only sends the reader on ({@see \WebxUi\Routing\Contracts\NotAPage})
+     * still has a canonical address, and the module's trail names it like any other. Printed, it
+     * is a crumb that answers 301 and a `BreadcrumbList` item a crawler is told is a page; so it
+     * is dropped here, once, for every module, rather than in each trail. The last step is the
+     * page being rendered and is never asked about.
+     *
+     * @param  list<Crumb>  $own
+     * @return list<Crumb>
+     */
+    private function pagesOnly(array $own, string $locale): array
+    {
+        $types = array_values(array_map(
+            static fn (RouteType $type): string => $type->type,
+            array_filter($this->types->all(), static fn (RouteType $type): bool => ! $type->servesPages()),
+        ));
+
+        if ($types === [] || count($own) < 2) {
+            return $own;
+        }
+
+        $host = parse_url(URL::to('/'), PHP_URL_HOST);
+        $prefix = UrlNormaliser::key($this->site->prefix($locale));
+        $keys = [];
+
+        foreach (array_slice($own, 0, -1, true) as $i => $crumb) {
+            if ($crumb->url === null || parse_url($crumb->url, PHP_URL_HOST) !== $host) {
+                continue;
+            }
+
+            $key = UrlNormaliser::key($crumb->url);
+
+            if ($prefix !== '' && ($key === $prefix || str_starts_with($key, $prefix.'/'))) {
+                $key = ltrim(substr($key, strlen($prefix)), '/');
+            }
+
+            $keys[$i] = $key;
+        }
+
+        if ($keys === []) {
+            return $own;
+        }
+
+        $redirecting = Route::query()
+            ->whereIn('entity_type', $types)
+            ->where('locale', $locale)
+            ->whereIn('path', array_values(array_unique($keys)))
+            ->pluck('path')
+            ->all();
+
+        if ($redirecting === []) {
+            return $own;
+        }
+
+        return array_values(array_filter(
+            $own,
+            static fn (Crumb $crumb, int $i): bool => ! isset($keys[$i]) || ! in_array($keys[$i], $redirecting, true),
+            ARRAY_FILTER_USE_BOTH,
+        ));
     }
 
     /**
