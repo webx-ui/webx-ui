@@ -180,7 +180,9 @@ final class RegistryTool extends McpTool
             return Response::error('Not accepted — '.implode('; ', $lines));
         }
 
-        return Results::toResponse($result);
+        return Results::toResponse(
+            Container::getInstance()->make(EmptyMaps::class)->apply($result, $this->bound->tool->inputSchema),
+        );
     }
 
     /**

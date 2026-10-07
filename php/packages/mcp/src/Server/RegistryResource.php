@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Mcp\Server;
 
+use Illuminate\Container\Container;
 use Illuminate\Support\Str;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -45,6 +46,8 @@ final class RegistryResource extends McpResourceBase
 
     public function handle(Request $request): Response
     {
-        return Response::text(Results::toText(($this->resource->handler)($request->all())));
+        $result = ($this->resource->handler)($request->all());
+
+        return Response::text(Results::toText(Container::getInstance()->make(EmptyMaps::class)->apply($result)));
     }
 }
