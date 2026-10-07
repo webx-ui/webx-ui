@@ -6,6 +6,7 @@ namespace WebxUi\Seo\Rendering;
 
 use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Support\Facades\URL;
+use WebxUi\Routing\Contracts\NotAPage;
 use WebxUi\Routing\Models\Route;
 use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
@@ -56,7 +57,7 @@ final class Breadcrumbs
     /**
      * The steps whose address shows a page — the same line the sitemap draws.
      *
-     * A category whose handler only sends the reader on ({@see \WebxUi\Routing\Contracts\NotAPage})
+     * A category whose handler only sends the reader on ({@see NotAPage})
      * still has a canonical address, and the module's trail names it like any other. Printed, it
      * is a crumb that answers 301 and a `BreadcrumbList` item a crawler is told is a page; so it
      * is dropped here, once, for every module, rather than in each trail. The last step is the

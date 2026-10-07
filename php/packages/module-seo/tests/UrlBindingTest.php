@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Tests;
 
 use PHPUnit\Framework\Attributes\Test;
-use WebxUi\Seo\Models\SeoRedirect;
 use WebxUi\Routing\Formatters\Slug;
 use WebxUi\Routing\RouteType;
 use WebxUi\Routing\RouteTypes;
+use WebxUi\Seo\Models\SeoRedirect;
 use WebxUi\Seo\Models\SeoUrl;
 use WebxUi\Seo\Panel\AddressReport;
 use WebxUi\Seo\Panel\UrlRuleSource;
