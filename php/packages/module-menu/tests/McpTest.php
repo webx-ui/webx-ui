@@ -190,6 +190,32 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function an_entity_nothing_answers_for_is_refused_on_add_and_on_update(): void
+    {
+        $this->agent('add_link', [
+            'menu' => 'header',
+            'target' => 'entity',
+            'entity_type' => 'thing',
+            'entity_id' => 9999,
+        ])->assertHasErrors(['There is no thing #9999']);
+
+        $this->assertSame(0, MenuItem::query()->count());
+
+        $thing = $this->thing('services', 'Services');
+        $item = $this->item(['target' => 'entity', 'entity_type' => 'thing', 'entity_id' => $thing->getKey()]);
+
+        $this->agent('update_link', ['menu' => 'header', 'item' => $item->getKey(), 'entity_id' => 9999])
+            ->assertHasErrors(['There is no thing #9999']);
+
+        $this->assertSame($thing->getKey(), $item->refresh()->entity_id);
+
+        // An item whose entity went away later is still editable for everything else.
+        $thing->delete();
+
+        $this->agent('update_link', ['menu' => 'header', 'item' => $item->getKey(), 'visible' => false])->assertOk();
+    }
+
+    #[Test]
     public function an_update_changes_what_was_sent_and_leaves_the_rest(): void
     {
         $thing = $this->thing('services', 'Services');
