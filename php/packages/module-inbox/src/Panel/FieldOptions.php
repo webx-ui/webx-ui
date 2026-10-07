@@ -117,7 +117,9 @@ final class FieldOptions
      * The written-down answers: a value that is stored and a label that is read.
      *
      * A choice with no value is dropped — `Rules::oneOf` builds `in:` out of the values, so a
-     * nameless one is an answer nothing can be checked against.
+     * nameless one is an answer nothing can be checked against. A plain string is a choice
+     * whose value and label are the same words: `["A", "B"]` is what anybody writing a list
+     * by hand sends first, and dropping it without a word was a select with nothing in it.
      *
      * @return list<array<string, mixed>>
      */
@@ -130,6 +132,10 @@ final class FieldOptions
         $choices = [];
 
         foreach ($input as $choice) {
+            if (is_string($choice) || is_int($choice)) {
+                $choice = ['value' => (string) $choice];
+            }
+
             if (! is_array($choice)) {
                 continue;
             }

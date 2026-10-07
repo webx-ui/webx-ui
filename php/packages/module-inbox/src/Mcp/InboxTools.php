@@ -14,6 +14,7 @@ use WebxUi\Admin\Support\Authors;
 use WebxUi\Auth\Models\CmsUser;
 use WebxUi\Inbox\Exceptions\InboxException;
 use WebxUi\Inbox\Exceptions\NobodyToNotify;
+use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Http\Controllers\FormController;
 use WebxUi\Inbox\Http\Resources\FieldResource;
 use WebxUi\Inbox\Http\Resources\FormResource;
@@ -107,7 +108,9 @@ final class InboxTools
                 .'refused here exactly as they are in the panel.',
                 fn (array $arguments): array => $this->attempt(fn (): array => $this->formSave($arguments)),
                 ['properties' => [
-                    'form' => $form + ['description' => 'The form to change; omit to create one.'],
+                    // Spread, not `+`: the left side wins a `+`, and the "omit to create" half
+                    // of the description never reached the listing.
+                    'form' => [...$form, 'description' => 'The form to change, by its id or its slug; omit to create one.'],
                     'slug' => ['type' => 'string', 'description' => 'Where it answers: lower case, words joined by hyphens.'],
                     'title' => ['type' => ['string', 'object'], 'description' => 'One language as a string, or every language as { "en": "…" }.'],
                     'is_enabled' => ['type' => 'boolean', 'description' => 'A form that is off is a 404 to the site and keeps everything it has received.'],
@@ -122,7 +125,10 @@ final class InboxTools
                             'title' => ['type' => ['string', 'object'], 'description' => 'The label, in one language or in all of them.'],
                             'is_required' => ['type' => 'boolean'],
                             'in_table' => ['type' => 'boolean', 'description' => 'Show this answer as a column of the submission list.'],
-                            'options' => ['type' => 'object', 'description' => 'What this type takes: choices for a list, maxlength for text, extensions for a file.'],
+                            'options' => ['type' => 'object', 'description' => 'What this type takes. select · radio · checkbox: choices, required and at least one — '
+                                .'[{ "value": "pro", "label": { "en": "Pro plan" } }], or plain strings ["Pro", "Basic"] where the value is the label; '
+                                .'checkbox also min and max. text · email · textarea: maxlength (textarea also rows). tel: pattern. '
+                                .'date: min and max, YYYY-MM-DD. file: extensions, max_size in KB, multiple. consent: text, the sentence beside the tick.'],
                             'remove' => ['type' => 'boolean', 'description' => 'Put the field aside: it leaves the form and stays readable in the submissions that used it.'],
                         ]],
                     ],
@@ -296,10 +302,17 @@ final class InboxTools
         // be refused for something nobody was changing.
         $input = [...$this->formAsInput($form), ...array_intersect_key($arguments, array_flip(['slug', 'title', 'is_enabled', 'options']))];
 
-        $this->validator()->make($input, FormInput::rules($form === null ? null : (int) $form->getKey()), FormInput::messages())->validate();
+        // The questions first: the Reply-To field the settings name has to be an e-mail field
+        // of the form as it will be after this call, which may be adding it right now.
+        $plan = $this->fieldsPlan($form, $sent);
+
+        $this->validator()->make(
+            $input,
+            FormInput::rules($form === null ? null : (int) $form->getKey(), $this->emailFieldsAfter($form, $plan)),
+            FormInput::messages(),
+        )->validate();
 
         $values = FormInput::values($input);
-        $plan = array_map(fn (array $field): array => $this->fieldPlan($form, $field), $sent);
 
         if ($this->dryRun($arguments)) {
             return [
@@ -355,37 +368,147 @@ final class InboxTools
     }
 
     /**
-     * What one field of the call would do, checked before anything is written.
+     * What every field of the call would do, checked before anything is written.
      *
      * Worked out for every field first and applied afterwards, so that a form is not half
      * saved when the fourth question turns out to name a type this package does not have.
      *
+     * Each entry is planned against the form as the entries before it leave it, not as the
+     * table has it: `phone` removed and `phone` added in one call is a field put aside and a
+     * new one in its place, and two new fields both called `name` are refused — matched
+     * against the table alone, the second of each pair met the same row as the first, and the
+     * call either lost a field without a word or made a form that could no longer be edited.
+     *
+     * @param  list<array<string, mixed>>  $sent
+     * @return list<array{would: string, field: Field|null, values: array<string, mixed>}>
+     */
+    private function fieldsPlan(?Form $form, array $sent): array
+    {
+        /** @var array<string, int|string> $names  name → the id of the field holding it, or the entry of this call that took it */
+        $names = [];
+
+        foreach ($form?->fields ?? [] as $field) {
+            $names[$field->key()] = (int) $field->getKey();
+        }
+
+        $removed = [];
+        $plan = [];
+
+        foreach ($sent as $index => $one) {
+            $name = is_string($one['name'] ?? null) ? trim($one['name']) : '';
+            $entry = 'fields['.$index.']'.($name === '' ? '' : ' "'.$name.'"');
+
+            try {
+                $plan[] = $this->fieldPlan($form, $one, $entry, $names, $removed);
+            } catch (ValidationException $invalid) {
+                $lines = [];
+
+                foreach ($invalid->errors() as $key => $messages) {
+                    $line = $key.': '.implode(' ', (array) $messages);
+
+                    if ($key === 'type') {
+                        $line .= ' The types are: '.implode(', ', FieldType::values()).'.';
+                    }
+
+                    $lines[] = $line;
+                }
+
+                throw new ToolFailure('Not accepted — '.$entry.': '.implode('; ', $lines));
+            }
+        }
+
+        return $plan;
+    }
+
+    /**
+     * One entry of {@see fieldsPlan()}.
+     *
      * @param  array<string, mixed>  $sent
+     * @param  array<string, int|string>  $names
+     * @param  array<int, true>  $removed
      * @return array{would: string, field: Field|null, values: array<string, mixed>}
      */
-    private function fieldPlan(?Form $form, array $sent): array
+    private function fieldPlan(?Form $form, array $sent, string $entry, array &$names, array &$removed): array
     {
-        $field = $form === null ? null : $this->matchField($form, $sent);
+        $field = $form === null ? null : $this->matchField($form, $sent, $entry, $names, $removed);
 
         if (($sent['remove'] ?? false) === true) {
-            return $field === null
-                ? throw new ToolFailure('A field to remove has to be one the form has: name it by id or by machine name.')
-                : ['would' => 'remove', 'field' => $field, 'values' => ['name' => $field->key()]];
+            if ($field === null) {
+                throw new ToolFailure("{$entry}: a field to remove has to be one the form has — name it by id or by machine name.");
+            }
+
+            unset($names[$field->key()]);
+            $removed[(int) $field->getKey()] = true;
+
+            return ['would' => 'remove', 'field' => $field, 'values' => ['name' => $field->key()]];
         }
 
         $input = [...$this->fieldAsInput($field), ...array_diff_key($sent, array_flip(['id', 'remove']))];
 
+        // The name is checked against `$names` below rather than against the table: the table
+        // does not know what the entries before this one freed or took.
         $this->validator()->make(
             $input,
-            FieldInput::rules($form === null ? null : (int) $form->getKey(), $field === null ? null : (int) $field->getKey()),
+            FieldInput::rules($form === null ? null : (int) $form->getKey(), $field === null ? null : (int) $field->getKey(), unique: false),
             FieldInput::messages(),
         )->validate();
+
+        $values = FieldInput::values($input);
+        $name = $values['name'];
+
+        if (is_string($name)) {
+            $holder = $names[$name] ?? null;
+
+            if ($holder !== null && $holder !== ($field === null ? null : (int) $field->getKey())) {
+                throw new ToolFailure(is_int($holder)
+                    ? "{$entry}: the form already has a field named [{$name}] (id {$holder}). Name it to change it, or remove it first in this call."
+                    : "{$entry}: [{$name}] is already the name of {$holder} in this call — one name, one field.");
+            }
+        }
+
+        if ($field !== null) {
+            unset($names[$field->key()]);
+        }
+
+        if (is_string($name)) {
+            $names[$name] = $field === null ? $entry : (int) $field->getKey();
+        }
 
         return [
             'would' => $field === null ? 'add' : 'update',
             'field' => $field,
-            'values' => FieldInput::values($input),
+            'values' => $values,
         ];
+    }
+
+    /**
+     * The machine names of the form's e-mail fields once the plan has been applied — what
+     * `options.email_field` may name.
+     *
+     * @param  list<array{would: string, field: Field|null, values: array<string, mixed>}>  $plan
+     * @return list<string>
+     */
+    private function emailFieldsAfter(?Form $form, array $plan): array
+    {
+        /** @var array<int|string, string> $emails  field id (or entry) → name */
+        $emails = [];
+
+        foreach ($form?->fields ?? [] as $field) {
+            if ($field->type === FieldType::Email) {
+                $emails[(int) $field->getKey()] = $field->key();
+            }
+        }
+
+        foreach ($plan as $index => $one) {
+            $id = $one['field'] === null ? 'new'.$index : (int) $one['field']->getKey();
+            unset($emails[$id]);
+
+            if ($one['would'] !== 'remove' && $one['values']['type'] === FieldType::Email && is_string($one['values']['name'])) {
+                $emails[$id] = $one['values']['name'];
+            }
+        }
+
+        return array_values($emails);
     }
 
     /**
@@ -418,21 +541,36 @@ final class InboxTools
      * name. A field put aside is not matched by name — it is gone from the form, and a save
      * that quietly resurrected it would be a save nobody asked for.
      *
+     * Matched against the state the earlier entries of the call left: a name one of them freed
+     * matches nothing (so this entry adds a field), and a name one of them took is refused
+     * by {@see fieldPlan()} rather than read as the same field twice.
+     *
      * @param  array<string, mixed>  $sent
+     * @param  array<string, int|string>  $names
+     * @param  array<int, true>  $removed
      */
-    private function matchField(Form $form, array $sent): ?Field
+    private function matchField(Form $form, array $sent, string $entry, array $names, array $removed): ?Field
     {
         if (isset($sent['id']) && is_numeric($sent['id'])) {
-            $field = $form->fields()->find((int) $sent['id']);
+            $field = $form->fields->firstWhere('id', (int) $sent['id']);
 
-            return $field instanceof Field
-                ? $field
-                : throw new ToolFailure("Form [{$form->slug}] has no field with the id [{$sent['id']}].");
+            if (! $field instanceof Field) {
+                throw new ToolFailure("{$entry}: form [{$form->slug}] has no field with the id [{$sent['id']}].");
+            }
+
+            return isset($removed[(int) $field->getKey()])
+                ? throw new ToolFailure("{$entry}: the field with the id [{$sent['id']}] is removed earlier in this call.")
+                : $field;
         }
 
         $name = trim((string) ($sent['name'] ?? ''));
+        $holder = $name === '' ? null : ($names[$name] ?? null);
 
-        return $name === '' ? null : $form->fields()->where('name', $name)->first();
+        if (is_string($holder)) {
+            throw new ToolFailure("{$entry}: [{$name}] is already the name of {$holder} in this call — one name, one field.");
+        }
+
+        return is_int($holder) ? $form->fields->firstWhere('id', $holder) : null;
     }
 
     /**

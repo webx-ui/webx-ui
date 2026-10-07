@@ -261,6 +261,114 @@ final class McpTest extends TestCase
     }
 
     #[Test]
+    public function a_field_removed_and_added_again_in_one_call_is_a_new_field_in_its_place(): void
+    {
+        $form = $this->form('callback', [['name' => 'phone', 'type' => FieldType::Tel]]);
+        $old = $form->fields->sole();
+
+        $content = $this->content($this->agent('form_save', [
+            'form' => 'callback',
+            'fields' => [
+                ['name' => 'phone', 'remove' => true],
+                ['name' => 'phone', 'type' => 'tel', 'title' => 'Phone again'],
+            ],
+        ])->assertOk());
+
+        $this->assertSame(['phone'], array_column($content['fields'], 'name'));
+        $this->assertNotSame((int) $old->getKey(), $content['fields'][0]['id']);
+        $this->assertTrue(Field::withTrashed()->find($old->getKey())?->trashed());
+    }
+
+    #[Test]
+    public function two_fields_with_one_name_in_one_call_are_refused(): void
+    {
+        $this->agent('form_save', [
+            'slug' => 'twins',
+            'title' => 'Twins',
+            'fields' => [
+                ['name' => 'name', 'type' => 'text', 'title' => 'Name'],
+                ['name' => 'name', 'type' => 'text', 'title' => 'Name again'],
+            ],
+        ])->assertHasErrors(['fields[1] "name": [name] is already the name of fields[0] "name" in this call']);
+
+        $this->assertNull(Form::query()->where('slug', 'twins')->first());
+
+        // A rename onto a name another field of the form holds is the same mistake.
+        $this->form();
+        $this->agent('form_save', ['form' => 'contact', 'fields' => [['name' => 'message', 'id' => null], ['id' => Field::query()->where('name', 'email')->value('id'), 'name' => 'name']]])
+            ->assertHasErrors(['the form already has a field named [name]']);
+    }
+
+    #[Test]
+    public function a_list_field_needs_choices_and_plain_strings_are_choices(): void
+    {
+        $this->agent('form_save', [
+            'slug' => 'survey',
+            'title' => 'Survey',
+            'fields' => [['name' => 'plan', 'type' => 'select', 'title' => 'Plan']],
+        ])->assertHasErrors(['fields[0] "plan": options.choices']);
+
+        $content = $this->content($this->agent('form_save', [
+            'slug' => 'survey',
+            'title' => 'Survey',
+            'fields' => [['name' => 'plan', 'type' => 'select', 'title' => 'Plan', 'options' => ['choices' => ['A', 'B']]]],
+        ])->assertOk());
+
+        $this->assertSame(['A' => 'A', 'B' => 'B'], $content['fields'][0]['choices']);
+    }
+
+    #[Test]
+    public function a_refused_field_says_which_entry_and_what_types_there_are(): void
+    {
+        $this->form();
+
+        $this->agent('form_save', [
+            'form' => 'contact',
+            'fields' => [
+                ['name' => 'ok', 'type' => 'text', 'title' => 'Fine'],
+                ['name' => 'extra', 'type' => 'wysiwyg'],
+            ],
+        ])->assertHasErrors(['fields[1] "extra": ', 'title: ', 'The types are: text, email']);
+    }
+
+    #[Test]
+    public function a_recipient_and_a_reply_to_field_that_do_not_exist_are_refused(): void
+    {
+        $this->form();
+
+        $this->agent('form_save', [
+            'form' => 'contact',
+            'options' => ['recipients' => [['email' => 'sales@example.test'], ['admin_id' => 999]]],
+        ])->assertHasErrors(['#2 ({"admin_id":999})']);
+
+        $this->agent('form_save', [
+            'form' => 'contact',
+            'options' => ['recipients' => [['email' => 'not-an-address']]],
+        ])->assertHasErrors(['#1 ({"email":"not-an-address"})']);
+
+        // Not a field of this form, and a field that is not an e-mail field.
+        $this->agent('form_save', ['form' => 'contact', 'options' => ['email_field' => 'nope']])->assertHasErrors(['options.email_field']);
+        $this->agent('form_save', ['form' => 'contact', 'options' => ['email_field' => 'name']])->assertHasErrors(['options.email_field']);
+        $this->agent('form_save', ['form' => 'contact', 'options' => ['email_field' => 'email']])->assertOk();
+
+        // One being added in the same call counts.
+        $this->agent('form_save', [
+            'slug' => 'callback',
+            'title' => 'Callback',
+            'options' => ['email_field' => 'reply'],
+            'fields' => [['name' => 'reply', 'type' => 'email', 'title' => 'E-mail']],
+        ])->assertOk();
+    }
+
+    #[Test]
+    public function the_form_argument_of_a_save_says_it_can_be_left_out(): void
+    {
+        $schema = $this->app->make(ToolRegistry::class)->tool('inbox_form_save')->tool->inputSchema;
+
+        $this->assertStringContainsString('omit to create one', (string) json_encode($schema));
+    }
+
+    #[Test]
     public function a_dry_run_reports_what_it_would_do_and_writes_nothing(): void
     {
         $content = $this->content($this->agent('form_save', [

@@ -177,7 +177,11 @@ function setEmail(index: number, email: string): void {
       </wx-button>
     </wx-space>
 
-    <wx-form-item :label="t('panel.email-field')" :help="t('panel.email-field-help')">
+    <wx-form-item
+      :label="t('panel.email-field')"
+      :help="t('panel.email-field-help')"
+      :error="errors['options.email_field']?.[0]"
+    >
       <wx-select v-model="emailField" :options="emailOptions" />
     </wx-form-item>
   </wx-card>

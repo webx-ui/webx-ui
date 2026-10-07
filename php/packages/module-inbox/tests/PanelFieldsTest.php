@@ -86,6 +86,37 @@ final class PanelFieldsTest extends TestCase
     }
 
     #[Test]
+    public function a_list_question_with_nothing_to_pick_is_refused(): void
+    {
+        $form = $this->form('contact');
+        $editor = $this->editor();
+
+        foreach (['select', 'radio', 'checkbox'] as $type) {
+            $this->actingAs($editor, 'cms')
+                ->postJson($this->api("forms/{$form->getKey()}/fields"), ['type' => $type, 'title' => 'Plan'])
+                ->assertJsonValidationErrors('options.choices');
+        }
+
+        // A choice with no value does not count: it is dropped before the field is written.
+        $this->actingAs($editor, 'cms')
+            ->postJson($this->api("forms/{$form->getKey()}/fields"), [
+                'type' => 'select',
+                'title' => 'Plan',
+                'options' => ['choices' => [['value' => '', 'label' => ['en' => 'Nothing']]]],
+            ])
+            ->assertJsonValidationErrors('options.choices');
+
+        $this->actingAs($editor, 'cms')
+            ->postJson($this->api("forms/{$form->getKey()}/fields"), [
+                'type' => 'select',
+                'title' => 'Plan',
+                'options' => ['choices' => ['Basic', ['value' => 'pro', 'label' => ['en' => 'Pro']]]],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.options.choices.0', ['value' => 'Basic', 'label' => 'Basic']);
+    }
+
+    #[Test]
     public function two_live_questions_cannot_share_a_name(): void
     {
         $form = $this->form('contact');
