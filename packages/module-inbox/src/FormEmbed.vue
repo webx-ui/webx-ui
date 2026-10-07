@@ -40,8 +40,7 @@ const block = computed(() =>
 
 /** The first hidden field, so the example fills a name this form actually has. */
 const hidden = computed(
-  () =>
-    props.fields.find((field) => field.type === 'hidden' && field.is_enabled)?.key ?? 'page',
+  () => props.fields.find((field) => field.type === 'hidden' && field.is_enabled)?.key ?? 'page',
 )
 
 const extras = computed(
