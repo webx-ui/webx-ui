@@ -38,10 +38,13 @@ final class PanelRefusalsTest extends TestCase
         $grandchild->delete();
         $parent->refresh()->delete();
 
-        $this->actingAs($this->editor(), 'cms')
+        $refused = $this->actingAs($this->editor(), 'cms')
             ->postJson($this->api($grandchild->getKey()).'/restore')
             ->assertStatus(422)
             ->assertJsonPath('message', fn (string $message): bool => str_contains($message, '#'.$parent->getKey()));
+        // A refusal with no field still answers `errors` as a map, like every other 422 —
+        // a client reading it as `Record<string, string[]>` must not get a list.
+        $this->assertStringContainsString('"errors":{}', $refused->getContent());
 
         $this->assertTrue(Page::withTrashed()->findOrFail($grandchild->getKey())->trashed());
         // It took no top-level address while it was refused.

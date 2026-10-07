@@ -38,7 +38,7 @@ class PagesException extends RuntimeException
 
         return new JsonResponse([
             'message' => $this->getMessage(),
-            'errors' => $this->field === null ? [] : [$this->field => [$this->getMessage()]],
+            'errors' => $this->field === null ? (object) [] : [$this->field => [$this->getMessage()]],
         ], 422);
     }
 
