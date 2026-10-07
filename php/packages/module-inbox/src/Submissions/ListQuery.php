@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 use Throwable;
+use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Models\Field;
 use WebxUi\Inbox\Models\Form;
 use WebxUi\Inbox\Models\Status;
@@ -37,19 +38,39 @@ final class ListQuery
 
     public const VIEW_UNREAD = 'unread';
 
+    /** The types whose answer fits in a column. */
+    private const SHORT = [
+        FieldType::Text,
+        FieldType::Email,
+        FieldType::Tel,
+        FieldType::Select,
+        FieldType::Radio,
+        FieldType::Date,
+    ];
+
     /**
      * @param  list<Field>  $columns  the `in_table` fields, in the order of the form
      */
     public function __construct(public readonly Form $form, public readonly array $columns) {}
 
+    /** How many answers stand in for the columns of a form that marks none. */
+    public const FALLBACK_COLUMNS = 2;
+
     public static function for(Form $form): self
     {
-        $columns = $form->liveFields()
-            ->where('in_table', true)
-            ->get()
-            ->all();
+        $fields = $form->liveFields()->get();
+        $columns = $fields->where('in_table', true);
 
-        return new self($form, array_values($columns));
+        // A form that marks no field as a column — every form an agent writes without saying
+        // `in_table` — was a list of rows with nothing to tell one from the next. The first
+        // short answers stand in: a name, an address, a choice, not a letter or a file.
+        if ($columns->isEmpty()) {
+            $columns = $fields
+                ->filter(static fn (Field $field): bool => in_array($field->type, self::SHORT, true))
+                ->take(self::FALLBACK_COLUMNS);
+        }
+
+        return new self($form, array_values($columns->all()));
     }
 
     /**

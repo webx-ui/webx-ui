@@ -18,7 +18,6 @@ use WebxUi\Inbox\Fields\FieldType;
 use WebxUi\Inbox\Http\Controllers\FormController;
 use WebxUi\Inbox\Http\Resources\FieldResource;
 use WebxUi\Inbox\Http\Resources\FormResource;
-use WebxUi\Inbox\Http\Resources\StatusResource;
 use WebxUi\Inbox\Http\Resources\SubmissionResource;
 use WebxUi\Inbox\Http\Resources\SubmissionRowResource;
 use WebxUi\Inbox\Mail\Notifier;
@@ -78,7 +77,9 @@ final class InboxTools
                 .'Each form also says who a submission would be written to: `recipients` lists everybody the form '
                 .'names with `receives` and, when false, the `problem` (admin_deleted, admin_inactive, '
                 .'invalid_email); `notifies: false` means nobody is told at all. Read this first — a form is '
-                .'named by its slug everywhere else.',
+                .'named by its slug everywhere else. This is the catalogue of the inbox module: it has no '
+                .'resource to read instead. `submissions_count` counts everything the form took, spam '
+                .'included; inbox_list\'s `counts.all` leaves spam out, as the panel\'s "All" tab does.',
                 fn (array $arguments): array => $this->formsList($arguments),
                 ['properties' => [
                     'disabled' => ['type' => 'boolean', 'description' => 'Include the forms that are switched off; true when omitted.'],
@@ -167,7 +168,8 @@ final class InboxTools
                 .'`notification` says whether the letter about it left: none, queued (handed to the queue and '
                 .'not yet sent — long in this state means no queue worker runs), delivered, or failed with the '
                 .'reason, and how it went for each recipient. Reading it does not mark it read: that is a '
-                .'person having looked.',
+                .'person having looked. Files are named with their size and type; `files[].url` is the panel\'s '
+                .'address and opens only in a signed-in panel — the bytes cannot be read through this tool.',
                 fn (array $arguments, ?Authenticatable $user = null): array => $this->get($arguments, $user),
                 ['properties' => [
                     'submission' => ['type' => 'integer', 'description' => 'The id, as inbox_list reports it.'],
@@ -284,7 +286,9 @@ final class InboxTools
             // usually looking at it to explain the form to somebody building a page.
             'intake' => $this->intake($form->slug),
             'fields' => $fields,
-            'statuses' => $this->statuses(),
+            // By key, in the language of the answer: the panel's resource carried every
+            // language of every title and a count that is never loaded here.
+            'statuses' => $this->statusNames(),
         ];
     }
 
@@ -741,21 +745,42 @@ final class InboxTools
         $request = $this->request();
 
         $submission->load(['form', 'status', 'assignee', 'values', 'files', 'events']);
+        $notes = $submission->noteFeed();
 
-        $shown = (new SubmissionResource(
-            $submission,
-            Authors::names($user, $submission->events->pluck('admin_id')->all()),
-        ))->resolve($request);
+        $authors = Authors::names($user, [
+            ...$submission->events->pluck('admin_id')->all(),
+            ...array_map(static fn (Note $note): ?int => $note->admin_id, $notes),
+        ]);
+
+        $shown = (new SubmissionResource($submission, $authors))->resolve($request);
+
+        // The arrows of the panel's card walk the list it was opened from; there is no list
+        // here, so they were always null — two keys that only looked like an answer.
+        unset($shown['previous_id'], $shown['next_id']);
+
+        // The status as the list names it — by key, in one language — rather than the
+        // panel's badge with every language of its title.
+        $status = $submission->status;
+        $shown['status'] = $status === null ? null : [
+            'key' => $status->key,
+            'title' => (string) $status->title,
+            'is_closed' => (bool) $status->is_closed,
+            'is_spam' => (bool) $status->is_spam,
+        ];
 
         // Notes are `module-admin`'s and travel on their own address in the panel; an agent
         // reading a submission is reading it to know what has been said about it, so they
-        // come with it here rather than as a second call.
+        // come with it here rather than as a second call. The author in the same shape as a
+        // line of the log.
         $shown['notes'] = array_map(fn (Note $note): array => [
             'id' => (int) $note->getKey(),
             'body' => $note->body,
-            'author' => $note->admin_id,
+            'author' => $note->admin_id === null ? null : [
+                'id' => (int) $note->admin_id,
+                'name' => $authors[(int) $note->admin_id] ?? null,
+            ],
             'created_at' => $note->created_at?->toAtomString(),
-        ], $submission->noteFeed());
+        ], $notes);
 
         return $shown;
     }
@@ -841,19 +866,6 @@ final class InboxTools
         $summary['fields_count'] = $count === null ? $form->fields()->count() : (int) $count;
 
         return $summary;
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private function statuses(): array
-    {
-        $request = $this->request();
-
-        return Status::query()->orderBy('position')->get()
-            ->map(static fn (Status $status): array => (new StatusResource($status))->resolve($request))
-            ->values()
-            ->all();
     }
 
     /**

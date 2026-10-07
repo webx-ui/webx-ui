@@ -164,10 +164,13 @@ final class McpTest extends TestCase
         // out loud (§2.6).
         $this->assertSame('fields[f'.$form->fields->last()?->getKey().']', $unnamed['parameter']);
 
+        // By key, named once in the answer's language — not every language of every title
+        // with a count that is never there.
         $this->assertSame(
             ['new', 'in-progress', 'done', 'rejected', 'spam'],
-            array_column($content['statuses'], 'key'),
+            array_keys($content['statuses']),
         );
+        $this->assertSame(['title' => 'New', 'is_closed' => false, 'is_spam' => false], $content['statuses']['new']);
     }
 
     #[Test]
@@ -358,6 +361,49 @@ final class McpTest extends TestCase
             'options' => ['email_field' => 'reply'],
             'fields' => [['name' => 'reply', 'type' => 'email', 'title' => 'E-mail']],
         ])->assertOk();
+    }
+
+    #[Test]
+    public function a_form_that_marks_no_column_still_has_rows_to_tell_apart(): void
+    {
+        $form = $this->form('quiet', [
+            ['name' => 'message', 'type' => FieldType::Textarea],
+            ['name' => 'name', 'type' => FieldType::Text],
+            ['name' => 'email', 'type' => FieldType::Email],
+            ['name' => 'phone', 'type' => FieldType::Tel],
+        ]);
+        $this->filled($form, ['message' => 'Hello', 'name' => 'Ada', 'email' => 'ada@example.test']);
+        $this->form('blank', [['name' => 'note', 'type' => FieldType::Textarea]]);
+        $this->filled(Form::query()->where('slug', 'blank')->sole(), ['note' => 'Hi']);
+
+        $content = $this->content($this->agent('list', ['form' => 'quiet'])->assertOk());
+
+        // The first short answers, not the letter.
+        $this->assertSame(['name', 'email'], array_column($content['columns'], 'name'));
+        $this->assertSame(['name' => 'Ada', 'email' => 'ada@example.test'], $content['submissions'][0]['values']);
+
+        // Nothing short to show: an object with nothing in it, never a list.
+        $this->agent('list', ['form' => 'blank'])->assertOk()->assertSee('"values":{}');
+    }
+
+    #[Test]
+    public function one_submission_names_its_authors_one_way_and_has_no_arrows_without_a_list(): void
+    {
+        $form = $this->form();
+        $submission = $this->filled($form, ['name' => 'Ada']);
+        $agent = $this->editor();
+
+        $content = $this->content($this->agent('set_status', [
+            'submission' => (int) $submission->getKey(),
+            'status' => 'in-progress',
+            'note' => 'Mine.',
+        ], $agent)->assertOk());
+
+        $this->assertArrayNotHasKey('previous_id', $content);
+        $this->assertArrayNotHasKey('next_id', $content);
+        $this->assertSame(['id' => (int) $agent->getKey(), 'name' => 'Editor'], $content['notes'][0]['author']);
+        $this->assertSame($content['notes'][0]['author'], end($content['events'])['author']);
+        $this->assertSame(['key' => 'in-progress', 'title' => 'In progress', 'is_closed' => false, 'is_spam' => false], $content['status']);
     }
 
     #[Test]

@@ -138,7 +138,7 @@
 | `is_enabled`    | bool      | выключенное поле не рисуется и не принимается   |
 | `is_required`   | bool      |                                                 |
 | `is_fullsize`   | bool      | во всю ширину или в половину                    |
-| `in_table`      | bool      | колонка в списке заявок                         |
+| `in_table`      | bool      | колонка в списке; нет ни одной — два коротких   |
 | `position`      | int       |                                                 |
 | `deleted_at`    | timestamp | мягкое удаление (§2.3)                          |
 
