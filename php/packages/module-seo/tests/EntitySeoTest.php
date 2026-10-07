@@ -220,7 +220,7 @@ final class EntitySeoTest extends TestCase
         $this->assertTrue($entity->fresh()?->updated_at?->gt($before));
 
         $this->travelTo(now()->addMinute());
-        $before = $entity->fresh()?->updated_at;
+        $before = $entity->refresh()->updated_at;
         $entity->saveSeo(null);
         $this->assertTrue($entity->fresh()?->updated_at?->gt($before));
     }

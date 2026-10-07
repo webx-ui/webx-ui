@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace WebxUi\Seo\Tests\Fixtures;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use WebxUi\Seo\HasSeo;
 
 /**
@@ -13,6 +14,7 @@ use WebxUi\Seo\HasSeo;
  *
  * @property int $id
  * @property string|null $name
+ * @property Carbon|null $updated_at
  */
 final class StampedSeoEntity extends Model
 {
