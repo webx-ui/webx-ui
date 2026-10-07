@@ -9,6 +9,7 @@ return [
     'unreachable' => 'Pod adresem :url nikt nie odpowiedział: :error',
     'app-url-redirects' => 'APP_URL :app_url przekierowuje na :location.',
     'queue-sync' => 'Połączenie kolejki :connection wykonuje zadania wewnątrz żądania.',
+    'queue-stalled' => 'Zadania w :connection czekające dłużej niż :minutes min: :count',
     'mail-nowhere' => 'Mailer :mailer zapisuje wiadomości do :transport.',
     'schedule-never' => 'Harmonogram nigdy nie był uruchomiony.',
     'schedule-stale' => 'Minut od ostatniego uruchomienia harmonogramu: :minutes',

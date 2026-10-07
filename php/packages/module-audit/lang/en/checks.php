@@ -28,6 +28,12 @@ return [
             'why' => 'Letters and submissions are handled while the visitor waits, a slow mail server makes forms slow, and long jobs such as the audit cannot run from the panel.',
             'fix' => 'Use the database or redis queue and keep a worker running (php artisan queue:work under a supervisor).',
         ],
+        'queue_worker' => [
+            'title' => 'Nobody works through the queue',
+            'found' => 'Jobs in the database queue have been due for minutes and no worker has taken them.',
+            'why' => 'Letters from forms, audit runs and image work stay queued and never happen, while the panel says everything is fine.',
+            'fix' => 'Keep a worker running (php artisan queue:work under a supervisor), or schedule queue:work --stop-when-empty every minute, or set QUEUE_CONNECTION=sync on a small site.',
+        ],
         'mail' => [
             'title' => 'Mail goes nowhere',
             'found' => 'The mailer writes letters to the log or to memory.',

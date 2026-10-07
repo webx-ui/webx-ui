@@ -9,6 +9,7 @@ return [
     'unreachable' => 'Nada respondió en :url: :error',
     'app-url-redirects' => 'APP_URL :app_url redirige a :location.',
     'queue-sync' => 'La conexión de cola :connection ejecuta los trabajos dentro de la petición.',
+    'queue-stalled' => 'Trabajos en :connection que esperan más de :minutes minutos: :count',
     'mail-nowhere' => 'El mailer :mailer escribe los correos en :transport.',
     'schedule-never' => 'El programador nunca se ha ejecutado.',
     'schedule-stale' => 'Minutos desde la última ejecución del programador: :minutes',

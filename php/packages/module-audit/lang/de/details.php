@@ -9,6 +9,7 @@ return [
     'unreachable' => 'Unter :url hat nichts geantwortet: :error',
     'app-url-redirects' => 'APP_URL :app_url leitet auf :location weiter.',
     'queue-sync' => 'Die Queue-Verbindung :connection führt Jobs innerhalb der Anfrage aus.',
+    'queue-stalled' => 'Jobs in :connection, die länger als :minutes Minuten warten: :count',
     'mail-nowhere' => 'Der Mailer :mailer schreibt E-Mails nach :transport.',
     'schedule-never' => 'Der Scheduler ist noch nie gelaufen.',
     'schedule-stale' => 'Minuten seit dem letzten Lauf des Schedulers: :minutes',

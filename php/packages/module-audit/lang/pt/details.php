@@ -9,6 +9,7 @@ return [
     'unreachable' => 'Nada respondeu em :url: :error',
     'app-url-redirects' => 'APP_URL :app_url redireciona para :location.',
     'queue-sync' => 'A ligação de fila :connection executa as tarefas dentro do pedido.',
+    'queue-stalled' => 'Tarefas em :connection à espera há mais de :minutes minutos: :count',
     'mail-nowhere' => 'O mailer :mailer escreve os e-mails em :transport.',
     'schedule-never' => 'O agendador nunca foi executado.',
     'schedule-stale' => 'Minutos desde a última execução do agendador: :minutes',

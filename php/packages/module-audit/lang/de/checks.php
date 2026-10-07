@@ -28,6 +28,12 @@ return [
             'why' => 'E-Mails und Einsendungen werden bearbeitet, während der Besucher wartet, ein langsamer Mailserver macht Formulare langsam, und lange Jobs wie das Audit lassen sich nicht aus dem Panel starten.',
             'fix' => 'Verwenden Sie die Queue database oder redis und lassen Sie einen Worker laufen (php artisan queue:work unter einem Supervisor).',
         ],
+        'queue_worker' => [
+            'title' => 'Niemand arbeitet die Queue ab',
+            'found' => 'Jobs in der Datenbank-Queue sind seit Minuten fällig, und kein Worker hat sie übernommen.',
+            'why' => 'Briefe aus Formularen, Audit-Läufe und Bildbearbeitung bleiben in der Warteschlange und geschehen nie, während das Panel meldet, alles sei in Ordnung.',
+            'fix' => 'Lassen Sie einen Worker laufen (php artisan queue:work unter einem Supervisor), planen Sie queue:work --stop-when-empty jede Minute ein oder setzen Sie auf einer kleinen Website QUEUE_CONNECTION=sync.',
+        ],
         'mail' => [
             'title' => 'E-Mails gehen ins Leere',
             'found' => 'Der Mailer schreibt E-Mails ins Log oder in den Speicher.',

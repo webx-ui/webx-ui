@@ -9,6 +9,7 @@ return [
     'unreachable' => ':url adresinde hiçbir yanıt alınamadı: :error',
     'app-url-redirects' => 'APP_URL :app_url, :location adresine yönlendiriyor.',
     'queue-sync' => ':connection kuyruk bağlantısı işleri istek içinde çalıştırıyor.',
+    'queue-stalled' => ':connection üzerinde :minutes dakikadan uzun bekleyen işler: :count',
     'mail-nowhere' => ':mailer posta sürücüsü e-postaları :transport hedefine yazıyor.',
     'schedule-never' => 'Zamanlayıcı hiç çalışmadı.',
     'schedule-stale' => 'Zamanlayıcının son çalışmasından bu yana geçen dakika: :minutes',

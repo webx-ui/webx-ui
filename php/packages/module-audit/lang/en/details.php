@@ -9,6 +9,7 @@ return [
     'unreachable' => 'Nothing answered at :url: :error',
     'app-url-redirects' => 'APP_URL :app_url redirects to :location.',
     'queue-sync' => 'The queue connection :connection runs jobs inside the request.',
+    'queue-stalled' => 'Jobs on :connection waiting longer than :minutes minutes: :count',
     'mail-nowhere' => 'The mailer :mailer writes letters to :transport.',
     'schedule-never' => 'The scheduler has never run.',
     'schedule-stale' => 'Minutes since the scheduler last ran: :minutes',

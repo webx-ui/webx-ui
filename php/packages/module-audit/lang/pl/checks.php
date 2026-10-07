@@ -28,6 +28,12 @@ return [
             'why' => 'Wiadomości i zgłoszenia są obsługiwane, gdy użytkownik czeka, wolny serwer poczty spowalnia formularze, a długich zadań, takich jak audyt, nie da się uruchomić z panelu.',
             'fix' => 'Użyj kolejki database lub redis i utrzymuj działający worker (php artisan queue:work pod supervisorem).',
         ],
+        'queue_worker' => [
+            'title' => 'Nikt nie obsługuje kolejki',
+            'found' => 'Zadania w kolejce bazodanowej czekają od kilku minut i żaden worker ich nie podjął.',
+            'why' => 'Wiadomości z formularzy, audyty i obróbka obrazów zostają w kolejce i nigdy się nie wykonują, a panel twierdzi, że wszystko jest w porządku.',
+            'fix' => 'Uruchom workera na stałe (php artisan queue:work pod supervisorem), zaplanuj queue:work --stop-when-empty co minutę albo ustaw QUEUE_CONNECTION=sync na małej stronie.',
+        ],
         'mail' => [
             'title' => 'Poczta idzie donikąd',
             'found' => 'Mailer zapisuje wiadomości do logu lub do pamięci.',

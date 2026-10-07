@@ -9,6 +9,7 @@ return [
     'unreachable' => 'Nessuna risposta a :url: :error',
     'app-url-redirects' => 'APP_URL :app_url reindirizza a :location.',
     'queue-sync' => 'La connessione di coda :connection esegue i job all’interno della richiesta.',
+    'queue-stalled' => 'Job su :connection in attesa da più di :minutes minuti: :count',
     'mail-nowhere' => 'Il mailer :mailer scrive le e-mail in :transport.',
     'schedule-never' => 'Lo scheduler non è mai stato eseguito.',
     'schedule-stale' => 'Minuti dall’ultima esecuzione dello scheduler: :minutes',

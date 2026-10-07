@@ -16,6 +16,7 @@ use WebxUi\Admin\Doctor\Checks\Migrations;
 use WebxUi\Admin\Doctor\Checks\NpmRanges;
 use WebxUi\Admin\Doctor\Checks\PanelOpens;
 use WebxUi\Admin\Doctor\Checks\PassportKeys;
+use WebxUi\Admin\Doctor\Checks\Queue;
 use WebxUi\Admin\Doctor\Checks\Regions;
 use WebxUi\Admin\Doctor\Checks\Relations;
 use WebxUi\Admin\Doctor\Checks\SiteGate;
@@ -65,6 +66,7 @@ final class DoctorCommand extends Command
         PanelOpens::class,
         PassportKeys::class,
         SiteGate::class,
+        Queue::class,
     ];
 
     public function handle(Container $container): int

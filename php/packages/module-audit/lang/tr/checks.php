@@ -28,6 +28,12 @@ return [
             'why' => 'E-postalar ve gönderimler ziyaretçi beklerken işlenir, yavaş bir posta sunucusu formları yavaşlatır ve denetim gibi uzun işler panelden çalıştırılamaz.',
             'fix' => 'database veya redis kuyruğunu kullanın ve bir worker çalışır durumda tutun (bir supervisor altında php artisan queue:work).',
         ],
+        'queue_worker' => [
+            'title' => 'Kuyruğu işleyen yok',
+            'found' => 'Veritabanı kuyruğundaki işlerin zamanı dakikalar önce geldi ve hiçbir worker onları almadı.',
+            'why' => 'Formlardan gelen e-postalar, denetim çalıştırmaları ve görsel işleri kuyrukta kalır ve hiç gerçekleşmez; panel ise her şeyin yolunda olduğunu söyler.',
+            'fix' => 'Bir worker’ı sürekli çalıştırın (supervisor altında php artisan queue:work), queue:work --stop-when-empty komutunu her dakika zamanlayın ya da küçük bir sitede QUEUE_CONNECTION=sync kullanın.',
+        ],
         'mail' => [
             'title' => 'Posta hiçbir yere gitmiyor',
             'found' => 'Posta sürücüsü e-postaları günlüğe veya belleğe yazıyor.',

@@ -9,6 +9,7 @@ return [
     'unreachable' => 'За адресою :url ніхто не відповів: :error',
     'app-url-redirects' => 'APP_URL :app_url перенаправляє на :location.',
     'queue-sync' => 'Підключення черги :connection виконує завдання всередині запиту.',
+    'queue-stalled' => 'Завдань у :connection чекають довше :minutes хв: :count',
     'mail-nowhere' => 'Поштовий драйвер :mailer записує листи в :transport.',
     'schedule-never' => 'Планувальник жодного разу не запускався.',
     'schedule-stale' => 'Хвилин від останнього запуску планувальника: :minutes',

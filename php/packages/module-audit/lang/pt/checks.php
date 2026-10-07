@@ -28,6 +28,12 @@ return [
             'why' => 'Os e-mails e os envios são tratados enquanto o visitante espera, um servidor de correio lento torna os formulários lentos, e as tarefas longas, como a auditoria, não podem ser executadas a partir do painel.',
             'fix' => 'Use a fila database ou redis e mantenha um worker em execução (php artisan queue:work sob um supervisor).',
         ],
+        'queue_worker' => [
+            'title' => 'Ninguém processa a fila',
+            'found' => 'Há tarefas na fila em base de dados pendentes há minutos que nenhum worker pegou.',
+            'why' => 'Os emails dos formulários, as auditorias e o trabalho com imagens ficam na fila e nunca acontecem, enquanto o painel diz que está tudo bem.',
+            'fix' => 'Mantenha um worker a correr (php artisan queue:work sob um supervisor), agende queue:work --stop-when-empty a cada minuto, ou use QUEUE_CONNECTION=sync num site pequeno.',
+        ],
         'mail' => [
             'title' => 'O correio não vai a lado nenhum',
             'found' => 'O mailer escreve os e-mails no registo ou na memória.',

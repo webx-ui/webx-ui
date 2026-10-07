@@ -28,6 +28,12 @@ return [
             'why' => 'Le e-mail e gli invii vengono gestiti mentre il visitatore aspetta, un server di posta lento rallenta i moduli e i job lunghi, come l’audit, non possono essere avviati dal pannello.',
             'fix' => 'Usa la coda database o redis e tieni in esecuzione un worker (php artisan queue:work sotto un supervisor).',
         ],
+        'queue_worker' => [
+            'title' => 'Nessuno elabora la coda',
+            'found' => 'I job della coda su database sono scaduti da minuti e nessun worker li ha presi.',
+            'why' => 'Le email dei moduli, le analisi e l’elaborazione delle immagini restano in coda e non avvengono mai, mentre il pannello dice che va tutto bene.',
+            'fix' => 'Tieni un worker in esecuzione (php artisan queue:work sotto un supervisore), pianifica queue:work --stop-when-empty ogni minuto, oppure usa QUEUE_CONNECTION=sync su un sito piccolo.',
+        ],
         'mail' => [
             'title' => 'La posta non va da nessuna parte',
             'found' => 'Il mailer scrive le e-mail nel log o in memoria.',

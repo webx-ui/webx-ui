@@ -28,6 +28,12 @@ return [
             'why' => 'Los correos y los envíos se procesan mientras el visitante espera, un servidor de correo lento ralentiza los formularios y los trabajos largos, como la auditoría, no pueden ejecutarse desde el panel.',
             'fix' => 'Usa la cola database o redis y mantén un worker en marcha (php artisan queue:work bajo un supervisor).',
         ],
+        'queue_worker' => [
+            'title' => 'Nadie procesa la cola',
+            'found' => 'Los trabajos de la cola en base de datos llevan minutos pendientes y ningún worker los ha tomado.',
+            'why' => 'Los correos de los formularios, las auditorías y el trabajo con imágenes se quedan en cola y nunca ocurren, mientras el panel dice que todo va bien.',
+            'fix' => 'Mantén un worker en marcha (php artisan queue:work bajo un supervisor), programa queue:work --stop-when-empty cada minuto o usa QUEUE_CONNECTION=sync en un sitio pequeño.',
+        ],
         'mail' => [
             'title' => 'El correo no va a ninguna parte',
             'found' => 'El mailer escribe los correos en el registro o en la memoria.',

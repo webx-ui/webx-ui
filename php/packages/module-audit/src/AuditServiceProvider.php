@@ -43,6 +43,7 @@ class AuditServiceProvider extends ServiceProvider
         Config\Environment::class,
         Config\AppUrl::class,
         Config\Queue::class,
+        Config\QueueWorker::class,
         Config\Mail::class,
         Config\Schedule::class,
         Config\StorageLink::class,
