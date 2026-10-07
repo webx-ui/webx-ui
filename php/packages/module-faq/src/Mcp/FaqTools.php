@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebxUi\Faq\Mcp;
 
+use Closure;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Http\Request;
@@ -11,13 +12,16 @@ use Illuminate\Validation\ValidationException;
 use WebxUi\Admin\Categories\CategoryException;
 use WebxUi\Admin\Categories\Ordering;
 use WebxUi\Admin\Contracts\HasPermissions;
+use WebxUi\Admin\Screens\ScreenRegistry;
 use WebxUi\Admin\Screens\ScreenValues;
 use WebxUi\Faq\Models\FaqCategory;
 use WebxUi\Faq\Models\Question;
 use WebxUi\Faq\Panel\QuestionForm;
 use WebxUi\Faq\Panel\QuestionList;
 use WebxUi\Localization\Locales;
+use WebxUi\Mcp\Arguments;
 use WebxUi\Mcp\Exceptions\ToolFailure;
+use WebxUi\Mcp\Rehearsal;
 use WebxUi\Mcp\Tool;
 
 /**
@@ -33,6 +37,10 @@ use WebxUi\Mcp\Tool;
  *
  * A question is named by its id or by its anchor — the anchor never changes (decision 10), so it
  * is as good a name as the id and the one an agent read off a link.
+ *
+ * A dry run is the write itself, rolled back ({@see Rehearsal}): refused where the write would be,
+ * answering what it would answer. An argument or a field the tool does not take is refused rather
+ * than dropped ({@see Arguments}).
  */
 final class FaqTools
 {
@@ -56,7 +64,7 @@ final class FaqTools
             'description' => 'One language as a string, or every language as { "en": "…", "ru": "…" }.',
         ];
 
-        return [
+        return Arguments::strictAll([
             Tool::read(
                 'list',
                 'The questions of the FAQ in the order they stand in: the question in every language, its '
@@ -135,7 +143,25 @@ final class FaqTools
                 ], 'required' => ['questions']],
                 permission: 'faq.manage',
             ),
-        ];
+
+            Tool::mutating(
+                'restore',
+                'Take a question out of the bin. It comes back where it stood, with its anchor — links to it work '
+                .'again — its categories, and published or not as it was when it went in.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->restore($arguments)),
+                ['properties' => ['question' => $question], 'required' => ['question']],
+                permission: 'faq.manage',
+            ),
+
+            Tool::mutating(
+                'purge',
+                'Delete a question in the bin for good; its anchor is free again. Cannot be undone. Only a question '
+                .'in the bin — faq_delete puts it there first.',
+                fn (array $arguments): array => $this->attempt(fn (): array => $this->purge($arguments)),
+                ['properties' => ['question' => $question], 'required' => ['question']],
+                permission: 'faq.manage',
+            ),
+        ], 'faq_');
     }
 
     /**
@@ -194,6 +220,8 @@ final class FaqTools
             throw new ToolFailure('`values` must be an object of field name → value.');
         }
 
+        Arguments::refuseUnknown($values, $this->fields(), 'faq_create');
+
         // The named arguments win over the same names in `values`: they are what the tool says it
         // takes, and an agent that sent both meant the one it could see.
         $values = [
@@ -210,20 +238,18 @@ final class FaqTools
             $values['categories'] = $this->categoryIds($arguments['categories']);
         }
 
-        if ($this->dryRun($arguments)) {
-            return [
-                'dry_run' => true,
-                'would_create' => [
-                    'question' => $values['question'],
-                    'published' => $values['published'],
-                    'categories' => $values['categories'] ?? [],
-                ],
-            ];
+        $work = fn (): array => $this->get(['question' => $this->form()->save(new Question, $values, $this->can($user))->getKey()]);
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        $question = $this->form()->save(new Question, $values, $this->can($user));
+        $would = $this->rehearse($work);
+        // The id the rehearsal was given is nobody's once it is rolled back; the anchor is the one
+        // the question would get.
+        $would['question']['id'] = null;
 
-        return $this->get(['question' => $question->getKey()]);
+        return ['dry_run' => true] + $would;
     }
 
     /**
@@ -238,6 +264,8 @@ final class FaqTools
         if (! is_array($values) || $values === []) {
             throw new ToolFailure('`values` must be a non-empty object of field name → value. faq_get says what the fields are.');
         }
+
+        Arguments::refuseUnknown($values, $this->fields(), 'faq_update');
 
         // Merged language by language, and a language the site does not have refused — dry run
         // included: `{"slug": {"de": …}}` changes the German address and leaves the others.
@@ -259,13 +287,17 @@ final class FaqTools
             }
         }
 
-        if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'fields' => array_keys($values), 'question' => $this->reference($question)];
+        $work = function () use ($question, $values, $user): array {
+            $this->form()->save($question, $values, $this->can($user));
+
+            return $this->get(['question' => $question->getKey()]);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        $this->form()->save($question, $values, $this->can($user));
-
-        return $this->get(['question' => $question->getKey()]);
+        return ['dry_run' => true, 'fields' => array_keys($values)] + $this->rehearse($work);
     }
 
     /**
@@ -318,13 +350,87 @@ final class FaqTools
             }
         }
 
-        if ($this->dryRun($arguments)) {
-            return ['dry_run' => true, 'would_order' => $ids, 'category' => $category?->getKey()];
+        $work = function () use ($ids, $category): array {
+            Ordering::move(Question::class, $ids, $category === null ? null : (int) $category->getKey());
+
+            return $this->list($category === null ? [] : ['category' => $category->getKey()]);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return $work();
         }
 
-        Ordering::move(Question::class, $ids, $category === null ? null : (int) $category->getKey());
+        return ['dry_run' => true, 'would_order' => $ids, 'category' => $category?->getKey()] + $this->rehearse($work);
+    }
 
-        return $this->list($category === null ? [] : ['category' => $category->getKey()]);
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function restore(array $arguments): array
+    {
+        $question = $this->question($arguments['question'] ?? null);
+
+        if (! $question->trashed()) {
+            throw new ToolFailure("Question {$this->reference($question)} is not in the bin.");
+        }
+
+        $work = function () use ($question): array {
+            $question->restore();
+
+            return $this->get(['question' => $question->getKey()]);
+        };
+
+        if (! $this->dryRun($arguments)) {
+            return ['restored' => true] + $work();
+        }
+
+        return ['dry_run' => true, 'would_restore' => $this->reference($question)] + $this->rehearse($work);
+    }
+
+    /**
+     * @param  array<string, mixed>  $arguments
+     * @return array<string, mixed>
+     */
+    private function purge(array $arguments): array
+    {
+        $question = $this->question($arguments['question'] ?? null);
+
+        if (! $question->trashed()) {
+            throw new ToolFailure("Question {$this->reference($question)} is not in the bin. faq_delete puts it there; only then can it be deleted for good.");
+        }
+
+        if ($this->dryRun($arguments)) {
+            return ['dry_run' => true, 'would_purge' => $this->reference($question)];
+        }
+
+        $question->getConnection()->transaction(static fn (): ?bool => $question->forceDelete());
+
+        return ['purged' => true, 'id' => (int) $question->getKey()];
+    }
+
+    /**
+     * What `values` may name: the fields of the screen — everything the save reads.
+     *
+     * @return list<string>
+     */
+    private function fields(): array
+    {
+        return array_values(array_unique(array_map(
+            static fn (array $node): string => (string) $node['name'],
+            $this->container->make(ScreenRegistry::class)->fields(Question::SCREEN),
+        )));
+    }
+
+    /**
+     * @template T
+     *
+     * @param  Closure(): T  $work
+     * @return T
+     */
+    private function rehearse(Closure $work): mixed
+    {
+        return Rehearsal::run($work, (new Question)->getConnectionName());
     }
 
     /**
@@ -409,7 +515,18 @@ final class FaqTools
         if (is_int($reference) || (is_string($reference) && ctype_digit($reference))) {
             $category = FaqCategory::query()->find((int) $reference);
         } elseif (is_string($reference)) {
-            $category = FaqCategory::query()->whereTranslationLikeAny('title', trim($reference))->first();
+            $matches = FaqCategory::query()->whereTranslationLikeAny('title', trim($reference))->get();
+
+            // Two by one name: picking the first is a guess.
+            if ($matches->count() > 1) {
+                throw new ToolFailure(sprintf(
+                    'More than one category is called [%s]: #%s. Name it by its id.',
+                    trim($reference),
+                    $matches->map(static fn (FaqCategory $one): int => (int) $one->getKey())->implode(', #'),
+                ));
+            }
+
+            $category = $matches->first();
         } else {
             throw new ToolFailure('`category` is an id or a title.');
         }

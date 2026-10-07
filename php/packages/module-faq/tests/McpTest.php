@@ -27,7 +27,7 @@ final class McpTest extends TestCase
         $registry = $this->app->make(ToolRegistry::class);
 
         $this->assertSame(
-            ['faq_list', 'faq_get', 'faq_create', 'faq_update', 'faq_delete', 'faq_reorder'],
+            ['faq_list', 'faq_get', 'faq_create', 'faq_update', 'faq_delete', 'faq_reorder', 'faq_restore', 'faq_purge'],
             array_map(static fn ($tool): string => $tool->fullName(), $registry->toolsOf('faq')),
         );
 
