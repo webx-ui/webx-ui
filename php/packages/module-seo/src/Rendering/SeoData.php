@@ -57,6 +57,42 @@ final class SeoData
     }
 
     /**
+     * What an entity says about itself when nobody wrote it a card ({@see \WebxUi\Seo\Contracts\HasSeoFallback}).
+     *
+     * The lead is what an editor typed for the page, often in the rich-text editor: the markup
+     * comes out, the whitespace is squeezed, and it is cut at a word near 300 characters — a
+     * description is a snippet, not the article. A picture on this site's own path is made
+     * absolute — a relative `og:image` is no picture at all to a social network — and anything
+     * else that is not an http(s) address is left out.
+     */
+    public static function fallback(?string $title, ?string $description = null, ?string $image = null): self
+    {
+        $description = $description === null ? null : trim((string) preg_replace(
+            '/\s+/u',
+            ' ',
+            html_entity_decode(strip_tags(str_replace('<', ' <', $description)), ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+        ));
+
+        if ($description !== null && mb_strlen($description) > 300) {
+            $cut = mb_substr($description, 0, 300);
+            $space = mb_strrpos($cut, ' ');
+            $description = rtrim($space !== false && $space > 200 ? mb_substr($cut, 0, $space) : $cut, " ,.;:—-").'…';
+        }
+
+        $image = $image === null ? null : trim($image);
+
+        if ($image !== null && str_starts_with($image, '/') && ! str_starts_with($image, '//')) {
+            $image = url($image);
+        }
+
+        return self::make([
+            'title' => $title,
+            'description' => $description,
+            'og' => $image !== null && preg_match('~^https?://~i', $image) === 1 ? ['image' => $image] : [],
+        ]);
+    }
+
+    /**
      * This one wins where it has something to say; `$lower` fills in the rest.
      *
      * `jsonLd` is the exception and adds up: an Organization block from the defaults and a

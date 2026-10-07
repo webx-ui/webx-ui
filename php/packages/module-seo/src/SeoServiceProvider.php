@@ -40,6 +40,7 @@ use WebxUi\Seo\Panel\UrlRuleSource;
 use WebxUi\Seo\Rendering\Alternates;
 use WebxUi\Seo\Rendering\Breadcrumbs;
 use WebxUi\Seo\Rendering\EntitySource;
+use WebxUi\Seo\Rendering\FallbackSource;
 use WebxUi\Seo\Rendering\Seo;
 use WebxUi\Seo\Rendering\SeoSources;
 use WebxUi\Seo\Screens\SeoFieldType;
@@ -155,6 +156,7 @@ class SeoServiceProvider extends ServiceProvider
 
         $sources->register($this->app->make(UrlRuleSource::class));
         $sources->register($this->app->make(EntitySource::class));
+        $sources->register($this->app->make(FallbackSource::class));
         $sources->register($this->app->make(DefaultsSource::class));
     }
 

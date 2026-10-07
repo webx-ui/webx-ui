@@ -92,11 +92,16 @@ return [
     | wrong, so it wins; the defaults are what is said when nothing was said,
     | so they lose.
     |
+    | Fallbacks are what an entity says without a card — its own name, lead and
+    | picture (HasSeoFallback). Below the card, above the defaults: a recipe's
+    | photo is a better picture of the recipe than the site's default one.
+    |
     */
 
     'sources' => [
         'urls' => 100,
         'entities' => 50,
+        'fallbacks' => 30,
         'defaults' => 10,
     ],
 
