@@ -1,9 +1,18 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useAdmin, useErrorText, useTranslate } from '@webx-ui/module-admin'
-import { useModal, WxButton, WxDialog, WxProgress, WxSpace, WxText } from '@webx-ui/core'
+import {
+  useModal,
+  WxButton,
+  WxCheckbox,
+  WxDialog,
+  WxProgress,
+  WxSpace,
+  WxText,
+} from '@webx-ui/core'
 import { createMediaApi } from './api'
 import { readable } from './format'
+import type { OptimizePending, OptimizeResult } from './types'
 
 /**
  * «Optimize»: what is waiting, then a few pictures per request until they are done or stopped.
@@ -13,9 +22,10 @@ import { readable } from './format'
  * in flight finishes and no other starts. However it closes, the manager draws the files again.
  */
 const props = defineProps<{
-  ids: number[]
-  /** What they weigh now, for the question asked before anything runs. */
-  size: number
+  /** What the current settings have not been through: optimized in place, format kept. */
+  plain: OptimizePending
+  /** What «Convert to WebP» would take: the JPEG and PNG pictures, optimized or not. */
+  convertible: OptimizePending
 }>()
 
 const { open, resolve } = useModal<true>()
@@ -34,17 +44,38 @@ const saved = ref(0)
 const stopping = ref(false)
 const failure = ref<string | null>(null)
 
-const total = computed(() => props.ids.length)
+/*
+ * Off unless asked for, and asked for here rather than in the settings: converting changes the
+ * address of every picture it touches and rewrites every page that names one. That is what the
+ * owner wants once, deliberately — not what a click on «Optimize» should do by surprise.
+ */
+const convert = ref(false)
+const counts = ref<Record<OptimizeResult['status'], number>>({
+  optimized: 0,
+  converted: 0,
+  unchanged: 0,
+  skipped: 0,
+  missing: 0,
+})
+const references = ref(0)
+
+const chosen = computed(() => (convert.value ? props.convertible : props.plain))
+const total = computed(() => chosen.value.ids.length)
 
 async function run(): Promise<void> {
   state.value = 'running'
 
+  const ids = [...chosen.value.ids]
+  const converting = convert.value
+
   try {
-    for (let at = 0; at < props.ids.length && !stopping.value; at += BATCH) {
-      const results = await api.optimize(props.ids.slice(at, at + BATCH))
+    for (let at = 0; at < ids.length && !stopping.value; at += BATCH) {
+      const results = await api.optimize(ids.slice(at, at + BATCH), converting)
 
       for (const result of results) {
         saved.value += Math.max(0, result.before - result.after)
+        counts.value[result.status] = (counts.value[result.status] ?? 0) + 1
+        references.value += result.references ?? 0
       }
 
       done.value += results.length
@@ -72,9 +103,20 @@ function close(): void {
   >
     <div class="wx-media-optimize">
       <template v-if="state === 'ready'">
-        <wx-text>{{ t('manager.optimize-text') }}</wx-text>
-        <wx-text weight="semibold">
-          {{ t('manager.optimize-waiting', { count: total, size: readable(size) }) }}
+        <wx-text>{{ t(convert ? 'manager.convert-text' : 'manager.optimize-text') }}</wx-text>
+
+        <wx-checkbox v-model="convert" :disabled="convertible.ids.length === 0">
+          {{ t('manager.convert') }}
+        </wx-checkbox>
+
+        <wx-text v-if="total === 0">{{ t('manager.optimize-none') }}</wx-text>
+        <wx-text v-else weight="semibold">
+          {{
+            t(convert ? 'manager.convert-waiting' : 'manager.optimize-waiting', {
+              count: total,
+              size: readable(chosen.size),
+            })
+          }}
         </wx-text>
       </template>
 
@@ -88,9 +130,18 @@ function close(): void {
           :aria-label="t('manager.optimize-title')"
         />
         <wx-text v-if="failure" size="sm" tone="danger">{{ failure }}</wx-text>
-        <wx-text v-else-if="state === 'done'">
-          {{ t('manager.optimize-saved', { size: readable(saved) }) }}
-        </wx-text>
+        <template v-if="state === 'done'">
+          <wx-text>{{ t('manager.optimize-saved', { size: readable(saved) }) }}</wx-text>
+          <wx-text v-if="convert" size="sm" tone="muted">
+            {{
+              t('manager.convert-report', {
+                converted: counts.converted,
+                unchanged: counts.unchanged + counts.skipped + counts.missing,
+                references,
+              })
+            }}
+          </wx-text>
+        </template>
       </template>
     </div>
 
@@ -98,7 +149,9 @@ function close(): void {
       <wx-space size="sm">
         <template v-if="state === 'ready'">
           <wx-button variant="outline" @click="close()">{{ t('manager.cancel') }}</wx-button>
-          <wx-button type="primary" @click="run">{{ t('manager.optimize') }}</wx-button>
+          <wx-button type="primary" :disabled="total === 0" @click="run">{{
+            t(convert ? 'manager.convert-run' : 'manager.optimize')
+          }}</wx-button>
         </template>
         <wx-button
           v-else-if="state === 'running'"

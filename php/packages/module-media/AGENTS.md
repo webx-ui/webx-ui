@@ -20,6 +20,9 @@ guides when the question is about one of those. An entity's own attachments are 
 - **API** under `{webx-admin.api_path}/media` (`directories`, `files`, `files/chunked`,
   `files/by-path`, `files/{file}/thumb`, `files/{file}/source`, `files/{file}/edit`, `…/copy`,
   `…/restore-original`, `files/move`, `files/delete`); route names `webx.media.*`.
+- **Convert to WebP** (`convert: true` of `media_optimize_images`, `webx:media:webp`): a new key
+  with the same uuid, every reference rewritten (history included, `usage.rewrite_ignore`),
+  the old key kept in `media_aliases` — its public address 301s to the new one. Off by default.
 - **Chunked uploads**: the upload purpose `media.library` with module-admin's `uploads`
   protocol — the panel sends every file a piece at a time and `files/chunked` hands the finished
   one to the library through the same rules and pipeline as `POST files`.
@@ -39,6 +42,7 @@ guides when the question is about one of those. An entity's own attachments are 
 | ----------------------------------------- | ----------------------------------------------------------------------------------------- |
 | The library on another disk (S3 and such) | `WEBX_MEDIA_DISK=s3`; for S3 also `composer require league/flysystem-aws-s3-v3`           |
 | Share a bucket with something else        | `WEBX_MEDIA_PREFIX=…` — the directory every new key starts with                           |
+| Old JPEG and PNG pictures as WebP         | **Optimize** → «Convert to WebP», or `php artisan webx:media:webp --dry-run` first        |
 | Bigger or smaller uploads                 | `WEBX_MEDIA_MAX_SIZE` (kilobytes); `upload.max_files` in the published config             |
 | Larger pieces of a chunked upload         | `webx-admin.uploads.chunk_mb`; PHP's own limits only have to fit one piece                |
 | Allow another file type                   | add the extension to `upload.extensions` in `config/webx-media.php`                       |

@@ -104,6 +104,14 @@ return [
     | thrown away. A step is any class implementing
     | WebxUi\Media\Images\Optimizing\OptimizeStep.
     |
+    | «Convert to WebP» (the option in the «Optimize» dialog, `convert: true`
+    | of media_optimize_images, `php artisan webx:media:webp`) is off unless
+    | asked for: a JPEG or PNG — and a HEIC where Imagick reads it — becomes
+    | `format` under a new key (same uuid, new extension), every reference to
+    | the old key is rewritten (see `usage.rewrite_ignore`), the old key is
+    | kept as an alias so `/storage/media/…/<uuid>.jpg` answers with a 301, and
+    | the old bytes go. A picture is left alone when the result is not smaller.
+    |
     */
 
     'optimize' => [
@@ -171,6 +179,19 @@ return [
             'mcp_*', 'audit_*', 'admin_history', 'admin_uploads',
             'entity_versions', 'block_versions', 'routes_trashed',
             'catalog_exchange_*', 'catalog_bulk_*', 'catalog_index_queue',
+            'telescope_*', 'pulse_*',
+        ],
+
+        // What a rewrite of keys passes over («Convert to WebP»). Shorter than
+        // `ignore` on purpose: history and versions are rewritten too, so a
+        // version restored later does not bring back a key whose bytes are gone.
+        'rewrite_ignore' => [
+            'media_*',
+            'migrations',
+            'cache', 'cache_locks', 'sessions',
+            'jobs', 'job_batches', 'failed_jobs',
+            'password_reset_tokens', 'personal_access_tokens', 'oauth_*',
+            'admin_uploads', 'cms_uploads',
             'telescope_*', 'pulse_*',
         ],
     ],

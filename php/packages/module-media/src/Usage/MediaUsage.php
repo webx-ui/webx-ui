@@ -55,4 +55,32 @@ final class MediaUsage
 
         return $found;
     }
+
+    /**
+     * Move every reference from each file's old basename to its new one, through every source
+     * that can ({@see UsageRewriter}).
+     *
+     * @param  array<int, array{0: string, 1: string}>  $renames  file id → [old basename, new basename]
+     * @return array<int, int> file id → places rewritten, or that would be on a dry run
+     */
+    public function rewrite(array $renames, bool $dryRun = false): array
+    {
+        $total = [];
+
+        if ($renames === []) {
+            return $total;
+        }
+
+        foreach ($this->container->tagged(self::TAG) as $source) {
+            if (! $source instanceof UsageRewriter) {
+                continue;
+            }
+
+            foreach ($source->rewrite($renames, $dryRun) as $fileId => $count) {
+                $total[$fileId] = ($total[$fileId] ?? 0) + $count;
+            }
+        }
+
+        return $total;
+    }
 }

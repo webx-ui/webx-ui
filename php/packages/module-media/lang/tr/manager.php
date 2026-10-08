@@ -61,4 +61,10 @@ return [
     'optimize-none' => 'Buradaki tüm görseller zaten optimize edilmiş.',
     'optimize-stop' => 'Durdur',
     'optimize-close' => 'Kapat',
+    'convert' => 'WebP\'ye dönüştür',
+    'convert-text' => 'JPEG ve PNG görseller WebP olur: daha küçük ve yeni bir adreste. Bunları kullanan her sayfa, blok, ayar ve önceki sürüm hemen yeni adrese geçer, eski adres de yeniye yönlendirir. WebP daha küçük olmayacaksa görsel olduğu gibi kalır; saydamlık korunur.',
+    'convert-waiting' => 'Dönüştürülecek görsel: :count, toplam :size',
+    'convert-run' => 'Dönüştür',
+    'convert-report' => 'Dönüştürülen: :converted, olduğu gibi bırakılan: :unchanged, güncellenen bağlantı: :references',
+    'no-folders' => 'Klasör yok',
 ];

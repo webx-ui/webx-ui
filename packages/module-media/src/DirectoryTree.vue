@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useTranslate } from '@webx-ui/module-admin'
-import { WxTree, type TreeDropEvent } from '@webx-ui/core'
+import { WxSkeleton, WxTree, type TreeDropEvent } from '@webx-ui/core'
 import type { MediaDirectory } from './types'
 
 /**
@@ -12,6 +12,8 @@ import type { MediaDirectory } from './types'
  */
 const props = defineProps<{
   directories: MediaDirectory[]
+  /** Not answered yet: a placeholder, rather than a tree that says it is empty. */
+  loading?: boolean
 }>()
 
 const selected = defineModel<number | null>('selected', { default: null })
@@ -60,7 +62,10 @@ function onDrop(event: TreeDropEvent<Node>): void {
 </script>
 
 <template>
+  <wx-skeleton v-if="loading" class="wx-media-tree" :rows="3" :title="false" animated />
+
   <wx-tree
+    v-else
     v-model:selected="selected"
     v-model:expanded="expanded"
     v-model="nodes"
@@ -68,6 +73,7 @@ function onDrop(event: TreeDropEvent<Node>): void {
     node-key="id"
     draggable
     show-lines
+    :empty-text="t('manager.no-folders')"
     @drop="onDrop"
   />
 </template>

@@ -22,7 +22,7 @@ import UploadQueue from './UploadQueue.vue'
 import { createMediaApi } from './api'
 import { readable } from './format'
 import { useMediaMessages } from './i18n'
-import type { MediaDirectory, MediaFile, MediaKind, MediaPage } from './types'
+import type { MediaDirectory, MediaFile, MediaKind, MediaPage, OptimizePending } from './types'
 import { useMediaUploads } from './uploading'
 
 /**
@@ -106,6 +106,8 @@ const width = useElementWidth(root)
 const compact = computed(() => width.value > 0 && width.value < 640)
 
 const directories = ref<MediaDirectory[]>([])
+/* Until the first answer the tree is loading, not empty — and says so with a placeholder. */
+const foldersLoaded = ref(false)
 const current = ref<number | null>(null)
 const page = ref<MediaPage | null>(null)
 const selected = ref<number[]>([])
@@ -192,6 +194,7 @@ watch(compact, (narrow) => {
  */
 async function load(to = 1): Promise<void> {
   directories.value = await api.directories()
+  foldersLoaded.value = true
 
   if (current.value === null && directories.value[0] !== undefined) {
     current.value = directories.value[0].id
@@ -536,7 +539,9 @@ function countsOf(error: unknown): { files: number; directories: number } | null
   return body?.code === 'directory_not_empty' ? (body.counts ?? null) : null
 }
 
-const askToOptimize = createModal<true, { ids: number[]; size: number }>(OptimizeDialog)
+const askToOptimize = createModal<true, { plain: OptimizePending; convertible: OptimizePending }>(
+  OptimizeDialog,
+)
 
 /**
  * «Optimize» for what is selected, or else for the folder that is open — the same thing every
@@ -544,18 +549,19 @@ const askToOptimize = createModal<true, { ids: number[]; size: number }>(Optimiz
  */
 async function optimize(): Promise<void> {
   try {
-    const pending = await api.optimizePending({
-      ids: [...selected.value],
-      directoryId: current.value,
-    })
+    const scope = { ids: [...selected.value], directoryId: current.value }
+    const [plain, convertible] = await Promise.all([
+      api.optimizePending(scope),
+      api.optimizePending({ ...scope, convert: true }),
+    ])
 
-    if (pending.ids.length === 0) {
+    if (plain.ids.length === 0 && convertible.ids.length === 0) {
       toast.info(t('manager.optimize-none'))
 
       return
     }
 
-    await askToOptimize(pending)
+    await askToOptimize({ plain, convertible })
     await loadFiles()
   } catch (error) {
     toast.danger(message(error))
@@ -578,7 +584,12 @@ function debounce(run: () => void, wait: number): () => void {
 <template>
   <div ref="root" class="wx-media" :class="{ 'wx-media--compact': compact }">
     <aside v-if="!compact" class="wx-media__folders">
-      <directory-tree v-model:selected="current" :directories="directories" @move="moveFolder" />
+      <directory-tree
+        v-model:selected="current"
+        :directories="directories"
+        :loading="!foldersLoaded"
+        @move="moveFolder"
+      />
 
       <wx-actions v-if="canManage" size="sm" align="start">
         <wx-action type="add" :title="t('manager.new-folder')" @click="createFolder" />
@@ -696,6 +707,7 @@ function debounce(run: () => void, wait: number): () => void {
         <directory-tree
           v-model:selected="current"
           :directories="directories"
+          :loading="!foldersLoaded"
           @move="moveFolder"
           @update:selected="foldersOpen = false"
         />

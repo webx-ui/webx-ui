@@ -61,4 +61,10 @@ return [
     'optimize-none' => 'Every picture here is already optimized.',
     'optimize-stop' => 'Stop',
     'optimize-close' => 'Close',
+    'convert' => 'Convert to WebP',
+    'convert-text' => 'JPEG and PNG pictures become WebP: smaller, under a new address. Every page, block, setting and earlier version that uses one is updated to the new address at once, and the old address redirects to it. A picture stays as it is when WebP would not be smaller; transparency is kept.',
+    'convert-waiting' => 'Pictures to convert: :count, :size in all',
+    'convert-run' => 'Convert',
+    'convert-report' => 'Converted: :converted, left as they were: :unchanged, references updated: :references',
+    'no-folders' => 'No folders',
 ];

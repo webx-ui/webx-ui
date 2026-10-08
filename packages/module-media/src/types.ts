@@ -64,9 +64,17 @@ export interface FileQuery {
 /** What «Optimize» did to one file; `before` and `after` are its size in bytes. */
 export interface OptimizeResult {
   id: number
-  status: 'optimized' | 'unchanged' | 'skipped' | 'missing'
+  status: 'optimized' | 'converted' | 'unchanged' | 'skipped' | 'missing'
   before: number
   after: number
+  /** «Convert to WebP» only: the places on the site moved over to the new key. */
+  references?: number
+}
+
+/** What «Optimize» would take, either way. */
+export interface OptimizePending {
+  ids: number[]
+  size: number
 }
 
 export interface EditOperations {

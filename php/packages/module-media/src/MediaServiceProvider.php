@@ -6,6 +6,7 @@ namespace WebxUi\Media;
 
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use WebxUi\Admin\Contracts\AssetUrls;
 use WebxUi\Admin\ModuleRegistry;
@@ -15,6 +16,9 @@ use WebxUi\Admin\Uploads\UploadPurposes;
 use WebxUi\Audit\Checks\AuditChecks;
 use WebxUi\Media\Audit\HeavyImages;
 use WebxUi\Media\Audit\MissingFiles;
+use WebxUi\Media\Console\ConvertToWebpCommand;
+use WebxUi\Media\Events\MediaKeysRewritten;
+use WebxUi\Media\Http\Controllers\OldAddressController;
 use WebxUi\Media\Screens\FileFieldType;
 use WebxUi\Media\Screens\FilesFieldType;
 use WebxUi\Media\Screens\GalleryFieldType;
@@ -23,6 +27,7 @@ use WebxUi\Media\Screens\MediaFiles;
 use WebxUi\Media\Storage\FileStore;
 use WebxUi\Media\Storage\LibraryUrls;
 use WebxUi\Media\Usage\DatabaseUsage;
+use WebxUi\Media\Usage\ForgetRenderedContent;
 use WebxUi\Media\Usage\MediaUsage;
 
 class MediaServiceProvider extends ServiceProvider
@@ -62,6 +67,7 @@ class MediaServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         $this->loadTranslationsFrom(__DIR__.'/../lang', 'webx-media');
         $this->loadRoutesFrom(__DIR__.'/../routes/api.php');
+        $this->oldAddresses();
 
         $this->app->make(ModuleRegistry::class)->register($this->app->make(MediaModule::class));
 
@@ -98,13 +104,23 @@ class MediaServiceProvider extends ServiceProvider
         // responses that memory would outlive the library it describes.
         $files = $this->app->make(MediaFiles::class);
 
-        $this->app->make(Dispatcher::class)->listen(RequestHandled::class, static function () use ($files): void {
+        $events = $this->app->make(Dispatcher::class);
+
+        $events->listen(RequestHandled::class, static function () use ($files): void {
             $files->flush();
+        });
+
+        // Keys rewritten in the database directly: the rendered caches never heard of it.
+        $events->listen(MediaKeysRewritten::class, function () use ($files): void {
+            $files->flush();
+            $this->app->make(ForgetRenderedContent::class)->handle();
         });
 
         if (! $this->app->runningInConsole()) {
             return;
         }
+
+        $this->commands([ConvertToWebpCommand::class]);
 
         $this->publishes([
             __DIR__.'/../config/webx-media.php' => config_path('webx-media.php'),
@@ -113,5 +129,29 @@ class MediaServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../lang' => lang_path('vendor/webx-media'),
         ], 'webx-media-lang');
+    }
+
+    /**
+     * Where the public addresses of the library's disk start on this site — `/storage/media` for
+     * the `public` disk — so that the address of a key a file no longer has redirects to the one
+     * it has now ({@see OldAddressController}). Nothing for a disk this application does not
+     * serve: an S3 bucket answers for itself.
+     */
+    private function oldAddresses(): void
+    {
+        $disk = (string) config('webx-media.disk', 'public');
+        $settings = (array) config("filesystems.disks.{$disk}", []);
+
+        if (($settings['driver'] ?? null) !== 'local' || empty($settings['url'])) {
+            return;
+        }
+
+        $base = trim((string) parse_url((string) $settings['url'], PHP_URL_PATH), '/');
+        $prefix = trim((string) config('webx-media.prefix', 'media'), '/');
+        $path = ltrim($base.'/'.$prefix, '/');
+
+        Route::get($path.'/{key}', OldAddressController::class)
+            ->where('key', '[A-Za-z0-9/_.-]+\.[A-Za-z0-9]+')
+            ->name('webx.media.old-address');
     }
 }

@@ -93,6 +93,40 @@ runs the pictures already there through the same steps, over the same key and in
 The steps are `webx-media.optimize.steps` — add a class implementing
 `WebxUi\Media\Images\Optimizing\OptimizeStep` to add your own.
 
+### Convert to WebP
+
+Off unless asked for — the checkbox in the **Optimize** dialog, `convert: true` of
+`media_optimize_images` (honours `dry_run`), or `php artisan webx:media:webp [--dry-run]
+[--directory=] [--id=]`. A still JPEG or PNG (and a HEIC, where Imagick is built with libheif)
+becomes a WebP when that is smaller; transparency is kept, GIF, SVG and animated pictures are left
+alone. Per file, so that a failure leaves the site as it was:
+
+1. the WebP is written beside the old file under the same uuid — `media/9f/2a/<uuid>.webp`;
+2. in one transaction: the row takes the new key (path, extension, MIME, file name, hash, size,
+   dimensions), the old key is kept in `media_aliases`, and every reference to the old basename
+   is rewritten — every text and JSON column of every table, **without** the caps the delete
+   check uses, history and versions included (`usage.rewrite_ignore` names what is skipped);
+3. then the old bytes and old previews go, and the rendered caches (settings, block regions,
+   menus) are let go of through the `MediaKeysRewritten` event.
+
+Why history is rewritten: restoring an old version must not bring back a key whose bytes are
+gone. The alias covers what no rewrite reaches — search engines, CDNs, e-mails, links on other
+sites: the old public address (`/storage/media/…/<uuid>.jpg`, any `?v=`) answers **301** to the
+new one for a disk the site serves itself, and `files/by-path` and the field lookups find the file
+by either key. The old bytes are not kept for a grace period: a 301 serves every old link, and the
+space is the point.
+
+The editor's kept original (`original_path`) stays as it arrived, in its own format — it is the
+picture before anything was done to it. **Restore original** re-encodes it into the file's
+current format, so the key never lies about what it holds.
+
+Each file is reported as `converted`, `unchanged` (WebP would not be smaller), `skipped` or
+`missing`, with bytes before and after and the number of references rewritten.
+
+A module that keeps keys where the schema cannot show them implements
+`WebxUi\Media\Usage\UsageRewriter` beside `UsageSource` on its tagged source; it is called inside
+the same transaction.
+
 ## MCP
 
 `list_directories`, `list_files`, `search_files`, `get_file`, `create_directory`, `delete_directory`,

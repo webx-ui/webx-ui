@@ -29,7 +29,7 @@ use WebxUi\Media\Models\MediaFile;
  * old version mentioned is not a file in use. A table that cannot be read is reported and passed
  * over rather than failing the whole question.
  */
-final class DatabaseUsage implements UsageSource
+final class DatabaseUsage implements UsageRewriter, UsageSource
 {
     private const TEXT_TYPES = [
         'char', 'varchar', 'nchar', 'nvarchar', 'character', 'character varying',
@@ -67,7 +67,7 @@ final class DatabaseUsage implements UsageSource
             $name = (string) $table['name'];
             $bare = $prefix !== '' && str_starts_with($name, $prefix) ? substr($name, strlen($prefix)) : $name;
 
-            if ($this->ignored($bare)) {
+            if ($this->ignored($bare, 'webx-media.usage.ignore')) {
                 continue;
             }
 
@@ -131,6 +131,87 @@ final class DatabaseUsage implements UsageSource
     }
 
     /**
+     * Every text and JSON column of every table but the ones `usage.rewrite_ignore` names, with
+     * no limit: one `UPDATE … SET column = REPLACE(column, old, new) WHERE column LIKE %old%` per
+     * column and file, so a row is never read into PHP and nothing is missed.
+     *
+     * History is rewritten as well (versions, the journal): restoring a version must not bring
+     * back a key whose bytes are gone. Failing is loud on purpose — the caller's transaction
+     * undoes the whole file rather than leave half of the site on the old key.
+     */
+    public function rewrite(array $renames, bool $dryRun = false): array
+    {
+        $connection = (new MediaFile)->getConnection();
+        $schema = $connection->getSchemaBuilder();
+        $prefix = $connection->getTablePrefix();
+        $counts = [];
+
+        foreach ($renames as [$from, $to]) {
+            // Spliced into SQL as literals below, so held to what a key's basename is.
+            if (preg_match('/^[A-Za-z0-9._-]+$/', $from.$to) !== 1) {
+                throw new \InvalidArgumentException("[{$from}] → [{$to}] is not a rename of a library key.");
+            }
+        }
+
+        foreach ($schema->getTables($schema->getCurrentSchemaName()) as $table) {
+            $name = (string) $table['name'];
+            $bare = $prefix !== '' && str_starts_with($name, $prefix) ? substr($name, strlen($prefix)) : $name;
+
+            if ($this->ignored($bare, 'webx-media.usage.rewrite_ignore')) {
+                continue;
+            }
+
+            foreach ($schema->getColumns($bare) as $column) {
+                $type = strtolower((string) $column['type_name']);
+
+                if (! in_array($type, self::TEXT_TYPES, true)) {
+                    continue;
+                }
+
+                $column = (string) $column['name'];
+
+                foreach ($renames as $fileId => [$from, $to]) {
+                    $query = $connection->table($bare);
+                    $this->contains($connection, $query, $column, $type, $from);
+
+                    $count = $dryRun
+                        ? $query->count()
+                        : $query->update([$column => $connection->raw($this->replaced($connection, $column, $type, $from, $to))]);
+
+                    if ($count > 0) {
+                        $counts[$fileId] = ($counts[$fileId] ?? 0) + $count;
+                    }
+                }
+            }
+        }
+
+        return $counts;
+    }
+
+    private function contains(Connection $connection, Builder $query, string $column, string $type, string $needle): void
+    {
+        if ($connection->getDriverName() === 'pgsql' && in_array($type, ['json', 'jsonb'], true)) {
+            $query->whereRaw($query->getGrammar()->wrap($column).'::text like ?', ['%'.$needle.'%']);
+
+            return;
+        }
+
+        $query->where($column, 'like', '%'.$needle.'%');
+    }
+
+    private function replaced(Connection $connection, string $column, string $type, string $from, string $to): string
+    {
+        $wrapped = $connection->getQueryGrammar()->wrap($column);
+        $replace = "replace(%s, {$connection->escape($from)}, {$connection->escape($to)})";
+
+        if ($connection->getDriverName() === 'pgsql' && in_array($type, ['json', 'jsonb'], true)) {
+            return sprintf($replace, $wrapped.'::text').'::'.$type;
+        }
+
+        return sprintf($replace, $wrapped);
+    }
+
+    /**
      * @param  list<string>  $columns
      * @param  array<int, string>  $needles
      */
@@ -150,10 +231,10 @@ final class DatabaseUsage implements UsageSource
         }
     }
 
-    private function ignored(string $table): bool
+    private function ignored(string $table, string $key): bool
     {
         /** @var list<string> $patterns */
-        $patterns = (array) $this->config->get('webx-media.usage.ignore', []);
+        $patterns = (array) $this->config->get($key, []);
 
         return Str::is($patterns, $table);
     }

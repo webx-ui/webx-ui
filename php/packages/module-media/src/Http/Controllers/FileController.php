@@ -19,6 +19,7 @@ use WebxUi\Media\Http\Requests\FileMoveRequest;
 use WebxUi\Media\Http\Requests\FileRenameRequest;
 use WebxUi\Media\Http\Requests\FileUploadRequest;
 use WebxUi\Media\Http\Resources\FileResource;
+use WebxUi\Media\Models\MediaAlias;
 use WebxUi\Media\Models\MediaDirectory;
 use WebxUi\Media\Models\MediaFile;
 use WebxUi\Media\Storage\FileStore;
@@ -83,7 +84,9 @@ final class FileController
     {
         $path = (string) $request->query('path');
 
-        $file = MediaFile::query()->where('path', $path)->first();
+        // A key the file had before a conversion finds it too: a value somewhere the rewrite
+        // could not reach still opens the picture it meant.
+        $file = MediaAlias::resolve($path);
 
         if ($file === null) {
             return ApiResponse::message(__('webx-media::errors.file-not-found'), 404);

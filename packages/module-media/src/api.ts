@@ -49,12 +49,20 @@ export interface MediaApi {
    * The pictures of a selection — or else of a folder — that the current optimize settings have
    * not been through, and what they weigh now.
    */
-  optimizePending(query: { ids?: number[]; directoryId?: number | null }): Promise<{
+  optimizePending(query: {
+    ids?: number[]
+    directoryId?: number | null
+    /** The JPEG, PNG and HEIC pictures «Convert to WebP» would take instead. */
+    convert?: boolean
+  }): Promise<{
     ids: number[]
     size: number
   }>
-  /** Up to ten of them through the pipeline again, each over its own key. */
-  optimize(ids: number[]): Promise<OptimizeResult[]>
+  /**
+   * Up to ten of them through the pipeline again, each over its own key — or, with `convert`,
+   * into WebP under a new key with every reference on the site rewritten.
+   */
+  optimize(ids: number[], convert?: boolean): Promise<OptimizeResult[]>
 
   /** The address of a preview at a size the server allows. */
   thumb(file: MediaFile, width: number, height?: number, fit?: 'cover' | 'contain'): string | null
@@ -189,16 +197,21 @@ export function createMediaApi(admin: AdminContext): MediaApi {
     restoreOriginal: (id) =>
       admin.http.post<{ data: MediaFile }>(`${base}/files/${id}/restore-original`).then(data),
 
-    optimizePending: ({ ids, directoryId }) =>
+    optimizePending: ({ ids, directoryId, convert }) =>
       admin.http
         .post<{ data: { ids: number[]; size: number } }>(`${base}/files/optimize/pending`, {
           ids: ids?.length ? ids : undefined,
           directory_id: ids?.length ? undefined : (directoryId ?? undefined),
+          convert: convert || undefined,
         })
         .then(data),
 
-    optimize: (ids) =>
-      admin.http.post<{ data: OptimizeResult[] }>(`${base}/files/optimize`, { ids }).then(data),
+    optimize: (ids, convert = false) =>
+      admin.http
+        .post<{
+          data: OptimizeResult[]
+        }>(`${base}/files/optimize`, { ids, convert: convert || undefined })
+        .then(data),
 
     thumb(file, width, height, fit = 'cover') {
       if (!file.thumb) {

@@ -61,4 +61,10 @@ return [
     'optimize-none' => 'Todas las imágenes de aquí ya están optimizadas.',
     'optimize-stop' => 'Detener',
     'optimize-close' => 'Cerrar',
+    'convert' => 'Convertir a WebP',
+    'convert-text' => 'Las imágenes JPEG y PNG pasan a WebP: más ligeras y con una dirección nueva. Cada página, bloque, ajuste y versión anterior que use una se actualiza al momento a la nueva dirección, y la antigua redirige a ella. Una imagen se queda como está si el WebP no fuera más ligero; la transparencia se conserva.',
+    'convert-waiting' => 'Imágenes por convertir: :count, :size en total',
+    'convert-run' => 'Convertir',
+    'convert-report' => 'Convertidas: :converted, sin cambios: :unchanged, referencias actualizadas: :references',
+    'no-folders' => 'No hay carpetas',
 ];
