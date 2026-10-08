@@ -34,6 +34,11 @@ final class SnapshotsTest extends TestCase
 
         $this->dir = sys_get_temp_dir().'/webx-snapshots-'.bin2hex(random_bytes(4));
         mkdir($this->dir.'/public', 0777, true);
+        mkdir($this->dir.'/www', 0777, true);
+
+        // A restore runs `storage:link` when the link is missing; Testbench's own public folder is
+        // shared by every package's tests, and a link left there changes what they see.
+        $app->usePublicPath($this->dir.'/www');
 
         $app['config']->set('app.name', 'Demo Site');
         $app['config']->set('app.url', 'http://demo.local');
@@ -76,6 +81,12 @@ final class SnapshotsTest extends TestCase
 
     protected function tearDown(): void
     {
+        $link = $this->dir.'/www/storage';
+
+        if (is_link($link)) {
+            @unlink($link) || @rmdir($link);
+        }
+
         MediaDisk::deleteDirectory($this->dir);
 
         parent::tearDown();
@@ -347,7 +358,7 @@ final class SnapshotsTest extends TestCase
     {
         $directory = $this->app->make(Snapshotter::class)->directory();
         $check = $this->app->make(Snapshots::class);
-        $this->assertSame([], $check->run());
+        $this->assertCount(0, $check->run());
 
         $this->write($directory.'/old.tar.gz', 'x');
 

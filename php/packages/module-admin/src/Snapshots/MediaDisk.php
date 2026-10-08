@@ -142,8 +142,16 @@ final class MediaDisk
         );
 
         /** @var SplFileInfo $item */
+        // Not following links (the iterator's default) is what keeps a `storage` link from taking
+        // what it points at with it; a directory link on Windows only goes with rmdir.
         foreach ($iterator as $item) {
-            $item->isDir() && ! $item->isLink() ? @rmdir($item->getPathname()) : @unlink($item->getPathname());
+            if ($item->isLink()) {
+                @unlink($item->getPathname()) || @rmdir($item->getPathname());
+            } elseif ($item->isDir()) {
+                @rmdir($item->getPathname());
+            } else {
+                @unlink($item->getPathname());
+            }
         }
 
         @rmdir($directory);
